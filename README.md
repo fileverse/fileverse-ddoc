@@ -22,7 +22,7 @@ That's it, you should be able to use DdocEditor now
 
 ### Props
 
-# DpageProps Interface
+# DdocProps Interface
 
 The `DpageProps` interface is a TypeScript interface that defines the properties for a component related to a page. This interface includes properties for handling preview mode, publishing data, and optional data related to the page's metadata and content.
 
