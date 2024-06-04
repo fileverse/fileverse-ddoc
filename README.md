@@ -1,4 +1,4 @@
-# DPage Editor
+# Ddoc Editor
 
 This repo contains example source code and package code
 
@@ -24,7 +24,7 @@ That's it, you should be able to use DdocEditor now
 
 # DdocProps Interface
 
-The `DpageProps` interface is a TypeScript interface that defines the properties for a component related to a page. This interface includes properties for handling preview mode, publishing data, and optional data related to the page's metadata and content.
+The `DdocProps` interface is a TypeScript interface that defines the properties for a component related to a page. This interface includes properties for handling preview mode, publishing data, and optional data related to the page's metadata and content.
 
 ## Properties
 
@@ -37,7 +37,7 @@ The `DpageProps` interface is a TypeScript interface that defines the properties
 
 ## Data Interface
 
-The `Data` interface defines the structure of the data object that can be passed to the `onPublish` function and optionally included in the `data` property of `DpageProps`.
+The `Data` interface defines the structure of the data object that can be passed to the `onPublish` function and optionally included in the `data` property of `DdocProps`.
 
 ### Properties
 
@@ -85,4 +85,4 @@ The `Plugin` interface defines the structure of the plugin information.
 - `npm i`
 - `npm run dev`
 
-It will open up a vite server, that will have the DPage Editor
+It will open up a vite server, that will have the Ddoc Editor
