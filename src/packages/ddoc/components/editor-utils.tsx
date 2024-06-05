@@ -1,30 +1,30 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import React, { Dispatch, SetStateAction, useState } from 'react';
-import { IEditorTool, useEditorToolVisiibility } from './hooks/use-visibility';
-import checklist from '../../assets/dpage/checklist.svg'
-import code from '../../assets/dpage/code.svg';
-import font from '../../assets/dpage/font.svg';
-import format_align_center from '../../assets/dpage/format_align_center.svg';
-import format_align_left from '../../assets/dpage/format_align_left.svg';
-import format_align_right from '../../assets/dpage/format_align_right.svg';
-import format_bold from '../../assets/dpage/bold.svg';
-import format_italic from '../../assets/dpage/italic.svg';
-import format_list_bulleted from '../../assets/dpage/format_list_bulleted.svg';
-import format_list_numbered from '../../assets/dpage/format_list_numbered.svg';
-import format_underlined from '../../assets/dpage/underline.svg';
-import link from '../../assets/dpage/link.svg';
-import strikethrough_s from '../../assets/dpage/strikethrough.svg';
-import text_format from '../../assets/dpage/text_format.svg';
-import quote from '../../assets/dpage/quote.svg';
-import h1 from '../../assets/dpage/h1.svg';
-import h2 from '../../assets/dpage/h2.svg';
-import h3 from '../../assets/dpage/h3.svg';
-import text from '../../assets/dpage/text.svg';
-import highlight from '../../assets/dpage/highlight.svg';
-import image from '../../assets/dpage/image.svg';
+import { IEditorTool, useEditorToolVisiibility } from '../hooks/use-visibility';
+import checklist from '../../../assets/dpage/checklist.svg'
+import code from '../../../assets/dpage/code.svg';
+import font from '../../../assets/dpage/font.svg';
+import format_align_center from '../../../assets/dpage/format_align_center.svg';
+import format_align_left from '../../../assets/dpage/format_align_left.svg';
+import format_align_right from '../../../assets/dpage/format_align_right.svg';
+import format_bold from '../../../assets/dpage/bold.svg';
+import format_italic from '../../../assets/dpage/italic.svg';
+import format_list_bulleted from '../../../assets/dpage/format_list_bulleted.svg';
+import format_list_numbered from '../../../assets/dpage/format_list_numbered.svg';
+import format_underlined from '../../../assets/dpage/underline.svg';
+import link from '../../../assets/dpage/link.svg';
+import strikethrough_s from '../../../assets/dpage/strikethrough.svg';
+import text_format from '../../../assets/dpage/text_format.svg';
+import quote from '../../../assets/dpage/quote.svg';
+import h1 from '../../../assets/dpage/h1.svg';
+import h2 from '../../../assets/dpage/h2.svg';
+import h3 from '../../../assets/dpage/h3.svg';
+import text from '../../../assets/dpage/text.svg';
+import highlight from '../../../assets/dpage/highlight.svg';
+import image from '../../../assets/dpage/image.svg';
 import { Editor } from '@tiptap/react';
 import { Ban, Check } from 'lucide-react';
-import { startImageUpload } from './utils/upload-images';
+import { startImageUpload } from '../utils/upload-images';
 import clx from 'classnames';
 interface IEditorToolElement {
   icon: any;

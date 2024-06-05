@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { Dispatch, FC, SetStateAction } from 'react'
 
-import { BubbleMenuItem } from './editor-bubble-menu'
+import { BubbleMenuItem } from './common/editor-bubble-menu'
 
 interface NodeSelectorProps {
   editor: Editor

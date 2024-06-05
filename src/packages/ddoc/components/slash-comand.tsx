@@ -33,7 +33,7 @@ import {
   Columns3,
 } from 'lucide-react';
 
-import { startImageUpload } from './utils/upload-images';
+import { startImageUpload } from '../utils/upload-images';
 
 interface CommandItemProps {
   title: string;

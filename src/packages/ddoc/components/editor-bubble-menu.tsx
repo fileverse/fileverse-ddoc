@@ -4,15 +4,15 @@
 import { BubbleMenu, BubbleMenuProps, isNodeSelection } from '@tiptap/react'
 import cx from 'classnames'
 import { FC, useState } from 'react'
-import format_bold from '../../assets/dpage/bold.svg'
-import format_italic from '../../assets/dpage/italic.svg'
-import format_underline from '../../assets/dpage/underline.svg'
-import code from '../../assets/dpage/code.svg'
-import strikethrough from '../../assets/dpage/strikethrough.svg'
-import link from '../../assets/dpage/link.svg'
+import format_bold from '../../../assets/dpage/bold.svg'
+import format_italic from '../../../assets/dpage/italic.svg'
+import format_underline from '../../../assets/dpage/underline.svg'
+import code from '../../../assets/dpage/code.svg'
+import strikethrough from '../../../assets/dpage/strikethrough.svg'
+import link from '../../../assets/dpage/link.svg'
 
 import { NodeSelector } from './node-selector'
-import { ColorSelector } from './color-selector'
+import { ColorSelector } from '../components/color-selector'
 import { LinkPopup, useEditorToolbar } from './editor-utils'
 
 export interface BubbleMenuItem {

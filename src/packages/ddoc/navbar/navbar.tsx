@@ -1,5 +1,5 @@
 import Logo from '../../../assets/mainLogo.png';
-import { PluginMetaData } from '../props';
+import { PluginMetaData } from '../types';
 
 export const PluginNavbarLeftSection = ({
   metaData,

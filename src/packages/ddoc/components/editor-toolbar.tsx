@@ -9,7 +9,7 @@ import {
   useEditorToolbar,
 } from './editor-utils';
 import { Editor } from '@tiptap/react';
-import { IEditorTool } from './hooks/use-visibility';
+import { IEditorTool } from '../hooks/use-visibility';
 import { ChevronDown } from 'lucide-react';
 import clx from 'classnames';
 

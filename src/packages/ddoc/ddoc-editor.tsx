@@ -2,13 +2,13 @@ import React, { useEffect, useRef, useState } from 'react';
 import { PluginNavbarLeftSection } from './navbar/navbar';
 import { AnyExtension, EditorContent, useEditor } from '@tiptap/react';
 import { defaultExtensions } from './extensions/default-extension';
-import { EditorBubbleMenu } from './editor-bubble-menu';
-import { PluginMetaData, DdocProps, DdocEditorProps } from './props';
+import { EditorBubbleMenu } from './components/editor-bubble-menu';
+import { PluginMetaData, DdocProps, DdocEditorProps } from './types';
 import { ColumnsMenu } from './extensions/multi-column/menus';
 import { EditingProvider } from './hooks/use-editing-context';
 import { Button } from './common/button';
 import Spinner from './common/spinner';
-import EditorToolBar from './editor-toolbar';
+import EditorToolBar from './components/editor-toolbar';
 import './styles/editor.scss';
 import 'tippy.js/animations/shift-toward-subtle.css';
 
