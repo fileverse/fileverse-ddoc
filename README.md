@@ -34,6 +34,9 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `togglePreviewMode`| `(flag: boolean) => void` | Function to toggle preview mode with a boolean flag.       |
 | `onPublish`        | `(data: Data) => void`    | Function to handle publishing of the page.                 |
 | `data` (optional)  | `Data`                    | Optional property holding data related to the page.        |
+| `enableCollaboration` (optional) | `boolean`    | Optional property to enable collaboration
+| `collaborationId` (optional) | `string` | When using enableCollaboration, you need to provide collaborationId, it can be uuid of doc |
+| `toggleCollaboration` (optional) |  `(flag: boolean) => void` | Function to toggle collaboration mode with a boolean flag | 
 
 ## Data Interface
 
@@ -53,21 +56,8 @@ The `PluginMetaData` interface defines the structure of the metadata related to 
 ### Properties
 
 | Property          | Type        | Description                                    |
-|-------------------|-------------|------------------------------------------------|
-| `cover`           | `Cover`     | Contains information about the cover.          |
+|-------------------|-------------|--------------------------------------------------       |
 | `plugin`          | `Plugin`    | Contains information about the plugin title.   |
-
-## Cover Interface
-
-The `Cover` interface defines the structure of the cover information.
-
-### Properties
-
-| Property   | Type             | Description                                           |
-|------------|------------------|-------------------------------------------------------|
-| `image`    | `string \| null` | URL of the cover image (can be `null`).               |
-| `emoji`    | `string \| null` | Emoji associated with the cover (can be `null`).      |
-| `name`     | `string \| null` | Name of the cover (can be `null`).                    |
 
 ## Plugin Interface
 

@@ -21,8 +21,11 @@ export const DdocEditorProps: EditorProps = {
 };
 
 export interface DdocProps {
+  enableCollaboration?: boolean;
+  collaborationId?: string;
   isPreviewMode: boolean;
   togglePreviewMode: (flag: boolean) => void;
+  toggleCollaboration?: (flag: boolean) => void;
   onPublish: (data: Data) => void;
   data?: Data;
 }
@@ -31,18 +34,10 @@ interface Data {
   metaData: PluginMetaData;
   editorJSONData: JSONContent;
 }
-
-interface Cover {
-  image: string | null;
-  emoji: string | null;
-  name: string | null;
-}
-
 interface Plugin {
   title: string | null;
 }
 
 export interface PluginMetaData {
-  cover: Cover;
   plugin: Plugin;
 }

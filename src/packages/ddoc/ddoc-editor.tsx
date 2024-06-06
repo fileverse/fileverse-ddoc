@@ -1,9 +1,7 @@
-import React, { useEffect, useRef, useState } from 'react';
 import { PluginNavbarLeftSection } from './navbar/navbar';
-import { AnyExtension, EditorContent, useEditor } from '@tiptap/react';
-import { defaultExtensions } from './extensions/default-extension';
+import { EditorContent } from '@tiptap/react';
 import { EditorBubbleMenu } from './components/editor-bubble-menu';
-import { PluginMetaData, DdocProps, DdocEditorProps } from './types';
+import { DdocProps } from './types';
 import { ColumnsMenu } from './extensions/multi-column/menus';
 import { EditingProvider } from './hooks/use-editing-context';
 import { Button } from './common/button';
@@ -11,54 +9,29 @@ import Spinner from './common/spinner';
 import EditorToolBar from './components/editor-toolbar';
 import './styles/editor.scss';
 import 'tippy.js/animations/shift-toward-subtle.css';
+import { useDdocEditor } from './use-ddoc-editor';
 
 const DdocEditor = ({
   isPreviewMode = false,
   onPublish,
   data,
   togglePreviewMode,
+  enableCollaboration,
+  collaborationId,
 }: DdocProps) => {
-  const [pluginMetaData, setPluginMetaData] = useState<PluginMetaData>({
-    cover: {
-      image: null,
-      emoji: null,
-      name: null,
-    },
-    plugin: {
-      title: null,
-    },
+
+  const { editor, pluginMetaData, focusEditor, setPluginMetaData, ref } = useDdocEditor({
+    isPreviewMode,
+    data,
+    enableCollaboration,
+    collaborationId,
+    onPublish,
+    togglePreviewMode
   });
-
-  const editor = useEditor({
-    extensions: [...(defaultExtensions as AnyExtension[])],
-    editorProps: DdocEditorProps,
-    autofocus: 'start',
-  });
-
-  const ref = useRef<HTMLDivElement>(null);
-
-  const focusEditor = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    if ((ref.current as any)?.contains(e.target)) return;
-    editor?.chain().focus().run();
-  };
-
-  useEffect(() => {
-    editor?.chain().focus();
-  }, []);
-
-  useEffect(() => {
-    editor?.setEditable(!isPreviewMode);
-  }, [isPreviewMode]);
-
-  useEffect(() => {
-    if (data && editor) {
-      editor?.commands.setContent(data);
-    }
-  }, [data, editor]);
 
   if (!editor) {
     return (
-      <div className=" w-screen h-screen flex flex-col gap-4 justify-center items-center">
+      <div className="w-screen h-screen flex flex-col gap-4 justify-center items-center">
         <Spinner />
         <p>Loading Editor...</p>
       </div>
