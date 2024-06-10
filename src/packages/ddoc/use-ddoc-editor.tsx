@@ -103,7 +103,8 @@ export const useDdocEditor = ({
 
   useEffect(() => {
     if (data && editor) {
-      editor?.commands.setContent(data);
+      editor?.commands.setContent(data.editorJSONData);
+      setPluginMetaData(data.metaData)
     }
   }, [data, editor]);
 
