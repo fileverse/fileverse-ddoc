@@ -82,7 +82,7 @@ export const useDdocEditor = ({
       extensions,
       editorProps: DdocEditorProps,
       autofocus: 'start',
-    },
+    }
     // [extensions]
   );
 
@@ -94,22 +94,18 @@ export const useDdocEditor = ({
   };
 
   useEffect(() => {
-    if (editor) {
-      editor.chain().focus();
-    }
-  }, [editor, extensions]);
+    editor?.chain().focus();
+  }, []);
 
   useEffect(() => {
-    if (editor) {
-      editor?.setEditable(!isPreviewMode);
-    }
-  }, [isPreviewMode, editor, extensions]);
+    editor?.setEditable(!isPreviewMode);
+  }, [isPreviewMode]);
 
   useEffect(() => {
     if (data && editor) {
-      editor.commands.setContent(data);
+      editor?.commands.setContent(data);
     }
-  }, [data, editor, extensions]);
+  }, [data, editor]);
 
   return {
     editor,
