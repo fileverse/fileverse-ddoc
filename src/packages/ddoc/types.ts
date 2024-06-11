@@ -30,11 +30,11 @@ export interface DdocProps {
   data?: Data;
 }
 
-interface Data {
+export interface Data {
   metaData: PluginMetaData;
   editorJSONData: JSONContent;
 }
-interface Plugin {
+export interface Plugin {
   title: string | null;
 }
 

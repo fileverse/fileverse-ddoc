@@ -19,15 +19,15 @@ const DdocEditor = ({
   enableCollaboration,
   collaborationId,
 }: DdocProps) => {
-
-  const { editor, pluginMetaData, focusEditor, setPluginMetaData, ref } = useDdocEditor({
-    isPreviewMode,
-    data,
-    enableCollaboration,
-    collaborationId,
-    onPublish,
-    togglePreviewMode
-  });
+  const { editor, pluginMetaData, focusEditor, setPluginMetaData, ref } =
+    useDdocEditor({
+      isPreviewMode,
+      data,
+      enableCollaboration,
+      collaborationId,
+      onPublish,
+      togglePreviewMode,
+    });
 
   if (!editor) {
     return (
@@ -39,7 +39,7 @@ const DdocEditor = ({
   }
 
   return (
-    <div data-cy="single-webpage" className="h-screen w-screen bg-[#f9fbfd]">
+    <div data-cy="single-webpage" className="bg-[#f9fbfd]">
       <div className="h-full flex flex-col overflow-scroll no-scrollbar">
         <div className="w-full h-screen">
           <div className="h-fit relative bg-[#ffffff]">
@@ -65,16 +65,17 @@ const DdocEditor = ({
               </div>
 
               {onPublish && (
-                <div
-                  onClick={() =>
-                    onPublish({
-                      metaData: pluginMetaData,
-                      editorJSONData: editor.getJSON(),
-                    })
-                  }
-                  className="cursor-pointer"
-                >
-                  <Button>Publish</Button>
+                <div>
+                  <Button
+                    onClick={() =>
+                      onPublish({
+                        metaData: pluginMetaData,
+                        editorJSONData: editor.getJSON(),
+                      })
+                    }
+                  >
+                    Publish
+                  </Button>
                 </div>
               )}
             </div>
