@@ -23,7 +23,7 @@ export const PluginNavbarLeftSection = ({
         disabled={isPreviewMode}
         type="text"
         placeholder="Untitled"
-        defaultValue={metaData.plugin.title || ''}
+        value={metaData.plugin.title || ''}
         onChange={(e) =>
           setMetaData({
             ...metaData,
