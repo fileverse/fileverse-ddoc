@@ -26,7 +26,7 @@ export const useDdocEditor = ({
 }: DdocProps) => {
   const [pluginMetaData, setPluginMetaData] = useState<PluginMetaData>({
     plugin: {
-      title: null,
+      title: 'Untitled',
     },
   });
   const [ydoc] = useState(new Y.Doc());
