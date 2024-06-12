@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { PluginNavbarLeftSection } from './navbar/navbar';
 import { EditorContent } from '@tiptap/react';
 import { EditorBubbleMenu } from './components/editor-bubble-menu';
@@ -19,6 +20,7 @@ const DdocEditor = ({
   togglePreviewMode,
   enableCollaboration,
   collaborationId,
+  onAutoSave, // Add this line
 }: DdocProps) => {
   const { editor, pluginMetaData, focusEditor, setPluginMetaData, ref } =
     useDdocEditor({
@@ -29,6 +31,18 @@ const DdocEditor = ({
       onPublish,
       togglePreviewMode,
     });
+
+  useEffect(() => {
+    if (editor && onAutoSave) {
+      const interval = setInterval(() => {
+        onAutoSave({
+          metaData: pluginMetaData,
+          editorJSONData: editor.getJSON(),
+        });
+      }, 10000); // Save every 5 seconds (adjust the interval as needed)
+      return () => clearInterval(interval);
+    }
+  }, [editor, onAutoSave, pluginMetaData]);
 
   if (!editor) {
     return (

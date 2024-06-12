@@ -28,6 +28,7 @@ export interface DdocProps {
   toggleCollaboration?: (flag: boolean) => void;
   onPublish: (data: Data) => void;
   data?: Data;
+  onAutoSave?: (data: Data) => void;
 }
 
 export interface Data {
