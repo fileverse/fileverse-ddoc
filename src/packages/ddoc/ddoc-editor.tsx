@@ -10,6 +10,7 @@ import EditorToolBar from './components/editor-toolbar';
 import './styles/editor.scss';
 import 'tippy.js/animations/shift-toward-subtle.css';
 import { useDdocEditor } from './use-ddoc-editor';
+import { Pencil, ScanEye, Share2 } from 'lucide-react';
 
 const DdocEditor = ({
   isPreviewMode = false,
@@ -60,6 +61,7 @@ const DdocEditor = ({
 
               <div>
                 <Button onClick={() => togglePreviewMode(isPreviewMode)}>
+                  {isPreviewMode ? <Pencil size={14} /> : <ScanEye size={14} />}{' '}
                   {isPreviewMode ? 'Edit' : 'Preview'}
                 </Button>
               </div>
@@ -74,7 +76,7 @@ const DdocEditor = ({
                       })
                     }
                   >
-                    Publish
+                    <Share2 size={14} /> Share
                   </Button>
                 </div>
               )}
