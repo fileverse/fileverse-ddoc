@@ -74,7 +74,7 @@ const DdocEditor = ({
               )}
 
               <div>
-                <Button onClick={() => togglePreviewMode(isPreviewMode)}>
+                <Button variant='secondary' onClick={() => togglePreviewMode(isPreviewMode)}>
                   {isPreviewMode ? <Pencil size={14} /> : <ScanEye size={14} />}{' '}
                   {isPreviewMode ? 'Edit' : 'Preview'}
                 </Button>
