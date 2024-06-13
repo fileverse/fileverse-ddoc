@@ -1,154 +1,187 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
-import { BubbleMenu, BubbleMenuProps, isNodeSelection } from '@tiptap/react'
-import cx from 'classnames'
-import { FC, useState } from 'react'
-import format_bold from '../../../assets/dpage/bold.svg'
-import format_italic from '../../../assets/dpage/italic.svg'
-import format_underline from '../../../assets/dpage/underline.svg'
-import code from '../../../assets/dpage/code.svg'
-import strikethrough from '../../../assets/dpage/strikethrough.svg'
-import link from '../../../assets/dpage/link.svg'
-
-import { NodeSelector } from './node-selector'
-import { ColorSelector } from '../components/color-selector'
-import { LinkPopup, useEditorToolbar } from './editor-utils'
+import { BubbleMenu, BubbleMenuProps, isNodeSelection } from '@tiptap/react';
+import cn from 'classnames';
+import { useState } from 'react';
+import {
+  Bold,
+  Code,
+  Highlighter,
+  Italic,
+  Link,
+  Strikethrough,
+  Underline,
+  AlignLeft,
+} from 'lucide-react';
+import { NodeSelector } from './node-selector';
+import { ColorSelector } from './color-selector';
+import {
+  LinkPopup,
+  useEditorToolbar,
+  TextHighlighter,
+  EditorAlignment,
+} from './editor-utils';
+import { IEditorTool } from '../hooks/use-visibility';
 
 export interface BubbleMenuItem {
-  name: string
-  isActive: () => boolean
-  command: () => void
-  icon: any
+  name: string;
+  isActive: () => boolean;
+  command: () => void;
+  icon: typeof any;
 }
 
-type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'>
+type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'>;
 
-export const EditorBubbleMenu: FC<EditorBubbleMenuProps> = (props) => {
+export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const items: BubbleMenuItem[] = [
     {
-      name: 'bold',
+      name: 'Bold',
       isActive: () => props.editor.isActive('bold'),
       command: () => props.editor.chain().focus().toggleBold().run(),
-      icon: format_bold,
+      icon: <Bold size={20} />,
     },
     {
-      name: 'italic',
+      name: 'Italic',
       isActive: () => props.editor.isActive('italic'),
       command: () => props.editor.chain().focus().toggleItalic().run(),
-      icon: format_italic,
+      icon: <Italic size={20} />,
     },
     {
-      name: 'underline',
+      name: 'Underline',
       isActive: () => props.editor.isActive('underline'),
-      // @ts-ignore
       command: () => props.editor.chain().focus().toggleUnderline().run(),
-      icon: format_underline,
+      icon: <Underline size={20} />,
     },
     {
-      name: 'strike',
+      name: 'Strikethrough',
       isActive: () => props.editor.isActive('strike'),
       command: () => props.editor.chain().focus().toggleStrike().run(),
-      icon: strikethrough,
+      icon: <Strikethrough size={20} />,
     },
     {
-      name: 'codeBlock',
+      name: 'Alignment',
+      isActive: () => toolVisibilty === IEditorTool.ALIGNMENT,
+      command: () => setToolVisibility(IEditorTool.ALIGNMENT),
+      icon: <AlignLeft size={20} />,
+    },
+    {
+      name: 'Code',
       isActive: () => props.editor.isActive('codeBlock'),
       command: () => props.editor.chain().focus().toggleCodeBlock().run(),
-      icon: code,
+      icon: <Code size={20} />,
     },
     {
-      name: 'link',
+      name: 'Link',
       isActive: () => props.editor.isActive('link'),
       command: () => setIsLinkPopupOpen(!isLinkPopupOpen),
-      icon: link,
+      icon: <Link size={20} />,
     },
-  ]
+  ];
 
   const bubbleMenuProps: EditorBubbleMenuProps = {
     ...props,
     shouldShow: ({ state, editor }) => {
-      const { selection } = state
-      const { empty } = selection
+      const { selection } = state;
+      const { empty } = selection;
 
       // don't show bubble menu if:
       // - the selected node is an image
       // - the selection is empty
       // - the selection is a node selection (for drag handles)
       if (editor.isActive('image') || empty || isNodeSelection(selection)) {
-        return false
+        return false;
       }
-      return true
+      return true;
     },
     tippyOptions: {
       moveTransition: 'transform 0.15s ease-out',
       duration: 200,
       animation: 'shift-toward-subtle',
       onHidden: () => {
-        setIsNodeSelectorOpen(false)
-        setIsColorSelectorOpen(false)
-        setIsLinkPopupOpen(false)
+        setIsNodeSelectorOpen(false);
+        setIsColorSelectorOpen(false);
+        setIsLinkPopupOpen(false);
       },
     },
-  }
+  };
 
-  const [isNodeSelectorOpen, setIsNodeSelectorOpen] = useState(false)
-  const [isColorSelectorOpen, setIsColorSelectorOpen] = useState(false)
-  const [isLinkPopupOpen, setIsLinkPopupOpen] = useState(false)
+  const [isNodeSelectorOpen, setIsNodeSelectorOpen] = useState(false);
+  const [isColorSelectorOpen, setIsColorSelectorOpen] = useState(false);
+  const [isLinkPopupOpen, setIsLinkPopupOpen] = useState(false);
 
-  const { toolRef, setToolVisibility } = useEditorToolbar({
-    // @ts-ignore
+  const { toolRef, setToolVisibility, toolVisibilty } = useEditorToolbar({
     editor: props.editor,
-  })
+  });
 
   return (
     <BubbleMenu
       {...bubbleMenuProps}
-      className="flex gap-1 overflow-hidden rounded border border-stone-200 bg-white shadow-xl"
+      className="flex gap-1 overflow-hidden rounded-[12px] h-[52px] min-w-[472px] w-full py-2 px-4 bg-white items-center shadow-elevation-3"
     >
       <NodeSelector
-        // @ts-ignore
         editor={props.editor}
         isOpen={isNodeSelectorOpen}
         setIsOpen={() => {
-          setIsNodeSelectorOpen(!isNodeSelectorOpen)
-          setIsColorSelectorOpen(false)
+          setIsNodeSelectorOpen(!isNodeSelectorOpen);
+          setIsColorSelectorOpen(false);
         }}
       />
-
+      <div className="w-px h-4 bg-gray-400 mx-2"></div>
       {items.map((item, index) => (
-        <button
-          key={index}
-          onClick={item.command}
-          className=" py-2 text-stone-600 hover:bg-stone-100 active:bg-stone-200"
-        >
-          <img
-            src={item.icon}
-            className={cx(' p-1 rounded-lg h-6 w-6', {
-              'bg-yellow-300': item.isActive(),
+        <div key={index} className="flex items-center gap-1">
+          <button
+            onClick={item.command}
+            className={cn('min-w-fit w-8 h-8 px-2', {
+              'color-bg-brand': item.isActive(),
             })}
-          />
-        </button>
+          >
+            {item.icon}
+          </button>
+          {(index === 4 || index === 6) && (
+            <div className="w-px h-4 bg-gray-400 mx-2"></div>
+          )}
+        </div>
       ))}
       <ColorSelector
-        // @ts-ignore
         editor={props.editor}
         isOpen={isColorSelectorOpen}
         setIsOpen={() => {
-          setIsColorSelectorOpen(!isColorSelectorOpen)
-          setIsNodeSelectorOpen(false)
+          setIsColorSelectorOpen(!isColorSelectorOpen);
+          setIsNodeSelectorOpen(false);
         }}
       />
+      <button
+        onClick={() => setToolVisibility(IEditorTool.HIGHLIGHT)}
+        className={cn('min-w-fit w-8 h-8 px-2', {
+          'color-bg-brand': toolVisibilty === IEditorTool.HIGHLIGHT,
+        })}
+      >
+        <Highlighter size={20} />
+      </button>
+      {toolVisibilty === IEditorTool.ALIGNMENT && (
+        <EditorAlignment
+          setToolVisibility={setToolVisibility}
+          editor={props.editor}
+          elementRef={toolRef}
+        />
+      )}
       {isLinkPopupOpen && (
         <LinkPopup
           setToolVisibility={setToolVisibility}
-          // @ts-ignore
           editor={props.editor}
           elementRef={toolRef}
           bubbleMenu={true}
           setIsLinkPopupOpen={setIsLinkPopupOpen}
         />
       )}
+      {toolVisibilty === IEditorTool.HIGHLIGHT && (
+        <TextHighlighter
+          setVisibility={setToolVisibility}
+          editor={props.editor as Editor}
+          elementRef={toolRef}
+        />
+      )}
     </BubbleMenu>
-  )
-}
+  );
+};

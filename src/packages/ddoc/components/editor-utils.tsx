@@ -1,37 +1,138 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+/* eslint-disable @typescript-eslint/no-explicit-any */
+/* eslint-disable no-useless-escape */
 import React, { Dispatch, SetStateAction, useState } from 'react';
 import { IEditorTool, useEditorToolVisiibility } from '../hooks/use-visibility';
-import checklist from '../../../assets/dpage/checklist.svg'
-import code from '../../../assets/dpage/code.svg';
-import font from '../../../assets/dpage/font.svg';
-import format_align_center from '../../../assets/dpage/format_align_center.svg';
-import format_align_left from '../../../assets/dpage/format_align_left.svg';
-import format_align_right from '../../../assets/dpage/format_align_right.svg';
-import format_bold from '../../../assets/dpage/bold.svg';
-import format_italic from '../../../assets/dpage/italic.svg';
-import format_list_bulleted from '../../../assets/dpage/format_list_bulleted.svg';
-import format_list_numbered from '../../../assets/dpage/format_list_numbered.svg';
-import format_underlined from '../../../assets/dpage/underline.svg';
-import link from '../../../assets/dpage/link.svg';
-import strikethrough_s from '../../../assets/dpage/strikethrough.svg';
-import text_format from '../../../assets/dpage/text_format.svg';
-import quote from '../../../assets/dpage/quote.svg';
-import h1 from '../../../assets/dpage/h1.svg';
-import h2 from '../../../assets/dpage/h2.svg';
-import h3 from '../../../assets/dpage/h3.svg';
-import text from '../../../assets/dpage/text.svg';
-import highlight from '../../../assets/dpage/highlight.svg';
-import image from '../../../assets/dpage/image.svg';
 import { Editor } from '@tiptap/react';
-import { Ban, Check } from 'lucide-react';
+import {
+  Ban,
+  Baseline,
+  Check,
+  AlignCenter,
+  AlignLeft,
+  AlignRight,
+  Bold,
+  Code,
+  Highlighter,
+  ImagePlus,
+  Italic,
+  Link,
+  List,
+  ListChecks,
+  ListOrdered,
+  Strikethrough,
+  TextQuote,
+  Underline,
+  Type,
+  Heading1,
+  Heading2,
+  Heading3,
+} from 'lucide-react';
 import { startImageUpload } from '../utils/upload-images';
-import clx from 'classnames';
+import cn from 'classnames';
+
 interface IEditorToolElement {
   icon: any;
   title: string;
   onClick: () => void;
   isActive: boolean;
 }
+
+export const fonts = [
+  {
+    title: 'Trebuchet MS',
+    value: 'Trebuchet MS, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Trebuchet MS, sans-serif').run();
+    },
+  },
+  {
+    title: 'Verdana',
+    value: 'Verdana, Geneva, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Verdana, Geneva, sans-serif').run();
+    },
+  },
+  {
+    title: 'Georgia',
+    value: 'Georgia, serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Georgia, serif').run();
+    },
+  },
+  {
+    title: 'Arial',
+    value: 'Arial, Helvetica, sans-serif',
+    command: (editor: Editor) => {
+      editor
+        .chain()
+        .focus()
+        .setFontFamily('Arial, Helvetica, sans-serif')
+        .run();
+    },
+  },
+  {
+    title: 'Comic Sans MS',
+    value: 'Comic Sans MS, Comic Sans',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Comic Sans MS, Comic Sans').run();
+    },
+  },
+  {
+    title: 'Impact',
+    value: 'Impact, Charcoal, sans-serif',
+    command: (editor: Editor) => {
+      editor
+        .chain()
+        .focus()
+        .setFontFamily('Impact, Charcoal, sans-serif')
+        .run();
+    },
+  },
+  {
+    title: 'Palatino',
+    value: 'Palatino Linotype, Book Antiqua, Palatino, serif',
+    command: (editor: Editor) => {
+      editor
+        .chain()
+        .focus()
+        .setFontFamily('Palatino Linotype, Book Antiqua, Palatino, serif')
+        .run();
+    },
+  },
+  {
+    title: 'Lucida Grande',
+    value: 'Lucida Sans Unicode, Lucida Grande, sans-serif',
+    command: (editor: Editor) => {
+      editor
+        .chain()
+        .focus()
+        .setFontFamily('Lucida Sans Unicode, Lucida Grande, sans-serif')
+        .run();
+    },
+  },
+  {
+    title: 'Serif',
+    value: 'serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('serif').run();
+    },
+  },
+  {
+    title: 'Monospace',
+    value: 'monospace',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('monospace').run();
+    },
+  },
+  {
+    title: 'Cursive',
+    value: 'cursive',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('cursive').run();
+    },
+  },
+];
+
 export const useEditorToolbar = ({ editor }: { editor: Editor }) => {
   const {
     ref: toolRef,
@@ -40,73 +141,87 @@ export const useEditorToolbar = ({ editor }: { editor: Editor }) => {
   } = useEditorToolVisiibility(IEditorTool.NONE);
   const toolbar: Array<IEditorToolElement | null> = [
     {
-      icon: font,
-      title: 'Font',
-      onClick: () => setToolVisibility(IEditorTool.FONT_FAMILY),
-      isActive: toolVisibilty === IEditorTool.FONT_FAMILY,
-    },
-    {
-      icon: text_format,
+      icon: <Baseline size={20} />,
       title: 'Text Color',
       onClick: () => setToolVisibility(IEditorTool.TEXT_COLOR),
       isActive: toolVisibilty === IEditorTool.TEXT_COLOR,
     },
     {
-      icon: highlight,
+      icon: <Highlighter size={20} />,
       title: 'Highlight',
       onClick: () => setToolVisibility(IEditorTool.HIGHLIGHT),
       isActive: toolVisibilty === IEditorTool.HIGHLIGHT,
     },
     null,
     {
-      icon: format_bold,
+      icon: <Bold size={20} />,
       title: 'Bold',
       onClick: () => editor?.chain().focus().toggleBold().run(),
       isActive: editor?.isActive('bold'),
     },
 
     {
-      icon: format_italic,
+      icon: <Italic size={20} />,
       title: 'Italic',
       onClick: () => editor?.chain().focus().toggleItalic().run(),
       isActive: editor?.isActive('italic'),
     },
 
     {
-      icon: format_underlined,
+      icon: <Underline size={20} />,
       title: 'Underlined',
-      // @ts-ignore
       onClick: () => editor?.chain().focus().toggleUnderline().run(),
       isActive: editor?.isActive('underline'),
     },
     {
-      icon: strikethrough_s,
+      icon: <Strikethrough size={20} />,
       title: 'Strikethrough',
       onClick: () => editor?.chain().focus().toggleStrike().run(),
       isActive: editor?.isActive('strike'),
     },
     null,
     {
-      icon: format_list_bulleted,
+      icon: <List size={20} />,
       title: 'List',
-      onClick: () => setToolVisibility(IEditorTool.LIST),
+      onClick: () => {
+        editor?.chain().focus().toggleBulletList().run();
+        setToolVisibility(IEditorTool.NONE);
+      },
       isActive: toolVisibilty === IEditorTool.LIST,
     },
     {
-      icon: format_align_left,
+      icon: <ListOrdered size={20} />,
+      title: 'Ordered List',
+      onClick: () => {
+        editor?.chain().focus().toggleOrderedList().run();
+        setToolVisibility(IEditorTool.NONE);
+      },
+      isActive: toolVisibilty === IEditorTool.LIST,
+    },
+    {
+      icon: <ListChecks size={20} />,
+      title: 'To-do List',
+      onClick: () => {
+        editor?.chain().focus().toggleTaskList().run();
+        setToolVisibility(IEditorTool.NONE);
+      },
+      isActive: toolVisibilty === IEditorTool.LIST,
+    },
+    {
+      icon: <AlignLeft size={20} />,
       title: 'Alignment',
       onClick: () => setToolVisibility(IEditorTool.ALIGNMENT),
       isActive: toolVisibilty === IEditorTool.ALIGNMENT,
     },
     {
-      icon: quote,
+      icon: <TextQuote size={20} />,
       title: 'Quote',
       onClick: () => editor?.chain().focus().toggleBlockquote().run(),
       isActive: editor?.isActive('blockquote'),
     },
     null,
     {
-      icon: image,
+      icon: <ImagePlus size={20} />,
       title: 'Upload Image',
       onClick: () => {
         editor?.chain().focus().deleteRange(editor.state.selection).run();
@@ -126,13 +241,13 @@ export const useEditorToolbar = ({ editor }: { editor: Editor }) => {
       isActive: false,
     },
     {
-      icon: link,
+      icon: <Link size={20} />,
       title: 'Link',
       onClick: () => setToolVisibility(IEditorTool.LINK),
       isActive: editor?.isActive('link'),
     },
     {
-      icon: code,
+      icon: <Code size={20} />,
       title: 'Code',
       onClick: () => editor?.chain().focus().toggleCodeBlock().run(),
       isActive: editor?.isActive('codeBlock'),
@@ -200,7 +315,7 @@ export const TextHighlighter = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto absolute gap-2 top-[50px] flex flex-wrap left-[20%] max-h-[330px] w-[20.5rem] overflow-y-auto scroll-smooth rounded-md border border-stone-200 bg-white px-1 py-2 shadow-md transition-all"
+      className="z-50 h-auto absolute gap-2 top-[50px] flex flex-wrap left-[20%] max-h-[330px] w-[20.5rem] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-elevation-3 transition-all"
     >
       <Ban
         className="cursor-pointer"
@@ -220,17 +335,20 @@ export const TextHighlighter = ({
             setVisibility(IEditorTool.NONE);
           }}
           key={color.color}
-          className={`w-6 ${color.code} drop-shadow rounded-full flex items-center justify-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-6`}
+          className={cn(
+            'w-6 drop-shadow rounded-full flex items-center justify-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-6',
+            color.code
+          )}
         >
           <Check
             size={14}
-            className={`${
+            className={cn(
               editor.isActive('highlight', {
                 color: color.color,
               })
                 ? 'visible'
                 : 'invisible'
-            }`}
+            )}
           />
         </div>
       ))}
@@ -246,99 +364,11 @@ export const EditorFontFamily = ({
   editor: Editor;
   setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
 }) => {
-  const fonts = [
-    {
-      title: 'Trebuchet MS',
-      command: (editor: Editor) => {
-        editor.chain().focus().setFontFamily('Trebuchet MS, sans-serif').run();
-      },
-    },
-    {
-      title: 'Verdana',
-      command: (editor: Editor) => {
-        editor
-          .chain()
-          .focus()
-          .setFontFamily('Verdana, Geneva, sans-serif')
-          .run();
-      },
-    },
-    {
-      title: 'Georgia',
-      command: (editor: Editor) => {
-        editor.chain().focus().setFontFamily('Georgia, serif').run();
-      },
-    },
-    {
-      title: 'Arial',
-      command: (editor: Editor) => {
-        editor
-          .chain()
-          .focus()
-          .setFontFamily('Arial, Helvetica, sans-serif')
-          .run();
-      },
-    },
-    {
-      title: 'Comic Sans MS',
-      command: (editor: Editor) => {
-        editor.chain().focus().setFontFamily('Comic Sans MS, Comic Sans').run();
-      },
-    },
-    {
-      title: 'Impact',
-      command: (editor: Editor) => {
-        editor
-          .chain()
-          .focus()
-          .setFontFamily('Impact, Charcoal, sans-serif')
-          .run();
-      },
-    },
-    {
-      title: 'Palatino',
-      command: (editor: Editor) => {
-        editor
-          .chain()
-          .focus()
-          .setFontFamily('Palatino Linotype, Book Antiqua, Palatino, serif')
-          .run();
-      },
-    },
-    {
-      title: 'Lucida Grande',
-      command: (editor: Editor) => {
-        editor
-          .chain()
-          .focus()
-          .setFontFamily('Lucida Sans Unicode, Lucida Grande, sans-serif')
-          .run();
-      },
-    },
-    {
-      title: 'Serif',
-      command: (editor: Editor) => {
-        editor.chain().focus().setFontFamily('serif').run();
-      },
-    },
-    {
-      title: 'Monospace',
-      command: (editor: Editor) => {
-        editor.chain().focus().setFontFamily('monospace').run();
-      },
-    },
-    {
-      title: 'Cursive',
-      command: (editor: Editor) => {
-        editor.chain().focus().setFontFamily('cursive').run();
-      },
-    },
-  ];
   return (
     <div
       ref={elementRef}
-      className={clx(
-        'z-50 h-auto absolute top-[50px] left-[20%]  max-h-[330px] w-48 overflow-y-auto scroll-smooth rounded-md border border-stone-200 bg-white px-1 py-2 shadow-md transition-all'
+      className={cn(
+        'z-50 h-auto absolute top-[50px] left-0 max-h-[330px] w-48 overflow-y-auto scroll-smooth bg-white px-1 py-2 shadow-elevation-3 transition-all animate-in fade-in slide-in-from-top-1'
       )}
     >
       {fonts.map((font) => (
@@ -351,11 +381,12 @@ export const EditorFontFamily = ({
           style={{
             fontFamily: font.title,
           }}
-          className={`flex w-full ${
-            editor.isActive('textStyle', { fontFamily: font.title })
-              ? 'bg-red-500'
-              : ''
-          } items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-stone-900 hover:bg-stone-100`}
+          className={cn(
+            'flex w-full items-center space-x-2 rounded px-2 py-1 text-left text-sm color-text-default',
+            editor.isActive('textStyle', { fontFamily: font.value })
+              ? 'color-bg-brand hover:color-bg-brand-hover'
+              : 'hover:bg-[#f2f2f2]'
+          )}
         >
           <p className="font-medium">{font.title}</p>
         </button>
@@ -375,42 +406,49 @@ export const EditorAlignment = ({
   return (
     <div
       ref={elementRef}
-      className={clx(
-        `z-50 h-auto absolute gap-2 top-[50px] right-[25%] flex flex-wrap  max-h-[330px] overflow-y-auto scroll-smooth rounded-md border border-stone-200 bg-white px-1 py-2 shadow-md transition-all`
-      )}
+      className="z-50 h-auto absolute gap-2 top-[50px] right-[25%] flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-elevation-3 transition-all"
     >
       <span
         onClick={() => {
           editor?.chain().focus().setTextAlign('left').run();
           setToolVisibility(IEditorTool.NONE);
         }}
-        className={` hover:bg-[#f2f2f2] ${
-          editor.isActive({ textAlign: 'left' }) && 'bg-[#f2f2f2]'
-        } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+        className={cn(
+          'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer',
+          editor.isActive({ textAlign: 'left' })
+            ? 'color-bg-brand hover:color-bg-brand-hover'
+            : 'hover:bg-[#f2f2f2]'
+        )}
       >
-        <img src={format_align_left} alt="align left" />
+        <AlignLeft />
       </span>
       <span
         onClick={() => {
           editor?.chain().focus().setTextAlign('center').run();
           setToolVisibility(IEditorTool.NONE);
         }}
-        className={` hover:bg-[#f2f2f2] ${
-          editor.isActive({ textAlign: 'center' }) && 'bg-[#f2f2f2]'
-        } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+        className={cn(
+          'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer',
+          editor.isActive({ textAlign: 'center' })
+            ? 'color-bg-brand hover:color-bg-brand-hover'
+            : 'hover:bg-[#f2f2f2]'
+        )}
       >
-        <img src={format_align_center} alt="align center" />
+        <AlignCenter />
       </span>
       <span
         onClick={() => {
           editor?.chain().focus().setTextAlign('right').run();
           setToolVisibility(IEditorTool.NONE);
         }}
-        className={` hover:bg-[#f2f2f2] ${
-          editor.isActive({ textAlign: 'right' }) && 'bg-[#f2f2f2]'
-        } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+        className={cn(
+          'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer',
+          editor.isActive({ textAlign: 'right' })
+            ? 'color-bg-brand hover:color-bg-brand-hover'
+            : 'hover:bg-[#f2f2f2]'
+        )}
       >
-        <img src={format_align_right} alt="align right" />
+        <AlignRight />
       </span>
     </div>
   );
@@ -427,8 +465,8 @@ export const EditorList = ({
   return (
     <div
       ref={elementRef}
-      className={clx(
-        'z-50 h-auto absolute gap-2 top-[50px] right-[30%] flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded-md border border-stone-200 bg-white px-1 py-2 shadow-md transition-all'
+      className={cn(
+        'z-50 h-auto absolute gap-2 top-[50px] right-[30%] flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-elevation-3 transition-all'
       )}
     >
       <div
@@ -444,7 +482,7 @@ export const EditorList = ({
             editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
           } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
-          <img src={format_list_bulleted} alt="bullet list" />
+          <List size={20} />
         </span>
       </div>
 
@@ -461,7 +499,7 @@ export const EditorList = ({
             editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
           } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
-          <img src={format_list_numbered} alt="numbered list" />
+          <ListOrdered size={20} />
         </span>
       </div>
 
@@ -478,7 +516,7 @@ export const EditorList = ({
             editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
           } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
-          <img src={checklist} alt="checklist" />
+          <ListChecks size={20} />
         </span>
       </div>
     </div>
@@ -548,11 +586,11 @@ export const LinkPopup = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto absolute gap-2 top-[50px] items-center flex right-[10%] max-h-[330px] overflow-y-auto scroll-smooth rounded-md border border-stone-200 bg-white p-2 shadow-md transition-all"
+      className="z-50 h-auto absolute gap-2 top-[50px] items-center flex right-[10%] max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white p-2 shadow-elevation-3 transition-all"
     >
       <input
         onChange={(e) => setUrl(e.target.value)}
-        className="border-2 focus:border-black px-2 py-1.5 rounded w-full font-medium text-sm"
+        className="shadow-none border-[1px]"
         placeholder="Add link here"
         value={url}
       />
@@ -564,7 +602,6 @@ export const LinkPopup = ({
     </div>
   );
 };
-
 export const TextColor = ({
   editor,
   setVisibility,
@@ -619,7 +656,7 @@ export const TextColor = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto absolute gap-2 top-[50px] flex flex-wrap left-[100px] max-h-[330px] w-[20.5rem] overflow-y-auto scroll-smooth rounded-md border border-stone-200 bg-white px-1 py-2 shadow-md transition-all"
+      className="z-50 h-auto absolute gap-2 top-[50px] flex flex-wrap left-[100px] max-h-[330px] w-[20.5rem] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-elevation-3 transition-all"
     >
       <Ban
         className="cursor-pointer"
@@ -635,17 +672,20 @@ export const TextColor = ({
             setVisibility(IEditorTool.NONE);
           }}
           key={color.color}
-          className={`w-6 ${color.code} drop-shadow rounded-full flex justify-center items-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-6`}
+          className={cn(
+            'w-6 drop-shadow rounded-full flex justify-center items-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-6',
+            color.code
+          )}
         >
           <Check
             size={14}
-            className={`${
+            className={cn(
               editor.isActive('textStyle', {
                 color: color.color,
               })
                 ? 'visible'
                 : 'invisible'
-            }`}
+            )}
           />
         </div>
       ))}
@@ -665,41 +705,48 @@ export const TextHeading = ({
     {
       title: 'Text',
       description: 'Normal',
-      icon: text,
+      icon: <Type size={20} />,
       command: (editor: Editor) =>
         editor.chain().focus().toggleNode('paragraph', 'paragraph').run(),
+      isActive: () =>
+        editor.isActive('paragraph') &&
+        !editor.isActive('bulletList') &&
+        !editor.isActive('orderedList'),
     },
     {
       title: 'Heading 1',
       description: 'Big',
-      icon: h1,
+      icon: <Heading1 size={20} />,
       command: (editor: Editor) => {
         editor.chain().focus().toggleHeading({ level: 1 }).run();
       },
+      isActive: () => editor.isActive('heading', { level: 1 }),
     },
     {
       title: 'Heading 2',
       description: 'Medium',
-      icon: h2,
+      icon: <Heading2 size={20} />,
       command: (editor: Editor) => {
         editor.chain().focus().toggleHeading({ level: 2 }).run();
       },
+      isActive: () => editor.isActive('heading', { level: 2 }),
     },
     {
       title: 'Heading 3',
       description: 'Small',
-      icon: h3,
+      icon: <Heading3 size={20} />,
       command: (editor: Editor) => {
         editor.chain().focus().toggleHeading({ level: 3 }).run();
       },
+      isActive: () => editor.isActive('heading', { level: 3 }),
     },
   ];
 
   return (
-    <section
+    <div
       ref={elementRef}
-      className={clx(
-        ' absolute top-[50px]  z-50 mt-1 flex w-48 flex-col overflow-hidden rounded border border-stone-200 bg-white p-1 shadow-xl animate-in fade-in slide-in-from-top-1',
+      className={cn(
+        'absolute top-[50px] z-50 mt-1 flex w-48 flex-col overflow-hidden rounded bg-white p-1 shadow-elevation-3 animate-in fade-in slide-in-from-top-1',
         'left-0'
       )}
     >
@@ -710,10 +757,16 @@ export const TextHeading = ({
             setVisibility(IEditorTool.NONE);
           }}
           key={heading.title}
-          className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-stone-900 hover:bg-stone-100`}
+          className={cn(
+            'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm color-text-default',
+            {
+              ['color-bg-brand hover:color-bg-brand-hover']: heading.isActive(),
+              ['hover:bg-[#f2f2f2]']: !heading.isActive(),
+            }
+          )}
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded-md border border-stone-200 bg-white">
-            <img src={heading.icon} alt={heading.title} />
+          <div className="flex h-10 w-10 items-center justify-center rounded bg-white">
+            {heading.icon}
           </div>
           <div>
             <p className="font-medium">{heading.title}</p>
@@ -721,6 +774,6 @@ export const TextHeading = ({
           </div>
         </button>
       ))}
-    </section>
+    </div>
   );
 };

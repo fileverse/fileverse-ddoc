@@ -1,11 +1,6 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 /* @unocss-include */
-// import { IconAlignCenter, IconAlignLeft, IconAlignRight, IconFloatLeft, IconFloatRight, IconDelete } from '~/../assets'dpagettrs } from '@tiptap/pm/model'
-import format_align_center from '../../../../assets/dpage/format_align_center.svg'
-import format_align_left from '../../../../assets/dpage/format_align_left.svg'
-import format_align_right from '../../../../assets/dpage/format_align_right.svg'
-import trash from '../../../../assets/dpage/trash.svg'
-
+// import { IconAlignCenter, IconAlignLeft, IconAlignRight, IconFloatLeft, IconFloatRight, IconDelete } from '~/assets'
+import { Attrs } from '@tiptap/pm/model'
 interface ResizableMediaAttributes {
   dataAlign: string
   dataFloat: null | string
@@ -15,7 +10,6 @@ interface ResizableMediaAction {
   tooltip: string
   icon?: string
   action?: Action
-  // @ts-ignore
   isActive?: (attrs: Attrs) => boolean
   delete?: (d: () => void) => void
 }
@@ -28,7 +22,7 @@ export const resizableMediaActions: ResizableMediaAction[] = [
         dataAlign: 'start',
         dataFloat: null,
       }),
-    icon: format_align_left,
+    icon: 'AlignLeft',
     isActive: (attrs) => attrs.dataAlign === 'start',
   },
   {
@@ -38,7 +32,7 @@ export const resizableMediaActions: ResizableMediaAction[] = [
         dataAlign: 'center',
         dataFloat: null,
       }),
-    icon: format_align_center,
+    icon: 'AlignCenter',
     isActive: (attrs) => attrs.dataAlign === 'center',
   },
   {
@@ -48,12 +42,12 @@ export const resizableMediaActions: ResizableMediaAction[] = [
         dataAlign: 'end',
         dataFloat: null,
       }),
-    icon: format_align_right,
+    icon: 'AlignRight',
     isActive: (attrs) => attrs.dataAlign === 'end',
   },
   {
     tooltip: 'Delete',
-    icon: trash,
+    icon: 'Trash2',
     delete: (deleteNode) => deleteNode(),
   },
 ]
