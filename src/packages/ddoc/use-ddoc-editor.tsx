@@ -6,6 +6,7 @@ import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import { defaultExtensions } from './extensions/default-extension';
 import { AnyExtension, useEditor } from '@tiptap/react';
+import { IndexeddbPersistence } from 'y-indexeddb';
 
 const usercolors = [
   '#30bced',
@@ -52,6 +53,8 @@ export const useDdocEditor = ({
   });
 
   useEffect(() => {
+    if (!collaborationId) return;
+    new IndexeddbPersistence(collaborationId, ydoc);
     if (enableCollaboration && collaborationId) {
       setLoading(true);
       const provider = new WebrtcProvider(collaborationId, ydoc, {
