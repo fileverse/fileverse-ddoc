@@ -12,7 +12,7 @@ import {
   Link,
   Strikethrough,
   Underline,
-  AlignLeft,
+  AlignLeft
 } from 'lucide-react';
 import { NodeSelector } from './node-selector';
 import { ColorSelector } from './color-selector';
@@ -20,7 +20,7 @@ import {
   LinkPopup,
   useEditorToolbar,
   TextHighlighter,
-  EditorAlignment,
+  EditorAlignment
 } from './editor-utils';
 import { IEditorTool } from '../hooks/use-visibility';
 
@@ -28,7 +28,7 @@ export interface BubbleMenuItem {
   name: string;
   isActive: () => boolean;
   command: () => void;
-  icon: typeof any;
+  icon: any;
 }
 
 type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'>;
@@ -39,44 +39,44 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       name: 'Bold',
       isActive: () => props.editor.isActive('bold'),
       command: () => props.editor.chain().focus().toggleBold().run(),
-      icon: <Bold size={20} />,
+      icon: <Bold size={20} />
     },
     {
       name: 'Italic',
       isActive: () => props.editor.isActive('italic'),
       command: () => props.editor.chain().focus().toggleItalic().run(),
-      icon: <Italic size={20} />,
+      icon: <Italic size={20} />
     },
     {
       name: 'Underline',
       isActive: () => props.editor.isActive('underline'),
       command: () => props.editor.chain().focus().toggleUnderline().run(),
-      icon: <Underline size={20} />,
+      icon: <Underline size={20} />
     },
     {
       name: 'Strikethrough',
       isActive: () => props.editor.isActive('strike'),
       command: () => props.editor.chain().focus().toggleStrike().run(),
-      icon: <Strikethrough size={20} />,
+      icon: <Strikethrough size={20} />
     },
     {
       name: 'Alignment',
       isActive: () => toolVisibilty === IEditorTool.ALIGNMENT,
       command: () => setToolVisibility(IEditorTool.ALIGNMENT),
-      icon: <AlignLeft size={20} />,
+      icon: <AlignLeft size={20} />
     },
     {
       name: 'Code',
       isActive: () => props.editor.isActive('codeBlock'),
       command: () => props.editor.chain().focus().toggleCodeBlock().run(),
-      icon: <Code size={20} />,
+      icon: <Code size={20} />
     },
     {
       name: 'Link',
       isActive: () => props.editor.isActive('link'),
       command: () => setIsLinkPopupOpen(!isLinkPopupOpen),
-      icon: <Link size={20} />,
-    },
+      icon: <Link size={20} />
+    }
   ];
 
   const bubbleMenuProps: EditorBubbleMenuProps = {
@@ -102,8 +102,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         setIsNodeSelectorOpen(false);
         setIsColorSelectorOpen(false);
         setIsLinkPopupOpen(false);
-      },
-    },
+      }
+    }
   };
 
   const [isNodeSelectorOpen, setIsNodeSelectorOpen] = useState(false);
@@ -111,13 +111,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const [isLinkPopupOpen, setIsLinkPopupOpen] = useState(false);
 
   const { toolRef, setToolVisibility, toolVisibilty } = useEditorToolbar({
-    editor: props.editor,
+    editor: props.editor
   });
 
   return (
     <BubbleMenu
       {...bubbleMenuProps}
-      className="flex gap-1 overflow-hidden rounded-[12px] h-[52px] min-w-[472px] w-full py-2 px-4 bg-white items-center shadow-elevation-3"
+      className='flex gap-1 overflow-hidden rounded-[12px] h-[52px] min-w-[472px] w-full py-2 px-4 bg-white items-center shadow-elevation-3'
     >
       <NodeSelector
         editor={props.editor}
@@ -127,19 +127,22 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           setIsColorSelectorOpen(false);
         }}
       />
-      <div className="w-px h-4 bg-gray-400 mx-2"></div>
+      <div className='w-px h-4 bg-gray-400 mx-2'></div>
       {items.map((item, index) => (
-        <div key={index} className="flex items-center gap-1">
+        <div
+          key={index}
+          className='flex items-center gap-1'
+        >
           <button
             onClick={item.command}
             className={cn('min-w-fit w-8 h-8 px-2', {
-              'color-bg-brand': item.isActive(),
+              'color-bg-brand': item.isActive()
             })}
           >
             {item.icon}
           </button>
           {(index === 4 || index === 6) && (
-            <div className="w-px h-4 bg-gray-400 mx-2"></div>
+            <div className='w-px h-4 bg-gray-400 mx-2'></div>
           )}
         </div>
       ))}
@@ -154,7 +157,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       <button
         onClick={() => setToolVisibility(IEditorTool.HIGHLIGHT)}
         className={cn('min-w-fit w-8 h-8 px-2', {
-          'color-bg-brand': toolVisibilty === IEditorTool.HIGHLIGHT,
+          'color-bg-brand': toolVisibilty === IEditorTool.HIGHLIGHT
         })}
       >
         <Highlighter size={20} />
