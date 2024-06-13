@@ -1,4 +1,3 @@
-import Logo from '../../../assets/mainLogo.png';
 import { PluginMetaData } from '../types';
 
 export const PluginNavbarLeftSection = ({
@@ -12,14 +11,8 @@ export const PluginNavbarLeftSection = ({
 }) => {
   return (
     <div className="flex items-center gap-4">
-      <img
-        src={Logo}
-        alt="Fileverse"
-        className={'w-10 h-10 object-cover mr-2 rounded-lg cursor-pointer'}
-      />
-
       <input
-        className="custom-input mx-2 focus:outline-none"
+        className="custom-input mx-2 focus:outline-none bg-[#f8f9fa]"
         disabled={isPreviewMode}
         type="text"
         placeholder="Untitled"
