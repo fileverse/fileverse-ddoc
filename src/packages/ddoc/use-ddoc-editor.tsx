@@ -52,42 +52,48 @@ export const useDdocEditor = ({
     autofocus: 'start'
   });
 
+  const connect = (username: string) => {
+    if (!enableCollaboration || !collaborationId || !username) {
+      throw new Error('docId or username is not provided');
+    }
+
+    setLoading(true);
+    const provider = new WebrtcProvider(collaborationId, ydoc, {
+      signaling: [
+        'wss://fileverse-signaling-server-0529292ff51c.herokuapp.com/'
+      ]
+    });
+
+    setExtensions([
+      ...extensions,
+      Collaboration.configure({
+        document: ydoc
+      }),
+      CollaborationCursor.configure({
+        provider: provider,
+        user: {
+          name: username,
+          color: usercolors[Math.floor(Math.random() * usercolors.length)]
+        }
+      })
+    ]);
+
+    const timeout = setTimeout(() => {
+      setLoading(false);
+    }, 100); // this is a hack to dynamically set tiptap extension -  wait for tiptap to re-render the online editor with new extensions before rendering the editor
+
+    return () => {
+      clearTimeout(timeout);
+      provider.destroy();
+      ydoc.destroy();
+      setLoading(false);
+    };
+  };
+
   useEffect(() => {
     if (!collaborationId) return;
     new IndexeddbPersistence(collaborationId, ydoc);
-    if (enableCollaboration && collaborationId) {
-      setLoading(true);
-      const provider = new WebrtcProvider(collaborationId, ydoc, {
-        signaling: [
-          'wss://fileverse-signaling-server-0529292ff51c.herokuapp.com/'
-        ]
-      });
-
-      setExtensions([
-        ...extensions,
-        Collaboration.configure({
-          document: ydoc
-        }),
-        CollaborationCursor.configure({
-          provider: provider,
-          user: {
-            color: usercolors[Math.floor(Math.random() * usercolors.length)]
-          }
-        })
-      ]);
-
-      const timeout = setTimeout(() => {
-        setLoading(false);
-      }, 100); // wait for tiptap to re-render the online editor with new extensions before rendering the editor
-
-      return () => {
-        clearTimeout(timeout);
-        provider.destroy();
-        ydoc.destroy();
-        setLoading(false);
-      };
-    }
-  }, [enableCollaboration, collaborationId]);
+  }, [collaborationId]);
 
   const ref = useRef<HTMLDivElement>(null);
 
@@ -125,6 +131,7 @@ export const useDdocEditor = ({
     setPluginMetaData,
     focusEditor,
     ref,
-    loading
+    loading,
+    connect
   };
 };

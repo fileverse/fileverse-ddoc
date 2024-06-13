@@ -20,6 +20,7 @@ const DdocEditor = ({
   togglePreviewMode,
   enableCollaboration,
   collaborationId,
+  username,
   onAutoSave // Add this line
 }: DdocProps) => {
   const {
@@ -28,7 +29,8 @@ const DdocEditor = ({
     focusEditor,
     setPluginMetaData,
     ref,
-    loading
+    loading,
+    connect
   } = useDdocEditor({
     isPreviewMode,
     data,
@@ -37,6 +39,12 @@ const DdocEditor = ({
     onPublish,
     togglePreviewMode
   });
+
+  useEffect(() => {
+    if (enableCollaboration && username) {
+      connect(username);
+    }
+  }, [enableCollaboration]);
 
   useEffect(() => {
     if (editor && onAutoSave) {
