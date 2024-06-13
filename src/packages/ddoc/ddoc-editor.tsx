@@ -62,12 +62,12 @@ const DdocEditor = ({
   return (
     <div
       data-cy='single-webpage'
-      className='bg-[#f9fbfd]'
+      className='bg-[#f8f9fa]'
     >
       <div className='h-full flex flex-col overflow-scroll no-scrollbar'>
         <div className='w-full h-screen'>
-          <div className='h-fit relative bg-[#ffffff]'>
-            <div className='flex items-center justify-center pl-4 pr-4 border-b-1 border gap-2 h-16'>
+          <div className='h-fit relative bg-[#f8f9fa]'>
+            <div className='flex items-center justify-center pl-4 pr-4 gap-2 h-16'>
               <div className='grow'>
                 <PluginNavbarLeftSection
                   isPreviewMode={isPreviewMode}
@@ -114,7 +114,7 @@ const DdocEditor = ({
               onClick={focusEditor}
               className={`w-full flex justify-center relative`}
             >
-              <div className='p-12 sm:p-[96px] mt-4 min-h-[900px] shadow-inner bg-white overflow-scroll no-scrollbar rounded-md w-full sm:w-[70%] max-w-[856px]'>
+              <div className='p-12 sm:p-[96px] mt-4 min-h-[900px] bg-white overflow-scroll no-scrollbar w-full sm:w-[70%] max-w-[856px]'>
                 <div
                   ref={ref}
                   className='w-full pt-4 h-full'
