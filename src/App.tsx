@@ -20,6 +20,7 @@ function App() {
   return (
     <div>
       <DdocEditor
+        data={null}
         enableCollaboration={enableCollaboration}
         toggleCollaboration={() => setEnableCollaboration(false)}
         collaborationId={collaborationId}

@@ -21,7 +21,7 @@ const DdocEditor = ({
   enableCollaboration,
   collaborationId,
   username,
-  onAutoSave // Add this line
+  onAutoSave 
 }: DdocProps) => {
   const {
     editor,
@@ -53,7 +53,7 @@ const DdocEditor = ({
           metaData: pluginMetaData,
           editorJSONData: editor.getJSON()
         });
-      }, 10000); // Save every 5 seconds (adjust the interval as needed)
+      }, 10000); // Save every 10 seconds (adjust the interval as needed)
       return () => clearInterval(interval);
     }
   }, [editor, onAutoSave, pluginMetaData]);

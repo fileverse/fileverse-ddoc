@@ -27,7 +27,7 @@ export interface DdocProps {
   togglePreviewMode: (flag: boolean) => void;
   toggleCollaboration?: (flag: boolean) => void;
   onPublish: (data: Data) => void;
-  data?: Data;
+  data?: Data | null;
   onAutoSave?: (data: Data) => void;
   username?: string;
 }

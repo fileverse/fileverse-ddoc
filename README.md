@@ -38,6 +38,7 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `collaborationId` (optional) | `string` | When using enableCollaboration, you need to provide collaborationId, it can be uuid of doc |
 | `toggleCollaboration` (optional) |  `(flag: boolean) => void` | Function to toggle collaboration mode with a boolean flag | 
 | `onAutoSave` (optional) | `(flag:boolean) => void` | Function which expose the current editor state every 10 seconds |
+| `username` (required when using collaboration) | `boolean` | Takes a username which can be used by collaboration cursor
 
 ## Data Interface
 
