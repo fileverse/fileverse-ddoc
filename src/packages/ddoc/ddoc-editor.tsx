@@ -5,23 +5,20 @@ import { EditorBubbleMenu } from './components/editor-bubble-menu';
 import { DdocProps } from './types';
 import { ColumnsMenu } from './extensions/multi-column/menus';
 import { EditingProvider } from './hooks/use-editing-context';
-import { Button } from './common/button';
 import Spinner from './common/spinner';
 import EditorToolBar from './components/editor-toolbar';
 import './styles/editor.scss';
 import 'tippy.js/animations/shift-toward-subtle.css';
 import { useDdocEditor } from './use-ddoc-editor';
-import { Pencil, ScanEye, Share2 } from 'lucide-react';
 
 const DdocEditor = ({
   isPreviewMode = false,
-  onPublish,
   data,
-  togglePreviewMode,
   enableCollaboration,
   collaborationId,
   username,
-  onAutoSave 
+  onAutoSave,
+  renderRightSection
 }: DdocProps) => {
   const {
     editor,
@@ -35,9 +32,7 @@ const DdocEditor = ({
     isPreviewMode,
     data,
     enableCollaboration,
-    collaborationId,
-    onPublish,
-    togglePreviewMode
+    collaborationId
   });
 
   useEffect(() => {
@@ -89,31 +84,7 @@ const DdocEditor = ({
                   <EditorToolBar editor={editor} />
                 </div>
               )}
-
-              <div>
-                <Button
-                  variant='secondary'
-                  onClick={() => togglePreviewMode(isPreviewMode)}
-                >
-                  {isPreviewMode ? <Pencil size={14} /> : <ScanEye size={14} />}{' '}
-                  {isPreviewMode ? 'Edit' : 'Preview'}
-                </Button>
-              </div>
-
-              {onPublish && (
-                <div>
-                  <Button
-                    onClick={() =>
-                      onPublish({
-                        metaData: pluginMetaData,
-                        editorJSONData: editor.getJSON()
-                      })
-                    }
-                  >
-                    <Share2 size={14} /> Share
-                  </Button>
-                </div>
-              )}
+              {renderRightSection?.({ editor, pluginMetaData })}
             </div>
           </div>
 

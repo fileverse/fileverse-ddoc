@@ -1,5 +1,9 @@
 import { useEffect, useState } from 'react';
 import DdocEditor from './packages/ddoc/ddoc-editor';
+import { Button } from './packages/ddoc/common/button';
+import { Pencil, ScanEye, Share2 } from 'lucide-react';
+import { Editor } from '@tiptap/react';
+import { PluginMetaData } from './packages/ddoc/types';
 
 function App() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -17,6 +21,37 @@ function App() {
     }
   }, [collaborationId]);
 
+  const renderRightSection = ({
+    editor,
+    pluginMetaData
+  }: {
+    editor: Editor;
+    pluginMetaData: PluginMetaData;
+  }): JSX.Element => {
+    const publishDoc = () => {
+      console.log(editor, pluginMetaData);
+    };
+    return (
+      <div className='flex gap-2'>
+        <div>
+          <Button
+            variant='secondary'
+            onClick={() => setIsPreviewMode(!isPreviewMode)}
+          >
+            {isPreviewMode ? <Pencil size={14} /> : <ScanEye size={14} />}{' '}
+            {isPreviewMode ? 'Edit' : 'Preview'}
+          </Button>
+        </div>
+
+        <div>
+          <Button onClick={publishDoc}>
+            <Share2 size={14} /> Share
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div>
       <DdocEditor
@@ -26,8 +61,7 @@ function App() {
         collaborationId={collaborationId}
         username={username}
         isPreviewMode={isPreviewMode}
-        togglePreviewMode={() => setIsPreviewMode(!isPreviewMode)}
-        onPublish={value => console.log(value)}
+        renderRightSection={renderRightSection}
       />
     </div>
   );
