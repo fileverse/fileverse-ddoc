@@ -1,5 +1,6 @@
 import { JSONContent } from '@tiptap/core';
 import { EditorProps } from '@tiptap/pm/view';
+import { Editor } from '@tiptap/react';
 
 export const DdocEditorProps: EditorProps = {
   attributes: {
@@ -24,12 +25,17 @@ export interface DdocProps {
   enableCollaboration?: boolean;
   collaborationId?: string;
   isPreviewMode: boolean;
-  togglePreviewMode: (flag: boolean) => void;
   toggleCollaboration?: (flag: boolean) => void;
-  onPublish: (data: Data) => void;
   data?: Data | null;
   onAutoSave?: (data: Data) => void;
   username?: string;
+  renderToolRightSection?: ({
+    editor,
+    pluginMetaData
+  }: {
+    editor: Editor;
+    pluginMetaData: PluginMetaData;
+  }) => JSX.Element;
 }
 
 export interface Data {
