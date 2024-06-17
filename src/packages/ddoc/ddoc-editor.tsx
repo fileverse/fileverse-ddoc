@@ -18,7 +18,7 @@ const DdocEditor = ({
   collaborationId,
   username,
   onAutoSave,
-  renderRightSection
+  renderToolRightSection
 }: DdocProps) => {
   const {
     editor,
@@ -84,7 +84,7 @@ const DdocEditor = ({
                   <EditorToolBar editor={editor} />
                 </div>
               )}
-              {renderRightSection?.({ editor, pluginMetaData })}
+              {renderToolRightSection?.({ editor, pluginMetaData })}
             </div>
           </div>
 

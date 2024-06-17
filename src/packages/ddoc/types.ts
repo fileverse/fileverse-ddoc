@@ -29,7 +29,7 @@ export interface DdocProps {
   data?: Data | null;
   onAutoSave?: (data: Data) => void;
   username?: string;
-  renderRightSection?: ({
+  renderToolRightSection?: ({
     editor,
     pluginMetaData
   }: {

@@ -61,7 +61,7 @@ function App() {
         collaborationId={collaborationId}
         username={username}
         isPreviewMode={isPreviewMode}
-        renderRightSection={renderRightSection}
+        renderToolRightSection={renderRightSection}
       />
     </div>
   );
