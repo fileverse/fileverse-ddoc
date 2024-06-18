@@ -29,6 +29,7 @@ export interface DdocProps {
   data?: Data | null;
   onAutoSave?: (data: Data) => void;
   username?: string;
+  ensProviderUrl?: string;
   renderToolRightSection?: ({
     editor,
     pluginMetaData
@@ -48,4 +49,10 @@ export interface Plugin {
 
 export interface PluginMetaData {
   plugin: Plugin;
+}
+
+export interface IUser {
+  name: string;
+  color: string;
+  isEns: boolean;
 }

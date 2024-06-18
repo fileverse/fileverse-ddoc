@@ -51,6 +51,7 @@
     "@tiptap/starter-kit": "^2.4.0",
     "@tiptap/suggestion": "^2.4.0",
     "classnames": "^2.5.1",
+    "ethers": "^6.13.1",
     "lucide-react": "^0.379.0",
     "prosemirror-model": "^1.21.0",
     "prosemirror-state": "^1.4.3",

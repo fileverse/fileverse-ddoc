@@ -7,6 +7,7 @@ import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import { defaultExtensions } from './extensions/default-extension';
 import { AnyExtension, useEditor } from '@tiptap/react';
 import { IndexeddbPersistence } from 'y-indexeddb';
+import { getCursor } from './utils/cursor';
 
 const usercolors = [
   '#30bced',
@@ -52,7 +53,7 @@ export const useDdocEditor = ({
     autofocus: 'start'
   });
 
-  const connect = (username: string) => {
+  const connect = (username: string, isEns = false) => {
     if (!enableCollaboration || !collaborationId || !username) {
       throw new Error('docId or username is not provided');
     }
@@ -73,8 +74,10 @@ export const useDdocEditor = ({
         provider: provider,
         user: {
           name: username,
-          color: usercolors[Math.floor(Math.random() * usercolors.length)]
-        }
+          color: usercolors[Math.floor(Math.random() * usercolors.length)],
+          isEns: isEns
+        },
+        render: getCursor
       })
     ]);
 

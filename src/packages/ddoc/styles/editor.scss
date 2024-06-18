@@ -398,7 +398,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   text-decoration-thickness: 2px;
 }
 
-/* Give a remote user a caret */
 .collaboration-cursor__caret {
   border-left: 1px solid #0d0d0d;
   border-right: 1px solid #0d0d0d;
@@ -423,4 +422,68 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   top: -1.4em;
   user-select: none;
   white-space: nowrap;
+}
+
+/* Give a remote user a caret */
+.custom-cursor__caret {
+  border-left: 1px solid transparent;
+  border-right: 1px solid transparent;
+  margin-left: -1px;
+  margin-right: -1px;
+  pointer-events: none;
+  position: relative;
+  word-break: normal;
+}
+
+/* Style for the label container */
+.custom-cursor__label-container {
+  display: flex;
+  align-items: center;
+  position: absolute;
+  top: -1.4em;
+  left: -1px;
+  background-color: rgba(255, 255, 255, 0.8);
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+  padding: 0.1rem 0.3rem;
+  max-width: fit-content;
+  white-space: nowrap;
+}
+
+/* Render the new label above the caret */
+.custom-cursor__label {
+  display: flex;
+  align-items: center;
+  color: #0d0d0d;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: normal;
+  user-select: none;
+  white-space: nowrap;
+  overflow: visible;
+  flex-grow: 1; /* Allow label to grow */
+}
+
+/* Style for the icon */
+.custom-cursor__icon {
+  flex-shrink: 0;
+  width: 13px;
+  height: 14px;
+  margin-right: 5px;
+}
+
+/* Style for the text */
+.custom-cursor__text {
+  white-space: nowrap;
+  overflow: visible; /* Ensure no overflow */
+  flex-grow: 1; /* Allow text to grow */
+  display: flex;
+}
+
+/* Style for the badge */
+.custom-cursor__badge {
+  flex-shrink: 0;
+  width: 14px;
+  height: 14px;
+  margin-left: 5px;
 }

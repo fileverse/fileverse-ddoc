@@ -10,7 +10,7 @@ import EditorToolBar from './components/editor-toolbar';
 import './styles/editor.scss';
 import 'tippy.js/animations/shift-toward-subtle.css';
 import { useDdocEditor } from './use-ddoc-editor';
-
+import { getAddressName } from './utils/getAddressName';
 const DdocEditor = ({
   isPreviewMode = false,
   data,
@@ -18,7 +18,8 @@ const DdocEditor = ({
   collaborationId,
   username,
   onAutoSave,
-  renderToolRightSection
+  renderToolRightSection,
+  ensProviderUrl
 }: DdocProps) => {
   const {
     editor,
@@ -35,9 +36,21 @@ const DdocEditor = ({
     collaborationId
   });
 
+  const startCollaboration = async () => {
+    if (!username) return;
+    let _username = username;
+    let _isEns = false;
+    if (ensProviderUrl) {
+      const { name, isEns } = await getAddressName(username, ensProviderUrl);
+      _username = name;
+      _isEns = isEns;
+    }
+    connect(_username, _isEns);
+  };
+
   useEffect(() => {
     if (enableCollaboration && username) {
-      connect(username);
+      startCollaboration();
     }
   }, [enableCollaboration]);
 
