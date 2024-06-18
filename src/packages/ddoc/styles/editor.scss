@@ -460,8 +460,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   line-height: normal;
   user-select: none;
   white-space: nowrap;
-  overflow: visible;
-  flex-grow: 1; /* Allow label to grow */
 }
 
 /* Style for the icon */
@@ -475,8 +473,8 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
 /* Style for the text */
 .custom-cursor__text {
   white-space: nowrap;
-  overflow: visible; /* Ensure no overflow */
-  flex-grow: 1; /* Allow text to grow */
+  overflow: visible;
+  flex-grow: 1;
   display: flex;
 }
 
