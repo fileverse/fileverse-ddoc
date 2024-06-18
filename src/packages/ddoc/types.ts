@@ -28,8 +28,8 @@ export interface DdocProps {
   toggleCollaboration?: (flag: boolean) => void;
   data?: Data | null;
   onAutoSave?: (data: Data) => void;
-  username?: string;
   ensProviderUrl?: string;
+  username?: string | null;
   renderToolRightSection?: ({
     editor,
     pluginMetaData
