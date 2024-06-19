@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
 import { PluginMetaData, DdocProps, DdocEditorProps } from './types';
 import * as Y from 'yjs';
@@ -8,6 +8,8 @@ import { defaultExtensions } from './extensions/default-extension';
 import { AnyExtension, useEditor } from '@tiptap/react';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { getCursor } from './utils/cursor';
+import { getAddressName } from './utils/getAddressName';
+import { debounce } from './utils/debounce';
 
 const usercolors = [
   '#30bced',
@@ -17,32 +19,35 @@ const usercolors = [
   '#ee6352',
   '#db3041',
   '#0ad7f2',
-  '#1bff39'
+  '#1bff39',
 ];
 
 export const useDdocEditor = ({
   isPreviewMode,
   data,
   enableCollaboration,
-  collaborationId
+  collaborationId,
+  ensProviderUrl,
+  username,
+  onAutoSave,
 }: DdocProps) => {
   const [pluginMetaData, setPluginMetaData] = useState<PluginMetaData>({
     plugin: {
-      title: 'Untitled'
-    }
+      title: 'Untitled',
+    },
   });
 
   const [ydoc] = useState(new Y.Doc());
   const [loading, setLoading] = useState(false);
   const [extensions, setExtensions] = useState([
-    ...(defaultExtensions as AnyExtension[])
+    ...(defaultExtensions as AnyExtension[]),
   ]);
 
   const onlineEditor = useEditor(
     {
       extensions,
       editorProps: DdocEditorProps,
-      autofocus: 'start'
+      autofocus: 'start',
     },
     [extensions]
   );
@@ -50,7 +55,7 @@ export const useDdocEditor = ({
   const offlineEditor = useEditor({
     extensions,
     editorProps: DdocEditorProps,
-    autofocus: 'start'
+    autofocus: 'start',
   });
 
   const connect = (username: string, isEns = false) => {
@@ -61,24 +66,24 @@ export const useDdocEditor = ({
     setLoading(true);
     const provider = new WebrtcProvider(collaborationId, ydoc, {
       signaling: [
-        'wss://fileverse-signaling-server-0529292ff51c.herokuapp.com/'
-      ]
+        'wss://fileverse-signaling-server-0529292ff51c.herokuapp.com/',
+      ],
     });
 
     setExtensions([
       ...extensions,
       Collaboration.configure({
-        document: ydoc
+        document: ydoc,
       }),
       CollaborationCursor.configure({
         provider: provider,
         user: {
           name: username,
           color: usercolors[Math.floor(Math.random() * usercolors.length)],
-          isEns: isEns
+          isEns: isEns,
         },
-        render: getCursor
-      })
+        render: getCursor,
+      }),
     ]);
 
     const timeout = setTimeout(() => {
@@ -128,6 +133,52 @@ export const useDdocEditor = ({
     }
   }, [data, editor]);
 
+  const startCollaboration = async () => {
+    if (!username) return;
+    let _username = username;
+    let _isEns = false;
+    if (ensProviderUrl) {
+      const { name, isEns } = await getAddressName(username, ensProviderUrl);
+      _username = name;
+      _isEns = isEns;
+    }
+    connect(_username, _isEns);
+  };
+
+  useEffect(() => {
+    if (enableCollaboration && username) {
+      startCollaboration();
+    }
+  }, [enableCollaboration]);
+
+  const debouncedAutoSave = useCallback(
+    debounce(() => {
+      if (editor && onAutoSave) {
+        onAutoSave({
+          metaData: pluginMetaData,
+          editorJSONData: editor.getJSON(),
+        });
+      }
+    }, 1000),
+    [editor, onAutoSave, pluginMetaData]
+  );
+
+  useEffect(() => {
+    if (editor && onAutoSave) {
+      debouncedAutoSave();
+
+      editor.on('update', () => {
+        debouncedAutoSave();
+      });
+
+      return () => {
+        editor.off('destroy', () => {
+          debouncedAutoSave();
+        });
+      };
+    }
+  }, [editor, onAutoSave, pluginMetaData, debouncedAutoSave]);
+
   return {
     editor,
     pluginMetaData,
@@ -135,6 +186,6 @@ export const useDdocEditor = ({
     focusEditor,
     ref,
     loading,
-    connect
+    connect,
   };
 };
