@@ -461,7 +461,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   padding: 0.1rem 0.3rem;
-  max-width: fit-content;
+width: max-content;
   white-space: nowrap;
 }
 
@@ -475,13 +475,13 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   user-select: none;
   white-space: nowrap;
   // border: 2px solid blue; /* Adjust the border color as needed */
-  padding-right: 24px; /* Adjust padding to accommodate the badge */
+  padding-right: 16px; /* Adjust padding to accommodate the badge */
   position: relative;
 }
 
 .custom-cursor__badge {
   position: absolute;
-  right: 0; /* Align the badge to the right within the label */
+  right: 3px; /* Align the badge to the right within the label */
   width: 12px;
   height: 12px;
   margin-left: 5px;
