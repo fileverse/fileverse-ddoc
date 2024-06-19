@@ -37,7 +37,8 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `toggleCollaboration` (optional)               | `(flag: boolean) => void`                   | Function to toggle collaboration mode with a boolean flag                                                                  |
 | `onAutoSave` (optional)                        | `(flag:boolean) => void`                    | Function which expose the current editor state every 10 seconds                                                            |
 | `renderToolRightSection` (optional)            | `({editor, pluginMetaData}) => JSX.Element` | Function that render the right section of the toolbar. it calls the function with the editor instance and the pluginMedata |
-| `username` (required when using collaboration) | `boolean`                                   | Takes a username which can be used by collaboration cursor                                                                 |
+| `username` (required when using collaboration) | `boolean`                                   | Takes a username which can be used by collaboration cursor      
+| `ensProviderUrl` | `string` | Takes a url                                                           |
 
 ## Data Interface
 
