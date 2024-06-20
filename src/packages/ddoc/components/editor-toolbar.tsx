@@ -49,7 +49,7 @@ const TiptapToolBar = ({ editor }: { editor: Editor }) => {
         <ChevronDown size={16} />
       </button>
       <div className="w-px h-4 bg-gray-400 mx-2"></div>
-      {toolbar.map((tool) => {
+      {toolbar.map((tool, _index) => {
         if (tool) {
           return (
             <div
@@ -73,7 +73,7 @@ const TiptapToolBar = ({ editor }: { editor: Editor }) => {
             </div>
           );
         } else {
-          return <div className="w-px h-4 bg-gray-400 mx-2"></div>;
+          return <div key={_index} className="w-px h-4 bg-gray-400 mx-2"></div>;
         }
       })}
       {toolVisibilty === IEditorTool.FONT_FAMILY && (

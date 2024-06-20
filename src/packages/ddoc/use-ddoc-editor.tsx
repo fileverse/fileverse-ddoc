@@ -124,12 +124,14 @@ export const useDdocEditor = ({
 
   useEffect(() => {
     editor?.setEditable(!isPreviewMode);
-  }, [isPreviewMode]);
+  }, [isPreviewMode, editor]);
 
   useEffect(() => {
     if (data && editor) {
-      editor?.commands.setContent(data.editorJSONData);
-      setPluginMetaData(data.metaData);
+      setTimeout(() => {
+        editor?.commands.setContent(data.editorJSONData);
+        setPluginMetaData(data.metaData);
+      });
     }
   }, [data, editor]);
 
