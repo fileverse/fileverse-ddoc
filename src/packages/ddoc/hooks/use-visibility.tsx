@@ -9,6 +9,9 @@ export enum IEditorTool {
   FONT_FAMILY,
   ALIGNMENT,
   LIST,
+  TEXT_FORMATING,
+  TEXT_COLOR_PICKER,
+  LINK_POPUP,
 }
 export default function useComponentVisibilty(initialIsVisible: boolean) {
   const [isComponentVisible, setIsComponentVisible] =

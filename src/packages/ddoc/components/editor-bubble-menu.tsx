@@ -117,7 +117,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   return (
     <BubbleMenu
       {...bubbleMenuProps}
-      className='flex gap-1 overflow-hidden rounded-[12px] h-[52px] min-w-[472px] w-full py-2 px-4 bg-white items-center shadow-elevation-3'
+      className='flex gap-1 overflow-hidden rounded-[12px] h-[52px] min-w-[472px] w-full py-2 px-4 bg-white items-center shadow-lg'
     >
       <NodeSelector
         editor={props.editor}
