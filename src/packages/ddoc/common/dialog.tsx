@@ -4,7 +4,6 @@ import * as DialogPrimitive from '@radix-ui/react-dialog'
 
 import cn from 'classnames'
 import { FocusScope } from '@radix-ui/react-focus-scope'
-import { X } from 'lucide-react'
 
 const Dialog = DialogPrimitive.Root
 

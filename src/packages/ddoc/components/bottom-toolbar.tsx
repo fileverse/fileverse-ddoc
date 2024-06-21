@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { TextColorPicker, TextFormatingPopup, useEditorToolbar } from './editor-utils';
 import { Editor } from '@tiptap/react';
 import { IEditorTool } from '../hooks/use-visibility';
