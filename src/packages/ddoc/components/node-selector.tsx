@@ -100,14 +100,13 @@ export const NodeSelector: FC<NodeSelectorProps> = ({
   }
 
   return (
-    <div className="relative h-full">
+    <div className="relative h-full flex items-center">
       <button
-        className="flex h-full items-center gap-1 p-2 text-sm font-medium text-stone-600 hover:bg-stone-100 active:bg-stone-200"
+        className="flex items-center justify-between p-2 text-sm font-medium text-black hover:bg-[#f2f2f2] min-w-[6rem] w-[6rem] h-8 px-2 gap-1 transition rounded"
         onClick={() => setIsOpen(!isOpen)}
       >
-        <span>{activeItem?.name}</span>
-
-        <ChevronDown className="h-4 w-4" />
+        <span className="truncate">{activeItem?.name}</span>
+        <ChevronDown size={16} />
       </button>
 
       {isOpen && (

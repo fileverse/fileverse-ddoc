@@ -67,11 +67,11 @@ export const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
 
       variant === 'ghost' &&
       cn(
-        'bg-transparent border-transparent text-neutral-500',
+        'bg-transparent border-transparent text-neutral-900',
         !disabled &&
         !active &&
-        'hover:bg-black/5 hover:text-neutral-700 active:bg-black/10 active:text-neutral-800 ',
-        active && cn('bg-black/10 text-neutral-800 ', activeClassname)
+        'hover:bg-black/5 hover:text-neutral-700 active:bg-black/10',
+        active && cn('bg-black/10', activeClassname)
       ),
 
       buttonSize === 'medium' && 'py-2 px-3',

@@ -67,7 +67,7 @@
     }
 
     .btn.active {
-      @apply bg-gray-300;
+      @apply bg-yellow-300 hover:brightness-90;
     }
 
     .media-control-buttons {
@@ -313,8 +313,8 @@
   color: #616161;
 }
 .ProseMirror pre {
-  background: #0d0d0d;
-  color: #fff;
+  background-color: transparent;
+  color: #000;
   font-family: 'JetBrainsMono', monospace;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
@@ -461,7 +461,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
   padding: 0.1rem 0.3rem;
-width: max-content;
+  width: max-content;
   white-space: nowrap;
 }
 

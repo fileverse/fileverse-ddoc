@@ -10,7 +10,7 @@ import {
 import cn from 'classnames'
 import { Button, ButtonVariant } from '../common/button'
 
-interface LinkModalProps {
+interface DynamicModalProps {
   title: string
   content: React.ReactNode
   contentClassName?: string
@@ -32,7 +32,7 @@ interface LinkModalProps {
   }
 }
 
-const LinkModal = ({
+const DynamicModal = ({
   title,
   content,
   contentClassName,
@@ -40,13 +40,13 @@ const LinkModal = ({
   onOpenChange,
   primaryAction,
   secondaryAction,
-}: LinkModalProps) => {
+}: DynamicModalProps) => {
   return (
     <Dialog
       open={open}
       onOpenChange={onOpenChange}
     >
-      <DialogContent className="max-w-md sm:w-full w-[80%] z-20">
+      <DialogContent className="max-w-md sm:w-full w-[90%] z-20">
         <DialogHeader className="px-4 pt-0 border-b-[1px]">
           <DialogTitle className="text-left text-base">
             {title}
@@ -91,4 +91,4 @@ const LinkModal = ({
   )
 }
 
-export default LinkModal
+export default DynamicModal

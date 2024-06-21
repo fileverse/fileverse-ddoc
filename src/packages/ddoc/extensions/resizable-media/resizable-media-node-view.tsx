@@ -4,6 +4,12 @@ import { NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 import { resizableMediaActions } from './resizable-media-menu-util';
 import clx from 'classnames';
 import { useEditingContext } from '../../hooks/use-editing-context';
+import {
+  AlignLeft,
+  AlignCenter,
+  AlignRight,
+  Trash2
+} from 'lucide-react';
 
 let lastClientX: number;
 interface WidthAndHeight {
@@ -78,7 +84,7 @@ export const ResizableMediaNodeView = ({
         // Aspect Ratio from its original size
         setAspectRatio(
           (resizableImgRef.current as HTMLImageElement).naturalWidth /
-            (resizableImgRef.current as HTMLImageElement).naturalHeight
+          (resizableImgRef.current as HTMLImageElement).naturalHeight
         );
       };
     }
@@ -194,6 +200,21 @@ export const ResizableMediaNodeView = ({
     setIsAlign(node.attrs.dataAlign);
   }, [node.attrs]);
 
+  const renderIcon = (icon: string) => {
+    switch (icon) {
+      case 'AlignLeft':
+        return <AlignLeft size={16} />;
+      case 'AlignCenter':
+        return <AlignCenter size={16} />;
+      case 'AlignRight':
+        return <AlignRight size={16} />;
+      case 'Trash2':
+        return <Trash2 size={16} />;
+      default:
+        return null;
+    }
+  };
+
   return (
     <NodeViewWrapper
       as="article"
@@ -250,14 +271,14 @@ export const ResizableMediaNodeView = ({
               onMouseUp={stopHorizontalResize}
             />
 
-            <section className="media-control-buttons opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <section className="media-control-buttons opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex">
               {resizableMediaActions.map((btn) => {
                 return (
                   <div className="tooltip" data-tip={btn.tooltip}>
                     <button
                       type="button"
                       className={clx(
-                        'btn rounded-none h-8 px-2',
+                        'btn rounded-none h-8 px-2 py-1 transition',
                         mediaActionActiveState[btn.tooltip] && 'active'
                       )}
                       onClick={() =>
@@ -266,7 +287,7 @@ export const ResizableMediaNodeView = ({
                           : btn.action?.(updateAttributes)
                       }
                     >
-                      <img src={btn.icon} className="w-4" />
+                      {btn.icon && renderIcon(btn.icon)}
                     </button>
                   </div>
                 );

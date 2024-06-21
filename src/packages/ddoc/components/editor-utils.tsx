@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-useless-escape */
 import React, { Dispatch, SetStateAction, useState } from 'react';
@@ -32,6 +33,9 @@ import { startImageUpload } from '../utils/upload-images';
 import cn from 'classnames';
 import UtilsModal from './utils-modal';
 import { DialogTrigger } from '../common/dialog';
+import { Carousel, CarouselContent, CarouselIndicator, CarouselItem } from '../common/carousel';
+import { TextField } from '../common/textfield';
+import { Button } from '../common/button';
 
 interface IEditorToolElement {
   icon: any;
@@ -136,6 +140,48 @@ export const fonts = [
   },
 ];
 
+export const colors = [
+  { color: '#00FF00', code: 'bg-[#00FF00]' },
+  { color: '#008080', code: 'bg-[#008080]' },
+  { color: '#FFC0CB', code: 'bg-[#FFC0CB]' },
+  { color: '#808000', code: 'bg-[#808000]' },
+  { color: '#800000', code: 'bg-[#800000]' },
+  { color: '#000080', code: 'bg-[#000080]' },
+  { color: '#7FFFD4', code: 'bg-[#7FFFD4]' },
+  { color: '#40E0D0', code: 'bg-[#40E0D0]' },
+  { color: '#C0C0C0', code: 'bg-[#C0C0C0]' },
+  { color: '#808080', code: 'bg-[#808080]' },
+  { color: '#000000', code: 'bg-[#000000]' },
+  { color: '#FFFFFF', code: 'bg-[#FFFFFF]' },
+  { color: '#CD5C5C', code: 'bg-[#CD5C5C]' },
+  { color: '#F08080', code: 'bg-[#F08080]' },
+  { color: '#FA8072', code: 'bg-[#FA8072]' },
+  { color: '#E9967A', code: 'bg-[#E9967A]' },
+  { color: '#FFA07A', code: 'bg-[#FFA07A]' },
+  { color: '#DC143C', code: 'bg-[#DC143C]' },
+  { color: '#FF6347', code: 'bg-[#FF6347]' },
+  { color: '#FF7F50', code: 'bg-[#FF7F50]' },
+  { color: '#FF4500', code: 'bg-[#FF4500]' },
+  { color: '#BDB76B', code: 'bg-[#BDB76B]' },
+  { color: '#FFD700', code: 'bg-[#FFD700]' },
+  { color: '#F0E68C', code: 'bg-[#F0E68C]' },
+  { color: '#FFE5B4', code: 'bg-[#FFE5B4]' },
+  { color: '#9ACD32', code: 'bg-[#9ACD32]' },
+  { color: '#556B2F', code: 'bg-[#556B2F]' },
+  { color: '#6B8E23', code: 'bg-[#6B8E23]' },
+  { color: '#7CFC00', code: 'bg-[#7CFC00]' },
+  { color: '#7FFF00', code: 'bg-[#7FFF00]' },
+  { color: '#ADFF2F', code: 'bg-[#ADFF2F]' },
+  { color: '#00BFFF', code: 'bg-[#00BFFF]' },
+  { color: '#1E90FF', code: 'bg-[#1E90FF]' },
+  { color: '#6495ED', code: 'bg-[#6495ED]' },
+  { color: '#4682B4', code: 'bg-[#4682B4]' },
+  { color: '#4169E1', code: 'bg-[#4169E1]' },
+  { color: '#8A2BE2', code: 'bg-[#8A2BE2]' },
+  { color: '#4B0082', code: 'bg-[#4B0082]' },
+  { color: '#6A5ACD', code: 'bg-[#6A5ACD]' },
+];
+
 export const useEditorToolbar = ({ editor }: { editor: Editor }) => {
   const {
     ref: toolRef,
@@ -190,7 +236,7 @@ export const useEditorToolbar = ({ editor }: { editor: Editor }) => {
         editor?.chain().focus().toggleBulletList().run();
         setToolVisibility(IEditorTool.NONE);
       },
-      isActive: toolVisibilty === IEditorTool.LIST,
+      isActive: editor?.isActive('bulletList'),
     },
     {
       icon: <ListOrdered size={20} />,
@@ -199,7 +245,7 @@ export const useEditorToolbar = ({ editor }: { editor: Editor }) => {
         editor?.chain().focus().toggleOrderedList().run();
         setToolVisibility(IEditorTool.NONE);
       },
-      isActive: toolVisibilty === IEditorTool.LIST,
+      isActive: editor?.isActive('orderedList'),
     },
     {
       icon: <ListChecks size={20} />,
@@ -208,7 +254,7 @@ export const useEditorToolbar = ({ editor }: { editor: Editor }) => {
         editor?.chain().focus().toggleTaskList().run();
         setToolVisibility(IEditorTool.NONE);
       },
-      isActive: toolVisibilty === IEditorTool.LIST,
+      isActive: editor?.isActive('taskList'),
     },
     {
       icon: <AlignLeft size={20} />,
@@ -436,9 +482,9 @@ export const EditorFontFamily = ({
             fontFamily: font.title,
           }}
           className={cn(
-            'flex w-full items-center space-x-2 rounded px-2 py-1 text-left text-sm text-black',
+            'flex w-full items-center space-x-2 rounded px-2 py-1 text-left text-sm text-black transition',
             editor.isActive('textStyle', { fontFamily: font.value })
-              ? 'color-bg-brand hover:color-bg-brand-hover'
+              ? 'bg-yellow-300 hover:brightness-90'
               : 'hover:bg-[#f2f2f2]'
           )}
         >
@@ -460,7 +506,7 @@ export const EditorAlignment = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto absolute gap-2 top-[50px] right-[25%] flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all"
+      className="z-50 h-auto absolute gap-2 top-14 left-[60%] translate-x-1/2 flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all"
     >
       <span
         onClick={() => {
@@ -468,9 +514,9 @@ export const EditorAlignment = ({
           setToolVisibility(IEditorTool.NONE);
         }}
         className={cn(
-          'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer',
+          'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'left' })
-            ? 'color-bg-brand hover:color-bg-brand-hover'
+            ? 'bg-yellow-300 hover:brightness-90'
             : 'hover:bg-[#f2f2f2]'
         )}
       >
@@ -482,9 +528,9 @@ export const EditorAlignment = ({
           setToolVisibility(IEditorTool.NONE);
         }}
         className={cn(
-          'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer',
+          'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'center' })
-            ? 'color-bg-brand hover:color-bg-brand-hover'
+            ? 'bg-yellow-300 hover:brightness-90'
             : 'hover:bg-[#f2f2f2]'
         )}
       >
@@ -496,9 +542,9 @@ export const EditorAlignment = ({
           setToolVisibility(IEditorTool.NONE);
         }}
         className={cn(
-          'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer',
+          'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'right' })
-            ? 'color-bg-brand hover:color-bg-brand-hover'
+            ? 'bg-yellow-300 hover:brightness-90'
             : 'hover:bg-[#f2f2f2]'
         )}
       >
@@ -637,18 +683,18 @@ export const LinkPopup = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto absolute gap-2 top-[50px] items-center flex right-[10%] max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white p-2 shadow-lg transition-all"
+      className="z-50 h-auto absolute gap-2 top-14 translate-x-1/2 items-center flex max-h-[330px] overflow-y-auto scroll-smooth rounded-lg bg-white p-2 shadow-lg transition-all"
     >
-      <input
+      <TextField
         onChange={(e) => setUrl(e.target.value)}
-        className="shadow-none border-[1px]"
+        className="w-full"
         placeholder="Add link here"
         value={url}
       />
       <div className="h-full flex items-center">
-        <button onClick={() => apply()} className="min-w-fit">
+        <Button variant='secondary' onClick={() => apply()} className="min-w-fit h-[36px]">
           Apply
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -662,48 +708,6 @@ export const TextColor = ({
   elementRef: React.RefObject<HTMLDivElement>;
   setVisibility: Dispatch<SetStateAction<IEditorTool>>;
 }) => {
-  const colors = [
-    { color: '#00FF00', code: 'bg-[#00FF00]' },
-    { color: '#008080', code: 'bg-[#008080]' },
-    { color: '#FFC0CB', code: 'bg-[#FFC0CB]' },
-    { color: '#808000', code: 'bg-[#808000]' },
-    { color: '#800000', code: 'bg-[#800000]' },
-    { color: '#000080', code: 'bg-[#000080]' },
-    { color: '#7FFFD4', code: 'bg-[#7FFFD4]' },
-    { color: '#40E0D0', code: 'bg-[#40E0D0]' },
-    { color: '#C0C0C0', code: 'bg-[#C0C0C0]' },
-    { color: '#808080', code: 'bg-[#808080]' },
-    { color: '#000000', code: 'bg-[#000000]' },
-    { color: '#FFFFFF', code: 'bg-[#FFFFFF]' },
-    { color: '#CD5C5C', code: 'bg-[#CD5C5C]' },
-    { color: '#F08080', code: 'bg-[#F08080]' },
-    { color: '#FA8072', code: 'bg-[#FA8072]' },
-    { color: '#E9967A', code: 'bg-[#E9967A]' },
-    { color: '#FFA07A', code: 'bg-[#FFA07A]' },
-    { color: '#DC143C', code: 'bg-[#DC143C]' },
-    { color: '#FF6347', code: 'bg-[#FF6347]' },
-    { color: '#FF7F50', code: 'bg-[#FF7F50]' },
-    { color: '#FF4500', code: 'bg-[#FF4500]' },
-    { color: '#BDB76B', code: 'bg-[#BDB76B]' },
-    { color: '#FFD700', code: 'bg-[#FFD700]' },
-    { color: '#F0E68C', code: 'bg-[#F0E68C]' },
-    { color: '#FFE5B4', code: 'bg-[#FFE5B4]' },
-    { color: '#9ACD32', code: 'bg-[#9ACD32]' },
-    { color: '#556B2F', code: 'bg-[#556B2F]' },
-    { color: '#6B8E23', code: 'bg-[#6B8E23]' },
-    { color: '#7CFC00', code: 'bg-[#7CFC00]' },
-    { color: '#7FFF00', code: 'bg-[#7FFF00]' },
-    { color: '#ADFF2F', code: 'bg-[#ADFF2F]' },
-    { color: '#00BFFF', code: 'bg-[#00BFFF]' },
-    { color: '#1E90FF', code: 'bg-[#1E90FF]' },
-    { color: '#6495ED', code: 'bg-[#6495ED]' },
-    { color: '#4682B4', code: 'bg-[#4682B4]' },
-    { color: '#4169E1', code: 'bg-[#4169E1]' },
-    { color: '#8A2BE2', code: 'bg-[#8A2BE2]' },
-    { color: '#4B0082', code: 'bg-[#4B0082]' },
-    { color: '#6A5ACD', code: 'bg-[#6A5ACD]' },
-  ];
-
   return (
     <div
       ref={elementRef}
@@ -809,9 +813,9 @@ export const TextHeading = ({
           }}
           key={heading.title}
           className={cn(
-            'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-black',
+            'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-black transition',
             {
-              ['color-bg-brand hover:color-bg-brand-hover']: heading.isActive(),
+              ['bg-yellow-300 hover:brightness-90']: heading.isActive(),
               ['hover:bg-[#f2f2f2]']: !heading.isActive(),
             }
           )}
@@ -834,7 +838,6 @@ export const TextFormatingPopup = ({
   setToolVisibility,
 }: {
   editor: Editor;
-  elementRef: React.RefObject<HTMLDivElement>;
   setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
 }) => {
   const headings = [
@@ -907,7 +910,7 @@ export const TextFormatingPopup = ({
                 onClick={() => {
                   editor?.chain().focus().setTextAlign('left').run();
                 }}
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition", {
+                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
                   ['bg-yellow-300 hover:brightness-90']: editor.isActive({ textAlign: 'left' }),
                   ['hover:bg-[#f2f2f2]']: !editor.isActive({ textAlign: 'left' }),
                 })}
@@ -919,7 +922,7 @@ export const TextFormatingPopup = ({
                   editor?.chain().focus().setTextAlign('center').run();
                 }}
 
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition", {
+                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
                   ['bg-yellow-300 hover:brightness-90']: editor.isActive({ textAlign: 'center' }),
                   ['hover:bg-[#f2f2f2]']: !editor.isActive({ textAlign: 'center' }),
                 })}
@@ -931,7 +934,7 @@ export const TextFormatingPopup = ({
                   editor?.chain().focus().setTextAlign('right').run();
                 }}
 
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition", {
+                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
                   ['bg-yellow-300 hover:brightness-90']: editor.isActive({ textAlign: 'right' }),
                   ['hover:bg-[#f2f2f2]']: !editor.isActive({ textAlign: 'right' }),
                 })}
@@ -943,7 +946,7 @@ export const TextFormatingPopup = ({
               <DialogTrigger asChild>
                 <button
                   onClick={() => setToolVisibility(IEditorTool.LINK_POPUP)}
-                  className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition", {
+                  className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
                     ['bg-yellow-300 hover:brightness-90']: editor.isActive('link'),
                     ['hover:bg-[#f2f2f2]']: !editor.isActive('link'),
                   })}
@@ -955,7 +958,7 @@ export const TextFormatingPopup = ({
                 onClick={() => {
                   editor?.chain().focus().toggleCodeBlock().run();
                 }}
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition", {
+                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
                   ['bg-yellow-300 hover:brightness-90']: editor.isActive('codeBlock'),
                   ['hover:bg-[#f2f2f2]']: !editor.isActive('codeBlock'),
                 })}
@@ -966,7 +969,7 @@ export const TextFormatingPopup = ({
                 onClick={() => {
                   editor?.chain().focus().toggleBlockquote().run();
                 }}
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition", {
+                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
                   ['bg-yellow-300 hover:brightness-90']: editor.isActive('blockquote'),
                   ['hover:bg-[#f2f2f2]']: !editor.isActive('blockquote'),
                 })}
@@ -981,7 +984,7 @@ export const TextFormatingPopup = ({
                 onClick={() => {
                   editor.chain().focus().toggleBold().run();
                 }}
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition", {
+                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
                   ['bg-yellow-300 hover:brightness-90']: editor.isActive('bold'),
                   ['hover:bg-[#f2f2f2]']: !editor.isActive('bold'),
                 })}
@@ -992,7 +995,7 @@ export const TextFormatingPopup = ({
                 onClick={() => {
                   editor.chain().focus().toggleItalic().run();
                 }}
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition", {
+                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
                   ['bg-yellow-300 hover:brightness-90']: editor.isActive('italic'),
                   ['hover:bg-[#f2f2f2]']: !editor.isActive('italic'),
                 })}
@@ -1003,7 +1006,7 @@ export const TextFormatingPopup = ({
                 onClick={() => {
                   editor.chain().focus().toggleUnderline().run();
                 }}
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition", {
+                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
                   ['bg-yellow-300 hover:brightness-90']: editor.isActive('underline'),
                   ['hover:bg-[#f2f2f2]']: !editor.isActive('bold'),
                 })}
@@ -1014,7 +1017,7 @@ export const TextFormatingPopup = ({
                 onClick={() => {
                   editor.chain().focus().toggleStrike().run();
                 }}
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition", {
+                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
                   ['bg-yellow-300 hover:brightness-90']: editor.isActive('strike'),
                   ['hover:bg-[#f2f2f2]']: !editor.isActive('bold'),
                 })}
@@ -1027,7 +1030,7 @@ export const TextFormatingPopup = ({
                 onClick={() => {
                   editor?.chain().focus().toggleBulletList().run();
                 }}
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition", {
+                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
                   ['bg-yellow-300 hover:brightness-90']: editor.isActive('bulletList'),
                   ['hover:bg-[#f2f2f2]']: !editor.isActive('bulletList'),
                 })}
@@ -1038,7 +1041,7 @@ export const TextFormatingPopup = ({
                 onClick={() => {
                   editor?.chain().focus().toggleOrderedList().run();
                 }}
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition", {
+                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
                   ['bg-yellow-300 hover:brightness-90']: editor.isActive('orderedList'),
                   ['hover:bg-[#f2f2f2]']: !editor.isActive('orderedList'),
                 })}
@@ -1052,3 +1055,77 @@ export const TextFormatingPopup = ({
     />
   );
 }
+
+export const TextColorPicker = ({
+  editor,
+  // setToolVisibility,
+}: {
+  editor: Editor;
+  setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
+}) => {
+  return (
+    <UtilsModal
+      title="Text color"
+      content={
+        <Carousel
+          opts={{
+            align: "start",
+            dragFree: true,
+            slidesToScroll: 'auto'
+          }}
+          className="w-full max-w-md px-4 mx-auto">
+          <CarouselContent>
+            <CarouselItem
+              style={{
+                flexBasis: 'calc(100% / 12)',
+              }}
+            >
+              <Ban
+                className="cursor-pointer"
+                onClick={() => {
+                  editor.chain().focus().unsetColor().run();
+                }}
+              />
+            </CarouselItem>
+            {colors.map((color, index) => (
+              <CarouselItem
+                key={index}
+                style={{
+                  flexBasis: 'calc(100% / 12)',
+                }}
+              >
+                <button
+                  onClick={() => {
+                    editor.chain().focus().setColor(color.color).run();
+                  }}
+                  key={color.color}
+                  className={cn(
+                    'w-6 h-6 border-[0.25px] border-black/[0.025] rounded-full flex justify-center items-center cursor-pointer transition',
+                    color.code
+                  )}
+                >
+                  <Check
+                    size={14}
+                    className={cn(
+                      editor.isActive('textStyle', {
+                        color: color.color,
+                      })
+                        ? 'visible'
+                        : 'invisible'
+                    )}
+                  />
+                </button>
+              </CarouselItem>
+            ))}
+          </CarouselContent>
+          <div className="flex justify-center gap-2 mt-4 w-full max-w-sm">
+            {Array.from({ length: colors.length / 8 }).map((_, index) => (
+              <CarouselIndicator key={index} index={index} />
+            ))}
+          </div>
+        </Carousel>
+      }
+    />
+  );
+}
+

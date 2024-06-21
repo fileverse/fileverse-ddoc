@@ -35,7 +35,7 @@ function App() {
       <div className='flex gap-2'>
         <div>
           <Button
-            variant='secondary'
+            variant='ghost'
             onClick={() => setIsPreviewMode(!isPreviewMode)}
           >
             {isPreviewMode ? <Pencil size={14} /> : <ScanEye size={14} />}{' '}

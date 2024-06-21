@@ -117,7 +117,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   return (
     <BubbleMenu
       {...bubbleMenuProps}
-      className='flex gap-1 overflow-hidden rounded-[12px] h-[52px] min-w-[472px] w-full py-2 px-4 bg-white items-center shadow-lg'
+      className='hidden lg:flex gap-2 overflow-hidden rounded-[12px] h-[52px] min-w-[550px] w-full py-2 px-4 bg-white items-center shadow-lg'
     >
       <NodeSelector
         editor={props.editor}
@@ -127,22 +127,22 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           setIsColorSelectorOpen(false);
         }}
       />
-      <div className='w-px h-4 bg-gray-400 mx-2'></div>
+
       {items.map((item, index) => (
         <div
           key={index}
-          className='flex items-center gap-1'
+          className='flex items-center'
         >
           <button
             onClick={item.command}
-            className={cn('min-w-fit w-8 h-8 px-2', {
-              'color-bg-brand': item.isActive()
+            className={cn('min-w-fit w-8 h-8 px-2 rounded', {
+              'bg-yellow-300': item.isActive()
             })}
           >
             {item.icon}
           </button>
           {(index === 4 || index === 6) && (
-            <div className='w-px h-4 bg-gray-400 mx-2'></div>
+            <div className='w-1.5 h-4 bg-gray-300 mx-2'></div>
           )}
         </div>
       ))}
@@ -157,7 +157,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       <button
         onClick={() => setToolVisibility(IEditorTool.HIGHLIGHT)}
         className={cn('min-w-fit w-8 h-8 px-2', {
-          'color-bg-brand': toolVisibilty === IEditorTool.HIGHLIGHT
+          'bg-yellow-300': toolVisibilty === IEditorTool.HIGHLIGHT
         })}
       >
         <Highlighter size={20} />

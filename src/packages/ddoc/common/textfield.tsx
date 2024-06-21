@@ -67,7 +67,7 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
           leftElement.props.onClick?.(e);
           focusToInput();
         },
-        className: cn("absolute left-3 color-text-disabled", {
+        className: cn("absolute left-3 text-[#A1AAB1]", {
           "cursor-not-allowed": props.disabled,
         }),
       });
@@ -90,12 +90,12 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
           focusToInput();
         },
         className: cn(
-          "absolute right-3 cursor-pointer color-text-disabled",
+          "absolute right-3 cursor-pointer text-[#A1AAB1]",
           {
             "cursor-not-allowed": props.disabled,
           },
           {
-            "text-danger": !isValid,
+            "text-red-500": !isValid,
           }
         ),
       });
@@ -113,12 +113,12 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
           <input
             type={type}
             className={cn(
-              "flex h-9 w-full rounded-md border border-input hover:border-border-hover bg-transparent px-3 py-2 text-body-sm  color-text-default transition-colors file:border-0 file:bg-transparent file:text-body-sm placeholder:color-text-disabled focus-visible:outline-none focus-visible:border-border-hover",
+              "flex h-9 w-full rounded border-[1px] border-[#E8EBEC] hover:border-black bg-transparent px-3 py-2 text-sm  text-black transition-colors file:border-0 file:bg-transparent file:text-sm placeholder:text-[#A1AAB1] focus-visible:outline-none focus-visible:border-black",
               { "pr-3 pl-10": left },
               { "pr-10": right },
-              { "border-danger": !isValid },
+              { "border-red-500": !isValid },
               {
-                "disabled:cursor-not-allowed disabled:bg-disabled disabled:border-disabled disabled:color-text-disabled":
+                "disabled:cursor-not-allowed disabled:bg-[#E8EBEC] disabled:border-[#A1AAB1] disabled:text-[#A1AAB1]":
                   props.disabled,
               },
               className
@@ -132,8 +132,8 @@ export const TextField = React.forwardRef<HTMLInputElement, TextFieldProps>(
         {message ? (
           <p
             className={cn("text-sm mt-2 font-normal text-wrap text-justify", {
-              "text-danger": !isValid,
-              "text-secondary": isValid,
+              "text-red-500": !isValid,
+              "text-black": isValid,
             })}
           >
             {message}
