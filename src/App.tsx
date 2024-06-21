@@ -3,12 +3,12 @@ import DdocEditor from './packages/ddoc/ddoc-editor';
 import { Button } from './packages/ddoc/common/button';
 import { Pencil, ScanEye, Share2 } from 'lucide-react';
 import { Editor } from '@tiptap/react';
-import { PluginMetaData } from './packages/ddoc/types';
 
 function App() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [enableCollaboration, setEnableCollaboration] = useState(false);
   const [username, setUsername] = useState('');
+  const [title, setTitle] = useState('Untitled');
 
   const collaborationId = window.location.pathname.split('/')[2]; // example url - /doc/1234, that why's used second element of array
 
@@ -21,21 +21,15 @@ function App() {
     }
   }, [collaborationId]);
 
-  const renderRightSection = ({
-    editor,
-    pluginMetaData
-  }: {
-    editor: Editor;
-    pluginMetaData: PluginMetaData;
-  }): JSX.Element => {
+  const renderRightSection = ({ editor }: { editor: Editor }): JSX.Element => {
     const publishDoc = () => {
-      console.log(editor, pluginMetaData);
+      console.log(editor, title);
     };
     return (
-      <div className='flex gap-2'>
+      <div className="flex gap-2">
         <div>
           <Button
-            variant='ghost'
+            variant="ghost"
             onClick={() => setIsPreviewMode(!isPreviewMode)}
           >
             {isPreviewMode ? <Pencil size={14} /> : <ScanEye size={14} />}{' '}
@@ -52,6 +46,21 @@ function App() {
     );
   };
 
+  const renderLeftSection = () => {
+    return (
+      <div className="flex items-center gap-4">
+        <input
+          className="max-w-[6rem] lg:max-w-xs focus:outline-none bg-[#f8f9fa]"
+          disabled={isPreviewMode}
+          type="text"
+          placeholder="Untitled"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+      </div>
+    );
+  };
+
   return (
     <div>
       <DdocEditor
@@ -62,6 +71,8 @@ function App() {
         username={username}
         isPreviewMode={isPreviewMode}
         renderToolRightSection={renderRightSection}
+        renderToolLeftSection={renderLeftSection}
+        onAutoSave={(data) => console.log(data, title)}
       />
     </div>
   );

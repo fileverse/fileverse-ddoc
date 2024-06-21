@@ -1,6 +1,6 @@
-import { useEffect, useState, useRef, useMemo, useCallback } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
-import { PluginMetaData, DdocProps, DdocEditorProps } from './types';
+import { DdocProps, DdocEditorProps } from './types';
 import * as Y from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
@@ -30,12 +30,6 @@ export const useDdocEditor = ({
   username,
   onAutoSave,
 }: DdocProps) => {
-  const [pluginMetaData, setPluginMetaData] = useState<PluginMetaData>({
-    plugin: {
-      title: 'Untitled',
-    },
-  });
-
   const [ydoc] = useState(new Y.Doc());
   const [loading, setLoading] = useState(false);
   const [extensions, setExtensions] = useState([
@@ -128,7 +122,6 @@ export const useDdocEditor = ({
     if (data && editor) {
       setTimeout(() => {
         editor?.commands.setContent(data.editorJSONData);
-        setPluginMetaData(data.metaData);
       });
     }
   }, [data, editor]);
@@ -153,38 +146,34 @@ export const useDdocEditor = ({
     }
   }, [enableCollaboration]);
 
-  const debouncedAutoSave = useCallback(
-    debounce(() => {
-      if (editor && onAutoSave) {
+  const debouncedAutoSave = useMemo(
+    () =>
+      debounce((editor, onAutoSave) => {
         onAutoSave({
-          metaData: pluginMetaData,
           editorJSONData: editor.getJSON(),
         });
-      }
-    }, 1000),
-    [editor, onAutoSave, pluginMetaData]
+      }, 1000),
+    [onAutoSave]
   );
 
   useEffect(() => {
     if (editor && onAutoSave) {
-      debouncedAutoSave();
+      // Bind the update handler only once
+      const handleUpdate = () => {
+        debouncedAutoSave(editor, onAutoSave);
+      };
 
-      editor.on('update', () => {
-        debouncedAutoSave();
-      });
+      editor.on('update', handleUpdate);
 
+      // Cleanup function to remove the handler
       return () => {
-        editor.off('destroy', () => {
-          debouncedAutoSave();
-        });
+        editor.off('update', handleUpdate);
       };
     }
-  }, [editor, onAutoSave, pluginMetaData, debouncedAutoSave]);
+  }, [editor, onAutoSave, debouncedAutoSave]);
 
   return {
     editor,
-    pluginMetaData,
-    setPluginMetaData,
     focusEditor,
     ref,
     loading,

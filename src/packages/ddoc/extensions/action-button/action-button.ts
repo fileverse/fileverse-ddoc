@@ -58,7 +58,6 @@ export const actionButton = Node.create<ActionButtonOptions>({
   },
 
   renderHTML({ HTMLAttributes }) {
-    console.log('action')
     return [
       'div',
       mergeAttributes(HTMLAttributes, { 'data-action-node': '' }),

@@ -1,4 +1,3 @@
-import { PluginNavbarLeftSection } from './navbar/navbar';
 import { EditorContent } from '@tiptap/react';
 import { EditorBubbleMenu } from './components/editor-bubble-menu';
 import { DdocProps } from './types';
@@ -19,16 +18,10 @@ const DdocEditor = ({
   username,
   onAutoSave,
   renderToolRightSection,
+  renderToolLeftSection,
   ensProviderUrl,
 }: DdocProps) => {
-  const {
-    editor,
-    pluginMetaData,
-    focusEditor,
-    setPluginMetaData,
-    ref,
-    loading,
-  } = useDdocEditor({
+  const { editor, focusEditor, ref, loading } = useDdocEditor({
     isPreviewMode,
     data,
     enableCollaboration,
@@ -53,20 +46,14 @@ const DdocEditor = ({
         <div className="w-full h-full">
           <div className="flex items-center w-full h-16 fixed z-10 px-4 bg-[#f8f9fa]">
             <div className="flex items-center justify-between gap-2 w-full">
-              <div className='grow'>
-                <PluginNavbarLeftSection
-                  isPreviewMode={isPreviewMode}
-                  metaData={pluginMetaData}
-                  setMetaData={setPluginMetaData}
-                />
-              </div>
+              <div className="grow">{renderToolLeftSection?.({ editor })}</div>
 
               {!isPreviewMode && (
                 <div className="grow relative hidden xl:block">
                   <EditorToolBar editor={editor} />
                 </div>
               )}
-              {renderToolRightSection?.({ editor, pluginMetaData })}
+              {renderToolRightSection?.({ editor })}
             </div>
           </div>
 
