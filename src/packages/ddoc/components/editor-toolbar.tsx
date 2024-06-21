@@ -20,7 +20,7 @@ const TiptapToolBar = ({ editor }: { editor: Editor }) => {
       editor: editor,
     });
   return (
-    <div className="w-fit bg-transparent px-4 items-center h-16 flex gap-1 justify-center">
+    <div className="w-fit bg-transparent px-4 items-center h-16 flex gap-1 justify-center relative">
       <button
         className="bg-transparent flex items-center gap-2 min-w-[55px]"
         onClick={() => setToolVisibility(IEditorTool.FONT_FAMILY)}
@@ -32,7 +32,7 @@ const TiptapToolBar = ({ editor }: { editor: Editor }) => {
         </span>
         <ChevronDown size={16} />
       </button>
-      <div className="w-px h-4 bg-gray-400 mx-2"></div>
+      <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
       <button
         className="bg-transparent gap-2 flex items-center min-w-[55px]"
         onClick={() => setToolVisibility(IEditorTool.HEADING)}
@@ -41,14 +41,14 @@ const TiptapToolBar = ({ editor }: { editor: Editor }) => {
           {editor?.isActive('heading', { level: 1 })
             ? 'Heading 1'
             : editor?.isActive('heading', { level: 2 })
-            ? 'Heading 2'
-            : editor?.isActive('heading', { level: 3 })
-            ? 'Heading 3'
-            : 'Text'}
+              ? 'Heading 2'
+              : editor?.isActive('heading', { level: 3 })
+                ? 'Heading 3'
+                : 'Text'}
         </span>
         <ChevronDown size={16} />
       </button>
-      <div className="w-px h-4 bg-gray-400 mx-2"></div>
+      <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
       {toolbar.map((tool, _index) => {
         if (tool) {
           return (
@@ -60,8 +60,8 @@ const TiptapToolBar = ({ editor }: { editor: Editor }) => {
               <span
                 onClick={() => tool.onClick()}
                 className={cn(
-                  'rounded-lg w-8 h-8 p-1 flex cursor-pointer justify-center items-center',
-                  tool.isActive ? 'bg-yellow-300' : 'hover:bg-[#f2f2f2]'
+                  'rounded w-8 h-8 p-1 flex cursor-pointer justify-center items-center transition',
+                  tool.isActive ? 'bg-yellow-300 hover:brightness-90' : 'hover:bg-[#f2f2f2]'
                 )}
               >
                 {typeof tool.icon === 'string' ? (
@@ -73,7 +73,7 @@ const TiptapToolBar = ({ editor }: { editor: Editor }) => {
             </div>
           );
         } else {
-          return <div key={_index} className="w-px h-4 bg-gray-400 mx-2"></div>;
+          return <div key={_index} className="w-[2px] h-4 bg-gray-200 mx-2"></div>;
         }
       })}
       {toolVisibilty === IEditorTool.FONT_FAMILY && (

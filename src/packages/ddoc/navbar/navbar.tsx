@@ -12,7 +12,7 @@ export const PluginNavbarLeftSection = ({
   return (
     <div className="flex items-center gap-4">
       <input
-        className="custom-input mx-2 focus:outline-none bg-[#f8f9fa]"
+        className="max-w-[6rem] lg:max-w-xs focus:outline-none bg-[#f8f9fa]"
         disabled={isPreviewMode}
         type="text"
         placeholder="Untitled"

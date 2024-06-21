@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Node, mergeAttributes } from '@tiptap/core';
-import { ReactNodeViewRenderer } from '@tiptap/react';
+import { Node, mergeAttributes } from '@tiptap/core'
+import { ReactNodeViewRenderer } from '@tiptap/react'
 
-import { DBlockNodeView } from './dblock-node-view';
-import { Node as ProsemirrorNode } from 'prosemirror-model';
+import { DBlockNodeView } from './dblock-node-view'
+import { Node as ProsemirrorNode } from 'prosemirror-model'
 export interface DBlockOptions {
-  HTMLAttributes: Record<string, any>;
+  HTMLAttributes: Record<string, any>
 }
 
-export type ListTypes = 'bulletList' | 'orderedList' | 'taskList';
+export type ListTypes = 'bulletList' | 'orderedList' | 'taskList'
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -16,10 +16,10 @@ declare module '@tiptap/core' {
       /**
        * Toggle a dBlock
        */
-      setDBlock: (position?: number) => ReturnType;
-      mergeDBlocksIntoList: (listType: ListTypes) => ReturnType;
-      splitListToDBlocks: (listType: ListTypes) => ReturnType;
-    };
+      setDBlock: (position?: number) => ReturnType
+      mergeDBlocksIntoList: (listType: ListTypes) => ReturnType
+      splitListToDBlocks: (listType: ListTypes) => ReturnType
+    }
   }
 }
 
@@ -40,45 +40,45 @@ export const DBlock = Node.create<DBlockOptions>({
 
   addOptions() {
     return {
-      HTMLAttributes: {},
-    };
+      HTMLAttributes: {}
+    }
   },
 
   parseHTML() {
-    return [{ tag: 'div[data-type="d-block"]' }];
+    return [{ tag: 'div[data-type="d-block"]' }]
   },
 
   renderHTML({ HTMLAttributes }: { HTMLAttributes: any }) {
     return [
       'div',
       mergeAttributes(HTMLAttributes, { 'data-type': 'd-block' }),
-      0,
-    ];
+      0
+    ]
   },
 
   addCommands() {
     return {
       setDBlock:
-        (position) =>
+        position =>
         ({ state, chain }) => {
           const {
-            selection: { from },
-          } = state;
+            selection: { from }
+          } = state
 
           const pos =
-            position !== undefined || position !== null ? from : position;
+            position !== undefined || position !== null ? from : position
 
           return chain()
             .insertContentAt(pos, {
               type: this.name,
               content: [
                 {
-                  type: 'paragraph',
-                },
-              ],
+                  type: 'paragraph'
+                }
+              ]
             })
             .focus(pos + 2)
-            .run();
+            .run()
         },
 
       // TODO: WIP
@@ -86,41 +86,41 @@ export const DBlock = Node.create<DBlockOptions>({
         (listType: ListTypes) =>
         ({ state, dispatch }) => {
           if (!dispatch) {
-            throw new Error('Dispatch function is not provided.');
+            throw new Error('Dispatch function is not provided.')
           }
 
-          const { from, to } = state.selection;
+          const { from, to } = state.selection
 
-          let tr = state.tr;
+          let tr = state.tr
 
-          const listItemNodes: ProsemirrorNode[] = [];
+          const listItemNodes: ProsemirrorNode[] = []
 
-          state.doc.nodesBetween(from, to, (node) => {
+          state.doc.nodesBetween(from, to, node => {
             if (node.type.name === this.name) {
               const listItemNode = state.schema.nodes.listItem.create(
                 null,
                 node.content
-              );
+              )
               if (listItemNode) {
-                listItemNodes.push(listItemNode);
+                listItemNodes.push(listItemNode)
               }
             }
-          });
+          })
 
-          if (listItemNodes.length === 0) return false;
+          if (listItemNodes.length === 0) return false
 
           const listNode = state.schema.nodes[listType].create(
             null,
             listItemNodes
-          );
+          )
 
-          if (!listNode) return false;
+          if (!listNode) return false
 
-          tr = tr.replaceRangeWith(from, to, listNode);
+          tr = tr.replaceRangeWith(from, to, listNode)
 
-          dispatch(tr);
+          dispatch(tr)
 
-          return true;
+          return true
         },
 
       // TODO: WIP
@@ -128,30 +128,30 @@ export const DBlock = Node.create<DBlockOptions>({
         (listType: ListTypes) =>
         ({ state, dispatch }) => {
           if (!dispatch) {
-            throw new Error('Dispatch function is not provided.');
+            throw new Error('Dispatch function is not provided.')
           }
 
-          const { from, to } = state.selection;
-          let tr = state.tr;
+          const { from, to } = state.selection
+          let tr = state.tr
 
           state.doc.nodesBetween(from, to, (node, pos) => {
             if (node.type.name === listType) {
               const dBlockNode = state.schema.nodes[this.name].create(
                 null,
                 node.content
-              );
-              tr = tr.insert(pos, dBlockNode);
+              )
+              tr = tr.insert(pos, dBlockNode)
             }
-          });
+          })
 
-          dispatch(tr);
-          return true;
-        },
-    };
+          dispatch(tr)
+          return true
+        }
+    }
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(DBlockNodeView);
+    return ReactNodeViewRenderer(DBlockNodeView)
   },
 
   addKeyboardShortcuts() {
@@ -160,40 +160,40 @@ export const DBlock = Node.create<DBlockOptions>({
       Enter: ({ editor }) => {
         const {
           selection: { $head, from, to },
-          doc,
-        } = editor.state;
+          doc
+        } = editor.state
 
-        const parent = $head.node($head.depth - 1);
+        const parent = $head.node($head.depth - 1)
 
-        if (parent?.type.name !== 'dBlock') return false;
+        if (parent?.type.name !== 'dBlock') return false
 
-        let currentActiveNodeTo = -1;
-        let currentActiveNodeType = '';
+        let currentActiveNodeTo = -1
+        let currentActiveNodeType = ''
 
         doc.descendants((node, pos) => {
-          if (currentActiveNodeTo !== -1) return false;
-          if (node.type.name === this.name) return;
+          if (currentActiveNodeTo !== -1) return false
+          if (node.type.name === this.name) return
 
-          const [nodeFrom, nodeTo] = [pos, pos + node.nodeSize];
+          const [nodeFrom, nodeTo] = [pos, pos + node.nodeSize]
 
           if (nodeFrom <= from && to <= nodeTo) {
-            currentActiveNodeTo = nodeTo;
-            currentActiveNodeType = node.type.name;
+            currentActiveNodeTo = nodeTo
+            currentActiveNodeType = node.type.name
           }
 
-          return false;
-        });
+          return false
+        })
 
-        const content = doc.slice(from, currentActiveNodeTo)?.toJSON().content;
+        const content = doc.slice(from, currentActiveNodeTo)?.toJSON().content
 
         try {
           // If the current active node's type is "codeBlock", continue as a break line within the code block
           if (currentActiveNodeType === 'codeBlock') {
             return editor
               .chain()
-              .insertContentAt({ from, to: currentActiveNodeTo }, '\n')
+              .newlineInCode()
               .focus(currentActiveNodeTo + 1)
-              .run();
+              .run()
           }
 
           if (['columns', 'heading'].includes(currentActiveNodeType)) {
@@ -203,12 +203,12 @@ export const DBlock = Node.create<DBlockOptions>({
                 type: 'dBlock',
                 content: [
                   {
-                    type: 'paragraph',
-                  },
-                ],
+                    type: 'paragraph'
+                  }
+                ]
               })
               .focus()
-              .run();
+              .run()
           }
 
           return editor
@@ -217,16 +217,16 @@ export const DBlock = Node.create<DBlockOptions>({
               { from, to: currentActiveNodeTo },
               {
                 type: this.name,
-                content,
+                content
               }
             )
             .focus(from + 4)
-            .run();
+            .run()
         } catch (error) {
-          console.error(`Error inserting content into dBlock node: ${error}`);
-          return false;
+          console.error(`Error inserting content into dBlock node: ${error}`)
+          return false
         }
-      },
-    };
-  },
-});
+      }
+    }
+  }
+})
