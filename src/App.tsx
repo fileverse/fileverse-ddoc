@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import DdocEditor from './packages/ddoc/ddoc-editor';
 import { Button } from './packages/ddoc/common/button';
 import { Pencil, ScanEye, Share2 } from 'lucide-react';
-import { Editor } from '@tiptap/react';
+import { JSONContent } from '@tiptap/react';
 
 function App() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -21,7 +21,7 @@ function App() {
     }
   }, [collaborationId]);
 
-  const renderRightSection = ({ editor }: { editor: Editor }): JSX.Element => {
+  const renderRightSection = ({ editor }: { editor: JSONContent }): JSX.Element => {
     const publishDoc = () => {
       console.log(editor, title);
     };

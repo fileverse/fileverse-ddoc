@@ -1,6 +1,5 @@
 import { JSONContent } from '@tiptap/core';
 import { EditorProps } from '@tiptap/pm/view';
-import { Editor } from '@tiptap/react';
 
 export const DdocEditorProps: EditorProps = {
   attributes: {
@@ -30,8 +29,8 @@ export interface DdocProps {
   onAutoSave?: (data: Data) => void;
   ensProviderUrl?: string;
   username?: string | null;
-  renderToolLeftSection?: ({ editor }: { editor: Editor }) => JSX.Element;
-  renderToolRightSection?: ({ editor }: { editor: Editor }) => JSX.Element;
+  renderToolLeftSection?: ({ editor }: { editor: JSONContent }) => JSX.Element;
+  renderToolRightSection?: ({ editor }: { editor: JSONContent}) => JSX.Element;
 }
 
 export interface Data {

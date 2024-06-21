@@ -46,14 +46,14 @@ const DdocEditor = ({
         <div className="w-full h-full">
           <div className="flex items-center w-full h-16 fixed z-10 px-4 bg-[#f8f9fa]">
             <div className="flex items-center justify-between gap-2 w-full">
-              <div className="grow">{renderToolLeftSection?.({ editor })}</div>
+              <div className="grow">{renderToolLeftSection?.({ editor: editor.getJSON() })}</div>
 
               {!isPreviewMode && (
                 <div className="grow relative hidden xl:block">
                   <EditorToolBar editor={editor} />
                 </div>
               )}
-              {renderToolRightSection?.({ editor })}
+              {renderToolRightSection?.({ editor: editor.getJSON() })}
             </div>
           </div>
 
