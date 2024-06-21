@@ -6,7 +6,7 @@ export const DdocEditorProps: EditorProps = {
   attributes: {
     class: `prose-lg prose-headings:font-display prose prose-p:my-2 prose-h1:my-2 prose-h2:my-2 prose-h3:my-2 prose-ul:my-2 prose-ol:my-2 max-w-none focus:outline-none w-full`,
     spellcheck: 'false',
-    suppressContentEditableWarning: 'true'
+    suppressContentEditableWarning: 'true',
   },
   handleDOMEvents: {
     keydown: (_view, event) => {
@@ -17,8 +17,8 @@ export const DdocEditorProps: EditorProps = {
           return true;
         }
       }
-    }
-  }
+    },
+  },
 };
 
 export interface DdocProps {
@@ -30,27 +30,13 @@ export interface DdocProps {
   onAutoSave?: (data: Data) => void;
   ensProviderUrl?: string;
   username?: string | null;
-  renderToolRightSection?: ({
-    editor,
-    pluginMetaData
-  }: {
-    editor: Editor;
-    pluginMetaData: PluginMetaData;
-  }) => JSX.Element;
+  renderToolLeftSection?: ({ editor }: { editor: Editor }) => JSX.Element;
+  renderToolRightSection?: ({ editor }: { editor: Editor }) => JSX.Element;
 }
 
 export interface Data {
-  metaData: PluginMetaData;
   editorJSONData: JSONContent;
 }
-export interface Plugin {
-  title: string | null;
-}
-
-export interface PluginMetaData {
-  plugin: Plugin;
-}
-
 export interface IUser {
   name: string;
   color: string;

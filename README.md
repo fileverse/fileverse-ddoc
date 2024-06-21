@@ -36,40 +36,21 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `collaborationId` (optional)                   | `string`                                    | When using enableCollaboration, you need to provide collaborationId, it can be uuid of doc                                 |
 | `toggleCollaboration` (optional)               | `(flag: boolean) => void`                   | Function to toggle collaboration mode with a boolean flag                                                                  |
 | `onAutoSave` (optional)                        | `(flag:boolean) => void`                    | Function which expose the current editor state every 10 seconds                                                            |
-| `renderToolRightSection` (optional)            | `({editor, pluginMetaData}) => JSX.Element` | Function that render the right section of the toolbar. it calls the function with the editor instance and the pluginMedata |
+| `renderToolRightSection` (optional)            | `({editor}) => JSX.Element` | Function that render the right section of the toolbar. it calls the function with the editor instance |
+| `renderToolLeftSection` (optional) | `({editor}) => JSX.Element` | Accept a react component
 | `username` (required when using collaboration) | `boolean`                                   | Takes a username which can be used by collaboration cursor      
 | `ensProviderUrl` | `string` | Takes a url                                                           |
 
 ## Data Interface
 
-The `Data` interface defines the structure of the data object that can be passed to the `onPublish` function and optionally included in the `data` property of `DdocProps`.
+The `Data` interface defines the structure of the data object that can be passed to the `onAutoSave` function and optionally included in the `data` property of `DdocProps`.
 
 ### Properties
 
 | Property         | Type             | Description                                |
 | ---------------- | ---------------- | ------------------------------------------ |
-| `metaData`       | `PluginMetaData` | Contains metadata related to the plugin.   |
 | `editorJSONData` | `JSONContent`    | Contains JSON data for the editor content. |
 
-## PluginMetaData Interface
-
-The `PluginMetaData` interface defines the structure of the metadata related to the plugin.
-
-### Properties
-
-| Property | Type     | Description                                  |
-| -------- | -------- | -------------------------------------------- |
-| `plugin` | `Plugin` | Contains information about the plugin title. |
-
-## Plugin Interface
-
-The `Plugin` interface defines the structure of the plugin information.
-
-### Properties
-
-| Property | Type             | Description                          |
-| -------- | ---------------- | ------------------------------------ |
-| `title`  | `string \| null` | Title of the plugin (can be `null`). |
 
 ### Steps to run this example locally
 
