@@ -6,7 +6,6 @@ import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import { defaultExtensions } from './extensions/default-extension';
 import { AnyExtension, useEditor } from '@tiptap/react';
-import { IndexeddbPersistence } from 'y-indexeddb';
 import { getCursor } from './utils/cursor';
 import { getAddressName } from './utils/getAddressName';
 import { debounce } from './utils/debounce';
@@ -58,6 +57,8 @@ export const useDdocEditor = ({
     autofocus: 'start',
   });
 
+  const collaborationCleanupRef = useRef<() => void>(() => {});
+
   const connect = (username: string, isEns = false) => {
     if (!enableCollaboration || !collaborationId || !username) {
       throw new Error('docId or username is not provided');
@@ -90,18 +91,15 @@ export const useDdocEditor = ({
       setLoading(false);
     }, 100); // this is a hack to dynamically set tiptap extension -  wait for tiptap to re-render the online editor with new extensions before rendering the editor
 
-    return () => {
+    collaborationCleanupRef.current = () => {
       clearTimeout(timeout);
       provider.destroy();
       ydoc.destroy();
       setLoading(false);
     };
-  };
 
-  useEffect(() => {
-    if (!collaborationId) return;
-    new IndexeddbPersistence(collaborationId, ydoc);
-  }, [collaborationId]);
+    return collaborationCleanupRef.current;
+  };
 
   const ref = useRef<HTMLDivElement>(null);
 
@@ -124,12 +122,14 @@ export const useDdocEditor = ({
 
   useEffect(() => {
     editor?.setEditable(!isPreviewMode);
-  }, [isPreviewMode]);
+  }, [isPreviewMode, editor]);
 
   useEffect(() => {
     if (data && editor) {
-      editor?.commands.setContent(data.editorJSONData);
-      setPluginMetaData(data.metaData);
+      setTimeout(() => {
+        editor?.commands.setContent(data.editorJSONData);
+        setPluginMetaData(data.metaData);
+      });
     }
   }, [data, editor]);
 
@@ -148,6 +148,8 @@ export const useDdocEditor = ({
   useEffect(() => {
     if (enableCollaboration && username) {
       startCollaboration();
+    } else {
+      collaborationCleanupRef.current();
     }
   }, [enableCollaboration]);
 
