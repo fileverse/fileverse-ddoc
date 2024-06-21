@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "1.2.8",
+  "version": "1.2.9",
   "main": "dist/index.umd.js",
   "module": "dist/index.es.js",
   "exports": {
@@ -62,7 +62,6 @@
     "tippy.js": "^6.3.7",
     "usehooks-ts": "^3.1.0",
     "vite-plugin-dts": "^3.6.3",
-    "y-indexeddb": "^9.0.12",
     "y-prosemirror": "^1.2.5",
     "y-webrtc": "^10.3.0",
     "yjs": "^13.6.15"
