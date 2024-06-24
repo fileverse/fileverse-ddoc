@@ -21,15 +21,19 @@ function App() {
     }
   }, [collaborationId]);
 
-  const renderRightSection = ({ editor }: { editor: JSONContent }): JSX.Element => {
+  const renderRightSection = ({
+    editor
+  }: {
+    editor: JSONContent;
+  }): JSX.Element => {
     const publishDoc = () => {
       console.log(editor, title);
     };
     return (
-      <div className="flex gap-2">
+      <div className='flex gap-2'>
         <div>
           <Button
-            variant="ghost"
+            variant='ghost'
             onClick={() => setIsPreviewMode(!isPreviewMode)}
           >
             {isPreviewMode ? <Pencil size={14} /> : <ScanEye size={14} />}{' '}
@@ -48,14 +52,14 @@ function App() {
 
   const renderLeftSection = () => {
     return (
-      <div className="flex items-center gap-4">
+      <div className='flex items-center gap-4'>
         <input
-          className="max-w-[6rem] lg:max-w-xs focus:outline-none bg-[#f8f9fa]"
+          className='max-w-[6rem] lg:max-w-xs focus:outline-none bg-[#f8f9fa]'
           disabled={isPreviewMode}
-          type="text"
-          placeholder="Untitled"
+          type='text'
+          placeholder='Untitled'
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={e => setTitle(e.target.value)}
         />
       </div>
     );
@@ -64,7 +68,6 @@ function App() {
   return (
     <div>
       <DdocEditor
-        data={null}
         enableCollaboration={enableCollaboration}
         toggleCollaboration={() => setEnableCollaboration(false)}
         collaborationId={collaborationId}
@@ -72,7 +75,7 @@ function App() {
         isPreviewMode={isPreviewMode}
         renderToolRightSection={renderRightSection}
         renderToolLeftSection={renderLeftSection}
-        onAutoSave={(data) => console.log(data, title)}
+        onAutoSave={data => console.log(data, title)}
       />
     </div>
   );
