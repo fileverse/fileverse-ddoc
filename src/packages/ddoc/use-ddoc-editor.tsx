@@ -43,6 +43,9 @@ export const useDdocEditor = ({
       editorProps: DdocEditorProps,
       autofocus: 'start',
       onUpdate: _editor => {
+        if (editor?.isEmpty) {
+          return;
+        }
         onChange?.(_editor.editor.getJSON());
       }
     },
@@ -54,6 +57,9 @@ export const useDdocEditor = ({
     editorProps: DdocEditorProps,
     autofocus: 'start',
     onUpdate: _editor => {
+      if (editor?.isEmpty) {
+        return;
+      }
       onChange?.(_editor.editor.getJSON());
     }
   });
