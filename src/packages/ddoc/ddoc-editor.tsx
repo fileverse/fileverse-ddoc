@@ -12,7 +12,7 @@ import BottomToolbar from './components/bottom-toolbar';
 
 const DdocEditor = ({
   isPreviewMode = false,
-  data,
+  initialContent,
   enableCollaboration,
   collaborationId,
   username,
@@ -20,20 +20,22 @@ const DdocEditor = ({
   renderToolRightSection,
   renderToolLeftSection,
   ensProviderUrl,
+  onChange
 }: DdocProps) => {
   const { editor, focusEditor, ref, loading } = useDdocEditor({
     isPreviewMode,
-    data,
+    initialContent,
     enableCollaboration,
     collaborationId,
     ensProviderUrl,
     username,
     onAutoSave,
+    onChange
   });
 
   if (!editor || loading) {
     return (
-      <div className="w-screen h-screen flex flex-col gap-4 justify-center items-center">
+      <div className='w-screen h-screen flex flex-col gap-4 justify-center items-center'>
         <Spinner />
         <p>Loading Editor...</p>
       </div>
@@ -41,15 +43,20 @@ const DdocEditor = ({
   }
 
   return (
-    <div data-cy="single-webpage" className="bg-[#f8f9fa]">
-      <div className="h-full flex flex-col overflow-scroll no-scrollbar">
-        <div className="w-full h-full">
-          <div className="flex items-center w-full h-16 fixed z-10 px-4 bg-[#f8f9fa]">
-            <div className="flex items-center justify-between gap-2 w-full">
-              <div className="grow">{renderToolLeftSection?.({ editor: editor.getJSON() })}</div>
+    <div
+      data-cy='single-webpage'
+      className='bg-[#f8f9fa]'
+    >
+      <div className='h-full flex flex-col overflow-scroll no-scrollbar'>
+        <div className='w-full h-full'>
+          <div className='flex items-center w-full h-16 fixed z-10 px-4 bg-[#f8f9fa]'>
+            <div className='flex items-center justify-between gap-2 w-full'>
+              <div className='grow'>
+                {renderToolLeftSection?.({ editor: editor.getJSON() })}
+              </div>
 
               {!isPreviewMode && (
-                <div className="grow relative hidden xl:block">
+                <div className='grow relative hidden xl:block'>
                   <EditorToolBar editor={editor} />
                 </div>
               )}
@@ -57,17 +64,23 @@ const DdocEditor = ({
             </div>
           </div>
 
-          <main className="h-screen lg:h-full w-full rounded-[8px] flex flex-col justify-start items-center gap-2">
+          <main className='h-screen lg:h-full w-full rounded-[8px] flex flex-col justify-start items-center gap-2'>
             <div
               onClick={focusEditor}
-              className="mt-8 lg:mt-[5rem] w-full flex justify-center relative"
+              className='mt-8 lg:mt-[5rem] w-full flex justify-center relative'
             >
-              <div className="px-4 pt-12 sm:p-[88px] h-screen bg-white overflow-scroll no-scrollbar w-full sm:w-[70%] max-w-[856px]">
-                <div ref={ref} className="w-full h-full">
+              <div className='px-4 pt-12 sm:p-[88px] h-screen bg-white overflow-scroll no-scrollbar w-full sm:w-[70%] max-w-[856px]'>
+                <div
+                  ref={ref}
+                  className='w-full h-full'
+                >
                   {!isPreviewMode && (
                     <div>
                       <EditorBubbleMenu editor={editor} />
-                      <ColumnsMenu editor={editor} appendTo={ref} />
+                      <ColumnsMenu
+                        editor={editor}
+                        appendTo={ref}
+                      />
                     </div>
                   )}
                   <EditingProvider isPreviewMode={isPreviewMode}>
@@ -78,7 +91,7 @@ const DdocEditor = ({
             </div>
           </main>
 
-          <div className="flex xl:hidden items-center w-full h-16 fixed bottom-0 z-10 px-4 bg-[#f8f9fa]">
+          <div className='flex xl:hidden items-center w-full h-16 fixed bottom-0 z-10 px-4 bg-[#f8f9fa]'>
             <BottomToolbar editor={editor} />
           </div>
         </div>
