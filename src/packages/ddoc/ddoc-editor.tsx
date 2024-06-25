@@ -91,9 +91,11 @@ const DdocEditor = ({
             </div>
           </main>
 
-          <div className='flex xl:hidden items-center w-full h-16 fixed bottom-0 z-10 px-4 bg-[#f8f9fa]'>
-            <BottomToolbar editor={editor} />
-          </div>
+          {!isPreviewMode && (
+            <div className='flex xl:hidden items-center w-full h-16 fixed bottom-0 z-10 px-4 bg-[#f8f9fa]'>
+              <BottomToolbar editor={editor} />
+            </div>
+          )}
         </div>
       </div>
     </div>
