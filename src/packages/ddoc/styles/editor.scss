@@ -283,15 +283,10 @@
 }
 .ProseMirror ul,
 .ProseMirror ol {
-  padding: 0 1rem;
-  margin: 0.5rem;
+  margin-left: 1rem;
   text-wrap: text-wrap;
   word-break: break-all;
   width: inherit;
-}
-.ProseMirror li {
-  padding: 0 1rem;
-  margin: 0.5rem;
 }
 .ProseMirror h1,
 .ProseMirror h2,
