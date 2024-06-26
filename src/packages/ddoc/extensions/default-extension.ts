@@ -128,7 +128,7 @@ export const defaultExtensions = [
   Color,
   TaskList.configure({
     HTMLAttributes: {
-      class: 'not-prose space-y-4 ml-2'
+      class: 'not-prose space-y-4 !ml-0'
     }
   }),
   TaskItem.configure({

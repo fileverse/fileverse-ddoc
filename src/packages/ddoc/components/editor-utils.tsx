@@ -415,7 +415,7 @@ export const TextHighlighter = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto absolute gap-2 top-[50px] flex flex-wrap left-[20%] max-h-[330px] w-[20.5rem] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all"
+      className="z-50 h-auto absolute gap-2 top-14 flex flex-wrap left-[20%] max-h-[330px] w-[20.5rem] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all"
     >
       <Ban
         className="cursor-pointer"
@@ -468,7 +468,7 @@ export const EditorFontFamily = ({
     <div
       ref={elementRef}
       className={cn(
-        'z-50 h-auto absolute top-[50px] left-0 max-h-[330px] w-48 overflow-y-auto scroll-smooth bg-white px-1 py-2 shadow-lg transition-all animate-in fade-in slide-in-from-top-1'
+        'z-50 h-auto absolute top-14 left-0 max-h-[330px] w-48 overflow-y-auto scroll-smooth bg-white px-1 py-2 shadow-lg transition-all rounded animate-in fade-in slide-in-from-top-1'
       )}
     >
       {fonts.map((font) => (
@@ -711,7 +711,7 @@ export const TextColor = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto absolute gap-2 top-[50px] flex flex-wrap left-[100px] max-h-[330px] w-[20.5rem] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all"
+      className="z-50 h-auto absolute gap-2 top-14 flex flex-wrap left-[100px] max-h-[330px] w-[20.5rem] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all"
     >
       <Ban
         className="cursor-pointer"
@@ -1100,7 +1100,7 @@ export const TextColorPicker = ({
                   }}
                   key={color.color}
                   className={cn(
-                    'w-6 h-6 border-[0.25px] border-black/[0.025] rounded-full flex justify-center items-center cursor-pointer transition',
+                    'w-6 h-6 mb-1 drop-shadow rounded-full flex justify-center items-center cursor-pointer transition',
                     color.code
                   )}
                 >
