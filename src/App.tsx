@@ -69,7 +69,6 @@ function App() {
     <div>
       <DdocEditor
         enableCollaboration={enableCollaboration}
-        toggleCollaboration={() => setEnableCollaboration(false)}
         collaborationId={collaborationId}
         username={username}
         isPreviewMode={isPreviewMode}

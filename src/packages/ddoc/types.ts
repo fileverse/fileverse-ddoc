@@ -24,7 +24,6 @@ export interface DdocProps {
   enableCollaboration?: boolean;
   collaborationId?: string;
   isPreviewMode: boolean;
-  toggleCollaboration?: (flag: boolean) => void;
   initialContent?: JSONContent | null;
   onAutoSave?: (data: Data) => void;
   ensProviderUrl?: string;
