@@ -1,24 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Node, mergeAttributes } from '@tiptap/core'
 import { ReactNodeViewRenderer } from '@tiptap/react'
-
 import { DBlockNodeView } from './dblock-node-view'
-import { Node as ProsemirrorNode } from 'prosemirror-model'
 export interface DBlockOptions {
   HTMLAttributes: Record<string, any>
 }
 
-export type ListTypes = 'bulletList' | 'orderedList' | 'taskList'
-
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     dBlock: {
-      /**
-       * Toggle a dBlock
-       */
       setDBlock: (position?: number) => ReturnType
-      mergeDBlocksIntoList: (listType: ListTypes) => ReturnType
-      splitListToDBlocks: (listType: ListTypes) => ReturnType
     }
   }
 }
@@ -79,79 +70,8 @@ export const DBlock = Node.create<DBlockOptions>({
             })
             .focus(pos + 2)
             .run()
-        },
-
-      // TODO: WIP
-      mergeDBlocksIntoList:
-        (listType: ListTypes) =>
-        ({ state, dispatch }) => {
-          if (!dispatch) {
-            throw new Error('Dispatch function is not provided.')
-          }
-
-          const { from, to } = state.selection
-
-          let tr = state.tr
-
-          const listItemNodes: ProsemirrorNode[] = []
-
-          state.doc.nodesBetween(from, to, node => {
-            if (node.type.name === this.name) {
-              const listItemNode = state.schema.nodes.listItem.create(
-                null,
-                node.content
-              )
-              if (listItemNode) {
-                listItemNodes.push(listItemNode)
-              }
-            }
-          })
-
-          if (listItemNodes.length === 0) return false
-
-          const listNode = state.schema.nodes[listType].create(
-            null,
-            listItemNodes
-          )
-
-          if (!listNode) return false
-
-          tr = tr.replaceRangeWith(from, to, listNode)
-
-          dispatch(tr)
-
-          return true
-        },
-
-      // TODO: WIP
-      splitListToDBlocks:
-        (listType: ListTypes) =>
-        ({ state, dispatch }) => {
-          if (!dispatch) {
-            throw new Error('Dispatch function is not provided.')
-          }
-
-          const { from, to } = state.selection
-          let tr = state.tr
-
-          state.doc.nodesBetween(from, to, (node, pos) => {
-            if (node.type.name === listType) {
-              const dBlockNode = state.schema.nodes[this.name].create(
-                null,
-                node.content
-              )
-              tr = tr.insert(pos, dBlockNode)
-            }
-          })
-
-          dispatch(tr)
-          return true
         }
     }
-  },
-
-  addNodeView() {
-    return ReactNodeViewRenderer(DBlockNodeView)
   },
 
   addKeyboardShortcuts() {
@@ -187,7 +107,6 @@ export const DBlock = Node.create<DBlockOptions>({
         const content = doc.slice(from, currentActiveNodeTo)?.toJSON().content
 
         try {
-          // If the current active node's type is "codeBlock", continue as a break line within the code block
           if (currentActiveNodeType === 'codeBlock') {
             return editor
               .chain()
@@ -228,5 +147,9 @@ export const DBlock = Node.create<DBlockOptions>({
         }
       }
     }
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(DBlockNodeView)
   }
 })
