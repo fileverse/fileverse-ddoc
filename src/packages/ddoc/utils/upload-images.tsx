@@ -4,7 +4,6 @@
 
 import { EditorState, Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet, EditorView } from '@tiptap/pm/view';
-import { toast } from 'react-toastify';
 
 const uploadKey = new PluginKey('upload-image');
 
@@ -64,13 +63,11 @@ export function startImageUpload(file: File, view: EditorView, pos: number) {
   // check if the file is an image
   if (!file.type.includes('image/')) {
     console.log('file is not an image');
-    toast.error('File is not an image');
     return;
 
     // check if the file size is less than 1MB
   } else if (file.size > 1024 * 1024) {
     console.log('failed');
-    toast.error('Image size should be less than 1MB');
     return;
   }
 
@@ -135,7 +132,6 @@ export const uploadFn = async (image: File) => {
   if (image.size > 1024 * 1024) {
     reader.abort();
     console.log('should be less than 1 mb');
-    toast.error('Image size should be less than 1MB');
     throw new Error('Image too large');
   }
 
