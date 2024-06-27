@@ -272,9 +272,9 @@ export const ResizableMediaNodeView = ({
             />
 
             <section className="media-control-buttons opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex">
-              {resizableMediaActions.map((btn) => {
+              {resizableMediaActions.map((btn, index) => {
                 return (
-                  <div className="tooltip" data-tip={btn.tooltip}>
+                  <div key={index} className="tooltip" data-tip={btn.tooltip}>
                     <button
                       type="button"
                       className={clx(

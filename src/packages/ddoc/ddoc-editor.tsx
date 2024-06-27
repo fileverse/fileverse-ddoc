@@ -9,8 +9,9 @@ import './styles/editor.scss';
 import 'tippy.js/animations/shift-toward-subtle.css';
 import { useDdocEditor } from './use-ddoc-editor';
 import BottomToolbar from './components/bottom-toolbar';
+import { forwardRef, useImperativeHandle } from 'react';
 
-const DdocEditor = ({
+const DdocEditor = forwardRef(({
   isPreviewMode = false,
   initialContent,
   enableCollaboration,
@@ -21,8 +22,8 @@ const DdocEditor = ({
   renderToolLeftSection,
   ensProviderUrl,
   onChange
-}: DdocProps) => {
-  const { editor, focusEditor, ref, loading } = useDdocEditor({
+}: DdocProps, ref) => {
+  const { editor, focusEditor, ref: editorRef, loading } = useDdocEditor({
     isPreviewMode,
     initialContent,
     enableCollaboration,
@@ -32,6 +33,10 @@ const DdocEditor = ({
     onAutoSave,
     onChange
   });
+
+  useImperativeHandle(ref, () => ({
+    getEditor: () => editor
+  }), [editor]);
 
   if (!editor || loading) {
     return (
@@ -71,7 +76,7 @@ const DdocEditor = ({
             >
               <div className='px-4 pt-12 sm:p-[88px] h-screen bg-white overflow-scroll no-scrollbar w-full sm:w-[70%] max-w-[856px]'>
                 <div
-                  ref={ref}
+                  ref={editorRef}
                   className='w-full h-full'
                 >
                   {!isPreviewMode && (
@@ -79,7 +84,7 @@ const DdocEditor = ({
                       <EditorBubbleMenu editor={editor} />
                       <ColumnsMenu
                         editor={editor}
-                        appendTo={ref}
+                        appendTo={editorRef}
                       />
                     </div>
                   )}
@@ -100,6 +105,6 @@ const DdocEditor = ({
       </div>
     </div>
   );
-};
+});
 
 export default DdocEditor;
