@@ -8,13 +8,13 @@ export type SurfaceProps = HTMLProps<HTMLDivElement> & {
 
 export const Surface = forwardRef<HTMLDivElement, SurfaceProps>(
   (
-    { children, className, withShadow = true, withBorder = true, ...props },
+    { children, className, withShadow = true, withBorder = false, ...props },
     ref
   ) => {
     const surfaceClass = clx(
       className,
-      'bg-white rounded-md',
-      withShadow ? 'shadow-md' : '',
+      'bg-white rounded',
+      withShadow ? 'shadow-lg' : '',
       withBorder ? 'border border-neutral-200' : ''
     )
 

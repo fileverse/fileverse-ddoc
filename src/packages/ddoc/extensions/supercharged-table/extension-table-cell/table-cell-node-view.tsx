@@ -190,12 +190,12 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
           trigger="click"
           interactive
           animation="shift-toward-subtle"
-          placement="right-start"
+          placement="top-start"
           content={
             <article className="dropdown" contentEditable={false}>
               <ul
                 tabIndex={0}
-                className="dropdown-content fixed menu menu-compact p-2 shadow bg-base-100 rounded-box w-56"
+                className="dropdown-content fixed top-8 menu menu-compact p-2 shadow bg-base-100 rounded-box w-56"
                 style={gimmeDropdownStyles()}
               >
                 {cellButtonsConfig.map((btn) => {
@@ -222,7 +222,7 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
             className={clx('trigger-button', { hidden: isPreviewMode })}
             contentEditable={false}
           >
-            <GripHorizontal fontSize="small" />
+            <GripHorizontal size={20} />
           </label>
         </Tippy>
       )}

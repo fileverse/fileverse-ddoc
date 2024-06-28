@@ -3,7 +3,7 @@ import { useCallback } from 'react'
 import { sticky } from 'tippy.js'
 import uuid from 'react-uuid'
 import { ColumnLayout } from '../columns'
-import { PanelLeft, PanelRight, Columns } from 'lucide-react'
+import { PanelLeft, PanelRight, Columns, Trash2 } from 'lucide-react'
 import getRenderContainer from '../../../utils/get-render-container'
 import { Toolbar } from '../../../common/toolbar'
 import { MenuProps } from '../../../common/types'
@@ -35,6 +35,10 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
     editor.chain().focus().setLayout(ColumnLayout.AlignCenter).run()
   }, [editor])
 
+  const onRemoveColumn = useCallback(() => {
+    editor.chain().focus().deleteNode('columns').run()
+  }, [editor])
+
   return (
     <BaseBubbleMenu
       editor={editor}
@@ -61,6 +65,7 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
           active={editor.isActive('columns', {
             layout: ColumnLayout.AlignLeft,
           })}
+          activeClassname='bg-yellow-300 hover:brightness-90'
           onClick={onColumnLeft}
         >
           <PanelLeft size={20} />
@@ -70,6 +75,7 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
           active={editor.isActive('columns', {
             layout: ColumnLayout.AlignCenter,
           })}
+          activeClassname='bg-yellow-300 hover:brightness-90'
           onClick={onColumnCenter}
         >
           <Columns size={20} />
@@ -79,9 +85,16 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
           active={editor.isActive('columns', {
             layout: ColumnLayout.AlignRight,
           })}
+          activeClassname='bg-yellow-300 hover:brightness-90'
           onClick={onColumnRight}
         >
           <PanelRight size={20} />
+        </Toolbar.Button>
+        <Toolbar.Button
+          tooltip="Remove column"
+          onClick={onRemoveColumn}
+        >
+          <Trash2 size={20} />
         </Toolbar.Button>
       </Toolbar.Wrapper>
     </BaseBubbleMenu>
