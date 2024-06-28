@@ -208,14 +208,12 @@ export const useEditorToolbar = ({ editor }: { editor: Editor }) => {
       onClick: () => editor?.chain().focus().toggleBold().run(),
       isActive: editor?.isActive('bold'),
     },
-
     {
       icon: <Italic size={20} />,
       title: 'Italic',
       onClick: () => editor?.chain().focus().toggleItalic().run(),
       isActive: editor?.isActive('italic'),
     },
-
     {
       icon: <Underline size={20} />,
       title: 'Underlined',
@@ -300,6 +298,12 @@ export const useEditorToolbar = ({ editor }: { editor: Editor }) => {
       title: 'Code',
       onClick: () => editor?.chain().focus().toggleCodeBlock().run(),
       isActive: editor?.isActive('codeBlock'),
+    },
+    {
+      icon: <Table size={20} />,
+      title: 'Add table',
+      onClick: () => editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
+      isActive: toolVisibilty === IEditorTool.TEXT_COLOR,
     },
   ];
 

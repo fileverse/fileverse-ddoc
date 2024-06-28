@@ -145,6 +145,50 @@ export const DBlock = Node.create<DBlockOptions>({
           console.error(`Error inserting content into dBlock node: ${error}`)
           return false
         }
+      },
+      Backspace: ({ editor }) => {
+        const { selection } = editor.state
+        const { $from } = selection
+        const pos = $from.pos
+        const nodeBefore = $from.nodeBefore
+
+        // console.log('Backspace triggered', { pos, nodeBefore })
+
+        if ($from.parent.content.size === 0) {
+          if (nodeBefore) {
+            const deleteFrom = pos - nodeBefore.nodeSize
+            const deleteTo = pos
+
+            const result = editor
+              .chain()
+              .focus()
+              .deleteRange({ from: deleteFrom, to: deleteTo })
+              .run()
+
+            // console.log('Deletion result', result)
+
+            if (result) {
+              return true
+            }
+          } else if ($from.depth > 1) {
+            // Handle nested nodes, like being at the start of a list item
+            // This is a simplified example, adjust based on your document structure
+            const parentPos = $from.before($from.depth)
+            const result = editor
+              .chain()
+              .focus()
+              .deleteRange({ from: parentPos - 1, to: pos })
+              .run()
+
+            // console.log('Nested deletion result', result)
+
+            if (result) {
+              return true
+            }
+          }
+        }
+
+        return false
       }
     }
   },

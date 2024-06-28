@@ -17,11 +17,11 @@ export const ActionButtonNodeView = ({
   const renderIcon = () => {
     switch (node.attrs.data) {
       case 'twitter':
-        return <Twitter />;
+        return <Twitter size={20} />;
       case 'iframe':
-        return <Youtube />;
+        return <Youtube size={20} />;
       default:
-        return <Telescope />;
+        return <Telescope size={20} />;
     }
   };
 
@@ -54,14 +54,14 @@ export const ActionButtonNodeView = ({
         case /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/.test(
           inputValue
         ): {
-          const matches = inputValue.match(
-            /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/
-          );
-          if (matches && matches.length > 0) {
-            formattedUrl = `https://www.youtube.com/embed/${matches[1]}`;
+            const matches = inputValue.match(
+              /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/
+            );
+            if (matches && matches.length > 0) {
+              formattedUrl = `https://www.youtube.com/embed/${matches[1]}`;
+            }
+            break;
           }
-          break;
-        }
         case /vimeo\.com\/([a-zA-Z0-9-_]+)/.test(inputValue): {
           const matches = inputValue.match(/vimeo\.com\/([a-zA-Z0-9-_]+)/);
           if (matches && matches.length > 0) {
@@ -136,6 +136,33 @@ export const ActionButtonNodeView = ({
   const debouncedHandleSave = debounce(handleSave, 500);
 
   useEffect(() => {
+    const handleBackspace = (event: KeyboardEvent) => {
+      if (event.key === 'Backspace' && inputValue === '') {
+        const pos = getPos();
+        const to = pos + node.nodeSize;
+
+        // Check if the node is actually empty or if it's just the input value that's empty
+        if (node.content.size === 0 || node.textContent === '') {
+          editor
+            ?.chain()
+            .focus(pos)
+            .deleteRange({ from: pos, to })
+            .run();
+          event.preventDefault(); // Prevent the default backspace behavior
+        }
+      }
+    };
+
+    // Add the event listener
+    document.addEventListener('keydown', handleBackspace);
+
+    // Cleanup function to remove the event listener
+    return () => {
+      document.removeEventListener('keydown', handleBackspace);
+    };
+  }, [inputValue, editor, getPos, node]);
+
+  useEffect(() => {
     if (inputValue) {
       debouncedHandleSave();
     }
@@ -158,7 +185,7 @@ export const ActionButtonNodeView = ({
     >
       {!isPreview && (
         <div className="relative w-full">
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-[#A1AAB1]">
             {renderIcon()}
           </div>
           <input
@@ -167,7 +194,7 @@ export const ActionButtonNodeView = ({
             placeholder={renderTitle()}
             onChange={(e) => setInputValue(e.target.value)}
             onClick={(e) => e.stopPropagation()}
-            className="bg-stone-200 p-3 pl-10 rounded-xl w-full hover:bg-stone-300 cursor-pointer transition-all ease-in-out"
+            className="rounded bg-[#f2f2f2] p-3 pl-10 w-full cursor-pointer transition-all ease-in-out text-sm"
           />
         </div>
       )}

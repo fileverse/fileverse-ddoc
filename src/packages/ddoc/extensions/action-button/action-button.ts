@@ -31,17 +31,15 @@ export const actionButton = Node.create<ActionButtonOptions>({
 
   addOptions() {
     return {
-      HTMLAttributes: {
-        class: 'rounded-lg bg-stone-500',
-      },
+      HTMLAttributes: {}
     }
   },
 
   addAttributes() {
     return {
       data: {
-        default: null,
-      },
+        default: null
+      }
     }
   },
 
@@ -52,8 +50,8 @@ export const actionButton = Node.create<ActionButtonOptions>({
   parseHTML() {
     return [
       {
-        tag: 'div[data-action-node]',
-      },
+        tag: 'div[data-action-node]'
+      }
     ]
   },
 
@@ -61,23 +59,23 @@ export const actionButton = Node.create<ActionButtonOptions>({
     return [
       'div',
       mergeAttributes(HTMLAttributes, { 'data-action-node': '' }),
-      0,
+      0
     ]
   },
 
   addCommands() {
     return {
       setActionButton:
-        (option) =>
+        option =>
         ({ commands }) => {
           return commands.insertContent({
             type: this.name,
             attrs: {
-              data: option,
+              data: option
             },
-            content: [],
+            content: []
           })
-        },
+        }
     }
-  },
+  }
 })
