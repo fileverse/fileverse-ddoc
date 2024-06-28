@@ -306,7 +306,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
       </section>
 
       <NodeViewContent
-        className={clx('node-view-content w-full', {
+        className={clx('node-view-content w-full break-all', {
           'is-table min-w-auto': isTable,
         })}
       />
