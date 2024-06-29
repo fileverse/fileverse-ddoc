@@ -14,10 +14,17 @@ import { IEditorTool } from '../hooks/use-visibility';
 import { ChevronDown } from 'lucide-react';
 import cn from 'classnames';
 
-const TiptapToolBar = ({ editor }: { editor: Editor }) => {
+const TiptapToolBar = ({
+  editor,
+  uploadToIpfs,
+}: {
+  editor: Editor;
+  uploadToIpfs: (f: File) => Promise<string>;
+}) => {
   const { toolRef, toolVisibilty, setToolVisibility, toolbar } =
     useEditorToolbar({
       editor: editor,
+      uploadToIpfs,
     });
   return (
     <div className="w-fit bg-transparent px-4 items-center h-16 flex gap-1 justify-center relative">
@@ -27,7 +34,7 @@ const TiptapToolBar = ({ editor }: { editor: Editor }) => {
       >
         <span className="text-sm">
           {fonts.find((font) =>
-            editor?.isActive('textStyle', { fontFamily: font.value })
+            editor?.isActive('textStyle', { fontFamily: font.value }),
           )?.title || 'Font'}
         </span>
         <ChevronDown size={16} />
@@ -41,10 +48,10 @@ const TiptapToolBar = ({ editor }: { editor: Editor }) => {
           {editor?.isActive('heading', { level: 1 })
             ? 'Heading 1'
             : editor?.isActive('heading', { level: 2 })
-              ? 'Heading 2'
-              : editor?.isActive('heading', { level: 3 })
-                ? 'Heading 3'
-                : 'Text'}
+            ? 'Heading 2'
+            : editor?.isActive('heading', { level: 3 })
+            ? 'Heading 3'
+            : 'Text'}
         </span>
         <ChevronDown size={16} />
       </button>
@@ -61,7 +68,9 @@ const TiptapToolBar = ({ editor }: { editor: Editor }) => {
                 onClick={() => tool.onClick()}
                 className={cn(
                   'rounded w-8 h-8 p-1 flex cursor-pointer justify-center items-center transition',
-                  tool.isActive ? 'bg-yellow-300 hover:brightness-90' : 'hover:bg-[#f2f2f2]'
+                  tool.isActive
+                    ? 'bg-yellow-300 hover:brightness-90'
+                    : 'hover:bg-[#f2f2f2]',
                 )}
               >
                 {typeof tool.icon === 'string' ? (
@@ -73,7 +82,9 @@ const TiptapToolBar = ({ editor }: { editor: Editor }) => {
             </div>
           );
         } else {
-          return <div key={_index} className="w-[2px] h-4 bg-gray-200 mx-2"></div>;
+          return (
+            <div key={_index} className="w-[2px] h-4 bg-gray-200 mx-2"></div>
+          );
         }
       })}
       {toolVisibilty === IEditorTool.FONT_FAMILY && (

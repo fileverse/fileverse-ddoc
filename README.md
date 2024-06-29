@@ -28,18 +28,19 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 
 ## Properties
 
-| Property                                       | Type                        | Description                                                                                           |
-| ---------------------------------------------- | --------------------------- | ----------------------------------------------------------------------------------------------------- |
-| `isPreviewMode`                                | `boolean`                   | Indicates whether the page is in preview mode or not.                                                 |
-| `data` (optional)                              | `Data`                      | Optional property holding data related to the page.                                                   |
-| `enableCollaboration` (optional)               | `boolean`                   | Optional property to enable collaboration                                                             |
-| `collaborationId` (optional)                   | `string`                    | When using enableCollaboration, you need to provide collaborationId, it can be uuid of doc            |
-| `onAutoSave` (optional)                        | `(flag:boolean) => void`    | Function which expose the current editor state every 10 seconds                                       |
-| `renderToolRightSection` (optional)            | `({editor}) => JSX.Element` | Function that render the right section of the toolbar. it calls the function with the editor instance |
-| `renderToolLeftSection` (optional)             | `({editor}) => JSX.Element` | Accept a react component                                                                              |
-| `username` (required when using collaboration) | `boolean`                   | Takes a username which can be used by collaboration cursor                                            |
-| `ensProviderUrl`                               | `string`                    | Takes a url                                                                                           |
-| `ref` (optional)                               | `any`                       | Gets editor instance                                                                                  |
+| Property                                       | Type                              | Description                                                                                           |
+| ---------------------------------------------- | --------------------------------- | ----------------------------------------------------------------------------------------------------- |
+| `isPreviewMode`                                | `boolean`                         | Indicates whether the page is in preview mode or not.                                                 |
+| `handleImageUploadToIpfs`                            | `(file: File) => Promise<string>` | Required function to upload ddoc editor's image on IPFS                                               |
+| `data` (optional)                              | `Data`                            | Optional property holding data related to the page.                                                   |
+| `enableCollaboration` (optional)               | `boolean`                         | Optional property to enable collaboration                                                             |
+| `collaborationId` (optional)                   | `string`                          | When using enableCollaboration, you need to provide collaborationId, it can be uuid of doc            |
+| `onAutoSave` (optional)                        | `(flag:boolean) => void`          | Function which expose the current editor state every 10 seconds                                       |
+| `renderToolRightSection` (optional)            | `({editor}) => JSX.Element`       | Function that render the right section of the toolbar. it calls the function with the editor instance |
+| `renderToolLeftSection` (optional)             | `({editor}) => JSX.Element`       | Accept a react component                                                                              |
+| `username` (required when using collaboration) | `boolean`                         | Takes a username which can be used by collaboration cursor                                            |
+| `ensProviderUrl`                               | `string`                          | Takes a url                                                                                           |
+| `ref` (optional)                               | `any`                             | Gets editor instance                                                                                  |
 
 ## Data Interface
 

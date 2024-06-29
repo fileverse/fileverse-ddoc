@@ -24,6 +24,7 @@ const DdocEditor = forwardRef(
       renderToolLeftSection,
       ensProviderUrl,
       onChange,
+      handleImageUploadToIpfs,
       onCollaboratorChange
     }: DdocProps,
     ref
@@ -79,7 +80,10 @@ const DdocEditor = forwardRef(
 
                 {!isPreviewMode && (
                   <div className='grow relative hidden xl:block'>
-                    <EditorToolBar editor={editor} />
+                    <EditorToolBar
+                      uploadToIpfs={handleImageUploadToIpfs}
+                      editor={editor}
+                    />
                   </div>
                 )}
                 {renderToolRightSection?.({ editor: editor.getJSON() })}
@@ -115,7 +119,10 @@ const DdocEditor = forwardRef(
 
             {!isPreviewMode && (
               <div className='flex xl:hidden items-center w-full h-16 fixed bottom-0 z-10 px-4 bg-[#f8f9fa]'>
-                <BottomToolbar editor={editor} />
+                <BottomToolbar
+                  uploadToIpfs={handleImageUploadToIpfs}
+                  editor={editor}
+                />
               </div>
             )}
           </div>

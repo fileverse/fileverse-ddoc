@@ -1,5 +1,9 @@
-import { useState } from 'react'
-import { TextColorPicker, TextFormatingPopup, useEditorToolbar } from './editor-utils';
+import { useState } from 'react';
+import {
+  TextColorPicker,
+  TextFormatingPopup,
+  useEditorToolbar,
+} from './editor-utils';
 import { Editor } from '@tiptap/react';
 import { IEditorTool } from '../hooks/use-visibility';
 import { Drawer, DrawerTrigger } from '../common/drawer';
@@ -7,11 +11,17 @@ import DynamicModal from './dynamic-modal';
 import { TextField } from '../common/textfield';
 import cn from 'classnames';
 
-const BottomToolbar = ({ editor }: { editor: Editor }) => {
-  const { toolVisibilty, setToolVisibility, bottomToolbar } =
-    useEditorToolbar({
-      editor: editor,
-    });
+const BottomToolbar = ({
+  editor,
+  uploadToIpfs,
+}: {
+  editor: Editor;
+  uploadToIpfs: (f: File) => Promise<string>;
+}) => {
+  const { toolVisibilty, setToolVisibility, bottomToolbar } = useEditorToolbar({
+    editor: editor,
+    uploadToIpfs,
+  });
 
   const [url, setUrl] = useState('');
   const [linkText, setLinkText] = useState('');
@@ -41,7 +51,7 @@ const BottomToolbar = ({ editor }: { editor: Editor }) => {
     try {
       if (
         finalUrl.match(
-          /^((http|https):\/\/)?([w|W]{3}\.)+[a-zA-Z0-9\-\.]{3,}\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?$/
+          /^((http|https):\/\/)?([w|W]{3}\.)+[a-zA-Z0-9\-\.]{3,}\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?$/,
         )
       ) {
         editor
@@ -83,25 +93,27 @@ const BottomToolbar = ({ editor }: { editor: Editor }) => {
     const { from, to } = editor.state.selection;
     const text = editor.state.doc.textBetween(from, to);
     return text;
-  }
+  };
 
   return (
     <Drawer>
-      <div className='flex w-full justify-between sm:justify-evenly'>
+      <div className="flex w-full justify-between sm:justify-evenly">
         {bottomToolbar.map((tool) => {
           if (tool) {
             return (
               <div key={tool.title} className="flex items-center">
-                {tool.title === 'Text formating' || tool.title === 'Text color' ? (
+                {tool.title === 'Text formating' ||
+                tool.title === 'Text color' ? (
                   <DrawerTrigger asChild>
-                    <button onClick={() => tool.onClick()}>
-                      {tool.icon}
-                    </button>
+                    <button onClick={() => tool.onClick()}>{tool.icon}</button>
                   </DrawerTrigger>
                 ) : (
                   <button
-                    className={cn("flex items-center rounded px-2 py-1 text-black transition")}
-                    onClick={() => tool.onClick()}>
+                    className={cn(
+                      'flex items-center rounded px-2 py-1 text-black transition',
+                    )}
+                    onClick={() => tool.onClick()}
+                  >
                     {tool.icon}
                   </button>
                 )}
@@ -134,9 +146,7 @@ const BottomToolbar = ({ editor }: { editor: Editor }) => {
                 placeholder="Link text"
                 className="w-full"
                 defaultValue={getSelectedText(editor)}
-                onChange={(e) =>
-                  setLinkText(e.target.value)
-                }
+                onChange={(e) => setLinkText(e.target.value)}
               />
               <TextField
                 label="Link"
@@ -166,7 +176,7 @@ const BottomToolbar = ({ editor }: { editor: Editor }) => {
         />
       )}
     </Drawer>
-  )
-}
+  );
+};
 
-export default BottomToolbar
+export default BottomToolbar;

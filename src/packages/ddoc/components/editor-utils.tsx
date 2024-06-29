@@ -33,7 +33,12 @@ import { startImageUpload } from '../utils/upload-images';
 import cn from 'classnames';
 import UtilsModal from './utils-modal';
 import { DialogTrigger } from '../common/dialog';
-import { Carousel, CarouselContent, CarouselIndicator, CarouselItem } from '../common/carousel';
+import {
+  Carousel,
+  CarouselContent,
+  CarouselIndicator,
+  CarouselItem,
+} from '../common/carousel';
 import { TextField } from '../common/textfield';
 import { Button } from '../common/button';
 
@@ -182,7 +187,13 @@ export const colors = [
   { color: '#6A5ACD', code: 'bg-[#6A5ACD]' },
 ];
 
-export const useEditorToolbar = ({ editor }: { editor: Editor }) => {
+export const useEditorToolbar = ({
+  editor,
+  uploadToIpfs,
+}: {
+  editor: Editor;
+  uploadToIpfs: (file: File) => Promise<string>;
+}) => {
   const {
     ref: toolRef,
     toolVisibilty,
@@ -280,7 +291,7 @@ export const useEditorToolbar = ({ editor }: { editor: Editor }) => {
           if (input.files?.length) {
             const file = input.files[0];
             const pos = editor.view.state.selection.from;
-            startImageUpload(file, editor.view, pos);
+            startImageUpload(file, editor.view, pos, uploadToIpfs);
           }
         };
         input.click();
@@ -302,7 +313,12 @@ export const useEditorToolbar = ({ editor }: { editor: Editor }) => {
     {
       icon: <Table size={20} />,
       title: 'Add table',
-      onClick: () => editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
+      onClick: () =>
+        editor
+          ?.chain()
+          .focus()
+          .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+          .run(),
       isActive: toolVisibilty === IEditorTool.TEXT_COLOR,
     },
   ];
@@ -323,7 +339,12 @@ export const useEditorToolbar = ({ editor }: { editor: Editor }) => {
     {
       icon: <Table size={24} />,
       title: 'Add table',
-      onClick: () => editor?.chain().focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run(),
+      onClick: () =>
+        editor
+          ?.chain()
+          .focus()
+          .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+          .run(),
       isActive: toolVisibilty === IEditorTool.TEXT_COLOR,
     },
     {
@@ -348,7 +369,7 @@ export const useEditorToolbar = ({ editor }: { editor: Editor }) => {
           if (input.files?.length) {
             const file = input.files[0];
             const pos = editor.view.state.selection.from;
-            startImageUpload(file, editor.view, pos);
+            startImageUpload(file, editor.view, pos, uploadToIpfs);
           }
         };
         input.click();
@@ -441,7 +462,7 @@ export const TextHighlighter = ({
           key={color.color}
           className={cn(
             'w-6 drop-shadow rounded-full flex items-center justify-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-6',
-            color.code
+            color.code,
           )}
         >
           <Check
@@ -451,7 +472,7 @@ export const TextHighlighter = ({
                 color: color.color,
               })
                 ? 'visible'
-                : 'invisible'
+                : 'invisible',
             )}
           />
         </div>
@@ -472,7 +493,7 @@ export const EditorFontFamily = ({
     <div
       ref={elementRef}
       className={cn(
-        'z-50 h-auto absolute top-14 left-0 max-h-[330px] w-48 overflow-y-auto scroll-smooth bg-white px-1 py-2 shadow-lg transition-all rounded animate-in fade-in slide-in-from-top-1'
+        'z-50 h-auto absolute top-14 left-0 max-h-[330px] w-48 overflow-y-auto scroll-smooth bg-white px-1 py-2 shadow-lg transition-all rounded animate-in fade-in slide-in-from-top-1',
       )}
     >
       {fonts.map((font) => (
@@ -489,7 +510,7 @@ export const EditorFontFamily = ({
             'flex w-full items-center space-x-2 rounded px-2 py-1 text-left text-sm text-black transition',
             editor.isActive('textStyle', { fontFamily: font.value })
               ? 'bg-yellow-300 hover:brightness-90'
-              : 'hover:bg-[#f2f2f2]'
+              : 'hover:bg-[#f2f2f2]',
           )}
         >
           <p className="font-medium">{font.title}</p>
@@ -521,7 +542,7 @@ export const EditorAlignment = ({
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'left' })
             ? 'bg-yellow-300 hover:brightness-90'
-            : 'hover:bg-[#f2f2f2]'
+            : 'hover:bg-[#f2f2f2]',
         )}
       >
         <AlignLeft />
@@ -535,7 +556,7 @@ export const EditorAlignment = ({
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'center' })
             ? 'bg-yellow-300 hover:brightness-90'
-            : 'hover:bg-[#f2f2f2]'
+            : 'hover:bg-[#f2f2f2]',
         )}
       >
         <AlignCenter />
@@ -549,7 +570,7 @@ export const EditorAlignment = ({
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'right' })
             ? 'bg-yellow-300 hover:brightness-90'
-            : 'hover:bg-[#f2f2f2]'
+            : 'hover:bg-[#f2f2f2]',
         )}
       >
         <AlignRight />
@@ -570,7 +591,7 @@ export const EditorList = ({
     <div
       ref={elementRef}
       className={cn(
-        'z-50 h-auto absolute gap-2 top-[50px] right-[30%] flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all'
+        'z-50 h-auto absolute gap-2 top-[50px] right-[30%] flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all',
       )}
     >
       <div
@@ -582,8 +603,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${
+            editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <List size={20} />
         </span>
@@ -598,8 +620,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${
+            editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <ListOrdered size={20} />
         </span>
@@ -614,8 +637,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${
+            editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <ListChecks size={20} />
         </span>
@@ -659,7 +683,7 @@ export const LinkPopup = ({
     try {
       if (
         finalUrl.match(
-          /^((http|https):\/\/)?([w|W]{3}\.)+[a-zA-Z0-9\-\.]{3,}\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?$/
+          /^((http|https):\/\/)?([w|W]{3}\.)+[a-zA-Z0-9\-\.]{3,}\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?$/,
         )
       ) {
         editor
@@ -696,7 +720,11 @@ export const LinkPopup = ({
         value={url}
       />
       <div className="h-full flex items-center">
-        <Button variant='secondary' onClick={() => apply()} className="min-w-fit h-[36px]">
+        <Button
+          variant="secondary"
+          onClick={() => apply()}
+          className="min-w-fit h-[36px]"
+        >
           Apply
         </Button>
       </div>
@@ -733,7 +761,7 @@ export const TextColor = ({
           key={color.color}
           className={cn(
             'w-6 drop-shadow rounded-full flex justify-center items-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-6',
-            color.code
+            color.code,
           )}
         >
           <Check
@@ -743,7 +771,7 @@ export const TextColor = ({
                 color: color.color,
               })
                 ? 'visible'
-                : 'invisible'
+                : 'invisible',
             )}
           />
         </div>
@@ -806,7 +834,7 @@ export const TextHeading = ({
       ref={elementRef}
       className={cn(
         'absolute top-[50px] z-50 mt-1 flex w-48 flex-col overflow-hidden rounded bg-white p-1 shadow-lg animate-in fade-in slide-in-from-top-1',
-        'left-0'
+        'left-0',
       )}
     >
       {headings.map((heading) => (
@@ -821,7 +849,7 @@ export const TextHeading = ({
             {
               ['bg-yellow-300 hover:brightness-90']: heading.isActive(),
               ['hover:bg-[#f2f2f2]']: !heading.isActive(),
-            }
+            },
           )}
         >
           <div className="flex h-10 w-10 items-center justify-center rounded bg-white">
@@ -890,7 +918,7 @@ export const TextFormatingPopup = ({
       title="Text formating"
       content={
         <div className="px-4 flex flex-col gap-2 w-full">
-          <div className='flex justify-start sm:justify-center items-center gap-1'>
+          <div className="flex justify-start sm:justify-center items-center gap-1">
             {headings.map((heading) => (
               <button
                 onClick={() => heading.command(editor)}
@@ -900,24 +928,30 @@ export const TextFormatingPopup = ({
                   {
                     ['bg-yellow-300 hover:brightness-90']: heading.isActive(),
                     ['hover:bg-[#f2f2f2]']: !heading.isActive(),
-                  }
+                  },
                 )}
               >
                 {heading.title}
               </button>
             ))}
-
           </div>
-          <div className='flex justify-between sm:justify-center items-center gap-1'>
-            <div className='bg-[#f8f9fa] rounded flex gap-2 justify-evenly w-full sm:w-fit p-2'>
+          <div className="flex justify-between sm:justify-center items-center gap-1">
+            <div className="bg-[#f8f9fa] rounded flex gap-2 justify-evenly w-full sm:w-fit p-2">
               <button
                 onClick={() => {
                   editor?.chain().focus().setTextAlign('left').run();
                 }}
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
-                  ['bg-yellow-300 hover:brightness-90']: editor.isActive({ textAlign: 'left' }),
-                  ['hover:bg-[#f2f2f2]']: !editor.isActive({ textAlign: 'left' }),
-                })}
+                className={cn(
+                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  {
+                    ['bg-yellow-300 hover:brightness-90']: editor.isActive({
+                      textAlign: 'left',
+                    }),
+                    ['hover:bg-[#f2f2f2]']: !editor.isActive({
+                      textAlign: 'left',
+                    }),
+                  },
+                )}
               >
                 <AlignLeft size={20} />
               </button>
@@ -925,11 +959,17 @@ export const TextFormatingPopup = ({
                 onClick={() => {
                   editor?.chain().focus().setTextAlign('center').run();
                 }}
-
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
-                  ['bg-yellow-300 hover:brightness-90']: editor.isActive({ textAlign: 'center' }),
-                  ['hover:bg-[#f2f2f2]']: !editor.isActive({ textAlign: 'center' }),
-                })}
+                className={cn(
+                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  {
+                    ['bg-yellow-300 hover:brightness-90']: editor.isActive({
+                      textAlign: 'center',
+                    }),
+                    ['hover:bg-[#f2f2f2]']: !editor.isActive({
+                      textAlign: 'center',
+                    }),
+                  },
+                )}
               >
                 <AlignCenter size={20} />
               </button>
@@ -937,23 +977,33 @@ export const TextFormatingPopup = ({
                 onClick={() => {
                   editor?.chain().focus().setTextAlign('right').run();
                 }}
-
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
-                  ['bg-yellow-300 hover:brightness-90']: editor.isActive({ textAlign: 'right' }),
-                  ['hover:bg-[#f2f2f2]']: !editor.isActive({ textAlign: 'right' }),
-                })}
+                className={cn(
+                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  {
+                    ['bg-yellow-300 hover:brightness-90']: editor.isActive({
+                      textAlign: 'right',
+                    }),
+                    ['hover:bg-[#f2f2f2]']: !editor.isActive({
+                      textAlign: 'right',
+                    }),
+                  },
+                )}
               >
                 <AlignRight size={20} />
               </button>
             </div>
-            <div className='bg-[#f8f9fa] rounded flex gap-2 justify-evenly w-full sm:w-fit p-2'>
+            <div className="bg-[#f8f9fa] rounded flex gap-2 justify-evenly w-full sm:w-fit p-2">
               <DialogTrigger asChild>
                 <button
                   onClick={() => setToolVisibility(IEditorTool.LINK_POPUP)}
-                  className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
-                    ['bg-yellow-300 hover:brightness-90']: editor.isActive('link'),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive('link'),
-                  })}
+                  className={cn(
+                    'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                    {
+                      ['bg-yellow-300 hover:brightness-90']:
+                        editor.isActive('link'),
+                      ['hover:bg-[#f2f2f2]']: !editor.isActive('link'),
+                    },
+                  )}
                 >
                   <Link size={20} />
                 </button>
@@ -962,10 +1012,14 @@ export const TextFormatingPopup = ({
                 onClick={() => {
                   editor?.chain().focus().toggleCodeBlock().run();
                 }}
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
-                  ['bg-yellow-300 hover:brightness-90']: editor.isActive('codeBlock'),
-                  ['hover:bg-[#f2f2f2]']: !editor.isActive('codeBlock'),
-                })}
+                className={cn(
+                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  {
+                    ['bg-yellow-300 hover:brightness-90']:
+                      editor.isActive('codeBlock'),
+                    ['hover:bg-[#f2f2f2]']: !editor.isActive('codeBlock'),
+                  },
+                )}
               >
                 <Code size={20} />
               </button>
@@ -973,25 +1027,33 @@ export const TextFormatingPopup = ({
                 onClick={() => {
                   editor?.chain().focus().toggleBlockquote().run();
                 }}
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
-                  ['bg-yellow-300 hover:brightness-90']: editor.isActive('blockquote'),
-                  ['hover:bg-[#f2f2f2]']: !editor.isActive('blockquote'),
-                })}
+                className={cn(
+                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  {
+                    ['bg-yellow-300 hover:brightness-90']:
+                      editor.isActive('blockquote'),
+                    ['hover:bg-[#f2f2f2]']: !editor.isActive('blockquote'),
+                  },
+                )}
               >
                 <TextQuote size={20} />
               </button>
             </div>
           </div>
-          <div className='flex justify-between sm:justify-center items-center gap-1'>
-            <div className='bg-[#f8f9fa] rounded flex gap-2 justify-evenly w-full sm:w-fit p-2'>
+          <div className="flex justify-between sm:justify-center items-center gap-1">
+            <div className="bg-[#f8f9fa] rounded flex gap-2 justify-evenly w-full sm:w-fit p-2">
               <button
                 onClick={() => {
                   editor.chain().focus().toggleBold().run();
                 }}
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
-                  ['bg-yellow-300 hover:brightness-90']: editor.isActive('bold'),
-                  ['hover:bg-[#f2f2f2]']: !editor.isActive('bold'),
-                })}
+                className={cn(
+                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  {
+                    ['bg-yellow-300 hover:brightness-90']:
+                      editor.isActive('bold'),
+                    ['hover:bg-[#f2f2f2]']: !editor.isActive('bold'),
+                  },
+                )}
               >
                 <Bold size={20} />
               </button>
@@ -999,10 +1061,14 @@ export const TextFormatingPopup = ({
                 onClick={() => {
                   editor.chain().focus().toggleItalic().run();
                 }}
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
-                  ['bg-yellow-300 hover:brightness-90']: editor.isActive('italic'),
-                  ['hover:bg-[#f2f2f2]']: !editor.isActive('italic'),
-                })}
+                className={cn(
+                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  {
+                    ['bg-yellow-300 hover:brightness-90']:
+                      editor.isActive('italic'),
+                    ['hover:bg-[#f2f2f2]']: !editor.isActive('italic'),
+                  },
+                )}
               >
                 <Italic size={20} />
               </button>
@@ -1010,10 +1076,14 @@ export const TextFormatingPopup = ({
                 onClick={() => {
                   editor.chain().focus().toggleUnderline().run();
                 }}
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
-                  ['bg-yellow-300 hover:brightness-90']: editor.isActive('underline'),
-                  ['hover:bg-[#f2f2f2]']: !editor.isActive('bold'),
-                })}
+                className={cn(
+                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  {
+                    ['bg-yellow-300 hover:brightness-90']:
+                      editor.isActive('underline'),
+                    ['hover:bg-[#f2f2f2]']: !editor.isActive('bold'),
+                  },
+                )}
               >
                 <Underline size={20} />
               </button>
@@ -1021,23 +1091,31 @@ export const TextFormatingPopup = ({
                 onClick={() => {
                   editor.chain().focus().toggleStrike().run();
                 }}
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
-                  ['bg-yellow-300 hover:brightness-90']: editor.isActive('strike'),
-                  ['hover:bg-[#f2f2f2]']: !editor.isActive('bold'),
-                })}
+                className={cn(
+                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  {
+                    ['bg-yellow-300 hover:brightness-90']:
+                      editor.isActive('strike'),
+                    ['hover:bg-[#f2f2f2]']: !editor.isActive('bold'),
+                  },
+                )}
               >
                 <Strikethrough size={20} />
               </button>
             </div>
-            <div className='bg-[#f8f9fa] rounded flex flex-[0.5] sm:flex-none gap-2 justify-evenly w-full sm:w-fit p-2'>
+            <div className="bg-[#f8f9fa] rounded flex flex-[0.5] sm:flex-none gap-2 justify-evenly w-full sm:w-fit p-2">
               <button
                 onClick={() => {
                   editor?.chain().focus().toggleBulletList().run();
                 }}
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
-                  ['bg-yellow-300 hover:brightness-90']: editor.isActive('bulletList'),
-                  ['hover:bg-[#f2f2f2]']: !editor.isActive('bulletList'),
-                })}
+                className={cn(
+                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  {
+                    ['bg-yellow-300 hover:brightness-90']:
+                      editor.isActive('bulletList'),
+                    ['hover:bg-[#f2f2f2]']: !editor.isActive('bulletList'),
+                  },
+                )}
               >
                 <List size={20} />
               </button>
@@ -1045,25 +1123,29 @@ export const TextFormatingPopup = ({
                 onClick={() => {
                   editor?.chain().focus().toggleOrderedList().run();
                 }}
-                className={cn("flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8", {
-                  ['bg-yellow-300 hover:brightness-90']: editor.isActive('orderedList'),
-                  ['hover:bg-[#f2f2f2]']: !editor.isActive('orderedList'),
-                })}
+                className={cn(
+                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  {
+                    ['bg-yellow-300 hover:brightness-90']:
+                      editor.isActive('orderedList'),
+                    ['hover:bg-[#f2f2f2]']: !editor.isActive('orderedList'),
+                  },
+                )}
               >
                 <ListOrdered size={20} />
               </button>
             </div>
-          </div >
-        </div >
+          </div>
+        </div>
       }
     />
   );
-}
+};
 
 export const TextColorPicker = ({
   editor,
-  // setToolVisibility,
-}: {
+}: // setToolVisibility,
+{
   editor: Editor;
   setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
 }) => {
@@ -1073,11 +1155,12 @@ export const TextColorPicker = ({
       content={
         <Carousel
           opts={{
-            align: "start",
+            align: 'start',
             dragFree: true,
-            slidesToScroll: 'auto'
+            slidesToScroll: 'auto',
           }}
-          className="w-full max-w-md px-4 mx-auto">
+          className="w-full max-w-md px-4 mx-auto"
+        >
           <CarouselContent>
             <CarouselItem
               style={{
@@ -1105,7 +1188,7 @@ export const TextColorPicker = ({
                   key={color.color}
                   className={cn(
                     'w-6 h-6 mb-1 drop-shadow rounded-full flex justify-center items-center cursor-pointer transition',
-                    color.code
+                    color.code,
                   )}
                 >
                   <Check
@@ -1115,7 +1198,7 @@ export const TextColorPicker = ({
                         color: color.color,
                       })
                         ? 'visible'
-                        : 'invisible'
+                        : 'invisible',
                     )}
                   />
                 </button>
@@ -1131,5 +1214,4 @@ export const TextColorPicker = ({
       }
     />
   );
-}
-
+};

@@ -5,6 +5,8 @@
 import { EditorState, Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet, EditorView } from '@tiptap/pm/view';
 
+import imagePlaceholder from '../../../assets/mainLogo.png';
+
 const uploadKey = new PluginKey('upload-image');
 
 const UploadImagesPlugin = () =>
@@ -37,8 +39,8 @@ const UploadImagesPlugin = () =>
             set.find(
               undefined,
               undefined,
-              (spec: any) => spec.id == action.remove.id
-            )
+              (spec: any) => spec.id == action.remove.id,
+            ),
           );
         }
         return set;
@@ -59,15 +61,15 @@ function findPlaceholder(state: EditorState, id: any) {
   return found.length ? found[0].from : null;
 }
 
-export function startImageUpload(file: File, view: EditorView, pos: number) {
+export function startImageUpload(
+  file: File,
+  view: EditorView,
+  pos: number,
+  handleImageUpload: (file: File) => Promise<string>,
+) {
   // check if the file is an image
   if (!file.type.includes('image/')) {
     console.log('file is not an image');
-    return;
-
-    // check if the file size is less than 1MB
-  } else if (file.size > 1024 * 1024) {
-    console.log('failed');
     return;
   }
 
@@ -78,31 +80,23 @@ export function startImageUpload(file: File, view: EditorView, pos: number) {
   const tr = view.state.tr;
   if (!tr.selection.empty) tr.deleteSelection();
 
-  const reader = new FileReader();
-  reader.readAsDataURL(file);
-  reader.onload = () => {
-    tr.setMeta(uploadKey, {
-      add: {
-        id,
-        pos,
-        src: reader.result,
-      },
-    });
-    view.dispatch(tr);
-  };
+  tr.setMeta(uploadKey, {
+    add: {
+      id,
+      pos,
+      src: imagePlaceholder,
+    },
+  });
+  view.dispatch(tr);
 
   handleImageUpload(file).then((src) => {
     const { schema } = view.state;
 
     const pos = findPlaceholder(view.state, id);
-    // If the content around the placeholder has been deleted, drop
-    // the image
+    // If the content around the placeholder has been deleted, drop the image
     if (pos == null) return;
 
-    // Otherwise, insert it at the placeholder's position, and remove
-    // the placeholder
-
-    const imageSrc = typeof src === 'object' ? reader.result : src;
+    const imageSrc = src;
 
     const node = schema.nodes.resizableMedia.create({
       src: imageSrc,
@@ -114,14 +108,6 @@ export function startImageUpload(file: File, view: EditorView, pos: number) {
     view.dispatch(transaction);
   });
 }
-
-export const handleImageUpload = (file: File) => {
-  return new Promise((resolve) => {
-    const reader = new FileReader();
-    reader.readAsDataURL(file);
-    reader.onload = () => resolve(reader.result);
-  });
-};
 
 export const uploadFn = async (image: File) => {
   // Read image data and create a File object, then return the string URL of the uploaded image
