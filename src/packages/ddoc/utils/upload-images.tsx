@@ -31,7 +31,7 @@ const UploadImagesPlugin = () =>
           image.src = src;
           placeholder.appendChild(image);
           const deco = Decoration.widget(pos + 1, placeholder, {
-            id
+            id,
           });
           set = set.add(tr.doc, [deco]);
         } else if (action && action.remove) {
@@ -39,18 +39,18 @@ const UploadImagesPlugin = () =>
             set.find(
               undefined,
               undefined,
-              (spec: any) => spec.id == action.remove.id
-            )
+              (spec: any) => spec.id == action.remove.id,
+            ),
           );
         }
         return set;
-      }
+      },
     },
     props: {
       decorations(state) {
         return this.getState(state);
-      }
-    }
+      },
+    },
   });
 
 export default UploadImagesPlugin;
@@ -65,7 +65,7 @@ export function startImageUpload(
   file: File,
   view: EditorView,
   pos: number,
-  handleImageUpload: (file: File) => Promise<string>
+  handleImageUpload: (file: File) => Promise<string>,
 ) {
   // check if the file is an image
   if (!file.type.includes('image/')) {
@@ -84,12 +84,12 @@ export function startImageUpload(
     add: {
       id,
       pos,
-      src: imagePlaceholder
-    }
+      src: imagePlaceholder,
+    },
   });
   view.dispatch(tr);
 
-  handleImageUpload(file).then(src => {
+  handleImageUpload(file).then((src) => {
     const { schema } = view.state;
 
     const pos = findPlaceholder(view.state, id);
@@ -100,7 +100,7 @@ export function startImageUpload(
 
     const node = schema.nodes.resizableMedia.create({
       src: imageSrc,
-      'media-type': 'img'
+      'media-type': 'img',
     });
     const transaction = view.state.tr
       .replaceWith(pos - 2, pos + node.nodeSize, node)
@@ -122,7 +122,7 @@ export const uploadFn = async (image: File) => {
   }
 
   // convert image to base64
-  const base64Image = await new Promise(resolve => {
+  const base64Image = await new Promise((resolve) => {
     reader.onload = () => {
       resolve(reader.result as string);
     };
