@@ -30,7 +30,7 @@ export const useDdocEditor = ({
   username,
   onAutoSave,
   onChange
-}: DdocProps) => {
+}: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [loading, setLoading] = useState(false);
   const [extensions, setExtensions] = useState([

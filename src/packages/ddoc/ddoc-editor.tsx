@@ -24,7 +24,7 @@ const DdocEditor = forwardRef(
       renderToolLeftSection,
       ensProviderUrl,
       onChange,
-      uploadImageToIpfs
+      handleImageUploadToIpfs
     }: DdocProps,
     ref
   ) => {
@@ -41,8 +41,7 @@ const DdocEditor = forwardRef(
       ensProviderUrl,
       username,
       onAutoSave,
-      onChange,
-      uploadImageToIpfs
+      onChange
     });
 
     useImperativeHandle(
@@ -78,7 +77,7 @@ const DdocEditor = forwardRef(
                 {!isPreviewMode && (
                   <div className='grow relative hidden xl:block'>
                     <EditorToolBar
-                      uploadToIpfs={uploadImageToIpfs}
+                      uploadToIpfs={handleImageUploadToIpfs}
                       editor={editor}
                     />
                   </div>
@@ -117,7 +116,7 @@ const DdocEditor = forwardRef(
             {!isPreviewMode && (
               <div className='flex xl:hidden items-center w-full h-16 fixed bottom-0 z-10 px-4 bg-[#f8f9fa]'>
                 <BottomToolbar
-                  uploadToIpfs={uploadImageToIpfs}
+                  uploadToIpfs={handleImageUploadToIpfs}
                   editor={editor}
                 />
               </div>
