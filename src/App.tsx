@@ -6,7 +6,7 @@ import { JSONContent } from '@tiptap/react';
 // import * as ucan from 'ucans';
 // import { buildUCANToken } from './packages/ddoc/utils/buildUCANToken';
 import axios from 'axios';
-import { DEFAULT_AUTHENTICATED_HEADER } from './constants/index';
+import { API_URL, DEFAULT_AUTHENTICATED_HEADER } from './constants/index';
 
 function App() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -17,8 +17,6 @@ function App() {
   //   token: string;
   //   did: string;
   // } | null>(null);
-
-  const apiUrl = 'https://dev-fileverse-storage.herokuapp.com';
 
   const collaborationId = window.location.pathname.split('/')[2]; // example url - /doc/1234, that why's used second element of array
 
@@ -106,7 +104,7 @@ function App() {
       }
     };
 
-    const result = await axios.post(`${apiUrl}/upload`, body, {
+    const result = await axios.post(`${API_URL}/upload`, body, {
       ...reqConfig,
       headers: DEFAULT_AUTHENTICATED_HEADER
     });

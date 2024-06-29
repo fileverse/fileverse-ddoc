@@ -4,3 +4,4 @@ export const DEFAULT_AUTHENTICATED_HEADER = {
   contract: '0x1C0ae3C96b55d3f99866589ce3FD463e078357dc',
   chain: 11155111
 };
+export const API_URL = 'https://dev-fileverse-storage.herokuapp.com';
