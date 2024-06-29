@@ -20,6 +20,12 @@ export const DdocEditorProps: EditorProps = {
   }
 };
 
+export interface IDocCollabUsers {
+  name: string;
+  isEns: string;
+  color: string;
+}
+
 export interface DdocProps {
   enableCollaboration?: boolean;
   collaborationId?: string;
@@ -32,6 +38,7 @@ export interface DdocProps {
   renderToolRightSection?: ({ editor }: { editor: JSONContent }) => JSX.Element;
   onChange?: (changes: Data['editorJSONData']) => void;
   handleImageUploadToIpfs: (file: File) => Promise<string>;
+  onCollaboratorChange?: (collaborators: undefined | IDocCollabUsers[]) => void;
 }
 
 export interface Data {

@@ -29,7 +29,8 @@ export const useDdocEditor = ({
   ensProviderUrl,
   username,
   onAutoSave,
-  onChange
+  onChange,
+  onCollaboratorChange
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [loading, setLoading] = useState(false);
@@ -185,11 +186,16 @@ export const useDdocEditor = ({
     }
   }, [editor, onAutoSave, debouncedAutoSave]);
 
+  useEffect(() => {
+    onCollaboratorChange?.(editor?.storage?.collaborationCursor?.users);
+  }, [editor?.storage?.collaborationCursor?.users]);
+
   return {
     editor,
     focusEditor,
     ref,
     loading,
-    connect
+    connect,
+    ydoc
   };
 };

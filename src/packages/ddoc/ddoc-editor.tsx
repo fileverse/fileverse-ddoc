@@ -24,7 +24,8 @@ const DdocEditor = forwardRef(
       renderToolLeftSection,
       ensProviderUrl,
       onChange,
-      handleImageUploadToIpfs
+      handleImageUploadToIpfs,
+      onCollaboratorChange
     }: DdocProps,
     ref
   ) => {
@@ -32,7 +33,8 @@ const DdocEditor = forwardRef(
       editor,
       focusEditor,
       ref: editorRef,
-      loading
+      loading,
+      ydoc
     } = useDdocEditor({
       isPreviewMode,
       initialContent,
@@ -41,15 +43,17 @@ const DdocEditor = forwardRef(
       ensProviderUrl,
       username,
       onAutoSave,
-      onChange
+      onChange,
+      onCollaboratorChange
     });
 
     useImperativeHandle(
       ref,
       () => ({
-        getEditor: () => editor
+        getEditor: () => editor,
+        getYdoc: () => ydoc
       }),
-      [editor]
+      [editor, ydoc]
     );
 
     if (!editor || loading) {
