@@ -50,7 +50,6 @@
     "@tiptap/react": "^2.4.0",
     "@tiptap/starter-kit": "^2.4.0",
     "@tiptap/suggestion": "^2.4.0",
-    "axios": "^1.7.2",
     "classnames": "^2.5.1",
     "embla-carousel-react": "^8.1.5",
     "ethers": "^6.13.1",

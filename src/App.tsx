@@ -5,7 +5,6 @@ import { Pencil, ScanEye, Share2 } from 'lucide-react';
 import { JSONContent } from '@tiptap/react';
 // import * as ucan from 'ucans';
 // import { buildUCANToken } from './packages/ddoc/utils/buildUCANToken';
-import axios from 'axios';
 import { API_URL, DEFAULT_AUTHENTICATED_HEADER } from './constants/index';
 
 function App() {
@@ -93,27 +92,43 @@ function App() {
     // if (!auth?.token) {
     //   throw new Error('Auth Tokens Not Found');
     // }
-
+  
     const body = new FormData();
     body.append('file', file);
     body.append('name', file.name);
-
-    const reqConfig = {
-      params: {
-        tags
-      }
+  
+    // Serialize tags array to a comma-separated string
+    const tagsParam = tags.join(',');
+  
+    const headers: any = {
+      ...DEFAULT_AUTHENTICATED_HEADER,
+      'Content-Type': 'multipart/form-data', // Ensure correct content type for FormData
     };
-
-    const result = await axios.post(`${API_URL}/upload`, body, {
-      ...reqConfig,
-      headers: DEFAULT_AUTHENTICATED_HEADER
-    });
-
-    const apiResponse = result.data;
-
-    return apiResponse;
+  
+    try {
+      const response = await fetch(`${API_URL}/upload?tags=${encodeURIComponent(tagsParam)}`, {
+        method: 'POST',
+        headers: {
+          ...headers,
+          'Access-Control-Request-Method': 'POST', // Specify the method of the actual request
+          'Access-Control-Request-Headers': 'Content-Type', // Specify the headers of the actual request
+        },
+        body,
+      });
+  
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+  
+      const apiResponse = await response.json();
+      return apiResponse;
+    } catch (error) {
+      // Handle fetch errors or response parsing errors
+      console.error('Error during fetch:', error);
+      throw error;
+    }
   };
-
+  
   const getImageIpfsHash = async (file: File): Promise<string> => {
     const response = await callUploadApi(file);
     return response.ipfsUrl;
@@ -129,7 +144,7 @@ function App() {
         enableCollaboration={enableCollaboration}
         collaborationId={collaborationId}
         username={username}
-        uploadImageToIpfs={getImageIpfsHash}
+        handleImageUploadToIpfs={getImageIpfsHash}
         isPreviewMode={isPreviewMode}
         renderToolRightSection={renderRightSection}
         renderToolLeftSection={renderLeftSection}
