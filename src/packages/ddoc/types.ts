@@ -20,6 +20,12 @@ export const DdocEditorProps: EditorProps = {
   }
 };
 
+export interface IDocCollabUsers {
+  name: string;
+  isEns: string;
+  color: string;
+}
+
 export interface DdocProps {
   enableCollaboration?: boolean;
   collaborationId?: string;
@@ -31,6 +37,7 @@ export interface DdocProps {
   renderToolLeftSection?: ({ editor }: { editor: JSONContent }) => JSX.Element;
   renderToolRightSection?: ({ editor }: { editor: JSONContent }) => JSX.Element;
   onChange?: (changes: Data['editorJSONData']) => void;
+  onCollaboratorChange?: (collaborators: undefined | IDocCollabUsers[]) => void;
 }
 
 export interface Data {
