@@ -1,5 +1,9 @@
-import { useState } from 'react'
-import { TextColorPicker, TextFormatingPopup, useEditorToolbar } from './editor-utils';
+import { useState } from 'react';
+import {
+  TextColorPicker,
+  TextFormatingPopup,
+  useEditorToolbar
+} from './editor-utils';
 import { Editor } from '@tiptap/react';
 import { IEditorTool } from '../hooks/use-visibility';
 import { Drawer, DrawerTrigger } from '../common/drawer';
@@ -7,11 +11,17 @@ import DynamicModal from './dynamic-modal';
 import { TextField } from '../common/textfield';
 import cn from 'classnames';
 
-const BottomToolbar = ({ editor }: { editor: Editor }) => {
-  const { toolVisibilty, setToolVisibility, bottomToolbar } =
-    useEditorToolbar({
-      editor: editor,
-    });
+const BottomToolbar = ({
+  editor,
+  uploadToIpfs
+}: {
+  editor: Editor;
+  uploadToIpfs: (f: File) => Promise<string>;
+}) => {
+  const { toolVisibilty, setToolVisibility, bottomToolbar } = useEditorToolbar({
+    editor: editor,
+    uploadToIpfs
+  });
 
   const [url, setUrl] = useState('');
   const [linkText, setLinkText] = useState('');
@@ -83,25 +93,30 @@ const BottomToolbar = ({ editor }: { editor: Editor }) => {
     const { from, to } = editor.state.selection;
     const text = editor.state.doc.textBetween(from, to);
     return text;
-  }
+  };
 
   return (
     <Drawer>
       <div className='flex w-full justify-between sm:justify-evenly'>
-        {bottomToolbar.map((tool) => {
+        {bottomToolbar.map(tool => {
           if (tool) {
             return (
-              <div key={tool.title} className="flex items-center">
-                {tool.title === 'Text formating' || tool.title === 'Text color' ? (
+              <div
+                key={tool.title}
+                className='flex items-center'
+              >
+                {tool.title === 'Text formating' ||
+                tool.title === 'Text color' ? (
                   <DrawerTrigger asChild>
-                    <button onClick={() => tool.onClick()}>
-                      {tool.icon}
-                    </button>
+                    <button onClick={() => tool.onClick()}>{tool.icon}</button>
                   </DrawerTrigger>
                 ) : (
                   <button
-                    className={cn("flex items-center rounded px-2 py-1 text-black transition")}
-                    onClick={() => tool.onClick()}>
+                    className={cn(
+                      'flex items-center rounded px-2 py-1 text-black transition'
+                    )}
+                    onClick={() => tool.onClick()}
+                  >
                     {tool.icon}
                   </button>
                 )}
@@ -126,24 +141,22 @@ const BottomToolbar = ({ editor }: { editor: Editor }) => {
         <DynamicModal
           open={toolVisibilty === IEditorTool.LINK_POPUP}
           onOpenChange={() => setToolVisibility(IEditorTool.NONE)}
-          title="Link"
+          title='Link'
           content={
-            <div className="flex flex-col gap-4 w-full h-full px-4">
+            <div className='flex flex-col gap-4 w-full h-full px-4'>
               <TextField
-                label="Text"
-                placeholder="Link text"
-                className="w-full"
+                label='Text'
+                placeholder='Link text'
+                className='w-full'
                 defaultValue={getSelectedText(editor)}
-                onChange={(e) =>
-                  setLinkText(e.target.value)
-                }
+                onChange={e => setLinkText(e.target.value)}
               />
               <TextField
-                label="Link"
-                placeholder="Paste URL"
-                className="w-full"
+                label='Link'
+                placeholder='Paste URL'
+                className='w-full'
                 defaultValue={editor.getAttributes('link').href}
-                onChange={(e) => {
+                onChange={e => {
                   setUrl(e.target.value);
                 }}
                 isValid={isUrlValid}
@@ -155,18 +168,18 @@ const BottomToolbar = ({ editor }: { editor: Editor }) => {
             label: 'Save',
             onClick: () => saveLink(),
             isLoading: false,
-            className: 'w-auto min-w-[80px]',
+            className: 'w-auto min-w-[80px]'
           }}
           secondaryAction={{
             label: 'Cancel',
             variant: 'secondary',
             onClick: () => setToolVisibility(IEditorTool.NONE),
-            className: 'w-auto min-w-[80px]',
+            className: 'w-auto min-w-[80px]'
           }}
         />
       )}
     </Drawer>
-  )
-}
+  );
+};
 
-export default BottomToolbar
+export default BottomToolbar;

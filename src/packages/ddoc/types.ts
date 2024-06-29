@@ -31,6 +31,7 @@ export interface DdocProps {
   renderToolLeftSection?: ({ editor }: { editor: JSONContent }) => JSX.Element;
   renderToolRightSection?: ({ editor }: { editor: JSONContent }) => JSX.Element;
   onChange?: (changes: Data['editorJSONData']) => void;
+  uploadImageToIpfs: (f: File) => Promise<string>;
 }
 
 export interface Data {
