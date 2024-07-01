@@ -138,6 +138,10 @@ export const useDdocEditor = ({
       editor.commands.setContent(initialContent);
       initialContentSetRef.current = true;
     }
+
+    setTimeout(() => {
+      initialContentSetRef.current = false;
+    });
   }, [initialContent, editor]);
 
   const startCollaboration = async () => {
