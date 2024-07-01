@@ -37,7 +37,7 @@ export interface DdocProps {
   renderToolLeftSection?: ({ editor }: { editor: JSONContent }) => JSX.Element;
   renderToolRightSection?: ({ editor }: { editor: JSONContent }) => JSX.Element;
   onChange?: (changes: Data['editorJSONData']) => void;
-  handleImageUploadToIpfs?: (file: File) => Promise<string>;
+  handleImageUploadToIpfs: (file: File) => Promise<string>;
   onCollaboratorChange?: (collaborators: undefined | IDocCollabUsers[]) => void;
 }
 

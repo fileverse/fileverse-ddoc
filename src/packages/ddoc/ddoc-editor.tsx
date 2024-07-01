@@ -81,7 +81,7 @@ const DdocEditor = forwardRef(
                 {!isPreviewMode && (
                   <div className='grow relative hidden xl:block'>
                     <EditorToolBar
-                      uploadToIpfs={handleImageUploadToIpfs!}
+                      uploadToIpfs={handleImageUploadToIpfs}
                       editor={editor}
                     />
                   </div>
@@ -120,7 +120,7 @@ const DdocEditor = forwardRef(
             {!isPreviewMode && (
               <div className='flex xl:hidden items-center w-full h-16 fixed bottom-0 z-10 px-4 bg-[#f8f9fa]'>
                 <BottomToolbar
-                  uploadToIpfs={handleImageUploadToIpfs!}
+                  uploadToIpfs={handleImageUploadToIpfs}
                   editor={editor}
                 />
               </div>
