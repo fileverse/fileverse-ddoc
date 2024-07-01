@@ -4,8 +4,9 @@ import { Editor } from '@tiptap/core'
 import Tippy from '@tippyjs/react'
 import './styles.scss'
 import { useEditingContext } from '../../../hooks/use-editing-context'
-import clx from 'classnames'
+import cn from 'classnames'
 import { GripHorizontal } from 'lucide-react'
+import { Button } from '../../../common/button'
 
 interface CellButton {
   name: string
@@ -192,24 +193,23 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
           animation="shift-toward-subtle"
           placement="top-start"
           content={
-            <article className="dropdown" contentEditable={false}>
+            <article className='w-screen lg:w-full' contentEditable={false}>
               <ul
                 tabIndex={0}
-                className="dropdown-content fixed top-8 menu menu-compact p-2 shadow bg-base-100 rounded-box w-56"
+                className="fixed top-8 right-1/2 translate-x-1/2 menu menu-compact p-2 shadow bg-base-100 rounded-lg w-56"
                 style={gimmeDropdownStyles()}
               >
                 {cellButtonsConfig.map((btn) => {
                   return (
                     <li key={btn.name}>
-                      <button
-                        type="button"
-                        className="button"
+                      <Button
+                        variant='ghost'
+                        className="!items-center w-full !justify-start !font-[400]"
                         onClick={() => btn.action(editor)}
                       >
-                        <span>{btn.icon}</span>
-
+                        {/* <span>{btn.icon}</span> */}
                         <span>{btn.name}</span>
-                      </button>
+                      </Button>
                     </li>
                   )
                 })}
@@ -219,7 +219,7 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
         >
           <label
             tabIndex={0}
-            className={clx('trigger-button', { hidden: isPreviewMode })}
+            className={cn('trigger-button', { hidden: isPreviewMode })}
             contentEditable={false}
           >
             <GripHorizontal size={20} />

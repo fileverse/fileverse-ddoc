@@ -48,10 +48,10 @@ const TiptapToolBar = ({
           {editor?.isActive('heading', { level: 1 })
             ? 'Heading 1'
             : editor?.isActive('heading', { level: 2 })
-            ? 'Heading 2'
-            : editor?.isActive('heading', { level: 3 })
-            ? 'Heading 3'
-            : 'Text'}
+              ? 'Heading 2'
+              : editor?.isActive('heading', { level: 3 })
+                ? 'Heading 3'
+                : 'Text'}
         </span>
         <ChevronDown size={16} />
       </button>
@@ -61,7 +61,7 @@ const TiptapToolBar = ({
           return (
             <div
               key={tool.title}
-              className="tooltip tooltip-bottom"
+              className="tooltip tooltip-neutral tooltip-bottom text-xs"
               data-tip={tool.title}
             >
               <span
