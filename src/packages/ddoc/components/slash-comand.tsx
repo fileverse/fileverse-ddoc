@@ -26,7 +26,6 @@ import {
   Table,
   ImageIcon,
   Minus,
-  FileSymlink,
   Twitter,
   Youtube,
   Columns2,
@@ -34,6 +33,7 @@ import {
 } from 'lucide-react';
 
 import { startImageUpload } from '../utils/upload-images';
+import { useMediaQuery } from 'usehooks-ts';
 
 interface CommandItemProps {
   title: string;
@@ -328,7 +328,7 @@ export const updateScrollView = (container: HTMLElement, item: HTMLElement) => {
 };
 
 const CommandList = ({
-  items,
+  items: initialItems,
   command,
   editor,
 }: {
@@ -338,7 +338,8 @@ const CommandList = ({
   range: any;
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
-
+  const [items, setItems] = useState<CommandItemProps[]>(initialItems)
+  const isMobile = useMediaQuery('(max-width: 640px)');
   const selectItem = useCallback(
     (index: number) => {
       const item = items[index];
@@ -354,6 +355,15 @@ const CommandList = ({
     },
     [command, editor, items]
   );
+
+  useEffect(() => {
+    if (isMobile) {
+      const filteredItems = items.filter(item => !['2 Columns', '3 Columns', 'Twitter', 'Video Embed'].includes(item.title));
+      setItems(filteredItems);
+    } else {
+      setItems(initialItems);
+    }
+  }, [initialItems, isMobile]);
 
   useEffect(() => {
     const navigationKeys = ['ArrowUp', 'ArrowDown', 'Enter'];
@@ -405,9 +415,8 @@ const CommandList = ({
         return (
           <button
             key={index}
-            className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-neutral-500 hover:bg-neutral-100 hover:border-neutral-200 border border-transparent transition-all ${
-              index === selectedIndex ? 'bg-neutral-200 text-neutral-800' : ''
-            }`}
+            className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-neutral-500 hover:bg-neutral-100 hover:border-neutral-200 border border-transparent transition-all ${index === selectedIndex ? 'bg-neutral-200 text-neutral-800' : ''
+              }`}
             onClick={() => selectItem(index)}
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-md border border-neutral-200 bg-white">

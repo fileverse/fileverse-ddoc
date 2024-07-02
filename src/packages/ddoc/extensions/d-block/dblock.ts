@@ -1,16 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Node, mergeAttributes } from '@tiptap/core'
-import { ReactNodeViewRenderer } from '@tiptap/react'
-import { DBlockNodeView } from './dblock-node-view'
+import { Node, mergeAttributes } from '@tiptap/core';
+import { ReactNodeViewRenderer } from '@tiptap/react';
+import { DBlockNodeView } from './dblock-node-view';
 export interface DBlockOptions {
-  HTMLAttributes: Record<string, any>
+  HTMLAttributes: Record<string, any>;
 }
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     dBlock: {
-      setDBlock: (position?: number) => ReturnType
-    }
+      setDBlock: (position?: number) => ReturnType;
+    };
   }
 }
 
@@ -31,20 +31,20 @@ export const DBlock = Node.create<DBlockOptions>({
 
   addOptions() {
     return {
-      HTMLAttributes: {}
-    }
+      HTMLAttributes: {},
+    };
   },
 
   parseHTML() {
-    return [{ tag: 'div[data-type="d-block"]' }]
+    return [{ tag: 'div[data-type="d-block"]' }];
   },
 
   renderHTML({ HTMLAttributes }: { HTMLAttributes: any }) {
     return [
       'div',
       mergeAttributes(HTMLAttributes, { 'data-type': 'd-block' }),
-      0
-    ]
+      0,
+    ];
   },
 
   addCommands() {
@@ -53,25 +53,25 @@ export const DBlock = Node.create<DBlockOptions>({
         position =>
         ({ state, chain }) => {
           const {
-            selection: { from }
-          } = state
+            selection: { from },
+          } = state;
 
           const pos =
-            position !== undefined || position !== null ? from : position
+            position !== undefined || position !== null ? from : position;
 
           return chain()
             .insertContentAt(pos, {
               type: this.name,
               content: [
                 {
-                  type: 'paragraph'
-                }
-              ]
+                  type: 'paragraph',
+                },
+              ],
             })
             .focus(pos + 2)
-            .run()
-        }
-    }
+            .run();
+        },
+    };
   },
 
   addKeyboardShortcuts() {
@@ -80,39 +80,76 @@ export const DBlock = Node.create<DBlockOptions>({
       Enter: ({ editor }) => {
         const {
           selection: { $head, from, to },
-          doc
-        } = editor.state
+          doc,
+        } = editor.state;
 
-        const parent = $head.node($head.depth - 1)
+        const parent = $head.node($head.depth - 1);
 
-        if (parent?.type.name !== 'dBlock') return false
+        if (parent?.type.name !== 'dBlock') {
+          const headString = $head.toString();
+          const nodePaths = headString.split('/');
 
-        let currentActiveNodeTo = -1
-        let currentActiveNodeType = ''
+          const isTaskList = nodePaths.some(path => path.includes('taskList'));
+          const isList = nodePaths.some(
+            path => path.includes('bulletList') || path.includes('orderedList'),
+          );
+
+          if (isTaskList) {
+            return editor
+              .chain()
+              .insertContent({
+                type: 'taskItem',
+                attrs: {
+                  checked: false,
+                },
+                content: [
+                  {
+                    type: 'paragraph',
+                  },
+                ],
+              })
+              .focus()
+              .run();
+          } else if (isList) {
+            return editor
+              .chain()
+              .insertContent({
+                type: 'listItem',
+                content: [
+                  {
+                    type: 'paragraph',
+                  },
+                ],
+              })
+              .focus()
+              .run();
+          } else {
+            return false;
+          }
+        }
+
+        let currentActiveNodeTo = -1;
+        let currentActiveNodeType = '';
 
         doc.descendants((node, pos) => {
-          if (currentActiveNodeTo !== -1) return false
-          if (node.type.name === this.name) return
+          if (currentActiveNodeTo !== -1) return false;
+          if (node.type.name === this.name) return;
 
-          const [nodeFrom, nodeTo] = [pos, pos + node.nodeSize]
+          const [nodeFrom, nodeTo] = [pos, pos + node.nodeSize];
 
           if (nodeFrom <= from && to <= nodeTo) {
-            currentActiveNodeTo = nodeTo
-            currentActiveNodeType = node.type.name
+            currentActiveNodeTo = nodeTo;
+            currentActiveNodeType = node.type.name;
           }
 
-          return false
-        })
+          return false;
+        });
 
-        const content = doc.slice(from, currentActiveNodeTo)?.toJSON().content
+        const content = doc.slice(from, currentActiveNodeTo)?.toJSON().content;
 
         try {
           if (currentActiveNodeType === 'codeBlock') {
-            return editor
-              .chain()
-              .newlineInCode()
-              .focus(currentActiveNodeTo + 1)
-              .run()
+            return editor.chain().newlineInCode().focus().run();
           }
 
           if (['columns', 'heading'].includes(currentActiveNodeType)) {
@@ -122,71 +159,70 @@ export const DBlock = Node.create<DBlockOptions>({
                 type: 'dBlock',
                 content: [
                   {
-                    type: 'paragraph'
-                  }
-                ]
+                    type: 'paragraph',
+                  },
+                ],
               })
               .focus()
-              .run()
+              .run();
           }
-
           return editor
             .chain()
             .insertContentAt(
               { from, to: currentActiveNodeTo },
               {
                 type: this.name,
-                content
-              }
+                content,
+              },
             )
             .focus(from + 4)
-            .run()
+            .run();
         } catch (error) {
-          console.error(`Error inserting content into dBlock node: ${error}`)
-          return false
+          console.error(`Error inserting content into dBlock node: ${error}`);
+          return false;
         }
       },
-      Backspace: ({ editor }) => {
-        const { selection } = editor.state
-        const { $from } = selection
-        const pos = $from.pos
-        const nodeBefore = $from.nodeBefore
+      // Backspace: ({ editor }) => {
+      //   const { selection } = editor.state;
+      //   const { $from } = selection;
+      //   const pos = $from.pos;
+      //   const nodeBefore = $from.nodeBefore;
 
-        if ($from.parent.content.size === 0) {
-          if (nodeBefore) {
-            const deleteFrom = pos - nodeBefore.nodeSize
-            const deleteTo = pos
+      //   if ($from.parent.content.size === 0) {
+      //     if (nodeBefore) {
+      //       const deleteFrom = pos - nodeBefore.nodeSize;
+      //       const deleteTo = pos;
 
-            const result = editor
-              .chain()
-              .focus()
-              .deleteRange({ from: deleteFrom, to: deleteTo })
-              .run()
+      //       const result = editor
+      //         .chain()
+      //         .focus()
+      //         .deleteRange({ from: deleteFrom, to: deleteTo })
+      //         .run();
 
-            if (result) {
-              return true
-            }
-          } else if ($from.depth > 1) {
-            // Handle nested nodes, like being at the start of a list item
-            const parentPos = $from.before($from.depth)
-            const result = editor
-              .chain()
-              .focus()
-              .deleteRange({ from: parentPos - 1, to: pos })
-              .run()
+      //       if (result) {
+      //         return true;
+      //       }
+      //     } else if ($from.depth > 1) {
+      //       // Handle nested nodes, like being at the start of a list item
+      //       const parentPos = $from.before($from.depth);
+      //       const result = editor
+      //         .chain()
+      //         .focus()
+      //         .deleteRange({ from: parentPos - 1, to: pos })
+      //         .run();
 
-            if (result) {
-              return true
-            }
-          }
-        }
+      //       if (result) {
+      //         return true;
+      //       }
+      //     }
+      //   }
 
-        return false
-      }
-    }
+      //   return false;
+      // },
+    };
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(DBlockNodeView)
-  }
-})
+    return ReactNodeViewRenderer(DBlockNodeView);
+  },
+});

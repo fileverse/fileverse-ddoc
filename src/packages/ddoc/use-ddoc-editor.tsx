@@ -66,7 +66,7 @@ export const useDdocEditor = ({
     },
   });
 
-  const collaborationCleanupRef = useRef<() => void>(() => {});
+  const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string, isEns = false) => {
     if (!enableCollaboration || !collaborationId || !username) {
@@ -120,14 +120,14 @@ export const useDdocEditor = ({
     }
   }, [onlineEditor, offlineEditor, loading]);
 
-  const focusEditor = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-    if (ref.current?.contains(e.target as Node)) return;
-    editor?.chain().focus().run();
-  };
+  // const focusEditor = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
+  //   if (ref.current?.contains(e.target as Node)) return;
+  //   editor?.chain().focus().run();
+  // };
 
-  useEffect(() => {
-    editor?.chain().focus();
-  }, []);
+  // useEffect(() => {
+  //   editor?.chain().focus();
+  // }, []);
 
   useEffect(() => {
     editor?.setEditable(!isPreviewMode);
@@ -196,7 +196,7 @@ export const useDdocEditor = ({
 
   return {
     editor,
-    focusEditor,
+    // focusEditor,
     ref,
     loading,
     connect,

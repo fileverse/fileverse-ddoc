@@ -105,18 +105,16 @@ function App() {
   };
 
   return (
-    <div>
-      <DdocEditor
-        enableCollaboration={enableCollaboration}
-        collaborationId={collaborationId}
-        username={username}
-        handleImageUploadToIpfs={getImageIpfsHash}
-        isPreviewMode={isPreviewMode}
-        renderToolRightSection={renderRightSection}
-        renderToolLeftSection={renderLeftSection}
-        onAutoSave={(data) => console.log(data, title)}
-      />
-    </div>
+    <DdocEditor
+      enableCollaboration={enableCollaboration}
+      collaborationId={collaborationId}
+      username={username}
+      handleImageUploadToIpfs={getImageIpfsHash}
+      isPreviewMode={isPreviewMode}
+      renderToolRightSection={renderRightSection}
+      renderToolLeftSection={renderLeftSection}
+      onAutoSave={(data) => console.log(data, title)}
+    />
   );
 }
 
