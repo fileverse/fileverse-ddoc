@@ -18,7 +18,7 @@ const usercolors = [
   '#ee6352',
   '#db3041',
   '#0ad7f2',
-  '#1bff39'
+  '#1bff39',
 ];
 
 export const useDdocEditor = ({
@@ -30,12 +30,12 @@ export const useDdocEditor = ({
   username,
   onAutoSave,
   onChange,
-  onCollaboratorChange
+  onCollaboratorChange,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [loading, setLoading] = useState(false);
   const [extensions, setExtensions] = useState([
-    ...(defaultExtensions as AnyExtension[])
+    ...(defaultExtensions as AnyExtension[]),
   ]);
 
   const onlineEditor = useEditor(
@@ -48,9 +48,9 @@ export const useDdocEditor = ({
           return;
         }
         onChange?.(_editor.editor.getJSON());
-      }
+      },
     },
-    [extensions]
+    [extensions],
   );
 
   const offlineEditor = useEditor({
@@ -62,7 +62,7 @@ export const useDdocEditor = ({
         return;
       }
       onChange?.(_editor.editor.getJSON());
-    }
+    },
   });
 
   const collaborationCleanupRef = useRef<() => void>(() => {});
@@ -75,24 +75,24 @@ export const useDdocEditor = ({
     setLoading(true);
     const provider = new WebrtcProvider(collaborationId, ydoc, {
       signaling: [
-        'wss://fileverse-signaling-server-0529292ff51c.herokuapp.com/'
-      ]
+        'wss://fileverse-signaling-server-0529292ff51c.herokuapp.com/',
+      ],
     });
 
     setExtensions([
       ...extensions,
       Collaboration.configure({
-        document: ydoc
+        document: ydoc,
       }),
       CollaborationCursor.configure({
         provider: provider,
         user: {
           name: username,
           color: usercolors[Math.floor(Math.random() * usercolors.length)],
-          isEns: isEns
+          isEns: isEns,
         },
-        render: getCursor
-      })
+        render: getCursor,
+      }),
     ]);
 
     const timeout = setTimeout(() => {
@@ -123,10 +123,6 @@ export const useDdocEditor = ({
     if (ref.current?.contains(e.target as Node)) return;
     editor?.chain().focus().run();
   };
-
-  useEffect(() => {
-    editor?.chain().focus();
-  }, []);
 
   useEffect(() => {
     editor?.setEditable(!isPreviewMode);
@@ -164,10 +160,10 @@ export const useDdocEditor = ({
     () =>
       debounce((editor, onAutoSave) => {
         onAutoSave({
-          editorJSONData: editor.getJSON()
+          editorJSONData: editor.getJSON(),
         });
       }, 1000),
-    [onAutoSave]
+    [onAutoSave],
   );
 
   useEffect(() => {
@@ -196,6 +192,6 @@ export const useDdocEditor = ({
     ref,
     loading,
     connect,
-    ydoc
+    ydoc,
   };
 };

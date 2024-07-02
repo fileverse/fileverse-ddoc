@@ -29,7 +29,7 @@ function App() {
   }, [collaborationId]);
 
   const renderRightSection = ({
-    editor
+    editor,
   }: {
     editor: JSONContent;
   }): JSX.Element => {
@@ -72,54 +72,24 @@ function App() {
     );
   };
 
-  // const handleCollaborationAuth = async () => {
-  //   const userAuth = localStorage.getItem('x');
-  //   if (!userAuth) {
-  //     const tempAuth = await ucan.EdKeypair.create({ exportable: true });
-  //     console.log({ tempAuth });
-  //     localStorage.setItem('x, JSON.stringify({ auth: tempAuth }));
-  //     const token = await buildUCANToken(tempAuth);
-  //     setCollaborationAuth({ token, did: tempAuth.did() });
-  //   } else {
-  //     const { auth } = JSON.parse(userAuth);
-  //     console.log({ auth });
-  //     const token = await buildUCANToken(auth);
-  //     setCollaborationAuth({ token, did: auth.did() });
-  //   }
-  // };
-
-  const callUploadApi = async (file: File, tags = ['public']) => {
-    // if (!auth?.token) {
-    //   throw new Error('Auth Tokens Not Found');
-    // }
-  
+  const callUploadApi = async (file: File) => {
     const body = new FormData();
     body.append('file', file);
     body.append('name', file.name);
-  
-    // Serialize tags array to a comma-separated string
-    const tagsParam = tags.join(',');
-  
-    const headers: any = {
-      ...DEFAULT_AUTHENTICATED_HEADER,
-      'Content-Type': 'multipart/form-data', // Ensure correct content type for FormData
-    };
-  
+
     try {
-      const response = await fetch(`${API_URL}/upload?tags=${encodeURIComponent(tagsParam)}`, {
+      const response = await fetch(`${API_URL}/upload/public`, {
         method: 'POST',
         headers: {
-          ...headers,
-          'Access-Control-Request-Method': 'POST', // Specify the method of the actual request
-          'Access-Control-Request-Headers': 'Content-Type', // Specify the headers of the actual request
+          'x-api-key': 'hello-world',
         },
         body,
       });
-  
+
       if (!response.ok) {
         throw new Error('Network response was not ok');
       }
-  
+
       const apiResponse = await response.json();
       return apiResponse;
     } catch (error) {
@@ -128,15 +98,11 @@ function App() {
       throw error;
     }
   };
-  
+
   const getImageIpfsHash = async (file: File): Promise<string> => {
     const response = await callUploadApi(file);
     return response.ipfsUrl;
   };
-
-  // useEffect(() => {
-  //   handleCollaborationAuth();
-  // }, []);
 
   return (
     <div>
