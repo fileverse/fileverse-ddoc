@@ -138,22 +138,22 @@ const BottomToolbar = ({
         <DynamicModal
           open={toolVisibilty === IEditorTool.LINK_POPUP}
           onOpenChange={() => setToolVisibility(IEditorTool.NONE)}
-          title='Link'
+          title="Link"
           content={
-            <div className='flex flex-col gap-4 w-full h-full px-4'>
+            <div className="flex flex-col gap-4 w-full h-full px-4">
               <TextField
-                label='Text'
-                placeholder='Link text'
-                className='w-full'
+                label="Text"
+                placeholder="Link text"
+                className="w-full"
                 defaultValue={getSelectedText(editor)}
                 onChange={(e) => setLinkText(e.target.value)}
               />
               <TextField
-                label='Link'
-                placeholder='Paste URL'
-                className='w-full'
+                label="Link"
+                placeholder="Paste URL"
+                className="w-full"
                 defaultValue={editor.getAttributes('link').href}
-                onChange={e => {
+                onChange={(e) => {
                   setUrl(e.target.value);
                 }}
                 isValid={isUrlValid}
@@ -165,13 +165,13 @@ const BottomToolbar = ({
             label: 'Save',
             onClick: () => saveLink(),
             isLoading: false,
-            className: 'w-auto min-w-[80px]'
+            className: 'w-auto min-w-[80px]',
           }}
           secondaryAction={{
             label: 'Cancel',
             variant: 'secondary',
             onClick: () => setToolVisibility(IEditorTool.NONE),
-            className: 'w-auto min-w-[80px]'
+            className: 'w-auto min-w-[80px]',
           }}
         />
       )}

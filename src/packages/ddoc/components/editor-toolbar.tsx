@@ -27,24 +27,24 @@ const TiptapToolBar = ({
       uploadToIpfs,
     });
   return (
-    <div className='w-fit bg-transparent px-4 items-center h-16 flex gap-1 justify-center relative'>
+    <div className="w-fit bg-transparent px-4 items-center h-16 flex gap-1 justify-center relative">
       <button
-        className='bg-transparent flex items-center gap-2 min-w-[55px]'
+        className="bg-transparent flex items-center gap-2 min-w-[55px]"
         onClick={() => setToolVisibility(IEditorTool.FONT_FAMILY)}
       >
-        <span className='text-sm'>
-          {fonts.find(font =>
+        <span className="text-sm">
+          {fonts.find((font) =>
             editor?.isActive('textStyle', { fontFamily: font.value }),
           )?.title || 'Font'}
         </span>
         <ChevronDown size={16} />
       </button>
-      <div className='w-[2px] h-4 bg-gray-200 mx-2'></div>
+      <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
       <button
-        className='bg-transparent gap-2 flex items-center min-w-[55px]'
+        className="bg-transparent gap-2 flex items-center min-w-[55px]"
         onClick={() => setToolVisibility(IEditorTool.HEADING)}
       >
-        <span className='text-sm'>
+        <span className="text-sm">
           {editor?.isActive('heading', { level: 1 })
             ? 'Heading 1'
             : editor?.isActive('heading', { level: 2 })
@@ -55,13 +55,13 @@ const TiptapToolBar = ({
         </span>
         <ChevronDown size={16} />
       </button>
-      <div className='w-[2px] h-4 bg-gray-200 mx-2'></div>
+      <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
       {toolbar.map((tool, _index) => {
         if (tool) {
           return (
             <div
               key={tool.title}
-              className='tooltip tooltip-neutral tooltip-bottom text-xs'
+              className="tooltip tooltip-neutral tooltip-bottom text-xs"
               data-tip={tool.title}
             >
               <span
@@ -74,10 +74,7 @@ const TiptapToolBar = ({
                 )}
               >
                 {typeof tool.icon === 'string' ? (
-                  <img
-                    src={tool.icon}
-                    className='w-4'
-                  />
+                  <img src={tool.icon} className="w-4" />
                 ) : (
                   tool.icon
                 )}
@@ -86,10 +83,7 @@ const TiptapToolBar = ({
           );
         } else {
           return (
-            <div
-              key={_index}
-              className='w-[2px] h-4 bg-gray-200 mx-2'
-            ></div>
+            <div key={_index} className="w-[2px] h-4 bg-gray-200 mx-2"></div>
           );
         }
       })}

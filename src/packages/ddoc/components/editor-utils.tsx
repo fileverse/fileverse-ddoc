@@ -440,16 +440,16 @@ export const TextHighlighter = ({
   return (
     <div
       ref={elementRef}
-      className='z-50 h-auto absolute gap-2 top-14 flex flex-wrap left-[20%] max-h-[330px] w-[20.5rem] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all'
+      className="z-50 h-auto absolute gap-2 top-14 flex flex-wrap left-[20%] max-h-[330px] w-[20.5rem] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all"
     >
       <Ban
-        className='cursor-pointer'
+        className="cursor-pointer"
         onClick={() => {
           editor.chain().focus().unsetHighlight().run();
           setVisibility(IEditorTool.NONE);
         }}
       />
-      {colors.map(color => (
+      {colors.map((color) => (
         <div
           onClick={() => {
             editor
@@ -496,7 +496,7 @@ export const EditorFontFamily = ({
         'z-50 h-auto absolute top-14 left-0 max-h-[330px] w-48 overflow-y-auto scroll-smooth bg-white px-1 py-2 shadow-lg transition-all rounded animate-in fade-in slide-in-from-top-1',
       )}
     >
-      {fonts.map(font => (
+      {fonts.map((font) => (
         <button
           onClick={() => {
             font.command(editor);
@@ -513,7 +513,7 @@ export const EditorFontFamily = ({
               : 'hover:bg-[#f2f2f2]',
           )}
         >
-          <p className='font-medium'>{font.title}</p>
+          <p className="font-medium">{font.title}</p>
         </button>
       ))}
     </div>
@@ -531,7 +531,7 @@ export const EditorAlignment = ({
   return (
     <div
       ref={elementRef}
-      className='z-50 h-auto absolute gap-2 top-14 left-[60%] translate-x-1/2 flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all'
+      className="z-50 h-auto absolute gap-2 top-14 left-[60%] translate-x-1/2 flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all"
     >
       <span
         onClick={() => {
@@ -595,8 +595,8 @@ export const EditorList = ({
       )}
     >
       <div
-        className='tooltip tooltip-open tooltip-bottom'
-        data-tip='unordered list'
+        className="tooltip tooltip-open tooltip-bottom"
+        data-tip="unordered list"
       >
         <span
           onClick={() => {
@@ -612,8 +612,8 @@ export const EditorList = ({
       </div>
 
       <div
-        className='tooltip tooltip-open tooltip-bottom'
-        data-tip='ordered list'
+        className="tooltip tooltip-open tooltip-bottom"
+        data-tip="ordered list"
       >
         <span
           onClick={() => {
@@ -629,8 +629,8 @@ export const EditorList = ({
       </div>
 
       <div
-        className='tooltip tooltip-open tooltip-bottom'
-        data-tip='to-do list'
+        className="tooltip tooltip-open tooltip-bottom"
+        data-tip="to-do list"
       >
         <span
           onClick={() => {
@@ -711,19 +711,19 @@ export const LinkPopup = ({
   return (
     <div
       ref={elementRef}
-      className='z-50 h-auto absolute gap-2 top-14 translate-x-1/2 items-center flex max-h-[330px] overflow-y-auto scroll-smooth rounded-lg bg-white p-2 shadow-lg transition-all'
+      className="z-50 h-auto absolute gap-2 top-14 translate-x-1/2 items-center flex max-h-[330px] overflow-y-auto scroll-smooth rounded-lg bg-white p-2 shadow-lg transition-all"
     >
       <TextField
-        onChange={e => setUrl(e.target.value)}
-        className='w-full'
-        placeholder='Add link here'
+        onChange={(e) => setUrl(e.target.value)}
+        className="w-full"
+        placeholder="Add link here"
         value={url}
       />
-      <div className='h-full flex items-center'>
+      <div className="h-full flex items-center">
         <Button
-          variant='secondary'
+          variant="secondary"
           onClick={() => apply()}
-          className='min-w-fit h-[36px]'
+          className="min-w-fit h-[36px]"
         >
           Apply
         </Button>
@@ -743,16 +743,16 @@ export const TextColor = ({
   return (
     <div
       ref={elementRef}
-      className='z-50 h-auto absolute gap-2 top-14 flex flex-wrap left-[100px] max-h-[330px] w-[20.5rem] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all'
+      className="z-50 h-auto absolute gap-2 top-14 flex flex-wrap left-[100px] max-h-[330px] w-[20.5rem] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all"
     >
       <Ban
-        className='cursor-pointer'
+        className="cursor-pointer"
         onClick={() => {
           editor.chain().focus().unsetColor().run();
           setVisibility(IEditorTool.NONE);
         }}
       />
-      {colors.map(color => (
+      {colors.map((color) => (
         <div
           onClick={() => {
             editor.chain().focus().setColor(color.color).run();
@@ -837,7 +837,7 @@ export const TextHeading = ({
         'left-0',
       )}
     >
-      {headings.map(heading => (
+      {headings.map((heading) => (
         <button
           onClick={() => {
             heading.command(editor);
@@ -852,12 +852,12 @@ export const TextHeading = ({
             },
           )}
         >
-          <div className='flex h-10 w-10 items-center justify-center rounded bg-white'>
+          <div className="flex h-10 w-10 items-center justify-center rounded bg-white">
             {heading.icon}
           </div>
           <div>
-            <p className='font-medium'>{heading.title}</p>
-            <p className='text-xs text-stone-500'> {heading.description} </p>
+            <p className="font-medium">{heading.title}</p>
+            <p className="text-xs text-stone-500"> {heading.description} </p>
           </div>
         </button>
       ))}
@@ -915,11 +915,11 @@ export const TextFormatingPopup = ({
 
   return (
     <UtilsModal
-      title='Text formating'
+      title="Text formating"
       content={
-        <div className='px-4 flex flex-col gap-2 w-full'>
-          <div className='flex justify-start sm:justify-center items-center gap-1'>
-            {headings.map(heading => (
+        <div className="px-4 flex flex-col gap-2 w-full">
+          <div className="flex justify-start sm:justify-center items-center gap-1">
+            {headings.map((heading) => (
               <button
                 onClick={() => heading.command(editor)}
                 key={heading.title}
@@ -935,8 +935,8 @@ export const TextFormatingPopup = ({
               </button>
             ))}
           </div>
-          <div className='flex justify-between sm:justify-center items-center gap-1'>
-            <div className='bg-[#f8f9fa] rounded flex gap-2 justify-evenly w-full sm:w-fit p-2'>
+          <div className="flex justify-between sm:justify-center items-center gap-1">
+            <div className="bg-[#f8f9fa] rounded flex gap-2 justify-evenly w-full sm:w-fit p-2">
               <button
                 onClick={() => {
                   editor?.chain().focus().setTextAlign('left').run();
@@ -992,7 +992,7 @@ export const TextFormatingPopup = ({
                 <AlignRight size={20} />
               </button>
             </div>
-            <div className='bg-[#f8f9fa] rounded flex gap-2 justify-evenly w-full sm:w-fit p-2'>
+            <div className="bg-[#f8f9fa] rounded flex gap-2 justify-evenly w-full sm:w-fit p-2">
               <DialogTrigger asChild>
                 <button
                   onClick={() => setToolVisibility(IEditorTool.LINK_POPUP)}
@@ -1040,8 +1040,8 @@ export const TextFormatingPopup = ({
               </button>
             </div>
           </div>
-          <div className='flex justify-between sm:justify-center items-center gap-1'>
-            <div className='bg-[#f8f9fa] rounded flex gap-2 justify-evenly w-full sm:w-fit p-2'>
+          <div className="flex justify-between sm:justify-center items-center gap-1">
+            <div className="bg-[#f8f9fa] rounded flex gap-2 justify-evenly w-full sm:w-fit p-2">
               <button
                 onClick={() => {
                   editor.chain().focus().toggleBold().run();
@@ -1103,7 +1103,7 @@ export const TextFormatingPopup = ({
                 <Strikethrough size={20} />
               </button>
             </div>
-            <div className='bg-[#f8f9fa] rounded flex flex-[0.5] sm:flex-none gap-2 justify-evenly w-full sm:w-fit p-2'>
+            <div className="bg-[#f8f9fa] rounded flex flex-[0.5] sm:flex-none gap-2 justify-evenly w-full sm:w-fit p-2">
               <button
                 onClick={() => {
                   editor?.chain().focus().toggleBulletList().run();
@@ -1151,7 +1151,7 @@ export const TextColorPicker = ({
 }) => {
   return (
     <UtilsModal
-      title='Text color'
+      title="Text color"
       content={
         <Carousel
           opts={{
@@ -1159,7 +1159,7 @@ export const TextColorPicker = ({
             dragFree: true,
             slidesToScroll: 'auto',
           }}
-          className='w-full max-w-md px-4 mx-auto'
+          className="w-full max-w-md px-4 mx-auto"
         >
           <CarouselContent>
             <CarouselItem
@@ -1168,7 +1168,7 @@ export const TextColorPicker = ({
               }}
             >
               <Ban
-                className='cursor-pointer'
+                className="cursor-pointer"
                 onClick={() => {
                   editor.chain().focus().unsetColor().run();
                 }}
@@ -1205,12 +1205,9 @@ export const TextColorPicker = ({
               </CarouselItem>
             ))}
           </CarouselContent>
-          <div className='flex justify-center gap-2 mt-4 w-full max-w-sm'>
+          <div className="flex justify-center gap-2 mt-4 w-full max-w-sm">
             {Array.from({ length: colors.length / 8 }).map((_, index) => (
-              <CarouselIndicator
-                key={index}
-                index={index}
-              />
+              <CarouselIndicator key={index} index={index} />
             ))}
           </div>
         </Carousel>

@@ -89,7 +89,7 @@ export function startImageUpload(
   });
   view.dispatch(tr);
 
-  handleImageUpload(file).then(src => {
+  handleImageUpload(file).then((src) => {
     const { schema } = view.state;
 
     const pos = findPlaceholder(view.state, id);
@@ -122,7 +122,7 @@ export const uploadFn = async (image: File) => {
   }
 
   // convert image to base64
-  const base64Image = await new Promise(resolve => {
+  const base64Image = await new Promise((resolve) => {
     reader.onload = () => {
       resolve(reader.result as string);
     };
