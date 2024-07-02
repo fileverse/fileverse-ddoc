@@ -5,7 +5,7 @@ import { Pencil, ScanEye, Share2 } from 'lucide-react';
 import { JSONContent } from '@tiptap/react';
 // import * as ucan from 'ucans';
 // import { buildUCANToken } from './packages/ddoc/utils/buildUCANToken';
-import { API_URL, DEFAULT_AUTHENTICATED_HEADER } from './constants/index';
+import { API_URL } from './constants/index';
 
 function App() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -37,10 +37,10 @@ function App() {
       console.log(editor, title);
     };
     return (
-      <div className='flex gap-2'>
+      <div className="flex gap-2">
         <div>
           <Button
-            variant='ghost'
+            variant="ghost"
             onClick={() => setIsPreviewMode(!isPreviewMode)}
           >
             {isPreviewMode ? <Pencil size={14} /> : <ScanEye size={14} />}{' '}
@@ -59,14 +59,14 @@ function App() {
 
   const renderLeftSection = () => {
     return (
-      <div className='flex items-center gap-4'>
+      <div className="flex items-center gap-4">
         <input
-          className='max-w-[6rem] lg:max-w-xs focus:outline-none bg-[#f8f9fa]'
+          className="max-w-[6rem] lg:max-w-xs focus:outline-none bg-[#f8f9fa]"
           disabled={isPreviewMode}
-          type='text'
-          placeholder='Untitled'
+          type="text"
+          placeholder="Untitled"
           value={title}
-          onChange={e => setTitle(e.target.value)}
+          onChange={(e) => setTitle(e.target.value)}
         />
       </div>
     );
@@ -114,7 +114,7 @@ function App() {
         isPreviewMode={isPreviewMode}
         renderToolRightSection={renderRightSection}
         renderToolLeftSection={renderLeftSection}
-        onAutoSave={data => console.log(data, title)}
+        onAutoSave={(data) => console.log(data, title)}
       />
     </div>
   );

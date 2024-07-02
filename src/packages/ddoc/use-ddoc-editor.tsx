@@ -37,13 +37,14 @@ export const useDdocEditor = ({
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions as AnyExtension[]),
   ]);
+  const initialContentSetRef = useRef(false);
 
   const onlineEditor = useEditor(
     {
       extensions,
       editorProps: DdocEditorProps,
       autofocus: 'start',
-      onUpdate: _editor => {
+      onUpdate: (_editor) => {
         if (editor?.isEmpty) {
           return;
         }
@@ -57,7 +58,7 @@ export const useDdocEditor = ({
     extensions,
     editorProps: DdocEditorProps,
     autofocus: 'start',
-    onUpdate: _editor => {
+    onUpdate: (_editor) => {
       if (editor?.isEmpty) {
         return;
       }
@@ -129,11 +130,14 @@ export const useDdocEditor = ({
   }, [isPreviewMode, editor]);
 
   useEffect(() => {
-    if (initialContent && editor) {
-      setTimeout(() => {
-        editor?.commands.setContent(initialContent);
-      });
+    if (initialContent && editor && !initialContentSetRef.current) {
+      editor.commands.setContent(initialContent);
+      initialContentSetRef.current = true;
     }
+
+    setTimeout(() => {
+      initialContentSetRef.current = false;
+    });
   }, [initialContent, editor]);
 
   const startCollaboration = async () => {

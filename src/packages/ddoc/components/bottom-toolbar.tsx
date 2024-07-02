@@ -2,7 +2,7 @@ import { useState } from 'react';
 import {
   TextColorPicker,
   TextFormatingPopup,
-  useEditorToolbar
+  useEditorToolbar,
 } from './editor-utils';
 import { Editor } from '@tiptap/react';
 import { IEditorTool } from '../hooks/use-visibility';
@@ -13,14 +13,14 @@ import cn from 'classnames';
 
 const BottomToolbar = ({
   editor,
-  uploadToIpfs
+  uploadToIpfs,
 }: {
   editor: Editor;
   uploadToIpfs: (f: File) => Promise<string>;
 }) => {
   const { toolVisibilty, setToolVisibility, bottomToolbar } = useEditorToolbar({
     editor: editor,
-    uploadToIpfs
+    uploadToIpfs,
   });
 
   const [url, setUrl] = useState('');
@@ -51,7 +51,7 @@ const BottomToolbar = ({
     try {
       if (
         finalUrl.match(
-          /^((http|https):\/\/)?([w|W]{3}\.)+[a-zA-Z0-9\-\.]{3,}\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?$/
+          /^((http|https):\/\/)?([w|W]{3}\.)+[a-zA-Z0-9\-\.]{3,}\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?$/,
         )
       ) {
         editor
@@ -97,14 +97,11 @@ const BottomToolbar = ({
 
   return (
     <Drawer>
-      <div className='flex w-full justify-between sm:justify-evenly'>
-        {bottomToolbar.map(tool => {
+      <div className="flex w-full justify-between sm:justify-evenly">
+        {bottomToolbar.map((tool) => {
           if (tool) {
             return (
-              <div
-                key={tool.title}
-                className='flex items-center'
-              >
+              <div key={tool.title} className="flex items-center">
                 {tool.title === 'Text formating' ||
                 tool.title === 'Text color' ? (
                   <DrawerTrigger asChild>
@@ -113,7 +110,7 @@ const BottomToolbar = ({
                 ) : (
                   <button
                     className={cn(
-                      'flex items-center rounded px-2 py-1 text-black transition'
+                      'flex items-center rounded px-2 py-1 text-black transition',
                     )}
                     onClick={() => tool.onClick()}
                   >
@@ -149,7 +146,7 @@ const BottomToolbar = ({
                 placeholder='Link text'
                 className='w-full'
                 defaultValue={getSelectedText(editor)}
-                onChange={e => setLinkText(e.target.value)}
+                onChange={(e) => setLinkText(e.target.value)}
               />
               <TextField
                 label='Link'

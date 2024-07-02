@@ -7,7 +7,7 @@ import {
   TextColor,
   TextHeading,
   TextHighlighter,
-  useEditorToolbar
+  useEditorToolbar,
 } from './editor-utils';
 import { Editor } from '@tiptap/react';
 import { IEditorTool } from '../hooks/use-visibility';
@@ -16,7 +16,7 @@ import cn from 'classnames';
 
 const TiptapToolBar = ({
   editor,
-  uploadToIpfs
+  uploadToIpfs,
 }: {
   editor: Editor;
   uploadToIpfs: (f: File) => Promise<string>;
@@ -24,7 +24,7 @@ const TiptapToolBar = ({
   const { toolRef, toolVisibilty, setToolVisibility, toolbar } =
     useEditorToolbar({
       editor: editor,
-      uploadToIpfs
+      uploadToIpfs,
     });
   return (
     <div className='w-fit bg-transparent px-4 items-center h-16 flex gap-1 justify-center relative'>
@@ -34,7 +34,7 @@ const TiptapToolBar = ({
       >
         <span className='text-sm'>
           {fonts.find(font =>
-            editor?.isActive('textStyle', { fontFamily: font.value })
+            editor?.isActive('textStyle', { fontFamily: font.value }),
           )?.title || 'Font'}
         </span>
         <ChevronDown size={16} />
@@ -61,7 +61,7 @@ const TiptapToolBar = ({
           return (
             <div
               key={tool.title}
-              className='tooltip tooltip-bottom'
+              className='tooltip tooltip-neutral tooltip-bottom text-xs'
               data-tip={tool.title}
             >
               <span
@@ -70,7 +70,7 @@ const TiptapToolBar = ({
                   'rounded w-8 h-8 p-1 flex cursor-pointer justify-center items-center transition',
                   tool.isActive
                     ? 'bg-yellow-300 hover:brightness-90'
-                    : 'hover:bg-[#f2f2f2]'
+                    : 'hover:bg-[#f2f2f2]',
                 )}
               >
                 {typeof tool.icon === 'string' ? (
