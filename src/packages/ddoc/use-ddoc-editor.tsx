@@ -44,7 +44,7 @@ export const useDdocEditor = ({
       extensions,
       editorProps: DdocEditorProps,
       autofocus: 'start',
-      onUpdate: (_editor) => {
+      onUpdate: _editor => {
         if (editor?.isEmpty) {
           return;
         }
@@ -58,7 +58,7 @@ export const useDdocEditor = ({
     extensions,
     editorProps: DdocEditorProps,
     autofocus: 'start',
-    onUpdate: (_editor) => {
+    onUpdate: _editor => {
       if (editor?.isEmpty) {
         return;
       }
@@ -124,6 +124,10 @@ export const useDdocEditor = ({
     if (ref.current?.contains(e.target as Node)) return;
     editor?.chain().focus().run();
   };
+
+  useEffect(() => {
+    editor?.chain().focus();
+  }, []);
 
   useEffect(() => {
     editor?.setEditable(!isPreviewMode);
