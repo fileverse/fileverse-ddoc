@@ -32,7 +32,7 @@ export interface DdocProps {
   isPreviewMode: boolean;
   initialContent?: JSONContent | null;
   onAutoSave?: (data: Data) => void;
-  ensProviderUrl?: string;
+  walletAddress?: string | null;
   username?: string | null;
   renderToolLeftSection?: ({ editor }: { editor: JSONContent }) => JSX.Element;
   renderToolRightSection?: ({ editor }: { editor: JSONContent }) => JSX.Element;

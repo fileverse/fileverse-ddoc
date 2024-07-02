@@ -7,8 +7,8 @@ import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import { defaultExtensions } from './extensions/default-extension';
 import { AnyExtension, useEditor } from '@tiptap/react';
 import { getCursor } from './utils/cursor';
-import { getAddressName } from './utils/getAddressName';
 import { debounce } from './utils/debounce';
+import { getAddressName } from './utils/getAddressName';
 
 const usercolors = [
   '#30bced',
@@ -26,7 +26,7 @@ export const useDdocEditor = ({
   initialContent,
   enableCollaboration,
   collaborationId,
-  ensProviderUrl,
+  walletAddress,
   username,
   onAutoSave,
   onChange,
@@ -66,10 +66,10 @@ export const useDdocEditor = ({
     },
   });
 
-  const collaborationCleanupRef = useRef<() => void>(() => { });
+  const collaborationCleanupRef = useRef<() => void>(() => {});
 
-  const connect = (username: string, isEns = false) => {
-    if (!enableCollaboration || !collaborationId || !username) {
+  const connect = (username: string | null | undefined, isEns = false) => {
+    if (!enableCollaboration || !collaborationId) {
       throw new Error('docId or username is not provided');
     }
 
@@ -145,11 +145,15 @@ export const useDdocEditor = ({
   }, [initialContent, editor]);
 
   const startCollaboration = async () => {
-    if (!username) return;
     let _username = username;
     let _isEns = false;
-    if (ensProviderUrl) {
-      const { name, isEns } = await getAddressName(username, ensProviderUrl);
+
+    if (walletAddress) {
+      const { name, isEns } = await getAddressName(
+        walletAddress,
+        'https://eth-mainnet.g.alchemy.com/v2/uzKE0HT-Vc3LmUAA_dNVEt2rO8LtJGA3',
+      );
+
       _username = name;
       _isEns = isEns;
     }
@@ -157,7 +161,7 @@ export const useDdocEditor = ({
   };
 
   useEffect(() => {
-    if (enableCollaboration && username) {
+    if (enableCollaboration) {
       startCollaboration();
     } else {
       collaborationCleanupRef.current();
