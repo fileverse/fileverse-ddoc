@@ -53,6 +53,7 @@
     "classnames": "^2.5.1",
     "embla-carousel-react": "^8.1.5",
     "ethers": "^6.13.1",
+    "framer-motion": "^11.2.12",
     "lucide-react": "^0.379.0",
     "prosemirror-model": "^1.21.0",
     "prosemirror-state": "^1.4.3",
