@@ -8,7 +8,7 @@ import { defaultExtensions } from './extensions/default-extension';
 import { AnyExtension, useEditor } from '@tiptap/react';
 import { getCursor } from './utils/cursor';
 import { debounce } from './utils/debounce';
-import { getAddressName } from './utils/getAddressName';
+import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { ENS_RESOLUTION_URL } from '../../constants';
 
 const usercolors = [
@@ -67,7 +67,7 @@ export const useDdocEditor = ({
     },
   });
 
-  const collaborationCleanupRef = useRef<() => void>(() => {});
+  const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
@@ -89,7 +89,7 @@ export const useDdocEditor = ({
       CollaborationCursor.configure({
         provider: provider,
         user: {
-          name: username,
+          name: username && username.length > 20 ? getTrimmedName(username, 7, 15) : username,
           color: usercolors[Math.floor(Math.random() * usercolors.length)],
           isEns: isEns,
         },

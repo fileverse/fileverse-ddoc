@@ -160,7 +160,7 @@ const DdocEditor = forwardRef(
               // onClick={focusEditor}
               className="mt-8 lg:mt-[5rem] w-screen flex justify-center relative"
             >
-              <div className="px-4 pt-12 sm:p-[88px] h-screen bg-white  w-full sm:w-[70%] max-w-[856px]">
+              <div className="px-4 pt-8 sm:px-[88px] sm:py-[78px] h-screen bg-white  w-full sm:w-[70%] max-w-[856px]">
                 <div
                   ref={editorRef}
                   className="w-full h-full overflow-y-scroll overflow-x-hidden no-scrollbar"
@@ -172,7 +172,7 @@ const DdocEditor = forwardRef(
                     </div>
                   )}
                   <EditingProvider isPreviewMode={isPreviewMode}>
-                    <EditorContent editor={editor} />
+                    <EditorContent editor={editor} className='py-4' />
                   </EditingProvider>
                 </div>
               </div>
