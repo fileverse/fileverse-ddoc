@@ -9,7 +9,13 @@ import './styles/editor.scss';
 import 'tippy.js/animations/shift-toward-subtle.css';
 import { useDdocEditor } from './use-ddoc-editor';
 import BottomToolbar from './components/bottom-toolbar';
-import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useEffect,
+  useImperativeHandle,
+  useRef,
+  useState,
+} from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import cn from 'classnames';
 
@@ -24,12 +30,12 @@ const DdocEditor = forwardRef(
       onAutoSave,
       renderToolRightSection,
       renderToolLeftSection,
-      ensProviderUrl,
+      walletAddress,
       onChange,
       handleImageUploadToIpfs,
-      onCollaboratorChange
+      onCollaboratorChange,
     }: DdocProps,
-    ref
+    ref,
   ) => {
     // const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
@@ -39,28 +45,27 @@ const DdocEditor = forwardRef(
       // focusEditor,
       ref: editorRef,
       loading,
-      ydoc
+      ydoc,
     } = useDdocEditor({
       isPreviewMode,
       initialContent,
       enableCollaboration,
       collaborationId,
-      ensProviderUrl,
+      walletAddress,
       username,
       onAutoSave,
       onChange,
-      onCollaboratorChange
+      onCollaboratorChange,
     });
 
     useImperativeHandle(
       ref,
       () => ({
         getEditor: () => editor,
-        getYdoc: () => ydoc
+        getYdoc: () => ydoc,
       }),
-      [editor, ydoc]
+      [editor, ydoc],
     );
-
 
     // useEffect(() => {
     //   const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
@@ -119,7 +124,7 @@ const DdocEditor = forwardRef(
 
     if (!editor || loading) {
       return (
-        <div className='w-screen h-screen flex flex-col gap-4 justify-center items-center'>
+        <div className="w-screen h-screen flex flex-col gap-4 justify-center items-center">
           <Spinner />
           <p>Loading Editor...</p>
         </div>
@@ -128,18 +133,18 @@ const DdocEditor = forwardRef(
 
     return (
       <div
-        data-cy='single-webpage'
-        className='bg-[#f8f9fa] h-full w-full overflow-hidden no-scrollbar'
+        data-cy="single-webpage"
+        className="bg-[#f8f9fa] h-full w-full overflow-hidden no-scrollbar"
       >
-        <div className='flex flex-col justify-between items-center'>
-          <div className='flex items-center w-full h-16 fixed z-10 px-4 bg-[#f8f9fa]'>
-            <div className='flex items-center justify-between gap-2 w-full'>
-              <div className='grow'>
+        <div className="flex flex-col justify-between items-center">
+          <div className="flex items-center w-full h-16 fixed z-10 px-4 bg-[#f8f9fa]">
+            <div className="flex items-center justify-between gap-2 w-full">
+              <div className="grow">
                 {renderToolLeftSection?.({ editor: editor.getJSON() })}
               </div>
 
               {!isPreviewMode && (
-                <div className='grow relative hidden xl:block'>
+                <div className="grow relative hidden xl:block">
                   <EditorToolBar
                     uploadToIpfs={handleImageUploadToIpfs}
                     editor={editor}
@@ -150,23 +155,20 @@ const DdocEditor = forwardRef(
             </div>
           </div>
 
-          <main className='rounded-[8px] flex flex-col justify-start items-center gap-2 '>
+          <main className="rounded-[8px] flex flex-col justify-start items-center gap-2 ">
             <div
               // onClick={focusEditor}
-              className='mt-8 lg:mt-[5rem] w-screen flex justify-center relative'
+              className="mt-8 lg:mt-[5rem] w-screen flex justify-center relative"
             >
-              <div className='px-4 pt-12 sm:p-[88px] h-screen bg-white  w-full sm:w-[70%] max-w-[856px]'>
+              <div className="px-4 pt-12 sm:p-[88px] h-screen bg-white  w-full sm:w-[70%] max-w-[856px]">
                 <div
                   ref={editorRef}
-                  className='w-full h-full overflow-y-scroll overflow-x-hidden no-scrollbar'
+                  className="w-full h-full overflow-y-scroll overflow-x-hidden no-scrollbar"
                 >
                   {!isPreviewMode && (
                     <div>
                       <EditorBubbleMenu editor={editor} />
-                      <ColumnsMenu
-                        editor={editor}
-                        appendTo={editorRef}
-                      />
+                      <ColumnsMenu editor={editor} appendTo={editorRef} />
                     </div>
                   )}
                   <EditingProvider isPreviewMode={isPreviewMode}>
@@ -204,7 +206,7 @@ const DdocEditor = forwardRef(
         </div>
       </div>
     );
-  }
+  },
 );
 
 export default DdocEditor;
