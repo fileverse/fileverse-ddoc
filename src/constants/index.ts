@@ -5,3 +5,5 @@ export const DEFAULT_AUTHENTICATED_HEADER = {
   chain: 11155111,
 };
 export const API_URL = 'https://dev-fileverse-storage.herokuapp.com';
+export const ENS_RESOLUTION_URL =
+  'https://eth-mainnet.g.alchemy.com/v2/uzKE0HT-Vc3LmUAA_dNVEt2rO8LtJGA3';

@@ -9,6 +9,7 @@ import { AnyExtension, useEditor } from '@tiptap/react';
 import { getCursor } from './utils/cursor';
 import { debounce } from './utils/debounce';
 import { getAddressName } from './utils/getAddressName';
+import { ENS_RESOLUTION_URL } from '../../constants';
 
 const usercolors = [
   '#30bced',
@@ -151,7 +152,7 @@ export const useDdocEditor = ({
     if (walletAddress) {
       const { name, isEns } = await getAddressName(
         walletAddress,
-        'https://eth-mainnet.g.alchemy.com/v2/uzKE0HT-Vc3LmUAA_dNVEt2rO8LtJGA3',
+        ENS_RESOLUTION_URL,
       );
 
       _username = name;
