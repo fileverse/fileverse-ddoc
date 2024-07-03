@@ -29,6 +29,7 @@ import { TrailingNode } from './trailing-node';
 import { NodeType } from '@tiptap/pm/model';
 import { InputRule } from '@tiptap/core';
 import { actionButton } from './action-button';
+import History from '@tiptap/extension-history';
 
 export const defaultExtensions = [
   FontFamily,
@@ -100,6 +101,7 @@ export const defaultExtensions = [
     document: false,
     horizontalRule: false,
   }),
+  History,
   TextAlign.configure({
     types: ['heading', 'paragraph'],
   }),
