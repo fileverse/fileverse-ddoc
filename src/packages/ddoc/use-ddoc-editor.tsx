@@ -34,6 +34,8 @@ export const useDdocEditor = ({
   onChange,
   onCollaboratorChange,
   onHighlightedTextClick,
+  onTextSelection,
+  threads,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [loading, setLoading] = useState(false);
@@ -157,6 +159,41 @@ export const useDdocEditor = ({
       initialContentSetRef.current = false;
     });
   }, [initialContent, editor]);
+
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+    const handleSelection = () => {
+      const { state } = editor;
+      const { from, to } = state.selection;
+
+      if (from !== to) {
+        const selectedText = state.doc.textBetween(from, to, ' ');
+        onTextSelection?.({
+          text: selectedText,
+          from,
+          to,
+        });
+      }
+    };
+    editor.on('selectionUpdate', handleSelection);
+    return () => {
+      editor.off('selectionUpdate', handleSelection);
+    };
+  }, [editor]);
+
+  useEffect(() => {
+    if (!editor || !threads?.length) return;
+    threads.forEach(selectedData => {
+      const { from, to } = selectedData;
+      editor
+        .chain()
+        .setTextSelection({ from, to })
+        .setHighlight({ color: 'yellow' })
+        .run();
+    });
+  }, [editor, threads]);
 
   const startCollaboration = async () => {
     let _username = username;

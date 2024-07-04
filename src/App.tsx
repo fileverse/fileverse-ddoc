@@ -121,7 +121,6 @@ function App() {
         handleImageUploadToIpfs={getImageIpfsHash}
         isPreviewMode={isPreviewMode}
         renderToolRightSection={renderRightSection}
-        onChange={content => console.log({ content })}
         renderToolLeftSection={renderLeftSection}
         onAutoSave={data => console.log(data, title)}
         threads={threads}
