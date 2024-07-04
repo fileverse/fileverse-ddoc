@@ -39,6 +39,7 @@
     "@tiptap/extension-font-family": "^2.4.0",
     "@tiptap/extension-gapcursor": "^2.4.0",
     "@tiptap/extension-highlight": "^2.4.0",
+    "@tiptap/extension-history": "^2.4.0",
     "@tiptap/extension-link": "^2.4.0",
     "@tiptap/extension-placeholder": "^2.4.0",
     "@tiptap/extension-task-item": "^2.4.0",

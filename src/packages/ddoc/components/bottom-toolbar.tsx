@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  TextColorPicker,
   TextFormatingPopup,
   useEditorToolbar,
 } from './editor-utils';
@@ -144,7 +143,7 @@ const BottomToolbar = ({
 
   return (
     <Drawer>
-      <div className="flex w-full justify-between sm:justify-evenly">
+      <div className="flex w-full justify-between sm:justify-evenly select-none">
         {bottomToolbar.map((tool) => {
           if (tool) {
             return (
@@ -160,9 +159,13 @@ const BottomToolbar = ({
                 ) : (
                   <button
                     className={cn(
-                      'flex items-center rounded px-2 py-1 text-black transition',
+                      'flex items-center rounded px-2 py-1 transition', {
+                      'text-black': tool.isActive,
+                      'text-[#A1AAB1]': !tool.isActive,
+                    }
                     )}
                     onClick={() => tool.onClick()}
+                    disabled={!tool.isActive}
                   >
                     {tool.icon}
                   </button>
@@ -174,12 +177,6 @@ const BottomToolbar = ({
       </div>
       {toolVisibilty === IEditorTool.TEXT_FORMATING && (
         <TextFormatingPopup
-          editor={editor}
-          setToolVisibility={setToolVisibility}
-        />
-      )}
-      {toolVisibilty === IEditorTool.TEXT_COLOR_PICKER && (
-        <TextColorPicker
           editor={editor}
           setToolVisibility={setToolVisibility}
         />
