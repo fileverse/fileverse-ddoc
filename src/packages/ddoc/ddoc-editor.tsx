@@ -34,6 +34,9 @@ const DdocEditor = forwardRef(
       onChange,
       handleImageUploadToIpfs,
       onCollaboratorChange,
+      onTextSelection,
+      onHighlightedTextClick,
+      threads,
     }: DdocProps,
     ref,
   ) => {
@@ -56,6 +59,7 @@ const DdocEditor = forwardRef(
       onAutoSave,
       onChange,
       onCollaboratorChange,
+      onHighlightedTextClick,
     });
 
     useImperativeHandle(
@@ -122,6 +126,41 @@ const DdocEditor = forwardRef(
       };
     }, [editor]);
 
+    useEffect(() => {
+      if (!editor) {
+        return;
+      }
+      const handleSelection = () => {
+        const { state } = editor;
+        const { from, to } = state.selection;
+
+        if (from !== to) {
+          const selectedText = state.doc.textBetween(from, to, ' ');
+          onTextSelection?.({
+            text: selectedText,
+            from,
+            to,
+          });
+        }
+      };
+      editor.on('selectionUpdate', handleSelection);
+      return () => {
+        editor.off('selectionUpdate', handleSelection);
+      };
+    }, [editor]);
+
+    useEffect(() => {
+      if (!editor || !threads?.length) return;
+      threads.forEach(selectedData => {
+        const { from, to } = selectedData;
+        editor
+          .chain()
+          .setTextSelection({ from, to })
+          .setHighlight({ color: 'yellow' })
+          .run();
+      });
+    }, [editor, threads]);
+
     if (!editor || loading) {
       return (
         <div className="w-screen h-screen flex flex-col gap-4 justify-center items-center">
@@ -168,11 +207,17 @@ const DdocEditor = forwardRef(
                   {!isPreviewMode && (
                     <div>
                       <EditorBubbleMenu editor={editor} />
-                      <ColumnsMenu editor={editor} appendTo={editorRef} />
+                      <ColumnsMenu
+                        editor={editor}
+                        appendTo={editorRef}
+                      />
                     </div>
                   )}
                   <EditingProvider isPreviewMode={isPreviewMode}>
-                    <EditorContent editor={editor} className='py-4' />
+                    <EditorContent
+                      editor={editor}
+                      className="py-4"
+                    />
                   </EditingProvider>
                 </div>
               </div>

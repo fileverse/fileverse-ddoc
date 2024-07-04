@@ -10,6 +10,7 @@ import { getCursor } from './utils/cursor';
 import { debounce } from './utils/debounce';
 import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { ENS_RESOLUTION_URL } from '../../constants';
+import { EditorView } from '@tiptap/pm/view';
 
 const usercolors = [
   '#30bced',
@@ -32,6 +33,7 @@ export const useDdocEditor = ({
   onAutoSave,
   onChange,
   onCollaboratorChange,
+  onHighlightedTextClick,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [loading, setLoading] = useState(false);
@@ -40,12 +42,20 @@ export const useDdocEditor = ({
   ]);
   const initialContentSetRef = useRef(false);
 
+  const handleClick = (_view: EditorView, _pos: number, event: MouseEvent) => {
+    const target: any = event.target;
+    if (target && target.nodeName === 'MARK' && target.dataset.color) {
+      const highlightedText = target.textContent;
+      onHighlightedTextClick?.(highlightedText);
+    }
+  };
+
   const onlineEditor = useEditor(
     {
       extensions,
-      editorProps: DdocEditorProps,
+      editorProps: { ...DdocEditorProps, handleClick },
       autofocus: 'start',
-      onUpdate: (_editor) => {
+      onUpdate: _editor => {
         if (editor?.isEmpty) {
           return;
         }
@@ -57,9 +67,9 @@ export const useDdocEditor = ({
 
   const offlineEditor = useEditor({
     extensions,
-    editorProps: DdocEditorProps,
+    editorProps: { ...DdocEditorProps, handleClick },
     autofocus: 'start',
-    onUpdate: (_editor) => {
+    onUpdate: _editor => {
       if (editor?.isEmpty) {
         return;
       }
@@ -67,7 +77,7 @@ export const useDdocEditor = ({
     },
   });
 
-  const collaborationCleanupRef = useRef<() => void>(() => { });
+  const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
@@ -89,7 +99,10 @@ export const useDdocEditor = ({
       CollaborationCursor.configure({
         provider: provider,
         user: {
-          name: username && username.length > 20 ? getTrimmedName(username, 7, 15) : username,
+          name:
+            username && username.length > 20
+              ? getTrimmedName(username, 7, 15)
+              : username,
           color: usercolors[Math.floor(Math.random() * usercolors.length)],
           isEns: isEns,
         },
