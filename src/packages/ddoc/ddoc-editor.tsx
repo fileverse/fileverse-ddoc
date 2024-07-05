@@ -9,7 +9,15 @@ import './styles/editor.scss';
 import 'tippy.js/animations/shift-toward-subtle.css';
 import { useDdocEditor } from './use-ddoc-editor';
 import BottomToolbar from './components/bottom-toolbar';
-import { forwardRef, useCallback, useEffect, useImperativeHandle, useMemo, useRef, useState } from 'react';
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import cn from 'classnames';
 import platform from 'platform';
@@ -67,7 +75,7 @@ const DdocEditor = forwardRef(
 
     const defaultHeight = useRef(window.innerHeight);
 
-    const isIOS = useMemo(() => checkOs() === "iOS", []);
+    const isIOS = useMemo(() => checkOs() === 'iOS', []);
 
     const scrollTop = useRef<number | undefined>(undefined);
 
@@ -79,38 +87,34 @@ const DdocEditor = forwardRef(
       () =>
         window
           ? isIOS
-            ?
-            defaultHeight.current - 305
+            ? defaultHeight.current - 305
             : defaultHeight.current
           : 600,
-      [isIOS]
+      [isIOS],
     );
 
     const stopScrollTimeout = useRef<ReturnType<typeof setTimeout>>();
 
     const scrollEditor = useCallback((offset: number) => {
-      const editorElement = document.getElementById("editor");
+      const editorElement = document.getElementById('editor');
       if (editorElement) {
         editorElement.scrollTo({
           top: offset,
-          behavior: "smooth"
+          behavior: 'smooth',
         });
       }
       setScrolled(Math.round(offset));
     }, []);
 
-    const stopScroll = useCallback(
-      () => {
-        if (isIOS) {
-          window.scrollTo({
-            top: scrollTop.current,
-            behavior: 'smooth'
-          });
-          scrollTop.current = undefined;
-        }
-      },
-      [isIOS, scrollTop]
-    );
+    const stopScroll = useCallback(() => {
+      if (isIOS) {
+        window.scrollTo({
+          top: scrollTop.current,
+          behavior: 'smooth',
+        });
+        scrollTop.current = undefined;
+      }
+    }, [isIOS, scrollTop]);
 
     const handleTouchEnd = useCallback(() => {
       stopScroll();
@@ -118,16 +122,20 @@ const DdocEditor = forwardRef(
 
     const getScrollTop = () => {
       if (scrollTop.current === undefined) {
-        const editorWrapper = document.getElementById("editor-wrapper");
-        scrollTop.current = editorWrapper ? editorWrapper.getBoundingClientRect().top + window.pageYOffset : 0;
+        const editorWrapper = document.getElementById('editor-wrapper');
+        scrollTop.current = editorWrapper
+          ? editorWrapper.getBoundingClientRect().top + window.pageYOffset
+          : 0;
       }
     };
 
     useEffect(() => {
       if (isIOS && !offsetInterval.current) {
         offsetInterval.current = setInterval(() => {
-          const editorWrapper = document.getElementById("editor-wrapper");
-          scrollTop.current = editorWrapper ? window.scrollY + editorWrapper.getBoundingClientRect().top : 0;
+          const editorWrapper = document.getElementById('editor-wrapper');
+          scrollTop.current = editorWrapper
+            ? window.scrollY + editorWrapper.getBoundingClientRect().top
+            : 0;
         }, 1000);
       }
       return () => {
@@ -135,16 +143,19 @@ const DdocEditor = forwardRef(
       };
     }, [isIOS]);
 
-    useEffect(() => () => {
-      if (stopScrollTimeout.current) clearTimeout(stopScrollTimeout.current);
-    }, []);
+    useEffect(
+      () => () => {
+        if (stopScrollTimeout.current) clearTimeout(stopScrollTimeout.current);
+      },
+      [],
+    );
 
     useEffect(() => {
-      document.addEventListener("touchstart", getScrollTop);
-      document.addEventListener("touchend", handleTouchEnd);
+      document.addEventListener('touchstart', getScrollTop);
+      document.addEventListener('touchend', handleTouchEnd);
       return () => {
-        document.removeEventListener("touchstart", getScrollTop);
-        document.removeEventListener("touchend", handleTouchEnd);
+        document.removeEventListener('touchstart', getScrollTop);
+        document.removeEventListener('touchend', handleTouchEnd);
       };
     }, [handleTouchEnd]);
 
@@ -211,10 +222,7 @@ const DdocEditor = forwardRef(
     }
 
     return (
-      <div
-        data-cy='single-webpage'
-        className='bg-[#f8f9fa] h-full w-full'
-      >
+      <div data-cy="single-webpage" className="bg-[#f8f9fa] h-full w-full">
         <div
           id="editor-wrapper"
           onFocus={() => {
@@ -227,10 +235,16 @@ const DdocEditor = forwardRef(
           onBlur={() => {
             setScrolled(false);
           }}
-          className={cn('flex flex-col justify-between items-center overflow-scroll')}>
-          <div id="toolbar" className='flex items-center w-full h-16 fixed z-10 px-4 bg-[#f8f9fa]'>
-            <div className='flex items-center justify-between gap-2 w-full'>
-              <div className='grow'>
+          className={cn(
+            'flex flex-col justify-between items-center overflow-scroll',
+          )}
+        >
+          <div
+            id="toolbar"
+            className="flex items-center w-full h-16 fixed z-10 px-4 bg-[#f8f9fa]"
+          >
+            <div className="flex items-center justify-between gap-2 w-full">
+              <div className="grow">
                 {renderToolLeftSection?.({ editor: editor.getJSON() })}
               </div>
 
@@ -247,10 +261,8 @@ const DdocEditor = forwardRef(
           </div>
 
           <main className="rounded-[8px] flex flex-col justify-start items-center gap-2 ">
-            <div
-              className='mt-8 lg:mt-[5rem] w-screen flex justify-center relative'
-            >
-              <div className='px-4 pt-12 sm:p-[88px] h-screen bg-white w-full sm:w-[70%] max-w-[856px]'>
+            <div className="mt-8 lg:mt-[5rem] w-screen flex justify-center relative">
+              <div className="px-4 pt-8 sm:px-[88px] sm:py-[78px] h-screen bg-white  w-full sm:w-[70%] max-w-[856px]">
                 <div
                   ref={editorRef}
                   className="w-full h-full overflow-y-scroll overflow-x-hidden no-scrollbar"
@@ -266,13 +278,20 @@ const DdocEditor = forwardRef(
                       editor={editor}
                       id="editor"
                       onTouchEnd={(e) => {
-                        if (isIOS && !scrolled && e.target instanceof HTMLElement) {
-                          offset.current = e.target.offsetTop + e.target.clientHeight;
+                        if (
+                          isIOS &&
+                          !scrolled &&
+                          e.target instanceof HTMLElement
+                        ) {
+                          offset.current =
+                            e.target.offsetTop + e.target.clientHeight;
                         }
                       }}
-                      className='w-full overflow-x-hidden overflow-y-scroll lg:overflow-hidden no-scrollbar'
+                      className="w-full overflow-x-hidden overflow-y-scroll lg:overflow-hidden no-scrollbar"
                       style={{
-                        height: isKeyboardVisible ? `calc(${editorHeight}px - 110px)` : `calc(${editorHeight}px + 160px)`,
+                        height: isKeyboardVisible
+                          ? `calc(${editorHeight}px - 110px)`
+                          : `calc(${editorHeight}px + 160px)`,
                       }}
                     />
                   </EditingProvider>
@@ -289,7 +308,7 @@ const DdocEditor = forwardRef(
                             {
                               'bottom-[270px]': isKeyboardVisible,
                               'bottom-0': !isKeyboardVisible,
-                            }
+                            },
                           )}
                         >
                           <BottomToolbar
@@ -304,10 +323,8 @@ const DdocEditor = forwardRef(
               </div>
             </div>
           </main>
-
-
-        </div >
-      </div >
+        </div>
+      </div>
     );
   },
 );

@@ -28,6 +28,8 @@ import {
   Heading2,
   Heading3,
   Table,
+  Undo,
+  Redo
 } from 'lucide-react';
 import { startImageUpload } from '../utils/upload-images';
 import cn from 'classnames';
@@ -330,12 +332,12 @@ export const useEditorToolbar = ({
       onClick: () => setToolVisibility(IEditorTool.TEXT_FORMATING),
       isActive: toolVisibilty === IEditorTool.TEXT_FORMATING,
     },
-    {
-      icon: <Baseline size={24} />,
-      title: 'Text color',
-      onClick: () => setToolVisibility(IEditorTool.TEXT_COLOR_PICKER),
-      isActive: toolVisibilty === IEditorTool.TEXT_COLOR_PICKER,
-    },
+    // {
+    //   icon: <Baseline size={24} />,
+    //   title: 'Text color',
+    //   onClick: () => setToolVisibility(IEditorTool.TEXT_COLOR_PICKER),
+    //   isActive: toolVisibilty === IEditorTool.TEXT_COLOR_PICKER,
+    // },
     {
       icon: <Table size={24} />,
       title: 'Add table',
@@ -345,7 +347,7 @@ export const useEditorToolbar = ({
           .focus()
           .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
           .run(),
-      isActive: toolVisibilty === IEditorTool.TEXT_COLOR,
+      isActive: true,
     },
     {
       icon: <ListChecks size={24} />,
@@ -354,7 +356,7 @@ export const useEditorToolbar = ({
         editor?.chain().focus().toggleTaskList().run();
         setToolVisibility(IEditorTool.NONE);
       },
-      isActive: toolVisibilty === IEditorTool.LIST,
+      isActive: true,
     },
     {
       icon: <ImagePlus size={24} />,
@@ -374,7 +376,23 @@ export const useEditorToolbar = ({
         };
         input.click();
       },
-      isActive: false,
+      isActive: true,
+    },
+    {
+      icon: <Undo size={24} />,
+      title: 'Undo',
+      onClick: () => {
+        editor?.chain().focus().undo().run();
+      },
+      isActive: editor?.can().undo(),
+    },
+    {
+      icon: <Redo size={24} />,
+      title: 'Redo',
+      onClick: () => {
+        editor?.chain().focus().redo().run();
+      },
+      isActive: editor?.can().redo(),
     },
   ];
   return {
@@ -603,9 +621,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${
-            editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <List size={20} />
         </span>
@@ -620,9 +637,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${
-            editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <ListOrdered size={20} />
         </span>
@@ -637,9 +653,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${
-            editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <ListChecks size={20} />
         </span>
@@ -936,13 +951,13 @@ export const TextFormatingPopup = ({
             ))}
           </div>
           <div className="flex justify-between sm:justify-center items-center gap-1">
-            <div className="bg-[#f8f9fa] rounded flex gap-2 justify-evenly w-full sm:w-fit p-2">
+            <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
               <button
                 onClick={() => {
                   editor?.chain().focus().setTextAlign('left').run();
                 }}
                 className={cn(
-                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                   {
                     ['bg-yellow-300 hover:brightness-90']: editor.isActive({
                       textAlign: 'left',
@@ -960,7 +975,7 @@ export const TextFormatingPopup = ({
                   editor?.chain().focus().setTextAlign('center').run();
                 }}
                 className={cn(
-                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                   {
                     ['bg-yellow-300 hover:brightness-90']: editor.isActive({
                       textAlign: 'center',
@@ -978,7 +993,7 @@ export const TextFormatingPopup = ({
                   editor?.chain().focus().setTextAlign('right').run();
                 }}
                 className={cn(
-                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                   {
                     ['bg-yellow-300 hover:brightness-90']: editor.isActive({
                       textAlign: 'right',
@@ -992,12 +1007,12 @@ export const TextFormatingPopup = ({
                 <AlignRight size={20} />
               </button>
             </div>
-            <div className="bg-[#f8f9fa] rounded flex gap-2 justify-evenly w-full sm:w-fit p-2">
+            <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
               <DialogTrigger asChild>
                 <button
                   onClick={() => setToolVisibility(IEditorTool.LINK_POPUP)}
                   className={cn(
-                    'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                    'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                     {
                       ['bg-yellow-300 hover:brightness-90']:
                         editor.isActive('link'),
@@ -1013,7 +1028,7 @@ export const TextFormatingPopup = ({
                   editor?.chain().focus().toggleCodeBlock().run();
                 }}
                 className={cn(
-                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                   {
                     ['bg-yellow-300 hover:brightness-90']:
                       editor.isActive('codeBlock'),
@@ -1028,7 +1043,7 @@ export const TextFormatingPopup = ({
                   editor?.chain().focus().toggleBlockquote().run();
                 }}
                 className={cn(
-                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                   {
                     ['bg-yellow-300 hover:brightness-90']:
                       editor.isActive('blockquote'),
@@ -1041,13 +1056,13 @@ export const TextFormatingPopup = ({
             </div>
           </div>
           <div className="flex justify-between sm:justify-center items-center gap-1">
-            <div className="bg-[#f8f9fa] rounded flex gap-2 justify-evenly w-full sm:w-fit p-2">
+            <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
               <button
                 onClick={() => {
                   editor.chain().focus().toggleBold().run();
                 }}
                 className={cn(
-                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                   {
                     ['bg-yellow-300 hover:brightness-90']:
                       editor.isActive('bold'),
@@ -1062,7 +1077,7 @@ export const TextFormatingPopup = ({
                   editor.chain().focus().toggleItalic().run();
                 }}
                 className={cn(
-                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                   {
                     ['bg-yellow-300 hover:brightness-90']:
                       editor.isActive('italic'),
@@ -1077,7 +1092,7 @@ export const TextFormatingPopup = ({
                   editor.chain().focus().toggleUnderline().run();
                 }}
                 className={cn(
-                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                   {
                     ['bg-yellow-300 hover:brightness-90']:
                       editor.isActive('underline'),
@@ -1092,7 +1107,7 @@ export const TextFormatingPopup = ({
                   editor.chain().focus().toggleStrike().run();
                 }}
                 className={cn(
-                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                   {
                     ['bg-yellow-300 hover:brightness-90']:
                       editor.isActive('strike'),
@@ -1103,13 +1118,13 @@ export const TextFormatingPopup = ({
                 <Strikethrough size={20} />
               </button>
             </div>
-            <div className="bg-[#f8f9fa] rounded flex flex-[0.5] sm:flex-none gap-2 justify-evenly w-full sm:w-fit p-2">
+            <div className="bg-[#f8f9fa] rounded flex flex-[0.5] sm:flex-none gap-2 justify-evenly w-full sm:w-fit p-1">
               <button
                 onClick={() => {
                   editor?.chain().focus().toggleBulletList().run();
                 }}
                 className={cn(
-                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                   {
                     ['bg-yellow-300 hover:brightness-90']:
                       editor.isActive('bulletList'),
@@ -1124,7 +1139,7 @@ export const TextFormatingPopup = ({
                   editor?.chain().focus().toggleOrderedList().run();
                 }}
                 className={cn(
-                  'flex items-center space-x-2 rounded px-2 py-1 text-black transition h-8',
+                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                   {
                     ['bg-yellow-300 hover:brightness-90']:
                       editor.isActive('orderedList'),
@@ -1136,6 +1151,69 @@ export const TextFormatingPopup = ({
               </button>
             </div>
           </div>
+
+          {/* New Layout */}
+          <div className='flex flex-col gap-4 mt-4'>
+            <p className="text-left sm:text-center text-lg font-semibold leading-none tracking-tight">Text color</p>
+            <Carousel
+              opts={{
+                align: 'start',
+                dragFree: true,
+                slidesToScroll: 'auto',
+              }}
+              className="w-full max-w-md mx-auto"
+            >
+              <CarouselContent>
+                <CarouselItem
+                  style={{
+                    flexBasis: 'calc(100% / 12)',
+                  }}
+                >
+                  <Ban
+                    className="cursor-pointer"
+                    onClick={() => {
+                      editor.chain().focus().unsetColor().run();
+                    }}
+                  />
+                </CarouselItem>
+                {colors.map((color, index) => (
+                  <CarouselItem
+                    key={index}
+                    style={{
+                      flexBasis: 'calc(100% / 12)',
+                    }}
+                  >
+                    <button
+                      onClick={() => {
+                        editor.chain().focus().setColor(color.color).run();
+                      }}
+                      key={color.color}
+                      className={cn(
+                        'w-6 h-6 mb-1 drop-shadow rounded-full flex justify-center items-center cursor-pointer transition',
+                        color.code,
+                      )}
+                    >
+                      <Check
+                        size={14}
+                        className={cn(
+                          editor.isActive('textStyle', {
+                            color: color.color,
+                          })
+                            ? 'visible'
+                            : 'invisible',
+                        )}
+                      />
+                    </button>
+                  </CarouselItem>
+                ))}
+              </CarouselContent>
+              <div className="flex justify-center gap-2 mt-4 w-full max-w-sm">
+                {Array.from({ length: colors.length / 8 }).map((_, index) => (
+                  <CarouselIndicator key={index} index={index} />
+                ))}
+              </div>
+            </Carousel>
+          </div>
         </div>
       }
     />
@@ -1144,11 +1222,10 @@ export const TextFormatingPopup = ({
 
 export const TextColorPicker = ({
   editor,
-}: // setToolVisibility,
-{
-  editor: Editor;
-  setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
-}) => {
+}:
+  {
+    editor: Editor;
+  }) => {
   return (
     <UtilsModal
       title="Text color"
