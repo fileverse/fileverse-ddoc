@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
 import { DdocProps, DdocEditorProps } from './types';
@@ -36,6 +37,7 @@ export const useDdocEditor = ({
   onHighlightedTextClick,
   onTextSelection,
   threads,
+  onMouseOut,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [loading, setLoading] = useState(false);
@@ -44,22 +46,95 @@ export const useDdocEditor = ({
   ]);
   const initialContentSetRef = useRef(false);
 
-  const handleClick = (_view: EditorView, _pos: number, event: MouseEvent) => {
+  const handleMouseOver = (view: EditorView, event: MouseEvent) => {
     const target: any = event.target;
+
+    // Check if the hovered element is a highlighted text
     if (
       target &&
       target.nodeName === 'MARK' &&
+      target.dataset.color &&
       target?.dataset?.color === 'yellow'
     ) {
       const highlightedText = target.textContent;
-      onHighlightedTextClick?.(highlightedText);
+
+      // Find the position of the hovered text within the document
+      const pos = view.posAtCoords({ left: event.clientX, top: event.clientY });
+
+      if (pos) {
+        const { state } = view;
+        let from = pos.pos;
+        let to = pos.pos + highlightedText.length;
+
+        // Find the start and end of the highlighted mark
+        state.doc.nodesBetween(from, to, (node: any, pos: any) => {
+          if (node.marks && node.marks.length) {
+            node.marks.forEach((mark: any) => {
+              if (mark.type.name === 'highlight') {
+                from = pos;
+                to = pos + node.nodeSize;
+              }
+            });
+          }
+        });
+
+        const data = { text: highlightedText, from, to, event: 'mouse-over' };
+        onHighlightedTextClick?.(data);
+      }
     }
+  };
+  const handleClick = (view: EditorView, _pos: number, event: MouseEvent) => {
+    const target: any = event.target;
+
+    // Check if the hovered element is a highlighted text
+    if (
+      target &&
+      target.nodeName === 'MARK' &&
+      target.dataset.color &&
+      target?.dataset?.color === 'yellow'
+    ) {
+      const highlightedText = target.textContent;
+
+      // Find the position of the hovered text within the document
+      const pos = view.posAtCoords({ left: event.clientX, top: event.clientY });
+
+      if (pos) {
+        const { state } = view;
+        let from = pos.pos;
+        let to = pos.pos + highlightedText.length;
+
+        // Find the start and end of the highlighted mark
+        state.doc.nodesBetween(from, to, (node: any, pos: any) => {
+          if (node.marks && node.marks.length) {
+            node.marks.forEach((mark: any) => {
+              if (mark.type.name === 'highlight') {
+                from = pos;
+                to = pos + node.nodeSize;
+              }
+            });
+          }
+        });
+
+        const data = { text: highlightedText, from, to, event: 'click' };
+        onHighlightedTextClick?.(data);
+      }
+    }
+  };
+  const handleMouseOut = () => {
+    onMouseOut?.();
   };
 
   const onlineEditor = useEditor(
     {
       extensions,
-      editorProps: { ...DdocEditorProps, handleClick },
+      editorProps: {
+        ...DdocEditorProps,
+        handleDOMEvents: {
+          mouseover: handleMouseOver,
+          mouseout: handleMouseOut,
+        },
+        handleClick,
+      },
       autofocus: 'start',
       onUpdate: _editor => {
         if (editor?.isEmpty) {
@@ -73,7 +148,14 @@ export const useDdocEditor = ({
 
   const offlineEditor = useEditor({
     extensions,
-    editorProps: { ...DdocEditorProps, handleClick },
+    editorProps: {
+      ...DdocEditorProps,
+      handleDOMEvents: {
+        mouseover: handleMouseOver,
+        mouseout: handleMouseOut,
+      },
+      handleClick,
+    },
     autofocus: 'start',
     onUpdate: _editor => {
       if (editor?.isEmpty) {
