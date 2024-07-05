@@ -40,13 +40,7 @@ export interface DdocProps {
   handleImageUploadToIpfs: (file: File) => Promise<string>;
   onCollaboratorChange?: (collaborators: undefined | IDocCollabUsers[]) => void;
   onTextSelection?: (data: IEditorSelectionData) => void;
-  onHighlightedTextClick?: (data: {
-    text: string;
-    from: number;
-    to: number;
-  }) => void;
-  threads?: IEditorSelectionData[];
-  onMouseOut?: () => void;
+  onHighlightedTextInteraction?: (data: IEditorSelectionData) => void;
 }
 
 export interface IEditorSelectionData {

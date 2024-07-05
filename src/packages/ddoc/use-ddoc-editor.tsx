@@ -34,10 +34,8 @@ export const useDdocEditor = ({
   onAutoSave,
   onChange,
   onCollaboratorChange,
-  onHighlightedTextClick,
+  onHighlightedTextInteraction,
   onTextSelection,
-  threads,
-  onMouseOut,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [loading, setLoading] = useState(false);
@@ -79,7 +77,7 @@ export const useDdocEditor = ({
         });
 
         const data = { text: highlightedText, from, to, event: 'mouse-over' };
-        onHighlightedTextClick?.(data);
+        onHighlightedTextInteraction?.(data);
       }
     }
   };
@@ -116,12 +114,9 @@ export const useDdocEditor = ({
         });
 
         const data = { text: highlightedText, from, to, event: 'click' };
-        onHighlightedTextClick?.(data);
+        onHighlightedTextInteraction?.(data);
       }
     }
-  };
-  const handleMouseOut = () => {
-    onMouseOut?.();
   };
 
   const onlineEditor = useEditor(
@@ -131,7 +126,6 @@ export const useDdocEditor = ({
         ...DdocEditorProps,
         handleDOMEvents: {
           mouseover: handleMouseOver,
-          mouseout: handleMouseOut,
         },
         handleClick,
       },
@@ -152,7 +146,6 @@ export const useDdocEditor = ({
       ...DdocEditorProps,
       handleDOMEvents: {
         mouseover: handleMouseOver,
-        mouseout: handleMouseOut,
       },
       handleClick,
     },
@@ -268,18 +261,6 @@ export const useDdocEditor = ({
       editor.off('selectionUpdate', handleSelection);
     };
   }, [editor]);
-
-  useEffect(() => {
-    if (!editor || !threads?.length) return;
-    threads.forEach(selectedData => {
-      const { from, to } = selectedData;
-      editor
-        .chain()
-        .setTextSelection({ from, to })
-        .setHighlight({ color: 'yellow' })
-        .run();
-    });
-  }, [editor, threads]);
 
   const startCollaboration = async () => {
     let _username = username;

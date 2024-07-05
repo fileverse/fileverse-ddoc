@@ -35,8 +35,7 @@ const DdocEditor = forwardRef(
       handleImageUploadToIpfs,
       onCollaboratorChange,
       onTextSelection,
-      onHighlightedTextClick,
-      threads,
+      onHighlightedTextInteraction,
     }: DdocProps,
     ref,
   ) => {
@@ -59,8 +58,7 @@ const DdocEditor = forwardRef(
       onAutoSave,
       onChange,
       onCollaboratorChange,
-      onHighlightedTextClick,
-      threads,
+      onHighlightedTextInteraction,
       onTextSelection,
     });
 

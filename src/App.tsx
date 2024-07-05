@@ -1,10 +1,9 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import DdocEditor from './packages/ddoc/ddoc-editor';
 import { Button } from './packages/ddoc/common/button';
 import { Pencil, ScanEye, Share2 } from 'lucide-react';
 import { JSONContent } from '@tiptap/react';
 import { API_URL } from './constants/index';
-import DEFAULT_CONTENT from './constants/default-content.json';
 
 function App() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -13,16 +12,7 @@ function App() {
   const [title, setTitle] = useState('Untitled');
 
   const collaborationId = window.location.pathname.split('/')[2]; // example url - /doc/1234, that why's used second element of array
-  const [threads] = useState([
-    { text: 'blanditiis harum quisquam', from: 166, to: 191 },
 
-    { text: 'consectetur adipisicing elit', from: 29, to: 57 },
-    {
-      text: 'alias error harum maxime adipisci amet laborum',
-      from: 706,
-      to: 752,
-    },
-  ]);
   useEffect(() => {
     if (collaborationId) {
       const name = prompt('Whats your username');
@@ -108,13 +98,9 @@ function App() {
     return response.ipfsUrl;
   };
 
-  const ref = useRef<any>(null);
-
   return (
     <div>
       <DdocEditor
-        ref={ref}
-        initialContent={DEFAULT_CONTENT}
         enableCollaboration={enableCollaboration}
         collaborationId={collaborationId}
         username={username}
@@ -122,11 +108,6 @@ function App() {
         isPreviewMode={isPreviewMode}
         renderToolRightSection={renderRightSection}
         renderToolLeftSection={renderLeftSection}
-        onAutoSave={data => console.log(data, title)}
-        threads={threads}
-        onHighlightedTextClick={data => {
-          alert(`You clicked on the highlighted Text: ${data}`);
-        }}
       />
     </div>
   );
