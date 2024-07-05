@@ -46,7 +46,11 @@ export const useDdocEditor = ({
 
   const handleClick = (_view: EditorView, _pos: number, event: MouseEvent) => {
     const target: any = event.target;
-    if (target && target.nodeName === 'MARK' && target.dataset.color) {
+    if (
+      target &&
+      target.nodeName === 'MARK' &&
+      target?.dataset?.color === 'yellow'
+    ) {
       const highlightedText = target.textContent;
       onHighlightedTextClick?.(highlightedText);
     }
