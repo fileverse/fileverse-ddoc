@@ -34,7 +34,7 @@ export const useDdocEditor = ({
   onAutoSave,
   onChange,
   onCollaboratorChange,
-  onHighlightedTextInteraction,
+  onCommentInteraction,
   onTextSelection,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
@@ -77,7 +77,7 @@ export const useDdocEditor = ({
 
         if (from !== to) {
           const data = { text: highlightedText, from, to };
-          onHighlightedTextInteraction?.(data);
+          onCommentInteraction?.(data);
         }
       }
     }
