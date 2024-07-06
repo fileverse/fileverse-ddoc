@@ -43,10 +43,10 @@ export const useDdocEditor = ({
     ...(defaultExtensions as AnyExtension[]),
   ]);
   const initialContentSetRef = useRef(false);
+  const [isTextHighlighted, setIsTextHighlighted] = useState(false);
 
   const handleMouseOver = (view: EditorView, event: MouseEvent) => {
     const target: any = event.target;
-
     // Check if the hovered element is a highlighted text
     if (
       target &&
@@ -62,12 +62,12 @@ export const useDdocEditor = ({
       if (pos) {
         const { state } = view;
         let from = pos.pos;
-        let to = pos.pos + highlightedText.length;
+        let to = pos.pos;
 
         // Find the start and end of the highlighted mark
-        state.doc.nodesBetween(from, to, (node: any, pos: any) => {
+        state.doc.nodesBetween(from, to, (node, pos) => {
           if (node.marks && node.marks.length) {
-            node.marks.forEach((mark: any) => {
+            node.marks.forEach(mark => {
               if (mark.type.name === 'highlight') {
                 from = pos;
                 to = pos + node.nodeSize;
@@ -76,8 +76,11 @@ export const useDdocEditor = ({
           }
         });
 
-        const data = { text: highlightedText, from, to, event: 'mouse-over' };
-        onHighlightedTextInteraction?.(data);
+        if (from !== to) {
+          setIsTextHighlighted(true);
+          const data = { text: highlightedText, from, to };
+          onHighlightedTextInteraction?.(data);
+        }
       }
     }
   };
@@ -99,12 +102,12 @@ export const useDdocEditor = ({
       if (pos) {
         const { state } = view;
         let from = pos.pos;
-        let to = pos.pos + highlightedText.length;
+        let to = pos.pos;
 
         // Find the start and end of the highlighted mark
-        state.doc.nodesBetween(from, to, (node: any, pos: any) => {
+        state.doc.nodesBetween(from, to, (node, pos) => {
           if (node.marks && node.marks.length) {
-            node.marks.forEach((mark: any) => {
+            node.marks.forEach(mark => {
               if (mark.type.name === 'highlight') {
                 from = pos;
                 to = pos + node.nodeSize;
@@ -113,8 +116,11 @@ export const useDdocEditor = ({
           }
         });
 
-        const data = { text: highlightedText, from, to, event: 'click' };
-        onHighlightedTextInteraction?.(data);
+        if (from !== to) {
+          setIsTextHighlighted(true);
+          const data = { text: highlightedText, from, to };
+          onHighlightedTextInteraction?.(data);
+        }
       }
     }
   };
@@ -323,5 +329,6 @@ export const useDdocEditor = ({
     loading,
     connect,
     ydoc,
+    isTextHighlighted,
   };
 };
