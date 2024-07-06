@@ -43,9 +43,8 @@ export const useDdocEditor = ({
     ...(defaultExtensions as AnyExtension[]),
   ]);
   const initialContentSetRef = useRef(false);
-  const [isTextHighlighted, setIsTextHighlighted] = useState(false);
 
-  const handleMouseOver = (view: EditorView, event: MouseEvent) => {
+  const handleCommentInteraction = (view: EditorView, event: MouseEvent) => {
     const target: any = event.target;
     // Check if the hovered element is a highlighted text
     if (
@@ -77,52 +76,19 @@ export const useDdocEditor = ({
         });
 
         if (from !== to) {
-          setIsTextHighlighted(true);
           const data = { text: highlightedText, from, to };
           onHighlightedTextInteraction?.(data);
         }
       }
     }
   };
-  const handleClick = (view: EditorView, _pos: number, event: MouseEvent) => {
-    const target: any = event.target;
 
-    // Check if the hovered element is a highlighted text
-    if (
-      target &&
-      target.nodeName === 'MARK' &&
-      target.dataset.color &&
-      target?.dataset?.color === 'yellow'
-    ) {
-      const highlightedText = target.textContent;
-
-      // Find the position of the hovered text within the document
-      const pos = view.posAtCoords({ left: event.clientX, top: event.clientY });
-
-      if (pos) {
-        const { state } = view;
-        let from = pos.pos;
-        let to = pos.pos;
-
-        // Find the start and end of the highlighted mark
-        state.doc.nodesBetween(from, to, (node, pos) => {
-          if (node.marks && node.marks.length) {
-            node.marks.forEach(mark => {
-              if (mark.type.name === 'highlight') {
-                from = pos;
-                to = pos + node.nodeSize;
-              }
-            });
-          }
-        });
-
-        if (from !== to) {
-          setIsTextHighlighted(true);
-          const data = { text: highlightedText, from, to };
-          onHighlightedTextInteraction?.(data);
-        }
-      }
-    }
+  const handleCommentClick = (
+    view: EditorView,
+    _pos: number,
+    event: MouseEvent,
+  ) => {
+    handleCommentInteraction(view, event);
   };
 
   const onlineEditor = useEditor(
@@ -131,9 +97,9 @@ export const useDdocEditor = ({
       editorProps: {
         ...DdocEditorProps,
         handleDOMEvents: {
-          mouseover: handleMouseOver,
+          mouseover: handleCommentInteraction,
         },
-        handleClick,
+        handleClick: handleCommentClick,
       },
       autofocus: 'start',
       onUpdate: _editor => {
@@ -151,9 +117,9 @@ export const useDdocEditor = ({
     editorProps: {
       ...DdocEditorProps,
       handleDOMEvents: {
-        mouseover: handleMouseOver,
+        mouseover: handleCommentInteraction,
       },
-      handleClick,
+      handleClick: handleCommentClick,
     },
     autofocus: 'start',
     onUpdate: _editor => {
@@ -329,6 +295,5 @@ export const useDdocEditor = ({
     loading,
     connect,
     ydoc,
-    isTextHighlighted,
   };
 };

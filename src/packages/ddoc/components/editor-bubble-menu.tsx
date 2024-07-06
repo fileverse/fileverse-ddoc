@@ -33,9 +33,7 @@ export interface BubbleMenuItem {
 
 type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'>;
 
-export const EditorBubbleMenu = (
-  props: EditorBubbleMenuProps & { isTextHighlighted: boolean },
-) => {
+export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const items: BubbleMenuItem[] = [
     {
       name: 'Bold',
@@ -115,12 +113,30 @@ export const EditorBubbleMenu = (
   const { toolRef, setToolVisibility, toolVisibilty } = useEditorToolbar({
     editor: props.editor,
   });
+  const shouldShow = ({ editor }) => {
+    const { from, to } = editor.state.selection;
+
+    if (from === to) {
+      return false;
+    }
+
+    let hasYellowHighlight = false;
+    editor.state.doc.nodesBetween(from, to, node => {
+      if (node.marks) {
+        node.marks.forEach(mark => {
+          if (mark.type.name === 'highlight' && mark.attrs.color === 'yellow') {
+            hasYellowHighlight = true;
+          }
+        });
+      }
+    });
+
+    return !hasYellowHighlight;
+  };
   return (
     <BubbleMenu
       {...bubbleMenuProps}
-      shouldShow={({ editor }) => {
-        return !props.isTextHighlighted && editor.view.hasFocus();
-      }}
+      shouldShow={shouldShow}
       className="hidden lg:flex gap-2 overflow-hidden rounded-[12px] h-[52px] min-w-[550px] w-full py-2 px-4 bg-white items-center shadow-lg"
     >
       <NodeSelector

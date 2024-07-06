@@ -48,7 +48,6 @@ const DdocEditor = forwardRef(
       ref: editorRef,
       loading,
       ydoc,
-      isTextHighlighted,
     } = useDdocEditor({
       isPreviewMode,
       initialContent,
@@ -172,10 +171,7 @@ const DdocEditor = forwardRef(
                 >
                   {!isPreviewMode && (
                     <div>
-                      <EditorBubbleMenu
-                        editor={editor}
-                        isTextHighlighted={isTextHighlighted}
-                      />
+                      <EditorBubbleMenu editor={editor} />
                       <ColumnsMenu
                         editor={editor}
                         appendTo={editorRef}
