@@ -76,14 +76,14 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
         case /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/.test(
           nodeContentText
         ): {
-          const matches = nodeContentText.match(
-            /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/
-          );
-          if (matches && matches.length > 0) {
-            formattedUrl = `https://www.youtube.com/embed/${matches[1]}`;
+            const matches = nodeContentText.match(
+              /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/
+            );
+            if (matches && matches.length > 0) {
+              formattedUrl = `https://www.youtube.com/embed/${matches[1]}`;
+            }
+            break;
           }
-          break;
-        }
         case /vimeo\.com\/([a-zA-Z0-9-_]+)/.test(nodeContentText): {
           const matches = nodeContentText.match(/vimeo\.com\/([a-zA-Z0-9-_]+)/);
           if (matches && matches.length > 0) {
@@ -242,9 +242,8 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
           }
         >
           <div
-            className={`d-block-button cursor-pointer ${
-              !isPreviewMode && 'group-hover:opacity-100'
-            }`}
+            className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
+              }`}
             contentEditable={false}
             onClick={handleClick}
           >
@@ -254,9 +253,8 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
         <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
           <Popover.Trigger asChild>
             <div
-              className={`d-block-button cursor-pointer ${
-                !isPreviewMode && 'group-hover:opacity-100'
-              }`}
+              className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
+                }`}
               contentEditable={false}
               draggable
               data-drag-handle
@@ -306,7 +304,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
       </section>
 
       <NodeViewContent
-        className={clx('node-view-content w-full break-all', {
+        className={clx('node-view-content w-full', {
           'is-table min-w-auto': isTable,
         })}
       />
