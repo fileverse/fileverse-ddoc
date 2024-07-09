@@ -1,5 +1,6 @@
 import { JSONContent } from '@tiptap/core';
 import { EditorProps } from '@tiptap/pm/view';
+import { Editor } from '@tiptap/react';
 
 export const DdocEditorProps: EditorProps = {
   attributes: {
@@ -41,6 +42,9 @@ export interface DdocProps {
   onCollaboratorChange?: (collaborators: undefined | IDocCollabUsers[]) => void;
   onTextSelection?: (data: IEditorSelectionData) => void;
   onCommentInteraction?: (data: IEditorSelectionData) => void;
+  handleCommentButtonOutsideClick?: (editor: Editor | null) => void;
+  handleCommentButtonClick?: (e: Editor) => void;
+  showCommentButton?: boolean;
 }
 
 export interface IEditorSelectionData {

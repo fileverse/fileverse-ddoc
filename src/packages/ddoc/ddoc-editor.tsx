@@ -18,6 +18,9 @@ import {
 } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import cn from 'classnames';
+import { Button } from './common/button';
+import { MessageSquareText } from 'lucide-react';
+import { useOnClickOutside } from 'usehooks-ts';
 
 const DdocEditor = forwardRef(
   (
@@ -36,12 +39,17 @@ const DdocEditor = forwardRef(
       onCollaboratorChange,
       onTextSelection,
       onCommentInteraction,
+      handleCommentButtonClick,
+      showCommentButton,
+      handleCommentButtonOutsideClick,
     }: DdocProps,
     ref,
   ) => {
     // const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const btn_ref = useRef(null);
+
     const {
       editor,
       // focusEditor,
@@ -70,6 +78,10 @@ const DdocEditor = forwardRef(
       }),
       [editor, ydoc],
     );
+
+    useOnClickOutside(btn_ref, () => {
+      handleCommentButtonOutsideClick?.(editor);
+    });
 
     // useEffect(() => {
     //   const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
@@ -164,10 +176,10 @@ const DdocEditor = forwardRef(
               // onClick={focusEditor}
               className="mt-8 lg:mt-[5rem] w-screen flex justify-center relative"
             >
-              <div className="px-4 pt-8 sm:px-[88px] sm:py-[78px] h-screen bg-white  w-full sm:w-[70%] max-w-[856px]">
+              <div className="px-4 pt-8 sm:px-[88px] relative sm:py-[78px] h-screen bg-white  w-full sm:w-[70%] max-w-[856px]">
                 <div
                   ref={editorRef}
-                  className="w-full h-full overflow-y-scroll overflow-x-hidden no-scrollbar"
+                  className="w-full h-full  overflow-y-scroll overflow-x-hidden no-scrollbar"
                 >
                   {!isPreviewMode && (
                     <div>
@@ -179,9 +191,25 @@ const DdocEditor = forwardRef(
                     </div>
                   )}
                   <EditingProvider isPreviewMode={isPreviewMode}>
-                    <EditorContent editor={editor} className='py-4' />
+                    <EditorContent
+                      editor={editor}
+                      className="py-4 relative"
+                    ></EditorContent>
                   </EditingProvider>
                 </div>
+                {showCommentButton && (
+                  <Button
+                    ref={btn_ref}
+                    onClick={() => {
+                      editor.chain().setHighlight({ color: 'yellow' }).run();
+                      handleCommentButtonClick?.(editor);
+                    }}
+                    variant="ghost"
+                    className="absolute w-12 h-12 bg-white right-[-23px] top-[70px] rounded-full shadow-xl"
+                  >
+                    <MessageSquareText />
+                  </Button>
+                )}
               </div>
             </div>
           </main>
