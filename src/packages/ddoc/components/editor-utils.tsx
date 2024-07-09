@@ -319,7 +319,7 @@ export const useEditorToolbar = ({
         editor
           ?.chain()
           .focus()
-          .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+          .insertTable({ rows: 3, cols: 2, withHeaderRow: true })
           .run(),
       isActive: toolVisibilty === IEditorTool.TEXT_COLOR,
     },
@@ -332,12 +332,6 @@ export const useEditorToolbar = ({
       onClick: () => setToolVisibility(IEditorTool.TEXT_FORMATING),
       isActive: toolVisibilty === IEditorTool.TEXT_FORMATING,
     },
-    // {
-    //   icon: <Baseline size={24} />,
-    //   title: 'Text color',
-    //   onClick: () => setToolVisibility(IEditorTool.TEXT_COLOR_PICKER),
-    //   isActive: toolVisibilty === IEditorTool.TEXT_COLOR_PICKER,
-    // },
     {
       icon: <Table size={24} />,
       title: 'Add table',
@@ -345,7 +339,7 @@ export const useEditorToolbar = ({
         editor
           ?.chain()
           .focus()
-          .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+          .insertTable({ rows: 3, cols: 2, withHeaderRow: true })
           .run(),
       isActive: true,
     },

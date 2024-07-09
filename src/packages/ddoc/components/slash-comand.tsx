@@ -214,7 +214,7 @@ const getSuggestionItems = ({ query }: { query: string }) => {
           .chain()
           .focus()
           .deleteRange(range)
-          .insertTable({ rows: 3, cols: 3, withHeaderRow: true })
+          .insertTable({ rows: 3, cols: 2, withHeaderRow: true })
           .run(),
     },
     {
