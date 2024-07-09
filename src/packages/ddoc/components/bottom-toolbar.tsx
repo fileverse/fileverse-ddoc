@@ -140,7 +140,6 @@ const BottomToolbar = ({
     };
   }, [editor, isMobile]);
 
-
   return (
     <Drawer>
       <div className="flex w-full justify-between sm:justify-evenly select-none">
