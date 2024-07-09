@@ -39,6 +39,14 @@ export interface DdocProps {
   onChange?: (changes: Data['editorJSONData']) => void;
   handleImageUploadToIpfs: (file: File) => Promise<string>;
   onCollaboratorChange?: (collaborators: undefined | IDocCollabUsers[]) => void;
+  onTextSelection?: (data: IEditorSelectionData) => void;
+  onCommentInteraction?: (data: IEditorSelectionData) => void;
+}
+
+export interface IEditorSelectionData {
+  from: number;
+  to: number;
+  text: string;
 }
 
 export interface Data {

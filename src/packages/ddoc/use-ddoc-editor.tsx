@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
 import { DdocProps, DdocEditorProps } from './types';
@@ -10,6 +11,7 @@ import { getCursor } from './utils/cursor';
 import { debounce } from './utils/debounce';
 import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { ENS_RESOLUTION_URL } from '../../constants';
+import { EditorView } from '@tiptap/pm/view';
 
 const usercolors = [
   '#30bced',
@@ -32,6 +34,8 @@ export const useDdocEditor = ({
   onAutoSave,
   onChange,
   onCollaboratorChange,
+  onCommentInteraction,
+  onTextSelection,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [loading, setLoading] = useState(false);
@@ -40,12 +44,65 @@ export const useDdocEditor = ({
   ]);
   const initialContentSetRef = useRef(false);
 
+  const handleCommentInteraction = (view: EditorView, event: MouseEvent) => {
+    const target: any = event.target;
+    // Check if the hovered element is a highlighted text
+    if (
+      target &&
+      target.nodeName === 'MARK' &&
+      target.dataset.color &&
+      target?.dataset?.color === 'yellow'
+    ) {
+      const highlightedText = target.textContent;
+
+      // Find the position of the hovered text within the document
+      const pos = view.posAtCoords({ left: event.clientX, top: event.clientY });
+
+      if (pos) {
+        const { state } = view;
+        let from = pos.pos;
+        let to = pos.pos;
+
+        // Find the start and end of the highlighted mark
+        state.doc.nodesBetween(from, to, (node, pos) => {
+          if (node.marks && node.marks.length) {
+            node.marks.forEach(mark => {
+              if (mark.type.name === 'highlight') {
+                from = pos;
+                to = pos + node.nodeSize;
+              }
+            });
+          }
+        });
+
+        if (from !== to) {
+          const data = { text: highlightedText, from, to };
+          onCommentInteraction?.(data);
+        }
+      }
+    }
+  };
+
+  const handleCommentClick = (
+    view: EditorView,
+    _pos: number,
+    event: MouseEvent,
+  ) => {
+    handleCommentInteraction(view, event);
+  };
+
   const onlineEditor = useEditor(
     {
       extensions,
-      editorProps: DdocEditorProps,
+      editorProps: {
+        ...DdocEditorProps,
+        handleDOMEvents: {
+          mouseover: handleCommentInteraction,
+        },
+        handleClick: handleCommentClick,
+      },
       autofocus: 'start',
-      onUpdate: (_editor) => {
+      onUpdate: _editor => {
         if (editor?.isEmpty) {
           return;
         }
@@ -57,9 +114,15 @@ export const useDdocEditor = ({
 
   const offlineEditor = useEditor({
     extensions,
-    editorProps: DdocEditorProps,
+    editorProps: {
+      ...DdocEditorProps,
+      handleDOMEvents: {
+        mouseover: handleCommentInteraction,
+      },
+      handleClick: handleCommentClick,
+    },
     autofocus: 'start',
-    onUpdate: (_editor) => {
+    onUpdate: _editor => {
       if (editor?.isEmpty) {
         return;
       }
@@ -67,7 +130,7 @@ export const useDdocEditor = ({
     },
   });
 
-  const collaborationCleanupRef = useRef<() => void>(() => { });
+  const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
@@ -89,7 +152,10 @@ export const useDdocEditor = ({
       CollaborationCursor.configure({
         provider: provider,
         user: {
-          name: username && username.length > 20 ? getTrimmedName(username, 7, 15) : username,
+          name:
+            username && username.length > 20
+              ? getTrimmedName(username, 7, 15)
+              : username,
           color: usercolors[Math.floor(Math.random() * usercolors.length)],
           isEns: isEns,
         },
@@ -144,6 +210,29 @@ export const useDdocEditor = ({
       initialContentSetRef.current = false;
     });
   }, [initialContent, editor]);
+
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+    const handleSelection = () => {
+      const { state } = editor;
+      const { from, to } = state.selection;
+
+      if (from !== to) {
+        const selectedText = state.doc.textBetween(from, to, ' ');
+        onTextSelection?.({
+          text: selectedText,
+          from,
+          to,
+        });
+      }
+    };
+    editor.on('selectionUpdate', handleSelection);
+    return () => {
+      editor.off('selectionUpdate', handleSelection);
+    };
+  }, [editor]);
 
   const startCollaboration = async () => {
     let _username = username;

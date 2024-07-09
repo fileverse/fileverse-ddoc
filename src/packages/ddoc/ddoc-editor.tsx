@@ -34,6 +34,8 @@ const DdocEditor = forwardRef(
       onChange,
       handleImageUploadToIpfs,
       onCollaboratorChange,
+      onTextSelection,
+      onCommentInteraction,
     }: DdocProps,
     ref,
   ) => {
@@ -56,6 +58,8 @@ const DdocEditor = forwardRef(
       onAutoSave,
       onChange,
       onCollaboratorChange,
+      onCommentInteraction,
+      onTextSelection,
     });
 
     useImperativeHandle(
@@ -168,7 +172,10 @@ const DdocEditor = forwardRef(
                   {!isPreviewMode && (
                     <div>
                       <EditorBubbleMenu editor={editor} />
-                      <ColumnsMenu editor={editor} appendTo={editorRef} />
+                      <ColumnsMenu
+                        editor={editor}
+                        appendTo={editorRef}
+                      />
                     </div>
                   )}
                   <EditingProvider isPreviewMode={isPreviewMode}>

@@ -3,8 +3,6 @@ import DdocEditor from './packages/ddoc/ddoc-editor';
 import { Button } from './packages/ddoc/common/button';
 import { Pencil, ScanEye, Share2 } from 'lucide-react';
 import { JSONContent } from '@tiptap/react';
-// import * as ucan from 'ucans';
-// import { buildUCANToken } from './packages/ddoc/utils/buildUCANToken';
 import { API_URL } from './constants/index';
 
 function App() {
@@ -12,10 +10,6 @@ function App() {
   const [enableCollaboration, setEnableCollaboration] = useState(false);
   const [username, setUsername] = useState('');
   const [title, setTitle] = useState('Untitled');
-  // const [auth, setCollaborationAuth] = useState<{
-  //   token: string;
-  //   did: string;
-  // } | null>(null);
 
   const collaborationId = window.location.pathname.split('/')[2]; // example url - /doc/1234, that why's used second element of array
 
@@ -66,7 +60,7 @@ function App() {
           type="text"
           placeholder="Untitled"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={e => setTitle(e.target.value)}
         />
       </div>
     );
@@ -105,16 +99,17 @@ function App() {
   };
 
   return (
-    <DdocEditor
-      enableCollaboration={enableCollaboration}
-      collaborationId={collaborationId}
-      username={username}
-      handleImageUploadToIpfs={getImageIpfsHash}
-      isPreviewMode={isPreviewMode}
-      renderToolRightSection={renderRightSection}
-      renderToolLeftSection={renderLeftSection}
-      onAutoSave={(data) => console.log(data, title)}
-    />
+    <div>
+      <DdocEditor
+        enableCollaboration={enableCollaboration}
+        collaborationId={collaborationId}
+        username={username}
+        handleImageUploadToIpfs={getImageIpfsHash}
+        isPreviewMode={isPreviewMode}
+        renderToolRightSection={renderRightSection}
+        renderToolLeftSection={renderLeftSection}
+      />
+    </div>
   );
 }
 
