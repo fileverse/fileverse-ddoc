@@ -71,7 +71,7 @@ function App() {
     body.append('name', file.name);
 
     try {
-      const response = await fetch(`${process.env.API_URL}/upload/public`, {
+      const response = await fetch(`${import.meta.env.API_URL}/upload/public`, {
         method: 'POST',
         headers: {
           'x-api-key': 'hello-world',
