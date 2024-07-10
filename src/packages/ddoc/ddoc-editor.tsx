@@ -45,14 +45,12 @@ const DdocEditor = forwardRef(
     }: DdocProps,
     ref,
   ) => {
-    // const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const btn_ref = useRef(null);
 
     const {
       editor,
-      // focusEditor,
       ref: editorRef,
       loading,
       ydoc,
