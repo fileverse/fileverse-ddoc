@@ -42,6 +42,7 @@ const DdocEditor = forwardRef(
       handleCommentButtonClick,
       showCommentButton,
       handleCommentButtonOutsideClick,
+      ensResolutionUrl,
     }: DdocProps,
     ref,
   ) => {
@@ -66,6 +67,7 @@ const DdocEditor = forwardRef(
       onCollaboratorChange,
       onCommentInteraction,
       onTextSelection,
+      ensResolutionUrl,
     });
 
     useImperativeHandle(
