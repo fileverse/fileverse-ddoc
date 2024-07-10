@@ -10,7 +10,6 @@ import { AnyExtension, useEditor } from '@tiptap/react';
 import { getCursor } from './utils/cursor';
 import { debounce } from './utils/debounce';
 import { getAddressName, getTrimmedName } from './utils/getAddressName';
-import { ENS_RESOLUTION_URL } from '../../constants';
 import { EditorView } from '@tiptap/pm/view';
 
 const usercolors = [
@@ -36,6 +35,7 @@ export const useDdocEditor = ({
   onCollaboratorChange,
   onCommentInteraction,
   onTextSelection,
+  ensResolutionUrl,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [loading, setLoading] = useState(false);
@@ -187,15 +187,6 @@ export const useDdocEditor = ({
     }
   }, [onlineEditor, offlineEditor, loading]);
 
-  // const focusEditor = (e: React.MouseEvent<HTMLDivElement, MouseEvent>) => {
-  //   if (ref.current?.contains(e.target as Node)) return;
-  //   editor?.chain().focus().run();
-  // };
-
-  // useEffect(() => {
-  //   editor?.chain().focus();
-  // }, []);
-
   useEffect(() => {
     editor?.setEditable(!isPreviewMode);
   }, [isPreviewMode, editor]);
@@ -238,15 +229,17 @@ export const useDdocEditor = ({
     let _username = username;
     let _isEns = false;
 
-    if (walletAddress) {
+    if (walletAddress && ensResolutionUrl) {
       const { name, isEns } = await getAddressName(
         walletAddress,
-        ENS_RESOLUTION_URL,
+        ensResolutionUrl,
       );
 
       _username = name;
       _isEns = isEns;
     }
+    if (!_username)
+      throw new Error('Cannot start collaboration without a username');
     connect(_username, _isEns);
   };
 

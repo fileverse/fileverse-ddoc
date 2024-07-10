@@ -3,7 +3,6 @@ import DdocEditor from './packages/ddoc/ddoc-editor';
 import { Button } from './packages/ddoc/common/button';
 import { Pencil, ScanEye, Share2 } from 'lucide-react';
 import { JSONContent } from '@tiptap/react';
-import { API_URL } from './constants/index';
 
 function App() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
@@ -72,7 +71,7 @@ function App() {
     body.append('name', file.name);
 
     try {
-      const response = await fetch(`${API_URL}/upload/public`, {
+      const response = await fetch(`${process.env.API_URL}/upload/public`, {
         method: 'POST',
         headers: {
           'x-api-key': 'hello-world',
@@ -108,6 +107,7 @@ function App() {
         isPreviewMode={isPreviewMode}
         renderToolRightSection={renderRightSection}
         renderToolLeftSection={renderLeftSection}
+        ensResolutionUrl={process.env.ENS_RESOLUTION_URL}
       />
     </div>
   );

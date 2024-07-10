@@ -31,6 +31,7 @@ export interface DdocProps {
   enableCollaboration?: boolean;
   collaborationId?: string;
   isPreviewMode: boolean;
+  ensResolutionUrl?: string;
   initialContent?: JSONContent | null;
   onAutoSave?: (data: Data) => void;
   walletAddress?: string | null;
