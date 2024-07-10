@@ -61,23 +61,12 @@ export const defaultExtensions = [
         class: 'select-text pointer-events-auto',
       },
     },
-    // bulletList: {
-    //   HTMLAttributes: {
-    //     class:
-    //       'flex flex-col items-start list-disc list-outside space-y-4 ml-6',
-    //   },
-    // },
     orderedList: {
       HTMLAttributes: {
         class:
           'flex flex-col items-start list-decimal list-outside space-y-4 ml-6',
       },
     },
-    // listItem: {
-    //   HTMLAttributes: {
-    //     class: 'leading-normal',
-    //   },
-    // },
     blockquote: {
       HTMLAttributes: {
         class: 'rounded-lg bg-[#E8EBEC] p-5 font-serif italic text-black',
