@@ -225,7 +225,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
       className={clx(
         'flex gap-2 group w-full relative justify-center items-start',
         isPreviewMode && 'pointer-events-none',
-        isTable && '2xl:ml-4 pointer-events-auto'
+        isTable && 'pointer-events-auto'
       )}
     >
       <section
@@ -305,7 +305,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
 
       <NodeViewContent
         className={clx('node-view-content w-full', {
-          'is-table min-w-auto': isTable,
+          'is-table': isTable,
         })}
       />
     </NodeViewWrapper>

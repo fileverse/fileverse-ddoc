@@ -107,7 +107,7 @@ function App() {
         isPreviewMode={isPreviewMode}
         renderToolRightSection={renderRightSection}
         renderToolLeftSection={renderLeftSection}
-        ensResolutionUrl={process.env.ENS_RESOLUTION_URL}
+        ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}
       />
     </div>
   );

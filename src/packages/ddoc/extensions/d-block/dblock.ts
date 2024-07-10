@@ -86,46 +86,7 @@ export const DBlock = Node.create<DBlockOptions>({
         const parent = $head.node($head.depth - 1);
 
         if (parent?.type.name !== 'dBlock') {
-          const headString = $head.toString();
-          const nodePaths = headString.split('/');
-
-          const isTaskList = nodePaths.some(path => path.includes('taskList'));
-          const isList = nodePaths.some(
-            path => path.includes('bulletList') || path.includes('orderedList'),
-          );
-
-          if (isTaskList) {
-            return editor
-              .chain()
-              .insertContent({
-                type: 'taskItem',
-                attrs: {
-                  checked: false,
-                },
-                content: [
-                  {
-                    type: 'paragraph',
-                  },
-                ],
-              })
-              .focus()
-              .run();
-          } else if (isList) {
-            return editor
-              .chain()
-              .insertContent({
-                type: 'listItem',
-                content: [
-                  {
-                    type: 'paragraph',
-                  },
-                ],
-              })
-              .focus()
-              .run();
-          } else {
-            return false;
-          }
+          return false;
         }
 
         let currentActiveNodeTo = -1;
