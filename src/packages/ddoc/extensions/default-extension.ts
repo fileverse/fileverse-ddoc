@@ -30,6 +30,8 @@ import { NodeType } from '@tiptap/pm/model';
 import { InputRule } from '@tiptap/core';
 import { actionButton } from './action-button';
 import History from '@tiptap/extension-history';
+import BulletList from '@tiptap/extension-bullet-list';
+import ListItem from '@tiptap/extension-list-item';
 
 export const defaultExtensions = [
   FontFamily,
@@ -59,21 +61,10 @@ export const defaultExtensions = [
         class: 'select-text pointer-events-auto',
       },
     },
-    bulletList: {
-      HTMLAttributes: {
-        class:
-          'flex flex-col items-start list-disc list-outside space-y-4 ml-6',
-      },
-    },
     orderedList: {
       HTMLAttributes: {
         class:
           'flex flex-col items-start list-decimal list-outside space-y-4 ml-6',
-      },
-    },
-    listItem: {
-      HTMLAttributes: {
-        class: 'leading-normal',
       },
     },
     blockquote: {
@@ -139,6 +130,16 @@ export const defaultExtensions = [
       class: 'flex items-start',
     },
     nested: true,
+  }),
+  BulletList.configure({
+    HTMLAttributes: {
+      class: 'space-y-4 !ml-6',
+    },
+  }),
+  ListItem.configure({
+    HTMLAttributes: {
+      class: 'leading-normal',
+    },
   }),
   DropCursor.configure({
     width: 3,

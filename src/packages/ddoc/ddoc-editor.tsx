@@ -169,12 +169,12 @@ const DdocEditor = forwardRef(
             </div>
           </div>
 
-          <main className="rounded-[8px] flex flex-col justify-start items-center gap-2 ">
+          <main className="rounded-[8px] flex flex-col justify-start items-center gap-2 min-h-full h-[calc(100vh-8rem)] lg:h-screen overflow-auto no-scrollbar">
             <div
               // onClick={focusEditor}
-              className="mt-8 lg:mt-[5rem] w-screen flex justify-center relative"
+              className="mt-8 lg:mt-[5rem] w-screen h-full flex justify-center relative"
             >
-              <div className="px-4 pt-8 sm:px-[88px] relative sm:py-[78px] h-screen bg-white  w-full sm:w-[70%] max-w-[856px]">
+              <div className="px-4 pt-8 sm:px-[88px] relative sm:py-[78px] h-full bg-white w-full sm:w-[70%] max-w-[856px]">
                 <div
                   ref={editorRef}
                   className="w-full h-full  overflow-y-scroll overflow-x-hidden no-scrollbar"
@@ -192,7 +192,7 @@ const DdocEditor = forwardRef(
                     <EditorContent
                       editor={editor}
                       className="py-4 relative"
-                    ></EditorContent>
+                    />
                   </EditingProvider>
                 </div>
                 {showCommentButton && (

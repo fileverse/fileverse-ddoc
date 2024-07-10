@@ -14,7 +14,7 @@ export default defineConfig({
       entry: path.resolve(__dirname, 'src/index.ts'),
       //A function that generates the output file
       //name for different formats during the build
-      fileName: (format) => `index.${format}.js`,
+      fileName: format => `index.${format}.js`,
     },
     rollupOptions: {
       external: ['react', 'react-dom'],
