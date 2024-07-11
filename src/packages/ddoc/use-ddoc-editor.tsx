@@ -8,7 +8,6 @@ import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import { defaultExtensions } from './extensions/default-extension';
 import { AnyExtension, useEditor } from '@tiptap/react';
 import { getCursor } from './utils/cursor';
-import { debounce } from './utils/debounce';
 import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from './components/slash-comand';
