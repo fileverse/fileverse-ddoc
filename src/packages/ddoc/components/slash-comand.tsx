@@ -77,7 +77,13 @@ const Command = Extension.create({
   },
 });
 
-const getSuggestionItems = ({ query }: { query: string }) => {
+const getSuggestionItems = ({
+  query,
+  uploadToIpfs,
+}: {
+  query: string;
+  uploadToIpfs: (file: File) => Promise<string>;
+}) => {
   return [
     {
       title: 'Text',
@@ -233,7 +239,7 @@ const getSuggestionItems = ({ query }: { query: string }) => {
           if (input.files?.length) {
             const file = input.files[0];
             const pos = editor.view.state.selection.from;
-            startImageUpload(file, editor.view, pos);
+            startImageUpload(file, editor.view, pos, uploadToIpfs);
           }
         };
         input.click();
@@ -299,7 +305,7 @@ const getSuggestionItems = ({ query }: { query: string }) => {
           .run();
       },
     },
-  ].filter((item) => {
+  ].filter(item => {
     if (typeof query === 'string' && query.length > 0) {
       const search = query.toLowerCase();
       return (
@@ -338,7 +344,7 @@ const CommandList = ({
   range: any;
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [items, setItems] = useState<CommandItemProps[]>(initialItems)
+  const [items, setItems] = useState<CommandItemProps[]>(initialItems);
   const isMobile = useMediaQuery('(max-width: 640px)');
   const selectItem = useCallback(
     (index: number) => {
@@ -353,12 +359,17 @@ const CommandList = ({
         }
       }
     },
-    [command, editor, items]
+    [command, editor, items],
   );
 
   useEffect(() => {
     if (isMobile) {
-      const filteredItems = items.filter(item => !['2 Columns', '3 Columns', 'Twitter', 'Video Embed'].includes(item.title));
+      const filteredItems = items.filter(
+        item =>
+          !['2 Columns', '3 Columns', 'Twitter', 'Video Embed'].includes(
+            item.title,
+          ),
+      );
       setItems(filteredItems);
     } else {
       setItems(initialItems);
@@ -415,8 +426,9 @@ const CommandList = ({
         return (
           <button
             key={index}
-            className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-neutral-500 hover:bg-neutral-100 hover:border-neutral-200 border border-transparent transition-all ${index === selectedIndex ? 'bg-neutral-200 text-neutral-800' : ''
-              }`}
+            className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-neutral-500 hover:bg-neutral-100 hover:border-neutral-200 border border-transparent transition-all ${
+              index === selectedIndex ? 'bg-neutral-200 text-neutral-800' : ''
+            }`}
             onClick={() => selectItem(index)}
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-md border border-neutral-200 bg-white">
@@ -480,11 +492,16 @@ const renderItems = () => {
   };
 };
 
-const SlashCommand = Command.configure({
-  suggestion: {
-    items: getSuggestionItems,
-    render: renderItems,
-  },
-});
+const SlashCommand = (uploadToIpfs: (file: File) => Promise<string>) => {
+  const items = ({ query }: { query: string }) => {
+    return getSuggestionItems({ query, uploadToIpfs });
+  };
+  return Command.configure({
+    suggestion: {
+      items,
+      render: renderItems,
+    },
+  });
+};
 
 export default SlashCommand;

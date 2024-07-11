@@ -11,6 +11,7 @@ import { getCursor } from './utils/cursor';
 import { debounce } from './utils/debounce';
 import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
+import SlashCommand from './components/slash-comand';
 
 const usercolors = [
   '#30bced',
@@ -36,11 +37,13 @@ export const useDdocEditor = ({
   onCommentInteraction,
   onTextSelection,
   ensResolutionUrl,
+  handleImageUploadToIpfs,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [loading, setLoading] = useState(false);
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions as AnyExtension[]),
+    SlashCommand(handleImageUploadToIpfs!),
   ]);
   const initialContentSetRef = useRef(false);
 
