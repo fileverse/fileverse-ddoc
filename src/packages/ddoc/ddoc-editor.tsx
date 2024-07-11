@@ -171,7 +171,7 @@ const DdocEditor = forwardRef(
             </div>
           </div>
 
-          <main className="rounded-[8px] flex flex-col justify-start items-center gap-2 min-h-full h-[calc(100vh-8rem)] lg:h-screen overflow-auto no-scrollbar">
+          <main className="rounded-[8px] flex flex-col justify-start items-center gap-2 min-h-full h-screen overflow-auto no-scrollbar">
             <div
               // onClick={focusEditor}
               className="mt-8 lg:mt-[5rem] w-screen h-full flex justify-center relative"
