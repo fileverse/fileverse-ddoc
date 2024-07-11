@@ -20,7 +20,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import cn from 'classnames';
 import { Button } from './common/button';
 import { MessageSquareText } from 'lucide-react';
-import { useOnClickOutside } from 'usehooks-ts';
+import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
 
 const DdocEditor = forwardRef(
   (
@@ -49,6 +49,7 @@ const DdocEditor = forwardRef(
     const [isTyping, setIsTyping] = useState(false);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const btn_ref = useRef(null);
+    const isMobile = useMediaQuery('(max-width: 640px)');
 
     const {
       editor,
@@ -185,17 +186,11 @@ const DdocEditor = forwardRef(
                   {!isPreviewMode && (
                     <div>
                       <EditorBubbleMenu editor={editor} />
-                      <ColumnsMenu
-                        editor={editor}
-                        appendTo={editorRef}
-                      />
+                      <ColumnsMenu editor={editor} appendTo={editorRef} />
                     </div>
                   )}
                   <EditingProvider isPreviewMode={isPreviewMode}>
-                    <EditorContent
-                      editor={editor}
-                      className="py-4 relative"
-                    />
+                    <EditorContent editor={editor} className="py-4 relative" />
                   </EditingProvider>
                 </div>
                 {showCommentButton && (
@@ -206,7 +201,13 @@ const DdocEditor = forwardRef(
                       handleCommentButtonClick?.(editor);
                     }}
                     variant="ghost"
-                    className="absolute w-12 h-12 bg-white right-[-23px] top-[70px] rounded-full shadow-xl"
+                    className={cn(
+                      'absolute w-12 h-12 bg-white rounded-full shadow-xl top-[70px]',
+                      {
+                        'right-[10vh]': isMobile,
+                        'right-[-23px]': !isMobile,
+                      },
+                    )}
                   >
                     <MessageSquareText />
                   </Button>
