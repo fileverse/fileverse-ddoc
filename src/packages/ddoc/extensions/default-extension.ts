@@ -12,7 +12,6 @@ import TaskItem from '@tiptap/extension-task-item';
 import TextStyle from '@tiptap/extension-text-style';
 import DropCursor from '@tiptap/extension-dropcursor';
 import TiptapUnderline from '@tiptap/extension-underline';
-import SlashCommand from '../components/slash-comand';
 import HorizontalRule from './horizontal-rule';
 import GapCursor from '@tiptap/extension-gapcursor';
 import ColumnExtension from './multi-column';
@@ -112,7 +111,6 @@ export const defaultExtensions = [
     showOnlyCurrent: true,
   }),
   Highlight.configure({ multicolor: true }),
-  SlashCommand,
   TiptapUnderline.configure({
     HTMLAttributes: {
       class: 'select-text pointer-events-auto',

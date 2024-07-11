@@ -68,6 +68,7 @@ const DdocEditor = forwardRef(
       onCommentInteraction,
       onTextSelection,
       ensResolutionUrl,
+      handleImageUploadToIpfs,
     });
 
     useImperativeHandle(
