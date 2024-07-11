@@ -101,8 +101,14 @@ export const useDdocEditor = ({
         ...DdocEditorProps,
         handleDOMEvents: {
           mouseover: handleCommentInteraction,
-          keydown: (_, event) => {
-            if (event.key === 'Enter') return true;
+          keydown: (_view, event) => {
+            // prevent default event listeners from firing when slash command is active
+            if (['ArrowUp', 'ArrowDown', 'Enter'].includes(event.key)) {
+              const slashCommand = document.querySelector('#slash-command');
+              if (slashCommand) {
+                return true;
+              }
+            }
           },
         },
         handleClick: handleCommentClick,
@@ -124,8 +130,14 @@ export const useDdocEditor = ({
       ...DdocEditorProps,
       handleDOMEvents: {
         mouseover: handleCommentInteraction,
-        keydown: (_, event) => {
-          if (event.key === 'Enter') return true;
+        keydown: (_view, event) => {
+          // prevent default event listeners from firing when slash command is active
+          if (['ArrowUp', 'ArrowDown', 'Enter'].includes(event.key)) {
+            const slashCommand = document.querySelector('#slash-command');
+            if (slashCommand) {
+              return true;
+            }
+          }
         },
       },
       handleClick: handleCommentClick,
