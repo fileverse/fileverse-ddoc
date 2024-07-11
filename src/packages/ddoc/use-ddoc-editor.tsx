@@ -276,7 +276,6 @@ export const useDdocEditor = ({
 
   return {
     editor,
-    // focusEditor,
     ref,
     loading,
     connect,
