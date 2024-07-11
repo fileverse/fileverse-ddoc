@@ -31,7 +31,6 @@ export const useDdocEditor = ({
   collaborationId,
   walletAddress,
   username,
-  onAutoSave,
   onChange,
   onCollaboratorChange,
   onCommentInteraction,
@@ -271,32 +270,6 @@ export const useDdocEditor = ({
       collaborationCleanupRef.current();
     }
   }, [enableCollaboration]);
-
-  const debouncedAutoSave = useMemo(
-    () =>
-      debounce((editor, onAutoSave) => {
-        onAutoSave({
-          editorJSONData: editor.getJSON(),
-        });
-      }, 1000),
-    [onAutoSave],
-  );
-
-  useEffect(() => {
-    if (editor && onAutoSave) {
-      // Bind the update handler only once
-      const handleUpdate = () => {
-        debouncedAutoSave(editor, onAutoSave);
-      };
-
-      editor.on('update', handleUpdate);
-
-      // Cleanup function to remove the handler
-      return () => {
-        editor.off('update', handleUpdate);
-      };
-    }
-  }, [editor, onAutoSave, debouncedAutoSave]);
 
   useEffect(() => {
     onCollaboratorChange?.(editor?.storage?.collaborationCursor?.users);

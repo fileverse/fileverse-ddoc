@@ -22,7 +22,6 @@ export interface DdocProps {
   isPreviewMode: boolean;
   ensResolutionUrl?: string;
   initialContent?: JSONContent | null;
-  onAutoSave?: (data: Data) => void;
   walletAddress?: string | null;
   username?: string | null;
   renderToolLeftSection?: ({ editor }: { editor: JSONContent }) => JSX.Element;

@@ -36,7 +36,6 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `enableCollaboration` (optional)               | `boolean`                                      | Optional property to enable collaboration                                                                 |
 | `onCommentInteraction` (optional)              | `(commentInfo: IEditSelectionData) => void`    | Optional function that get's called whenever there is a mouse-over and click interaction on a comment     |
 | `collaborationId` (optional)                   | `string`                                       | When using enableCollaboration, you need to provide collaborationId, it can be uuid of doc                |
-| `onAutoSave` (optional)                        | `(flag:boolean) => void`                       | Function which expose the current seditor state every 10 seconds                                          |
 | `onTextSelection` (optional)                   | `(data: IEditorSelectionData) => void`         | Function called when a text is selected on the editor                                                     |
 | `renderToolRightSection` (optional)            | `({editor}) => JSX.Element`                    | Function that render the right section of the toolbar. it calls the function with the editor instance     |
 | `renderToolLeftSection` (optional)             | `({editor}) => JSX.Element`                    | Accept a react component                                                                                  |
@@ -50,7 +49,7 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 
 ## Data Interface
 
-The `Data` interface defines the structure of the data object that can be passed to the `onAutoSave` function and optionally included in the `data` property of `DdocProps`.
+The `Data` interface defines the structure of the data object
 
 ### Properties
 

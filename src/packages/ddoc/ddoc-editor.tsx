@@ -30,7 +30,6 @@ const DdocEditor = forwardRef(
       enableCollaboration,
       collaborationId,
       username,
-      onAutoSave,
       renderToolRightSection,
       renderToolLeftSection,
       walletAddress,
@@ -62,7 +61,6 @@ const DdocEditor = forwardRef(
       collaborationId,
       walletAddress,
       username,
-      onAutoSave,
       onChange,
       onCollaboratorChange,
       onCommentInteraction,
@@ -185,17 +183,11 @@ const DdocEditor = forwardRef(
                   {!isPreviewMode && (
                     <div>
                       <EditorBubbleMenu editor={editor} />
-                      <ColumnsMenu
-                        editor={editor}
-                        appendTo={editorRef}
-                      />
+                      <ColumnsMenu editor={editor} appendTo={editorRef} />
                     </div>
                   )}
                   <EditingProvider isPreviewMode={isPreviewMode}>
-                    <EditorContent
-                      editor={editor}
-                      className="py-4 relative"
-                    />
+                    <EditorContent editor={editor} className="py-4 relative" />
                   </EditingProvider>
                 </div>
                 {showCommentButton && (
