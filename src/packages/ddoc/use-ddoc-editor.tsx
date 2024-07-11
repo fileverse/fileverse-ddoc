@@ -69,7 +69,7 @@ export const useDdocEditor = ({
         // Find the start and end of the highlighted mark
         state.doc.nodesBetween(from, to, (node, pos) => {
           if (node.marks && node.marks.length) {
-            node.marks.forEach(mark => {
+            node.marks.forEach((mark) => {
               if (mark.type.name === 'highlight') {
                 from = pos;
                 to = pos + node.nodeSize;
@@ -101,11 +101,14 @@ export const useDdocEditor = ({
         ...DdocEditorProps,
         handleDOMEvents: {
           mouseover: handleCommentInteraction,
+          keydown: (_, event) => {
+            if (event.key === 'Enter') return true;
+          },
         },
         handleClick: handleCommentClick,
       },
       autofocus: 'start',
-      onUpdate: _editor => {
+      onUpdate: (_editor) => {
         if (editor?.isEmpty) {
           return;
         }
@@ -121,11 +124,14 @@ export const useDdocEditor = ({
       ...DdocEditorProps,
       handleDOMEvents: {
         mouseover: handleCommentInteraction,
+        keydown: (_, event) => {
+          if (event.key === 'Enter') return true;
+        },
       },
       handleClick: handleCommentClick,
     },
     autofocus: 'start',
-    onUpdate: _editor => {
+    onUpdate: (_editor) => {
       if (editor?.isEmpty) {
         return;
       }
