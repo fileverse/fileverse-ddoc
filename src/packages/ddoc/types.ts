@@ -8,17 +8,6 @@ export const DdocEditorProps: EditorProps = {
     spellcheck: 'false',
     suppressContentEditableWarning: 'true',
   },
-  handleDOMEvents: {
-    keydown: (_view, event) => {
-      // prevent default event listeners from firing when slash command is active
-      if (['ArrowUp', 'ArrowDown', 'Enter'].includes(event.key)) {
-        const slashCommand = document.querySelector('#slash-command');
-        if (slashCommand) {
-          return true;
-        }
-      }
-    },
-  },
 };
 
 export interface IDocCollabUsers {
