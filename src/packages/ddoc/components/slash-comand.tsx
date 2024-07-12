@@ -305,7 +305,7 @@ const getSuggestionItems = ({
           .run();
       },
     },
-  ].filter(item => {
+  ].filter((item) => {
     if (typeof query === 'string' && query.length > 0) {
       const search = query.toLowerCase();
       return (
@@ -364,8 +364,8 @@ const CommandList = ({
 
   useEffect(() => {
     if (isMobile) {
-      const filteredItems = items.filter(
-        item =>
+      const filteredItems = initialItems.filter(
+        (item) =>
           !['2 Columns', '3 Columns', 'Twitter', 'Video Embed'].includes(
             item.title,
           ),
