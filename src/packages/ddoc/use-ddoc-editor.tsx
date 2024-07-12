@@ -54,12 +54,11 @@ export const useDdocEditor = ({
     to: number,
   ) => {
     let _isHighlightedYellow = false;
-    state.doc.nodesBetween(from, to, node => {
-      console.log({ node });
+    state.doc.nodesBetween(from, to, (node) => {
       if (
         node.marks &&
         node.marks.some(
-          mark =>
+          (mark) =>
             mark.type.name === 'highlight' && mark.attrs.color === 'yellow',
         )
       ) {
@@ -91,7 +90,7 @@ export const useDdocEditor = ({
         // Find the start and end of the highlighted mark
         state.doc.nodesBetween(from, to, (node, pos) => {
           if (node.marks && node.marks.length) {
-            node.marks.forEach(mark => {
+            node.marks.forEach((mark) => {
               if (mark.type.name === 'highlight') {
                 from = pos;
                 to = pos + node.nodeSize;
@@ -141,7 +140,7 @@ export const useDdocEditor = ({
         handleClick: handleCommentClick,
       },
       autofocus: 'start',
-      onUpdate: _editor => {
+      onUpdate: (_editor) => {
         if (editor?.isEmpty) {
           return;
         }
@@ -170,7 +169,7 @@ export const useDdocEditor = ({
       handleClick: handleCommentClick,
     },
     autofocus: 'start',
-    onUpdate: _editor => {
+    onUpdate: (_editor) => {
       if (editor?.isEmpty) {
         return;
       }
