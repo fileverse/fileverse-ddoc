@@ -82,30 +82,6 @@ const DdocEditor = forwardRef(
       handleCommentButtonOutsideClick?.(editor);
     });
 
-    // useEffect(() => {
-    //   const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent)
-
-    //   if (!iOS) {
-    //     return;
-    //   }
-
-    //   const handleFocus = () => {
-    //     setIsKeyboardVisible(true);
-    //   };
-
-    //   const handleBlur = () => {
-    //     setIsKeyboardVisible(false);
-    //   };
-
-    //   editor?.on('focus', handleFocus);
-    //   editor?.on('blur', handleBlur);
-
-    //   return () => {
-    //     editor?.off('focus', handleFocus);
-    //     editor?.off('blur', handleBlur);
-    //   };
-    // }, [editor]);
-
     useEffect(() => {
       if (!editor) return;
 
@@ -171,10 +147,7 @@ const DdocEditor = forwardRef(
           </div>
 
           <main className="rounded-[8px] flex flex-col justify-start items-center gap-2 min-h-full h-screen overflow-auto no-scrollbar">
-            <div
-              // onClick={focusEditor}
-              className="mt-8 lg:mt-[5rem] w-screen h-full flex justify-center relative"
-            >
+            <div className="mt-8 lg:mt-[5rem] w-screen h-full flex justify-center relative">
               <div className="px-4 pt-8 sm:px-[88px] relative sm:py-[78px] h-full bg-white w-full sm:w-[70%] max-w-[856px]">
                 <div
                   ref={editorRef}
@@ -217,10 +190,6 @@ const DdocEditor = forwardRef(
                   transition={{ duration: 0.2 }}
                   className={cn(
                     'flex xl:hidden items-center w-full h-16 fixed z-10 px-4 bg-[#f8f9fa] bottom-0',
-                    // {
-                    //   'bottom-[268px]': isKeyboardVisible,
-                    //   'bottom-0': !isKeyboardVisible,
-                    // }
                   )}
                 >
                   <BottomToolbar
