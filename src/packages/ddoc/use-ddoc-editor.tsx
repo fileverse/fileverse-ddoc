@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
@@ -134,6 +135,18 @@ export const useDdocEditor = ({
               }
             }
           },
+          paste: (_view, event) => {
+            // prevent default when pasting a set of large text to avoid browser crash
+            if (event.clipboardData) {
+              const text = event.clipboardData.getData('text');
+              if (text.length > 20000) {
+                event.preventDefault();
+                alert('Pasting large text is not supported.');
+              }
+            }
+
+            return false;
+          }
         },
         handleClick: handleCommentClick,
       },
@@ -163,6 +176,18 @@ export const useDdocEditor = ({
             }
           }
         },
+        paste: (_view, event) => {
+          // prevent default when pasting a set of large text to avoid browser crash
+          if (event.clipboardData) {
+            const text = event.clipboardData.getData('text');
+            if (text.length > 20000) {
+              event.preventDefault();
+              alert('Pasting large text is not supported.');
+            }
+          }
+
+          return false;
+        }
       },
       handleClick: handleCommentClick,
     },
@@ -175,7 +200,7 @@ export const useDdocEditor = ({
     },
   });
 
-  const collaborationCleanupRef = useRef<() => void>(() => {});
+  const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
