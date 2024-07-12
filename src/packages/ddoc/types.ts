@@ -40,6 +40,7 @@ export interface IEditorSelectionData {
   from: number;
   to: number;
   text: string;
+  isHighlightedYellow: boolean;
 }
 
 export interface Data {

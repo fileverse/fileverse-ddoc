@@ -11,6 +11,7 @@ import { getCursor } from './utils/cursor';
 import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from './components/slash-comand';
+import { EditorState } from '@tiptap/pm/state';
 
 const usercolors = [
   '#30bced',
@@ -45,6 +46,26 @@ export const useDdocEditor = ({
   ]);
   const initialContentSetRef = useRef(false);
 
+  const isHighlightedYellow = (
+    state: EditorState,
+    from: number,
+    to: number,
+  ) => {
+    let _isHighlightedYellow = false;
+    state.doc.nodesBetween(from, to, (node) => {
+      if (
+        node.marks &&
+        node.marks.some(
+          (mark) =>
+            mark.type.name === 'highlight' && mark.attrs.color === 'yellow',
+        )
+      ) {
+        _isHighlightedYellow = true;
+      }
+    });
+    return _isHighlightedYellow;
+  };
+
   const handleCommentInteraction = (view: EditorView, event: MouseEvent) => {
     const target: any = event.target;
     // Check if the hovered element is a highlighted text
@@ -77,7 +98,12 @@ export const useDdocEditor = ({
         });
 
         if (from !== to) {
-          const data = { text: highlightedText, from, to };
+          const data = {
+            text: highlightedText,
+            from,
+            to,
+            isHighlightedYellow: isHighlightedYellow(state, from, to),
+          };
           onCommentInteraction?.(data);
         }
       }
@@ -235,9 +261,11 @@ export const useDdocEditor = ({
           text: selectedText,
           from,
           to,
+          isHighlightedYellow: isHighlightedYellow(state, from, to),
         });
       }
     };
+
     editor.on('selectionUpdate', handleSelection);
     return () => {
       editor.off('selectionUpdate', handleSelection);
