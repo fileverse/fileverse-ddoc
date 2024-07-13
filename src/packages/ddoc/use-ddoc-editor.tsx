@@ -141,7 +141,7 @@ export const useDdocEditor = ({
               const text = event.clipboardData.getData('text');
               if (text.length > 20000) {
                 event.preventDefault();
-                alert('Pasting large text is not supported.');
+                console.error('Pasting large text is not supported.');
               }
             }
 
@@ -182,7 +182,7 @@ export const useDdocEditor = ({
             const text = event.clipboardData.getData('text');
             if (text.length > 20000) {
               event.preventDefault();
-              alert('Pasting large text is not supported.');
+              console.error('Pasting large text is not supported.');
             }
           }
 
