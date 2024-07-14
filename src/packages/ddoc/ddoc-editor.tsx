@@ -157,18 +157,23 @@ const DdocEditor = forwardRef(
                   {!isPreviewMode && (
                     <div>
                       <EditorBubbleMenu editor={editor} />
-                      <ColumnsMenu editor={editor} appendTo={editorRef} />
+                      <ColumnsMenu
+                        editor={editor}
+                        appendTo={editorRef}
+                      />
                     </div>
                   )}
                   <EditingProvider isPreviewMode={isPreviewMode}>
-                    <EditorContent editor={editor} className="py-4 relative" />
+                    <EditorContent
+                      editor={editor}
+                      className="py-4 relative"
+                    />
                   </EditingProvider>
                 </div>
                 {showCommentButton && (
                   <Button
                     ref={btn_ref}
                     onClick={() => {
-                      editor.chain().setHighlight({ color: 'yellow' }).run();
                       handleCommentButtonClick?.(editor);
                     }}
                     variant="ghost"
