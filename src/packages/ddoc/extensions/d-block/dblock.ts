@@ -85,9 +85,7 @@ export const DBlock = Node.create<DBlockOptions>({
 
         const parent = $head.node($head.depth - 1);
 
-        if (parent?.type.name !== 'dBlock') {
-          return false;
-        }
+        if (parent?.type.name !== 'dBlock') return false;
 
         let currentActiveNodeTo = -1;
         let currentActiveNodeType = '';
@@ -143,43 +141,6 @@ export const DBlock = Node.create<DBlockOptions>({
           return false;
         }
       },
-      // Backspace: ({ editor }) => {
-      //   const { selection } = editor.state;
-      //   const { $from } = selection;
-      //   const pos = $from.pos;
-      //   const nodeBefore = $from.nodeBefore;
-
-      //   if ($from.parent.content.size === 0) {
-      //     if (nodeBefore) {
-      //       const deleteFrom = pos - nodeBefore.nodeSize;
-      //       const deleteTo = pos;
-
-      //       const result = editor
-      //         .chain()
-      //         .focus()
-      //         .deleteRange({ from: deleteFrom, to: deleteTo })
-      //         .run();
-
-      //       if (result) {
-      //         return true;
-      //       }
-      //     } else if ($from.depth > 1) {
-      //       // Handle nested nodes, like being at the start of a list item
-      //       const parentPos = $from.before($from.depth);
-      //       const result = editor
-      //         .chain()
-      //         .focus()
-      //         .deleteRange({ from: parentPos - 1, to: pos })
-      //         .run();
-
-      //       if (result) {
-      //         return true;
-      //       }
-      //     }
-      //   }
-
-      //   return false;
-      // },
     };
   },
 

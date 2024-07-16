@@ -66,6 +66,7 @@
     "react-uuid": "^2.0.0",
     "tailwindcss-animate": "^1.0.7",
     "tippy.js": "^6.3.7",
+    "tiptap-markdown": "^0.8.10",
     "usehooks-ts": "^3.1.0",
     "vaul": "^0.9.1",
     "vite-plugin-dts": "^3.6.3",

@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useRef, useMemo } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
@@ -118,6 +119,44 @@ export const useDdocEditor = ({
     handleCommentInteraction(view, event);
   };
 
+  const processLargeTextAsync = (view: any, text: string) => {
+    const blocks = text.split('\n\n');
+    // Reverse the order of blocks except for the first one
+    const firstBlock = blocks.slice(0, 1);
+    const reversedBlocks = blocks.slice(1).reverse();
+    const orderedBlocks = firstBlock.concat(reversedBlocks);
+
+    let currentBlockIndex = 0;
+
+    const insertNextBlock = () => {
+      if (currentBlockIndex < orderedBlocks.length) {
+        const block = orderedBlocks[currentBlockIndex];
+        const tr = view.state.tr;
+        let insertPos = tr.selection.from;
+
+        if (currentBlockIndex > 0) {
+          insertPos = tr.doc.resolve(insertPos).end(1);
+          // Ensure we're not at the end of the document; if so, adjust accordingly
+          if (!tr.doc.resolve(insertPos + 1).parent) {
+            tr.insert(insertPos, view.state.schema.nodes.paragraph.create());
+            insertPos += 1;
+          } else {
+            insertPos += 1; // Adjust to insert after the current block/node
+          }
+        }
+
+        tr.insertText(block, insertPos);
+        view.dispatch(tr);
+
+        currentBlockIndex++;
+        // Adjust the delay or mechanism based on performance and responsiveness needs
+        requestAnimationFrame(insertNextBlock);
+      }
+    };
+
+    insertNextBlock();
+  };
+
   const onlineEditor = useEditor(
     {
       extensions,
@@ -134,6 +173,18 @@ export const useDdocEditor = ({
               }
             }
           },
+          paste: (_view, event) => {
+            // prevent default when pasting a set of large text to avoid browser crash
+            if (event.clipboardData) {
+              const text = event.clipboardData.getData('text');
+              if (text.length > 20000) {
+                event.preventDefault();
+                processLargeTextAsync(_view, text);
+              }
+            }
+
+            return false;
+          }
         },
         handleClick: handleCommentClick,
       },
@@ -163,6 +214,18 @@ export const useDdocEditor = ({
             }
           }
         },
+        paste: (_view, event) => {
+          // prevent default when pasting a set of large text to avoid browser crash
+          if (event.clipboardData) {
+            const text = event.clipboardData.getData('text');
+            if (text.length > 20000) {
+              event.preventDefault();
+              processLargeTextAsync(_view, text);
+            }
+          }
+
+          return false;
+        }
       },
       handleClick: handleCommentClick,
     },
@@ -175,7 +238,7 @@ export const useDdocEditor = ({
     },
   });
 
-  const collaborationCleanupRef = useRef<() => void>(() => {});
+  const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
