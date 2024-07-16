@@ -20,7 +20,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import cn from 'classnames';
 import { Button } from './common/button';
 import { MessageSquareText } from 'lucide-react';
-import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
+import { useMediaQuery } from 'usehooks-ts';
 
 const DdocEditor = forwardRef(
   (
@@ -40,8 +40,8 @@ const DdocEditor = forwardRef(
       onCommentInteraction,
       handleCommentButtonClick,
       showCommentButton,
-      handleCommentButtonOutsideClick,
       ensResolutionUrl,
+      disableBottomToolbar,
     }: DdocProps,
     ref,
   ) => {
@@ -78,10 +78,6 @@ const DdocEditor = forwardRef(
       }),
       [editor, ydoc],
     );
-
-    useOnClickOutside(btn_ref, () => {
-      handleCommentButtonOutsideClick?.(editor);
-    });
 
     useEffect(() => {
       if (!editor) return;
@@ -170,7 +166,7 @@ const DdocEditor = forwardRef(
                     />
                   </EditingProvider>
                 </div>
-                {showCommentButton && (
+                {showCommentButton && !isMobile && (
                   <Button
                     ref={btn_ref}
                     onClick={() => {
@@ -178,11 +174,7 @@ const DdocEditor = forwardRef(
                     }}
                     variant="ghost"
                     className={cn(
-                      'absolute w-12 h-12 bg-white rounded-full shadow-xl top-[70px]',
-                      {
-                        'right-[10vh]': isMobile,
-                        'right-[-23px]': !isMobile,
-                      },
+                      'absolute w-12 h-12 bg-white rounded-full shadow-xl top-[70px]  right-[-23px]',
                     )}
                   >
                     <MessageSquareText />
@@ -194,7 +186,7 @@ const DdocEditor = forwardRef(
 
           {!isPreviewMode && (
             <AnimatePresence>
-              {!isTyping && (
+              {!isTyping && !disableBottomToolbar && (
                 <motion.div
                   initial={{ y: 50, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}

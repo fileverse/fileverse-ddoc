@@ -31,9 +31,9 @@ export interface DdocProps {
   onCollaboratorChange?: (collaborators: undefined | IDocCollabUsers[]) => void;
   onTextSelection?: (data: IEditorSelectionData) => void;
   onCommentInteraction?: (data: IEditorSelectionData) => void;
-  handleCommentButtonOutsideClick?: (editor: Editor | null) => void;
   handleCommentButtonClick?: (e: Editor) => void;
   showCommentButton?: boolean;
+  disableBottomToolbar?: boolean;
 }
 
 export interface IEditorSelectionData {
