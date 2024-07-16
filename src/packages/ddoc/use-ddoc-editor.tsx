@@ -184,7 +184,7 @@ export const useDdocEditor = ({
             }
 
             return false;
-          },
+          }
         },
         handleClick: handleCommentClick,
       },
@@ -195,8 +195,6 @@ export const useDdocEditor = ({
         }
         onChange?.(_editor.editor.getJSON());
       },
-      immediatelyRender: true,
-      shouldRerenderOnTransaction: false,
     },
     [extensions],
   );
@@ -227,13 +225,11 @@ export const useDdocEditor = ({
           }
 
           return false;
-        },
+        }
       },
       handleClick: handleCommentClick,
     },
     autofocus: 'start',
-    immediatelyRender: true,
-    shouldRerenderOnTransaction: false,
     onUpdate: (_editor) => {
       if (editor?.isEmpty) {
         return;
@@ -242,7 +238,7 @@ export const useDdocEditor = ({
     },
   });
 
-  const collaborationCleanupRef = useRef<() => void>(() => {});
+  const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
