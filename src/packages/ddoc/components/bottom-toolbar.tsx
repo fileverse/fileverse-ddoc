@@ -92,6 +92,7 @@ const BottomToolbar = ({
   const getSelectedText = (editor: Editor) => {
     const { from, to } = editor.state.selection;
     const text = editor.state.doc.textBetween(from, to);
+    setLinkText(text);
     return text;
   };
   const textFormattingButtonRef = useRef<HTMLButtonElement>(null);
@@ -139,6 +140,29 @@ const BottomToolbar = ({
       }
     };
   }, [editor, isMobile]);
+
+  useEffect(() => {
+    getSelectedText(editor);
+  }, [editor]);
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'k' && (event.metaKey || event.ctrlKey)) {
+        event.preventDefault();
+        if (toolVisibilty !== IEditorTool.LINK_POPUP) {
+          setToolVisibility(IEditorTool.LINK_POPUP);
+        } else {
+          setToolVisibility(IEditorTool.NONE);
+        }
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [editor, toolVisibilty]);
 
   return (
     <Drawer>
@@ -191,8 +215,11 @@ const BottomToolbar = ({
                 label="Text"
                 placeholder="Link text"
                 className="w-full"
-                defaultValue={getSelectedText(editor)}
-                onChange={(e) => setLinkText(e.target.value)}
+                defaultValue={linkText}
+                onChange={(e) => {
+                  e.preventDefault();
+                  setLinkText(e.target.value);
+                }}
               />
               <TextField
                 label="Link"
@@ -200,6 +227,7 @@ const BottomToolbar = ({
                 className="w-full"
                 defaultValue={editor.getAttributes('link').href}
                 onChange={(e) => {
+                  e.preventDefault();
                   setUrl(e.target.value);
                 }}
                 isValid={isUrlValid}

@@ -85,7 +85,81 @@ export const DBlock = Node.create<DBlockOptions>({
 
         const parent = $head.node($head.depth - 1);
 
-        if (parent?.type.name !== 'dBlock') return false;
+        if (parent?.type.name !== 'dBlock') {
+          const headString = $head.toString();
+          const nodePaths = headString.split('/');
+
+          const isList = nodePaths.some(
+            path =>
+              path.includes('bulletList_0') ||
+              path.includes('orderedList_0') ||
+              path.includes('taskList_0'),
+          );
+
+          const isNodeBeforeEmpty = $head.nodeBefore?.content.size === 0;
+
+          const isNestedEmptyListItem =
+            nodePaths.some(path => path.includes('paragraph_0:0')) &&
+            nodePaths.length !== 4;
+
+          const isFirstListItemWithoutContent =
+            $head.parent.content.size === 0 &&
+            nodePaths.some(path => path.includes('listItem_0'));
+
+          const isListItemUnstyled = nodePaths.some(path =>
+            path.includes('paragraph_1:0'),
+          );
+
+          if (isListItemUnstyled) {
+            return editor
+              .chain()
+              .deleteRange({
+                from,
+                to,
+              })
+              .insertContentAt(from, {
+                type: 'dBlock',
+                content: [
+                  {
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: '' }],
+                  },
+                ],
+              })
+              .focus()
+              .run();
+          }
+
+          if (
+            (isNestedEmptyListItem && isList) ||
+            isFirstListItemWithoutContent
+          ) {
+            return editor.chain().liftListItem('listItem').focus().run();
+          }
+
+          if (!isNodeBeforeEmpty && isList) {
+            // Find the list node and its position
+            const listPos = $head.before($head.depth - 1);
+            return editor
+              .chain()
+              .deleteRange({
+                from: listPos,
+                to: listPos + parent.nodeSize,
+              })
+              .insertContentAt(from, {
+                type: 'dBlock',
+                content: [
+                  {
+                    type: 'paragraph',
+                  },
+                ],
+              })
+              .focus()
+              .run();
+          }
+
+          return false;
+        }
 
         let currentActiveNodeTo = -1;
         let currentActiveNodeType = '';
@@ -140,6 +214,109 @@ export const DBlock = Node.create<DBlockOptions>({
           console.error(`Error inserting content into dBlock node: ${error}`);
           return false;
         }
+      },
+      Backspace: ({ editor }) => {
+        const {
+          selection: { $head, from, to },
+        } = editor.state;
+
+        const parent = $head.node($head.depth - 1);
+
+        if (parent?.type.name !== 'dBlock') {
+          const headString = $head.toString();
+          const nodePaths = headString.split('/');
+
+          const isList = nodePaths.some(
+            path =>
+              path.includes('bulletList_0') ||
+              path.includes('orderedList_0') ||
+              path.includes('taskList_0'),
+          );
+
+          const isFirstListItem = nodePaths.some(
+            path => path.includes('listItem_0') || path.includes('taskItem_0'),
+          );
+
+          const isAtBeginFirstListItem =
+            isFirstListItem &&
+            nodePaths.some(path => path.includes('paragraph_0:0'));
+
+          const isFirstDBlock = nodePaths.some(path =>
+            path.includes('dBlock_0'),
+          );
+
+          const isFirstDBlockListItem =
+            isFirstDBlock && isAtBeginFirstListItem && isList;
+
+          const getParagraphText = () => {
+            const paragraphNode = $head.node($head.depth - 1).toJSON()
+              .content[0].content[0].text;
+
+            return paragraphNode;
+          };
+
+          const isFirstListItemWithoutContent =
+            $head.parent.content.size === 0 &&
+            nodePaths.some(path => path.includes('paragraph_0:0')) &&
+            nodePaths.some(
+              path =>
+                path.includes('listItem_0') || path.includes('taskItem_0'),
+            ) &&
+            isList;
+
+          if (isFirstListItemWithoutContent) {
+            return editor
+              .chain()
+              .setNode('paragraph') // Get rid of the error warning
+              .deleteRange({
+                from,
+                to,
+              })
+              .insertContentAt(from, {
+                type: 'dBlock',
+                content: [
+                  {
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: '' }],
+                  },
+                ],
+              })
+              .focus()
+              .run();
+          }
+
+          // The only list item of list
+          // if (isFirstListItemWithoutContent) {
+          //   return editor.chain().liftListItem('listItem').focus().run();
+          // }
+
+          if (isFirstDBlockListItem && nodePaths.length === 4) {
+            // Insert the paragraph content into a new dBlock above
+            // Find the list node and its position
+            const listNode = $head.node($head.depth - 2);
+            const listPos = $head.before($head.depth - 2);
+
+            return editor
+              .chain()
+              .deleteRange({
+                from: listPos + 1,
+                to: listPos + 1 + (listNode.firstChild?.nodeSize || 0),
+              })
+              .insertContentAt(from - 4, {
+                type: 'dBlock',
+                content: [
+                  {
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: getParagraphText() }],
+                  },
+                ],
+              })
+              .focus()
+              .run();
+          }
+        }
+
+        return false;
       },
     };
   },
