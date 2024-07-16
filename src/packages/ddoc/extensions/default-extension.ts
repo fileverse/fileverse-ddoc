@@ -4,7 +4,7 @@
 import StarterKit from '@tiptap/starter-kit';
 import FontFamily from '@tiptap/extension-font-family';
 import TextAlign from '@tiptap/extension-text-align';
-import TiptapLink from '@tiptap/extension-link';
+import Link from '@tiptap/extension-link';
 import Placeholder from '@tiptap/extension-placeholder';
 import Highlight from '@tiptap/extension-highlight';
 import TaskList from '@tiptap/extension-task-list';
@@ -31,6 +31,7 @@ import { actionButton } from './action-button';
 import History from '@tiptap/extension-history';
 import BulletList from '@tiptap/extension-bullet-list';
 import { Markdown } from 'tiptap-markdown';
+import ListItem from '@tiptap/extension-list-item';
 
 export const defaultExtensions = [
   FontFamily,
@@ -90,13 +91,18 @@ export const defaultExtensions = [
     dropcursor: false,
     document: false,
     horizontalRule: false,
+    bulletList: false,
+    listItem: false,
   }),
-  History,
+  History.configure({
+    depth: 10,
+    newGroupDelay: 100,
+  }),
   TextAlign.configure({
     types: ['heading', 'paragraph'],
   }),
   HorizontalRule,
-  TiptapLink.extend({
+  Link.extend({
     exitable: true,
   }).configure({
     HTMLAttributes: {
@@ -104,6 +110,7 @@ export const defaultExtensions = [
         'text-blue-500 font-bold transition-colors cursor-pointer select-text pointer-events-auto',
     },
     openOnClick: true,
+    autolink: false,
   }),
   Placeholder.configure({
     placeholder: () => '',
@@ -132,6 +139,11 @@ export const defaultExtensions = [
   BulletList.configure({
     HTMLAttributes: {
       class: 'space-y-4 !ml-6',
+    },
+  }),
+  ListItem.configure({
+    HTMLAttributes: {
+      class: 'leading-normal',
     },
   }),
   DropCursor.configure({
