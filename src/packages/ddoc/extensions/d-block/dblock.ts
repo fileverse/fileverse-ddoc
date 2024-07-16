@@ -114,8 +114,8 @@ export const DBlock = Node.create<DBlockOptions>({
             return editor
               .chain()
               .deleteRange({
-                from,
-                to,
+                from: from - 1,
+                to: to,
               })
               .insertContentAt(from, {
                 type: 'dBlock',
@@ -217,22 +217,22 @@ export const DBlock = Node.create<DBlockOptions>({
       },
       Backspace: ({ editor }) => {
         const {
-          selection: { $head, from, to },
+          selection: { $head, from },
         } = editor.state;
 
         const parent = $head.node($head.depth - 1);
 
+        const headString = $head.toString();
+        const nodePaths = headString.split('/');
+
+        const isList = nodePaths.some(
+          path =>
+            path.includes('bulletList_0') ||
+            path.includes('orderedList_0') ||
+            path.includes('taskList_0'),
+        );
+
         if (parent?.type.name !== 'dBlock') {
-          const headString = $head.toString();
-          const nodePaths = headString.split('/');
-
-          const isList = nodePaths.some(
-            path =>
-              path.includes('bulletList_0') ||
-              path.includes('orderedList_0') ||
-              path.includes('taskList_0'),
-          );
-
           const isFirstListItem = nodePaths.some(
             path => path.includes('listItem_0') || path.includes('taskItem_0'),
           );
@@ -264,31 +264,34 @@ export const DBlock = Node.create<DBlockOptions>({
             ) &&
             isList;
 
-          if (isFirstListItemWithoutContent) {
-            return editor
-              .chain()
-              .setNode('paragraph') // Get rid of the error warning
-              .deleteRange({
-                from,
-                to,
-              })
-              .insertContentAt(from, {
-                type: 'dBlock',
-                content: [
-                  {
-                    type: 'paragraph',
-                    content: [{ type: 'text', text: '' }],
-                  },
-                ],
-              })
-              .focus()
-              .run();
-          }
+          const isMultipleListItems =
+            $head.node($head.depth - 2).childCount > 1;
 
-          // The only list item of list
-          // if (isFirstListItemWithoutContent) {
-          //   return editor.chain().liftListItem('listItem').focus().run();
-          // }
+          if (isFirstListItemWithoutContent) {
+            const listPos = $head.before($head.depth - 2);
+
+            if (!isMultipleListItems) {
+              return editor.chain().liftListItem('listItem').focus().run();
+            } else {
+              return editor
+                .chain()
+                .deleteRange({
+                  from: listPos + 1,
+                  to: listPos + 1 + parent.nodeSize,
+                })
+                .insertContentAt(from - 4, {
+                  type: 'dBlock',
+                  content: [
+                    {
+                      type: 'paragraph',
+                      content: [{ type: 'text', text: '' }],
+                    },
+                  ],
+                })
+                .focus()
+                .run();
+            }
+          }
 
           if (isFirstDBlockListItem && nodePaths.length === 4) {
             // Insert the paragraph content into a new dBlock above
@@ -314,6 +317,14 @@ export const DBlock = Node.create<DBlockOptions>({
               .focus()
               .run();
           }
+        }
+
+        const isFirstEmptyDBlock =
+          $head.toString().includes('dBlock_0') &&
+          $head.parent.content.size === 0;
+
+        if (isFirstEmptyDBlock && !isList) {
+          return editor.chain().deleteNode('dBlock').focus().run();
         }
 
         return false;
