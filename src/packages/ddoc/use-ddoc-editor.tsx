@@ -256,15 +256,13 @@ export const useDdocEditor = ({
       const { state } = editor;
       const { from, to } = state.selection;
 
-      if (from !== to) {
-        const selectedText = state.doc.textBetween(from, to, ' ');
-        onTextSelection?.({
-          text: selectedText,
-          from,
-          to,
-          isHighlightedYellow: isHighlightedYellow(state, from, to),
-        });
-      }
+      const selectedText = state.doc.textBetween(from, to, ' ');
+      onTextSelection?.({
+        text: selectedText,
+        from,
+        to,
+        isHighlightedYellow: isHighlightedYellow(state, from, to),
+      });
     };
 
     editor.on('selectionUpdate', handleSelection);
