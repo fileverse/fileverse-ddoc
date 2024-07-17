@@ -104,13 +104,16 @@ export const defaultExtensions = [
   HorizontalRule,
   Link.extend({
     exitable: true,
+    inclusive: false,
   }).configure({
     HTMLAttributes: {
       class:
         'text-blue-500 font-bold transition-colors cursor-pointer select-text pointer-events-auto',
+      rel: 'noopener noreferrer',
     },
+    validate: href => /^https?:\/\//.test(href),
     openOnClick: true,
-    autolink: false,
+    autolink: true,
   }),
   Placeholder.configure({
     placeholder: () => '',

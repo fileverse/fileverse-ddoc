@@ -23,28 +23,43 @@ const BottomToolbar = ({
     uploadToIpfs,
   });
   const isMobile = useMediaQuery('(max-width: 1023px)');
-
   const [url, setUrl] = useState('');
   const [linkText, setLinkText] = useState('');
+  const [isTextValid, setIsTextValid] = useState(true);
   const [isUrlValid, setIsUrlValid] = useState(true);
+  const textFormattingButtonRef = useRef<HTMLButtonElement>(null);
+
   const saveLink = () => {
     // cancelled
     if (url === null) {
       setIsUrlValid(false);
+      setToolVisibility(IEditorTool.NONE);
       return;
     }
 
+    // console.log('url', url);
+    // console.log('linkText', linkText);
+
+    if (linkText === '' && url === '') {
+      setToolVisibility(IEditorTool.NONE);
+      setIsTextValid(true);
+      setIsUrlValid(true);
+      return;
+    }
     // empty
     if (url === '') {
+      // console.log('empty url');
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
-      setIsUrlValid(false);
+      setToolVisibility(IEditorTool.NONE);
       return;
     }
 
     // Add https:// prefix if it's missing
     let finalUrl = url;
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+    if (!url.startsWith('http://') || !url.startsWith('https://')) {
       finalUrl = 'https://' + url;
+    } else {
+      finalUrl = url;
     }
 
     // validate link
@@ -54,48 +69,55 @@ const BottomToolbar = ({
           /^((http|https):\/\/)?([w|W]{3}\.)+[a-zA-Z0-9\-\.]{3,}\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?$/,
         )
       ) {
-        editor
-          .chain()
-          .focus()
-          .extendMarkRange('link')
-          .setLink({ href: finalUrl })
-          .command(({ tr }) => {
-            tr.insertText(linkText);
-            return true
-          })
-          .run();
+        setIsUrlValid(true);
       }
-
-      setIsUrlValid(true);
     } catch (e) {
       console.error('Invalid URL');
       setIsUrlValid(false);
-      return;
     }
 
-    // update link
-    editor
-      .chain()
-      .focus()
-      .extendMarkRange('link')
-      .setLink({ href: finalUrl })
-      .command(({ tr }) => {
-        tr.insertText(linkText);
-        return true;
-      })
-      .run();
+    const { from, to } = editor.state.selection;
+    // isSelected which will return true if the current selection is either a link or a text
+    const isSelected = editor.state.doc.textBetween(from, to);
+
+    if (isSelected) {
+      editor.chain().focus().extendMarkRange('link').setLink({ href: finalUrl }).run();
+    } else {
+      // create link via popup
+      editor.chain().focus().
+        command(({ tr, dispatch }) => {
+          const { from, to } = editor.state.selection;
+          const text = linkText;
+          const link = { href: finalUrl };
+          tr.insertText(text, from, to);
+          tr.addMark(from, text.length + from, editor.schema.marks.link.create(link));
+
+          if (dispatch) {
+            dispatch(tr);
+          }
+
+          return true;
+        }).
+        run();
+    }
 
     setIsUrlValid(true);
+    setIsTextValid(true);
+    setLinkText('');
+    setUrl('');
     setToolVisibility(IEditorTool.NONE);
   };
 
   const getSelectedText = (editor: Editor) => {
     const { from, to } = editor.state.selection;
     const text = editor.state.doc.textBetween(from, to);
-    setLinkText(text);
     return text;
   };
-  const textFormattingButtonRef = useRef<HTMLButtonElement>(null);
+
+  const getSelectedTextUrl = (editor: Editor) => {
+    const url = editor.getAttributes('link').href;
+    return url;
+  }
 
   useEffect(() => {
     let touchStartTime = 0;
@@ -142,10 +164,8 @@ const BottomToolbar = ({
   }, [editor, isMobile]);
 
   useEffect(() => {
-    getSelectedText(editor);
-  }, [editor]);
+    if (!editor) return;
 
-  useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'k' && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
@@ -204,51 +224,51 @@ const BottomToolbar = ({
           setToolVisibility={setToolVisibility}
         />
       )}
-      {toolVisibilty === IEditorTool.LINK_POPUP && (
-        <DynamicModal
-          open={toolVisibilty === IEditorTool.LINK_POPUP}
-          onOpenChange={() => setToolVisibility(IEditorTool.NONE)}
-          title="Link"
-          content={
-            <div className="flex flex-col gap-4 w-full h-full px-4">
-              <TextField
-                label="Text"
-                placeholder="Link text"
-                className="w-full"
-                defaultValue={linkText}
-                onChange={(e) => {
-                  e.preventDefault();
-                  setLinkText(e.target.value);
-                }}
-              />
-              <TextField
-                label="Link"
-                placeholder="Paste URL"
-                className="w-full"
-                defaultValue={editor.getAttributes('link').href}
-                onChange={(e) => {
-                  e.preventDefault();
-                  setUrl(e.target.value);
-                }}
-                isValid={isUrlValid}
-                message={isUrlValid ? '' : 'Invalid URL'}
-              />
-            </div>
-          }
-          primaryAction={{
-            label: 'Save',
-            onClick: () => saveLink(),
-            isLoading: false,
-            className: 'w-auto min-w-[80px]',
-          }}
-          secondaryAction={{
-            label: 'Cancel',
-            variant: 'secondary',
-            onClick: () => setToolVisibility(IEditorTool.NONE),
-            className: 'w-auto min-w-[80px]',
-          }}
-        />
-      )}
+      <DynamicModal
+        open={toolVisibilty === IEditorTool.LINK_POPUP}
+        onOpenChange={() => setToolVisibility(IEditorTool.NONE)}
+        title="Link"
+        content={
+          <div className="flex flex-col gap-4 w-full h-full px-4">
+            <TextField
+              label="Text"
+              placeholder="Link text"
+              className="w-full"
+              defaultValue={getSelectedText(editor)}
+              onChange={(e) => {
+                e.preventDefault();
+                setLinkText(e.target.value);
+              }}
+              isValid={isTextValid}
+              message={isTextValid ? '' : 'Invalid text'}
+            />
+            <TextField
+              label="Link"
+              placeholder="Paste URL"
+              className="w-full"
+              defaultValue={getSelectedTextUrl(editor)}
+              onChange={(e) => {
+                e.preventDefault();
+                setUrl(e.target.value);
+              }}
+              isValid={isUrlValid}
+              message={isUrlValid ? '' : 'Invalid URL'}
+            />
+          </div>
+        }
+        primaryAction={{
+          label: 'Save',
+          onClick: () => saveLink(),
+          isLoading: false,
+          className: 'w-auto min-w-[80px]',
+        }}
+        secondaryAction={{
+          label: 'Cancel',
+          variant: 'secondary',
+          onClick: () => setToolVisibility(IEditorTool.NONE),
+          className: 'w-auto min-w-[80px]',
+        }}
+      />
     </Drawer>
   );
 };

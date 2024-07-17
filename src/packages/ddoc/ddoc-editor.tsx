@@ -88,7 +88,7 @@ const DdocEditor = forwardRef(
       };
 
       const handleKeyDown = (event: KeyboardEvent) => {
-        if (isCharacterKey(event)) {
+        if (isCharacterKey(event) && isMobile) {
           if (typingTimeoutRef.current) {
             clearTimeout(typingTimeoutRef.current);
           }
@@ -108,7 +108,7 @@ const DdocEditor = forwardRef(
           clearTimeout(typingTimeoutRef.current);
         }
       };
-    }, [editor]);
+    }, [editor, isMobile]);
 
     if (!editor || loading) {
       return (

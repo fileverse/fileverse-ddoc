@@ -321,7 +321,7 @@ export const useEditorToolbar = ({
           .focus()
           .insertTable({ rows: 3, cols: 2, withHeaderRow: true })
           .run(),
-      isActive: toolVisibilty === IEditorTool.TEXT_COLOR,
+      isActive: false,
     },
   ];
 
