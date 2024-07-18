@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
 import { DdocProps, DdocEditorProps } from './types';
 import * as Y from 'yjs';
@@ -119,7 +119,7 @@ export const useDdocEditor = ({
     handleCommentInteraction(view, event);
   };
 
-  const onlineEditor = useEditor(
+  const editor = useEditor(
     {
       extensions,
       editorProps: {
@@ -145,36 +145,11 @@ export const useDdocEditor = ({
         }
         onChange?.(_editor.editor.getJSON());
       },
+      shouldRerenderOnTransaction: !!enableCollaboration,
+      immediatelyRender: true,
     },
     [extensions],
   );
-
-  const offlineEditor = useEditor({
-    extensions,
-    editorProps: {
-      ...DdocEditorProps,
-      handleDOMEvents: {
-        mouseover: handleCommentInteraction,
-        keydown: (_view, event) => {
-          // prevent default event listeners from firing when slash command is active
-          if (['ArrowUp', 'ArrowDown', 'Enter'].includes(event.key)) {
-            const slashCommand = document.querySelector('#slash-command');
-            if (slashCommand) {
-              return true;
-            }
-          }
-        },
-      },
-      handleClick: handleCommentClick,
-    },
-    autofocus: 'start',
-    onUpdate: (_editor) => {
-      if (editor?.isEmpty) {
-        return;
-      }
-      onChange?.(_editor.editor.getJSON());
-    },
-  });
 
   const collaborationCleanupRef = useRef<() => void>(() => {});
 
@@ -224,14 +199,6 @@ export const useDdocEditor = ({
   };
 
   const ref = useRef<HTMLDivElement>(null);
-
-  const editor = useMemo(() => {
-    if (enableCollaboration && collaborationId && onlineEditor && !loading) {
-      return onlineEditor;
-    } else {
-      return offlineEditor;
-    }
-  }, [onlineEditor, offlineEditor, loading]);
 
   useEffect(() => {
     editor?.setEditable(!isPreviewMode);
