@@ -40,7 +40,6 @@ export const useDdocEditor = ({
   handleImageUploadToIpfs,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
-  const [loading, setLoading] = useState(false);
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions as AnyExtension[]),
     SlashCommand(handleImageUploadToIpfs!),
@@ -158,7 +157,6 @@ export const useDdocEditor = ({
       throw new Error('docId or username is not provided');
     }
 
-    setLoading(true);
     const provider = new WebrtcProvider(collaborationId, ydoc, {
       signaling: [
         'wss://fileverse-signaling-server-0529292ff51c.herokuapp.com/',
@@ -184,15 +182,9 @@ export const useDdocEditor = ({
       }),
     ]);
 
-    const timeout = setTimeout(() => {
-      setLoading(false);
-    }, 100); // this is a hack to dynamically set tiptap extension -  wait for tiptap to re-render the online editor with new extensions before rendering the editor
-
     collaborationCleanupRef.current = () => {
-      clearTimeout(timeout);
       provider.destroy();
       ydoc.destroy();
-      setLoading(false);
     };
 
     return collaborationCleanupRef.current;
@@ -271,7 +263,6 @@ export const useDdocEditor = ({
   return {
     editor,
     ref,
-    loading,
     connect,
     ydoc,
   };
