@@ -197,10 +197,11 @@ export const useDdocEditor = ({
   }, [isPreviewMode, editor]);
 
   useEffect(() => {
-    console.log('helo world');
     if (initialContent && editor && !initialContentSetRef.current) {
-      console.log(initialContent);
-      editor.commands.setContent(initialContent);
+      queueMicrotask(() => {
+        editor.commands.setContent(initialContent);
+      });
+
       initialContentSetRef.current = true;
     }
 
