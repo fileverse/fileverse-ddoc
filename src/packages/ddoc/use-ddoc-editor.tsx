@@ -138,14 +138,14 @@ export const useDdocEditor = ({
         handleClick: handleCommentClick,
       },
       autofocus: 'start',
-      onUpdate: (_editor) => {
+      onTransaction: (_editor) => {
         if (editor?.isEmpty) {
           return;
         }
         onChange?.(_editor.editor.getJSON());
       },
-      shouldRerenderOnTransaction: !!enableCollaboration,
-      immediatelyRender: true,
+      shouldRerenderOnTransaction: true,
+      immediatelyRender: false,
     },
     [extensions],
   );
@@ -197,7 +197,9 @@ export const useDdocEditor = ({
   }, [isPreviewMode, editor]);
 
   useEffect(() => {
+    console.log('helo world');
     if (initialContent && editor && !initialContentSetRef.current) {
+      console.log(initialContent);
       editor.commands.setContent(initialContent);
       initialContentSetRef.current = true;
     }
