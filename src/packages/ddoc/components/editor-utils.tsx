@@ -189,7 +189,20 @@ export const colors = [
   { color: '#6A5ACD', code: 'bg-[#6A5ACD]' },
 ];
 
-export const useEditorToolbar = ({ editor }: { editor: Editor }) => {
+// 2 Mb
+export const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
+
+export const ERR_MSG_MAP = {
+  IMAGE_SIZE: 'Image size should be less than 2 MB',
+};
+
+export const useEditorToolbar = ({
+  editor,
+  onErrorCb,
+}: {
+  editor: Editor;
+  onErrorCb?: (errorString: string) => void;
+}) => {
   const {
     ref: toolRef,
     toolVisibilty,
@@ -286,6 +299,13 @@ export const useEditorToolbar = ({ editor }: { editor: Editor }) => {
         input.onchange = async () => {
           if (input.files?.length) {
             const file = input.files[0];
+            const size = file.size;
+            if (size > MAX_IMAGE_SIZE) {
+              if (onErrorCb && typeof onErrorCb === 'function') {
+                onErrorCb(ERR_MSG_MAP.IMAGE_SIZE);
+              }
+              return;
+            }
             const pos = editor.view.state.selection.from;
             startImageUpload(file, editor.view, pos);
           }
@@ -358,6 +378,13 @@ export const useEditorToolbar = ({ editor }: { editor: Editor }) => {
         input.onchange = async () => {
           if (input.files?.length) {
             const file = input.files[0];
+            const size = file.size;
+            if (size > MAX_IMAGE_SIZE) {
+              if (onErrorCb && typeof onErrorCb === 'function') {
+                onErrorCb(ERR_MSG_MAP.IMAGE_SIZE);
+              }
+              return;
+            }
             const pos = editor.view.state.selection.from;
             startImageUpload(file, editor.view, pos);
           }

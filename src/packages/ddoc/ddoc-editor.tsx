@@ -41,6 +41,7 @@ const DdocEditor = forwardRef(
       showCommentButton,
       ensResolutionUrl,
       disableBottomToolbar,
+      onErrorCb,
     }: DdocProps,
     ref,
   ) => {
@@ -65,6 +66,7 @@ const DdocEditor = forwardRef(
       onCommentInteraction,
       onTextSelection,
       ensResolutionUrl,
+      onErrorCb,
     });
 
     useImperativeHandle(
@@ -130,7 +132,7 @@ const DdocEditor = forwardRef(
 
               {!isPreviewMode && (
                 <div className="grow relative hidden xl:block">
-                  <EditorToolBar editor={editor} />
+                  <EditorToolBar editor={editor} onErrorCb={onErrorCb} />
                 </div>
               )}
               {renderToolRightSection?.({ editor: editor.getJSON() })}
@@ -184,7 +186,7 @@ const DdocEditor = forwardRef(
                     'flex xl:hidden items-center w-full h-16 fixed z-10 px-4 bg-[#f8f9fa] bottom-0',
                   )}
                 >
-                  <BottomToolbar editor={editor} />
+                  <BottomToolbar editor={editor} onErrorCb={onErrorCb} />
                 </motion.div>
               )}
             </AnimatePresence>

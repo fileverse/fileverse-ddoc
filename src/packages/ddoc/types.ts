@@ -33,7 +33,7 @@ export interface DdocProps {
   handleCommentButtonClick?: (e: Editor) => void;
   showCommentButton?: boolean;
   disableBottomToolbar?: boolean;
-  onImageUpdateError?: (error: string) => void;
+  onErrorCb?: (error: string) => void;
 }
 
 export interface IEditorSelectionData {

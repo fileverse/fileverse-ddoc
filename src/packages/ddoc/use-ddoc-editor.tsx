@@ -37,11 +37,12 @@ export const useDdocEditor = ({
   onCommentInteraction,
   onTextSelection,
   ensResolutionUrl,
+  onErrorCb,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions as AnyExtension[]),
-    SlashCommand(),
+    SlashCommand(onErrorCb),
   ]);
   const initialContentSetRef = useRef(false);
 

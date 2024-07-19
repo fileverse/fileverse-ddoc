@@ -34,6 +34,7 @@ import {
 
 import { startImageUpload } from '../utils/upload-images';
 import { useMediaQuery } from 'usehooks-ts';
+import { ERR_MSG_MAP, MAX_IMAGE_SIZE } from './editor-utils';
 
 interface CommandItemProps {
   title: string;
@@ -77,7 +78,13 @@ const Command = Extension.create({
   },
 });
 
-const getSuggestionItems = ({ query }: { query: string }) => {
+const getSuggestionItems = ({
+  query,
+  onErrorCb,
+}: {
+  query: string;
+  onErrorCb?: (errorString: string) => void;
+}) => {
   return [
     {
       title: 'Text',
@@ -232,6 +239,13 @@ const getSuggestionItems = ({ query }: { query: string }) => {
         input.onchange = async () => {
           if (input.files?.length) {
             const file = input.files[0];
+            const size = file.size;
+            if (size > MAX_IMAGE_SIZE) {
+              if (onErrorCb && typeof onErrorCb === 'function') {
+                onErrorCb(ERR_MSG_MAP.IMAGE_SIZE);
+              }
+              return;
+            }
             const pos = editor.view.state.selection.from;
             startImageUpload(file, editor.view, pos);
           }
@@ -486,9 +500,9 @@ const renderItems = () => {
   };
 };
 
-const SlashCommand = () => {
+const SlashCommand = (onErrorCb?: (errorString: string) => void) => {
   const items = ({ query }: { query: string }) => {
-    return getSuggestionItems({ query });
+    return getSuggestionItems({ query, onErrorCb });
   };
   return Command.configure({
     suggestion: {

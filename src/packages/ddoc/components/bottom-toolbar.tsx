@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape */
 import { useEffect, useRef, useState } from 'react';
 import { TextFormatingPopup, useEditorToolbar } from './editor-utils';
 import { Editor } from '@tiptap/react';
@@ -8,9 +9,16 @@ import { TextField } from '../common/textfield';
 import cn from 'classnames';
 import { useMediaQuery } from 'usehooks-ts';
 
-const BottomToolbar = ({ editor }: { editor: Editor }) => {
+const BottomToolbar = ({
+  editor,
+  onErrorCb,
+}: {
+  editor: Editor;
+  onErrorCb?: (errorString: string) => void;
+}) => {
   const { toolVisibilty, setToolVisibility, bottomToolbar } = useEditorToolbar({
     editor: editor,
+    onErrorCb,
   });
   const isMobile = useMediaQuery('(max-width: 1023px)');
 
