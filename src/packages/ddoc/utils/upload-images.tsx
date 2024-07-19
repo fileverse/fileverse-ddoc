@@ -6,6 +6,7 @@ import { EditorState, Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet, EditorView } from '@tiptap/pm/view';
 
 import imagePlaceholder from '../../../assets/spinner_GIF.gif';
+import { MAX_IMAGE_SIZE } from '../components/editor-utils';
 
 const uploadKey = new PluginKey('upload-image');
 
@@ -61,12 +62,7 @@ function findPlaceholder(state: EditorState, id: any) {
   return found.length ? found[0].from : null;
 }
 
-export function startImageUpload(
-  file: File,
-  view: EditorView,
-  pos: number,
-  handleImageUpload: (file: File) => Promise<string>,
-) {
+export function startImageUpload(file: File, view: EditorView, pos: number) {
   // check if the file is an image
   if (!file.type.includes('image/')) {
     console.log('file is not an image');
@@ -88,25 +84,23 @@ export function startImageUpload(
     },
   });
   view.dispatch(tr);
-
-  handleImageUpload(file).then((src) => {
+  // convert file to base64
+  const fileReader = new FileReader();
+  fileReader.readAsDataURL(file);
+  fileReader.onloadend = () => {
     const { schema } = view.state;
-
     const pos = findPlaceholder(view.state, id);
-    // If the content around the placeholder has been deleted, drop the image
-    if (pos == null) return;
-
-    const imageSrc = src;
-
+    if (!pos) return;
+    const src = fileReader.result as string;
     const node = schema.nodes.resizableMedia.create({
-      src: imageSrc,
+      src: src,
       'media-type': 'img',
     });
     const transaction = view.state.tr
       .replaceWith(pos - 2, pos + node.nodeSize, node)
       .setMeta(uploadKey, { remove: { id } });
     view.dispatch(transaction);
-  });
+  };
 }
 
 export const uploadFn = async (image: File) => {
@@ -115,7 +109,7 @@ export const uploadFn = async (image: File) => {
   reader.readAsDataURL(image);
 
   // check if image is too large for upload (> 1 MB), then throw error
-  if (image.size > 1024 * 1024) {
+  if (image.size > MAX_IMAGE_SIZE) {
     reader.abort();
     console.log('should be less than 1 mb');
     throw new Error('Image too large');

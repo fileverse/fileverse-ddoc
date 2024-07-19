@@ -59,42 +59,10 @@ function App() {
           type="text"
           placeholder="Untitled"
           value={title}
-          onChange={e => setTitle(e.target.value)}
+          onChange={(e) => setTitle(e.target.value)}
         />
       </div>
     );
-  };
-
-  const callUploadApi = async (file: File) => {
-    const body = new FormData();
-    body.append('file', file);
-    body.append('name', file.name);
-
-    try {
-      const response = await fetch(`${import.meta.env.API_URL}/upload/public`, {
-        method: 'POST',
-        headers: {
-          'x-api-key': 'hello-world',
-        },
-        body,
-      });
-
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
-      const apiResponse = await response.json();
-      return apiResponse;
-    } catch (error) {
-      // Handle fetch errors or response parsing errors
-      console.error('Error during fetch:', error);
-      throw error;
-    }
-  };
-
-  const getImageIpfsHash = async (file: File): Promise<string> => {
-    const response = await callUploadApi(file);
-    return response.ipfsUrl;
   };
 
   return (
@@ -103,8 +71,8 @@ function App() {
         enableCollaboration={enableCollaboration}
         collaborationId={collaborationId}
         username={username}
-        handleImageUploadToIpfs={getImageIpfsHash}
         isPreviewMode={isPreviewMode}
+        onError={(error) => console.log(error)}
         renderToolRightSection={renderRightSection}
         renderToolLeftSection={renderLeftSection}
         ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}

@@ -1,4 +1,5 @@
 import { Plugin, PluginKey } from 'prosemirror-state';
+import { MAX_IMAGE_SIZE } from '../../../components/editor-utils';
 
 export type UploadFnType = (image: File) => Promise<string>;
 
@@ -29,7 +30,7 @@ export const getMediaPasteDropPlugin = (upload: UploadFnType) => {
 
             if (file) {
               // Check if the image size is less than 1MB
-              if (file.size > 1024 * 1024) {
+              if (file.size > MAX_IMAGE_SIZE) {
                 throw new Error('Image too large');
               }
             }
@@ -49,7 +50,7 @@ export const getMediaPasteDropPlugin = (upload: UploadFnType) => {
         }
 
         const imagesAndVideos = Array.from(
-          event.dataTransfer?.files ?? []
+          event.dataTransfer?.files ?? [],
         ).filter(({ type: t }) => /image|video/i.test(t));
 
         if (imagesAndVideos.length === 0) return false;

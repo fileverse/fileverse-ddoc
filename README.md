@@ -31,7 +31,6 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | Property                                       | Type                                           | Description                                                                                               |
 | ---------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `isPreviewMode`                                | `boolean`                                      | Indicates whether the page is in preview mode or not.                                                     |
-| `handleImageUploadToIpfs`                      | `(file: File) => Promise<string>`              | Required function to upload ddoc editor's image on IPFS                                                   |
 | `data` (optional)                              | `Data`                                         | Optional property holding data related to the page.                                                       |
 | `enableCollaboration` (optional)               | `boolean`                                      | Optional property to enable collaboration                                                                 |
 | `onCommentInteraction` (optional)              | `(commentInfo: IEditSelectionData) => void`    | Optional function that get's called whenever there is a mouse-over and click interaction on a comment     |
@@ -46,6 +45,7 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `initialContent` (optional)                    | `JSONContent`                                  | Initial content of the editor                                                                             |
 | `onChange` (optional)                          | `(changes: JSONContent) => void`               | Optional function that gets triggered with the latest content of the editor on every change in the editor |
 | `onCollaboratorChange` (optional)              | `(collaborators?: IDocCollabUsers[] ) => void` | Optional function that gets triggered when a user join or leave the doc during collaboration              |
+| `onError` (optional)                           | `(errorString: string) => void`                | Function to call on error                                                                                 |
 
 ## Data Interface
 

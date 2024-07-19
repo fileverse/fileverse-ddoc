@@ -27,13 +27,13 @@ export interface DdocProps {
   renderToolLeftSection?: ({ editor }: { editor: JSONContent }) => JSX.Element;
   renderToolRightSection?: ({ editor }: { editor: JSONContent }) => JSX.Element;
   onChange?: (changes: Data['editorJSONData']) => void;
-  handleImageUploadToIpfs: (file: File) => Promise<string>;
   onCollaboratorChange?: (collaborators: undefined | IDocCollabUsers[]) => void;
   onTextSelection?: (data: IEditorSelectionData) => void;
   onCommentInteraction?: (data: IEditorSelectionData) => void;
   handleCommentButtonClick?: (e: Editor) => void;
   showCommentButton?: boolean;
   disableBottomToolbar?: boolean;
+  onError?: (error: string) => void;
 }
 
 export interface IEditorSelectionData {
