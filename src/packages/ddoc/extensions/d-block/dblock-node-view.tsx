@@ -23,6 +23,7 @@ import { DropdownButton } from '../../common/dropdown';
 import useContentItemActions from '../../hooks/use-content-item-actions';
 import { Toolbar } from '../../common/toolbar';
 import CustomTooltip from '../../common/cutsom-tooltip';
+import { FocusScope } from '@radix-ui/react-focus-scope';
 
 export const DBlockNodeView: React.FC<NodeViewProps> = ({
   node,
@@ -58,7 +59,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
     const { content } = node.content as any;
 
     return content[0].content.content.find((item: any) =>
-      item?.text?.match(/\/status\/([0-9]*)/)
+      item?.text?.match(/\/status\/([0-9]*)/),
     );
   }, [node.content]);
 
@@ -74,16 +75,16 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
     } else {
       switch (true) {
         case /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/.test(
-          nodeContentText
+          nodeContentText,
         ): {
-            const matches = nodeContentText.match(
-              /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/
-            );
-            if (matches && matches.length > 0) {
-              formattedUrl = `https://www.youtube.com/embed/${matches[1]}`;
-            }
-            break;
+          const matches = nodeContentText.match(
+            /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/,
+          );
+          if (matches && matches.length > 0) {
+            formattedUrl = `https://www.youtube.com/embed/${matches[1]}`;
           }
+          break;
+        }
         case /vimeo\.com\/([a-zA-Z0-9-_]+)/.test(nodeContentText): {
           const matches = nodeContentText.match(/vimeo\.com\/([a-zA-Z0-9-_]+)/);
           if (matches && matches.length > 0) {
@@ -225,7 +226,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
       className={clx(
         'flex gap-2 group w-full relative justify-center items-start',
         isPreviewMode && 'pointer-events-none',
-        isTable && 'pointer-events-auto'
+        isTable && 'pointer-events-auto',
       )}
     >
       <section
@@ -242,65 +243,72 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
           }
         >
           <div
-            className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
-              }`}
+            className={`d-block-button cursor-pointer ${
+              !isPreviewMode && 'group-hover:opacity-100'
+            }`}
             contentEditable={false}
             onClick={handleClick}
           >
             <Plus size={18} />
           </div>
         </CustomTooltip>
-        <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
-          <Popover.Trigger asChild>
-            <div
-              className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
+        <FocusScope
+          onMountAutoFocus={(e) => e.preventDefault()}
+          trapped={false}
+        >
+          <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
+            <Popover.Trigger asChild>
+              <div
+                className={`d-block-button cursor-pointer ${
+                  !isPreviewMode && 'group-hover:opacity-100'
                 }`}
-              contentEditable={false}
-              draggable
-              data-drag-handle
-              onClick={handleDragClick}
+                contentEditable={false}
+                draggable
+                data-drag-handle
+                onClick={handleDragClick}
+              >
+                <GripVertical size={18} />
+              </div>
+            </Popover.Trigger>
+            <Popover.Content
+              side="bottom"
+              align="start"
+              sideOffset={8}
+              className="z-10"
             >
-              <GripVertical size={18} />
-            </div>
-          </Popover.Trigger>
-          <Popover.Content
-            side="bottom"
-            align="start"
-            sideOffset={8}
-            className="z-10"
-          >
-            <Surface className="p-2 flex flex-col min-w-[16rem]">
-              <Popover.Close>
-                <DropdownButton onClick={actions.resetTextFormatting}>
-                  <RemoveFormatting size={18} />
-                  Clear formatting
-                </DropdownButton>
-              </Popover.Close>
-              <Popover.Close>
-                <DropdownButton onClick={actions.copyNodeToClipboard}>
-                  <Clipboard size={18} />
-                  Copy to clipboard
-                </DropdownButton>
-              </Popover.Close>
-              <Popover.Close>
-                <DropdownButton onClick={actions.duplicateNode}>
-                  <Copy size={18} />
-                  Duplicate
-                </DropdownButton>
-              </Popover.Close>
-              <Toolbar.Divider horizontal />
-              <Popover.Close>
-                <DropdownButton
-                  onClick={actions.deleteNode}
-                  className="text-red-500 hover:bg-red-500 bg-opacity-10 hover:bg-opacity-20"
-                >
-                  <Trash2 size={18} />
-                  Delete
-                </DropdownButton>
-              </Popover.Close>
-            </Surface>
-          </Popover.Content>
-        </Popover.Root>
+              <Surface className="p-2 flex flex-col min-w-[16rem]">
+                <Popover.Close>
+                  <DropdownButton onClick={actions.resetTextFormatting}>
+                    <RemoveFormatting size={18} />
+                    Clear formatting
+                  </DropdownButton>
+                </Popover.Close>
+                <Popover.Close>
+                  <DropdownButton onClick={actions.copyNodeToClipboard}>
+                    <Clipboard size={18} />
+                    Copy to clipboard
+                  </DropdownButton>
+                </Popover.Close>
+                <Popover.Close>
+                  <DropdownButton onClick={actions.duplicateNode}>
+                    <Copy size={18} />
+                    Duplicate
+                  </DropdownButton>
+                </Popover.Close>
+                <Toolbar.Divider horizontal />
+                <Popover.Close>
+                  <DropdownButton
+                    onClick={actions.deleteNode}
+                    className="text-red-500 hover:bg-red-500 bg-opacity-10 hover:bg-opacity-20"
+                  >
+                    <Trash2 size={18} />
+                    Delete
+                  </DropdownButton>
+                </Popover.Close>
+              </Surface>
+            </Popover.Content>
+          </Popover.Root>
+        </FocusScope>
       </section>
 
       <NodeViewContent
