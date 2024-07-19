@@ -53,7 +53,6 @@ const DdocEditor = forwardRef(
     const {
       editor,
       ref: editorRef,
-      loading,
       ydoc,
     } = useDdocEditor({
       isPreviewMode,
@@ -110,7 +109,7 @@ const DdocEditor = forwardRef(
       };
     }, [editor, isMobile]);
 
-    if (!editor || loading) {
+    if (!editor) {
       return (
         <div className="w-screen h-screen flex flex-col gap-4 justify-center items-center">
           <Spinner />
@@ -153,17 +152,11 @@ const DdocEditor = forwardRef(
                   {!isPreviewMode && (
                     <div>
                       <EditorBubbleMenu editor={editor} />
-                      <ColumnsMenu
-                        editor={editor}
-                        appendTo={editorRef}
-                      />
+                      <ColumnsMenu editor={editor} appendTo={editorRef} />
                     </div>
                   )}
                   <EditingProvider isPreviewMode={isPreviewMode}>
-                    <EditorContent
-                      editor={editor}
-                      className="py-4 relative"
-                    />
+                    <EditorContent editor={editor} className="py-4 relative" />
                   </EditingProvider>
                 </div>
                 {showCommentButton && !isMobile && (

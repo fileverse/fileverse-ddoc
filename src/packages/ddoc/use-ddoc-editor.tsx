@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useRef, useMemo } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
 import { DdocProps, DdocEditorProps } from './types';
 import * as Y from 'yjs';
@@ -40,7 +40,6 @@ export const useDdocEditor = ({
   handleImageUploadToIpfs,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
-  const [loading, setLoading] = useState(false);
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions as AnyExtension[]),
     SlashCommand(handleImageUploadToIpfs!),
@@ -119,7 +118,7 @@ export const useDdocEditor = ({
     handleCommentInteraction(view, event);
   };
 
-  const onlineEditor = useEditor(
+  const editor = useEditor(
     {
       extensions,
       editorProps: {
@@ -139,42 +138,17 @@ export const useDdocEditor = ({
         handleClick: handleCommentClick,
       },
       autofocus: 'start',
-      onUpdate: (_editor) => {
+      onTransaction: (_editor) => {
         if (editor?.isEmpty) {
           return;
         }
         onChange?.(_editor.editor.getJSON());
       },
+      shouldRerenderOnTransaction: true,
+      immediatelyRender: false,
     },
     [extensions],
   );
-
-  const offlineEditor = useEditor({
-    extensions,
-    editorProps: {
-      ...DdocEditorProps,
-      handleDOMEvents: {
-        mouseover: handleCommentInteraction,
-        keydown: (_view, event) => {
-          // prevent default event listeners from firing when slash command is active
-          if (['ArrowUp', 'ArrowDown', 'Enter'].includes(event.key)) {
-            const slashCommand = document.querySelector('#slash-command');
-            if (slashCommand) {
-              return true;
-            }
-          }
-        },
-      },
-      handleClick: handleCommentClick,
-    },
-    autofocus: 'start',
-    onUpdate: (_editor) => {
-      if (editor?.isEmpty) {
-        return;
-      }
-      onChange?.(_editor.editor.getJSON());
-    },
-  });
 
   const collaborationCleanupRef = useRef<() => void>(() => {});
 
@@ -183,7 +157,6 @@ export const useDdocEditor = ({
       throw new Error('docId or username is not provided');
     }
 
-    setLoading(true);
     const provider = new WebrtcProvider(collaborationId, ydoc, {
       signaling: [
         'wss://fileverse-signaling-server-0529292ff51c.herokuapp.com/',
@@ -209,15 +182,9 @@ export const useDdocEditor = ({
       }),
     ]);
 
-    const timeout = setTimeout(() => {
-      setLoading(false);
-    }, 100); // this is a hack to dynamically set tiptap extension -  wait for tiptap to re-render the online editor with new extensions before rendering the editor
-
     collaborationCleanupRef.current = () => {
-      clearTimeout(timeout);
       provider.destroy();
       ydoc.destroy();
-      setLoading(false);
     };
 
     return collaborationCleanupRef.current;
@@ -225,21 +192,16 @@ export const useDdocEditor = ({
 
   const ref = useRef<HTMLDivElement>(null);
 
-  const editor = useMemo(() => {
-    if (enableCollaboration && collaborationId && onlineEditor && !loading) {
-      return onlineEditor;
-    } else {
-      return offlineEditor;
-    }
-  }, [onlineEditor, offlineEditor, loading]);
-
   useEffect(() => {
     editor?.setEditable(!isPreviewMode);
   }, [isPreviewMode, editor]);
 
   useEffect(() => {
     if (initialContent && editor && !initialContentSetRef.current) {
-      editor.commands.setContent(initialContent);
+      queueMicrotask(() => {
+        editor.commands.setContent(initialContent);
+      });
+
       initialContentSetRef.current = true;
     }
 
@@ -304,7 +266,6 @@ export const useDdocEditor = ({
   return {
     editor,
     ref,
-    loading,
     connect,
     ydoc,
   };
