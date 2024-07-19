@@ -31,7 +31,6 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | Property                                       | Type                                           | Description                                                                                               |
 | ---------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
 | `isPreviewMode`                                | `boolean`                                      | Indicates whether the page is in preview mode or not.                                                     |
-| `handleImageUploadToIpfs`                      | `(file: File) => Promise<string>`              | Required function to upload ddoc editor's image on IPFS                                                   |
 | `data` (optional)                              | `Data`                                         | Optional property holding data related to the page.                                                       |
 | `enableCollaboration` (optional)               | `boolean`                                      | Optional property to enable collaboration                                                                 |
 | `onCommentInteraction` (optional)              | `(commentInfo: IEditSelectionData) => void`    | Optional function that get's called whenever there is a mouse-over and click interaction on a comment     |

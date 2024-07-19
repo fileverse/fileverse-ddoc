@@ -14,17 +14,11 @@ import { IEditorTool } from '../hooks/use-visibility';
 import { ChevronDown } from 'lucide-react';
 import cn from 'classnames';
 
-const TiptapToolBar = ({
-  editor,
-  uploadToIpfs,
-}: {
-  editor: Editor;
-  uploadToIpfs: (f: File) => Promise<string>;
-}) => {
+const TiptapToolBar = ({ editor }: { editor: Editor }) => {
   const { toolRef, toolVisibilty, setToolVisibility, toolbar } =
     useEditorToolbar({
       editor: editor,
-      uploadToIpfs,
+      // uploadToIpfs,
     });
   return (
     <div className="w-fit bg-transparent px-4 items-center h-16 flex gap-1 justify-center relative">

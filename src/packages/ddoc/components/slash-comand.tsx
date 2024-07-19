@@ -77,13 +77,7 @@ const Command = Extension.create({
   },
 });
 
-const getSuggestionItems = ({
-  query,
-  uploadToIpfs,
-}: {
-  query: string;
-  uploadToIpfs: (file: File) => Promise<string>;
-}) => {
+const getSuggestionItems = ({ query }: { query: string }) => {
   return [
     {
       title: 'Text',
@@ -239,7 +233,7 @@ const getSuggestionItems = ({
           if (input.files?.length) {
             const file = input.files[0];
             const pos = editor.view.state.selection.from;
-            startImageUpload(file, editor.view, pos, uploadToIpfs);
+            startImageUpload(file, editor.view, pos);
           }
         };
         input.click();
@@ -492,9 +486,9 @@ const renderItems = () => {
   };
 };
 
-const SlashCommand = (uploadToIpfs: (file: File) => Promise<string>) => {
+const SlashCommand = () => {
   const items = ({ query }: { query: string }) => {
-    return getSuggestionItems({ query, uploadToIpfs });
+    return getSuggestionItems({ query });
   };
   return Command.configure({
     suggestion: {

@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { EditorState, Plugin, PluginKey } from '@tiptap/pm/state';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet, EditorView } from '@tiptap/pm/view';
 
 import imagePlaceholder from '../../../assets/spinner_GIF.gif';
@@ -55,18 +55,13 @@ const UploadImagesPlugin = () =>
 
 export default UploadImagesPlugin;
 
-function findPlaceholder(state: EditorState, id: any) {
-  const decos = uploadKey.getState(state);
-  const found = decos.find(null, null, (spec: any) => spec.id == id);
-  return found.length ? found[0].from : null;
-}
+// function findPlaceholder(state: EditorState, id: any) {
+//   const decos = uploadKey.getState(state);
+//   const found = decos.find(null, null, (spec: any) => spec.id == id);
+//   return found.length ? found[0].from : null;
+// }
 
-export function startImageUpload(
-  file: File,
-  view: EditorView,
-  pos: number,
-  handleImageUpload: (file: File) => Promise<string>,
-) {
+export function startImageUpload(file: File, view: EditorView, pos: number) {
   // check if the file is an image
   if (!file.type.includes('image/')) {
     console.log('file is not an image');
@@ -88,25 +83,6 @@ export function startImageUpload(
     },
   });
   view.dispatch(tr);
-
-  handleImageUpload(file).then((src) => {
-    const { schema } = view.state;
-
-    const pos = findPlaceholder(view.state, id);
-    // If the content around the placeholder has been deleted, drop the image
-    if (pos == null) return;
-
-    const imageSrc = src;
-
-    const node = schema.nodes.resizableMedia.create({
-      src: imageSrc,
-      'media-type': 'img',
-    });
-    const transaction = view.state.tr
-      .replaceWith(pos - 2, pos + node.nodeSize, node)
-      .setMeta(uploadKey, { remove: { id } });
-    view.dispatch(transaction);
-  });
 }
 
 export const uploadFn = async (image: File) => {

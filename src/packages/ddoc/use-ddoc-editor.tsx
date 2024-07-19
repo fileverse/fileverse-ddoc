@@ -37,12 +37,11 @@ export const useDdocEditor = ({
   onCommentInteraction,
   onTextSelection,
   ensResolutionUrl,
-  handleImageUploadToIpfs,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions as AnyExtension[]),
-    SlashCommand(handleImageUploadToIpfs!),
+    SlashCommand(),
   ]);
   const initialContentSetRef = useRef(false);
 

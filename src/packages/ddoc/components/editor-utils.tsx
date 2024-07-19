@@ -29,7 +29,7 @@ import {
   Heading3,
   Table,
   Undo,
-  Redo
+  Redo,
 } from 'lucide-react';
 import { startImageUpload } from '../utils/upload-images';
 import cn from 'classnames';
@@ -189,13 +189,7 @@ export const colors = [
   { color: '#6A5ACD', code: 'bg-[#6A5ACD]' },
 ];
 
-export const useEditorToolbar = ({
-  editor,
-  uploadToIpfs,
-}: {
-  editor: Editor;
-  uploadToIpfs: (file: File) => Promise<string>;
-}) => {
+export const useEditorToolbar = ({ editor }: { editor: Editor }) => {
   const {
     ref: toolRef,
     toolVisibilty,
@@ -293,7 +287,7 @@ export const useEditorToolbar = ({
           if (input.files?.length) {
             const file = input.files[0];
             const pos = editor.view.state.selection.from;
-            startImageUpload(file, editor.view, pos, uploadToIpfs);
+            startImageUpload(file, editor.view, pos);
           }
         };
         input.click();
@@ -365,7 +359,7 @@ export const useEditorToolbar = ({
           if (input.files?.length) {
             const file = input.files[0];
             const pos = editor.view.state.selection.from;
-            startImageUpload(file, editor.view, pos, uploadToIpfs);
+            startImageUpload(file, editor.view, pos);
           }
         };
         input.click();
@@ -615,8 +609,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${
+            editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <List size={20} />
         </span>
@@ -631,8 +626,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${
+            editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <ListOrdered size={20} />
         </span>
@@ -647,8 +643,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${
+            editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <ListChecks size={20} />
         </span>
@@ -1147,8 +1144,10 @@ export const TextFormatingPopup = ({
           </div>
 
           {/* New Layout */}
-          <div className='flex flex-col gap-4 mt-4'>
-            <p className="text-left sm:text-center text-lg font-semibold leading-none tracking-tight">Text color</p>
+          <div className="flex flex-col gap-4 mt-4">
+            <p className="text-left sm:text-center text-lg font-semibold leading-none tracking-tight">
+              Text color
+            </p>
             <Carousel
               opts={{
                 align: 'start',
@@ -1214,12 +1213,7 @@ export const TextFormatingPopup = ({
   );
 };
 
-export const TextColorPicker = ({
-  editor,
-}:
-  {
-    editor: Editor;
-  }) => {
+export const TextColorPicker = ({ editor }: { editor: Editor }) => {
   return (
     <UtilsModal
       title="Text color"
