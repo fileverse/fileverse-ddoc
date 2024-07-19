@@ -198,10 +198,10 @@ export const ERR_MSG_MAP = {
 
 export const useEditorToolbar = ({
   editor,
-  onErrorCb,
+  onError,
 }: {
   editor: Editor;
-  onErrorCb?: (errorString: string) => void;
+  onError?: (errorString: string) => void;
 }) => {
   const {
     ref: toolRef,
@@ -301,8 +301,8 @@ export const useEditorToolbar = ({
             const file = input.files[0];
             const size = file.size;
             if (size > MAX_IMAGE_SIZE) {
-              if (onErrorCb && typeof onErrorCb === 'function') {
-                onErrorCb(ERR_MSG_MAP.IMAGE_SIZE);
+              if (onError && typeof onError === 'function') {
+                onError(ERR_MSG_MAP.IMAGE_SIZE);
               }
               return;
             }
@@ -380,8 +380,8 @@ export const useEditorToolbar = ({
             const file = input.files[0];
             const size = file.size;
             if (size > MAX_IMAGE_SIZE) {
-              if (onErrorCb && typeof onErrorCb === 'function') {
-                onErrorCb(ERR_MSG_MAP.IMAGE_SIZE);
+              if (onError && typeof onError === 'function') {
+                onError(ERR_MSG_MAP.IMAGE_SIZE);
               }
               return;
             }

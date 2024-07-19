@@ -72,7 +72,7 @@ function App() {
         collaborationId={collaborationId}
         username={username}
         isPreviewMode={isPreviewMode}
-        onErrorCb={(error) => console.log(error)}
+        onError={(error) => console.log(error)}
         renderToolRightSection={renderRightSection}
         renderToolLeftSection={renderLeftSection}
         ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}

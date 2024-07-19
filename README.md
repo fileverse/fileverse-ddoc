@@ -45,6 +45,7 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `initialContent` (optional)                    | `JSONContent`                                  | Initial content of the editor                                                                             |
 | `onChange` (optional)                          | `(changes: JSONContent) => void`               | Optional function that gets triggered with the latest content of the editor on every change in the editor |
 | `onCollaboratorChange` (optional)              | `(collaborators?: IDocCollabUsers[] ) => void` | Optional function that gets triggered when a user join or leave the doc during collaboration              |
+| `onError` (optional)                           | `(errorString: string) => void`                | Function to call on error                                                                                 |
 
 ## Data Interface
 

@@ -80,10 +80,10 @@ const Command = Extension.create({
 
 const getSuggestionItems = ({
   query,
-  onErrorCb,
+  onError,
 }: {
   query: string;
-  onErrorCb?: (errorString: string) => void;
+  onError?: (errorString: string) => void;
 }) => {
   return [
     {
@@ -241,8 +241,8 @@ const getSuggestionItems = ({
             const file = input.files[0];
             const size = file.size;
             if (size > MAX_IMAGE_SIZE) {
-              if (onErrorCb && typeof onErrorCb === 'function') {
-                onErrorCb(ERR_MSG_MAP.IMAGE_SIZE);
+              if (onError && typeof onError === 'function') {
+                onError(ERR_MSG_MAP.IMAGE_SIZE);
               }
               return;
             }
@@ -500,9 +500,9 @@ const renderItems = () => {
   };
 };
 
-const SlashCommand = (onErrorCb?: (errorString: string) => void) => {
+const SlashCommand = (onError?: (errorString: string) => void) => {
   const items = ({ query }: { query: string }) => {
-    return getSuggestionItems({ query, onErrorCb });
+    return getSuggestionItems({ query, onError });
   };
   return Command.configure({
     suggestion: {

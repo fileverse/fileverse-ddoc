@@ -11,14 +11,14 @@ import { useMediaQuery } from 'usehooks-ts';
 
 const BottomToolbar = ({
   editor,
-  onErrorCb,
+  onError,
 }: {
   editor: Editor;
-  onErrorCb?: (errorString: string) => void;
+  onError?: (errorString: string) => void;
 }) => {
   const { toolVisibilty, setToolVisibility, bottomToolbar } = useEditorToolbar({
     editor: editor,
-    onErrorCb,
+    onError,
   });
   const isMobile = useMediaQuery('(max-width: 1023px)');
 
