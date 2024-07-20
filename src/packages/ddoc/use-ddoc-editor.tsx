@@ -166,7 +166,7 @@ export const useDdocEditor = ({
     });
 
     setExtensions([
-      ...extensions,
+      ...extensions.filter((extension) => extension.name !== 'history'),
       Collaboration.configure({
         document: ydoc,
       }),
