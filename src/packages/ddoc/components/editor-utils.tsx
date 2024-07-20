@@ -189,8 +189,7 @@ export const colors = [
   { color: '#6A5ACD', code: 'bg-[#6A5ACD]' },
 ];
 
-// 2 Mb
-export const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
+export const MAX_IMAGE_SIZE = 1024 * 100; // 100Kb
 
 export const ERR_MSG_MAP = {
   IMAGE_SIZE: 'Image size should be less than 2 MB',
