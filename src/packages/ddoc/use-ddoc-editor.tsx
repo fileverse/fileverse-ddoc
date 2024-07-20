@@ -138,11 +138,13 @@ export const useDdocEditor = ({
         handleClick: handleCommentClick,
       },
       autofocus: 'start',
-      onTransaction: (_editor) => {
+      onTransaction: ({ editor, transaction }) => {
         if (editor?.isEmpty) {
           return;
         }
-        onChange?.(_editor.editor.getJSON());
+        if (transaction.docChanged) {
+          onChange?.(editor.getJSON());
+        }
       },
       shouldRerenderOnTransaction: true,
       immediatelyRender: false,
