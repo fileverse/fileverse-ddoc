@@ -192,7 +192,7 @@ export const colors = [
 export const MAX_IMAGE_SIZE = 1024 * 100; // 100Kb
 
 export const ERR_MSG_MAP = {
-  IMAGE_SIZE: 'Image size should be less than 2 MB',
+  IMAGE_SIZE: 'Image size should be less than 100KB',
 };
 
 export const useEditorToolbar = ({
