@@ -34,7 +34,6 @@ const DdocEditor = forwardRef(
       renderToolLeftSection,
       walletAddress,
       onChange,
-      handleImageUploadToIpfs,
       onCollaboratorChange,
       onTextSelection,
       onCommentInteraction,
@@ -42,6 +41,7 @@ const DdocEditor = forwardRef(
       showCommentButton,
       ensResolutionUrl,
       disableBottomToolbar,
+      onError,
     }: DdocProps,
     ref,
   ) => {
@@ -66,7 +66,7 @@ const DdocEditor = forwardRef(
       onCommentInteraction,
       onTextSelection,
       ensResolutionUrl,
-      handleImageUploadToIpfs,
+      onError,
     });
 
     useImperativeHandle(
@@ -132,10 +132,7 @@ const DdocEditor = forwardRef(
 
               {!isPreviewMode && (
                 <div className="grow relative hidden xl:block">
-                  <EditorToolBar
-                    uploadToIpfs={handleImageUploadToIpfs}
-                    editor={editor}
-                  />
+                  <EditorToolBar editor={editor} onError={onError} />
                 </div>
               )}
               {renderToolRightSection?.({ editor: editor.getJSON() })}
@@ -189,10 +186,7 @@ const DdocEditor = forwardRef(
                     'flex xl:hidden items-center w-full h-16 fixed z-10 px-4 bg-[#f8f9fa] bottom-0',
                   )}
                 >
-                  <BottomToolbar
-                    uploadToIpfs={handleImageUploadToIpfs}
-                    editor={editor}
-                  />
+                  <BottomToolbar editor={editor} onError={onError} />
                 </motion.div>
               )}
             </AnimatePresence>

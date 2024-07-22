@@ -34,6 +34,7 @@ import {
 
 import { startImageUpload } from '../utils/upload-images';
 import { useMediaQuery } from 'usehooks-ts';
+import { ERR_MSG_MAP, MAX_IMAGE_SIZE } from './editor-utils';
 
 interface CommandItemProps {
   title: string;
@@ -79,10 +80,10 @@ const Command = Extension.create({
 
 const getSuggestionItems = ({
   query,
-  uploadToIpfs,
+  onError,
 }: {
   query: string;
-  uploadToIpfs: (file: File) => Promise<string>;
+  onError?: (errorString: string) => void;
 }) => {
   return [
     {
@@ -238,8 +239,15 @@ const getSuggestionItems = ({
         input.onchange = async () => {
           if (input.files?.length) {
             const file = input.files[0];
+            const size = file.size;
+            if (size > MAX_IMAGE_SIZE) {
+              if (onError && typeof onError === 'function') {
+                onError(ERR_MSG_MAP.IMAGE_SIZE);
+              }
+              return;
+            }
             const pos = editor.view.state.selection.from;
-            startImageUpload(file, editor.view, pos, uploadToIpfs);
+            startImageUpload(file, editor.view, pos);
           }
         };
         input.click();
@@ -492,9 +500,9 @@ const renderItems = () => {
   };
 };
 
-const SlashCommand = (uploadToIpfs: (file: File) => Promise<string>) => {
+const SlashCommand = (onError?: (errorString: string) => void) => {
   const items = ({ query }: { query: string }) => {
-    return getSuggestionItems({ query, uploadToIpfs });
+    return getSuggestionItems({ query, onError });
   };
   return Command.configure({
     suggestion: {

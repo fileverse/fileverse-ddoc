@@ -16,15 +16,15 @@ import cn from 'classnames';
 
 const TiptapToolBar = ({
   editor,
-  uploadToIpfs,
+  onError,
 }: {
   editor: Editor;
-  uploadToIpfs: (f: File) => Promise<string>;
+  onError?: (errorString: string) => void;
 }) => {
   const { toolRef, toolVisibilty, setToolVisibility, toolbar } =
     useEditorToolbar({
       editor: editor,
-      uploadToIpfs,
+      onError,
     });
   return (
     <div className="w-fit bg-transparent px-4 items-center h-16 flex gap-1 justify-center relative">

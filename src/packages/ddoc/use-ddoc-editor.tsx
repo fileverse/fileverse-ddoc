@@ -37,12 +37,12 @@ export const useDdocEditor = ({
   onCommentInteraction,
   onTextSelection,
   ensResolutionUrl,
-  handleImageUploadToIpfs,
+  onError,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions as AnyExtension[]),
-    SlashCommand(handleImageUploadToIpfs!),
+    SlashCommand(onError),
   ]);
   const initialContentSetRef = useRef(false);
 
@@ -138,11 +138,13 @@ export const useDdocEditor = ({
         handleClick: handleCommentClick,
       },
       autofocus: 'start',
-      onTransaction: (_editor) => {
+      onTransaction: ({ editor, transaction }) => {
         if (editor?.isEmpty) {
           return;
         }
-        onChange?.(_editor.editor.getJSON());
+        if (transaction.docChanged) {
+          onChange?.(editor.getJSON());
+        }
       },
       shouldRerenderOnTransaction: true,
       immediatelyRender: false,
@@ -164,7 +166,7 @@ export const useDdocEditor = ({
     });
 
     setExtensions([
-      ...extensions,
+      ...extensions.filter((extension) => extension.name !== 'history'),
       Collaboration.configure({
         document: ydoc,
       }),

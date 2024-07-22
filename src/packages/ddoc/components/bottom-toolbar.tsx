@@ -1,8 +1,6 @@
+/* eslint-disable no-useless-escape */
 import { useEffect, useRef, useState } from 'react';
-import {
-  TextFormatingPopup,
-  useEditorToolbar,
-} from './editor-utils';
+import { TextFormatingPopup, useEditorToolbar } from './editor-utils';
 import { Editor } from '@tiptap/react';
 import { IEditorTool } from '../hooks/use-visibility';
 import { Drawer, DrawerTrigger } from '../common/drawer';
@@ -13,14 +11,14 @@ import { useMediaQuery } from 'usehooks-ts';
 
 const BottomToolbar = ({
   editor,
-  uploadToIpfs,
+  onError,
 }: {
   editor: Editor;
-  uploadToIpfs: (f: File) => Promise<string>;
+  onError?: (errorString: string) => void;
 }) => {
   const { toolVisibilty, setToolVisibility, bottomToolbar } = useEditorToolbar({
     editor: editor,
-    uploadToIpfs,
+    onError,
   });
   const isMobile = useMediaQuery('(max-width: 1023px)');
   const [url, setUrl] = useState('');
@@ -128,7 +126,8 @@ const BottomToolbar = ({
 
     const handleTouchEnd = () => {
       const touchEndTime = Date.now();
-      if (touchEndTime - touchStartTime > 500) { // Long press, likely selecting text
+      if (touchEndTime - touchStartTime > 500) {
+        // Long press, likely selecting text
         const { selection } = editor.state;
         const isTextSelected = selection.from !== selection.to;
         if (isTextSelected) {
@@ -193,7 +192,12 @@ const BottomToolbar = ({
               <div key={tool.title} className="flex items-center">
                 {tool.title === 'Text formating' ? (
                   <DrawerTrigger asChild>
-                    <button ref={textFormattingButtonRef} onClick={() => tool.onClick()}>{tool.icon}</button>
+                    <button
+                      ref={textFormattingButtonRef}
+                      onClick={() => tool.onClick()}
+                    >
+                      {tool.icon}
+                    </button>
                   </DrawerTrigger>
                 ) : tool.title === 'Text color' ? (
                   <DrawerTrigger asChild>
@@ -202,10 +206,11 @@ const BottomToolbar = ({
                 ) : (
                   <button
                     className={cn(
-                      'flex items-center rounded px-2 py-1 transition', {
-                      'text-black': tool.isActive,
-                      'text-[#A1AAB1]': !tool.isActive,
-                    }
+                      'flex items-center rounded px-2 py-1 transition',
+                      {
+                        'text-black': tool.isActive,
+                        'text-[#A1AAB1]': !tool.isActive,
+                      },
                     )}
                     onClick={() => tool.onClick()}
                     disabled={!tool.isActive}
