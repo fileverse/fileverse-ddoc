@@ -191,12 +191,12 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
           trigger="click"
           interactive
           animation="shift-toward-subtle"
-          placement="top-start"
+          placement="bottom-start"
           content={
             <article className='w-screen lg:w-full' contentEditable={false}>
               <ul
                 tabIndex={0}
-                className="fixed top-8 right-1/2 translate-x-1/2 menu menu-compact p-2 shadow bg-base-100 rounded-lg w-56"
+                className="static top-8 right-1/2 translate-x-1/2 lg:-translate-x-full menu menu-compact p-2 shadow bg-base-100 rounded-lg w-56"
                 style={gimmeDropdownStyles()}
               >
                 {cellButtonsConfig.map((btn) => {
