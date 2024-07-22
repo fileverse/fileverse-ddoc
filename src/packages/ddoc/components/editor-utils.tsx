@@ -396,7 +396,7 @@ export const useEditorToolbar = ({
       icon: <Undo size={24} />,
       title: 'Undo',
       onClick: () => {
-        editor?.chain().focus().undo().run();
+        editor?.chain().undo().run();
       },
       isActive: editor?.can().undo(),
     },
@@ -404,7 +404,7 @@ export const useEditorToolbar = ({
       icon: <Redo size={24} />,
       title: 'Redo',
       onClick: () => {
-        editor?.chain().focus().redo().run();
+        editor?.chain().redo().run();
       },
       isActive: editor?.can().redo(),
     },
@@ -910,7 +910,7 @@ export const TextFormatingPopup = ({
       description: 'Normal',
       icon: <Type size={20} />,
       command: (editor: Editor) =>
-        editor.chain().focus().toggleNode('paragraph', 'paragraph').run(),
+        editor.chain().toggleNode('paragraph', 'paragraph').run(),
       isActive: () =>
         editor.isActive('paragraph') &&
         !editor.isActive('bulletList') &&
@@ -921,7 +921,7 @@ export const TextFormatingPopup = ({
       description: 'Big',
       icon: <Heading1 size={20} />,
       command: (editor: Editor) => {
-        editor.chain().focus().toggleHeading({ level: 1 }).run();
+        editor.chain().toggleHeading({ level: 1 }).run();
       },
       isActive: () => editor.isActive('heading', { level: 1 }),
     },
@@ -930,7 +930,7 @@ export const TextFormatingPopup = ({
       description: 'Medium',
       icon: <Heading2 size={20} />,
       command: (editor: Editor) => {
-        editor.chain().focus().toggleHeading({ level: 2 }).run();
+        editor.chain().toggleHeading({ level: 2 }).run();
       },
       isActive: () => editor.isActive('heading', { level: 2 }),
     },
@@ -939,7 +939,7 @@ export const TextFormatingPopup = ({
       description: 'Small',
       icon: <Heading3 size={20} />,
       command: (editor: Editor) => {
-        editor.chain().focus().toggleHeading({ level: 3 }).run();
+        editor.chain().toggleHeading({ level: 3 }).run();
       },
       isActive: () => editor.isActive('heading', { level: 3 }),
     },
@@ -971,7 +971,7 @@ export const TextFormatingPopup = ({
             <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
               <button
                 onClick={() => {
-                  editor?.chain().focus().setTextAlign('left').run();
+                  editor?.chain().setTextAlign('left').run();
                 }}
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
@@ -989,7 +989,7 @@ export const TextFormatingPopup = ({
               </button>
               <button
                 onClick={() => {
-                  editor?.chain().focus().setTextAlign('center').run();
+                  editor?.chain().setTextAlign('center').run();
                 }}
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
@@ -1007,7 +1007,7 @@ export const TextFormatingPopup = ({
               </button>
               <button
                 onClick={() => {
-                  editor?.chain().focus().setTextAlign('right').run();
+                  editor?.chain().setTextAlign('right').run();
                 }}
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
@@ -1042,7 +1042,7 @@ export const TextFormatingPopup = ({
               </DialogTrigger>
               <button
                 onClick={() => {
-                  editor?.chain().focus().toggleCodeBlock().run();
+                  editor?.chain().toggleCodeBlock().run();
                 }}
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
@@ -1057,7 +1057,7 @@ export const TextFormatingPopup = ({
               </button>
               <button
                 onClick={() => {
-                  editor?.chain().focus().toggleBlockquote().run();
+                  editor?.chain().toggleBlockquote().run();
                 }}
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
@@ -1076,7 +1076,7 @@ export const TextFormatingPopup = ({
             <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
               <button
                 onClick={() => {
-                  editor.chain().focus().toggleBold().run();
+                  editor.chain().toggleBold().run();
                 }}
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
@@ -1091,7 +1091,7 @@ export const TextFormatingPopup = ({
               </button>
               <button
                 onClick={() => {
-                  editor.chain().focus().toggleItalic().run();
+                  editor.chain().toggleItalic().run();
                 }}
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
@@ -1106,7 +1106,7 @@ export const TextFormatingPopup = ({
               </button>
               <button
                 onClick={() => {
-                  editor.chain().focus().toggleUnderline().run();
+                  editor.chain().toggleUnderline().run();
                 }}
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
@@ -1121,7 +1121,7 @@ export const TextFormatingPopup = ({
               </button>
               <button
                 onClick={() => {
-                  editor.chain().focus().toggleStrike().run();
+                  editor.chain().toggleStrike().run();
                 }}
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
@@ -1138,7 +1138,7 @@ export const TextFormatingPopup = ({
             <div className="bg-[#f8f9fa] rounded flex flex-[0.5] sm:flex-none gap-2 justify-evenly w-full sm:w-fit p-1">
               <button
                 onClick={() => {
-                  editor?.chain().focus().toggleBulletList().run();
+                  editor?.chain().toggleBulletList().run();
                 }}
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
@@ -1153,7 +1153,7 @@ export const TextFormatingPopup = ({
               </button>
               <button
                 onClick={() => {
-                  editor?.chain().focus().toggleOrderedList().run();
+                  editor?.chain().toggleOrderedList().run();
                 }}
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
@@ -1191,7 +1191,7 @@ export const TextFormatingPopup = ({
                   <Ban
                     className="cursor-pointer"
                     onClick={() => {
-                      editor.chain().focus().unsetColor().run();
+                      editor.chain().unsetColor().run();
                     }}
                   />
                 </CarouselItem>
@@ -1204,7 +1204,7 @@ export const TextFormatingPopup = ({
                   >
                     <button
                       onClick={() => {
-                        editor.chain().focus().setColor(color.color).run();
+                        editor.chain().setColor(color.color).run();
                       }}
                       key={color.color}
                       className={cn(

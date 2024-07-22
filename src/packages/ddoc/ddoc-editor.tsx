@@ -22,6 +22,10 @@ import { Button } from './common/button';
 import { MessageSquareText } from 'lucide-react';
 import { useMediaQuery } from 'usehooks-ts';
 
+import platform from 'platform';
+
+const checkOs = () => platform.os?.family;
+
 const DdocEditor = forwardRef(
   (
     {
@@ -45,10 +49,12 @@ const DdocEditor = forwardRef(
     }: DdocProps,
     ref,
   ) => {
+    const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const btn_ref = useRef(null);
     const isMobile = useMediaQuery('(max-width: 640px)');
+    const isNativeMobile = checkOs() === 'iOS' || checkOs() === 'Android' || checkOs() === 'Windows Phone' || isMobile;
 
     const {
       editor,
@@ -87,7 +93,7 @@ const DdocEditor = forwardRef(
       };
 
       const handleKeyDown = (event: KeyboardEvent) => {
-        if (isCharacterKey(event) && isMobile) {
+        if (isCharacterKey(event) && isNativeMobile) {
           if (typingTimeoutRef.current) {
             clearTimeout(typingTimeoutRef.current);
           }
@@ -107,7 +113,66 @@ const DdocEditor = forwardRef(
           clearTimeout(typingTimeoutRef.current);
         }
       };
-    }, [editor, isMobile]);
+    }, [editor, isNativeMobile]);
+
+    useEffect(() => {
+      if (!editor) return;
+      if (isNativeMobile) {
+
+        const handleKeyboardShow = () => {
+          setIsKeyboardVisible(true);
+        };
+
+        const handleKeyboardHide = () => {
+          setIsKeyboardVisible(false);
+        };
+
+        editor.on('focus', handleKeyboardShow);
+        editor.on('blur', handleKeyboardHide);
+
+        return () => {
+          editor.off('focus', handleKeyboardShow);
+          editor.off('blur', handleKeyboardHide);
+        };
+      }
+    }, [isNativeMobile, editor]);
+
+    useEffect(() => {
+      if (!editor) return;
+      // Pressing the enter key will scroll the editor to the current selection
+      const handleEnterKey = (event: KeyboardEvent) => {
+        if (event.key === 'Enter') {
+          editor.commands.scrollIntoView();
+        }
+      };
+
+      const editorElement = editor.view.dom;
+
+      editorElement.addEventListener('keydown', handleEnterKey);
+
+      return () => {
+        editorElement.removeEventListener('keydown', handleEnterKey);
+      };
+    }, [editor]);
+
+    // Push the editor to the top when the keyboard is visible
+    useEffect(() => {
+      if (!isNativeMobile || !editor) return;
+
+      const handleKeyboardShow = () => {
+        if (editorRef.current) {
+          editorRef.current.scrollIntoView();
+        }
+      };
+
+      const editorElement = editor.view.dom;
+
+      editorElement.addEventListener('resize', handleKeyboardShow);
+
+      return () => {
+        editorElement.removeEventListener('resize', handleKeyboardShow);
+      };
+    }, [editor, editorRef, isNativeMobile]);
 
     if (!editor) {
       return (
@@ -119,80 +184,90 @@ const DdocEditor = forwardRef(
     }
 
     return (
-      <div
-        data-cy="single-webpage"
-        className="bg-[#f8f9fa] h-full w-full overflow-hidden no-scrollbar"
-      >
-        <div className="flex flex-col justify-between items-center">
-          <div className="flex items-center w-full h-16 fixed z-10 px-4 bg-[#f8f9fa]">
-            <div className="flex items-center justify-between gap-2 w-full">
-              <div className="grow">
-                {renderToolLeftSection?.({ editor: editor.getJSON() })}
-              </div>
-
-              {!isPreviewMode && (
-                <div className="grow relative hidden xl:block">
-                  <EditorToolBar editor={editor} onError={onError} />
-                </div>
-              )}
-              {renderToolRightSection?.({ editor: editor.getJSON() })}
+      <main data-cy="single-webpage" className="bg-[#f8f9fa] h-screen w-full">
+        <div
+          id="toolbar"
+          className="flex items-center w-full h-16 sticky left-0 top-0 z-10 px-4 bg-[#f8f9fa]"
+        >
+          <div className="flex items-center justify-between gap-2 w-full">
+            <div className="grow">
+              {renderToolLeftSection?.({ editor: editor.getJSON() })}
             </div>
+
+            {!isPreviewMode && (
+              <div className="grow relative hidden xl:block">
+                <EditorToolBar
+                  onError={onError}
+                  editor={editor}
+                />
+              </div>
+            )}
+            {renderToolRightSection?.({ editor: editor.getJSON() })}
           </div>
+        </div>
+        <div className="p-4 sm:px-[88px] sm:py-[78px] bg-white w-full sm:w-[70%] max-w-[856px] mx-auto"
+          style={{
+            height: isNativeMobile ? 'calc(100vh - 8rem)' : '100vh',
+          }}
+        >
+          <div
+            ref={editorRef}
+            className="w-full h-full overflow-y-scroll overflow-x-hidden no-scrollbar"
+          >
 
-          <main className="rounded-[8px] flex flex-col justify-start items-center gap-2 min-h-full h-screen overflow-auto no-scrollbar">
-            <div className="mt-8 lg:mt-[5rem] w-screen h-full flex justify-center relative">
-              <div className="px-4 pt-8 sm:px-[88px] relative sm:py-[78px] h-full bg-white w-full sm:w-[70%] max-w-[856px]">
-                <div
-                  ref={editorRef}
-                  className="w-full h-full  overflow-y-scroll overflow-x-hidden no-scrollbar"
-                >
-                  {!isPreviewMode && (
-                    <div>
-                      <EditorBubbleMenu editor={editor} />
-                      <ColumnsMenu editor={editor} appendTo={editorRef} />
-                    </div>
-                  )}
-                  <EditingProvider isPreviewMode={isPreviewMode}>
-                    <EditorContent editor={editor} className="py-4 relative" />
-                  </EditingProvider>
-                </div>
-                {showCommentButton && !isMobile && (
-                  <Button
-                    ref={btn_ref}
-                    onClick={() => {
-                      handleCommentButtonClick?.(editor);
-                    }}
-                    variant="ghost"
-                    className={cn(
-                      'absolute w-12 h-12 bg-white rounded-full shadow-xl top-[70px]  right-[-23px]',
-                    )}
-                  >
-                    <MessageSquareText />
-                  </Button>
-                )}
+            {!isPreviewMode && (
+              <div>
+                <EditorBubbleMenu editor={editor} />
+                <ColumnsMenu editor={editor} appendTo={editorRef} />
               </div>
-            </div>
-          </main>
+            )}
+            <EditingProvider isPreviewMode={isPreviewMode}>
+              <EditorContent
+                editor={editor}
+                id="editor"
+                className="w-full h-full py-4"
+              />
+            </EditingProvider>
 
-          {!isPreviewMode && (
-            <AnimatePresence>
-              {!isTyping && !disableBottomToolbar && (
-                <motion.div
-                  initial={{ y: 50, opacity: 0 }}
-                  animate={{ y: 0, opacity: 1 }}
-                  exit={{ y: 50, opacity: 0 }}
-                  transition={{ duration: 0.2 }}
-                  className={cn(
-                    'flex xl:hidden items-center w-full h-16 fixed z-10 px-4 bg-[#f8f9fa] bottom-0',
-                  )}
-                >
-                  <BottomToolbar editor={editor} onError={onError} />
-                </motion.div>
+          </div>
+          {showCommentButton && !isNativeMobile && (
+            <Button
+              ref={btn_ref}
+              onClick={() => {
+                handleCommentButtonClick?.(editor);
+              }}
+              variant="ghost"
+              className={cn(
+                'absolute w-12 h-12 bg-white rounded-full shadow-xl top-[70px]  right-[-23px]',
               )}
-            </AnimatePresence>
+            >
+              <MessageSquareText />
+            </Button>
           )}
         </div>
-      </div>
+        {!isPreviewMode && (
+          <AnimatePresence>
+            {!isTyping && !disableBottomToolbar && (
+              <motion.div
+                initial={{ y: 50, opacity: 0 }}
+                animate={{ y: 0, opacity: 1 }}
+                exit={{ y: 50, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className={cn(
+                  'flex xl:hidden items-center w-full h-16 fixed left-0 bottom-0 z-10 px-4 bg-[#f8f9fa] transition-all duration-300 ease-in-out',
+                  isKeyboardVisible && 'hidden',
+                )}
+              >
+                <BottomToolbar
+                  onError={onError}
+                  editor={editor}
+                  isKeyboardVisible={isKeyboardVisible}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        )}
+      </main>
     );
   },
 );

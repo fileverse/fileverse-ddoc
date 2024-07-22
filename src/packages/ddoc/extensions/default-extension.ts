@@ -94,10 +94,7 @@ export const defaultExtensions = [
     bulletList: false,
     listItem: false,
   }),
-  History.configure({
-    depth: 10,
-    newGroupDelay: 100,
-  }),
+  History,
   TextAlign.configure({
     types: ['heading', 'paragraph'],
   }),

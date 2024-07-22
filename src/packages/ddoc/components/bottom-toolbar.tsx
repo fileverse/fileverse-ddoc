@@ -12,9 +12,11 @@ import { useMediaQuery } from 'usehooks-ts';
 const BottomToolbar = ({
   editor,
   onError,
+  isKeyboardVisible
 }: {
   editor: Editor;
   onError?: (errorString: string) => void;
+  isKeyboardVisible: boolean;
 }) => {
   const { toolVisibilty, setToolVisibility, bottomToolbar } = useEditorToolbar({
     editor: editor,
@@ -130,7 +132,8 @@ const BottomToolbar = ({
         // Long press, likely selecting text
         const { selection } = editor.state;
         const isTextSelected = selection.from !== selection.to;
-        if (isTextSelected) {
+        const isImageSelected = editor.state.doc.nodeAt(selection.from)?.type.name === 'resizableMedia';
+        if (isTextSelected && !isImageSelected) {
           textFormattingButtonRef.current?.click();
         }
       }
@@ -140,6 +143,8 @@ const BottomToolbar = ({
       if (!isMobile) return;
       const { selection } = editor.state;
       const isTextSelected = selection.from !== selection.to;
+
+
       if (isTextSelected) {
         textFormattingButtonRef.current?.click();
       }
@@ -182,6 +187,12 @@ const BottomToolbar = ({
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [editor, toolVisibilty]);
+
+  useEffect(() => {
+    if (isKeyboardVisible) {
+      setToolVisibility(IEditorTool.NONE);
+    }
+  }, [isKeyboardVisible, setToolVisibility]);
 
   return (
     <Drawer>

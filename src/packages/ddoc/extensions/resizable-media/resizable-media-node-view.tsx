@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { LegacyRef, useEffect, useRef, useState } from 'react';
 import { NodeViewWrapper, NodeViewProps } from '@tiptap/react';
@@ -103,16 +104,24 @@ export const ResizableMediaNodeView = ({
   const limitWidthOrHeight = ({ width, height }: WidthAndHeight) =>
     width < 200 || height < 200;
 
-  const documentHorizontalMouseMove = (e: MouseEvent) => {
-    setTimeout(() => onHorizontalMouseMove(e));
+  const documentHorizontalMouseMove = (e: MouseEvent | TouchEvent) => {
+    // Determine if the event is a touch event and extract clientX accordingly
+    const clientX = e instanceof TouchEvent ? e.touches[0].clientX : e.clientX;
+
+    setTimeout(() => onHorizontalMouseMove(clientX));
   };
 
-  const startHorizontalResize = (e: { clientX: number }) => {
-    lastClientX = e.clientX;
+  const startHorizontalResize = (e: MouseEvent | TouchEvent) => {
+    // Check if it's a touch event and extract the clientX accordingly
+    const clientX = e instanceof TouchEvent ? e.touches[0].clientX : e.clientX;
+    lastClientX = clientX;
 
     setTimeout(() => {
+      // Use both mouse and touch events for move and end actions
       document.addEventListener('mousemove', documentHorizontalMouseMove);
       document.addEventListener('mouseup', stopHorizontalResize);
+      document.addEventListener('touchmove', documentHorizontalMouseMove);
+      document.addEventListener('touchend', stopHorizontalResize);
     });
 
     setIsMouseDown(true);
@@ -148,34 +157,44 @@ export const ResizableMediaNodeView = ({
       height: -1,
     };
 
-    if (directionOfMouseMove === 'left') {
-      newMediaDimensions.width = currentMediaDimensions.width - Math.abs(diff);
-    } else {
-      if (typeof currentMediaDimensions.width === 'string') {
-        currentMediaDimensions.width = Number(currentMediaDimensions.width);
-      }
-      newMediaDimensions.width = currentMediaDimensions.width + Math.abs(diff);
+    // Ensure currentMediaDimensions.width is a number
+    let width = parseFloat(currentMediaDimensions.width.toString());
+    if (isNaN(width)) {
+      width = 0; // Default width if current width is not a number
     }
 
-    if (newMediaDimensions.width > proseMirrorContainerWidth)
-      newMediaDimensions.width = proseMirrorContainerWidth;
+    if (directionOfMouseMove === 'left') {
+      newMediaDimensions.width = width - Math.abs(diff);
+    } else {
+      newMediaDimensions.width = width + Math.abs(diff);
+    }
 
+    // Ensure width does not exceed container width
+    if (newMediaDimensions.width > proseMirrorContainerWidth) {
+      newMediaDimensions.width = proseMirrorContainerWidth;
+    }
+
+    // Calculate height based on media type and aspect ratio
     if (mediaType === 'iframe') {
-      // calculate height from width and aspect ratio for iframe, which should be 16/9
+      // Protect against division by zero or undefined aspectRatio
       newMediaDimensions.height = newMediaDimensions.width / (16 / 9);
     } else {
-      newMediaDimensions.height = newMediaDimensions.width / aspectRatio;
+      // Ensure aspectRatio is a valid number
+      const validAspectRatio = isNaN(aspectRatio) ? 1 : aspectRatio; // Fallback to 1 if aspectRatio is NaN
+      newMediaDimensions.height = newMediaDimensions.width / validAspectRatio;
     }
+
+    // Fallback for NaN dimensions
+    newMediaDimensions.width = isNaN(newMediaDimensions.width) ? 0 : newMediaDimensions.width;
+    newMediaDimensions.height = isNaN(newMediaDimensions.height) ? 0 : newMediaDimensions.height;
 
     if (limitWidthOrHeight(newMediaDimensions)) return;
 
     updateAttributes(newMediaDimensions);
   };
 
-  const onHorizontalMouseMove = (e: MouseEvent) => {
+  const onHorizontalMouseMove = (clientX: number) => {
     if (lastClientX === -1) return;
-
-    const { clientX } = e;
 
     const diff = lastClientX - clientX;
 
@@ -267,8 +286,10 @@ export const ResizableMediaNodeView = ({
               className="horizontal-resize-handle group-hover:bg-black group-hover:border-2 group-hover:border-white/80"
               title="Resize"
               onClick={({ clientX }) => setLastClientX(clientX)}
-              onMouseDown={startHorizontalResize}
+              onMouseDown={(e: any) => startHorizontalResize(e)}
               onMouseUp={stopHorizontalResize}
+              onTouchStart={(e: any) => startHorizontalResize(e)}
+              onTouchEnd={stopHorizontalResize}
             />
 
             <section className="media-control-buttons opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex">
