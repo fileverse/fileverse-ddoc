@@ -750,13 +750,13 @@ export const LinkPopup = ({
       />
       <div className="h-full flex items-center gap-2">
         <Button
-          variant="secondary"
           onClick={() => apply()}
           className="min-w-fit h-[36px]"
         >
           Apply
         </Button>
         <Button
+          variant="secondary"
           onClick={() => editor.chain().focus().unsetLink().run()}
           className="min-w-fit h-[36px]"
         >
