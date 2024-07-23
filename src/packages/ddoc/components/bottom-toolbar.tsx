@@ -37,9 +37,6 @@ const BottomToolbar = ({
       return;
     }
 
-    // console.log('url', url);
-    // console.log('linkText', linkText);
-
     if (linkText === '' && url === '') {
       setToolVisibility(IEditorTool.NONE);
       setIsTextValid(true);
@@ -48,7 +45,6 @@ const BottomToolbar = ({
     }
     // empty
     if (url === '') {
-      // console.log('empty url');
       editor.chain().focus().extendMarkRange('link').unsetLink().run();
       setToolVisibility(IEditorTool.NONE);
       return;
