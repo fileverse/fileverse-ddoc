@@ -1,4 +1,4 @@
-import { EditorContent } from '@tiptap/react';
+import { EditorContent, isTextSelection } from '@tiptap/react';
 import { EditorBubbleMenu } from './components/editor-bubble-menu';
 import { DdocProps } from './types';
 import { ColumnsMenu } from './extensions/multi-column/menus';
@@ -118,6 +118,8 @@ const DdocEditor = forwardRef(
     useEffect(() => {
       if (!editor) return;
       if (isNativeMobile) {
+        const { selection } = editor.state;
+        const isTextSelected = isTextSelection(selection);
 
         const handleKeyboardShow = () => {
           setIsKeyboardVisible(true);
@@ -127,8 +129,8 @@ const DdocEditor = forwardRef(
           setIsKeyboardVisible(false);
         };
 
-        editor.on('focus', handleKeyboardShow);
-        editor.on('blur', handleKeyboardHide);
+        !isTextSelected && editor.on('focus', handleKeyboardShow);
+        isTextSelected && editor.on('blur', handleKeyboardHide);
 
         return () => {
           editor.off('focus', handleKeyboardShow);
