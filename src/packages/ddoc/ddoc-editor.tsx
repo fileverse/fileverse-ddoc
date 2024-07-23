@@ -184,7 +184,7 @@ const DdocEditor = forwardRef(
     }
 
     return (
-      <main data-cy="single-webpage" className="bg-[#f8f9fa] h-screen w-full">
+      <div data-cy="single-webpage" className="bg-[#f8f9fa] h-full w-full">
         <div
           id="toolbar"
           className="flex items-center w-full h-16 sticky left-0 top-0 z-10 px-4 bg-[#f8f9fa]"
@@ -238,7 +238,7 @@ const DdocEditor = forwardRef(
               }}
               variant="ghost"
               className={cn(
-                'absolute w-12 h-12 bg-white rounded-full shadow-xl top-[70px]  right-[-23px]',
+                'absolute w-12 h-12 bg-white rounded-full shadow-xl top-[70px] right-[-23px]',
               )}
             >
               <MessageSquareText />
@@ -267,7 +267,7 @@ const DdocEditor = forwardRef(
             )}
           </AnimatePresence>
         )}
-      </main>
+      </div>
     );
   },
 );

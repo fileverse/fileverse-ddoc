@@ -3,7 +3,7 @@
 import { LegacyRef, useEffect, useRef, useState } from 'react';
 import { NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 import { resizableMediaActions } from './resizable-media-menu-util';
-import clx from 'classnames';
+import cn from 'classnames';
 import { useEditingContext } from '../../hooks/use-editing-context';
 import {
   AlignLeft,
@@ -237,7 +237,7 @@ export const ResizableMediaNodeView = ({
   return (
     <NodeViewWrapper
       as="article"
-      className={clx(
+      className={cn(
         'media-node-view not-prose transition-all ease-in-out w-full',
         isFloat && `f-${node.attrs.dataFloat}`,
         isAlign && `justify-${node.attrs.dataAlign}`
@@ -270,7 +270,7 @@ export const ResizableMediaNodeView = ({
         {mediaType === 'iframe' && (
           <iframe
             ref={resizableImgRef as LegacyRef<HTMLIFrameElement>}
-            className={clx(
+            className={cn(
               'rounded-lg max-w-full',
               isMouseDown && 'pointer-events-none'
             )}
@@ -298,8 +298,8 @@ export const ResizableMediaNodeView = ({
                   <div key={index} className="tooltip" data-tip={btn.tooltip}>
                     <button
                       type="button"
-                      className={clx(
-                        'btn rounded-none h-8 px-2 py-1 transition',
+                      className={cn(
+                        'btn rounded-none h-6 transition',
                         mediaActionActiveState[btn.tooltip] && 'active'
                       )}
                       onClick={() =>
