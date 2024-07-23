@@ -32,6 +32,8 @@ import History from '@tiptap/extension-history';
 import BulletList from '@tiptap/extension-bullet-list';
 import { Markdown } from 'tiptap-markdown';
 import ListItem from '@tiptap/extension-list-item';
+import Typography from '@tiptap/extension-typography';
+import MarkdownPasteHandler from './mardown-paste-handler';
 
 export const defaultExtensions = [
   FontFamily,
@@ -95,6 +97,7 @@ export const defaultExtensions = [
     listItem: false,
   }),
   History,
+  Typography,
   TextAlign.configure({
     types: ['heading', 'paragraph'],
   }),
@@ -163,6 +166,7 @@ export const defaultExtensions = [
   EmbeddedTweet,
   actionButton,
   ColumnExtension,
+  MarkdownPasteHandler,
   Markdown.configure({
     html: true, // Allow HTML input/output
     tightLists: true, // No <p> inside <li> in markdown output
