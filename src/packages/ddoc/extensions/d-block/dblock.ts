@@ -96,7 +96,12 @@ export const DBlock = Node.create<DBlockOptions>({
               path.includes('taskList_0'),
           );
 
-          const isNodeBeforeEmpty = $head.nodeBefore?.content.size === 0;
+          const isEmptyParagraph = nodePaths.some(path =>
+            path.includes('paragraph_0:0'),
+          );
+          const isLastEmptyListItem = $head.parent.content.size === 0;
+          const isOnlyListItemAndEmpty =
+            nodePaths.length === 4 && isEmptyParagraph;
 
           const isNestedEmptyListItem =
             nodePaths.some(path => path.includes('paragraph_0:0')) &&
@@ -106,23 +111,59 @@ export const DBlock = Node.create<DBlockOptions>({
             $head.parent.content.size === 0 &&
             nodePaths.some(path => path.includes('listItem_0'));
 
-          const isListItemUnstyled = nodePaths.some(path =>
-            path.includes('paragraph_1:0'),
+          const isListItemUnstyledAndEmpty =
+            nodePaths.some(path => path.includes('paragraph_1:0')) &&
+            $head.parent.content.size === 0;
+
+          const isListItemUnstyledWithContent = $head.parent.content.size > 0;
+          const isAtBeginOfUnstyledListItem = nodePaths.some(path =>
+            /paragraph_\d+:0/.test(path),
           );
 
-          if (isListItemUnstyled) {
+          if (isOnlyListItemAndEmpty) {
+            return editor.chain().liftListItem('listItem').focus().run();
+          }
+
+          if (isListItemUnstyledWithContent && isAtBeginOfUnstyledListItem) {
+            const listItemPos = $head.before($head.depth - 1);
+            const getParagraphNode = () => {
+              const paragraphNode = $head.node($head.depth - 1);
+              const content = paragraphNode?.lastChild?.textContent;
+
+              return content;
+            };
+
             return editor
               .chain()
               .deleteRange({
-                from: from - 1,
-                to: to,
+                from,
+                to: listItemPos + 1 + parent.nodeSize,
               })
-              .insertContentAt(from, {
+              .insertContent({
                 type: 'dBlock',
                 content: [
                   {
                     type: 'paragraph',
-                    content: [{ type: 'text', text: '' }],
+                    content: [
+                      {
+                        type: 'text',
+                        text: getParagraphNode(),
+                      },
+                    ],
+                  },
+                ],
+              })
+              .run();
+          }
+
+          if (isListItemUnstyledAndEmpty) {
+            return editor
+              .chain()
+              .insertContent({
+                type: 'dBlock',
+                content: [
+                  {
+                    type: 'paragraph',
                   },
                 ],
               })
@@ -137,7 +178,7 @@ export const DBlock = Node.create<DBlockOptions>({
             return editor.chain().liftListItem('listItem').focus().run();
           }
 
-          if (!isNodeBeforeEmpty && isList) {
+          if (isLastEmptyListItem && isList) {
             // Find the list node and its position
             const listPos = $head.before($head.depth - 1);
             return editor
@@ -208,7 +249,7 @@ export const DBlock = Node.create<DBlockOptions>({
                 content,
               },
             )
-            .focus(from + 4)
+            .focus()
             .run();
         } catch (error) {
           console.error(`Error inserting content into dBlock node: ${error}`);
@@ -248,13 +289,6 @@ export const DBlock = Node.create<DBlockOptions>({
           const isFirstDBlockListItem =
             isFirstDBlock && isAtBeginFirstListItem && isList;
 
-          const getParagraphText = () => {
-            const paragraphNode = $head.node($head.depth - 1).toJSON()
-              .content[0].content[0].text;
-
-            return paragraphNode;
-          };
-
           const isFirstListItemWithoutContent =
             $head.parent.content.size === 0 &&
             nodePaths.some(path => path.includes('paragraph_0:0')) &&
@@ -262,7 +296,8 @@ export const DBlock = Node.create<DBlockOptions>({
               path =>
                 path.includes('listItem_0') || path.includes('taskItem_0'),
             ) &&
-            isList;
+            isList &&
+            nodePaths.length === 4;
 
           const isMultipleListItems =
             $head.node($head.depth - 2).childCount > 1;
@@ -294,23 +329,14 @@ export const DBlock = Node.create<DBlockOptions>({
           }
 
           if (isFirstDBlockListItem && nodePaths.length === 4) {
-            // Insert the paragraph content into a new dBlock above
-            // Find the list node and its position
-            const listNode = $head.node($head.depth - 2);
-            const listPos = $head.before($head.depth - 2);
-
             return editor
               .chain()
-              .deleteRange({
-                from: listPos + 1,
-                to: listPos + 1 + (listNode.firstChild?.nodeSize || 0),
-              })
+              .liftListItem('listItem')
               .insertContentAt(from - 4, {
                 type: 'dBlock',
                 content: [
                   {
                     type: 'paragraph',
-                    content: [{ type: 'text', text: getParagraphText() }],
                   },
                 ],
               })

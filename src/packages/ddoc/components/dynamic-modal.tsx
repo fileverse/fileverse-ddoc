@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useCallback, useEffect } from 'react'
 import {
   Dialog,
   DialogClose,
@@ -41,6 +41,21 @@ const DynamicModal = ({
   primaryAction,
   secondaryAction,
 }: DynamicModalProps) => {
+  const handleKeyDown = useCallback((event: KeyboardEvent) => {
+    if (event.key === 'Enter' && primaryAction?.onClick && !primaryAction.isLoading) {
+      primaryAction.onClick();
+    }
+  }, [primaryAction]);
+
+  useEffect(() => {
+    if (open) {
+      document.addEventListener('keydown', handleKeyDown);
+    }
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [handleKeyDown, open, primaryAction]);
+
   return (
     <Dialog
       open={open}
