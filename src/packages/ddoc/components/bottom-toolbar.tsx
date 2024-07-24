@@ -129,7 +129,9 @@ const BottomToolbar = ({
         const { selection } = editor.state;
         const isTextSelected = selection.from !== selection.to;
         const isImageSelected = editor.state.doc.nodeAt(selection.from)?.type.name === 'resizableMedia';
-        if (isTextSelected && !isImageSelected) {
+        const isIframeSelected =
+          editor.state.doc.nodeAt(selection.from)?.type.name === 'iframe';
+        if (isTextSelected && !isImageSelected && !isIframeSelected) {
           textFormattingButtonRef.current?.click();
         }
       }

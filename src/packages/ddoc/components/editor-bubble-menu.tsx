@@ -117,12 +117,11 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     const { from, to } = editor.state.selection;
     const isImageSelected =
       editor.state.doc.nodeAt(from)?.type.name === 'resizableMedia';
-    if (!isImageSelected) {
-      return;
-    }
+    const isIframeSelected =
+      editor.state.doc.nodeAt(from)?.type.name === 'iframe';
     const isCodeBlockSelected = editor.isActive('codeBlock');
 
-    if (from === to || isImageSelected || isCodeBlockSelected) {
+    if (from === to || isImageSelected || isCodeBlockSelected || isIframeSelected) {
       return false;
     }
 
