@@ -15,15 +15,31 @@ const MarkdownPasteHandler = Extension.create({
       new Plugin({
         props: {
           handlePaste: (view, event) => {
+            event.preventDefault();
+
             const clipboardData = event.clipboardData;
             if (!clipboardData) return false;
 
             // Get the Markdown content from the clipboard
-            const markdown = clipboardData.getData('text/plain');
-            if (!markdown.match(/[#*]/)) return false;
+            const copiedData = clipboardData.getData('text/plain');
+
+            // Check if the copied content is Markdown
+            const isMarkdown =
+              copiedData.startsWith('#') ||
+              copiedData.startsWith('*') ||
+              copiedData.startsWith('-') ||
+              copiedData.startsWith('>') ||
+              copiedData.startsWith('```') ||
+              copiedData.match(/\[.*\]\(.*\)/) || // Links
+              copiedData.match(/!\[.*\]\(.*\)/) || // Images
+              copiedData.match(/\*\*(.*?)\*\*/g) || // Bold
+              copiedData.match(/\*(.*?)\*/g) || // Italic
+              copiedData.match(/`{1,3}[^`]+`{1,3}/g); // Inline code or code block
+
+            if (!isMarkdown) return false;
 
             // Convert Markdown to HTML
-            let convertedHtml = markdownIt.render(markdown);
+            let convertedHtml = markdownIt.render(copiedData);
 
             // Sanitize the converted HTML
             convertedHtml = DOMPurify.sanitize(convertedHtml);
@@ -45,7 +61,6 @@ const MarkdownPasteHandler = Extension.create({
             );
             view.dispatch(transaction);
 
-            event.preventDefault();
             return true;
           },
         },
