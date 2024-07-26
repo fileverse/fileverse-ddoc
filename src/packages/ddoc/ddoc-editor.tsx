@@ -46,6 +46,8 @@ const DdocEditor = forwardRef(
       ensResolutionUrl,
       disableBottomToolbar,
       onError,
+      setCharacterCount,
+      setWordCount
     }: DdocProps,
     ref,
   ) => {
@@ -73,6 +75,8 @@ const DdocEditor = forwardRef(
       onTextSelection,
       ensResolutionUrl,
       onError,
+      setCharacterCount,
+      setWordCount,
     });
 
     useImperativeHandle(

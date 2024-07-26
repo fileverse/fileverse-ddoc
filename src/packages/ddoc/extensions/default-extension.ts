@@ -34,6 +34,7 @@ import { Markdown } from 'tiptap-markdown';
 import ListItem from '@tiptap/extension-list-item';
 import Typography from '@tiptap/extension-typography';
 import MarkdownPasteHandler from './mardown-paste-handler';
+import CharacterCount from '@tiptap/extension-character-count'
 
 export const defaultExtensions = [
   FontFamily,
@@ -177,6 +178,7 @@ export const defaultExtensions = [
     transformPastedText: true, // Allow to paste markdown text in the editor
     transformCopiedText: false, // Copied text is transformed to markdown
   }),
+  CharacterCount
 ];
 
 export const createInputRule = (
