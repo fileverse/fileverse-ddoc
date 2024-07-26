@@ -38,6 +38,8 @@ export const useDdocEditor = ({
   onTextSelection,
   ensResolutionUrl,
   onError,
+  setCharacterCount,
+  setWordCount,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
@@ -264,6 +266,15 @@ export const useDdocEditor = ({
   useEffect(() => {
     onCollaboratorChange?.(editor?.storage?.collaborationCursor?.users);
   }, [editor?.storage?.collaborationCursor?.users]);
+
+  useEffect(() => {
+    setCharacterCount &&
+      setCharacterCount(editor?.storage.characterCount.characters());
+    setWordCount && setWordCount(editor?.storage.characterCount.words());
+  }, [
+    editor?.storage.characterCount.characters(),
+    editor?.storage.characterCount.words(),
+  ]);
 
   return {
     editor,
