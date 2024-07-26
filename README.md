@@ -46,6 +46,8 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `onChange` (optional)                          | `(changes: JSONContent) => void`               | Optional function that gets triggered with the latest content of the editor on every change in the editor |
 | `onCollaboratorChange` (optional)              | `(collaborators?: IDocCollabUsers[] ) => void` | Optional function that gets triggered when a user join or leave the doc during collaboration              |
 | `onError` (optional)                           | `(errorString: string) => void`                | Function to call on error                                                                                 |
+| `setCharacterCount` (optional)                 | `React.Dispatch<SetStateAction<number>>`       | Optional. React Set State function to update Character Count                                              |
+| `setWordCount` (optional)                      | `React.Dispatch<SetStateAction<number>>`       | Optional. React Set State function to update Word Count                                                   |
 
 ## Data Interface
 
