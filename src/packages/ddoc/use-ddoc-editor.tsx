@@ -1,11 +1,9 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useRef } from 'react';
-import { WebrtcProvider } from 'y-webrtc';
 import { DdocProps, DdocEditorProps } from './types';
 import * as Y from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration';
-import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import { defaultExtensions } from './extensions/default-extension';
 import { AnyExtension, useEditor } from '@tiptap/react';
 import { getCursor } from './utils/cursor';
@@ -13,6 +11,8 @@ import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from './components/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
+import { SyncMachinContext, useSyncMachine } from 'fileverse-sync';
+import { CollaborationCursor } from './utils/CollaborationCursor';
 
 const usercolors = [
   '#30bced',
@@ -52,11 +52,11 @@ export const useDdocEditor = ({
     to: number,
   ) => {
     let _isHighlightedYellow = false;
-    state.doc.nodesBetween(from, to, (node) => {
+    state.doc.nodesBetween(from, to, node => {
       if (
         node.marks &&
         node.marks.some(
-          (mark) =>
+          mark =>
             mark.type.name === 'highlight' && mark.attrs.color === 'yellow',
         )
       ) {
@@ -88,7 +88,7 @@ export const useDdocEditor = ({
         // Find the start and end of the highlighted mark
         state.doc.nodesBetween(from, to, (node, pos) => {
           if (node.marks && node.marks.length) {
-            node.marks.forEach((mark) => {
+            node.marks.forEach(mark => {
               if (mark.type.name === 'highlight') {
                 from = pos;
                 to = pos + node.nodeSize;
@@ -117,6 +117,12 @@ export const useDdocEditor = ({
   ) => {
     handleCommentInteraction(view, event);
   };
+
+  const { machine, connect: connectMachine } = useSyncMachine({
+    ydoc: ydoc as any,
+    roomId: collaborationId,
+  });
+  const context = (machine[0] as any).context as SyncMachinContext;
 
   const editor = useEditor(
     {
@@ -154,42 +160,28 @@ export const useDdocEditor = ({
 
   const collaborationCleanupRef = useRef<() => void>(() => {});
 
-  const connect = (username: string | null | undefined, isEns = false) => {
+  const connect = (
+    username: string | null | undefined,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    _isEns = false,
+  ) => {
     if (!enableCollaboration || !collaborationId) {
       throw new Error('docId or username is not provided');
     }
 
-    const provider = new WebrtcProvider(collaborationId, ydoc, {
-      signaling: [
-        'wss://fileverse-signaling-server-0529292ff51c.herokuapp.com/',
-      ],
-    });
+    // const provider = new WebrtcProvider(collaborationId, ydoc, {
+    //   signaling: [
+    //     'wss://fileverse-signaling-server-0529292ff51c.herokuapp.com/',
+    //   ],
+    // });
+    connectMachine(username as string, collaborationId);
 
-    setExtensions([
-      ...extensions.filter((extension) => extension.name !== 'history'),
-      Collaboration.configure({
-        document: ydoc,
-      }),
-      CollaborationCursor.configure({
-        provider: provider,
-        user: {
-          name:
-            username && username.length > 20
-              ? getTrimmedName(username, 7, 15)
-              : username,
-          color: usercolors[Math.floor(Math.random() * usercolors.length)],
-          isEns: isEns,
-        },
-        render: getCursor,
-      }),
-    ]);
+    // collaborationCleanupRef.current = () => {
+    //   provider.destroy();
+    //   ydoc.destroy();
+    // };
 
-    collaborationCleanupRef.current = () => {
-      provider.destroy();
-      ydoc.destroy();
-    };
-
-    return collaborationCleanupRef.current;
+    // return collaborationCleanupRef.current;
   };
 
   const ref = useRef<HTMLDivElement>(null);
@@ -234,6 +226,29 @@ export const useDdocEditor = ({
       editor.off('selectionUpdate', handleSelection);
     };
   }, [editor]);
+
+  useEffect(() => {
+    if (context?.awareness && context.isConnected) {
+      setExtensions([
+        ...extensions.filter(extension => extension.name !== 'history'),
+        Collaboration.configure({
+          document: ydoc,
+        }),
+        CollaborationCursor.configure({
+          provider: machine[0],
+          user: {
+            name:
+              username && username.length > 20
+                ? getTrimmedName(username, 7, 15)
+                : username,
+            color: usercolors[Math.floor(Math.random() * usercolors.length)],
+            isEns: false,
+          },
+          render: getCursor,
+        }),
+      ]);
+    }
+  }, [context?.awareness, context.isConnected]);
 
   const startCollaboration = async () => {
     let _username = username;
