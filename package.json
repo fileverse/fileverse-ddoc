@@ -72,8 +72,7 @@
     "vaul": "^0.9.1",
     "vite-plugin-dts": "^3.6.3",
     "y-prosemirror": "^1.2.5",
-    "y-webrtc": "^10.3.0",
-    "yjs": "^13.6.15"
+    "y-webrtc": "^10.3.0"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

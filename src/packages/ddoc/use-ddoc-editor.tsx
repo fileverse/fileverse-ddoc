@@ -11,7 +11,7 @@ import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from './components/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
-import { SyncMachinContext, useSyncMachine } from 'fileverse-sync';
+import { SyncMachineContext, useSyncMachine } from 'fileverse-sync';
 import { CollaborationCursor } from './utils/CollaborationCursor';
 
 const usercolors = [
@@ -122,7 +122,7 @@ export const useDdocEditor = ({
     ydoc: ydoc as any,
     roomId: collaborationId,
   });
-  const context = (machine[0] as any).context as SyncMachinContext;
+  const context = (machine[0] as any).context as SyncMachineContext;
 
   const editor = useEditor(
     {
