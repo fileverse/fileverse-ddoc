@@ -2,7 +2,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useRef } from 'react';
 import { DdocProps, DdocEditorProps } from './types';
-import * as Y from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration';
 import { defaultExtensions } from './extensions/default-extension';
 import { AnyExtension, useEditor } from '@tiptap/react';
@@ -11,7 +10,10 @@ import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from './components/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
-import { SyncMachineContext, useSyncMachine } from 'fileverse-sync';
+import {
+  SyncMachineContext,
+  useSyncMachine,
+} from '@fileverse-dev/fileverse-sync';
 import { CollaborationCursor } from './utils/CollaborationCursor';
 
 const usercolors = [
@@ -39,7 +41,6 @@ export const useDdocEditor = ({
   ensResolutionUrl,
   onError,
 }: Partial<DdocProps>) => {
-  const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions as AnyExtension[]),
     SlashCommand(onError),
@@ -118,8 +119,11 @@ export const useDdocEditor = ({
     handleCommentInteraction(view, event);
   };
 
-  const { machine, connect: connectMachine } = useSyncMachine({
-    ydoc: ydoc as any,
+  const {
+    machine,
+    connect: connectMachine,
+    ydoc,
+  } = useSyncMachine({
     roomId: collaborationId,
   });
   const context = (machine[0] as any).context as SyncMachineContext;

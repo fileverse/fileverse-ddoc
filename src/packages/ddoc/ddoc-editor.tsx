@@ -49,7 +49,6 @@ const DdocEditor = forwardRef(
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const btn_ref = useRef(null);
     const isMobile = useMediaQuery('(max-width: 640px)');
-
     const {
       editor,
       ref: editorRef,
@@ -132,7 +131,10 @@ const DdocEditor = forwardRef(
 
               {!isPreviewMode && (
                 <div className="grow relative hidden xl:block">
-                  <EditorToolBar editor={editor} onError={onError} />
+                  <EditorToolBar
+                    editor={editor}
+                    onError={onError}
+                  />
                 </div>
               )}
               {renderToolRightSection?.({ editor: editor.getJSON() })}
@@ -149,11 +151,17 @@ const DdocEditor = forwardRef(
                   {!isPreviewMode && (
                     <div>
                       <EditorBubbleMenu editor={editor} />
-                      <ColumnsMenu editor={editor} appendTo={editorRef} />
+                      <ColumnsMenu
+                        editor={editor}
+                        appendTo={editorRef}
+                      />
                     </div>
                   )}
                   <EditingProvider isPreviewMode={isPreviewMode}>
-                    <EditorContent editor={editor} className="py-4 relative" />
+                    <EditorContent
+                      editor={editor}
+                      className="py-4 relative"
+                    />
                   </EditingProvider>
                 </div>
                 {showCommentButton && !isMobile && (
@@ -186,7 +194,10 @@ const DdocEditor = forwardRef(
                     'flex xl:hidden items-center w-full h-16 fixed z-10 px-4 bg-[#f8f9fa] bottom-0',
                   )}
                 >
-                  <BottomToolbar editor={editor} onError={onError} />
+                  <BottomToolbar
+                    editor={editor}
+                    onError={onError}
+                  />
                 </motion.div>
               )}
             </AnimatePresence>
