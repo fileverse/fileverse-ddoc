@@ -1,6 +1,7 @@
 import { JSONContent } from '@tiptap/core';
 import { EditorProps } from '@tiptap/pm/view';
 import { Editor } from '@tiptap/react';
+import React, { SetStateAction } from 'react';
 
 export const DdocEditorProps: EditorProps = {
   attributes: {
@@ -34,6 +35,8 @@ export interface DdocProps {
   showCommentButton?: boolean;
   disableBottomToolbar?: boolean;
   onError?: (error: string) => void;
+  setCharacterCount?: React.Dispatch<SetStateAction<number>>
+  setWordCount?: React.Dispatch<SetStateAction<number>>
 }
 
 export interface IEditorSelectionData {

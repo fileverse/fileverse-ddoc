@@ -115,8 +115,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   });
   const shouldShow = ({ editor }) => {
     const { from, to } = editor.state.selection;
+    const isImageSelected =
+      editor.state.doc.nodeAt(from)?.type.name === 'resizableMedia';
+    const isIframeSelected =
+      editor.state.doc.nodeAt(from)?.type.name === 'iframe';
+    const isCodeBlockSelected = editor.isActive('codeBlock');
 
-    if (from === to) {
+    if (from === to || isImageSelected || isCodeBlockSelected || isIframeSelected) {
       return false;
     }
 

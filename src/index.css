@@ -69,3 +69,7 @@ li > ol > li > ol > li:before {
   position: absolute;
   left: -1.4em;
 }
+
+.tooltip:before {
+  z-index: 999;
+}
