@@ -6,14 +6,12 @@ import { IEditorTool, useEditorToolVisiibility } from '../hooks/use-visibility';
 import { Editor } from '@tiptap/react';
 import {
   Ban,
-  Baseline,
   Check,
   AlignCenter,
   AlignLeft,
   AlignRight,
   Bold,
   Code,
-  Highlighter,
   ImagePlus,
   Italic,
   Link,
@@ -41,8 +39,7 @@ import {
   CarouselIndicator,
   CarouselItem,
 } from '../common/carousel';
-import { TextField } from '../common/textfield';
-import { Button } from '../common/button';
+import { Button, TextField, Tooltip } from '@fileverse/ui/dist/index.es';
 
 interface IEditorToolElement {
   icon: any;
@@ -207,47 +204,67 @@ export const useEditorToolbar = ({
     toolVisibilty,
     setToolVisibility,
   } = useEditorToolVisiibility(IEditorTool.NONE);
+
+  const undoRedoTools: Array<IEditorToolElement | null> = [
+    {
+      icon: 'Undo',
+      title: 'Undo',
+      onClick: () => {
+        editor?.chain().undo().run();
+      },
+      isActive: editor?.can().undo(),
+    },
+    {
+      icon: 'Redo',
+      title: 'Redo',
+      onClick: () => {
+        editor?.chain().redo().run();
+      },
+      isActive: editor?.can().redo(),
+    },
+    null,
+  ];
   const toolbar: Array<IEditorToolElement | null> = [
     {
-      icon: <Baseline size={20} />,
+      icon: 'Baseline',
       title: 'Text Color',
       onClick: () => setToolVisibility(IEditorTool.TEXT_COLOR),
       isActive: toolVisibilty === IEditorTool.TEXT_COLOR,
     },
     {
-      icon: <Highlighter size={20} />,
+      icon: 'Highlighter',
       title: 'Highlight',
       onClick: () => setToolVisibility(IEditorTool.HIGHLIGHT),
       isActive: toolVisibilty === IEditorTool.HIGHLIGHT,
     },
     null,
     {
-      icon: <Bold size={20} />,
+      icon: 'Bold',
       title: 'Bold',
       onClick: () => editor?.chain().focus().toggleBold().run(),
       isActive: editor?.isActive('bold'),
     },
     {
-      icon: <Italic size={20} />,
+      icon: 'Italic',
       title: 'Italic',
       onClick: () => editor?.chain().focus().toggleItalic().run(),
       isActive: editor?.isActive('italic'),
     },
     {
-      icon: <Underline size={20} />,
+      icon: 'Underline',
       title: 'Underlined',
       onClick: () => editor?.chain().focus().toggleUnderline().run(),
       isActive: editor?.isActive('underline'),
     },
     {
-      icon: <Strikethrough size={20} />,
+      icon: 'Strikethrough',
       title: 'Strikethrough',
       onClick: () => editor?.chain().focus().toggleStrike().run(),
       isActive: editor?.isActive('strike'),
     },
     null,
     {
-      icon: <List size={20} />,
+      icon: 'List',
       title: 'List',
       onClick: () => {
         editor?.chain().focus().toggleBulletList().run();
@@ -256,7 +273,7 @@ export const useEditorToolbar = ({
       isActive: editor?.isActive('bulletList'),
     },
     {
-      icon: <ListOrdered size={20} />,
+      icon: 'ListOrdered',
       title: 'Ordered List',
       onClick: () => {
         editor?.chain().focus().toggleOrderedList().run();
@@ -265,7 +282,7 @@ export const useEditorToolbar = ({
       isActive: editor?.isActive('orderedList'),
     },
     {
-      icon: <ListChecks size={20} />,
+      icon: 'ListChecks',
       title: 'To-do List',
       onClick: () => {
         editor?.chain().focus().toggleTaskList().run();
@@ -274,20 +291,20 @@ export const useEditorToolbar = ({
       isActive: editor?.isActive('taskList'),
     },
     {
-      icon: <AlignLeft size={20} />,
+      icon: 'AlignLeft',
       title: 'Alignment',
       onClick: () => setToolVisibility(IEditorTool.ALIGNMENT),
       isActive: toolVisibilty === IEditorTool.ALIGNMENT,
     },
     {
-      icon: <TextQuote size={20} />,
+      icon: 'TextQuote',
       title: 'Quote',
       onClick: () => editor?.chain().focus().toggleBlockquote().run(),
       isActive: editor?.isActive('blockquote'),
     },
     null,
     {
-      icon: <ImagePlus size={20} />,
+      icon: 'ImagePlus',
       title: 'Upload Image',
       onClick: () => {
         editor?.chain().focus().deleteRange(editor.state.selection).run();
@@ -314,19 +331,19 @@ export const useEditorToolbar = ({
       isActive: false,
     },
     {
-      icon: <Link size={20} />,
+      icon: 'Link',
       title: 'Link',
       onClick: () => setToolVisibility(IEditorTool.LINK),
       isActive: editor?.isActive('link'),
     },
     {
-      icon: <Code size={20} />,
+      icon: 'Code',
       title: 'Code',
       onClick: () => editor?.chain().focus().toggleCodeBlock().run(),
       isActive: editor?.isActive('codeBlock'),
     },
     {
-      icon: <Table size={20} />,
+      icon: 'Table',
       title: 'Add table',
       onClick: () =>
         editor
@@ -410,6 +427,7 @@ export const useEditorToolbar = ({
     },
   ];
   return {
+    undoRedoTools,
     toolbar,
     bottomToolbar,
     toolRef,
@@ -472,7 +490,7 @@ export const TextHighlighter = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto absolute gap-2 top-14 flex flex-wrap left-[20%] max-h-[330px] w-[20.5rem] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all"
+      className="z-50 h-auto absolute gap-2 top-14 flex flex-wrap left-[30%] max-h-[330px] w-[20.5rem] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all"
     >
       <Ban
         className="cursor-pointer"
@@ -525,7 +543,7 @@ export const EditorFontFamily = ({
     <div
       ref={elementRef}
       className={cn(
-        'z-50 h-auto absolute top-14 left-0 max-h-[330px] w-48 overflow-y-auto scroll-smooth bg-white px-1 py-2 shadow-lg transition-all rounded animate-in fade-in slide-in-from-top-1',
+        'z-50 h-auto absolute top-14 left-[8%] max-h-[330px] w-48 overflow-y-auto scroll-smooth bg-white px-1 py-2 shadow-lg transition-all rounded animate-in fade-in slide-in-from-top-1',
       )}
     >
       {fonts.map((font) => (
@@ -563,7 +581,7 @@ export const EditorAlignment = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto absolute gap-2 top-14 left-[60%] translate-x-1/2 flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all"
+      className="z-50 h-auto absolute gap-2 top-14 left-[51%] translate-x-1/2 flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all"
     >
       <span
         onClick={() => {
@@ -626,53 +644,47 @@ export const EditorList = ({
         'z-50 h-auto absolute gap-2 top-[50px] right-[30%] flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all',
       )}
     >
-      <div
-        className="tooltip tooltip-open tooltip-bottom"
-        data-tip="unordered list"
-      >
+      <Tooltip text="unordered list">
         <span
           onClick={() => {
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${
+            editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <List size={20} />
         </span>
-      </div>
+      </Tooltip>
 
-      <div
-        className="tooltip tooltip-open tooltip-bottom"
-        data-tip="ordered list"
-      >
+      <Tooltip text="ordered list">
         <span
           onClick={() => {
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${
+            editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <ListOrdered size={20} />
         </span>
-      </div>
+      </Tooltip>
 
-      <div
-        className="tooltip tooltip-open tooltip-bottom"
-        data-tip="to-do list"
-      >
+      <Tooltip text="to-d- list">
         <span
           onClick={() => {
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${
+            editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <ListChecks size={20} />
         </span>
-      </div>
+      </Tooltip>
     </div>
   );
 };
@@ -749,10 +761,7 @@ export const LinkPopup = ({
         value={url}
       />
       <div className="h-full flex items-center gap-2">
-        <Button
-          onClick={() => apply()}
-          className="min-w-fit h-[36px]"
-        >
+        <Button onClick={() => apply()} className="min-w-fit h-[36px]">
           Apply
         </Button>
         <Button
@@ -778,7 +787,7 @@ export const TextColor = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto absolute gap-2 top-14 flex flex-wrap left-[100px] max-h-[330px] w-[20.5rem] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all"
+      className="z-50 h-auto absolute gap-2 top-14 flex flex-wrap left-[26%] max-h-[330px] w-[20.5rem] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all"
     >
       <Ban
         className="cursor-pointer"
@@ -868,7 +877,7 @@ export const TextHeading = ({
     <div
       ref={elementRef}
       className={cn(
-        'absolute top-[50px] z-50 mt-1 flex w-48 flex-col overflow-hidden rounded bg-white p-1 shadow-lg animate-in fade-in slide-in-from-top-1',
+        'absolute top-[50px] left-[17%] z-50 mt-1 flex w-48 flex-col overflow-hidden rounded bg-white p-1 shadow-lg animate-in fade-in slide-in-from-top-1',
         'left-0',
       )}
     >

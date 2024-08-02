@@ -1,11 +1,10 @@
 import { useEffect, useState } from 'react';
 import DdocEditor from './packages/ddoc/ddoc-editor';
-import { Button } from './packages/ddoc/common/button';
-import { Pencil, ScanEye, Share2 } from 'lucide-react';
 import { JSONContent } from '@tiptap/react';
+import { Button, Tag, IconButton } from '@fileverse/ui/dist/index.es';
+import farcasterLogo from './assets/social_farcaster.svg';
 
 function App() {
-  const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [enableCollaboration, setEnableCollaboration] = useState(false);
   const [username, setUsername] = useState('');
   const [title, setTitle] = useState('Untitled');
@@ -21,47 +20,52 @@ function App() {
     }
   }, [collaborationId]);
 
-  const renderRightSection = ({
-    editor,
-  }: {
-    editor: JSONContent;
-  }): JSX.Element => {
-    const publishDoc = () => {
-      console.log(editor, title);
-    };
+  const renderNavbar = ({ editor }: { editor: JSONContent }): JSX.Element => {
+    const publishDoc = () => console.log(editor, title);
     return (
-      <div className="flex gap-2">
-        <div>
-          <Button
-            variant="ghost"
-            onClick={() => setIsPreviewMode(!isPreviewMode)}
+      <>
+        <div className="flex items-center gap-[12px]">
+          <IconButton variant={'ghost'} icon="Menu" />
+
+          <div className="relative truncate inline-block !max-w-[300px] md:max-w-full bg-[#ffffff] text-[14px] font-medium leading-[20px]">
+            <span className="invisible whitespace-pre">
+              {title || 'Untitled'}
+            </span>
+            <input
+              className="focus:outline-none truncate bg-[#ffffff] absolute top-0 left-0 right-0 bottom-0 select-text"
+              type="text"
+              placeholder="Untitled"
+              value={title}
+              onChange={(e) => setTitle?.(e.target.value)}
+            />
+          </div>
+          <Tag
+            icon="CloudUpload"
+            className="h-6 rounded !border-[0.5px] !border-[#E8EBEC] color-text-secondary text-[12px] font-normal"
           >
-            {isPreviewMode ? <Pencil size={14} /> : <ScanEye size={14} />}{' '}
-            {isPreviewMode ? 'Edit' : 'Preview'}
-          </Button>
+            Saved in local storage
+          </Tag>
         </div>
-
-        <div>
-          <Button onClick={publishDoc}>
-            <Share2 size={14} /> Share
+        <div className="flex gap-2">
+          <IconButton variant={'ghost'} icon="MessageSquareText" />
+          <Button
+            onClick={publishDoc}
+            toggleLeftIcon={true}
+            leftIcon="Share2"
+            variant={'ghost'}
+            className="!min-w-[90px] !px-0"
+          >
+            Share
           </Button>
+          <div className="flex gap-2 px-2 justify-center items-center">
+            <img src={farcasterLogo} alt="farcaster" />
+            <div className="flex flex-col">
+              <p className="text-heading-xsm">@[username]</p>
+              <p className="text-helper-text-sm">Farcaster</p>
+            </div>
+          </div>
         </div>
-      </div>
-    );
-  };
-
-  const renderLeftSection = () => {
-    return (
-      <div className="flex items-center gap-4">
-        <input
-          className="max-w-[6rem] lg:max-w-xs focus:outline-none bg-[#f8f9fa]"
-          disabled={isPreviewMode}
-          type="text"
-          placeholder="Untitled"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-      </div>
+      </>
     );
   };
 
@@ -71,10 +75,9 @@ function App() {
         enableCollaboration={enableCollaboration}
         collaborationId={collaborationId}
         username={username}
-        isPreviewMode={isPreviewMode}
+        isPreviewMode={false}
         onError={(error) => console.log(error)}
-        renderToolRightSection={renderRightSection}
-        renderToolLeftSection={renderLeftSection}
+        renderNavbar={renderNavbar}
         ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}
       />
     </div>

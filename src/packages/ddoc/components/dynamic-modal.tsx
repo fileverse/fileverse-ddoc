@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect } from 'react';
 import {
   Dialog,
   DialogClose,
@@ -6,30 +6,30 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from '../common/dialog'
-import cn from 'classnames'
-import { Button, ButtonVariant } from '../common/button'
+} from '../common/dialog';
+import cn from 'classnames';
+import { Button } from '@fileverse/ui/dist/index.es';
 
 interface DynamicModalProps {
-  title: string
-  content: React.ReactNode
-  contentClassName?: string
-  open: boolean
-  onOpenChange?: () => void
+  title: string;
+  content: React.ReactNode;
+  contentClassName?: string;
+  open: boolean;
+  onOpenChange?: () => void;
   primaryAction?: {
-    label: string
-    variant?: ButtonVariant
-    className?: string
-    isLoading?: boolean
-    onClick?: () => void
-  }
+    label: string;
+    variant?: 'default' | 'danger' | 'secondary' | 'ghost' | null | undefined;
+    className?: string;
+    isLoading?: boolean;
+    onClick?: () => void;
+  };
   secondaryAction?: {
-    label: string
-    variant?: ButtonVariant
-    className?: string
-    isLoading?: boolean
-    onClick?: () => void
-  }
+    label: string;
+    variant?: 'default' | 'danger' | 'secondary' | 'ghost' | null | undefined;
+    className?: string;
+    isLoading?: boolean;
+    onClick?: () => void;
+  };
 }
 
 const DynamicModal = ({
@@ -41,11 +41,18 @@ const DynamicModal = ({
   primaryAction,
   secondaryAction,
 }: DynamicModalProps) => {
-  const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (event.key === 'Enter' && primaryAction?.onClick && !primaryAction.isLoading) {
-      primaryAction.onClick();
-    }
-  }, [primaryAction]);
+  const handleKeyDown = useCallback(
+    (event: KeyboardEvent) => {
+      if (
+        event.key === 'Enter' &&
+        primaryAction?.onClick &&
+        !primaryAction.isLoading
+      ) {
+        primaryAction.onClick();
+      }
+    },
+    [primaryAction],
+  );
 
   useEffect(() => {
     if (open) {
@@ -57,20 +64,15 @@ const DynamicModal = ({
   }, [handleKeyDown, open, primaryAction]);
 
   return (
-    <Dialog
-      open={open}
-      onOpenChange={onOpenChange}
-    >
+    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md sm:w-full w-[90%] z-20">
         <DialogHeader className="px-4 pt-0 border-b-[1px]">
-          <DialogTitle className="text-left text-base">
-            {title}
-          </DialogTitle>
+          <DialogTitle className="text-left text-base">{title}</DialogTitle>
         </DialogHeader>
         <div
           className={cn(
             'flex flex-col gap-4 w-full h-full pb-4 text-base text-black',
-            contentClassName
+            contentClassName,
           )}
         >
           {content && content}
@@ -94,7 +96,7 @@ const DynamicModal = ({
               disabled={primaryAction?.isLoading}
               isLoading={primaryAction?.isLoading}
               className={primaryAction?.className}
-              variant={primaryAction?.variant || 'primary'}
+              variant={primaryAction?.variant || 'default'}
               onClick={primaryAction?.onClick}
             >
               {primaryAction?.label}
@@ -103,7 +105,7 @@ const DynamicModal = ({
         </DialogFooter>
       </DialogContent>
     </Dialog>
-  )
-}
+  );
+};
 
-export default DynamicModal
+export default DynamicModal;

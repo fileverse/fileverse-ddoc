@@ -25,8 +25,7 @@ export interface DdocProps {
   initialContent?: JSONContent | null;
   walletAddress?: string | null;
   username?: string | null;
-  renderToolLeftSection?: ({ editor }: { editor: JSONContent }) => JSX.Element;
-  renderToolRightSection?: ({ editor }: { editor: JSONContent }) => JSX.Element;
+  renderNavbar?: ({ editor }: { editor: JSONContent }) => JSX.Element;
   onChange?: (changes: Data['editorJSONData']) => void;
   onCollaboratorChange?: (collaborators: undefined | IDocCollabUsers[]) => void;
   onTextSelection?: (data: IEditorSelectionData) => void;

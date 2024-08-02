@@ -1,17 +1,17 @@
-import React, { FC, useEffect, useRef, useState } from 'react'
-import { NodeViewContent, NodeViewWrapper, NodeViewProps } from '@tiptap/react'
-import { Editor } from '@tiptap/core'
-import Tippy from '@tippyjs/react'
-import './styles.scss'
-import { useEditingContext } from '../../../hooks/use-editing-context'
-import cn from 'classnames'
-import { GripHorizontal } from 'lucide-react'
-import { Button } from '../../../common/button'
+import React, { FC, useEffect, useRef, useState } from 'react';
+import { NodeViewContent, NodeViewWrapper, NodeViewProps } from '@tiptap/react';
+import { Editor } from '@tiptap/core';
+import Tippy from '@tippyjs/react';
+import './styles.scss';
+import { useEditingContext } from '../../../hooks/use-editing-context';
+import cn from 'classnames';
+import { GripHorizontal } from 'lucide-react';
+import { Button } from '@fileverse/ui/dist/index.es';
 
 interface CellButton {
-  name: string
-  action: (editor: Editor) => boolean
-  icon: JSX.Element
+  name: string;
+  action: (editor: Editor) => boolean;
+  icon: JSX.Element;
 }
 
 const cellButtonsConfig: CellButton[] = [
@@ -135,7 +135,7 @@ const cellButtonsConfig: CellButton[] = [
       </svg>
     ),
   },
-]
+];
 
 export const TableCellNodeView: FC<NodeViewProps> = ({
   node,
@@ -143,43 +143,43 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
   selected,
   editor,
 }) => {
-  const [isCurrentCellActive, setIsCurrentCellActive] = useState(false)
+  const [isCurrentCellActive, setIsCurrentCellActive] = useState(false);
 
-  const isPreviewMode = useEditingContext()
+  const isPreviewMode = useEditingContext();
 
-  const tableCellOptionsButtonRef = useRef<HTMLLabelElement>(null)
+  const tableCellOptionsButtonRef = useRef<HTMLLabelElement>(null);
 
   const calculateActiveSateOfCurrentCell = () => {
-    const { from, to } = editor.state.selection
+    const { from, to } = editor.state.selection;
 
-    const nodeFrom = getPos()
-    const nodeTo = nodeFrom + node.nodeSize
+    const nodeFrom = getPos();
+    const nodeTo = nodeFrom + node.nodeSize;
 
-    setIsCurrentCellActive(nodeFrom <= from && to <= nodeTo)
-  }
+    setIsCurrentCellActive(nodeFrom <= from && to <= nodeTo);
+  };
 
   useEffect(() => {
-    editor.on('selectionUpdate', calculateActiveSateOfCurrentCell)
+    editor.on('selectionUpdate', calculateActiveSateOfCurrentCell);
 
-    setTimeout(calculateActiveSateOfCurrentCell, 100)
+    setTimeout(calculateActiveSateOfCurrentCell, 100);
 
     return () => {
-      editor.off('selectionUpdate', calculateActiveSateOfCurrentCell)
-    }
-  })
+      editor.off('selectionUpdate', calculateActiveSateOfCurrentCell);
+    };
+  });
 
   const gimmeDropdownStyles = (): React.CSSProperties => {
-    let top = tableCellOptionsButtonRef.current?.clientTop
-    if (top) top += 5
+    let top = tableCellOptionsButtonRef.current?.clientTop;
+    if (top) top += 5;
 
-    let left = tableCellOptionsButtonRef.current?.clientLeft
-    if (left) left += 5
+    let left = tableCellOptionsButtonRef.current?.clientLeft;
+    if (left) left += 5;
 
     return {
       top: `${top}px`,
       left: `${left}px`,
-    }
-  }
+    };
+  };
 
   return (
     <NodeViewWrapper className="group">
@@ -193,7 +193,7 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
           animation="shift-toward-subtle"
           placement="bottom-start"
           content={
-            <article className='w-screen lg:w-full' contentEditable={false}>
+            <article className="w-screen lg:w-full" contentEditable={false}>
               <ul
                 tabIndex={0}
                 className="static top-8 right-1/2 translate-x-1/2 lg:-translate-x-full menu menu-compact p-2 shadow bg-base-100 rounded-lg w-56"
@@ -203,7 +203,7 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
                   return (
                     <li key={btn.name}>
                       <Button
-                        variant='ghost'
+                        variant="ghost"
                         className="!items-center w-full !justify-start !font-[400]"
                         onClick={() => btn.action(editor)}
                       >
@@ -211,7 +211,7 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
                         <span>{btn.name}</span>
                       </Button>
                     </li>
-                  )
+                  );
                 })}
               </ul>
             </article>
@@ -227,5 +227,5 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
         </Tippy>
       )}
     </NodeViewWrapper>
-  )
-}
+  );
+};

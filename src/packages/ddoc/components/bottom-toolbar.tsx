@@ -5,14 +5,14 @@ import { Editor } from '@tiptap/react';
 import { IEditorTool } from '../hooks/use-visibility';
 import { Drawer, DrawerTrigger } from '../common/drawer';
 import DynamicModal from './dynamic-modal';
-import { TextField } from '../common/textfield';
+import { TextField } from '@fileverse/ui/dist/index.es';
 import cn from 'classnames';
 import { useMediaQuery } from 'usehooks-ts';
 
 const BottomToolbar = ({
   editor,
   onError,
-  isKeyboardVisible
+  isKeyboardVisible,
 }: {
   editor: Editor;
   onError?: (errorString: string) => void;
@@ -77,24 +77,35 @@ const BottomToolbar = ({
     const isSelected = editor.state.doc.textBetween(from, to);
 
     if (isSelected) {
-      editor.chain().focus().extendMarkRange('link').setLink({ href: finalUrl }).run();
+      editor
+        .chain()
+        .focus()
+        .extendMarkRange('link')
+        .setLink({ href: finalUrl })
+        .run();
     } else {
       // create link via popup
-      editor.chain().focus().
-        command(({ tr, dispatch }) => {
+      editor
+        .chain()
+        .focus()
+        .command(({ tr, dispatch }) => {
           const { from, to } = editor.state.selection;
           const text = linkText;
           const link = { href: finalUrl };
           tr.insertText(text, from, to);
-          tr.addMark(from, text.length + from, editor.schema.marks.link.create(link));
+          tr.addMark(
+            from,
+            text.length + from,
+            editor.schema.marks.link.create(link),
+          );
 
           if (dispatch) {
             dispatch(tr);
           }
 
           return true;
-        }).
-        run();
+        })
+        .run();
     }
 
     setIsUrlValid(true);
@@ -113,7 +124,7 @@ const BottomToolbar = ({
   const getSelectedTextUrl = (editor: Editor) => {
     const url = editor.getAttributes('link').href;
     return url;
-  }
+  };
 
   useEffect(() => {
     let touchStartTime = 0;
@@ -128,7 +139,9 @@ const BottomToolbar = ({
         // Long press, likely selecting text
         const { selection } = editor.state;
         const isTextSelected = selection.from !== selection.to;
-        const isImageSelected = editor.state.doc.nodeAt(selection.from)?.type.name === 'resizableMedia';
+        const isImageSelected =
+          editor.state.doc.nodeAt(selection.from)?.type.name ===
+          'resizableMedia';
         const isIframeSelected =
           editor.state.doc.nodeAt(selection.from)?.type.name === 'iframe';
         if (isTextSelected && !isImageSelected && !isIframeSelected) {
@@ -141,7 +154,6 @@ const BottomToolbar = ({
       if (!isMobile) return;
       const { selection } = editor.state;
       const isTextSelected = selection.from !== selection.to;
-
 
       if (isTextSelected) {
         textFormattingButtonRef.current?.click();

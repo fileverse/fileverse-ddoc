@@ -18,7 +18,7 @@ import {
 } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import cn from 'classnames';
-import { Button } from './common/button';
+import { Button } from '@fileverse/ui/dist/index.es';
 import { MessageSquareText } from 'lucide-react';
 import { useMediaQuery } from 'usehooks-ts';
 
@@ -34,8 +34,7 @@ const DdocEditor = forwardRef(
       enableCollaboration,
       collaborationId,
       username,
-      renderToolRightSection,
-      renderToolLeftSection,
+      renderNavbar,
       walletAddress,
       onChange,
       onCollaboratorChange,
@@ -47,16 +46,21 @@ const DdocEditor = forwardRef(
       disableBottomToolbar,
       onError,
       setCharacterCount,
-      setWordCount
+      setWordCount,
     }: DdocProps,
     ref,
   ) => {
+    const [isNavbarVisible, setIsNavbarVisible] = useState(true);
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [isTyping, setIsTyping] = useState(false);
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const btn_ref = useRef(null);
     const isMobile = useMediaQuery('(max-width: 640px)');
-    const isNativeMobile = checkOs() === 'iOS' || checkOs() === 'Android' || checkOs() === 'Windows Phone' || isMobile;
+    const isNativeMobile =
+      checkOs() === 'iOS' ||
+      checkOs() === 'Android' ||
+      checkOs() === 'Windows Phone' ||
+      isMobile;
 
     const {
       editor,
@@ -191,36 +195,43 @@ const DdocEditor = forwardRef(
 
     return (
       <div data-cy="single-webpage" className="bg-[#f8f9fa] h-full w-full">
+        {isNavbarVisible && (
+          <nav
+            id="Navbar"
+            className="h-14 bg-[#ffffff] py-2 px-6 flex gap-[40px] items-center justify-between w-full sticky left-0 top-0 border-b color-border-default"
+          >
+            {renderNavbar?.({ editor: editor.getJSON() })}
+          </nav>
+        )}
         <div
           id="toolbar"
-          className="flex items-center w-full h-16 sticky left-0 top-0 z-10 px-4 bg-[#f8f9fa]"
+          className={cn(
+            'hidden xl:flex items-center justify-center w-full h-[52px] sticky left-0 px-4 bg-[#ffffff]',
+            { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
+          )}
         >
-          <div className="flex items-center justify-between gap-2 w-full">
-            <div className="grow">
-              {renderToolLeftSection?.({ editor: editor.getJSON() })}
+          {!isPreviewMode && (
+            <div className="justify-center items-center grow relative">
+              <EditorToolBar
+                onError={onError}
+                editor={editor}
+                isNavbarVisible={isNavbarVisible}
+                setIsNavbarVisible={setIsNavbarVisible}
+              />
             </div>
-
-            {!isPreviewMode && (
-              <div className="grow relative hidden xl:block">
-                <EditorToolBar
-                  onError={onError}
-                  editor={editor}
-                />
-              </div>
-            )}
-            {renderToolRightSection?.({ editor: editor.getJSON() })}
-          </div>
+          )}
         </div>
-        <div className="p-4 sm:px-[88px] sm:py-[78px] bg-white w-full sm:w-[70%] max-w-[856px] mx-auto"
+        <div
+          className="p-4 sm:px-[88px] mt-6 sm:py-[78px] bg-white w-full sm:w-[70%] max-w-[856px] mx-auto"
           style={{
-            height: isNativeMobile && !isPreviewMode ? 'calc(100vh - 8rem)' : '100vh',
+            height:
+              isNativeMobile && !isPreviewMode ? 'calc(100vh - 8rem)' : '100vh',
           }}
         >
           <div
             ref={editorRef}
             className="w-full h-full overflow-y-scroll overflow-x-hidden no-scrollbar"
           >
-
             {!isPreviewMode && (
               <div>
                 <EditorBubbleMenu editor={editor} />
@@ -234,7 +245,6 @@ const DdocEditor = forwardRef(
                 className="w-full h-full py-4"
               />
             </EditingProvider>
-
           </div>
           {showCommentButton && !isNativeMobile && (
             <Button

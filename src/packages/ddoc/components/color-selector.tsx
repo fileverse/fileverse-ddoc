@@ -1,17 +1,17 @@
-import { Editor } from '@tiptap/core'
-import cx from 'classnames'
-import { Check, ChevronDown } from 'lucide-react'
-import { Dispatch, FC, SetStateAction } from 'react'
+import { Editor } from '@tiptap/core';
+import cx from 'classnames';
+import { Check, ChevronDown } from 'lucide-react';
+import { Dispatch, FC, SetStateAction } from 'react';
 
 export interface BubbleColorMenuItem {
-  name: string
-  color: string
+  name: string;
+  color: string;
 }
 
 interface ColorSelectorProps {
-  editor: Editor
-  isOpen: boolean
-  setIsOpen: Dispatch<SetStateAction<boolean>>
+  editor: Editor;
+  isOpen: boolean;
+  setIsOpen: Dispatch<SetStateAction<boolean>>;
 }
 
 export const ColorSelector: FC<ColorSelectorProps> = ({
@@ -52,16 +52,16 @@ export const ColorSelector: FC<ColorSelectorProps> = ({
       name: 'Gray',
       color: '#A8A29E',
     },
-  ]
+  ];
 
   const activeItem = items.find(({ color }) =>
-    editor.isActive('textStyle', { color })
-  )
+    editor.isActive('textStyle', { color }),
+  );
 
   return (
     <div className="">
       <button
-        className="flex h-[100%] items-center gap-1 p-2 text-sm font-medium text-stone-600 hover:bg-stone-100 active:bg-stone-200"
+        className="flex h-[100%] items-center gap-1 p-2 text-sm font-medium text-stone-600 rounded hover:bg-stone-100 active:bg-stone-200"
         onClick={() => setIsOpen(!isOpen)}
       >
         <span style={{ color: activeItem?.color || '#000000' }}>A</span>
@@ -75,14 +75,14 @@ export const ColorSelector: FC<ColorSelectorProps> = ({
             <button
               key={index}
               onClick={() => {
-                editor.chain().focus().setColor(color).run()
-                setIsOpen(false)
+                editor.chain().focus().setColor(color).run();
+                setIsOpen(false);
               }}
               className={cx(
                 'flex items-center justify-between rounded-sm px-2 py-1 text-sm text-stone-600 hover:bg-stone-100',
                 {
                   'text-blue-600': editor.isActive('textStyle', { color }),
-                }
+                },
               )}
             >
               <div className="flex items-center space-x-2">
@@ -102,5 +102,5 @@ export const ColorSelector: FC<ColorSelectorProps> = ({
         </section>
       )}
     </div>
-  )
-}
+  );
+};

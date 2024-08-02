@@ -5,12 +5,7 @@ import { NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 import { resizableMediaActions } from './resizable-media-menu-util';
 import cn from 'classnames';
 import { useEditingContext } from '../../hooks/use-editing-context';
-import {
-  AlignLeft,
-  AlignCenter,
-  AlignRight,
-  Trash2
-} from 'lucide-react';
+import ToolbarButton from '../../common/toolbar-button';
 
 let lastClientX: number;
 interface WidthAndHeight {
@@ -85,7 +80,7 @@ export const ResizableMediaNodeView = ({
         // Aspect Ratio from its original size
         setAspectRatio(
           (resizableImgRef.current as HTMLImageElement).naturalWidth /
-          (resizableImgRef.current as HTMLImageElement).naturalHeight
+            (resizableImgRef.current as HTMLImageElement).naturalHeight,
         );
       };
     }
@@ -138,7 +133,7 @@ export const ResizableMediaNodeView = ({
 
   const onHorizontalResize = (
     directionOfMouseMove: 'right' | 'left',
-    diff: number
+    diff: number,
   ) => {
     if (!resizableImgRef.current) {
       console.error('Media ref is undefined|null', {
@@ -185,8 +180,12 @@ export const ResizableMediaNodeView = ({
     }
 
     // Fallback for NaN dimensions
-    newMediaDimensions.width = isNaN(newMediaDimensions.width) ? 0 : newMediaDimensions.width;
-    newMediaDimensions.height = isNaN(newMediaDimensions.height) ? 0 : newMediaDimensions.height;
+    newMediaDimensions.width = isNaN(newMediaDimensions.width)
+      ? 0
+      : newMediaDimensions.width;
+    newMediaDimensions.height = isNaN(newMediaDimensions.height)
+      ? 0
+      : newMediaDimensions.height;
 
     if (limitWidthOrHeight(newMediaDimensions)) return;
 
@@ -219,28 +218,13 @@ export const ResizableMediaNodeView = ({
     setIsAlign(node.attrs.dataAlign);
   }, [node.attrs]);
 
-  const renderIcon = (icon: string) => {
-    switch (icon) {
-      case 'AlignLeft':
-        return <AlignLeft size={16} />;
-      case 'AlignCenter':
-        return <AlignCenter size={16} />;
-      case 'AlignRight':
-        return <AlignRight size={16} />;
-      case 'Trash2':
-        return <Trash2 size={16} />;
-      default:
-        return null;
-    }
-  };
-
   return (
     <NodeViewWrapper
       as="article"
       className={cn(
         'media-node-view not-prose transition-all ease-in-out w-full',
         isFloat && `f-${node.attrs.dataFloat}`,
-        isAlign && `justify-${node.attrs.dataAlign}`
+        isAlign && `justify-${node.attrs.dataAlign}`,
       )}
     >
       <div className="w-fit flex relative group transition-all ease-in-out">
@@ -272,7 +256,7 @@ export const ResizableMediaNodeView = ({
             ref={resizableImgRef as LegacyRef<HTMLIFrameElement>}
             className={cn(
               'rounded-lg max-w-full',
-              isMouseDown && 'pointer-events-none'
+              isMouseDown && 'pointer-events-none',
             )}
             src={node.attrs.src}
             width={node.attrs.width}
@@ -292,25 +276,20 @@ export const ResizableMediaNodeView = ({
               onTouchEnd={stopHorizontalResize}
             />
 
-            <section className="media-control-buttons opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex">
+            <section className="media-control-buttons opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
               {resizableMediaActions.map((btn, index) => {
                 return (
-                  <div key={index} className="tooltip" data-tip={btn.tooltip}>
-                    <button
-                      type="button"
-                      className={cn(
-                        'btn rounded-none h-6 transition',
-                        mediaActionActiveState[btn.tooltip] && 'active'
-                      )}
-                      onClick={() =>
-                        btn.tooltip === 'Delete'
-                          ? deleteNode()
-                          : btn.action?.(updateAttributes)
-                      }
-                    >
-                      {btn.icon && renderIcon(btn.icon)}
-                    </button>
-                  </div>
+                  <ToolbarButton
+                    key={index}
+                    tooltip={btn.tooltip}
+                    isActive={mediaActionActiveState[btn.tooltip]}
+                    onClick={() =>
+                      btn.tooltip === 'Delete'
+                        ? deleteNode()
+                        : btn.action?.(updateAttributes)
+                    }
+                    icon={btn.icon as string}
+                  />
                 );
               })}
             </section>
