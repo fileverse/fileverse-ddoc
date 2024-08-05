@@ -52,8 +52,6 @@ const DdocEditor = forwardRef(
   ) => {
     const [isNavbarVisible, setIsNavbarVisible] = useState(true);
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-    const [isTyping, setIsTyping] = useState(false);
-    const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const btn_ref = useRef(null);
     const isMobile = useMediaQuery('(max-width: 640px)');
     const isNativeMobile =
@@ -91,37 +89,6 @@ const DdocEditor = forwardRef(
       }),
       [editor, ydoc],
     );
-
-    useEffect(() => {
-      if (!editor) return;
-
-      const isCharacterKey = (event: KeyboardEvent) => {
-        const { key } = event;
-        return key.length === 1;
-      };
-
-      const handleKeyDown = (event: KeyboardEvent) => {
-        if (isCharacterKey(event) && isNativeMobile) {
-          if (typingTimeoutRef.current) {
-            clearTimeout(typingTimeoutRef.current);
-          }
-          setIsTyping(true);
-          typingTimeoutRef.current = setTimeout(() => {
-            setIsTyping(false);
-          }, 500);
-        }
-      };
-
-      const editorElement = editor.view.dom;
-      editorElement.addEventListener('keydown', handleKeyDown);
-
-      return () => {
-        editorElement.removeEventListener('keydown', handleKeyDown);
-        if (typingTimeoutRef.current) {
-          clearTimeout(typingTimeoutRef.current);
-        }
-      };
-    }, [editor, isNativeMobile]);
 
     useEffect(() => {
       if (!editor) return;
@@ -198,7 +165,7 @@ const DdocEditor = forwardRef(
         {isNavbarVisible && (
           <nav
             id="Navbar"
-            className="h-14 bg-[#ffffff] py-2 px-6 flex gap-[40px] items-center justify-between w-full sticky left-0 top-0 border-b color-border-default"
+            className="h-14 bg-[#ffffff] py-2 px-3 xl:px-6 flex gap-[40px] items-center justify-between w-full sticky left-0 top-0 border-b color-border-default"
           >
             {renderNavbar?.({ editor: editor.getJSON() })}
           </nav>
@@ -222,10 +189,10 @@ const DdocEditor = forwardRef(
           )}
         </div>
         <div
-          className="p-4 sm:px-[88px] mt-6 sm:py-[78px] bg-white w-full sm:w-[70%] max-w-[856px] mx-auto"
+          className="p-4 sm:px-[88px] xl:mt-6 mt-12 sm:py-[78px] bg-white w-full sm:w-[70%] max-w-[856px] mx-auto"
           style={{
             height:
-              isNativeMobile && !isPreviewMode ? 'calc(100vh - 8rem)' : '100vh',
+              isNativeMobile && !isPreviewMode ? 'calc(100vh - 4rem)' : '100vh',
           }}
         >
           <div
@@ -263,21 +230,24 @@ const DdocEditor = forwardRef(
         </div>
         {!isPreviewMode && (
           <AnimatePresence>
-            {!isTyping && !disableBottomToolbar && (
+            {!disableBottomToolbar && (
               <motion.div
                 initial={{ y: 50, opacity: 0 }}
                 animate={{ y: 0, opacity: 1 }}
                 exit={{ y: 50, opacity: 0 }}
                 transition={{ duration: 0.2 }}
                 className={cn(
-                  'flex xl:hidden items-center w-full h-16 fixed left-0 bottom-0 z-10 px-4 bg-[#f8f9fa] transition-all duration-300 ease-in-out',
+                  'flex xl:hidden items-center w-full h-[52px] fixed left-0 z-10 px-4 bg-[#ffffff] transition-all duration-300 ease-in-out border-b border-color-default',
                   isKeyboardVisible && 'hidden',
+                  { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
                 )}
               >
                 <BottomToolbar
                   onError={onError}
                   editor={editor}
                   isKeyboardVisible={isKeyboardVisible}
+                  isNavbarVisible={isNavbarVisible}
+                  setIsNavbarVisible={setIsNavbarVisible}
                 />
               </motion.div>
             )}

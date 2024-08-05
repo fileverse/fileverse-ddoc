@@ -3,6 +3,7 @@ import DdocEditor from './packages/ddoc/ddoc-editor';
 import { JSONContent } from '@tiptap/react';
 import { Button, Tag, IconButton } from '@fileverse/ui';
 import farcasterLogo from './assets/social_farcaster.svg';
+import { BadgeCheck } from 'lucide-react';
 
 function App() {
   const [enableCollaboration, setEnableCollaboration] = useState(false);
@@ -27,7 +28,7 @@ function App() {
         <div className="flex items-center gap-[12px]">
           <IconButton variant={'ghost'} icon="Menu" />
 
-          <div className="relative truncate inline-block !max-w-[300px] md:max-w-full bg-[#ffffff] text-[14px] font-medium leading-[20px]">
+          <div className="relative truncate inline-block xl:!max-w-[300px] !max-w-[108px] bg-[#ffffff] text-[14px] font-medium leading-[20px]">
             <span className="invisible whitespace-pre">
               {title || 'Untitled'}
             </span>
@@ -41,25 +42,33 @@ function App() {
           </div>
           <Tag
             icon="CloudUpload"
-            className="h-6 rounded !border-[0.5px] !border-[#E8EBEC] color-text-secondary text-[12px] font-normal"
+            className="h-6 rounded !border-[0.5px] !border-[#E8EBEC] color-text-secondary text-[12px] font-normal hidden xl:flex"
           >
             Saved in local storage
           </Tag>
+          <div className="w-6 h-6 rounded color-bg-secondary flex justify-center items-center border color-border-default xl:hidden">
+            <BadgeCheck size={16} color="#77818A" />
+          </div>
         </div>
         <div className="flex gap-2">
           <IconButton variant={'ghost'} icon="MessageSquareText" />
+          <IconButton
+            variant={'ghost'}
+            icon="Share2"
+            className="flex xl:hidden"
+          />
           <Button
             onClick={publishDoc}
             toggleLeftIcon={true}
             leftIcon="Share2"
             variant={'ghost'}
-            className="!min-w-[90px] !px-0"
+            className="!min-w-[90px] !px-0 hidden xl:flex"
           >
             Share
           </Button>
           <div className="flex gap-2 px-2 justify-center items-center">
             <img src={farcasterLogo} alt="farcaster" />
-            <div className="flex flex-col">
+            <div className="flex-col hidden xl:flex">
               <p className="text-heading-xsm">@[username]</p>
               <p className="text-helper-text-sm">Farcaster</p>
             </div>

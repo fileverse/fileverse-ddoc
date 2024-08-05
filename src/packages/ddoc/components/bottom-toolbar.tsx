@@ -5,7 +5,7 @@ import { Editor } from '@tiptap/react';
 import { IEditorTool } from '../hooks/use-visibility';
 import { Drawer, DrawerTrigger } from '../common/drawer';
 import DynamicModal from './dynamic-modal';
-import { TextField } from '@fileverse/ui';
+import { LucideIcon, TextField } from '@fileverse/ui';
 import cn from 'classnames';
 import { useMediaQuery } from 'usehooks-ts';
 
@@ -13,10 +13,14 @@ const BottomToolbar = ({
   editor,
   onError,
   isKeyboardVisible,
+  isNavbarVisible,
+  setIsNavbarVisible,
 }: {
   editor: Editor;
   onError?: (errorString: string) => void;
   isKeyboardVisible: boolean;
+  isNavbarVisible: boolean;
+  setIsNavbarVisible: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   const { toolVisibilty, setToolVisibility, bottomToolbar } = useEditorToolbar({
     editor: editor,
@@ -206,8 +210,8 @@ const BottomToolbar = ({
 
   return (
     <Drawer>
-      <div className="flex w-full justify-between sm:justify-evenly select-none">
-        {bottomToolbar.map((tool) => {
+      <div className="flex w-full justify-between sm:justify-evenly items-center select-none">
+        {bottomToolbar.map((tool, _index) => {
           if (tool) {
             return (
               <div key={tool.title} className="flex items-center">
@@ -216,18 +220,30 @@ const BottomToolbar = ({
                     <button
                       ref={textFormattingButtonRef}
                       onClick={() => tool.onClick()}
+                      className={cn(
+                        'h-9 w-9 flex justify-center items-center rounded',
+                        {
+                          '!bg-yellow-300 hover:!brightness-90': tool.isActive,
+                          '': !tool.isActive,
+                        },
+                      )}
                     >
                       {tool.icon}
                     </button>
                   </DrawerTrigger>
                 ) : tool.title === 'Text color' ? (
                   <DrawerTrigger asChild>
-                    <button onClick={() => tool.onClick()}>{tool.icon}</button>
+                    <button
+                      className="h-9 w-9 flex justify-center items-center rounded"
+                      onClick={() => tool.onClick()}
+                    >
+                      {tool.icon}
+                    </button>
                   </DrawerTrigger>
                 ) : (
                   <button
                     className={cn(
-                      'flex items-center rounded px-2 py-1 transition',
+                      'flex items-center rounded h-9 w-9 justify-center transition',
                       {
                         'text-black': tool.isActive,
                         'text-[#A1AAB1]': !tool.isActive,
@@ -241,8 +257,20 @@ const BottomToolbar = ({
                 )}
               </div>
             );
+          } else {
+            return (
+              <div key={_index} className="w-[2px] h-4 bg-gray-200 mx-2"></div>
+            );
           }
         })}
+        <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
+        <div className="w-9 h-9 flex justify-center items-center">
+          <LucideIcon
+            size={'md'}
+            name={isNavbarVisible ? 'ChevronUp' : 'ChevronDown'}
+            onClick={() => setIsNavbarVisible((prev) => !prev)}
+          />
+        </div>
       </div>
       {toolVisibilty === IEditorTool.TEXT_FORMATING && (
         <TextFormatingPopup

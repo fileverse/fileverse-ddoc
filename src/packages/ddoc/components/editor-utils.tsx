@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-useless-escape */
-import React, { Dispatch, SetStateAction, useState } from 'react';
+import React, { Dispatch, SetStateAction, useRef, useState } from 'react';
 import { IEditorTool, useEditorToolVisiibility } from '../hooks/use-visibility';
 import { Editor } from '@tiptap/react';
 import {
@@ -40,6 +40,7 @@ import {
   CarouselItem,
 } from '../common/carousel';
 import { Button, TextField, Tooltip } from '@fileverse/ui';
+import { useOnClickOutside } from 'usehooks-ts';
 
 interface IEditorToolElement {
   icon: any;
@@ -357,13 +358,31 @@ export const useEditorToolbar = ({
 
   const bottomToolbar: Array<IEditorToolElement | null> = [
     {
-      icon: <Type size={24} />,
+      icon: <Undo size={20} />,
+      title: 'Undo',
+      onClick: () => {
+        editor?.chain().undo().run();
+      },
+      isActive: editor?.can().undo(),
+    },
+    {
+      icon: <Redo size={20} />,
+      title: 'Redo',
+      onClick: () => {
+        editor?.chain().redo().run();
+      },
+      isActive: editor?.can().redo(),
+    },
+    null,
+    {
+      icon: <Type size={20} />,
       title: 'Text formating',
       onClick: () => setToolVisibility(IEditorTool.TEXT_FORMATING),
       isActive: toolVisibilty === IEditorTool.TEXT_FORMATING,
     },
+    null,
     {
-      icon: <Table size={24} />,
+      icon: <Table size={20} />,
       title: 'Add table',
       onClick: () =>
         editor
@@ -373,8 +392,9 @@ export const useEditorToolbar = ({
           .run(),
       isActive: true,
     },
+    null,
     {
-      icon: <ListChecks size={24} />,
+      icon: <ListChecks size={20} />,
       title: 'To-do list',
       onClick: () => {
         editor?.chain().focus().toggleTaskList().run();
@@ -382,8 +402,9 @@ export const useEditorToolbar = ({
       },
       isActive: true,
     },
+    null,
     {
-      icon: <ImagePlus size={24} />,
+      icon: <ImagePlus size={20} />,
       title: 'Add image',
       onClick: () => {
         editor?.chain().focus().deleteRange(editor.state.selection).run();
@@ -408,22 +429,6 @@ export const useEditorToolbar = ({
         input.click();
       },
       isActive: true,
-    },
-    {
-      icon: <Undo size={24} />,
-      title: 'Undo',
-      onClick: () => {
-        editor?.chain().undo().run();
-      },
-      isActive: editor?.can().undo(),
-    },
-    {
-      icon: <Redo size={24} />,
-      title: 'Redo',
-      onClick: () => {
-        editor?.chain().redo().run();
-      },
-      isActive: editor?.can().redo(),
     },
   ];
   return {
@@ -916,6 +921,7 @@ export const TextFormatingPopup = ({
   editor: Editor;
   setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
 }) => {
+  const popupRef = useRef(null);
   const headings = [
     {
       title: 'Text',
@@ -957,11 +963,13 @@ export const TextFormatingPopup = ({
     },
   ];
 
+  useOnClickOutside(popupRef, () => setToolVisibility(IEditorTool.NONE));
+
   return (
     <UtilsModal
       title="Text formating"
       content={
-        <div className="px-4 flex flex-col gap-2 w-full">
+        <div ref={popupRef} className="px-4 flex flex-col gap-2 w-full">
           <div className="flex justify-start sm:justify-center items-center gap-1">
             {headings.map((heading) => (
               <button
