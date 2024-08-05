@@ -39,6 +39,7 @@ export const useDdocEditor = ({
   onError,
   setCharacterCount,
   setWordCount,
+  collaborationkey,
 }: Partial<DdocProps>) => {
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions as AnyExtension[]),
@@ -117,14 +118,13 @@ export const useDdocEditor = ({
   ) => {
     handleCommentInteraction(view, event);
   };
-  const roomKey = '40eqqsENayNby-at6w6UDA';
   const {
     machine,
     connect: connectMachine,
     ydoc,
   } = useSyncMachine({
     roomId: collaborationId,
-    roomKey,
+    roomKey: collaborationkey,
   });
   const context = (machine[0] as any).context as SyncMachineContext;
 

@@ -35,8 +35,9 @@ export interface DdocProps {
   showCommentButton?: boolean;
   disableBottomToolbar?: boolean;
   onError?: (error: string) => void;
-  setCharacterCount?: React.Dispatch<SetStateAction<number>>
-  setWordCount?: React.Dispatch<SetStateAction<number>>
+  setCharacterCount?: React.Dispatch<SetStateAction<number>>;
+  setWordCount?: React.Dispatch<SetStateAction<number>>;
+  collaborationkey: string;
 }
 
 export interface IEditorSelectionData {

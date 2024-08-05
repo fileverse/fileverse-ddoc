@@ -48,6 +48,7 @@ const DdocEditor = forwardRef(
       onError,
       setCharacterCount,
       setWordCount,
+      collaborationkey,
     }: DdocProps,
     ref,
   ) => {
@@ -81,6 +82,7 @@ const DdocEditor = forwardRef(
       onError,
       setCharacterCount,
       setWordCount,
+      collaborationkey,
     });
 
     useImperativeHandle(
