@@ -1,4 +1,5 @@
 import path from 'path';
+import fs from 'fs';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import dts from 'vite-plugin-dts';
@@ -14,7 +15,7 @@ export default defineConfig({
       entry: path.resolve(__dirname, 'src/index.ts'),
       //A function that generates the output file
       //name for different formats during the build
-      fileName: format => `index.${format}.js`,
+      fileName: (format) => `index.${format}.js`,
     },
     rollupOptions: {
       external: ['react', 'react-dom'],
@@ -34,8 +35,21 @@ export default defineConfig({
   //react() enables React support.
   //dts() generates TypeScript declaration files (*.d.ts)
   //during the build.
-  plugins: [react(), dts()],
-  define: {
-    'process:env.NODE_ENV': JSON.stringify('production'),
-  },
+  plugins: [
+    react(),
+    dts(),
+    {
+      name: 'emit-index',
+      generateBundle() {
+        this.emitFile({
+          type: 'asset',
+          fileName: 'index.html',
+          source: fs.readFileSync(
+            path.resolve(__dirname, 'index.html'),
+            'utf-8',
+          ),
+        });
+      },
+    },
+  ],
 });
