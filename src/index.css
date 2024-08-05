@@ -1,4 +1,4 @@
-@import '@fileverse/ui/dist/index.css';
+@import '@fileverse/ui/styles';
 
 @tailwind base;
 @tailwind components;

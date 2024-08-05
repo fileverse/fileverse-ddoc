@@ -8,7 +8,7 @@ import {
   DialogTitle,
 } from '../common/dialog';
 import cn from 'classnames';
-import { Button } from '@fileverse/ui/dist/index.es';
+import { Button } from '@fileverse/ui';
 
 interface DynamicModalProps {
   title: string;

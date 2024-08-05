@@ -6,7 +6,7 @@ import './styles.scss';
 import { useEditingContext } from '../../../hooks/use-editing-context';
 import cn from 'classnames';
 import { GripHorizontal } from 'lucide-react';
-import { Button } from '@fileverse/ui/dist/index.es';
+import { Button } from '@fileverse/ui';
 
 interface CellButton {
   name: string;

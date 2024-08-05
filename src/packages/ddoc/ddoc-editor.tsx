@@ -18,7 +18,7 @@ import {
 } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import cn from 'classnames';
-import { Button } from '@fileverse/ui/dist/index.es';
+import { Button } from '@fileverse/ui';
 import { MessageSquareText } from 'lucide-react';
 import { useMediaQuery } from 'usehooks-ts';
 

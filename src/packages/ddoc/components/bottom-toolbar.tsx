@@ -5,7 +5,7 @@ import { Editor } from '@tiptap/react';
 import { IEditorTool } from '../hooks/use-visibility';
 import { Drawer, DrawerTrigger } from '../common/drawer';
 import DynamicModal from './dynamic-modal';
-import { TextField } from '@fileverse/ui/dist/index.es';
+import { TextField } from '@fileverse/ui';
 import cn from 'classnames';
 import { useMediaQuery } from 'usehooks-ts';
 

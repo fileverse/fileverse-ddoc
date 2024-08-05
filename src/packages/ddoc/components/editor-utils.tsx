@@ -39,7 +39,7 @@ import {
   CarouselIndicator,
   CarouselItem,
 } from '../common/carousel';
-import { Button, TextField, Tooltip } from '@fileverse/ui/dist/index.es';
+import { Button, TextField, Tooltip } from '@fileverse/ui';
 
 interface IEditorToolElement {
   icon: any;

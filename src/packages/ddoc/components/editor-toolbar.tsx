@@ -12,12 +12,7 @@ import {
 import { Editor } from '@tiptap/react';
 import { IEditorTool } from '../hooks/use-visibility';
 import { ChevronDown } from 'lucide-react';
-import {
-  Tooltip,
-  Divider,
-  LucideIcon,
-  IconButton,
-} from '@fileverse/ui/dist/index.es';
+import { Tooltip, Divider, LucideIcon, IconButton } from '@fileverse/ui';
 import ToolbarButton from '../common/toolbar-button';
 
 const TiptapToolBar = ({

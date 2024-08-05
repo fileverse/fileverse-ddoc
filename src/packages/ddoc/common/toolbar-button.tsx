@@ -1,4 +1,4 @@
-import { IconButton, Tooltip } from '@fileverse/ui/dist/index.es';
+import { IconButton, Tooltip } from '@fileverse/ui';
 
 export default function ToolbarButton({
   icon,
