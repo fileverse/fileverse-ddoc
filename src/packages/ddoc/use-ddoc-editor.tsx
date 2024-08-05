@@ -172,20 +172,7 @@ export const useDdocEditor = ({
     if (!enableCollaboration || !collaborationId) {
       throw new Error('docId or username is not provided');
     }
-
-    // const provider = new WebrtcProvider(collaborationId, ydoc, {
-    //   signaling: [
-    //     'wss://fileverse-signaling-server-0529292ff51c.herokuapp.com/',
-    //   ],
-    // });
     connectMachine(username as string, collaborationId);
-
-    // collaborationCleanupRef.current = () => {
-    //   provider.destroy();
-    //   ydoc.destroy();
-    // };
-
-    // return collaborationCleanupRef.current;
   };
 
   const ref = useRef<HTMLDivElement>(null);
