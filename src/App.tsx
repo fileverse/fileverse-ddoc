@@ -59,7 +59,7 @@ function App() {
           type="text"
           placeholder="Untitled"
           value={title}
-          onChange={(e) => setTitle(e.target.value)}
+          onChange={e => setTitle(e.target.value)}
         />
       </div>
     );
@@ -72,10 +72,11 @@ function App() {
         collaborationId={collaborationId}
         username={username}
         isPreviewMode={isPreviewMode}
-        onError={(error) => console.log(error)}
+        onError={error => console.log(error)}
         renderToolRightSection={renderRightSection}
         renderToolLeftSection={renderLeftSection}
         ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}
+        collaborationkey=""
       />
     </div>
   );

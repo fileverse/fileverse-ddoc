@@ -47,7 +47,8 @@ const DdocEditor = forwardRef(
       disableBottomToolbar,
       onError,
       setCharacterCount,
-      setWordCount
+      setWordCount,
+      collaborationkey,
     }: DdocProps,
     ref,
   ) => {
@@ -56,7 +57,11 @@ const DdocEditor = forwardRef(
     const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const btn_ref = useRef(null);
     const isMobile = useMediaQuery('(max-width: 640px)');
-    const isNativeMobile = checkOs() === 'iOS' || checkOs() === 'Android' || checkOs() === 'Windows Phone' || isMobile;
+    const isNativeMobile =
+      checkOs() === 'iOS' ||
+      checkOs() === 'Android' ||
+      checkOs() === 'Windows Phone' ||
+      isMobile;
 
     const {
       editor,
@@ -77,6 +82,7 @@ const DdocEditor = forwardRef(
       onError,
       setCharacterCount,
       setWordCount,
+      collaborationkey,
     });
 
     useImperativeHandle(
@@ -190,7 +196,10 @@ const DdocEditor = forwardRef(
     }
 
     return (
-      <div data-cy="single-webpage" className="bg-[#f8f9fa] h-full w-full">
+      <div
+        data-cy="single-webpage"
+        className="bg-[#f8f9fa] h-full w-full"
+      >
         <div
           id="toolbar"
           className="flex items-center w-full h-16 sticky left-0 top-0 z-10 px-4 bg-[#f8f9fa]"
@@ -211,20 +220,24 @@ const DdocEditor = forwardRef(
             {renderToolRightSection?.({ editor: editor.getJSON() })}
           </div>
         </div>
-        <div className="p-4 sm:px-[88px] sm:py-[78px] bg-white w-full sm:w-[70%] max-w-[856px] mx-auto"
+        <div
+          className="p-4 sm:px-[88px] sm:py-[78px] bg-white w-full sm:w-[70%] max-w-[856px] mx-auto"
           style={{
-            height: isNativeMobile && !isPreviewMode ? 'calc(100vh - 8rem)' : '100vh',
+            height:
+              isNativeMobile && !isPreviewMode ? 'calc(100vh - 8rem)' : '100vh',
           }}
         >
           <div
             ref={editorRef}
             className="w-full h-full overflow-y-scroll overflow-x-hidden no-scrollbar"
           >
-
             {!isPreviewMode && (
               <div>
                 <EditorBubbleMenu editor={editor} />
-                <ColumnsMenu editor={editor} appendTo={editorRef} />
+                <ColumnsMenu
+                  editor={editor}
+                  appendTo={editorRef}
+                />
               </div>
             )}
             <EditingProvider isPreviewMode={isPreviewMode}>
@@ -234,7 +247,6 @@ const DdocEditor = forwardRef(
                 className="w-full h-full py-4"
               />
             </EditingProvider>
-
           </div>
           {showCommentButton && !isNativeMobile && (
             <Button
