@@ -10,10 +10,7 @@ import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from './components/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
-import {
-  SyncMachineContext,
-  useSyncMachine,
-} from '@fileverse-dev/fileverse-sync';
+import { SyncMachineContext, useSyncMachine } from '@fileverse-dev/sync';
 import { CollaborationCursor } from './utils/CollaborationCursor';
 
 const usercolors = [
@@ -120,13 +117,14 @@ export const useDdocEditor = ({
   ) => {
     handleCommentInteraction(view, event);
   };
-
+  const roomKey = '40eqqsENayNby-at6w6UDA';
   const {
     machine,
     connect: connectMachine,
     ydoc,
   } = useSyncMachine({
     roomId: collaborationId,
+    roomKey,
   });
   const context = (machine[0] as any).context as SyncMachineContext;
 
