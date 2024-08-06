@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { IconButton, Tooltip } from '@fileverse/ui';
 
 export default function ToolbarButton({
@@ -21,6 +22,7 @@ export default function ToolbarButton({
     return (
       <Tooltip text={tooltip}>
         <IconButton
+          // @ts-ignore
           ref={ref}
           variant="ghost"
           size="md"
@@ -35,6 +37,7 @@ export default function ToolbarButton({
 
   return (
     <IconButton
+      // @ts-ignore
       ref={ref}
       variant="ghost"
       size="md"
