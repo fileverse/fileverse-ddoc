@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import DdocEditor from './packages/ddoc/ddoc-editor';
+import DdocEditor from '../../package/ddoc-editor';
 import { JSONContent } from '@tiptap/react';
 import { Button, Tag, IconButton } from '@fileverse/ui';
 import farcasterLogo from './assets/social_farcaster.svg';

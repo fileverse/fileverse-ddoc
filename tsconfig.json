@@ -18,9 +18,14 @@
     /* The "typeRoots" configuration specifies the locations where 
        TypeScript looks for type definitions (.d.ts files) to 
        include in the compilation process.*/
-    "typeRoots": ["./dist/index.d.ts","./dist/packages/ddoc/types.d.ts", "node_modules/@types"]
+    "typeRoots": [
+      "./dist/index.d.ts",
+      "./dist/package/types.d.ts",
+      "node_modules/@types"
+    ]
   },
   /* include /index.ts*/
-  "include": ["src", "./index.ts"],
+  "include": ["./index.ts", "package/**/*", "demo/src/vite-env.d.ts"],
+  "exclude": ["demo", "public"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
