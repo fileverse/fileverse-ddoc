@@ -175,7 +175,7 @@ const DdocEditor = forwardRef(
           <div
             id="toolbar"
             className={cn(
-              'hidden xl:flex items-center justify-center w-full h-[52px] sticky left-0 px-4 bg-[#ffffff]',
+              'z-50 hidden xl:flex items-center justify-center w-full h-[52px] sticky left-0 px-4 bg-[#ffffff]',
               { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
             )}
           >

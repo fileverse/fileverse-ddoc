@@ -1,8 +1,7 @@
 import { useEffect, useState } from 'react';
 import DdocEditor from '../../package/ddoc-editor';
 import { JSONContent } from '@tiptap/react';
-import { Button, Tag, IconButton } from '@fileverse/ui';
-import farcasterLogo from './assets/social_farcaster.svg';
+import { Button, Tag, IconButton, LucideIcon } from '@fileverse/ui';
 import { BadgeCheck } from 'lucide-react';
 
 function App() {
@@ -41,8 +40,8 @@ function App() {
             />
           </div>
           <Tag
-            icon="CloudUpload"
-            className="h-6 rounded !border-[0.5px] !border-[#E8EBEC] color-text-secondary text-[12px] font-normal hidden xl:flex"
+            icon="BadgeCheck"
+            className="h-6 rounded !border !color-border-default color-text-secondary text-[12px] font-normal hidden xl:flex"
           >
             Saved in local storage
           </Tag>
@@ -68,7 +67,7 @@ function App() {
             Share
           </Button>
           <div className="flex gap-2 px-2 justify-center items-center">
-            <img src={farcasterLogo} alt="farcaster" />
+            <LucideIcon name="Farcaster" />
             <div className="flex-col hidden xl:flex">
               <p className="text-heading-xsm">@[username]</p>
               <p className="text-helper-text-sm">Farcaster</p>
