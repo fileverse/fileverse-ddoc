@@ -43,6 +43,7 @@ const TiptapToolBar = ({
                     variant={'ghost'}
                     icon={tool.icon}
                     onClick={() => tool.onClick()}
+                    size="md"
                   />
                 </Tooltip>
               );

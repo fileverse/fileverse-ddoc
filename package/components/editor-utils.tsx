@@ -12,7 +12,6 @@ import {
   AlignRight,
   Bold,
   Code,
-  ImagePlus,
   Italic,
   Link,
   List,
@@ -25,14 +24,10 @@ import {
   Heading1,
   Heading2,
   Heading3,
-  Table,
-  Undo,
-  Redo,
 } from 'lucide-react';
 import { startImageUpload } from '../utils/upload-images';
 import cn from 'classnames';
 import UtilsModal from './utils-modal';
-import { DialogTrigger } from '../common/dialog';
 import {
   Carousel,
   CarouselContent,
@@ -358,7 +353,7 @@ export const useEditorToolbar = ({
 
   const bottomToolbar: Array<IEditorToolElement | null> = [
     {
-      icon: <Undo size={20} />,
+      icon: 'Undo',
       title: 'Undo',
       onClick: () => {
         editor?.chain().undo().run();
@@ -366,7 +361,7 @@ export const useEditorToolbar = ({
       isActive: editor?.can().undo(),
     },
     {
-      icon: <Redo size={20} />,
+      icon: 'Redo',
       title: 'Redo',
       onClick: () => {
         editor?.chain().redo().run();
@@ -375,14 +370,14 @@ export const useEditorToolbar = ({
     },
     null,
     {
-      icon: <Type size={20} />,
+      icon: 'Type',
       title: 'Text formating',
       onClick: () => setToolVisibility(IEditorTool.TEXT_FORMATING),
       isActive: toolVisibilty === IEditorTool.TEXT_FORMATING,
     },
     null,
     {
-      icon: <Table size={20} />,
+      icon: 'Table',
       title: 'Add table',
       onClick: () =>
         editor
@@ -390,21 +385,21 @@ export const useEditorToolbar = ({
           .focus()
           .insertTable({ rows: 3, cols: 2, withHeaderRow: true })
           .run(),
-      isActive: true,
+      isActive: false,
     },
     null,
     {
-      icon: <ListChecks size={20} />,
+      icon: 'ListChecks',
       title: 'To-do list',
       onClick: () => {
         editor?.chain().focus().toggleTaskList().run();
         setToolVisibility(IEditorTool.NONE);
       },
-      isActive: true,
+      isActive: false,
     },
     null,
     {
-      icon: <ImagePlus size={20} />,
+      icon: 'ImagePlus',
       title: 'Add image',
       onClick: () => {
         editor?.chain().focus().deleteRange(editor.state.selection).run();
@@ -428,7 +423,7 @@ export const useEditorToolbar = ({
         };
         input.click();
       },
-      isActive: true,
+      isActive: false,
     },
   ];
   return {
@@ -1045,21 +1040,19 @@ export const TextFormatingPopup = ({
               </button>
             </div>
             <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
-              <DialogTrigger asChild>
-                <button
-                  onClick={() => setToolVisibility(IEditorTool.LINK_POPUP)}
-                  className={cn(
-                    'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
-                    {
-                      ['bg-yellow-300 hover:brightness-90']:
-                        editor.isActive('link'),
-                      ['hover:bg-[#f2f2f2]']: !editor.isActive('link'),
-                    },
-                  )}
-                >
-                  <Link size={20} />
-                </button>
-              </DialogTrigger>
+              <button
+                onClick={() => setToolVisibility(IEditorTool.LINK_POPUP)}
+                className={cn(
+                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
+                  {
+                    ['bg-yellow-300 hover:brightness-90']:
+                      editor.isActive('link'),
+                    ['hover:bg-[#f2f2f2]']: !editor.isActive('link'),
+                  },
+                )}
+              >
+                <Link size={20} />
+              </button>
               <button
                 onClick={() => {
                   editor?.chain().toggleCodeBlock().run();
