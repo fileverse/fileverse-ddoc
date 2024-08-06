@@ -171,14 +171,14 @@ const DdocEditor = forwardRef(
             {renderNavbar?.({ editor: editor.getJSON() })}
           </nav>
         )}
-        <div
-          id="toolbar"
-          className={cn(
-            'hidden xl:flex items-center justify-center w-full h-[52px] sticky left-0 px-4 bg-[#ffffff]',
-            { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
-          )}
-        >
-          {!isPreviewMode && (
+        {!isPreviewMode && (
+          <div
+            id="toolbar"
+            className={cn(
+              'hidden xl:flex items-center justify-center w-full h-[52px] sticky left-0 px-4 bg-[#ffffff]',
+              { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
+            )}
+          >
             <div className="justify-center items-center grow relative">
               <EditorToolBar
                 onError={onError}
@@ -187,8 +187,8 @@ const DdocEditor = forwardRef(
                 setIsNavbarVisible={setIsNavbarVisible}
               />
             </div>
-          )}
-        </div>
+          </div>
+        )}
         <div
           className="p-4 sm:px-[88px] xl:mt-6 mt-12 sm:py-[78px] bg-white w-full sm:w-[70%] max-w-[856px] mx-auto"
           style={{
