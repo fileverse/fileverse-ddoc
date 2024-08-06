@@ -190,10 +190,11 @@ const DdocEditor = forwardRef(
           </div>
         )}
         <div
-          className="p-4 sm:px-[88px] xl:mt-6 mt-12 sm:py-[78px] bg-white w-full sm:w-[70%] max-w-[856px] mx-auto"
+          className="p-4 md:px-[88px] xl:mt-6 md:py-[78px] bg-white w-full md:w-[70%] max-w-[856px] mx-auto"
           style={{
             height:
               isNativeMobile && !isPreviewMode ? 'calc(100vh - 4rem)' : '100vh',
+            marginTop: isPreviewMode ? '0' : '3rem',
           }}
         >
           <div
