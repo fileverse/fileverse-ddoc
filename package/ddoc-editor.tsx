@@ -175,7 +175,7 @@ const DdocEditor = forwardRef(
           <div
             id="toolbar"
             className={cn(
-              'z-50 hidden xl:flex items-center justify-center w-full h-[52px] sticky left-0 px-4 bg-[#ffffff]',
+              'z-50 hidden xl:flex items-center justify-center w-full h-[52px] sticky left-0 px-1 bg-[#ffffff]',
               { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
             )}
           >
@@ -190,11 +190,13 @@ const DdocEditor = forwardRef(
           </div>
         )}
         <div
-          className="p-4 md:px-[88px] xl:mt-6 md:py-[78px] bg-white w-full md:w-[70%] max-w-[856px] mx-auto"
+          className={cn(
+            'p-4 md:px-[80px] xl:mt-6 md:py-[78px] bg-white w-full md:w-[850px] max-w-[850px] mx-auto',
+            { 'mt-0 xl:!mt-6': isPreviewMode },
+          )}
           style={{
             height:
               isNativeMobile && !isPreviewMode ? 'calc(100vh - 4rem)' : '100vh',
-            marginTop: isPreviewMode ? '0' : '3rem',
           }}
         >
           <div
