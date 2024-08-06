@@ -3,11 +3,15 @@ import { useEffect, useRef, useState } from 'react';
 import { TextFormatingPopup, useEditorToolbar } from './editor-utils';
 import { Editor } from '@tiptap/react';
 import { IEditorTool } from '../hooks/use-visibility';
-import { Drawer, DrawerTrigger } from '../common/drawer';
-import DynamicModal from './dynamic-modal';
-import { LucideIcon, TextField } from '@fileverse/ui';
-import cn from 'classnames';
+import {
+  LucideIcon,
+  TextField,
+  Drawer,
+  DrawerTrigger,
+  DynamicModal,
+} from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
+import ToolbarButton from '../common/toolbar-button';
 
 const BottomToolbar = ({
   editor,
@@ -217,43 +221,27 @@ const BottomToolbar = ({
               <div key={tool.title} className="flex items-center">
                 {tool.title === 'Text formating' ? (
                   <DrawerTrigger asChild>
-                    <button
+                    <ToolbarButton
                       ref={textFormattingButtonRef}
-                      onClick={() => tool.onClick()}
-                      className={cn(
-                        'h-9 w-9 flex justify-center items-center rounded',
-                        {
-                          '!bg-yellow-300 hover:!brightness-90': tool.isActive,
-                          '': !tool.isActive,
-                        },
-                      )}
-                    >
-                      {tool.icon}
-                    </button>
+                      onClick={tool.onClick}
+                      isActive={tool.isActive}
+                      icon={tool.icon}
+                    />
                   </DrawerTrigger>
                 ) : tool.title === 'Text color' ? (
                   <DrawerTrigger asChild>
-                    <button
-                      className="h-9 w-9 flex justify-center items-center rounded"
-                      onClick={() => tool.onClick()}
-                    >
-                      {tool.icon}
-                    </button>
+                    <ToolbarButton
+                      onClick={tool.onClick}
+                      icon={tool.icon}
+                      isActive={false}
+                    />
                   </DrawerTrigger>
                 ) : (
-                  <button
-                    className={cn(
-                      'flex items-center rounded h-9 w-9 justify-center transition',
-                      {
-                        'text-black': tool.isActive,
-                        'text-[#A1AAB1]': !tool.isActive,
-                      },
-                    )}
-                    onClick={() => tool.onClick()}
-                    disabled={!tool.isActive}
-                  >
-                    {tool.icon}
-                  </button>
+                  <ToolbarButton
+                    onClick={tool.onClick}
+                    icon={tool.icon}
+                    isActive={false}
+                  />
                 )}
               </div>
             );
@@ -280,7 +268,7 @@ const BottomToolbar = ({
       )}
       <DynamicModal
         open={toolVisibilty === IEditorTool.LINK_POPUP}
-        onOpenChange={() => setToolVisibility(IEditorTool.NONE)}
+        onOpenChange={(open) => !open && setToolVisibility(IEditorTool.NONE)}
         title="Link"
         content={
           <div className="flex flex-col gap-4 w-full h-full px-4">

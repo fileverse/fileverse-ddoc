@@ -26,7 +26,7 @@ function App() {
     return (
       <>
         <div className="flex items-center gap-[12px]">
-          <IconButton variant={'ghost'} icon="Menu" />
+          <IconButton variant={'ghost'} icon="Menu" size="md" />
 
           <div className="relative truncate inline-block xl:!max-w-[300px] !max-w-[108px] bg-[#ffffff] text-[14px] font-medium leading-[20px]">
             <span className="invisible whitespace-pre">
@@ -51,11 +51,12 @@ function App() {
           </div>
         </div>
         <div className="flex gap-2">
-          <IconButton variant={'ghost'} icon="MessageSquareText" />
+          <IconButton variant={'ghost'} icon="MessageSquareText" size="md" />
           <IconButton
             variant={'ghost'}
             icon="Share2"
             className="flex xl:hidden"
+            size="md"
           />
           <Button
             onClick={publishDoc}

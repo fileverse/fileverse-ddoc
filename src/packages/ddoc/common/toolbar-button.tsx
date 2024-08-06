@@ -1,4 +1,4 @@
-import { cn, IconButton, Tooltip } from '@fileverse/ui';
+import { IconButton, Tooltip } from '@fileverse/ui';
 
 export default function ToolbarButton({
   icon,
@@ -6,39 +6,43 @@ export default function ToolbarButton({
   onClick,
   tooltip,
   classNames,
+  ref,
+  disabled,
 }: {
   icon: string;
   isActive: boolean;
   onClick: () => void;
   tooltip?: string;
   classNames?: string;
+  ref?: React.LegacyRef<HTMLButtonElement> | undefined;
+  disabled?: boolean;
 }) {
   if (tooltip)
     return (
       <Tooltip text={tooltip}>
         <IconButton
+          ref={ref}
           variant="ghost"
           size="md"
           icon={icon}
           onClick={onClick}
-          className={cn(
-            classNames,
-            isActive ? '!bg-yellow-300 hover:!brightness-90 p-2 rounded' : '',
-          )}
+          isActive={isActive}
+          className={classNames}
+          disabled={disabled}
         />
       </Tooltip>
     );
 
   return (
     <IconButton
+      ref={ref}
       variant="ghost"
       size="md"
       icon={icon}
       onClick={onClick}
-      className={cn(
-        classNames,
-        isActive ? '!bg-yellow-300 hover:!brightness-90' : '',
-      )}
+      isActive={isActive}
+      className={classNames}
+      disabled={disabled}
     />
   );
 }
