@@ -9,6 +9,7 @@ import './styles/editor.scss';
 import 'tippy.js/animations/shift-toward-subtle.css';
 import { useDdocEditor } from './use-ddoc-editor';
 import BottomToolbar from './components/bottom-toolbar';
+import './styles/index.css';
 import {
   forwardRef,
   useEffect,

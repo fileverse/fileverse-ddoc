@@ -12,7 +12,7 @@
       "types": "./dist/index.d.ts"
     },
     "./styles": "./dist/style.css",
-    "./types": "./dist/packages/ddoc/types.d.ts"
+    "./types": "./dist/package/types.d.ts"
   },
   "files": [
     "/dist"

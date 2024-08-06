@@ -5,7 +5,7 @@
 import { EditorState, Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet, EditorView } from '@tiptap/pm/view';
 
-import imagePlaceholder from '../../../assets/spinner_GIF.gif';
+import imagePlaceholder from '../assets/spinner_GIF.gif';
 import { MAX_IMAGE_SIZE } from '../components/editor-utils';
 
 const uploadKey = new PluginKey('upload-image');
