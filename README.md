@@ -1,8 +1,8 @@
 # Ddoc Editor
 
-This repo contains example source code and package code
+This repo contains example - demo source code and package code
 
-`/src/packages/ddoc/` contains the package code
+`/package` contains the package code
 
 ## Usage
 
