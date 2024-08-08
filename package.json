@@ -2,13 +2,12 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "2.0.0-alpha",
-  "main": "dist/index.umd.js",
+  "version": "2.0.0-beta",
+  "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
     ".": {
       "import": "./dist/index.es.js",
-      "require": "./dist/index.umd.js",
       "types": "./dist/index.d.ts"
     },
     "./styles": "./dist/style.css",
