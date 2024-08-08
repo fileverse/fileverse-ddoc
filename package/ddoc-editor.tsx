@@ -201,7 +201,7 @@ const DdocEditor = forwardRef(
         >
           <div
             ref={editorRef}
-            className="w-full h-full overflow-y-scroll overflow-x-hidden no-scrollbar"
+            className="w-full h-full overflow-y-scroll overflow-x-hidden no-scrollbar pt-8 md:pt-0"
           >
             {!isPreviewMode && (
               <div>
