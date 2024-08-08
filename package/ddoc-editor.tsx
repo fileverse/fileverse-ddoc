@@ -166,7 +166,7 @@ const DdocEditor = forwardRef(
         {isNavbarVisible && (
           <nav
             id="Navbar"
-            className="h-14 bg-[#ffffff] py-2 px-3 xl:px-6 flex gap-[40px] items-center justify-between w-full sticky left-0 top-0 border-b color-border-default"
+            className="h-14 bg-[#ffffff] py-2 px-3 xl:px-6 flex gap-[40px] items-center justify-between w-screen xl:w-full sticky left-0 top-0 border-b color-border-default"
           >
             {renderNavbar?.({ editor: editor.getJSON() })}
           </nav>
@@ -201,7 +201,7 @@ const DdocEditor = forwardRef(
         >
           <div
             ref={editorRef}
-            className="w-full h-full overflow-y-scroll overflow-x-hidden no-scrollbar"
+            className="w-full h-full overflow-y-scroll overflow-x-hidden no-scrollbar pt-8 md:pt-0"
           >
             {!isPreviewMode && (
               <div>
