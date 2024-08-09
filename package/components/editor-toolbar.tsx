@@ -40,7 +40,7 @@ const TiptapToolBar = ({
               return (
                 <Tooltip key={tool.title} text={tool.title}>
                   <IconButton
-                    className="!bg-transparent"
+                    className="disabled:bg-transparent"
                     variant={'ghost'}
                     icon={tool.icon}
                     onClick={() => tool.onClick()}
@@ -60,7 +60,7 @@ const TiptapToolBar = ({
           })}
         </div>
         <button
-          className="bg-transparent hover:!bg-[#F2F4F5] rounded py-2 px-4 flex items-center justify-center gap-2 w-[90px]"
+          className="bg-transparent hover:!bg-[#F2F4F5] rounded py-2 px-4 flex items-center justify-center gap-2 w-fit"
           onClick={() => setToolVisibility(IEditorTool.FONT_FAMILY)}
         >
           <span className="text-sm">
@@ -72,7 +72,7 @@ const TiptapToolBar = ({
         </button>
         <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
         <button
-          className="bg-transparent hover:!bg-[#F2F4F5] rounded gap-2 py-2 px-4 flex items-center justify-center w-[90px]"
+          className="bg-transparent hover:!bg-[#F2F4F5] rounded gap-2 py-2 px-4 flex items-center justify-center w-fit"
           onClick={() => setToolVisibility(IEditorTool.HEADING)}
         >
           <span className="text-sm">
