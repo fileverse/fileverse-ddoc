@@ -161,7 +161,7 @@ const TiptapToolBar = ({
       </div>
       <div className="flex h-9 gap-[10px]">
         <Divider direction="vertical" />
-        <div className="w-9 h-9 flex justify-center items-center">
+        <div className="w-9 h-9 flex justify-center items-center cursor-pointer">
           <LucideIcon
             size={'md'}
             name={isNavbarVisible ? 'ChevronUp' : 'ChevronDown'}
