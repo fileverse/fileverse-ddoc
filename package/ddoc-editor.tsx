@@ -8,7 +8,6 @@ import EditorToolBar from './components/editor-toolbar';
 import './styles/editor.scss';
 import 'tippy.js/animations/shift-toward-subtle.css';
 import { useDdocEditor } from './use-ddoc-editor';
-import BottomToolbar from './components/bottom-toolbar';
 import './styles/index.css';
 import {
   forwardRef,
@@ -24,6 +23,7 @@ import { MessageSquareText } from 'lucide-react';
 import { useMediaQuery } from 'usehooks-ts';
 
 import platform from 'platform';
+import MobileToolbar from './components/mobile-toolbar';
 
 const checkOs = () => platform.os?.family;
 
@@ -166,7 +166,7 @@ const DdocEditor = forwardRef(
         {isNavbarVisible && (
           <nav
             id="Navbar"
-            className="h-14 bg-[#ffffff] py-2 px-3 xl:px-6 flex gap-[40px] items-center justify-between w-screen xl:w-full sticky left-0 top-0 border-b color-border-default"
+            className="h-14 bg-[#ffffff] py-2 px-3 xl:px-4 flex gap-[40px] items-center justify-between w-screen xl:w-full sticky left-0 top-0 border-b color-border-default"
           >
             {renderNavbar?.({ editor: editor.getJSON() })}
           </nav>
@@ -241,12 +241,12 @@ const DdocEditor = forwardRef(
                 exit={{ y: 50, opacity: 0 }}
                 transition={{ duration: 0.2 }}
                 className={cn(
-                  'flex xl:hidden items-center w-full h-[52px] fixed left-0 z-10 px-4 bg-[#ffffff] transition-all duration-300 ease-in-out border-b border-color-default',
+                  'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-10 px-4 bg-[#ffffff] transition-all duration-300 ease-in-out border-b border-color-default',
                   isKeyboardVisible && 'hidden',
                   { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
                 )}
               >
-                <BottomToolbar
+                <MobileToolbar
                   onError={onError}
                   editor={editor}
                   isKeyboardVisible={isKeyboardVisible}

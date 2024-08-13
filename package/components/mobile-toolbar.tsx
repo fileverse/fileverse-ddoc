@@ -13,7 +13,7 @@ import {
 import { useMediaQuery } from 'usehooks-ts';
 import ToolbarButton from '../common/toolbar-button';
 
-const BottomToolbar = ({
+const MobileToolbar = ({
   editor,
   onError,
   isKeyboardVisible,
@@ -315,4 +315,4 @@ const BottomToolbar = ({
   );
 };
 
-export default BottomToolbar;
+export default MobileToolbar;
