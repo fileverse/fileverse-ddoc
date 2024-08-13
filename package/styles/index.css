@@ -75,3 +75,7 @@ li > ol > li > ol > li:before {
 .tooltip:before {
   z-index: 999;
 }
+
+.node-view-content > div {
+  word-break: break-all;
+}
