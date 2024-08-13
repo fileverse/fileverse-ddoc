@@ -32,7 +32,7 @@ const TiptapToolBar = ({
       onError,
     });
   return (
-    <div className="w-full bg-transparent py-2 px-6 items-center h-9 flex justify-between relative">
+    <div className="w-full bg-transparent py-2 px-4 items-center h-9 flex justify-between relative">
       <div className="flex h-9 items-center gap-2 justify-center">
         <div className="flex gap-2 justify-center items-center">
           {undoRedoTools.map((tool, _index) => {
