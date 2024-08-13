@@ -77,6 +77,5 @@ li > ol > li > ol > li:before {
 }
 
 .node-view-content > div {
-  max-width: 642px;
   word-break: break-all;
 }
