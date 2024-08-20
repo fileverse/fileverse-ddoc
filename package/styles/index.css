@@ -77,5 +77,5 @@ li > ol > li > ol > li:before {
 }
 
 .node-view-content > div {
-  word-break: break-all;
+  word-break: break-word;
 }
