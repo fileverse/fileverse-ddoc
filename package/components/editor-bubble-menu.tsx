@@ -51,7 +51,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     },
     {
       name: 'Alignment',
-      isActive: () => toolVisibilty === IEditorTool.ALIGNMENT,
+      isActive: () => toolVisibility === IEditorTool.ALIGNMENT,
       command: () => setToolVisibility(IEditorTool.ALIGNMENT),
       icon: 'AlignLeft',
     },
@@ -100,7 +100,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const [isColorSelectorOpen, setIsColorSelectorOpen] = useState(false);
   const [isLinkPopupOpen, setIsLinkPopupOpen] = useState(false);
 
-  const { toolRef, setToolVisibility, toolVisibilty } = useEditorToolbar({
+  const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
     editor: props.editor,
   });
   const shouldShow = ({ editor }) => {
@@ -171,9 +171,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       <ToolbarButton
         icon="Highlighter"
         onClick={() => setToolVisibility(IEditorTool.HIGHLIGHT)}
-        isActive={toolVisibilty === IEditorTool.HIGHLIGHT}
+        isActive={toolVisibility === IEditorTool.HIGHLIGHT}
       />
-      {toolVisibilty === IEditorTool.ALIGNMENT && (
+      {toolVisibility === IEditorTool.ALIGNMENT && (
         <EditorAlignment
           setToolVisibility={setToolVisibility}
           editor={props.editor}
@@ -189,7 +189,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           setIsLinkPopupOpen={setIsLinkPopupOpen}
         />
       )}
-      {toolVisibilty === IEditorTool.HIGHLIGHT && (
+      {toolVisibility === IEditorTool.HIGHLIGHT && (
         <TextHighlighter
           setVisibility={setToolVisibility}
           editor={props.editor as Editor}

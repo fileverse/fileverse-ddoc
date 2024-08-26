@@ -26,7 +26,7 @@ const TiptapToolBar = ({
   isNavbarVisible: boolean;
   setIsNavbarVisible: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
-  const { toolRef, toolVisibilty, setToolVisibility, toolbar, undoRedoTools } =
+  const { toolRef, toolVisibility, setToolVisibility, toolbar, undoRedoTools } =
     useEditorToolbar({
       editor: editor,
       onError,
@@ -108,49 +108,49 @@ const TiptapToolBar = ({
               );
             }
           })}
-          {toolVisibilty === IEditorTool.FONT_FAMILY && (
+          {toolVisibility === IEditorTool.FONT_FAMILY && (
             <EditorFontFamily
               setToolVisibility={setToolVisibility}
               editor={editor as Editor}
               elementRef={toolRef}
             />
           )}
-          {toolVisibilty === IEditorTool.HEADING && (
+          {toolVisibility === IEditorTool.HEADING && (
             <TextHeading
               setVisibility={setToolVisibility}
               editor={editor as Editor}
               elementRef={toolRef}
             />
           )}
-          {toolVisibilty === IEditorTool.TEXT_COLOR && (
+          {toolVisibility === IEditorTool.TEXT_COLOR && (
             <TextColor
               setVisibility={setToolVisibility}
               editor={editor as Editor}
               elementRef={toolRef}
             />
           )}
-          {toolVisibilty === IEditorTool.HIGHLIGHT && (
+          {toolVisibility === IEditorTool.HIGHLIGHT && (
             <TextHighlighter
               setVisibility={setToolVisibility}
               editor={editor as Editor}
               elementRef={toolRef}
             />
           )}
-          {toolVisibilty === IEditorTool.ALIGNMENT && (
+          {toolVisibility === IEditorTool.ALIGNMENT && (
             <EditorAlignment
               setToolVisibility={setToolVisibility}
               editor={editor as Editor}
               elementRef={toolRef}
             />
           )}
-          {toolVisibilty === IEditorTool.LIST && (
+          {toolVisibility === IEditorTool.LIST && (
             <EditorList
               setToolVisibility={setToolVisibility}
               editor={editor as Editor}
               elementRef={toolRef}
             />
           )}
-          {toolVisibilty === IEditorTool.LINK && (
+          {toolVisibility === IEditorTool.LINK && (
             <LinkPopup
               setToolVisibility={setToolVisibility}
               editor={editor as Editor}

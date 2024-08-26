@@ -13,7 +13,7 @@ export enum IEditorTool {
   TEXT_COLOR_PICKER,
   LINK_POPUP,
 }
-export default function useComponentVisibilty(initialIsVisible: boolean) {
+export default function useComponentVisibility(initialIsVisible: boolean) {
   const [isComponentVisible, setIsComponentVisible] =
     useState<boolean>(initialIsVisible)
   const ref = useRef<HTMLDivElement>(null)
@@ -34,7 +34,7 @@ export default function useComponentVisibilty(initialIsVisible: boolean) {
   return { ref, isComponentVisible, setIsComponentVisible }
 }
 export function useEditorToolVisiibility(initialIsVisible: IEditorTool) {
-  const [toolVisibilty, setToolVisibility] =
+  const [toolVisibility, setToolVisibility] =
     useState<IEditorTool>(initialIsVisible)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -51,5 +51,5 @@ export function useEditorToolVisiibility(initialIsVisible: IEditorTool) {
     }
   }, [])
 
-  return { ref, toolVisibilty, setToolVisibility }
+  return { ref, toolVisibility, setToolVisibility }
 }
