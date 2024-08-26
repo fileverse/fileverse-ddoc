@@ -197,7 +197,7 @@ export const useEditorToolbar = ({
 }) => {
   const {
     ref: toolRef,
-    toolVisibilty,
+    toolVisibility,
     setToolVisibility,
   } = useEditorToolVisiibility(IEditorTool.NONE);
 
@@ -225,13 +225,13 @@ export const useEditorToolbar = ({
       icon: 'Baseline',
       title: 'Text Color',
       onClick: () => setToolVisibility(IEditorTool.TEXT_COLOR),
-      isActive: toolVisibilty === IEditorTool.TEXT_COLOR,
+      isActive: toolVisibility === IEditorTool.TEXT_COLOR,
     },
     {
       icon: 'Highlighter',
       title: 'Highlight',
       onClick: () => setToolVisibility(IEditorTool.HIGHLIGHT),
-      isActive: toolVisibilty === IEditorTool.HIGHLIGHT,
+      isActive: toolVisibility === IEditorTool.HIGHLIGHT,
     },
     null,
     {
@@ -290,7 +290,7 @@ export const useEditorToolbar = ({
       icon: 'AlignLeft',
       title: 'Alignment',
       onClick: () => setToolVisibility(IEditorTool.ALIGNMENT),
-      isActive: toolVisibilty === IEditorTool.ALIGNMENT,
+      isActive: toolVisibility === IEditorTool.ALIGNMENT,
     },
     {
       icon: 'TextQuote',
@@ -373,7 +373,7 @@ export const useEditorToolbar = ({
       icon: 'Type',
       title: 'Text formating',
       onClick: () => setToolVisibility(IEditorTool.TEXT_FORMATING),
-      isActive: toolVisibilty === IEditorTool.TEXT_FORMATING,
+      isActive: toolVisibility === IEditorTool.TEXT_FORMATING,
     },
     null,
     {
@@ -431,7 +431,7 @@ export const useEditorToolbar = ({
     toolbar,
     bottomToolbar,
     toolRef,
-    toolVisibilty,
+    toolVisibility,
     setToolVisibility,
   };
 };

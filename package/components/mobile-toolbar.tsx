@@ -26,7 +26,7 @@ const MobileToolbar = ({
   isNavbarVisible: boolean;
   setIsNavbarVisible: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
-  const { toolVisibilty, setToolVisibility, bottomToolbar } = useEditorToolbar({
+  const { toolVisibility, setToolVisibility, bottomToolbar } = useEditorToolbar({
     editor: editor,
     onError,
   });
@@ -191,7 +191,7 @@ const MobileToolbar = ({
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'k' && (event.metaKey || event.ctrlKey)) {
         event.preventDefault();
-        if (toolVisibilty !== IEditorTool.LINK_POPUP) {
+        if (toolVisibility !== IEditorTool.LINK_POPUP) {
           setToolVisibility(IEditorTool.LINK_POPUP);
         } else {
           setToolVisibility(IEditorTool.NONE);
@@ -204,7 +204,7 @@ const MobileToolbar = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [editor, toolVisibilty]);
+  }, [editor, toolVisibility]);
 
   useEffect(() => {
     if (isKeyboardVisible) {
@@ -260,14 +260,14 @@ const MobileToolbar = ({
           />
         </div>
       </div>
-      {toolVisibilty === IEditorTool.TEXT_FORMATING && (
+      {toolVisibility === IEditorTool.TEXT_FORMATING && (
         <TextFormatingPopup
           editor={editor}
           setToolVisibility={setToolVisibility}
         />
       )}
       <DynamicModal
-        open={toolVisibilty === IEditorTool.LINK_POPUP}
+        open={toolVisibility === IEditorTool.LINK_POPUP}
         onOpenChange={(open) => !open && setToolVisibility(IEditorTool.NONE)}
         title="Link"
         content={
