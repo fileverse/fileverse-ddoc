@@ -12,8 +12,12 @@ import TurndownService from 'turndown';
 const markdownIt = new MarkdownIt().use(markdownItFootnote);
 
 // Initialize TurndownService for converting HTML to Markdown
-const turndownService = new TurndownService();
+const turndownService = new TurndownService({
+  codeBlockStyle: 'fenced',
+  headingStyle: 'atx',
+});
 
+// Custom rules for iframe
 turndownService.addRule('iframe', {
   filter: ['iframe'],
   replacement: function (_content, node) {
@@ -22,13 +26,12 @@ turndownService.addRule('iframe', {
   },
 });
 
-turndownService.addRule('img', {
-  filter: ['img'],
+// Custom rules for iframe tweet embed
+turndownService.addRule('tweet', {
+  filter: ['iframe'],
   replacement: function (_content, node) {
-    const src = (node as HTMLElement).getAttribute('src');
-    const alt = (node as HTMLElement).getAttribute('alt') || 'image';
-    const title = (node as HTMLElement).getAttribute('title') || '';
-    return src ? `![${alt}](${src} "${title}")` : '';
+    const src = (node as HTMLElement).getAttribute('data-tweet-id');
+    return src ? `[tweet](${src})` : '';
   },
 });
 
@@ -164,6 +167,12 @@ function handleMarkdownContent(view: any, content: string) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(convertedHtml, 'text/html');
   const domContent = doc.body;
+
+  // Convert iframe and img markdown syntax to HTML
+  domContent.innerHTML = domContent.innerHTML.replace(
+    /\[iframe\]\((.*?)\)/g,
+    '<iframe src="$1"></iframe>',
+  );
 
   // Convert the DOM nodes to ProseMirror nodes using ProseMirror's DOMParser
   const proseMirrorNodes = ProseMirrorDOMParser.fromSchema(

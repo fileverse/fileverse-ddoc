@@ -15,7 +15,7 @@ import {
   Clipboard,
 } from 'lucide-react';
 import { useEditingContext } from '../../hooks/use-editing-context';
-import clx from 'classnames';
+import cn from 'classnames';
 import { debounce } from '../../utils/debounce';
 import * as Popover from '@radix-ui/react-popover';
 import { Surface } from '../../common/surface';
@@ -63,54 +63,70 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
     );
   }, [node.content]);
 
-  const iframeRender = () => {
+  const mediaRender = () => {
     if (!nodeContentText) {
       return;
     }
 
-    let formattedUrl = nodeContentText;
+    try {
+      const { content } = node.content as any;
+      const urlSrc = content[0]?.content?.content[0]?.marks[0]?.attrs?.href;
 
-    if (nodeContentText.includes('<iframe')) {
-      formattedUrl = nodeContentLink;
-    } else {
-      switch (true) {
-        case /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/.test(
-          nodeContentText,
-        ): {
-          const matches = nodeContentText.match(
-            /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/,
-          );
-          if (matches && matches.length > 0) {
-            formattedUrl = `https://www.youtube.com/embed/${matches[1]}`;
-          }
-          break;
-        }
-        case /vimeo\.com\/([a-zA-Z0-9-_]+)/.test(nodeContentText): {
-          const matches = nodeContentText.match(/vimeo\.com\/([a-zA-Z0-9-_]+)/);
-          if (matches && matches.length > 0) {
-            formattedUrl = `https://player.vimeo.com/video/${matches[1]}`;
-          }
-          break;
-        }
-        default: {
-          return;
-        }
+      // Handle image
+      if (urlSrc && /\.(jpeg|jpg|gif|png)$/i.test(urlSrc)) {
+        setMedia('img', nodeContentText);
+        return;
       }
+
+      // Handle iframe
+      if (nodeContentText.includes('<iframe')) {
+        const src = nodeContentLink;
+        setMedia('iframe', src);
+        return;
+      }
+
+      // Handle YouTube
+      const youtubeMatch = nodeContentText.match(/youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/) || urlSrc.match(/youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/);
+      if (youtubeMatch) {
+        const youtubeUrl = `https://www.youtube.com/embed/${youtubeMatch[1]}`;
+        setMedia('iframe', youtubeUrl);
+        return;
+      }
+
+      // Handle Vimeo
+      const vimeoMatch = nodeContentText.match(/vimeo\.com\/([a-zA-Z0-9-_]+)/);
+      if (vimeoMatch) {
+        const vimeoUrl = `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+        setMedia('iframe', vimeoUrl);
+        return;
+      }
+
+      // If no matching media type is found, do nothing
+      console.warn('No matching media type found for:', nodeContentText);
+    } catch (error) {
+      console.error('Error in mediaRender:', error);
     }
+  };
 
-    const width = 640;
-    const height = 360;
-
+  const setMedia = (type: 'img' | 'iframe', src: string) => {
     const pos = getPos();
     const to = pos + node.nodeSize;
 
-    formattedUrl &&
+    if (type === 'img') {
       editor
         ?.chain()
         .focus(pos)
         .deleteRange({ from: pos === 0 ? pos : pos + 1, to })
-        .setIframe({ src: formattedUrl, width, height })
+        .setMedia({ src, 'media-type': 'img' })
         .run();
+    } else {
+      editor
+        ?.chain()
+        .focus(pos)
+        .deleteRange({ from: pos === 0 ? pos : pos + 1, to })
+        .setIframe({ src, width: 640, height: 360 })
+        .run();
+    }
   };
 
   const extractTweetId = (text: string) => {
@@ -207,7 +223,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
       twitterRender();
       return;
     } else {
-      iframeRender();
+      mediaRender();
       return;
     }
   };
@@ -223,7 +239,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
   return (
     <NodeViewWrapper
       as="div"
-      className={clx(
+      className={cn(
         'flex gap-2 group w-full relative justify-center items-start',
         isPreviewMode && 'pointer-events-none',
         isTable && 'pointer-events-auto',
@@ -243,9 +259,8 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
           }
         >
           <div
-            className={`d-block-button cursor-pointer ${
-              !isPreviewMode && 'group-hover:opacity-100'
-            }`}
+            className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
+              }`}
             contentEditable={false}
             onClick={handleClick}
           >
@@ -259,9 +274,8 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
           <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
             <Popover.Trigger asChild>
               <div
-                className={`d-block-button cursor-pointer ${
-                  !isPreviewMode && 'group-hover:opacity-100'
-                }`}
+                className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
+                  }`}
                 contentEditable={false}
                 draggable
                 data-drag-handle
@@ -312,7 +326,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
       </section>
 
       <NodeViewContent
-        className={clx('node-view-content w-full', {
+        className={cn('node-view-content w-full', {
           'is-table': isTable,
         })}
       />
