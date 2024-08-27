@@ -14,6 +14,7 @@ const markdownIt = new MarkdownIt().use(markdownItFootnote);
 // Initialize TurndownService for converting HTML to Markdown
 const turndownService = new TurndownService();
 
+// Custom rules for iframe
 turndownService.addRule('iframe', {
   filter: ['iframe'],
   replacement: function (_content, node) {
@@ -22,6 +23,7 @@ turndownService.addRule('iframe', {
   },
 });
 
+// Custom rules for image
 turndownService.addRule('img', {
   filter: ['img'],
   replacement: function (_content, node) {
