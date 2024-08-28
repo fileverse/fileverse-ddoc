@@ -93,7 +93,7 @@ turndownService.addRule('iframe', {
   filter: ['iframe'],
   replacement: function (_content, node) {
     const src = (node as HTMLElement).getAttribute('src');
-    return src ? `[iframe](${src})` : '';
+    return src ? `[${src}](${src})` : '';
   },
 });
 
@@ -102,7 +102,7 @@ turndownService.addRule('img', {
   filter: ['img'],
   replacement: function (_content, node) {
     const src = (node as HTMLElement).getAttribute('src');
-    const alt = (node as HTMLElement).getAttribute('alt') || 'image';
+    const alt = (node as HTMLElement).getAttribute('alt') || src;
 
     if (src?.startsWith('data:')) {
       return src;

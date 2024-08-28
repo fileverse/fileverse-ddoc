@@ -172,7 +172,7 @@ export const defaultExtensions = [
   ColumnExtension,
   MarkdownPasteHandler,
   Markdown.configure({
-    html: true, // Allow HTML input/output
+    html: false, // Allow HTML input/output
     tightLists: true, // No <p> inside <li> in markdown output
     tightListClass: 'tight', // Add class to <ul> allowing you to remove <p> margins when tight
     bulletListMarker: '-', // <li> prefix in markdown output
