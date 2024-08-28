@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Extension } from '@tiptap/core';
+import { Editor, Extension } from '@tiptap/core';
 import MarkdownIt from 'markdown-it';
 import { Plugin } from 'prosemirror-state';
 import DOMPurify from 'dompurify';
@@ -119,7 +119,7 @@ declare module '@tiptap/core' {
       uploadMarkdownFile: () => Command;
     };
     exportMarkdownFile: {
-      exportMarkdownFile: () => Command;
+      exportMarkdownFile: () => any;
     };
   }
 }
@@ -180,39 +180,24 @@ const MarkdownPasteHandler = Extension.create({
         },
       exportMarkdownFile:
         () =>
-        ({ editor }) => {
+        ({ editor }: { editor: Editor }) => {
           // Get the HTML content from the editor
           const html = editor.getHTML();
 
           // Convert HTML to Markdown
           const markdown = turndownService.turndown(html);
 
-          // Prompt the user for a custom filename
-          const defaultFilename = 'exported_document.md';
-          const customFilename = prompt(
-            'Enter a filename for your Markdown file:',
-            defaultFilename,
-          );
-
-          // Only proceed with the download if a filename was provided
-          if (customFilename) {
+          // Function to generate download URL
+          const generateDownloadUrl = () => {
             // Create a Blob with the Markdown content
             const blob = new Blob([markdown], {
               type: 'text/markdown;charset=utf-8',
             });
-            const url = URL.createObjectURL(blob);
+            return URL.createObjectURL(blob);
+          };
 
-            // Create a download link and trigger the download
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = customFilename;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-          }
-
-          return true;
+          // Return the generateDownloadUrl function
+          return generateDownloadUrl();
         },
     };
   },
