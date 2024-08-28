@@ -111,7 +111,6 @@ const MarkdownPasteHandler = Extension.create({
         ({ editor }) => {
           // Get the HTML content from the editor
           const html = editor.getHTML();
-          console.log(html);
 
           // Convert HTML to Markdown
           const markdown = turndownService.turndown(html);
