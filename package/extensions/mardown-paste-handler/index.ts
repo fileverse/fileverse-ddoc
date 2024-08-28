@@ -14,7 +14,79 @@ const markdownIt = new MarkdownIt().use(markdownItFootnote);
 // Initialize TurndownService for converting HTML to Markdown
 const turndownService = new TurndownService({
   headingStyle: 'atx',
+  codeBlockStyle: 'fenced',
 });
+
+// Custom rule for tables
+turndownService.addRule('table', {
+  filter: 'table',
+  replacement: function (_content, node) {
+    const table = node as HTMLTableElement;
+    const rows = Array.from(table.rows);
+
+    // Process header
+    const headers = Array.from(rows[0].cells).map(cell => {
+      return turndownService.turndown(cell.innerHTML).trim();
+    });
+    const maxColumnWidths = headers.map(header => header.length);
+
+    // Process body and update maxColumnWidths
+    const bodyRows = rows.slice(1).map(row => {
+      return Array.from(row.cells).map((cell, index) => {
+        const cellContent = turndownService.turndown(cell.innerHTML).trim();
+        maxColumnWidths[index] = Math.max(
+          maxColumnWidths[index],
+          cellContent.length,
+        );
+        return cellContent;
+      });
+    });
+
+    // Create aligned rows
+    const createAlignedRow = (row: string[]) => {
+      return (
+        '| ' +
+        row
+          .map((cell, index) => {
+            const padding = ' '.repeat(
+              Math.max(0, maxColumnWidths[index] - cell.length),
+            );
+            return cell + padding;
+          })
+          .join(' | ') +
+        ' |'
+      );
+    };
+
+    const headerRow = createAlignedRow(headers);
+    const separator =
+      '| ' + maxColumnWidths.map(width => '-'.repeat(width)).join(' | ') + ' |';
+    const bodyRowsFormatted = bodyRows.map(row => createAlignedRow(row));
+
+    return `\n\n${headerRow}\n${separator}\n${bodyRowsFormatted.join(
+      '\n',
+    )}\n\n`;
+  },
+});
+
+// Custom rule for inline code
+turndownService.addRule('inlineCode', {
+  filter: function (node) {
+    return node.nodeName === 'CODE' && node.parentNode?.nodeName !== 'PRE';
+  },
+  replacement: function (content) {
+    return '`' + content + '`';
+  },
+});
+
+// Custom rules for headings --- IN CASE OF NEED
+// turndownService.addRule('heading', {
+//   filter: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
+//   replacement: function (content, node) {
+//     const headingLevel = Number(node.nodeName.charAt(1));
+//     return '\n' + '#'.repeat(headingLevel) + ' ' + content + '\n\n';
+//   },
+// });
 
 // Custom rules for iframe
 turndownService.addRule('iframe', {
@@ -95,7 +167,7 @@ const MarkdownPasteHandler = Extension.create({
               const file = files[0];
               if (file.type === 'text/markdown' || file.name.endsWith('.md')) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
+                reader.onload = e => {
                   const content = e.target?.result as string;
                   handleMarkdownContent(view, content);
                 };
@@ -148,7 +220,7 @@ const MarkdownPasteHandler = Extension.create({
 
 function isMarkdown(content: string): boolean {
   return (
-    content.startsWith('#') ||
+    content.match(/^#{1,6}\s/) !== null || // Headings
     content.startsWith('*') ||
     content.startsWith('-') ||
     content.startsWith('>') ||
