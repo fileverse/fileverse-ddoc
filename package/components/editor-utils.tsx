@@ -200,6 +200,8 @@ export const useEditorToolbar = ({
     toolVisibility,
     setToolVisibility,
   } = useEditorToolVisiibility(IEditorTool.NONE);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+
 
   const undoRedoTools: Array<IEditorToolElement | null> = [
     {
@@ -367,7 +369,7 @@ export const useEditorToolbar = ({
     {
       icon: 'FileOutput',
       title: 'Export Markdown',
-      onClick: () => editor?.commands.exportMarkdownFile(),
+      onClick: () => setIsExportModalOpen(true),
       isActive: false,
     }
   ]
@@ -455,6 +457,8 @@ export const useEditorToolbar = ({
     toolRef,
     toolVisibility,
     setToolVisibility,
+    isExportModalOpen,
+    setIsExportModalOpen,
   };
 };
 

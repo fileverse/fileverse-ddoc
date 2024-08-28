@@ -21,8 +21,11 @@ import {
   ButtonGroup,
   Button,
   LucideIconProps,
+  DynamicModal,
+  TextField,
 } from '@fileverse/ui';
 import ToolbarButton from '../common/toolbar-button';
+import { useState } from 'react';
 
 const TiptapToolBar = ({
   editor,
@@ -42,10 +45,31 @@ const TiptapToolBar = ({
     toolbar,
     undoRedoTools,
     markdownOptions,
+    isExportModalOpen,
+    setIsExportModalOpen,
   } = useEditorToolbar({
     editor: editor,
     onError,
   });
+  const [filename, setFilename] = useState('exported_document.md');
+
+  const handleExport = () => {
+    if (editor) {
+      const generateDownloadUrl = editor.commands.exportMarkdownFile();
+      if (generateDownloadUrl) {
+        const url = generateDownloadUrl;
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }
+    }
+    setIsExportModalOpen(false);
+  };
+
   return (
     <div className="w-full bg-transparent py-2 px-4 items-center h-9 flex justify-between relative">
       <div className="flex h-9 items-center gap-2 justify-center">
@@ -94,10 +118,10 @@ const TiptapToolBar = ({
             {editor?.isActive('heading', { level: 1 })
               ? 'Heading 1'
               : editor?.isActive('heading', { level: 2 })
-              ? 'Heading 2'
-              : editor?.isActive('heading', { level: 3 })
-              ? 'Heading 3'
-              : 'Text'}
+                ? 'Heading 2'
+                : editor?.isActive('heading', { level: 3 })
+                  ? 'Heading 3'
+                  : 'Text'}
           </span>
           <ChevronDown size={16} />
         </button>
@@ -114,7 +138,6 @@ const TiptapToolBar = ({
                         icon={tool.icon}
                         variant="ghost"
                         size="md"
-                        className="p-0 !pt-2 aspect-square"
                       />
                     </Tooltip>
                   }
@@ -206,6 +229,27 @@ const TiptapToolBar = ({
               elementRef={toolRef}
             />
           )}
+          <DynamicModal
+            open={isExportModalOpen}
+            onOpenChange={setIsExportModalOpen}
+            title="Export Markdown"
+            content={
+              <TextField
+                label="Filename"
+                value={filename}
+                onChange={(e) => setFilename(e.target.value)}
+                placeholder="Enter filename"
+              />
+            }
+            primaryAction={{
+              label: 'Export',
+              onClick: handleExport,
+            }}
+            secondaryAction={{
+              label: 'Cancel',
+              onClick: () => setIsExportModalOpen(false),
+            }}
+          />
         </div>
       </div>
       <div className="flex h-9 gap-[10px]">
