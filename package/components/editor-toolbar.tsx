@@ -12,7 +12,16 @@ import {
 import { Editor } from '@tiptap/react';
 import { IEditorTool } from '../hooks/use-visibility';
 import { ChevronDown } from 'lucide-react';
-import { Tooltip, Divider, LucideIcon, IconButton } from '@fileverse/ui';
+import {
+  Tooltip,
+  Divider,
+  LucideIcon,
+  IconButton,
+  DynamicDropdown,
+  ButtonGroup,
+  Button,
+  LucideIconProps,
+} from '@fileverse/ui';
 import ToolbarButton from '../common/toolbar-button';
 
 const TiptapToolBar = ({
@@ -26,11 +35,17 @@ const TiptapToolBar = ({
   isNavbarVisible: boolean;
   setIsNavbarVisible: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
-  const { toolRef, toolVisibility, setToolVisibility, toolbar, undoRedoTools } =
-    useEditorToolbar({
-      editor: editor,
-      onError,
-    });
+  const {
+    toolRef,
+    toolVisibility,
+    setToolVisibility,
+    toolbar,
+    undoRedoTools,
+    markdownOptions,
+  } = useEditorToolbar({
+    editor: editor,
+    onError,
+  });
   return (
     <div className="w-full bg-transparent py-2 px-4 items-center h-9 flex justify-between relative">
       <div className="flex h-9 items-center gap-2 justify-center">
@@ -89,7 +104,41 @@ const TiptapToolBar = ({
         <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
         <div className="flex gap-2 justify-center items-center">
           {toolbar.map((tool, _index) => {
-            if (tool) {
+            if (tool?.title === 'Markdown') {
+              return (
+                <DynamicDropdown
+                  key={tool.title}
+                  anchorTrigger={
+                    <Tooltip text={tool.title}>
+                      <IconButton
+                        icon={tool.icon}
+                        variant="ghost"
+                        size="md"
+                        className="p-0 !pt-2 aspect-square"
+                      />
+                    </Tooltip>
+                  }
+                  content={
+                    <ButtonGroup className="flex-col space-x-0 gap-1 p-1">
+                      {markdownOptions.map((option, index) => (
+                        <Button
+                          variant="ghost"
+                          key={index}
+                          onClick={option?.onClick}
+                          className="space-x-2"
+                        >
+                          <LucideIcon
+                            name={option?.icon as LucideIconProps['name']}
+                            className="w-5 h-5"
+                          />
+                          <span>{option?.title}</span>
+                        </Button>
+                      ))}
+                    </ButtonGroup>
+                  }
+                />
+              );
+            } else if (tool) {
               return (
                 <Tooltip key={tool.title} text={tool.title}>
                   <ToolbarButton

@@ -349,7 +349,28 @@ export const useEditorToolbar = ({
           .run(),
       isActive: false,
     },
+    {
+      icon: 'Markdown',
+      title: "Markdown",
+      onClick: () => { },
+      isActive: false,
+    }
   ];
+
+  const markdownOptions: Array<IEditorToolElement | null> = [
+    {
+      icon: 'FileInput',
+      title: 'Import Markdown',
+      onClick: () => editor?.commands.uploadMarkdownFile(),
+      isActive: false,
+    },
+    {
+      icon: 'FileOutput',
+      title: 'Export Markdown',
+      onClick: () => editor?.commands.exportMarkdownFile(),
+      isActive: false,
+    }
+  ]
 
   const bottomToolbar: Array<IEditorToolElement | null> = [
     {
@@ -429,6 +450,7 @@ export const useEditorToolbar = ({
   return {
     undoRedoTools,
     toolbar,
+    markdownOptions,
     bottomToolbar,
     toolRef,
     toolVisibility,
@@ -650,9 +672,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${
-            editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <List size={20} />
         </span>
@@ -664,9 +685,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${
-            editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <ListOrdered size={20} />
         </span>
@@ -678,9 +698,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${
-            editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <ListChecks size={20} />
         </span>

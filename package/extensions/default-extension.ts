@@ -34,7 +34,9 @@ import { Markdown } from 'tiptap-markdown';
 import ListItem from '@tiptap/extension-list-item';
 import Typography from '@tiptap/extension-typography';
 import MarkdownPasteHandler from './mardown-paste-handler';
-import CharacterCount from '@tiptap/extension-character-count'
+import CharacterCount from '@tiptap/extension-character-count';
+import { MathExtension } from '@aarkue/tiptap-math-extension';
+import { Footnote } from './footnote/footnote';
 
 export const defaultExtensions = [
   FontFamily,
@@ -72,20 +74,21 @@ export const defaultExtensions = [
     },
     blockquote: {
       HTMLAttributes: {
-        class: 'rounded-lg bg-[#E8EBEC] p-5 font-serif italic text-black',
+        class:
+          'pl-4 border-l-4 color-border-default italic color-text-secondary my-2',
       },
     },
     codeBlock: {
       HTMLAttributes: {
         class:
-          'rounded-lg bg-transparent border border-[#DDE2E4] p-5 font-mono font-medium text-black',
+          'rounded-lg bg-transparent border color-border-default p-5 font-mono font-medium color-text-default',
       },
       exitOnArrowDown: true,
     },
     code: {
       HTMLAttributes: {
         class:
-          'rounded bg-transparent p-1.5 font-mono font-medium text-black text-sm',
+          'rounded bg-transparent p-1.5 font-mono font-medium color-text-default text-body-sm',
         spellcheck: 'false',
       },
     },
@@ -109,7 +112,7 @@ export const defaultExtensions = [
   }).configure({
     HTMLAttributes: {
       class:
-        'text-blue-500 font-bold transition-colors cursor-pointer select-text pointer-events-auto',
+        'color-text-link font-bold transition-colors cursor-pointer select-text pointer-events-auto',
       rel: 'noopener noreferrer',
     },
     validate: href => /^https?:\/\//.test(href),
@@ -176,9 +179,15 @@ export const defaultExtensions = [
     linkify: true, // Create links from "https://..." text
     breaks: true, // New lines (\n) in markdown input are converted to <br>
     transformPastedText: true, // Allow to paste markdown text in the editor
-    transformCopiedText: false, // Copied text is transformed to markdown
+    transformCopiedText: true, // Copied text is transformed to markdown
   }),
-  CharacterCount
+  CharacterCount,
+  MathExtension.configure({
+    addInlineMath: true,
+    evaluation: false,
+    delimiters: 'dollar',
+  }),
+  Footnote,
 ];
 
 export const createInputRule = (
