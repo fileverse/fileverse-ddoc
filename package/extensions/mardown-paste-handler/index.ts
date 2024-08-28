@@ -12,7 +12,9 @@ import TurndownService from 'turndown';
 const markdownIt = new MarkdownIt().use(markdownItFootnote);
 
 // Initialize TurndownService for converting HTML to Markdown
-const turndownService = new TurndownService();
+const turndownService = new TurndownService({
+  headingStyle: 'atx',
+});
 
 // Custom rules for iframe
 turndownService.addRule('iframe', {
@@ -93,7 +95,7 @@ const MarkdownPasteHandler = Extension.create({
               const file = files[0];
               if (file.type === 'text/markdown' || file.name.endsWith('.md')) {
                 const reader = new FileReader();
-                reader.onload = e => {
+                reader.onload = (e) => {
                   const content = e.target?.result as string;
                   handleMarkdownContent(view, content);
                 };
@@ -109,6 +111,7 @@ const MarkdownPasteHandler = Extension.create({
         ({ editor }) => {
           // Get the HTML content from the editor
           const html = editor.getHTML();
+          console.log(html);
 
           // Convert HTML to Markdown
           const markdown = turndownService.turndown(html);
