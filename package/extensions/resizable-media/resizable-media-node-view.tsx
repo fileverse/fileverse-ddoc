@@ -80,7 +80,7 @@ export const ResizableMediaNodeView = ({
         // Aspect Ratio from its original size
         setAspectRatio(
           (resizableImgRef.current as HTMLImageElement).naturalWidth /
-            (resizableImgRef.current as HTMLImageElement).naturalHeight,
+          (resizableImgRef.current as HTMLImageElement).naturalHeight,
         );
       };
     }
@@ -101,14 +101,14 @@ export const ResizableMediaNodeView = ({
 
   const documentHorizontalMouseMove = (e: MouseEvent | TouchEvent) => {
     // Determine if the event is a touch event and extract clientX accordingly
-    const clientX = e instanceof TouchEvent ? e.touches[0].clientX : e.clientX;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
 
     setTimeout(() => onHorizontalMouseMove(clientX));
   };
 
   const startHorizontalResize = (e: MouseEvent | TouchEvent) => {
     // Check if it's a touch event and extract the clientX accordingly
-    const clientX = e instanceof TouchEvent ? e.touches[0].clientX : e.clientX;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     lastClientX = clientX;
 
     setTimeout(() => {

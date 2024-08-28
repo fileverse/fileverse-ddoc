@@ -222,18 +222,18 @@
   }
 
   [data-type='horizontalRule'] {
-    @apply pt-2 pb-3 h-1 rounded-sm w-1/2 mx-auto transition-all duration-100 ease-in-out cursor-pointer;
+    @apply pt-2 pb-3 h-1 w-full mx-auto transition-all cursor-pointer;
 
     &.ProseMirror-selectednode {
       @apply bg-blue-200/50;
     }
 
     &:hover:not(&.ProseMirror-selectednode) {
-      @apply bg-blue-200/50;
+      @apply bg-blue-200/20;
     }
 
     hr {
-      @apply rounded border-[2px] border-gray-300/20 bg-gray-300/80;
+      @apply rounded border-t-[1px] border-gray-300/20 bg-gray-300/80;
     }
   }
 }

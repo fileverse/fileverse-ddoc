@@ -72,9 +72,13 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
       const { content } = node.content as any;
       const urlSrc = content[0]?.content?.content[0]?.marks[0]?.attrs?.href;
 
+      if (!urlSrc) {
+        return;
+      }
+
       // Handle image
       if (urlSrc && /\.(jpeg|jpg|gif|png)$/i.test(urlSrc)) {
-        setMedia('img', nodeContentText);
+        setMedia('img', urlSrc);
         return;
       }
 

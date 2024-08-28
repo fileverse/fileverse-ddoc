@@ -350,18 +350,27 @@ export const useEditorToolbar = ({
       isActive: false,
     },
     {
-      icon: 'FileUp',
-      title: 'Upload Markdown',
+      icon: 'Markdown',
+      title: "Markdown",
+      onClick: () => { },
+      isActive: false,
+    }
+  ];
+
+  const markdownOptions: Array<IEditorToolElement | null> = [
+    {
+      icon: 'FileInput',
+      title: 'Import Markdown',
       onClick: () => editor?.commands.uploadMarkdownFile(),
       isActive: false,
     },
     {
-      icon: 'FileDown',
+      icon: 'FileOutput',
       title: 'Export Markdown',
       onClick: () => editor?.commands.exportMarkdownFile(),
       isActive: false,
-    },
-  ];
+    }
+  ]
 
   const bottomToolbar: Array<IEditorToolElement | null> = [
     {
@@ -441,6 +450,7 @@ export const useEditorToolbar = ({
   return {
     undoRedoTools,
     toolbar,
+    markdownOptions,
     bottomToolbar,
     toolRef,
     toolVisibility,

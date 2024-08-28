@@ -27,8 +27,12 @@ turndownService.addRule('img', {
   replacement: function (_content, node) {
     const src = (node as HTMLElement).getAttribute('src');
     const alt = (node as HTMLElement).getAttribute('alt') || 'image';
-    const title = (node as HTMLElement).getAttribute('title') || '';
-    return src ? `![${alt}](${src} "${title}")` : '';
+
+    if (src?.startsWith('data:')) {
+      return src;
+    }
+
+    return src ? `[${alt}](${src})` : '';
   },
 });
 
@@ -114,23 +118,23 @@ const MarkdownPasteHandler = Extension.create({
             defaultFilename,
           );
 
-          // Use the custom filename if provided, otherwise use the default
-          const filename = customFilename || defaultFilename;
+          // Only proceed with the download if a filename was provided
+          if (customFilename) {
+            // Create a Blob with the Markdown content
+            const blob = new Blob([markdown], {
+              type: 'text/markdown;charset=utf-8',
+            });
+            const url = URL.createObjectURL(blob);
 
-          // Create a Blob with the Markdown content
-          const blob = new Blob([markdown], {
-            type: 'text/markdown;charset=utf-8',
-          });
-          const url = URL.createObjectURL(blob);
-
-          // Create a download link and trigger the download
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = filename;
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
-          URL.revokeObjectURL(url);
+            // Create a download link and trigger the download
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = customFilename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
 
           return true;
         },
