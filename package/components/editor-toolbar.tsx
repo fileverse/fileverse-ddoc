@@ -244,10 +244,12 @@ const TiptapToolBar = ({
             primaryAction={{
               label: 'Export',
               onClick: handleExport,
+              className: "w-full md:w-auto",
             }}
             secondaryAction={{
               label: 'Cancel',
               onClick: () => setIsExportModalOpen(false),
+              className: "w-full md:w-auto",
             }}
           />
         </div>
