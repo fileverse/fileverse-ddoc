@@ -196,7 +196,7 @@ const DdocEditor = forwardRef(
           )}
           style={{
             height:
-              isNativeMobile && !isPreviewMode ? 'calc(100vh - 4rem)' : '100vh',
+              isNativeMobile && !isPreviewMode ? 'calc(100vh - 4rem)' : '95vh',
           }}
         >
           <div
