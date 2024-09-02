@@ -47,6 +47,9 @@ export const useDdocEditor = ({
     SlashCommand(onError),
   ]);
   const initialContentSetRef = useRef(false);
+  const [isContentLoading, setIsContentLoading] = useState(
+    initialContent ?? true,
+  );
 
   const isHighlightedYellow = (
     state: EditorState,
@@ -205,7 +208,7 @@ export const useDdocEditor = ({
       queueMicrotask(() => {
         editor.commands.setContent(initialContent);
       });
-
+      setIsContentLoading(false);
       initialContentSetRef.current = true;
     }
 
@@ -278,6 +281,7 @@ export const useDdocEditor = ({
 
   return {
     editor,
+    isContentLoading,
     ref,
     connect,
     ydoc,
