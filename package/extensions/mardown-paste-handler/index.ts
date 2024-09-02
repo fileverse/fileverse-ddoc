@@ -25,13 +25,13 @@ turndownService.addRule('table', {
     const rows = Array.from(table.rows);
 
     // Process header
-    const headers = Array.from(rows[0].cells).map(cell => {
+    const headers = Array.from(rows[0].cells).map((cell) => {
       return turndownService.turndown(cell.innerHTML).trim();
     });
-    const maxColumnWidths = headers.map(header => header.length);
+    const maxColumnWidths = headers.map((header) => header.length);
 
     // Process body and update maxColumnWidths
-    const bodyRows = rows.slice(1).map(row => {
+    const bodyRows = rows.slice(1).map((row) => {
       return Array.from(row.cells).map((cell, index) => {
         const cellContent = turndownService.turndown(cell.innerHTML).trim();
         maxColumnWidths[index] = Math.max(
@@ -60,8 +60,10 @@ turndownService.addRule('table', {
 
     const headerRow = createAlignedRow(headers);
     const separator =
-      '| ' + maxColumnWidths.map(width => '-'.repeat(width)).join(' | ') + ' |';
-    const bodyRowsFormatted = bodyRows.map(row => createAlignedRow(row));
+      '| ' +
+      maxColumnWidths.map((width) => '-'.repeat(width)).join(' | ') +
+      ' |';
+    const bodyRowsFormatted = bodyRows.map((row) => createAlignedRow(row));
 
     return `\n\n${headerRow}\n${separator}\n${bodyRowsFormatted.join(
       '\n',
@@ -79,14 +81,25 @@ turndownService.addRule('inlineCode', {
   },
 });
 
-// Custom rules for headings --- IN CASE OF NEED
-// turndownService.addRule('heading', {
-//   filter: ['h1', 'h2', 'h3', 'h4', 'h5', 'h6'],
-//   replacement: function (content, node) {
-//     const headingLevel = Number(node.nodeName.charAt(1));
-//     return '\n' + '#'.repeat(headingLevel) + ' ' + content + '\n\n';
-//   },
-// });
+turndownService.addRule('listItem', {
+  filter: 'li',
+  replacement: function (content, node, options) {
+    content = content
+      .replace(/^\n+/, '') // remove leading newlines
+      .replace(/\n+$/, '\n') // replace trailing newlines with just a single one
+      .replace(/\n/gm, '\n    '); // indent
+    let prefix = options.bulletListMarker + ' ';
+    const parent: any = node.parentNode;
+    if (parent && parent.nodeName === 'OL') {
+      const start = parent.getAttribute('start');
+      const index = Array.prototype.indexOf.call(parent.children, node);
+      prefix = (start ? Number(start) + index : index + 1) + '. ';
+    }
+    return (
+      prefix + content + (node.nextSibling && !/\n$/.test(content) ? '\n' : '')
+    );
+  },
+});
 
 // Custom rules for iframe
 turndownService.addRule('iframe', {
@@ -167,7 +180,7 @@ const MarkdownPasteHandler = Extension.create({
               const file = files[0];
               if (file.type === 'text/markdown' || file.name.endsWith('.md')) {
                 const reader = new FileReader();
-                reader.onload = e => {
+                reader.onload = (e) => {
                   const content = e.target?.result as string;
                   handleMarkdownContent(view, content);
                 };
