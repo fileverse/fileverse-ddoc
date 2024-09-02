@@ -47,6 +47,7 @@ export const useDdocEditor = ({
     SlashCommand(onError),
   ]);
   const initialContentSetRef = useRef(false);
+  const [isContentLoading, setIsContentLoading] = useState(true);
 
   const isHighlightedYellow = (
     state: EditorState,
@@ -202,8 +203,10 @@ export const useDdocEditor = ({
 
   useEffect(() => {
     if (initialContent && editor && !initialContentSetRef.current) {
+      setIsContentLoading(true);
       queueMicrotask(() => {
         editor.commands.setContent(initialContent);
+        setIsContentLoading(false);
       });
 
       initialContentSetRef.current = true;
@@ -211,6 +214,9 @@ export const useDdocEditor = ({
 
     setTimeout(() => {
       initialContentSetRef.current = false;
+      if (editor && initialContent === undefined) {
+        setIsContentLoading(false);
+      }
     });
   }, [initialContent, editor]);
 
@@ -278,6 +284,7 @@ export const useDdocEditor = ({
 
   return {
     editor,
+    isContentLoading,
     ref,
     connect,
     ydoc,

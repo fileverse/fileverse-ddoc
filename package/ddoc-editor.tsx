@@ -64,6 +64,7 @@ const DdocEditor = forwardRef(
     const {
       editor,
       ref: editorRef,
+      isContentLoading,
       ydoc,
     } = useDdocEditor({
       isPreviewMode,
@@ -152,7 +153,7 @@ const DdocEditor = forwardRef(
       };
     }, [editor, editorRef, isNativeMobile]);
 
-    if (!editor) {
+    if (!editor || isContentLoading) {
       return (
         <div className="w-screen h-screen flex flex-col gap-4 justify-center items-center">
           <Spinner />
