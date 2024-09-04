@@ -8,7 +8,7 @@ export const colors = [
   { color: '#D9D9D9', code: 'bg-[#D9D9D9]' },
   { color: '#EFEFEF', code: 'bg-[#EFEFEF]' },
   { color: '#F3F3F3', code: 'bg-[#F3F3F3]' },
-  { color: '#FFFFFF', code: 'bg-[#FFFFFF]' },
+  { color: '#FFFFFF', code: 'bg-[#FFFFFF] border border-gray-200' },
   { color: '#980000', code: 'bg-[#980000]' },
   { color: '#FF0000', code: 'bg-[#FF0000]' },
   { color: '#FF9900', code: 'bg-[#FF9900]' },
