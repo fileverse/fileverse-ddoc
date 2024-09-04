@@ -446,7 +446,7 @@ export const TextHighlighter = ({
           }}
           key={color.color}
           className={cn(
-            'w-5 drop-shadow rounded-full flex items-center justify-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-5',
+            'w-5 rounded-full flex items-center justify-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-5',
             color.code,
           )}
         >
@@ -742,7 +742,7 @@ export const TextColor = ({
           }}
           key={color.color}
           className={cn(
-            'w-5 drop-shadow rounded-full flex justify-center items-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-5',
+            'w-5 rounded-full flex justify-center items-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-5',
             color.code,
           )}
         >
