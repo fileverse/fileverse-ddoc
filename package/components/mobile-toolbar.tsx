@@ -26,10 +26,12 @@ const MobileToolbar = ({
   isNavbarVisible: boolean;
   setIsNavbarVisible: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
-  const { toolVisibility, setToolVisibility, bottomToolbar } = useEditorToolbar({
-    editor: editor,
-    onError,
-  });
+  const { toolVisibility, setToolVisibility, bottomToolbar } = useEditorToolbar(
+    {
+      editor: editor,
+      onError,
+    },
+  );
   const isMobile = useMediaQuery('(max-width: 1023px)');
   const [url, setUrl] = useState('');
   const [linkText, setLinkText] = useState('');
@@ -60,7 +62,7 @@ const MobileToolbar = ({
 
     // Add https:// prefix if it's missing
     let finalUrl = url;
-    if (!url.startsWith('http://') || !url.startsWith('https://')) {
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
       finalUrl = 'https://' + url;
     } else {
       finalUrl = url;
