@@ -432,7 +432,7 @@ export const TextHighlighter = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto absolute gap-1 top-14 flex flex-wrap left-[25.5rem] max-h-[400px] w-[16rem] overflow-y-auto scroll-smooth rounded bg-white px-2 py-2 shadow-lg transition-all"
+      className="z-50 h-auto absolute gap-0.5 top-14 flex flex-wrap left-[25.5rem] max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded bg-white px-2 py-2 shadow-lg transition-all"
     >
       {colors.map((color) => (
         <div
@@ -468,7 +468,7 @@ export const TextHighlighter = ({
           editor.chain().focus().unsetHighlight().run();
           setVisibility(IEditorTool.NONE);
         }}
-        className="flex items-center gap-1 cursor-pointer mt-2 mb-1 text-sm"
+        className="flex w-full items-center gap-1 cursor-pointer mt-2 mb-1 text-sm text-gray-800 hover:bg-gray-100 rounded-md p-1"
       >
         <Ban size={18}></Ban> None
       </div>
@@ -732,7 +732,7 @@ export const TextColor = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto absolute gap-1 top-14 flex flex-wrap left-[22.5rem] max-h-[400px] w-[16rem] overflow-y-auto scroll-smooth rounded bg-white px-2 py-2 shadow-lg transition-all"
+      className="z-50 h-auto absolute gap-0.5 top-14 flex flex-wrap left-[22.5rem] max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded bg-white px-2 py-2 shadow-lg transition-all"
     >
       {colors.map((color) => (
         <div
