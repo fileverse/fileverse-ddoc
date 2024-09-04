@@ -36,6 +36,7 @@ import {
 } from '../common/carousel';
 import { Button, TextField, Tooltip } from '@fileverse/ui';
 import { useOnClickOutside } from 'usehooks-ts';
+import { colors } from '../utils/colors';
 
 interface IEditorToolElement {
   icon: any;
@@ -140,48 +141,6 @@ export const fonts = [
   },
 ];
 
-export const colors = [
-  { color: '#00FF00', code: 'bg-[#00FF00]' },
-  { color: '#008080', code: 'bg-[#008080]' },
-  { color: '#FFC0CB', code: 'bg-[#FFC0CB]' },
-  { color: '#808000', code: 'bg-[#808000]' },
-  { color: '#800000', code: 'bg-[#800000]' },
-  { color: '#000080', code: 'bg-[#000080]' },
-  { color: '#7FFFD4', code: 'bg-[#7FFFD4]' },
-  { color: '#40E0D0', code: 'bg-[#40E0D0]' },
-  { color: '#C0C0C0', code: 'bg-[#C0C0C0]' },
-  { color: '#808080', code: 'bg-[#808080]' },
-  { color: '#000000', code: 'bg-[#000000]' },
-  { color: '#FFFFFF', code: 'bg-[#FFFFFF]' },
-  { color: '#CD5C5C', code: 'bg-[#CD5C5C]' },
-  { color: '#F08080', code: 'bg-[#F08080]' },
-  { color: '#FA8072', code: 'bg-[#FA8072]' },
-  { color: '#E9967A', code: 'bg-[#E9967A]' },
-  { color: '#FFA07A', code: 'bg-[#FFA07A]' },
-  { color: '#DC143C', code: 'bg-[#DC143C]' },
-  { color: '#FF6347', code: 'bg-[#FF6347]' },
-  { color: '#FF7F50', code: 'bg-[#FF7F50]' },
-  { color: '#FF4500', code: 'bg-[#FF4500]' },
-  { color: '#BDB76B', code: 'bg-[#BDB76B]' },
-  { color: '#FFD700', code: 'bg-[#FFD700]' },
-  { color: '#F0E68C', code: 'bg-[#F0E68C]' },
-  { color: '#FFE5B4', code: 'bg-[#FFE5B4]' },
-  { color: '#9ACD32', code: 'bg-[#9ACD32]' },
-  { color: '#556B2F', code: 'bg-[#556B2F]' },
-  { color: '#6B8E23', code: 'bg-[#6B8E23]' },
-  { color: '#7CFC00', code: 'bg-[#7CFC00]' },
-  { color: '#7FFF00', code: 'bg-[#7FFF00]' },
-  { color: '#ADFF2F', code: 'bg-[#ADFF2F]' },
-  { color: '#00BFFF', code: 'bg-[#00BFFF]' },
-  { color: '#1E90FF', code: 'bg-[#1E90FF]' },
-  { color: '#6495ED', code: 'bg-[#6495ED]' },
-  { color: '#4682B4', code: 'bg-[#4682B4]' },
-  { color: '#4169E1', code: 'bg-[#4169E1]' },
-  { color: '#8A2BE2', code: 'bg-[#8A2BE2]' },
-  { color: '#4B0082', code: 'bg-[#4B0082]' },
-  { color: '#6A5ACD', code: 'bg-[#6A5ACD]' },
-];
-
 export const MAX_IMAGE_SIZE = 1024 * 100; // 100Kb
 
 export const ERR_MSG_MAP = {
@@ -201,7 +160,6 @@ export const useEditorToolbar = ({
     setToolVisibility,
   } = useEditorToolVisiibility(IEditorTool.NONE);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-
 
   const undoRedoTools: Array<IEditorToolElement | null> = [
     {
@@ -353,10 +311,10 @@ export const useEditorToolbar = ({
     },
     {
       icon: 'Markdown',
-      title: "Markdown",
-      onClick: () => { },
+      title: 'Markdown',
+      onClick: () => {},
       isActive: false,
-    }
+    },
   ];
 
   const markdownOptions: Array<IEditorToolElement | null> = [
@@ -371,8 +329,8 @@ export const useEditorToolbar = ({
       title: 'Export Markdown',
       onClick: () => setIsExportModalOpen(true),
       isActive: false,
-    }
-  ]
+    },
+  ];
 
   const bottomToolbar: Array<IEditorToolElement | null> = [
     {
@@ -471,60 +429,11 @@ export const TextHighlighter = ({
   elementRef: React.RefObject<HTMLDivElement>;
   setVisibility: Dispatch<SetStateAction<IEditorTool>>;
 }) => {
-  const colors = [
-    { color: '#00FF00', code: 'bg-[#00FF00]' },
-    { color: '#008080', code: 'bg-[#008080]' },
-    { color: '#FFC0CB', code: 'bg-[#FFC0CB]' },
-    { color: '#808000', code: 'bg-[#808000]' },
-    { color: '#800000', code: 'bg-[#800000]' },
-    { color: '#000080', code: 'bg-[#000080]' },
-    { color: '#7FFFD4', code: 'bg-[#7FFFD4]' },
-    { color: '#40E0D0', code: 'bg-[#40E0D0]' },
-    { color: '#C0C0C0', code: 'bg-[#C0C0C0]' },
-    { color: '#808080', code: 'bg-[#808080]' },
-    { color: '#000000', code: 'bg-[#000000]' },
-    { color: '#FFFFFF', code: 'bg-[#FFFFFF]' },
-    { color: '#CD5C5C', code: 'bg-[#CD5C5C]' },
-    { color: '#F08080', code: 'bg-[#F08080]' },
-    { color: '#FA8072', code: 'bg-[#FA8072]' },
-    { color: '#E9967A', code: 'bg-[#E9967A]' },
-    { color: '#FFA07A', code: 'bg-[#FFA07A]' },
-    { color: '#DC143C', code: 'bg-[#DC143C]' },
-    { color: '#FF6347', code: 'bg-[#FF6347]' },
-    { color: '#FF7F50', code: 'bg-[#FF7F50]' },
-    { color: '#FF4500', code: 'bg-[#FF4500]' },
-    { color: '#BDB76B', code: 'bg-[#BDB76B]' },
-    { color: '#FFD700', code: 'bg-[#FFD700]' },
-    { color: '#F0E68C', code: 'bg-[#F0E68C]' },
-    { color: '#FFE5B4', code: 'bg-[#FFE5B4]' },
-    { color: '#9ACD32', code: 'bg-[#9ACD32]' },
-    { color: '#556B2F', code: 'bg-[#556B2F]' },
-    { color: '#6B8E23', code: 'bg-[#6B8E23]' },
-    { color: '#7CFC00', code: 'bg-[#7CFC00]' },
-    { color: '#7FFF00', code: 'bg-[#7FFF00]' },
-    { color: '#ADFF2F', code: 'bg-[#ADFF2F]' },
-    { color: '#00BFFF', code: 'bg-[#00BFFF]' },
-    { color: '#1E90FF', code: 'bg-[#1E90FF]' },
-    { color: '#6495ED', code: 'bg-[#6495ED]' },
-    { color: '#4682B4', code: 'bg-[#4682B4]' },
-    { color: '#4169E1', code: 'bg-[#4169E1]' },
-    { color: '#8A2BE2', code: 'bg-[#8A2BE2]' },
-    { color: '#4B0082', code: 'bg-[#4B0082]' },
-    { color: '#6A5ACD', code: 'bg-[#6A5ACD]' },
-  ];
-
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto absolute gap-2 top-14 flex flex-wrap left-[25.5rem] max-h-[330px] w-[20.5rem] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all"
+      className="z-50 h-auto absolute gap-1 top-14 flex flex-wrap left-[25.5rem] max-h-[400px] w-[16rem] overflow-y-auto scroll-smooth rounded bg-white px-2 py-2 shadow-lg transition-all"
     >
-      <Ban
-        className="cursor-pointer"
-        onClick={() => {
-          editor.chain().focus().unsetHighlight().run();
-          setVisibility(IEditorTool.NONE);
-        }}
-      />
       {colors.map((color) => (
         <div
           onClick={() => {
@@ -537,7 +446,7 @@ export const TextHighlighter = ({
           }}
           key={color.color}
           className={cn(
-            'w-6 drop-shadow rounded-full flex items-center justify-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-6',
+            'w-5 drop-shadow rounded-full flex items-center justify-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-5',
             color.code,
           )}
         >
@@ -553,6 +462,16 @@ export const TextHighlighter = ({
           />
         </div>
       ))}
+
+      <div
+        onClick={() => {
+          editor.chain().focus().unsetHighlight().run();
+          setVisibility(IEditorTool.NONE);
+        }}
+        className="flex items-center gap-1 cursor-pointer mt-2 mb-1 text-sm"
+      >
+        <Ban size={18}></Ban> None
+      </div>
     </div>
   );
 };
@@ -676,8 +595,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${
+            editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <List size={20} />
         </span>
@@ -689,8 +609,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${
+            editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <ListOrdered size={20} />
         </span>
@@ -702,8 +623,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${
+            editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <ListChecks size={20} />
         </span>
@@ -810,15 +732,8 @@ export const TextColor = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto absolute gap-2 top-14 flex flex-wrap left-[22.5rem] max-h-[330px] w-[20.5rem] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all"
+      className="z-50 h-auto absolute gap-1 top-14 flex flex-wrap left-[22.5rem] max-h-[400px] w-[16rem] overflow-y-auto scroll-smooth rounded bg-white px-2 py-2 shadow-lg transition-all"
     >
-      <Ban
-        className="cursor-pointer"
-        onClick={() => {
-          editor.chain().focus().unsetColor().run();
-          setVisibility(IEditorTool.NONE);
-        }}
-      />
       {colors.map((color) => (
         <div
           onClick={() => {
@@ -827,7 +742,7 @@ export const TextColor = ({
           }}
           key={color.color}
           className={cn(
-            'w-6 drop-shadow rounded-full flex justify-center items-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-6',
+            'w-5 drop-shadow rounded-full flex justify-center items-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-5',
             color.code,
           )}
         >
