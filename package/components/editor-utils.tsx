@@ -312,7 +312,7 @@ export const useEditorToolbar = ({
     {
       icon: 'Markdown',
       title: 'Markdown',
-      onClick: () => {},
+      onClick: () => { },
       isActive: false,
     },
   ];
@@ -432,7 +432,7 @@ export const TextHighlighter = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto absolute gap-0.5 top-14 flex flex-wrap left-[25.5rem] max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded bg-white px-2 py-2 shadow-lg transition-all"
+      className="z-50 h-auto gap-0.5 flex flex-wrap max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded bg-white px-2 py-2 shadow-elevation-1 transition-all"
     >
       {colors.map((color) => (
         <div
@@ -488,7 +488,7 @@ export const EditorFontFamily = ({
     <div
       ref={elementRef}
       className={cn(
-        'z-50 h-auto absolute top-14 left-[7rem] max-h-[330px] w-48 overflow-y-auto scroll-smooth bg-white px-1 py-2 shadow-lg transition-all rounded animate-in fade-in slide-in-from-top-1',
+        'z-50 h-auto max-h-[330px] w-48 overflow-y-auto scroll-smooth bg-white px-1 py-2 shadow-elevation-1 transition-all rounded',
       )}
     >
       {fonts.map((font) => (
@@ -526,7 +526,7 @@ export const EditorAlignment = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto absolute gap-2 top-14 left-[47rem] translate-x-1/2 flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all"
+      className="z-50 h-auto left-[47rem] flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-elevation-1 transition-all"
     >
       <span
         onClick={() => {
@@ -586,7 +586,7 @@ export const EditorList = ({
     <div
       ref={elementRef}
       className={cn(
-        'z-50 h-auto absolute gap-2 top-[50px] right-[30%] flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-lg transition-all',
+        'z-50 h-auto gap-2 flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-elevation-1 transition-all',
       )}
     >
       <Tooltip text="unordered list">
@@ -595,9 +595,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${
-            editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <List size={20} />
         </span>
@@ -609,9 +608,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${
-            editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <ListOrdered size={20} />
         </span>
@@ -623,9 +621,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${
-            editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <ListChecks size={20} />
         </span>
@@ -697,7 +694,7 @@ export const LinkPopup = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto absolute gap-2 top-14 translate-x-1/2 items-center flex max-h-[330px] overflow-y-auto scroll-smooth rounded-lg bg-white p-2 shadow-lg transition-all"
+      className="z-50 h-auto gap-2 items-center flex max-h-[330px] overflow-y-auto scroll-smooth rounded-lg bg-white p-2 shadow-elevation-1 transition-all"
     >
       <TextField
         onChange={(e) => setUrl(e.target.value)}
@@ -732,7 +729,7 @@ export const TextColor = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto absolute gap-0.5 top-14 flex flex-wrap left-[22.5rem] max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded bg-white px-2 py-2 shadow-lg transition-all"
+      className="z-50 h-auto gap-0.5 flex flex-wrap max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded bg-white px-2 py-2 shadow-elevation-1 transition-all"
     >
       {colors.map((color) => (
         <div
@@ -758,6 +755,15 @@ export const TextColor = ({
           />
         </div>
       ))}
+      <div
+        onClick={() => {
+          editor.chain().focus().unsetColor().run();
+          setVisibility(IEditorTool.NONE);
+        }}
+        className="flex w-full items-center gap-1 cursor-pointer mt-2 mb-1 text-sm text-gray-800 hover:bg-gray-100 rounded-md p-1"
+      >
+        <Ban size={18}></Ban> None
+      </div>
     </div>
   );
 };
@@ -815,8 +821,7 @@ export const TextHeading = ({
     <div
       ref={elementRef}
       className={cn(
-        'absolute top-[50px] left-[15rem] z-50 mt-1 flex w-48 flex-col overflow-hidden rounded bg-white p-1 shadow-lg animate-in fade-in slide-in-from-top-1',
-        'left-0',
+        'z-50 flex w-48 flex-col overflow-hidden rounded bg-white p-1 shadow-elevation-1'
       )}
     >
       {headings.map((heading) => (

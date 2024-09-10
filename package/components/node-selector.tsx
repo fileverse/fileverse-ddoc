@@ -1,8 +1,8 @@
+import React from 'react';
 import { Editor } from '@tiptap/core'
-import cx from 'classnames'
+import cn from 'classnames'
 import {
   Check,
-  ChevronDown,
   Heading1,
   Heading2,
   Heading3,
@@ -11,29 +11,27 @@ import {
   TextIcon,
   Code,
   CheckSquare,
+  ChevronDown,
 } from 'lucide-react'
-import { Dispatch, FC, SetStateAction } from 'react'
 
 import { BubbleMenuItem } from './editor-bubble-menu'
+import { DynamicDropdown } from '@fileverse/ui';
 
 interface NodeSelectorProps {
   editor: Editor
-  isOpen: boolean
-  setIsOpen: Dispatch<SetStateAction<boolean>>
+  elementRef: React.RefObject<HTMLDivElement>;
 }
 
-export const NodeSelector: FC<NodeSelectorProps> = ({
+export const NodeSelector = ({
   editor,
-  isOpen,
-  setIsOpen,
-}) => {
+  elementRef
+}: NodeSelectorProps) => {
   const items: BubbleMenuItem[] = [
     {
       name: 'Text',
       icon: TextIcon,
       command: () =>
         editor.chain().focus().toggleNode('paragraph', 'paragraph').run(),
-      // I feel like there has to be a more efficient way to do this – feel free to PR if you know how!
       isActive: () =>
         editor.isActive('paragraph') &&
         !editor.isActive('bulletList') &&
@@ -100,25 +98,28 @@ export const NodeSelector: FC<NodeSelectorProps> = ({
   }
 
   return (
-    <div className="relative h-full flex items-center">
-      <button
-        className="flex items-center justify-between p-2 text-sm font-medium text-black hover:bg-[#f2f2f2] min-w-[6rem] w-[6rem] h-8 px-2 gap-1 transition rounded"
-        onClick={() => setIsOpen(!isOpen)}
-      >
-        <span className="truncate">{activeItem?.name}</span>
-        <ChevronDown size={16} />
-      </button>
-
-      {isOpen && (
-        <section className="fixed top-full z-[99999] mt-1 flex w-48 flex-col overflow-hidden rounded border border-stone-200 bg-white p-1 shadow-xl animate-in fade-in slide-in-from-top-1">
+    <DynamicDropdown
+      key="NodeSelector"
+      sideOffset={15}
+      anchorTrigger={
+        <button
+          className="bg-transparent hover:!bg-[#F2F4F5] rounded p-2 flex items-center justify-between gap-2 w-fit max-w-36"
+        >
+          <span className="text-body-sm truncate">{activeItem.name}</span>
+          <ChevronDown size={16} />
+        </button>
+      }
+      content={
+        <div
+          ref={elementRef}
+          className="h-auto flex w-48 flex-col overflow-hidden rounded bg-white p-1 shadow-elevation-2">
           {items.map((item, index) => (
             <button
               key={index}
               onClick={() => {
                 item.command()
-                setIsOpen(false)
               }}
-              className={cx(
+              className={cn(
                 'flex items-center justify-between rounded-sm px-2 py-1 text-sm text-stone-600 hover:bg-stone-100',
                 {
                   'text-blue-600': item.isActive(),
@@ -134,8 +135,8 @@ export const NodeSelector: FC<NodeSelectorProps> = ({
               {activeItem.name === item.name && <Check className="h-4 w-4" />}
             </button>
           ))}
-        </section>
-      )}
-    </div>
+        </div>
+      }
+    />
   )
 }

@@ -2,17 +2,18 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 import { BubbleMenu, BubbleMenuProps, isNodeSelection } from '@tiptap/react';
-import { useState } from 'react';
+import React from 'react';
 import { NodeSelector } from './node-selector';
-import { ColorSelector } from './color-selector';
 import {
   LinkPopup,
   useEditorToolbar,
   TextHighlighter,
   EditorAlignment,
+  TextColor,
 } from './editor-utils';
 import { IEditorTool } from '../hooks/use-visibility';
 import ToolbarButton from '../common/toolbar-button';
+import { DynamicDropdown } from '@fileverse/ui';
 
 export interface BubbleMenuItem {
   name: string;
@@ -64,7 +65,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Link',
       isActive: () => props.editor.isActive('link'),
-      command: () => setIsLinkPopupOpen(!isLinkPopupOpen),
+      command: () => { },
       icon: 'Link',
     },
   ];
@@ -88,17 +89,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       moveTransition: 'transform 0.15s ease-out',
       duration: 200,
       animation: 'shift-toward-subtle',
-      onHidden: () => {
-        setIsNodeSelectorOpen(false);
-        setIsColorSelectorOpen(false);
-        setIsLinkPopupOpen(false);
-      },
     },
   };
-
-  const [isNodeSelectorOpen, setIsNodeSelectorOpen] = useState(false);
-  const [isColorSelectorOpen, setIsColorSelectorOpen] = useState(false);
-  const [isLinkPopupOpen, setIsLinkPopupOpen] = useState(false);
 
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
     editor: props.editor,
@@ -133,69 +125,110 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
 
     return !hasYellowHighlight;
   };
+
+  const renderContent = (item: BubbleMenuItem) => {
+    switch (item.name) {
+      case 'Alignment':
+        return (
+          <EditorAlignment
+            setToolVisibility={setToolVisibility}
+            editor={props.editor}
+            elementRef={toolRef}
+          />
+        );
+      case 'Link':
+        return (
+          <LinkPopup
+            setToolVisibility={setToolVisibility}
+            editor={props.editor}
+            elementRef={toolRef}
+            bubbleMenu={true}
+          />
+        );
+      default:
+        return null;
+    }
+  };
+
   return (
     <BubbleMenu
       {...bubbleMenuProps}
       shouldShow={shouldShow}
-      className="hidden lg:flex gap-2 overflow-hidden rounded-[12px] h-[52px] min-w-[570px] w-full py-2 px-4 bg-white items-center shadow-lg"
+      className="hidden lg:flex gap-2 overflow-hidden rounded-lg h-[52px] min-w-fit w-full py-2 px-4 bg-white items-center shadow-elevation-1"
     >
       <NodeSelector
         editor={props.editor}
-        isOpen={isNodeSelectorOpen}
-        setIsOpen={() => {
-          setIsNodeSelectorOpen(!isNodeSelectorOpen);
-          setIsColorSelectorOpen(false);
-        }}
+        elementRef={toolRef}
       />
 
-      {items.map((item, index) => (
-        <div key={index} className="flex items-center">
+      {items.map((item, index) => {
+        if (item.name === 'Alignment' || item.name === 'Link') {
+          return (
+            <DynamicDropdown
+              key={item.name}
+              sideOffset={15}
+              anchorTrigger={
+                <ToolbarButton
+                  icon={item.icon}
+                  variant="ghost"
+                  size="md"
+                />
+              }
+              content={renderContent(item)}
+            />
+          );
+        } else if (item) {
+          return (
+            <div key={index} className="flex items-center">
+              <ToolbarButton
+                icon={item.icon}
+                onClick={item.command}
+                isActive={item.isActive()}
+              />
+              {(index === 3 || index === 5) && (
+                <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
+              )}
+            </div>
+          );
+        } else {
+          return null;
+        }
+      })}
+
+      <DynamicDropdown
+        key={IEditorTool.TEXT_COLOR}
+        sideOffset={15}
+        anchorTrigger={
           <ToolbarButton
-            icon={item.icon}
-            onClick={item.command}
-            isActive={item.isActive()}
+            icon="Baseline"
+            isActive={toolVisibility === IEditorTool.TEXT_COLOR}
           />
-          {(index === 4 || index === 6) && (
-            <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
-          )}
-        </div>
-      ))}
-      <ColorSelector
-        editor={props.editor}
-        isOpen={isColorSelectorOpen}
-        setIsOpen={() => {
-          setIsColorSelectorOpen(!isColorSelectorOpen);
-          setIsNodeSelectorOpen(false);
-        }}
+        }
+        content={
+          <TextColor
+            setVisibility={setToolVisibility}
+            editor={props.editor as Editor}
+            elementRef={toolRef}
+          />
+        }
       />
-      <ToolbarButton
-        icon="Highlighter"
-        onClick={() => setToolVisibility(IEditorTool.HIGHLIGHT)}
-        isActive={toolVisibility === IEditorTool.HIGHLIGHT}
+      <DynamicDropdown
+        key={IEditorTool.HIGHLIGHT}
+        sideOffset={15}
+        anchorTrigger={
+          <ToolbarButton
+            icon="Highlighter"
+            isActive={toolVisibility === IEditorTool.HIGHLIGHT}
+          />
+        }
+        content={
+          <TextHighlighter
+            setVisibility={setToolVisibility}
+            editor={props.editor as Editor}
+            elementRef={toolRef}
+          />
+        }
       />
-      {toolVisibility === IEditorTool.ALIGNMENT && (
-        <EditorAlignment
-          setToolVisibility={setToolVisibility}
-          editor={props.editor}
-          elementRef={toolRef}
-        />
-      )}
-      {isLinkPopupOpen && (
-        <LinkPopup
-          setToolVisibility={setToolVisibility}
-          editor={props.editor}
-          elementRef={toolRef}
-          bubbleMenu={true}
-          setIsLinkPopupOpen={setIsLinkPopupOpen}
-        />
-      )}
-      {toolVisibility === IEditorTool.HIGHLIGHT && (
-        <TextHighlighter
-          setVisibility={setToolVisibility}
-          editor={props.editor as Editor}
-          elementRef={toolRef}
-        />
-      )}
     </BubbleMenu>
   );
 };

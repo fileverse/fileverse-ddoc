@@ -1,7 +1,7 @@
+import React, { useState } from 'react';
 import {
   EditorAlignment,
   EditorFontFamily,
-  EditorList,
   fonts,
   LinkPopup,
   TextColor,
@@ -25,7 +25,6 @@ import {
   TextField,
 } from '@fileverse/ui';
 import ToolbarButton from '../common/toolbar-button';
-import { useState } from 'react';
 
 const TiptapToolBar = ({
   editor,
@@ -40,7 +39,6 @@ const TiptapToolBar = ({
 }) => {
   const {
     toolRef,
-    toolVisibility,
     setToolVisibility,
     toolbar,
     undoRedoTools,
@@ -68,6 +66,67 @@ const TiptapToolBar = ({
       }
     }
     setIsExportModalOpen(false);
+  };
+
+  const renderContent = (tool: {
+    title: string;
+    icon: LucideIconProps['name'];
+  }) => {
+    switch (tool.title) {
+      case 'Markdown':
+        return (
+          <ButtonGroup className="flex-col space-x-0 gap-1 p-1">
+            {markdownOptions.map((option, index) => (
+              <Button
+                variant="ghost"
+                key={index}
+                onClick={option?.onClick}
+                className="space-x-2"
+              >
+                <LucideIcon
+                  name={option?.icon as LucideIconProps['name']}
+                  className="w-5 h-5"
+                />
+                <span>{option?.title}</span>
+              </Button>
+            ))}
+          </ButtonGroup>
+        );
+      case 'Highlight':
+        return (
+          <TextHighlighter
+            setVisibility={setToolVisibility}
+            editor={editor as Editor}
+            elementRef={toolRef}
+          />
+        );
+      case 'Text Color':
+        return (
+          <TextColor
+            editor={editor}
+            setVisibility={setToolVisibility}
+            elementRef={toolRef}
+          />
+        );
+      case 'Alignment':
+        return (
+          <EditorAlignment
+            setToolVisibility={setToolVisibility}
+            editor={editor as Editor}
+            elementRef={toolRef}
+          />
+        );
+      case 'Link':
+        return (
+          <LinkPopup
+            setToolVisibility={setToolVisibility}
+            editor={editor as Editor}
+            elementRef={toolRef}
+          />
+        );
+      default:
+        return null;
+    }
   };
 
   return (
@@ -98,37 +157,60 @@ const TiptapToolBar = ({
             }
           })}
         </div>
-        <button
-          className="bg-transparent hover:!bg-[#F2F4F5] rounded py-2 px-4 flex items-center justify-center gap-2 w-fit"
-          onClick={() => setToolVisibility(IEditorTool.FONT_FAMILY)}
-        >
-          <span className="text-sm">
-            {fonts.find((font) =>
-              editor?.isActive('textStyle', { fontFamily: font.value }),
-            )?.title || 'Font'}
-          </span>
-          <ChevronDown size={16} />
-        </button>
+        <DynamicDropdown
+          key={IEditorTool.FONT_FAMILY}
+          anchorTrigger={
+            <button
+              className="bg-transparent hover:!bg-[#F2F4F5] rounded py-2 px-4 flex items-center justify-center gap-2 w-fit"
+              onClick={() => setToolVisibility(IEditorTool.FONT_FAMILY)}
+            >
+              <span className="text-body-sm">
+                {fonts.find((font) =>
+                  editor?.isActive('textStyle', { fontFamily: font.value }),
+                )?.title || 'Font'}
+              </span>
+              <ChevronDown size={16} />
+            </button>
+          }
+          content={
+            <EditorFontFamily
+              editor={editor as Editor}
+              elementRef={toolRef}
+              setToolVisibility={setToolVisibility} />
+          }
+        />
         <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
-        <button
-          className="bg-transparent hover:!bg-[#F2F4F5] rounded gap-2 py-2 px-4 flex items-center justify-center w-fit"
-          onClick={() => setToolVisibility(IEditorTool.HEADING)}
-        >
-          <span className="text-sm">
-            {editor?.isActive('heading', { level: 1 })
-              ? 'Heading 1'
-              : editor?.isActive('heading', { level: 2 })
-                ? 'Heading 2'
-                : editor?.isActive('heading', { level: 3 })
-                  ? 'Heading 3'
-                  : 'Text'}
-          </span>
-          <ChevronDown size={16} />
-        </button>
+        <DynamicDropdown
+          key={IEditorTool.HEADING}
+          anchorTrigger={
+            <button
+              className="bg-transparent hover:!bg-[#F2F4F5] rounded gap-2 py-2 px-4 flex items-center justify-center w-fit"
+              onClick={() => setToolVisibility(IEditorTool.HEADING)}
+            >
+              <span className="text-sm">
+                {editor?.isActive('heading', { level: 1 })
+                  ? 'Heading 1'
+                  : editor?.isActive('heading', { level: 2 })
+                    ? 'Heading 2'
+                    : editor?.isActive('heading', { level: 3 })
+                      ? 'Heading 3'
+                      : 'Text'}
+              </span>
+              <ChevronDown size={16} />
+            </button>
+          }
+          content={
+            <TextHeading
+              setVisibility={setToolVisibility}
+              editor={editor as Editor}
+              elementRef={toolRef}
+            />
+          }
+        />
         <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
         <div className="flex gap-2 justify-center items-center">
-          {toolbar.map((tool, _index) => {
-            if (tool?.title === 'Markdown') {
+          {toolbar.map((tool, index) => {
+            if (tool?.title === 'Markdown' || tool?.title === 'Highlight' || tool?.title === 'Text Color' || tool?.title === 'Alignment' || tool?.title === 'Link') {
               return (
                 <DynamicDropdown
                   key={tool.title}
@@ -141,24 +223,7 @@ const TiptapToolBar = ({
                       />
                     </Tooltip>
                   }
-                  content={
-                    <ButtonGroup className="flex-col space-x-0 gap-1 p-1">
-                      {markdownOptions.map((option, index) => (
-                        <Button
-                          variant="ghost"
-                          key={index}
-                          onClick={option?.onClick}
-                          className="space-x-2"
-                        >
-                          <LucideIcon
-                            name={option?.icon as LucideIconProps['name']}
-                            className="w-5 h-5"
-                          />
-                          <span>{option?.title}</span>
-                        </Button>
-                      ))}
-                    </ButtonGroup>
-                  }
+                  content={renderContent(tool)}
                 />
               );
             } else if (tool) {
@@ -174,61 +239,12 @@ const TiptapToolBar = ({
             } else {
               return (
                 <div
-                  key={_index}
+                  key={index}
                   className="w-[2px] h-4 bg-gray-200 mx-2"
                 ></div>
               );
             }
           })}
-          {toolVisibility === IEditorTool.FONT_FAMILY && (
-            <EditorFontFamily
-              setToolVisibility={setToolVisibility}
-              editor={editor as Editor}
-              elementRef={toolRef}
-            />
-          )}
-          {toolVisibility === IEditorTool.HEADING && (
-            <TextHeading
-              setVisibility={setToolVisibility}
-              editor={editor as Editor}
-              elementRef={toolRef}
-            />
-          )}
-          {toolVisibility === IEditorTool.TEXT_COLOR && (
-            <TextColor
-              setVisibility={setToolVisibility}
-              editor={editor as Editor}
-              elementRef={toolRef}
-            />
-          )}
-          {toolVisibility === IEditorTool.HIGHLIGHT && (
-            <TextHighlighter
-              setVisibility={setToolVisibility}
-              editor={editor as Editor}
-              elementRef={toolRef}
-            />
-          )}
-          {toolVisibility === IEditorTool.ALIGNMENT && (
-            <EditorAlignment
-              setToolVisibility={setToolVisibility}
-              editor={editor as Editor}
-              elementRef={toolRef}
-            />
-          )}
-          {toolVisibility === IEditorTool.LIST && (
-            <EditorList
-              setToolVisibility={setToolVisibility}
-              editor={editor as Editor}
-              elementRef={toolRef}
-            />
-          )}
-          {toolVisibility === IEditorTool.LINK && (
-            <LinkPopup
-              setToolVisibility={setToolVisibility}
-              editor={editor as Editor}
-              elementRef={toolRef}
-            />
-          )}
           <DynamicModal
             open={isExportModalOpen}
             onOpenChange={setIsExportModalOpen}
