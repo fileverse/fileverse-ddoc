@@ -1,34 +1,33 @@
 {
-    "editor.tabSize": 4,
-    "editor.insertSpaces": true,
-    "editor.wordWrap": "on",
-    "editor.minimap.enabled": false,
-    "editor.formatOnSave": true,
-    "files.autoSaveDelay": 1000,
-    "files.exclude": {
-      "**/.git": true,
-      "**/.DS_Store": true,
-      "**/node_modules": true
-    },
-    "files.associations": {
-      "*.js": "javascriptreact",
-      "*.ts": "typescript",
-      "*.jsx": "javascriptreact",
-      "*.tsx": "typescriptreact"
-    },
-    "terminal.integrated.fontSize": 12,
-    "javascript.validate.enable": true,
-    "typescript.validate.enable": true,
-    "eslint.enable": true,
-    "eslint.validate": [
-      "javascript",
-      "javascriptreact",
-      "typescript",
-      "typescriptreact"
-    ],
-    "prettier.singleQuote": true,
-    "prettier.trailingComma": "all",
-    "prettier.semi": true,
-    "prettier.tabWidth": 2,
-    "editor.showUnused": true
-  }
+  "editor.tabSize": 4,
+  "editor.insertSpaces": true,
+  "editor.wordWrap": "on",
+  "editor.minimap.enabled": false,
+  "editor.formatOnSave": true,
+  "files.autoSaveDelay": 1000,
+  "files.exclude": {
+    "**/.git": true,
+    "**/.DS_Store": true,
+    "**/node_modules": true
+  },
+  "files.associations": {
+    "*.js": "javascriptreact",
+    "*.ts": "typescript",
+    "*.jsx": "javascriptreact",
+    "*.tsx": "typescriptreact"
+  },
+  "javascript.validate.enable": true,
+  "typescript.validate.enable": true,
+  "eslint.enable": true,
+  "eslint.validate": [
+    "javascript",
+    "javascriptreact",
+    "typescript",
+    "typescriptreact"
+  ],
+  "prettier.singleQuote": true,
+  "prettier.trailingComma": "all",
+  "prettier.semi": true,
+  "prettier.tabWidth": 2,
+  "editor.showUnused": true
+}

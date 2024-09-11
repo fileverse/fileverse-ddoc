@@ -1,23 +1,22 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
+import { forwardRef } from 'react';
 import { IconButton, Tooltip } from '@fileverse/ui';
 
-export default function ToolbarButton({
-  icon,
-  isActive,
-  onClick,
-  tooltip,
-  classNames,
-  ref,
-  disabled,
-}: {
+const ToolbarButton = forwardRef<HTMLButtonElement, {
   icon: string;
   isActive: boolean;
   onClick: () => void;
   tooltip?: string;
   classNames?: string;
-  ref?: React.LegacyRef<HTMLButtonElement> | undefined;
   disabled?: boolean;
-}) {
+}>(({
+  icon,
+  isActive,
+  onClick,
+  tooltip,
+  classNames,
+  disabled,
+}, ref) => {
   if (tooltip)
     return (
       <Tooltip text={tooltip}>
@@ -48,4 +47,6 @@ export default function ToolbarButton({
       disabled={disabled}
     />
   );
-}
+});
+
+export default ToolbarButton;
