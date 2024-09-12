@@ -5,8 +5,7 @@ import Tippy from '@tippyjs/react';
 import './styles.scss';
 import { useEditingContext } from '../../../hooks/use-editing-context';
 import cn from 'classnames';
-import { GripHorizontal } from 'lucide-react';
-import { Button } from '@fileverse/ui';
+import { Button, LucideIcon } from '@fileverse/ui';
 
 interface CellButton {
   name: string;
@@ -194,14 +193,14 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
           placement="bottom-start"
           content={
             <article className="w-screen lg:w-full" contentEditable={false}>
-              <ul
-                tabIndex={0}
+              <div
+                tabIndex={1}
                 className="static top-8 right-1/2 translate-x-1/2 lg:-translate-x-full menu menu-compact p-2 shadow bg-base-100 rounded-lg w-56"
                 style={gimmeDropdownStyles()}
               >
                 {cellButtonsConfig.map((btn) => {
                   return (
-                    <li key={btn.name}>
+                    <div key={btn.name}>
                       <Button
                         variant="ghost"
                         className="!items-center w-full !justify-start !font-[400]"
@@ -210,10 +209,10 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
                         {/* <span>{btn.icon}</span> */}
                         <span>{btn.name}</span>
                       </Button>
-                    </li>
+                    </div>
                   );
                 })}
-              </ul>
+              </div>
             </article>
           }
         >
@@ -222,7 +221,7 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
             className={cn('trigger-button', { hidden: isPreviewMode })}
             contentEditable={false}
           >
-            <GripHorizontal size={20} />
+            <LucideIcon name="Ellipsis" className='color-text-default' size={'sm'} />
           </label>
         </Tippy>
       )}

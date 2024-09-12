@@ -3,7 +3,7 @@ import { NodeViewProps } from '@tiptap/core';
 import { NodeViewWrapper } from '@tiptap/react';
 import { useEditingContext } from '../../hooks/use-editing-context';
 import { debounce } from '../../utils/debounce';
-import { Youtube, Twitter, Telescope } from 'lucide-react';
+import { LucideIcon } from '@fileverse/ui';
 
 export const ActionButtonNodeView = ({
   node,
@@ -17,11 +17,11 @@ export const ActionButtonNodeView = ({
   const renderIcon = () => {
     switch (node.attrs.data) {
       case 'twitter':
-        return <Twitter size={20} />;
+        return <LucideIcon name="XSocial" size={'md'} />;
       case 'iframe':
-        return <Youtube size={20} />;
+        return <LucideIcon name="Youtube" size={'md'} />;
       default:
-        return <Telescope size={20} />;
+        return <LucideIcon name="Sparkles" size={'md'} />;
     }
   };
 
@@ -32,7 +32,7 @@ export const ActionButtonNodeView = ({
       case 'iframe':
         return 'Embed a video';
       default:
-        return 'Embed an URL';
+        return 'Paste an Youtube or Twitter/X link to embed';
     }
   };
 
@@ -122,13 +122,80 @@ export const ActionButtonNodeView = ({
         .run();
   };
 
+  const multiRender = () => {
+    if (!inputValue) {
+      alert('Please enter a URL');
+      return;
+    }
+
+    let formattedUrl = inputValue;
+    let mediaType = 'iframe';
+
+    if (inputValue.includes('<iframe')) {
+      const matches = inputValue.match(/src="([^"]*)"/);
+      if (matches && matches.length > 0) {
+        formattedUrl = matches[1];
+      }
+    } else {
+      switch (true) {
+        case /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/.test(inputValue): {
+          const matches = inputValue.match(/youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/);
+          if (matches && matches.length > 0) {
+            formattedUrl = `https://www.youtube.com/embed/${matches[1]}`;
+          }
+          break;
+        }
+        case /vimeo\.com\/([a-zA-Z0-9-_]+)/.test(inputValue): {
+          const matches = inputValue.match(/vimeo\.com\/([a-zA-Z0-9-_]+)/);
+          if (matches && matches.length > 0) {
+            formattedUrl = `https://player.vimeo.com/video/${matches[1]}`;
+          }
+          break;
+        }
+        case /(?:twitter|x)\.com\/(?:#!\/)?(\w+)\/status(es)?\/(\d+)/.test(inputValue): {
+          const matches = inputValue.match(/(?:twitter|x)\.com\/(?:#!\/)?(\w+)\/status(es)?\/(\d+)/);
+          if (matches && matches.length > 0) {
+            formattedUrl = matches[3]; // Extract the tweet ID
+            mediaType = 'twitter';
+          }
+          break;
+        }
+        default: {
+          alert('Please enter a valid URL');
+          return;
+        }
+      }
+    }
+
+    const width = 640;
+    const height = 360;
+
+    const pos = getPos();
+    const to = pos + node.nodeSize;
+
+    if (formattedUrl) {
+      const chain = editor?.chain().focus(pos).deleteRange({ from: pos, to });
+
+      if (mediaType === 'twitter') {
+        chain?.setTweetEmbed({ tweetId: formattedUrl });
+      } else {
+        chain?.setIframe({ src: formattedUrl, width, height });
+      }
+
+      chain?.run();
+    }
+  }
+
   const handleSave = () => {
     switch (node.attrs.data) {
       case 'twitter':
         twitterRender();
         break;
-      default:
+      case 'iframe':
         iframeRender();
+        break
+      default:
+        multiRender();
         break;
     }
   };

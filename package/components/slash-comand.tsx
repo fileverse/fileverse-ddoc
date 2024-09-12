@@ -13,24 +13,7 @@ import { Editor, Range, Extension } from '@tiptap/core';
 import Suggestion from '@tiptap/suggestion';
 import { ReactRenderer } from '@tiptap/react';
 import tippy from 'tippy.js';
-import {
-  Heading1,
-  Heading2,
-  Heading3,
-  List,
-  ListOrdered,
-  Text,
-  TextQuote,
-  Code,
-  CheckSquare,
-  Table,
-  ImageIcon,
-  Minus,
-  Twitter,
-  Youtube,
-  Columns2,
-  Columns3,
-} from 'lucide-react';
+import { LucideIcon } from '@fileverse/ui'
 
 import { startImageUpload } from '../utils/upload-images';
 import { useMediaQuery } from 'usehooks-ts';
@@ -90,7 +73,7 @@ const getSuggestionItems = ({
       title: 'Text',
       description: 'Just start typing with plain text.',
       searchTerms: ['p', 'paragraph'],
-      icon: <Text size={18} />,
+      icon: <LucideIcon name="Text" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) => {
         editor
@@ -105,7 +88,7 @@ const getSuggestionItems = ({
       title: 'To-do List',
       description: 'Track tasks with a to-do list.',
       searchTerms: ['todo', 'task', 'list', 'check', 'checkbox'],
-      icon: <CheckSquare size={18} />,
+      icon: <LucideIcon name="ListChecks" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) => {
         editor.chain().focus().deleteRange(range).toggleTaskList().run();
@@ -115,7 +98,7 @@ const getSuggestionItems = ({
       title: 'Heading 1',
       description: 'Big section heading.',
       searchTerms: ['title', 'big', 'large'],
-      icon: <Heading1 size={18} />,
+      icon: <LucideIcon name="Heading1" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) => {
         editor
@@ -130,7 +113,7 @@ const getSuggestionItems = ({
       title: 'Heading 2',
       description: 'Medium section heading.',
       searchTerms: ['subtitle', 'medium'],
-      icon: <Heading2 size={18} />,
+      icon: <LucideIcon name="Heading2" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) => {
         editor
@@ -145,7 +128,7 @@ const getSuggestionItems = ({
       title: 'Heading 3',
       description: 'Small section heading.',
       searchTerms: ['subtitle', 'small'],
-      icon: <Heading3 size={18} />,
+      icon: <LucideIcon name="Heading3" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) => {
         editor
@@ -160,7 +143,7 @@ const getSuggestionItems = ({
       title: 'Bullet List',
       description: 'Create a simple bullet list.',
       searchTerms: ['unordered', 'point'],
-      icon: <List size={18} />,
+      icon: <LucideIcon name="List" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) => {
         editor.chain().focus().deleteRange(range).toggleBulletList().run();
@@ -170,7 +153,7 @@ const getSuggestionItems = ({
       title: 'Numbered List',
       description: 'Create a list with numbering.',
       searchTerms: ['ordered'],
-      icon: <ListOrdered size={18} />,
+      icon: <LucideIcon name="ListOrdered" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) => {
         editor.chain().focus().deleteRange(range).toggleOrderedList().run();
@@ -180,7 +163,7 @@ const getSuggestionItems = ({
       title: 'Divider',
       description: 'Visually divide content.',
       searchTerms: ['hr', 'divider', 'break', 'line', 'delimiter'],
-      icon: <Minus size={18} />,
+      icon: <LucideIcon name="Minus" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) => {
         editor.chain().focus().deleteRange(range).setHorizontalRule().run();
@@ -190,7 +173,7 @@ const getSuggestionItems = ({
       title: 'Quote',
       description: 'Capture a quote.',
       searchTerms: ['blockquote'],
-      icon: <TextQuote size={18} />,
+      icon: <LucideIcon name="TextQuote" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) =>
         editor
@@ -205,7 +188,7 @@ const getSuggestionItems = ({
       title: 'Code',
       description: 'Capture a code snippet.',
       searchTerms: ['codeblock'],
-      icon: <Code size={18} />,
+      icon: <LucideIcon name="Code" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) =>
         editor.chain().focus().deleteRange(range).toggleCodeBlock().run(),
@@ -214,7 +197,7 @@ const getSuggestionItems = ({
       title: 'Table',
       description: 'Create a table.',
       searchTerms: ['table'],
-      icon: <Table size={18} />,
+      icon: <LucideIcon name="Table" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) =>
         editor
@@ -228,7 +211,7 @@ const getSuggestionItems = ({
       title: 'Image',
       description: 'Upload an image from your computer.',
       searchTerms: ['photo', 'picture', 'media'],
-      icon: <ImageIcon size={18} />,
+      icon: <LucideIcon name="ImageUp" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) => {
         editor.chain().focus().deleteRange(range).run();
@@ -257,7 +240,7 @@ const getSuggestionItems = ({
       title: 'Video Embed',
       description: 'Embed a video from YouTube, Vimeo, etc.',
       searchTerms: ['iframe', 'embed', 'video', 'youtube'],
-      icon: <Youtube />,
+      icon: <LucideIcon name="Youtube" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) => {
         editor
@@ -272,7 +255,7 @@ const getSuggestionItems = ({
       title: 'Twitter',
       description: 'Embed a Twitter tweet.',
       searchTerms: ['embed', 'twitter', 'tweet'],
-      icon: <Twitter />,
+      icon: <LucideIcon name="XSocial" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) => {
         editor
@@ -287,7 +270,7 @@ const getSuggestionItems = ({
       title: '2 Columns',
       description: 'Create 2 columns of block',
       searchTerms: ['col', 'column', '2', 'layout'],
-      icon: <Columns2 />,
+      icon: <LucideIcon name="Columns2" size={'md'} />,
       image: '',
       command: ({ editor }: CommandProps) => {
         editor
@@ -302,7 +285,7 @@ const getSuggestionItems = ({
       title: '3 Columns',
       description: 'Create 3 columns of block',
       searchTerms: ['col', 'column', '3', 'layout'],
-      icon: <Columns3 />,
+      icon: <LucideIcon name="Columns3" size={'md'} />,
       image: '',
       command: ({ editor }: CommandProps) => {
         editor
@@ -434,9 +417,8 @@ const CommandList = ({
         return (
           <button
             key={index}
-            className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-neutral-500 hover:bg-neutral-100 hover:border-neutral-200 border border-transparent transition-all ${
-              index === selectedIndex ? 'bg-neutral-200 text-neutral-800' : ''
-            }`}
+            className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-neutral-500 hover:bg-neutral-100 hover:border-neutral-200 border border-transparent transition-all ${index === selectedIndex ? 'bg-neutral-200 text-neutral-800' : ''
+              }`}
             onClick={() => selectItem(index)}
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-md border border-neutral-200 bg-white">
