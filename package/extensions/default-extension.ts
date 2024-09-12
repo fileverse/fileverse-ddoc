@@ -115,7 +115,7 @@ export const defaultExtensions = [
         'color-text-link font-bold transition-colors cursor-pointer select-text pointer-events-auto',
       rel: 'noopener noreferrer',
     },
-    validate: (href) => /^https?:\/\//.test(href),
+    validate: href => /^https?:\/\//.test(href),
     openOnClick: true,
     autolink: true,
   }),

@@ -57,10 +57,10 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       icon: 'AlignLeft',
     },
     {
-      name: 'Code',
+      name: 'Code Block',
       isActive: () => props.editor.isActive('codeBlock'),
       command: () => props.editor.chain().focus().toggleCodeBlock().run(),
-      icon: 'Code',
+      icon: 'Braces',
     },
     {
       name: 'Link',

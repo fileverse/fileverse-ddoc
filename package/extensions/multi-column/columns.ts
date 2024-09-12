@@ -167,14 +167,6 @@ export const Columns = Node.create({
     }
   },
 
-  // addKeyboardShortcuts() {
-  //   return {
-  //     Backspace: () => {
-  //       return this.editor.commands.unsetColumns()
-  //     },
-  //   }
-  // },
-
   renderHTML({ HTMLAttributes }) {
     return [
       'div',

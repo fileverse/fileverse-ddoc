@@ -24,6 +24,7 @@ import {
   Heading1,
   Heading2,
   Heading3,
+  Braces,
 } from 'lucide-react';
 import { startImageUpload } from '../utils/upload-images';
 import cn from 'classnames';
@@ -295,6 +296,12 @@ export const useEditorToolbar = ({
     {
       icon: 'Code',
       title: 'Code',
+      onClick: () => editor?.chain().focus().toggleCode().run(),
+      isActive: editor?.isActive('code'),
+    },
+    {
+      icon: 'Braces',
+      title: 'Code Block',
       onClick: () => editor?.chain().focus().toggleCodeBlock().run(),
       isActive: editor?.isActive('codeBlock'),
     },
@@ -998,14 +1005,14 @@ export const TextFormatingPopup = ({
               </button>
               <button
                 onClick={() => {
-                  editor?.chain().toggleCodeBlock().run();
+                  editor?.chain().toggleCode().run();
                 }}
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                   {
                     ['bg-yellow-300 hover:brightness-90']:
-                      editor.isActive('codeBlock'),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive('codeBlock'),
+                      editor.isActive('code'),
+                    ['hover:bg-[#f2f2f2]']: !editor.isActive('code'),
                   },
                 )}
               >
@@ -1092,6 +1099,21 @@ export const TextFormatingPopup = ({
               </button>
             </div>
             <div className="bg-[#f8f9fa] rounded flex flex-[0.5] sm:flex-none gap-2 justify-evenly w-full sm:w-fit p-1">
+              <button
+                onClick={() => {
+                  editor?.chain().toggleCodeBlock().run();
+                }}
+                className={cn(
+                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
+                  {
+                    ['bg-yellow-300 hover:brightness-90']:
+                      editor.isActive('codeBlock'),
+                    ['hover:bg-[#f2f2f2]']: !editor.isActive('codeBlock'),
+                  },
+                )}
+              >
+                <Braces size={20} />
+              </button>
               <button
                 onClick={() => {
                   editor?.chain().toggleBulletList().run();

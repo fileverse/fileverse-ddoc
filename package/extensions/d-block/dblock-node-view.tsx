@@ -1,19 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useMemo, useState } from 'react';
-import {
-  NodeViewWrapper,
-  NodeViewProps,
-  NodeViewContent,
-  Editor,
-} from '@tiptap/react';
-import {
-  Copy,
-  GripVertical,
-  Plus,
-  RemoveFormatting,
-  Trash2,
-  Clipboard,
-} from 'lucide-react';
+import { NodeViewWrapper, NodeViewProps, NodeViewContent, Editor } from '@tiptap/react';
+import { Copy, GripVertical, Plus, RemoveFormatting, Trash2, Clipboard } from 'lucide-react';
 import { useEditingContext } from '../../hooks/use-editing-context';
 import cn from 'classnames';
 import { debounce } from '../../utils/debounce';
@@ -24,6 +12,7 @@ import useContentItemActions from '../../hooks/use-content-item-actions';
 import { Toolbar } from '../../common/toolbar';
 import CustomTooltip from '../../common/cutsom-tooltip';
 import { FocusScope } from '@radix-ui/react-focus-scope';
+import { createTemplateButtons, createMoreTemplates, renderTemplateButtons } from '../../utils/template-utils';
 
 export const DBlockNodeView: React.FC<NodeViewProps> = ({
   node,
@@ -240,6 +229,28 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
     }
   }, [nodeContentText]);
 
+  const isDocEmpty = useMemo(() => {
+    const { doc } = editor.state;
+    const pos = getPos();
+    const isFirstDBlock = doc.nodeAt(pos) === doc.firstChild
+    const isPagaraph = doc.nodeAt(pos)?.type.name === 'dBlock' && doc.nodeAt(pos)?.content.firstChild?.type.name === 'paragraph';
+    return doc.textContent === '' && isFirstDBlock && isPagaraph;
+  }, [getPos, editor.state]);
+
+  const addTemplate = (template: string) => {
+    const pos = getPos() + node.nodeSize;
+    editor.commands.insertContentAt(pos - 4, template);
+  };
+
+  const templateButtons = createTemplateButtons(addTemplate);
+  const moreTemplates = createMoreTemplates(addTemplate);
+
+  const [visibleTemplateCount, setVisibleTemplateCount] = useState(2);
+
+  const expandAllTemplates = () => {
+    setVisibleTemplateCount(moreTemplates.length);
+  };
+
   return (
     <NodeViewWrapper
       as="div"
@@ -330,10 +341,12 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
       </section>
 
       <NodeViewContent
-        className={cn('node-view-content w-full', {
+        className={cn('node-view-content w-full relative', {
           'is-table': isTable,
         })}
-      />
+      >
+        {isDocEmpty && renderTemplateButtons(templateButtons, moreTemplates, visibleTemplateCount, expandAllTemplates)}
+      </NodeViewContent>
     </NodeViewWrapper>
   );
 };
