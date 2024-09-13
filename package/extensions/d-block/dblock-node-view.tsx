@@ -230,11 +230,12 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
   }, [nodeContentText]);
 
   const isDocEmpty = useMemo(() => {
-    const { doc } = editor.state;
+    const { doc, selection } = editor.state;
     const pos = getPos();
-    const isFirstDBlock = doc.nodeAt(pos) === doc.firstChild
-    const isPagaraph = doc.nodeAt(pos)?.type.name === 'dBlock' && doc.nodeAt(pos)?.content.firstChild?.type.name === 'paragraph';
-    return doc.textContent === '' && isFirstDBlock && isPagaraph;
+    const isFirstDBlock = doc.nodeAt(pos) === doc.firstChild;
+    const isParagraph = doc.nodeAt(pos)?.type.name === 'dBlock' && doc.nodeAt(pos)?.content.firstChild?.type.name === 'paragraph';
+    const isFirstDBlockFocused = selection.$anchor.pos >= pos && selection.$anchor.pos <= pos + (doc.nodeAt(pos)?.nodeSize || 0);
+    return doc.textContent === '' && isFirstDBlock && isParagraph && isFirstDBlockFocused;
   }, [getPos, editor.state]);
 
   const addTemplate = (template: string) => {
