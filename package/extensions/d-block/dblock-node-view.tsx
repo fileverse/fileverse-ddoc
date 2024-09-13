@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useMemo, useState } from 'react';
-import { NodeViewWrapper, NodeViewProps, NodeViewContent, Editor } from '@tiptap/react';
+import { NodeViewWrapper, NodeViewProps, NodeViewContent, Editor, JSONContent } from '@tiptap/react';
 import { Copy, GripVertical, Plus, RemoveFormatting, Trash2, Clipboard } from 'lucide-react';
 import { useEditingContext } from '../../hooks/use-editing-context';
 import cn from 'classnames';
@@ -238,7 +238,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
     return doc.textContent === '' && isFirstDBlock && isParagraph && isFirstDBlockFocused;
   }, [getPos, editor.state]);
 
-  const addTemplate = (template: string) => {
+  const addTemplate = (template: JSONContent) => {
     const pos = getPos() + node.nodeSize;
     editor.commands.insertContentAt(pos - 4, template);
   };
@@ -246,10 +246,12 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
   const templateButtons = createTemplateButtons(addTemplate);
   const moreTemplates = createMoreTemplates(addTemplate);
 
+  const [isExpanded, setIsExpanded] = useState(false);
   const [visibleTemplateCount, setVisibleTemplateCount] = useState(2);
 
-  const expandAllTemplates = () => {
-    setVisibleTemplateCount(moreTemplates.length);
+  const toggleAllTemplates = () => {
+    setIsExpanded(!isExpanded);
+    setVisibleTemplateCount(isExpanded ? 2 : moreTemplates.length);
   };
 
   return (
@@ -346,7 +348,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
           'is-table': isTable,
         })}
       >
-        {isDocEmpty && renderTemplateButtons(templateButtons, moreTemplates, visibleTemplateCount, expandAllTemplates)}
+        {isDocEmpty && renderTemplateButtons(templateButtons, moreTemplates, visibleTemplateCount, toggleAllTemplates, isExpanded)}
       </NodeViewContent>
     </NodeViewWrapper>
   );
