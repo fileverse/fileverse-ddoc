@@ -167,7 +167,7 @@ const DdocEditor = forwardRef(
         {isNavbarVisible && (
           <nav
             id="Navbar"
-            className="h-14 bg-[#ffffff] py-2 px-3 xl:px-4 flex gap-[40px] items-center justify-between w-screen xl:w-full sticky left-0 top-0 border-b color-border-default"
+            className="h-14 bg-[#ffffff] py-2 px-3 xl:px-4 flex gap-[40px] items-center justify-between w-screen xl:w-full fixed left-0 top-0 border-b color-border-default z-50"
           >
             {renderNavbar?.({ editor: editor.getJSON() })}
           </nav>
@@ -176,7 +176,7 @@ const DdocEditor = forwardRef(
           <div
             id="toolbar"
             className={cn(
-              'z-50 hidden xl:flex items-center justify-center w-full h-[52px] sticky left-0 px-1 bg-[#ffffff]',
+              'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 px-1 bg-[#ffffff]',
               { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
             )}
           >
@@ -192,8 +192,10 @@ const DdocEditor = forwardRef(
         )}
         <div
           className={cn(
-            'p-4 md:px-[80px] xl:mt-6 md:py-[78px] bg-white w-full md:w-[850px] max-w-[850px] mx-auto',
+            'p-4 md:px-[80px] md:mt-12 md:py-[78px] bg-white w-full md:w-[850px] max-w-[850px] mx-auto',
             { 'mt-0 xl:!mt-6': isPreviewMode },
+            { 'pt-20': isNavbarVisible },
+            { 'pt-6': !isNavbarVisible },
           )}
           style={{
             height:
