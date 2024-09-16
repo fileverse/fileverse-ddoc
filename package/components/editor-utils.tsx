@@ -906,6 +906,16 @@ export const TextFormatingPopup = ({
       },
       isActive: () => editor.isActive('heading', { level: 3 }),
     },
+    {
+      title: 'Code',
+      description: 'Code block',
+      icon: <Braces size={20} />,
+      command: (editor: Editor) => {
+        editor.chain().toggleCodeBlock().run();
+      },
+      isActive: () => editor.isActive('codeBlock'),
+    },
+
   ];
 
   useOnClickOutside(popupRef, () => setToolVisibility(IEditorTool.NONE));
@@ -1099,21 +1109,6 @@ export const TextFormatingPopup = ({
               </button>
             </div>
             <div className="bg-[#f8f9fa] rounded flex flex-[0.5] sm:flex-none gap-2 justify-evenly w-full sm:w-fit p-1">
-              <button
-                onClick={() => {
-                  editor?.chain().toggleCodeBlock().run();
-                }}
-                className={cn(
-                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
-                  {
-                    ['bg-yellow-300 hover:brightness-90']:
-                      editor.isActive('codeBlock'),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive('codeBlock'),
-                  },
-                )}
-              >
-                <Braces size={20} />
-              </button>
               <button
                 onClick={() => {
                   editor?.chain().toggleBulletList().run();
