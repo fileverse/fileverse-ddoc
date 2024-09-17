@@ -85,17 +85,34 @@ export const DBlock = Node.create<DBlockOptions>({
 
         const parent = $head.node($head.depth - 1);
 
+        const headString = $head.toString();
+        const nodePaths = headString.split('/');
+
+        // Check if inside table
+        const isInsideTable = nodePaths.some(path => path.includes('table'));
+
         if (parent?.type.name !== 'dBlock') {
           const isListOrTaskItem =
-            (parent?.type.name === 'listItem' ||
-              parent?.type.name === 'taskItem') &&
-            parent?.textContent === '';
+            parent?.type.name === 'listItem' ||
+            parent?.type.name === 'taskItem';
 
-          const isLastChildEmpty =
+          const isItemSelected = from !== to && isListOrTaskItem;
+          // If a list item or task item is selected, delete it
+          if (isItemSelected) {
+            return editor.chain().deleteSelection().focus().run();
+          }
+
+          // If inside table, do nothing
+          if (isInsideTable) {
+            return false;
+          }
+
+          const isCurrentItemEmpty =
             parent?.lastChild?.textContent === '' &&
-            parent?.lastChild?.type.name === 'paragraph';
+            parent?.lastChild?.type.name === 'paragraph' &&
+            isListOrTaskItem;
 
-          if (isListOrTaskItem || isLastChildEmpty) {
+          if (isCurrentItemEmpty) {
             return editor
               .chain()
               .insertContentAt(from, {
