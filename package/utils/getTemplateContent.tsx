@@ -1071,7 +1071,7 @@ export const getTemplateContent = (
                                     title: null,
                                     width: '100%',
                                     height: 'auto',
-                                    dataAlign: 'left',
+                                    dataAlign: 'center',
                                     dataFloat: null,
                                 },
                             },

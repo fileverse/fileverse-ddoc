@@ -18,8 +18,7 @@ import {
 } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 import cn from 'classnames';
-import { Button } from '@fileverse/ui';
-import { MessageSquareText } from 'lucide-react';
+import { Button, LucideIcon } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 
 import platform from 'platform';
@@ -231,7 +230,7 @@ const DdocEditor = forwardRef(
                 'absolute w-12 h-12 bg-white rounded-full shadow-xl top-[70px] right-[-23px]',
               )}
             >
-              <MessageSquareText />
+              <LucideIcon name="MessageSquareText" size="sm" />
             </Button>
           )}
         </div>

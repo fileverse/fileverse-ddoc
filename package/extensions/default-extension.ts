@@ -37,6 +37,8 @@ import MarkdownPasteHandler from './mardown-paste-handler';
 import CharacterCount from '@tiptap/extension-character-count';
 import { MathExtension } from '@aarkue/tiptap-math-extension';
 import { Footnote } from './footnote/footnote';
+import Superscript from '@tiptap/extension-superscript';
+import Subscript from '@tiptap/extension-subscript';
 
 export const defaultExtensions = [
   FontFamily,
@@ -188,6 +190,8 @@ export const defaultExtensions = [
     delimiters: 'dollar',
   }),
   Footnote,
+  Superscript,
+  Subscript,
 ];
 
 export const createInputRule = (

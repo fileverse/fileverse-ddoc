@@ -1,8 +1,7 @@
 
 import { JSONContent } from '@tiptap/react';
 
-import { Button, ButtonGroup, cn, Divider, DynamicDropdown, LucideIcon, LucideIconProps } from '@fileverse/ui';
-import { icons } from 'lucide-react';
+import { Button, ButtonGroup, cn, Divider, DynamicDropdown, LucideIcon, LucideIconProps, UltimateIcons } from '@fileverse/ui';
 import { getTemplateContent } from './getTemplateContent';
 
 type IconType = LucideIconProps['name'] | string;
@@ -15,8 +14,8 @@ type TemplateButtonProps = {
 }[];
 
 const renderIcon = (icon: IconType, className?: string) => {
-    if (typeof icon === 'string' && icons[icon as keyof typeof icons]) {
-        return <LucideIcon name={icon as keyof typeof icons} className={className} />;
+    if (typeof icon === 'string' && UltimateIcons[icon as keyof typeof UltimateIcons]) {
+        return <LucideIcon name={icon as keyof typeof UltimateIcons} className={className} />;
     } else if (typeof icon === 'string') {
         return <span className={className}>{icon}</span>;
     }

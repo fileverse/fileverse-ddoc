@@ -4,28 +4,6 @@
 import React, { Dispatch, SetStateAction, useRef, useState } from 'react';
 import { IEditorTool, useEditorToolVisiibility } from '../hooks/use-visibility';
 import { Editor } from '@tiptap/react';
-import {
-  Ban,
-  Check,
-  AlignCenter,
-  AlignLeft,
-  AlignRight,
-  Bold,
-  Code,
-  Italic,
-  Link,
-  List,
-  ListChecks,
-  ListOrdered,
-  Strikethrough,
-  TextQuote,
-  Underline,
-  Type,
-  Heading1,
-  Heading2,
-  Heading3,
-  Braces,
-} from 'lucide-react';
 import { startImageUpload } from '../utils/upload-images';
 import cn from 'classnames';
 import UtilsModal from './utils-modal';
@@ -35,7 +13,7 @@ import {
   CarouselIndicator,
   CarouselItem,
 } from '../common/carousel';
-import { Button, TextField, Tooltip } from '@fileverse/ui';
+import { Button, IconButton, LucideIcon, TextField, Tooltip } from '@fileverse/ui';
 import { useOnClickOutside } from 'usehooks-ts';
 import { colors } from '../utils/colors';
 
@@ -218,6 +196,18 @@ export const useEditorToolbar = ({
       title: 'Strikethrough',
       onClick: () => editor?.chain().focus().toggleStrike().run(),
       isActive: editor?.isActive('strike'),
+    },
+    {
+      icon: 'Superscript',
+      title: 'Superscript',
+      onClick: () => editor?.chain().focus().toggleSuperscript().run(),
+      isActive: editor?.isActive('superscript'),
+    },
+    {
+      icon: 'Subscript',
+      title: 'Subscript',
+      onClick: () => editor?.chain().focus().toggleSubscript().run(),
+      isActive: editor?.isActive('subscript'),
     },
     null,
     {
@@ -457,10 +447,10 @@ export const TextHighlighter = ({
             color.code,
           )}
         >
-          <Check
-            size={14}
-            className={cn(
-              editor.isActive('highlight', {
+          <LucideIcon
+            name="Check"
+            className={cn("w-[14px] aspect-square",
+              editor.isActive('textStyle', {
                 color: color.color,
               })
                 ? 'visible'
@@ -470,15 +460,17 @@ export const TextHighlighter = ({
         </div>
       ))}
 
-      <div
+      <Button
+        variant="ghost"
         onClick={() => {
           editor.chain().focus().unsetHighlight().run();
           setVisibility(IEditorTool.NONE);
         }}
-        className="flex w-full items-center gap-1 cursor-pointer mt-2 mb-1 text-sm text-gray-800 hover:bg-gray-100 rounded-md p-1"
+        className="w-full justify-start mt-2 gap-1 !p-1 h-fit"
       >
-        <Ban size={18}></Ban> None
-      </div>
+        <LucideIcon name="Ban" className='w-[18px] aspect-square' />
+        <span>None</span>
+      </Button>
     </div>
   );
 };
@@ -533,9 +525,9 @@ export const EditorAlignment = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto left-[47rem] flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-elevation-1 transition-all"
+      className="z-50 h-auto left-[47rem] flex flex-wrap gap-1 max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-elevation-1 transition-all"
     >
-      <span
+      <button
         onClick={() => {
           editor?.chain().focus().setTextAlign('left').run();
           setToolVisibility(IEditorTool.NONE);
@@ -547,9 +539,9 @@ export const EditorAlignment = ({
             : 'hover:bg-[#f2f2f2]',
         )}
       >
-        <AlignLeft />
-      </span>
-      <span
+        <LucideIcon name="AlignLeft" />
+      </button>
+      <button
         onClick={() => {
           editor?.chain().focus().setTextAlign('center').run();
           setToolVisibility(IEditorTool.NONE);
@@ -561,9 +553,9 @@ export const EditorAlignment = ({
             : 'hover:bg-[#f2f2f2]',
         )}
       >
-        <AlignCenter />
-      </span>
-      <span
+        <LucideIcon name="AlignCenter" />
+      </button>
+      <button
         onClick={() => {
           editor?.chain().focus().setTextAlign('right').run();
           setToolVisibility(IEditorTool.NONE);
@@ -575,8 +567,8 @@ export const EditorAlignment = ({
             : 'hover:bg-[#f2f2f2]',
         )}
       >
-        <AlignRight />
-      </span>
+        <LucideIcon name="AlignRight" />
+      </button>
     </div>
   );
 };
@@ -597,7 +589,7 @@ export const EditorList = ({
       )}
     >
       <Tooltip text="unordered list">
-        <span
+        <button
           onClick={() => {
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
@@ -605,12 +597,12 @@ export const EditorList = ({
           className={` hover:bg-[#f2f2f2] ${editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
             } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
-          <List size={20} />
-        </span>
+          <LucideIcon name="List" />
+        </button>
       </Tooltip>
 
       <Tooltip text="ordered list">
-        <span
+        <button
           onClick={() => {
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
@@ -618,12 +610,12 @@ export const EditorList = ({
           className={` hover:bg-[#f2f2f2] ${editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
             } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
-          <ListOrdered size={20} />
-        </span>
+          <LucideIcon name="ListOrdered" />
+        </button>
       </Tooltip>
 
-      <Tooltip text="to-d- list">
-        <span
+      <Tooltip text="to-do list">
+        <button
           onClick={() => {
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
@@ -631,8 +623,8 @@ export const EditorList = ({
           className={` hover:bg-[#f2f2f2] ${editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
             } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
-          <ListChecks size={20} />
-        </span>
+          <LucideIcon name="ListChecks" />
+        </button>
       </Tooltip>
     </div>
   );
@@ -750,9 +742,9 @@ export const TextColor = ({
             color.code,
           )}
         >
-          <Check
-            size={14}
-            className={cn(
+          <LucideIcon
+            name="Check"
+            className={cn("w-[14px] aspect-square",
               editor.isActive('textStyle', {
                 color: color.color,
               })
@@ -762,15 +754,17 @@ export const TextColor = ({
           />
         </div>
       ))}
-      <div
+      <Button
+        variant="ghost"
         onClick={() => {
           editor.chain().focus().unsetColor().run();
           setVisibility(IEditorTool.NONE);
         }}
-        className="flex w-full items-center gap-1 cursor-pointer mt-2 mb-1 text-sm text-gray-800 hover:bg-gray-100 rounded-md p-1"
+        className="w-full justify-start mt-2 gap-1 !p-1 h-fit"
       >
-        <Ban size={18}></Ban> None
-      </div>
+        <LucideIcon name="Ban" className='w-[18px] aspect-square' />
+        <span>None</span>
+      </Button>
     </div>
   );
 };
@@ -787,7 +781,7 @@ export const TextHeading = ({
     {
       title: 'Text',
       description: 'Normal',
-      icon: <Type size={20} />,
+      icon: "Type",
       command: (editor: Editor) =>
         editor.chain().focus().toggleNode('paragraph', 'paragraph').run(),
       isActive: () =>
@@ -798,7 +792,7 @@ export const TextHeading = ({
     {
       title: 'Heading 1',
       description: 'Big',
-      icon: <Heading1 size={20} />,
+      icon: "Heading1",
       command: (editor: Editor) => {
         editor.chain().focus().toggleHeading({ level: 1 }).run();
       },
@@ -807,7 +801,7 @@ export const TextHeading = ({
     {
       title: 'Heading 2',
       description: 'Medium',
-      icon: <Heading2 size={20} />,
+      icon: "Heading2",
       command: (editor: Editor) => {
         editor.chain().focus().toggleHeading({ level: 2 }).run();
       },
@@ -816,7 +810,7 @@ export const TextHeading = ({
     {
       title: 'Heading 3',
       description: 'Small',
-      icon: <Heading3 size={20} />,
+      icon: "Heading3",
       command: (editor: Editor) => {
         editor.chain().focus().toggleHeading({ level: 3 }).run();
       },
@@ -847,7 +841,7 @@ export const TextHeading = ({
           )}
         >
           <div className="flex h-10 w-10 items-center justify-center rounded bg-white">
-            {heading.icon}
+            <LucideIcon name={heading.icon} size="md" />
           </div>
           <div>
             <p className="font-medium">{heading.title}</p>
@@ -871,7 +865,7 @@ export const TextFormatingPopup = ({
     {
       title: 'Text',
       description: 'Normal',
-      icon: <Type size={20} />,
+      icon: "Type",
       command: (editor: Editor) =>
         editor.chain().toggleNode('paragraph', 'paragraph').run(),
       isActive: () =>
@@ -882,7 +876,7 @@ export const TextFormatingPopup = ({
     {
       title: 'Heading 1',
       description: 'Big',
-      icon: <Heading1 size={20} />,
+      icon: "Heading1",
       command: (editor: Editor) => {
         editor.chain().toggleHeading({ level: 1 }).run();
       },
@@ -891,7 +885,7 @@ export const TextFormatingPopup = ({
     {
       title: 'Heading 2',
       description: 'Medium',
-      icon: <Heading2 size={20} />,
+      icon: "Heading2",
       command: (editor: Editor) => {
         editor.chain().toggleHeading({ level: 2 }).run();
       },
@@ -900,22 +894,129 @@ export const TextFormatingPopup = ({
     {
       title: 'Heading 3',
       description: 'Small',
-      icon: <Heading3 size={20} />,
+      icon: "Heading3",
       command: (editor: Editor) => {
         editor.chain().toggleHeading({ level: 3 }).run();
       },
       isActive: () => editor.isActive('heading', { level: 3 }),
     },
+  ];
+
+  const textAlignments = [
+    {
+      title: 'Left',
+      description: 'Left',
+      icon: "AlignLeft",
+      command: (editor: Editor) => editor.chain().focus().setTextAlign('left').run(),
+      isActive: () => editor.isActive({ textAlign: 'left' }),
+    },
+    {
+      title: 'Center',
+      description: 'Center',
+      icon: "AlignCenter",
+      command: (editor: Editor) => editor.chain().focus().setTextAlign('center').run(),
+      isActive: () => editor.isActive({ textAlign: 'center' }),
+    },
+    {
+      title: 'Right',
+      description: 'Right',
+      icon: "AlignRight",
+      command: (editor: Editor) => editor.chain().focus().setTextAlign('right').run(),
+      isActive: () => editor.isActive({ textAlign: 'right' }),
+    }
+  ];
+
+  const textStyles = [
+    {
+      title: 'Bold',
+      description: 'Bold text',
+      icon: 'Bold',
+      command: (editor: Editor) => editor.chain().focus().toggleBold().run(),
+      isActive: () => editor.isActive('bold'),
+    },
+    {
+      title: 'Italic',
+      description: 'Italic text',
+      icon: "Italic",
+      command: (editor: Editor) => editor.chain().focus().toggleItalic().run(),
+      isActive: () => editor.isActive('italic'),
+    },
+    {
+      title: 'Underline',
+      description: 'Underline text',
+      icon: "Underline",
+      command: (editor: Editor) => editor.chain().focus().toggleUnderline().run(),
+      isActive: () => editor.isActive('underline'),
+    },
+    {
+      title: 'Strikethrough',
+      description: 'Strikethrough text',
+      icon: "Strikethrough",
+      command: (editor: Editor) => editor.chain().focus().toggleStrike().run(),
+      isActive: () => editor.isActive('strike'),
+    },
+    {
+      title: 'Superscript',
+      description: 'Superscript text',
+      icon: "Superscript",
+      command: (editor: Editor) => editor.chain().focus().toggleSuperscript().run(),
+      isActive: () => editor.isActive('superscript'),
+    },
+    {
+      title: 'Subscript',
+      description: 'Subscript text',
+      icon: "Subscript",
+      command: (editor: Editor) => editor.chain().focus().toggleSubscript().run(),
+      isActive: () => editor.isActive('subscript'),
+    },
+  ];
+
+  const others = [
     {
       title: 'Code',
+      description: 'Code',
+      icon: "Code",
+      command: (editor: Editor) => editor.chain().focus().toggleCode().run(),
+      isActive: () => editor.isActive('code'),
+    },
+    {
+      title: 'Link',
+      description: 'Link',
+      icon: "Link",
+      command: () => setToolVisibility(IEditorTool.LINK_POPUP),
+      isActive: () => false,
+    },
+    {
+      title: 'Quote',
+      description: 'Quote',
+      icon: "TextQuote",
+      command: (editor: Editor) => editor.chain().focus().toggleBlockquote().run(),
+      isActive: () => editor.isActive('blockquote'),
+    },
+  ];
+
+  const listStyles = [
+    {
+      title: 'Bullet List',
+      description: 'Bullet list',
+      icon: "List",
+      command: (editor: Editor) => editor.chain().focus().toggleBulletList().run(),
+      isActive: () => editor.isActive('bulletList'),
+    },
+    {
+      title: 'Ordered List',
+      description: 'Ordered list',
+      icon: "ListOrdered",
+      command: (editor: Editor) => editor.chain().focus().toggleOrderedList().run(),
+      isActive: () => editor.isActive('orderedList'),
+    },
+    {
+      title: 'Code Block',
       description: 'Code block',
-      icon: <Braces size={20} />,
-      command: (editor: Editor) => {
-        editor.chain().toggleCodeBlock().run();
-      },
+      icon: "Braces",
+      command: (editor: Editor) => editor.chain().focus().toggleCodeBlock().run(),
       isActive: () => editor.isActive('codeBlock'),
     },
-
   ];
 
   useOnClickOutside(popupRef, () => setToolVisibility(IEditorTool.NONE));
@@ -944,202 +1045,73 @@ export const TextFormatingPopup = ({
           </div>
           <div className="flex justify-between sm:justify-center items-center gap-1">
             <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
-              <button
-                onClick={() => {
-                  editor?.chain().setTextAlign('left').run();
-                }}
-                className={cn(
-                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
-                  {
-                    ['bg-yellow-300 hover:brightness-90']: editor.isActive({
-                      textAlign: 'left',
-                    }),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive({
-                      textAlign: 'left',
-                    }),
-                  },
-                )}
-              >
-                <AlignLeft size={20} />
-              </button>
-              <button
-                onClick={() => {
-                  editor?.chain().setTextAlign('center').run();
-                }}
-                className={cn(
-                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
-                  {
-                    ['bg-yellow-300 hover:brightness-90']: editor.isActive({
-                      textAlign: 'center',
-                    }),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive({
-                      textAlign: 'center',
-                    }),
-                  },
-                )}
-              >
-                <AlignCenter size={20} />
-              </button>
-              <button
-                onClick={() => {
-                  editor?.chain().setTextAlign('right').run();
-                }}
-                className={cn(
-                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
-                  {
-                    ['bg-yellow-300 hover:brightness-90']: editor.isActive({
-                      textAlign: 'right',
-                    }),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive({
-                      textAlign: 'right',
-                    }),
-                  },
-                )}
-              >
-                <AlignRight size={20} />
-              </button>
+              {textAlignments.map((textAlignment) => (
+                <button
+                  onClick={() => textAlignment.command(editor)}
+                  key={textAlignment.title}
+                  className={cn(
+                    'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
+                    {
+                      ['bg-yellow-300 hover:brightness-90']: textAlignment.isActive(),
+                      ['hover:bg-[#f2f2f2]']: !textAlignment.isActive(),
+                    },
+                  )}
+                >
+                  <LucideIcon name={textAlignment.icon} size="md" />
+                </button>
+              ))}
             </div>
             <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
-              <button
-                onClick={() => setToolVisibility(IEditorTool.LINK_POPUP)}
-                className={cn(
-                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
-                  {
-                    ['bg-yellow-300 hover:brightness-90']:
-                      editor.isActive('link'),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive('link'),
-                  },
-                )}
-              >
-                <Link size={20} />
-              </button>
-              <button
-                onClick={() => {
-                  editor?.chain().toggleCode().run();
-                }}
-                className={cn(
-                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
-                  {
-                    ['bg-yellow-300 hover:brightness-90']:
-                      editor.isActive('code'),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive('code'),
-                  },
-                )}
-              >
-                <Code size={20} />
-              </button>
-              <button
-                onClick={() => {
-                  editor?.chain().toggleBlockquote().run();
-                }}
-                className={cn(
-                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
-                  {
-                    ['bg-yellow-300 hover:brightness-90']:
-                      editor.isActive('blockquote'),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive('blockquote'),
-                  },
-                )}
-              >
-                <TextQuote size={20} />
-              </button>
+              {others.map((other) => (
+                <button
+                  onClick={() => other.command(editor)}
+                  key={other.title}
+                  className={cn(
+                    'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
+                    {
+                      ['bg-yellow-300 hover:brightness-90']: other.isActive(),
+                      ['hover:bg-[#f2f2f2]']: !other.isActive(),
+                    },
+                  )}
+                >
+                  <LucideIcon name={other.icon} size="md" />
+                </button>
+              ))}
             </div>
           </div>
-          <div className="flex justify-between sm:justify-center items-center gap-1">
-            <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
+          <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
+            {textStyles.map((textStyle) => (
               <button
-                onClick={() => {
-                  editor.chain().toggleBold().run();
-                }}
+                onClick={() => textStyle.command(editor)}
+                key={textStyle.title}
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                   {
-                    ['bg-yellow-300 hover:brightness-90']:
-                      editor.isActive('bold'),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive('bold'),
+                    ['bg-yellow-300 hover:brightness-90']: textStyle.isActive(),
+                    ['hover:bg-[#f2f2f2]']: !textStyle.isActive(),
                   },
                 )}
               >
-                <Bold size={20} />
+                <LucideIcon name={textStyle.icon} size="md" />
               </button>
+            ))}
+          </div>
+          <div className="bg-[#f8f9fa] rounded flex gap-1 justify-center self-center w-fit p-1">
+            {listStyles.map((listStyle) => (
               <button
-                onClick={() => {
-                  editor.chain().toggleItalic().run();
-                }}
+                onClick={() => listStyle.command(editor)}
+                key={listStyle.title}
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                   {
-                    ['bg-yellow-300 hover:brightness-90']:
-                      editor.isActive('italic'),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive('italic'),
+                    ['bg-yellow-300 hover:brightness-90']: listStyle.isActive(),
+                    ['hover:bg-[#f2f2f2]']: !listStyle.isActive(),
                   },
                 )}
               >
-                <Italic size={20} />
+                <LucideIcon name={listStyle.icon} size="md" />
               </button>
-              <button
-                onClick={() => {
-                  editor.chain().toggleUnderline().run();
-                }}
-                className={cn(
-                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
-                  {
-                    ['bg-yellow-300 hover:brightness-90']:
-                      editor.isActive('underline'),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive('bold'),
-                  },
-                )}
-              >
-                <Underline size={20} />
-              </button>
-              <button
-                onClick={() => {
-                  editor.chain().toggleStrike().run();
-                }}
-                className={cn(
-                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
-                  {
-                    ['bg-yellow-300 hover:brightness-90']:
-                      editor.isActive('strike'),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive('bold'),
-                  },
-                )}
-              >
-                <Strikethrough size={20} />
-              </button>
-            </div>
-            <div className="bg-[#f8f9fa] rounded flex flex-[0.5] sm:flex-none gap-2 justify-evenly w-full sm:w-fit p-1">
-              <button
-                onClick={() => {
-                  editor?.chain().toggleBulletList().run();
-                }}
-                className={cn(
-                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
-                  {
-                    ['bg-yellow-300 hover:brightness-90']:
-                      editor.isActive('bulletList'),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive('bulletList'),
-                  },
-                )}
-              >
-                <List size={20} />
-              </button>
-              <button
-                onClick={() => {
-                  editor?.chain().toggleOrderedList().run();
-                }}
-                className={cn(
-                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
-                  {
-                    ['bg-yellow-300 hover:brightness-90']:
-                      editor.isActive('orderedList'),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive('orderedList'),
-                  },
-                )}
-              >
-                <ListOrdered size={20} />
-              </button>
-            </div>
+            ))}
           </div>
 
           {/* New Layout */}
@@ -1161,12 +1133,17 @@ export const TextFormatingPopup = ({
                     flexBasis: 'calc(100% / 12)',
                   }}
                 >
-                  <Ban
-                    className="cursor-pointer"
+                  <button
+                    className="mb-1 drop-shadow flex justify-center items-center cursor-pointer transition"
                     onClick={() => {
                       editor.chain().unsetColor().run();
                     }}
-                  />
+                  >
+                    <LucideIcon
+                      name="Ban"
+                      className="w-6 h-6"
+                    />
+                  </button>
                 </CarouselItem>
                 {colors.map((color, index) => (
                   <CarouselItem
@@ -1185,9 +1162,9 @@ export const TextFormatingPopup = ({
                         color.code,
                       )}
                     >
-                      <Check
-                        size={14}
-                        className={cn(
+                      <LucideIcon
+                        name="Check"
+                        className={cn("w-[14px] aspect-square",
                           editor.isActive('textStyle', {
                             color: color.color,
                           })
@@ -1231,8 +1208,8 @@ export const TextColorPicker = ({ editor }: { editor: Editor }) => {
                 flexBasis: 'calc(100% / 12)',
               }}
             >
-              <Ban
-                className="cursor-pointer"
+              <IconButton
+                icon="Ban"
                 onClick={() => {
                   editor.chain().focus().unsetColor().run();
                 }}
@@ -1255,9 +1232,9 @@ export const TextColorPicker = ({ editor }: { editor: Editor }) => {
                     color.code,
                   )}
                 >
-                  <Check
-                    size={14}
-                    className={cn(
+                  <LucideIcon
+                    name="Check"
+                    className={cn("w-[14px] aspect-square",
                       editor.isActive('textStyle', {
                         color: color.color,
                       })

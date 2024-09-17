@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import DdocEditor from '../../package/ddoc-editor';
 import { JSONContent } from '@tiptap/react';
 import { Button, Tag, IconButton, LucideIcon } from '@fileverse/ui';
-import { BadgeCheck } from 'lucide-react';
 
 function App() {
   const [enableCollaboration, setEnableCollaboration] = useState(false);
@@ -46,7 +45,7 @@ function App() {
             Saved in local storage
           </Tag>
           <div className="w-6 h-6 rounded color-bg-secondary flex justify-center items-center border color-border-default xl:hidden">
-            <BadgeCheck size={16} color="#77818A" />
+            <LucideIcon name="BadgeCheck" size="sm" className="text-[#77818A]" />
           </div>
         </div>
         <div className="flex gap-2">

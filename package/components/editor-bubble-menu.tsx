@@ -51,6 +51,18 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       icon: 'Strikethrough',
     },
     {
+      name: 'Superscript',
+      isActive: () => props.editor.isActive('superscript'),
+      command: () => props.editor.chain().focus().toggleSuperscript().run(),
+      icon: 'Superscript',
+    },
+    {
+      name: 'Subscript',
+      isActive: () => props.editor.isActive('subscript'),
+      command: () => props.editor.chain().focus().toggleSubscript().run(),
+      icon: 'Subscript',
+    },
+    {
       name: 'Alignment',
       isActive: () => toolVisibility === IEditorTool.ALIGNMENT,
       command: () => setToolVisibility(IEditorTool.ALIGNMENT),
