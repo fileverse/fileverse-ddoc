@@ -10,21 +10,16 @@ import {
   AlignCenter,
   AlignLeft,
   AlignRight,
-  Bold,
   Code,
-  Italic,
   Link,
   List,
   ListChecks,
   ListOrdered,
-  Strikethrough,
   TextQuote,
-  Underline,
   Type,
   Heading1,
   Heading2,
   Heading3,
-  Braces,
 } from 'lucide-react';
 import { startImageUpload } from '../utils/upload-images';
 import cn from 'classnames';
