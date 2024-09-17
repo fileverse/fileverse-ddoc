@@ -273,7 +273,7 @@ const MobileToolbar = ({
         onOpenChange={(open) => !open && setToolVisibility(IEditorTool.NONE)}
         title="Link"
         content={
-          <div className="flex flex-col gap-4 w-full h-full px-4">
+          <div className="flex flex-col gap-4 w-full h-full">
             <TextField
               label="Text"
               placeholder="Link text"
@@ -304,13 +304,13 @@ const MobileToolbar = ({
           label: 'Save',
           onClick: () => saveLink(),
           isLoading: false,
-          className: 'w-auto min-w-[80px]',
+          className: 'w-full md:w-auto min-w-[80px]',
         }}
         secondaryAction={{
           label: 'Cancel',
           variant: 'secondary',
           onClick: () => setToolVisibility(IEditorTool.NONE),
-          className: 'w-auto min-w-[80px]',
+          className: 'w-full md:w-auto min-w-[80px]',
         }}
       />
     </Drawer>

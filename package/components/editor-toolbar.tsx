@@ -11,7 +11,6 @@ import {
 } from './editor-utils';
 import { Editor } from '@tiptap/react';
 import { IEditorTool } from '../hooks/use-visibility';
-import { ChevronDown } from 'lucide-react';
 import {
   Tooltip,
   Divider,
@@ -169,7 +168,7 @@ const TiptapToolBar = ({
                   editor?.isActive('textStyle', { fontFamily: font.value }),
                 )?.title || 'Font'}
               </span>
-              <ChevronDown size={16} />
+              <LucideIcon name="ChevronDown" size="sm" />
             </button>
           }
           content={
@@ -196,7 +195,7 @@ const TiptapToolBar = ({
                       ? 'Heading 3'
                       : 'Text'}
               </span>
-              <ChevronDown size={16} />
+              <LucideIcon name="ChevronDown" size="sm" />
             </button>
           }
           content={

@@ -1,21 +1,8 @@
 import React from 'react';
 import { Editor } from '@tiptap/core'
 import cn from 'classnames'
-import {
-  Check,
-  Heading1,
-  Heading2,
-  Heading3,
-  TextQuote,
-  ListOrdered,
-  TextIcon,
-  Code,
-  CheckSquare,
-  ChevronDown,
-} from 'lucide-react'
-
 import { BubbleMenuItem } from './editor-bubble-menu'
-import { DynamicDropdown } from '@fileverse/ui';
+import { DynamicDropdown, LucideIcon } from '@fileverse/ui';
 
 interface NodeSelectorProps {
   editor: Editor
@@ -29,7 +16,7 @@ export const NodeSelector = ({
   const items: BubbleMenuItem[] = [
     {
       name: 'Text',
-      icon: TextIcon,
+      icon: 'Type',
       command: () =>
         editor.chain().focus().toggleNode('paragraph', 'paragraph').run(),
       isActive: () =>
@@ -39,43 +26,43 @@ export const NodeSelector = ({
     },
     {
       name: 'Heading 1',
-      icon: Heading1,
+      icon: 'Heading1',
       command: () => editor.chain().focus().toggleHeading({ level: 1 }).run(),
       isActive: () => editor.isActive('heading', { level: 1 }),
     },
     {
       name: 'Heading 2',
-      icon: Heading2,
+      icon: 'Heading2',
       command: () => editor.chain().focus().toggleHeading({ level: 2 }).run(),
       isActive: () => editor.isActive('heading', { level: 2 }),
     },
     {
       name: 'Heading 3',
-      icon: Heading3,
+      icon: 'Heading3',
       command: () => editor.chain().focus().toggleHeading({ level: 3 }).run(),
       isActive: () => editor.isActive('heading', { level: 3 }),
     },
     {
       name: 'To-do List',
-      icon: CheckSquare,
+      icon: 'ListChecks',
       command: () => editor.chain().focus().toggleTaskList().run(),
       isActive: () => editor.isActive('taskItem'),
     },
     {
       name: 'Bullet List',
-      icon: ListOrdered,
+      icon: 'ListOrdered',
       command: () => editor.chain().focus().toggleBulletList().run(),
       isActive: () => editor.isActive('bulletList'),
     },
     {
       name: 'Numbered List',
-      icon: ListOrdered,
+      icon: 'ListOrdered',
       command: () => editor.chain().focus().toggleOrderedList().run(),
       isActive: () => editor.isActive('orderedList'),
     },
     {
       name: 'Quote',
-      icon: TextQuote,
+      icon: 'TextQuote',
       command: () =>
         editor
           .chain()
@@ -87,7 +74,7 @@ export const NodeSelector = ({
     },
     {
       name: 'Code',
-      icon: Code,
+      icon: 'Code',
       command: () => editor.chain().focus().toggleCode().run(),
       isActive: () => editor.isActive('code'),
     },
@@ -106,7 +93,7 @@ export const NodeSelector = ({
           className="bg-transparent hover:!bg-[#F2F4F5] rounded p-2 flex items-center justify-between gap-2 w-fit max-w-36"
         >
           <span className="text-body-sm truncate">{activeItem.name}</span>
-          <ChevronDown size={16} />
+          <LucideIcon name="ChevronDown" size="sm" />
         </button>
       }
       content={
@@ -128,11 +115,11 @@ export const NodeSelector = ({
             >
               <div className="flex items-center space-x-2">
                 <div className="rounded-sm border border-stone-200 p-1">
-                  <item.icon className="h-3 w-3" />
+                  <LucideIcon name={item.icon} size="sm" />
                 </div>
                 <span>{item.name}</span>
               </div>
-              {activeItem.name === item.name && <Check className="h-4 w-4" />}
+              {activeItem.name === item.name && <LucideIcon name="Check" size="sm" />}
             </button>
           ))}
         </div>

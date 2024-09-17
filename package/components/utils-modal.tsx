@@ -4,9 +4,9 @@ import {
   DrawerHeader,
   DrawerTitle,
   DrawerClose,
+  LucideIcon,
 } from '@fileverse/ui';
 import cn from 'classnames';
-import { X } from 'lucide-react';
 
 interface UtilsModalProps {
   title: string;
@@ -21,7 +21,7 @@ const UtilsModal = ({ title, content, contentClassName }: UtilsModalProps) => {
         <DrawerTitle className="flex justify-between items-center text-left sm:text-center text-base">
           {title}
           <DrawerClose>
-            <X />
+            <LucideIcon name="X" size="sm" />
           </DrawerClose>
         </DrawerTitle>
       </DrawerHeader>

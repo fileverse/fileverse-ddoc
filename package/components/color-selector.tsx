@@ -1,6 +1,6 @@
+import { LucideIcon } from '@fileverse/ui';
 import { Editor } from '@tiptap/core';
-import cx from 'classnames';
-import { Check, ChevronDown } from 'lucide-react';
+import cn from 'classnames';
 import { Dispatch, FC, SetStateAction } from 'react';
 
 export interface BubbleColorMenuItem {
@@ -66,7 +66,7 @@ export const ColorSelector: FC<ColorSelectorProps> = ({
       >
         <span style={{ color: activeItem?.color || '#000000' }}>A</span>
 
-        <ChevronDown className="h-4 w-4 " />
+        <LucideIcon name="ChevronDown" size="sm" />
       </button>
 
       {isOpen && (
@@ -78,7 +78,7 @@ export const ColorSelector: FC<ColorSelectorProps> = ({
                 editor.chain().focus().setColor(color).run();
                 setIsOpen(false);
               }}
-              className={cx(
+              className={cn(
                 'flex items-center justify-between rounded-sm px-2 py-1 text-sm text-stone-600 hover:bg-stone-100',
                 {
                   'text-blue-600': editor.isActive('textStyle', { color }),
@@ -95,7 +95,7 @@ export const ColorSelector: FC<ColorSelectorProps> = ({
                 <span>{name}</span>
               </div>
               {editor.isActive('textStyle', { color }) && (
-                <Check className="h-4 w-4" />
+                <LucideIcon name="Check" size="sm" />
               )}
             </button>
           ))}

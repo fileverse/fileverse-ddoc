@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useMemo, useState } from 'react';
 import { NodeViewWrapper, NodeViewProps, NodeViewContent, Editor, JSONContent } from '@tiptap/react';
-import { Copy, GripVertical, Plus, RemoveFormatting, Trash2, Clipboard } from 'lucide-react';
 import { useEditingContext } from '../../hooks/use-editing-context';
 import cn from 'classnames';
 import { debounce } from '../../utils/debounce';
@@ -13,6 +12,7 @@ import { Toolbar } from '../../common/toolbar';
 import CustomTooltip from '../../common/cutsom-tooltip';
 import { FocusScope } from '@radix-ui/react-focus-scope';
 import { createTemplateButtons, createMoreTemplates, renderTemplateButtons } from '../../utils/template-utils';
+import { LucideIcon } from '@fileverse/ui';
 
 export const DBlockNodeView: React.FC<NodeViewProps> = ({
   node,
@@ -282,7 +282,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
             contentEditable={false}
             onClick={handleClick}
           >
-            <Plus size={18} />
+            <LucideIcon name="Plus" size="sm" />
           </div>
         </CustomTooltip>
         <FocusScope
@@ -299,7 +299,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
                 data-drag-handle
                 onClick={handleDragClick}
               >
-                <GripVertical size={18} />
+                <LucideIcon name="GripVertical" size="sm" />
               </div>
             </Popover.Trigger>
             <Popover.Content
@@ -311,19 +311,19 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
               <Surface className="p-2 flex flex-col min-w-[16rem]">
                 <Popover.Close>
                   <DropdownButton onClick={actions.resetTextFormatting}>
-                    <RemoveFormatting size={18} />
+                    <LucideIcon name="RemoveFormatting" size="sm" />
                     Clear formatting
                   </DropdownButton>
                 </Popover.Close>
                 <Popover.Close>
                   <DropdownButton onClick={actions.copyNodeToClipboard}>
-                    <Clipboard size={18} />
+                    <LucideIcon name="Clipboard" size="sm" />
                     Copy to clipboard
                   </DropdownButton>
                 </Popover.Close>
                 <Popover.Close>
                   <DropdownButton onClick={actions.duplicateNode}>
-                    <Copy size={18} />
+                    <LucideIcon name="Copy" size="sm" />
                     Duplicate
                   </DropdownButton>
                 </Popover.Close>
@@ -333,7 +333,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
                     onClick={actions.deleteNode}
                     className="text-red-500 hover:bg-red-500 bg-opacity-10 hover:bg-opacity-20"
                   >
-                    <Trash2 size={18} />
+                    <LucideIcon name="Trash2" size="sm" />
                     Delete
                   </DropdownButton>
                 </Popover.Close>
