@@ -86,107 +86,18 @@ export const DBlock = Node.create<DBlockOptions>({
         const parent = $head.node($head.depth - 1);
 
         if (parent?.type.name !== 'dBlock') {
-          const headString = $head.toString();
-          const nodePaths = headString.split('/');
+          const isListOrTaskItem =
+            (parent?.type.name === 'listItem' ||
+              parent?.type.name === 'taskItem') &&
+            parent?.textContent === '';
 
-          const isList = nodePaths.some(
-            path =>
-              path.includes('bulletList_0') ||
-              path.includes('orderedList_0') ||
-              path.includes('taskList_0'),
-          );
+          const isLastChildEmpty =
+            parent?.lastChild?.textContent === '' &&
+            parent?.lastChild?.type.name === 'paragraph';
 
-          const isEmptyParagraph = nodePaths.some(path =>
-            path.includes('paragraph_0:0'),
-          );
-          const isLastEmptyListItem = $head.parent.content.size === 0;
-          const isOnlyListItemAndEmpty =
-            nodePaths.length === 4 && isEmptyParagraph;
-
-          const isNestedEmptyListItem =
-            nodePaths.some(path => path.includes('paragraph_0:0')) &&
-            nodePaths.length !== 4;
-
-          const isFirstListItemWithoutContent =
-            $head.parent.content.size === 0 &&
-            nodePaths.some(path => path.includes('listItem_0'));
-
-          const isListItemUnstyledAndEmpty =
-            nodePaths.some(path => path.includes('paragraph_1:0')) &&
-            $head.parent.content.size === 0;
-
-          const isListItemUnstyledWithContent = $head.parent.content.size > 0;
-          const isAtBeginOfUnstyledListItem = nodePaths.some(path =>
-            /paragraph_\d+:0/.test(path),
-          );
-
-          if (isOnlyListItemAndEmpty) {
-            return editor.chain().liftListItem('listItem').focus().run();
-          }
-
-          if (isListItemUnstyledWithContent && isAtBeginOfUnstyledListItem) {
-            const listItemPos = $head.before($head.depth - 1);
-            const getParagraphNode = () => {
-              const paragraphNode = $head.node($head.depth - 1);
-              const content = paragraphNode?.lastChild?.textContent;
-
-              return content;
-            };
-
+          if (isListOrTaskItem || isLastChildEmpty) {
             return editor
               .chain()
-              .deleteRange({
-                from,
-                to: listItemPos + 1 + parent.nodeSize,
-              })
-              .insertContent({
-                type: 'dBlock',
-                content: [
-                  {
-                    type: 'paragraph',
-                    content: [
-                      {
-                        type: 'text',
-                        text: getParagraphNode(),
-                      },
-                    ],
-                  },
-                ],
-              })
-              .run();
-          }
-
-          if (isListItemUnstyledAndEmpty) {
-            return editor
-              .chain()
-              .insertContent({
-                type: 'dBlock',
-                content: [
-                  {
-                    type: 'paragraph',
-                  },
-                ],
-              })
-              .focus()
-              .run();
-          }
-
-          if (
-            (isNestedEmptyListItem && isList) ||
-            isFirstListItemWithoutContent
-          ) {
-            return editor.chain().liftListItem('listItem').focus().run();
-          }
-
-          if (isLastEmptyListItem && isList) {
-            // Find the list node and its position
-            const listPos = $head.before($head.depth - 1);
-            return editor
-              .chain()
-              .deleteRange({
-                from: listPos,
-                to: listPos + parent.nodeSize,
-              })
               .insertContentAt(from, {
                 type: 'dBlock',
                 content: [
@@ -197,9 +108,9 @@ export const DBlock = Node.create<DBlockOptions>({
               })
               .focus()
               .run();
+          } else {
+            return false;
           }
-
-          return false;
         }
 
         let currentActiveNodeTo = -1;

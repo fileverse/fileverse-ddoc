@@ -35,7 +35,7 @@ import {
   CarouselIndicator,
   CarouselItem,
 } from '../common/carousel';
-import { Button, TextField, Tooltip } from '@fileverse/ui';
+import { Button, LucideIcon, TextField, Tooltip } from '@fileverse/ui';
 import { useOnClickOutside } from 'usehooks-ts';
 import { colors } from '../utils/colors';
 
@@ -218,6 +218,18 @@ export const useEditorToolbar = ({
       title: 'Strikethrough',
       onClick: () => editor?.chain().focus().toggleStrike().run(),
       isActive: editor?.isActive('strike'),
+    },
+    {
+      icon: 'Superscript',
+      title: 'Superscript',
+      onClick: () => editor?.chain().focus().toggleSuperscript().run(),
+      isActive: editor?.isActive('superscript'),
+    },
+    {
+      icon: 'Subscript',
+      title: 'Subscript',
+      onClick: () => editor?.chain().focus().toggleSubscript().run(),
+      isActive: editor?.isActive('subscript'),
     },
     null,
     {
@@ -906,16 +918,75 @@ export const TextFormatingPopup = ({
       },
       isActive: () => editor.isActive('heading', { level: 3 }),
     },
+  ];
+
+  const textStyles = [
     {
-      title: 'Code',
+      title: 'Bold',
+      description: 'Bold text',
+      icon: 'Bold',
+      command: (editor: Editor) => editor.chain().focus().toggleBold().run(),
+      isActive: () => editor.isActive('bold'),
+    },
+    {
+      title: 'Italic',
+      description: 'Italic text',
+      icon: "Italic",
+      command: (editor: Editor) => editor.chain().focus().toggleItalic().run(),
+      isActive: () => editor.isActive('italic'),
+    },
+    {
+      title: 'Underline',
+      description: 'Underline text',
+      icon: "Underline",
+      command: (editor: Editor) => editor.chain().focus().toggleUnderline().run(),
+      isActive: () => editor.isActive('underline'),
+    },
+    {
+      title: 'Strikethrough',
+      description: 'Strikethrough text',
+      icon: "Strikethrough",
+      command: (editor: Editor) => editor.chain().focus().toggleStrike().run(),
+      isActive: () => editor.isActive('strike'),
+    },
+    {
+      title: 'Superscript',
+      description: 'Superscript text',
+      icon: "Superscript",
+      command: (editor: Editor) => editor.chain().focus().toggleSuperscript().run(),
+      isActive: () => editor.isActive('superscript'),
+    },
+    {
+      title: 'Subscript',
+      description: 'Subscript text',
+      icon: "Subscript",
+      command: (editor: Editor) => editor.chain().focus().toggleSubscript().run(),
+      isActive: () => editor.isActive('subscript'),
+    },
+  ];
+
+  const listStyles = [
+    {
+      title: 'Bullet List',
+      description: 'Bullet list',
+      icon: "List",
+      command: (editor: Editor) => editor.chain().focus().toggleBulletList().run(),
+      isActive: () => editor.isActive('bulletList'),
+    },
+    {
+      title: 'Ordered List',
+      description: 'Ordered list',
+      icon: "ListOrdered",
+      command: (editor: Editor) => editor.chain().focus().toggleOrderedList().run(),
+      isActive: () => editor.isActive('orderedList'),
+    },
+    {
+      title: 'Code Block',
       description: 'Code block',
-      icon: <Braces size={20} />,
-      command: (editor: Editor) => {
-        editor.chain().toggleCodeBlock().run();
-      },
+      icon: "Braces",
+      command: (editor: Editor) => editor.chain().focus().toggleCodeBlock().run(),
       isActive: () => editor.isActive('codeBlock'),
     },
-
   ];
 
   useOnClickOutside(popupRef, () => setToolVisibility(IEditorTool.NONE));
@@ -1045,101 +1116,39 @@ export const TextFormatingPopup = ({
               </button>
             </div>
           </div>
-          <div className="flex justify-between sm:justify-center items-center gap-1">
-            <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
+          <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
+            {textStyles.map((textStyle) => (
               <button
-                onClick={() => {
-                  editor.chain().toggleBold().run();
-                }}
+                onClick={() => textStyle.command(editor)}
+                key={textStyle.title}
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                   {
-                    ['bg-yellow-300 hover:brightness-90']:
-                      editor.isActive('bold'),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive('bold'),
+                    ['bg-yellow-300 hover:brightness-90']: textStyle.isActive(),
+                    ['hover:bg-[#f2f2f2]']: !textStyle.isActive(),
                   },
                 )}
               >
-                <Bold size={20} />
+                <LucideIcon name={textStyle.icon} size="md" />
               </button>
+            ))}
+          </div>
+          <div className="bg-[#f8f9fa] rounded flex gap-1 justify-center self-center w-fit p-1">
+            {listStyles.map((listStyle) => (
               <button
-                onClick={() => {
-                  editor.chain().toggleItalic().run();
-                }}
+                onClick={() => listStyle.command(editor)}
+                key={listStyle.title}
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                   {
-                    ['bg-yellow-300 hover:brightness-90']:
-                      editor.isActive('italic'),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive('italic'),
+                    ['bg-yellow-300 hover:brightness-90']: listStyle.isActive(),
+                    ['hover:bg-[#f2f2f2]']: !listStyle.isActive(),
                   },
                 )}
               >
-                <Italic size={20} />
+                <LucideIcon name={listStyle.icon} size="md" />
               </button>
-              <button
-                onClick={() => {
-                  editor.chain().toggleUnderline().run();
-                }}
-                className={cn(
-                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
-                  {
-                    ['bg-yellow-300 hover:brightness-90']:
-                      editor.isActive('underline'),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive('bold'),
-                  },
-                )}
-              >
-                <Underline size={20} />
-              </button>
-              <button
-                onClick={() => {
-                  editor.chain().toggleStrike().run();
-                }}
-                className={cn(
-                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
-                  {
-                    ['bg-yellow-300 hover:brightness-90']:
-                      editor.isActive('strike'),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive('bold'),
-                  },
-                )}
-              >
-                <Strikethrough size={20} />
-              </button>
-            </div>
-            <div className="bg-[#f8f9fa] rounded flex flex-[0.5] sm:flex-none gap-2 justify-evenly w-full sm:w-fit p-1">
-              <button
-                onClick={() => {
-                  editor?.chain().toggleBulletList().run();
-                }}
-                className={cn(
-                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
-                  {
-                    ['bg-yellow-300 hover:brightness-90']:
-                      editor.isActive('bulletList'),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive('bulletList'),
-                  },
-                )}
-              >
-                <List size={20} />
-              </button>
-              <button
-                onClick={() => {
-                  editor?.chain().toggleOrderedList().run();
-                }}
-                className={cn(
-                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
-                  {
-                    ['bg-yellow-300 hover:brightness-90']:
-                      editor.isActive('orderedList'),
-                    ['hover:bg-[#f2f2f2]']: !editor.isActive('orderedList'),
-                  },
-                )}
-              >
-                <ListOrdered size={20} />
-              </button>
-            </div>
+            ))}
           </div>
 
           {/* New Layout */}
