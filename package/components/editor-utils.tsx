@@ -197,18 +197,6 @@ export const useEditorToolbar = ({
       onClick: () => editor?.chain().focus().toggleStrike().run(),
       isActive: editor?.isActive('strike'),
     },
-    {
-      icon: 'Superscript',
-      title: 'Superscript',
-      onClick: () => editor?.chain().focus().toggleSuperscript().run(),
-      isActive: editor?.isActive('superscript'),
-    },
-    {
-      icon: 'Subscript',
-      title: 'Subscript',
-      onClick: () => editor?.chain().focus().toggleSubscript().run(),
-      isActive: editor?.isActive('subscript'),
-    },
     null,
     {
       icon: 'List',
@@ -248,6 +236,19 @@ export const useEditorToolbar = ({
       title: 'Quote',
       onClick: () => editor?.chain().focus().toggleBlockquote().run(),
       isActive: editor?.isActive('blockquote'),
+    },
+    null,
+    {
+      icon: 'Superscript',
+      title: 'Superscript',
+      onClick: () => editor?.chain().focus().unsetSubscript().toggleSuperscript().run(),
+      isActive: editor?.isActive('superscript'),
+    },
+    {
+      icon: 'Subscript',
+      title: 'Subscript',
+      onClick: () => editor?.chain().focus().unsetSuperscript().toggleSubscript().run(),
+      isActive: editor?.isActive('subscript'),
     },
     null,
     {
@@ -716,6 +717,62 @@ export const LinkPopup = ({
     </div>
   );
 };
+export const ScriptsPopup = ({
+  elementRef,
+  editor,
+  setToolVisibility,
+}: {
+  elementRef: React.RefObject<HTMLDivElement>;
+  editor: Editor;
+  setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
+}) => {
+  const options = [
+    {
+      title: 'Superscript',
+      command: () => editor.chain().focus().unsetSubscript().toggleSuperscript().run(),
+      isActive: () => editor.isActive('superscript'),
+      icon: 'Superscript',
+    },
+    {
+      title: 'Subscript',
+      command: () => editor.chain().focus().unsetSuperscript().toggleSubscript().run(),
+      isActive: () => editor.isActive('subscript'),
+      icon: 'Subscript',
+    },
+    {
+      title: 'None',
+      command: () => editor.chain().focus().unsetSuperscript().unsetSubscript().run(),
+      isActive: () => !editor.isActive('superscript') && !editor.isActive('subscript'),
+      icon: 'RemoveFormatting',
+    },
+  ];
+
+  return (
+    <div ref={elementRef} className="z-50 w-48 bg-white rounded shadow-elevation-1 p-1">
+      <div className="flex flex-col gap-1 justify-center w-fit sm:w-full">
+        {options.map((option) => (
+          <Button
+            key={option.title}
+            variant="ghost"
+            onClick={() => {
+              option.command();
+              setToolVisibility(IEditorTool.NONE);
+            }}
+            className="flex items-center justify-between w-full px-2 py-1"
+          >
+            <div className="flex items-center gap-2">
+              <LucideIcon name={option.icon} />
+              <span>{option.title}</span>
+            </div>
+            {option.isActive() && (
+              <LucideIcon name="Check" size="sm" className="ml-2" />
+            )}
+          </Button>
+        ))}
+      </div>
+    </div>
+  );
+};
 export const TextColor = ({
   editor,
   setVisibility,
@@ -959,14 +1016,14 @@ export const TextFormatingPopup = ({
       title: 'Superscript',
       description: 'Superscript text',
       icon: "Superscript",
-      command: (editor: Editor) => editor.chain().focus().toggleSuperscript().run(),
+      command: (editor: Editor) => editor.chain().focus().unsetSubscript().toggleSuperscript().run(),
       isActive: () => editor.isActive('superscript'),
     },
     {
       title: 'Subscript',
       description: 'Subscript text',
       icon: "Subscript",
-      command: (editor: Editor) => editor.chain().focus().toggleSubscript().run(),
+      command: (editor: Editor) => editor.chain().focus().unsetSuperscript().toggleSubscript().run(),
       isActive: () => editor.isActive('subscript'),
     },
   ];
@@ -1079,22 +1136,41 @@ export const TextFormatingPopup = ({
               ))}
             </div>
           </div>
-          <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
-            {textStyles.map((textStyle) => (
-              <button
-                onClick={() => textStyle.command(editor)}
-                key={textStyle.title}
-                className={cn(
-                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
-                  {
-                    ['bg-yellow-300 hover:brightness-90']: textStyle.isActive(),
-                    ['hover:bg-[#f2f2f2]']: !textStyle.isActive(),
-                  },
-                )}
-              >
-                <LucideIcon name={textStyle.icon} size="md" />
-              </button>
-            ))}
+          <div className="flex gap-1 justify-center">
+            <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly p-1 w-full sm:w-fit ">
+              {textStyles.slice(0, 4).map((textStyle) => (
+                <button
+                  onClick={() => textStyle.command(editor)}
+                  key={textStyle.title}
+                  className={cn(
+                    'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
+                    {
+                      ['bg-yellow-300 hover:brightness-90']: textStyle.isActive(),
+                      ['hover:bg-[#f2f2f2]']: !textStyle.isActive(),
+                    },
+                  )}
+                >
+                  <LucideIcon name={textStyle.icon} size="md" />
+                </button>
+              ))}
+            </div>
+            <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly p-1 w-full sm:w-fit ">
+              {textStyles.slice(4).map((textStyle) => (
+                <button
+                  onClick={() => textStyle.command(editor)}
+                  key={textStyle.title}
+                  className={cn(
+                    'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
+                    {
+                      ['bg-yellow-300 hover:brightness-90']: textStyle.isActive(),
+                      ['hover:bg-[#f2f2f2]']: !textStyle.isActive(),
+                    },
+                  )}
+                >
+                  <LucideIcon name={textStyle.icon} size="md" />
+                </button>
+              ))}
+            </div>
           </div>
           <div className="bg-[#f8f9fa] rounded flex gap-1 justify-center self-center w-fit p-1">
             {listStyles.map((listStyle) => (
