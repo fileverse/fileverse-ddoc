@@ -10,6 +10,7 @@ import {
   TextHighlighter,
   EditorAlignment,
   TextColor,
+  ScriptsPopup,
 } from './editor-utils';
 import { IEditorTool } from '../hooks/use-visibility';
 import ToolbarButton from '../common/toolbar-button';
@@ -50,17 +51,23 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       command: () => props.editor.chain().focus().toggleStrike().run(),
       icon: 'Strikethrough',
     },
+    // {
+    //   name: 'Superscript',
+    //   isActive: () => props.editor.isActive('superscript'),
+    //   command: () => props.editor.chain().focus().toggleSuperscript().run(),
+    //   icon: 'Superscript',
+    // },
+    // {
+    //   name: 'Subscript',
+    //   isActive: () => props.editor.isActive('subscript'),
+    //   command: () => props.editor.chain().focus().toggleSubscript().run(),
+    //   icon: 'Subscript',
+    // },
     {
-      name: 'Superscript',
-      isActive: () => props.editor.isActive('superscript'),
-      command: () => props.editor.chain().focus().toggleSuperscript().run(),
+      name: 'Scripts',
+      isActive: () => toolVisibility === IEditorTool.SCRIPTS,
+      command: () => setToolVisibility(IEditorTool.SCRIPTS),
       icon: 'Superscript',
-    },
-    {
-      name: 'Subscript',
-      isActive: () => props.editor.isActive('subscript'),
-      command: () => props.editor.chain().focus().toggleSubscript().run(),
-      icon: 'Subscript',
     },
     {
       name: 'Alignment',
@@ -157,6 +164,14 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             bubbleMenu={true}
           />
         );
+      case 'Scripts':
+        return (
+          <ScriptsPopup
+            setToolVisibility={setToolVisibility}
+            editor={props.editor}
+            elementRef={toolRef}
+          />
+        );
       default:
         return null;
     }
@@ -174,7 +189,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       />
 
       {items.map((item, index) => {
-        if (item.name === 'Alignment' || item.name === 'Link') {
+        if (item.name === 'Alignment' || item.name === 'Link' || item.name === 'Scripts') {
           return (
             <DynamicDropdown
               key={item.name}

@@ -348,7 +348,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
           'is-table': isTable,
         })}
       >
-        {isDocEmpty && renderTemplateButtons(templateButtons, moreTemplates, visibleTemplateCount, toggleAllTemplates, isExpanded)}
+        {isDocEmpty && !isPreviewMode && renderTemplateButtons(templateButtons, moreTemplates, visibleTemplateCount, toggleAllTemplates, isExpanded)}
       </NodeViewContent>
     </NodeViewWrapper>
   );
