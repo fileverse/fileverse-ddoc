@@ -51,18 +51,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       command: () => props.editor.chain().focus().toggleStrike().run(),
       icon: 'Strikethrough',
     },
-    // {
-    //   name: 'Superscript',
-    //   isActive: () => props.editor.isActive('superscript'),
-    //   command: () => props.editor.chain().focus().toggleSuperscript().run(),
-    //   icon: 'Superscript',
-    // },
-    // {
-    //   name: 'Subscript',
-    //   isActive: () => props.editor.isActive('subscript'),
-    //   command: () => props.editor.chain().focus().toggleSubscript().run(),
-    //   icon: 'Subscript',
-    // },
     {
       name: 'Scripts',
       isActive: () => toolVisibility === IEditorTool.SCRIPTS,
@@ -84,7 +72,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Link',
       isActive: () => props.editor.isActive('link'),
-      command: () => { },
+      command: () => {},
       icon: 'Link',
     },
   ];
@@ -183,23 +171,20 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       shouldShow={shouldShow}
       className="hidden lg:flex gap-2 overflow-hidden rounded-lg h-[52px] min-w-fit w-full py-2 px-4 bg-white items-center shadow-elevation-1"
     >
-      <NodeSelector
-        editor={props.editor}
-        elementRef={toolRef}
-      />
+      <NodeSelector editor={props.editor} elementRef={toolRef} />
 
       {items.map((item, index) => {
-        if (item.name === 'Alignment' || item.name === 'Link' || item.name === 'Scripts') {
+        if (
+          item.name === 'Alignment' ||
+          item.name === 'Link' ||
+          item.name === 'Scripts'
+        ) {
           return (
             <DynamicDropdown
               key={item.name}
               sideOffset={15}
               anchorTrigger={
-                <ToolbarButton
-                  icon={item.icon}
-                  variant="ghost"
-                  size="md"
-                />
+                <ToolbarButton icon={item.icon} variant="ghost" size="md" />
               }
               content={renderContent(item)}
             />
