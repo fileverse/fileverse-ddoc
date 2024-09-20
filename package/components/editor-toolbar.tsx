@@ -121,6 +121,7 @@ const TiptapToolBar = ({
             setToolVisibility={setToolVisibility}
             editor={editor as Editor}
             elementRef={toolRef}
+            onError={onError}
           />
         );
       default:
