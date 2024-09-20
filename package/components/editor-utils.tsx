@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-useless-escape */
-import React, { Dispatch, SetStateAction, useRef, useState } from 'react';
+import React, { Dispatch, SetStateAction, useCallback, useRef, useState } from 'react';
 import { IEditorTool, useEditorToolVisiibility } from '../hooks/use-visibility';
 import { Editor } from '@tiptap/react';
 import { startImageUpload } from '../utils/upload-images';
@@ -636,23 +636,30 @@ export const LinkPopup = ({
   setToolVisibility,
   bubbleMenu,
   setIsLinkPopupOpen,
+  onError,
 }: {
   elementRef: React.RefObject<HTMLDivElement>;
   editor: Editor;
   setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
   bubbleMenu?: boolean;
   setIsLinkPopupOpen?: Dispatch<SetStateAction<boolean>>;
+  onError?: (errorString: string) => void;
 }) => {
   const [url, setUrl] = useState(editor.getAttributes('link').href);
-  const apply = () => {
-    // cancelled
-    if (url === null) {
+  const apply = useCallback(() => {
+    // empty
+    if (url === '' || url === undefined) {
+      editor.chain().focus().extendMarkRange('link').unsetLink().run();
       return;
     }
 
-    // empty
-    if (url === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run();
+    // Validate URL
+    const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+
+    if (!urlPattern.test(url)) {
+      if (onError && typeof onError === 'function') {
+        onError('Invalid URL');
+      }
       return;
     }
 
@@ -662,42 +669,24 @@ export const LinkPopup = ({
       finalUrl = 'https://' + url;
     }
 
-    // validate link
-    try {
-      if (
-        finalUrl.match(
-          /^((http|https):\/\/)?([w|W]{3}\.)+[a-zA-Z0-9\-\.]{3,}\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?$/,
-        )
-      ) {
-        editor
-          .chain()
-          .focus()
-          .extendMarkRange('link')
-          .setLink({ href: finalUrl })
-          .run();
-      }
-    } catch (e) {
-      console.error('Invalid URL');
-      return;
-    }
-
-    // update link
+    // Update link
     editor
       .chain()
       .focus()
       .extendMarkRange('link')
       .setLink({ href: finalUrl })
       .run();
+
     setToolVisibility(IEditorTool.NONE);
     if (bubbleMenu && setIsLinkPopupOpen) setIsLinkPopupOpen(false);
-  };
+  }, [url, editor, bubbleMenu, setIsLinkPopupOpen, onError, setToolVisibility]);
   return (
     <div
       ref={elementRef}
       className="z-50 h-auto gap-2 items-center flex max-h-[330px] overflow-y-auto scroll-smooth rounded-lg bg-white p-2 shadow-elevation-1 transition-all"
     >
       <TextField
-        onChange={(e) => setUrl(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUrl(e.target.value)}
         className="w-full"
         placeholder="Add link here"
         value={url}

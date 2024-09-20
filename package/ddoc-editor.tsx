@@ -163,38 +163,44 @@ const DdocEditor = forwardRef(
 
     return (
       <div data-cy="single-webpage" className="bg-[#f8f9fa] h-full w-full">
-        {isNavbarVisible && (
-          <nav
-            id="Navbar"
-            className="h-14 bg-[#ffffff] py-2 px-3 xl:px-4 flex gap-[40px] items-center justify-between w-screen xl:w-full fixed left-0 top-0 border-b color-border-default z-50"
-          >
-            {renderNavbar?.({ editor: editor.getJSON() })}
-          </nav>
-        )}
-        {!isPreviewMode && (
-          <div
-            id="toolbar"
-            className={cn(
-              'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 px-1 bg-[#ffffff]',
-              { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
-            )}
-          >
-            <div className="justify-center items-center grow relative">
-              <EditorToolBar
-                onError={onError}
-                editor={editor}
-                isNavbarVisible={isNavbarVisible}
-                setIsNavbarVisible={setIsNavbarVisible}
-              />
-            </div>
-          </div>
-        )}
+        <AnimatePresence>
+          {isNavbarVisible && (
+            <nav
+              id="Navbar"
+              className="h-14 bg-[#ffffff] py-2 px-3 xl:px-4 flex gap-[40px] items-center justify-between w-screen xl:w-full fixed left-0 top-0 border-b color-border-default z-50"
+            >
+              {renderNavbar?.({ editor: editor.getJSON() })}
+            </nav>
+          )}
+          {!isPreviewMode && (
+            <motion.div
+              initial={{ y: 50, opacity: 0 }}
+              animate={{ y: 0, opacity: 1 }}
+              exit={{ y: 50, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              id="toolbar"
+              className={cn(
+                'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 px-1 bg-[#ffffff] border-b color-border-default',
+                { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
+              )}
+            >
+              <div className="justify-center items-center grow relative">
+                <EditorToolBar
+                  onError={onError}
+                  editor={editor}
+                  isNavbarVisible={isNavbarVisible}
+                  setIsNavbarVisible={setIsNavbarVisible}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
         <div
           className={cn(
-            'p-4 md:px-[80px] md:mt-12 md:py-[78px] bg-white w-full md:w-[850px] max-w-[850px] mx-auto',
+            'p-4 md:px-[80px] md:mt-12 md:py-[78px] bg-white w-full md:w-[850px] max-w-[850px] mx-auto shadow-elevation-2 rounded',
             { 'mt-0 xl:!mt-6': isPreviewMode },
-            { 'pt-20': isNavbarVisible },
-            { 'pt-6': !isNavbarVisible },
+            { 'pt-20 md:mt-[7.5rem]': isNavbarVisible },
+            { 'pt-6 md:mt-[4rem]': !isNavbarVisible },
           )}
           style={{
             height:
