@@ -3,7 +3,7 @@ import { EditorBubbleMenu } from './components/editor-bubble-menu';
 import { DdocProps } from './types';
 import { ColumnsMenu } from './extensions/multi-column/menus';
 import { EditingProvider } from './hooks/use-editing-context';
-import Spinner from './common/spinner';
+import { Spinner } from './common/spinner';
 import EditorToolBar from './components/editor-toolbar';
 import './styles/editor.scss';
 import 'tippy.js/animations/shift-toward-subtle.css';
@@ -16,7 +16,6 @@ import {
   useRef,
   useState,
 } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
 import cn from 'classnames';
 import { Button, LucideIcon } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
@@ -163,38 +162,31 @@ const DdocEditor = forwardRef(
 
     return (
       <div data-cy="single-webpage" className="bg-[#f8f9fa] h-full w-full">
-        <AnimatePresence>
-          {isNavbarVisible && (
-            <nav
-              id="Navbar"
-              className="h-14 bg-[#ffffff] py-2 px-3 xl:px-4 flex gap-[40px] items-center justify-between w-screen xl:w-full fixed left-0 top-0 border-b color-border-default z-50"
-            >
-              {renderNavbar?.({ editor: editor.getJSON() })}
-            </nav>
-          )}
-          {!isPreviewMode && (
-            <motion.div
-              initial={{ y: 50, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              id="toolbar"
-              className={cn(
-                'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 px-1 bg-[#ffffff] border-b color-border-default',
-                { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
-              )}
-            >
-              <div className="justify-center items-center grow relative">
-                <EditorToolBar
-                  onError={onError}
-                  editor={editor}
-                  isNavbarVisible={isNavbarVisible}
-                  setIsNavbarVisible={setIsNavbarVisible}
-                />
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <nav
+          id="Navbar"
+          className="h-14 bg-[#ffffff] py-2 px-3 xl:px-4 flex gap-[40px] items-center justify-between w-screen xl:w-full fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300"
+          style={{ transform: isNavbarVisible ? 'translateY(0)' : 'translateY(-100%)' }}
+        >
+          {renderNavbar?.({ editor: editor.getJSON() })}
+        </nav>
+        {!isPreviewMode && (
+          <div
+            id="toolbar"
+            className={cn(
+              'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 px-1 bg-[#ffffff] border-b color-border-default transition-transform duration-300 top-14',
+            )}
+            style={{ transform: isNavbarVisible ? 'translateY(0)' : 'translateY(-100%)' }}
+          >
+            <div className="justify-center items-center grow relative">
+              <EditorToolBar
+                onError={onError}
+                editor={editor}
+                isNavbarVisible={isNavbarVisible}
+                setIsNavbarVisible={setIsNavbarVisible}
+              />
+            </div>
+          </div>
+        )}
         <div
           className={cn(
             'p-4 md:px-[80px] md:mt-12 md:py-[78px] bg-white w-full md:w-[850px] max-w-[850px] mx-auto shadow-elevation-2 rounded',
@@ -240,30 +232,22 @@ const DdocEditor = forwardRef(
             </Button>
           )}
         </div>
-        {!isPreviewMode && (
-          <AnimatePresence>
-            {!disableBottomToolbar && (
-              <motion.div
-                initial={{ y: 50, opacity: 0 }}
-                animate={{ y: 0, opacity: 1 }}
-                exit={{ y: 50, opacity: 0 }}
-                transition={{ duration: 0.2 }}
-                className={cn(
-                  'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-10 px-4 bg-[#ffffff] transition-all duration-300 ease-in-out border-b border-color-default',
-                  isKeyboardVisible && 'hidden',
-                  { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
-                )}
-              >
-                <MobileToolbar
-                  onError={onError}
-                  editor={editor}
-                  isKeyboardVisible={isKeyboardVisible}
-                  isNavbarVisible={isNavbarVisible}
-                  setIsNavbarVisible={setIsNavbarVisible}
-                />
-              </motion.div>
+        {!isPreviewMode && !disableBottomToolbar && (
+          <div
+            className={cn(
+              'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-10 px-4 bg-[#ffffff] transition-all duration-300 ease-in-out border-b border-color-default',
+              isKeyboardVisible && 'hidden',
+              { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
             )}
-          </AnimatePresence>
+          >
+            <MobileToolbar
+              onError={onError}
+              editor={editor}
+              isKeyboardVisible={isKeyboardVisible}
+              isNavbarVisible={isNavbarVisible}
+              setIsNavbarVisible={setIsNavbarVisible}
+            />
+          </div>
         )}
       </div>
     );
