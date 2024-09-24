@@ -1,16 +1,15 @@
-interface SpinnerProps {
-  height?: number
-  width?: number
-}
-export const Spinner = ({ height, width }: SpinnerProps) => {
+import { LucideIcon } from "@fileverse/ui"
+
+export const Spinner = () => {
   return (
-    <span className="flex items-center justify-center ">
-      <span
-        className={`${width ? `w-${width}` : 'w-8'} ${
-          height ? `h-${height}` : 'h-8'
-        } border-4 border-t-4 border-t-[#ccc] border-gray-500 rounded-full animate-spin`}
+    <div className="flex items-center justify-center">
+      <LucideIcon
+        name="LoaderCircle"
+        size="lg"
+        className="animate-spin"
+        fill="transparent"
+        stroke="currentColor"
       />
-    </span>
+    </div>
   )
 }
-export default Spinner
