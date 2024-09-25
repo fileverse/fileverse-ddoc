@@ -10,6 +10,7 @@ import {
   Toaster,
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
+import { DEFAULT_ENCRYPTION_KEY } from './constants';
 
 function App() {
   const [enableCollaboration, setEnableCollaboration] = useState(false);
@@ -115,7 +116,7 @@ function App() {
         }}
         renderNavbar={renderNavbar}
         ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}
-        collaborationKey="40eqqsENayNby-at6w6UDA"
+        collaborationKey={DEFAULT_ENCRYPTION_KEY}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}
