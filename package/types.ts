@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { JSONContent } from '@tiptap/core';
 import { EditorProps } from '@tiptap/pm/view';
 import { Editor } from '@tiptap/react';
@@ -53,4 +54,15 @@ export interface IUser {
   name: string;
   color: string;
   isEns: boolean;
+}
+export type CollaborationCursorStorage = {
+  users: { clientId: number; [key: string]: any }[];
+};
+
+export interface CollaborationCursorOptions {
+  provider: any;
+  user: Record<string, any>;
+  render(user: Record<string, any>): HTMLElement;
+  selectionRender(user: Record<string, any>): any;
+  onUpdate: (users: { clientId: number; [key: string]: any }[]) => null;
 }

@@ -2,18 +2,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Extension } from '@tiptap/core';
 import { defaultSelectionBuilder, yCursorPlugin } from 'y-prosemirror';
-
-type CollaborationCursorStorage = {
-  users: { clientId: number; [key: string]: any }[];
-};
-
-export interface CollaborationCursorOptions {
-  provider: any;
-  user: Record<string, any>;
-  render(user: Record<string, any>): HTMLElement;
-  selectionRender(user: Record<string, any>): any;
-  onUpdate: (users: { clientId: number; [key: string]: any }[]) => null;
-}
+import {
+  CollaborationCursorOptions,
+  CollaborationCursorStorage,
+} from '../types';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
