@@ -73,10 +73,10 @@ export const NodeSelector = ({
       isActive: () => editor.isActive('blockquote'),
     },
     {
-      name: 'Code',
-      icon: 'Code',
-      command: () => editor.chain().focus().toggleCode().run(),
-      isActive: () => editor.isActive('code'),
+      name: 'Code Block',
+      icon: 'Braces',
+      command: () => editor.chain().focus().toggleCodeBlock().run(),
+      isActive: () => editor.isActive('codeBlock'),
     },
   ]
 
