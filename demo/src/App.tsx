@@ -1,7 +1,14 @@
 import { useEffect, useState } from 'react';
 import DdocEditor from '../../package/ddoc-editor';
 import { JSONContent } from '@tiptap/react';
-import { Button, Tag, IconButton, LucideIcon, toast, Toaster } from '@fileverse/ui';
+import {
+  Button,
+  Tag,
+  IconButton,
+  LucideIcon,
+  toast,
+  Toaster,
+} from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 
 function App() {
@@ -26,7 +33,11 @@ function App() {
     return (
       <>
         <div className="flex items-center gap-[12px]">
-          <IconButton variant={'ghost'} icon="Menu" size="md" />
+          <IconButton
+            variant={'ghost'}
+            icon="Menu"
+            size="md"
+          />
 
           <div className="relative truncate inline-block xl:!max-w-[300px] !max-w-[108px] bg-[#ffffff] text-[14px] font-medium leading-[20px]">
             <span className="invisible whitespace-pre">
@@ -37,7 +48,7 @@ function App() {
               type="text"
               placeholder="Untitled"
               value={title}
-              onChange={(e) => setTitle?.(e.target.value)}
+              onChange={e => setTitle?.(e.target.value)}
             />
           </div>
           <Tag
@@ -47,11 +58,19 @@ function App() {
             Saved in local storage
           </Tag>
           <div className="w-6 h-6 rounded color-bg-secondary flex justify-center items-center border color-border-default xl:hidden">
-            <LucideIcon name="BadgeCheck" size="sm" className="text-[#77818A]" />
+            <LucideIcon
+              name="BadgeCheck"
+              size="sm"
+              className="text-[#77818A]"
+            />
           </div>
         </div>
         <div className="flex gap-2">
-          <IconButton variant={'ghost'} icon="MessageSquareText" size="md" />
+          <IconButton
+            variant={'ghost'}
+            icon="MessageSquareText"
+            size="md"
+          />
           <IconButton
             variant={'ghost'}
             icon="Share2"
@@ -86,7 +105,7 @@ function App() {
         collaborationId={collaborationId}
         username={username}
         isPreviewMode={false}
-        onError={(error) => {
+        onError={error => {
           toast({
             title: 'Error',
             description: error,
@@ -96,6 +115,7 @@ function App() {
         }}
         renderNavbar={renderNavbar}
         ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}
+        collaborationKey="40eqqsENayNby-at6w6UDA"
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}
