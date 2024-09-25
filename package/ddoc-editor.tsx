@@ -46,6 +46,7 @@ const DdocEditor = forwardRef(
       onError,
       setCharacterCount,
       setWordCount,
+      collaborationKey,
     }: DdocProps,
     ref,
   ) => {
@@ -79,6 +80,7 @@ const DdocEditor = forwardRef(
       onError,
       setCharacterCount,
       setWordCount,
+      collaborationKey,
     });
 
     useImperativeHandle(
@@ -161,11 +163,16 @@ const DdocEditor = forwardRef(
     }
 
     return (
-      <div data-cy="single-webpage" className="bg-[#f8f9fa] h-full w-full">
+      <div
+        data-cy="single-webpage"
+        className="bg-[#f8f9fa] h-full w-full"
+      >
         <nav
           id="Navbar"
           className="h-14 bg-[#ffffff] py-2 px-3 xl:px-4 flex gap-[40px] items-center justify-between w-screen xl:w-full fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300"
-          style={{ transform: isNavbarVisible ? 'translateY(0)' : 'translateY(-100%)' }}
+          style={{
+            transform: isNavbarVisible ? 'translateY(0)' : 'translateY(-100%)',
+          }}
         >
           {renderNavbar?.({ editor: editor.getJSON() })}
         </nav>
@@ -175,7 +182,11 @@ const DdocEditor = forwardRef(
             className={cn(
               'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 px-1 bg-[#ffffff] border-b color-border-default transition-transform duration-300 top-14',
             )}
-            style={{ transform: isNavbarVisible ? 'translateY(0)' : 'translateY(-100%)' }}
+            style={{
+              transform: isNavbarVisible
+                ? 'translateY(0)'
+                : 'translateY(-100%)',
+            }}
           >
             <div className="justify-center items-center grow relative">
               <EditorToolBar
@@ -206,7 +217,10 @@ const DdocEditor = forwardRef(
             {!isPreviewMode && (
               <div>
                 <EditorBubbleMenu editor={editor} />
-                <ColumnsMenu editor={editor} appendTo={editorRef} />
+                <ColumnsMenu
+                  editor={editor}
+                  appendTo={editorRef}
+                />
               </div>
             )}
             <EditingProvider isPreviewMode={isPreviewMode}>
@@ -228,7 +242,10 @@ const DdocEditor = forwardRef(
                 'absolute w-12 h-12 bg-white rounded-full shadow-xl top-[70px] right-[-23px]',
               )}
             >
-              <LucideIcon name="MessageSquareText" size="sm" />
+              <LucideIcon
+                name="MessageSquareText"
+                size="sm"
+              />
             </Button>
           )}
         </div>

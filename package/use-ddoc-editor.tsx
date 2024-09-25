@@ -39,6 +39,7 @@ export const useDdocEditor = ({
   onError,
   setCharacterCount,
   setWordCount,
+  collaborationKey,
 }: Partial<DdocProps>) => {
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions as AnyExtension[]),
@@ -53,7 +54,7 @@ export const useDdocEditor = ({
     ydoc,
   } = useSyncMachine({
     roomId: collaborationId,
-    roomKey: '40eqqsENayNby-at6w6UDA',
+    roomKey: collaborationKey,
     wsProvider: 'wss://dev-sync.fileverse.io/',
   });
   const context = (machine[0] as any).context as SyncMachineContext;
