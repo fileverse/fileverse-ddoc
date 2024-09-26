@@ -3,12 +3,14 @@ import DdocEditor from '../../package/ddoc-editor';
 import { JSONContent } from '@tiptap/react';
 import { Button, Tag, IconButton, LucideIcon, toast, Toaster } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
-
+import { CornerUtils } from '../../package/components/corner-utils';
 function App() {
   const [enableCollaboration, setEnableCollaboration] = useState(false);
   const [username, setUsername] = useState('');
   const [title, setTitle] = useState('Untitled');
   const isMobile = useMediaQuery('(max-width: 768px)');
+
+  const isPreviewMode = true;
 
   const collaborationId = window.location.pathname.split('/')[2]; // example url - /doc/1234, that why's used second element of array
 
@@ -85,7 +87,7 @@ function App() {
         enableCollaboration={enableCollaboration}
         collaborationId={collaborationId}
         username={username}
-        isPreviewMode={false}
+        isPreviewMode={isPreviewMode}
         onError={(error) => {
           toast({
             title: 'Error',
@@ -97,6 +99,7 @@ function App() {
         renderNavbar={renderNavbar}
         ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}
       />
+      {isPreviewMode && <CornerUtils />}
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}
         duration={3000}

@@ -164,8 +164,12 @@ const DdocEditor = forwardRef(
       <div data-cy="single-webpage" className="bg-[#f8f9fa] h-full w-full">
         <nav
           id="Navbar"
-          className="h-14 bg-[#ffffff] py-2 px-3 xl:px-4 flex gap-[40px] items-center justify-between w-screen xl:w-full fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300"
-          style={{ transform: isNavbarVisible ? 'translateY(0)' : 'translateY(-100%)' }}
+          className={cn("h-14 bg-[#ffffff] py-2 px-4 flex gap-[40px] items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300",
+            {
+              'translate-y-0': isNavbarVisible,
+              'translate-y-[-100%]': !isNavbarVisible,
+            }
+          )}
         >
           {renderNavbar?.({ editor: editor.getJSON() })}
         </nav>
@@ -174,8 +178,8 @@ const DdocEditor = forwardRef(
             id="toolbar"
             className={cn(
               'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 px-1 bg-[#ffffff] border-b color-border-default transition-transform duration-300 top-14',
+              { 'translate-y-0': isNavbarVisible, 'translate-y-[-105%]': !isNavbarVisible },
             )}
-            style={{ transform: isNavbarVisible ? 'translateY(0)' : 'translateY(-100%)' }}
           >
             <div className="justify-center items-center grow relative">
               <EditorToolBar
@@ -189,10 +193,11 @@ const DdocEditor = forwardRef(
         )}
         <div
           className={cn(
-            'p-4 md:px-[80px] md:mt-12 md:py-[78px] bg-white w-full md:w-[850px] max-w-[850px] mx-auto shadow-elevation-2 rounded',
-            { 'mt-0 xl:!mt-6': isPreviewMode },
-            { 'pt-20 md:mt-[7.5rem]': isNavbarVisible },
-            { 'pt-6 md:mt-[4rem]': !isNavbarVisible },
+            'p-4 md:px-[80px] md:py-[78px] bg-white w-full md:w-[850px] max-w-[850px] mx-auto shadow-elevation-2 rounded',
+            { 'mt-0 md:!mt-16': isPreviewMode },
+            { 'md:!mt-16': !isPreviewMode },
+            { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
+            { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
           )}
           style={{
             height:
