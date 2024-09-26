@@ -1,14 +1,22 @@
 import { useEffect, useState } from 'react';
 import DdocEditor from '../../package/ddoc-editor';
 import { JSONContent } from '@tiptap/react';
-import { Button, Tag, IconButton, LucideIcon, toast, Toaster } from '@fileverse/ui';
+import {
+  Button,
+  Tag,
+  IconButton,
+  LucideIcon,
+  toast,
+  Toaster,
+} from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
-
 function App() {
   const [enableCollaboration, setEnableCollaboration] = useState(false);
   const [username, setUsername] = useState('');
   const [title, setTitle] = useState('Untitled');
   const isMobile = useMediaQuery('(max-width: 768px)');
+
+  const isPreviewMode = false;
 
   const collaborationId = window.location.pathname.split('/')[2]; // example url - /doc/1234, that why's used second element of array
 
@@ -47,7 +55,11 @@ function App() {
             Saved in local storage
           </Tag>
           <div className="w-6 h-6 rounded color-bg-secondary flex justify-center items-center border color-border-default xl:hidden">
-            <LucideIcon name="BadgeCheck" size="sm" className="text-[#77818A]" />
+            <LucideIcon
+              name="BadgeCheck"
+              size="sm"
+              className="text-[#77818A]"
+            />
           </div>
         </div>
         <div className="flex gap-2">
@@ -85,7 +97,7 @@ function App() {
         enableCollaboration={enableCollaboration}
         collaborationId={collaborationId}
         username={username}
-        isPreviewMode={false}
+        isPreviewMode={isPreviewMode}
         onError={(error) => {
           toast({
             title: 'Error',
