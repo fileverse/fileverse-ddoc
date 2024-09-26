@@ -10,7 +10,6 @@ import {
   Toaster,
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
-import { CornerUtils } from '../../package/components/corner-utils';
 function App() {
   const [enableCollaboration, setEnableCollaboration] = useState(false);
   const [username, setUsername] = useState('');
@@ -110,7 +109,6 @@ function App() {
         renderNavbar={renderNavbar}
         ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}
       />
-      {isPreviewMode && <CornerUtils />}
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}
         duration={3000}
