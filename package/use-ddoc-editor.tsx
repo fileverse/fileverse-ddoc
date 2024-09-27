@@ -10,7 +10,7 @@ import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from './components/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
-import { SyncMachineContext, useSyncMachine } from '@fileverse-dev/sync';
+import { useSyncMachine } from '@fileverse-dev/sync';
 import { SyncCursor } from './extensions/sync-cursor';
 
 const usercolors = [
@@ -51,13 +51,13 @@ export const useDdocEditor = ({
   const {
     machine,
     connect: connectMachine,
+    isReady: isCollaborationReady,
     ydoc,
   } = useSyncMachine({
     roomId: collaborationId,
     roomKey: collaborationKey,
     wsProvider: 'wss://dev-sync.fileverse.io/',
   });
-  const context = (machine[0] as any).context as SyncMachineContext;
 
   const isHighlightedYellow = (
     state: EditorState,
@@ -172,7 +172,7 @@ export const useDdocEditor = ({
       throw new Error('docId or username is not provided');
     }
     console.log({ isEns });
-    connectMachine(username as string, collaborationId);
+    connectMachine(username as string);
   };
 
   const ref = useRef<HTMLDivElement>(null);
@@ -224,7 +224,7 @@ export const useDdocEditor = ({
   }, [editor]);
 
   useEffect(() => {
-    if (context?.awareness && context.isConnected) {
+    if (isCollaborationReady) {
       setExtensions([
         ...extensions.filter(extension => extension.name !== 'history'),
         Collaboration.configure({
@@ -244,7 +244,7 @@ export const useDdocEditor = ({
         }),
       ]);
     }
-  }, [context?.awareness, context.isConnected]);
+  }, [isCollaborationReady]);
 
   const startCollaboration = async () => {
     let _username = username;
@@ -291,5 +291,6 @@ export const useDdocEditor = ({
     ref,
     connect,
     ydoc,
+    isCollaborationReady,
   };
 };

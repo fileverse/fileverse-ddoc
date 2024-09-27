@@ -65,6 +65,7 @@ const DdocEditor = forwardRef(
       ref: editorRef,
       isContentLoading,
       ydoc,
+      isCollaborationReady,
     } = useDdocEditor({
       isPreviewMode,
       initialContent,
@@ -162,6 +163,15 @@ const DdocEditor = forwardRef(
       );
     }
 
+    if (enableCollaboration && !isCollaborationReady) {
+      return (
+        <div className="w-screen h-screen flex flex-col gap-4 justify-center items-center">
+          <Spinner />
+          <p>Loading Sync ...</p>
+        </div>
+      );
+    }
+
     return (
       <div
         data-cy="single-webpage"
@@ -198,9 +208,10 @@ const DdocEditor = forwardRef(
             </div>
           </div>
         )}
+
         <div
           className={cn(
-            'p-4 md:px-[80px] md:mt-12 md:py-[78px] bg-white w-full md:w-[850px] max-w-[850px] mx-auto shadow-elevation-2 rounded',
+            'p-4 md:px-[80px] bg-white md:mt-12 md:py-[78px] w-full md:w-[850px] max-w-[850px] mx-auto shadow-elevation-2 rounded',
             { 'mt-0 xl:!mt-6': isPreviewMode },
             { 'pt-20 md:mt-[7.5rem]': isNavbarVisible },
             { 'pt-6 md:mt-[4rem]': !isNavbarVisible },
@@ -227,7 +238,7 @@ const DdocEditor = forwardRef(
               <EditorContent
                 editor={editor}
                 id="editor"
-                className="w-full h-full py-4"
+                className="w-full h-full py-4 "
               />
             </EditingProvider>
           </div>
