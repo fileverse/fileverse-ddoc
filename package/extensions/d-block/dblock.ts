@@ -92,6 +92,7 @@ export const DBlock = Node.create<DBlockOptions>({
         const isInsideTable = nodePaths.some(path => path.includes('table'));
 
         if (parent?.type.name !== 'dBlock') {
+          const isTaskList = nodePaths.some(path => path.includes('taskList'));
           const isListOrTaskItem =
             parent?.type.name === 'listItem' ||
             parent?.type.name === 'taskItem';
@@ -115,6 +116,7 @@ export const DBlock = Node.create<DBlockOptions>({
           if (isCurrentItemEmpty) {
             return editor
               .chain()
+              .deleteNode(isTaskList ? 'taskItem' : 'listItem')
               .insertContentAt(from, {
                 type: 'dBlock',
                 content: [
@@ -150,9 +152,7 @@ export const DBlock = Node.create<DBlockOptions>({
         const content = doc.slice(from, currentActiveNodeTo)?.toJSON().content;
 
         try {
-          if (currentActiveNodeType === 'codeBlock') {
-            return editor.chain().newlineInCode().focus().run();
-          }
+          const atTheStartOfText = from + 4;
 
           if (['columns', 'heading'].includes(currentActiveNodeType)) {
             return editor
@@ -165,7 +165,7 @@ export const DBlock = Node.create<DBlockOptions>({
                   },
                 ],
               })
-              .focus()
+              .focus(atTheStartOfText)
               .run();
           }
           return editor
@@ -177,7 +177,7 @@ export const DBlock = Node.create<DBlockOptions>({
                 content,
               },
             )
-            .focus()
+            .focus(atTheStartOfText)
             .run();
         } catch (error) {
           console.error(`Error inserting content into dBlock node: ${error}`);
