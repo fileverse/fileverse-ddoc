@@ -53,6 +53,7 @@ export const useDdocEditor = ({
     connect: connectMachine,
     isReady: isCollaborationReady,
     ydoc,
+    getYdocEncodedState,
   } = useSyncMachine({
     roomId: collaborationId,
     roomKey: collaborationKey,
@@ -133,7 +134,12 @@ export const useDdocEditor = ({
 
   const editor = useEditor(
     {
-      extensions,
+      extensions: [
+        ...extensions,
+        Collaboration.configure({
+          document: ydoc,
+        }),
+      ],
       editorProps: {
         ...DdocEditorProps,
         handleDOMEvents: {
@@ -151,18 +157,10 @@ export const useDdocEditor = ({
         handleClick: handleCommentClick,
       },
       autofocus: 'start',
-      onTransaction: ({ editor, transaction }) => {
-        if (editor?.isEmpty) {
-          return;
-        }
-        if (transaction.docChanged) {
-          onChange?.(editor.getJSON());
-        }
-      },
       shouldRerenderOnTransaction: true,
       immediatelyRender: false,
     },
-    [extensions],
+    [extensions, ydoc],
   );
 
   const collaborationCleanupRef = useRef<() => void>(() => {});
@@ -227,9 +225,6 @@ export const useDdocEditor = ({
     if (isCollaborationReady) {
       setExtensions([
         ...extensions.filter(extension => extension.name !== 'history'),
-        Collaboration.configure({
-          document: ydoc,
-        }),
         SyncCursor.configure({
           provider: machine[0],
           user: {
@@ -284,6 +279,16 @@ export const useDdocEditor = ({
     editor?.storage.characterCount.characters(),
     editor?.storage.characterCount.words(),
   ]);
+
+  useEffect(() => {
+    const handler = () => {
+      onChange?.(getYdocEncodedState());
+    };
+    if (ydoc) {
+      ydoc.on('update', handler);
+    }
+    return () => ydoc?.off('update', handler);
+  }, [ydoc]);
 
   return {
     editor,
