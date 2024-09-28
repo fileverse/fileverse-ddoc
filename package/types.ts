@@ -38,6 +38,7 @@ export interface DdocProps {
   setCharacterCount?: React.Dispatch<SetStateAction<number>>;
   setWordCount?: React.Dispatch<SetStateAction<number>>;
   collaborationKey?: string;
+  yjsUpdate?: string;
 }
 
 export interface IEditorSelectionData {

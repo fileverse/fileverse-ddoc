@@ -47,6 +47,7 @@ const DdocEditor = forwardRef(
       setCharacterCount,
       setWordCount,
       collaborationKey,
+      yjsUpdate,
     }: DdocProps,
     ref,
   ) => {
@@ -82,6 +83,7 @@ const DdocEditor = forwardRef(
       setCharacterCount,
       setWordCount,
       collaborationKey,
+      yjsUpdate,
     });
 
     useImperativeHandle(
@@ -153,6 +155,8 @@ const DdocEditor = forwardRef(
         editorElement.removeEventListener('resize', handleKeyboardShow);
       };
     }, [editor, editorRef, isNativeMobile]);
+
+    console.log({ editor, isContentLoading });
 
     if (!editor || isContentLoading) {
       return (

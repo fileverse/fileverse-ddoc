@@ -40,6 +40,7 @@ export const useDdocEditor = ({
   setCharacterCount,
   setWordCount,
   collaborationKey,
+  yjsUpdate,
 }: Partial<DdocProps>) => {
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions as AnyExtension[]),
@@ -53,7 +54,8 @@ export const useDdocEditor = ({
     connect: connectMachine,
     isReady: isCollaborationReady,
     ydoc,
-    getYdocEncodedState,
+    getYjsEncodedState,
+    applyYjsEncodedState,
   } = useSyncMachine({
     roomId: collaborationId,
     roomKey: collaborationKey,
@@ -178,12 +180,23 @@ export const useDdocEditor = ({
   useEffect(() => {
     editor?.setEditable(!isPreviewMode);
   }, [isPreviewMode, editor]);
-
+  console.log('jjjjjjjjj');
   useEffect(() => {
-    if (initialContent && editor && !initialContentSetRef.current) {
+    console.log({ initialContent, yjsUpdate }, 'useEffect');
+    if (
+      (initialContent || yjsUpdate) &&
+      editor &&
+      !initialContentSetRef.current
+    ) {
       setIsContentLoading(true);
       queueMicrotask(() => {
-        editor.commands.setContent(initialContent);
+        if (yjsUpdate) {
+          console.log('applying encoded yjs state');
+          applyYjsEncodedState(yjsUpdate);
+        } else if (initialContent) {
+          console.log('setting inital content');
+          editor.commands.setContent(initialContent);
+        }
         setIsContentLoading(false);
       });
 
@@ -192,11 +205,13 @@ export const useDdocEditor = ({
 
     setTimeout(() => {
       initialContentSetRef.current = false;
+      console.log({ initialContent, editor }, 'from set timeout');
       if (editor && initialContent === undefined) {
+        console.log('should setIsLContentLading to fale');
         setIsContentLoading(false);
       }
     });
-  }, [initialContent, editor]);
+  }, [initialContent, editor, yjsUpdate]);
 
   useEffect(() => {
     if (!editor) {
@@ -282,13 +297,19 @@ export const useDdocEditor = ({
 
   useEffect(() => {
     const handler = () => {
-      onChange?.(getYdocEncodedState());
+      onChange?.(getYjsEncodedState());
     };
     if (ydoc) {
       ydoc.on('update', handler);
     }
     return () => ydoc?.off('update', handler);
   }, [ydoc]);
+
+  useEffect(() => {
+    if (yjsUpdate) {
+      applyYjsEncodedState(yjsUpdate);
+    }
+  }, [yjsUpdate]);
 
   return {
     editor,
