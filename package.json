@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "2.0.3-sync-patch-8",
+  "version": "2.0.3-sync-patch-10",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
@@ -28,7 +28,7 @@
   "dependencies": {
     "@_ueberdosis/prosemirror-tables": "^1.1.3",
     "@aarkue/tiptap-math-extension": "^1.3.3",
-    "@fileverse-dev/sync": "^0.1.3-patch-2",
+    "@fileverse-dev/sync": "^0.1.4",
     "@fileverse/ui": "^4.1.1-patch-8",
     "@radix-ui/react-focus-scope": "^1.1.0",
     "@radix-ui/react-popover": "^1.0.7",

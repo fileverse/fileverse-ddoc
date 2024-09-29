@@ -56,6 +56,7 @@ export const useDdocEditor = ({
     ydoc,
     getYjsEncodedState,
     applyYjsEncodedState,
+    error: syncError,
   } = useSyncMachine({
     roomId: collaborationId,
     roomKey: collaborationKey,
@@ -180,9 +181,7 @@ export const useDdocEditor = ({
   useEffect(() => {
     editor?.setEditable(!isPreviewMode);
   }, [isPreviewMode, editor]);
-  console.log('jjjjjjjjj');
   useEffect(() => {
-    console.log({ initialContent, yjsUpdate }, 'useEffect');
     if (
       (initialContent || yjsUpdate) &&
       editor &&
@@ -191,10 +190,8 @@ export const useDdocEditor = ({
       setIsContentLoading(true);
       queueMicrotask(() => {
         if (yjsUpdate) {
-          console.log('applying encoded yjs state');
           applyYjsEncodedState(yjsUpdate);
         } else if (initialContent) {
-          console.log('setting inital content');
           editor.commands.setContent(initialContent);
         }
         setIsContentLoading(false);
@@ -205,9 +202,7 @@ export const useDdocEditor = ({
 
     setTimeout(() => {
       initialContentSetRef.current = false;
-      console.log({ initialContent, editor }, 'from set timeout');
       if (editor && initialContent === undefined) {
-        console.log('should setIsLContentLading to fale');
         setIsContentLoading(false);
       }
     });
@@ -235,6 +230,9 @@ export const useDdocEditor = ({
       editor.off('selectionUpdate', handleSelection);
     };
   }, [editor]);
+
+  const isSyncFetchingFromIpfs = !!(machine[0] as any).value
+    ?.syncing_latest_commit;
 
   useEffect(() => {
     if (isCollaborationReady) {
@@ -318,5 +316,7 @@ export const useDdocEditor = ({
     connect,
     ydoc,
     isCollaborationReady,
+    syncError,
+    isSyncFetchingFromIpfs,
   };
 };
