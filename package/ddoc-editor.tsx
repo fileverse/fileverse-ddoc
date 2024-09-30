@@ -47,6 +47,7 @@ const DdocEditor = forwardRef(
       setCharacterCount,
       setWordCount,
       collaborationKey,
+      onDisconnectionDueToSyncError,
       yjsUpdate,
     }: DdocProps,
     ref,
@@ -74,6 +75,7 @@ const DdocEditor = forwardRef(
       initialContent,
       enableCollaboration,
       collaborationId,
+      onDisconnectionDueToSyncError,
       walletAddress,
       username,
       onChange,
@@ -158,6 +160,9 @@ const DdocEditor = forwardRef(
       };
     }, [editor, editorRef, isNativeMobile]);
 
+    const showSyncLoader =
+      enableCollaboration && (!isCollaborationReady || syncError);
+
     if (!editor || isContentLoading) {
       return (
         <div className="w-screen h-screen flex flex-col gap-4 justify-center items-center">
@@ -166,9 +171,6 @@ const DdocEditor = forwardRef(
         </div>
       );
     }
-
-    const showSyncLoader =
-      enableCollaboration && (!isCollaborationReady || syncError);
 
     return (
       <div

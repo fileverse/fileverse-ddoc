@@ -39,6 +39,7 @@ export interface DdocProps {
   setWordCount?: React.Dispatch<SetStateAction<number>>;
   collaborationKey?: string;
   yjsUpdate?: string;
+  onDisconnectionDueToSyncError?: (syncError: { message: string }) => void;
 }
 
 export interface IEditorSelectionData {
