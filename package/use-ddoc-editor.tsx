@@ -45,6 +45,7 @@ export const useDdocEditor = ({
   ]);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
+  const [isEns, setIsEns] = useState(false);
 
   const {
     machine,
@@ -92,7 +93,7 @@ export const useDdocEditor = ({
     if (!enableCollaboration || !collaborationId) {
       throw new Error('docId or username is not provided');
     }
-    console.log({ isEns });
+    setIsEns(isEns);
     connectMachine(username as string);
   };
 
@@ -143,7 +144,7 @@ export const useDdocEditor = ({
                 ? getTrimmedName(username, 7, 15)
                 : username,
             color: usercolors[Math.floor(Math.random() * usercolors.length)],
-            isEns: false,
+            isEns,
           },
           render: getCursor,
         }),
