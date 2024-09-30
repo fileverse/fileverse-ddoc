@@ -10,6 +10,8 @@ import {
   Toaster,
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
+import { DEFAULT_ENCRYPTION_KEY } from './constants';
+
 function App() {
   const [enableCollaboration, setEnableCollaboration] = useState(false);
   const [username, setUsername] = useState('');
@@ -34,7 +36,11 @@ function App() {
     return (
       <>
         <div className="flex items-center gap-[12px]">
-          <IconButton variant={'ghost'} icon="Menu" size="md" />
+          <IconButton
+            variant={'ghost'}
+            icon="Menu"
+            size="md"
+          />
 
           <div className="relative truncate inline-block xl:!max-w-[300px] !max-w-[108px] bg-[#ffffff] text-[14px] font-medium leading-[20px]">
             <span className="invisible whitespace-pre">
@@ -45,7 +51,7 @@ function App() {
               type="text"
               placeholder="Untitled"
               value={title}
-              onChange={(e) => setTitle?.(e.target.value)}
+              onChange={e => setTitle?.(e.target.value)}
             />
           </div>
           <Tag
@@ -63,7 +69,11 @@ function App() {
           </div>
         </div>
         <div className="flex gap-2">
-          <IconButton variant={'ghost'} icon="MessageSquareText" size="md" />
+          <IconButton
+            variant={'ghost'}
+            icon="MessageSquareText"
+            size="md"
+          />
           <IconButton
             variant={'ghost'}
             icon="Share2"
@@ -98,7 +108,7 @@ function App() {
         collaborationId={collaborationId}
         username={username}
         isPreviewMode={isPreviewMode}
-        onError={(error) => {
+        onError={error => {
           toast({
             title: 'Error',
             description: error,
@@ -108,6 +118,7 @@ function App() {
         }}
         renderNavbar={renderNavbar}
         ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}
+        collaborationKey={DEFAULT_ENCRYPTION_KEY}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

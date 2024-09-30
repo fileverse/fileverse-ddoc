@@ -25,7 +25,12 @@
     ]
   },
   /* include /index.ts*/
-  "include": ["./index.ts", "package/**/*", "demo/src/vite-env.d.ts"],
+  "include": [
+    "./index.ts",
+    "package/**/*",
+    "demo/src/vite-env.d.ts",
+    "demo/src/constants"
+  ],
   "exclude": ["demo", "public"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
