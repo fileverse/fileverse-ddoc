@@ -198,8 +198,8 @@ const DdocEditor = forwardRef(
               {syncError
                 ? syncError.message
                 : isSyncFetchingFromIpfs
-                ? 'Pulling contents from IPFS ...'
-                : 'Loading Sync ...'}
+                  ? 'Pulling contents from IPFS ...'
+                  : 'Loading Sync ...'}
             </p>
           </div>
         ) : (
@@ -245,99 +245,56 @@ const DdocEditor = forwardRef(
                 className="w-full h-full overflow-y-scroll overflow-x-hidden no-scrollbar pt-8 md:pt-0"
               >
                 {!isPreviewMode && (
-                  <div
-                    id="toolbar"
-                    className={cn(
-                      'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 px-1 bg-[#ffffff] border-b color-border-default transition-transform duration-300 top-14',
-                    )}
-                    style={{
-                      transform: isNavbarVisible
-                        ? 'translateY(0)'
-                        : 'translateY(-100%)',
-                    }}
-                  >
-                    <div className="justify-center items-center grow relative">
-                      <EditorToolBar
-                        onError={onError}
-                        editor={editor}
-                        isNavbarVisible={isNavbarVisible}
-                        setIsNavbarVisible={setIsNavbarVisible}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                <div
-                  className={cn(
-                    'p-4 md:px-[80px] bg-white md:mt-12 md:py-[78px] w-full md:w-[850px] max-w-[850px] mx-auto shadow-elevation-2 rounded',
-                    { 'mt-0 xl:!mt-6': isPreviewMode },
-                    { 'pt-20 md:mt-[7.5rem]': isNavbarVisible },
-                    { 'pt-6 md:mt-[4rem]': !isNavbarVisible },
-                  )}
-                  style={{
-                    height:
-                      isNativeMobile && !isPreviewMode
-                        ? 'calc(100vh - 4rem)'
-                        : '95vh',
-                  }}
-                >
-                  <div
-                    ref={editorRef}
-                    className="w-full h-full overflow-y-scroll overflow-x-hidden no-scrollbar pt-8 md:pt-0"
-                  >
-                    {!isPreviewMode && (
-                      <div>
-                        <EditorBubbleMenu editor={editor} />
-                        <ColumnsMenu
-                          editor={editor}
-                          appendTo={editorRef}
-                        />
-                      </div>
-                    )}
-                    <EditingProvider isPreviewMode={isPreviewMode}>
-                      <EditorContent
-                        editor={editor}
-                        id="editor"
-                        className="w-full h-full py-4 "
-                      />
-                    </EditingProvider>
-                  </div>
-                  {showCommentButton && !isNativeMobile && (
-                    <Button
-                      ref={btn_ref}
-                      onClick={() => {
-                        handleCommentButtonClick?.(editor);
-                      }}
-                      variant="ghost"
-                      className={cn(
-                        'absolute w-12 h-12 bg-white rounded-full shadow-xl top-[70px] right-[-23px]',
-                      )}
-                    >
-                      <LucideIcon
-                        name="MessageSquareText"
-                        size="sm"
-                      />
-                    </Button>
-                  )}
-                </div>
-                {!isPreviewMode && !disableBottomToolbar && (
-                  <div
-                    className={cn(
-                      'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-10 px-4 bg-[#ffffff] transition-all duration-300 ease-in-out border-b border-color-default',
-                      isKeyboardVisible && 'hidden',
-                      { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
-                    )}
-                  >
-                    <MobileToolbar
-                      onError={onError}
+                  <div>
+                    <EditorBubbleMenu editor={editor} />
+                    <ColumnsMenu
                       editor={editor}
-                      isKeyboardVisible={isKeyboardVisible}
-                      isNavbarVisible={isNavbarVisible}
-                      setIsNavbarVisible={setIsNavbarVisible}
+                      appendTo={editorRef}
                     />
                   </div>
                 )}
+                <EditingProvider isPreviewMode={isPreviewMode}>
+                  <EditorContent
+                    editor={editor}
+                    id="editor"
+                    className="w-full h-full py-4 "
+                  />
+                </EditingProvider>
               </div>
+              {showCommentButton && !isNativeMobile && (
+                <Button
+                  ref={btn_ref}
+                  onClick={() => {
+                    handleCommentButtonClick?.(editor);
+                  }}
+                  variant="ghost"
+                  className={cn(
+                    'absolute w-12 h-12 bg-white rounded-full shadow-xl top-[70px] right-[-23px]',
+                  )}
+                >
+                  <LucideIcon
+                    name="MessageSquareText"
+                    size="sm"
+                  />
+                </Button>
+              )}
+              {!isPreviewMode && !disableBottomToolbar && (
+                <div
+                  className={cn(
+                    'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-10 px-4 bg-[#ffffff] transition-all duration-300 ease-in-out border-b border-color-default',
+                    isKeyboardVisible && 'hidden',
+                    { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
+                  )}
+                >
+                  <MobileToolbar
+                    onError={onError}
+                    editor={editor}
+                    isKeyboardVisible={isKeyboardVisible}
+                    isNavbarVisible={isNavbarVisible}
+                    setIsNavbarVisible={setIsNavbarVisible}
+                  />
+                </div>
+              )}
             </div>
           </>
         )}
