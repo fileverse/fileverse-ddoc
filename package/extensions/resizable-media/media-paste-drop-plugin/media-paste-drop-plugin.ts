@@ -1,5 +1,5 @@
 import { Plugin, PluginKey } from 'prosemirror-state';
-import { MAX_IMAGE_SIZE } from '../../../components/editor-utils';
+import { ERR_MSG_MAP, MAX_IMAGE_SIZE } from '../../../components/editor-utils';
 
 export type UploadFnType = (image: File) => Promise<string>;
 
@@ -11,14 +11,17 @@ export type UploadFnType = (image: File) => Promise<string>;
  * If no upload function is provided, it reads the media file as DataURL and uses this in the new node.
  * The function returns a new instance of the Plugin.
  */
-export const getMediaPasteDropPlugin = (upload: UploadFnType) => {
+export const getMediaPasteDropPlugin = (
+  upload: UploadFnType,
+  onError: (error: string) => void,
+) => {
   return new Plugin({
     key: new PluginKey('media-paste-drop'),
     props: {
       handlePaste(_view, event) {
         const items = Array.from(event.clipboardData?.items || []);
 
-        items.forEach((item) => {
+        items.forEach(item => {
           const file = item.getAsFile();
 
           const isImageOrVideo =
@@ -29,9 +32,10 @@ export const getMediaPasteDropPlugin = (upload: UploadFnType) => {
             event.preventDefault();
 
             if (file) {
-              // Check if the image size is less than 1MB
+              // Check if the image size is less than 100Kb
               if (file.size > MAX_IMAGE_SIZE) {
-                throw new Error('Image too large');
+                onError(ERR_MSG_MAP.IMAGE_SIZE);
+                throw new Error(ERR_MSG_MAP.IMAGE_SIZE);
               }
             }
           }
@@ -66,22 +70,26 @@ export const getMediaPasteDropPlugin = (upload: UploadFnType) => {
 
         if (!coordinates) return false;
 
-        imagesAndVideos.forEach(async (imageOrVideo) => {
+        imagesAndVideos.forEach(async imageOrVideo => {
           const reader = new FileReader();
 
           if (upload) {
-            const node = schema.nodes.resizableMedia.create({
-              src: await upload(imageOrVideo),
-              'media-type': imageOrVideo.type.includes('image')
-                ? 'img'
-                : 'video',
-            });
+            try {
+              const uploadedSrc = await upload(imageOrVideo);
+              const node = schema.nodes.resizableMedia.create({
+                src: uploadedSrc,
+                'media-type': imageOrVideo.type.includes('image')
+                  ? 'img'
+                  : 'video',
+              });
 
-            const transaction = view.state.tr.insert(coordinates.pos, node);
-
-            view.dispatch(transaction);
+              const transaction = view.state.tr.insert(coordinates.pos, node);
+              view.dispatch(transaction);
+            } catch (error) {
+              onError((error as Error).message || 'Error uploading media');
+            }
           } else {
-            reader.onload = (readerEvent) => {
+            reader.onload = readerEvent => {
               const node = schema.nodes.resizableMedia.create({
                 src: readerEvent.target?.result,
 

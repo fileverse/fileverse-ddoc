@@ -276,7 +276,7 @@ export const ResizableMediaNodeView = ({
               onTouchEnd={stopHorizontalResize}
             />
 
-            <section className="media-control-buttons opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
+            <section className="media-control-buttons opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1 p-1">
               {resizableMediaActions.map((btn, index) => {
                 return (
                   <ToolbarButton
@@ -289,6 +289,7 @@ export const ResizableMediaNodeView = ({
                         : btn.action?.(updateAttributes)
                     }
                     icon={btn.icon as string}
+                    classNames="min-w-6 aspect-square"
                   />
                 );
               })}

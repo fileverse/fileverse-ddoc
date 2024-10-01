@@ -123,8 +123,8 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
   };
 
   const extractTweetId = (text: string) => {
-    const matches = text.match(/\/status\/([0-9]*)/);
-    return matches && matches.length > 0 ? matches[1] : null;
+    const matches = text.match(/(?:https?:\/\/)?(?:www\.)?(?:twitter\.com|x\.com)\/(?:#!\/)?(\w+)\/status\/(\d+)/);
+    return matches && matches[2] ? matches[2] : null;
   };
 
   const twitterRender = () => {
@@ -132,21 +132,20 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
       return;
     }
 
-    let filteredTweetId = nodeContentText;
+    let filteredTweetId = null;
 
-    const isValidUrl = twitterUrls.some((url) => nodeContentText.includes(url));
     const isValidTweetId = extractTweetId(nodeContentText);
 
-    if (isValidUrl && isValidTweetId) {
+    if (isValidTweetId) {
       filteredTweetId = isValidTweetId;
     } else if (nodeTweetContentLink) {
       filteredTweetId = extractTweetId(nodeTweetContentLink.text);
     }
 
-    const pos = getPos();
-    const to = pos + node.nodeSize;
-
     if (filteredTweetId) {
+      const pos = getPos();
+      const to = pos + node.nodeSize;
+
       editor
         ?.chain()
         .focus(pos)
@@ -209,15 +208,12 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
   };
 
   const handleSave = () => {
-    if (
-      twitterUrls.some((url) => nodeContentText.includes(url)) ||
-      nodeTweetContentLink?.text
-    ) {
+    const tweetId = extractTweetId(nodeContentText) || (nodeTweetContentLink && extractTweetId(nodeTweetContentLink.text));
+
+    if (tweetId) {
       twitterRender();
-      return;
     } else {
       mediaRender();
-      return;
     }
   };
 
