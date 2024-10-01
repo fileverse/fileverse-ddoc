@@ -654,7 +654,7 @@ export const LinkPopup = ({
     }
 
     // Validate URL
-    const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+    const urlPattern = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+\.?(:\d+)?(\/\S*)?|\w+@[\w.-]+\.\w+)$/i;
 
     if (!urlPattern.test(url)) {
       if (onError && typeof onError === 'function') {

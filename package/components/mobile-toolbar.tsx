@@ -40,100 +40,59 @@ const MobileToolbar = ({
   const textFormattingButtonRef = useRef<HTMLButtonElement>(null);
 
   const saveLink = () => {
-    // cancelled
-    if (url === null) {
-      setIsUrlValid(false);
+    if ((url === null || url === '') && (linkText === '' || linkText === null)) {
       setToolVisibility(IEditorTool.NONE);
       return;
     }
 
-    if (linkText === '' && url === '') {
-      setToolVisibility(IEditorTool.NONE);
-      setIsTextValid(true);
-      setIsUrlValid(true);
-      return;
-    }
-    // empty
-    if (url === '') {
-      editor.chain().focus().extendMarkRange('link').unsetLink().run();
-      setToolVisibility(IEditorTool.NONE);
-      return;
-    }
-
-    // Add https:// prefix if it's missing
     let finalUrl = url;
-    if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      finalUrl = 'https://' + url;
-    } else {
-      finalUrl = url;
+    if (finalUrl && !finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+      finalUrl = 'https://' + finalUrl;
     }
 
-    // validate link
-    try {
-      if (
-        finalUrl.match(
-          /^((http|https):\/\/)?([w|W]{3}\.)+[a-zA-Z0-9\-\.]{3,}\.[a-zA-Z]{2,}(\.[a-zA-Z]{2,})?$/,
-        )
-      ) {
-        setIsUrlValid(true);
-      }
-    } catch (e) {
-      console.error('Invalid URL');
+    const urlPattern = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+\.?(:\d+)?(\/\S*)?|\w+@[\w.-]+\.\w+)$/i;
+    if (finalUrl && !urlPattern.test(finalUrl)) {
       setIsUrlValid(false);
+      if (onError) onError('Invalid URL');
+      return;
     }
 
     const { from, to } = editor.state.selection;
-    // isSelected which will return true if the current selection is either a link or a text
-    const isSelected = editor.state.doc.textBetween(from, to);
+    const isSelected = editor.state.doc.textBetween(from, to).length > 0;
 
     if (isSelected) {
       editor
         .chain()
         .focus()
-        .extendMarkRange('link')
-        .setLink({ href: finalUrl })
+        .deleteSelection()
+        .insertContent({
+          type: 'text',
+          text: linkText,
+          marks: finalUrl ? [{ type: 'link', attrs: { href: finalUrl } }] : [],
+        })
         .run();
-    } else {
-      // create link via popup
+    } else if (linkText) {
       editor
         .chain()
         .focus()
-        .command(({ tr, dispatch }) => {
-          const { from, to } = editor.state.selection;
-          const text = linkText;
-          const link = { href: finalUrl };
-          tr.insertText(text, from, to);
-          tr.addMark(
-            from,
-            text.length + from,
-            editor.schema.marks.link.create(link),
-          );
-
-          if (dispatch) {
-            dispatch(tr);
-          }
-
-          return true;
+        .insertContent({
+          type: 'text',
+          text: linkText,
+          marks: finalUrl ? [{ type: 'link', attrs: { href: finalUrl } }] : [],
         })
         .run();
     }
 
     setIsUrlValid(true);
     setIsTextValid(true);
-    setLinkText('');
-    setUrl('');
     setToolVisibility(IEditorTool.NONE);
   };
 
-  const getSelectedText = (editor: Editor) => {
+  const getSelectedLink = () => {
     const { from, to } = editor.state.selection;
-    const text = editor.state.doc.textBetween(from, to);
-    return text;
-  };
-
-  const getSelectedTextUrl = (editor: Editor) => {
-    const url = editor.getAttributes('link').href;
-    return url;
+    const selectedText = editor.state.doc.textBetween(from, to);
+    const linkMark = editor.getAttributes('link');
+    return { text: selectedText || linkMark.text || '', url: linkMark.href || '' };
   };
 
   useEffect(() => {
@@ -214,6 +173,14 @@ const MobileToolbar = ({
     }
   }, [isKeyboardVisible, setToolVisibility]);
 
+  useEffect(() => {
+    if (toolVisibility === IEditorTool.LINK_POPUP) {
+      const { text, url } = getSelectedLink();
+      setLinkText(text);
+      setUrl(url);
+    }
+  }, [toolVisibility, editor]);
+
   return (
     <Drawer>
       <div className="flex w-full justify-between sm:justify-evenly items-center select-none">
@@ -278,7 +245,7 @@ const MobileToolbar = ({
               label="Text"
               placeholder="Link text"
               className="w-full"
-              defaultValue={getSelectedText(editor)}
+              defaultValue={getSelectedLink().text}
               onChange={(e) => {
                 e.preventDefault();
                 setLinkText(e.target.value);
@@ -290,7 +257,7 @@ const MobileToolbar = ({
               label="Link"
               placeholder="Paste URL"
               className="w-full"
-              defaultValue={getSelectedTextUrl(editor)}
+              defaultValue={getSelectedLink().url}
               onChange={(e) => {
                 e.preventDefault();
                 setUrl(e.target.value);

@@ -39,6 +39,7 @@ import { MathExtension } from '@aarkue/tiptap-math-extension';
 import { Footnote } from './footnote/footnote';
 import Superscript from '@tiptap/extension-superscript';
 import Subscript from '@tiptap/extension-subscript';
+import { toast } from '@fileverse/ui';
 
 export const defaultExtensions = [
   FontFamily,
@@ -166,6 +167,13 @@ export const defaultExtensions = [
   ...SuperchargedTableExtensions,
   ResizableMedia.configure({
     uploadFn: uploadFn,
+    onError: (error: string) => {
+      toast({
+        title: error,
+        variant: 'danger',
+        hasIcon: true,
+      });
+    },
   }),
   CustomKeymap,
   Iframe,

@@ -210,7 +210,7 @@ const DdocEditor = forwardRef(
           >
             {!isPreviewMode && (
               <div>
-                <EditorBubbleMenu editor={editor} />
+                <EditorBubbleMenu editor={editor} onError={onError} />
                 <ColumnsMenu editor={editor} appendTo={editorRef} />
               </div>
             )}
