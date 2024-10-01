@@ -1,6 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useEffect, useMemo, useState } from 'react';
-import { NodeViewWrapper, NodeViewProps, NodeViewContent, Editor, JSONContent } from '@tiptap/react';
+import {
+  NodeViewWrapper,
+  NodeViewProps,
+  NodeViewContent,
+  Editor,
+  JSONContent,
+} from '@tiptap/react';
 import { useEditingContext } from '../../hooks/use-editing-context';
 import cn from 'classnames';
 import { debounce } from '../../utils/debounce';
@@ -11,7 +17,11 @@ import useContentItemActions from '../../hooks/use-content-item-actions';
 import { Toolbar } from '../../common/toolbar';
 import CustomTooltip from '../../common/cutsom-tooltip';
 import { FocusScope } from '@radix-ui/react-focus-scope';
-import { createTemplateButtons, createMoreTemplates, renderTemplateButtons } from '../../utils/template-utils';
+import {
+  createTemplateButtons,
+  createMoreTemplates,
+  renderTemplateButtons,
+} from '../../utils/template-utils';
 import { LucideIcon } from '@fileverse/ui';
 
 export const DBlockNodeView: React.FC<NodeViewProps> = ({
@@ -24,7 +34,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
   const actions = useContentItemActions(editor as Editor, node, getPos());
   const isPreviewMode = useEditingContext();
 
-  const twitterUrls = ['https://twitter.com', 'https://x.com'];
+  //const twitterUrls = ['https://twitter.com', 'https://x.com'];
 
   const isTable = useMemo(() => {
     const { content } = node.content as any;
@@ -79,7 +89,13 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
       }
 
       // Handle YouTube
-      const youtubeMatch = nodeContentText.match(/youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/) || urlSrc.match(/youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/);
+      const youtubeMatch =
+        nodeContentText.match(
+          /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/,
+        ) ||
+        urlSrc.match(
+          /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/,
+        );
       if (youtubeMatch) {
         const youtubeUrl = `https://www.youtube.com/embed/${youtubeMatch[1]}`;
         setMedia('iframe', youtubeUrl);
@@ -123,7 +139,9 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
   };
 
   const extractTweetId = (text: string) => {
-    const matches = text.match(/(?:https?:\/\/)?(?:www\.)?(?:twitter\.com|x\.com)\/(?:#!\/)?(\w+)\/status\/(\d+)/);
+    const matches = text.match(
+      /(?:https?:\/\/)?(?:www\.)?(?:twitter\.com|x\.com)\/(?:#!\/)?(\w+)\/status\/(\d+)/,
+    );
     return matches && matches[2] ? matches[2] : null;
   };
 
@@ -208,7 +226,9 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
   };
 
   const handleSave = () => {
-    const tweetId = extractTweetId(nodeContentText) || (nodeTweetContentLink && extractTweetId(nodeTweetContentLink.text));
+    const tweetId =
+      extractTweetId(nodeContentText) ||
+      (nodeTweetContentLink && extractTweetId(nodeTweetContentLink.text));
 
     if (tweetId) {
       twitterRender();
@@ -229,9 +249,18 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
     const { doc, selection } = editor.state;
     const pos = getPos();
     const isFirstDBlock = doc.nodeAt(pos) === doc.firstChild;
-    const isParagraph = doc.nodeAt(pos)?.type.name === 'dBlock' && doc.nodeAt(pos)?.content.firstChild?.type.name === 'paragraph';
-    const isFirstDBlockFocused = selection.$anchor.pos >= pos && selection.$anchor.pos <= pos + (doc.nodeAt(pos)?.nodeSize || 0);
-    return doc.textContent === '' && isFirstDBlock && isParagraph && isFirstDBlockFocused;
+    const isParagraph =
+      doc.nodeAt(pos)?.type.name === 'dBlock' &&
+      doc.nodeAt(pos)?.content.firstChild?.type.name === 'paragraph';
+    const isFirstDBlockFocused =
+      selection.$anchor.pos >= pos &&
+      selection.$anchor.pos <= pos + (doc.nodeAt(pos)?.nodeSize || 0);
+    return (
+      doc.textContent === '' &&
+      isFirstDBlock &&
+      isParagraph &&
+      isFirstDBlockFocused
+    );
   }, [getPos, editor.state]);
 
   const addTemplate = (template: JSONContent) => {
@@ -273,8 +302,9 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
           }
         >
           <div
-            className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
-              }`}
+            className={`d-block-button cursor-pointer ${
+              !isPreviewMode && 'group-hover:opacity-100'
+            }`}
             contentEditable={false}
             onClick={handleClick}
           >
@@ -288,8 +318,9 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
           <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
             <Popover.Trigger asChild>
               <div
-                className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
-                  }`}
+                className={`d-block-button cursor-pointer ${
+                  !isPreviewMode && 'group-hover:opacity-100'
+                }`}
                 contentEditable={false}
                 draggable
                 data-drag-handle
@@ -344,7 +375,15 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
           'is-table': isTable,
         })}
       >
-        {isDocEmpty && !isPreviewMode && renderTemplateButtons(templateButtons, moreTemplates, visibleTemplateCount, toggleAllTemplates, isExpanded)}
+        {isDocEmpty &&
+          !isPreviewMode &&
+          renderTemplateButtons(
+            templateButtons,
+            moreTemplates,
+            visibleTemplateCount,
+            toggleAllTemplates,
+            isExpanded,
+          )}
       </NodeViewContent>
     </NodeViewWrapper>
   );
