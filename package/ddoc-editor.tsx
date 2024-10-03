@@ -17,11 +17,12 @@ import {
   useState,
 } from 'react';
 import cn from 'classnames';
-import { Button, LucideIcon } from '@fileverse/ui';
+import { Button, LucideIcon, Tag } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 
 import platform from 'platform';
 import MobileToolbar from './components/mobile-toolbar';
+import { TagInput, TagProps } from './components/tag-input';
 
 const checkOs = () => platform.os?.family;
 
@@ -46,6 +47,7 @@ const DdocEditor = forwardRef(
       onError,
       setCharacterCount,
       setWordCount,
+      tags,
     }: DdocProps,
     ref,
   ) => {
@@ -89,6 +91,30 @@ const DdocEditor = forwardRef(
       }),
       [editor, ydoc],
     );
+
+    const [selectedTags, setSelectedTags] = useState<TagProps[]>([]);
+
+    const handleAddTag = (tag: TagProps) => {
+      const newTags = tag.name.split(',').map(name => {
+        const trimmedName = name.trim();
+        const existingTag = tags?.find(t => t.name.toLowerCase() === trimmedName.toLowerCase());
+        return existingTag || { name: trimmedName, color: tag.color };
+      });
+
+      setSelectedTags(prevTags => {
+        const uniqueTags = [...prevTags];
+        newTags.forEach(newTag => {
+          if (!uniqueTags.some(t => t.name.toLowerCase() === newTag.name.toLowerCase())) {
+            uniqueTags.push(newTag);
+          }
+        });
+        return uniqueTags;
+      });
+    };
+
+    const handleRemoveTag = (tagName: string) => {
+      setSelectedTags(prevTags => prevTags.filter(tag => tag.name !== tagName));
+    };
 
     useEffect(() => {
       if (!editor) return;
@@ -215,6 +241,21 @@ const DdocEditor = forwardRef(
               </div>
             )}
             <EditingProvider isPreviewMode={isPreviewMode}>
+              {tags && tags.length > 0 && (
+                <div className="flex flex-wrap gap-2 mb-4 mt-4 lg:!mt-0">
+                  {selectedTags.map((tag, index) => (
+                    <Tag
+                      key={index}
+                      style={{ backgroundColor: tag.color }}
+                      onRemove={() => handleRemoveTag(tag.name)}
+                      isRemovable={!isPreviewMode}
+                    >
+                      {tag.name}
+                    </Tag>
+                  ))}
+                  <TagInput tags={tags || []} selectedTags={selectedTags} onAddTag={handleAddTag} isPreviewMode={isPreviewMode} />
+                </div>
+              )}
               <EditorContent
                 editor={editor}
                 id="editor"
