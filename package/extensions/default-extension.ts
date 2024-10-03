@@ -19,9 +19,7 @@ import CustomKeymap from './custom-keymap';
 import { Color } from '@tiptap/extension-color';
 import { Iframe } from './iframe';
 import { EmbeddedTweet } from './twitter-embed';
-import { ResizableMedia } from './resizable-media';
 import { DBlock } from './d-block';
-import { uploadFn } from '../utils/upload-images';
 import { SuperchargedTableExtensions } from './supercharged-table';
 import { Document } from './document';
 import { TrailingNode } from './trailing-node';
@@ -39,7 +37,6 @@ import { MathExtension } from '@aarkue/tiptap-math-extension';
 import { Footnote } from './footnote/footnote';
 import Superscript from '@tiptap/extension-superscript';
 import Subscript from '@tiptap/extension-subscript';
-import { toast } from '@fileverse/ui';
 
 export const defaultExtensions = [
   FontFamily,
@@ -165,16 +162,6 @@ export const defaultExtensions = [
   TrailingNode,
   Document,
   ...SuperchargedTableExtensions,
-  ResizableMedia.configure({
-    uploadFn: uploadFn,
-    onError: (error: string) => {
-      toast({
-        title: error,
-        variant: 'danger',
-        hasIcon: true,
-      });
-    },
-  }),
   CustomKeymap,
   Iframe,
   EmbeddedTweet,
