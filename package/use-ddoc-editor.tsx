@@ -16,6 +16,7 @@ import { EditorState } from '@tiptap/pm/state';
 import { ResizableMedia } from './extensions/resizable-media';
 import { uploadFn } from './utils/upload-images';
 import { getMediaPasteDropPlugin } from './extensions/resizable-media/media-paste-drop-plugin';
+import superscriptOrdinal from './extensions/superscriptOrdinal';
 
 const usercolors = [
   '#30bced',
@@ -48,6 +49,7 @@ export const useDdocEditor = ({
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions as AnyExtension[]),
     SlashCommand(onError),
+    superscriptOrdinal, 
     ResizableMedia.configure({
       uploadFn,
     }).extend({
