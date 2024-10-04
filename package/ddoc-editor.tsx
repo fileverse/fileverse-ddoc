@@ -17,12 +17,11 @@ import {
   useState,
 } from 'react';
 import cn from 'classnames';
-import { Button, LucideIcon, Tag } from '@fileverse/ui';
+import { Button, LucideIcon, Tag, TagType, TagInput } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 
 import platform from 'platform';
 import MobileToolbar from './components/mobile-toolbar';
-import { TagInput, TagProps } from './components/tag-input';
 
 const checkOs = () => platform.os?.family;
 
@@ -48,6 +47,8 @@ const DdocEditor = forwardRef(
       setCharacterCount,
       setWordCount,
       tags,
+      selectedTags,
+      setSelectedTags,
     }: DdocProps,
     ref,
   ) => {
@@ -92,16 +93,14 @@ const DdocEditor = forwardRef(
       [editor, ydoc],
     );
 
-    const [selectedTags, setSelectedTags] = useState<TagProps[]>([]);
-
-    const handleAddTag = (tag: TagProps) => {
+    const handleAddTag = (tag: TagType) => {
       const newTags = tag.name.split(',').map(name => {
         const trimmedName = name.trim();
         const existingTag = tags?.find(t => t.name.toLowerCase() === trimmedName.toLowerCase());
         return existingTag || { name: trimmedName, color: tag.color };
       });
 
-      setSelectedTags(prevTags => {
+      setSelectedTags?.(prevTags => {
         const uniqueTags = [...prevTags];
         newTags.forEach(newTag => {
           if (!uniqueTags.some(t => t.name.toLowerCase() === newTag.name.toLowerCase())) {
@@ -113,7 +112,7 @@ const DdocEditor = forwardRef(
     };
 
     const handleRemoveTag = (tagName: string) => {
-      setSelectedTags(prevTags => prevTags.filter(tag => tag.name !== tagName));
+      setSelectedTags?.(prevTags => prevTags.filter(tag => tag.name !== tagName));
     };
 
     useEffect(() => {
@@ -243,17 +242,17 @@ const DdocEditor = forwardRef(
             <EditingProvider isPreviewMode={isPreviewMode}>
               {tags && tags.length > 0 && (
                 <div className="flex flex-wrap gap-2 mb-4 mt-4 lg:!mt-0">
-                  {selectedTags.map((tag, index) => (
+                  {selectedTags?.map((tag, index) => (
                     <Tag
                       key={index}
-                      style={{ backgroundColor: tag.color }}
-                      onRemove={() => handleRemoveTag(tag.name)}
+                      style={{ backgroundColor: tag?.color }}
+                      onRemove={() => handleRemoveTag(tag?.name)}
                       isRemovable={!isPreviewMode}
                     >
-                      {tag.name}
+                      {tag?.name}
                     </Tag>
                   ))}
-                  <TagInput tags={tags || []} selectedTags={selectedTags} onAddTag={handleAddTag} isPreviewMode={isPreviewMode} />
+                  <TagInput tags={tags || []} selectedTags={selectedTags as TagType[]} onAddTag={handleAddTag} isPreviewMode={isPreviewMode} />
                 </div>
               )}
               <EditorContent

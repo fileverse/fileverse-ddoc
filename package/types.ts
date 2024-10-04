@@ -1,3 +1,4 @@
+import { TagType } from '@fileverse/ui';
 import { JSONContent } from '@tiptap/core';
 import { EditorProps } from '@tiptap/pm/view';
 import { Editor } from '@tiptap/react';
@@ -18,6 +19,8 @@ export interface IDocCollabUsers {
 }
 
 export interface DdocProps {
+  selectedTags?: TagType[];
+  setSelectedTags?: React.Dispatch<SetStateAction<TagType[]>>;
   enableCollaboration?: boolean;
   collaborationId?: string;
   isPreviewMode: boolean;
