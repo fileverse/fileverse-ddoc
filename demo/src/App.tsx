@@ -8,6 +8,7 @@ import {
   LucideIcon,
   toast,
   Toaster,
+  TagType,
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 
@@ -26,6 +27,7 @@ function App() {
   const [username, setUsername] = useState('');
   const [title, setTitle] = useState('Untitled');
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const [selectedTags, setSelectedTags] = useState<TagType[]>([]);
 
   const isPreviewMode = false;
 
@@ -120,6 +122,8 @@ function App() {
         renderNavbar={renderNavbar}
         ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}
         tags={sampleTags}
+        selectedTags={selectedTags}
+        setSelectedTags={setSelectedTags}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}
