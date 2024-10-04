@@ -119,7 +119,7 @@ function App() {
         }}
         renderNavbar={renderNavbar}
         ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}
-        tags={sampleTags}
+        // tags={sampleTags}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}
