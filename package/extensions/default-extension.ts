@@ -37,6 +37,8 @@ import { MathExtension } from '@aarkue/tiptap-math-extension';
 import { Footnote } from './footnote/footnote';
 import Superscript from '@tiptap/extension-superscript';
 import Subscript from '@tiptap/extension-subscript';
+import { ResizableMedia } from './resizable-media';
+import { uploadFn } from '../utils/upload-images';
 
 export const defaultExtensions = [
   FontFamily,
@@ -156,6 +158,9 @@ export const defaultExtensions = [
   DropCursor.configure({
     width: 3,
     color: '#d1d5db',
+  }),
+  ResizableMedia.configure({
+    uploadFn: uploadFn,
   }),
   GapCursor,
   DBlock,

@@ -25,13 +25,13 @@ turndownService.addRule('table', {
     const rows = Array.from(table.rows);
 
     // Process header
-    const headers = Array.from(rows[0].cells).map((cell) => {
+    const headers = Array.from(rows[0].cells).map(cell => {
       return turndownService.turndown(cell.innerHTML).trim();
     });
-    const maxColumnWidths = headers.map((header) => header.length);
+    const maxColumnWidths = headers.map(header => header.length);
 
     // Process body and update maxColumnWidths
-    const bodyRows = rows.slice(1).map((row) => {
+    const bodyRows = rows.slice(1).map(row => {
       return Array.from(row.cells).map((cell, index) => {
         const cellContent = turndownService.turndown(cell.innerHTML).trim();
         maxColumnWidths[index] = Math.max(
@@ -60,10 +60,8 @@ turndownService.addRule('table', {
 
     const headerRow = createAlignedRow(headers);
     const separator =
-      '| ' +
-      maxColumnWidths.map((width) => '-'.repeat(width)).join(' | ') +
-      ' |';
-    const bodyRowsFormatted = bodyRows.map((row) => createAlignedRow(row));
+      '| ' + maxColumnWidths.map(width => '-'.repeat(width)).join(' | ') + ' |';
+    const bodyRowsFormatted = bodyRows.map(row => createAlignedRow(row));
 
     return `\n\n${headerRow}\n${separator}\n${bodyRowsFormatted.join(
       '\n',
@@ -115,13 +113,8 @@ turndownService.addRule('img', {
   filter: ['img'],
   replacement: function (_content, node) {
     const src = (node as HTMLElement).getAttribute('src');
-    const alt = (node as HTMLElement).getAttribute('alt') || src;
-
-    if (src?.startsWith('data:')) {
-      return src;
-    }
-
-    return src ? `[${alt}](${src})` : '';
+    const alt = (node as HTMLElement).getAttribute('alt') || '';
+    return src ? `![${alt}](${src})` : '';
   },
 });
 
@@ -154,6 +147,7 @@ const MarkdownPasteHandler = Extension.create({
             const copiedData = clipboardData.getData('text/plain');
 
             // Check if the copied content is Markdown
+            console.log(isMarkdown(copiedData));
             if (isMarkdown(copiedData)) {
               handleMarkdownContent(view, copiedData);
               return true;
@@ -180,7 +174,7 @@ const MarkdownPasteHandler = Extension.create({
               const file = files[0];
               if (file.type === 'text/markdown' || file.name.endsWith('.md')) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
+                reader.onload = e => {
                   const content = e.target?.result as string;
                   handleMarkdownContent(view, content);
                 };
@@ -235,13 +229,27 @@ function handleMarkdownContent(view: any, content: string) {
   // Convert Markdown to HTML
   let convertedHtml = markdownIt.render(content);
 
+  // Parse the HTML string into DOM nodes
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(convertedHtml, 'text/html');
+
+  // Handle images: remove parent paragraph tags if they only contain an image
+  const paragraphs = doc.getElementsByTagName('p');
+  for (let i = paragraphs.length - 1; i >= 0; i--) {
+    const p = paragraphs[i];
+    if (p.childNodes.length === 1 && p.firstChild?.nodeName === 'IMG') {
+      p.parentNode?.replaceChild(p.firstChild, p);
+    }
+  }
+
+  // Get the modified HTML content
+  convertedHtml = doc.body.innerHTML;
+
   // Sanitize the converted HTML
   convertedHtml = DOMPurify.sanitize(convertedHtml);
 
   // Parse the sanitized HTML string into DOM nodes
-  const parser = new DOMParser();
-  const doc = parser.parseFromString(convertedHtml, 'text/html');
-  const domContent = doc.body;
+  const domContent = parser.parseFromString(convertedHtml, 'text/html').body;
 
   // Convert the DOM nodes to ProseMirror nodes using ProseMirror's DOMParser
   const proseMirrorNodes = ProseMirrorDOMParser.fromSchema(
