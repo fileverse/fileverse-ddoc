@@ -147,7 +147,6 @@ const MarkdownPasteHandler = Extension.create({
             const copiedData = clipboardData.getData('text/plain');
 
             // Check if the copied content is Markdown
-            console.log(isMarkdown(copiedData));
             if (isMarkdown(copiedData)) {
               handleMarkdownContent(view, copiedData);
               return true;
