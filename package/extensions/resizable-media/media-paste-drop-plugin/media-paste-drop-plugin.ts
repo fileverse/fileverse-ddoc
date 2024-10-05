@@ -21,7 +21,7 @@ export const getMediaPasteDropPlugin = (
       handlePaste(_view, event) {
         const items = Array.from(event.clipboardData?.items || []);
 
-        items.forEach(item => {
+        items.forEach((item) => {
           const file = item.getAsFile();
 
           const isImageOrVideo =
@@ -70,7 +70,7 @@ export const getMediaPasteDropPlugin = (
 
         if (!coordinates) return false;
 
-        imagesAndVideos.forEach(async imageOrVideo => {
+        imagesAndVideos.forEach(async (imageOrVideo) => {
           const reader = new FileReader();
 
           if (upload) {
@@ -86,10 +86,13 @@ export const getMediaPasteDropPlugin = (
               const transaction = view.state.tr.insert(coordinates.pos, node);
               view.dispatch(transaction);
             } catch (error) {
-              onError((error as Error).message || 'Error uploading media');
+              throw new Error(
+                (error as Error).message || 'Error uploading media',
+              );
+              // onError((error as Error).message || 'Error uploading media');
             }
           } else {
-            reader.onload = readerEvent => {
+            reader.onload = (readerEvent) => {
               const node = schema.nodes.resizableMedia.create({
                 src: readerEvent.target?.result,
 
