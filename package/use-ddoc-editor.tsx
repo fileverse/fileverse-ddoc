@@ -13,9 +13,6 @@ import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from './components/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
-import { ResizableMedia } from './extensions/resizable-media';
-import { uploadFn } from './utils/upload-images';
-import { getMediaPasteDropPlugin } from './extensions/resizable-media/media-paste-drop-plugin';
 
 const usercolors = [
   '#30bced',
@@ -48,15 +45,6 @@ export const useDdocEditor = ({
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions as AnyExtension[]),
     SlashCommand(onError),
-    ResizableMedia.configure({
-      uploadFn,
-    }).extend({
-      addProseMirrorPlugins() {
-        return [
-          getMediaPasteDropPlugin(uploadFn, onError as (error: string) => void),
-        ];
-      },
-    }),
   ]);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);

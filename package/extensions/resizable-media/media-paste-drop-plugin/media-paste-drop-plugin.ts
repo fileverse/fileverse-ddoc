@@ -13,7 +13,7 @@ export type UploadFnType = (image: File) => Promise<string>;
  */
 export const getMediaPasteDropPlugin = (
   upload: UploadFnType,
-  onError: (error: string) => void,
+  // onError: (error: string) => void,
 ) => {
   return new Plugin({
     key: new PluginKey('media-paste-drop'),
@@ -34,7 +34,7 @@ export const getMediaPasteDropPlugin = (
             if (file) {
               // Check if the image size is less than 100Kb
               if (file.size > MAX_IMAGE_SIZE) {
-                onError(ERR_MSG_MAP.IMAGE_SIZE);
+                // onError(ERR_MSG_MAP.IMAGE_SIZE);
                 throw new Error(ERR_MSG_MAP.IMAGE_SIZE);
               }
             }

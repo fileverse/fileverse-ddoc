@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { mergeAttributes, Node, nodeInputRule } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
-
-import { UploadFnType } from './media-paste-drop-plugin';
-
 import { ResizableMediaNodeView } from './resizable-media-node-view';
+import {
+  getMediaPasteDropPlugin,
+  UploadFnType,
+} from './media-paste-drop-plugin';
 import UploadImagesPlugin from '../../utils/upload-images';
 
 declare module '@tiptap/core' {
@@ -92,7 +93,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
   parseHTML() {
     return [
       {
-        tag: 'img[src]:not([src^="data:"])',
+        tag: 'img',
         getAttrs: el => ({
           src: (el as HTMLImageElement).getAttribute('src'),
           'media-type': 'img',
@@ -231,6 +232,9 @@ export const ResizableMedia = Node.create<MediaOptions>({
   },
 
   addProseMirrorPlugins() {
-    return [UploadImagesPlugin()];
+    return [
+      getMediaPasteDropPlugin(this.options.uploadFn),
+      UploadImagesPlugin(),
+    ];
   },
 });
