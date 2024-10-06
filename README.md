@@ -12,7 +12,7 @@ This repo contains example - demo source code and package code
 
 `import { DdocEditor } from '@fileverse-dev/ddoc'`
 
-`import '@fileverse-dev/ddoc/dist/style.css'` in App.jsx/App.tsx
+`import '@fileverse-dev/ddoc/styles'` in App.jsx/App.tsx
 
 In your tailwind config, add this line to content array
 
