@@ -43,8 +43,8 @@ export const useDdocEditor = ({
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
-    ...(defaultExtensions as AnyExtension[]),
-    SlashCommand(onError),
+    ...(defaultExtensions((error: string) => onError?.(error)) as AnyExtension[]),
+    SlashCommand((error: string) => onError?.(error)),
   ]);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);

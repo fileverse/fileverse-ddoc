@@ -6,7 +6,7 @@ import { EditorState, Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet, EditorView } from '@tiptap/pm/view';
 
 import imagePlaceholder from '../assets/spinner_GIF.gif';
-import { MAX_IMAGE_SIZE } from '../components/editor-utils';
+import { ERR_MSG_MAP, MAX_IMAGE_SIZE } from '../components/editor-utils';
 
 const uploadKey = new PluginKey('upload-image');
 
@@ -111,8 +111,7 @@ export const uploadFn = async (image: File) => {
   // check if image is too large for upload (> 1 MB), then throw error
   if (image.size > MAX_IMAGE_SIZE) {
     reader.abort();
-    console.log('should be less than 1 mb');
-    throw new Error('Image too large');
+    throw new Error(ERR_MSG_MAP.IMAGE_SIZE);
   }
 
   // convert image to base64
