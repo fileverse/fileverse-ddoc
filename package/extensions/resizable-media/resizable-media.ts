@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { mergeAttributes, Node, nodeInputRule } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
-
-import { UploadFnType } from './media-paste-drop-plugin';
-
 import { ResizableMediaNodeView } from './resizable-media-node-view';
+import {
+  getMediaPasteDropPlugin,
+  UploadFnType,
+} from './media-paste-drop-plugin';
 import UploadImagesPlugin from '../../utils/upload-images';
 
 declare module '@tiptap/core' {
@@ -30,6 +31,7 @@ export interface MediaOptions {
   // allowBase64: boolean, // we're not going to allow this
   HTMLAttributes: Record<string, any>;
   uploadFn: UploadFnType;
+  onError: (error: string) => void;
 }
 
 export const IMAGE_INPUT_REGEX =
@@ -48,6 +50,9 @@ export const ResizableMedia = Node.create<MediaOptions>({
       },
       uploadFn: async () => {
         return '';
+      },
+      onError: () => {
+        console.error('Error uploading media');
       },
     };
   },
@@ -92,7 +97,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
   parseHTML() {
     return [
       {
-        tag: 'img[src]:not([src^="data:"])',
+        tag: 'img',
         getAttrs: el => ({
           src: (el as HTMLImageElement).getAttribute('src'),
           'media-type': 'img',
@@ -231,6 +236,9 @@ export const ResizableMedia = Node.create<MediaOptions>({
   },
 
   addProseMirrorPlugins() {
-    return [UploadImagesPlugin()];
+    return [
+      getMediaPasteDropPlugin(this.options.uploadFn, this.options.onError),
+      UploadImagesPlugin(),
+    ];
   },
 });

@@ -13,9 +13,6 @@ import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from './components/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
-import { ResizableMedia } from './extensions/resizable-media';
-import { uploadFn } from './utils/upload-images';
-import { getMediaPasteDropPlugin } from './extensions/resizable-media/media-paste-drop-plugin';
 import superscriptOrdinal from './extensions/superscriptOrdinal';
 
 const usercolors = [
@@ -47,18 +44,9 @@ export const useDdocEditor = ({
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
-    ...(defaultExtensions as AnyExtension[]),
-    SlashCommand(onError),
-    superscriptOrdinal, 
-    ResizableMedia.configure({
-      uploadFn,
-    }).extend({
-      addProseMirrorPlugins() {
-        return [
-          getMediaPasteDropPlugin(uploadFn, onError as (error: string) => void),
-        ];
-      },
-    }),
+    ...(defaultExtensions((error: string) => onError?.(error)) as AnyExtension[]),
+    SlashCommand((error: string) => onError?.(error)),
+    superscriptOrdinal,
   ]);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);

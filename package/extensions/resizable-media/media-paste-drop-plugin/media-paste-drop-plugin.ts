@@ -87,6 +87,9 @@ export const getMediaPasteDropPlugin = (
               view.dispatch(transaction);
             } catch (error) {
               onError((error as Error).message || 'Error uploading media');
+              throw new Error(
+                (error as Error).message || 'Error uploading media',
+              );
             }
           } else {
             reader.onload = readerEvent => {
