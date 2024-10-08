@@ -159,7 +159,7 @@ export const uploadSecureImage = async (image: File, publicKey) => {
     formData.append('file', image);
     formData.append('publicKey', publicKeyBase64);
 
-    const response = await fetch(`${import.meta.env.VITE_FILEVERSE_IMAGES_API_URL}/v1/upload`,{
+    const response = await fetch(`${import.meta.env.VITE_FILEVERSE_IMAGES_API_URL}/upload`,{
       method: 'POST',
       body: formData
     });
