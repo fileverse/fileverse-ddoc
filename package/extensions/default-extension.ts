@@ -83,7 +83,7 @@ export const defaultExtensions = (onError: (error: string) => void) => [
     codeBlock: {
       HTMLAttributes: {
         class:
-          'rounded-lg bg-transparent border color-border-default p-5 font-mono font-medium color-text-default',
+          'rounded-lg bg-transparent border color-border-default p-5 font-mono font-medium color-text-default select-text pointer-events-auto',
       },
       exitOnArrowDown: true,
     },
@@ -117,7 +117,7 @@ export const defaultExtensions = (onError: (error: string) => void) => [
         'color-text-link font-bold transition-colors cursor-pointer select-text pointer-events-auto',
       rel: 'noopener noreferrer',
     },
-    validate: href => /^https?:\/\//.test(href),
+    validate: (href) => /^https?:\/\//.test(href),
     openOnClick: true,
     autolink: true,
   }),
