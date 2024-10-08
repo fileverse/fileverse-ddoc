@@ -7,6 +7,12 @@ import { Decoration, DecorationSet, EditorView } from '@tiptap/pm/view';
 
 import imagePlaceholder from '../assets/spinner_GIF.gif';
 import { ERR_MSG_MAP, MAX_IMAGE_SIZE } from '../components/editor-utils';
+import {
+  arrayBufferToBase64,
+  generateRSAKeyPair,
+  decryptAESKey,
+  decryptImageData
+} from './security';
 
 const uploadKey = new PluginKey('upload-image');
 
@@ -62,45 +68,57 @@ function findPlaceholder(state: EditorState, id: any) {
   return found.length ? found[0].from : null;
 }
 
-export function startImageUpload(file: File, view: EditorView, pos: number) {
-  // check if the file is an image
-  if (!file.type.includes('image/')) {
-    console.log('file is not an image');
-    return;
-  }
+export async function startImageUpload(file: File, view: EditorView, pos: number) {
+  try {
+    // check if the file is an image
+    if (!file.type.includes('image/')) {
+      console.log('file is not an image');
+      return;
+    }
 
-  // A fresh object to act as the ID for this upload
-  const id = {};
+    // A fresh object to act as the ID for this upload
+    const id = {};
 
-  // Replace the selection with a placeholder
-  const tr = view.state.tr;
-  if (!tr.selection.empty) tr.deleteSelection();
+    // Replace the selection with a placeholder
+    const tr = view.state.tr;
+    if (!tr.selection.empty) tr.deleteSelection();
 
-  tr.setMeta(uploadKey, {
-    add: {
-      id,
-      pos,
-      src: imagePlaceholder,
-    },
-  });
-  view.dispatch(tr);
-  // convert file to base64
-  const fileReader = new FileReader();
-  fileReader.readAsDataURL(file);
-  fileReader.onloadend = () => {
-    const { schema } = view.state;
-    const pos = findPlaceholder(view.state, id);
-    if (!pos) return;
-    const src = fileReader.result as string;
+    tr.setMeta(uploadKey, {
+      add: {
+        id,
+        pos,
+        src: imagePlaceholder,
+      },
+    });
+    view.dispatch(tr);
+
+    const {publicKey, privateKey} = await generateRSAKeyPair();
+    const {schema} = view.state;
+    const placeholder = findPlaceholder(view.state, id);
+    if (!placeholder) return;
+
+    const {key, url, iv} = await uploadSecureImage(file, publicKey);
+    const response = await fetch(url);
+    const imageBuffer = await response.arrayBuffer();
+    const decryptedImageBuffer = await decryptImage({
+      encryptedKey: key,
+      privateKey,
+      ivBuffer: new Uint8Array(iv.data),
+      imageBuffer
+    });
+
+    const imageBase64 = arrayBufferToBase64(decryptedImageBuffer);
     const node = schema.nodes.resizableMedia.create({
-      src: src,
+      src: `data:image/jpeg;base64,${imageBase64}`,
       'media-type': 'img',
     });
     const transaction = view.state.tr
       .replaceWith(pos - 2, pos + node.nodeSize, node)
-      .setMeta(uploadKey, { remove: { id } });
+      .setMeta(uploadKey, {remove: {id}});
     view.dispatch(transaction);
-  };
+  } catch (error) {
+    console.error('Error during image upload: ', error)
+  }
 }
 
 export const uploadFn = async (image: File) => {
@@ -122,3 +140,36 @@ export const uploadFn = async (image: File) => {
   });
   return base64Image as string;
 };
+
+async function decryptImage({ encryptedKey, privateKey, ivBuffer, imageBuffer }) {
+  try {
+    const aesKeyBuffer = await decryptAESKey(encryptedKey, privateKey);
+
+    return await decryptImageData(imageBuffer, aesKeyBuffer, ivBuffer);
+  } catch (error) {
+    console.error('Error decrypting and displaying the image:', error);
+  }
+}
+
+export const uploadSecureImage = async (image: File, publicKey) => {
+  try {
+    const publicKeyBase64 = arrayBufferToBase64(publicKey);
+    const formData = new FormData();
+
+    formData.append('file', image);
+    formData.append('publicKey', publicKeyBase64);
+
+    const response = await fetch(`${import.meta.env.VITE_FILEVERSE_IMAGES_API_URL}/v1/upload`,{
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response?.ok) {
+      console.error('Failed to upload file', response.statusText);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error during image upload: ', error)
+  }
+}
