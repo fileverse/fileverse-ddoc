@@ -6,6 +6,7 @@ import { resizableMediaActions } from './resizable-media-menu-util';
 import cn from 'classnames';
 import { useEditingContext } from '../../hooks/use-editing-context';
 import ToolbarButton from '../../common/toolbar-button';
+import { SecureImage } from '../../components/secure-image.tsx';
 
 let lastClientX: number;
 interface WidthAndHeight {
@@ -19,7 +20,7 @@ export const ResizableMediaNodeView = ({
 }: NodeViewProps) => {
   const isPreview = useEditingContext();
 
-  const [mediaType, setMediaType] = useState<'img' | 'video' | 'iframe'>();
+  const [mediaType, setMediaType] = useState<'img' | 'secure-img' | 'video' | 'iframe'>();
 
   const [aspectRatio, setAspectRatio] = useState(0);
 
@@ -236,6 +237,16 @@ export const ResizableMediaNodeView = ({
             alt={node.attrs.src}
             width={node.attrs.width}
             height={node.attrs.height}
+          />
+        )}
+
+        {mediaType === 'secure-img' && (
+          <SecureImage
+            encryptedKey={node.attrs.encryptedKey}
+            url={node.attrs.url}
+            iv={node.attrs.iv}
+            privateKey={node.attrs.privateKey}
+            alt={node.attrs.alt}
           />
         )}
 

@@ -89,6 +89,18 @@ export const ResizableMedia = Node.create<MediaOptions>({
       dataFloat: {
         default: null, // 'left' | 'right'
       },
+      encryptedKey: {
+        default: null,
+      },
+      url: {
+        default: null,
+      },
+      iv: {
+        default: null,
+      },
+      privateKey: {
+        default: null,
+      }
     };
   },
 
@@ -116,7 +128,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
   renderHTML({ HTMLAttributes }) {
     const { 'media-type': mediaType } = HTMLAttributes;
 
-    if (mediaType === 'img') {
+    if (mediaType === 'img' || mediaType === 'secure-img') {
       return [
         'img',
         mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
@@ -148,7 +160,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
         ({ commands }) => {
           const { 'media-type': mediaType } = options;
 
-          if (mediaType === 'img') {
+          if (mediaType === 'img' || mediaType === 'secure-img') {
             return commands.insertContent({
               type: this.name,
               attrs: options,

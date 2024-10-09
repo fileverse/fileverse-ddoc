@@ -10,8 +10,6 @@ import { ERR_MSG_MAP, MAX_IMAGE_SIZE } from '../components/editor-utils';
 import {
   arrayBufferToBase64,
   generateRSAKeyPair,
-  decryptAESKey,
-  decryptImageData
 } from './security';
 
 const uploadKey = new PluginKey('upload-image');
@@ -98,19 +96,13 @@ export async function startImageUpload(file: File, view: EditorView, pos: number
     if (!placeholder) return;
 
     const {key, url, iv} = await uploadSecureImage(file, publicKey);
-    const response = await fetch(url);
-    const imageBuffer = await response.arrayBuffer();
-    const decryptedImageBuffer = await decryptImage({
-      encryptedKey: key,
-      privateKey,
-      ivBuffer: new Uint8Array(iv.data),
-      imageBuffer
-    });
 
-    const imageBase64 = arrayBufferToBase64(decryptedImageBuffer);
     const node = schema.nodes.resizableMedia.create({
-      src: `data:image/jpeg;base64,${imageBase64}`,
-      'media-type': 'img',
+      encryptedKey: key,
+      url,
+      iv,
+      privateKey,
+      'media-type': 'secure-img',
     });
     const transaction = view.state.tr
       .replaceWith(pos - 2, pos + node.nodeSize, node)
@@ -141,15 +133,6 @@ export const uploadFn = async (image: File) => {
   return base64Image as string;
 };
 
-async function decryptImage({ encryptedKey, privateKey, ivBuffer, imageBuffer }) {
-  try {
-    const aesKeyBuffer = await decryptAESKey(encryptedKey, privateKey);
-
-    return await decryptImageData(imageBuffer, aesKeyBuffer, ivBuffer);
-  } catch (error) {
-    console.error('Error decrypting and displaying the image:', error);
-  }
-}
 
 export const uploadSecureImage = async (image: File, publicKey) => {
   try {
