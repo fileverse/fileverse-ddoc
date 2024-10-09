@@ -129,9 +129,11 @@ export const ERR_MSG_MAP = {
 export const useEditorToolbar = ({
   editor,
   onError,
+  secureImageUploadUrl
 }: {
   editor: Editor;
   onError?: (errorString: string) => void;
+  secureImageUploadUrl?: string;
 }) => {
   const {
     ref: toolRef,
@@ -271,7 +273,7 @@ export const useEditorToolbar = ({
               return;
             }
             const pos = editor.view.state.selection.from;
-            startImageUpload(file, editor.view, pos);
+            startImageUpload(file, editor.view, pos, secureImageUploadUrl);
           }
         };
         input.click();

@@ -42,6 +42,7 @@ const DdocEditor = forwardRef(
       handleCommentButtonClick,
       showCommentButton,
       ensResolutionUrl,
+      secureImageUploadUrl,
       disableBottomToolbar,
       onError,
       setCharacterCount,
@@ -212,6 +213,7 @@ const DdocEditor = forwardRef(
                 editor={editor}
                 isNavbarVisible={isNavbarVisible}
                 setIsNavbarVisible={setIsNavbarVisible}
+                secureImageUploadUrl={secureImageUploadUrl}
               />
             </div>
           </div>
