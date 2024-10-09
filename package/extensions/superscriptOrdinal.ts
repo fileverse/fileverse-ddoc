@@ -252,6 +252,8 @@ const superscriptOrdinal = Extension.create({
       textInputRule({ find: /:@ $/, replace: '😠 ' }),
       textInputRule({ find: /<3 $/, replace: '❤️ ' }),
       textInputRule({ find: /\/shrug $/, replace: '¯\\_(ツ)_/¯' }),
+      textInputRule({ find: /;\) $/, replace: '😉 ' }),
+      textInputRule({ find: /:\)\] $/, replace: '🙂 ' })
     ];
   },
 });
