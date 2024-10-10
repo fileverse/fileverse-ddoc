@@ -30,11 +30,13 @@ const TiptapToolBar = ({
   onError,
   isNavbarVisible,
   setIsNavbarVisible,
+  secureImageUploadUrl,
 }: {
   editor: Editor;
   onError?: (errorString: string) => void;
   isNavbarVisible: boolean;
   setIsNavbarVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  secureImageUploadUrl?: string;
 }) => {
   const {
     toolRef,
@@ -47,6 +49,7 @@ const TiptapToolBar = ({
   } = useEditorToolbar({
     editor: editor,
     onError,
+    secureImageUploadUrl
   });
   const [filename, setFilename] = useState('exported_document.md');
 

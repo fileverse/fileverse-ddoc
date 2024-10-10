@@ -25,6 +25,7 @@ export interface DdocProps {
   collaborationId?: string;
   isPreviewMode: boolean;
   ensResolutionUrl?: string;
+  secureImageUploadUrl?: string;
   initialContent?: JSONContent | null;
   walletAddress?: string | null;
   username?: string | null;

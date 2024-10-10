@@ -7,6 +7,10 @@ import { Decoration, DecorationSet, EditorView } from '@tiptap/pm/view';
 
 import imagePlaceholder from '../assets/spinner_GIF.gif';
 import { ERR_MSG_MAP, MAX_IMAGE_SIZE } from '../components/editor-utils';
+import {
+  arrayBufferToBase64,
+  generateRSAKeyPair,
+} from './security';
 
 const uploadKey = new PluginKey('upload-image');
 
@@ -62,45 +66,71 @@ function findPlaceholder(state: EditorState, id: any) {
   return found.length ? found[0].from : null;
 }
 
-export function startImageUpload(file: File, view: EditorView, pos: number) {
-  // check if the file is an image
-  if (!file.type.includes('image/')) {
-    console.log('file is not an image');
-    return;
-  }
+export async function startImageUpload(file: File, view: EditorView, pos: number, secureImageUploadUrl: string) {
+  try {
+    // check if the file is an image
+    if (!file.type.includes('image/')) {
+      console.log('file is not an image');
+      return;
+    }
 
-  // A fresh object to act as the ID for this upload
-  const id = {};
+    // A fresh object to act as the ID for this upload
+    const id = {};
 
-  // Replace the selection with a placeholder
-  const tr = view.state.tr;
-  if (!tr.selection.empty) tr.deleteSelection();
+    // Replace the selection with a placeholder
+    const tr = view.state.tr;
+    if (!tr.selection.empty) tr.deleteSelection();
 
-  tr.setMeta(uploadKey, {
-    add: {
-      id,
-      pos,
-      src: imagePlaceholder,
-    },
-  });
-  view.dispatch(tr);
-  // convert file to base64
-  const fileReader = new FileReader();
-  fileReader.readAsDataURL(file);
-  fileReader.onloadend = () => {
-    const { schema } = view.state;
-    const pos = findPlaceholder(view.state, id);
-    if (!pos) return;
-    const src = fileReader.result as string;
-    const node = schema.nodes.resizableMedia.create({
-      src: src,
-      'media-type': 'img',
+    tr.setMeta(uploadKey, {
+      add: {
+        id,
+        pos,
+        src: imagePlaceholder,
+      },
     });
-    const transaction = view.state.tr
-      .replaceWith(pos - 2, pos + node.nodeSize, node)
-      .setMeta(uploadKey, { remove: { id } });
-    view.dispatch(transaction);
-  };
+    view.dispatch(tr);
+
+    const {schema} = view.state;
+    const placeholder = findPlaceholder(view.state, id);
+    if (!placeholder) return;
+
+    if (secureImageUploadUrl) {
+      const {publicKey, privateKey} = await generateRSAKeyPair();
+      const {key, url, iv} = await uploadSecureImage(secureImageUploadUrl, file, publicKey);
+
+      const node = schema.nodes.resizableMedia.create({
+        encryptedKey: key,
+        url,
+        iv,
+        privateKey,
+        'media-type': 'secure-img',
+      });
+
+      const transaction = view.state.tr
+        .replaceWith(pos - 2, pos + node.nodeSize, node)
+        .setMeta(uploadKey, {remove: {id}});
+      view.dispatch(transaction);
+    } else {
+      const fileReader = new FileReader();
+      fileReader.readAsDataURL(file);
+      fileReader.onloadend = () => {
+        const {schema} = view.state;
+        const pos = findPlaceholder(view.state, id);
+        if (!pos) return;
+        const src = fileReader.result as string;
+        const node = schema.nodes.resizableMedia.create({
+          src: src,
+          'media-type': 'img',
+        });
+        const transaction = view.state.tr
+          .replaceWith(pos - 2, pos + node.nodeSize, node)
+          .setMeta(uploadKey, {remove: {id}});
+        view.dispatch(transaction);
+      }
+    }
+  } catch (error) {
+    console.error('Error during image upload: ', error)
+  }
 }
 
 export const uploadFn = async (image: File) => {
@@ -122,3 +152,27 @@ export const uploadFn = async (image: File) => {
   });
   return base64Image as string;
 };
+
+
+export const uploadSecureImage = async (url, image: File, publicKey) => {
+  try {
+    const publicKeyBase64 = arrayBufferToBase64(publicKey);
+    const formData = new FormData();
+
+    formData.append('file', image);
+    formData.append('publicKey', publicKeyBase64);
+
+    const response = await fetch(url, {
+      method: 'POST',
+      body: formData
+    });
+
+    if (!response?.ok) {
+      console.error('Failed to upload file', response.statusText);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error during image upload: ', error)
+  }
+}
