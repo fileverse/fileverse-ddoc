@@ -13,7 +13,7 @@ import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from './components/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
-import superscriptOrdinal from './extensions/superscriptOrdinal';
+import customTextInputRules from './extensions/customTextInputRules';
 
 const usercolors = [
   '#30bced',
@@ -46,7 +46,7 @@ export const useDdocEditor = ({
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions((error: string) => onError?.(error)) as AnyExtension[]),
     SlashCommand((error: string) => onError?.(error)),
-    superscriptOrdinal,
+    customTextInputRules,
   ]);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);

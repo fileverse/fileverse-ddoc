@@ -1,7 +1,7 @@
 import { Extension, textInputRule } from '@tiptap/core';
 
-const superscriptOrdinal = Extension.create({
-  name: 'superscriptOrdinal',
+const customTextInputRules = Extension.create({
+  name: 'customTextInputRules',
 
   addInputRules() {
     return [
@@ -258,4 +258,4 @@ const superscriptOrdinal = Extension.create({
   },
 });
 
-export default superscriptOrdinal;
+export default customTextInputRules;
