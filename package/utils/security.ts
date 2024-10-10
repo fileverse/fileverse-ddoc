@@ -33,7 +33,7 @@ export const generateRSAKeyPair = async () => {
   };
 }
 
-export const decryptAESKey = async (encryptedKeyBase64, privateKeyPem) => {
+export const decryptAESKey = async (encryptedKeyBase64: string, privateKeyPem: BufferSource) => {
   const encryptedKeyBuffer = base64ToArrayBuffer(encryptedKeyBase64);
 
   const privateKey = await crypto.subtle.importKey(
@@ -56,7 +56,7 @@ export const decryptAESKey = async (encryptedKeyBase64, privateKeyPem) => {
   );
 }
 
-export const decryptImageData = async (encryptedImageData, aesKeyBuffer, iv) => {
+export const decryptImageData = async (encryptedImageData: ArrayBuffer, aesKeyBuffer: ArrayBuffer, iv: string) => {
   const ivBuffer = base64ToArrayBuffer(iv);
   const aesKey = await crypto.subtle.importKey(
     "raw",
@@ -78,12 +78,13 @@ export const decryptImageData = async (encryptedImageData, aesKeyBuffer, iv) => 
   );
 }
 
-export const fetchImage = async (url: string): Promise<ArrayBuffer> => {
+export const fetchImage = async (url: string): Promise<ArrayBuffer | undefined> => {
   try {
     const response = await fetch(url);
 
     if (!response?.ok) {
       console.error('Failed to fetch image: ', response.statusText);
+      return;
     }
 
     return await response.arrayBuffer();
@@ -92,7 +93,14 @@ export const fetchImage = async (url: string): Promise<ArrayBuffer> => {
   }
 }
 
-export const decryptImage = async ({ encryptedKey, privateKey, iv, imageBuffer }) => {
+type DecryptImage = {
+  encryptedKey: string;
+  privateKey: BufferSource;
+  iv: string;
+  imageBuffer: ArrayBuffer;
+};
+
+export const decryptImage = async ({ encryptedKey, privateKey, iv, imageBuffer }: DecryptImage) => {
   try {
     const aesKeyBuffer = await decryptAESKey(encryptedKey, privateKey);
 

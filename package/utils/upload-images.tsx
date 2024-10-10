@@ -66,7 +66,7 @@ function findPlaceholder(state: EditorState, id: any) {
   return found.length ? found[0].from : null;
 }
 
-export async function startImageUpload(file: File, view: EditorView, pos: number, secureImageUploadUrl: string) {
+export async function startImageUpload(file: File, view: EditorView, pos: number, secureImageUploadUrl?: string) {
   try {
     // check if the file is an image
     if (!file.type.includes('image/')) {
@@ -154,7 +154,7 @@ export const uploadFn = async (image: File) => {
 };
 
 
-export const uploadSecureImage = async (url, image: File, publicKey) => {
+export const uploadSecureImage = async (url: string, image: File, publicKey: ArrayBuffer) => {
   try {
     const publicKeyBase64 = arrayBufferToBase64(publicKey);
     const formData = new FormData();
