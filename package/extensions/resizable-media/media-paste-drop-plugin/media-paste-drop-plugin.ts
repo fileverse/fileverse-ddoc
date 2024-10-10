@@ -1,5 +1,6 @@
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { ERR_MSG_MAP, MAX_IMAGE_SIZE } from '../../../components/editor-utils';
+import {startImageUpload} from "../../../utils/upload-images.tsx";
 
 export type UploadFnType = (image: File) => Promise<string>;
 
@@ -14,12 +15,28 @@ export type UploadFnType = (image: File) => Promise<string>;
 export const getMediaPasteDropPlugin = (
   upload: UploadFnType,
   onError: (error: string) => void,
+  secureImageUploadUrl?: string
 ) => {
   return new Plugin({
     key: new PluginKey('media-paste-drop'),
     props: {
       handlePaste(_view, event) {
         const items = Array.from(event.clipboardData?.items || []);
+        const files = event.clipboardData?.files;
+        const position = _view.state.selection.from;
+
+        if (!position) {
+          return false;
+        }
+
+        Object.values(files).forEach(file => {
+          const isImage = file?.type.indexOf('image') === 0;
+
+          if (isImage) {
+            startImageUpload(file, _view, position, secureImageUploadUrl);
+          }
+        })
+
 
         items.forEach(item => {
           const file = item.getAsFile();
@@ -75,16 +92,7 @@ export const getMediaPasteDropPlugin = (
 
           if (upload) {
             try {
-              const uploadedSrc = await upload(imageOrVideo);
-              const node = schema.nodes.resizableMedia.create({
-                src: uploadedSrc,
-                'media-type': imageOrVideo.type.includes('image')
-                  ? 'img'
-                  : 'video',
-              });
-
-              const transaction = view.state.tr.insert(coordinates.pos, node);
-              view.dispatch(transaction);
+              startImageUpload(imageOrVideo, view, coordinates.pos, secureImageUploadUrl);
             } catch (error) {
               onError((error as Error).message || 'Error uploading media');
               throw new Error(
