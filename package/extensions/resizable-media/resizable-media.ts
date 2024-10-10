@@ -32,6 +32,7 @@ export interface MediaOptions {
   HTMLAttributes: Record<string, any>;
   uploadFn: UploadFnType;
   onError: (error: string) => void;
+  secureImageUploadUrl?: string;
 }
 
 export const IMAGE_INPUT_REGEX =
@@ -54,6 +55,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
       onError: () => {
         console.error('Error uploading media');
       },
+      secureImageUploadUrl: ''
     };
   },
 
@@ -255,7 +257,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
 
   addProseMirrorPlugins() {
     return [
-      getMediaPasteDropPlugin(this.options.uploadFn, this.options.onError),
+      getMediaPasteDropPlugin(this.options.uploadFn, this.options.onError, this.options.secureImageUploadUrl),
       UploadImagesPlugin(),
     ];
   },

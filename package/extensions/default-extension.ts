@@ -40,7 +40,7 @@ import Subscript from '@tiptap/extension-subscript';
 import { ResizableMedia } from './resizable-media';
 import { uploadFn } from '../utils/upload-images';
 
-export const defaultExtensions = (onError: (error: string) => void) => [
+export const defaultExtensions = (onError: (error: string) => void, secureImageUploadUrl?: string) => [
   FontFamily,
   StarterKit.configure({
     strike: {
@@ -162,6 +162,7 @@ export const defaultExtensions = (onError: (error: string) => void) => [
   ResizableMedia.configure({
     uploadFn: uploadFn,
     onError: onError,
+    secureImageUploadUrl
   }),
   GapCursor,
   DBlock,
