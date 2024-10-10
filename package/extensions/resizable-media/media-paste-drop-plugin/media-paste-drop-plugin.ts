@@ -22,6 +22,21 @@ export const getMediaPasteDropPlugin = (
     props: {
       handlePaste(_view, event) {
         const items = Array.from(event.clipboardData?.items || []);
+        const files = event.clipboardData?.files;
+        const position = _view.state.selection.from;
+
+        if (!position) {
+          return false;
+        }
+
+        Object.values(files).forEach(file => {
+          const isImage = file?.type.indexOf('image') === 0;
+
+          if (isImage) {
+            startImageUpload(file, _view, position, secureImageUploadUrl);
+          }
+        })
+
 
         items.forEach(item => {
           const file = item.getAsFile();
