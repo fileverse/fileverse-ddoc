@@ -1,5 +1,5 @@
 import { Plugin, PluginKey } from 'prosemirror-state';
-import { ERR_MSG_MAP, MAX_IMAGE_SIZE } from '../../../components/editor-utils';
+import { IMG_UPLOAD_SETTINGS } from '../../../components/editor-utils';
 import { startImageUpload } from '../../../utils/upload-images.tsx';
 
 export type UploadFnType = (image: File) => Promise<string>;
@@ -28,14 +28,21 @@ export const getMediaPasteDropPlugin = (
         if (!position) {
           return false;
         }
+        const imgConfig = secureImageUploadUrl
+          ? IMG_UPLOAD_SETTINGS.Extended
+          : IMG_UPLOAD_SETTINGS.Base;
+        const filesContainImage = Object.values(files ?? {}).some(
+          (file) => file?.type.indexOf('image') === 0,
+        );
 
-        const filesContainImage = Object.values(files ?? {}).some(file => file?.type.indexOf('image') === 0);
-
-        if (filesContainImage) {
-          Object.values(files ?? {}).forEach(file => {
+        if (filesContainImage && secureImageUploadUrl) {
+          Object.values(files ?? {}).forEach((file) => {
             const isImage = file?.type.indexOf('image') === 0;
-
             if (isImage) {
+              if (file.size > imgConfig.maxSize) {
+                onError(imgConfig.errorMsg);
+                throw new Error(imgConfig.errorMsg);
+              }
               startImageUpload(file, _view, position, secureImageUploadUrl);
             }
           });
@@ -44,7 +51,7 @@ export const getMediaPasteDropPlugin = (
         }
 
         // TODO: Check if the gif is supported and without duplicated images
-        items.forEach(item => {
+        items.forEach((item) => {
           const file = item.getAsFile();
 
           const isImageOrVideo =
@@ -56,9 +63,9 @@ export const getMediaPasteDropPlugin = (
 
             if (file) {
               // Check if the image size is less than 100Kb
-              if (file.size > MAX_IMAGE_SIZE) {
-                onError(ERR_MSG_MAP.IMAGE_SIZE);
-                throw new Error(ERR_MSG_MAP.IMAGE_SIZE);
+              if (file.size > imgConfig.maxSize) {
+                onError(imgConfig.errorMsg);
+                throw new Error(imgConfig.errorMsg);
               }
             }
           }
@@ -93,7 +100,7 @@ export const getMediaPasteDropPlugin = (
 
         if (!coordinates) return false;
 
-        imagesAndVideos.forEach(async imageOrVideo => {
+        imagesAndVideos.forEach(async (imageOrVideo) => {
           const reader = new FileReader();
 
           if (typeof upload === 'function') {
@@ -111,7 +118,7 @@ export const getMediaPasteDropPlugin = (
               );
             }
           } else {
-            reader.onload = readerEvent => {
+            reader.onload = (readerEvent) => {
               const node = schema.nodes.resizableMedia.create({
                 src: readerEvent.target?.result,
 

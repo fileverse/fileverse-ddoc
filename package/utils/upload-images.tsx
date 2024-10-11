@@ -6,11 +6,8 @@ import { EditorState, Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet, EditorView } from '@tiptap/pm/view';
 
 import imagePlaceholder from '../assets/spinner_GIF.gif';
-import { ERR_MSG_MAP, MAX_IMAGE_SIZE } from '../components/editor-utils';
-import {
-  arrayBufferToBase64,
-  generateRSAKeyPair,
-} from './security';
+import { IMG_UPLOAD_SETTINGS } from '../components/editor-utils';
+import { arrayBufferToBase64, generateRSAKeyPair } from './security';
 
 const uploadKey = new PluginKey('upload-image');
 
@@ -66,7 +63,12 @@ function findPlaceholder(state: EditorState, id: any) {
   return found.length ? found[0].from : null;
 }
 
-export async function startImageUpload(file: File, view: EditorView, pos: number, secureImageUploadUrl?: string) {
+export async function startImageUpload(
+  file: File,
+  view: EditorView,
+  pos: number,
+  secureImageUploadUrl?: string,
+) {
   try {
     // check if the file is an image
     if (!file.type.includes('image/')) {
@@ -96,7 +98,11 @@ export async function startImageUpload(file: File, view: EditorView, pos: number
 
     if (secureImageUploadUrl) {
       const { publicKey, privateKey } = await generateRSAKeyPair();
-      const { key, url, iv } = await uploadSecureImage(secureImageUploadUrl, file, publicKey);
+      const { key, url, iv } = await uploadSecureImage(
+        secureImageUploadUrl,
+        file,
+        publicKey,
+      );
 
       const node = schema.nodes.resizableMedia.create({
         encryptedKey: key,
@@ -126,10 +132,10 @@ export async function startImageUpload(file: File, view: EditorView, pos: number
           .replaceWith(pos - 2, pos + node.nodeSize, node)
           .setMeta(uploadKey, { remove: { id } });
         view.dispatch(transaction);
-      }
+      };
     }
   } catch (error) {
-    console.error('Error during image upload: ', error)
+    console.error('Error during image upload: ', error);
   }
 }
 
@@ -137,11 +143,11 @@ export const uploadFn = async (image: File) => {
   // Read image data and create a File object, then return the string URL of the uploaded image
   const reader = new FileReader();
   reader.readAsDataURL(image);
-
+  const imgConfig = IMG_UPLOAD_SETTINGS.Extended;
   // check if image is too large for upload (> 1 MB), then throw error
-  if (image.size > MAX_IMAGE_SIZE) {
+  if (image.size > imgConfig.maxSize) {
     reader.abort();
-    throw new Error(ERR_MSG_MAP.IMAGE_SIZE);
+    throw new Error(imgConfig.errorMsg);
   }
 
   // convert image to base64
@@ -153,8 +159,11 @@ export const uploadFn = async (image: File) => {
   return base64Image as string;
 };
 
-
-export const uploadSecureImage = async (url: string, image: File, publicKey: ArrayBuffer) => {
+export const uploadSecureImage = async (
+  url: string,
+  image: File,
+  publicKey: ArrayBuffer,
+) => {
   try {
     const publicKeyBase64 = arrayBufferToBase64(publicKey);
     const formData = new FormData();
@@ -164,7 +173,7 @@ export const uploadSecureImage = async (url: string, image: File, publicKey: Arr
 
     const response = await fetch(url, {
       method: 'POST',
-      body: formData
+      body: formData,
     });
 
     if (!response?.ok) {
@@ -173,6 +182,6 @@ export const uploadSecureImage = async (url: string, image: File, publicKey: Arr
 
     return await response.json();
   } catch (error) {
-    console.error('Error during image upload: ', error)
+    console.error('Error during image upload: ', error);
   }
-}
+};
