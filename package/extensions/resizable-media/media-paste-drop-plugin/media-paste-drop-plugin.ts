@@ -29,13 +29,19 @@ export const getMediaPasteDropPlugin = (
           return false;
         }
 
-        Object.values(files ?? {}).forEach(file => {
-          const isImage = file?.type.indexOf('image') === 0;
+        const filesContainImage = Object.values(files ?? {}).some(file => file?.type.indexOf('image') === 0);
 
-          if (isImage) {
-            startImageUpload(file, _view, position, secureImageUploadUrl);
-          }
-        });
+        if (filesContainImage) {
+          Object.values(files ?? {}).forEach(file => {
+            const isImage = file?.type.indexOf('image') === 0;
+
+            if (isImage) {
+              startImageUpload(file, _view, position, secureImageUploadUrl);
+            }
+          });
+
+          return true;
+        }
 
         // TODO: Check if the gif is supported and without duplicated images
         items.forEach(item => {
