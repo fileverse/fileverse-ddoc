@@ -46,7 +46,7 @@ export const useDdocEditor = ({
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions((error: string) => onError?.(error), secureImageUploadUrl) as AnyExtension[]),
-    SlashCommand((error: string) => onError?.(error)),
+    SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
     customTextInputRules,
   ]);
   const initialContentSetRef = useRef(false);

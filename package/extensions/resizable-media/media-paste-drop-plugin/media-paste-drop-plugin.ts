@@ -1,6 +1,6 @@
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { ERR_MSG_MAP, MAX_IMAGE_SIZE } from '../../../components/editor-utils';
-import {startImageUpload} from "../../../utils/upload-images.tsx";
+import { startImageUpload } from '../../../utils/upload-images.tsx';
 
 export type UploadFnType = (image: File) => Promise<string>;
 
@@ -15,7 +15,7 @@ export type UploadFnType = (image: File) => Promise<string>;
 export const getMediaPasteDropPlugin = (
   upload: UploadFnType,
   onError: (error: string) => void,
-  secureImageUploadUrl?: string
+  secureImageUploadUrl?: string,
 ) => {
   return new Plugin({
     key: new PluginKey('media-paste-drop'),
@@ -29,15 +29,15 @@ export const getMediaPasteDropPlugin = (
           return false;
         }
 
-        Object.values(files).forEach(file => {
+        Object.values(files ?? {}).forEach(file => {
           const isImage = file?.type.indexOf('image') === 0;
 
           if (isImage) {
             startImageUpload(file, _view, position, secureImageUploadUrl);
           }
-        })
+        });
 
-
+        // TODO: Check if the gif is supported and without duplicated images
         items.forEach(item => {
           const file = item.getAsFile();
 
@@ -90,9 +90,14 @@ export const getMediaPasteDropPlugin = (
         imagesAndVideos.forEach(async imageOrVideo => {
           const reader = new FileReader();
 
-          if (upload) {
+          if (typeof upload === 'function') {
             try {
-              startImageUpload(imageOrVideo, view, coordinates.pos, secureImageUploadUrl);
+              startImageUpload(
+                imageOrVideo,
+                view,
+                coordinates.pos,
+                secureImageUploadUrl,
+              );
             } catch (error) {
               onError((error as Error).message || 'Error uploading media');
               throw new Error(

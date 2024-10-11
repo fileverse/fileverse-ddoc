@@ -47,7 +47,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
   addOptions() {
     return {
       HTMLAttributes: {
-        class: 'rounded-lg border border-stone-200',
+        class: 'rounded-lg border color-border-default',
       },
       uploadFn: async () => {
         return '';
@@ -55,7 +55,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
       onError: () => {
         console.error('Error uploading media');
       },
-      secureImageUploadUrl: ''
+      secureImageUploadUrl: '',
     };
   },
 
@@ -102,7 +102,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
       },
       privateKey: {
         default: null,
-      }
+      },
     };
   },
 
@@ -257,7 +257,11 @@ export const ResizableMedia = Node.create<MediaOptions>({
 
   addProseMirrorPlugins() {
     return [
-      getMediaPasteDropPlugin(this.options.uploadFn, this.options.onError, this.options.secureImageUploadUrl),
+      getMediaPasteDropPlugin(
+        this.options.uploadFn,
+        this.options.onError,
+        this.options.secureImageUploadUrl,
+      ),
       UploadImagesPlugin(),
     ];
   },

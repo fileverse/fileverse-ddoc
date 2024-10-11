@@ -4,6 +4,7 @@ import { ReactNodeViewRenderer } from '@tiptap/react';
 import { DBlockNodeView } from './dblock-node-view';
 export interface DBlockOptions {
   HTMLAttributes: Record<string, any>;
+  secureImageUploadUrl?: string;
 }
 
 declare module '@tiptap/core' {
@@ -32,6 +33,7 @@ export const DBlock = Node.create<DBlockOptions>({
   addOptions() {
     return {
       HTMLAttributes: {},
+      secureImageUploadUrl: '',
     };
   },
 
@@ -329,6 +331,6 @@ export const DBlock = Node.create<DBlockOptions>({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(DBlockNodeView);
+    return ReactNodeViewRenderer(DBlockNodeView as any);
   },
 });

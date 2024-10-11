@@ -23,12 +23,14 @@ import {
   renderTemplateButtons,
 } from '../../utils/template-utils';
 import { LucideIcon } from '@fileverse/ui';
+// import { startImageUpload } from '../../utils/upload-images';
 
-export const DBlockNodeView: React.FC<NodeViewProps> = ({
+export const DBlockNodeView: React.FC<NodeViewProps & { secureImageUploadUrl?: string }> = ({
   node,
   getPos,
   editor,
   deleteNode,
+  secureImageUploadUrl,
 }) => {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const actions = useContentItemActions(editor as Editor, node, getPos());
@@ -117,7 +119,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
     }
   };
 
-  const setMedia = (type: 'img' | 'iframe', src: string) => {
+  const setMedia = (type: 'img' | 'iframe' | 'secure-img', src: string) => {
     const pos = getPos();
     const to = pos + node.nodeSize;
 
@@ -128,6 +130,12 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
         .deleteRange({ from: pos === 0 ? pos : pos + 1, to })
         .setMedia({ src, 'media-type': 'img' })
         .run();
+    } else if (type === 'secure-img') {
+      // Convert base64 to File object
+      console.log('secureImageUploadUrl', secureImageUploadUrl);
+
+      // Use startImageUpload function
+      // startImageUpload(file, editor.view, pos, secureImageUploadUrl);
     } else {
       editor
         ?.chain()
@@ -302,9 +310,8 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
           }
         >
           <div
-            className={`d-block-button cursor-pointer ${
-              !isPreviewMode && 'group-hover:opacity-100'
-            }`}
+            className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
+              }`}
             contentEditable={false}
             onClick={handleClick}
           >
@@ -318,9 +325,8 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
           <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
             <Popover.Trigger asChild>
               <div
-                className={`d-block-button cursor-pointer ${
-                  !isPreviewMode && 'group-hover:opacity-100'
-                }`}
+                className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
+                  }`}
                 contentEditable={false}
                 draggable
                 data-drag-handle

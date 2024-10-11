@@ -32,7 +32,7 @@ const UploadImagesPlugin = () =>
           const placeholder = document.createElement('div');
           placeholder.setAttribute('class', 'img-placeholder');
           const image = document.createElement('img');
-          image.setAttribute('class', 'rounded-lg border border-stone-200');
+          image.setAttribute('class', 'bg-white z-50 object-contain');
           image.src = src;
           placeholder.appendChild(image);
           const deco = Decoration.widget(pos + 1, placeholder, {
@@ -84,19 +84,19 @@ export async function startImageUpload(file: File, view: EditorView, pos: number
     tr.setMeta(uploadKey, {
       add: {
         id,
-        pos,
+        pos: pos - 1,
         src: imagePlaceholder,
       },
     });
     view.dispatch(tr);
 
-    const {schema} = view.state;
+    const { schema } = view.state;
     const placeholder = findPlaceholder(view.state, id);
     if (!placeholder) return;
 
     if (secureImageUploadUrl) {
-      const {publicKey, privateKey} = await generateRSAKeyPair();
-      const {key, url, iv} = await uploadSecureImage(secureImageUploadUrl, file, publicKey);
+      const { publicKey, privateKey } = await generateRSAKeyPair();
+      const { key, url, iv } = await uploadSecureImage(secureImageUploadUrl, file, publicKey);
 
       const node = schema.nodes.resizableMedia.create({
         encryptedKey: key,
@@ -108,13 +108,13 @@ export async function startImageUpload(file: File, view: EditorView, pos: number
 
       const transaction = view.state.tr
         .replaceWith(pos - 2, pos + node.nodeSize, node)
-        .setMeta(uploadKey, {remove: {id}});
+        .setMeta(uploadKey, { remove: { id } });
       view.dispatch(transaction);
     } else {
       const fileReader = new FileReader();
       fileReader.readAsDataURL(file);
       fileReader.onloadend = () => {
-        const {schema} = view.state;
+        const { schema } = view.state;
         const pos = findPlaceholder(view.state, id);
         if (!pos) return;
         const src = fileReader.result as string;
@@ -124,7 +124,7 @@ export async function startImageUpload(file: File, view: EditorView, pos: number
         });
         const transaction = view.state.tr
           .replaceWith(pos - 2, pos + node.nodeSize, node)
-          .setMeta(uploadKey, {remove: {id}});
+          .setMeta(uploadKey, { remove: { id } });
         view.dispatch(transaction);
       }
     }
