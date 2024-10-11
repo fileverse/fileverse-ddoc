@@ -8,6 +8,7 @@ import { Decoration, DecorationSet, EditorView } from '@tiptap/pm/view';
 import imagePlaceholder from '../assets/spinner_GIF.gif';
 import { IMG_UPLOAD_SETTINGS } from '../components/editor-utils';
 import { arrayBufferToBase64, generateRSAKeyPair } from './security';
+import { fromByteArray } from 'base64-js';
 
 const uploadKey = new PluginKey('upload-image');
 
@@ -108,7 +109,7 @@ export async function startImageUpload(
         encryptedKey: key,
         url,
         iv,
-        privateKey,
+        privateKey: fromByteArray(privateKey),
         'media-type': 'secure-img',
       });
 

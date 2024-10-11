@@ -1,11 +1,16 @@
 import { FC, useState, useEffect } from 'react';
-import { fetchImage, decryptImage, arrayBufferToBase64 } from '../utils/security.ts';
+import {
+  fetchImage,
+  decryptImage,
+  arrayBufferToBase64,
+} from '../utils/security.ts';
+import { toByteArray } from 'base64-js';
 
 type Props = {
   encryptedKey: string;
   url: string;
   iv: string;
-  privateKey: ArrayBuffer;
+  privateKey: string;
   alt?: string;
 };
 
@@ -14,7 +19,7 @@ export const SecureImage: FC<Props> = ({
   url,
   iv,
   privateKey,
-  alt
+  alt,
 }) => {
   const [imageData, setImageData] = useState<string>('');
 
@@ -32,11 +37,13 @@ export const SecureImage: FC<Props> = ({
 
           const result = await decryptImage({
             encryptedKey,
-            privateKey,
+            privateKey: toByteArray(privateKey),
             iv,
-            imageBuffer
+            imageBuffer,
           });
-          const src = `data:image/jpeg;base64,${arrayBufferToBase64(result as ArrayBuffer)}`;
+          const src = `data:image/jpeg;base64,${arrayBufferToBase64(
+            result as ArrayBuffer,
+          )}`;
 
           setImageData(src);
         } catch (error) {
@@ -48,7 +55,5 @@ export const SecureImage: FC<Props> = ({
     }
   }, [encryptedKey, url, iv, privateKey]);
 
-  return (
-    <img src={imageData} alt={alt} />
-  );
+  return <img src={imageData} alt={alt} />;
 };

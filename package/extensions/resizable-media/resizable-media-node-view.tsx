@@ -20,7 +20,9 @@ export const ResizableMediaNodeView = ({
 }: NodeViewProps) => {
   const isPreview = useEditingContext();
 
-  const [mediaType, setMediaType] = useState<'img' | 'secure-img' | 'video' | 'iframe'>();
+  const [mediaType, setMediaType] = useState<
+    'img' | 'secure-img' | 'video' | 'iframe'
+  >();
 
   const [aspectRatio, setAspectRatio] = useState(0);
 
@@ -81,7 +83,7 @@ export const ResizableMediaNodeView = ({
         // Aspect Ratio from its original size
         setAspectRatio(
           (resizableImgRef.current as HTMLImageElement).naturalWidth /
-          (resizableImgRef.current as HTMLImageElement).naturalHeight,
+            (resizableImgRef.current as HTMLImageElement).naturalHeight,
         );
       };
     }
