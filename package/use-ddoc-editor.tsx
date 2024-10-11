@@ -41,11 +41,12 @@ export const useDdocEditor = ({
   onError,
   setCharacterCount,
   setWordCount,
+  secureImageUploadUrl
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
-    ...(defaultExtensions((error: string) => onError?.(error)) as AnyExtension[]),
-    SlashCommand((error: string) => onError?.(error)),
+    ...(defaultExtensions((error: string) => onError?.(error), secureImageUploadUrl) as AnyExtension[]),
+    SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
     customTextInputRules,
   ]);
   const initialContentSetRef = useRef(false);

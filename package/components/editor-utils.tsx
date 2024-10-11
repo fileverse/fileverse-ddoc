@@ -120,10 +120,10 @@ export const fonts = [
   },
 ];
 
-export const MAX_IMAGE_SIZE = 1024 * 100; // 100Kb
+export const MAX_IMAGE_SIZE = 1024 * 1024 * 10; // 10MB
 
 export const ERR_MSG_MAP = {
-  IMAGE_SIZE: 'Image size should be less than 100KB',
+  IMAGE_SIZE: 'Image size should be less than 10MB',
 };
 
 export const useEditorToolbar = ({
@@ -399,7 +399,7 @@ export const useEditorToolbar = ({
               return;
             }
             const pos = editor.view.state.selection.from;
-            startImageUpload(file, editor.view, pos);
+            startImageUpload(file, editor.view, pos, secureImageUploadUrl);
           }
         };
         input.click();

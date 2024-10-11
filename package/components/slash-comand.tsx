@@ -64,9 +64,11 @@ const Command = Extension.create({
 const getSuggestionItems = ({
   query,
   onError,
+  secureImageUploadUrl,
 }: {
   query: string;
   onError?: (errorString: string) => void;
+  secureImageUploadUrl?: string;
 }) => {
   return [
     {
@@ -230,7 +232,7 @@ const getSuggestionItems = ({
               return;
             }
             const pos = editor.view.state.selection.from;
-            startImageUpload(file, editor.view, pos);
+            startImageUpload(file, editor.view, pos, secureImageUploadUrl);
           }
         };
         input.click();
@@ -482,9 +484,9 @@ const renderItems = () => {
   };
 };
 
-const SlashCommand = (onError?: (errorString: string) => void) => {
+const SlashCommand = (onError?: (errorString: string) => void, secureImageUploadUrl?: string) => {
   const items = ({ query }: { query: string }) => {
-    return getSuggestionItems({ query, onError });
+    return getSuggestionItems({ query, onError, secureImageUploadUrl });
   };
   return Command.configure({
     suggestion: {

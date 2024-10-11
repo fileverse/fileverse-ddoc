@@ -83,6 +83,7 @@ const DdocEditor = forwardRef(
       onError,
       setCharacterCount,
       setWordCount,
+      secureImageUploadUrl
     });
 
     useImperativeHandle(
