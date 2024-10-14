@@ -18,7 +18,8 @@ import {
 } from 'react';
 import cn from 'classnames';
 import { Button, LucideIcon, Tag, TagType, TagInput } from '@fileverse/ui';
-import { useMediaQuery } from 'usehooks-ts';
+import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
+import { AnimatePresence, motion } from 'framer-motion';
 
 import platform from 'platform';
 import MobileToolbar from './components/mobile-toolbar';
@@ -62,6 +63,22 @@ const DdocEditor = forwardRef(
       checkOs() === 'Android' ||
       checkOs() === 'Windows Phone' ||
       isMobile;
+
+    const [isHiddenTagsVisible, setIsHiddenTagsVisible] = useState(false);
+    const tagsContainerRef = useRef(null);
+
+    const visibleTags = selectedTags?.slice(0, 4) || [];
+    const hiddenTagsCount = selectedTags ? Math.max(0, selectedTags.length - 4) : 0;
+
+    useOnClickOutside(tagsContainerRef, () => {
+      setIsHiddenTagsVisible(false);
+    });
+
+    useEffect(() => {
+      if (selectedTags && selectedTags.length <= 4) {
+        setIsHiddenTagsVisible(false);
+      }
+    }, [selectedTags]);
 
     const {
       editor,
@@ -244,18 +261,56 @@ const DdocEditor = forwardRef(
             )}
             <EditingProvider isPreviewMode={isPreviewMode}>
               {tags && tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-4 mt-4 lg:!mt-0">
-                  {selectedTags?.map((tag, index) => (
+                <div ref={tagsContainerRef} className="flex flex-wrap items-center gap-1 mb-4 mt-4 lg:!mt-0">
+                  {visibleTags.map((tag, index) => (
                     <Tag
                       key={index}
                       style={{ backgroundColor: tag?.color }}
                       onRemove={() => handleRemoveTag(tag?.name)}
                       isRemovable={!isPreviewMode}
+                      className='!h-6 rounded'
                     >
                       {tag?.name}
                     </Tag>
                   ))}
-                  <TagInput tags={tags || []} selectedTags={selectedTags as TagType[]} onAddTag={handleAddTag} isPreviewMode={isPreviewMode} />
+                  {hiddenTagsCount > 0 && !isHiddenTagsVisible && (
+                    <Button
+                      variant="ghost"
+                      className="!h-6 rounded min-w-fit !px-2 color-bg-secondary text-helper-text-sm"
+                      onClick={() => setIsHiddenTagsVisible(true)}
+                    >
+                      +{hiddenTagsCount}
+                    </Button>
+                  )}
+                  <AnimatePresence>
+                    {isHiddenTagsVisible && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="flex flex-wrap items-center gap-1"
+                      >
+                        {selectedTags?.slice(4).map((tag, index) => (
+                          <Tag
+                            key={index + 4}
+                            style={{ backgroundColor: tag?.color }}
+                            onRemove={() => handleRemoveTag(tag?.name)}
+                            isRemovable={!isPreviewMode}
+                            className='!h-6 rounded'
+                          >
+                            {tag?.name}
+                          </Tag>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  <TagInput
+                    tags={tags || []}
+                    selectedTags={selectedTags as TagType[]}
+                    onAddTag={handleAddTag}
+                    isPreviewMode={isPreviewMode}
+                  />
                 </div>
               )}
               <EditorContent
