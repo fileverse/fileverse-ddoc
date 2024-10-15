@@ -249,6 +249,7 @@ export const ResizableMediaNodeView = ({
             iv={node.attrs.iv}
             privateKey={node.attrs.privateKey}
             alt={node.attrs.alt}
+            // caption={node.attrs.caption}
             className="rounded-lg"
             width={node.attrs.width}
             height={node.attrs.height}
@@ -313,20 +314,6 @@ export const ResizableMediaNodeView = ({
             </span>
           </>
         )}
-
-        {/* TODO: For figure caption later */}
-        {/* {mediaType === 'img' || mediaType === 'secure-img' && (
-          <figcaption
-            contentEditable
-            className="text-center italic mt-2"
-            onInput={(e) => {
-              const caption = (e.target as HTMLElement).innerText;
-              updateAttributes({ caption, alt: caption });
-            }}
-            defaultValue={node.attrs.caption || node.attrs.alt || 'Add a caption'}
-          >
-          </figcaption>
-        )} */}
       </div>
 
 

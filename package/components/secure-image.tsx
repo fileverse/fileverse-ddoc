@@ -15,6 +15,7 @@ type Props = {
   width?: string;
   height?: string;
   className?: string;
+  caption?: string;
 };
 
 export const SecureImage = forwardRef<HTMLImageElement, Props>(
@@ -25,6 +26,7 @@ export const SecureImage = forwardRef<HTMLImageElement, Props>(
       iv,
       privateKey,
       alt,
+      // caption,
       className,
       width,
       height,
@@ -74,6 +76,28 @@ export const SecureImage = forwardRef<HTMLImageElement, Props>(
         height={height}
         ref={ref}
       />
+
+      // TODO: For figure caption later
+      //   <figure>
+      //   <img
+      //     src={imageData}
+      //     alt={alt}
+      //     className={className}
+      //     width={width}
+      //     height={height}
+      //     ref={ref}
+      //   />
+      //   <figcaption
+      //     contentEditable
+      //     className="text-center italic mt-2"
+      //     onInput={(e) => {
+      //       // const caption = (e.target as HTMLElement).innerText;
+      //       // updateAttributes({ caption, alt: caption });
+      //     }}
+      //     defaultValue={caption || alt || 'Add a caption'}
+      //   >
+      //   </figcaption>
+      // </figure>
     );
   },
 );
