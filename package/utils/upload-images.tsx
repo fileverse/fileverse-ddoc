@@ -111,6 +111,8 @@ export async function startImageUpload(
         iv,
         privateKey: fromByteArray(privateKey),
         'media-type': 'secure-img',
+        width: '100%',
+        height: 'auto',
       });
 
       const transaction = view.state.tr

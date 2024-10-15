@@ -103,6 +103,10 @@ export const ResizableMedia = Node.create<MediaOptions>({
       privateKey: {
         default: null,
       },
+      // TODO: For figure caption later
+      // caption: {
+      //   default: null,
+      // },
     };
   },
 

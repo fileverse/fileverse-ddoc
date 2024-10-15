@@ -197,8 +197,16 @@ export const defaultExtensions = (
     delimiters: 'dollar',
   }),
   Footnote,
-  Superscript,
-  Subscript,
+  Superscript.configure({
+    HTMLAttributes: {
+      class: 'superscript',
+    },
+  }),
+  Subscript.configure({
+    HTMLAttributes: {
+      class: 'subscript',
+    },
+  }),
 ];
 
 export const createInputRule = (

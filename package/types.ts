@@ -41,6 +41,7 @@ export interface DdocProps {
   setCharacterCount?: React.Dispatch<SetStateAction<number>>;
   setWordCount?: React.Dispatch<SetStateAction<number>>;
   tags?: Array<{ name: string; color: string }>;
+  className?: string;
 }
 
 export interface IEditorSelectionData {
