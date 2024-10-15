@@ -83,7 +83,7 @@ export const ResizableMediaNodeView = ({
         // Aspect Ratio from its original size
         setAspectRatio(
           (resizableImgRef.current as HTMLImageElement).naturalWidth /
-            (resizableImgRef.current as HTMLImageElement).naturalHeight,
+          (resizableImgRef.current as HTMLImageElement).naturalHeight,
         );
       };
     }
@@ -230,7 +230,7 @@ export const ResizableMediaNodeView = ({
         isAlign && `justify-${node.attrs.dataAlign}`,
       )}
     >
-      <div className="w-fit flex relative group transition-all ease-in-out">
+      <div className="w-fit flex flex-col gap-2 relative group transition-all ease-in-out">
         {mediaType === 'img' && (
           <img
             src={node.attrs.src}
@@ -249,6 +249,10 @@ export const ResizableMediaNodeView = ({
             iv={node.attrs.iv}
             privateKey={node.attrs.privateKey}
             alt={node.attrs.alt}
+            className="rounded-lg"
+            width={node.attrs.width}
+            height={node.attrs.height}
+            ref={resizableImgRef as LegacyRef<HTMLImageElement>}
           />
         )}
 
@@ -289,7 +293,7 @@ export const ResizableMediaNodeView = ({
               onTouchEnd={stopHorizontalResize}
             />
 
-            <section className="media-control-buttons opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1 p-1">
+            <span className="media-control-buttons opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1 p-1">
               {resizableMediaActions.map((btn, index) => {
                 return (
                   <ToolbarButton
@@ -306,10 +310,26 @@ export const ResizableMediaNodeView = ({
                   />
                 );
               })}
-            </section>
+            </span>
           </>
         )}
+
+        {/* TODO: For figure caption later */}
+        {/* {mediaType === 'img' || mediaType === 'secure-img' && (
+          <figcaption
+            contentEditable
+            className="text-center italic mt-2"
+            onInput={(e) => {
+              const caption = (e.target as HTMLElement).innerText;
+              updateAttributes({ caption, alt: caption });
+            }}
+            defaultValue={node.attrs.caption || node.attrs.alt || 'Add a caption'}
+          >
+          </figcaption>
+        )} */}
       </div>
+
+
     </NodeViewWrapper>
   );
 };

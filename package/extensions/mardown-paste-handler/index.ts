@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Editor, Extension } from '@tiptap/core';
+import { Editor, Extension, InputRule } from '@tiptap/core';
 import MarkdownIt from 'markdown-it';
 import { Plugin } from 'prosemirror-state';
 import DOMPurify from 'dompurify';
@@ -108,6 +108,22 @@ turndownService.addRule('iframe', {
   },
 });
 
+// Custom rule for superscript
+turndownService.addRule('superscript', {
+  filter: 'sup',
+  replacement: function (content) {
+    return '<sup>' + content + '</sup>';
+  },
+});
+
+// Custom rule for subscript
+turndownService.addRule('subscript', {
+  filter: 'sub',
+  replacement: function (content) {
+    return '<sub>' + content + '</sub>';
+  },
+});
+
 // Custom rules for image
 turndownService.addRule('img', {
   filter: ['img'],
@@ -207,6 +223,43 @@ const MarkdownPasteHandler = Extension.create({
         },
     };
   },
+
+  addInputRules() {
+    return [
+      new InputRule({
+        find: /<sup>(.*?)<\/sup>/,
+        handler: ({ state, range, match }) => {
+          const { tr } = state;
+          const start = range.from - 1;
+          const end = range.to;
+          const content = match[1];
+          tr.replaceWith(
+            start,
+            end,
+            this.editor.schema.text(content, [
+              this.editor.schema.marks.superscript.create(),
+            ]),
+          );
+        },
+      }),
+      new InputRule({
+        find: /<sub>(.*?)<\/sub>/,
+        handler: ({ state, range, match }) => {
+          const { tr } = state;
+          const start = range.from - 1;
+          const end = range.to;
+          const content = match[1];
+          tr.replaceWith(
+            start,
+            end,
+            this.editor.schema.text(content, [
+              this.editor.schema.marks.subscript.create(),
+            ]),
+          );
+        },
+      }),
+    ];
+  },
 });
 
 function isMarkdown(content: string): boolean {
@@ -220,7 +273,9 @@ function isMarkdown(content: string): boolean {
     content.match(/!\[.*\]\(.*\)/) !== null || // Images
     content.match(/\*\*(.*?)\*\*/g) !== null || // Bold
     content.match(/\*(.*?)\*/g) !== null || // Italic
-    content.match(/`{1,3}[^`]+`{1,3}/g) !== null
+    content.match(/`{1,3}[^`]+`{1,3}/g) !== null ||
+    content.match(/<sup>(.*?)<\/sup>/g) !== null ||
+    content.match(/<sub>(.*?)<\/sub>/g) !== null
   );
 }
 
