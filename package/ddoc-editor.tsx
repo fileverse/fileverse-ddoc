@@ -113,23 +113,29 @@ const DdocEditor = forwardRef(
     );
 
     const handleAddTag = (tag: TagType) => {
-      const newTags = tag.name.split(',').map(name => {
-        const trimmedName = name.trim();
-        const existingTag = tags?.find(t => t.name.toLowerCase() === trimmedName.toLowerCase());
-        return existingTag || { name: trimmedName, color: tag.color };
-      });
-
       setSelectedTags?.(prevTags => {
+        if (prevTags.length >= 6) {
+          // If we already have 6 tags, don't add any more
+          return prevTags;
+        }
+
+        const newTags = tag.name.split(',').map(name => {
+          const trimmedName = name.trim();
+          const existingTag = tags?.find(t => t.name.toLowerCase() === trimmedName.toLowerCase());
+          return existingTag || { name: trimmedName, color: tag.color };
+        });
+
         const uniqueTags = [...prevTags];
         newTags.forEach(newTag => {
           if (!uniqueTags.some(t => t.name.toLowerCase() === newTag.name.toLowerCase())) {
             uniqueTags.push(newTag);
           }
         });
-        return uniqueTags;
+
+        // Ensure we don't exceed 6 tags
+        return uniqueTags.slice(0, 6);
       });
     };
-
     const handleRemoveTag = (tagName: string) => {
       setSelectedTags?.(prevTags => prevTags.filter(tag => tag.name !== tagName));
     };
@@ -305,12 +311,12 @@ const DdocEditor = forwardRef(
                       </motion.div>
                     )}
                   </AnimatePresence>
-                  <TagInput
+                  {selectedTags && selectedTags?.length < 6 ? <TagInput
                     tags={tags || []}
                     selectedTags={selectedTags as TagType[]}
                     onAddTag={handleAddTag}
                     isPreviewMode={isPreviewMode}
-                  />
+                  /> : null}
                 </div>
               )}
               <EditorContent
