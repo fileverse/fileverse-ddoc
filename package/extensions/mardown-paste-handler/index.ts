@@ -258,6 +258,38 @@ const MarkdownPasteHandler = Extension.create({
           );
         },
       }),
+      new InputRule({
+        find: /\^(.*?)\^/,
+        handler: ({ state, range, match }) => {
+          const { tr } = state;
+          const start = range.from;
+          const end = range.to;
+          const content = match[1];
+          tr.replaceWith(
+            start,
+            end,
+            this.editor.schema.text(content, [
+              this.editor.schema.marks.superscript.create(),
+            ]),
+          );
+        },
+      }),
+      new InputRule({
+        find: /~(.*?)~/,
+        handler: ({ state, range, match }) => {
+          const { tr } = state;
+          const start = range.from;
+          const end = range.to;
+          const content = match[1];
+          tr.replaceWith(
+            start,
+            end,
+            this.editor.schema.text(content, [
+              this.editor.schema.marks.subscript.create(),
+            ]),
+          );
+        },
+      }),
     ];
   },
 });
@@ -275,13 +307,20 @@ function isMarkdown(content: string): boolean {
     content.match(/\*(.*?)\*/g) !== null || // Italic
     content.match(/`{1,3}[^`]+`{1,3}/g) !== null ||
     content.match(/<sup>(.*?)<\/sup>/g) !== null ||
-    content.match(/<sub>(.*?)<\/sub>/g) !== null
+    content.match(/<sub>(.*?)<\/sub>/g) !== null ||
+    content.match(/\^(.*?)\^/g) !== null || // New superscript syntax
+    content.match(/~(.*?)~/g) !== null // New subscript syntax
   );
 }
 
 function handleMarkdownContent(view: any, content: string) {
   // Convert Markdown to HTML
   let convertedHtml = markdownIt.render(content);
+
+  // Decode HTML entities
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = convertedHtml;
+  convertedHtml = textarea.value;
 
   // Parse the HTML string into DOM nodes
   const parser = new DOMParser();
@@ -299,9 +338,28 @@ function handleMarkdownContent(view: any, content: string) {
   // Get the modified HTML content
   convertedHtml = doc.body.innerHTML;
 
+  const subsupRegex = /<(sup|sub)>(.*?)<\/\1>/g;
+  const superscriptRegex = /\^(.*?)\^/g;
+  const subscriptRegex = /~(.*?)~/g;
+
+  // Process superscript and subscript tags in the HTML string
+  convertedHtml = convertedHtml.replace(subsupRegex, content => {
+    return `${content}`;
+  });
+
+  // Process markdown-style superscript and subscript
+  convertedHtml = convertedHtml.replace(
+    superscriptRegex,
+    '<sup data-type="sup">$1</sup>',
+  );
+
+  convertedHtml = convertedHtml.replace(
+    subscriptRegex,
+    '<sub data-type="sub">$1</sub>',
+  );
+
   // Sanitize the converted HTML
   convertedHtml = DOMPurify.sanitize(convertedHtml);
-
   // Parse the sanitized HTML string into DOM nodes
   const domContent = parser.parseFromString(convertedHtml, 'text/html').body;
 
@@ -310,11 +368,32 @@ function handleMarkdownContent(view: any, content: string) {
     view.state.schema,
   ).parse(domContent);
 
+  // Apply superscript and subscript marks
+  const transaction = view.state.tr;
+  proseMirrorNodes.descendants((node, pos) => {
+    if (node.isText) {
+      const nodeDOM = domContent.childNodes[pos];
+      if (nodeDOM && nodeDOM.nodeType === Node.ELEMENT_NODE) {
+        const element = nodeDOM as HTMLElement;
+        if (element.dataset.type === 'sup') {
+          transaction.addMark(
+            pos,
+            pos + node.nodeSize,
+            view.state.schema.marks.superscript.create(),
+          );
+        } else if (element.dataset.type === 'sub') {
+          transaction.addMark(
+            pos,
+            pos + node.nodeSize,
+            view.state.schema.marks.subscript.create(),
+          );
+        }
+      }
+    }
+  });
+
   // Insert the sanitized content
-  const transaction = view.state.tr.replaceSelectionWith(
-    proseMirrorNodes,
-    false,
-  );
+  transaction.replaceSelectionWith(proseMirrorNodes, false);
   view.dispatch(transaction);
 }
 

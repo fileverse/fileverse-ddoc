@@ -4,11 +4,9 @@
 
 import { EditorState, Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet, EditorView } from '@tiptap/pm/view';
-
-import imagePlaceholder from '../assets/spinner_GIF.gif';
 import { IMG_UPLOAD_SETTINGS } from '../components/editor-utils';
-import { arrayBufferToBase64, generateRSAKeyPair } from './security';
-import { fromByteArray } from 'base64-js';
+import { arrayBufferToBase64, decryptImage, fetchImage, generateRSAKeyPair } from './security';
+import { fromByteArray, toByteArray } from 'base64-js';
 
 const uploadKey = new PluginKey('upload-image');
 
@@ -25,14 +23,12 @@ const UploadImagesPlugin = () =>
         // @ts-ignore
         const action = tr.getMeta(this);
         if (action && action.add) {
-          const { id, pos, src } = action.add;
+          const { id, pos, content } = action.add;
 
           const placeholder = document.createElement('div');
           placeholder.setAttribute('class', 'img-placeholder');
-          const image = document.createElement('img');
-          image.setAttribute('class', 'bg-white z-50 object-contain');
-          image.src = src;
-          placeholder.appendChild(image);
+          placeholder.textContent = content;
+
           const deco = Decoration.widget(pos + 1, placeholder, {
             id,
           });
@@ -88,7 +84,7 @@ export async function startImageUpload(
       add: {
         id,
         pos: pos - 1,
-        src: imagePlaceholder,
+        content: 'Uploading image...',
       },
     });
     view.dispatch(tr);
@@ -105,6 +101,8 @@ export async function startImageUpload(
         publicKey,
       );
 
+      const imgSrc = await handleDecryptImage(url, key, fromByteArray(privateKey), iv);
+
       const node = schema.nodes.resizableMedia.create({
         encryptedKey: key,
         url,
@@ -113,6 +111,7 @@ export async function startImageUpload(
         'media-type': 'secure-img',
         width: '100%',
         height: 'auto',
+        src: imgSrc,
       });
 
       const transaction = view.state.tr
@@ -186,5 +185,34 @@ export const uploadSecureImage = async (
     return await response.json();
   } catch (error) {
     console.error('Error during image upload: ', error);
+  }
+};
+
+export const handleDecryptImage = async (
+  url: string,
+  encryptedKey: string,
+  privateKey: string,
+  iv: string,
+) => {
+  try {
+    const imageBuffer = await fetchImage(url);
+
+    if (!imageBuffer) {
+      return;
+    }
+
+    const result = await decryptImage({
+      encryptedKey,
+      privateKey: toByteArray(privateKey),
+      iv,
+      imageBuffer,
+    });
+    const src = `data:image/jpeg;base64,${arrayBufferToBase64(
+      result as ArrayBuffer,
+    )}`;
+
+    return src;
+  } catch (error) {
+    console.error('Error decrypting image:', error);
   }
 };
