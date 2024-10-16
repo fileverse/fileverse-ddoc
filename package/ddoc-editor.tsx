@@ -355,6 +355,7 @@ const DdocEditor = forwardRef(
               isKeyboardVisible={isKeyboardVisible}
               isNavbarVisible={isNavbarVisible}
               setIsNavbarVisible={setIsNavbarVisible}
+              secureImageUploadUrl={secureImageUploadUrl}
             />
           </div>
         )}

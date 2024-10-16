@@ -19,17 +19,20 @@ const MobileToolbar = ({
   isKeyboardVisible,
   isNavbarVisible,
   setIsNavbarVisible,
+  secureImageUploadUrl,
 }: {
   editor: Editor;
   onError?: (errorString: string) => void;
   isKeyboardVisible: boolean;
   isNavbarVisible: boolean;
   setIsNavbarVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  secureImageUploadUrl?: string;
 }) => {
   const { toolVisibility, setToolVisibility, bottomToolbar } = useEditorToolbar(
     {
       editor: editor,
       onError,
+      secureImageUploadUrl
     },
   );
   const isMobile = useMediaQuery('(max-width: 1023px)');

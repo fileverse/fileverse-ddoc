@@ -281,8 +281,6 @@ export const useEditorToolbar = ({
       title: 'Upload Image',
       onClick: () => {
         editor?.chain().focus().deleteRange(editor.state.selection).run();
-        // upload image
-        console.log(editor);
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
@@ -339,7 +337,7 @@ export const useEditorToolbar = ({
     {
       icon: 'Markdown',
       title: 'Markdown',
-      onClick: () => {},
+      onClick: () => { },
       isActive: false,
     },
   ];
@@ -630,9 +628,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${
-            editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="List" />
         </button>
@@ -644,9 +641,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${
-            editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListOrdered" />
         </button>
@@ -658,9 +654,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${
-            editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListChecks" />
         </button>
