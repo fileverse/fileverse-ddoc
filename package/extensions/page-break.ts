@@ -119,9 +119,7 @@ export const PageBreak = Node.create<PageBreakRuleOptions>({
           handleClick: (view, pos, event) => {
             const target = event.target as HTMLElement;
 
-            // Check if the clicked element is the image to remove the page break
             if (target.classList.contains('remove-page-break-icon')) {
-              console.log('Remove page break image clicked');
               const { state, dispatch } = view;
 
               const node = state.doc.nodeAt(pos);
@@ -131,23 +129,13 @@ export const PageBreak = Node.create<PageBreakRuleOptions>({
                 const tr = state.tr;
                 const nodeSize = node.nodeSize;
 
-                // Log nodeSize and pos for debugging
-                console.log(
-                  'Deleting page break at pos:',
-                  pos,
-                  'with size:',
-                  nodeSize,
-                );
-
                 tr.delete(pos, pos + nodeSize);
 
                 dispatch(tr.scrollIntoView());
 
                 return true;
               }
-            } else {
-              console.log('Click was not on the remove page break icon');
-            }
+            } 
             return false;
           },
         },
