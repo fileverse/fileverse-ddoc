@@ -230,7 +230,7 @@ const MarkdownPasteHandler = Extension.create({
         find: /<sup>(.*?)<\/sup>/,
         handler: ({ state, range, match }) => {
           const { tr } = state;
-          const start = range.from - 1;
+          const start = range.from;
           const end = range.to;
           const content = match[1];
           tr.replaceWith(
@@ -246,7 +246,7 @@ const MarkdownPasteHandler = Extension.create({
         find: /<sub>(.*?)<\/sub>/,
         handler: ({ state, range, match }) => {
           const { tr } = state;
-          const start = range.from - 1;
+          const start = range.from;
           const end = range.to;
           const content = match[1];
           tr.replaceWith(
