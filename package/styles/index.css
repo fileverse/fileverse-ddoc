@@ -79,3 +79,31 @@ li > ol > li > ol > li:before {
 .node-view-content > div {
   word-break: break-word;
 }
+
+div[data-page-break="true"] {
+  opacity: 0.3;
+  background-color: #e9eaeb; 
+  height: 30px;
+  margin: 4rem 0;
+}
+
+div[data-page-break="false"] {
+  border: none; 
+}
+
+.remove-page-break {
+  cursor: pointer;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.remove-page-break-icon {
+  display: none;
+}
+
+div[data-type="page-break"]:hover .remove-page-break-icon {
+  display: inline-block;
+}

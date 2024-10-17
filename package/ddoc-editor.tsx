@@ -244,7 +244,7 @@ const DdocEditor = forwardRef(
         )}
         <div
           className={cn(
-            'p-4 md:px-[80px] md:py-[78px] bg-white w-full md:w-[850px] max-w-[850px] mx-auto shadow-elevation-2 rounded',
+            'bg-white w-full md:w-[850px] max-w-[850px] mx-auto rounded',
             { 'mt-0 md:!mt-16': isPreviewMode },
             { 'md:!mt-16': !isPreviewMode },
             { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
@@ -267,7 +267,7 @@ const DdocEditor = forwardRef(
             )}
             <EditingProvider isPreviewMode={isPreviewMode}>
               {tags && tags.length > 0 && (
-                <div ref={tagsContainerRef} className="flex flex-wrap items-center gap-1 mb-4 mt-4 lg:!mt-0">
+                <div ref={tagsContainerRef} className="flex flex-wrap md:pl-16 pl-4 items-center gap-1 mb-4 mt-4 lg:!mt-0">
                   {visibleTags.map((tag, index) => (
                     <Tag
                       key={index}

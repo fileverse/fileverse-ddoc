@@ -291,7 +291,7 @@ export const DBlockNodeView: React.FC<NodeViewProps & { secureImageUploadUrl?: s
     <NodeViewWrapper
       as="div"
       className={cn(
-        'flex gap-2 group w-full relative justify-center items-start',
+        'flex px-4 md:px-[80px] gap-2 group w-full relative justify-center items-start',
         isPreviewMode && 'pointer-events-none',
         isTable && 'pointer-events-auto',
       )}
