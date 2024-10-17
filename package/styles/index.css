@@ -84,7 +84,7 @@ div[data-page-break="true"] {
   opacity: 0.3;
   background-color: #e9eaeb; 
   height: 30px;
-  margin: 4rem 0;
+  margin-bottom: 4rem;
 }
 
 div[data-page-break="false"] {

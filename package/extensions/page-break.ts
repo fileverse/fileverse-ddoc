@@ -78,7 +78,7 @@ export const PageBreak = Node.create<PageBreakRuleOptions>({
         ({ chain, state, dispatch }) => {
           const pos = state.selection.from;
           return chain()
-            .insertContentAt(pos - 2, { type: this.name })
+            .insertContentAt(pos, { type: this.name })
             .command(({ tr }) => {
               const node = tr.doc.nodeAt(tr.selection.from);
               const newPos = tr.selection.from + (node ? node.nodeSize : 0);
