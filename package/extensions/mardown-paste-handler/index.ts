@@ -84,7 +84,7 @@ turndownService.addRule('listItem', {
   replacement: function (content, node, options) {
     content = content
       .replace(/^\n+/, '') // remove leading newlines
-      .replace(/\n+$/, '\n') // replace trailing newlines with just a single one
+      .replace(/\n+$/, '') // remove trailing newlines
       .replace(/\n/gm, '\n    '); // indent
     let prefix = options.bulletListMarker + ' ';
     const parent: any = node.parentNode;
@@ -288,6 +288,35 @@ const MarkdownPasteHandler = Extension.create({
               this.editor.schema.marks.subscript.create(),
             ]),
           );
+        },
+      }),
+      new InputRule({
+        find: /(?:^|\s)\[([^\]]+)\]\((\S+)\)/,
+        handler: ({ state, range, match }) => {
+          const { tr } = state;
+          const [fullMatch, linkText, url] = match;
+          const start = range.from;
+          const end = range.to;
+
+          if (fullMatch) {
+            const nodeBeforeLink = state.doc.resolve(start).nodeBefore;
+            const needsSpace =
+              nodeBeforeLink &&
+              nodeBeforeLink.isText &&
+              nodeBeforeLink.text?.endsWith(' ');
+
+            if (needsSpace) {
+              tr.insertText(' ', start);
+            }
+
+            tr.replaceWith(
+              needsSpace ? start + 1 : start,
+              needsSpace ? end + 1 : end,
+              this.editor.schema.text(linkText, [
+                this.editor.schema.marks.link.create({ href: url }),
+              ]),
+            );
+          }
         },
       }),
     ];
