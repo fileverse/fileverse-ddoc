@@ -14,6 +14,7 @@ import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from './components/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
 import customTextInputRules from './extensions/customTextInputRules';
+import { PageBreak } from './extensions/page-break';
 
 const usercolors = [
   '#30bced',
@@ -48,6 +49,7 @@ export const useDdocEditor = ({
     ...(defaultExtensions((error: string) => onError?.(error), secureImageUploadUrl) as AnyExtension[]),
     SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
     customTextInputRules,
+    PageBreak,
   ]);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);

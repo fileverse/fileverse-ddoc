@@ -162,6 +162,16 @@ const getSuggestionItems = ({
       },
     },
     {
+      title: 'Page breaker',
+      description: 'Insert page break that will split your document into pages.',
+      searchTerms: ['pagebreak', 'break', 'line', 'page'],
+      icon: <LucideIcon name="PageBreak" src={'md'} />,
+      image: '',
+      command: ({ editor, range }: CommandProps) => {
+        editor.chain().focus().deleteRange(range).setPageBreak().run();
+      },
+    },
+    {
       title: 'Divider',
       description: 'Visually divide content.',
       searchTerms: ['hr', 'divider', 'break', 'line', 'delimiter'],
@@ -430,7 +440,7 @@ const CommandList = ({
             <div className="flex h-10 w-10 items-center justify-center rounded-md border border-neutral-200 bg-white">
               {item.icon}
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <p className="font-medium">{item.title}</p>
               <p className="text-xs text-neutral-500">{item.description}</p>
             </div>
