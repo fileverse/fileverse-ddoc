@@ -40,7 +40,7 @@ export const PageBreak = Node.create<PageBreakRuleOptions>({
     return [
       {
         tag: 'div',
-        getAttrs: (node) =>
+        getAttrs: node =>
           (node as HTMLElement).style.pageBreakAfter === 'always' &&
           (node as HTMLElement).dataset.pageBreak === 'true' &&
           null,
@@ -56,7 +56,11 @@ export const PageBreak = Node.create<PageBreakRuleOptions>({
       }),
       [
         'button',
-        { class: 'remove-page-break', 'data-remove-break': 'true' },
+        {
+          class: 'remove-page-break cursor-default',
+          'data-remove-break': 'true',
+          draggable: 'false',
+        },
         [
           'img',
           {
@@ -124,7 +128,6 @@ export const PageBreak = Node.create<PageBreakRuleOptions>({
 
               const node = state.doc.nodeAt(pos);
 
-              console.log(node?.type.name === 'pageBreak', 'name of node');
               if (node?.type.name === 'pageBreak') {
                 const tr = state.tr;
                 const nodeSize = node.nodeSize;
@@ -135,7 +138,7 @@ export const PageBreak = Node.create<PageBreakRuleOptions>({
 
                 return true;
               }
-            } 
+            }
             return false;
           },
         },
