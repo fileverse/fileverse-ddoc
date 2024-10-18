@@ -231,6 +231,7 @@ export const DBlock = Node.create<DBlockOptions>({
       Backspace: ({ editor }) => {
         const {
           selection: { $head, from },
+          doc,
         } = editor.state;
 
         const parent = $head.node($head.depth - 1);
@@ -246,6 +247,21 @@ export const DBlock = Node.create<DBlockOptions>({
         );
 
         if (parent?.type.name !== 'dBlock') {
+          let isPrevNodePageBreak = false;
+          let currentNodePos = -1;
+
+          doc.descendants((node, pos) => {
+            if (currentNodePos !== -1) return false;
+            if (node.type.name === 'pageBreak') {
+              isPrevNodePageBreak = true;
+              currentNodePos = pos;
+            }
+          });
+
+          if (isPrevNodePageBreak) {
+            return true;
+          }
+
           const isFirstListItem = nodePaths.some(
             path => path.includes('listItem_0') || path.includes('taskItem_0'),
           );
