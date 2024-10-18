@@ -79,17 +79,10 @@ export const PageBreak = Node.create<PageBreakRuleOptions>({
     return {
       setPageBreak:
         () =>
-        ({ chain, state, dispatch }) => {
+        ({ chain, state }) => {
           const pos = state.selection.from;
           return chain()
             .insertContentAt(pos, { type: this.name })
-            .command(({ tr }) => {
-              const node = tr.doc.nodeAt(tr.selection.from);
-              const newPos = tr.selection.from + (node ? node.nodeSize : 0);
-              tr.setSelection(TextSelection.create(tr.doc, newPos));
-              dispatch && dispatch(tr);
-              return true;
-            })
             .focus()
             .run();
         },
