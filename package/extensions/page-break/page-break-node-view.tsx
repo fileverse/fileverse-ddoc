@@ -15,16 +15,16 @@ export const PageBreakNodeView: React.FC<NodeViewProps> = ({
 
   return (
     <NodeViewWrapper
-      as="span"
-      className={cn('flex w-full h-full justify-center items-center')}
+      as="div"
+      className={cn('flex opacity-0 hover:opacity-100 transition-opacity duration-200 w-full h-full justify-center items-center')}
     >
-      <Tooltip sideOffset={5} position="bottom" text="Remove page breaker">
-        <LucideIcon
-          name="PageBreakRemove"
-          onClick={handleDeleteNode}
-          className="cursor-pointer"
-        />
-      </Tooltip>
+        <Tooltip sideOffset={5} position="bottom" text="Remove page breaker">
+          <LucideIcon
+            name="PageBreakRemove"
+            onClick={handleDeleteNode}
+            className="cursor-pointer"
+          />
+        </Tooltip>
     </NodeViewWrapper>
   );
 };
