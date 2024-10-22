@@ -1,7 +1,7 @@
 import { mergeAttributes, Node } from '@tiptap/core';
-import { TextSelection } from 'prosemirror-state';
 import { Plugin, PluginKey } from 'prosemirror-state';
-import pageBreakRemove from '../assets/pageBreakRemove.svg';
+import { ReactNodeViewRenderer } from '@tiptap/react';
+import { PageBreakNodeView } from './page-break-node-view';
 
 export interface PageBreakRuleOptions {
   HTMLAttributes: Record<string, any>;
@@ -48,30 +48,14 @@ export const PageBreak = Node.create<PageBreakRuleOptions>({
     ];
   },
 
+ 
   renderHTML({ HTMLAttributes }) {
     return [
       'div',
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
         'data-type': 'page-break',
       }),
-      [
-        'button',
-        {
-          class: 'remove-page-break cursor-default',
-          'data-remove-break': 'true',
-          draggable: 'false',
-        },
-        [
-          'img',
-          {
-            src: pageBreakRemove,
-            alt: 'Remove Page Break',
-            class: 'remove-page-break-icon',
-            draggable: 'false',
-            title: 'Remove Page Break',
-          },
-        ],
-      ],
+      0,
     ];
   },
 
@@ -137,5 +121,9 @@ export const PageBreak = Node.create<PageBreakRuleOptions>({
         },
       }),
     ];
+  },
+
+  addNodeView() {
+    return ReactNodeViewRenderer(PageBreakNodeView);
   },
 });

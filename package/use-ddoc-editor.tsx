@@ -14,7 +14,7 @@ import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from './components/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
 import customTextInputRules from './extensions/customTextInputRules';
-import { PageBreak } from './extensions/page-break';
+import { PageBreak } from './extensions/page-break/page-break';
 
 const usercolors = [
   '#30bced',
