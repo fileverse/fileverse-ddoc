@@ -124,6 +124,6 @@ export const PageBreak = Node.create<PageBreakRuleOptions>({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(PageBreakNodeView as any);
+    return ReactNodeViewRenderer(PageBreakNodeView);
   },
 });

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import React from 'react';
 import { NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 import cn from 'classnames';
