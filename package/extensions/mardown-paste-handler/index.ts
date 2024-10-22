@@ -33,7 +33,21 @@ turndownService.addRule('table', {
     // Process body and update maxColumnWidths
     const bodyRows = rows.slice(1).map(row => {
       return Array.from(row.cells).map((cell, index) => {
-        const cellContent = turndownService.turndown(cell.innerHTML).trim();
+        let cellContent = cell.innerHTML.trim();
+
+        // Handle lists
+        if (cell.querySelector('ul, ol')) {
+          const listType = cell.querySelector('ul') ? 'ul' : 'ol';
+          const listItems = Array.from(cell.querySelectorAll('li')).map(
+            li => li.textContent?.trim() || '',
+          );
+          cellContent = `<${listType}><li>${listItems.join(
+            '</li><li>',
+          )}</li></${listType}>`;
+        } else {
+          cellContent = turndownService.turndown(cellContent);
+        }
+
         maxColumnWidths[index] = Math.max(
           maxColumnWidths[index],
           cellContent.length,
@@ -68,7 +82,6 @@ turndownService.addRule('table', {
     )}\n\n`;
   },
 });
-
 // Custom rule for inline code
 turndownService.addRule('inlineCode', {
   filter: function (node) {
