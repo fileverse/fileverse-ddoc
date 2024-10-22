@@ -22,7 +22,7 @@ export const PageBreakNodeView: React.FC<NodeViewProps> = ({
           <LucideIcon
             name="PageBreakRemove"
             onClick={handleDeleteNode}
-            className="cursor-pointer"
+            className="text-[#77818A] cursor-pointer"
           />
         </Tooltip>
     </NodeViewWrapper>
