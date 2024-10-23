@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { mergeAttributes, Node } from '@tiptap/core';
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { ReactNodeViewRenderer } from '@tiptap/react';
@@ -48,7 +49,6 @@ export const PageBreak = Node.create<PageBreakRuleOptions>({
     ];
   },
 
- 
   renderHTML({ HTMLAttributes }) {
     return [
       'div',
@@ -65,8 +65,22 @@ export const PageBreak = Node.create<PageBreakRuleOptions>({
         () =>
         ({ chain, state }) => {
           const pos = state.selection.from;
+          const { $head } = state.selection;
+          const currentNode = $head.node($head.depth);
+          const isCurrentNodeEmpty =
+            currentNode?.textContent === '' &&
+            currentNode?.type.name === 'paragraph';
+
           return chain()
-            .insertContentAt(pos, { type: this.name })
+            .insertContentAt(
+              {
+                from: pos - (isCurrentNodeEmpty ? 2 : 0),
+                to: pos,
+              },
+              {
+                type: this.name,
+              },
+            )
             .focus()
             .run();
         },
