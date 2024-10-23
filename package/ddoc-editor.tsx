@@ -322,7 +322,7 @@ const DdocEditor = forwardRef(
               <EditorContent
                 editor={editor}
                 id="editor"
-                className="w-full h-full py-4"
+                className="w-full h-auto py-4"
               />
             </EditingProvider>
           </div>
