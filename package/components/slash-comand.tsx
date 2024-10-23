@@ -161,16 +161,16 @@ const getSuggestionItems = ({
         editor.chain().focus().deleteRange(range).toggleOrderedList().run();
       },
     },
-    {
-      title: 'Page breaker',
-      description: 'Insert page break that will split your document into pages.',
-      searchTerms: ['pagebreak', 'break', 'line', 'page'],
-      icon: <LucideIcon name="PageBreak" src={'md'} />,
-      image: '',
-      command: ({ editor, range }: CommandProps) => {
-        editor.chain().focus().deleteRange(range).setPageBreak().run();
-      },
-    },
+    // {
+    //   title: 'Page breaker',
+    //   description: 'Insert page break that will split your document into pages.',
+    //   searchTerms: ['pagebreak', 'break', 'line', 'page'],
+    //   icon: <LucideIcon name="PageBreak" src={'md'} />,
+    //   image: '',
+    //   command: ({ editor, range }: CommandProps) => {
+    //     editor.chain().focus().deleteRange(range).setPageBreak().run();
+    //   },
+    // },
     {
       title: 'Divider',
       description: 'Visually divide content.',
