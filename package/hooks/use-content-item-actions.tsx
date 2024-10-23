@@ -1,3 +1,4 @@
+import { toast } from '@fileverse/ui'
 import { Node } from '@tiptap/pm/model'
 import { NodeSelection } from '@tiptap/pm/state'
 import { Editor } from '@tiptap/react'
@@ -45,7 +46,10 @@ const useContentItemActions = (
       .run()
 
     document.execCommand('copy')
-    alert('copied')
+    toast({
+      title: 'Copied to clipboard',
+      variant: 'success',
+    })
   }, [editor, currentNodePos])
 
   const deleteNode = useCallback(() => {

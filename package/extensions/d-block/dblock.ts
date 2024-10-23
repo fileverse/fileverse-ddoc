@@ -235,6 +235,7 @@ export const DBlock = Node.create<DBlockOptions>({
         } = editor.state;
 
         const parent = $head.node($head.depth - 1);
+        const grandParent = $head.node($head.depth - 2);
 
         const headString = $head.toString();
         const nodePaths = headString.split('/');
@@ -269,6 +270,17 @@ export const DBlock = Node.create<DBlockOptions>({
           const isAtBeginFirstListItem =
             isFirstListItem &&
             nodePaths.some(path => path.includes('paragraph_0:0'));
+
+          const isNestedList =
+            grandParent &&
+            ['bulletList', 'orderedList', 'taskList'].includes(
+              grandParent.type.name,
+            );
+
+          if (isAtBeginFirstListItem && isNestedList) {
+            // We're at the beginning of the first item in a nested list
+            return editor.chain().liftListItem(parent.type.name).focus().run();
+          }
 
           const isFirstDBlock = nodePaths.some(path =>
             path.includes('dBlock_0'),
