@@ -147,6 +147,14 @@ turndownService.addRule('img', {
   },
 });
 
+// Custom rules for strikethrough
+turndownService.addRule('strikethrough', {
+  filter: 's',
+  replacement: function (content) {
+    return '<s>' + content + '</s>';
+  },
+});
+
 // Define the command type
 declare module '@tiptap/core' {
   interface Commands {
