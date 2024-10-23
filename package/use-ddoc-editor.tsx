@@ -42,11 +42,15 @@ export const useDdocEditor = ({
   onError,
   setCharacterCount,
   setWordCount,
-  secureImageUploadUrl
+  secureImageUploadUrl,
+  isScrollToBottom,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
-    ...(defaultExtensions((error: string) => onError?.(error), secureImageUploadUrl) as AnyExtension[]),
+    ...(defaultExtensions(
+      (error: string) => onError?.(error),
+      secureImageUploadUrl,
+    ) as AnyExtension[]),
     SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
     customTextInputRules,
     PageBreak,
@@ -60,11 +64,11 @@ export const useDdocEditor = ({
     to: number,
   ) => {
     let _isHighlightedYellow = false;
-    state.doc.nodesBetween(from, to, (node) => {
+    state.doc.nodesBetween(from, to, node => {
       if (
         node.marks &&
         node.marks.some(
-          (mark) =>
+          mark =>
             mark.type.name === 'highlight' && mark.attrs.color === 'yellow',
         )
       ) {
@@ -96,7 +100,7 @@ export const useDdocEditor = ({
         // Find the start and end of the highlighted mark
         state.doc.nodesBetween(from, to, (node, pos) => {
           if (node.marks && node.marks.length) {
-            node.marks.forEach((mark) => {
+            node.marks.forEach(mark => {
               if (mark.type.name === 'highlight') {
                 from = pos;
                 to = pos + node.nodeSize;
@@ -160,7 +164,7 @@ export const useDdocEditor = ({
     [extensions],
   );
 
-  const collaborationCleanupRef = useRef<() => void>(() => { });
+  const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
@@ -174,7 +178,7 @@ export const useDdocEditor = ({
     });
 
     setExtensions([
-      ...extensions.filter((extension) => extension.name !== 'history'),
+      ...extensions.filter(extension => extension.name !== 'history'),
       Collaboration.configure({
         document: ydoc,
       }),
@@ -218,6 +222,12 @@ export const useDdocEditor = ({
     }
 
     setTimeout(() => {
+      if (ref.current && isScrollToBottom) {
+        ref.current.scrollTo({
+          top: ref.current.scrollHeight,
+          behavior: 'smooth',
+        });
+      }
       initialContentSetRef.current = false;
       if (editor && initialContent === undefined) {
         setIsContentLoading(false);
