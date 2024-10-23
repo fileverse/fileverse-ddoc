@@ -272,12 +272,12 @@ const MarkdownPasteHandler = Extension.create({
         },
       }),
       new InputRule({
-        find: /\^(.*?)\^/,
+        find: /(\S*)\^((?:[^\^]|\\\^)+)\^/,
         handler: ({ state, range, match }) => {
           const { tr } = state;
-          const start = range.from;
+          const start = range.from + match[1].length;
           const end = range.to;
-          const content = match[1];
+          const content = match[2].replace(/\\\^/g, '^');
           tr.replaceWith(
             start,
             end,
@@ -288,12 +288,12 @@ const MarkdownPasteHandler = Extension.create({
         },
       }),
       new InputRule({
-        find: /~(.*?)~/,
+        find: /(\S*)~((?:[^~]|\\~)+)~/,
         handler: ({ state, range, match }) => {
           const { tr } = state;
-          const start = range.from;
+          const start = range.from + match[1].length;
           const end = range.to;
-          const content = match[1];
+          const content = match[2].replace(/\\~/g, '~');
           tr.replaceWith(
             start,
             end,
