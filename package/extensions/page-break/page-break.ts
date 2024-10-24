@@ -87,21 +87,8 @@ export const PageBreak = Node.create<PageBreakRuleOptions>({
 
       unsetPageBreak:
         () =>
-        ({ chain, dispatch }) => {
-          return chain()
-            .deleteSelection()
-            .command(({ tr }) => {
-              if (dispatch) {
-                const { selection } = tr;
-                const { $from } = selection;
-
-                tr.delete($from.pos - 1, $from.pos);
-                dispatch(tr);
-              }
-              return true;
-            })
-            .deleteCurrentNode()
-            .run();
+        ({ chain }) => {
+          return chain().deleteSelection().deleteCurrentNode().run();
         },
     };
   },
