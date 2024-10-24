@@ -51,7 +51,7 @@ const DdocEditor = forwardRef(
       tags,
       selectedTags,
       setSelectedTags,
-      isScrollToBottom,
+      scrollPosition,
     }: DdocProps,
     ref,
   ) => {
@@ -104,7 +104,7 @@ const DdocEditor = forwardRef(
       setCharacterCount,
       setWordCount,
       secureImageUploadUrl,
-      isScrollToBottom,
+      scrollPosition,
     });
 
     useImperativeHandle(

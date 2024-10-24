@@ -42,7 +42,7 @@ export interface DdocProps {
   setWordCount?: React.Dispatch<SetStateAction<number>>;
   tags?: Array<{ name: string; color: string }>;
   className?: string;
-  isScrollToBottom?: boolean;
+  scrollPosition?: number;
 }
 
 export interface IEditorSelectionData {

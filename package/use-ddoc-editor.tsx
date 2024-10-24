@@ -43,7 +43,7 @@ export const useDdocEditor = ({
   setCharacterCount,
   setWordCount,
   secureImageUploadUrl,
-  isScrollToBottom,
+  scrollPosition,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
@@ -222,9 +222,11 @@ export const useDdocEditor = ({
     }
 
     setTimeout(() => {
-      if (ref.current && isScrollToBottom) {
-        ref.current.scrollTo({
-          top: ref.current.scrollHeight,
+      if (ref.current && !!scrollPosition && editor) {
+        const coords = editor.view.coordsAtPos(scrollPosition);
+        const editorContainer = ref.current;
+        editorContainer.scrollTo({
+          top: editorContainer.scrollTop + coords.top - 500,
           behavior: 'smooth',
         });
       }
