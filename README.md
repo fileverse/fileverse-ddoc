@@ -49,6 +49,7 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `onError` (optional)                           | `(errorString: string) => void`                | Function to call on error                                                                              |
 | `setCharacterCount` (optional)                 | `React.Dispatch<SetStateAction<number>>`       | Optional. React Set State function to update Character Count                                           |
 | `setWordCount` (optional)                      | `React.Dispatch<SetStateAction<number>>`       | Optional. React Set State function to update Word Count                                                |
+| `scrollPosition`(optional                      | `number`                                       | User cursor position to scroll to on intitalising the content of the editor                            |
 
 ## Data Interface
 
