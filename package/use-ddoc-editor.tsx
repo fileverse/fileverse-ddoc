@@ -42,11 +42,15 @@ export const useDdocEditor = ({
   onError,
   setCharacterCount,
   setWordCount,
-  secureImageUploadUrl
+  secureImageUploadUrl,
+  scrollPosition,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
-    ...(defaultExtensions((error: string) => onError?.(error), secureImageUploadUrl) as AnyExtension[]),
+    ...(defaultExtensions(
+      (error: string) => onError?.(error),
+      secureImageUploadUrl,
+    ) as AnyExtension[]),
     SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
     customTextInputRules,
     PageBreak,
@@ -160,7 +164,7 @@ export const useDdocEditor = ({
     [extensions],
   );
 
-  const collaborationCleanupRef = useRef<() => void>(() => { });
+  const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
@@ -218,6 +222,14 @@ export const useDdocEditor = ({
     }
 
     setTimeout(() => {
+      if (ref.current && !!scrollPosition && editor) {
+        const coords = editor.view.coordsAtPos(scrollPosition);
+        const editorContainer = ref.current;
+        editorContainer.scrollTo({
+          top: editorContainer.scrollTop + coords.top - 500,
+          behavior: 'smooth',
+        });
+      }
       initialContentSetRef.current = false;
       if (editor && initialContent === undefined) {
         setIsContentLoading(false);

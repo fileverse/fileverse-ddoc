@@ -51,6 +51,7 @@ const DdocEditor = forwardRef(
       tags,
       selectedTags,
       setSelectedTags,
+      scrollPosition,
     }: DdocProps,
     ref,
   ) => {
@@ -68,7 +69,9 @@ const DdocEditor = forwardRef(
     const tagsContainerRef = useRef(null);
 
     const visibleTags = selectedTags?.slice(0, 4) || [];
-    const hiddenTagsCount = selectedTags ? Math.max(0, selectedTags.length - 4) : 0;
+    const hiddenTagsCount = selectedTags
+      ? Math.max(0, selectedTags.length - 4)
+      : 0;
 
     useOnClickOutside(tagsContainerRef, () => {
       setIsHiddenTagsVisible(false);
@@ -100,7 +103,8 @@ const DdocEditor = forwardRef(
       onError,
       setCharacterCount,
       setWordCount,
-      secureImageUploadUrl
+      secureImageUploadUrl,
+      scrollPosition,
     });
 
     useImperativeHandle(
@@ -113,21 +117,27 @@ const DdocEditor = forwardRef(
     );
 
     const handleAddTag = (tag: TagType) => {
-      setSelectedTags?.(prevTags => {
+      setSelectedTags?.((prevTags) => {
         if (prevTags.length >= 6) {
           // If we already have 6 tags, don't add any more
           return prevTags;
         }
 
-        const newTags = tag.name.split(',').map(name => {
+        const newTags = tag.name.split(',').map((name) => {
           const trimmedName = name.trim();
-          const existingTag = tags?.find(t => t.name.toLowerCase() === trimmedName.toLowerCase());
+          const existingTag = tags?.find(
+            (t) => t.name.toLowerCase() === trimmedName.toLowerCase(),
+          );
           return existingTag || { name: trimmedName, color: tag.color };
         });
 
         const uniqueTags = [...prevTags];
-        newTags.forEach(newTag => {
-          if (!uniqueTags.some(t => t.name.toLowerCase() === newTag.name.toLowerCase())) {
+        newTags.forEach((newTag) => {
+          if (
+            !uniqueTags.some(
+              (t) => t.name.toLowerCase() === newTag.name.toLowerCase(),
+            )
+          ) {
             uniqueTags.push(newTag);
           }
         });
@@ -137,7 +147,9 @@ const DdocEditor = forwardRef(
       });
     };
     const handleRemoveTag = (tagName: string) => {
-      setSelectedTags?.(prevTags => prevTags.filter(tag => tag.name !== tagName));
+      setSelectedTags?.((prevTags) =>
+        prevTags.filter((tag) => tag.name !== tagName),
+      );
     };
 
     useEffect(() => {
@@ -214,11 +226,12 @@ const DdocEditor = forwardRef(
       <div data-cy="single-webpage" className="bg-[#f8f9fa] h-full w-full">
         <nav
           id="Navbar"
-          className={cn("h-14 bg-[#ffffff] py-2 px-4 flex gap-[40px] items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300",
+          className={cn(
+            'h-14 bg-[#ffffff] py-2 px-4 flex gap-[40px] items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300',
             {
               'translate-y-0': isNavbarVisible,
               'translate-y-[-100%]': !isNavbarVisible,
-            }
+            },
           )}
         >
           {renderNavbar?.({ editor: editor.getJSON() })}
@@ -228,7 +241,10 @@ const DdocEditor = forwardRef(
             id="toolbar"
             className={cn(
               'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 px-1 bg-[#ffffff] border-b color-border-default transition-transform duration-300 top-14',
-              { 'translate-y-0': isNavbarVisible, 'translate-y-[-105%]': !isNavbarVisible },
+              {
+                'translate-y-0': isNavbarVisible,
+                'translate-y-[-105%]': !isNavbarVisible,
+              },
             )}
           >
             <div className="justify-center items-center grow relative">
@@ -267,14 +283,17 @@ const DdocEditor = forwardRef(
             )}
             <EditingProvider isPreviewMode={isPreviewMode}>
               {tags && tags.length > 0 && (
-                <div ref={tagsContainerRef} className="flex flex-wrap md:pl-16 pl-4 items-center gap-1 mb-4 mt-4 lg:!mt-0">
+                <div
+                  ref={tagsContainerRef}
+                  className="flex flex-wrap md:pl-16 pl-4 items-center gap-1 mb-4 mt-4 lg:!mt-0"
+                >
                   {visibleTags.map((tag, index) => (
                     <Tag
                       key={index}
                       style={{ backgroundColor: tag?.color }}
                       onRemove={() => handleRemoveTag(tag?.name)}
                       isRemovable={!isPreviewMode}
-                      className='!h-6 rounded'
+                      className="!h-6 rounded"
                     >
                       {tag?.name}
                     </Tag>
@@ -303,7 +322,7 @@ const DdocEditor = forwardRef(
                             style={{ backgroundColor: tag?.color }}
                             onRemove={() => handleRemoveTag(tag?.name)}
                             isRemovable={!isPreviewMode}
-                            className='!h-6 rounded'
+                            className="!h-6 rounded"
                           >
                             {tag?.name}
                           </Tag>
@@ -311,12 +330,14 @@ const DdocEditor = forwardRef(
                       </motion.div>
                     )}
                   </AnimatePresence>
-                  {selectedTags && selectedTags?.length < 6 ? <TagInput
-                    tags={tags || []}
-                    selectedTags={selectedTags as TagType[]}
-                    onAddTag={handleAddTag}
-                    isPreviewMode={isPreviewMode}
-                  /> : null}
+                  {selectedTags && selectedTags?.length < 6 ? (
+                    <TagInput
+                      tags={tags || []}
+                      selectedTags={selectedTags as TagType[]}
+                      onAddTag={handleAddTag}
+                      isPreviewMode={isPreviewMode}
+                    />
+                  ) : null}
                 </div>
               )}
               <EditorContent
