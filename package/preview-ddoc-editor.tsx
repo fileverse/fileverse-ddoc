@@ -128,7 +128,7 @@ const PreviewDdocEditor = forwardRef(
             >
                 <EditingProvider isPreviewMode={isPreviewMode}>
                     {tags && tags.length > 0 && (
-                        <div ref={tagsContainerRef} className="flex flex-wrap items-center gap-1 mb-4 mt-4 lg:!mt-0">
+                        <div ref={tagsContainerRef} className="flex flex-wrap px-4 md:px-[80px] lg:!px-[124px] items-center gap-1 mb-4 mt-4 lg:!mt-0">
                             {visibleTags.map((tag, index) => (
                                 <Tag
                                     key={index}
@@ -183,7 +183,7 @@ const PreviewDdocEditor = forwardRef(
                     <EditorContent
                         editor={editor}
                         id="editor"
-                        className="w-full h-full py-4"
+                        className="w-full h-auto py-4"
                     />
                 </EditingProvider>
             </div>
