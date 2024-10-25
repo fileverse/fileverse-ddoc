@@ -8,15 +8,27 @@ import {
   LucideIcon,
   toast,
   Toaster,
+  TagType,
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 import { DEFAULT_ENCRYPTION_KEY } from './constants';
+
+const sampleTags = [
+  { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
+  { name: 'Discussions', isActive: true, color: '#FFD6D7' },
+  { name: 'Meet-up', isActive: false, color: '#FFD887' },
+  { name: 'Workshop', isActive: false, color: '#FFF292' },
+  { name: 'Hackathon', isActive: false, color: '#D7F893' },
+  { name: 'Devcon Main Event', isActive: true, color: '#B7F1BA' },
+  { name: 'Specific Event', isActive: true, color: '#AAF5E4' },
+];
 
 function App() {
   const [enableCollaboration, setEnableCollaboration] = useState(false);
   const [username, setUsername] = useState('');
   const [title, setTitle] = useState('Untitled');
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const [selectedTags, setSelectedTags] = useState<TagType[]>([]);
 
   const isPreviewMode = false;
 
@@ -119,6 +131,10 @@ function App() {
         renderNavbar={renderNavbar}
         ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}
         collaborationKey={DEFAULT_ENCRYPTION_KEY}
+        secureImageUploadUrl={import.meta.env.VITE_SECURE_IMAGE_UPLOAD_URL}
+        tags={sampleTags}
+        selectedTags={selectedTags}
+        setSelectedTags={setSelectedTags}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

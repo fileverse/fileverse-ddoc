@@ -490,3 +490,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   height: 12px;
   margin-left: 5px;
 }
+
+.img-placeholder {
+  @apply py-2 px-4 animate-pulse bg-black text-white text-sm font-medium rounded text-center w-fit mx-auto z-[999] relative -translate-y-1;
+}

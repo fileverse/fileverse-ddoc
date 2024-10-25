@@ -1,5 +1,6 @@
 import { Plugin, PluginKey } from 'prosemirror-state';
-import { MAX_IMAGE_SIZE } from '../../../components/editor-utils';
+import { IMG_UPLOAD_SETTINGS } from '../../../components/editor-utils';
+import { startImageUpload } from '../../../utils/upload-images.tsx';
 
 export type UploadFnType = (image: File) => Promise<string>;
 
@@ -11,13 +12,45 @@ export type UploadFnType = (image: File) => Promise<string>;
  * If no upload function is provided, it reads the media file as DataURL and uses this in the new node.
  * The function returns a new instance of the Plugin.
  */
-export const getMediaPasteDropPlugin = (upload: UploadFnType) => {
+export const getMediaPasteDropPlugin = (
+  upload: UploadFnType,
+  onError: (error: string) => void,
+  secureImageUploadUrl?: string,
+) => {
   return new Plugin({
     key: new PluginKey('media-paste-drop'),
     props: {
       handlePaste(_view, event) {
         const items = Array.from(event.clipboardData?.items || []);
+        const files = event.clipboardData?.files;
+        const position = _view.state.selection.from;
 
+        if (!position) {
+          return false;
+        }
+        const imgConfig = secureImageUploadUrl
+          ? IMG_UPLOAD_SETTINGS.Extended
+          : IMG_UPLOAD_SETTINGS.Base;
+        const filesContainImage = Object.values(files ?? {}).some(
+          (file) => file?.type.indexOf('image') === 0,
+        );
+
+        if (filesContainImage && secureImageUploadUrl) {
+          Object.values(files ?? {}).forEach((file) => {
+            const isImage = file?.type.indexOf('image') === 0;
+            if (isImage) {
+              if (file.size > imgConfig.maxSize) {
+                onError(imgConfig.errorMsg);
+                throw new Error(imgConfig.errorMsg);
+              }
+              startImageUpload(file, _view, position, secureImageUploadUrl);
+            }
+          });
+
+          return true;
+        }
+
+        // TODO: Check if the gif is supported and without duplicated images
         items.forEach((item) => {
           const file = item.getAsFile();
 
@@ -29,9 +62,10 @@ export const getMediaPasteDropPlugin = (upload: UploadFnType) => {
             event.preventDefault();
 
             if (file) {
-              // Check if the image size is less than 1MB
-              if (file.size > MAX_IMAGE_SIZE) {
-                throw new Error('Image too large');
+              // Check if the image size is less than 100Kb
+              if (file.size > imgConfig.maxSize) {
+                onError(imgConfig.errorMsg);
+                throw new Error(imgConfig.errorMsg);
               }
             }
           }
@@ -69,17 +103,20 @@ export const getMediaPasteDropPlugin = (upload: UploadFnType) => {
         imagesAndVideos.forEach(async (imageOrVideo) => {
           const reader = new FileReader();
 
-          if (upload) {
-            const node = schema.nodes.resizableMedia.create({
-              src: await upload(imageOrVideo),
-              'media-type': imageOrVideo.type.includes('image')
-                ? 'img'
-                : 'video',
-            });
-
-            const transaction = view.state.tr.insert(coordinates.pos, node);
-
-            view.dispatch(transaction);
+          if (typeof upload === 'function') {
+            try {
+              startImageUpload(
+                imageOrVideo,
+                view,
+                coordinates.pos,
+                secureImageUploadUrl,
+              );
+            } catch (error) {
+              onError((error as Error).message || 'Error uploading media');
+              throw new Error(
+                (error as Error).message || 'Error uploading media',
+              );
+            }
           } else {
             reader.onload = (readerEvent) => {
               const node = schema.nodes.resizableMedia.create({

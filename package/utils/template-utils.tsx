@@ -89,7 +89,7 @@ const renderTemplateButtons = (
     toggleAllTemplates: () => void,
     isExpanded: boolean
 ) => (
-    <ButtonGroup className="template-buttons space-x-0 gap-2 absolute top-8 left-0 md:!left-[unset] md:-translate-x-[60%] md:-translate-y-1 md:!right-0 md:!top-0 z-50">
+    <ButtonGroup className="template-buttons space-x-0 gap-2 absolute top-8 left-0 md:!left-[unset] md:-translate-x-[60%] md:-translate-y-1 md:!right-0 md:!top-0 z-40">
         {templateButtons.map((button, index) => (
             <Button
                 key={index}

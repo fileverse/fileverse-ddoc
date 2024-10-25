@@ -23,7 +23,9 @@ export interface BubbleMenuItem {
   icon: any;
 }
 
-type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'>;
+type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
+  onError?: (errorString: string) => void;
+};
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const items: BubbleMenuItem[] = [
@@ -72,7 +74,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Link',
       isActive: () => props.editor.isActive('link'),
-      command: () => {},
+      command: () => { },
       icon: 'Link',
     },
   ];
@@ -109,12 +111,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     const isIframeSelected =
       editor.state.doc.nodeAt(from)?.type.name === 'iframe';
     const isCodeBlockSelected = editor.isActive('codeBlock');
-
+    const isPageBreak = editor.state.doc.nodeAt(from)?.type.name === 'pageBreak';
     if (
       from === to ||
       isImageSelected ||
       isCodeBlockSelected ||
-      isIframeSelected
+      isIframeSelected || 
+      isPageBreak
     ) {
       return false;
     }
@@ -150,6 +153,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             editor={props.editor}
             elementRef={toolRef}
             bubbleMenu={true}
+            onError={props.onError}
           />
         );
       case 'Scripts':

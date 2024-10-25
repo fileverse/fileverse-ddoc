@@ -19,9 +19,7 @@ import CustomKeymap from './custom-keymap';
 import { Color } from '@tiptap/extension-color';
 import { Iframe } from './iframe';
 import { EmbeddedTweet } from './twitter-embed';
-import { ResizableMedia } from './resizable-media';
 import { DBlock } from './d-block';
-import { uploadFn } from '../utils/upload-images';
 import { SuperchargedTableExtensions } from './supercharged-table';
 import { Document } from './document';
 import { TrailingNode } from './trailing-node';
@@ -39,8 +37,13 @@ import { MathExtension } from '@aarkue/tiptap-math-extension';
 import { Footnote } from './footnote/footnote';
 import Superscript from '@tiptap/extension-superscript';
 import Subscript from '@tiptap/extension-subscript';
+import { ResizableMedia } from './resizable-media';
+import { uploadFn } from '../utils/upload-images';
 
-export const defaultExtensions = [
+export const defaultExtensions = (
+  onError: (error: string) => void,
+  secureImageUploadUrl?: string,
+) => [
   FontFamily,
   StarterKit.configure({
     strike: {
@@ -83,7 +86,7 @@ export const defaultExtensions = [
     codeBlock: {
       HTMLAttributes: {
         class:
-          'rounded-lg bg-transparent border color-border-default p-5 font-mono font-medium color-text-default',
+          'rounded-lg bg-transparent border color-border-default p-5 font-mono font-medium color-text-default select-text pointer-events-auto',
       },
       exitOnArrowDown: true,
     },
@@ -159,14 +162,18 @@ export const defaultExtensions = [
     width: 3,
     color: '#d1d5db',
   }),
+  ResizableMedia.configure({
+    uploadFn: uploadFn,
+    onError: onError,
+    secureImageUploadUrl,
+  }),
   GapCursor,
-  DBlock,
+  DBlock.configure({
+    secureImageUploadUrl,
+  }),
   TrailingNode,
   Document,
   ...SuperchargedTableExtensions,
-  ResizableMedia.configure({
-    uploadFn: uploadFn,
-  }),
   CustomKeymap,
   Iframe,
   EmbeddedTweet,
@@ -190,8 +197,16 @@ export const defaultExtensions = [
     delimiters: 'dollar',
   }),
   Footnote,
-  Superscript,
-  Subscript,
+  Superscript.configure({
+    HTMLAttributes: {
+      class: 'superscript',
+    },
+  }),
+  Subscript.configure({
+    HTMLAttributes: {
+      class: 'subscript',
+    },
+  }),
 ];
 
 export const createInputRule = (

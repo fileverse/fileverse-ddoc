@@ -6,6 +6,7 @@ import { resizableMediaActions } from './resizable-media-menu-util';
 import cn from 'classnames';
 import { useEditingContext } from '../../hooks/use-editing-context';
 import ToolbarButton from '../../common/toolbar-button';
+import { SecureImage } from '../../components/secure-image.tsx';
 
 let lastClientX: number;
 interface WidthAndHeight {
@@ -19,7 +20,9 @@ export const ResizableMediaNodeView = ({
 }: NodeViewProps) => {
   const isPreview = useEditingContext();
 
-  const [mediaType, setMediaType] = useState<'img' | 'video' | 'iframe'>();
+  const [mediaType, setMediaType] = useState<
+    'img' | 'secure-img' | 'video' | 'iframe'
+  >();
 
   const [aspectRatio, setAspectRatio] = useState(0);
 
@@ -227,7 +230,7 @@ export const ResizableMediaNodeView = ({
         isAlign && `justify-${node.attrs.dataAlign}`,
       )}
     >
-      <div className="w-fit flex relative group transition-all ease-in-out">
+      <div className="w-fit flex flex-col gap-2 relative group transition-all ease-in-out">
         {mediaType === 'img' && (
           <img
             src={node.attrs.src}
@@ -236,6 +239,21 @@ export const ResizableMediaNodeView = ({
             alt={node.attrs.src}
             width={node.attrs.width}
             height={node.attrs.height}
+          />
+        )}
+
+        {mediaType === 'secure-img' && (
+          <SecureImage
+            encryptedKey={node.attrs.encryptedKey}
+            url={node.attrs.url}
+            iv={node.attrs.iv}
+            privateKey={node.attrs.privateKey}
+            alt={node.attrs.alt}
+            // caption={node.attrs.caption}
+            className="rounded-lg"
+            width={node.attrs.width}
+            height={node.attrs.height}
+            ref={resizableImgRef as LegacyRef<HTMLImageElement>}
           />
         )}
 
@@ -276,7 +294,7 @@ export const ResizableMediaNodeView = ({
               onTouchEnd={stopHorizontalResize}
             />
 
-            <section className="media-control-buttons opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-2">
+            <span className="media-control-buttons opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1 p-1">
               {resizableMediaActions.map((btn, index) => {
                 return (
                   <ToolbarButton
@@ -289,13 +307,16 @@ export const ResizableMediaNodeView = ({
                         : btn.action?.(updateAttributes)
                     }
                     icon={btn.icon as string}
+                    classNames="min-w-6 aspect-square"
                   />
                 );
               })}
-            </section>
+            </span>
           </>
         )}
       </div>
+
+
     </NodeViewWrapper>
   );
 };

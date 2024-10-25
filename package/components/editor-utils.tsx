@@ -1,7 +1,13 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-useless-escape */
-import React, { Dispatch, SetStateAction, useCallback, useRef, useState } from 'react';
+import React, {
+  Dispatch,
+  SetStateAction,
+  useCallback,
+  useRef,
+  useState,
+} from 'react';
 import { IEditorTool, useEditorToolVisiibility } from '../hooks/use-visibility';
 import { Editor } from '@tiptap/react';
 import { startImageUpload } from '../utils/upload-images';
@@ -13,7 +19,13 @@ import {
   CarouselIndicator,
   CarouselItem,
 } from '../common/carousel';
-import { Button, IconButton, LucideIcon, TextField, Tooltip } from '@fileverse/ui';
+import {
+  Button,
+  IconButton,
+  LucideIcon,
+  TextField,
+  Tooltip,
+} from '@fileverse/ui';
 import { useOnClickOutside } from 'usehooks-ts';
 import { colors } from '../utils/colors';
 
@@ -120,18 +132,29 @@ export const fonts = [
   },
 ];
 
-export const MAX_IMAGE_SIZE = 1024 * 100; // 100Kb
-
 export const ERR_MSG_MAP = {
-  IMAGE_SIZE: 'Image size should be less than 100KB',
+  IMAGE_SIZE: 'Image size should be less than 10MB',
+};
+
+export const IMG_UPLOAD_SETTINGS = {
+  Extended: {
+    maxSize: 1024 * 1024 * 10,
+    errorMsg: 'Image size should be less than 10MB',
+  },
+  Base: {
+    maxSize: 1024 * 100,
+    errorMsg: 'Image size should be less than 100kb',
+  },
 };
 
 export const useEditorToolbar = ({
   editor,
   onError,
+  secureImageUploadUrl,
 }: {
   editor: Editor;
   onError?: (errorString: string) => void;
+  secureImageUploadUrl?: string;
 }) => {
   const {
     ref: toolRef,
@@ -241,13 +264,15 @@ export const useEditorToolbar = ({
     {
       icon: 'Superscript',
       title: 'Superscript',
-      onClick: () => editor?.chain().focus().unsetSubscript().toggleSuperscript().run(),
+      onClick: () =>
+        editor?.chain().focus().unsetSubscript().toggleSuperscript().run(),
       isActive: editor?.isActive('superscript'),
     },
     {
       icon: 'Subscript',
       title: 'Subscript',
-      onClick: () => editor?.chain().focus().unsetSuperscript().toggleSubscript().run(),
+      onClick: () =>
+        editor?.chain().focus().unsetSuperscript().toggleSubscript().run(),
       isActive: editor?.isActive('subscript'),
     },
     null,
@@ -256,7 +281,6 @@ export const useEditorToolbar = ({
       title: 'Upload Image',
       onClick: () => {
         editor?.chain().focus().deleteRange(editor.state.selection).run();
-        // upload image
         const input = document.createElement('input');
         input.type = 'file';
         input.accept = 'image/*';
@@ -264,14 +288,17 @@ export const useEditorToolbar = ({
           if (input.files?.length) {
             const file = input.files[0];
             const size = file.size;
-            if (size > MAX_IMAGE_SIZE) {
+            const imgConfig = secureImageUploadUrl
+              ? IMG_UPLOAD_SETTINGS.Extended
+              : IMG_UPLOAD_SETTINGS.Base;
+            if (size > imgConfig.maxSize) {
               if (onError && typeof onError === 'function') {
-                onError(ERR_MSG_MAP.IMAGE_SIZE);
+                onError(imgConfig.errorMsg);
               }
               return;
             }
             const pos = editor.view.state.selection.from;
-            startImageUpload(file, editor.view, pos);
+            startImageUpload(file, editor.view, pos, secureImageUploadUrl);
           }
         };
         input.click();
@@ -390,14 +417,19 @@ export const useEditorToolbar = ({
           if (input.files?.length) {
             const file = input.files[0];
             const size = file.size;
-            if (size > MAX_IMAGE_SIZE) {
+
+            const imgConfig = secureImageUploadUrl
+              ? IMG_UPLOAD_SETTINGS.Extended
+              : IMG_UPLOAD_SETTINGS.Base;
+
+            if (size > imgConfig.maxSize) {
               if (onError && typeof onError === 'function') {
-                onError(ERR_MSG_MAP.IMAGE_SIZE);
+                onError(imgConfig.errorMsg);
               }
               return;
             }
             const pos = editor.view.state.selection.from;
-            startImageUpload(file, editor.view, pos);
+            startImageUpload(file, editor.view, pos, secureImageUploadUrl);
           }
         };
         input.click();
@@ -450,7 +482,8 @@ export const TextHighlighter = ({
         >
           <LucideIcon
             name="Check"
-            className={cn("w-[14px] aspect-square",
+            className={cn(
+              'w-[14px] aspect-square',
               editor.isActive('textStyle', {
                 color: color.color,
               })
@@ -469,7 +502,7 @@ export const TextHighlighter = ({
         }}
         className="w-full justify-start mt-2 gap-1 !p-1 h-fit"
       >
-        <LucideIcon name="Ban" className='w-[18px] aspect-square' />
+        <LucideIcon name="Ban" className="w-[18px] aspect-square" />
         <span>None</span>
       </Button>
     </div>
@@ -654,7 +687,8 @@ export const LinkPopup = ({
     }
 
     // Validate URL
-    const urlPattern = /^(https?:\/\/)?([\da-z\.-]+)\.([a-z\.]{2,6})([\/\w \.-]*)*\/?$/;
+    const urlPattern =
+      /^(https?:\/\/)?([\w-]+(\.[\w-]+)+\.?(:\d+)?(\/\S*)?|\w+@[\w.-]+\.\w+)$/i;
 
     if (!urlPattern.test(url)) {
       if (onError && typeof onError === 'function') {
@@ -686,7 +720,9 @@ export const LinkPopup = ({
       className="z-50 h-auto gap-2 items-center flex max-h-[330px] overflow-y-auto scroll-smooth rounded-lg bg-white p-2 shadow-elevation-1 transition-all"
     >
       <TextField
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) => setUrl(e.target.value)}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+          setUrl(e.target.value)
+        }
         className="w-full"
         placeholder="Add link here"
         value={url}
@@ -718,26 +754,33 @@ export const ScriptsPopup = ({
   const options = [
     {
       title: 'Superscript',
-      command: () => editor.chain().focus().unsetSubscript().toggleSuperscript().run(),
+      command: () =>
+        editor.chain().focus().unsetSubscript().toggleSuperscript().run(),
       isActive: () => editor.isActive('superscript'),
       icon: 'Superscript',
     },
     {
       title: 'Subscript',
-      command: () => editor.chain().focus().unsetSuperscript().toggleSubscript().run(),
+      command: () =>
+        editor.chain().focus().unsetSuperscript().toggleSubscript().run(),
       isActive: () => editor.isActive('subscript'),
       icon: 'Subscript',
     },
     {
       title: 'None',
-      command: () => editor.chain().focus().unsetSuperscript().unsetSubscript().run(),
-      isActive: () => !editor.isActive('superscript') && !editor.isActive('subscript'),
+      command: () =>
+        editor.chain().focus().unsetSuperscript().unsetSubscript().run(),
+      isActive: () =>
+        !editor.isActive('superscript') && !editor.isActive('subscript'),
       icon: 'RemoveFormatting',
     },
   ];
 
   return (
-    <div ref={elementRef} className="z-50 w-48 bg-white rounded shadow-elevation-1 p-1">
+    <div
+      ref={elementRef}
+      className="z-50 w-48 bg-white rounded shadow-elevation-1 p-1"
+    >
       <div className="flex flex-col gap-1 justify-center w-fit sm:w-full">
         {options.map((option) => (
           <Button
@@ -790,7 +833,8 @@ export const TextColor = ({
         >
           <LucideIcon
             name="Check"
-            className={cn("w-[14px] aspect-square",
+            className={cn(
+              'w-[14px] aspect-square',
               editor.isActive('textStyle', {
                 color: color.color,
               })
@@ -808,7 +852,7 @@ export const TextColor = ({
         }}
         className="w-full justify-start mt-2 gap-1 !p-1 h-fit"
       >
-        <LucideIcon name="Ban" className='w-[18px] aspect-square' />
+        <LucideIcon name="Ban" className="w-[18px] aspect-square" />
         <span>None</span>
       </Button>
     </div>
@@ -827,7 +871,7 @@ export const TextHeading = ({
     {
       title: 'Text',
       description: 'Normal',
-      icon: "Type",
+      icon: 'Type',
       command: (editor: Editor) =>
         editor.chain().focus().toggleNode('paragraph', 'paragraph').run(),
       isActive: () =>
@@ -838,7 +882,7 @@ export const TextHeading = ({
     {
       title: 'Heading 1',
       description: 'Big',
-      icon: "Heading1",
+      icon: 'Heading1',
       command: (editor: Editor) => {
         editor.chain().focus().toggleHeading({ level: 1 }).run();
       },
@@ -847,7 +891,7 @@ export const TextHeading = ({
     {
       title: 'Heading 2',
       description: 'Medium',
-      icon: "Heading2",
+      icon: 'Heading2',
       command: (editor: Editor) => {
         editor.chain().focus().toggleHeading({ level: 2 }).run();
       },
@@ -856,7 +900,7 @@ export const TextHeading = ({
     {
       title: 'Heading 3',
       description: 'Small',
-      icon: "Heading3",
+      icon: 'Heading3',
       command: (editor: Editor) => {
         editor.chain().focus().toggleHeading({ level: 3 }).run();
       },
@@ -868,7 +912,7 @@ export const TextHeading = ({
     <div
       ref={elementRef}
       className={cn(
-        'z-50 flex w-48 flex-col overflow-hidden rounded bg-white p-1 shadow-elevation-1'
+        'z-50 flex w-48 flex-col overflow-hidden rounded bg-white p-1 shadow-elevation-1',
       )}
     >
       {headings.map((heading) => (
@@ -911,7 +955,7 @@ export const TextFormatingPopup = ({
     {
       title: 'Text',
       description: 'Normal',
-      icon: "Type",
+      icon: 'Type',
       command: (editor: Editor) =>
         editor.chain().toggleNode('paragraph', 'paragraph').run(),
       isActive: () =>
@@ -922,7 +966,7 @@ export const TextFormatingPopup = ({
     {
       title: 'Heading 1',
       description: 'Big',
-      icon: "Heading1",
+      icon: 'Heading1',
       command: (editor: Editor) => {
         editor.chain().toggleHeading({ level: 1 }).run();
       },
@@ -931,7 +975,7 @@ export const TextFormatingPopup = ({
     {
       title: 'Heading 2',
       description: 'Medium',
-      icon: "Heading2",
+      icon: 'Heading2',
       command: (editor: Editor) => {
         editor.chain().toggleHeading({ level: 2 }).run();
       },
@@ -940,7 +984,7 @@ export const TextFormatingPopup = ({
     {
       title: 'Heading 3',
       description: 'Small',
-      icon: "Heading3",
+      icon: 'Heading3',
       command: (editor: Editor) => {
         editor.chain().toggleHeading({ level: 3 }).run();
       },
@@ -952,24 +996,27 @@ export const TextFormatingPopup = ({
     {
       title: 'Left',
       description: 'Left',
-      icon: "AlignLeft",
-      command: (editor: Editor) => editor.chain().focus().setTextAlign('left').run(),
+      icon: 'AlignLeft',
+      command: (editor: Editor) =>
+        editor.chain().focus().setTextAlign('left').run(),
       isActive: () => editor.isActive({ textAlign: 'left' }),
     },
     {
       title: 'Center',
       description: 'Center',
-      icon: "AlignCenter",
-      command: (editor: Editor) => editor.chain().focus().setTextAlign('center').run(),
+      icon: 'AlignCenter',
+      command: (editor: Editor) =>
+        editor.chain().focus().setTextAlign('center').run(),
       isActive: () => editor.isActive({ textAlign: 'center' }),
     },
     {
       title: 'Right',
       description: 'Right',
-      icon: "AlignRight",
-      command: (editor: Editor) => editor.chain().focus().setTextAlign('right').run(),
+      icon: 'AlignRight',
+      command: (editor: Editor) =>
+        editor.chain().focus().setTextAlign('right').run(),
       isActive: () => editor.isActive({ textAlign: 'right' }),
-    }
+    },
   ];
 
   const textStyles = [
@@ -983,36 +1030,39 @@ export const TextFormatingPopup = ({
     {
       title: 'Italic',
       description: 'Italic text',
-      icon: "Italic",
+      icon: 'Italic',
       command: (editor: Editor) => editor.chain().focus().toggleItalic().run(),
       isActive: () => editor.isActive('italic'),
     },
     {
       title: 'Underline',
       description: 'Underline text',
-      icon: "Underline",
-      command: (editor: Editor) => editor.chain().focus().toggleUnderline().run(),
+      icon: 'Underline',
+      command: (editor: Editor) =>
+        editor.chain().focus().toggleUnderline().run(),
       isActive: () => editor.isActive('underline'),
     },
     {
       title: 'Strikethrough',
       description: 'Strikethrough text',
-      icon: "Strikethrough",
+      icon: 'Strikethrough',
       command: (editor: Editor) => editor.chain().focus().toggleStrike().run(),
       isActive: () => editor.isActive('strike'),
     },
     {
       title: 'Superscript',
       description: 'Superscript text',
-      icon: "Superscript",
-      command: (editor: Editor) => editor.chain().focus().unsetSubscript().toggleSuperscript().run(),
+      icon: 'Superscript',
+      command: (editor: Editor) =>
+        editor.chain().focus().unsetSubscript().toggleSuperscript().run(),
       isActive: () => editor.isActive('superscript'),
     },
     {
       title: 'Subscript',
       description: 'Subscript text',
-      icon: "Subscript",
-      command: (editor: Editor) => editor.chain().focus().unsetSuperscript().toggleSubscript().run(),
+      icon: 'Subscript',
+      command: (editor: Editor) =>
+        editor.chain().focus().unsetSuperscript().toggleSubscript().run(),
       isActive: () => editor.isActive('subscript'),
     },
   ];
@@ -1021,22 +1071,23 @@ export const TextFormatingPopup = ({
     {
       title: 'Code',
       description: 'Code',
-      icon: "Code",
+      icon: 'Code',
       command: (editor: Editor) => editor.chain().focus().toggleCode().run(),
       isActive: () => editor.isActive('code'),
     },
     {
       title: 'Link',
       description: 'Link',
-      icon: "Link",
+      icon: 'Link',
       command: () => setToolVisibility(IEditorTool.LINK_POPUP),
       isActive: () => false,
     },
     {
       title: 'Quote',
       description: 'Quote',
-      icon: "TextQuote",
-      command: (editor: Editor) => editor.chain().focus().toggleBlockquote().run(),
+      icon: 'TextQuote',
+      command: (editor: Editor) =>
+        editor.chain().focus().toggleBlockquote().run(),
       isActive: () => editor.isActive('blockquote'),
     },
   ];
@@ -1045,22 +1096,25 @@ export const TextFormatingPopup = ({
     {
       title: 'Bullet List',
       description: 'Bullet list',
-      icon: "List",
-      command: (editor: Editor) => editor.chain().focus().toggleBulletList().run(),
+      icon: 'List',
+      command: (editor: Editor) =>
+        editor.chain().focus().toggleBulletList().run(),
       isActive: () => editor.isActive('bulletList'),
     },
     {
       title: 'Ordered List',
       description: 'Ordered list',
-      icon: "ListOrdered",
-      command: (editor: Editor) => editor.chain().focus().toggleOrderedList().run(),
+      icon: 'ListOrdered',
+      command: (editor: Editor) =>
+        editor.chain().focus().toggleOrderedList().run(),
       isActive: () => editor.isActive('orderedList'),
     },
     {
       title: 'Code Block',
       description: 'Code block',
-      icon: "Braces",
-      command: (editor: Editor) => editor.chain().focus().toggleCodeBlock().run(),
+      icon: 'Braces',
+      command: (editor: Editor) =>
+        editor.chain().focus().toggleCodeBlock().run(),
       isActive: () => editor.isActive('codeBlock'),
     },
   ];
@@ -1098,7 +1152,8 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                     {
-                      ['bg-yellow-300 hover:brightness-90']: textAlignment.isActive(),
+                      ['bg-yellow-300 hover:brightness-90']:
+                        textAlignment.isActive(),
                       ['hover:bg-[#f2f2f2]']: !textAlignment.isActive(),
                     },
                   )}
@@ -1134,7 +1189,8 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                     {
-                      ['bg-yellow-300 hover:brightness-90']: textStyle.isActive(),
+                      ['bg-yellow-300 hover:brightness-90']:
+                        textStyle.isActive(),
                       ['hover:bg-[#f2f2f2]']: !textStyle.isActive(),
                     },
                   )}
@@ -1151,7 +1207,8 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                     {
-                      ['bg-yellow-300 hover:brightness-90']: textStyle.isActive(),
+                      ['bg-yellow-300 hover:brightness-90']:
+                        textStyle.isActive(),
                       ['hover:bg-[#f2f2f2]']: !textStyle.isActive(),
                     },
                   )}
@@ -1204,10 +1261,7 @@ export const TextFormatingPopup = ({
                       editor.chain().unsetColor().run();
                     }}
                   >
-                    <LucideIcon
-                      name="Ban"
-                      className="w-6 h-6"
-                    />
+                    <LucideIcon name="Ban" className="w-6 h-6" />
                   </button>
                 </CarouselItem>
                 {colors.map((color, index) => (
@@ -1229,7 +1283,8 @@ export const TextFormatingPopup = ({
                     >
                       <LucideIcon
                         name="Check"
-                        className={cn("w-[14px] aspect-square",
+                        className={cn(
+                          'w-[14px] aspect-square',
                           editor.isActive('textStyle', {
                             color: color.color,
                           })
@@ -1299,7 +1354,8 @@ export const TextColorPicker = ({ editor }: { editor: Editor }) => {
                 >
                   <LucideIcon
                     name="Check"
-                    className={cn("w-[14px] aspect-square",
+                    className={cn(
+                      'w-[14px] aspect-square',
                       editor.isActive('textStyle', {
                         color: color.color,
                       })

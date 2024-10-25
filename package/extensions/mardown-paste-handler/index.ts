@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Editor, Extension } from '@tiptap/core';
+import { Editor, Extension, InputRule } from '@tiptap/core';
 import MarkdownIt from 'markdown-it';
 import { Plugin } from 'prosemirror-state';
 import DOMPurify from 'dompurify';
@@ -25,15 +25,29 @@ turndownService.addRule('table', {
     const rows = Array.from(table.rows);
 
     // Process header
-    const headers = Array.from(rows[0].cells).map((cell) => {
+    const headers = Array.from(rows[0].cells).map(cell => {
       return turndownService.turndown(cell.innerHTML).trim();
     });
-    const maxColumnWidths = headers.map((header) => header.length);
+    const maxColumnWidths = headers.map(header => header.length);
 
     // Process body and update maxColumnWidths
-    const bodyRows = rows.slice(1).map((row) => {
+    const bodyRows = rows.slice(1).map(row => {
       return Array.from(row.cells).map((cell, index) => {
-        const cellContent = turndownService.turndown(cell.innerHTML).trim();
+        let cellContent = cell.innerHTML.trim();
+
+        // Handle lists
+        if (cell.querySelector('ul, ol')) {
+          const listType = cell.querySelector('ul') ? 'ul' : 'ol';
+          const listItems = Array.from(cell.querySelectorAll('li')).map(
+            li => li.textContent?.trim() || '',
+          );
+          cellContent = `<${listType}><li>${listItems.join(
+            '</li><li>',
+          )}</li></${listType}>`;
+        } else {
+          cellContent = turndownService.turndown(cellContent);
+        }
+
         maxColumnWidths[index] = Math.max(
           maxColumnWidths[index],
           cellContent.length,
@@ -60,17 +74,14 @@ turndownService.addRule('table', {
 
     const headerRow = createAlignedRow(headers);
     const separator =
-      '| ' +
-      maxColumnWidths.map((width) => '-'.repeat(width)).join(' | ') +
-      ' |';
-    const bodyRowsFormatted = bodyRows.map((row) => createAlignedRow(row));
+      '| ' + maxColumnWidths.map(width => '-'.repeat(width)).join(' | ') + ' |';
+    const bodyRowsFormatted = bodyRows.map(row => createAlignedRow(row));
 
     return `\n\n${headerRow}\n${separator}\n${bodyRowsFormatted.join(
       '\n',
     )}\n\n`;
   },
 });
-
 // Custom rule for inline code
 turndownService.addRule('inlineCode', {
   filter: function (node) {
@@ -86,7 +97,7 @@ turndownService.addRule('listItem', {
   replacement: function (content, node, options) {
     content = content
       .replace(/^\n+/, '') // remove leading newlines
-      .replace(/\n+$/, '\n') // replace trailing newlines with just a single one
+      .replace(/\n+$/, '') // remove trailing newlines
       .replace(/\n/gm, '\n    '); // indent
     let prefix = options.bulletListMarker + ' ';
     const parent: any = node.parentNode;
@@ -110,18 +121,37 @@ turndownService.addRule('iframe', {
   },
 });
 
+// Custom rule for superscript
+turndownService.addRule('superscript', {
+  filter: 'sup',
+  replacement: function (content) {
+    return '<sup>' + content + '</sup>';
+  },
+});
+
+// Custom rule for subscript
+turndownService.addRule('subscript', {
+  filter: 'sub',
+  replacement: function (content) {
+    return '<sub>' + content + '</sub>';
+  },
+});
+
 // Custom rules for image
 turndownService.addRule('img', {
   filter: ['img'],
   replacement: function (_content, node) {
     const src = (node as HTMLElement).getAttribute('src');
-    const alt = (node as HTMLElement).getAttribute('alt') || src;
+    const alt = (node as HTMLElement).getAttribute('alt') || '';
+    return src ? `![${alt}](${src})` : '';
+  },
+});
 
-    if (src?.startsWith('data:')) {
-      return src;
-    }
-
-    return src ? `[${alt}](${src})` : '';
+// Custom rules for strikethrough
+turndownService.addRule('strikethrough', {
+  filter: 's',
+  replacement: function (content) {
+    return '<s>' + content + '</s>';
   },
 });
 
@@ -180,7 +210,7 @@ const MarkdownPasteHandler = Extension.create({
               const file = files[0];
               if (file.type === 'text/markdown' || file.name.endsWith('.md')) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
+                reader.onload = e => {
                   const content = e.target?.result as string;
                   handleMarkdownContent(view, content);
                 };
@@ -214,6 +244,104 @@ const MarkdownPasteHandler = Extension.create({
         },
     };
   },
+
+  addInputRules() {
+    return [
+      new InputRule({
+        find: /<sup>(.*?)<\/sup>/,
+        handler: ({ state, range, match }) => {
+          const { tr } = state;
+          const start = range.from;
+          const end = range.to;
+          const content = match[1];
+          tr.replaceWith(
+            start,
+            end,
+            this.editor.schema.text(content, [
+              this.editor.schema.marks.superscript.create(),
+            ]),
+          );
+        },
+      }),
+      new InputRule({
+        find: /<sub>(.*?)<\/sub>/,
+        handler: ({ state, range, match }) => {
+          const { tr } = state;
+          const start = range.from;
+          const end = range.to;
+          const content = match[1];
+          tr.replaceWith(
+            start,
+            end,
+            this.editor.schema.text(content, [
+              this.editor.schema.marks.subscript.create(),
+            ]),
+          );
+        },
+      }),
+      new InputRule({
+        find: /(\S*)\^((?:[^\^]|\\\^)+)\^/,
+        handler: ({ state, range, match }) => {
+          const { tr } = state;
+          const start = range.from + match[1].length;
+          const end = range.to;
+          const content = match[2].replace(/\\\^/g, '^');
+          tr.replaceWith(
+            start,
+            end,
+            this.editor.schema.text(content, [
+              this.editor.schema.marks.superscript.create(),
+            ]),
+          );
+        },
+      }),
+      new InputRule({
+        find: /(\S*)~((?:[^~]|\\~)+)~/,
+        handler: ({ state, range, match }) => {
+          const { tr } = state;
+          const start = range.from + match[1].length;
+          const end = range.to;
+          const content = match[2].replace(/\\~/g, '~');
+          tr.replaceWith(
+            start,
+            end,
+            this.editor.schema.text(content, [
+              this.editor.schema.marks.subscript.create(),
+            ]),
+          );
+        },
+      }),
+      new InputRule({
+        find: /(?:^|\s)\[([^\]]+)\]\((\S+)\)/,
+        handler: ({ state, range, match }) => {
+          const { tr } = state;
+          const [fullMatch, linkText, url] = match;
+          const start = range.from;
+          const end = range.to;
+
+          if (fullMatch) {
+            const nodeBeforeLink = state.doc.resolve(start).nodeBefore;
+            const needsSpace =
+              nodeBeforeLink &&
+              nodeBeforeLink.isText &&
+              nodeBeforeLink.text?.endsWith(' ');
+
+            if (needsSpace) {
+              tr.insertText(' ', start);
+            }
+
+            tr.replaceWith(
+              needsSpace ? start + 1 : start,
+              needsSpace ? end + 1 : end,
+              this.editor.schema.text(linkText, [
+                this.editor.schema.marks.link.create({ href: url }),
+              ]),
+            );
+          }
+        },
+      }),
+    ];
+  },
 });
 
 function isMarkdown(content: string): boolean {
@@ -227,7 +355,11 @@ function isMarkdown(content: string): boolean {
     content.match(/!\[.*\]\(.*\)/) !== null || // Images
     content.match(/\*\*(.*?)\*\*/g) !== null || // Bold
     content.match(/\*(.*?)\*/g) !== null || // Italic
-    content.match(/`{1,3}[^`]+`{1,3}/g) !== null
+    content.match(/`{1,3}[^`]+`{1,3}/g) !== null ||
+    content.match(/<sup>(.*?)<\/sup>/g) !== null ||
+    content.match(/<sub>(.*?)<\/sub>/g) !== null ||
+    content.match(/\^(.*?)\^/g) !== null || // New superscript syntax
+    content.match(/~(.*?)~/g) !== null // New subscript syntax
   );
 }
 
@@ -235,24 +367,83 @@ function handleMarkdownContent(view: any, content: string) {
   // Convert Markdown to HTML
   let convertedHtml = markdownIt.render(content);
 
-  // Sanitize the converted HTML
-  convertedHtml = DOMPurify.sanitize(convertedHtml);
+  // Decode HTML entities
+  const textarea = document.createElement('textarea');
+  textarea.innerHTML = convertedHtml;
+  convertedHtml = textarea.value;
 
-  // Parse the sanitized HTML string into DOM nodes
+  // Parse the HTML string into DOM nodes
   const parser = new DOMParser();
   const doc = parser.parseFromString(convertedHtml, 'text/html');
-  const domContent = doc.body;
+
+  // Handle images: remove parent paragraph tags if they only contain an image
+  const paragraphs = doc.getElementsByTagName('p');
+  for (let i = paragraphs.length - 1; i >= 0; i--) {
+    const p = paragraphs[i];
+    if (p.childNodes.length === 1 && p.firstChild?.nodeName === 'IMG') {
+      p.parentNode?.replaceChild(p.firstChild, p);
+    }
+  }
+
+  // Get the modified HTML content
+  convertedHtml = doc.body.innerHTML;
+
+  const subsupRegex = /<(sup|sub)>(.*?)<\/\1>/g;
+  const superscriptRegex = /\^(.*?)\^/g;
+  const subscriptRegex = /~(.*?)~/g;
+
+  // Process superscript and subscript tags in the HTML string
+  convertedHtml = convertedHtml.replace(subsupRegex, content => {
+    return `${content}`;
+  });
+
+  // Process markdown-style superscript and subscript
+  convertedHtml = convertedHtml.replace(
+    superscriptRegex,
+    '<sup data-type="sup">$1</sup>',
+  );
+
+  convertedHtml = convertedHtml.replace(
+    subscriptRegex,
+    '<sub data-type="sub">$1</sub>',
+  );
+
+  // Sanitize the converted HTML
+  convertedHtml = DOMPurify.sanitize(convertedHtml);
+  // Parse the sanitized HTML string into DOM nodes
+  const domContent = parser.parseFromString(convertedHtml, 'text/html').body;
 
   // Convert the DOM nodes to ProseMirror nodes using ProseMirror's DOMParser
   const proseMirrorNodes = ProseMirrorDOMParser.fromSchema(
     view.state.schema,
   ).parse(domContent);
 
+  // Apply superscript and subscript marks
+  const transaction = view.state.tr;
+  proseMirrorNodes.descendants((node, pos) => {
+    if (node.isText) {
+      const nodeDOM = domContent.childNodes[pos];
+      if (nodeDOM && nodeDOM.nodeType === Node.ELEMENT_NODE) {
+        const element = nodeDOM as HTMLElement;
+        if (element.dataset.type === 'sup') {
+          transaction.addMark(
+            pos,
+            pos + node.nodeSize,
+            view.state.schema.marks.superscript.create(),
+          );
+        } else if (element.dataset.type === 'sub') {
+          transaction.addMark(
+            pos,
+            pos + node.nodeSize,
+            view.state.schema.marks.subscript.create(),
+          );
+        }
+      }
+    }
+  });
+
   // Insert the sanitized content
-  const transaction = view.state.tr.replaceSelectionWith(
-    proseMirrorNodes,
-    false,
-  );
+  transaction.replaceSelectionWith(proseMirrorNodes, false);
   view.dispatch(transaction);
 }
 

@@ -13,11 +13,11 @@ import { Editor, Range, Extension } from '@tiptap/core';
 import Suggestion from '@tiptap/suggestion';
 import { ReactRenderer } from '@tiptap/react';
 import tippy from 'tippy.js';
-import { LucideIcon } from '@fileverse/ui'
+import { LucideIcon } from '@fileverse/ui';
 
 import { startImageUpload } from '../utils/upload-images';
 import { useMediaQuery } from 'usehooks-ts';
-import { ERR_MSG_MAP, MAX_IMAGE_SIZE } from './editor-utils';
+import { IMG_UPLOAD_SETTINGS } from './editor-utils';
 
 interface CommandItemProps {
   title: string;
@@ -64,9 +64,11 @@ const Command = Extension.create({
 const getSuggestionItems = ({
   query,
   onError,
+  secureImageUploadUrl,
 }: {
   query: string;
   onError?: (errorString: string) => void;
+  secureImageUploadUrl?: string;
 }) => {
   return [
     {
@@ -159,6 +161,16 @@ const getSuggestionItems = ({
         editor.chain().focus().deleteRange(range).toggleOrderedList().run();
       },
     },
+    // {
+    //   title: 'Page breaker',
+    //   description: 'Insert page break that will split your document into pages.',
+    //   searchTerms: ['pagebreak', 'break', 'line', 'page'],
+    //   icon: <LucideIcon name="PageBreak" src={'md'} />,
+    //   image: '',
+    //   command: ({ editor, range }: CommandProps) => {
+    //     editor.chain().focus().deleteRange(range).setPageBreak().run();
+    //   },
+    // },
     {
       title: 'Divider',
       description: 'Visually divide content.',
@@ -223,14 +235,17 @@ const getSuggestionItems = ({
           if (input.files?.length) {
             const file = input.files[0];
             const size = file.size;
-            if (size > MAX_IMAGE_SIZE) {
+            const imgConfig = secureImageUploadUrl
+              ? IMG_UPLOAD_SETTINGS.Extended
+              : IMG_UPLOAD_SETTINGS.Base;
+            if (size > imgConfig.maxSize) {
               if (onError && typeof onError === 'function') {
-                onError(ERR_MSG_MAP.IMAGE_SIZE);
+                onError(imgConfig.errorMsg);
               }
               return;
             }
             const pos = editor.view.state.selection.from;
-            startImageUpload(file, editor.view, pos);
+            startImageUpload(file, editor.view, pos, secureImageUploadUrl);
           }
         };
         input.click();
@@ -417,14 +432,15 @@ const CommandList = ({
         return (
           <button
             key={index}
-            className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-neutral-500 hover:bg-neutral-100 hover:border-neutral-200 border border-transparent transition-all ${index === selectedIndex ? 'bg-neutral-200 text-neutral-800' : ''
-              }`}
+            className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-neutral-500 hover:bg-neutral-100 hover:border-neutral-200 border border-transparent transition-all ${
+              index === selectedIndex ? 'bg-neutral-200 text-neutral-800' : ''
+            }`}
             onClick={() => selectItem(index)}
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-md border border-neutral-200 bg-white">
               {item.icon}
             </div>
-            <div>
+            <div className="flex-1 min-w-0">
               <p className="font-medium">{item.title}</p>
               <p className="text-xs text-neutral-500">{item.description}</p>
             </div>
@@ -482,9 +498,12 @@ const renderItems = () => {
   };
 };
 
-const SlashCommand = (onError?: (errorString: string) => void) => {
+const SlashCommand = (
+  onError?: (errorString: string) => void,
+  secureImageUploadUrl?: string,
+) => {
   const items = ({ query }: { query: string }) => {
-    return getSuggestionItems({ query, onError });
+    return getSuggestionItems({ query, onError, secureImageUploadUrl });
   };
   return Command.configure({
     suggestion: {

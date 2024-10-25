@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+import { TagType } from '@fileverse/ui';
 import { JSONContent } from '@tiptap/core';
 import { EditorProps } from '@tiptap/pm/view';
 import { Editor } from '@tiptap/react';
@@ -19,10 +19,13 @@ export interface IDocCollabUsers {
 }
 
 export interface DdocProps {
+  selectedTags?: TagType[];
+  setSelectedTags?: React.Dispatch<SetStateAction<TagType[]>>;
   enableCollaboration?: boolean;
   collaborationId?: string;
   isPreviewMode: boolean;
   ensResolutionUrl?: string;
+  secureImageUploadUrl?: string;
   initialContent?: JSONContent | null;
   walletAddress?: string | null;
   username?: string | null;
@@ -40,6 +43,9 @@ export interface DdocProps {
   collaborationKey?: string;
   yjsUpdate?: string;
   onDisconnectionDueToSyncError?: (syncError: { message: string }) => void;
+  tags?: Array<{ name: string; color: string }>;
+  className?: string;
+  scrollPosition?: number;
 }
 
 export interface IEditorSelectionData {

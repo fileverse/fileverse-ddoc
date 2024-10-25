@@ -10,6 +10,8 @@ import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import SlashCommand from './components/slash-comand';
 import { useSyncMachine } from '@fileverse-dev/sync';
 import { SyncCursor } from './extensions/sync-cursor';
+import customTextInputRules from './extensions/customTextInputRules';
+import { PageBreak } from './extensions/page-break/page-break';
 
 const usercolors = [
   '#30bced',
@@ -38,10 +40,17 @@ export const useDdocEditor = ({
   collaborationKey,
   yjsUpdate,
   onDisconnectionDueToSyncError,
+  secureImageUploadUrl,
+  scrollPosition,
 }: Partial<DdocProps>) => {
   const [extensions, setExtensions] = useState([
-    ...(defaultExtensions as AnyExtension[]),
-    SlashCommand(onError),
+    ...(defaultExtensions(
+      (error: string) => onError?.(error),
+      secureImageUploadUrl,
+    ) as AnyExtension[]),
+    SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
+    customTextInputRules,
+    PageBreak,
   ]);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
@@ -122,6 +131,14 @@ export const useDdocEditor = ({
     }
 
     setTimeout(() => {
+      if (ref.current && !!scrollPosition && editor) {
+        const coords = editor.view.coordsAtPos(scrollPosition);
+        const editorContainer = ref.current;
+        editorContainer.scrollTo({
+          top: editorContainer.scrollTop + coords.top - 500,
+          behavior: 'smooth',
+        });
+      }
       initialContentSetRef.current = false;
       if (editor && initialContent === undefined) {
         setIsContentLoading(false);
