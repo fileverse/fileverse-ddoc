@@ -30,7 +30,7 @@ export interface DdocProps {
   walletAddress?: string | null;
   username?: string | null;
   renderNavbar?: ({ editor }: { editor: JSONContent }) => JSX.Element;
-  onChange?: (changes: Data['editorJSONData']) => void;
+  onChange?: (changes: string) => void;
   onCollaboratorChange?: (collaborators: undefined | IDocCollabUsers[]) => void;
   onTextSelection?: (data: IEditorSelectionData) => void;
   onCommentInteraction?: (data: IEditorSelectionData) => void;
@@ -40,6 +40,9 @@ export interface DdocProps {
   onError?: (error: string) => void;
   setCharacterCount?: React.Dispatch<SetStateAction<number>>;
   setWordCount?: React.Dispatch<SetStateAction<number>>;
+  collaborationKey?: string;
+  yjsUpdate?: string;
+  onDisconnectionDueToSyncError?: (syncError: { message: string }) => void;
   tags?: Array<{ name: string; color: string }>;
   className?: string;
   scrollPosition?: number;
@@ -59,4 +62,15 @@ export interface IUser {
   name: string;
   color: string;
   isEns: boolean;
+}
+export type CollaborationCursorStorage = {
+  users: { clientId: number; [key: string]: any }[];
+};
+
+export interface CollaborationCursorOptions {
+  provider: any;
+  user: Record<string, any>;
+  render(user: Record<string, any>): HTMLElement;
+  selectionRender(user: Record<string, any>): any;
+  onUpdate: (users: { clientId: number; [key: string]: any }[]) => null;
 }
