@@ -630,7 +630,7 @@ export const EditorList = ({
             setToolVisibility(IEditorTool.NONE);
           }}
           className={` hover:bg-[#f2f2f2] ${editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="List" />
         </button>
@@ -643,7 +643,7 @@ export const EditorList = ({
             setToolVisibility(IEditorTool.NONE);
           }}
           className={` hover:bg-[#f2f2f2] ${editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListOrdered" />
         </button>
@@ -656,7 +656,7 @@ export const EditorList = ({
             setToolVisibility(IEditorTool.NONE);
           }}
           className={` hover:bg-[#f2f2f2] ${editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListChecks" />
         </button>
@@ -773,12 +773,36 @@ export const InlineCommentPopup = ({
   };
 
   const handleClick = () => {
-    setInlineCommentData({ inlineCommentText: comment }); 
-    editor.chain().unsetHighlight().run();
-    setIsInlineCommentPopupOpen(true);
-    console.log(setIsInlineCommentPopupOpen)
-    setToolVisibility(IEditorTool.NONE); 
-  }
+    if (comment.trim()) {
+      // Update comment data and highlight
+      setInlineCommentData({ inlineCommentText: comment });
+      editor.chain().unsetHighlight().run();
+      setIsInlineCommentPopupOpen(true);
+
+      // Reset comment field
+      setComment('');
+      setInlineCommentData({ inlineCommentText: '' });
+
+      // Close popup using ref
+      if (elementRef.current?.parentElement) {
+        // Find and close the nearest popover/dropdown container
+        const popoverContent = elementRef.current.closest('[role="dialog"]');
+        if (popoverContent) {
+          popoverContent.remove();
+        }
+      }
+
+      // Reset tool visibility
+      setToolVisibility(IEditorTool.NONE);
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleClick();
+    }
+  };
 
   return (
     <div
@@ -788,8 +812,10 @@ export const InlineCommentPopup = ({
       <TextAreaField
         value={comment}
         onChange={handleInputChange}
-        className="w-full min-w-[300px] max-h-[196px] pt-2 border-none overflow-y-auto no-scrollbar"
+        onKeyDown={handleKeyDown}
+        className="bg-[#F8F9FA] w-[296px] max-h-[196px] pt-2 border-none overflow-y-auto no-scrollbar"
         placeholder="Type your comment"
+        autoFocus
       />
       {comment.trim() !== '' && (
         <div className="h-full flex items-center gap-2 p-3">
@@ -854,7 +880,7 @@ export const ScriptsPopup = ({
             variant="ghost"
             onClick={() => {
               option.command();
-              setToolVisibility(IEditorTool.NONE);
+              // setToolVisibility(IEditorTool.NONE);
             }}
             className="flex items-center justify-between w-full px-2 py-1"
           >

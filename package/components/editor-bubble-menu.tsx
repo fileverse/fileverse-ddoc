@@ -173,10 +173,10 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             editor={props.editor}
             elementRef={toolRef}
             setIsInlineCommentPopupOpen={props.setIsCommentSectionOpen}
-            inlineCommentData={props.inlineCommentData} 
-            setInlineCommentData={(data) => props.setInlineCommentData?.(prev => ({ ...prev, ...data }))} 
-            />
-          );
+            inlineCommentData={props.inlineCommentData}
+            setInlineCommentData={(data) => props.setInlineCommentData?.(prev => ({ ...prev, ...data }))}
+          />
+        );
       case 'Scripts':
         return (
           <ScriptsPopup
@@ -217,7 +217,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                     ...prevData,
                     highlightedTextContent: selectedText,
                   };
-                  return updatedData; 
+                  return updatedData;
                 });
               }
             }
