@@ -90,9 +90,9 @@ export const NodeSelector = ({
       sideOffset={15}
       anchorTrigger={
         <button
-          className="bg-transparent hover:!bg-[#F2F4F5] rounded p-2 flex items-center justify-between gap-2 w-fit max-w-36"
+          className="bg-transparent hover:!bg-[#F2F4F5] !text-stone-600 rounded p-2 flex items-center justify-between gap-2 w-fit max-w-36"
         >
-          <span className="text-body-sm truncate">{activeItem.name}</span>
+          <span className="text-body-sm text-stone-600 truncate">{activeItem.name}</span>
           <LucideIcon name="ChevronDown" size="sm" />
         </button>
       }
