@@ -23,7 +23,7 @@ import {
   Button,
   IconButton,
   LucideIcon,
-  TextAreaField,
+  TextAreaFieldV2,
   TextField,
   Tooltip,
 } from '@fileverse/ui';
@@ -809,7 +809,7 @@ export const InlineCommentPopup = ({
       ref={elementRef}
       className="w-[300px] bg-[#F8F9FA] shadow-[0px_4px_16px_-4px_rgba(0,0,0,0.15)] border border-[#E8EBEC] rounded-md"
     >
-      <TextAreaField
+      <TextAreaFieldV2
         value={comment}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
