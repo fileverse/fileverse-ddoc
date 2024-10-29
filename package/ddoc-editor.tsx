@@ -223,7 +223,7 @@ const DdocEditor = forwardRef(
     }
 
     return (
-      <div data-cy="single-webpage" className="bg-[#f8f9fa] h-full w-full">
+      <div data-cy="single-webpage" className="bg-[#f8f9fa] w-full overflow-y-auto h-screen no-scrollbar">
         <nav
           id="Navbar"
           className={cn(
@@ -265,15 +265,13 @@ const DdocEditor = forwardRef(
             { 'md:!mt-16': !isPreviewMode },
             { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
             { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
+            { 'min-h-[83vh]': isNavbarVisible },
+            { 'min-h-[90vh]': !isNavbarVisible },
           )}
-          style={{
-            height:
-              isNativeMobile && !isPreviewMode ? 'calc(100vh - 4rem)' : '95vh',
-          }}
-        >
+                >
           <div
             ref={editorRef}
-            className="w-full h-full overflow-y-scroll overflow-x-hidden no-scrollbar pt-8 md:pt-0"
+            className="w-full h-full pt-8 md:pt-0"
           >
             {!isPreviewMode && (
               <div>
