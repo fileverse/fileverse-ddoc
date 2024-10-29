@@ -23,6 +23,7 @@ import {
   Button,
   IconButton,
   LucideIcon,
+  TextAreaField,
   TextField,
   Tooltip,
 } from '@fileverse/ui';
@@ -629,7 +630,7 @@ export const EditorList = ({
             setToolVisibility(IEditorTool.NONE);
           }}
           className={` hover:bg-[#f2f2f2] ${editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="List" />
         </button>
@@ -642,7 +643,7 @@ export const EditorList = ({
             setToolVisibility(IEditorTool.NONE);
           }}
           className={` hover:bg-[#f2f2f2] ${editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListOrdered" />
         </button>
@@ -655,7 +656,7 @@ export const EditorList = ({
             setToolVisibility(IEditorTool.NONE);
           }}
           className={` hover:bg-[#f2f2f2] ${editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListChecks" />
         </button>
@@ -742,6 +743,71 @@ export const LinkPopup = ({
     </div>
   );
 };
+
+export const InlineCommentPopup = ({
+  elementRef,
+  editor,
+  setToolVisibility,
+  setIsInlineCommentPopupOpen,
+  inlineCommentData,
+  setInlineCommentData,
+}: {
+  elementRef: React.RefObject<HTMLDivElement>;
+  editor: Editor;
+  setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
+  setIsInlineCommentPopupOpen: Dispatch<SetStateAction<boolean>>;
+  inlineCommentData: { highlightedText: string; inlineCommentText: string };
+  setInlineCommentData: (data: {
+    highlightedText?: string;
+    inlineCommentText?: string;
+  }) => void;
+}) => {
+  const [comment, setComment] = useState(
+    inlineCommentData.inlineCommentText || '',
+  );
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setComment(value);
+    setInlineCommentData({ inlineCommentText: value });
+  };
+
+  const handleClick = () => {
+    setInlineCommentData({ inlineCommentText: comment }); 
+    editor.chain().unsetHighlight().run();
+    setIsInlineCommentPopupOpen(true);
+    console.log(setIsInlineCommentPopupOpen)
+    setToolVisibility(IEditorTool.NONE); 
+  }
+
+  return (
+    <div
+      ref={elementRef}
+      className="w-[300px] bg-[#F8F9FA] shadow-[0px_4px_16px_-4px_rgba(0,0,0,0.15)] border border-[#E8EBEC] rounded-md"
+    >
+      <TextAreaField
+        value={comment}
+        onChange={handleInputChange}
+        className="w-full min-w-[300px] max-h-[196px] pt-2 border-none overflow-y-auto no-scrollbar"
+        placeholder="Type your comment"
+      />
+      {comment.trim() !== '' && (
+        <div className="h-full flex items-center gap-2 p-3">
+          <span className="w-full text-[12px] text-[#77818A]">
+            Press <span className='font-semibold'>Enter</span> to send a comment
+          </span>
+          <Button
+            className="!min-w-[10px] !h-8 !px-2"
+            onClick={handleClick}
+          >
+            <LucideIcon name="SendHorizontal" size="md" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const ScriptsPopup = ({
   elementRef,
   editor,

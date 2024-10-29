@@ -11,6 +11,7 @@ import {
   EditorAlignment,
   TextColor,
   ScriptsPopup,
+  InlineCommentPopup,
 } from './editor-utils';
 import { IEditorTool } from '../hooks/use-visibility';
 import ToolbarButton from '../common/toolbar-button';
@@ -25,6 +26,9 @@ export interface BubbleMenuItem {
 
 type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   onError?: (errorString: string) => void;
+  setIsCommentSectionOpen?: (isOpen: boolean) => void;
+  inlineCommentData?: InlineCommentData;
+  setInlineCommentData?: React.Dispatch<React.SetStateAction<InlineCommentData>>;
 };
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
@@ -77,6 +81,12 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       command: () => { },
       icon: 'Link',
     },
+    {
+      name: 'InlineComment',
+      isActive: () => props.editor.isActive('inlineComment'),
+      command: () => { },
+      icon: 'MessageSquarePlus',
+    },
   ];
 
   const bubbleMenuProps: EditorBubbleMenuProps = {
@@ -116,7 +126,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       from === to ||
       isImageSelected ||
       isCodeBlockSelected ||
-      isIframeSelected || 
+      isIframeSelected ||
       isPageBreak
     ) {
       return false;
@@ -156,6 +166,17 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             onError={props.onError}
           />
         );
+      case 'InlineComment':
+        return (
+          <InlineCommentPopup
+            setToolVisibility={setToolVisibility}
+            editor={props.editor}
+            elementRef={toolRef}
+            setIsInlineCommentPopupOpen={props.setIsCommentSectionOpen}
+            inlineCommentData={props.inlineCommentData} 
+            setInlineCommentData={(data) => props.setInlineCommentData?.(prev => ({ ...prev, ...data }))} 
+            />
+          );
       case 'Scripts':
         return (
           <ScriptsPopup
@@ -181,14 +202,33 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         if (
           item.name === 'Alignment' ||
           item.name === 'Link' ||
-          item.name === 'Scripts'
+          item.name === 'Scripts' ||
+          item.name === 'InlineComment'
         ) {
+
+          const handleHighlight = () => {
+            const selection = window.getSelection();
+            if (selection.rangeCount > 0) {
+              const selectedText = selection.toString().trim();
+              if (selectedText) {
+                props.editor.chain().setHighlight({ color: '#DDFBDF' }).run();
+                props.setInlineCommentData((prevData) => {
+                  const updatedData = {
+                    ...prevData,
+                    highlightedTextContent: selectedText,
+                  };
+                  return updatedData; 
+                });
+              }
+            }
+          };
+
           return (
             <DynamicDropdown
               key={item.name}
               sideOffset={15}
               anchorTrigger={
-                <ToolbarButton icon={item.icon} variant="ghost" size="md" />
+                <ToolbarButton icon={item.icon} variant="ghost" size="md" onClick={() => item.name === "InlineComment" ? handleHighlight() : null} />
               }
               content={renderContent(item)}
             />

@@ -38,7 +38,9 @@ const PreviewDdocEditor = forwardRef(
             tags,
             selectedTags,
             setSelectedTags,
-            className
+            className,
+            isCommentSectionOpen,
+            setIsCommentSectionOpen
         }: DdocProps,
         ref,
     ) => {
@@ -78,7 +80,9 @@ const PreviewDdocEditor = forwardRef(
             onError,
             setCharacterCount,
             setWordCount,
-            secureImageUploadUrl
+            secureImageUploadUrl,
+            isCommentSectionOpen,
+            setIsCommentSectionOpen
         });
 
         useImperativeHandle(

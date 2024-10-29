@@ -28,6 +28,11 @@ function App() {
   const [title, setTitle] = useState('Untitled');
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [selectedTags, setSelectedTags] = useState<TagType[]>([]);
+  const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(false);
+  const [inlineCommentData, setInlineCommentData] = useState({
+    inlineCommentText: '',
+    highlightedTextContent: '',
+  });
 
   const isPreviewMode = false;
 
@@ -125,6 +130,10 @@ function App() {
         tags={sampleTags}
         selectedTags={selectedTags}
         setSelectedTags={setSelectedTags}
+        isCommentSectionOpen={isCommentSectionOpen}
+        setIsCommentSectionOpen={setIsCommentSectionOpen}
+        setInlineCommentData={setInlineCommentData}
+        inlineCommentData={inlineCommentData}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

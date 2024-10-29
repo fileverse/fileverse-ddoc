@@ -51,7 +51,10 @@ const DdocEditor = forwardRef(
       tags,
       selectedTags,
       setSelectedTags,
-      scrollPosition,
+      isCommentSectionOpen,
+      setIsCommentSectionOpen,
+      setInlineCommentData,
+      inlineCommentData
     }: DdocProps,
     ref,
   ) => {
@@ -104,7 +107,10 @@ const DdocEditor = forwardRef(
       setCharacterCount,
       setWordCount,
       secureImageUploadUrl,
-      scrollPosition,
+      isCommentSectionOpen,
+      setIsCommentSectionOpen,
+      setInlineCommentData,
+      inlineCommentData
     });
 
     useImperativeHandle(
@@ -265,6 +271,8 @@ const DdocEditor = forwardRef(
             { 'md:!mt-16': !isPreviewMode },
             { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
             { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
+            { '!ml-64': isCommentSectionOpen },
+            { '!mx-auto': !isCommentSectionOpen },
           )}
           style={{
             height:
@@ -277,7 +285,13 @@ const DdocEditor = forwardRef(
           >
             {!isPreviewMode && (
               <div>
-                <EditorBubbleMenu editor={editor} onError={onError} />
+                <EditorBubbleMenu
+                  editor={editor}
+                  onError={onError}
+                  setIsCommentSectionOpen={setIsCommentSectionOpen}
+                  inlineCommentData={inlineCommentData}
+                  setInlineCommentData={setInlineCommentData}
+                />
                 <ColumnsMenu editor={editor} appendTo={editorRef} />
               </div>
             )}
