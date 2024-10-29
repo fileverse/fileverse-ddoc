@@ -781,7 +781,6 @@ export const InlineCommentPopup = ({
 
       // Reset comment field
       setComment('');
-      setInlineCommentData({ inlineCommentText: '' });
 
       // Close popup using ref
       if (elementRef.current?.parentElement) {
@@ -880,7 +879,6 @@ export const ScriptsPopup = ({
             variant="ghost"
             onClick={() => {
               option.command();
-              // setToolVisibility(IEditorTool.NONE);
             }}
             className="flex items-center justify-between w-full px-2 py-1"
           >
