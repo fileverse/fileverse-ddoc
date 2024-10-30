@@ -169,7 +169,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       case 'InlineComment':
         return (
           <InlineCommentPopup
-            setToolVisibility={setToolVisibility}
             editor={props.editor}
             elementRef={toolRef}
             setIsInlineCommentPopupOpen={props.setIsCommentSectionOpen}
@@ -180,7 +179,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       case 'Scripts':
         return (
           <ScriptsPopup
-            setToolVisibility={setToolVisibility}
             editor={props.editor}
             elementRef={toolRef}
           />

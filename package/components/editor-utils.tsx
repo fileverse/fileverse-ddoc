@@ -747,14 +747,12 @@ export const LinkPopup = ({
 export const InlineCommentPopup = ({
   elementRef,
   editor,
-  setToolVisibility,
   setIsInlineCommentPopupOpen,
   inlineCommentData,
   setInlineCommentData,
 }: {
   elementRef: React.RefObject<HTMLDivElement>;
   editor: Editor;
-  setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
   setIsInlineCommentPopupOpen: Dispatch<SetStateAction<boolean>>;
   inlineCommentData: { highlightedText: string; inlineCommentText: string };
   setInlineCommentData: (data: {
@@ -791,8 +789,6 @@ export const InlineCommentPopup = ({
         }
       }
 
-      // Reset tool visibility
-      setToolVisibility(IEditorTool.NONE);
     }
   };
 
@@ -836,11 +832,9 @@ export const InlineCommentPopup = ({
 export const ScriptsPopup = ({
   elementRef,
   editor,
-  setToolVisibility,
 }: {
   elementRef: React.RefObject<HTMLDivElement>;
   editor: Editor;
-  setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
 }) => {
   const options = [
     {
