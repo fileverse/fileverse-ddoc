@@ -124,7 +124,7 @@ const PreviewDdocEditor = forwardRef(
         return (
             <div
                 ref={editorRef}
-                className={cn("overflow-y-scroll overflow-x-hidden no-scrollbar", className)}
+                className={cn("overflow-x-hidden", className)}
             >
                 <EditingProvider isPreviewMode={isPreviewMode}>
                     {tags && tags.length > 0 && (
