@@ -32,6 +32,7 @@ function App() {
   const [inlineCommentData, setInlineCommentData] = useState({
     inlineCommentText: '',
     highlightedTextContent: '',
+    handleClick: false,
   });
 
   const isPreviewMode = false;

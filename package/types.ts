@@ -21,6 +21,7 @@ export interface IDocCollabUsers {
 type InlineCommentData = {
   inlineCommentText: string;
   highlightedTextContent: string;
+  handleClick: boolean;
 };
 
 export interface DdocProps {

@@ -754,10 +754,11 @@ export const InlineCommentPopup = ({
   elementRef: React.RefObject<HTMLDivElement>;
   editor: Editor;
   setIsInlineCommentPopupOpen: Dispatch<SetStateAction<boolean>>;
-  inlineCommentData: { highlightedText: string; inlineCommentText: string };
+  inlineCommentData: { highlightedText: string; inlineCommentText: string; handleClick: boolean };
   setInlineCommentData: (data: {
     highlightedText?: string;
     inlineCommentText?: string;
+    handleClick?: boolean;
   }) => void;
 }) => {
   const [comment, setComment] = useState(
@@ -773,7 +774,7 @@ export const InlineCommentPopup = ({
   const handleClick = () => {
     if (comment.trim()) {
       // Update comment data and highlight
-      setInlineCommentData({ inlineCommentText: comment });
+      setInlineCommentData({ inlineCommentText: comment, handleClick: true });
       editor.chain().unsetHighlight().run();
       setIsInlineCommentPopupOpen(true);
 
