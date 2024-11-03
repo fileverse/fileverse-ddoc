@@ -5,6 +5,7 @@ import React, {
   Dispatch,
   SetStateAction,
   useCallback,
+  useEffect,
   useRef,
   useState,
 } from 'react';
@@ -770,6 +771,34 @@ export const InlineCommentPopup = ({
     setComment(value);
     setInlineCommentData({ inlineCommentText: value });
   };
+
+  // Unset highlight when popup is closed without submitting
+  const handleClosePopup = () => {
+    editor.chain().unsetHighlight().run();
+    setIsInlineCommentPopupOpen(false);
+    setComment('');
+    setInlineCommentData({ inlineCommentText: '', highlightedText: "", handleClick: false });
+  };
+
+  // Close popup if click is outside or ESC key is pressed
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (elementRef.current && !elementRef.current.contains(event.target as Node)) {
+        handleClosePopup();
+      }
+    };
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        handleClosePopup();
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscKey);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [elementRef]);
 
   const handleClick = () => {
     if (comment.trim()) {
