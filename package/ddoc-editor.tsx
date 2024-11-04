@@ -260,11 +260,13 @@ const DdocEditor = forwardRef(
         )}
         <div
           className={cn(
-            'bg-white w-full md:w-[850px] max-w-[850px] mx-auto rounded',
+            'bg-white w-full md:w-[850px] max-w-[850px] mx-auto rounded h-full',
             { 'mt-0 md:!mt-16': isPreviewMode },
             { 'md:!mt-16': !isPreviewMode },
             { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
             { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
+            { 'min-h-[83vh]': isNavbarVisible },
+            { 'min-h-[90vh]': !isNavbarVisible },
           )}
         >
           <div
