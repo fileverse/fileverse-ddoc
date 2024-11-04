@@ -273,7 +273,7 @@ const DdocEditor = forwardRef(
             ref={editorRef}
             className={cn(
               'w-full h-full pt-8 md:pt-0',
-              { '!mt-8': isNativeMobile},
+              { '!mt-16': isNativeMobile},
             )}            
           >
             {!isPreviewMode && (
