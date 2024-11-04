@@ -230,127 +230,67 @@ export const DBlock = Node.create<DBlockOptions>({
       },
       Backspace: ({ editor }) => {
         const {
-          selection: { $head, from },
+          selection: { $head, from, to },
           doc,
         } = editor.state;
 
         const parent = $head.node($head.depth - 1);
-        const grandParent = $head.node($head.depth - 2);
+        const node = $head.node($head.depth);
+        const nodeStartPos = $head.start();
+        const isAtStartOfNode = nodeStartPos === from;
 
-        const headString = $head.toString();
-        const nodePaths = headString.split('/');
+        const isListOrTaskList =
+          parent?.type.name === 'listItem' || parent?.type.name === 'taskItem';
 
-        const isList = nodePaths.some(
-          path =>
-            path.includes('bulletList_0') ||
-            path.includes('orderedList_0') ||
-            path.includes('taskList_0'),
-        );
+        const isTaskList = parent?.type.name === 'taskItem';
 
-        if (parent?.type.name !== 'dBlock') {
-          let isPrevNodePageBreak = false;
-          let currentNodePos = -1;
+        const isNodeEmpty = node?.textContent === '';
 
-          doc.descendants((node, pos) => {
-            if (currentNodePos !== -1) return false;
-            if (node.type.name === 'pageBreak') {
-              isPrevNodePageBreak = true;
-              currentNodePos = pos;
-            }
-          });
+        let isPrevNodePageBreak = false;
+        let currentNodePos = -1;
 
-          if (isPrevNodePageBreak) {
-            return true;
+        doc.descendants((node, pos) => {
+          if (currentNodePos !== -1) return false;
+          if (node.type.name === 'pageBreak') {
+            isPrevNodePageBreak = true;
+            currentNodePos = pos;
           }
+        });
 
-          const isFirstListItem = nodePaths.some(
-            path => path.includes('listItem_0') || path.includes('taskItem_0'),
-          );
-
-          const isAtBeginFirstListItem =
-            isFirstListItem &&
-            nodePaths.some(path => path.includes('paragraph_0:0'));
-
-          const isNestedList =
-            grandParent &&
-            ['bulletList', 'orderedList', 'taskList'].includes(
-              grandParent.type.name,
-            );
-
-          if (isAtBeginFirstListItem && isNestedList) {
-            // We're at the beginning of the first item in a nested list
-            return editor.chain().liftListItem(parent.type.name).focus().run();
-          }
-
-          const isFirstDBlock = nodePaths.some(path =>
-            path.includes('dBlock_0'),
-          );
-
-          const isFirstDBlockListItem =
-            isFirstDBlock && isAtBeginFirstListItem && isList;
-
-          const isFirstListItemWithoutContent =
-            $head.parent.content.size === 0 &&
-            nodePaths.some(path => path.includes('paragraph_0:0')) &&
-            nodePaths.some(
-              path =>
-                path.includes('listItem_0') || path.includes('taskItem_0'),
-            ) &&
-            isList &&
-            nodePaths.length === 4;
-
-          const isMultipleListItems =
-            $head.node($head.depth - 2).childCount > 1;
-
-          if (isFirstListItemWithoutContent) {
-            const listPos = $head.before($head.depth - 2);
-
-            if (!isMultipleListItems) {
-              return editor.chain().liftListItem('listItem').focus().run();
-            } else {
-              return editor
-                .chain()
-                .deleteRange({
-                  from: listPos + 1,
-                  to: listPos + 1 + parent.nodeSize,
-                })
-                .insertContentAt(from - 4, {
-                  type: 'dBlock',
-                  content: [
-                    {
-                      type: 'paragraph',
-                      content: [{ type: 'text', text: '' }],
-                    },
-                  ],
-                })
-                .focus()
-                .run();
-            }
-          }
-
-          if (isFirstDBlockListItem && nodePaths.length === 4) {
-            return editor
-              .chain()
-              .liftListItem('listItem')
-              .insertContentAt(from - 4, {
-                type: 'dBlock',
-                content: [
-                  {
-                    type: 'paragraph',
-                  },
-                ],
-              })
-              .focus()
-              .run();
-          }
+        if (isPrevNodePageBreak) {
+          return true;
         }
 
-        const isFirstEmptyDBlock =
-          $head.toString().includes('dBlock_0') &&
-          $head.parent.content.size === 0;
+        const isMultipleListItems = parent?.childCount > 1 && isListOrTaskList;
+        const isNotAListItem = $head.index($head.depth - 1) !== 0;
 
-        if (isFirstEmptyDBlock && !isList) {
-          return editor.chain().deleteNode('dBlock').focus().run();
+        const isItemSelected = from !== to && isListOrTaskList;
+        if (isItemSelected) {
+          return editor.chain().deleteSelection().focus().run();
+        }
+
+        if (isMultipleListItems && !isNotAListItem) {
+          return editor
+            .chain()
+            .deleteSelection()
+            .insertContentAt(from, {
+              type: isTaskList ? 'taskItem' : 'listItem',
+              content: [],
+            })
+            .focus(nodeStartPos)
+            .run();
+        }
+
+        if (isAtStartOfNode && isListOrTaskList) {
+          return editor
+            .chain()
+            .liftListItem(isTaskList ? 'taskItem' : 'listItem')
+            .focus(nodeStartPos)
+            .run();
+        }
+
+        if (!isListOrTaskList && isNodeEmpty) {
+          return editor.chain().deleteNode(this.name).focus().run();
         }
 
         return false;
