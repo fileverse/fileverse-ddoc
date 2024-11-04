@@ -65,6 +65,7 @@ const DdocEditor = forwardRef(
       checkOs() === 'Windows Phone' ||
       isMobile;
 
+    const isIOS = checkOs() === 'iOS';
     const [isHiddenTagsVisible, setIsHiddenTagsVisible] = useState(false);
     const tagsContainerRef = useRef(null);
 
@@ -194,6 +195,15 @@ const DdocEditor = forwardRef(
       };
     }, [editor]);
 
+    const [hasEditorContent, setHasEditorContent] = useState(false);
+
+    useEffect(() => {
+      if (editorRef.current) {
+       const editorEmpty = editorRef.current.querySelector('.is-editor-empty');
+       setHasEditorContent(!editorEmpty);
+      }
+    }, [editorRef]);
+
     // Push the editor to the top when the keyboard is visible
     useEffect(() => {
       if (!isNativeMobile || !editor) return;
@@ -273,7 +283,7 @@ const DdocEditor = forwardRef(
             ref={editorRef}
             className={cn(
               'w-full h-full pt-8 md:pt-0',
-              { '!mt-24': isNativeMobile},
+              {'!mt-24': isIOS && hasEditorContent},
             )}            
           >
             {!isPreviewMode && (
