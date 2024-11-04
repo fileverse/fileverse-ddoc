@@ -265,10 +265,8 @@ const DdocEditor = forwardRef(
             { 'md:!mt-16': !isPreviewMode },
             { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
             { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
-            { 'min-h-[83vh]': isNavbarVisible },
-            { 'min-h-[90vh]': !isNavbarVisible },
           )}
-                >
+        >
           <div
             ref={editorRef}
             className="w-full h-full pt-8 md:pt-0"
