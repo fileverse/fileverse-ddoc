@@ -775,7 +775,6 @@ export const InlineCommentPopup = ({
   // Unset highlight when popup is closed without submitting
   const handleClosePopup = () => {
     editor.chain().unsetHighlight().run();
-    setIsInlineCommentPopupOpen(false);
     setComment('');
     setInlineCommentData({ inlineCommentText: '', highlightedText: "", handleClick: false });
   };
