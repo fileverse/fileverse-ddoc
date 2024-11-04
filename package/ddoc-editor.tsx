@@ -199,10 +199,36 @@ const DdocEditor = forwardRef(
 
     useEffect(() => {
       if (editorRef.current) {
-       const editorEmpty = editorRef.current.querySelector('.is-editor-empty');
-       setHasEditorContent(!editorEmpty);
+        const checkEditorEmpty = () => {
+          const editorEmpty = editorRef.current?.querySelector('.is-editor-empty');
+          setHasEditorContent(!editorEmpty); 
+        };
+  
+        checkEditorEmpty();
+  
+        const observer = new MutationObserver(() => {
+          checkEditorEmpty(); 
+        });
+  
+        observer.observe(editorRef.current, {
+          childList: true,
+          subtree: true,
+          attributes: true, 
+        });
+  
+        return () => observer.disconnect();
       }
-    }, [editorRef]);
+    }, []);
+  
+    useEffect(() => {
+      const intervalId = setInterval(() => {
+        if (editorRef.current) {
+          const editorEmpty = editorRef.current.querySelector('.is-editor-empty');
+          setHasEditorContent(!editorEmpty);
+        }
+      }, 1000);
+        return () => clearInterval(intervalId);
+    }, []);
 
     // Push the editor to the top when the keyboard is visible
     useEffect(() => {
