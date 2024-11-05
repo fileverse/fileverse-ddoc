@@ -261,32 +261,19 @@ export const DBlock = Node.create<DBlockOptions>({
           return true;
         }
 
-        const isMultipleListItems = parent?.childCount > 1 && isListOrTaskList;
-        const isNotAListItem = $head.index($head.depth - 1) !== 0;
+        if (isAtStartOfNode && isListOrTaskList) {
+          if (isNodeEmpty) {
+            return editor.commands.joinTextblockBackward();
+          } else {
+            return editor.commands.liftListItem(
+              isTaskList ? 'taskItem' : 'listItem',
+            );
+          }
+        }
 
         const isItemSelected = from !== to && isListOrTaskList;
         if (isItemSelected) {
           return editor.chain().deleteSelection().focus().run();
-        }
-
-        if (isMultipleListItems && !isNotAListItem) {
-          return editor
-            .chain()
-            .deleteSelection()
-            .insertContentAt(from, {
-              type: isTaskList ? 'taskItem' : 'listItem',
-              content: [],
-            })
-            .focus(nodeStartPos)
-            .run();
-        }
-
-        if (isAtStartOfNode && isListOrTaskList) {
-          return editor
-            .chain()
-            .liftListItem(isTaskList ? 'taskItem' : 'listItem')
-            .focus(nodeStartPos)
-            .run();
         }
 
         if (!isListOrTaskList && isNodeEmpty) {
