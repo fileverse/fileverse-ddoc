@@ -304,7 +304,7 @@ const DdocEditor = forwardRef(
             { 'min-h-[83vh]': isNavbarVisible },
             { 'min-h-[90vh]': !isNavbarVisible },
           )}
-        >
+                >
           <div
             ref={editorRef}
             className={cn(
