@@ -68,7 +68,7 @@ const DdocEditor = forwardRef(
     const isIOS = checkOs() === 'iOS';
     const [isHiddenTagsVisible, setIsHiddenTagsVisible] = useState(false);
     const tagsContainerRef = useRef(null);
-
+    const [zoomLevel, setZoomLevel] = useState(1);
     const visibleTags = selectedTags?.slice(0, 4) || [];
     const hiddenTagsCount = selectedTags
       ? Math.max(0, selectedTags.length - 4)
@@ -201,25 +201,25 @@ const DdocEditor = forwardRef(
       if (editorRef.current) {
         const checkEditorEmpty = () => {
           const editorEmpty = editorRef.current?.querySelector('.is-editor-empty');
-          setHasEditorContent(!editorEmpty); 
+          setHasEditorContent(!editorEmpty);
         };
-  
+
         checkEditorEmpty();
-  
+
         const observer = new MutationObserver(() => {
-          checkEditorEmpty(); 
+          checkEditorEmpty();
         });
-  
+
         observer.observe(editorRef.current, {
           childList: true,
           subtree: true,
-          attributes: true, 
+          attributes: true,
         });
-  
+
         return () => observer.disconnect();
       }
     }, []);
-  
+
     useEffect(() => {
       const intervalId = setInterval(() => {
         if (editorRef.current) {
@@ -227,7 +227,7 @@ const DdocEditor = forwardRef(
           setHasEditorContent(!editorEmpty);
         }
       }, 1000);
-        return () => clearInterval(intervalId);
+      return () => clearInterval(intervalId);
     }, []);
 
     // Push the editor to the top when the keyboard is visible
@@ -290,27 +290,38 @@ const DdocEditor = forwardRef(
                 isNavbarVisible={isNavbarVisible}
                 setIsNavbarVisible={setIsNavbarVisible}
                 secureImageUploadUrl={secureImageUploadUrl}
+                zoomLevel={zoomLevel}
+                setZoomLevel={setZoomLevel}
               />
             </div>
           </div>
         )}
         <div
           className={cn(
-            'bg-white w-full md:w-[850px] max-w-[850px] mx-auto rounded',
+            'bg-white w-full mx-auto md:w-[850px] md:max-w-[850px] rounded',
             { 'mt-0 md:!mt-16': isPreviewMode },
             { 'md:!mt-16': !isPreviewMode },
             { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
             { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
             { 'min-h-[83vh]': isNavbarVisible },
             { 'min-h-[90vh]': !isNavbarVisible },
+            // { 'w-[318.75px] md:max-w-[318.75px]': zoomLevel === 0.5 },
+            // { 'w-[637.5px] md:max-w-[637.5px]': zoomLevel === 0.75 },
+            // { 'w-[850px] md:max-w-[850px]': zoomLevel === 1 },
+            // { 'w-[1062.5px] md:max-w-[1062.5px]': zoomLevel === 1.25 },
+            // { 'w-full md:max-w-full': zoomLevel === 1.5 },
           )}
-                >
+        >
           <div
             ref={editorRef}
             className={cn(
               'w-full h-full pt-8 md:pt-0',
-              {'!mt-24': isIOS && hasEditorContent},
-            )}            
+              { '!mt-24': isIOS && hasEditorContent },
+            )}
+            style={{
+              transform: `scale(${zoomLevel})`,
+              transformOrigin: 'top center',
+            }}
           >
             {!isPreviewMode && (
               <div>

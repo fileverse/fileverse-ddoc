@@ -25,19 +25,27 @@ import {
 } from '@fileverse/ui';
 import ToolbarButton from '../common/toolbar-button';
 
+interface TiptapToolBarProps {
+  editor: Editor;
+  onError?: (errorString: string) => void;
+  isNavbarVisible: boolean;
+  setIsNavbarVisible: React.Dispatch<React.SetStateAction<boolean>>;
+  secureImageUploadUrl?: string;
+  zoomLevel: number;
+  setZoomLevel: (zoom: number) => void;
+}
+
+const zoomLevels = [0.5, 0.75, 1, 1.25, 1.5];
+
 const TiptapToolBar = ({
   editor,
   onError,
   isNavbarVisible,
   setIsNavbarVisible,
   secureImageUploadUrl,
-}: {
-  editor: Editor;
-  onError?: (errorString: string) => void;
-  isNavbarVisible: boolean;
-  setIsNavbarVisible: React.Dispatch<React.SetStateAction<boolean>>;
-  secureImageUploadUrl?: string;
-}) => {
+  zoomLevel,
+  setZoomLevel,
+}: TiptapToolBarProps) => {
   const {
     toolRef,
     setToolVisibility,
@@ -271,6 +279,45 @@ const TiptapToolBar = ({
               className: "w-full md:w-auto",
             }}
           />
+        </div>
+
+        <div className="flex items-center gap-2 ml-4">
+          <Divider direction="vertical" />
+          <div className="flex items-center gap-2">
+            <IconButton
+              variant="ghost"
+              icon="ZoomOut"
+              onClick={() => {
+                const currentIndex = zoomLevels.indexOf(zoomLevel);
+                if (currentIndex > 0) {
+                  setZoomLevel(zoomLevels[currentIndex - 1]);
+                }
+              }}
+              disabled={zoomLevel === zoomLevels[0]}
+            />
+            <select
+              value={zoomLevel}
+              onChange={(e) => setZoomLevel(Number(e.target.value))}
+              className="bg-transparent border-none text-sm focus:outline-none"
+            >
+              {zoomLevels.map((level) => (
+                <option key={level} value={level}>
+                  {Math.round(level * 100)}%
+                </option>
+              ))}
+            </select>
+            <IconButton
+              variant="ghost"
+              icon="ZoomIn"
+              onClick={() => {
+                const currentIndex = zoomLevels.indexOf(zoomLevel);
+                if (currentIndex < zoomLevels.length - 1) {
+                  setZoomLevel(zoomLevels[currentIndex + 1]);
+                }
+              }}
+              disabled={zoomLevel === zoomLevels[zoomLevels.length - 1]}
+            />
+          </div>
         </div>
       </div>
       <div className="flex h-9 gap-[10px]">
