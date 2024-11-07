@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 import { BubbleMenu, BubbleMenuProps, isNodeSelection } from '@tiptap/react';
-import React, {useEffect} from 'react';
+import React from 'react';
 import { NodeSelector } from './node-selector';
 import {
   LinkPopup,
