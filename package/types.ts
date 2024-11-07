@@ -40,7 +40,7 @@ export interface DdocProps {
   onError?: (error: string) => void;
   setCharacterCount?: React.Dispatch<SetStateAction<number>>;
   setWordCount?: React.Dispatch<SetStateAction<number>>;
-  collaborationKey?: string;
+  collaborationKey?: CryptoKey;
   yjsUpdate?: string;
   onDisconnectionDueToSyncError?: (syncError: { message: string }) => void;
   tags?: Array<{ name: string; color: string }>;

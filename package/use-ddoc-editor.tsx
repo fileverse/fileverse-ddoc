@@ -55,7 +55,7 @@ export const useDdocEditor = ({
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
   const [isEns, setIsEns] = useState(false);
-
+  console.log({ collaborationKey }, 'from bishhhhhhhh');
   const {
     machine,
     connect: connectMachine,
@@ -66,7 +66,6 @@ export const useDdocEditor = ({
     error: syncError,
   } = useSyncMachine({
     roomId: collaborationId,
-    roomKey: collaborationKey,
     wsProvider: 'wss://dev-sync.fileverse.io/',
   });
 
@@ -103,7 +102,7 @@ export const useDdocEditor = ({
       throw new Error('docId or username is not provided');
     }
     setIsEns(isEns);
-    connectMachine(username as string);
+    connectMachine(username as string, collaborationKey as CryptoKey);
   };
 
   const ref = useRef<HTMLDivElement>(null);
