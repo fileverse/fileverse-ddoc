@@ -311,7 +311,7 @@ const DdocEditor = forwardRef(
             { 'w-[800px] md:max-w-[800px] h-[200%]': zoomLevel === 0.75 },
             { 'w-[850px] md:max-w-[850px] h-[100%]': zoomLevel === 1 },
             { 'w-[70%] md:max-w-[70%] h-[200%]': zoomLevel === 1.4 },
-            // { 'w-[1062.5px] md:max-w-[1062.5px] h-[320%]': zoomLevel === 1.5 },
+            { 'w-[1062.5px] md:max-w-[1062.5px] h-[100%]': zoomLevel === 1.5 },
             // { 'w-[1548px] md:max-w-[1548px]': zoomLevel === 2},
           )}
           style={{
@@ -324,7 +324,7 @@ const DdocEditor = forwardRef(
                className={cn(
               'w-full h-full pt-8 md:pt-0',
               {'!mt-24': isIOS && hasEditorContent},
-              { 'bg-white': zoomLevel === 1.4 },
+              { 'bg-white': zoomLevel === 1.4 || 1.5 },
             )}  
             style={{
               transformOrigin: 'top center',
