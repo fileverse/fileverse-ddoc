@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 import { BubbleMenu, BubbleMenuProps, isNodeSelection } from '@tiptap/react';
-import React from 'react';
+import React, {useEffect} from 'react';
 import { NodeSelector } from './node-selector';
 import {
   LinkPopup,
@@ -15,6 +15,7 @@ import {
 import { IEditorTool } from '../hooks/use-visibility';
 import ToolbarButton from '../common/toolbar-button';
 import { DynamicDropdown } from '@fileverse/ui';
+import cn from 'classnames';
 
 export interface BubbleMenuItem {
   name: string;
@@ -25,6 +26,7 @@ export interface BubbleMenuItem {
 
 type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   onError?: (errorString: string) => void;
+  zoomLevel: number;
 };
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
@@ -173,8 +175,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     <BubbleMenu
       {...bubbleMenuProps}
       shouldShow={shouldShow}
-      className="hidden lg:flex gap-2 overflow-hidden rounded-lg h-[52px] min-w-fit w-full py-2 px-4 bg-white items-center shadow-elevation-1"
-    >
+      className={cn(
+        "hidden lg:flex gap-2 overflow-hidden rounded-lg h-[52px] min-w-fit w-full py-2 px-4 bg-white items-center shadow-elevation-1",
+        {
+          "ml-[100%] mt-[60%]": props.zoomLevel === 0.5,
+        }
+      )}
+      >
       <NodeSelector editor={props.editor} elementRef={toolRef} />
 
       {items.map((item, index) => {

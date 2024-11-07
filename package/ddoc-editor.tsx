@@ -117,6 +117,8 @@ const DdocEditor = forwardRef(
       [editor, ydoc],
     );
 
+    const [zoomLevel, setZoomLevel] = useState<number>(1);
+
     const handleAddTag = (tag: TagType) => {
       setSelectedTags?.((prevTags) => {
         if (prevTags.length >= 6) {
@@ -259,7 +261,7 @@ const DdocEditor = forwardRef(
     }
 
     return (
-      <div data-cy="single-webpage" className="bg-[#f8f9fa] w-full overflow-y-auto h-screen no-scrollbar">
+      <div data-cy="single-webpage" className="bg-[#f8f9fa] w-full overflow-y-auto h-screen overflow-x-hidden no-scrollbar">
         <nav
           id="Navbar"
           className={cn(
@@ -287,6 +289,8 @@ const DdocEditor = forwardRef(
               <EditorToolBar
                 onError={onError}
                 editor={editor}
+                zoomLevel={zoomLevel}
+                setZoomLevel={setZoomLevel}
                 isNavbarVisible={isNavbarVisible}
                 setIsNavbarVisible={setIsNavbarVisible}
                 secureImageUploadUrl={secureImageUploadUrl}
@@ -296,25 +300,39 @@ const DdocEditor = forwardRef(
         )}
         <div
           className={cn(
-            'bg-white w-full md:w-[850px] max-w-[850px] mx-auto rounded',
+            'bg-white w-full mx-auto rounded',
             { 'mt-0 md:!mt-16': isPreviewMode },
             { 'md:!mt-16': !isPreviewMode },
             { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
             { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
             { 'min-h-[83vh]': isNavbarVisible },
             { 'min-h-[90vh]': !isNavbarVisible },
+            { 'w-[700px] md:max-w-[700px] h-[150%]': zoomLevel === 0.5 },
+            { 'w-[800px] md:max-w-[800px] h-[200%]': zoomLevel === 0.75 },
+            { 'w-[850px] md:max-w-[850px] h-[100%]': zoomLevel === 1 },
+            { 'w-[70%] md:max-w-[70%] h-[200%]': zoomLevel === 1.4 },
+            // { 'w-[1062.5px] md:max-w-[1062.5px] h-[320%]': zoomLevel === 1.5 },
+            // { 'w-[1548px] md:max-w-[1548px]': zoomLevel === 2},
           )}
-                >
+          style={{
+            transformOrigin: 'top center',
+            transform: `scaleX(${zoomLevel})`,
+          }}  
+          >
           <div
             ref={editorRef}
-            className={cn(
+               className={cn(
               'w-full h-full pt-8 md:pt-0',
               {'!mt-24': isIOS && hasEditorContent},
-            )}            
+            )}  
+            style={{
+              transformOrigin: 'top center',
+              transform: `scaleY(${zoomLevel})`,
+            }}          
           >
             {!isPreviewMode && (
               <div>
-                <EditorBubbleMenu editor={editor} onError={onError} />
+                <EditorBubbleMenu editor={editor} onError={onError} zoomLevel={zoomLevel} />
                 <ColumnsMenu editor={editor} appendTo={editorRef} />
               </div>
             )}
@@ -380,7 +398,7 @@ const DdocEditor = forwardRef(
               <EditorContent
                 editor={editor}
                 id="editor"
-                className="w-full h-auto py-4"
+                className="w-full h-auto py-4 bg-white"
               />
             </EditingProvider>
           </div>
@@ -417,7 +435,7 @@ const DdocEditor = forwardRef(
             />
           </div>
         )}
-      </div>
+        </div>
     );
   },
 );

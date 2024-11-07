@@ -28,12 +28,16 @@ import ToolbarButton from '../common/toolbar-button';
 const TiptapToolBar = ({
   editor,
   onError,
+  zoomLevel,
+  setZoomLevel,
   isNavbarVisible,
   setIsNavbarVisible,
   secureImageUploadUrl,
 }: {
   editor: Editor;
   onError?: (errorString: string) => void;
+  zoomLevel: number;
+  setZoomLevel: (zoom: number) => void;
   isNavbarVisible: boolean;
   setIsNavbarVisible: React.Dispatch<React.SetStateAction<boolean>>;
   secureImageUploadUrl?: string;
@@ -52,6 +56,15 @@ const TiptapToolBar = ({
     secureImageUploadUrl
   });
   const [filename, setFilename] = useState('exported_document.md');
+  const zoomLevels = [
+    { title: 'Fit to screen', value:  1.4}, 
+    { title: '50%', value: 0.5 },
+    { title: '75%', value: 0.75 },
+    { title: '100%', value: 1 },
+    // { title: '150%', value: 1.5 },
+    // { title: '200%', value: 2 },
+  ];
+  
 
   const handleExport = () => {
     if (editor) {
@@ -179,7 +192,38 @@ const TiptapToolBar = ({
             <EditorFontFamily
               editor={editor as Editor}
               elementRef={toolRef}
-              setToolVisibility={setToolVisibility} />
+              setToolVisibility={setToolVisibility}
+            />
+          }
+        />
+        <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
+        <DynamicDropdown
+          key="zoom-levels"
+          anchorTrigger={
+            <button
+              className="bg-transparent hover:bg-gray-200 rounded py-2 px-4 flex items-center gap-2"
+              onClick={() => {}}
+            >
+              <span className='text-body-sm'>
+                {zoomLevels.find((z) => z.value === zoomLevel)?.title || '100%'}
+              </span>
+              <LucideIcon name="ChevronDown" size="sm" />
+            </button>
+          }
+          content={
+            <div className="zoom-level-options w-[110px] text-body-sm">
+              {zoomLevels.map((zoom) => (
+                <button
+                  key={zoom.title}
+                  className="hover:bg-gray-200 rounded py-1 px-2 w-full text-left"
+                  onClick={() => {
+                      setZoomLevel(zoom.value);
+                  }}
+                >
+                  {zoom.title}
+                </button>
+              ))}
+            </div>
           }
         />
         <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
@@ -194,10 +238,10 @@ const TiptapToolBar = ({
                 {editor?.isActive('heading', { level: 1 })
                   ? 'Heading 1'
                   : editor?.isActive('heading', { level: 2 })
-                    ? 'Heading 2'
-                    : editor?.isActive('heading', { level: 3 })
-                      ? 'Heading 3'
-                      : 'Text'}
+                  ? 'Heading 2'
+                  : editor?.isActive('heading', { level: 3 })
+                  ? 'Heading 3'
+                  : 'Text'}
               </span>
               <LucideIcon name="ChevronDown" size="sm" />
             </button>
