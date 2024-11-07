@@ -324,6 +324,7 @@ const DdocEditor = forwardRef(
                className={cn(
               'w-full h-full pt-8 md:pt-0',
               {'!mt-24': isIOS && hasEditorContent},
+              { 'bg-white': zoomLevel === 1.4 },
             )}  
             style={{
               transformOrigin: 'top center',
