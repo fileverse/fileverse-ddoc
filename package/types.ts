@@ -43,6 +43,7 @@ export interface DdocProps {
   tags?: Array<{ name: string; color: string }>;
   className?: string;
   scrollPosition?: number;
+  unFocused?: boolean;
 }
 
 export interface IEditorSelectionData {

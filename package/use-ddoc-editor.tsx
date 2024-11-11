@@ -44,6 +44,7 @@ export const useDdocEditor = ({
   setWordCount,
   secureImageUploadUrl,
   scrollPosition,
+  unFocused,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
@@ -149,7 +150,7 @@ export const useDdocEditor = ({
         },
         handleClick: handleCommentClick,
       },
-      autofocus: 'start',
+      autofocus: unFocused ? false : 'start',
       onTransaction: ({ editor, transaction }) => {
         if (editor?.isEmpty) {
           return;
@@ -164,7 +165,7 @@ export const useDdocEditor = ({
     [extensions],
   );
 
-  const collaborationCleanupRef = useRef<() => void>(() => {});
+  const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
