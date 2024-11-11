@@ -326,7 +326,10 @@ const DdocEditor = forwardRef(
               {tags && tags.length > 0 && (
                 <div
                   ref={tagsContainerRef}
-                  className="flex flex-wrap px-4 md:px-[80px] lg:!px-[124px] items-center pt-12 gap-1 mb-4 mt-4 lg:!mt-0"
+                  className={cn(
+                    'flex flex-wrap px-4 md:px-[80px] lg:!px-[124px] items-center gap-1 mb-4 mt-4 lg:!mt-0',
+                    { 'pt-12': isPreviewMode },
+                  )}
                 >
                   {visibleTags.map((tag, index) => (
                     <Tag
