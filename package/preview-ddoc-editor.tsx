@@ -39,8 +39,6 @@ const PreviewDdocEditor = forwardRef(
             selectedTags,
             setSelectedTags,
             className,
-            isCommentSectionOpen,
-            setIsCommentSectionOpen,
             unFocused
         }: DdocProps,
         ref,
@@ -82,8 +80,6 @@ const PreviewDdocEditor = forwardRef(
             setCharacterCount,
             setWordCount,
             secureImageUploadUrl,
-            isCommentSectionOpen,
-            setIsCommentSectionOpen,
             unFocused
         });
 
