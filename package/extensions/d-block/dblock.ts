@@ -238,6 +238,11 @@ export const DBlock = Node.create<DBlockOptions>({
         const node = $head.node($head.depth);
         const nodeStartPos = $head.start();
         const isAtStartOfNode = nodeStartPos === from;
+        const isAtTheStartOfDocument = from === 2;
+
+        if (isAtTheStartOfDocument && from === to) {
+          return editor.chain().deleteNode(this.name).focus().run();
+        }
 
         const isListOrTaskList =
           parent?.type.name === 'listItem' || parent?.type.name === 'taskItem';
@@ -261,23 +266,31 @@ export const DBlock = Node.create<DBlockOptions>({
           return true;
         }
 
+        const isNearestDBlock = doc.nodeAt(from - 4)?.type.name === 'dBlock';
+
+        const isNearestListItem =
+          doc.nodeAt(from - 2)?.type.name === 'listItem' ||
+          doc.nodeAt(from - 2)?.type.name === 'taskItem';
+
+        // Fix for deleting the first item in a list that breaks the list
         if (isAtStartOfNode && isListOrTaskList) {
-          if (isNodeEmpty) {
-            return editor.commands.joinTextblockBackward();
+          if (isNodeEmpty && isNearestDBlock) {
+            return true;
           } else {
-            return editor.commands.liftListItem(
-              isTaskList ? 'taskItem' : 'listItem',
-            );
+            if (isNearestListItem) {
+              return editor.commands.liftListItem(
+                isTaskList ? 'taskItem' : 'listItem',
+              );
+            } else {
+              return editor.commands.joinTextblockBackward();
+            }
           }
         }
 
         const isItemSelected = from !== to && isListOrTaskList;
+
         if (isItemSelected) {
           return editor.chain().deleteSelection().focus().run();
-        }
-
-        if (!isListOrTaskList && isNodeEmpty) {
-          return editor.chain().deleteNode(this.name).focus().run();
         }
 
         return false;
