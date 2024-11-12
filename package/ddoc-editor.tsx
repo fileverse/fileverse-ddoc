@@ -68,6 +68,7 @@ const DdocEditor = forwardRef(
       checkOs() === 'Windows Phone' ||
       isMobile;
 
+    const isIOS = checkOs() === 'iOS';
     const [isHiddenTagsVisible, setIsHiddenTagsVisible] = useState(false);
     const tagsContainerRef = useRef(null);
 
@@ -200,6 +201,43 @@ const DdocEditor = forwardRef(
       };
     }, [editor]);
 
+    const [hasEditorContent, setHasEditorContent] = useState(false);
+
+    useEffect(() => {
+      if (editorRef.current) {
+        const checkEditorEmpty = () => {
+          const editorEmpty =
+            editorRef.current?.querySelector('.is-editor-empty');
+          setHasEditorContent(!editorEmpty);
+        };
+
+        checkEditorEmpty();
+
+        const observer = new MutationObserver(() => {
+          checkEditorEmpty();
+        });
+
+        observer.observe(editorRef.current, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+        });
+
+        return () => observer.disconnect();
+      }
+    }, []);
+
+    useEffect(() => {
+      const intervalId = setInterval(() => {
+        if (editorRef.current) {
+          const editorEmpty =
+            editorRef.current.querySelector('.is-editor-empty');
+          setHasEditorContent(!editorEmpty);
+        }
+      }, 1000);
+      return () => clearInterval(intervalId);
+    }, []);
+
     // Push the editor to the top when the keyboard is visible
     useEffect(() => {
       if (!isNativeMobile || !editor) return;
@@ -229,7 +267,10 @@ const DdocEditor = forwardRef(
     }
 
     return (
-      <div data-cy="single-webpage" className="bg-[#f8f9fa] w-full overflow-y-auto h-screen no-scrollbar">
+      <div
+        data-cy="single-webpage"
+        className="bg-[#f8f9fa] w-full overflow-y-auto h-screen no-scrollbar"
+      >
         <nav
           id="Navbar"
           className={cn(
@@ -276,10 +317,12 @@ const DdocEditor = forwardRef(
             { 'min-h-[83vh]': isNavbarVisible },
             { 'min-h-[90vh]': !isNavbarVisible },
           )}
-                >
+        >
           <div
             ref={editorRef}
-            className="w-full h-full pt-8 md:pt-0"
+            className={cn('w-full h-full pt-8 md:pt-0', {
+              '!mt-24': isIOS && hasEditorContent,
+            })}
           >
             {!isPreviewMode && (
               <div>
@@ -297,7 +340,10 @@ const DdocEditor = forwardRef(
               {tags && tags.length > 0 && (
                 <div
                   ref={tagsContainerRef}
-                  className="flex flex-wrap px-4 md:px-[80px] lg:!px-[124px] items-center gap-1 mb-4 mt-4 lg:!mt-0"
+                  className={cn(
+                    'flex flex-wrap px-4 md:px-[80px] lg:!px-[124px] items-center gap-1 mb-4 mt-4 lg:!mt-0',
+                    { 'pt-12': isPreviewMode },
+                  )}
                 >
                   {visibleTags.map((tag, index) => (
                     <Tag
