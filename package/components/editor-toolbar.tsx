@@ -62,7 +62,7 @@ const TiptapToolBar = ({
     { title: '75%', value: 0.75 },
     { title: '100%', value: 1 },
     { title: '150%', value: 1.5 },
-    // { title: '200%', value: 2 },
+    { title: '200%', value: 2 },
   ];
   
 

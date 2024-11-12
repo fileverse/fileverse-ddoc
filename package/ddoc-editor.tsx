@@ -261,7 +261,12 @@ const DdocEditor = forwardRef(
     }
 
     return (
-      <div data-cy="single-webpage" className="bg-[#f8f9fa] w-full overflow-y-auto h-screen overflow-x-hidden no-scrollbar">
+      <div
+        data-cy="single-webpage"
+        className={`bg-[#f8f9fa] w-full h-screen overflow-y-auto no-scrollbar ${
+          zoomLevel === 2 ? 'overflow-x-auto' : 'overflow-x-hidden'
+        }`}
+      >
         <nav
           id="Navbar"
           className={cn(
@@ -312,24 +317,24 @@ const DdocEditor = forwardRef(
             { 'w-[850px] md:max-w-[850px] h-[100%]': zoomLevel === 1 },
             { 'w-[70%] md:max-w-[70%] h-[200%]': zoomLevel === 1.4 },
             { 'w-[1062.5px] md:max-w-[1062.5px] h-[100%]': zoomLevel === 1.5 },
-            // { 'w-[1548px] md:max-w-[1548px]': zoomLevel === 2},
+            { 'w-[1548px] md:max-w-[1548px]': zoomLevel === 2 },
           )}
           style={{
-            transformOrigin: 'top center',
+            transformOrigin: zoomLevel === 2 ? 'left center' : 'top center',
             transform: `scaleX(${zoomLevel})`,
-          }}  
-          >
+          }}
+        >
           <div
             ref={editorRef}
-               className={cn(
+            className={cn(
               'w-full h-full pt-8 md:pt-0',
               {'!mt-24': isIOS && hasEditorContent},
               { 'bg-white': zoomLevel === 1.4 || 1.5 },
-            )}  
+            )}
             style={{
               transformOrigin: 'top center',
               transform: `scaleY(${zoomLevel})`,
-            }}          
+            }}
           >
             {!isPreviewMode && (
               <div>
@@ -419,13 +424,13 @@ const DdocEditor = forwardRef(
           )}
         </div>
         {!isPreviewMode && !disableBottomToolbar && (
-         <div
-         className={cn(
-           'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-10 px-4 bg-[#ffffff] transition-all duration-300 ease-in-out border-b border-color-default',
-           isKeyboardVisible && 'hidden',
+          <div
+            className={cn(
+              'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-10 px-4 bg-[#ffffff] transition-all duration-300 ease-in-out border-b border-color-default',
+              isKeyboardVisible && 'hidden',
               { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
-         )}
-       >       
+            )}
+          >
             <MobileToolbar
               onError={onError}
               editor={editor}
@@ -436,7 +441,7 @@ const DdocEditor = forwardRef(
             />
           </div>
         )}
-        </div>
+      </div>
     );
   },
 );
