@@ -171,7 +171,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           <InlineCommentPopup
             editor={props.editor}
             elementRef={toolRef}
-            setIsInlineCommentPopupOpen={props.setIsCommentSectionOpen}
+            setIsCommentSectionOpen={props.setIsCommentSectionOpen}
             inlineCommentData={props.inlineCommentData}
             setInlineCommentData={(data) => props.setInlineCommentData?.(prev => ({ ...prev, ...data }))}
           />
@@ -209,7 +209,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             if (selection.rangeCount > 0) {
               const selectedText = selection.toString().trim();
               if (selectedText) {
-                props.editor.chain().setHighlight({ color: '#DDFBDF' }).run();
                 props.setInlineCommentData((prevData) => {
                   const updatedData = {
                     ...prevData,
@@ -217,6 +216,10 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                   };
                   return updatedData;
                 });
+          
+                setTimeout(() => {
+                  props.editor.chain().setHighlight({ color: '#DDFBDF' }).run();
+                }, 10); 
               }
             }
           };

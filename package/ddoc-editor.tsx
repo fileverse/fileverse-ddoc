@@ -271,7 +271,7 @@ const DdocEditor = forwardRef(
             { 'md:!mt-16': !isPreviewMode },
             { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
             { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
-            { '!ml-64': isCommentSectionOpen && !isNativeMobile },
+            { '!ml-[18%]': isCommentSectionOpen && !isNativeMobile },
             { '!mx-auto': !isCommentSectionOpen },
             { 'min-h-[83vh]': isNavbarVisible },
             { 'min-h-[90vh]': !isNavbarVisible },

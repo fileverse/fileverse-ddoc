@@ -748,16 +748,16 @@ export const LinkPopup = ({
 export const InlineCommentPopup = ({
   elementRef,
   editor,
-  setIsInlineCommentPopupOpen,
+  setIsCommentSectionOpen,
   inlineCommentData,
   setInlineCommentData,
 }: {
   elementRef: React.RefObject<HTMLDivElement>;
   editor: Editor;
-  setIsInlineCommentPopupOpen: Dispatch<SetStateAction<boolean>>;
-  inlineCommentData: { highlightedText: string; inlineCommentText: string; handleClick: boolean };
+  setIsCommentSectionOpen: Dispatch<SetStateAction<boolean>>;
+  inlineCommentData: { highlightedTextContent: string; inlineCommentText: string; handleClick: boolean };
   setInlineCommentData: (data: {
-    highlightedText?: string;
+    highlightedTextContent?: string;
     inlineCommentText?: string;
     handleClick?: boolean;
   }) => void;
@@ -776,7 +776,7 @@ export const InlineCommentPopup = ({
   const handleClosePopup = () => {
     editor.chain().unsetHighlight().run();
     setComment('');
-    setInlineCommentData({ inlineCommentText: '', highlightedText: "", handleClick: false });
+    setInlineCommentData({ inlineCommentText: '', highlightedTextContent: "", handleClick: false });
   };
 
   // Close popup if click is outside or ESC key is pressed
@@ -804,22 +804,21 @@ export const InlineCommentPopup = ({
       // Update comment data and highlight
       setInlineCommentData({ inlineCommentText: comment, handleClick: true });
       editor.chain().unsetHighlight().run();
-      setIsInlineCommentPopupOpen(true);
-
+      setIsCommentSectionOpen(true);            
       // Reset comment field
       setComment('');
 
       // Close popup using ref
-      if (elementRef.current?.parentElement) {
+    if (elementRef.current?.parentElement) {
         // Find and close the nearest popover/dropdown container
         const popoverContent = elementRef.current.closest('[role="dialog"]');
-        if (popoverContent) {
-          popoverContent.remove();
-        }
+            if (popoverContent) {
+                popoverContent.remove();
+            }
       }
 
     }
-  };
+};
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
