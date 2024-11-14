@@ -42,6 +42,7 @@ export const useDdocEditor = ({
   onDisconnectionDueToSyncError,
   secureImageUploadUrl,
   scrollPosition,
+  unFocused,
 }: Partial<DdocProps>) => {
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions(
@@ -91,12 +92,21 @@ export const useDdocEditor = ({
           },
         },
       },
-      autofocus: 'start',
+      autofocus: unFocused ? false : 'start',
+      onTransaction: ({ editor, transaction }) => {
+        if (editor?.isEmpty) {
+          return;
+        }
+        if (transaction.docChanged) {
+          onChange?.(getYjsEncodedState());
+        }
+      },
       shouldRerenderOnTransaction: true,
       immediatelyRender: false,
     },
     [extensions, ydoc],
   );
+
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
       throw new Error('docId or username is not provided');

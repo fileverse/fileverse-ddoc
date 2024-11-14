@@ -18,10 +18,20 @@ export interface IDocCollabUsers {
   color: string;
 }
 
+type InlineCommentData = {
+  inlineCommentText: string;
+  highlightedTextContent: string;
+  handleClick: boolean;
+};
+
 export interface DdocProps {
   selectedTags?: TagType[];
   setSelectedTags?: React.Dispatch<SetStateAction<TagType[]>>;
-  enableCollaboration?: boolean;
+  enableCollaboration?: boolean | undefined;
+  setIsCommentSectionOpen?: React.Dispatch<SetStateAction<boolean>>;
+  inlineCommentData?: InlineCommentData;
+  setInlineCommentData?: React.Dispatch<React.SetStateAction<InlineCommentData>>;
+  isCommentSectionOpen?: boolean;
   collaborationId?: string;
   isPreviewMode: boolean;
   ensResolutionUrl?: string;
@@ -46,6 +56,7 @@ export interface DdocProps {
   tags?: Array<{ name: string; color: string }>;
   className?: string;
   scrollPosition?: number;
+  unFocused?: boolean;
 }
 
 export interface IEditorSelectionData {

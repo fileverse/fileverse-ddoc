@@ -54,7 +54,10 @@ const DdocEditor = forwardRef(
       tags,
       selectedTags,
       setSelectedTags,
-      scrollPosition,
+      isCommentSectionOpen,
+      setIsCommentSectionOpen,
+      setInlineCommentData,
+      inlineCommentData
     }: DdocProps,
     ref,
   ) => {
@@ -68,6 +71,7 @@ const DdocEditor = forwardRef(
       checkOs() === 'Windows Phone' ||
       isMobile;
 
+    const isIOS = checkOs() === 'iOS';
     const [isHiddenTagsVisible, setIsHiddenTagsVisible] = useState(false);
     const tagsContainerRef = useRef(null);
 
@@ -113,7 +117,10 @@ const DdocEditor = forwardRef(
       collaborationKey,
       yjsUpdate,
       secureImageUploadUrl,
-      scrollPosition,
+      isCommentSectionOpen,
+      setIsCommentSectionOpen,
+      setInlineCommentData,
+      inlineCommentData
     });
 
     useImperativeHandle(
@@ -203,6 +210,43 @@ const DdocEditor = forwardRef(
       };
     }, [editor]);
 
+    const [hasEditorContent, setHasEditorContent] = useState(false);
+
+    useEffect(() => {
+      if (editorRef.current) {
+        const checkEditorEmpty = () => {
+          const editorEmpty =
+            editorRef.current?.querySelector('.is-editor-empty');
+          setHasEditorContent(!editorEmpty);
+        };
+
+        checkEditorEmpty();
+
+        const observer = new MutationObserver(() => {
+          checkEditorEmpty();
+        });
+
+        observer.observe(editorRef.current, {
+          childList: true,
+          subtree: true,
+          attributes: true,
+        });
+
+        return () => observer.disconnect();
+      }
+    }, []);
+
+    useEffect(() => {
+      const intervalId = setInterval(() => {
+        if (editorRef.current) {
+          const editorEmpty =
+            editorRef.current.querySelector('.is-editor-empty');
+          setHasEditorContent(!editorEmpty);
+        }
+      }, 1000);
+      return () => clearInterval(intervalId);
+    }, []);
+
     // Push the editor to the top when the keyboard is visible
     useEffect(() => {
       if (!isNativeMobile || !editor) return;
@@ -237,7 +281,7 @@ const DdocEditor = forwardRef(
     return (
       <div
         data-cy="single-webpage"
-        className="bg-[#f8f9fa] h-full w-full"
+        className="bg-[#f8f9fa] w-full overflow-y-auto h-screen no-scrollbar"
       >
         <nav
           id="Navbar"
@@ -290,145 +334,143 @@ const DdocEditor = forwardRef(
               </div>
             </div>
           )}
+                  <div
+          className={cn(
+            'bg-white w-full md:w-[850px] max-w-[850px] mx-auto rounded',
+            { 'mt-0 md:!mt-16': isPreviewMode },
+            { 'md:!mt-16': !isPreviewMode },
+            { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
+            { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
+            { 'max-[1080px]:!mx-auto min-[1081px]:!ml-[18%] min-[1700px]:!mx-auto': isCommentSectionOpen && !isNativeMobile },            
+            { '!mx-auto': !isCommentSectionOpen },
+            { 'min-h-[83vh]': isNavbarVisible },
+            { 'min-h-[90vh]': !isNavbarVisible },
+          )}
+        >
           <div
-            className={cn(
-              'bg-white w-full md:w-[850px] max-w-[850px] mx-auto rounded',
-              { 'mt-0 md:!mt-16': isPreviewMode },
-              { 'md:!mt-16': !isPreviewMode },
-              { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
-              { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
-            )}
-            style={{
-              height:
-                isNativeMobile && !isPreviewMode ? 'calc(100vh - 4rem)' : '95vh',
-            }}
+            ref={editorRef}
+            className={cn('w-full h-full pt-8 md:pt-0', {
+              '!mt-24': isIOS && hasEditorContent,
+            })}
           >
-            <div
-              ref={editorRef}
-              className="w-full h-full overflow-y-scroll overflow-x-hidden no-scrollbar pt-8 md:pt-0"
-            >
-              {!isPreviewMode && (
-                <div>
-                  <EditorBubbleMenu editor={editor} onError={onError} />
-                  <ColumnsMenu editor={editor} appendTo={editorRef} />
+            {!isPreviewMode && (
+              <div>
+                <EditorBubbleMenu
+                  editor={editor}
+                  onError={onError}
+                  setIsCommentSectionOpen={setIsCommentSectionOpen}
+                  inlineCommentData={inlineCommentData}
+                  setInlineCommentData={setInlineCommentData}
+                />
+                <ColumnsMenu editor={editor} appendTo={editorRef} />
+              </div>
+            )}
+            <EditingProvider isPreviewMode={isPreviewMode}>
+              {tags && tags.length > 0 && (
+                <div
+                  ref={tagsContainerRef}
+                  className={cn(
+                    'flex flex-wrap px-4 md:px-[80px] lg:!px-[124px] items-center gap-1 mb-4 mt-4 lg:!mt-0',
+                    { 'pt-12': isPreviewMode },
+                  )}
+                >
+                  {visibleTags.map((tag, index) => (
+                    <Tag
+                      key={index}
+                      style={{ backgroundColor: tag?.color }}
+                      onRemove={() => handleRemoveTag(tag?.name)}
+                      isRemovable={!isPreviewMode}
+                      className="!h-6 rounded"
+                    >
+                      {tag?.name}
+                    </Tag>
+                  ))}
+                  {hiddenTagsCount > 0 && !isHiddenTagsVisible && (
+                    <Button
+                      variant="ghost"
+                      className="!h-6 rounded min-w-fit !px-2 color-bg-secondary text-helper-text-sm"
+                      onClick={() => setIsHiddenTagsVisible(true)}
+                    >
+                      +{hiddenTagsCount}
+                    </Button>
+                  )}
+                  <AnimatePresence>
+                    {isHiddenTagsVisible && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3 }}
+                        className="flex flex-wrap items-center gap-1"
+                      >
+                        {selectedTags?.slice(4).map((tag, index) => (
+                          <Tag
+                            key={index + 4}
+                            style={{ backgroundColor: tag?.color }}
+                            onRemove={() => handleRemoveTag(tag?.name)}
+                            isRemovable={!isPreviewMode}
+                            className="!h-6 rounded"
+                          >
+                            {tag?.name}
+                          </Tag>
+                        ))}
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                  {selectedTags && selectedTags?.length < 6 ? (
+                    <TagInput
+                      tags={tags || []}
+                      selectedTags={selectedTags as TagType[]}
+                      onAddTag={handleAddTag}
+                      isPreviewMode={isPreviewMode}
+                    />
+                  ) : null}
                 </div>
               )}
-              <EditingProvider isPreviewMode={isPreviewMode}>
-                {tags && tags.length > 0 && (
-                  <div
-                    ref={tagsContainerRef}
-                    className="flex flex-wrap px-4 md:px-[80px] lg:!px-[124px] items-center gap-1 mb-4 mt-4 lg:!mt-0"
-                  >
-                    {visibleTags.map((tag, index) => (
-                      <Tag
-                        key={index}
-                        style={{ backgroundColor: tag?.color }}
-                        onRemove={() => handleRemoveTag(tag?.name)}
-                        isRemovable={!isPreviewMode}
-                        className="!h-6 rounded"
-                      >
-                        {tag?.name}
-                      </Tag>
-                    ))}
-                    {hiddenTagsCount > 0 && !isHiddenTagsVisible && (
-                      <Button
-                        variant="ghost"
-                        className="!h-6 rounded min-w-fit !px-2 color-bg-secondary text-helper-text-sm"
-                        onClick={() => setIsHiddenTagsVisible(true)}
-                      >
-                        +{hiddenTagsCount}
-                      </Button>
-                    )}
-                    <AnimatePresence>
-                      {isHiddenTagsVisible && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.3 }}
-                          className="flex flex-wrap items-center gap-1"
-                        >
-                          {selectedTags?.slice(4).map((tag, index) => (
-                            <Tag
-                              key={index + 4}
-                              style={{ backgroundColor: tag?.color }}
-                              onRemove={() => handleRemoveTag(tag?.name)}
-                              isRemovable={!isPreviewMode}
-                              className="!h-6 rounded"
-                            >
-                              {tag?.name}
-                            </Tag>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                    {selectedTags && selectedTags?.length < 6 ? (
-                      <TagInput
-                        tags={tags || []}
-                        selectedTags={selectedTags as TagType[]}
-                        onAddTag={handleAddTag}
-                        isPreviewMode={isPreviewMode}
-                      />
-                    ) : null}
-                  </div>
-                )}
-                <EditorContent
-                  editor={editor}
-                  id="editor"
-                  className="w-full h-auto py-4"
-                />
-              </EditingProvider>
-            </div>
-            {showCommentButton && !isNativeMobile && (
-              <Button
-                ref={btn_ref}
-                onClick={() => {
-                  handleCommentButtonClick?.(editor);
-                }}
-                variant="ghost"
-                className={cn(
-                  'p-4 md:px-[80px] md:py-[78px] bg-white w-full md:w-[850px] max-w-[850px] mx-auto shadow-elevation-2 rounded',
-                  { 'mt-0 md:!mt-16': isPreviewMode },
-                  { 'md:!mt-16': !isPreviewMode },
-                  { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
-                  { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
-                )}
-                style={{
-                  height:
-                    isNativeMobile && !isPreviewMode
-                      ? 'calc(100vh - 4rem)'
-                      : '95vh',
-                }}
-              >
-                <LucideIcon name="MessageSquareText" size="sm" />
-              </Button>
-            )}
+              <EditorContent
+                editor={editor}
+                id="editor"
+                className="w-full h-auto py-4"
+              />
+            </EditingProvider>
           </div>
-          {!isPreviewMode && !disableBottomToolbar && (
-            <div
+          {showCommentButton && !isNativeMobile && (
+            <Button
+              ref={btn_ref}
+              onClick={() => {
+                handleCommentButtonClick?.(editor);
+              }}
+              variant="ghost"
               className={cn(
-                'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-10 px-4 bg-[#ffffff] transition-all duration-300 ease-in-out border-b border-color-default',
-                isKeyboardVisible && 'hidden',
-                { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
+                'absolute w-12 h-12 bg-white rounded-full shadow-xl top-[70px] right-[-23px]',
               )}
             >
-              <MobileToolbar
-                onError={onError}
-                editor={editor}
-                isKeyboardVisible={isKeyboardVisible}
-                isNavbarVisible={isNavbarVisible}
-                setIsNavbarVisible={setIsNavbarVisible}
-                secureImageUploadUrl={secureImageUploadUrl}
-              />
-            </div>
+              <LucideIcon name="MessageSquareText" size="sm" />
+            </Button>
           )}
+        </div>
+        {!isPreviewMode && !disableBottomToolbar && (
+          <div
+            className={cn(
+              'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-10 px-4 bg-[#ffffff] transition-all duration-300 ease-in-out border-b border-color-default',
+              isKeyboardVisible && 'hidden',
+              { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
+            )}
+          >
+            <MobileToolbar
+              onError={onError}
+              editor={editor}
+              isKeyboardVisible={isKeyboardVisible}
+              isNavbarVisible={isNavbarVisible}
+              setIsNavbarVisible={setIsNavbarVisible}
+              secureImageUploadUrl={secureImageUploadUrl}
+            />
+          </div>
+        )}
           </>
         )
         }
-
       </div>
-    );
-  },
-);
+)});
 
-export default DdocEditor;
+export default DdocEditor
