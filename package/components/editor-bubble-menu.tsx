@@ -109,6 +109,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       moveTransition: 'transform 0.15s ease-out',
       duration: 200,
       animation: 'shift-toward-subtle',
+      zIndex: 50,
     },
   };
 
