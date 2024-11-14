@@ -28,7 +28,7 @@ import {
   TextField,
   Tooltip,
 } from '@fileverse/ui';
-import { useOnClickOutside } from 'usehooks-ts';
+import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
 import { colors } from '../utils/colors';
 
 interface IEditorToolElement {
@@ -765,7 +765,7 @@ export const InlineCommentPopup = ({
   const [comment, setComment] = useState(
     inlineCommentData.inlineCommentText || '',
   );
-
+  const isMobile = useMediaQuery('(max-width: 1023px)');
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setComment(value);
@@ -843,7 +843,7 @@ export const InlineCommentPopup = ({
       {comment.trim() !== '' && (
         <div className="h-full flex items-center gap-2 p-3">
           <span className="w-full text-[12px] text-[#77818A]">
-            Press <span className='font-semibold'>Enter</span> to send a comment
+            Press <span className='font-semibold'>{isMobile ? 'Send' : 'Enter'}</span> to send a comment
           </span>
           <Button
             className="!min-w-[10px] !h-8 !px-2"
