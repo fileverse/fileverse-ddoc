@@ -12,6 +12,7 @@ import {
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 import { DEFAULT_ENCRYPTION_KEY } from './constants';
+import { toByteArray } from 'base64-js';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -23,6 +24,19 @@ const sampleTags = [
   { name: 'Specific Event', isActive: true, color: '#AAF5E4' },
 ];
 
+export const toAESKey = async (key: string) => {
+  const keyBytes = toByteArray(key);
+  return await window.crypto.subtle.importKey(
+    'raw',
+    keyBytes,
+    {
+      name: 'AES-GCM',
+    },
+    true,
+    ['encrypt', 'decrypt'],
+  );
+};
+
 function App() {
   const [enableCollaboration, setEnableCollaboration] = useState(false);
   const [username, setUsername] = useState('');
@@ -30,6 +44,7 @@ function App() {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [selectedTags, setSelectedTags] = useState<TagType[]>([]);
   const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(false);
+  const [collabKey, setCollabKey] = useState<CryptoKey>();
   const [inlineCommentData, setInlineCommentData] = useState({
     inlineCommentText: '',
     highlightedTextContent: '',
@@ -39,6 +54,17 @@ function App() {
   const isPreviewMode = false;
 
   const collaborationId = window.location.pathname.split('/')[2]; // example url - /doc/1234, that why's used second element of array
+
+  useEffect(() => {
+    if (DEFAULT_ENCRYPTION_KEY) {
+      const handleKey = async () => {
+        const key = await toAESKey(DEFAULT_ENCRYPTION_KEY);
+        setCollabKey(key);
+      };
+
+      handleKey();
+    }
+  }, [DEFAULT_ENCRYPTION_KEY]);
 
   useEffect(() => {
     if (collaborationId) {
@@ -136,7 +162,7 @@ function App() {
         }}
         renderNavbar={renderNavbar}
         ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}
-        collaborationKey={DEFAULT_ENCRYPTION_KEY}
+        collaborationKey={collabKey}
         secureImageUploadUrl={import.meta.env.VITE_SECURE_IMAGE_UPLOAD_URL}
         tags={sampleTags}
         selectedTags={selectedTags}
