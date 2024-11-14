@@ -16,6 +16,7 @@ import {
 import { IEditorTool } from '../hooks/use-visibility';
 import ToolbarButton from '../common/toolbar-button';
 import { DynamicDropdown } from '@fileverse/ui';
+import { useMediaQuery } from 'usehooks-ts';
 
 export interface BubbleMenuItem {
   name: string;
@@ -188,104 +189,133 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     }
   };
 
+  const isMobile = useMediaQuery('(max-width: 1023px)');
+
+  const handleHighlight = () => {
+    const selection = window.getSelection();
+    if (selection.rangeCount > 0) {
+      const selectedText = selection.toString().trim();
+      if (selectedText) {
+        props.setInlineCommentData((prevData) => {
+          const updatedData = {
+            ...prevData,
+            highlightedTextContent: selectedText,
+          };
+          return updatedData;
+        });
+
+        setTimeout(() => {
+          props.editor.chain().setHighlight({ color: '#DDFBDF' }).run();
+        }, 10);
+      }
+    }
+  };
+
   return (
     <BubbleMenu
       {...bubbleMenuProps}
       shouldShow={shouldShow}
-      className="hidden lg:flex gap-2 overflow-hidden rounded-lg h-[52px] min-w-fit w-full py-2 px-4 bg-white items-center shadow-elevation-1"
+      className="flex gap-2 overflow-hidden rounded-lg h-[52px] min-w-fit w-full py-2 px-4 bg-white items-center shadow-elevation-1"
     >
-      <NodeSelector editor={props.editor} elementRef={toolRef} />
-
-      {items.map((item, index) => {
-        if (
-          item.name === 'Alignment' ||
-          item.name === 'Link' ||
-          item.name === 'Scripts' ||
-          item.name === 'InlineComment'
-        ) {
-
-          const handleHighlight = () => {
-            const selection = window.getSelection();
-            if (selection.rangeCount > 0) {
-              const selectedText = selection.toString().trim();
-              if (selectedText) {
-                props.setInlineCommentData((prevData) => {
-                  const updatedData = {
-                    ...prevData,
-                    highlightedTextContent: selectedText,
-                  };
-                  return updatedData;
-                });
-          
-                setTimeout(() => {
-                  props.editor.chain().setHighlight({ color: '#DDFBDF' }).run();
-                }, 10); 
-              }
-            }
-          };
-
-          return (
-            <DynamicDropdown
-              key={item.name}
-              sideOffset={15}
-              anchorTrigger={
-                <ToolbarButton icon={item.icon} variant="ghost" size="md" onClick={() => item.name === "InlineComment" ? handleHighlight() : null} />
-              }
-              content={renderContent(item)}
-            />
-          );
-        } else if (item) {
-          return (
-            <div key={index} className="flex items-center">
+      {isMobile ? (
+        <>
+          <DynamicDropdown
+            key="InlineComment"
+            sideOffset={15}
+            anchorTrigger={
               <ToolbarButton
-                icon={item.icon}
-                onClick={item.command}
-                isActive={item.isActive()}
+                icon="MessageSquarePlus"
+                variant="ghost"
+                size="md"
+                onClick={() => handleHighlight()}
               />
-              {(index === 3 || index === 5) && (
-                <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
-              )}
-            </div>
-          );
-        } else {
-          return null;
-        }
-      })}
+            }
+            content={renderContent({ name: 'InlineComment' })}
+          />
+        </>
+      ) : (
+        <>
+          <NodeSelector editor={props.editor} elementRef={toolRef} />
 
-      <DynamicDropdown
-        key={IEditorTool.TEXT_COLOR}
-        sideOffset={15}
-        anchorTrigger={
-          <ToolbarButton
-            icon="Baseline"
-            isActive={toolVisibility === IEditorTool.TEXT_COLOR}
+          {items.map((item, index) => {
+            if (
+              item.name === 'Alignment' ||
+              item.name === 'Link' ||
+              item.name === 'Scripts' ||
+              item.name === 'InlineComment'
+            ) {
+
+              return (
+                <DynamicDropdown
+                  key={item.name}
+                  sideOffset={15}
+                  anchorTrigger={
+                    <ToolbarButton
+                      icon={item.icon}
+                      variant="ghost"
+                      size="md"
+                      onClick={() =>
+                        item.name === 'InlineComment' ? handleHighlight() : null
+                      }
+                    />
+                  }
+                  content={renderContent(item)}
+                />
+              );
+            } else if (item) {
+              return (
+                <div key={index} className="flex items-center">
+                  <ToolbarButton
+                    icon={item.icon}
+                    onClick={item.command}
+                    isActive={item.isActive()}
+                  />
+                  {(index === 3 || index === 5) && (
+                    <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
+                  )}
+                </div>
+              );
+            } else {
+              return null;
+            }
+          })}
+
+          <DynamicDropdown
+            key={IEditorTool.TEXT_COLOR}
+            sideOffset={15}
+            anchorTrigger={
+              <ToolbarButton
+                icon="Baseline"
+                isActive={toolVisibility === IEditorTool.TEXT_COLOR}
+              />
+            }
+            content={
+              <TextColor
+                setVisibility={setToolVisibility}
+                editor={props.editor as Editor}
+                elementRef={toolRef}
+              />
+            }
           />
-        }
-        content={
-          <TextColor
-            setVisibility={setToolVisibility}
-            editor={props.editor as Editor}
-            elementRef={toolRef}
+          <DynamicDropdown
+            key={IEditorTool.HIGHLIGHT}
+            sideOffset={15}
+            anchorTrigger={
+              <ToolbarButton
+                icon="Highlighter"
+                isActive={toolVisibility === IEditorTool.HIGHLIGHT}
+              />
+            }
+            content={
+              <TextHighlighter
+                setVisibility={setToolVisibility}
+                editor={props.editor as Editor}
+                elementRef={toolRef}
+              />
+            }
           />
-        }
-      />
-      <DynamicDropdown
-        key={IEditorTool.HIGHLIGHT}
-        sideOffset={15}
-        anchorTrigger={
-          <ToolbarButton
-            icon="Highlighter"
-            isActive={toolVisibility === IEditorTool.HIGHLIGHT}
-          />
-        }
-        content={
-          <TextHighlighter
-            setVisibility={setToolVisibility}
-            editor={props.editor as Editor}
-            elementRef={toolRef}
-          />
-        }
-      />
+        </>
+      )}
     </BubbleMenu>
   );
 };
