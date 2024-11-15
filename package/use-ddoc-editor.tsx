@@ -12,6 +12,7 @@ import { useSyncMachine } from '@fileverse-dev/sync';
 import { SyncCursor } from './extensions/sync-cursor';
 import customTextInputRules from './extensions/customTextInputRules';
 import { PageBreak } from './extensions/page-break/page-break';
+import { isJSONString } from './utils/isJsonString';
 
 const usercolors = [
   '#30bced',
@@ -38,7 +39,6 @@ export const useDdocEditor = ({
   setCharacterCount,
   setWordCount,
   collaborationKey,
-  yjsUpdate,
   onDisconnectionDueToSyncError,
   secureImageUploadUrl,
   scrollPosition,
@@ -56,7 +56,6 @@ export const useDdocEditor = ({
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
   const [isEns, setIsEns] = useState(false);
-  console.log({ collaborationKey }, 'from bishhhhhhhh');
   const {
     machine,
     connect: connectMachine,
@@ -121,15 +120,13 @@ export const useDdocEditor = ({
     editor?.setEditable(!isPreviewMode);
   }, [isPreviewMode, editor]);
   useEffect(() => {
-    if (
-      (initialContent || yjsUpdate) &&
-      editor &&
-      !initialContentSetRef.current
-    ) {
+    if (initialContent && editor && !initialContentSetRef.current) {
       setIsContentLoading(true);
       queueMicrotask(() => {
-        if (yjsUpdate) {
-          applyYjsEncodedState(yjsUpdate);
+        const isYjsUpdate =
+          typeof initialContent === 'string' && !isJSONString(initialContent);
+        if (isYjsUpdate) {
+          applyYjsEncodedState(initialContent);
         } else if (initialContent) {
           editor.commands.setContent(initialContent);
         }
@@ -153,7 +150,7 @@ export const useDdocEditor = ({
         setIsContentLoading(false);
       }
     });
-  }, [initialContent, editor, yjsUpdate]);
+  }, [initialContent, editor]);
 
   const isSyncFetchingFromIpfs = !!(machine[0] as any).value
     ?.syncing_latest_commit;
@@ -227,12 +224,6 @@ export const useDdocEditor = ({
     }
     return () => ydoc?.off('update', handler);
   }, [ydoc]);
-
-  useEffect(() => {
-    if (yjsUpdate) {
-      applyYjsEncodedState(yjsUpdate);
-    }
-  }, [yjsUpdate]);
 
   useEffect(() => {
     if (syncError && isStateMachineDisconnected) {

@@ -30,13 +30,15 @@ export interface DdocProps {
   enableCollaboration?: boolean | undefined;
   setIsCommentSectionOpen?: React.Dispatch<SetStateAction<boolean>>;
   inlineCommentData?: InlineCommentData;
-  setInlineCommentData?: React.Dispatch<React.SetStateAction<InlineCommentData>>;
+  setInlineCommentData?: React.Dispatch<
+    React.SetStateAction<InlineCommentData>
+  >;
   isCommentSectionOpen?: boolean;
   collaborationId?: string;
   isPreviewMode: boolean;
   ensResolutionUrl?: string;
   secureImageUploadUrl?: string;
-  initialContent?: JSONContent | null;
+  initialContent?: JSONContent | string | null;
   walletAddress?: string | null;
   username?: string | null;
   renderNavbar?: ({ editor }: { editor: JSONContent }) => JSX.Element;
@@ -51,7 +53,6 @@ export interface DdocProps {
   setCharacterCount?: React.Dispatch<SetStateAction<number>>;
   setWordCount?: React.Dispatch<SetStateAction<number>>;
   collaborationKey?: CryptoKey;
-  yjsUpdate?: string;
   onDisconnectionDueToSyncError?: (syncError: { message: string }) => void;
   tags?: Array<{ name: string; color: string }>;
   className?: string;
