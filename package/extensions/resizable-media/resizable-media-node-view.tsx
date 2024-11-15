@@ -38,6 +38,10 @@ export const ResizableMediaNodeView = ({
 
   const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
 
+  const [isDragging, setIsDragging] = useState(false);
+  const [touchTimeout, setTouchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const dragStartPos = useRef<{ x: number; y: number } | null>(null);
+
   const calculateMediaActionActiveStates = () => {
     const activeStates: Record<string, boolean> = {};
 
@@ -221,6 +225,55 @@ export const ResizableMediaNodeView = ({
     setIsAlign(node.attrs.dataAlign);
   }, [node.attrs]);
 
+  const handleTouchStart = (e: React.TouchEvent) => {
+    // Prevent default to avoid scrolling while attempting to drag
+    e.stopPropagation();
+
+    // Store initial touch position
+    dragStartPos.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY,
+    };
+
+    // Set a timeout to distinguish between tap and drag
+    const timeout = setTimeout(() => {
+      setIsDragging(true);
+    }, 500); // 500ms hold to start drag
+
+    setTouchTimeout(timeout);
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!isDragging) {
+      // If we moved before the drag started, cancel the timeout
+      if (touchTimeout) {
+        clearTimeout(touchTimeout);
+        setTouchTimeout(null);
+      }
+      return;
+    }
+
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  const handleTouchEnd = () => {
+    if (touchTimeout) {
+      clearTimeout(touchTimeout);
+      setTouchTimeout(null);
+    }
+    setIsDragging(false);
+    dragStartPos.current = null;
+  };
+
+  useEffect(() => {
+    return () => {
+      if (touchTimeout) {
+        clearTimeout(touchTimeout);
+      }
+    };
+  }, [touchTimeout]);
+
   return (
     <NodeViewWrapper
       as="article"
@@ -230,7 +283,18 @@ export const ResizableMediaNodeView = ({
         isAlign && `justify-${node.attrs.dataAlign}`,
       )}
     >
-      <div className="w-fit flex flex-col gap-2 relative group transition-all ease-in-out">
+      <div
+        draggable
+        data-drag-handle
+        className={cn(
+          "w-fit flex flex-col gap-2 relative group transition-all ease-in-out",
+          isDragging && "opacity-50"
+        )}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+        onTouchCancel={handleTouchEnd}
+      >
         {mediaType === 'img' && (
           <img
             src={node.attrs.src}
