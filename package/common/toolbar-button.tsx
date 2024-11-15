@@ -24,7 +24,7 @@ const ToolbarButton = forwardRef<HTMLButtonElement, {
           // @ts-ignore
           ref={ref}
           variant="ghost"
-          size="md"
+          size="sm"
           icon={icon}
           onClick={onClick}
           isActive={isActive}
@@ -39,7 +39,7 @@ const ToolbarButton = forwardRef<HTMLButtonElement, {
       // @ts-ignore
       ref={ref}
       variant="ghost"
-      size="md"
+      size="sm"
       icon={icon}
       onClick={onClick}
       isActive={isActive}

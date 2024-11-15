@@ -216,7 +216,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     <BubbleMenu
       {...bubbleMenuProps}
       shouldShow={shouldShow}
-      className="flex gap-2 overflow-hidden rounded-lg h-[52px] min-w-fit w-full py-2 px-4 bg-white items-center shadow-elevation-1"
+      className="flex gap-2 overflow-hidden rounded-lg h-[45px] min-w-fit w-full py-2 px-2 bg-white items-center shadow-elevation-1"
     >
       {isMobile ? (
         <>
