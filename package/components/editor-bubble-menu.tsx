@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 import { BubbleMenu, BubbleMenuProps, isNodeSelection } from '@tiptap/react';
-import React from 'react';
+import React, { useState } from 'react';
 import { NodeSelector } from './node-selector';
 import {
   LinkPopup,
@@ -15,7 +15,7 @@ import {
 } from './editor-utils';
 import { IEditorTool } from '../hooks/use-visibility';
 import ToolbarButton from '../common/toolbar-button';
-import { DynamicDropdown } from '@fileverse/ui';
+import { DynamicDropdown, cn } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 
 export interface BubbleMenuItem {
@@ -33,6 +33,7 @@ type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
 };
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
+  const [isInlineCommentOpen, setIsInlineCommentOpen] = useState(false);
   const items: BubbleMenuItem[] = [
     {
       name: 'Bold',
@@ -144,7 +145,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         });
       }
     });
-
     return !hasYellowHighlight;
   };
 
@@ -174,6 +174,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             editor={props.editor}
             elementRef={toolRef}
             setIsCommentSectionOpen={props.setIsCommentSectionOpen}
+            setIsInlineCommentOpen={setIsInlineCommentOpen}
             inlineCommentData={props.inlineCommentData}
             setInlineCommentData={(data) => props.setInlineCommentData?.(prev => ({ ...prev, ...data }))}
           />
@@ -210,19 +211,24 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         }, 10);
       }
     }
+    setIsInlineCommentOpen(true)
   };
 
   return (
     <BubbleMenu
       {...bubbleMenuProps}
       shouldShow={shouldShow}
-      className="flex gap-2 overflow-hidden rounded-lg h-[52px] min-w-fit w-full py-2 px-4 bg-white items-center shadow-elevation-1"
+      className={cn(
+        'flex gap-2 overflow-hidden rounded-lg h-[52px] min-w-fit w-full py-2 px-4 bg-white items-center shadow-elevation-1',
+        isInlineCommentOpen ? '!invisible' : '!visible'
+      )}
     >
       {isMobile ? (
-        <>
+        <div className={cn('relative', isInlineCommentOpen ? 'left-1/2 translate-x-1/2' : '')}>
           <DynamicDropdown
             key="InlineComment"
-            sideOffset={15}
+            side='top'
+            sideOffset={-40}
             anchorTrigger={
               <ToolbarButton
                 icon="MessageSquarePlus"
@@ -233,7 +239,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             }
             content={renderContent({ name: 'InlineComment' })}
           />
-        </>
+        </div>
       ) : (
         <>
           <NodeSelector editor={props.editor} elementRef={toolRef} />
@@ -249,7 +255,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               return (
                 <DynamicDropdown
                   key={item.name}
-                  sideOffset={15}
+                  sideOffset={isInlineCommentOpen ? 5 : 15}
                   anchorTrigger={
                     <ToolbarButton
                       icon={item.icon}
