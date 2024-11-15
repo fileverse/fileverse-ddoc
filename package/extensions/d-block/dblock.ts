@@ -272,10 +272,24 @@ export const DBlock = Node.create<DBlockOptions>({
           doc.nodeAt(from - 2)?.type.name === 'listItem' ||
           doc.nodeAt(from - 2)?.type.name === 'taskItem';
 
+        const isMultipleListItems =
+          $head.node($head.depth - 2).childCount > 1 ||
+          $head.node($head.depth - 1).childCount > 1;
+
+        const isItemSelected = from !== to && isListOrTaskList;
+
+        if (isItemSelected) {
+          return editor.chain().deleteSelection().focus().run();
+        }
+
         // Fix for deleting the first item in a list that breaks the list
         if (isAtStartOfNode && isListOrTaskList) {
           if (isNodeEmpty && isNearestDBlock) {
-            return true;
+            if (!isMultipleListItems) {
+              return editor.commands.deleteNode(this.name);
+            } else {
+              return true;
+            }
           } else {
             if (isNearestListItem) {
               return editor.commands.liftListItem(
@@ -285,12 +299,6 @@ export const DBlock = Node.create<DBlockOptions>({
               return editor.commands.joinTextblockBackward();
             }
           }
-        }
-
-        const isItemSelected = from !== to && isListOrTaskList;
-
-        if (isItemSelected) {
-          return editor.chain().deleteSelection().focus().run();
         }
 
         return false;
