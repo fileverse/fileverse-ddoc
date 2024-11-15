@@ -749,12 +749,14 @@ export const InlineCommentPopup = ({
   elementRef,
   editor,
   setIsCommentSectionOpen,
+  setIsInlineCommentOpen,
   inlineCommentData,
   setInlineCommentData,
 }: {
   elementRef: React.RefObject<HTMLDivElement>;
   editor: Editor;
   setIsCommentSectionOpen: Dispatch<SetStateAction<boolean>>;
+  setIsInlineCommentOpen: Dispatch<SetStateAction<boolean>>;
   inlineCommentData: { highlightedTextContent: string; inlineCommentText: string; handleClick: boolean };
   setInlineCommentData: (data: {
     highlightedTextContent?: string;
@@ -777,6 +779,7 @@ export const InlineCommentPopup = ({
     editor.chain().unsetHighlight().run();
     setComment('');
     setInlineCommentData({ inlineCommentText: '', highlightedTextContent: "", handleClick: false });
+    setIsInlineCommentOpen(false)
   };
 
   // Close popup if click is outside or ESC key is pressed
@@ -804,21 +807,23 @@ export const InlineCommentPopup = ({
       // Update comment data and highlight
       setInlineCommentData({ inlineCommentText: comment, handleClick: true });
       editor.chain().unsetHighlight().run();
-      setIsCommentSectionOpen(true);            
+      setIsCommentSectionOpen(true);
       // Reset comment field
       setComment('');
+      setIsInlineCommentOpen(false)
 
       // Close popup using ref
-    if (elementRef.current?.parentElement) {
+      if (elementRef.current?.parentElement) {
         // Find and close the nearest popover/dropdown container
         const popoverContent = elementRef.current.closest('[role="dialog"]');
-            if (popoverContent) {
-                popoverContent.remove();
-            }
+        if (popoverContent) {
+          popoverContent.remove();
+          setIsInlineCommentOpen(false)
+        }
       }
 
     }
-};
+  };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
