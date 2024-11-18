@@ -36,7 +36,7 @@
   }
 
   .media-node-view {
-    @apply flex relative w-full my-2;
+    @apply flex relative w-full my-2 touch-none select-none;
 
     &.f-left {
       @apply float-left;

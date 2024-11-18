@@ -5,6 +5,7 @@ import React, {
   Dispatch,
   SetStateAction,
   useCallback,
+  useEffect,
   useRef,
   useState,
 } from 'react';
@@ -23,10 +24,11 @@ import {
   Button,
   IconButton,
   LucideIcon,
+  TextAreaFieldV2,
   TextField,
   Tooltip,
 } from '@fileverse/ui';
-import { useOnClickOutside } from 'usehooks-ts';
+import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
 import { colors } from '../utils/colors';
 
 interface IEditorToolElement {
@@ -742,14 +744,130 @@ export const LinkPopup = ({
     </div>
   );
 };
-export const ScriptsPopup = ({
+
+export const InlineCommentPopup = ({
   elementRef,
   editor,
-  setToolVisibility,
+  setIsCommentSectionOpen,
+  setIsInlineCommentOpen,
+  inlineCommentData,
+  setInlineCommentData,
 }: {
   elementRef: React.RefObject<HTMLDivElement>;
   editor: Editor;
-  setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
+  setIsCommentSectionOpen: Dispatch<SetStateAction<boolean>>;
+  setIsInlineCommentOpen: Dispatch<SetStateAction<boolean>>;
+  inlineCommentData: { highlightedTextContent: string; inlineCommentText: string; handleClick: boolean };
+  setInlineCommentData: (data: {
+    highlightedTextContent?: string;
+    inlineCommentText?: string;
+    handleClick?: boolean;
+  }) => void;
+}) => {
+  const [comment, setComment] = useState(
+    inlineCommentData.inlineCommentText || '',
+  );
+  const isMobile = useMediaQuery('(max-width: 1023px)');
+  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
+    setComment(value);
+    setInlineCommentData({ inlineCommentText: value });
+  };
+
+  // Unset highlight when popup is closed without submitting
+  const handleClosePopup = () => {
+    editor.chain().unsetHighlight().run();
+    setComment('');
+    setInlineCommentData({ inlineCommentText: '', highlightedTextContent: "", handleClick: false });
+    setIsInlineCommentOpen(false)
+  };
+
+  // Close popup if click is outside or ESC key is pressed
+  useEffect(() => {
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (elementRef.current && !elementRef.current.contains(event.target as Node)) {
+        handleClosePopup();
+      }
+    };
+    const handleEscKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        handleClosePopup();
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('keydown', handleEscKey);
+    return () => {
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('keydown', handleEscKey);
+    };
+  }, [elementRef]);
+
+  const handleClick = () => {
+    if (comment.trim()) {
+      // Update comment data and highlight
+      setInlineCommentData({ inlineCommentText: comment, handleClick: true });
+      editor.chain().unsetHighlight().run();
+      setIsCommentSectionOpen(true);
+      // Reset comment field
+      setComment('');
+      setIsInlineCommentOpen(false)
+
+      // Close popup using ref
+      if (elementRef.current?.parentElement) {
+        // Find and close the nearest popover/dropdown container
+        const popoverContent = elementRef.current.closest('[role="dialog"]');
+        if (popoverContent) {
+          popoverContent.remove();
+          setIsInlineCommentOpen(false)
+        }
+      }
+
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleClick();
+    }
+  };
+
+  return (
+    <div
+      ref={elementRef}
+      className="w-[300px] bg-[#F8F9FA] shadow-[0px_4px_16px_-4px_rgba(0,0,0,0.15)] rounded-md"
+    >
+      <TextAreaFieldV2
+        value={comment}
+        onChange={handleInputChange}
+        onKeyDown={handleKeyDown}
+        className="bg-[#F8F9FA] w-[296px] max-h-[196px] pt-2 border-none overflow-y-auto no-scrollbar"
+        placeholder="Type your comment"
+        autoFocus
+      />
+      {comment.trim() !== '' && (
+        <div className="h-full flex items-center gap-2 p-3">
+          <span className="w-full text-[12px] text-[#77818A]">
+            Press <span className='font-semibold'>{isMobile ? 'Send' : 'Enter'}</span> to send a comment
+          </span>
+          <Button
+            className="!min-w-[10px] !h-8 !px-2"
+            onClick={handleClick}
+          >
+            <LucideIcon name="SendHorizontal" size="md" />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export const ScriptsPopup = ({
+  elementRef,
+  editor,
+}: {
+  elementRef: React.RefObject<HTMLDivElement>;
+  editor: Editor;
 }) => {
   const options = [
     {
@@ -788,7 +906,6 @@ export const ScriptsPopup = ({
             variant="ghost"
             onClick={() => {
               option.command();
-              setToolVisibility(IEditorTool.NONE);
             }}
             className="flex items-center justify-between w-full px-2 py-1"
           >

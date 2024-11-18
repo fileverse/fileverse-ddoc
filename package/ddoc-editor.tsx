@@ -51,7 +51,10 @@ const DdocEditor = forwardRef(
       tags,
       selectedTags,
       setSelectedTags,
-      scrollPosition,
+      isCommentSectionOpen,
+      setIsCommentSectionOpen,
+      setInlineCommentData,
+      inlineCommentData
     }: DdocProps,
     ref,
   ) => {
@@ -105,7 +108,10 @@ const DdocEditor = forwardRef(
       setCharacterCount,
       setWordCount,
       secureImageUploadUrl,
-      scrollPosition,
+      isCommentSectionOpen,
+      setIsCommentSectionOpen,
+      setInlineCommentData,
+      inlineCommentData
     });
 
     useImperativeHandle(
@@ -202,34 +208,36 @@ const DdocEditor = forwardRef(
     useEffect(() => {
       if (editorRef.current) {
         const checkEditorEmpty = () => {
-          const editorEmpty = editorRef.current?.querySelector('.is-editor-empty');
-          setHasEditorContent(!editorEmpty); 
+          const editorEmpty =
+            editorRef.current?.querySelector('.is-editor-empty');
+          setHasEditorContent(!editorEmpty);
         };
-  
+
         checkEditorEmpty();
-  
+
         const observer = new MutationObserver(() => {
-          checkEditorEmpty(); 
+          checkEditorEmpty();
         });
-  
+
         observer.observe(editorRef.current, {
           childList: true,
           subtree: true,
-          attributes: true, 
+          attributes: true,
         });
-  
+
         return () => observer.disconnect();
       }
     }, []);
-  
+
     useEffect(() => {
       const intervalId = setInterval(() => {
         if (editorRef.current) {
-          const editorEmpty = editorRef.current.querySelector('.is-editor-empty');
+          const editorEmpty =
+            editorRef.current.querySelector('.is-editor-empty');
           setHasEditorContent(!editorEmpty);
         }
       }, 1000);
-        return () => clearInterval(intervalId);
+      return () => clearInterval(intervalId);
     }, []);
 
     // Push the editor to the top when the keyboard is visible
@@ -310,6 +318,8 @@ const DdocEditor = forwardRef(
             { 'md:!mt-16': !isPreviewMode },
             { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
             { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
+            { 'max-[1080px]:!mx-auto min-[1081px]:!ml-[18%] min-[1700px]:!mx-auto': isCommentSectionOpen && !isNativeMobile },            
+            { '!mx-auto': !isCommentSectionOpen },
             { 'min-h-[83vh]': isNavbarVisible },
             { 'min-h-[90vh]': !isNavbarVisible },
             { 'w-[700px] md:max-w-[700px] h-[150%]': zoomLevel === 0.5 },
@@ -338,7 +348,14 @@ const DdocEditor = forwardRef(
           >
             {!isPreviewMode && (
               <div>
-                <EditorBubbleMenu editor={editor} onError={onError} zoomLevel={zoomLevel} />
+                <EditorBubbleMenu 
+                  editor={editor} 
+                  onError={onError} 
+                  zoomLevel={zoomLevel} 
+                  setIsCommentSectionOpen={setIsCommentSectionOpen}
+                  inlineCommentData={inlineCommentData}
+                  setInlineCommentData={setInlineCommentData} 
+                />
                 <ColumnsMenu editor={editor} appendTo={editorRef} />
               </div>
             )}
@@ -346,7 +363,10 @@ const DdocEditor = forwardRef(
               {tags && tags.length > 0 && (
                 <div
                   ref={tagsContainerRef}
-                  className="flex flex-wrap px-4 md:px-[80px] lg:!px-[124px] items-center gap-1 mb-4 mt-4 lg:!mt-0"
+                  className={cn(
+                    'flex flex-wrap px-4 md:px-[80px] lg:!px-[124px] items-center gap-1 mb-4 mt-4 lg:!mt-0',
+                    { 'pt-12': isPreviewMode },
+                  )}
                 >
                   {visibleTags.map((tag, index) => (
                     <Tag
