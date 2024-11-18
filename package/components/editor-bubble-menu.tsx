@@ -15,8 +15,6 @@ import {
 } from './editor-utils';
 import { IEditorTool } from '../hooks/use-visibility';
 import ToolbarButton from '../common/toolbar-button';
-import { DynamicDropdown } from '@fileverse/ui';
-import cn from 'classnames';
 import { DynamicDropdown, cn } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 
