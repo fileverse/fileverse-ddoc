@@ -219,7 +219,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       {...bubbleMenuProps}
       shouldShow={shouldShow}
       className={cn(
-        'flex gap-2 overflow-hidden rounded-lg h-[52px] min-w-fit w-full py-2 px-4 bg-white items-center shadow-elevation-1',
+        'flex gap-2 overflow-hidden rounded-lg h-[45px] min-w-fit w-full py-2 px-4 bg-white items-center shadow-elevation-1',
         isInlineCommentOpen ? '!invisible' : '!visible'
       )}
     >
@@ -233,7 +233,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               <ToolbarButton
                 icon="MessageSquarePlus"
                 variant="ghost"
-                size="md"
+                size="sm"
                 onClick={() => handleHighlight()}
               />
             }
@@ -260,7 +260,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                     <ToolbarButton
                       icon={item.icon}
                       variant="ghost"
-                      size="md"
+                      size="sm"
                       onClick={() =>
                         item.name === 'InlineComment' ? handleHighlight() : null
                       }
@@ -274,6 +274,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                 <div key={index} className="flex items-center">
                   <ToolbarButton
                     icon={item.icon}
+                    size='sm'
                     onClick={item.command}
                     isActive={item.isActive()}
                   />
@@ -293,6 +294,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             anchorTrigger={
               <ToolbarButton
                 icon="Baseline"
+                size='sm'
                 isActive={toolVisibility === IEditorTool.TEXT_COLOR}
               />
             }
@@ -310,6 +312,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             anchorTrigger={
               <ToolbarButton
                 icon="Highlighter"
+                size='sm'
                 isActive={toolVisibility === IEditorTool.HIGHLIGHT}
               />
             }

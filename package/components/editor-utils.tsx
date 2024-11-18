@@ -835,7 +835,7 @@ export const InlineCommentPopup = ({
   return (
     <div
       ref={elementRef}
-      className="w-[300px] bg-[#F8F9FA] shadow-[0px_4px_16px_-4px_rgba(0,0,0,0.15)] border border-[#E8EBEC] rounded-md"
+      className="w-[300px] bg-[#F8F9FA] shadow-[0px_4px_16px_-4px_rgba(0,0,0,0.15)] rounded-md"
     >
       <TextAreaFieldV2
         value={comment}
