@@ -9,6 +9,7 @@ const ToolbarButton = forwardRef<HTMLButtonElement, {
   tooltip?: string;
   classNames?: string;
   disabled?: boolean;
+  size?: "sm" | "md" | "lg";
 }>(({
   icon,
   isActive,
@@ -16,6 +17,7 @@ const ToolbarButton = forwardRef<HTMLButtonElement, {
   tooltip,
   classNames,
   disabled,
+  size,
 }, ref) => {
   if (tooltip)
     return (
@@ -24,7 +26,7 @@ const ToolbarButton = forwardRef<HTMLButtonElement, {
           // @ts-ignore
           ref={ref}
           variant="ghost"
-          size="md"
+          size={size || 'md'}
           icon={icon}
           onClick={onClick}
           isActive={isActive}
@@ -39,7 +41,7 @@ const ToolbarButton = forwardRef<HTMLButtonElement, {
       // @ts-ignore
       ref={ref}
       variant="ghost"
-      size="md"
+      size={size || 'md'}
       icon={icon}
       onClick={onClick}
       isActive={isActive}
