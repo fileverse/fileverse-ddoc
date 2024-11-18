@@ -227,7 +227,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               <ToolbarButton
                 icon="MessageSquarePlus"
                 variant="ghost"
-                size="md"
+                size="sm"
                 onClick={() => handleHighlight()}
               />
             }
@@ -254,7 +254,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                     <ToolbarButton
                       icon={item.icon}
                       variant="ghost"
-                      size="md"
+                      size="sm"
                       onClick={() =>
                         item.name === 'InlineComment' ? handleHighlight() : null
                       }
@@ -268,6 +268,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                 <div key={index} className="flex items-center">
                   <ToolbarButton
                     icon={item.icon}
+                    size="sm"
                     onClick={item.command}
                     isActive={item.isActive()}
                   />
@@ -287,6 +288,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             anchorTrigger={
               <ToolbarButton
                 icon="Baseline"
+                size="sm"
                 isActive={toolVisibility === IEditorTool.TEXT_COLOR}
               />
             }
@@ -304,6 +306,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             anchorTrigger={
               <ToolbarButton
                 icon="Highlighter"
+                size="sm"
                 isActive={toolVisibility === IEditorTool.HIGHLIGHT}
               />
             }
