@@ -841,7 +841,7 @@ export const InlineCommentPopup = ({
         value={comment}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        className="bg-[#F8F9FA] w-[296px] max-h-[196px] pt-2 border-none overflow-y-auto no-scrollbar"
+        className="bg-[#F8F9FA] w-[296px] font-normal min-h-[44px] max-h-[196px] pt-2 border-none overflow-y-auto no-scrollbar"
         placeholder="Type your comment"
         autoFocus
       />
