@@ -29,7 +29,9 @@ type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   onError?: (errorString: string) => void;
   setIsCommentSectionOpen?: (isOpen: boolean) => void;
   inlineCommentData?: InlineCommentData;
-  setInlineCommentData?: React.Dispatch<React.SetStateAction<InlineCommentData>>;
+  setInlineCommentData?: React.Dispatch<
+    React.SetStateAction<InlineCommentData>
+  >;
 };
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
@@ -74,7 +76,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Link',
       isActive: () => props.editor.isActive('link'),
-      command: () => { },
+      command: () => {},
       icon: 'Link',
     },
     {
@@ -86,7 +88,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'InlineComment',
       isActive: () => props.editor.isActive('inlineComment'),
-      command: () => { },
+      command: () => {},
       icon: 'MessageSquarePlus',
     },
   ];
@@ -124,7 +126,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     const isIframeSelected =
       editor.state.doc.nodeAt(from)?.type.name === 'iframe';
     const isCodeBlockSelected = editor.isActive('codeBlock');
-    const isPageBreak = editor.state.doc.nodeAt(from)?.type.name === 'pageBreak';
+    const isPageBreak =
+      editor.state.doc.nodeAt(from)?.type.name === 'pageBreak';
     if (
       from === to ||
       isImageSelected ||
@@ -176,16 +179,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             setIsCommentSectionOpen={props.setIsCommentSectionOpen}
             setIsInlineCommentOpen={setIsInlineCommentOpen}
             inlineCommentData={props.inlineCommentData}
-            setInlineCommentData={(data) => props.setInlineCommentData?.(prev => ({ ...prev, ...data }))}
+            setInlineCommentData={(data) =>
+              props.setInlineCommentData?.((prev) => ({ ...prev, ...data }))
+            }
           />
         );
       case 'Scripts':
-        return (
-          <ScriptsPopup
-            editor={props.editor}
-            elementRef={toolRef}
-          />
-        );
+        return <ScriptsPopup editor={props.editor} elementRef={toolRef} />;
       default:
         return null;
     }
@@ -211,7 +211,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         }, 10);
       }
     }
-    setIsInlineCommentOpen(true)
+    setIsInlineCommentOpen(true);
   };
 
   return (
@@ -221,16 +221,18 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       className={cn(
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border bg-white items-center shadow-elevation-3',
         isInlineCommentOpen ? '!invisible' : '!visible',
-        {
-          "ml-[100%] mt-[60%]": props.zoomLevel === 0.5,
-        }
       )}
     >
       {isMobile ? (
-        <div className={cn('relative', isInlineCommentOpen ? 'left-1/2 translate-x-1/2' : '')}>
+        <div
+          className={cn(
+            'relative',
+            isInlineCommentOpen ? 'left-1/2 translate-x-1/2' : '',
+          )}
+        >
           <DynamicDropdown
             key="InlineComment"
-            side='top'
+            side="top"
             sideOffset={-40}
             anchorTrigger={
               <ToolbarButton
@@ -259,7 +261,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                 <div key={index} className="flex items-center">
                   <ToolbarButton
                     icon={item.icon}
-                    size='sm'
+                    size="sm"
                     onClick={item.command}
                     isActive={item.isActive()}
                   />
@@ -279,7 +281,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                     anchorTrigger={
                       <ToolbarButton
                         icon="Baseline"
-                        size='sm'
+                        size="sm"
                         isActive={toolVisibility === IEditorTool.TEXT_COLOR}
                       />
                     }
@@ -297,7 +299,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                     anchorTrigger={
                       <ToolbarButton
                         icon="Highlighter"
-                        size='sm'
+                        size="sm"
                         isActive={toolVisibility === IEditorTool.HIGHLIGHT}
                       />
                     }
@@ -333,24 +335,26 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             ) {
               return (
                 <React.Fragment key={item.name}>
-                {item.name === 'InlineComment' && (
-                  <div className="w-[1px] h-4 bg-gray-200"></div>
-                )}
-                <DynamicDropdown
-                  sideOffset={isInlineCommentOpen ? 5 : 15}
-                  anchorTrigger={
-                    <ToolbarButton
-                      icon={item.icon}
-                      variant="ghost"
-                      size="sm"
-                      onClick={() =>
-                        item.name === 'InlineComment' ? handleHighlight() : null
-                      }
-                    />
-                  }
-                  content={renderContent(item)}
-                />
-              </React.Fragment>
+                  {item.name === 'InlineComment' && (
+                    <div className="w-[1px] h-4 bg-gray-200"></div>
+                  )}
+                  <DynamicDropdown
+                    sideOffset={isInlineCommentOpen ? 5 : 15}
+                    anchorTrigger={
+                      <ToolbarButton
+                        icon={item.icon}
+                        variant="ghost"
+                        size="sm"
+                        onClick={() =>
+                          item.name === 'InlineComment'
+                            ? handleHighlight()
+                            : null
+                        }
+                      />
+                    }
+                    content={renderContent(item)}
+                  />
+                </React.Fragment>
               );
             }
 
