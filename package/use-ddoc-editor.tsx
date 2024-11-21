@@ -15,6 +15,7 @@ import SlashCommand from './components/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
 import customTextInputRules from './extensions/customTextInputRules';
 import { PageBreak } from './extensions/page-break/page-break';
+import { useMediaQuery } from 'usehooks-ts';
 
 const usercolors = [
   '#30bced',
@@ -45,6 +46,7 @@ export const useDdocEditor = ({
   scrollPosition,
   unFocused,
   commentMap,
+  openCommentSection,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
@@ -58,6 +60,7 @@ export const useDdocEditor = ({
   ]);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
+  const isMobile = useMediaQuery('(max-width: 1024px)');
 
   const isHighlightedYellow = (
     state: EditorState,
@@ -86,9 +89,13 @@ export const useDdocEditor = ({
 
   const [popupContent, setPopupContent] = useState('');
 
-  const handleCommentInteraction = (_view: EditorView, event: MouseEvent) => {
-    console.log({ commentMap }, 'handleCommentInteraction');
+  const handleCommentInteraction = (
+    _view: EditorView,
+    event: MouseEvent,
+    isClicked = false,
+  ) => {
     if (!commentMap) return;
+
     const target: any = event.target;
     // Check if the hovered element is a highlighted text
     if (
@@ -113,6 +120,8 @@ export const useDdocEditor = ({
       if (highlightedComment) {
         setPopupContent(highlightedComment);
         setPopupPosition({ x, y, visible: true });
+      } else if (isMobile && isClicked) {
+        openCommentSection?.();
       }
     } else {
       setPopupPosition(prev => ({ ...prev, visible: false }));
@@ -124,7 +133,7 @@ export const useDdocEditor = ({
     _pos: number,
     event: MouseEvent,
   ) => {
-    handleCommentInteraction(view, event);
+    handleCommentInteraction(view, event, true);
   };
 
   const editor = useEditor(

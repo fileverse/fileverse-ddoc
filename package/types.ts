@@ -34,6 +34,7 @@ export interface DdocProps {
     React.SetStateAction<InlineCommentData>
   >;
   isCommentSectionOpen?: boolean;
+  openCommentSection?: () => void;
   collaborationId?: string;
   isPreviewMode: boolean;
   ensResolutionUrl?: string;

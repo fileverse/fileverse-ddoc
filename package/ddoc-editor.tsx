@@ -35,6 +35,7 @@ const DdocEditor = forwardRef(
       enableCollaboration,
       collaborationId,
       username,
+      openCommentSection,
       renderNavbar,
       walletAddress,
       onChange,
@@ -98,6 +99,7 @@ const DdocEditor = forwardRef(
       popupPosition,
       popupContent,
     } = useDdocEditor({
+      openCommentSection,
       commentMap,
       isPreviewMode,
       initialContent,
