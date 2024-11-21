@@ -101,8 +101,14 @@ export const useDdocEditor = ({
 
       const popupWidth = 300;
 
-      const x = rect.left + rect.width / 2 - popupWidth / 2;
-      const y = rect.top - 120;
+      const x = Math.max(
+        10,
+        Math.min(
+          rect.left + rect.width / 2 - popupWidth / 2,
+          window.innerWidth - popupWidth - 10,
+        ),
+      );
+      const y = Math.max(10, rect.top - 130);
       const highlightedComment = commentMap.get(target.textContent);
       if (highlightedComment) {
         setPopupContent(highlightedComment);

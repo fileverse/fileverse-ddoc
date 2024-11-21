@@ -899,7 +899,7 @@ export const CommentPopup = ({
       style={{ top: yPosition, left: xPosition }}
       className="w-[300px] absolute bg-[#F8F9FA] p-3 shadow-[0px_4px_16px_-4px_rgba(0,0,0,0.15)] z-[99] rounded-md"
     >
-      <div className="bg-[#F8F9FA] w-[296px] font-normal min-h-[44px] max-h-[196px] pt-2 border-none overflow-y-auto no-scrollbar">
+      <div className="bg-[#F8F9FA] w-full font-normal min-h-[44px] max-h-[196px] pt-2 border-none overflow-y-auto no-scrollbar">
         <p>{content}</p>
       </div>
 
