@@ -339,7 +339,7 @@ export const useEditorToolbar = ({
     {
       icon: 'Markdown',
       title: 'Markdown',
-      onClick: () => { },
+      onClick: () => {},
       isActive: false,
     },
   ];
@@ -466,7 +466,7 @@ export const TextHighlighter = ({
       ref={elementRef}
       className="z-50 h-auto gap-0.5 flex flex-wrap max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded bg-white px-2 py-2 shadow-elevation-1 transition-all"
     >
-      {colors.map((color) => (
+      {colors.map(color => (
         <div
           onClick={() => {
             editor
@@ -504,7 +504,10 @@ export const TextHighlighter = ({
         }}
         className="w-full justify-start mt-2 gap-1 !p-1 h-fit"
       >
-        <LucideIcon name="Ban" className="w-[18px] aspect-square" />
+        <LucideIcon
+          name="Ban"
+          className="w-[18px] aspect-square"
+        />
         <span>None</span>
       </Button>
     </div>
@@ -526,7 +529,7 @@ export const EditorFontFamily = ({
         'z-50 h-auto max-h-[330px] w-48 overflow-y-auto scroll-smooth bg-white px-1 py-2 shadow-elevation-1 transition-all rounded',
       )}
     >
-      {fonts.map((font) => (
+      {fonts.map(font => (
         <button
           onClick={() => {
             font.command(editor);
@@ -630,8 +633,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${
+            editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="List" />
         </button>
@@ -643,8 +647,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${
+            editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListOrdered" />
         </button>
@@ -656,8 +661,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${
+            editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListChecks" />
         </button>
@@ -730,7 +736,10 @@ export const LinkPopup = ({
         value={url}
       />
       <div className="h-full flex items-center gap-2">
-        <Button onClick={() => apply()} className="min-w-fit h-[36px]">
+        <Button
+          onClick={() => apply()}
+          className="min-w-fit h-[36px]"
+        >
           Apply
         </Button>
         <Button
@@ -757,7 +766,11 @@ export const InlineCommentPopup = ({
   editor: Editor;
   setIsCommentSectionOpen: Dispatch<SetStateAction<boolean>>;
   setIsInlineCommentOpen: Dispatch<SetStateAction<boolean>>;
-  inlineCommentData: { highlightedTextContent: string; inlineCommentText: string; handleClick: boolean };
+  inlineCommentData: {
+    highlightedTextContent: string;
+    inlineCommentText: string;
+    handleClick: boolean;
+  };
   setInlineCommentData: (data: {
     highlightedTextContent?: string;
     inlineCommentText?: string;
@@ -778,14 +791,21 @@ export const InlineCommentPopup = ({
   const handleClosePopup = () => {
     editor.chain().unsetHighlight().run();
     setComment('');
-    setInlineCommentData({ inlineCommentText: '', highlightedTextContent: "", handleClick: false });
-    setIsInlineCommentOpen(false)
+    setInlineCommentData({
+      inlineCommentText: '',
+      highlightedTextContent: '',
+      handleClick: false,
+    });
+    setIsInlineCommentOpen(false);
   };
 
   // Close popup if click is outside or ESC key is pressed
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
-      if (elementRef.current && !elementRef.current.contains(event.target as Node)) {
+      if (
+        elementRef.current &&
+        !elementRef.current.contains(event.target as Node)
+      ) {
         handleClosePopup();
       }
     };
@@ -806,11 +826,10 @@ export const InlineCommentPopup = ({
     if (comment.trim()) {
       // Update comment data and highlight
       setInlineCommentData({ inlineCommentText: comment, handleClick: true });
-      editor.chain().unsetHighlight().run();
       setIsCommentSectionOpen(true);
       // Reset comment field
       setComment('');
-      setIsInlineCommentOpen(false)
+      setIsInlineCommentOpen(false);
 
       // Close popup using ref
       if (elementRef.current?.parentElement) {
@@ -818,10 +837,9 @@ export const InlineCommentPopup = ({
         const popoverContent = elementRef.current.closest('[role="dialog"]');
         if (popoverContent) {
           popoverContent.remove();
-          setIsInlineCommentOpen(false)
+          setIsInlineCommentOpen(false);
         }
       }
-
     }
   };
 
@@ -848,16 +866,60 @@ export const InlineCommentPopup = ({
       {comment.trim() !== '' && (
         <div className="h-full flex items-center gap-2 p-3">
           <span className="w-full text-[12px] text-[#77818A]">
-            Press <span className='font-semibold'>{isMobile ? 'Send' : 'Enter'}</span> to send a comment
+            Press{' '}
+            <span className="font-semibold">{isMobile ? 'Send' : 'Enter'}</span>{' '}
+            to send a comment
           </span>
           <Button
             className="!min-w-[10px] !h-8 !px-2"
             onClick={handleClick}
           >
-            <LucideIcon name="SendHorizontal" size="md" />
+            <LucideIcon
+              name="SendHorizontal"
+              size="md"
+            />
           </Button>
         </div>
       )}
+    </div>
+  );
+};
+
+export const CommentPopup = ({
+  xPosition,
+  yPosition,
+  content,
+}: {
+  xPosition: number;
+  yPosition: number;
+  content: string;
+}) => {
+  return (
+    <div
+      style={{ top: yPosition, left: xPosition }}
+      className="w-[300px] absolute bg-[#F8F9FA] p-3 shadow-[0px_4px_16px_-4px_rgba(0,0,0,0.15)] z-[99] rounded-md"
+    >
+      <div className="bg-[#F8F9FA] w-[296px] font-normal min-h-[44px] max-h-[196px] pt-2 border-none overflow-y-auto no-scrollbar">
+        <p>{content}</p>
+      </div>
+
+      <div className="h-full flex items-center gap-2 mt-3">
+        <span className="w-full text-[12px] text-[#77818A]">Edit Comment</span>
+        <Tooltip
+          text="Coming soon"
+          className="z-[999]"
+        >
+          <Button
+            disabled={true}
+            className="!min-w-[10px] !h-8 !px-2"
+          >
+            <LucideIcon
+              name="SendHorizontal"
+              size="md"
+            />
+          </Button>
+        </Tooltip>
+      </div>
     </div>
   );
 };
@@ -900,7 +962,7 @@ export const ScriptsPopup = ({
       className="z-50 w-48 bg-white rounded shadow-elevation-1 p-1"
     >
       <div className="flex flex-col gap-1 justify-center w-fit sm:w-full">
-        {options.map((option) => (
+        {options.map(option => (
           <Button
             key={option.title}
             variant="ghost"
@@ -914,7 +976,11 @@ export const ScriptsPopup = ({
               <span>{option.title}</span>
             </div>
             {option.isActive() && (
-              <LucideIcon name="Check" size="sm" className="ml-2" />
+              <LucideIcon
+                name="Check"
+                size="sm"
+                className="ml-2"
+              />
             )}
           </Button>
         ))}
@@ -936,7 +1002,7 @@ export const TextColor = ({
       ref={elementRef}
       className="z-50 h-auto gap-0.5 flex flex-wrap max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded bg-white px-2 py-2 shadow-elevation-1 transition-all"
     >
-      {colors.map((color) => (
+      {colors.map(color => (
         <div
           onClick={() => {
             editor.chain().focus().setColor(color.color).run();
@@ -969,7 +1035,10 @@ export const TextColor = ({
         }}
         className="w-full justify-start mt-2 gap-1 !p-1 h-fit"
       >
-        <LucideIcon name="Ban" className="w-[18px] aspect-square" />
+        <LucideIcon
+          name="Ban"
+          className="w-[18px] aspect-square"
+        />
         <span>None</span>
       </Button>
     </div>
@@ -1032,7 +1101,7 @@ export const TextHeading = ({
         'z-50 flex w-48 flex-col overflow-hidden rounded bg-white p-1 shadow-elevation-1',
       )}
     >
-      {headings.map((heading) => (
+      {headings.map(heading => (
         <button
           onClick={() => {
             heading.command(editor);
@@ -1048,7 +1117,10 @@ export const TextHeading = ({
           )}
         >
           <div className="flex h-10 w-10 items-center justify-center rounded bg-white">
-            <LucideIcon name={heading.icon} size="md" />
+            <LucideIcon
+              name={heading.icon}
+              size="md"
+            />
           </div>
           <div>
             <p className="font-medium">{heading.title}</p>
@@ -1242,9 +1314,12 @@ export const TextFormatingPopup = ({
     <UtilsModal
       title="Text formating"
       content={
-        <div ref={popupRef} className="px-4 flex flex-col gap-2 w-full">
+        <div
+          ref={popupRef}
+          className="px-4 flex flex-col gap-2 w-full"
+        >
           <div className="flex justify-start sm:justify-center items-center gap-1">
-            {headings.map((heading) => (
+            {headings.map(heading => (
               <button
                 onClick={() => heading.command(editor)}
                 key={heading.title}
@@ -1262,7 +1337,7 @@ export const TextFormatingPopup = ({
           </div>
           <div className="flex justify-between sm:justify-center items-center gap-1">
             <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
-              {textAlignments.map((textAlignment) => (
+              {textAlignments.map(textAlignment => (
                 <button
                   onClick={() => textAlignment.command(editor)}
                   key={textAlignment.title}
@@ -1275,12 +1350,15 @@ export const TextFormatingPopup = ({
                     },
                   )}
                 >
-                  <LucideIcon name={textAlignment.icon} size="md" />
+                  <LucideIcon
+                    name={textAlignment.icon}
+                    size="md"
+                  />
                 </button>
               ))}
             </div>
             <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
-              {others.map((other) => (
+              {others.map(other => (
                 <button
                   onClick={() => other.command(editor)}
                   key={other.title}
@@ -1292,14 +1370,17 @@ export const TextFormatingPopup = ({
                     },
                   )}
                 >
-                  <LucideIcon name={other.icon} size="md" />
+                  <LucideIcon
+                    name={other.icon}
+                    size="md"
+                  />
                 </button>
               ))}
             </div>
           </div>
           <div className="flex gap-1 justify-center">
             <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly p-1 w-full sm:w-fit ">
-              {textStyles.slice(0, 4).map((textStyle) => (
+              {textStyles.slice(0, 4).map(textStyle => (
                 <button
                   onClick={() => textStyle.command(editor)}
                   key={textStyle.title}
@@ -1312,12 +1393,15 @@ export const TextFormatingPopup = ({
                     },
                   )}
                 >
-                  <LucideIcon name={textStyle.icon} size="md" />
+                  <LucideIcon
+                    name={textStyle.icon}
+                    size="md"
+                  />
                 </button>
               ))}
             </div>
             <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly p-1 w-full sm:w-fit ">
-              {textStyles.slice(4).map((textStyle) => (
+              {textStyles.slice(4).map(textStyle => (
                 <button
                   onClick={() => textStyle.command(editor)}
                   key={textStyle.title}
@@ -1330,13 +1414,16 @@ export const TextFormatingPopup = ({
                     },
                   )}
                 >
-                  <LucideIcon name={textStyle.icon} size="md" />
+                  <LucideIcon
+                    name={textStyle.icon}
+                    size="md"
+                  />
                 </button>
               ))}
             </div>
           </div>
           <div className="bg-[#f8f9fa] rounded flex gap-1 justify-center self-center w-fit p-1">
-            {listStyles.map((listStyle) => (
+            {listStyles.map(listStyle => (
               <button
                 onClick={() => listStyle.command(editor)}
                 key={listStyle.title}
@@ -1348,7 +1435,10 @@ export const TextFormatingPopup = ({
                   },
                 )}
               >
-                <LucideIcon name={listStyle.icon} size="md" />
+                <LucideIcon
+                  name={listStyle.icon}
+                  size="md"
+                />
               </button>
             ))}
           </div>
@@ -1378,7 +1468,10 @@ export const TextFormatingPopup = ({
                       editor.chain().unsetColor().run();
                     }}
                   >
-                    <LucideIcon name="Ban" className="w-6 h-6" />
+                    <LucideIcon
+                      name="Ban"
+                      className="w-6 h-6"
+                    />
                   </button>
                 </CarouselItem>
                 {colors.map((color, index) => (
@@ -1415,7 +1508,10 @@ export const TextFormatingPopup = ({
               </CarouselContent>
               <div className="flex justify-center gap-2 mt-4 w-full max-w-sm">
                 {Array.from({ length: colors.length / 8 }).map((_, index) => (
-                  <CarouselIndicator key={index} index={index} />
+                  <CarouselIndicator
+                    key={index}
+                    index={index}
+                  />
                 ))}
               </div>
             </Carousel>
@@ -1486,7 +1582,10 @@ export const TextColorPicker = ({ editor }: { editor: Editor }) => {
           </CarouselContent>
           <div className="flex justify-center gap-2 mt-4 w-full max-w-sm">
             {Array.from({ length: colors.length / 8 }).map((_, index) => (
-              <CarouselIndicator key={index} index={index} />
+              <CarouselIndicator
+                key={index}
+                index={index}
+              />
             ))}
           </div>
         </Carousel>

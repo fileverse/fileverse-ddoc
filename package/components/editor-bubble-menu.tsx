@@ -139,9 +139,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     }
 
     let hasYellowHighlight = false;
-    editor.state.doc.nodesBetween(from, to, (node) => {
+    editor.state.doc.nodesBetween(from, to, node => {
       if (node.marks) {
-        node.marks.forEach((mark) => {
+        node.marks.forEach(mark => {
           if (mark.type.name === 'highlight' && mark.attrs.color === 'yellow') {
             hasYellowHighlight = true;
           }
@@ -179,13 +179,18 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             setIsCommentSectionOpen={props.setIsCommentSectionOpen}
             setIsInlineCommentOpen={setIsInlineCommentOpen}
             inlineCommentData={props.inlineCommentData}
-            setInlineCommentData={(data) =>
-              props.setInlineCommentData?.((prev) => ({ ...prev, ...data }))
+            setInlineCommentData={data =>
+              props.setInlineCommentData?.(prev => ({ ...prev, ...data }))
             }
           />
         );
       case 'Scripts':
-        return <ScriptsPopup editor={props.editor} elementRef={toolRef} />;
+        return (
+          <ScriptsPopup
+            editor={props.editor}
+            elementRef={toolRef}
+          />
+        );
       default:
         return null;
     }
@@ -198,17 +203,14 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     if (selection.rangeCount > 0) {
       const selectedText = selection.toString().trim();
       if (selectedText) {
-        props.setInlineCommentData((prevData) => {
+        props.setInlineCommentData(prevData => {
           const updatedData = {
             ...prevData,
             highlightedTextContent: selectedText,
           };
           return updatedData;
         });
-
-        setTimeout(() => {
-          props.editor.chain().setHighlight({ color: '#DDFBDF' }).run();
-        }, 10);
+        props.editor.chain().setHighlight({ color: '#DDFBDF' }).run();
       }
     }
     setIsInlineCommentOpen(true);
@@ -247,7 +249,10 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         </div>
       ) : (
         <>
-          <NodeSelector editor={props.editor} elementRef={toolRef} />
+          <NodeSelector
+            editor={props.editor}
+            elementRef={toolRef}
+          />
 
           {items.map((item, index) => {
             if (
@@ -258,7 +263,10 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               item.name === 'Code'
             ) {
               return (
-                <div key={index} className="flex items-center">
+                <div
+                  key={index}
+                  className="flex items-center"
+                >
                   <ToolbarButton
                     icon={item.icon}
                     size="sm"

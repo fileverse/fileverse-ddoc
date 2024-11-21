@@ -23,6 +23,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 import platform from 'platform';
 import MobileToolbar from './components/mobile-toolbar';
+import { CommentPopup } from './components/editor-utils';
 
 const checkOs = () => platform.os?.family;
 
@@ -54,7 +55,8 @@ const DdocEditor = forwardRef(
       isCommentSectionOpen,
       setIsCommentSectionOpen,
       setInlineCommentData,
-      inlineCommentData
+      inlineCommentData,
+      commentMap,
     }: DdocProps,
     ref,
   ) => {
@@ -92,7 +94,11 @@ const DdocEditor = forwardRef(
       ref: editorRef,
       isContentLoading,
       ydoc,
+      isCommentShown,
+      popupPosition,
+      popupContent,
     } = useDdocEditor({
+      commentMap,
       isPreviewMode,
       initialContent,
       enableCollaboration,
@@ -111,7 +117,7 @@ const DdocEditor = forwardRef(
       isCommentSectionOpen,
       setIsCommentSectionOpen,
       setInlineCommentData,
-      inlineCommentData
+      inlineCommentData,
     });
 
     useImperativeHandle(
@@ -124,25 +130,25 @@ const DdocEditor = forwardRef(
     );
 
     const handleAddTag = (tag: TagType) => {
-      setSelectedTags?.((prevTags) => {
+      setSelectedTags?.(prevTags => {
         if (prevTags.length >= 6) {
           // If we already have 6 tags, don't add any more
           return prevTags;
         }
 
-        const newTags = tag.name.split(',').map((name) => {
+        const newTags = tag.name.split(',').map(name => {
           const trimmedName = name.trim();
           const existingTag = tags?.find(
-            (t) => t.name.toLowerCase() === trimmedName.toLowerCase(),
+            t => t.name.toLowerCase() === trimmedName.toLowerCase(),
           );
           return existingTag || { name: trimmedName, color: tag.color };
         });
 
         const uniqueTags = [...prevTags];
-        newTags.forEach((newTag) => {
+        newTags.forEach(newTag => {
           if (
             !uniqueTags.some(
-              (t) => t.name.toLowerCase() === newTag.name.toLowerCase(),
+              t => t.name.toLowerCase() === newTag.name.toLowerCase(),
             )
           ) {
             uniqueTags.push(newTag);
@@ -154,8 +160,8 @@ const DdocEditor = forwardRef(
       });
     };
     const handleRemoveTag = (tagName: string) => {
-      setSelectedTags?.((prevTags) =>
-        prevTags.filter((tag) => tag.name !== tagName),
+      setSelectedTags?.(prevTags =>
+        prevTags.filter(tag => tag.name !== tagName),
       );
     };
 
@@ -202,7 +208,7 @@ const DdocEditor = forwardRef(
     }, [editor]);
 
     const [hasEditorContent, setHasEditorContent] = useState(false);
-
+    // is this Optimal ?
     useEffect(() => {
       if (editorRef.current) {
         const checkEditorEmpty = () => {
@@ -312,7 +318,10 @@ const DdocEditor = forwardRef(
             { 'md:!mt-16': !isPreviewMode },
             { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
             { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
-            { 'max-[1080px]:!mx-auto min-[1081px]:!ml-[18%] min-[1700px]:!mx-auto': isCommentSectionOpen && !isNativeMobile },            
+            {
+              'max-[1080px]:!mx-auto min-[1081px]:!ml-[18%] min-[1700px]:!mx-auto':
+                isCommentSectionOpen && !isNativeMobile,
+            },
             { '!mx-auto': !isCommentSectionOpen },
             { 'min-h-[83vh]': isNavbarVisible },
             { 'min-h-[90vh]': !isNavbarVisible },
@@ -333,8 +342,18 @@ const DdocEditor = forwardRef(
                   inlineCommentData={inlineCommentData}
                   setInlineCommentData={setInlineCommentData}
                 />
-                <ColumnsMenu editor={editor} appendTo={editorRef} />
+                <ColumnsMenu
+                  editor={editor}
+                  appendTo={editorRef}
+                />
               </div>
+            )}
+            {isCommentShown && (
+              <CommentPopup
+                xPosition={popupPosition.x}
+                yPosition={popupPosition.y}
+                content={popupContent}
+              />
             )}
             <EditingProvider isPreviewMode={isPreviewMode}>
               {tags && tags.length > 0 && (
@@ -416,7 +435,10 @@ const DdocEditor = forwardRef(
                 'absolute w-12 h-12 bg-white rounded-full shadow-xl top-[70px] right-[-23px]',
               )}
             >
-              <LucideIcon name="MessageSquareText" size="sm" />
+              <LucideIcon
+                name="MessageSquareText"
+                size="sm"
+              />
             </Button>
           )}
         </div>

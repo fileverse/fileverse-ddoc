@@ -36,7 +36,6 @@ export const useDdocEditor = ({
   username,
   onChange,
   onCollaboratorChange,
-  onCommentInteraction,
   onTextSelection,
   ensResolutionUrl,
   onError,
@@ -45,6 +44,7 @@ export const useDdocEditor = ({
   secureImageUploadUrl,
   scrollPosition,
   unFocused,
+  commentMap,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
@@ -65,11 +65,11 @@ export const useDdocEditor = ({
     to: number,
   ) => {
     let _isHighlightedYellow = false;
-    state.doc.nodesBetween(from, to, (node) => {
+    state.doc.nodesBetween(from, to, node => {
       if (
         node.marks &&
         node.marks.some(
-          (mark) =>
+          mark =>
             mark.type.name === 'highlight' && mark.attrs.color === 'yellow',
         )
       ) {
@@ -78,48 +78,38 @@ export const useDdocEditor = ({
     });
     return _isHighlightedYellow;
   };
+  const [popupPosition, setPopupPosition] = useState({
+    x: 0,
+    y: 0,
+    visible: false,
+  });
 
-  const handleCommentInteraction = (view: EditorView, event: MouseEvent) => {
+  const [popupContent, setPopupContent] = useState('');
+
+  const handleCommentInteraction = (_view: EditorView, event: MouseEvent) => {
+    console.log({ commentMap }, 'handleCommentInteraction');
+    if (!commentMap) return;
     const target: any = event.target;
     // Check if the hovered element is a highlighted text
     if (
       target &&
       target.nodeName === 'MARK' &&
       target.dataset.color &&
-      target?.dataset?.color === 'yellow'
+      target?.dataset?.color === '#DDFBDF'
     ) {
-      const highlightedText = target.textContent;
+      const rect = target.getBoundingClientRect();
 
-      // Find the position of the hovered text within the document
-      const pos = view.posAtCoords({ left: event.clientX, top: event.clientY });
+      const popupWidth = 300;
 
-      if (pos) {
-        const { state } = view;
-        let from = pos.pos;
-        let to = pos.pos;
-
-        // Find the start and end of the highlighted mark
-        state.doc.nodesBetween(from, to, (node, pos) => {
-          if (node.marks && node.marks.length) {
-            node.marks.forEach((mark) => {
-              if (mark.type.name === 'highlight') {
-                from = pos;
-                to = pos + node.nodeSize;
-              }
-            });
-          }
-        });
-
-        if (from !== to) {
-          const data = {
-            text: highlightedText,
-            from,
-            to,
-            isHighlightedYellow: isHighlightedYellow(state, from, to),
-          };
-          onCommentInteraction?.(data);
-        }
+      const x = rect.left + rect.width / 2 - popupWidth / 2;
+      const y = rect.top - 120;
+      const highlightedComment = commentMap.get(target.textContent);
+      if (highlightedComment) {
+        setPopupContent(highlightedComment);
+        setPopupPosition({ x, y, visible: true });
       }
+    } else {
+      setPopupPosition(prev => ({ ...prev, visible: false }));
     }
   };
 
@@ -165,7 +155,7 @@ export const useDdocEditor = ({
     [extensions],
   );
 
-  const collaborationCleanupRef = useRef<() => void>(() => { });
+  const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
@@ -179,7 +169,7 @@ export const useDdocEditor = ({
     });
 
     setExtensions([
-      ...extensions.filter((extension) => extension.name !== 'history'),
+      ...extensions.filter(extension => extension.name !== 'history'),
       Collaboration.configure({
         document: ydoc,
       }),
@@ -306,5 +296,8 @@ export const useDdocEditor = ({
     ref,
     connect,
     ydoc,
+    isCommentShown: popupPosition.visible,
+    popupContent,
+    popupPosition,
   };
 };
