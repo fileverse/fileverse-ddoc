@@ -54,7 +54,7 @@ const DdocEditor = forwardRef(
       isCommentSectionOpen,
       setIsCommentSectionOpen,
       setInlineCommentData,
-      inlineCommentData
+      inlineCommentData,
     }: DdocProps,
     ref,
   ) => {
@@ -111,7 +111,7 @@ const DdocEditor = forwardRef(
       isCommentSectionOpen,
       setIsCommentSectionOpen,
       setInlineCommentData,
-      inlineCommentData
+      inlineCommentData,
     });
 
     useImperativeHandle(
@@ -312,7 +312,10 @@ const DdocEditor = forwardRef(
             { 'md:!mt-16': !isPreviewMode },
             { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
             { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
-            { 'max-[1080px]:!mx-auto min-[1081px]:!ml-[18%] min-[1700px]:!mx-auto': isCommentSectionOpen && !isNativeMobile },            
+            {
+              'max-[1080px]:!mx-auto min-[1081px]:!ml-[18%] min-[1700px]:!mx-auto':
+                isCommentSectionOpen && !isNativeMobile,
+            },
             { '!mx-auto': !isCommentSectionOpen },
             { 'min-h-[83vh]': isNavbarVisible },
             { 'min-h-[90vh]': !isNavbarVisible },
@@ -324,18 +327,17 @@ const DdocEditor = forwardRef(
               '!mt-24': isIOS && hasEditorContent,
             })}
           >
-            {!isPreviewMode && (
-              <div>
-                <EditorBubbleMenu
-                  editor={editor}
-                  onError={onError}
-                  setIsCommentSectionOpen={setIsCommentSectionOpen}
-                  inlineCommentData={inlineCommentData}
-                  setInlineCommentData={setInlineCommentData}
-                />
-                <ColumnsMenu editor={editor} appendTo={editorRef} />
-              </div>
-            )}
+            <div>
+              <EditorBubbleMenu
+                editor={editor}
+                onError={onError}
+                setIsCommentSectionOpen={setIsCommentSectionOpen}
+                inlineCommentData={inlineCommentData}
+                setInlineCommentData={setInlineCommentData}
+                isPreviewMode={isPreviewMode}
+              />
+              <ColumnsMenu editor={editor} appendTo={editorRef} />
+            </div>
             <EditingProvider isPreviewMode={isPreviewMode}>
               {tags && tags.length > 0 && (
                 <div
