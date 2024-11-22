@@ -26,6 +26,7 @@ export interface BubbleMenuItem {
 }
 
 type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
+  isPreviewMode: boolean;
   onError?: (errorString: string) => void;
   setIsCommentSectionOpen?: (isOpen: boolean) => void;
   inlineCommentData?: InlineCommentData;
@@ -223,7 +224,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         isInlineCommentOpen ? '!invisible' : '!visible',
       )}
     >
-      {isMobile ? (
+      {isMobile || props.isPreviewMode ? (
         <div
           className={cn(
             'relative',
