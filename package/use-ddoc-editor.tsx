@@ -15,6 +15,7 @@ import SlashCommand from './components/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
 import customTextInputRules from './extensions/customTextInputRules';
 import { PageBreak } from './extensions/page-break/page-break';
+import { fromUint8Array, toUint8Array } from 'js-base64';
 
 const usercolors = [
   '#30bced',
@@ -26,6 +27,20 @@ const usercolors = [
   '#0ad7f2',
   '#1bff39',
 ];
+
+export function isJSONString(str: any) {
+  if (typeof str !== 'string') {
+    return false;
+  }
+
+  try {
+    const parsed = JSON.parse(str);
+    return typeof parsed === 'object' && parsed !== null;
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
+}
 
 export const useDdocEditor = ({
   isPreviewMode,
@@ -55,6 +70,9 @@ export const useDdocEditor = ({
     SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
     customTextInputRules,
     PageBreak,
+    Collaboration.configure({
+      document: ydoc,
+    }),
   ]);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
@@ -65,11 +83,11 @@ export const useDdocEditor = ({
     to: number,
   ) => {
     let _isHighlightedYellow = false;
-    state.doc.nodesBetween(from, to, (node) => {
+    state.doc.nodesBetween(from, to, node => {
       if (
         node.marks &&
         node.marks.some(
-          (mark) =>
+          mark =>
             mark.type.name === 'highlight' && mark.attrs.color === 'yellow',
         )
       ) {
@@ -101,7 +119,7 @@ export const useDdocEditor = ({
         // Find the start and end of the highlighted mark
         state.doc.nodesBetween(from, to, (node, pos) => {
           if (node.marks && node.marks.length) {
-            node.marks.forEach((mark) => {
+            node.marks.forEach(mark => {
               if (mark.type.name === 'highlight') {
                 from = pos;
                 to = pos + node.nodeSize;
@@ -151,21 +169,13 @@ export const useDdocEditor = ({
         handleClick: handleCommentClick,
       },
       autofocus: unFocused ? false : 'start',
-      onTransaction: ({ editor, transaction }) => {
-        if (editor?.isEmpty) {
-          return;
-        }
-        if (transaction.docChanged) {
-          onChange?.(editor.getJSON());
-        }
-      },
       shouldRerenderOnTransaction: true,
       immediatelyRender: false,
     },
     [extensions],
   );
 
-  const collaborationCleanupRef = useRef<() => void>(() => { });
+  const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
@@ -179,10 +189,7 @@ export const useDdocEditor = ({
     });
 
     setExtensions([
-      ...extensions.filter((extension) => extension.name !== 'history'),
-      Collaboration.configure({
-        document: ydoc,
-      }),
+      ...extensions.filter(extension => extension.name !== 'history'),
       CollaborationCursor.configure({
         provider: provider,
         user: {
@@ -212,10 +219,31 @@ export const useDdocEditor = ({
   }, [isPreviewMode, editor]);
 
   useEffect(() => {
-    if (initialContent && editor && !initialContentSetRef.current) {
+    if (initialContent && editor && !initialContentSetRef.current && ydoc) {
       setIsContentLoading(true);
       queueMicrotask(() => {
-        editor.commands.setContent(initialContent);
+        const isYjsUpdate =
+          Array.isArray(initialContent) ||
+          (typeof initialContent === 'string' && !isJSONString(initialContent));
+
+        if (isYjsUpdate) {
+          console.log({ initialContent });
+
+          if (Array.isArray(initialContent)) {
+            Y.applyUpdate(
+              ydoc,
+              Y.mergeUpdates([
+                toUint8Array(initialContent[0]),
+                toUint8Array(initialContent[1]),
+              ]),
+            );
+          } else {
+            Y.applyUpdate(ydoc, toUint8Array(initialContent));
+          }
+        } else {
+          editor.commands.setContent(initialContent);
+        }
+
         setIsContentLoading(false);
       });
 
@@ -236,7 +264,7 @@ export const useDdocEditor = ({
         setIsContentLoading(false);
       }
     });
-  }, [initialContent, editor]);
+  }, [initialContent, editor, ydoc]);
 
   useEffect(() => {
     if (!editor) {
@@ -299,6 +327,16 @@ export const useDdocEditor = ({
     editor?.storage.characterCount.characters(),
     editor?.storage.characterCount.words(),
   ]);
+
+  useEffect(() => {
+    const handler = () => {
+      onChange?.(fromUint8Array(Y.encodeStateAsUpdate(ydoc)) as any);
+    };
+    if (ydoc) {
+      ydoc.on('update', handler);
+    }
+    return () => ydoc?.off('update', handler);
+  }, [ydoc]);
 
   return {
     editor,
