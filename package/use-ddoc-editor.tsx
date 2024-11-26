@@ -7,7 +7,7 @@ import * as Y from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import { defaultExtensions } from './extensions/default-extension';
-import { AnyExtension, useEditor } from '@tiptap/react';
+import { AnyExtension, JSONContent, useEditor } from '@tiptap/react';
 import { getCursor } from './utils/cursor';
 import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
@@ -15,6 +15,8 @@ import SlashCommand from './components/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
 import customTextInputRules from './extensions/customTextInputRules';
 import { PageBreak } from './extensions/page-break/page-break';
+import { fromUint8Array, toUint8Array } from 'js-base64';
+import { IndexeddbPersistence } from 'y-indexeddb';
 
 const usercolors = [
   '#30bced',
@@ -26,6 +28,20 @@ const usercolors = [
   '#0ad7f2',
   '#1bff39',
 ];
+
+export function isJSONString(str: any) {
+  if (typeof str !== 'string') {
+    return false;
+  }
+
+  try {
+    const parsed = JSON.parse(str);
+    return typeof parsed === 'object' && parsed !== null;
+  } catch (e) {
+    console.log(e);
+    return false;
+  }
+}
 
 export const useDdocEditor = ({
   isPreviewMode,
@@ -44,6 +60,8 @@ export const useDdocEditor = ({
   setWordCount,
   secureImageUploadUrl,
   scrollPosition,
+  ddocId,
+  enableIndexeddbSync,
   unFocused,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
@@ -55,6 +73,9 @@ export const useDdocEditor = ({
     SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
     customTextInputRules,
     PageBreak,
+    Collaboration.configure({
+      document: ydoc,
+    }),
   ]);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
@@ -65,11 +86,11 @@ export const useDdocEditor = ({
     to: number,
   ) => {
     let _isHighlightedYellow = false;
-    state.doc.nodesBetween(from, to, (node) => {
+    state.doc.nodesBetween(from, to, node => {
       if (
         node.marks &&
         node.marks.some(
-          (mark) =>
+          mark =>
             mark.type.name === 'highlight' && mark.attrs.color === 'yellow',
         )
       ) {
@@ -101,7 +122,7 @@ export const useDdocEditor = ({
         // Find the start and end of the highlighted mark
         state.doc.nodesBetween(from, to, (node, pos) => {
           if (node.marks && node.marks.length) {
-            node.marks.forEach((mark) => {
+            node.marks.forEach(mark => {
               if (mark.type.name === 'highlight') {
                 from = pos;
                 to = pos + node.nodeSize;
@@ -151,21 +172,13 @@ export const useDdocEditor = ({
         handleClick: handleCommentClick,
       },
       autofocus: unFocused ? false : 'start',
-      onTransaction: ({ editor, transaction }) => {
-        if (editor?.isEmpty) {
-          return;
-        }
-        if (transaction.docChanged) {
-          onChange?.(editor.getJSON());
-        }
-      },
       shouldRerenderOnTransaction: true,
       immediatelyRender: false,
     },
     [extensions],
   );
 
-  const collaborationCleanupRef = useRef<() => void>(() => { });
+  const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
@@ -179,10 +192,7 @@ export const useDdocEditor = ({
     });
 
     setExtensions([
-      ...extensions.filter((extension) => extension.name !== 'history'),
-      Collaboration.configure({
-        document: ydoc,
-      }),
+      ...extensions.filter(extension => extension.name !== 'history'),
       CollaborationCursor.configure({
         provider: provider,
         user: {
@@ -211,12 +221,55 @@ export const useDdocEditor = ({
     editor?.setEditable(!isPreviewMode);
   }, [isPreviewMode, editor]);
 
+  const yjsIndexeddbProviderRef = useRef<IndexeddbPersistence | null>(null);
+
+  const initialiseYjsIndexedDbProvider = async () => {
+    const provider = yjsIndexeddbProviderRef.current;
+    if (provider) {
+      await provider.destroy();
+    }
+    if (enableIndexeddbSync && ddocId) {
+      const newYjsIndexeddbProvider = new IndexeddbPersistence(ddocId, ydoc);
+      yjsIndexeddbProviderRef.current = newYjsIndexeddbProvider;
+    }
+  };
+
+  const mergeAndApplyUpdate = (contents: string[]) => {
+    const parsedContents = contents.map(content => toUint8Array(content));
+    Y.applyUpdate(ydoc, Y.mergeUpdates(parsedContents));
+  };
+
+  const isContentYjsEncoded = (
+    initialContent: string[] | JSONContent | string | null,
+  ) => {
+    return (
+      Array.isArray(initialContent) ||
+      (typeof initialContent === 'string' && !isJSONString(initialContent))
+    );
+  };
+
   useEffect(() => {
-    if (initialContent && editor && !initialContentSetRef.current) {
+    if (initialContent && editor && !initialContentSetRef.current && ydoc) {
       setIsContentLoading(true);
       queueMicrotask(() => {
-        editor.commands.setContent(initialContent);
-        setIsContentLoading(false);
+        const isYjsEncoded = isContentYjsEncoded(initialContent);
+        if (isYjsEncoded) {
+          if (Array.isArray(initialContent)) {
+            mergeAndApplyUpdate(initialContent);
+          } else {
+            Y.applyUpdate(ydoc, toUint8Array(initialContent as string));
+          }
+        } else {
+          editor.commands.setContent(initialContent);
+        }
+
+        initialiseYjsIndexedDbProvider()
+          .then(() => {
+            setIsContentLoading(false);
+          })
+          .catch(error => {
+            console.log(error);
+          });
       });
 
       initialContentSetRef.current = true;
@@ -236,7 +289,7 @@ export const useDdocEditor = ({
         setIsContentLoading(false);
       }
     });
-  }, [initialContent, editor]);
+  }, [initialContent, editor, ydoc]);
 
   useEffect(() => {
     if (!editor) {
@@ -300,11 +353,24 @@ export const useDdocEditor = ({
     editor?.storage.characterCount.words(),
   ]);
 
+  useEffect(() => {
+    const handler = () => {
+      onChange?.(fromUint8Array(Y.encodeStateAsUpdate(ydoc)) as any);
+    };
+    if (ydoc) {
+      ydoc.on('update', handler);
+    }
+    return () => {
+      ydoc?.off('update', handler);
+    };
+  }, [ydoc]);
+
   return {
     editor,
     isContentLoading,
     ref,
     connect,
     ydoc,
+    refreshYjsIndexedDbProvider: initialiseYjsIndexedDbProvider,
   };
 };

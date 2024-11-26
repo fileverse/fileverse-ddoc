@@ -30,13 +30,17 @@ export interface DdocProps {
   enableCollaboration?: boolean | undefined;
   setIsCommentSectionOpen?: React.Dispatch<SetStateAction<boolean>>;
   inlineCommentData?: InlineCommentData;
-  setInlineCommentData?: React.Dispatch<React.SetStateAction<InlineCommentData>>;
+  setInlineCommentData?: React.Dispatch<
+    React.SetStateAction<InlineCommentData>
+  >;
   isCommentSectionOpen?: boolean;
   collaborationId?: string;
   isPreviewMode: boolean;
   ensResolutionUrl?: string;
   secureImageUploadUrl?: string;
-  initialContent?: JSONContent | null;
+  enableIndexeddbSync?: boolean;
+  ddocId?: string;
+  initialContent?: JSONContent | string | string[] | null;
   walletAddress?: string | null;
   username?: string | null;
   renderNavbar?: ({ editor }: { editor: JSONContent }) => JSX.Element;

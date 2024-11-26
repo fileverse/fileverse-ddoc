@@ -20,9 +20,11 @@ import cn from 'classnames';
 import { Button, LucideIcon, Tag, TagType, TagInput } from '@fileverse/ui';
 import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
 import { AnimatePresence, motion } from 'framer-motion';
+import * as Y from 'yjs';
 
 import platform from 'platform';
 import MobileToolbar from './components/mobile-toolbar';
+import { fromUint8Array, toUint8Array } from 'js-base64';
 
 const checkOs = () => platform.os?.family;
 
@@ -55,6 +57,8 @@ const DdocEditor = forwardRef(
       setIsCommentSectionOpen,
       setInlineCommentData,
       inlineCommentData,
+      enableIndexeddbSync,
+      ddocId,
     }: DdocProps,
     ref,
   ) => {
@@ -92,7 +96,10 @@ const DdocEditor = forwardRef(
       ref: editorRef,
       isContentLoading,
       ydoc,
+      refreshYjsIndexedDbProvider,
     } = useDdocEditor({
+      enableIndexeddbSync,
+      ddocId,
       isPreviewMode,
       initialContent,
       enableCollaboration,
@@ -119,30 +126,39 @@ const DdocEditor = forwardRef(
       () => ({
         getEditor: () => editor,
         getYdoc: () => ydoc,
+        refreshYjsIndexedDbProvider,
+        mergeYjsContents: (_contents: string[]) => {
+          const contents = Y.mergeUpdates(
+            _contents.map(content => toUint8Array(content)),
+          );
+          Y.applyUpdate(ydoc, contents);
+
+          return fromUint8Array(contents);
+        },
       }),
       [editor, ydoc],
     );
 
     const handleAddTag = (tag: TagType) => {
-      setSelectedTags?.((prevTags) => {
+      setSelectedTags?.(prevTags => {
         if (prevTags.length >= 6) {
           // If we already have 6 tags, don't add any more
           return prevTags;
         }
 
-        const newTags = tag.name.split(',').map((name) => {
+        const newTags = tag.name.split(',').map(name => {
           const trimmedName = name.trim();
           const existingTag = tags?.find(
-            (t) => t.name.toLowerCase() === trimmedName.toLowerCase(),
+            t => t.name.toLowerCase() === trimmedName.toLowerCase(),
           );
           return existingTag || { name: trimmedName, color: tag.color };
         });
 
         const uniqueTags = [...prevTags];
-        newTags.forEach((newTag) => {
+        newTags.forEach(newTag => {
           if (
             !uniqueTags.some(
-              (t) => t.name.toLowerCase() === newTag.name.toLowerCase(),
+              t => t.name.toLowerCase() === newTag.name.toLowerCase(),
             )
           ) {
             uniqueTags.push(newTag);
@@ -154,8 +170,8 @@ const DdocEditor = forwardRef(
       });
     };
     const handleRemoveTag = (tagName: string) => {
-      setSelectedTags?.((prevTags) =>
-        prevTags.filter((tag) => tag.name !== tagName),
+      setSelectedTags?.(prevTags =>
+        prevTags.filter(tag => tag.name !== tagName),
       );
     };
 
@@ -336,7 +352,10 @@ const DdocEditor = forwardRef(
                 setInlineCommentData={setInlineCommentData}
                 isPreviewMode={isPreviewMode}
               />
-              <ColumnsMenu editor={editor} appendTo={editorRef} />
+              <ColumnsMenu
+                editor={editor}
+                appendTo={editorRef}
+              />
             </div>
             <EditingProvider isPreviewMode={isPreviewMode}>
               {tags && tags.length > 0 && (
@@ -418,7 +437,10 @@ const DdocEditor = forwardRef(
                 'absolute w-12 h-12 bg-white rounded-full shadow-xl top-[70px] right-[-23px]',
               )}
             >
-              <LucideIcon name="MessageSquareText" size="sm" />
+              <LucideIcon
+                name="MessageSquareText"
+                size="sm"
+              />
             </Button>
           )}
         </div>
