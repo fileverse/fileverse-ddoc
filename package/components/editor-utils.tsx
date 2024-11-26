@@ -818,12 +818,6 @@ export const InlineCommentPopup = ({
         // Find and close the nearest popover/dropdown container
         const popoverContent = elementRef.current.closest('[role="dialog"]');
         if (popoverContent) {
-          // Clear comment and set inline comment to false before removing
-          setInlineCommentData({
-            inlineCommentText: '',
-            highlightedTextContent: '',
-            handleClick: false
-          });
           popoverContent.remove();
         }
       }
