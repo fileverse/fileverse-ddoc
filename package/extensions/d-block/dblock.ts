@@ -251,19 +251,21 @@ export const DBlock = Node.create<DBlockOptions>({
 
         const isNodeEmpty = node?.textContent === '';
 
-        let isPrevNodePageBreak = false;
-        let currentNodePos = -1;
+        if (parent?.type.name !== 'dBlock') {
+          let isPrevNodePageBreak = false;
+          let currentNodePos = -1;
 
-        doc.descendants((node, pos) => {
-          if (currentNodePos !== -1) return false;
-          if (node.type.name === 'pageBreak') {
-            isPrevNodePageBreak = true;
-            currentNodePos = pos;
+          doc.descendants((node, pos) => {
+            if (currentNodePos !== -1) return false;
+            if (node.type.name === 'pageBreak') {
+              isPrevNodePageBreak = true;
+              currentNodePos = pos;
+            }
+          });
+
+          if (isPrevNodePageBreak) {
+            return true;
           }
-        });
-
-        if (isPrevNodePageBreak) {
-          return true;
         }
 
         const isNearestDBlock = doc.nodeAt(from - 4)?.type.name === 'dBlock';
