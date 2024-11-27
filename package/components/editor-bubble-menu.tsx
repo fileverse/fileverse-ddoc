@@ -123,7 +123,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       duration: 200,
       animation: 'shift-toward-subtle',
       zIndex: 50,
-      offset: [0, isNativeMobile ? -150 : 0],
+      offset: [0, isNativeMobile ? 80 : 0],
     },
   };
 
