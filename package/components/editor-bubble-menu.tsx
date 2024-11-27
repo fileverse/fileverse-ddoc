@@ -17,6 +17,7 @@ import { IEditorTool } from '../hooks/use-visibility';
 import ToolbarButton from '../common/toolbar-button';
 import { DynamicDropdown, cn } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
+import platform from 'platform';
 
 export interface BubbleMenuItem {
   name: string;
@@ -94,6 +95,14 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     },
   ];
 
+  const checkOs = () => platform.os?.family;
+
+  const isMobileScreen = useMediaQuery('(max-width: 640px)');
+  const isNativeMobile =
+      checkOs() === 'Android' ||
+      checkOs() === 'Windows Phone' ||
+      isMobileScreen;
+
   const bubbleMenuProps: EditorBubbleMenuProps = {
     ...props,
     shouldShow: ({ state, editor }) => {
@@ -114,6 +123,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       duration: 200,
       animation: 'shift-toward-subtle',
       zIndex: 50,
+      offset: [0, isNativeMobile ? -150 : 0],
     },
   };
 
