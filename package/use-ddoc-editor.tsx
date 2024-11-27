@@ -17,6 +17,7 @@ import customTextInputRules from './extensions/customTextInputRules';
 import { PageBreak } from './extensions/page-break/page-break';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { IndexeddbPersistence } from 'y-indexeddb';
+import { isJSONString } from './utils/isJsonString';
 
 const usercolors = [
   '#30bced',
@@ -28,20 +29,6 @@ const usercolors = [
   '#0ad7f2',
   '#1bff39',
 ];
-
-export function isJSONString(str: any) {
-  if (typeof str !== 'string') {
-    return false;
-  }
-
-  try {
-    const parsed = JSON.parse(str);
-    return typeof parsed === 'object' && parsed !== null;
-  } catch (e) {
-    console.log(e);
-    return false;
-  }
-}
 
 export const useDdocEditor = ({
   isPreviewMode,
@@ -264,7 +251,6 @@ export const useDdocEditor = ({
       setIsContentLoading(true);
       queueMicrotask(() => {
         if (initialContent !== '') {
-          console.log('doc is empty ');
           const isYjsEncoded = isContentYjsEncoded(initialContent as string);
           if (isYjsEncoded) {
             if (Array.isArray(initialContent)) {
