@@ -1,5 +1,5 @@
 /* eslint-disable no-useless-escape */
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { TextFormatingPopup, useEditorToolbar } from './editor-utils';
 import { Editor } from '@tiptap/react';
 import { IEditorTool } from '../hooks/use-visibility';
@@ -10,7 +10,6 @@ import {
   DrawerTrigger,
   DynamicModal,
 } from '@fileverse/ui';
-import { useMediaQuery } from 'usehooks-ts';
 import ToolbarButton from '../common/toolbar-button';
 
 const MobileToolbar = ({
@@ -35,12 +34,10 @@ const MobileToolbar = ({
       secureImageUploadUrl
     },
   );
-  const isMobile = useMediaQuery('(max-width: 1023px)');
   const [url, setUrl] = useState('');
   const [linkText, setLinkText] = useState('');
   const [isTextValid, setIsTextValid] = useState(true);
   const [isUrlValid, setIsUrlValid] = useState(true);
-  const textFormattingButtonRef = useRef<HTMLButtonElement>(null);
 
   const saveLink = () => {
     if ((url === null || url === '') && (linkText === '' || linkText === null)) {
@@ -97,58 +94,7 @@ const MobileToolbar = ({
     const linkMark = editor.getAttributes('link');
     return { text: selectedText || linkMark.text || '', url: linkMark.href || '' };
   };
-
-  useEffect(() => {
-    let touchStartTime = 0;
-
-    const handleTouchStart = () => {
-      touchStartTime = Date.now();
-    };
-
-    const handleTouchEnd = () => {
-      const touchEndTime = Date.now();
-      if (touchEndTime - touchStartTime > 500) {
-        // Long press, likely selecting text
-        const { selection } = editor.state;
-        const isTextSelected = selection.from !== selection.to;
-        const isImageSelected =
-          editor.state.doc.nodeAt(selection.from)?.type.name ===
-          'resizableMedia';
-        const isIframeSelected =
-          editor.state.doc.nodeAt(selection.from)?.type.name === 'iframe';
-        if (isTextSelected && !isImageSelected && !isIframeSelected) {
-          textFormattingButtonRef.current?.click();
-        }
-      }
-    };
-
-    const handleMouseUp = () => {
-      if (!isMobile) return;
-      const { selection } = editor.state;
-      const isTextSelected = selection.from !== selection.to;
-
-      if (isTextSelected) {
-        textFormattingButtonRef.current?.click();
-      }
-    };
-
-    if (isMobile) {
-      document.addEventListener('touchstart', handleTouchStart);
-      document.addEventListener('touchend', handleTouchEnd);
-    } else {
-      document.addEventListener('mouseup', handleMouseUp);
-    }
-
-    return () => {
-      if (isMobile) {
-        document.removeEventListener('touchstart', handleTouchStart);
-        document.removeEventListener('touchend', handleTouchEnd);
-      } else {
-        document.removeEventListener('mouseup', handleMouseUp);
-      }
-    };
-  }, [editor, isMobile]);
-
+  
   useEffect(() => {
     if (!editor) return;
 
@@ -194,7 +140,6 @@ const MobileToolbar = ({
                 {tool.title === 'Text formating' ? (
                   <DrawerTrigger asChild>
                     <ToolbarButton
-                      ref={textFormattingButtonRef}
                       onClick={tool.onClick}
                       isActive={tool.isActive}
                       icon={tool.icon}
