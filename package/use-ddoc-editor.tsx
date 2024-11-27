@@ -248,19 +248,33 @@ export const useDdocEditor = ({
     );
   };
 
+  const isLoadingInitialContent = (
+    initialContent: string | JSONContent | string[] | null | undefined,
+  ) => {
+    return !initialContent && initialContent !== '';
+  };
+
   useEffect(() => {
-    if (initialContent && editor && !initialContentSetRef.current && ydoc) {
+    if (
+      !isLoadingInitialContent(initialContent) &&
+      editor &&
+      !initialContentSetRef.current &&
+      ydoc
+    ) {
       setIsContentLoading(true);
       queueMicrotask(() => {
-        const isYjsEncoded = isContentYjsEncoded(initialContent);
-        if (isYjsEncoded) {
-          if (Array.isArray(initialContent)) {
-            mergeAndApplyUpdate(initialContent);
+        if (initialContent !== '') {
+          console.log('doc is empty ');
+          const isYjsEncoded = isContentYjsEncoded(initialContent as string);
+          if (isYjsEncoded) {
+            if (Array.isArray(initialContent)) {
+              mergeAndApplyUpdate(initialContent);
+            } else {
+              Y.applyUpdate(ydoc, toUint8Array(initialContent as string));
+            }
           } else {
-            Y.applyUpdate(ydoc, toUint8Array(initialContent as string));
+            editor.commands.setContent(initialContent as JSONContent);
           }
-        } else {
-          editor.commands.setContent(initialContent);
         }
 
         initialiseYjsIndexedDbProvider()
