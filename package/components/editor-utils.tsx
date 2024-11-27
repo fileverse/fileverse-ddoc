@@ -808,9 +808,10 @@ export const InlineCommentPopup = ({
       setInlineCommentData({ inlineCommentText: comment, handleClick: true });
       editor.chain().unsetHighlight().run();
       setIsCommentSectionOpen(true);
-      // Reset comment field
+
+      // Reset comment field and close inline comment
       setComment('');
-      setIsInlineCommentOpen(false)
+      setIsInlineCommentOpen(false);
 
       // Close popup using ref
       if (elementRef.current?.parentElement) {
@@ -818,10 +819,15 @@ export const InlineCommentPopup = ({
         const popoverContent = elementRef.current.closest('[role="dialog"]');
         if (popoverContent) {
           popoverContent.remove();
-          setIsInlineCommentOpen(false)
         }
       }
 
+      // Clear selection to hide bubble menu by collapsing selection to start
+      const { from } = editor.state.selection;
+      editor.chain()
+        .focus()
+        .setTextSelection(from)
+        .run();
     }
   };
 

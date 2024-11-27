@@ -114,6 +114,7 @@ export const ResizableMediaNodeView = ({
   };
 
   const startHorizontalResize = (e: MouseEvent | TouchEvent) => {
+    e.stopPropagation();
     // Check if it's a touch event and extract the clientX accordingly
     const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
     lastClientX = clientX;
