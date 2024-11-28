@@ -35,7 +35,7 @@ function App() {
     handleClick: false,
   });
   
-  const [zoomLevel, setZoomLevel] = useState<string>('');
+  const [zoomLevel, setZoomLevel] = useState<string>('1');
 
   const isPreviewMode = false;
 
