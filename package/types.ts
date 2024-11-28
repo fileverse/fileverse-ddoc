@@ -31,6 +31,8 @@ export interface DdocProps {
   setIsCommentSectionOpen?: React.Dispatch<SetStateAction<boolean>>;
   inlineCommentData?: InlineCommentData;
   setInlineCommentData?: React.Dispatch<React.SetStateAction<InlineCommentData>>;
+  zoomLevel: string;
+  setZoomLevel: React.Dispatch<SetStateAction<string>>;
   isCommentSectionOpen?: boolean;
   collaborationId?: string;
   isPreviewMode: boolean;

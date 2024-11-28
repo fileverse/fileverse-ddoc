@@ -27,7 +27,7 @@ export interface BubbleMenuItem {
 
 type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   onError?: (errorString: string) => void;
-  zoomLevel: number;
+  zoomLevel: string;
   setIsCommentSectionOpen?: (isOpen: boolean) => void;
   inlineCommentData?: InlineCommentData;
   setInlineCommentData?: React.Dispatch<React.SetStateAction<InlineCommentData>>;
@@ -223,7 +223,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         'flex gap-2 overflow-hidden rounded-lg h-[45px] min-w-fit w-full py-2 px-4 bg-white items-center shadow-elevation-1',
         isInlineCommentOpen ? '!invisible' : '!visible',
         {
-          "ml-[100%] mt-[60%]": props.zoomLevel === 0.5,
+          "ml-[100%] mt-[60%]": props.zoomLevel === '0.5',
         }
       )}
     >
