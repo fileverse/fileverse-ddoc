@@ -348,19 +348,18 @@ const DdocEditor = forwardRef(
               transform: `scaleY(${zoomLevel})`,
             }}
           >
-            {!isPreviewMode && (
-              <div>
-                <EditorBubbleMenu 
-                  editor={editor} 
-                  onError={onError} 
-                  zoomLevel={zoomLevel} 
-                  setIsCommentSectionOpen={setIsCommentSectionOpen}
-                  inlineCommentData={inlineCommentData}
-                  setInlineCommentData={setInlineCommentData} 
-                />
-                <ColumnsMenu editor={editor} appendTo={editorRef} />
-              </div>
-            )}
+            <div>
+              <EditorBubbleMenu
+                editor={editor}
+                onError={onError}
+                zoomLevel={zoomLevel} 
+                setIsCommentSectionOpen={setIsCommentSectionOpen}
+                inlineCommentData={inlineCommentData}
+                setInlineCommentData={setInlineCommentData}
+                isPreviewMode={isPreviewMode}
+              />
+              <ColumnsMenu editor={editor} appendTo={editorRef} />
+            </div>
             <EditingProvider isPreviewMode={isPreviewMode}>
               {tags && tags.length > 0 && (
                 <div
