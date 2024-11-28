@@ -49,7 +49,9 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `onError` (optional)                           | `(errorString: string) => void`                | Function to call on error                                                                              |
 | `setCharacterCount` (optional)                 | `React.Dispatch<SetStateAction<number>>`       | Optional. React Set State function to update Character Count                                           |
 | `setWordCount` (optional)                      | `React.Dispatch<SetStateAction<number>>`       | Optional. React Set State function to update Word Count                                                |
-| `scrollPosition`(optional                      | `number`                                       | User cursor position to scroll to on intitalising the content of the editor                            |
+| `scrollPosition`(optional)                      | `number`                                       | User cursor position to scroll to on intitalising the content of the editor  
+| `enableIndexeddbSync` (optional) | `boolean` | Indicates when to use yjs-indexeddb provider
+| `ddocId` (optional) | `string` | custom ID for the document (this has to be provided to enable yjs-indexeddb provider)
 
 ## Data Interface
 
