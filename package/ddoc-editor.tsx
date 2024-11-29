@@ -64,7 +64,7 @@ const DdocEditor = forwardRef(
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const btn_ref = useRef(null);
     const isMobile = useMediaQuery('(max-width: 640px)');
-    const isWidth2000px = useMediaQuery('(min-width: 2000px)');
+    const isWidth1500px = useMediaQuery('(min-width: 1500px)');
     const isWidth3000px = useMediaQuery('(min-width: 3000px)');
     const isNativeMobile =
       checkOs() === 'iOS' ||
@@ -340,7 +340,7 @@ const DdocEditor = forwardRef(
                 zoomLevel === '1.4' ||
                 zoomLevel === '1.5',
             },
-            { '!ml-0': zoomLevel === '2' && isWidth2000px && !isWidth3000px },
+            { '!ml-0': zoomLevel === '2' && isWidth1500px && !isWidth3000px },
             { 'min-h-[83vh]': isNavbarVisible },
             { 'min-h-[90vh]': !isNavbarVisible },
             { 'w-[700px] md:max-w-[700px] h-[150%]': zoomLevel === '0.5' },
