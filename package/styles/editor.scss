@@ -59,7 +59,7 @@
     }
 
     .horizontal-resize-handle {
-      @apply h-12 lg:h-24 w-2 top-[50%] right-1 cursor-col-resize absolute z-50 translate-y-[-50%] rounded;
+      @apply h-12 lg:h-24 w-2 top-[50%] right-1 cursor-col-resize absolute z-20 translate-y-[-50%] rounded;
     }
 
     .btn {
@@ -493,4 +493,75 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
 
 .img-placeholder {
   @apply py-2 px-4 animate-pulse bg-black text-white text-sm font-medium rounded text-center w-fit mx-auto z-[999] relative -translate-y-1;
+}
+
+.presentation-mode {
+  .ProseMirror {
+    @apply outline-none;
+
+    h1 {
+      @apply text-[82px] font-[700];
+    }
+
+    img {
+      @apply w-full h-auto flex justify-center items-center;
+    }
+
+    p {
+      @apply leading-relaxed my-3 first:mt-0 last:mb-0;
+    }
+
+    & > p {
+      @apply my-6 first:mt-0 last:mb-0;
+    }
+  }
+
+  &.preview-slide {
+    transform: scale(0.2);
+    transform-origin: top left;
+    pointer-events: none;
+    min-width: 950px;
+
+    .ProseMirror {
+      h1 {
+        font-size: 4rem;
+      }
+      h2 {
+        font-size: 3rem;
+      }
+      p {
+        font-size: 2rem;
+      }
+      a {
+        pointer-events: none;
+      }
+    }
+  }
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  margin: 1em 0;
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0;
+
+    th,
+    td {
+      border: 1px solid #ddd;
+      padding: 8px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #f5f5f5;
+      font-weight: bold;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+  }
 }

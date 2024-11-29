@@ -33,6 +33,7 @@ const TiptapToolBar = ({
   isNavbarVisible,
   setIsNavbarVisible,
   secureImageUploadUrl,
+  setIsPresentationMode,
 }: {
   editor: Editor;
   onError?: (errorString: string) => void;
@@ -41,6 +42,7 @@ const TiptapToolBar = ({
   isNavbarVisible: boolean;
   setIsNavbarVisible: React.Dispatch<React.SetStateAction<boolean>>;
   secureImageUploadUrl?: string;
+  setIsPresentationMode: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   const {
     toolRef,
@@ -57,14 +59,13 @@ const TiptapToolBar = ({
   });
   const [filename, setFilename] = useState('exported_document.md');
   const zoomLevels = [
-    { title: 'Fit', value: '1.4' }, 
+    { title: 'Fit', value: '1.4' },
     { title: '50%', value: '0.5' },
     { title: '75%', value: '0.75' },
     { title: '100%', value: '1' },
     { title: '150%', value: '1.5' },
     { title: '200%', value: '2' },
   ];
-  
 
   const handleExport = () => {
     if (editor) {
@@ -202,7 +203,7 @@ const TiptapToolBar = ({
           anchorTrigger={
             <button
               className="bg-transparent hover:bg-gray-200 rounded py-2 px-4 flex items-center gap-2"
-              onClick={() => {}}
+              onClick={() => { }}
             >
               <span className='text-body-sm'>
                 {zoomLevels.find((z) => z.value === zoomLevel)?.title || '100%'}
@@ -217,7 +218,7 @@ const TiptapToolBar = ({
                   key={zoom.title}
                   className="hover:bg-gray-200 rounded py-1 px-2 w-full text-left"
                   onClick={() => {
-                      setZoomLevel(zoom.value);
+                    setZoomLevel(zoom.value);
                   }}
                 >
                   {zoom.title}
@@ -238,10 +239,10 @@ const TiptapToolBar = ({
                 {editor?.isActive('heading', { level: 1 })
                   ? 'Heading 1'
                   : editor?.isActive('heading', { level: 2 })
-                  ? 'Heading 2'
-                  : editor?.isActive('heading', { level: 3 })
-                  ? 'Heading 3'
-                  : 'Text'}
+                    ? 'Heading 2'
+                    : editor?.isActive('heading', { level: 3 })
+                      ? 'Heading 3'
+                      : 'Text'}
               </span>
               <LucideIcon name="ChevronDown" size="sm" />
             </button>
@@ -314,6 +315,12 @@ const TiptapToolBar = ({
               onClick: () => setIsExportModalOpen(false),
               className: "w-full md:w-auto",
             }}
+          />
+          <ToolbarButton
+            onClick={() => setIsPresentationMode(true)}
+            icon="Presentation"
+            tooltip="Presentation Mode"
+            isActive={false}
           />
         </div>
       </div>

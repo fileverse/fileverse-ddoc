@@ -12,9 +12,17 @@ import TurndownService from 'turndown';
 const markdownIt = new MarkdownIt().use(markdownItFootnote);
 
 // Initialize TurndownService for converting HTML to Markdown
-const turndownService = new TurndownService({
+export const turndownService = new TurndownService({
   headingStyle: 'atx',
   codeBlockStyle: 'fenced',
+});
+
+// Custom rule for page breaks
+turndownService.addRule('pageBreak', {
+  filter: 'br',
+  replacement: function () {
+    return '\n\n===\n\n';
+  },
 });
 
 // Custom rule for tables
@@ -82,6 +90,7 @@ turndownService.addRule('table', {
     )}\n\n`;
   },
 });
+
 // Custom rule for inline code
 turndownService.addRule('inlineCode', {
   filter: function (node) {
@@ -340,6 +349,21 @@ const MarkdownPasteHandler = Extension.create({
           }
         },
       }),
+      new InputRule({
+        find: /===\s*$/m,
+        handler: ({ state, range }) => {
+          const { tr } = state;
+          const start = range.from - 2;
+          const end = range.to;
+
+          // Create a page break node
+          tr.replaceWith(
+            start,
+            end,
+            this.editor.schema.nodes.pageBreak.create(),
+          );
+        },
+      }),
     ];
   },
 });
@@ -359,7 +383,8 @@ function isMarkdown(content: string): boolean {
     content.match(/<sup>(.*?)<\/sup>/g) !== null ||
     content.match(/<sub>(.*?)<\/sub>/g) !== null ||
     content.match(/\^(.*?)\^/g) !== null || // New superscript syntax
-    content.match(/~(.*?)~/g) !== null // New subscript syntax
+    content.match(/~(.*?)~/g) !== null || // New subscript syntax
+    content.match(/^===\s*$/m) !== null // Page break
   );
 }
 
@@ -376,12 +401,22 @@ function handleMarkdownContent(view: any, content: string) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(convertedHtml, 'text/html');
 
-  // Handle images: remove parent paragraph tags if they only contain an image
+  // Handle images and page breaks
   const paragraphs = doc.getElementsByTagName('p');
   for (let i = paragraphs.length - 1; i >= 0; i--) {
     const p = paragraphs[i];
     if (p.childNodes.length === 1 && p.firstChild?.nodeName === 'IMG') {
       p.parentNode?.replaceChild(p.firstChild, p);
+    }
+    // Replace === text content with a div element that will be converted to a page break node
+    if (
+      p.childNodes.length === 1 &&
+      p.firstChild?.textContent?.trim() === '==='
+    ) {
+      const pageBreakDiv = doc.createElement('div');
+      pageBreakDiv.setAttribute('data-type', 'page-break');
+      pageBreakDiv.setAttribute('data-page-break', 'true');
+      p.parentNode?.replaceChild(pageBreakDiv, p);
     }
   }
 
@@ -391,6 +426,7 @@ function handleMarkdownContent(view: any, content: string) {
   const subsupRegex = /<(sup|sub)>(.*?)<\/\1>/g;
   const superscriptRegex = /\^(.*?)\^/g;
   const subscriptRegex = /~(.*?)~/g;
+  const pageBreakRegex = /===\s*$/gm;
 
   // Process superscript and subscript tags in the HTML string
   convertedHtml = convertedHtml.replace(subsupRegex, content => {
@@ -408,8 +444,18 @@ function handleMarkdownContent(view: any, content: string) {
     '<sub data-type="sub">$1</sub>',
   );
 
+  // Process page breaks
+  convertedHtml = convertedHtml.replace(
+    pageBreakRegex,
+    '<div data-type="page-break" data-page-break="true"></div>',
+  );
+
   // Sanitize the converted HTML
-  convertedHtml = DOMPurify.sanitize(convertedHtml);
+  convertedHtml = DOMPurify.sanitize(convertedHtml, {
+    ADD_TAGS: ['div'],
+    ADD_ATTR: ['data-type', 'data-page-break'],
+  });
+
   // Parse the sanitized HTML string into DOM nodes
   const domContent = parser.parseFromString(convertedHtml, 'text/html').body;
 
@@ -418,8 +464,11 @@ function handleMarkdownContent(view: any, content: string) {
     view.state.schema,
   ).parse(domContent);
 
-  // Apply superscript and subscript marks
+  // Create a new transaction
   const transaction = view.state.tr;
+
+  // Process the nodes and convert page break divs to actual page break nodes
+  let offset = 0;
   proseMirrorNodes.descendants((node, pos) => {
     if (node.isText) {
       const nodeDOM = domContent.childNodes[pos];
@@ -427,22 +476,36 @@ function handleMarkdownContent(view: any, content: string) {
         const element = nodeDOM as HTMLElement;
         if (element.dataset.type === 'sup') {
           transaction.addMark(
-            pos,
-            pos + node.nodeSize,
+            pos + offset,
+            pos + offset + node.nodeSize,
             view.state.schema.marks.superscript.create(),
           );
         } else if (element.dataset.type === 'sub') {
           transaction.addMark(
-            pos,
-            pos + node.nodeSize,
+            pos + offset,
+            pos + offset + node.nodeSize,
             view.state.schema.marks.subscript.create(),
           );
+        }
+      }
+    } else if (node.type.name === 'paragraph') {
+      const nodeDOM = domContent.childNodes[pos];
+      if (nodeDOM && nodeDOM.nodeType === Node.ELEMENT_NODE) {
+        const element = nodeDOM as HTMLElement;
+        if (element.dataset.type === 'page-break') {
+          // Replace the paragraph with a page break node
+          transaction.replaceWith(
+            pos + offset,
+            pos + offset + node.nodeSize,
+            view.state.schema.nodes.pageBreak.create(),
+          );
+          offset -= node.nodeSize - 1; // Adjust offset for the size difference
         }
       }
     }
   });
 
-  // Insert the sanitized content
+  // Insert the content and apply the transaction
   transaction.replaceSelectionWith(proseMirrorNodes, false);
   view.dispatch(transaction);
 }

@@ -40,23 +40,16 @@ export const PageBreak = Node.create<PageBreakRuleOptions>({
   parseHTML() {
     return [
       {
-        tag: 'div',
-        getAttrs: node =>
-          (node as HTMLElement).style.pageBreakAfter === 'always' &&
-          (node as HTMLElement).dataset.pageBreak === 'true' &&
-          null,
+        tag: 'br[data-type="page-break"]',
+      },
+      {
+        tag: 'div[data-type="page-break"]',
       },
     ];
   },
 
   renderHTML({ HTMLAttributes }) {
-    return [
-      'div',
-      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
-        'data-type': 'page-break',
-      }),
-      0,
-    ];
+    return ['br', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes)];
   },
 
   addCommands() {

@@ -23,6 +23,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 import platform from 'platform';
 import MobileToolbar from './components/mobile-toolbar';
+import { PresentationMode } from './components/presentation-mode';
 
 const checkOs = () => platform.os?.family;
 
@@ -62,6 +63,8 @@ const DdocEditor = forwardRef(
   ) => {
     const [isNavbarVisible, setIsNavbarVisible] = useState(true);
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+    const [isPresentationMode, setIsPresentationMode] = useState(false);
+
     const btn_ref = useRef(null);
     const isMobile = useMediaQuery('(max-width: 640px)');
     const isWidth1500px = useMediaQuery('(min-width: 1500px)');
@@ -275,9 +278,8 @@ const DdocEditor = forwardRef(
     return (
       <div
         data-cy="single-webpage"
-        className={`bg-[#f8f9fa] w-full h-screen overflow-y-auto no-scrollbar ${
-          zoomLevel === '2' ? 'overflow-x-auto' : 'overflow-x-hidden'
-        }`}
+        className={`bg-[#f8f9fa] w-full h-screen overflow-y-auto no-scrollbar ${zoomLevel === '2' ? 'overflow-x-auto' : 'overflow-x-hidden'
+          }`}
       >
         <nav
           id="Navbar"
@@ -311,8 +313,15 @@ const DdocEditor = forwardRef(
                 isNavbarVisible={isNavbarVisible}
                 setIsNavbarVisible={setIsNavbarVisible}
                 secureImageUploadUrl={secureImageUploadUrl}
+                setIsPresentationMode={setIsPresentationMode}
               />
             </div>
+            {isPresentationMode && (
+              <PresentationMode
+                editor={editor}
+                onClose={() => setIsPresentationMode(false)}
+              />
+            )}
           </div>
         )}
         <div
