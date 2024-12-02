@@ -59,6 +59,8 @@ const DdocEditor = forwardRef(
       inlineCommentData,
       enableIndexeddbSync,
       ddocId,
+      zoomLevel,
+      setZoomLevel,
     }: DdocProps,
     ref,
   ) => {
@@ -66,6 +68,8 @@ const DdocEditor = forwardRef(
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const btn_ref = useRef(null);
     const isMobile = useMediaQuery('(max-width: 640px)');
+    const isWidth1500px = useMediaQuery('(min-width: 1500px)');
+    const isWidth3000px = useMediaQuery('(min-width: 3000px)');
     const isNativeMobile =
       checkOs() === 'iOS' ||
       checkOs() === 'Android' ||
@@ -119,6 +123,8 @@ const DdocEditor = forwardRef(
       setIsCommentSectionOpen,
       setInlineCommentData,
       inlineCommentData,
+      zoomLevel,
+      setZoomLevel,
     });
 
     useImperativeHandle(
@@ -285,7 +291,9 @@ const DdocEditor = forwardRef(
     return (
       <div
         data-cy="single-webpage"
-        className="bg-[#f8f9fa] w-full overflow-y-auto h-screen no-scrollbar"
+        className={`bg-[#f8f9fa] w-full h-screen overflow-y-auto no-scrollbar ${
+          zoomLevel === '2' ? 'overflow-x-auto' : 'overflow-x-hidden'
+        }`}
       >
         <nav
           id="Navbar"
@@ -303,7 +311,7 @@ const DdocEditor = forwardRef(
           <div
             id="toolbar"
             className={cn(
-              'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 px-1 bg-[#ffffff] border-b color-border-default transition-transform duration-300 top-14',
+              'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 px-1 bg-[#ffffff] border-b color-border-default transition-transform duration-300 top-[3.3rem]',
               {
                 'translate-y-0': isNavbarVisible,
                 'translate-y-[-105%]': !isNavbarVisible,
@@ -314,6 +322,8 @@ const DdocEditor = forwardRef(
               <EditorToolBar
                 onError={onError}
                 editor={editor}
+                zoomLevel={zoomLevel}
+                setZoomLevel={setZoomLevel}
                 isNavbarVisible={isNavbarVisible}
                 setIsNavbarVisible={setIsNavbarVisible}
                 secureImageUploadUrl={secureImageUploadUrl}
@@ -323,30 +333,66 @@ const DdocEditor = forwardRef(
         )}
         <div
           className={cn(
-            'bg-white w-full md:w-[850px] max-w-[850px] mx-auto rounded',
+            'bg-white w-full mx-auto rounded',
             { 'mt-0 md:!mt-16': isPreviewMode },
             { 'md:!mt-16': !isPreviewMode },
             { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
             { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
             {
               'max-[1080px]:!mx-auto min-[1081px]:!ml-[18%] min-[1700px]:!mx-auto':
-                isCommentSectionOpen && !isNativeMobile,
+                isCommentSectionOpen &&
+                !isNativeMobile &&
+                zoomLevel !== '0.5' &&
+                zoomLevel !== '0.75' &&
+                zoomLevel !== '1.4' &&
+                zoomLevel !== '1.5' &&
+                zoomLevel !== '2',
             },
-            { '!mx-auto': !isCommentSectionOpen },
+            {
+              '!mx-auto':
+                !isCommentSectionOpen ||
+                zoomLevel === '0.5' ||
+                zoomLevel === '0.75' ||
+                zoomLevel === '1.4' ||
+                zoomLevel === '1.5',
+            },
+            { '!ml-0': zoomLevel === '2' && isWidth1500px && !isWidth3000px },
             { 'min-h-[83vh]': isNavbarVisible },
             { 'min-h-[90vh]': !isNavbarVisible },
+            { 'w-[700px] md:max-w-[700px] h-[150%]': zoomLevel === '0.5' },
+            { 'w-[800px] md:max-w-[800px] h-[200%]': zoomLevel === '0.75' },
+            { 'w-[850px] md:max-w-[850px] h-[100%]': zoomLevel === '1' },
+            { 'w-[70%] md:max-w-[70%] h-[200%]': zoomLevel === '1.4' },
+            {
+              'w-[1062.5px] md:max-w-[1062.5px] h-[100%]': zoomLevel === '1.5',
+            },
+            { 'w-[1548px] md:max-w-[1548px]': zoomLevel === '2' },
           )}
+          style={{
+            transformOrigin:
+              zoomLevel === '2' && !isWidth3000px
+                ? 'left center'
+                : 'top center',
+            transform: `scaleX(${zoomLevel})`,
+          }}
         >
           <div
             ref={editorRef}
-            className={cn('w-full h-full pt-8 md:pt-0', {
-              '!mt-24': isIOS && hasEditorContent,
-            })}
+            className={cn(
+              'w-full h-full pt-8 md:pt-0',
+              { '!mt-24': isIOS && hasEditorContent },
+              { 'bg-white': zoomLevel === '1.4' || '1.5' },
+            )}
+            style={{
+              transformOrigin: 'top center',
+              transform: `scaleY(${zoomLevel})`,
+            }}
           >
             <div>
               <EditorBubbleMenu
                 editor={editor}
                 onError={onError}
+                zoomLevel={zoomLevel}
                 setIsCommentSectionOpen={setIsCommentSectionOpen}
                 inlineCommentData={inlineCommentData}
                 setInlineCommentData={setInlineCommentData}
@@ -422,7 +468,7 @@ const DdocEditor = forwardRef(
               <EditorContent
                 editor={editor}
                 id="editor"
-                className="w-full h-auto py-4"
+                className="w-full h-auto py-4 bg-white"
               />
             </EditingProvider>
           </div>
