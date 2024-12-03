@@ -29,6 +29,7 @@ export interface BubbleMenuItem {
 type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   isPreviewMode: boolean;
   onError?: (errorString: string) => void;
+  zoomLevel: string;
   setIsCommentSectionOpen?: (isOpen: boolean) => void;
   inlineCommentData?: InlineCommentData;
   setInlineCommentData?: React.Dispatch<
@@ -232,6 +233,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       className={cn(
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border bg-white items-center shadow-elevation-3',
         isInlineCommentOpen ? '!invisible' : '!visible',
+        {
+          "ml-[100%] mt-[60%]": props.zoomLevel === '0.5',
+        }
       )}
     >
       {isMobile || props.isPreviewMode ? (
