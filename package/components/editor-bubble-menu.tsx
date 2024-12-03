@@ -205,7 +205,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const isMobile = useMediaQuery('(max-width: 1023px)');
 
   const handleHighlight = () => {
-    console.log('runnning');
     if (!(props.username || props.walletAddress)) {
       props.setIsCommentSectionOpen(true);
       return;
