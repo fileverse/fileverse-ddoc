@@ -335,6 +335,8 @@ const DdocEditor = forwardRef(
                 inlineCommentData={inlineCommentData}
                 setInlineCommentData={setInlineCommentData}
                 isPreviewMode={isPreviewMode}
+                username={username as string}
+                walletAddress={walletAddress as string}
               />
               <ColumnsMenu editor={editor} appendTo={editorRef} />
             </div>
