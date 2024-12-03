@@ -30,7 +30,9 @@ export interface DdocProps {
   enableCollaboration?: boolean | undefined;
   setIsCommentSectionOpen?: React.Dispatch<SetStateAction<boolean>>;
   inlineCommentData?: InlineCommentData;
-  setInlineCommentData?: React.Dispatch<React.SetStateAction<InlineCommentData>>;
+  setInlineCommentData?: React.Dispatch<
+    React.SetStateAction<InlineCommentData>
+  >;
   zoomLevel: string;
   setZoomLevel: React.Dispatch<SetStateAction<string>>;
   isCommentSectionOpen?: boolean;
@@ -38,7 +40,9 @@ export interface DdocProps {
   isPreviewMode: boolean;
   ensResolutionUrl?: string;
   secureImageUploadUrl?: string;
-  initialContent?: JSONContent | null;
+  enableIndexeddbSync?: boolean;
+  ddocId?: string;
+  initialContent?: JSONContent | string | string[] | null;
   walletAddress?: string | null;
   username?: string | null;
   renderNavbar?: ({ editor }: { editor: JSONContent }) => JSX.Element;
