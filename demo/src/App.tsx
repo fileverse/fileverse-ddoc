@@ -34,6 +34,8 @@ function App() {
     highlightedTextContent: '',
     handleClick: false,
   });
+  
+  const [zoomLevel, setZoomLevel] = useState<string>('1');
 
   const isPreviewMode = false;
 
@@ -135,6 +137,8 @@ function App() {
         setIsCommentSectionOpen={setIsCommentSectionOpen}
         setInlineCommentData={setInlineCommentData}
         inlineCommentData={inlineCommentData}
+        zoomLevel={zoomLevel}
+        setZoomLevel={setZoomLevel}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}
