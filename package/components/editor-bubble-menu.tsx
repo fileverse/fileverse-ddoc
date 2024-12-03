@@ -1,7 +1,12 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
-import { BubbleMenu, BubbleMenuProps, isNodeSelection } from '@tiptap/react';
+import {
+  BubbleMenu,
+  BubbleMenuProps,
+  Editor,
+  isNodeSelection,
+} from '@tiptap/react';
 import React, { useState } from 'react';
 import { NodeSelector } from './node-selector';
 import {
@@ -35,6 +40,7 @@ type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   setInlineCommentData?: React.Dispatch<
     React.SetStateAction<InlineCommentData>
   >;
+  editor: Editor;
 };
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
@@ -100,9 +106,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
 
   const isMobileScreen = useMediaQuery('(max-width: 640px)');
   const isNativeMobile =
-      checkOs() === 'Android' ||
-      checkOs() === 'Windows Phone' ||
-      isMobileScreen;
+    checkOs() === 'Android' || checkOs() === 'Windows Phone' || isMobileScreen;
 
   const bubbleMenuProps: EditorBubbleMenuProps = {
     ...props,
@@ -151,9 +155,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     }
 
     let hasYellowHighlight = false;
-    editor.state.doc.nodesBetween(from, to, (node) => {
+    editor.state.doc.nodesBetween(from, to, node => {
       if (node.marks) {
-        node.marks.forEach((mark) => {
+        node.marks.forEach(mark => {
           if (mark.type.name === 'highlight' && mark.attrs.color === 'yellow') {
             hasYellowHighlight = true;
           }
@@ -191,13 +195,18 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             setIsCommentSectionOpen={props.setIsCommentSectionOpen}
             setIsInlineCommentOpen={setIsInlineCommentOpen}
             inlineCommentData={props.inlineCommentData}
-            setInlineCommentData={(data) =>
-              props.setInlineCommentData?.((prev) => ({ ...prev, ...data }))
+            setInlineCommentData={data =>
+              props.setInlineCommentData?.(prev => ({ ...prev, ...data }))
             }
           />
         );
       case 'Scripts':
-        return <ScriptsPopup editor={props.editor} elementRef={toolRef} />;
+        return (
+          <ScriptsPopup
+            editor={props.editor}
+            elementRef={toolRef}
+          />
+        );
       default:
         return null;
     }
@@ -206,23 +215,23 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const isMobile = useMediaQuery('(max-width: 1023px)');
 
   const handleHighlight = () => {
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-      const selectedText = selection.toString().trim();
-      if (selectedText) {
-        props.setInlineCommentData((prevData) => {
-          const updatedData = {
-            ...prevData,
-            highlightedTextContent: selectedText,
-          };
-          return updatedData;
-        });
+    const { state } = props.editor;
+    if (!state) return;
+    const { from, to } = state.selection;
 
-        setTimeout(() => {
-          props.editor.chain().setHighlight({ color: '#DDFBDF' }).run();
-        }, 10);
-      }
-    }
+    const selectedText = state.doc.textBetween(from, to, ' ');
+    if (!selectedText) return;
+    props.setInlineCommentData(prevData => {
+      const updatedData = {
+        ...prevData,
+        highlightedTextContent: selectedText,
+      };
+      return updatedData;
+    });
+
+    setTimeout(() => {
+      props.editor.chain().setHighlight({ color: '#DDFBDF' }).run();
+    }, 10);
     setIsInlineCommentOpen(true);
   };
 
@@ -234,8 +243,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border bg-white items-center shadow-elevation-3',
         isInlineCommentOpen ? '!invisible' : '!visible',
         {
-          "ml-[100%] mt-[60%]": props.zoomLevel === '0.5',
-        }
+          'ml-[100%] mt-[60%]': props.zoomLevel === '0.5',
+        },
       )}
     >
       {isMobile || props.isPreviewMode ? (
@@ -262,7 +271,10 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         </div>
       ) : (
         <>
-          <NodeSelector editor={props.editor} elementRef={toolRef} />
+          <NodeSelector
+            editor={props.editor}
+            elementRef={toolRef}
+          />
 
           {items.map((item, index) => {
             if (
@@ -273,7 +285,10 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               item.name === 'Code'
             ) {
               return (
-                <div key={index} className="flex items-center">
+                <div
+                  key={index}
+                  className="flex items-center"
+                >
                   <ToolbarButton
                     icon={item.icon}
                     size="sm"
