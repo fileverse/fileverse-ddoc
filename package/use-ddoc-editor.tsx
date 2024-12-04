@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useLayoutEffect } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
 import { DdocProps, DdocEditorProps } from './types';
 import * as Y from 'yjs';
@@ -211,18 +211,21 @@ export const useDdocEditor = ({
     editor?.setEditable(!isPreviewMode);
   }, [isPreviewMode, editor]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (initialContent && editor && !initialContentSetRef.current) {
       setIsContentLoading(true);
       queueMicrotask(() => {
-        editor.commands.setContent(initialContent);
-        setIsContentLoading(false);
+        const timeoutId = setTimeout(() => {
+          editor.commands.setContent(initialContent);
+          setIsContentLoading(false);
+        }, 0);
+        return () => clearTimeout(timeoutId);
       });
 
       initialContentSetRef.current = true;
     }
 
-    setTimeout(() => {
+    const scrollTimeoutId = setTimeout(() => {
       if (ref.current && !!scrollPosition && editor) {
         const coords = editor.view.coordsAtPos(scrollPosition);
         const editorContainer = ref.current;
@@ -236,6 +239,10 @@ export const useDdocEditor = ({
         setIsContentLoading(false);
       }
     });
+
+    return () => {
+      clearTimeout(scrollTimeoutId);
+    };
   }, [initialContent, editor]);
 
   useEffect(() => {
@@ -299,6 +306,14 @@ export const useDdocEditor = ({
     editor?.storage.characterCount.characters(),
     editor?.storage.characterCount.words(),
   ]);
+
+  useEffect(() => {
+    return () => {
+      if (editor) {
+        editor.destroy();
+      }
+    };
+  }, [editor]);
 
   return {
     editor,
