@@ -1,18 +1,15 @@
 import React from 'react';
-import { Editor } from '@tiptap/core'
-import cn from 'classnames'
-import { BubbleMenuItem } from './editor-bubble-menu'
+import { Editor } from '@tiptap/core';
+import cn from 'classnames';
+import { BubbleMenuItem } from './editor-bubble-menu';
 import { DynamicDropdown, LucideIcon } from '@fileverse/ui';
 
 interface NodeSelectorProps {
-  editor: Editor
+  editor: Editor;
   elementRef: React.RefObject<HTMLDivElement>;
 }
 
-export const NodeSelector = ({
-  editor,
-  elementRef
-}: NodeSelectorProps) => {
+export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
   const items: BubbleMenuItem[] = [
     {
       name: 'Text',
@@ -78,39 +75,40 @@ export const NodeSelector = ({
       command: () => editor.chain().focus().toggleCodeBlock().run(),
       isActive: () => editor.isActive('codeBlock'),
     },
-  ]
+  ];
 
   const activeItem = items.filter((item) => item.isActive()).pop() ?? {
     name: 'Multiple',
-  }
+  };
 
   return (
     <DynamicDropdown
       key="NodeSelector"
       sideOffset={15}
       anchorTrigger={
-        <button
-          className="bg-transparent hover:!bg-[#F2F4F5] !text-[#363B3F] rounded p-1 flex items-center justify-between gap-2 w-fit max-w-36"
-        >
-          <span className="text-body-sm !text-[#363B3F] truncate">{activeItem.name}</span>
-          <LucideIcon name="ChevronDown" size="sm" className='mt-1' />
+        <button className="bg-transparent hover:!bg-[#F2F4F5] !text-[#363B3F] rounded p-1 flex items-center justify-between gap-2 w-fit max-w-36">
+          <span className="text-body-sm !text-[#363B3F] truncate">
+            {activeItem.name}
+          </span>
+          <LucideIcon name="ChevronDown" size="sm" className="mt-1" />
         </button>
       }
       content={
         <div
           ref={elementRef}
-          className="h-auto flex w-48 flex-col overflow-hidden rounded bg-white p-1 shadow-elevation-2">
+          className="h-auto flex w-48 flex-col overflow-hidden rounded bg-white p-1 shadow-elevation-2"
+        >
           {items.map((item, index) => (
             <button
               key={index}
               onClick={() => {
-                item.command()
+                item.command();
               }}
               className={cn(
                 'flex items-center justify-between rounded-sm px-2 py-1 text-sm text-stone-600 hover:bg-stone-100',
                 {
                   'text-blue-600': item.isActive(),
-                }
+                },
               )}
             >
               <div className="flex items-center space-x-2">
@@ -119,11 +117,13 @@ export const NodeSelector = ({
                 </div>
                 <span>{item.name}</span>
               </div>
-              {activeItem.name === item.name && <LucideIcon name="Check" size="sm" />}
+              {activeItem.name === item.name && (
+                <LucideIcon name="Check" size="sm" />
+              )}
             </button>
           ))}
         </div>
       }
     />
-  )
-}
+  );
+};

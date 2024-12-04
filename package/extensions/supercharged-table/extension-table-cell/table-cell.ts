@@ -1,11 +1,11 @@
-import { mergeAttributes, Node } from '@tiptap/core'
-import { ReactNodeViewRenderer } from '@tiptap/react'
+import { mergeAttributes, Node } from '@tiptap/core';
+import { ReactNodeViewRenderer } from '@tiptap/react';
 
-import { TableCellNodeView } from './table-cell-node-view'
+import { TableCellNodeView } from './table-cell-node-view';
 
 export interface TableCellOptions {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  HTMLAttributes: Record<string, any>
+  HTMLAttributes: Record<string, any>;
 }
 
 export const TableCell = Node.create<TableCellOptions>({
@@ -14,7 +14,7 @@ export const TableCell = Node.create<TableCellOptions>({
   addOptions() {
     return {
       HTMLAttributes: {},
-    }
+    };
   },
 
   content: 'block+',
@@ -30,13 +30,13 @@ export const TableCell = Node.create<TableCellOptions>({
       colwidth: {
         default: null,
         parseHTML: (element) => {
-          const colwidth = element.getAttribute('colwidth')
-          const value = colwidth ? [parseInt(colwidth, 10)] : null
+          const colwidth = element.getAttribute('colwidth');
+          const value = colwidth ? [parseInt(colwidth, 10)] : null;
 
-          return value
+          return value;
         },
       },
-    }
+    };
   },
 
   tableRole: 'cell',
@@ -44,7 +44,7 @@ export const TableCell = Node.create<TableCellOptions>({
   isolating: true,
 
   parseHTML() {
-    return [{ tag: 'td' }]
+    return [{ tag: 'td' }];
   },
 
   renderHTML({ HTMLAttributes }) {
@@ -52,13 +52,13 @@ export const TableCell = Node.create<TableCellOptions>({
       'td',
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
       0,
-    ]
+    ];
   },
 
   addNodeView() {
     return ReactNodeViewRenderer(TableCellNodeView, {
       as: 'td',
       className: 'relative',
-    })
+    });
   },
-})
+});

@@ -116,14 +116,14 @@ export const ResizableMedia = Node.create<MediaOptions>({
     return [
       {
         tag: 'img',
-        getAttrs: el => ({
+        getAttrs: (el) => ({
           src: (el as HTMLImageElement).getAttribute('src'),
           'media-type': 'img',
         }),
       },
       {
         tag: 'video',
-        getAttrs: el => ({
+        getAttrs: (el) => ({
           src: (el as HTMLVideoElement).getAttribute('src'),
           'media-type': 'video',
         }),
@@ -168,7 +168,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
   addCommands() {
     return {
       setMedia:
-        options =>
+        (options) =>
         ({ commands }) => {
           const { 'media-type': mediaType } = options;
 
@@ -233,7 +233,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
       nodeInputRule({
         find: IMAGE_INPUT_REGEX,
         type: this.type,
-        getAttributes: match => {
+        getAttributes: (match) => {
           const [, , alt, src, title] = match;
 
           return {
@@ -247,7 +247,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
       nodeInputRule({
         find: VIDEO_INPUT_REGEX,
         type: this.type,
-        getAttributes: match => {
+        getAttributes: (match) => {
           const [, , src] = match;
 
           return {

@@ -1,4 +1,4 @@
-import { LucideIcon } from "@fileverse/ui"
+import { LucideIcon } from '@fileverse/ui';
 
 export const Spinner = () => {
   return (
@@ -11,5 +11,5 @@ export const Spinner = () => {
         stroke="currentColor"
       />
     </div>
-  )
-}
+  );
+};

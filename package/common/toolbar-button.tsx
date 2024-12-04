@@ -2,23 +2,18 @@
 import { forwardRef } from 'react';
 import { IconButton, Tooltip } from '@fileverse/ui';
 
-const ToolbarButton = forwardRef<HTMLButtonElement, {
-  icon: string;
-  isActive: boolean;
-  onClick: () => void;
-  tooltip?: string;
-  classNames?: string;
-  disabled?: boolean;
-  size?: "sm" | "md" | "lg";
-}>(({
-  icon,
-  isActive,
-  onClick,
-  tooltip,
-  classNames,
-  disabled,
-  size,
-}, ref) => {
+const ToolbarButton = forwardRef<
+  HTMLButtonElement,
+  {
+    icon: string;
+    isActive: boolean;
+    onClick: () => void;
+    tooltip?: string;
+    classNames?: string;
+    disabled?: boolean;
+    size?: 'sm' | 'md' | 'lg';
+  }
+>(({ icon, isActive, onClick, tooltip, classNames, disabled, size }, ref) => {
   if (tooltip)
     return (
       <Tooltip text={tooltip}>

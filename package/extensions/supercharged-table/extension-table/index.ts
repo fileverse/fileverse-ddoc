@@ -1,6 +1,6 @@
-import { Table } from './table'
+import { Table } from './table';
 
-export * from './table'
-export * from './utilities/create-table'
+export * from './table';
+export * from './utilities/create-table';
 
-export default Table
+export default Table;

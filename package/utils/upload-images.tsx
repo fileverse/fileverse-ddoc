@@ -5,7 +5,12 @@
 import { EditorState, Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet, EditorView } from '@tiptap/pm/view';
 import { IMG_UPLOAD_SETTINGS } from '../components/editor-utils';
-import { arrayBufferToBase64, decryptImage, fetchImage, generateRSAKeyPair } from './security';
+import {
+  arrayBufferToBase64,
+  decryptImage,
+  fetchImage,
+  generateRSAKeyPair,
+} from './security';
 import { fromByteArray, toByteArray } from 'base64-js';
 
 const uploadKey = new PluginKey('upload-image');
@@ -101,7 +106,12 @@ export async function startImageUpload(
         publicKey,
       );
 
-      const imgSrc = await handleDecryptImage(url, key, fromByteArray(privateKey), iv);
+      const imgSrc = await handleDecryptImage(
+        url,
+        key,
+        fromByteArray(privateKey),
+        iv,
+      );
 
       const node = schema.nodes.resizableMedia.create({
         encryptedKey: key,

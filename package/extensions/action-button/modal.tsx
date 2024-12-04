@@ -32,10 +32,10 @@ export const Modal = ({
     } else {
       switch (true) {
         case /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/.test(
-          inputValue
+          inputValue,
         ): {
           const matches = inputValue.match(
-            /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/
+            /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/,
           );
           if (matches && matches.length > 0) {
             formattedUrl = `https://www.youtube.com/embed/${matches[1]}`;

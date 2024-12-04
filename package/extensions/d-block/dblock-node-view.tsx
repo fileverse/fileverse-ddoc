@@ -25,13 +25,9 @@ import {
 import { LucideIcon } from '@fileverse/ui';
 // import { startImageUpload } from '../../utils/upload-images';
 
-export const DBlockNodeView: React.FC<NodeViewProps & { secureImageUploadUrl?: string }> = ({
-  node,
-  getPos,
-  editor,
-  deleteNode,
-  secureImageUploadUrl,
-}) => {
+export const DBlockNodeView: React.FC<
+  NodeViewProps & { secureImageUploadUrl?: string }
+> = ({ node, getPos, editor, deleteNode, secureImageUploadUrl }) => {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const actions = useContentItemActions(editor as Editor, node, getPos());
   const isPreviewMode = useEditingContext();
@@ -310,8 +306,9 @@ export const DBlockNodeView: React.FC<NodeViewProps & { secureImageUploadUrl?: s
           }
         >
           <div
-            className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
-              }`}
+            className={`d-block-button cursor-pointer ${
+              !isPreviewMode && 'group-hover:opacity-100'
+            }`}
             contentEditable={false}
             onClick={handleClick}
           >
@@ -325,8 +322,9 @@ export const DBlockNodeView: React.FC<NodeViewProps & { secureImageUploadUrl?: s
           <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
             <Popover.Trigger asChild>
               <div
-                className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
-                  }`}
+                className={`d-block-button cursor-pointer ${
+                  !isPreviewMode && 'group-hover:opacity-100'
+                }`}
                 contentEditable={false}
                 draggable
                 data-drag-handle

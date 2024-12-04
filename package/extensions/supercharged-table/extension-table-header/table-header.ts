@@ -1,11 +1,11 @@
-import { mergeAttributes, Node } from '@tiptap/core'
-import { ReactNodeViewRenderer } from '@tiptap/react'
+import { mergeAttributes, Node } from '@tiptap/core';
+import { ReactNodeViewRenderer } from '@tiptap/react';
 
-import { TableCellNodeView } from '../extension-table-cell/table-cell-node-view'
+import { TableCellNodeView } from '../extension-table-cell/table-cell-node-view';
 
 export interface TableHeaderOptions {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  HTMLAttributes: Record<string, any>
+  HTMLAttributes: Record<string, any>;
 }
 export const TableHeader = Node.create<TableHeaderOptions>({
   name: 'tableHeader',
@@ -13,7 +13,7 @@ export const TableHeader = Node.create<TableHeaderOptions>({
   addOptions() {
     return {
       HTMLAttributes: {},
-    }
+    };
   },
 
   content: 'block+',
@@ -29,13 +29,13 @@ export const TableHeader = Node.create<TableHeaderOptions>({
       colwidth: {
         default: null,
         parseHTML: (element) => {
-          const colwidth = element.getAttribute('colwidth')
-          const value = colwidth ? [parseInt(colwidth, 10)] : null
+          const colwidth = element.getAttribute('colwidth');
+          const value = colwidth ? [parseInt(colwidth, 10)] : null;
 
-          return value
+          return value;
         },
       },
-    }
+    };
   },
 
   tableRole: 'header_cell',
@@ -43,7 +43,7 @@ export const TableHeader = Node.create<TableHeaderOptions>({
   isolating: true,
 
   parseHTML() {
-    return [{ tag: 'th' }]
+    return [{ tag: 'th' }];
   },
 
   renderHTML({ HTMLAttributes }) {
@@ -51,13 +51,13 @@ export const TableHeader = Node.create<TableHeaderOptions>({
       'th',
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
       0,
-    ]
+    ];
   },
 
   addNodeView() {
     return ReactNodeViewRenderer(TableCellNodeView, {
       as: 'th',
       className: 'relative',
-    })
+    });
   },
-})
+});

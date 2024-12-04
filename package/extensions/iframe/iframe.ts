@@ -1,15 +1,15 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Node, mergeAttributes } from '@tiptap/core'
-import { ReactNodeViewRenderer } from '@tiptap/react'
-import { ResizableMediaNodeView } from '../resizable-media/resizable-media-node-view'
+import { Node, mergeAttributes } from '@tiptap/core';
+import { ReactNodeViewRenderer } from '@tiptap/react';
+import { ResizableMediaNodeView } from '../resizable-media/resizable-media-node-view';
 
 export interface IframeOptions {
-  allowFullscreen: boolean
+  allowFullscreen: boolean;
   HTMLAttributes: {
-    [key: string]: any
-  }
-  width?: number
-  height?: number
+    [key: string]: any;
+  };
+  width?: number;
+  height?: number;
 }
 
 declare module '@tiptap/core' {
@@ -19,13 +19,13 @@ declare module '@tiptap/core' {
        * Add an iframe
        */
       setIframe: (options: {
-        src: string
-        alt?: string
-        title?: string
-        width?: number
-        height?: number
-      }) => ReturnType
-    }
+        src: string;
+        alt?: string;
+        title?: string;
+        width?: number;
+        height?: number;
+      }) => ReturnType;
+    };
   }
 }
 
@@ -44,7 +44,7 @@ export const Iframe = Node.create<IframeOptions>({
       HTMLAttributes: {
         class: 'iframe-wrapper',
       },
-    }
+    };
   },
 
   addAttributes() {
@@ -80,11 +80,11 @@ export const Iframe = Node.create<IframeOptions>({
       dataFloat: {
         default: null, // 'left' | 'right'
       },
-    }
+    };
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(ResizableMediaNodeView)
+    return ReactNodeViewRenderer(ResizableMediaNodeView);
   },
 
   parseHTML() {
@@ -92,14 +92,14 @@ export const Iframe = Node.create<IframeOptions>({
       {
         tag: 'iframe',
       },
-    ]
+    ];
   },
 
   renderHTML({ HTMLAttributes }) {
     return [
       'iframe',
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
-    ]
+    ];
   },
 
   addCommands() {
@@ -107,15 +107,15 @@ export const Iframe = Node.create<IframeOptions>({
       setIframe:
         (options: { src: string }) =>
         ({ tr, dispatch }) => {
-          const { selection } = tr
-          const node = this.type.create(options)
+          const { selection } = tr;
+          const node = this.type.create(options);
 
           if (dispatch) {
-            tr.replaceRangeWith(selection.from - 1, selection.to, node)
+            tr.replaceRangeWith(selection.from - 1, selection.to, node);
           }
 
-          return true
+          return true;
         },
-    }
+    };
   },
-})
+});
