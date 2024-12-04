@@ -33,7 +33,6 @@ const TiptapToolBar = ({
   isNavbarVisible,
   setIsNavbarVisible,
   secureImageUploadUrl,
-  setIsPresentationMode,
 }: {
   editor: Editor;
   onError?: (errorString: string) => void;
@@ -42,7 +41,6 @@ const TiptapToolBar = ({
   isNavbarVisible: boolean;
   setIsNavbarVisible: React.Dispatch<React.SetStateAction<boolean>>;
   secureImageUploadUrl?: string;
-  setIsPresentationMode: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   const {
     toolRef,
@@ -315,12 +313,6 @@ const TiptapToolBar = ({
               onClick: () => setIsExportModalOpen(false),
               className: "w-full md:w-auto",
             }}
-          />
-          <ToolbarButton
-            onClick={() => setIsPresentationMode(true)}
-            icon="Presentation"
-            tooltip="Presentation Mode"
-            isActive={false}
           />
         </div>
       </div>

@@ -58,12 +58,13 @@ const DdocEditor = forwardRef(
       inlineCommentData,
       zoomLevel,
       setZoomLevel,
+      isPresentationMode,
+      setIsPresentationMode,
     }: DdocProps,
     ref,
   ) => {
     const [isNavbarVisible, setIsNavbarVisible] = useState(true);
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-    const [isPresentationMode, setIsPresentationMode] = useState(false);
 
     const btn_ref = useRef(null);
     const isMobile = useMediaQuery('(max-width: 640px)');
@@ -313,13 +314,12 @@ const DdocEditor = forwardRef(
                 isNavbarVisible={isNavbarVisible}
                 setIsNavbarVisible={setIsNavbarVisible}
                 secureImageUploadUrl={secureImageUploadUrl}
-                setIsPresentationMode={setIsPresentationMode}
               />
             </div>
             {isPresentationMode && (
               <PresentationMode
                 editor={editor}
-                onClose={() => setIsPresentationMode(false)}
+                onClose={() => setIsPresentationMode?.(false)}
               />
             )}
           </div>
@@ -493,6 +493,12 @@ const DdocEditor = forwardRef(
               setIsNavbarVisible={setIsNavbarVisible}
               secureImageUploadUrl={secureImageUploadUrl}
             />
+            {isPresentationMode && (
+              <PresentationMode
+                editor={editor}
+                onClose={() => setIsPresentationMode?.(false)}
+              />
+            )}
           </div>
         )}
       </div>

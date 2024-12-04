@@ -30,7 +30,9 @@ export interface DdocProps {
   enableCollaboration?: boolean | undefined;
   setIsCommentSectionOpen?: React.Dispatch<SetStateAction<boolean>>;
   inlineCommentData?: InlineCommentData;
-  setInlineCommentData?: React.Dispatch<React.SetStateAction<InlineCommentData>>;
+  setInlineCommentData?: React.Dispatch<
+    React.SetStateAction<InlineCommentData>
+  >;
   zoomLevel: string;
   setZoomLevel: React.Dispatch<SetStateAction<string>>;
   isCommentSectionOpen?: boolean;
@@ -56,6 +58,8 @@ export interface DdocProps {
   className?: string;
   scrollPosition?: number;
   unFocused?: boolean;
+  isPresentationMode?: boolean;
+  setIsPresentationMode?: React.Dispatch<SetStateAction<boolean>>;
 }
 
 export interface IEditorSelectionData {
