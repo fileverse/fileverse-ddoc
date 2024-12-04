@@ -3,7 +3,9 @@ import { useEffect, useState, useRef } from 'react';
 import { Editor, EditorContent, useEditor } from '@tiptap/react';
 import { IconButton } from '@fileverse/ui';
 import { EditingProvider } from '../hooks/use-editing-context';
-import { convertToMarkdown, md, processMarkdownContent, Slides } from '../utils/md-to-slides';
+import { convertToMarkdown } from '../utils/md-to-slides';
+import { convertMarkdownToHTML } from '../utils/md-to-html';
+// import { convertMarkdownToHTML } from '@fileverse-dev/md2slides';
 import cn from 'classnames';
 
 interface PresentationModeProps {
@@ -12,9 +14,8 @@ interface PresentationModeProps {
 }
 
 export const PresentationMode = ({ editor, onClose }: PresentationModeProps) => {
-    const [slides, setSlides] = useState<Slides>({});
+    const [slides, setSlides] = useState<string[]>([]);
     const [currentSlide, setCurrentSlide] = useState(0);
-    const slidesLength = Object.keys(slides).length;
     const [previewEditors, setPreviewEditors] = useState<{ [key: number]: Editor }>({});
     const previewPanelRef = useRef<HTMLDivElement>(null);
     const slideRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
@@ -24,11 +25,59 @@ export const PresentationMode = ({ editor, onClose }: PresentationModeProps) => 
         editable: false,
     });
 
+    // Convert content to slides using HTML
+    useEffect(() => {
+        const markdown = convertToMarkdown(editor);
+
+        // First convert markdown to HTML with proper page breaks
+        const html = convertMarkdownToHTML(markdown, {
+            preserveNewlines: true,
+            sanitize: true,
+            maxCharsPerSlide: 1000,
+            maxWordsPerSlide: 250,
+            maxLinesPerSlide: 8,
+        });
+
+        // Create a temporary div to properly parse the HTML
+        const tempDiv = document.createElement('div');
+        tempDiv.innerHTML = html;
+
+        // Find all page breaks and split content
+        const slideArray: string[] = [];
+        let currentSlideContent: Node[] = [];
+
+        // Iterate through all nodes
+        tempDiv.childNodes.forEach((node) => {
+            if (node instanceof HTMLElement &&
+                node.getAttribute('data-type') === 'page-break' &&
+                node.getAttribute('data-page-break') === 'true') {
+                // When we hit a page break, save the current slide content
+                if (currentSlideContent.length > 0) {
+                    const slideDiv = document.createElement('div');
+                    currentSlideContent.forEach(n => slideDiv.appendChild(n.cloneNode(true)));
+                    slideArray.push(slideDiv.innerHTML);
+                    currentSlideContent = [];
+                }
+            } else {
+                currentSlideContent.push(node.cloneNode(true));
+            }
+        });
+
+        // Don't forget to add the last slide
+        if (currentSlideContent.length > 0) {
+            const slideDiv = document.createElement('div');
+            currentSlideContent.forEach(n => slideDiv.appendChild(n.cloneNode(true)));
+            slideArray.push(slideDiv.innerHTML);
+        }
+
+        // Filter out empty slides and set the state
+        setSlides(slideArray.filter(slide => slide.trim().length > 0));
+    }, [editor]);
+
     // Create preview editors for each slide
     useEffect(() => {
         const editors: { [key: number]: Editor } = {};
-        Object.keys(slides).forEach((slideIndex) => {
-            const index = parseInt(slideIndex);
+        slides.forEach((_, index) => {
             editors[index] = new Editor({
                 extensions: editor.extensionManager.extensions,
                 editable: false,
@@ -36,7 +85,6 @@ export const PresentationMode = ({ editor, onClose }: PresentationModeProps) => 
         });
         setPreviewEditors(editors);
 
-        // Cleanup
         return () => {
             Object.values(editors).forEach(editor => editor.destroy());
         };
@@ -48,50 +96,15 @@ export const PresentationMode = ({ editor, onClose }: PresentationModeProps) => 
             const index = parseInt(slideIndex);
             const editor = previewEditors[index];
             if (editor) {
-                const html = slideContent.map((content: { type: any; content: string; }) => {
-                    switch (content.type) {
-                        case 'h1':
-                            return `<h1>${content.content}</h1>`;
-                        case 'h2':
-                            return `<h2>${content.content}</h2>`;
-                        case 'image':
-                            return `<img src="${content.content}" />`;
-                        case 'table':
-                            return `<div class="table-wrapper">${md.render(content.content)}</div>`;
-                        default:
-                            return md.render(content.content);
-                    }
-                }).join('\n');
-                editor.commands.setContent(html);
+                editor.commands.setContent(slideContent);
             }
         });
     }, [slides, previewEditors]);
 
-    useEffect(() => {
-        const markdown = convertToMarkdown(editor);
-        const processedSlides = processMarkdownContent(markdown);
-        setSlides(processedSlides);
-    }, [editor]);
-
+    // Update presentation editor content
     useEffect(() => {
         if (presentationEditor && slides[currentSlide]) {
-            const slideContent = slides[currentSlide];
-            const html = slideContent.map(content => {
-                switch (content.type) {
-                    case 'h1':
-                        return `<h1>${content.content}</h1>`;
-                    case 'h2':
-                        return `<h2>${content.content}</h2>`;
-                    case 'image':
-                        return `<img src="${content.content}" />`;
-                    case 'table':
-                        return `<div class="table-wrapper">${md.render(content.content)}</div>`;
-                    default:
-                        return md.render(content.content);
-                }
-            }).join('\n');
-
-            presentationEditor.commands.setContent(html);
+            presentationEditor.commands.setContent(slides[currentSlide]);
         }
     }, [currentSlide, slides, presentationEditor]);
 
@@ -120,7 +133,7 @@ export const PresentationMode = ({ editor, onClose }: PresentationModeProps) => 
 
     const handleKeyDown = (e: KeyboardEvent) => {
         if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'Space') {
-            const nextSlide = Math.min(currentSlide + 1, slidesLength - 1);
+            const nextSlide = Math.min(currentSlide + 1, slides.length - 1);
             setCurrentSlide(nextSlide);
             scrollToCurrentSlide(nextSlide);
         } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
@@ -135,13 +148,13 @@ export const PresentationMode = ({ editor, onClose }: PresentationModeProps) => 
     useEffect(() => {
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [slidesLength, currentSlide]);
+    }, [slides.length, currentSlide]);
 
     useEffect(() => {
         scrollToCurrentSlide(currentSlide);
     }, [currentSlide]);
 
-    if (slidesLength === 0 || !presentationEditor) return null;
+    if (slides.length === 0 || !presentationEditor) return null;
 
     return (
         <div className="fixed inset-0 bg-[#E8EBEC] flex flex-row items-center justify-center w-screen h-screen">
@@ -150,8 +163,7 @@ export const PresentationMode = ({ editor, onClose }: PresentationModeProps) => 
                 ref={previewPanelRef}
                 className="w-64 h-full bg-white overflow-y-auto flex flex-col gap-4 p-4 border-r color-border-default-hover pb-20"
             >
-                {Object.keys(slides).map((slideIndex) => {
-                    const index = parseInt(slideIndex);
+                {slides.map((_slideContent, index) => {
                     return (
                         <div
                             key={index}

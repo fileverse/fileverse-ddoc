@@ -109,6 +109,26 @@ turndownService.addRule('table', {
   },
 });
 
+turndownService.addRule('taskListItem', {
+  filter: node => {
+    const parent = node.parentElement;
+    return (
+      node.nodeName === 'LI' && parent?.getAttribute('data-type') === 'taskList'
+    );
+  },
+  replacement: function (content, node) {
+    const isChecked =
+      (node as HTMLElement).getAttribute('data-checked') === 'true';
+    content = content
+      .replace(/^\n+/, '') // remove leading newlines
+      .replace(/\n+$/, '') // remove trailing newlines
+      .replace(/\n/gm, '\n    '); // indent
+    return `- [${isChecked ? 'x' : ' '}] ${content}${
+      node.nextSibling ? '\n' : ''
+    }`;
+  },
+});
+
 export const convertToMarkdown = (editor: Editor) => {
   const html = editor.getHTML();
   return turndownService.turndown(html);
@@ -124,9 +144,9 @@ export const processMarkdownContent = (markdown: string): Slides => {
   let currentCharCount = 0;
   let currentWordCount = 0;
   let currentLineCount = 0;
-  const MAX_CHARS_PER_SLIDE = 1500;
+  const MAX_CHARS_PER_SLIDE = 1000;
   const MAX_WORDS_PER_SLIDE = 250;
-  const MAX_LINES_PER_SLIDE = 10;
+  const MAX_LINES_PER_SLIDE = 8;
 
   const countWords = (text: string): number => {
     return text
@@ -276,6 +296,8 @@ export const processMarkdownContent = (markdown: string): Slides => {
           currentWordCount += countWords(line);
           currentLineCount++;
         }
+        // Ensure the next paragraph starts on a new slide
+        createNewSlide();
       } else if (line.length > 0 && !isInTable) {
         if (shouldCreateNewSlide(line)) {
           createNewSlide();

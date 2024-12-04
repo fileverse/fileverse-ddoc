@@ -17,6 +17,27 @@ export const turndownService = new TurndownService({
   codeBlockStyle: 'fenced',
 });
 
+// Add this new rule after the other turndownService rules
+turndownService.addRule('taskListItem', {
+  filter: node => {
+    const parent = node.parentElement;
+    return (
+      node.nodeName === 'LI' && parent?.getAttribute('data-type') === 'taskList'
+    );
+  },
+  replacement: function (content, node) {
+    const isChecked =
+      (node as HTMLElement).getAttribute('data-checked') === 'true';
+    content = content
+      .replace(/^\n+/, '') // remove leading newlines
+      .replace(/\n+$/, '') // remove trailing newlines
+      .replace(/\n/gm, '\n    '); // indent
+    return `- [${isChecked ? 'x' : ' '}] ${content}${
+      node.nextSibling ? '\n' : ''
+    }`;
+  },
+});
+
 // Custom rule for page breaks
 turndownService.addRule('pageBreak', {
   filter: 'br',
@@ -400,6 +421,35 @@ function handleMarkdownContent(view: any, content: string) {
   // Parse the HTML string into DOM nodes
   const parser = new DOMParser();
   const doc = parser.parseFromString(convertedHtml, 'text/html');
+
+  // Handle todo lists
+  const lists = doc.getElementsByTagName('ul');
+  for (let i = 0; i < lists.length; i++) {
+    const list = lists[i];
+    const items = list.getElementsByTagName('li');
+    let isTodoList = false;
+
+    for (let j = 0; j < items.length; j++) {
+      const item = items[j];
+      const text = item.textContent || '';
+      const todoMatch = text.match(/^\[([ x])\]\s*(.*)/i);
+
+      if (todoMatch) {
+        isTodoList = true;
+        const isChecked = todoMatch[1].toLowerCase() === 'x';
+        const content = todoMatch[2];
+
+        // Set attributes for task list
+        item.setAttribute('data-type', 'taskItem');
+        item.setAttribute('data-checked', isChecked.toString());
+        item.textContent = content;
+      }
+    }
+
+    if (isTodoList) {
+      list.setAttribute('data-type', 'taskList');
+    }
+  }
 
   // Handle images and page breaks
   const paragraphs = doc.getElementsByTagName('p');
