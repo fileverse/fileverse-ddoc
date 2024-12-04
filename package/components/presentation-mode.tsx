@@ -35,7 +35,7 @@ export const PresentationMode = ({ editor, onClose }: PresentationModeProps) => 
             sanitize: true,
             maxCharsPerSlide: 1000,
             maxWordsPerSlide: 250,
-            maxLinesPerSlide: 8,
+            maxLinesPerSlide: 7,
         });
 
         // Create a temporary div to properly parse the HTML
