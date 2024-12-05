@@ -30,7 +30,11 @@ export interface DdocProps {
   enableCollaboration?: boolean | undefined;
   setIsCommentSectionOpen?: React.Dispatch<SetStateAction<boolean>>;
   inlineCommentData?: InlineCommentData;
-  setInlineCommentData?: React.Dispatch<React.SetStateAction<InlineCommentData>>;
+  setInlineCommentData?: React.Dispatch<
+    React.SetStateAction<InlineCommentData>
+  >;
+  isNavbarVisible: boolean;
+  setIsNavbarVisible: React.Dispatch<SetStateAction<boolean>>;
   isCommentSectionOpen?: boolean;
   collaborationId?: string;
   isPreviewMode: boolean;
