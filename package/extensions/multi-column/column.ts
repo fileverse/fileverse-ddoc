@@ -1,4 +1,4 @@
-import { Node, mergeAttributes } from '@tiptap/core'
+import { Node, mergeAttributes } from '@tiptap/core';
 
 export const Column = Node.create({
   name: 'column',
@@ -14,7 +14,7 @@ export const Column = Node.create({
         parseHTML: (element) => element.getAttribute('data-position'),
         renderHTML: (attributes) => ({ 'data-position': attributes.position }),
       },
-    }
+    };
   },
 
   renderHTML({ HTMLAttributes }) {
@@ -22,7 +22,7 @@ export const Column = Node.create({
       'div',
       mergeAttributes(HTMLAttributes, { 'data-type': 'column' }),
       0,
-    ]
+    ];
   },
 
   parseHTML() {
@@ -30,8 +30,8 @@ export const Column = Node.create({
       {
         tag: 'div[data-type="column"]',
       },
-    ]
+    ];
   },
-})
+});
 
-export default Column
+export default Column;

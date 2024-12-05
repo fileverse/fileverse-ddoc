@@ -1,9 +1,9 @@
-import { AnyExtension } from '@tiptap/core'
+import { AnyExtension } from '@tiptap/core';
 
-import { Table } from './extension-table'
-import { TableCell } from './extension-table-cell'
-import { TableHeader } from './extension-table-header'
-import { TableRow } from './extension-table-row'
+import { Table } from './extension-table';
+import { TableCell } from './extension-table-cell';
+import { TableHeader } from './extension-table-header';
+import { TableRow } from './extension-table-row';
 
 export const SuperchargedTableExtensions: AnyExtension[] = [
   Table.configure({
@@ -12,4 +12,4 @@ export const SuperchargedTableExtensions: AnyExtension[] = [
   TableCell,
   TableHeader,
   TableRow,
-]
+];

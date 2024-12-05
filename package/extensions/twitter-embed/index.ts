@@ -1,1 +1,1 @@
-export * from './embedded-tweet'
+export * from './embedded-tweet';

@@ -4,16 +4,16 @@ import {
   Node,
   Predicate,
   findParentNodeClosestToPos,
-} from '@tiptap/core'
-import { NodeSelection } from 'prosemirror-state'
-import type { Node as ProseMirrorNode, NodeType } from 'prosemirror-model'
-import { ColumnSelection } from './column-selection'
+} from '@tiptap/core';
+import { NodeSelection } from 'prosemirror-state';
+import type { Node as ProseMirrorNode, NodeType } from 'prosemirror-model';
+import { ColumnSelection } from './column-selection';
 import {
   buildColumn,
   buildColumnBlock,
   buildDBlock,
   buildNColumns,
-} from './utils'
+} from './utils';
 
 export enum ColumnLayout {
   AlignLeft = 'align-left',
@@ -24,10 +24,10 @@ export enum ColumnLayout {
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     columns: {
-      unsetColumns: () => ReturnType
-      setColumns: (columns: number) => ReturnType
-      setLayout: (layout: ColumnLayout) => ReturnType
-    }
+      unsetColumns: () => ReturnType;
+      setColumns: (columns: number) => ReturnType;
+      setLayout: (layout: ColumnLayout) => ReturnType;
+    };
   }
 }
 
@@ -49,7 +49,7 @@ export const Columns = Node.create({
       layout: {
         default: ColumnLayout.AlignCenter,
       },
-    }
+    };
   },
 
   addCommands() {
@@ -59,112 +59,112 @@ export const Columns = Node.create({
         ({ tr, dispatch }: CommandProps) => {
           try {
             if (!dispatch) {
-              return
+              return;
             }
 
             // find the first ancestor
-            const pos = tr.selection.$from
+            const pos = tr.selection.$from;
             const where: Predicate = ({ node }: any) => {
               if (!this.options.nestedColumns && node.type == this.type) {
-                return true
+                return true;
               }
-              return node.type == this.type
-            }
-            const firstAncestor = findParentNodeClosestToPos(pos, where)
+              return node.type == this.type;
+            };
+            const firstAncestor = findParentNodeClosestToPos(pos, where);
             if (firstAncestor === undefined) {
-              return
+              return;
             }
 
             // find the content inside of all the columns
-            let nodes: Array<ProseMirrorNode> = []
+            let nodes: Array<ProseMirrorNode> = [];
             firstAncestor.node.descendants((node, _, parent) => {
               if (parent?.type.name === Columns.name) {
-                nodes.push(node)
+                nodes.push(node);
               }
-            })
-            nodes = nodes.reverse().filter((node) => node.content.size > 0)
+            });
+            nodes = nodes.reverse().filter((node) => node.content.size > 0);
 
             // resolve the position of the first ancestor
-            const resolvedPos = tr.doc.resolve(firstAncestor.pos)
-            const sel = new NodeSelection(resolvedPos)
+            const resolvedPos = tr.doc.resolve(firstAncestor.pos);
+            const sel = new NodeSelection(resolvedPos);
 
             // insert the content inside of all the columns and remove the column layout
-            tr = tr.setSelection(sel)
-            nodes.forEach((node) => (tr = tr.insert(firstAncestor.pos, node)))
-            tr = tr.deleteSelection()
-            return dispatch(tr)
+            tr = tr.setSelection(sel);
+            nodes.forEach((node) => (tr = tr.insert(firstAncestor.pos, node)));
+            tr = tr.deleteSelection();
+            return dispatch(tr);
           } catch (error) {
-            console.error(error)
+            console.error(error);
           }
         },
       setColumns:
         (n: number, keepContent = false) =>
         ({ tr, dispatch }: CommandProps) => {
           try {
-            const { doc, selection } = tr
+            const { doc, selection } = tr;
             if (!dispatch) {
-              console.log('no dispatch')
-              return
+              console.log('no dispatch');
+              return;
             }
 
-            const sel = new ColumnSelection(selection)
-            sel.expandSelection(doc)
+            const sel = new ColumnSelection(selection);
+            sel.expandSelection(doc);
 
-            const { openStart, openEnd } = sel.content()
+            const { openStart, openEnd } = sel.content();
             if (openStart !== openEnd) {
-              console.warn('failed depth check')
-              return
+              console.warn('failed depth check');
+              return;
             }
 
             // create columns and put old content in the first column
-            let columnBlock
+            let columnBlock;
             if (keepContent) {
-              const content = sel.content().toJSON()
-              const firstColumn = buildColumn(content)
-              const otherColumns = buildNColumns(n - 1)
+              const content = sel.content().toJSON();
+              const firstColumn = buildColumn(content);
+              const otherColumns = buildNColumns(n - 1);
               columnBlock = buildColumnBlock({
                 content: [firstColumn, ...otherColumns],
-              })
+              });
             } else {
-              const columns = buildNColumns(n)
-              columnBlock = buildColumnBlock({ content: columns })
+              const columns = buildNColumns(n);
+              columnBlock = buildColumnBlock({ content: columns });
             }
             const newNode = doc.type.schema.nodeFromJSON(
-              buildDBlock({ content: [columnBlock] })
-            )
+              buildDBlock({ content: [columnBlock] }),
+            );
             if (newNode === null) {
-              return
+              return;
             }
 
-            const parent = sel.$anchor.parent.type
+            const parent = sel.$anchor.parent.type;
             const canAcceptColumnBlockChild = (par: NodeType) => {
               if (!par.contentMatch.matchType(this.type)) {
-                return false
+                return false;
               }
 
               if (!this.options.nestedColumns && par.name === Columns.name) {
-                return false
+                return false;
               }
 
-              return true
-            }
+              return true;
+            };
             if (!canAcceptColumnBlockChild(parent)) {
-              console.warn('content not allowed')
-              return
+              console.warn('content not allowed');
+              return;
             }
 
-            tr = tr.setSelection(sel)
-            tr = tr.replaceSelectionWith(newNode, false)
-            return dispatch(tr)
+            tr = tr.setSelection(sel);
+            tr = tr.replaceSelectionWith(newNode, false);
+            return dispatch(tr);
           } catch (error) {
-            console.error(error)
+            console.error(error);
           }
         },
       setLayout:
         (layout: ColumnLayout) =>
         ({ commands }) =>
           commands.updateAttributes('columns', { layout }),
-    }
+    };
   },
 
   renderHTML({ HTMLAttributes }) {
@@ -172,7 +172,7 @@ export const Columns = Node.create({
       'div',
       { 'data-type': 'columns', class: `layout-${HTMLAttributes.layout}` },
       0,
-    ]
+    ];
   },
 
   parseHTML() {
@@ -180,8 +180,8 @@ export const Columns = Node.create({
       {
         tag: 'div[data-type="columns"]',
       },
-    ]
+    ];
   },
-})
+});
 
-export default Columns
+export default Columns;

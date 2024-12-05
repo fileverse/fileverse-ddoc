@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // define your extension array
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import StarterKit from '@tiptap/starter-kit';
 import FontFamily from '@tiptap/extension-font-family';
 import TextAlign from '@tiptap/extension-text-align';
@@ -120,7 +120,7 @@ export const defaultExtensions = (
         'color-text-link font-bold transition-colors cursor-pointer select-text pointer-events-auto',
       rel: 'noopener noreferrer',
     },
-    validate: href => /^https?:\/\//.test(href),
+    validate: (href) => /^https?:\/\//.test(href),
     openOnClick: true,
     autolink: true,
   }),

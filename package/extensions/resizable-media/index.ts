@@ -1,1 +1,1 @@
-export * from './resizable-media'
+export * from './resizable-media';

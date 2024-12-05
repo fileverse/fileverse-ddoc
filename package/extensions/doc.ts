@@ -1,4 +1,4 @@
-import { Node } from '@tiptap/core'
+import { Node } from '@tiptap/core';
 
 export const Document = Node.create({
   name: 'doc',
@@ -7,4 +7,4 @@ export const Document = Node.create({
 
   // content: "draggableBlock{1,}", // accepts one or more draggable block as content
   content: 'dBlock+',
-})
+});

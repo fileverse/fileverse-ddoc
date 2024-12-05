@@ -1,17 +1,17 @@
 /* @unocss-include */
 // import { IconAlignCenter, IconAlignLeft, IconAlignRight, IconFloatLeft, IconFloatRight, IconDelete } from '~/assets'
-import { Attrs } from '@tiptap/pm/model'
+import { Attrs } from '@tiptap/pm/model';
 interface ResizableMediaAttributes {
-  dataAlign: string
-  dataFloat: null | string
+  dataAlign: string;
+  dataFloat: null | string;
 }
-type Action = (updateAttributes: (o: ResizableMediaAttributes) => void) => void
+type Action = (updateAttributes: (o: ResizableMediaAttributes) => void) => void;
 interface ResizableMediaAction {
-  tooltip: string
-  icon?: string
-  action?: Action
-  isActive?: (attrs: Attrs) => boolean
-  delete?: (d: () => void) => void
+  tooltip: string;
+  icon?: string;
+  action?: Action;
+  isActive?: (attrs: Attrs) => boolean;
+  delete?: (d: () => void) => void;
 }
 
 export const resizableMediaActions: ResizableMediaAction[] = [
@@ -50,4 +50,4 @@ export const resizableMediaActions: ResizableMediaAction[] = [
     icon: 'Trash2',
     delete: (deleteNode) => deleteNode(),
   },
-]
+];
