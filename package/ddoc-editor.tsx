@@ -57,10 +57,11 @@ const DdocEditor = forwardRef(
       inlineCommentData,
       zoomLevel,
       setZoomLevel,
+      isNavbarVisible,
+      setIsNavbarVisible,
     }: DdocProps,
     ref,
   ) => {
-    const [isNavbarVisible, setIsNavbarVisible] = useState(true);
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const btn_ref = useRef(null);
     const isMobile = useMediaQuery('(max-width: 640px)');
@@ -118,6 +119,8 @@ const DdocEditor = forwardRef(
       inlineCommentData,
       zoomLevel,
       setZoomLevel,
+      isNavbarVisible,
+      setIsNavbarVisible,
     });
 
     useImperativeHandle(
