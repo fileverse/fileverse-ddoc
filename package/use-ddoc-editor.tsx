@@ -57,7 +57,6 @@ export const useDdocEditor = ({
   ]);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
-  const [isNavbarVisible, setIsNavbarVisible] = useState(true);
 
   const isHighlightedYellow = (
     state: EditorState,
