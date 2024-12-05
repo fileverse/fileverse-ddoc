@@ -31,6 +31,7 @@ turndownService.addRule('taskListItem', {
     content = content
       .replace(/^\n+/, '') // remove leading newlines
       .replace(/\n+$/, '') // remove trailing newlines
+      .replace(/\n\s*/gm, '\n') // normalize all newlines to single space
       .replace(/\n/gm, '\n    '); // indent
     return `- [${isChecked ? 'x' : ' '}] ${content}${
       node.nextSibling ? '\n' : ''
@@ -128,6 +129,7 @@ turndownService.addRule('listItem', {
     content = content
       .replace(/^\n+/, '') // remove leading newlines
       .replace(/\n+$/, '') // remove trailing newlines
+      .replace(/\n\s*\n/g, '\n') // replace multiple newlines with single newline
       .replace(/\n/gm, '\n    '); // indent
     let prefix = options.bulletListMarker + ' ';
     const parent: any = node.parentNode;

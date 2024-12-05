@@ -23,7 +23,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 import platform from 'platform';
 import MobileToolbar from './components/mobile-toolbar';
-import { PresentationMode } from './components/presentation-mode';
+import { PresentationMode } from './components/presentation-mode/presentation-mode';
 
 const checkOs = () => platform.os?.family;
 
@@ -65,6 +65,7 @@ const DdocEditor = forwardRef(
   ) => {
     const [isNavbarVisible, setIsNavbarVisible] = useState(true);
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
 
     const btn_ref = useRef(null);
     const isMobile = useMediaQuery('(max-width: 640px)');
@@ -279,8 +280,11 @@ const DdocEditor = forwardRef(
     return (
       <div
         data-cy="single-webpage"
-        className={`bg-[#f8f9fa] w-full h-screen overflow-y-auto no-scrollbar ${zoomLevel === '2' ? 'overflow-x-auto' : 'overflow-x-hidden'
-          }`}
+        className={cn(
+          'w-full h-screen overflow-y-auto no-scrollbar',
+          zoomLevel === '2' ? 'overflow-x-auto' : 'overflow-x-hidden',
+          isFullscreen ? 'bg-white' : 'bg-[#f8f9fa]',
+        )}
       >
         <nav
           id="Navbar"
@@ -288,7 +292,7 @@ const DdocEditor = forwardRef(
             'h-14 bg-[#ffffff] py-2 px-4 flex gap-[40px] items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300',
             {
               'translate-y-0': isNavbarVisible,
-              'translate-y-[-100%]': !isNavbarVisible,
+              'translate-y-[-100%]': !isNavbarVisible || isPresentationMode,
             },
           )}
         >
@@ -320,6 +324,8 @@ const DdocEditor = forwardRef(
               <PresentationMode
                 editor={editor}
                 onClose={() => setIsPresentationMode?.(false)}
+                isFullscreen={isFullscreen}
+                setIsFullscreen={setIsFullscreen}
               />
             )}
           </div>
@@ -497,6 +503,8 @@ const DdocEditor = forwardRef(
               <PresentationMode
                 editor={editor}
                 onClose={() => setIsPresentationMode?.(false)}
+                isFullscreen={isFullscreen}
+                setIsFullscreen={setIsFullscreen}
               />
             )}
           </div>

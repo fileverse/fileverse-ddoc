@@ -65,7 +65,6 @@ export const handlePrint = (slides: string[]) => {
                             height: 100%;
                             display: flex;
                             flex-direction: column;
-                            justify-content: center;
                             padding: 0 64px;
                             box-sizing: border-box;
                             overflow: hidden;
@@ -121,7 +120,7 @@ export const handlePrint = (slides: string[]) => {
                             width: 100%;
                             border-collapse: collapse;
                             margin: 16px 0;
-                            font-size: 24px;
+                            font-size: 20px;
                         }
 
                         .ProseMirror th {
