@@ -184,18 +184,21 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           />
         );
       case 'InlineComment':
-        return (
-          <InlineCommentPopup
-            editor={props.editor}
-            elementRef={toolRef}
-            setIsCommentSectionOpen={props.setIsCommentSectionOpen}
-            setIsInlineCommentOpen={setIsInlineCommentOpen}
-            inlineCommentData={props.inlineCommentData}
-            setInlineCommentData={(data) =>
-              props.setInlineCommentData?.((prev) => ({ ...prev, ...data }))
-            }
-          />
-        );
+        if (props.username || props.walletAddress) {
+          return (
+            <InlineCommentPopup
+              editor={props.editor}
+              elementRef={toolRef}
+              setIsCommentSectionOpen={props.setIsCommentSectionOpen}
+              setIsInlineCommentOpen={setIsInlineCommentOpen}
+              inlineCommentData={props.inlineCommentData}
+              setInlineCommentData={(data) =>
+                props.setInlineCommentData?.((prev) => ({ ...prev, ...data }))
+              }
+            />
+          );
+        }
+        return null;
       case 'Scripts':
         return <ScriptsPopup editor={props.editor} elementRef={toolRef} />;
       default:
