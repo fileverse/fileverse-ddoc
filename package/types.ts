@@ -35,6 +35,8 @@ export interface DdocProps {
   >;
   zoomLevel: string;
   setZoomLevel: React.Dispatch<SetStateAction<string>>;
+  isNavbarVisible: boolean;
+  setIsNavbarVisible: React.Dispatch<SetStateAction<boolean>>;
   isCommentSectionOpen?: boolean;
   collaborationId?: string;
   isPreviewMode: boolean;
