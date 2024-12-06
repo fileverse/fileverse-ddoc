@@ -210,43 +210,6 @@ const DdocEditor = forwardRef(
       };
     }, [editor]);
 
-    const [hasEditorContent, setHasEditorContent] = useState(false);
-
-    useEffect(() => {
-      if (editorRef.current) {
-        const checkEditorEmpty = () => {
-          const editorEmpty =
-            editorRef.current?.querySelector('.is-editor-empty');
-          setHasEditorContent(!editorEmpty);
-        };
-
-        checkEditorEmpty();
-
-        const observer = new MutationObserver(() => {
-          checkEditorEmpty();
-        });
-
-        observer.observe(editorRef.current, {
-          childList: true,
-          subtree: true,
-          attributes: true,
-        });
-
-        return () => observer.disconnect();
-      }
-    }, []);
-
-    useEffect(() => {
-      const intervalId = setInterval(() => {
-        if (editorRef.current) {
-          const editorEmpty =
-            editorRef.current.querySelector('.is-editor-empty');
-          setHasEditorContent(!editorEmpty);
-        }
-      }, 1000);
-      return () => clearInterval(intervalId);
-    }, []);
-
     // Push the editor to the top when the keyboard is visible
     useEffect(() => {
       if (!isNativeMobile || !editor) return;
@@ -278,9 +241,8 @@ const DdocEditor = forwardRef(
     return (
       <div
         data-cy="single-webpage"
-        className={`bg-[#f8f9fa] w-full h-screen overflow-y-auto no-scrollbar ${
-          zoomLevel === '2' ? 'overflow-x-auto' : 'overflow-x-hidden'
-        }`}
+        className={`bg-[#f8f9fa] w-full h-screen overflow-y-auto no-scrollbar ${zoomLevel === '2' ? 'overflow-x-auto' : 'overflow-x-hidden'
+          }`}
       >
         <nav
           id="Navbar"
@@ -367,7 +329,7 @@ const DdocEditor = forwardRef(
             ref={editorRef}
             className={cn(
               'w-full h-full pt-8 md:pt-0',
-              { '!mt-24': isIOS && hasEditorContent },
+              { 'custom-ios-padding': isIOS },
               { 'bg-white': zoomLevel === '1.4' || '1.5' },
             )}
             style={{
