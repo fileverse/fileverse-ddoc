@@ -201,7 +201,7 @@ const TiptapToolBar = ({
           anchorTrigger={
             <button
               className="bg-transparent hover:bg-gray-200 rounded py-2 px-4 flex items-center gap-2"
-              onClick={() => {}}
+              onClick={() => { }}
             >
               <span className="text-body-sm">
                 {zoomLevels.find((z) => z.value === zoomLevel)?.title || '100%'}

@@ -14,11 +14,15 @@ export const PageBreakNodeView: React.FC<NodeViewProps> = ({
 
   return (
     <NodeViewWrapper
-      as="div"
       className={cn(
         'flex relative opacity-0 hover:opacity-100 transition-opacity duration-200 w-full h-full justify-center items-center',
       )}
     >
+      <br
+        data-type="page-break"
+        data-page-break="true"
+        style={{ pageBreakAfter: 'always' }}
+      />
       <div className="absolute top-[-15px] left-0 right-0 h-4">
         <div
           className="absolute inset-0 border-b-1 border-transparent"
