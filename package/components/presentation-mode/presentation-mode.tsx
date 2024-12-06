@@ -1,4 +1,5 @@
-import { useEffect, useState, useLayoutEffect, useCallback } from 'react';
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+import { useEffect, useState, useCallback } from 'react';
 import { Editor, EditorContent, useEditor } from '@tiptap/react';
 import { AnimatedLoader, IconButton, Label, Tooltip } from '@fileverse/ui';
 import { EditingProvider } from '../../hooks/use-editing-context';
@@ -36,12 +37,11 @@ const SlideContent = ({
   onTouchEnd: () => void;
   isFullscreen: boolean;
 }) => {
-  useLayoutEffect(() => {
-    const timeoutId = setTimeout(() => {
+  useEffect(() => {
+    setTimeout(() => {
       editor.commands.setContent(content);
-    }, 0);
-    return () => clearTimeout(timeoutId);
-  }, [content, editor]);
+    });
+  }, [content]);
 
   return (
     <EditorContent
@@ -165,7 +165,7 @@ export const PresentationMode = ({
   }, [editor]);
 
   // Create preview editors for each slide
-  useLayoutEffect(() => {
+  useEffect(() => {
     const editors: { [key: number]: Editor } = {};
     slides.forEach((_, index) => {
       editors[index] = new Editor({
@@ -188,7 +188,7 @@ export const PresentationMode = ({
   const toggleFullscreen = useCallback(() => {
     if (isNativeMobile) {
       // For iOS, just toggle the state without using native fullscreen
-      // @ts-ignore
+      // @ts-expect-error
       setIsFullscreen((prev) => !prev);
     } else {
       // For desktop, use native fullscreen API

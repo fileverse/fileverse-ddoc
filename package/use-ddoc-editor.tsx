@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useRef, useLayoutEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
 import { DdocProps, DdocEditorProps } from './types';
 import * as Y from 'yjs';
@@ -164,7 +164,7 @@ export const useDdocEditor = ({
     [extensions],
   );
 
-  const collaborationCleanupRef = useRef<() => void>(() => {});
+  const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
@@ -210,15 +210,12 @@ export const useDdocEditor = ({
     editor?.setEditable(!isPreviewMode);
   }, [isPreviewMode, editor]);
 
-  useLayoutEffect(() => {
+  useEffect(() => {
     if (initialContent && editor && !initialContentSetRef.current) {
       setIsContentLoading(true);
       queueMicrotask(() => {
-        const timeoutId = setTimeout(() => {
-          editor.commands.setContent(initialContent);
-          setIsContentLoading(false);
-        }, 0);
-        return () => clearTimeout(timeoutId);
+        editor.commands.setContent(initialContent);
+        setIsContentLoading(false);
       });
 
       initialContentSetRef.current = true;
