@@ -662,6 +662,14 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
         width: 90%;
         margin: 2vh auto;
         font-size: 1.5vw;
+
+        p {
+          font-size: 1.5vw !important;
+        }
+
+        code {
+          font-size: 1.5vw !important;
+        }
       }
 
       @media (max-width: 640px) {
@@ -687,6 +695,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
         table {
           transform: scale(0.8);
           transform-origin: top left;
+          margin: 0 auto;
 
           p {
             font-size: 2.5vw !important;

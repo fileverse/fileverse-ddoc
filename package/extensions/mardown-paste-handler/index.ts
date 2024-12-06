@@ -19,7 +19,7 @@ export const turndownService = new TurndownService({
 
 // Add this new rule after the other turndownService rules
 turndownService.addRule('taskListItem', {
-  filter: node => {
+  filter: (node) => {
     const parent = node.parentElement;
     return (
       node.nodeName === 'LI' && parent?.getAttribute('data-type') === 'taskList'
@@ -382,12 +382,15 @@ const MarkdownPasteHandler = Extension.create({
           const start = range.from - 2;
           const end = range.to;
 
+          const isDBlock = state.doc.nodeAt(start)?.type.name === 'dBlock';
           // Create a page break node
-          tr.replaceWith(
-            start,
-            end,
-            this.editor.schema.nodes.pageBreak.create(),
-          );
+          if (isDBlock) {
+            tr.replaceWith(
+              start,
+              end,
+              this.editor.schema.nodes.pageBreak.create(),
+            );
+          }
         },
       }),
     ];
