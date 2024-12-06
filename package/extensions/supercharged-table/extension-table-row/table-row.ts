@@ -23,18 +23,17 @@ const isScrollable = function (ele: any) {
 };
 
 const getScrollableParent = function (ele: any): any {
-  // eslint-disable-next-line no-nested-ternary
   return !ele || ele === document.body
     ? document.body
     : isScrollable(ele)
-    ? ele
-    : getScrollableParent(ele.parentNode);
+      ? ele
+      : getScrollableParent(ele.parentNode);
 };
 
 const getElementWithAttributes = (
   name: string,
   attrs?: Record<string, any>,
-  events?: Record<string, any>
+  events?: Record<string, any>,
 ) => {
   const el = document.createElement(name);
 
@@ -46,7 +45,7 @@ const getElementWithAttributes = (
 
   if (events) {
     Object.entries(events).forEach(([key, val]) =>
-      el.addEventListener(key, val)
+      el.addEventListener(key, val),
     );
   }
 
@@ -94,7 +93,7 @@ export const TableRow = Node.create<TableRowOptions>({
       const pos = () => (getPos as () => number)();
 
       const scrollableParent = getScrollableParent(
-        editor.options.element
+        editor.options.element,
       ) as HTMLDivElement;
 
       let isCursorInsideControlSection = false;
@@ -145,7 +144,7 @@ export const TableRow = Node.create<TableRowOptions>({
             setCursorOutsideControlSection();
             hideControls();
           },
-        }
+        },
       );
 
       const deleteButton = getElementWithAttributes(
@@ -160,7 +159,7 @@ export const TableRow = Node.create<TableRowOptions>({
 
             actions.deleteRow();
           },
-        }
+        },
       );
 
       const showControls = () => {
@@ -183,7 +182,7 @@ export const TableRow = Node.create<TableRowOptions>({
           mouseenter: showControls,
           mouseover: showControls,
           mouseleave: hideControls,
-        }
+        },
       );
 
       // deleteButton.textContent = 'x'
@@ -228,7 +227,7 @@ export const TableRow = Node.create<TableRowOptions>({
         editor.off('update', repositionControlsCenter);
         scrollableParent?.removeEventListener(
           'scroll',
-          repositionControlsCenter
+          repositionControlsCenter,
         );
         document.removeEventListener('scroll', repositionControlsCenter);
       };

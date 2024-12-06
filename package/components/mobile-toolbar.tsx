@@ -1,4 +1,3 @@
-/* eslint-disable no-useless-escape */
 import { useEffect, useState } from 'react';
 import { TextFormatingPopup, useEditorToolbar } from './editor-utils';
 import { Editor } from '@tiptap/react';
@@ -31,7 +30,7 @@ const MobileToolbar = ({
     {
       editor: editor,
       onError,
-      secureImageUploadUrl
+      secureImageUploadUrl,
     },
   );
   const [url, setUrl] = useState('');
@@ -40,17 +39,25 @@ const MobileToolbar = ({
   const [isUrlValid, setIsUrlValid] = useState(true);
 
   const saveLink = () => {
-    if ((url === null || url === '') && (linkText === '' || linkText === null)) {
+    if (
+      (url === null || url === '') &&
+      (linkText === '' || linkText === null)
+    ) {
       setToolVisibility(IEditorTool.NONE);
       return;
     }
 
     let finalUrl = url;
-    if (finalUrl && !finalUrl.startsWith('http://') && !finalUrl.startsWith('https://')) {
+    if (
+      finalUrl &&
+      !finalUrl.startsWith('http://') &&
+      !finalUrl.startsWith('https://')
+    ) {
       finalUrl = 'https://' + finalUrl;
     }
 
-    const urlPattern = /^(https?:\/\/)?([\w-]+(\.[\w-]+)+\.?(:\d+)?(\/\S*)?|\w+@[\w.-]+\.\w+)$/i;
+    const urlPattern =
+      /^(https?:\/\/)?([\w-]+(\.[\w-]+)+\.?(:\d+)?(\/\S*)?|\w+@[\w.-]+\.\w+)$/i;
     if (finalUrl && !urlPattern.test(finalUrl)) {
       setIsUrlValid(false);
       if (onError) onError('Invalid URL');
@@ -92,9 +99,12 @@ const MobileToolbar = ({
     const { from, to } = editor.state.selection;
     const selectedText = editor.state.doc.textBetween(from, to);
     const linkMark = editor.getAttributes('link');
-    return { text: selectedText || linkMark.text || '', url: linkMark.href || '' };
+    return {
+      text: selectedText || linkMark.text || '',
+      url: linkMark.href || '',
+    };
   };
-  
+
   useEffect(() => {
     if (!editor) return;
 

@@ -37,7 +37,6 @@ export const useDdocEditor = ({
   onChange,
   onCollaboratorChange,
   onCommentInteraction,
-  onTextSelection,
   ensResolutionUrl,
   onError,
   setCharacterCount,
@@ -165,7 +164,7 @@ export const useDdocEditor = ({
     [extensions],
   );
 
-  const collaborationCleanupRef = useRef<() => void>(() => { });
+  const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
@@ -244,29 +243,6 @@ export const useDdocEditor = ({
       clearTimeout(scrollTimeoutId);
     };
   }, [initialContent, editor]);
-
-  useEffect(() => {
-    if (!editor) {
-      return;
-    }
-    const handleSelection = () => {
-      const { state } = editor;
-      const { from, to } = state.selection;
-
-      const selectedText = state.doc.textBetween(from, to, ' ');
-      onTextSelection?.({
-        text: selectedText,
-        from,
-        to,
-        isHighlightedYellow: isHighlightedYellow(state, from, to),
-      });
-    };
-
-    editor.on('selectionUpdate', handleSelection);
-    return () => {
-      editor.off('selectionUpdate', handleSelection);
-    };
-  }, [editor]);
 
   const startCollaboration = async () => {
     let _username = username;

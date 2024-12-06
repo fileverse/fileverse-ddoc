@@ -60,10 +60,11 @@ const DdocEditor = forwardRef(
       setZoomLevel,
       isPresentationMode,
       setIsPresentationMode,
+      isNavbarVisible,
+      setIsNavbarVisible,
     }: DdocProps,
     ref,
   ) => {
-    const [isNavbarVisible, setIsNavbarVisible] = useState(true);
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -123,6 +124,8 @@ const DdocEditor = forwardRef(
       inlineCommentData,
       zoomLevel,
       setZoomLevel,
+      isNavbarVisible,
+      setIsNavbarVisible,
     });
 
     useImperativeHandle(
@@ -305,7 +308,7 @@ const DdocEditor = forwardRef(
               'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 px-1 bg-[#ffffff] border-b color-border-default transition-transform duration-300 top-[3.3rem]',
               {
                 'translate-y-0': isNavbarVisible,
-                'translate-y-[-105%]': !isNavbarVisible,
+                'translate-y-[-108%]': !isNavbarVisible,
               },
             )}
           >
@@ -396,6 +399,8 @@ const DdocEditor = forwardRef(
                 inlineCommentData={inlineCommentData}
                 setInlineCommentData={setInlineCommentData}
                 isPreviewMode={isPreviewMode}
+                username={username as string}
+                walletAddress={walletAddress as string}
               />
               <ColumnsMenu editor={editor} appendTo={editorRef} />
             </div>

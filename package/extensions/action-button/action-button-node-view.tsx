@@ -52,16 +52,16 @@ export const ActionButtonNodeView = ({
     } else {
       switch (true) {
         case /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/.test(
-          inputValue
+          inputValue,
         ): {
-            const matches = inputValue.match(
-              /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/
-            );
-            if (matches && matches.length > 0) {
-              formattedUrl = `https://www.youtube.com/embed/${matches[1]}`;
-            }
-            break;
+          const matches = inputValue.match(
+            /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/,
+          );
+          if (matches && matches.length > 0) {
+            formattedUrl = `https://www.youtube.com/embed/${matches[1]}`;
           }
+          break;
+        }
         case /vimeo\.com\/([a-zA-Z0-9-_]+)/.test(inputValue): {
           const matches = inputValue.match(/vimeo\.com\/([a-zA-Z0-9-_]+)/);
           if (matches && matches.length > 0) {
@@ -138,8 +138,12 @@ export const ActionButtonNodeView = ({
       }
     } else {
       switch (true) {
-        case /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/.test(inputValue): {
-          const matches = inputValue.match(/youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/);
+        case /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/.test(
+          inputValue,
+        ): {
+          const matches = inputValue.match(
+            /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/,
+          );
           if (matches && matches.length > 0) {
             formattedUrl = `https://www.youtube.com/embed/${matches[1]}`;
           }
@@ -152,8 +156,12 @@ export const ActionButtonNodeView = ({
           }
           break;
         }
-        case /(?:twitter|x)\.com\/(?:#!\/)?(\w+)\/status(es)?\/(\d+)/.test(inputValue): {
-          const matches = inputValue.match(/(?:twitter|x)\.com\/(?:#!\/)?(\w+)\/status(es)?\/(\d+)/);
+        case /(?:twitter|x)\.com\/(?:#!\/)?(\w+)\/status(es)?\/(\d+)/.test(
+          inputValue,
+        ): {
+          const matches = inputValue.match(
+            /(?:twitter|x)\.com\/(?:#!\/)?(\w+)\/status(es)?\/(\d+)/,
+          );
           if (matches && matches.length > 0) {
             formattedUrl = matches[3]; // Extract the tweet ID
             mediaType = 'twitter';
@@ -184,7 +192,7 @@ export const ActionButtonNodeView = ({
 
       chain?.run();
     }
-  }
+  };
 
   const handleSave = () => {
     switch (node.attrs.data) {
@@ -193,7 +201,7 @@ export const ActionButtonNodeView = ({
         break;
       case 'iframe':
         iframeRender();
-        break
+        break;
       default:
         multiRender();
         break;
@@ -210,11 +218,7 @@ export const ActionButtonNodeView = ({
 
         // Check if the node is actually empty or if it's just the input value that's empty
         if (node.content.size === 0 || node.textContent === '') {
-          editor
-            ?.chain()
-            .focus(pos)
-            .deleteRange({ from: pos, to })
-            .run();
+          editor?.chain().focus(pos).deleteRange({ from: pos, to }).run();
           event.preventDefault(); // Prevent the default backspace behavior
         }
       }

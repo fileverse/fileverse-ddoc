@@ -1,1 +1,1 @@
-export * from './media-paste-drop-plugin'
+export * from './media-paste-drop-plugin';

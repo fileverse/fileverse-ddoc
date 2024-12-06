@@ -1,1 +1,1 @@
-export * from './dblock'
+export * from './dblock';

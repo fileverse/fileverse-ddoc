@@ -221,7 +221,11 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
             className={cn('trigger-button', { hidden: isPreviewMode })}
             contentEditable={false}
           >
-            <LucideIcon name="Ellipsis" className='color-text-default' size={'sm'} />
+            <LucideIcon
+              name="Ellipsis"
+              className="color-text-default"
+              size={'sm'}
+            />
           </label>
         </Tippy>
       )}

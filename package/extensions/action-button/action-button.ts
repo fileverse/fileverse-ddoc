@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Node, mergeAttributes } from '@tiptap/core'
-import { ActionButtonNodeView } from './action-button-node-view'
-import { ReactNodeViewRenderer } from '@tiptap/react'
+import { Node, mergeAttributes } from '@tiptap/core';
+import { ActionButtonNodeView } from './action-button-node-view';
+import { ReactNodeViewRenderer } from '@tiptap/react';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -9,13 +9,13 @@ declare module '@tiptap/core' {
       /**
        * Toggle a actionButton
        */
-      setActionButton: (option?: string) => ReturnType
-    }
+      setActionButton: (option?: string) => ReturnType;
+    };
   }
 }
 
 export interface ActionButtonOptions {
-  HTMLAttributes: Record<string, any>
+  HTMLAttributes: Record<string, any>;
 }
 
 export const actionButton = Node.create<ActionButtonOptions>({
@@ -31,51 +31,51 @@ export const actionButton = Node.create<ActionButtonOptions>({
 
   addOptions() {
     return {
-      HTMLAttributes: {}
-    }
+      HTMLAttributes: {},
+    };
   },
 
   addAttributes() {
     return {
       data: {
-        default: null
-      }
-    }
+        default: null,
+      },
+    };
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(ActionButtonNodeView)
+    return ReactNodeViewRenderer(ActionButtonNodeView);
   },
 
   parseHTML() {
     return [
       {
-        tag: 'div[data-action-node]'
-      }
-    ]
+        tag: 'div[data-action-node]',
+      },
+    ];
   },
 
   renderHTML({ HTMLAttributes }) {
     return [
       'div',
       mergeAttributes(HTMLAttributes, { 'data-action-node': '' }),
-      0
-    ]
+      0,
+    ];
   },
 
   addCommands() {
     return {
       setActionButton:
-        option =>
+        (option) =>
         ({ commands }) => {
           return commands.insertContent({
             type: this.name,
             attrs: {
-              data: option
+              data: option,
             },
-            content: []
-          })
-        }
-    }
-  }
-})
+            content: [],
+          });
+        },
+    };
+  },
+});

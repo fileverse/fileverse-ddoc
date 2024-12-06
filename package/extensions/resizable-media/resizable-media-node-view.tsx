@@ -87,7 +87,7 @@ export const ResizableMediaNodeView = ({
         // Aspect Ratio from its original size
         setAspectRatio(
           (resizableImgRef.current as HTMLImageElement).naturalWidth /
-          (resizableImgRef.current as HTMLImageElement).naturalHeight,
+            (resizableImgRef.current as HTMLImageElement).naturalHeight,
         );
       };
     }
@@ -288,8 +288,8 @@ export const ResizableMediaNodeView = ({
         draggable
         data-drag-handle
         className={cn(
-          "w-fit flex flex-col gap-2 relative group transition-all ease-in-out",
-          isDragging && "opacity-50"
+          'w-fit flex flex-col gap-2 relative group transition-all ease-in-out',
+          isDragging && 'opacity-50',
         )}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -380,8 +380,6 @@ export const ResizableMediaNodeView = ({
           </>
         )}
       </div>
-
-
     </NodeViewWrapper>
   );
 };

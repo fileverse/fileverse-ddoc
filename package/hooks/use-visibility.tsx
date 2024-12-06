@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef } from 'react';
 export enum IEditorTool {
   NONE,
   HEADING,
@@ -16,41 +16,41 @@ export enum IEditorTool {
 }
 export default function useComponentVisibility(initialIsVisible: boolean) {
   const [isComponentVisible, setIsComponentVisible] =
-    useState<boolean>(initialIsVisible)
-  const ref = useRef<HTMLDivElement>(null)
+    useState<boolean>(initialIsVisible);
+  const ref = useRef<HTMLDivElement>(null);
 
   const handleClickOutside = (event: any) => {
     if (ref && ref.current && !ref.current.contains(event.target)) {
-      setIsComponentVisible(false)
+      setIsComponentVisible(false);
     }
-  }
+  };
 
   useEffect(() => {
-    document.addEventListener('click', handleClickOutside, true)
+    document.addEventListener('click', handleClickOutside, true);
     return () => {
-      document.removeEventListener('click', handleClickOutside, true)
-    }
-  }, [])
+      document.removeEventListener('click', handleClickOutside, true);
+    };
+  }, []);
 
-  return { ref, isComponentVisible, setIsComponentVisible }
+  return { ref, isComponentVisible, setIsComponentVisible };
 }
 export function useEditorToolVisiibility(initialIsVisible: IEditorTool) {
   const [toolVisibility, setToolVisibility] =
-    useState<IEditorTool>(initialIsVisible)
-  const ref = useRef<HTMLDivElement>(null)
+    useState<IEditorTool>(initialIsVisible);
+  const ref = useRef<HTMLDivElement>(null);
 
   const handleClickOutside = (event: any) => {
     if (ref && ref.current && !ref.current.contains(event.target)) {
-      setToolVisibility(IEditorTool.NONE)
+      setToolVisibility(IEditorTool.NONE);
     }
-  }
+  };
 
   useEffect(() => {
-    document.addEventListener('click', handleClickOutside, true)
+    document.addEventListener('click', handleClickOutside, true);
     return () => {
-      document.removeEventListener('click', handleClickOutside, true)
-    }
-  }, [])
+      document.removeEventListener('click', handleClickOutside, true);
+    };
+  }, []);
 
-  return { ref, toolVisibility, setToolVisibility }
+  return { ref, toolVisibility, setToolVisibility };
 }

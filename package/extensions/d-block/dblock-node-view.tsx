@@ -25,13 +25,9 @@ import {
 import { LucideIcon } from '@fileverse/ui';
 // import { startImageUpload } from '../../utils/upload-images';
 
-export const DBlockNodeView: React.FC<NodeViewProps & { secureImageUploadUrl?: string }> = ({
-  node,
-  getPos,
-  editor,
-  deleteNode,
-  secureImageUploadUrl,
-}) => {
+export const DBlockNodeView: React.FC<
+  NodeViewProps & { secureImageUploadUrl?: string }
+> = ({ node, getPos, editor, deleteNode, secureImageUploadUrl }) => {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const actions = useContentItemActions(editor as Editor, node, getPos());
   const isPreviewMode = useEditingContext();

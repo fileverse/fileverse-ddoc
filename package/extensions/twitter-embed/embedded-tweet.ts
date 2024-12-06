@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Node, ReactNodeViewRenderer, mergeAttributes } from '@tiptap/react'
-import { TweetComponentNodeView } from './tweet-component-node-view'
+import { Node, ReactNodeViewRenderer, mergeAttributes } from '@tiptap/react';
+import { TweetComponentNodeView } from './tweet-component-node-view';
 
 export interface EmbeddedTweetOptions {
-  HTMLAttributes: Record<string, any>
+  HTMLAttributes: Record<string, any>;
 }
 
 declare module '@tiptap/core' {
@@ -12,8 +12,8 @@ declare module '@tiptap/core' {
       /**
        * Add an tweet embed
        */
-      setTweetEmbed: (options: { tweetId: string }) => ReturnType
-    }
+      setTweetEmbed: (options: { tweetId: string }) => ReturnType;
+    };
   }
 }
 
@@ -31,7 +31,7 @@ export const EmbeddedTweet = Node.create<EmbeddedTweetOptions>({
       HTMLAttributes: {
         class: '',
       },
-    }
+    };
   },
 
   addAttributes() {
@@ -42,7 +42,7 @@ export const EmbeddedTweet = Node.create<EmbeddedTweetOptions>({
       align: {
         default: 'center',
       },
-    }
+    };
   },
 
   parseHTML() {
@@ -50,15 +50,18 @@ export const EmbeddedTweet = Node.create<EmbeddedTweetOptions>({
       {
         tag: 'div[data-tweet-id]',
       },
-    ]
+    ];
   },
 
   renderHTML({ HTMLAttributes }) {
-    return ['div', mergeAttributes(this.options.HTMLAttributes, HTMLAttributes)]
+    return [
+      'div',
+      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
+    ];
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(TweetComponentNodeView)
+    return ReactNodeViewRenderer(TweetComponentNodeView);
   },
 
   addCommands() {
@@ -73,8 +76,8 @@ export const EmbeddedTweet = Node.create<EmbeddedTweetOptions>({
               align: 'center', // we can also set other attributes here
             },
             content: [],
-          })
+          });
         },
-    }
+    };
   },
-})
+});

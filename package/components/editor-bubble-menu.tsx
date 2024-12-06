@@ -35,6 +35,8 @@ type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   setInlineCommentData?: React.Dispatch<
     React.SetStateAction<InlineCommentData>
   >;
+  walletAddress?: string;
+  username?: string;
 };
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
@@ -100,9 +102,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
 
   const isMobileScreen = useMediaQuery('(max-width: 640px)');
   const isNativeMobile =
-      checkOs() === 'Android' ||
-      checkOs() === 'Windows Phone' ||
-      isMobileScreen;
+    checkOs() === 'Android' || checkOs() === 'Windows Phone' || isMobileScreen;
 
   const bubbleMenuProps: EditorBubbleMenuProps = {
     ...props,
@@ -184,18 +184,21 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           />
         );
       case 'InlineComment':
-        return (
-          <InlineCommentPopup
-            editor={props.editor}
-            elementRef={toolRef}
-            setIsCommentSectionOpen={props.setIsCommentSectionOpen}
-            setIsInlineCommentOpen={setIsInlineCommentOpen}
-            inlineCommentData={props.inlineCommentData}
-            setInlineCommentData={(data) =>
-              props.setInlineCommentData?.((prev) => ({ ...prev, ...data }))
-            }
-          />
-        );
+        if (props.username || props.walletAddress) {
+          return (
+            <InlineCommentPopup
+              editor={props.editor}
+              elementRef={toolRef}
+              setIsCommentSectionOpen={props.setIsCommentSectionOpen}
+              setIsInlineCommentOpen={setIsInlineCommentOpen}
+              inlineCommentData={props.inlineCommentData}
+              setInlineCommentData={(data) =>
+                props.setInlineCommentData?.((prev) => ({ ...prev, ...data }))
+              }
+            />
+          );
+        }
+        return null;
       case 'Scripts':
         return <ScriptsPopup editor={props.editor} elementRef={toolRef} />;
       default:
@@ -206,23 +209,27 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const isMobile = useMediaQuery('(max-width: 1023px)');
 
   const handleHighlight = () => {
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-      const selectedText = selection.toString().trim();
-      if (selectedText) {
-        props.setInlineCommentData((prevData) => {
-          const updatedData = {
-            ...prevData,
-            highlightedTextContent: selectedText,
-          };
-          return updatedData;
-        });
-
-        setTimeout(() => {
-          props.editor.chain().setHighlight({ color: '#DDFBDF' }).run();
-        }, 10);
-      }
+    if (!(props.username || props.walletAddress)) {
+      props.setIsCommentSectionOpen(true);
+      return;
     }
+    const { state } = props.editor;
+    if (!state) return;
+    const { from, to } = state.selection;
+
+    const selectedText = state.doc.textBetween(from, to, ' ');
+    if (!selectedText) return;
+    props.setInlineCommentData((prevData) => {
+      const updatedData = {
+        ...prevData,
+        highlightedTextContent: selectedText,
+      };
+      return updatedData;
+    });
+
+    setTimeout(() => {
+      props.editor.chain().setHighlight({ color: '#DDFBDF' }).run();
+    }, 10);
     setIsInlineCommentOpen(true);
   };
 
@@ -234,8 +241,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border bg-white items-center shadow-elevation-3',
         isInlineCommentOpen ? '!invisible' : '!visible',
         {
-          "ml-[100%] mt-[60%]": props.zoomLevel === '0.5',
-        }
+          'ml-[100%] mt-[60%]': props.zoomLevel === '0.5',
+        },
       )}
     >
       {isMobile || props.isPreviewMode ? (

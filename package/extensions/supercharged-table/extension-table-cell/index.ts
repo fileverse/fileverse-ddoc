@@ -1,5 +1,5 @@
-import { TableCell } from './table-cell'
+import { TableCell } from './table-cell';
 
-export * from './table-cell'
+export * from './table-cell';
 
-export default TableCell
+export default TableCell;
