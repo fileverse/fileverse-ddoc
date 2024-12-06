@@ -63,6 +63,7 @@ export const PresentationMode = ({ editor, onClose, isFullscreen, setIsFullscree
     const [touchStart, setTouchStart] = useState<number | null>(null);
     const [touchEnd, setTouchEnd] = useState<number | null>(null);
     const minSwipeDistance = 50;
+    const [slideDirection, setSlideDirection] = useState<'forward' | 'backward'>('forward');
 
     const presentationEditor = useEditor({
         extensions: editor.extensionManager.extensions,
@@ -167,6 +168,7 @@ export const PresentationMode = ({ editor, onClose, isFullscreen, setIsFullscree
     const toggleFullscreen = useCallback(() => {
         if (isIOS) {
             // For iOS, just toggle the state without using native fullscreen
+            // @ts-ignore
             setIsFullscreen(prev => !prev);
         } else {
             // For desktop, use native fullscreen API
@@ -189,8 +191,10 @@ export const PresentationMode = ({ editor, onClose, isFullscreen, setIsFullscree
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'Space') {
+            setSlideDirection('forward');
             setCurrentSlide(prev => Math.min(prev + 1, slides.length - 1));
         } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+            setSlideDirection('backward');
             setCurrentSlide(prev => Math.max(prev - 1, 0));
         } else if (e.key === 'Escape') {
             onClose();
@@ -243,9 +247,11 @@ export const PresentationMode = ({ editor, onClose, isFullscreen, setIsFullscree
         const isRightSwipe = distance < -minSwipeDistance;
 
         if (isLeftSwipe) {
+            setSlideDirection('forward');
             setCurrentSlide(prev => Math.min(prev + 1, slides.length - 1));
         }
         if (isRightSwipe) {
+            setSlideDirection('backward');
             setCurrentSlide(prev => Math.max(prev - 1, 0));
         }
     }, [touchStart, touchEnd, slides.length, minSwipeDistance]);
@@ -253,7 +259,7 @@ export const PresentationMode = ({ editor, onClose, isFullscreen, setIsFullscree
     if (isLoading) {
         return (
             <div className="fixed inset-0 color-bg-secondary flex flex-col items-center justify-center w-screen h-screen">
-                <div className="flex flex-col items-center gap-4 translate-y-[-10vh]">
+                <div className="flex flex-col items-center gap-4 translate-y-[-5vh]">
                     <AnimatedLoader text="Building slides..." />
                 </div>
             </div>
@@ -346,24 +352,33 @@ export const PresentationMode = ({ editor, onClose, isFullscreen, setIsFullscree
                         transformOrigin: "center"
                     }}>
                         <EditingProvider isPreviewMode={true}>
-                            <AnimatePresence mode="wait">
-                                <motion.div
-                                    key={currentSlide}
-                                    initial={{ opacity: 0, x: 50 }}
-                                    animate={{ opacity: 1, x: 0 }}
-                                    exit={{ opacity: 0, x: -50 }}
-                                    transition={{ duration: 0.2 }}
-                                >
-                                    <SlideContent
-                                        content={slides[currentSlide]}
-                                        editor={presentationEditor}
-                                        onTouchStart={onTouchStart}
-                                        onTouchMove={onTouchMove}
-                                        onTouchEnd={onTouchEnd}
-                                        isFullscreen={isFullscreen}
-                                    />
-                                </motion.div>
-                            </AnimatePresence>
+                            {isFullscreen ? (
+                                <AnimatePresence mode="wait">
+                                    <motion.div
+                                        key={currentSlide}
+                                        initial={{ opacity: 0, x: slideDirection === 'forward' ? 50 : -50 }}
+                                        animate={{ opacity: 1, x: 0 }}
+                                        exit={{ opacity: 0, x: slideDirection === 'forward' ? -50 : 50 }}
+                                        transition={{ duration: 0.2 }}
+                                    >
+                                        <SlideContent
+                                            content={slides[currentSlide]}
+                                            editor={presentationEditor}
+                                            onTouchStart={onTouchStart}
+                                            onTouchMove={onTouchMove}
+                                            onTouchEnd={onTouchEnd}
+                                            isFullscreen={isFullscreen}
+                                        />
+                                    </motion.div>
+                                </AnimatePresence>
+                            ) : <SlideContent
+                                content={slides[currentSlide]}
+                                editor={presentationEditor}
+                                onTouchStart={onTouchStart}
+                                onTouchMove={onTouchMove}
+                                onTouchEnd={onTouchEnd}
+                                isFullscreen={isFullscreen}
+                            />}
                         </EditingProvider>
                     </div>
                 </div>
