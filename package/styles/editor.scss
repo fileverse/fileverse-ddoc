@@ -494,3 +494,9 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
 .img-placeholder {
   @apply py-2 px-4 animate-pulse bg-black text-white text-sm font-medium rounded text-center w-fit mx-auto z-[999] relative -translate-y-1;
 }
+
+.custom-ios-padding {
+  @supports (-webkit-touch-callout: none) {
+    margin-top: max(env(safe-area-inset-top), 24px);
+  }
+}
