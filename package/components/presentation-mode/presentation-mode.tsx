@@ -9,12 +9,14 @@ import { PreviewPanel } from './preview-panel';
 import { cn } from '@fileverse/ui';
 import platform from 'platform';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useMediaQuery } from 'usehooks-ts';
 
 interface PresentationModeProps {
     editor: Editor;
     onClose: () => void;
     isFullscreen: boolean;
     setIsFullscreen: (isFullscreen: boolean) => void;
+    onError?: (error: string) => void;
 }
 
 const checkOs = () => platform.os?.family;
@@ -54,12 +56,17 @@ const SlideContent = ({
     );
 };
 
-export const PresentationMode = ({ editor, onClose, isFullscreen, setIsFullscreen }: PresentationModeProps) => {
+export const PresentationMode = ({ editor, onClose, isFullscreen, setIsFullscreen, onError }: PresentationModeProps) => {
     const [slides, setSlides] = useState<string[]>([]);
     const [currentSlide, setCurrentSlide] = useState(0);
     const [previewEditors, setPreviewEditors] = useState<{ [key: number]: Editor }>({});
     const [isLoading, setIsLoading] = useState(true);
-    const isIOS = checkOs() === 'iOS';
+    const isMobile = useMediaQuery('(max-width: 640px)');
+    const isNativeMobile =
+        checkOs() === 'iOS' ||
+        checkOs() === 'Android' ||
+        checkOs() === 'Windows Phone' ||
+        isMobile;
     const [touchStart, setTouchStart] = useState<number | null>(null);
     const [touchEnd, setTouchEnd] = useState<number | null>(null);
     const minSwipeDistance = 50;
@@ -70,8 +77,18 @@ export const PresentationMode = ({ editor, onClose, isFullscreen, setIsFullscree
         editable: false,
     }, []);
 
-    // Convert content to slides using HTML
+    // Add check for empty editor
     useEffect(() => {
+        const editorElement = editor.view.dom;
+        const isEditorEmpty = editorElement.querySelector('.is-editor-empty');
+
+        if (isEditorEmpty) {
+            onClose();
+            // You'll need to pass an onError prop to show the toast
+            onError?.("Cannot enter presentation mode with empty content");
+            return;
+        }
+
         setIsLoading(true);
         const markdown = convertToMarkdown(editor);
 
@@ -166,7 +183,7 @@ export const PresentationMode = ({ editor, onClose, isFullscreen, setIsFullscree
 
     // Add this function to handle fullscreen mode
     const toggleFullscreen = useCallback(() => {
-        if (isIOS) {
+        if (isNativeMobile) {
             // For iOS, just toggle the state without using native fullscreen
             // @ts-ignore
             setIsFullscreen(prev => !prev);
@@ -187,7 +204,7 @@ export const PresentationMode = ({ editor, onClose, isFullscreen, setIsFullscree
                 });
             }
         }
-    }, [isIOS]);
+    }, [isNativeMobile]);
 
     const handleKeyDown = useCallback((e: KeyboardEvent) => {
         if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === 'Space') {
@@ -219,7 +236,7 @@ export const PresentationMode = ({ editor, onClose, isFullscreen, setIsFullscree
     // Update the fullscreen change event listener
     useEffect(() => {
         const handleFullscreenChange = () => {
-            if (!isIOS && !document.fullscreenElement) {
+            if (!isNativeMobile && !document.fullscreenElement) {
                 setIsFullscreen(false);
             }
         };
@@ -228,7 +245,7 @@ export const PresentationMode = ({ editor, onClose, isFullscreen, setIsFullscree
         return () => {
             document.removeEventListener('fullscreenchange', handleFullscreenChange);
         };
-    }, [isIOS]);
+    }, [isNativeMobile]);
 
     const onTouchStart = (e: React.TouchEvent) => {
         setTouchEnd(null);
@@ -258,7 +275,7 @@ export const PresentationMode = ({ editor, onClose, isFullscreen, setIsFullscree
 
     if (isLoading) {
         return (
-            <div className="fixed inset-0 color-bg-secondary flex flex-col items-center justify-center w-screen h-screen">
+            <div className="fixed inset-0 color-bg-default flex flex-col items-center justify-center w-screen h-screen">
                 <div className="flex flex-col items-center gap-4 translate-y-[-5vh]">
                     <AnimatedLoader text="Building slides..." />
                 </div>
@@ -271,7 +288,7 @@ export const PresentationMode = ({ editor, onClose, isFullscreen, setIsFullscree
     return (
         <div className={cn(
             "fixed inset-0 color-bg-secondary flex",
-            isIOS ? "flex-col" : "flex-col xl:flex-row",
+            isNativeMobile ? "flex-col" : "flex-col xl:flex-row",
             "items-center justify-center w-screen h-screen"
         )}>
             {!isFullscreen && (
@@ -393,9 +410,9 @@ export const PresentationMode = ({ editor, onClose, isFullscreen, setIsFullscree
                     </div>
                 )}
 
-                {isFullscreen && isIOS && (
+                {isFullscreen && isNativeMobile && (
                     <>
-                        <div className="fixed top-4 right-4 z-50">
+                        <div className="fixed top-2 right-4 z-50">
                             <IconButton
                                 variant="ghost"
                                 onClick={toggleFullscreen}

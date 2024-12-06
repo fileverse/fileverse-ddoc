@@ -286,7 +286,7 @@ const DdocEditor = forwardRef(
         className={cn(
           'w-full h-screen overflow-y-auto no-scrollbar',
           zoomLevel === '2' ? 'overflow-x-auto' : 'overflow-x-hidden',
-          isFullscreen ? 'bg-white' : 'bg-[#f8f9fa]',
+          !isPresentationMode ? 'bg-[#f8f9fa]' : 'bg-[#ffffff]',
         )}
       >
         <nav
@@ -329,6 +329,7 @@ const DdocEditor = forwardRef(
                 onClose={() => setIsPresentationMode?.(false)}
                 isFullscreen={isFullscreen}
                 setIsFullscreen={setIsFullscreen}
+                onError={onError}
               />
             )}
           </div>
@@ -510,6 +511,7 @@ const DdocEditor = forwardRef(
                 onClose={() => setIsPresentationMode?.(false)}
                 isFullscreen={isFullscreen}
                 setIsFullscreen={setIsFullscreen}
+                onError={onError}
               />
             )}
           </div>
