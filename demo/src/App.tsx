@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import DdocEditor from '../../package/ddoc-editor';
 import { JSONContent } from '@tiptap/react';
 import {
@@ -11,6 +11,9 @@ import {
   TagType,
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
+import { createDdoc, getDdocById, updateDdocById } from './db/db';
+import { useNavigate } from 'react-router-dom'
+import shortUUID from 'short-uuid';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -34,10 +37,15 @@ function App() {
     highlightedTextContent: '',
     handleClick: false,
   });
+
+  const router = useNavigate()
   
   const [zoomLevel, setZoomLevel] = useState<string>('1');
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const isPreviewMode = false;
+  const ddocId = useMemo(() => {
+    return window.location.pathname.split('/')[1];
+  }, [window.location])
 
   const collaborationId = window.location.pathname.split('/')[2]; // example url - /doc/1234, that why's used second element of array
 
@@ -112,12 +120,51 @@ function App() {
     );
   };
 
+  const [initialContent, setInitialContent] = useState<JSONContent>()
+
+
+  const initialiseData = async () => {
+
+    if(!ddocId) return
+
+    const ddoc = await getDdocById(ddocId)
+
+    if(!ddoc) return
+    setInitialContent(ddoc.content)
+  }
+
+
+  useEffect(() => {
+    if(!ddocId){
+      router(`/${shortUUID.generate()}`)
+    } else {
+      initialiseData()
+    }
+
+  }, [ddocId])
+
+  const onChange = async (content: JSONContent) => {
+    if(!ddocId) return
+    const ddoc = await getDdocById(ddocId)
+    if(ddoc){
+      await updateDdocById(ddocId, {content})
+    }else {
+      await createDdoc({content, createAt: Date.now(), ddocId})
+    }
+  }
+
+  const [characterCount, setCharacterCount] = useState<number>(0);
+  const [wordCount, setWordCount] = useState<number>(0);
+
   return (
     <div>
       <DdocEditor
+      setCharacterCount={setCharacterCount}
+      setWordCount={setWordCount}
         enableCollaboration={enableCollaboration}
         collaborationId={collaborationId}
         username={username}
+        initialContent={initialContent}
         isPreviewMode={isPreviewMode}
         onError={(error) => {
           toast({
@@ -141,7 +188,22 @@ function App() {
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
+        onChange={onChange}
       />
+          <div className="w-full h-6 bg-[#F8F9FA] border border-t-[#E8EBEC] absolute text-[#77818A] text-[12px] leading-[16px] right-0 bottom-0 flex justify-end xl:!justify-between items-start py-1 px-3 md:!px-6">
+      <div className="hidden xl:flex gap-4">
+        <p>P2P. Decentralised. Encrypted.</p>
+      </div>
+      <div className="flex gap-4">
+        <div className="flex gap-1 justify-start items-center">
+          <p>Characters:</p>
+          <div>{characterCount}</div>
+        </div>
+        <div className="flex gap-1 justify-start items-center">
+          <p>Words:</p> <div>{wordCount}</div>
+        </div>
+      </div>
+    </div>
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}
         duration={3000}
