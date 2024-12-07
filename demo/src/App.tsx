@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import DdocEditor from '../../package/ddoc-editor';
 import { JSONContent } from '@tiptap/react';
 import {
@@ -43,9 +43,7 @@ function App() {
   const [zoomLevel, setZoomLevel] = useState<string>('1');
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const isPreviewMode = false;
-  const ddocId = useMemo(() => {
-    return window.location.pathname.split('/')[1];
-  }, [window.location])
+  const ddocId = window.location.pathname.split('/')[1];
 
   const collaborationId = window.location.pathname.split('/')[2]; // example url - /doc/1234, that why's used second element of array
 
@@ -141,6 +139,7 @@ function App() {
       initialiseData()
     }
 
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ddocId])
 
   const onChange = async (content: JSONContent) => {
