@@ -291,8 +291,8 @@ export const PresentationMode = ({
 
   if (isLoading) {
     return (
-      <div className="fixed inset-0 color-bg-default flex flex-col items-center justify-center w-screen h-screen">
-        <div className="flex flex-col items-center gap-4 translate-y-[-5vh]">
+      <div className="fixed inset-0 color-bg-default flex flex-col items-center justify-center w-screen h-screen z-50">
+        <div className="flex flex-col items-center gap-4">
           <AnimatedLoader text="Building slides..." />
         </div>
       </div>
@@ -304,7 +304,7 @@ export const PresentationMode = ({
   return (
     <div
       className={cn(
-        'fixed inset-0 color-bg-secondary flex',
+        'fixed inset-0 color-bg-secondary flex z-50',
         isNativeMobile ? 'flex-col' : 'flex-col xl:flex-row',
         'items-center justify-center w-screen h-screen',
       )}
@@ -327,7 +327,7 @@ export const PresentationMode = ({
         )}
       >
         {!isFullscreen && (
-          <div className="absolute top-0 xl:top-[-3.3rem] px-4 py-2 border-b color-border-default right-0 flex gap-2 bg-white w-full justify-between">
+          <div className="absolute top-0 px-4 py-2 border-b color-border-default right-0 flex gap-2 bg-white w-full justify-between z-50">
             <div className="flex items-center gap-2">
               <IconButton
                 variant="ghost"
@@ -344,14 +344,14 @@ export const PresentationMode = ({
                 <IconButton
                   variant="ghost"
                   onClick={() => handlePrint(slides)}
-                  icon="Download"
+                  icon="FilePdf"
                   size="md"
                 />
               </Tooltip>
               <Tooltip text="Comments" sideOffset={10}>
                 <IconButton
                   variant="ghost"
-                  onClick={() => {}}
+                  onClick={() => { }}
                   icon="MessageSquareText"
                   size="md"
                 />
@@ -359,7 +359,7 @@ export const PresentationMode = ({
               <Tooltip text="Share" sideOffset={10}>
                 <IconButton
                   variant="ghost"
-                  onClick={() => {}}
+                  onClick={() => { }}
                   icon="Link"
                   size="md"
                 />
@@ -434,7 +434,7 @@ export const PresentationMode = ({
         </div>
 
         {isFullscreen && (
-          <div className="absolute bottom-[8vh] left-[40%] translate-x-[25%] z-50 opacity-0 transition-opacity duration-300 ease-in-out hover:opacity-100">
+          <div className="absolute bottom-8 left-[50%] translate-x-[-50%] z-50 opacity-0 transition-opacity duration-300 ease-in-out hover:opacity-100">
             <div className="bg-black/80 rounded-full px-4 py-2">
               <p className="text-white text-helper-text-sm">
                 Press <strong>ESC</strong> to exit fullscreen

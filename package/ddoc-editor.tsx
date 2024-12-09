@@ -286,16 +286,16 @@ const DdocEditor = forwardRef(
                 secureImageUploadUrl={secureImageUploadUrl}
               />
             </div>
-            {isPresentationMode && (
-              <PresentationMode
-                editor={editor}
-                onClose={() => setIsPresentationMode?.(false)}
-                isFullscreen={isFullscreen}
-                setIsFullscreen={setIsFullscreen}
-                onError={onError}
-              />
-            )}
           </div>
+        )}
+        {isPresentationMode && (
+          <PresentationMode
+            editor={editor}
+            onClose={() => setIsPresentationMode?.(false)}
+            isFullscreen={isFullscreen}
+            setIsFullscreen={setIsFullscreen}
+            onError={onError}
+          />
         )}
         <div
           className={cn(
@@ -468,15 +468,6 @@ const DdocEditor = forwardRef(
               setIsNavbarVisible={setIsNavbarVisible}
               secureImageUploadUrl={secureImageUploadUrl}
             />
-            {isPresentationMode && (
-              <PresentationMode
-                editor={editor}
-                onClose={() => setIsPresentationMode?.(false)}
-                isFullscreen={isFullscreen}
-                setIsFullscreen={setIsFullscreen}
-                onError={onError}
-              />
-            )}
           </div>
         )}
       </div>

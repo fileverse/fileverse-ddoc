@@ -79,7 +79,7 @@ export const PreviewPanel = ({
         'bg-white flex gap-4 py-4 px-6 color-border-default-hover relative',
         isMobile
           ? 'flex-row overflow-x-auto border-t min-h-[12rem] order-2 w-full pt-10 xl:pt-0'
-          : 'w-64 h-full overflow-y-auto flex-col pb-20 border-r',
+          : 'w-64 h-full overflow-y-auto flex-col py-20 border-r',
         isNativeMobile && 'min-h-[20rem]',
       )}
     >
@@ -105,7 +105,7 @@ export const PreviewPanel = ({
               className={cn(
                 'text-body-sm color-text-default h-full w-6 pr-1 text-center',
                 currentSlide === index &&
-                  'bg-[#FFDF0A] border-[#FFDF0A] border',
+                'bg-[#FFDF0A] border-[#FFDF0A] border',
               )}
             >
               {index + 1}
