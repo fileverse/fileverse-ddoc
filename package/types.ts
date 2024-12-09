@@ -1,7 +1,6 @@
 import { TagType } from '@fileverse/ui';
 import { JSONContent } from '@tiptap/core';
 import { EditorProps } from '@tiptap/pm/view';
-import { Editor } from '@tiptap/react';
 import React, { SetStateAction } from 'react';
 
 export const DdocEditorProps: EditorProps = {
@@ -48,17 +47,12 @@ export interface DdocProps {
   renderNavbar?: ({ editor }: { editor: JSONContent }) => JSX.Element;
   onChange?: (changes: Data['editorJSONData']) => void;
   onCollaboratorChange?: (collaborators: undefined | IDocCollabUsers[]) => void;
-  onTextSelection?: (data: IEditorSelectionData) => void;
-  onCommentInteraction?: (data: IEditorSelectionData) => void;
-  handleCommentButtonClick?: (e: Editor) => void;
-  showCommentButton?: boolean;
   disableBottomToolbar?: boolean;
   onError?: (error: string) => void;
   setCharacterCount?: React.Dispatch<SetStateAction<number>>;
   setWordCount?: React.Dispatch<SetStateAction<number>>;
   tags?: Array<{ name: string; color: string }>;
   className?: string;
-  scrollPosition?: number;
   unFocused?: boolean;
 }
 
