@@ -17,7 +17,7 @@ import {
   useState,
 } from 'react';
 import cn from 'classnames';
-import { Button, LucideIcon, Tag, TagType, TagInput } from '@fileverse/ui';
+import { Button, Tag, TagType, TagInput } from '@fileverse/ui';
 import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
 import { AnimatePresence, motion } from 'framer-motion';
 
@@ -38,10 +38,6 @@ const DdocEditor = forwardRef(
       walletAddress,
       onChange,
       onCollaboratorChange,
-      onTextSelection,
-      onCommentInteraction,
-      handleCommentButtonClick,
-      showCommentButton,
       ensResolutionUrl,
       secureImageUploadUrl,
       disableBottomToolbar,
@@ -63,7 +59,6 @@ const DdocEditor = forwardRef(
     ref,
   ) => {
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
-    const btn_ref = useRef(null);
     const isMobile = useMediaQuery('(max-width: 640px)');
     const isWidth1500px = useMediaQuery('(min-width: 1500px)');
     const isWidth3000px = useMediaQuery('(min-width: 3000px)');
@@ -106,8 +101,6 @@ const DdocEditor = forwardRef(
       username,
       onChange,
       onCollaboratorChange,
-      onCommentInteraction,
-      onTextSelection,
       ensResolutionUrl,
       onError,
       setCharacterCount,
@@ -458,20 +451,6 @@ const DdocEditor = forwardRef(
               />
             </EditingProvider>
           </div>
-          {showCommentButton && !isNativeMobile && (
-            <Button
-              ref={btn_ref}
-              onClick={() => {
-                handleCommentButtonClick?.(editor);
-              }}
-              variant="ghost"
-              className={cn(
-                'absolute w-12 h-12 bg-white rounded-full shadow-xl top-[70px] right-[-23px]',
-              )}
-            >
-              <LucideIcon name="MessageSquareText" size="sm" />
-            </Button>
-          )}
         </div>
         {!isPreviewMode && !disableBottomToolbar && (
           <div
