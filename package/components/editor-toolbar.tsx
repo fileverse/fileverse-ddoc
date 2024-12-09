@@ -200,7 +200,7 @@ const TiptapToolBar = ({
           key="zoom-levels"
           anchorTrigger={
             <button
-              className="bg-transparent hover:bg-gray-200 rounded py-2 px-4 flex items-center gap-2"
+              className="bg-transparent hover:!bg-[#F2F4F5] rounded py-2 px-4 flex items-center gap-2"
               onClick={() => {}}
             >
               <span className="text-body-sm">
@@ -210,11 +210,11 @@ const TiptapToolBar = ({
             </button>
           }
           content={
-            <div className="zoom-level-options w-[110px] text-body-sm">
+            <div className="zoom-level-options w-[110px] text-body-sm scroll-smooth bg-white px-1 py-2 shadow-elevation-1 transition-all rounded">
               {zoomLevels.map((zoom) => (
                 <button
                   key={zoom.title}
-                  className="hover:bg-gray-200 rounded py-1 px-2 w-full text-left"
+                  className="hover:bg-[#f2f2f2] rounded py-1 px-2 w-full text-left flex items-center space-x-2 text-sm text-black transition"
                   onClick={() => {
                     setZoomLevel(zoom.value);
                   }}
