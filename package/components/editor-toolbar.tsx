@@ -149,6 +149,7 @@ const TiptapToolBar = ({
       <div className="flex h-9 items-center gap-1 justify-center">
       <DynamicDropdown
           key="zoom-levels"
+          align='start'
           anchorTrigger={
             <button
               className="bg-transparent hover:!bg-[#F2F4F5] rounded py-2 px-4 flex items-center gap-2"
