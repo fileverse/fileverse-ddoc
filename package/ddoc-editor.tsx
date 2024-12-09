@@ -57,10 +57,11 @@ const DdocEditor = forwardRef(
       inlineCommentData,
       zoomLevel,
       setZoomLevel,
+      isNavbarVisible,
+      setIsNavbarVisible,
     }: DdocProps,
     ref,
   ) => {
-    const [isNavbarVisible, setIsNavbarVisible] = useState(true);
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const btn_ref = useRef(null);
     const isMobile = useMediaQuery('(max-width: 640px)');
@@ -118,6 +119,8 @@ const DdocEditor = forwardRef(
       inlineCommentData,
       zoomLevel,
       setZoomLevel,
+      isNavbarVisible,
+      setIsNavbarVisible,
     });
 
     useImperativeHandle(
@@ -207,43 +210,6 @@ const DdocEditor = forwardRef(
       };
     }, [editor]);
 
-    const [hasEditorContent, setHasEditorContent] = useState(false);
-
-    useEffect(() => {
-      if (editorRef.current) {
-        const checkEditorEmpty = () => {
-          const editorEmpty =
-            editorRef.current?.querySelector('.is-editor-empty');
-          setHasEditorContent(!editorEmpty);
-        };
-
-        checkEditorEmpty();
-
-        const observer = new MutationObserver(() => {
-          checkEditorEmpty();
-        });
-
-        observer.observe(editorRef.current, {
-          childList: true,
-          subtree: true,
-          attributes: true,
-        });
-
-        return () => observer.disconnect();
-      }
-    }, []);
-
-    useEffect(() => {
-      const intervalId = setInterval(() => {
-        if (editorRef.current) {
-          const editorEmpty =
-            editorRef.current.querySelector('.is-editor-empty');
-          setHasEditorContent(!editorEmpty);
-        }
-      }, 1000);
-      return () => clearInterval(intervalId);
-    }, []);
-
     // Push the editor to the top when the keyboard is visible
     useEffect(() => {
       if (!isNativeMobile || !editor) return;
@@ -298,7 +264,7 @@ const DdocEditor = forwardRef(
               'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 px-1 bg-[#ffffff] border-b color-border-default transition-transform duration-300 top-[3.3rem]',
               {
                 'translate-y-0': isNavbarVisible,
-                'translate-y-[-105%]': !isNavbarVisible,
+                'translate-y-[-108%]': !isNavbarVisible,
               },
             )}
           >
@@ -364,7 +330,7 @@ const DdocEditor = forwardRef(
             ref={editorRef}
             className={cn(
               'w-full h-full pt-8 md:pt-0',
-              { '!mt-24': isIOS && hasEditorContent },
+              { 'custom-ios-padding': isIOS },
               { 'bg-white': zoomLevel === '1.4' || '1.5' },
             )}
             style={{
