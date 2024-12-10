@@ -205,8 +205,8 @@ const TiptapToolBar = ({
               ))}
             </div>
           }
-        /> */}
-        <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
+        /> 
+        <div className="w-[2px] h-4 bg-gray-200 mx-2"></div> */}
         <DynamicDropdown
           key={IEditorTool.FONT_FAMILY}
           anchorTrigger={
