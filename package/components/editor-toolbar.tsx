@@ -17,6 +17,7 @@ import {
   LucideIcon,
   IconButton,
   DynamicDropdown,
+  DynamicDropdownV2,
   ButtonGroup,
   Button,
   LucideIconProps,
@@ -64,7 +65,7 @@ const TiptapToolBar = ({
     { title: '150%', value: '1.5' },
     { title: '200%', value: '2' },
   ];
-
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const handleExport = () => {
     if (editor) {
       const generateDownloadUrl = editor.commands.exportMarkdownFile();
@@ -147,37 +148,6 @@ const TiptapToolBar = ({
   return (
     <div className="w-full bg-transparent py-2 px-4 items-center h-9 flex justify-between relative">
       <div className="flex h-9 items-center gap-1 justify-center">
-      <DynamicDropdown
-          key="zoom-levels"
-          align='start'
-          anchorTrigger={
-            <button
-              className="bg-transparent hover:!bg-[#F2F4F5] rounded py-2 px-4 flex items-center gap-2"
-              onClick={() => {}}
-            >
-              <span className="text-body-sm">
-                {zoomLevels.find((z) => z.value === zoomLevel)?.title || '100%'}
-              </span>
-              <LucideIcon name="ChevronDown" size="sm" />
-            </button>
-          }
-          content={
-            <div className="zoom-level-options w-[110px] text-body-sm scroll-smooth bg-white px-1 py-2 shadow-elevation-1 transition-all rounded">
-              {zoomLevels.map((zoom) => (
-                <button
-                  key={zoom.title}
-                  className="hover:bg-[#f2f2f2] rounded py-1 px-2 w-full text-left flex items-center space-x-2 text-sm text-black transition"
-                  onClick={() => {
-                    setZoomLevel(zoom.value);
-                  }}
-                >
-                  {zoom.title}
-                </button>
-              ))}
-            </div>
-          }
-        />
-        <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
         <div className="flex gap-1 justify-center items-center">
           {undoRedoTools.map((tool, _index) => {
             if (tool) {
@@ -203,6 +173,41 @@ const TiptapToolBar = ({
             }
           })}
         </div>
+        <DynamicDropdownV2
+          key="zoom-levels"
+          align='start'
+          controlled={true}
+          isOpen={dropdownOpen}
+          onClose={() => setDropdownOpen(false)}
+          anchorTrigger={
+            <button
+              className="bg-transparent hover:!bg-[#F2F4F5] rounded py-2 px-4 flex items-center gap-2"
+              onClick={() => setDropdownOpen((prev) => !prev)}
+            >
+              <span className="text-body-sm">
+                {zoomLevels.find((z) => z.value === zoomLevel)?.title || '100%'}
+              </span>
+              <LucideIcon name="ChevronDown" size="sm" />
+            </button>
+          }
+          content={
+            <div className="zoom-level-options w-[110px] text-body-sm scroll-smooth bg-white px-1 py-2 shadow-elevation-1 transition-all rounded">
+              {zoomLevels.map((zoom) => (
+                <button
+                  key={zoom.title}
+                  className="hover:bg-[#f2f2f2] rounded py-1 px-2 w-full text-left flex items-center space-x-2 text-sm text-black transition"
+                  onClick={() => {
+                    setZoomLevel(zoom.value);
+                    setDropdownOpen(false);
+                  }}
+                >
+                  {zoom.title}
+                </button>
+              ))}
+            </div>
+          }
+        />
+        <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
         <DynamicDropdown
           key={IEditorTool.FONT_FAMILY}
           anchorTrigger={

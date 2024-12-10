@@ -38,6 +38,23 @@ body {
   scrollbar-width: none !important; /* Firefox */
 }
 
+.scroll-container::-webkit-scrollbar {
+  width: 0; 
+}
+
+.scroll-container::-webkit-scrollbar:horizontal {
+  height: 10px; 
+}
+
+.scroll-container::-webkit-scrollbar-track:horizontal {
+  background: #f1f1f1;
+}
+
+.scroll-container::-webkit-scrollbar-thumb:horizontal {
+  background: #00000040;
+  border-radius: 10px;
+}
+
 li > ol {
   counter-reset: list;
   margin: 0;
