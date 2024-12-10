@@ -17,7 +17,6 @@ import {
   LucideIcon,
   IconButton,
   DynamicDropdown,
-  DynamicDropdownV2,
   ButtonGroup,
   Button,
   LucideIconProps,
@@ -29,8 +28,8 @@ import ToolbarButton from '../common/toolbar-button';
 const TiptapToolBar = ({
   editor,
   onError,
-  zoomLevel,
-  setZoomLevel,
+  // zoomLevel,
+  // setZoomLevel,
   isNavbarVisible,
   setIsNavbarVisible,
   secureImageUploadUrl,
@@ -57,15 +56,15 @@ const TiptapToolBar = ({
     secureImageUploadUrl,
   });
   const [filename, setFilename] = useState('exported_document.md');
-  const zoomLevels = [
-    { title: 'Fit', value: '1.4' },
-    { title: '50%', value: '0.5' },
-    { title: '75%', value: '0.75' },
-    { title: '100%', value: '1' },
-    { title: '150%', value: '1.5' },
-    { title: '200%', value: '2' },
-  ];
-  const [dropdownOpen, setDropdownOpen] = useState(false);
+  // const zoomLevels = [
+  //   { title: 'Fit', value: '1.4' },
+  //   { title: '50%', value: '0.5' },
+  //   { title: '75%', value: '0.75' },
+  //   { title: '100%', value: '1' },
+  //   { title: '150%', value: '1.5' },
+  //   { title: '200%', value: '2' },
+  // ];
+  // const [dropdownOpen, setDropdownOpen] = useState(false);
   const handleExport = () => {
     if (editor) {
       const generateDownloadUrl = editor.commands.exportMarkdownFile();
@@ -173,7 +172,7 @@ const TiptapToolBar = ({
             }
           })}
         </div>
-        <DynamicDropdownV2
+        {/* <DynamicDropdownV2
           key="zoom-levels"
           align='start'
           controlled={true}
@@ -206,8 +205,8 @@ const TiptapToolBar = ({
               ))}
             </div>
           }
-        />
-        <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
+        /> 
+        <div className="w-[2px] h-4 bg-gray-200 mx-2"></div> */}
         <DynamicDropdown
           key={IEditorTool.FONT_FAMILY}
           anchorTrigger={
