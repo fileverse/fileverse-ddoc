@@ -18,6 +18,7 @@ import ToolbarButton from '../common/toolbar-button';
 import { DynamicDropdown, cn } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 import platform from 'platform';
+import tippy from 'tippy.js';
 
 export interface BubbleMenuItem {
   name: string;
@@ -81,7 +82,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Link',
       isActive: () => props.editor.isActive('link'),
-      command: () => {},
+      command: () => { },
       icon: 'Link',
     },
     {
@@ -93,7 +94,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'InlineComment',
       isActive: () => props.editor.isActive('inlineComment'),
-      command: () => {},
+      command: () => { },
       icon: 'MessageSquarePlus',
     },
   ];
@@ -110,10 +111,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       const { selection } = state;
       const { empty } = selection;
 
-      // don't show bubble menu if:
-      // - the selected node is an image
-      // - the selection is empty
-      // - the selection is a node selection (for drag handles)
       if (editor.isActive('image') || empty || isNodeSelection(selection)) {
         return false;
       }
@@ -123,9 +120,51 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       moveTransition: 'transform 0.15s ease-out',
       duration: 200,
       animation: 'shift-toward-subtle',
-      zIndex: 50,
-      offset: [0, isNativeMobile ? 60 : 0],
+      zIndex: 20,
+      appendTo: () => document.body,
+      popperOptions: {
+        modifiers: [
+          {
+            name: 'computeStyles',
+            options: {
+              gpuAcceleration: false,
+              adaptive: true,
+            },
+          },
+          {
+            name: 'offset',
+            options: {
+              offset: () => {
+                const zoomLevel = parseFloat(props.zoomLevel);
+                const baseOffset = isNativeMobile ? 60 : 8;
+
+                return [0, -baseOffset * zoomLevel];
+              },
+            },
+          },
+          {
+            name: 'preventOverflow',
+            options: {
+              boundary: 'viewport',
+              padding: 20,
+              altAxis: true,
+            },
+          },
+        ],
+      },
     },
+  };
+
+  const initializeTippy = (element: HTMLElement, clientRect: DOMRect) => {
+    tippy(element, {
+      getReferenceClientRect: () => clientRect,
+      appendTo: () => document.body,
+      interactive: true,
+      trigger: 'manual',
+      placement: 'bottom-start',
+      content: element,
+      showOnCreate: true,
+    });
   };
 
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
@@ -240,10 +279,17 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       className={cn(
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border bg-white items-center shadow-elevation-3',
         isInlineCommentOpen ? '!invisible' : '!visible',
-        {
-          'ml-[100%] mt-[60%]': props.zoomLevel === '0.5',
-        },
       )}
+      style={{
+        transform: `scale(${1 / parseFloat(props.zoomLevel)})`,
+        transformOrigin: 'center',
+      }}
+      ref={(element) => {
+        if (element) {
+          const clientRect = element.getBoundingClientRect();
+          initializeTippy(element, clientRect);
+        }
+      }}
     >
       {isMobile || props.isPreviewMode ? (
         <div
