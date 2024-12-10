@@ -241,8 +241,8 @@ const DdocEditor = forwardRef(
     return (
       <div
         data-cy="single-webpage"
-        className={`bg-[#f8f9fa] w-full h-screen overflow-y-auto no-scrollbar ${
-          zoomLevel === '2' ? 'overflow-x-auto' : 'overflow-x-hidden'
+        className={`bg-[#f8f9fa] w-full h-screen overflow-y-auto ${
+          zoomLevel === '2' ? 'overflow-x-auto scroll-container' : 'overflow-x-hidden no-scrollbar'
         }`}
       >
         <nav
