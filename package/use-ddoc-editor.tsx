@@ -164,7 +164,7 @@ export const useDdocEditor = ({
     [extensions],
   );
 
-  const collaborationCleanupRef = useRef<() => void>(() => {});
+  const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
@@ -221,7 +221,7 @@ export const useDdocEditor = ({
       initialContentSetRef.current = true;
     }
 
-    setTimeout(() => {
+    const scrollTimeoutId = setTimeout(() => {
       if (ref.current && !!scrollPosition && editor) {
         const coords = editor.view.coordsAtPos(scrollPosition);
         const editorContainer = ref.current;
@@ -235,6 +235,10 @@ export const useDdocEditor = ({
         setIsContentLoading(false);
       }
     });
+
+    return () => {
+      clearTimeout(scrollTimeoutId);
+    };
   }, [initialContent, editor]);
 
   const startCollaboration = async () => {
@@ -275,6 +279,14 @@ export const useDdocEditor = ({
     editor?.storage.characterCount.characters(),
     editor?.storage.characterCount.words(),
   ]);
+
+  useEffect(() => {
+    return () => {
+      if (editor) {
+        editor.destroy();
+      }
+    };
+  }, [editor]);
 
   return {
     editor,
