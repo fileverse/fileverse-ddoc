@@ -62,6 +62,7 @@ const DdocEditor = forwardRef(
       setIsPresentationMode,
       isNavbarVisible,
       setIsNavbarVisible,
+      sharedSlidesLink,
     }: DdocProps,
     ref,
   ) => {
@@ -295,6 +296,9 @@ const DdocEditor = forwardRef(
             isFullscreen={isFullscreen}
             setIsFullscreen={setIsFullscreen}
             onError={onError}
+            setIsCommentSectionOpen={setIsCommentSectionOpen}
+            sharedSlidesLink={sharedSlidesLink}
+            isPreviewMode={isPreviewMode}
           />
         )}
         <div

@@ -62,6 +62,7 @@ export interface DdocProps {
   unFocused?: boolean;
   isPresentationMode?: boolean;
   setIsPresentationMode?: React.Dispatch<SetStateAction<boolean>>;
+  sharedSlidesLink?: string;
 }
 
 export interface IEditorSelectionData {
