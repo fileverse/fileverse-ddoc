@@ -249,7 +249,7 @@ const DdocEditor = forwardRef(
       <div
         id="editor-canvas"
         className={cn(
-          '100vh bg-[#f8f9fa] w-full overflow-y-auto',
+          'h-[100vh] bg-[#f8f9fa] w-full overflow-y-auto',
           {
             'overflow-x-hidden no-scrollbar': zoomLevel !== '2',
             'overflow-x-auto scroll-container': zoomLevel === '2',
