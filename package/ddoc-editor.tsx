@@ -63,6 +63,7 @@ const DdocEditor = forwardRef(
       isNavbarVisible,
       setIsNavbarVisible,
       customHeight,
+      sharedSlidesLink,
     }: DdocProps,
     ref,
   ) => {
@@ -246,7 +247,7 @@ const DdocEditor = forwardRef(
 
     return (
       <div
-        data-cy="single-webpage"
+        id="editor-canvas"
         className={cn(
           'bg-[#f8f9fa] w-full overflow-y-auto',
           {
@@ -302,6 +303,9 @@ const DdocEditor = forwardRef(
             isFullscreen={isFullscreen}
             setIsFullscreen={setIsFullscreen}
             onError={onError}
+            setIsCommentSectionOpen={setIsCommentSectionOpen}
+            sharedSlidesLink={sharedSlidesLink}
+            isPreviewMode={isPreviewMode}
           />
         )}
         <div
