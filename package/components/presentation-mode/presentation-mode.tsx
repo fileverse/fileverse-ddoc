@@ -1,7 +1,13 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useEffect, useState, useCallback } from 'react';
 import { Editor, EditorContent, useEditor } from '@tiptap/react';
-import { AnimatedLoader, IconButton, Label, Tooltip } from '@fileverse/ui';
+import {
+  AnimatedLoader,
+  DynamicDropdownV2,
+  IconButton,
+  Label,
+  Tooltip,
+} from '@fileverse/ui';
 import { EditingProvider } from '../../hooks/use-editing-context';
 import { convertToMarkdown } from '../../utils/md-to-slides';
 import { convertMarkdownToHTML } from '@fileverse-dev/md2slides';
@@ -11,6 +17,7 @@ import { cn } from '@fileverse/ui';
 import platform from 'platform';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMediaQuery } from 'usehooks-ts';
+import copy from 'copy-to-clipboard';
 
 interface PresentationModeProps {
   editor: Editor;
@@ -18,6 +25,11 @@ interface PresentationModeProps {
   isFullscreen: boolean;
   setIsFullscreen: (isFullscreen: boolean) => void;
   onError?: (error: string) => void;
+  setIsCommentSectionOpen:
+    | React.Dispatch<React.SetStateAction<boolean>>
+    | undefined;
+  sharedSlidesLink?: string;
+  isPreviewMode: boolean;
 }
 
 const checkOs = () => platform.os?.family;
@@ -62,7 +74,11 @@ export const PresentationMode = ({
   isFullscreen,
   setIsFullscreen,
   onError,
+  setIsCommentSectionOpen,
+  sharedSlidesLink,
+  isPreviewMode,
 }: PresentationModeProps) => {
+  const [showLinkCopied, setShowLinkCopied] = useState(false);
   const [slides, setSlides] = useState<string[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [previewEditors, setPreviewEditors] = useState<{
@@ -289,6 +305,19 @@ export const PresentationMode = ({
     }
   }, [touchStart, touchEnd, slides.length, minSwipeDistance]);
 
+  const handleCopyLink = () => {
+    if (sharedSlidesLink) {
+      copy(sharedSlidesLink);
+      setShowLinkCopied(true);
+
+      const timeoutId = setTimeout(() => {
+        setShowLinkCopied(false);
+      }, 2000);
+
+      return () => clearTimeout(timeoutId);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="fixed inset-0 color-bg-default flex flex-col items-center justify-center w-screen h-screen z-50">
@@ -351,19 +380,43 @@ export const PresentationMode = ({
               <Tooltip text="Comments" sideOffset={10}>
                 <IconButton
                   variant="ghost"
-                  onClick={() => { }}
                   icon="MessageSquareText"
                   size="md"
+                  onClick={() => setIsCommentSectionOpen?.((prev) => !prev)}
                 />
               </Tooltip>
-              <Tooltip text="Share" sideOffset={10}>
-                <IconButton
-                  variant="ghost"
-                  onClick={() => { }}
-                  icon="Link"
-                  size="md"
-                />
-              </Tooltip>
+              {!isPreviewMode && (
+                <Tooltip
+                  text={
+                    sharedSlidesLink ? 'Copy to Share' : 'Link is preparing...'
+                  }
+                  sideOffset={10}
+                >
+                  <IconButton
+                    variant="ghost"
+                    icon="Link"
+                    disabled={!sharedSlidesLink}
+                    className="disabled:!bg-transparent disabled:pointer-events-none"
+                    size="md"
+                    onClick={handleCopyLink}
+                  />
+                  {showLinkCopied && (
+                    <DynamicDropdownV2
+                      key="link-copied"
+                      align="center"
+                      sideOffset={15}
+                      controlled={true}
+                      isOpen={showLinkCopied}
+                      onClose={() => setShowLinkCopied?.(false)}
+                      content={
+                        <div className="flex items-start gap-3 bg-black text-white rounded shadow-elevation-3 p-2 text-helper-text-sm">
+                          Link copied
+                        </div>
+                      }
+                    />
+                  )}
+                </Tooltip>
+              )}
               <Tooltip text="Press F to toggle fullscreen" sideOffset={10}>
                 <IconButton
                   variant="ghost"
