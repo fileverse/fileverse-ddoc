@@ -146,6 +146,18 @@ function App() {
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
+        onInlineComment={(): void => {
+          // Your inline comment logic here
+          console.log('Inline comment submitted from app!');
+        }} 
+        onMarkdownImport={(): void => {
+          // Your inline comment logic here
+          console.log('Inline comment submitted from app!');
+        }} 
+        onMarkdownExport={(): void => {
+          // Your inline comment logic here
+          console.log('Inline comment submitted from app!');
+        }} 
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

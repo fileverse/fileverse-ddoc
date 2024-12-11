@@ -348,13 +348,19 @@ export const useEditorToolbar = ({
     {
       icon: 'FileInput',
       title: 'Import Markdown',
-      onClick: () => editor?.commands.uploadMarkdownFile(),
+      onClick: () => {
+        onMarkdownImport?.(); 
+        editor?.commands.uploadMarkdownFile();
+      },
       isActive: false,
     },
     {
       icon: 'FileOutput',
       title: 'Export Markdown',
-      onClick: () => setIsExportModalOpen(true),
+      onClick: () => {
+        onMarkdownExport?.(); 
+        setIsExportModalOpen(true);
+      },
       isActive: false,
     },
   ];
@@ -755,6 +761,7 @@ export const InlineCommentPopup = ({
   setIsInlineCommentOpen,
   inlineCommentData,
   setInlineCommentData,
+  onInlineComment,
 }: {
   elementRef: React.RefObject<HTMLDivElement>;
   editor: Editor;
@@ -770,6 +777,7 @@ export const InlineCommentPopup = ({
     inlineCommentText?: string;
     handleClick?: boolean;
   }) => void;
+  onInlineComment?: () => void; 
 }) => {
   const [comment, setComment] = useState(
     inlineCommentData.inlineCommentText || '',
@@ -822,7 +830,7 @@ export const InlineCommentPopup = ({
       setInlineCommentData({ inlineCommentText: comment, handleClick: true });
       editor.chain().unsetHighlight().run();
       setIsCommentSectionOpen(true);
-
+      onInlineComment?.();
       // Reset comment field and close inline comment
       setComment('');
       setIsInlineCommentOpen(false);
@@ -846,6 +854,7 @@ export const InlineCommentPopup = ({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleClick();
+      onInlineComment?.();
     }
   };
 

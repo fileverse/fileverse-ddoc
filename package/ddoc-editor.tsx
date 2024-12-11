@@ -62,6 +62,9 @@ const DdocEditor = forwardRef(
       setIsPresentationMode,
       isNavbarVisible,
       setIsNavbarVisible,
+      onInlineComment,
+      onMarkdownExport,
+      onMarkdownImport,
     }: DdocProps,
     ref,
   ) => {
@@ -365,6 +368,9 @@ const DdocEditor = forwardRef(
                 isPreviewMode={isPreviewMode}
                 username={username as string}
                 walletAddress={walletAddress as string}
+                onInlineComment={onInlineComment}
+                onMarkdownExport={onMarkdownExport}
+                onMarkdownImport={onMarkdownImport}
               />
               <ColumnsMenu editor={editor} appendTo={editorRef} />
             </div>

@@ -37,6 +37,7 @@ type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   >;
   walletAddress?: string;
   username?: string;
+  onInlineComment?: () => void; 
 };
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
@@ -195,7 +196,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               setInlineCommentData={(data) =>
                 props.setInlineCommentData?.((prev) => ({ ...prev, ...data }))
               }
-            />
+              onInlineComment={props.onInlineComment}
+                          />
           );
         }
         return null;
