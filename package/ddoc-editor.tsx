@@ -257,7 +257,7 @@ const DdocEditor = forwardRef(
           !isPresentationMode ? 'bg-[#f8f9fa]' : 'bg-[#ffffff]',
         )}
         style={{
-          height: zoomLevel === '2' && customHeight ? `calc(100vh - ${customHeight}px)` : '100vh',
+          height: zoomLevel === '2' && customHeight ? customHeight : '100vh',
         }}
       >
         <nav
