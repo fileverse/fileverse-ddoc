@@ -153,10 +153,14 @@ export const useEditorToolbar = ({
   editor,
   onError,
   secureImageUploadUrl,
+  onMarkdownExport,
+  onMarkdownImport,
 }: {
   editor: Editor;
   onError?: (errorString: string) => void;
   secureImageUploadUrl?: string;
+  onMarkdownExport?: () => void; 
+  onMarkdownImport?: () => void; 
 }) => {
   const {
     ref: toolRef,
@@ -349,8 +353,8 @@ export const useEditorToolbar = ({
       icon: 'FileInput',
       title: 'Import Markdown',
       onClick: () => {
-        onMarkdownImport?.(); 
         editor?.commands.uploadMarkdownFile();
+        onMarkdownImport?.(); 
       },
       isActive: false,
     },
@@ -358,8 +362,8 @@ export const useEditorToolbar = ({
       icon: 'FileOutput',
       title: 'Export Markdown',
       onClick: () => {
-        onMarkdownExport?.(); 
         setIsExportModalOpen(true);
+        onMarkdownExport?.(); 
       },
       isActive: false,
     },

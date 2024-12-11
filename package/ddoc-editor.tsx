@@ -287,6 +287,8 @@ const DdocEditor = forwardRef(
                 isNavbarVisible={isNavbarVisible}
                 setIsNavbarVisible={setIsNavbarVisible}
                 secureImageUploadUrl={secureImageUploadUrl}
+                onMarkdownExport={onMarkdownExport}
+                onMarkdownImport={onMarkdownImport}
               />
             </div>
           </div>
@@ -369,8 +371,6 @@ const DdocEditor = forwardRef(
                 username={username as string}
                 walletAddress={walletAddress as string}
                 onInlineComment={onInlineComment}
-                onMarkdownExport={onMarkdownExport}
-                onMarkdownImport={onMarkdownImport}
               />
               <ColumnsMenu editor={editor} appendTo={editorRef} />
             </div>

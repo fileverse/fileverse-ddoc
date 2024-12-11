@@ -33,6 +33,8 @@ const TiptapToolBar = ({
   isNavbarVisible,
   setIsNavbarVisible,
   secureImageUploadUrl,
+  onMarkdownExport,
+  onMarkdownImport,
 }: {
   editor: Editor;
   onError?: (errorString: string) => void;
@@ -41,6 +43,8 @@ const TiptapToolBar = ({
   isNavbarVisible: boolean;
   setIsNavbarVisible: React.Dispatch<React.SetStateAction<boolean>>;
   secureImageUploadUrl?: string;
+  onMarkdownExport?: () => void; 
+  onMarkdownImport?: () => void;  
 }) => {
   const {
     toolRef,
@@ -54,6 +58,8 @@ const TiptapToolBar = ({
     editor: editor,
     onError,
     secureImageUploadUrl,
+    onMarkdownExport,
+    onMarkdownImport,
   });
   const [filename, setFilename] = useState('exported_document.md');
   // const zoomLevels = [

@@ -37,7 +37,7 @@ type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   >;
   walletAddress?: string;
   username?: string;
-  onInlineComment?: () => void; 
+  onInlineComment?: () => void;
 };
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
