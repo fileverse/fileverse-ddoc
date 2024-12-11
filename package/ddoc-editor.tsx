@@ -245,7 +245,7 @@ const DdocEditor = forwardRef(
 
     return (
       <div
-        data-cy="single-webpage"
+        id="editor-canvas"
         className={cn(
           'w-full h-screen overflow-y-auto no-scrollbar',
           zoomLevel === '2' ? 'overflow-x-auto' : 'overflow-x-hidden',

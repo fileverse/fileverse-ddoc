@@ -82,7 +82,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Link',
       isActive: () => props.editor.isActive('link'),
-      command: () => { },
+      command: () => {},
       icon: 'Link',
     },
     {
@@ -94,7 +94,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'InlineComment',
       isActive: () => props.editor.isActive('inlineComment'),
-      command: () => { },
+      command: () => {},
       icon: 'MessageSquarePlus',
     },
   ];
@@ -121,7 +121,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       duration: 200,
       animation: 'shift-toward-subtle',
       zIndex: 20,
-      appendTo: () => document.body,
+      offset: isNativeMobile ? 60 : 20,
+      appendTo: () => document.getElementById('editor-canvas'),
       popperOptions: {
         modifiers: [
           {
@@ -129,17 +130,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             options: {
               gpuAcceleration: false,
               adaptive: true,
-            },
-          },
-          {
-            name: 'offset',
-            options: {
-              offset: () => {
-                const zoomLevel = parseFloat(props.zoomLevel);
-                const baseOffset = isNativeMobile ? 60 : 8;
-
-                return [0, -baseOffset * zoomLevel];
-              },
             },
           },
           {
@@ -158,7 +148,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const initializeTippy = (element: HTMLElement, clientRect: DOMRect) => {
     tippy(element, {
       getReferenceClientRect: () => clientRect,
-      appendTo: () => document.body,
+      appendTo: () => document.getElementById('editor-canvas'),
       interactive: true,
       trigger: 'manual',
       placement: 'bottom-start',
