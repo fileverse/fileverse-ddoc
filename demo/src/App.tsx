@@ -29,12 +29,14 @@ function App() {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const [selectedTags, setSelectedTags] = useState<TagType[]>([]);
   const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(false);
+  const [isPresentationMode, setIsPresentationMode] = useState(false);
+
   const [inlineCommentData, setInlineCommentData] = useState({
     inlineCommentText: '',
     highlightedTextContent: '',
     handleClick: false,
   });
-  
+
   const [zoomLevel, setZoomLevel] = useState<string>('1');
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const isPreviewMode = false;
@@ -84,6 +86,7 @@ function App() {
           </div>
         </div>
         <div className="flex gap-2">
+          <IconButton variant={'ghost'} icon="Presentation" size="md" onClick={() => setIsPresentationMode(true)} />
           <IconButton variant={'ghost'} icon="MessageSquareText" size="md" />
           <IconButton
             variant={'ghost'}
@@ -137,6 +140,8 @@ function App() {
         setIsCommentSectionOpen={setIsCommentSectionOpen}
         setInlineCommentData={setInlineCommentData}
         inlineCommentData={inlineCommentData}
+        isPresentationMode={isPresentationMode}
+        setIsPresentationMode={setIsPresentationMode}
         zoomLevel={zoomLevel}
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}

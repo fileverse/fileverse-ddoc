@@ -61,6 +61,8 @@ export interface DdocProps {
   className?: string;
   scrollPosition?: number;
   unFocused?: boolean;
+  isPresentationMode?: boolean;
+  setIsPresentationMode?: React.Dispatch<SetStateAction<boolean>>;
 }
 
 export interface IEditorSelectionData {

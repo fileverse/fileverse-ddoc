@@ -23,6 +23,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 
 import platform from 'platform';
 import MobileToolbar from './components/mobile-toolbar';
+import { PresentationMode } from './components/presentation-mode/presentation-mode';
 
 const checkOs = () => platform.os?.family;
 
@@ -57,6 +58,8 @@ const DdocEditor = forwardRef(
       inlineCommentData,
       zoomLevel,
       setZoomLevel,
+      isPresentationMode,
+      setIsPresentationMode,
       isNavbarVisible,
       setIsNavbarVisible,
       customHeight,
@@ -64,6 +67,8 @@ const DdocEditor = forwardRef(
     ref,
   ) => {
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
     const btn_ref = useRef(null);
     const isMobile = useMediaQuery('(max-width: 640px)');
     const isWidth1500px = useMediaQuery('(min-width: 1500px)');
@@ -247,7 +252,8 @@ const DdocEditor = forwardRef(
           {
             'overflow-x-hidden no-scrollbar': zoomLevel !== '2',
             'overflow-x-auto scroll-container': zoomLevel === '2',
-          }
+          },
+          !isPresentationMode ? 'bg-[#f8f9fa]' : 'bg-[#ffffff]',
         )}
         style={{
           height: zoomLevel === '2' && customHeight ? `calc(100vh - ${customHeight}px)` : '100vh',
@@ -259,7 +265,7 @@ const DdocEditor = forwardRef(
             'h-14 bg-[#ffffff] py-2 px-4 flex gap-[40px] items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300',
             {
               'translate-y-0': isNavbarVisible,
-              'translate-y-[-100%]': !isNavbarVisible,
+              'translate-y-[-100%]': !isNavbarVisible || isPresentationMode,
             },
           )}
         >
@@ -288,6 +294,15 @@ const DdocEditor = forwardRef(
               />
             </div>
           </div>
+        )}
+        {isPresentationMode && (
+          <PresentationMode
+            editor={editor}
+            onClose={() => setIsPresentationMode?.(false)}
+            isFullscreen={isFullscreen}
+            setIsFullscreen={setIsFullscreen}
+            onError={onError}
+          />
         )}
         <div
           className={cn(
