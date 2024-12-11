@@ -59,6 +59,7 @@ const DdocEditor = forwardRef(
       setZoomLevel,
       isNavbarVisible,
       setIsNavbarVisible,
+      customHeight,
     }: DdocProps,
     ref,
   ) => {
@@ -241,9 +242,16 @@ const DdocEditor = forwardRef(
     return (
       <div
         data-cy="single-webpage"
-        className={`bg-[#f8f9fa] w-full h-screen overflow-y-auto ${
-          zoomLevel === '2' ? 'overflow-x-auto scroll-container' : 'overflow-x-hidden no-scrollbar'
-        }`}
+        className={cn(
+          'bg-[#f8f9fa] w-full overflow-y-auto',
+          {
+            'overflow-x-hidden no-scrollbar': zoomLevel !== '2',
+            'overflow-x-auto scroll-container': zoomLevel === '2',
+          }
+        )}
+        style={{
+          height: zoomLevel === '2' && customHeight ? `calc(100vh - ${customHeight}px)` : '100vh',
+        }}
       >
         <nav
           id="Navbar"
