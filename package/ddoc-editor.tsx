@@ -65,6 +65,8 @@ const DdocEditor = forwardRef(
       onInlineComment,
       onMarkdownExport,
       onMarkdownImport,
+      customHeight,
+      sharedSlidesLink,
     }: DdocProps,
     ref,
   ) => {
@@ -248,12 +250,18 @@ const DdocEditor = forwardRef(
 
     return (
       <div
-        data-cy="single-webpage"
+        id="editor-canvas"
         className={cn(
-          'w-full h-screen overflow-y-auto no-scrollbar',
-          zoomLevel === '2' ? 'overflow-x-auto' : 'overflow-x-hidden',
+          'bg-[#f8f9fa] w-full overflow-y-auto',
+          {
+            'overflow-x-hidden no-scrollbar': zoomLevel !== '2',
+            'overflow-x-auto scroll-container': zoomLevel === '2',
+          },
           !isPresentationMode ? 'bg-[#f8f9fa]' : 'bg-[#ffffff]',
         )}
+        style={{
+          height: zoomLevel === '2' && customHeight ? customHeight : '100vh',
+        }}
       >
         <nav
           id="Navbar"
@@ -300,6 +308,9 @@ const DdocEditor = forwardRef(
             isFullscreen={isFullscreen}
             setIsFullscreen={setIsFullscreen}
             onError={onError}
+            setIsCommentSectionOpen={setIsCommentSectionOpen}
+            sharedSlidesLink={sharedSlidesLink}
+            isPreviewMode={isPreviewMode}
           />
         )}
         <div
