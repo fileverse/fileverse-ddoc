@@ -50,7 +50,7 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `setCharacterCount` (optional)                 | `React.Dispatch<SetStateAction<number>>`       | Optional. React Set State function to update Character Count                                              |
 | `setWordCount` (optional)                      | `React.Dispatch<SetStateAction<number>>`       | Optional. React Set State function to update Word Count                                                   |
 | `scrollPosition`(optional)                     | `number`                                       | User cursor position to scroll to on intitalising the content of the editor                               |
-| `customHeight`(optional)                       | `string`                                       | Optional. Custom Height for editor canvas when zoomLevel is 200%                                          |
+| `editorCanvasClassNames`(optional)             | `string`                                       | Optional. Extra className for editor-canvas                                                               |
 
 ## Data Interface
 
