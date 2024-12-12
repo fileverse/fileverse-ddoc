@@ -44,10 +44,12 @@ export const useDdocEditor = ({
   secureImageUploadUrl,
   scrollPosition,
   unFocused,
+  zoomLevel,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions(
+      zoomLevel as string,
       (error: string) => onError?.(error),
       secureImageUploadUrl,
     ) as AnyExtension[]),
