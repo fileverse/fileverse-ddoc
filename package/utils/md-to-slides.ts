@@ -1,6 +1,7 @@
 import MarkdownIt from 'markdown-it';
 import { Editor } from '@tiptap/react';
 import { turndownService } from '../extensions/mardown-paste-handler';
+import TurndownService from 'turndown';
 
 interface SlideContent {
   type: 'h1' | 'h2' | 'content' | 'image' | 'table';
@@ -28,6 +29,39 @@ turndownService.addRule('pageBreak', {
   },
 });
 
+const getPrefix = (node: TurndownService.Node) => {
+  const prefix = node.nodeName;
+  if (!prefix) return '';
+
+  switch (node.nodeName) {
+    case 'H1':
+      return '#';
+    case 'H2':
+      return '##';
+    case 'H3':
+      return '###';
+    default:
+      return '';
+  }
+};
+
+turndownService.addRule('heading', {
+  filter: ['h1', 'h2', 'h3'],
+  replacement: function (content, node) {
+    const prefix = getPrefix(node);
+    const replacedContent = content.replace(/\n\n===\n\n/g, '\n');
+    const actualContent = replacedContent
+      .split('\n')
+      .map((str) => {
+        if (str === '') return '\n';
+        else return `${prefix} ${str}`;
+      })
+      .join('\n');
+
+    return actualContent;
+  },
+});
+
 // Add custom rules for superscript and subscript
 turndownService.addRule('superscript', {
   filter: 'sup',
@@ -51,13 +85,13 @@ turndownService.addRule('table', {
     const rows = Array.from(table.rows);
 
     // Process header
-    const headers = Array.from(rows[0].cells).map(cell => {
+    const headers = Array.from(rows[0].cells).map((cell) => {
       return turndownService.turndown(cell.innerHTML).trim();
     });
-    const maxColumnWidths = headers.map(header => header.length);
+    const maxColumnWidths = headers.map((header) => header.length);
 
     // Process body and update maxColumnWidths
-    const bodyRows = rows.slice(1).map(row => {
+    const bodyRows = rows.slice(1).map((row) => {
       return Array.from(row.cells).map((cell, index) => {
         let cellContent = cell.innerHTML.trim();
 
@@ -65,7 +99,7 @@ turndownService.addRule('table', {
         if (cell.querySelector('ul, ol')) {
           const listType = cell.querySelector('ul') ? 'ul' : 'ol';
           const listItems = Array.from(cell.querySelectorAll('li')).map(
-            li => li.textContent?.trim() || '',
+            (li) => li.textContent?.trim() || '',
           );
           cellContent = `<${listType}><li>${listItems.join(
             '</li><li>',
@@ -100,8 +134,10 @@ turndownService.addRule('table', {
 
     const headerRow = createAlignedRow(headers);
     const separator =
-      '| ' + maxColumnWidths.map(width => '-'.repeat(width)).join(' | ') + ' |';
-    const bodyRowsFormatted = bodyRows.map(row => createAlignedRow(row));
+      '| ' +
+      maxColumnWidths.map((width) => '-'.repeat(width)).join(' | ') +
+      ' |';
+    const bodyRowsFormatted = bodyRows.map((row) => createAlignedRow(row));
 
     return `\n\n${headerRow}\n${separator}\n${bodyRowsFormatted.join(
       '\n',
@@ -110,7 +146,7 @@ turndownService.addRule('table', {
 });
 
 turndownService.addRule('taskListItem', {
-  filter: node => {
+  filter: (node) => {
     const parent = node.parentElement;
     return (
       node.nodeName === 'LI' && parent?.getAttribute('data-type') === 'taskList'
@@ -131,6 +167,7 @@ turndownService.addRule('taskListItem', {
 
 export const convertToMarkdown = (editor: Editor) => {
   const html = editor.getHTML();
+
   return turndownService.turndown(html);
 };
 
@@ -152,7 +189,7 @@ export const processMarkdownContent = (markdown: string): Slides => {
     return text
       .trim()
       .split(/\s+/)
-      .filter(word => word.length > 0).length;
+      .filter((word) => word.length > 0).length;
   };
 
   const shouldCreateNewSlide = (
@@ -184,7 +221,7 @@ export const processMarkdownContent = (markdown: string): Slides => {
   // Split markdown by page breaks
   const sections = markdown.split('\n');
 
-  sections.forEach(section => {
+  sections.forEach((section) => {
     const lines = section.split('\n');
 
     for (let i = 0; i < lines.length; i++) {
@@ -303,7 +340,7 @@ export const processMarkdownContent = (markdown: string): Slides => {
           createNewSlide();
         }
         // Preserve sup/sub tags when adding content
-        const content = line.replace(/<\/?[^>]+(>|$)/g, match => {
+        const content = line.replace(/<\/?[^>]+(>|$)/g, (match) => {
           // Preserve sup and sub tags
           if (match.match(/<\/?(?:sup|sub)>/i)) {
             return match;
