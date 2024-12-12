@@ -568,6 +568,10 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       img {
         user-select: none;
       }
+
+      .node-dBlock {
+        @apply translate-x-[0.5rem] md:translate-x-[-4rem];
+      }
     }
   }
 
@@ -593,16 +597,12 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       }
 
       th {
-        background-color: #f5f5f5;
+        background-color: #f8f9fa;
         font-weight: bold;
 
         p {
           @apply font-[700];
         }
-      }
-
-      tr:nth-child(even) {
-        background-color: #f9f9f9;
       }
     }
   }

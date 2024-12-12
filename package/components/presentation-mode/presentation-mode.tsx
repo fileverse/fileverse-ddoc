@@ -10,7 +10,7 @@ import {
 } from '@fileverse/ui';
 import { EditingProvider } from '../../hooks/use-editing-context';
 import { convertToMarkdown } from '../../utils/md-to-slides';
-import { convertMarkdownToHTML } from '@fileverse-dev/md2slides';
+// import { convertMarkdownToHTML } from '@fileverse-dev/md2slides';
 import { handlePrint } from '../../utils/handle-print';
 import { PreviewPanel } from './preview-panel';
 import { cn } from '@fileverse/ui';
@@ -18,6 +18,7 @@ import platform from 'platform';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMediaQuery } from 'usehooks-ts';
 import copy from 'copy-to-clipboard';
+import { convertMarkdownToHTML } from '../../utils/md-to-html';
 
 interface PresentationModeProps {
   editor: Editor;
@@ -26,8 +27,8 @@ interface PresentationModeProps {
   setIsFullscreen: (isFullscreen: boolean) => void;
   onError?: (error: string) => void;
   setIsCommentSectionOpen:
-    | React.Dispatch<React.SetStateAction<boolean>>
-    | undefined;
+  | React.Dispatch<React.SetStateAction<boolean>>
+  | undefined;
   sharedSlidesLink?: string;
   isPreviewMode: boolean;
 }

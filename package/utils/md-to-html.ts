@@ -28,7 +28,7 @@ markdownIt.renderer.rules.list_item_open = (tokens, idx) => {
 };
 
 interface SlideContent {
-  type: 'h1' | 'h2' | 'content' | 'image' | 'table';
+  type: 'h1' | 'h2' | 'h3' | 'content' | 'image' | 'table';
   content: string;
 }
 
@@ -88,11 +88,10 @@ const processContent = (
     if (match) {
       const isChecked = match[1].toLowerCase() === 'x';
       const content = match[2];
-      currentSection[
-        currentSection.length - 1
-      ].content += `<li class="task-list-item"><input type="checkbox" ${
-        isChecked ? 'checked' : ''
-      } disabled>${content}</li>\n`;
+      currentSection[currentSection.length - 1].content +=
+        `<li class="task-list-item"><input type="checkbox" ${
+          isChecked ? 'checked' : ''
+        } disabled>${content}</li>\n`;
     }
   } else {
     // Close any open list and add new content
@@ -119,7 +118,7 @@ export function convertMarkdownToHTML(
     sanitize = true,
     maxCharsPerSlide = 1000,
     maxWordsPerSlide = 250,
-    maxLinesPerSlide = 8,
+    maxLinesPerSlide = 7,
   } = options;
 
   const sections: SlideContent[][] = [];
@@ -239,7 +238,10 @@ export function convertMarkdownToHTML(
 
       // Convert markdown content to HTML, but strip the outer <p> tags
       const markdownContent = line.substring(2);
+      console.log('markdownContent for h1', markdownContent);
       const htmlContent = markdownIt.renderInline(markdownContent);
+
+      console.log('htmlContent for h1', htmlContent);
 
       sections.push([{ type: 'h1', content: htmlContent }]);
       continue;
@@ -271,6 +273,32 @@ export function convertMarkdownToHTML(
       continue;
     }
 
+    // Handle H3
+    if (line.startsWith('### ')) {
+      if (tableBuffer.length > 0) {
+        const tableHtmlChunks = processTable(tableBuffer);
+
+        for (let i = 0; i < tableHtmlChunks.length; i++) {
+          const tableHtml = tableHtmlChunks[i];
+          if (tableHtml) {
+            if (i > 0 || shouldCreateNewSection(tableHtml, currentSection)) {
+              createNewSection();
+            }
+            currentSection.push({ type: 'table', content: tableHtml });
+          }
+        }
+        tableBuffer = [];
+      }
+      createNewSection();
+
+      // Convert markdown content to HTML, but strip the outer <p> tags
+      const markdownContent = line.substring(4);
+      const htmlContent = markdownIt.renderInline(markdownContent);
+
+      currentSection = [{ type: 'h3', content: htmlContent }];
+      continue;
+    }
+
     // Table handling
     if (line.startsWith('|') || line.match(/^\s*[-|]+\s*$/)) {
       tableBuffer.push(line);
@@ -295,16 +323,23 @@ export function convertMarkdownToHTML(
     if (line.match(/!\[.*\]\(.*\)/)) {
       const imgMatch = line.match(/!\[(.*)\]\((.*)\)/);
       if (imgMatch) {
-        if (currentSection.length === 0) {
-          // Solo image slide
-          sections.push([{ type: 'image', content: imgMatch[2] }]);
-        } else {
-          if (shouldCreateNewSection(line, currentSection)) {
-            createNewSection();
-          }
-          currentSection.push({ type: 'image', content: imgMatch[2] });
+        // Check if current section starts with h2 or h3
+        const hasHeading =
+          currentSection.length > 0 &&
+          (currentSection[0].type === 'h2' || currentSection[0].type === 'h3');
+
+        if (
+          currentSection.length === 0 ||
+          (!hasHeading && shouldCreateNewSection(line, currentSection))
+        ) {
+          createNewSection();
         }
-        createNewSection();
+        currentSection.push({ type: 'image', content: imgMatch[2] });
+
+        // Only create new section if this wasn't following a heading
+        if (!hasHeading) {
+          createNewSection();
+        }
       }
       continue;
     }
@@ -353,10 +388,12 @@ export function convertMarkdownToHTML(
             return `<h1>${content.content}</h1>`;
           case 'h2':
             return `<h2>${content.content}</h2>`;
+          case 'h3':
+            return `<h3>${content.content}</h3>`;
           case 'image':
             return `<img src="${content.content}" class="slide-image"/>`;
           case 'table':
-            return content.content; // Table content is already HTML
+            return content.content;
           default:
             return markdownIt.render(content.content);
         }
