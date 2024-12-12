@@ -512,7 +512,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
     }
 
     img {
-      @apply w-full h-auto flex justify-center items-center;
+      @apply w-full h-auto flex justify-center items-center max-w-[720px] aspect-video;
     }
 
     p {
@@ -567,10 +567,15 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
 
       img {
         user-select: none;
+        border-radius: 1rem;
       }
 
       .node-dBlock {
         @apply translate-x-[0.5rem] md:translate-x-[-4rem];
+
+        img {
+          @apply translate-x-[-4.5rem] translate-y-[1rem] md:translate-x-0;
+        }
       }
     }
   }
@@ -706,6 +711,24 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
           }
         }
       }
+    }
+  }
+
+  .ProseMirror.solo-slide-image {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100%;
+    padding: 0;
+
+    img {
+      min-width: 1080px;
+      aspect-ratio: 16/9;
+      object-fit: contain;
+      position: fixed;
+      top: 0;
+      left: 0;
+      background-color: #fff;
     }
   }
 }
