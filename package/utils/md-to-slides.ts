@@ -49,16 +49,8 @@ turndownService.addRule('heading', {
   filter: ['h1', 'h2', 'h3'],
   replacement: function (content, node) {
     const prefix = getPrefix(node);
-    const replacedContent = content.replace(/\n\n===\n\n/g, '\n');
-    const actualContent = replacedContent
-      .split('\n')
-      .map((str) => {
-        if (str === '') return '\n';
-        else return `${prefix} ${str}`;
-      })
-      .join('\n');
-
-    return actualContent;
+    const replacedContent = content.replace(/\n\n===\n\n/g, '<br>');
+    return `${prefix} ${replacedContent}`;
   },
 });
 
