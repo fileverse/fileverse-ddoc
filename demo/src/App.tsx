@@ -146,6 +146,9 @@ function App() {
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
+        onInlineComment={(): void => {}}
+        onMarkdownImport={(): void => {}}
+        onMarkdownExport={(): void => {}}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

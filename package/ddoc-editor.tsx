@@ -62,6 +62,9 @@ const DdocEditor = forwardRef(
       setIsPresentationMode,
       isNavbarVisible,
       setIsNavbarVisible,
+      onInlineComment,
+      onMarkdownExport,
+      onMarkdownImport,
       editorCanvasClassNames,
       sharedSlidesLink,
     }: DdocProps,
@@ -290,6 +293,8 @@ const DdocEditor = forwardRef(
                 isNavbarVisible={isNavbarVisible}
                 setIsNavbarVisible={setIsNavbarVisible}
                 secureImageUploadUrl={secureImageUploadUrl}
+                onMarkdownExport={onMarkdownExport}
+                onMarkdownImport={onMarkdownImport}
               />
             </div>
           </div>
@@ -374,6 +379,7 @@ const DdocEditor = forwardRef(
                 isPreviewMode={isPreviewMode}
                 username={username as string}
                 walletAddress={walletAddress as string}
+                onInlineComment={onInlineComment}
               />
               <ColumnsMenu editor={editor} appendTo={editorRef} />
             </div>
