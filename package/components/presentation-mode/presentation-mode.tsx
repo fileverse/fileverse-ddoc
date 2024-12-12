@@ -252,8 +252,10 @@ export const PresentationMode = ({
       if (
         e.key === 'ArrowRight' ||
         e.key === 'ArrowDown' ||
-        e.key === 'Space'
+        e.code === 'Space'
       ) {
+        e.preventDefault();
+        e.stopPropagation();
         setSlideDirection('forward');
         setCurrentSlide((prev) => Math.min(prev + 1, slides.length - 1));
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {

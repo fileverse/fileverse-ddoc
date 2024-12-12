@@ -512,7 +512,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
     }
 
     img {
-      @apply w-full h-auto flex justify-center items-center max-w-[720px] aspect-video;
+      @apply w-full h-auto flex justify-center items-center max-w-[720px] aspect-video object-contain;
     }
 
     p {
@@ -658,9 +658,10 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       }
 
       img {
-        max-height: 60vh;
+        max-width: 100%;
         width: auto;
         margin: 2vh auto;
+        position: relative !important;
       }
 
       table {
