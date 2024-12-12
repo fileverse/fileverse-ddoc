@@ -62,7 +62,7 @@ const DdocEditor = forwardRef(
       setIsPresentationMode,
       isNavbarVisible,
       setIsNavbarVisible,
-      customHeight,
+      editorCanvasClassNames,
       sharedSlidesLink,
     }: DdocProps,
     ref,
@@ -249,16 +249,14 @@ const DdocEditor = forwardRef(
       <div
         id="editor-canvas"
         className={cn(
-          'bg-[#f8f9fa] w-full overflow-y-auto',
+          'h-[100vh] bg-[#f8f9fa] w-full overflow-y-auto',
           {
             'overflow-x-hidden no-scrollbar': zoomLevel !== '2',
             'overflow-x-auto scroll-container': zoomLevel === '2',
           },
           !isPresentationMode ? 'bg-[#f8f9fa]' : 'bg-[#ffffff]',
+          editorCanvasClassNames,
         )}
-        style={{
-          height: zoomLevel === '2' && customHeight ? customHeight : '100vh',
-        }}
       >
         <nav
           id="Navbar"
