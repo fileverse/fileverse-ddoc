@@ -28,7 +28,7 @@ markdownIt.renderer.rules.list_item_open = (tokens, idx) => {
 };
 
 interface SlideContent {
-  type: 'h1' | 'h2' | 'h3' | 'content' | 'image' | 'table';
+  type: 'h1' | 'h2' | 'content' | 'image' | 'table';
   content: string;
 }
 
@@ -129,7 +129,7 @@ export function convertMarkdownToHTML(
     return text
       .trim()
       .split(/\s+/)
-      .filter(word => word.length > 0).length;
+      .filter((word) => word.length > 0).length;
   };
 
   const shouldCreateNewSection = (
@@ -160,13 +160,13 @@ export function convertMarkdownToHTML(
 
   const processTable = (tableLines: string[]): string[] => {
     // Remove any empty lines
-    const cleanedLines = tableLines.filter(line => line.trim().length > 0);
+    const cleanedLines = tableLines.filter((line) => line.trim().length > 0);
     if (cleanedLines.length < 2) return ['']; // Need at least header and separator
 
     // Extract headers, separator and content rows
     const headers = cleanedLines[0]
       .split('|')
-      .map(cell => cell.trim())
+      .map((cell) => cell.trim())
       .filter(Boolean);
     const separator = cleanedLines[1];
     const contentRows = cleanedLines.slice(2);
@@ -181,7 +181,7 @@ export function convertMarkdownToHTML(
     const chunks = splitTableIntoChunks(headers, contentRows, maxLinesPerSlide);
 
     // Convert each chunk to HTML
-    return chunks.map(chunk => {
+    return chunks.map((chunk) => {
       const chunkMarkdown = [
         `|${headers.join('|')}|`,
         separator,
@@ -238,10 +238,7 @@ export function convertMarkdownToHTML(
 
       // Convert markdown content to HTML, but strip the outer <p> tags
       const markdownContent = line.substring(2);
-      console.log('markdownContent for h1', markdownContent);
       const htmlContent = markdownIt.renderInline(markdownContent);
-
-      console.log('htmlContent for h1', htmlContent);
 
       sections.push([{ type: 'h1', content: htmlContent }]);
       continue;
@@ -273,32 +270,6 @@ export function convertMarkdownToHTML(
       continue;
     }
 
-    // Handle H3
-    if (line.startsWith('### ')) {
-      if (tableBuffer.length > 0) {
-        const tableHtmlChunks = processTable(tableBuffer);
-
-        for (let i = 0; i < tableHtmlChunks.length; i++) {
-          const tableHtml = tableHtmlChunks[i];
-          if (tableHtml) {
-            if (i > 0 || shouldCreateNewSection(tableHtml, currentSection)) {
-              createNewSection();
-            }
-            currentSection.push({ type: 'table', content: tableHtml });
-          }
-        }
-        tableBuffer = [];
-      }
-      createNewSection();
-
-      // Convert markdown content to HTML, but strip the outer <p> tags
-      const markdownContent = line.substring(4);
-      const htmlContent = markdownIt.renderInline(markdownContent);
-
-      currentSection = [{ type: 'h3', content: htmlContent }];
-      continue;
-    }
-
     // Table handling
     if (line.startsWith('|') || line.match(/^\s*[-|]+\s*$/)) {
       tableBuffer.push(line);
@@ -325,8 +296,7 @@ export function convertMarkdownToHTML(
       if (imgMatch) {
         // Check if current section starts with h2 or h3
         const hasHeading =
-          currentSection.length > 0 &&
-          (currentSection[0].type === 'h2' || currentSection[0].type === 'h3');
+          currentSection.length > 0 && currentSection[0].type === 'h2';
 
         if (
           currentSection.length === 0 ||
@@ -380,20 +350,18 @@ export function convertMarkdownToHTML(
   createNewSection();
 
   // Convert sections to HTML
-  const htmlSections = sections.map(section => {
+  const htmlSections = sections.map((section) => {
     return section
-      .map(content => {
+      .map((content) => {
         switch (content.type) {
           case 'h1':
             return `<h1>${content.content}</h1>`;
           case 'h2':
             return `<h2>${content.content}</h2>`;
-          case 'h3':
-            return `<h3>${content.content}</h3>`;
           case 'image':
             return `<img src="${content.content}" class="slide-image"/>`;
           case 'table':
-            return content.content;
+            return content.content; // Table content is already HTML
           default:
             return markdownIt.render(content.content);
         }

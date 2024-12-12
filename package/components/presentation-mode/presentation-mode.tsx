@@ -50,9 +50,24 @@ const SlideContent = ({
   onTouchEnd: () => void;
   isFullscreen: boolean;
 }) => {
+  const isSoloImage = (html: string): boolean => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const img = doc.querySelector('img.slide-image');
+    // Check if there's exactly one image with class 'slide-image' and it's the only content
+    return !!img && doc.body.children.length === 1;
+  };
+
   useEffect(() => {
     setTimeout(() => {
       editor.commands.setContent(content);
+
+      if (isSoloImage(content)) {
+        // Add a class to the editor root for solo image slides
+        editor.view.dom.classList.add('solo-slide-image');
+      } else {
+        editor.view.dom.classList.remove('solo-slide-image');
+      }
     });
   }, [content]);
 
