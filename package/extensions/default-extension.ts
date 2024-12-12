@@ -41,6 +41,7 @@ import { ResizableMedia } from './resizable-media';
 import { uploadFn } from '../utils/upload-images';
 
 export const defaultExtensions = (
+  zoomLevel: string,
   onError: (error: string) => void,
   secureImageUploadUrl?: string,
 ) => [
@@ -169,6 +170,7 @@ export const defaultExtensions = (
   }),
   GapCursor,
   DBlock.configure({
+    zoomLevel,
     secureImageUploadUrl,
   }),
   TrailingNode,

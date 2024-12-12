@@ -2,7 +2,9 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import { DBlockNodeView } from './dblock-node-view';
+import React from 'react';
 export interface DBlockOptions {
+  zoomLevel: string;
   HTMLAttributes: Record<string, any>;
   secureImageUploadUrl?: string;
 }
@@ -32,6 +34,7 @@ export const DBlock = Node.create<DBlockOptions>({
 
   addOptions() {
     return {
+      zoomLevel: '',
       HTMLAttributes: {},
       secureImageUploadUrl: '',
     };
@@ -44,7 +47,7 @@ export const DBlock = Node.create<DBlockOptions>({
   renderHTML({ HTMLAttributes }: { HTMLAttributes: any }) {
     return [
       'div',
-      mergeAttributes(HTMLAttributes, { 'data-type': 'd-block' }),
+      mergeAttributes(HTMLAttributes, { 'data-type': 'd-block', 'data-zoom-level': this.options.zoomLevel }),
       0,
     ];
   },
@@ -316,6 +319,10 @@ export const DBlock = Node.create<DBlockOptions>({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(DBlockNodeView as any);
-  },
+    return ReactNodeViewRenderer((props) => {
+      props.updateAttributes({ zoomLevel: this.options.zoomLevel });
+  
+      return React.createElement(DBlockNodeView, { ...props, zoomLevel: this.options.zoomLevel });
+    });
+  }
 });

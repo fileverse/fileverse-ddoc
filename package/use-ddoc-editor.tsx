@@ -15,6 +15,7 @@ import SlashCommand from './components/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
 import customTextInputRules from './extensions/customTextInputRules';
 import { PageBreak } from './extensions/page-break/page-break';
+import { useZoomLevelListener } from './useZoomLevelListener';
 
 const usercolors = [
   '#30bced',
@@ -44,10 +45,12 @@ export const useDdocEditor = ({
   secureImageUploadUrl,
   scrollPosition,
   unFocused,
+  zoomLevel,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions(
+      zoomLevel as string,
       (error: string) => onError?.(error),
       secureImageUploadUrl,
     ) as AnyExtension[]),
@@ -57,6 +60,16 @@ export const useDdocEditor = ({
   ]);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
+  useZoomLevelListener({
+    zoomLevel,
+    setExtensions,
+    defaultExtensions,
+    onError,
+    secureImageUploadUrl,
+    customTextInputRules,
+    SlashCommand,
+    PageBreak,
+  });
 
   const isHighlightedYellow = (
     state: EditorState,
