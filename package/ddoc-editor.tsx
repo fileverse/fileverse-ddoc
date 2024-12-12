@@ -178,6 +178,22 @@ const DdocEditor = forwardRef(
       );
     };
 
+    const handleClosePresentationMode = () => {
+      setIsPresentationMode?.(false);
+
+      // Remove slides parameter from URL
+      const url = new URL(window.location.href);
+      const hash = url.hash;
+
+      // Split the hash to preserve the key parameter
+      const [hashPath, keyParam] = hash.split('&');
+      if (keyParam && keyParam.startsWith('slides=')) {
+        // Remove only the slides parameter while keeping the key
+        url.hash = hashPath;
+        window.history.replaceState({}, '', url.toString());
+      }
+    };
+
     useEffect(() => {
       if (!editor) return;
       if (isNativeMobile) {
@@ -302,7 +318,7 @@ const DdocEditor = forwardRef(
         {isPresentationMode && (
           <PresentationMode
             editor={editor}
-            onClose={() => setIsPresentationMode?.(false)}
+            onClose={handleClosePresentationMode}
             isFullscreen={isFullscreen}
             setIsFullscreen={setIsFullscreen}
             onError={onError}
