@@ -10,7 +10,7 @@ import {
 } from '@fileverse/ui';
 import { EditingProvider } from '../../hooks/use-editing-context';
 import { convertToMarkdown } from '../../utils/md-to-slides';
-import { convertMarkdownToHTML } from '@fileverse-dev/md2slides';
+// import { convertMarkdownToHTML } from '@fileverse-dev/md2slides';
 import { handlePrint } from '../../utils/handle-print';
 import { PreviewPanel } from './preview-panel';
 import { cn } from '@fileverse/ui';
@@ -18,6 +18,7 @@ import platform from 'platform';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMediaQuery } from 'usehooks-ts';
 import copy from 'copy-to-clipboard';
+import { convertMarkdownToHTML } from '../../utils/md-to-html';
 
 interface PresentationModeProps {
   editor: Editor;
@@ -26,8 +27,8 @@ interface PresentationModeProps {
   setIsFullscreen: (isFullscreen: boolean) => void;
   onError?: (error: string) => void;
   setIsCommentSectionOpen:
-    | React.Dispatch<React.SetStateAction<boolean>>
-    | undefined;
+  | React.Dispatch<React.SetStateAction<boolean>>
+  | undefined;
   sharedSlidesLink?: string;
   isPreviewMode: boolean;
 }
@@ -49,9 +50,24 @@ const SlideContent = ({
   onTouchEnd: () => void;
   isFullscreen: boolean;
 }) => {
+  const isSoloImage = (html: string): boolean => {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const img = doc.querySelector('img.slide-image');
+    // Check if there's exactly one image with class 'slide-image' and it's the only content
+    return !!img && doc.body.children.length === 1;
+  };
+
   useEffect(() => {
     setTimeout(() => {
       editor.commands.setContent(content);
+
+      if (isSoloImage(content)) {
+        // Add a class to the editor root for solo image slides
+        editor.view.dom.classList.add('solo-slide-image');
+      } else {
+        editor.view.dom.classList.remove('solo-slide-image');
+      }
     });
   }, [content]);
 
@@ -236,8 +252,10 @@ export const PresentationMode = ({
       if (
         e.key === 'ArrowRight' ||
         e.key === 'ArrowDown' ||
-        e.key === 'Space'
+        e.code === 'Space'
       ) {
+        e.preventDefault();
+        e.stopPropagation();
         setSlideDirection('forward');
         setCurrentSlide((prev) => Math.min(prev + 1, slides.length - 1));
       } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {

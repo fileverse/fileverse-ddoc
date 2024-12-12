@@ -76,10 +76,10 @@ export const PreviewPanel = ({
     <div
       ref={previewPanelRef}
       className={cn(
-        'bg-white flex gap-4 py-4 px-6 color-border-default-hover relative',
+        'bg-white flex gap-3 py-4 px-4 color-border-default-hover relative',
         isMobile
           ? 'flex-row overflow-x-auto border-t min-h-[12rem] order-2 w-full pt-10 xl:pt-0'
-          : 'w-64 h-full overflow-y-auto flex-col py-20 border-r',
+          : 'w-[251px] h-full overflow-y-auto flex-col py-16 border-r',
         isNativeMobile && 'min-h-[20rem]',
       )}
     >
@@ -94,32 +94,23 @@ export const PreviewPanel = ({
             key={index}
             ref={(el) => (slideRefs.current[index] = el)}
             className={cn(
-              'flex',
-              isMobile && 'flex-shrink-0 h-[120px]',
+              'flex p-2 rounded-xl w-[219px] h-[122px] transition-all',
               currentSlide === index
-                ? 'ring-[.5rem] ring-[#FFDF0A] rounded-[2px]'
-                : '',
+                ? 'color-bg-brand hover:color-bg-brand-hover'
+                : 'bg-transparent hover:color-bg-default-hover',
             )}
           >
-            <span
-              className={cn(
-                'text-body-sm color-text-default h-full w-6 pr-1 text-center',
-                currentSlide === index &&
-                'bg-[#FFDF0A] border-[#FFDF0A] border',
-              )}
-            >
+            <span className="text-body-sm color-text-default h-full w-[20px] pr-1 text-center">
               {index + 1}
             </span>
             <div
               onClick={() => setCurrentSlide(index)}
               className={cn(
-                'bg-white border color-border-default p-2 cursor-pointer transition-all transform overflow-hidden aspect-video',
-                isMobile ? 'w-[200px] min-w-[200px]' : 'w-full min-h-[120px]',
-                currentSlide !== index && 'rounded-lg',
+                'bg-white border rounded-lg p-2 cursor-pointer transition-all transform overflow-hidden aspect-video w-[188px] h-[106px]',
+                currentSlide === index
+                  ? 'border-[#FFDF0A]'
+                  : 'color-border-default',
               )}
-              style={{
-                transform: `scale(${currentSlide === index ? 1.02 : 1})`,
-              }}
             >
               <EditingProvider isPreviewMode={true}>
                 <EditorContent

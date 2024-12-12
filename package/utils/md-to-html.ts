@@ -88,11 +88,10 @@ const processContent = (
     if (match) {
       const isChecked = match[1].toLowerCase() === 'x';
       const content = match[2];
-      currentSection[
-        currentSection.length - 1
-      ].content += `<li class="task-list-item"><input type="checkbox" ${
-        isChecked ? 'checked' : ''
-      } disabled>${content}</li>\n`;
+      currentSection[currentSection.length - 1].content +=
+        `<li class="task-list-item"><input type="checkbox" ${
+          isChecked ? 'checked' : ''
+        } disabled>${content}</li>\n`;
     }
   } else {
     // Close any open list and add new content
@@ -119,7 +118,7 @@ export function convertMarkdownToHTML(
     sanitize = true,
     maxCharsPerSlide = 1000,
     maxWordsPerSlide = 250,
-    maxLinesPerSlide = 8,
+    maxLinesPerSlide = 7,
   } = options;
 
   const sections: SlideContent[][] = [];
@@ -130,7 +129,7 @@ export function convertMarkdownToHTML(
     return text
       .trim()
       .split(/\s+/)
-      .filter(word => word.length > 0).length;
+      .filter((word) => word.length > 0).length;
   };
 
   const shouldCreateNewSection = (
@@ -161,13 +160,13 @@ export function convertMarkdownToHTML(
 
   const processTable = (tableLines: string[]): string[] => {
     // Remove any empty lines
-    const cleanedLines = tableLines.filter(line => line.trim().length > 0);
+    const cleanedLines = tableLines.filter((line) => line.trim().length > 0);
     if (cleanedLines.length < 2) return ['']; // Need at least header and separator
 
     // Extract headers, separator and content rows
     const headers = cleanedLines[0]
       .split('|')
-      .map(cell => cell.trim())
+      .map((cell) => cell.trim())
       .filter(Boolean);
     const separator = cleanedLines[1];
     const contentRows = cleanedLines.slice(2);
@@ -182,7 +181,7 @@ export function convertMarkdownToHTML(
     const chunks = splitTableIntoChunks(headers, contentRows, maxLinesPerSlide);
 
     // Convert each chunk to HTML
-    return chunks.map(chunk => {
+    return chunks.map((chunk) => {
       const chunkMarkdown = [
         `|${headers.join('|')}|`,
         separator,
@@ -295,16 +294,22 @@ export function convertMarkdownToHTML(
     if (line.match(/!\[.*\]\(.*\)/)) {
       const imgMatch = line.match(/!\[(.*)\]\((.*)\)/);
       if (imgMatch) {
-        if (currentSection.length === 0) {
-          // Solo image slide
-          sections.push([{ type: 'image', content: imgMatch[2] }]);
-        } else {
-          if (shouldCreateNewSection(line, currentSection)) {
-            createNewSection();
-          }
-          currentSection.push({ type: 'image', content: imgMatch[2] });
+        // Check if current section starts with h2 or h3
+        const hasHeading =
+          currentSection.length > 0 && currentSection[0].type === 'h2';
+
+        if (
+          currentSection.length === 0 ||
+          (!hasHeading && shouldCreateNewSection(line, currentSection))
+        ) {
+          createNewSection();
         }
-        createNewSection();
+        currentSection.push({ type: 'image', content: imgMatch[2] });
+
+        // Only create new section if this wasn't following a heading
+        if (!hasHeading) {
+          createNewSection();
+        }
       }
       continue;
     }
@@ -345,9 +350,9 @@ export function convertMarkdownToHTML(
   createNewSection();
 
   // Convert sections to HTML
-  const htmlSections = sections.map(section => {
+  const htmlSections = sections.map((section) => {
     return section
-      .map(content => {
+      .map((content) => {
         switch (content.type) {
           case 'h1':
             return `<h1>${content.content}</h1>`;

@@ -62,7 +62,10 @@ const DdocEditor = forwardRef(
       setIsPresentationMode,
       isNavbarVisible,
       setIsNavbarVisible,
-      customHeight,
+      onInlineComment,
+      onMarkdownExport,
+      onMarkdownImport,
+      editorCanvasClassNames,
       sharedSlidesLink,
     }: DdocProps,
     ref,
@@ -175,6 +178,22 @@ const DdocEditor = forwardRef(
       );
     };
 
+    const handleClosePresentationMode = () => {
+      setIsPresentationMode?.(false);
+
+      // Remove slides parameter from URL
+      const url = new URL(window.location.href);
+      const hash = url.hash;
+
+      // Split the hash to preserve the key parameter
+      const [hashPath, keyParam] = hash.split('&');
+      if (keyParam && keyParam.startsWith('slides=')) {
+        // Remove only the slides parameter while keeping the key
+        url.hash = hashPath;
+        window.history.replaceState({}, '', url.toString());
+      }
+    };
+
     useEffect(() => {
       if (!editor) return;
       if (isNativeMobile) {
@@ -249,16 +268,14 @@ const DdocEditor = forwardRef(
       <div
         id="editor-canvas"
         className={cn(
-          'bg-[#f8f9fa] w-full overflow-y-auto',
+          'h-[100vh] bg-[#f8f9fa] w-full overflow-y-auto',
           {
             'overflow-x-hidden no-scrollbar': zoomLevel !== '2',
             'overflow-x-auto scroll-container': zoomLevel === '2',
           },
           !isPresentationMode ? 'bg-[#f8f9fa]' : 'bg-[#ffffff]',
+          editorCanvasClassNames,
         )}
-        style={{
-          height: zoomLevel === '2' && customHeight ? customHeight : '100vh',
-        }}
       >
         <nav
           id="Navbar"
@@ -292,6 +309,8 @@ const DdocEditor = forwardRef(
                 isNavbarVisible={isNavbarVisible}
                 setIsNavbarVisible={setIsNavbarVisible}
                 secureImageUploadUrl={secureImageUploadUrl}
+                onMarkdownExport={onMarkdownExport}
+                onMarkdownImport={onMarkdownImport}
               />
             </div>
           </div>
@@ -299,7 +318,7 @@ const DdocEditor = forwardRef(
         {isPresentationMode && (
           <PresentationMode
             editor={editor}
-            onClose={() => setIsPresentationMode?.(false)}
+            onClose={handleClosePresentationMode}
             isFullscreen={isFullscreen}
             setIsFullscreen={setIsFullscreen}
             onError={onError}
@@ -376,6 +395,7 @@ const DdocEditor = forwardRef(
                 isPreviewMode={isPreviewMode}
                 username={username as string}
                 walletAddress={walletAddress as string}
+                onInlineComment={onInlineComment}
               />
               <ColumnsMenu editor={editor} appendTo={editorRef} />
             </div>
