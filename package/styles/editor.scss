@@ -706,7 +706,8 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
         }
 
         img {
-          width: 80vw;
+          width: 80vw !important;
+          min-width: 80vw !important;
         }
 
         p,
