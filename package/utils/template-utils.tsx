@@ -118,7 +118,7 @@ const renderTemplateButtons = (
         "md:-translate-x-[60%]": zoomLevel === "1",
         "md:-translate-x-[120%]": zoomLevel === "1.4",
         "md:-translate-x-[140%]": zoomLevel === "1.5",
-        "md:-translate-x-[320%]": zoomLevel === "2",
+        "md:-translate-x-[280%]": zoomLevel === "2",
       }
     )}>
       {templateButtons.map((button, index) => (
