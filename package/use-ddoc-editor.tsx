@@ -15,7 +15,7 @@ import SlashCommand from './components/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
 import customTextInputRules from './extensions/customTextInputRules';
 import { PageBreak } from './extensions/page-break/page-break';
-import { useZoomLevelListener } from './useZoomLevelListener';
+import { zoomService } from './zoom-service';
 
 const usercolors = [
   '#30bced',
@@ -50,7 +50,6 @@ export const useDdocEditor = ({
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions(
-      zoomLevel as string,
       (error: string) => onError?.(error),
       secureImageUploadUrl,
     ) as AnyExtension[]),
@@ -60,16 +59,6 @@ export const useDdocEditor = ({
   ]);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
-  useZoomLevelListener({
-    zoomLevel,
-    setExtensions,
-    defaultExtensions,
-    onError,
-    secureImageUploadUrl,
-    customTextInputRules,
-    SlashCommand,
-    PageBreak,
-  });
 
   const isHighlightedYellow = (
     state: EditorState,
@@ -292,6 +281,12 @@ export const useDdocEditor = ({
     editor?.storage.characterCount.characters(),
     editor?.storage.characterCount.words(),
   ]);
+
+  useEffect(() => {
+    if (zoomLevel) {
+      zoomService.updateZoomLevel(zoomLevel);
+    }
+  }, [zoomLevel]);
 
   useEffect(() => {
     return () => {
