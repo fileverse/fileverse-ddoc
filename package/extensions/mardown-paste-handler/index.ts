@@ -12,9 +12,39 @@ import TurndownService from 'turndown';
 const markdownIt = new MarkdownIt().use(markdownItFootnote);
 
 // Initialize TurndownService for converting HTML to Markdown
-const turndownService = new TurndownService({
+export const turndownService = new TurndownService({
   headingStyle: 'atx',
   codeBlockStyle: 'fenced',
+});
+
+// Add this new rule after the other turndownService rules
+turndownService.addRule('taskListItem', {
+  filter: (node) => {
+    const parent = node.parentElement;
+    return (
+      node.nodeName === 'LI' && parent?.getAttribute('data-type') === 'taskList'
+    );
+  },
+  replacement: function (content, node) {
+    const isChecked =
+      (node as HTMLElement).getAttribute('data-checked') === 'true';
+    content = content
+      .replace(/^\n+/, '') // remove leading newlines
+      .replace(/\n+$/, '') // remove trailing newlines
+      .replace(/\n\s*/gm, '\n') // normalize all newlines to single space
+      .replace(/\n/gm, '\n    '); // indent
+    return `- [${isChecked ? 'x' : ' '}] ${content}${
+      node.nextSibling ? '\n' : ''
+    }`;
+  },
+});
+
+// Custom rule for page breaks
+turndownService.addRule('pageBreak', {
+  filter: 'br',
+  replacement: function () {
+    return '\n\n===\n\n';
+  },
 });
 
 // Custom rule for tables
@@ -25,13 +55,13 @@ turndownService.addRule('table', {
     const rows = Array.from(table.rows);
 
     // Process header
-    const headers = Array.from(rows[0].cells).map(cell => {
+    const headers = Array.from(rows[0].cells).map((cell) => {
       return turndownService.turndown(cell.innerHTML).trim();
     });
-    const maxColumnWidths = headers.map(header => header.length);
+    const maxColumnWidths = headers.map((header) => header.length);
 
     // Process body and update maxColumnWidths
-    const bodyRows = rows.slice(1).map(row => {
+    const bodyRows = rows.slice(1).map((row) => {
       return Array.from(row.cells).map((cell, index) => {
         let cellContent = cell.innerHTML.trim();
 
@@ -39,7 +69,7 @@ turndownService.addRule('table', {
         if (cell.querySelector('ul, ol')) {
           const listType = cell.querySelector('ul') ? 'ul' : 'ol';
           const listItems = Array.from(cell.querySelectorAll('li')).map(
-            li => li.textContent?.trim() || '',
+            (li) => li.textContent?.trim() || '',
           );
           cellContent = `<${listType}><li>${listItems.join(
             '</li><li>',
@@ -74,14 +104,17 @@ turndownService.addRule('table', {
 
     const headerRow = createAlignedRow(headers);
     const separator =
-      '| ' + maxColumnWidths.map(width => '-'.repeat(width)).join(' | ') + ' |';
-    const bodyRowsFormatted = bodyRows.map(row => createAlignedRow(row));
+      '| ' +
+      maxColumnWidths.map((width) => '-'.repeat(width)).join(' | ') +
+      ' |';
+    const bodyRowsFormatted = bodyRows.map((row) => createAlignedRow(row));
 
     return `\n\n${headerRow}\n${separator}\n${bodyRowsFormatted.join(
       '\n',
     )}\n\n`;
   },
 });
+
 // Custom rule for inline code
 turndownService.addRule('inlineCode', {
   filter: function (node) {
@@ -98,6 +131,7 @@ turndownService.addRule('listItem', {
     content = content
       .replace(/^\n+/, '') // remove leading newlines
       .replace(/\n+$/, '') // remove trailing newlines
+      .replace(/\n\s*\n/g, '\n') // replace multiple newlines with single newline
       .replace(/\n/gm, '\n    '); // indent
     let prefix = options.bulletListMarker + ' ';
     const parent: any = node.parentNode;
@@ -210,7 +244,7 @@ const MarkdownPasteHandler = Extension.create({
               const file = files[0];
               if (file.type === 'text/markdown' || file.name.endsWith('.md')) {
                 const reader = new FileReader();
-                reader.onload = e => {
+                reader.onload = (e) => {
                   const content = e.target?.result as string;
                   handleMarkdownContent(view, content);
                 };
@@ -280,6 +314,7 @@ const MarkdownPasteHandler = Extension.create({
         },
       }),
       new InputRule({
+        // eslint-disable-next-line no-useless-escape
         find: /(\S*)\^((?:[^\^]|\\\^)+)\^/,
         handler: ({ state, range, match }) => {
           const { tr } = state;
@@ -340,6 +375,24 @@ const MarkdownPasteHandler = Extension.create({
           }
         },
       }),
+      new InputRule({
+        find: /===\s*$/m,
+        handler: ({ state, range }) => {
+          const { tr } = state;
+          const start = range.from - 2;
+          const end = range.to;
+
+          const isDBlock = state.doc.nodeAt(start)?.type.name === 'dBlock';
+          // Create a page break node
+          if (isDBlock) {
+            tr.replaceWith(
+              start,
+              end,
+              this.editor.schema.nodes.pageBreak.create(),
+            );
+          }
+        },
+      }),
     ];
   },
 });
@@ -359,7 +412,8 @@ function isMarkdown(content: string): boolean {
     content.match(/<sup>(.*?)<\/sup>/g) !== null ||
     content.match(/<sub>(.*?)<\/sub>/g) !== null ||
     content.match(/\^(.*?)\^/g) !== null || // New superscript syntax
-    content.match(/~(.*?)~/g) !== null // New subscript syntax
+    content.match(/~(.*?)~/g) !== null || // New subscript syntax
+    content.match(/^===\s*$/m) !== null // Page break
   );
 }
 
@@ -376,12 +430,51 @@ function handleMarkdownContent(view: any, content: string) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(convertedHtml, 'text/html');
 
-  // Handle images: remove parent paragraph tags if they only contain an image
+  // Handle todo lists
+  const lists = doc.getElementsByTagName('ul');
+  for (let i = 0; i < lists.length; i++) {
+    const list = lists[i];
+    const items = list.getElementsByTagName('li');
+    let isTodoList = false;
+
+    for (let j = 0; j < items.length; j++) {
+      const item = items[j];
+      const text = item.textContent || '';
+      const todoMatch = text.match(/^\[([ x])\]\s*(.*)/i);
+
+      if (todoMatch) {
+        isTodoList = true;
+        const isChecked = todoMatch[1].toLowerCase() === 'x';
+        const content = todoMatch[2];
+
+        // Set attributes for task list
+        item.setAttribute('data-type', 'taskItem');
+        item.setAttribute('data-checked', isChecked.toString());
+        item.textContent = content;
+      }
+    }
+
+    if (isTodoList) {
+      list.setAttribute('data-type', 'taskList');
+    }
+  }
+
+  // Handle images and page breaks
   const paragraphs = doc.getElementsByTagName('p');
   for (let i = paragraphs.length - 1; i >= 0; i--) {
     const p = paragraphs[i];
     if (p.childNodes.length === 1 && p.firstChild?.nodeName === 'IMG') {
       p.parentNode?.replaceChild(p.firstChild, p);
+    }
+    // Replace === text content with a div element that will be converted to a page break node
+    if (
+      p.childNodes.length === 1 &&
+      p.firstChild?.textContent?.trim() === '==='
+    ) {
+      const pageBreakDiv = doc.createElement('div');
+      pageBreakDiv.setAttribute('data-type', 'page-break');
+      pageBreakDiv.setAttribute('data-page-break', 'true');
+      p.parentNode?.replaceChild(pageBreakDiv, p);
     }
   }
 
@@ -391,9 +484,10 @@ function handleMarkdownContent(view: any, content: string) {
   const subsupRegex = /<(sup|sub)>(.*?)<\/\1>/g;
   const superscriptRegex = /\^(.*?)\^/g;
   const subscriptRegex = /~(.*?)~/g;
+  const pageBreakRegex = /===\s*$/gm;
 
   // Process superscript and subscript tags in the HTML string
-  convertedHtml = convertedHtml.replace(subsupRegex, content => {
+  convertedHtml = convertedHtml.replace(subsupRegex, (content) => {
     return `${content}`;
   });
 
@@ -408,8 +502,18 @@ function handleMarkdownContent(view: any, content: string) {
     '<sub data-type="sub">$1</sub>',
   );
 
+  // Process page breaks
+  convertedHtml = convertedHtml.replace(
+    pageBreakRegex,
+    '<div data-type="page-break" data-page-break="true"></div>',
+  );
+
   // Sanitize the converted HTML
-  convertedHtml = DOMPurify.sanitize(convertedHtml);
+  convertedHtml = DOMPurify.sanitize(convertedHtml, {
+    ADD_TAGS: ['div'],
+    ADD_ATTR: ['data-type', 'data-page-break'],
+  });
+
   // Parse the sanitized HTML string into DOM nodes
   const domContent = parser.parseFromString(convertedHtml, 'text/html').body;
 
@@ -418,8 +522,11 @@ function handleMarkdownContent(view: any, content: string) {
     view.state.schema,
   ).parse(domContent);
 
-  // Apply superscript and subscript marks
+  // Create a new transaction
   const transaction = view.state.tr;
+
+  // Process the nodes and convert page break divs to actual page break nodes
+  let offset = 0;
   proseMirrorNodes.descendants((node, pos) => {
     if (node.isText) {
       const nodeDOM = domContent.childNodes[pos];
@@ -427,22 +534,36 @@ function handleMarkdownContent(view: any, content: string) {
         const element = nodeDOM as HTMLElement;
         if (element.dataset.type === 'sup') {
           transaction.addMark(
-            pos,
-            pos + node.nodeSize,
+            pos + offset,
+            pos + offset + node.nodeSize,
             view.state.schema.marks.superscript.create(),
           );
         } else if (element.dataset.type === 'sub') {
           transaction.addMark(
-            pos,
-            pos + node.nodeSize,
+            pos + offset,
+            pos + offset + node.nodeSize,
             view.state.schema.marks.subscript.create(),
           );
+        }
+      }
+    } else if (node.type.name === 'paragraph') {
+      const nodeDOM = domContent.childNodes[pos];
+      if (nodeDOM && nodeDOM.nodeType === Node.ELEMENT_NODE) {
+        const element = nodeDOM as HTMLElement;
+        if (element.dataset.type === 'page-break') {
+          // Replace the paragraph with a page break node
+          transaction.replaceWith(
+            pos + offset,
+            pos + offset + node.nodeSize,
+            view.state.schema.nodes.pageBreak.create(),
+          );
+          offset -= node.nodeSize - 1; // Adjust offset for the size difference
         }
       }
     }
   });
 
-  // Insert the sanitized content
+  // Insert the content and apply the transaction
   transaction.replaceSelectionWith(proseMirrorNodes, false);
   view.dispatch(transaction);
 }

@@ -28,22 +28,22 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 
 ## Properties
 
-| Property                                       | Type                                           | Description                                                                                            |
-| ---------------------------------------------- | ---------------------------------------------- |--------------------------------------------------------------------------------------------------------|
-| `isPreviewMode`                                | `boolean`                                      | Indicates whether the page is in preview mode or not.                                                  |
-| `data` (optional)                              | `Data`                                         | Optional property holding data related to the page.                                                    |
-| `enableCollaboration` (optional)               | `boolean`                                      | Optional property to enable collaboration                                                              |
-| `onCommentInteraction` (optional)              | `(commentInfo: IEditSelectionData) => void`    | Optional function that get's called whenever there is a mouse-over and click interaction on a comment  |
-| `collaborationId` (optional)                   | `string`                                       | When using enableCollaboration, you need to provide collaborationId, it can be uuid of doc             |
-| `onTextSelection` (optional)                   | `(data: IEditorSelectionData) => void`         | Function called when a text is selected on the editor                                                  |
-| `renderToolRightSection` (optional)            | `({editor}) => JSX.Element`                    | Function that render the right section of the toolbar. it calls the function with the editor instance  |
-| `renderToolLeftSection` (optional)             | `({editor}) => JSX.Element`                    | Accept a react component                                                                               |
-| `username` (required when using collaboration) | `boolean`                                      | Takes a username which can be used by collaboration cursor                                             |
-| `walletAddress` (optional)                     | `string `                                      | Takes a wallet address                                                                                 |
-| `ref` (optional)                               | `any`                                          | Gets editor instance                                                                                   |
-| `ensResolutionUrl` (optional)                  | `string`                                       | Api Url for resolving ens names                                                                        |
-| `secureImageUploadUrl` (optional)              | `string`                                       | Api Url for secure image upload                                                                        |
-| `initialContent` (optional)                    | `JSONContent`                                  | Initial content of the editor                                                                          |
+| Property                                       | Type                                           | Description                                                                                               |
+| ---------------------------------------------- | ---------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| `isPreviewMode`                                | `boolean`                                      | Indicates whether the page is in preview mode or not.                                                     |
+| `data` (optional)                              | `Data`                                         | Optional property holding data related to the page.                                                       |
+| `enableCollaboration` (optional)               | `boolean`                                      | Optional property to enable collaboration                                                                 |
+| `onCommentInteraction` (optional)              | `(commentInfo: IEditSelectionData) => void`    | Optional function that get's called whenever there is a mouse-over and click interaction on a comment     |
+| `collaborationId` (optional)                   | `string`                                       | When using enableCollaboration, you need to provide collaborationId, it can be uuid of doc                |
+| `onTextSelection` (optional)                   | `(data: IEditorSelectionData) => void`         | Function called when a text is selected on the editor                                                     |
+| `renderToolRightSection` (optional)            | `({editor}) => JSX.Element`                    | Function that render the right section of the toolbar. it calls the function with the editor instance     |
+| `renderToolLeftSection` (optional)             | `({editor}) => JSX.Element`                    | Accept a react component                                                                                  |
+| `username` (required when using collaboration) | `boolean`                                      | Takes a username which can be used by collaboration cursor                                                |
+| `walletAddress` (optional)                     | `string `                                      | Takes a wallet address                                                                                    |
+| `ref` (optional)                               | `any`                                          | Gets editor instance                                                                                      |
+| `ensResolutionUrl` (optional)                  | `string`                                       | Api Url for resolving ens names                                                                           |
+| `secureImageUploadUrl` (optional)              | `string`                                       | Api Url for secure image upload                                                                           |
+| `initialContent` (optional)                    | `JSONContent`                                  | Initial content of the editor                                                                             |
 | `onChange` (optional)                          | `(changes: JSONContent) => void`               | Optional function that gets triggered with the latest content of the editor on every change in the editor |
 | `onCollaboratorChange` (optional)              | `(collaborators?: IDocCollabUsers[] ) => void` | Optional function that gets triggered when a user join or leave the doc during collaboration           |
 | `onError` (optional)                           | `(errorString: string) => void`                | Function to call on error                                                                              |
@@ -51,7 +51,8 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `setWordCount` (optional)                      | `React.Dispatch<SetStateAction<number>>`       | Optional. React Set State function to update Word Count                                                |
 | `scrollPosition`(optional)                      | `number`                                       | User cursor position to scroll to on intitalising the content of the editor  
 | `enableIndexeddbSync` (optional) | `boolean` | Indicates when to use yjs-indexeddb provider
-| `ddocId` (optional) | `string` | custom ID for the document (this has to be provided to enable yjs-indexeddb provider)
+| `ddocId` (optional) | `string` | custom ID for the document (this has to be provided to enable yjs-indexeddb provider)                              |
+| `editorCanvasClassNames`(optional)             | `string`                                       | Optional. Extra className for editor-canvas                                                               |
 
 ## Data Interface
 

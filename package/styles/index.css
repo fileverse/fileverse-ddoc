@@ -38,6 +38,23 @@ body {
   scrollbar-width: none !important; /* Firefox */
 }
 
+.scroll-container::-webkit-scrollbar {
+  width: 0;
+}
+
+.scroll-container::-webkit-scrollbar:horizontal {
+  height: 10px;
+}
+
+.scroll-container::-webkit-scrollbar-track:horizontal {
+  background: #f8f9fa;
+}
+
+.scroll-container::-webkit-scrollbar-thumb:horizontal {
+  background: #00000040;
+  border-radius: 10px;
+}
+
 li > ol {
   counter-reset: list;
   margin: 0;
@@ -80,11 +97,11 @@ li > ol > li > ol > li:before {
   word-break: break-word;
 }
 
-.node-pageBreak{
+.node-pageBreak {
   background-color: #f8f9fa;
   height: 30px;
   margin-top: 4rem;
-  margin-bottom: 4rem;  
+  margin-bottom: 4rem;
 }
 
 div[data-page-break='false'] {

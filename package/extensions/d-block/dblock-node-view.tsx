@@ -25,13 +25,9 @@ import {
 import { LucideIcon } from '@fileverse/ui';
 // import { startImageUpload } from '../../utils/upload-images';
 
-export const DBlockNodeView: React.FC<NodeViewProps & { secureImageUploadUrl?: string }> = ({
-  node,
-  getPos,
-  editor,
-  deleteNode,
-  secureImageUploadUrl,
-}) => {
+export const DBlockNodeView: React.FC<
+  NodeViewProps & { zoomLevel: string, secureImageUploadUrl?: string }
+> = ({ zoomLevel, node, getPos, editor, deleteNode, secureImageUploadUrl }) => {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const actions = useContentItemActions(editor as Editor, node, getPos());
   const isPreviewMode = useEditingContext();
@@ -289,92 +285,93 @@ export const DBlockNodeView: React.FC<NodeViewProps & { secureImageUploadUrl?: s
 
   return (
     <NodeViewWrapper
-      as="div"
       className={cn(
         'flex px-4 md:px-[80px] gap-2 group w-full relative justify-center items-start',
         isPreviewMode && 'pointer-events-none',
         isTable && 'pointer-events-auto',
       )}
     >
-      <section
-        className="lg:flex gap-1 hidden"
-        aria-label="left-menu"
-        contentEditable={false}
-      >
-        <CustomTooltip
-          content={
-            <div className="flex flex-col w-40">
-              <div className="text-xs">Click to add below</div>
-              <div className="text-xs">Opt + Click to add above</div>
-            </div>
-          }
+      {!isPreviewMode && (
+        <section
+          className="lg:flex gap-1 hidden"
+          aria-label="left-menu"
+          contentEditable={false}
         >
-          <div
-            className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
-              }`}
-            contentEditable={false}
-            onClick={handleClick}
-          >
-            <LucideIcon name="Plus" size="sm" />
-          </div>
-        </CustomTooltip>
-        <FocusScope
-          onMountAutoFocus={(e) => e.preventDefault()}
-          trapped={false}
-        >
-          <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
-            <Popover.Trigger asChild>
-              <div
-                className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
-                  }`}
-                contentEditable={false}
-                draggable
-                data-drag-handle
-                onClick={handleDragClick}
-              >
-                <LucideIcon name="GripVertical" size="sm" />
+          <CustomTooltip
+            content={
+              <div className="flex flex-col w-40">
+                <div className="text-xs">Click to add below</div>
+                <div className="text-xs">Opt + Click to add above</div>
               </div>
-            </Popover.Trigger>
-            <Popover.Content
-              side="bottom"
-              align="start"
-              sideOffset={8}
-              className="z-10"
+            }
+          >
+            <div
+              className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
+                }`}
+              contentEditable={false}
+              onClick={handleClick}
             >
-              <Surface className="p-2 flex flex-col min-w-[16rem]">
-                <Popover.Close>
-                  <DropdownButton onClick={actions.resetTextFormatting}>
-                    <LucideIcon name="RemoveFormatting" size="sm" />
-                    Clear formatting
-                  </DropdownButton>
-                </Popover.Close>
-                <Popover.Close>
-                  <DropdownButton onClick={actions.copyNodeToClipboard}>
-                    <LucideIcon name="Clipboard" size="sm" />
-                    Copy to clipboard
-                  </DropdownButton>
-                </Popover.Close>
-                <Popover.Close>
-                  <DropdownButton onClick={actions.duplicateNode}>
-                    <LucideIcon name="Copy" size="sm" />
-                    Duplicate
-                  </DropdownButton>
-                </Popover.Close>
-                <Toolbar.Divider horizontal />
-                <Popover.Close>
-                  <DropdownButton
-                    onClick={actions.deleteNode}
-                    className="text-red-500 hover:bg-red-500 bg-opacity-10 hover:bg-opacity-20"
-                  >
-                    <LucideIcon name="Trash2" size="sm" />
-                    Delete
-                  </DropdownButton>
-                </Popover.Close>
-              </Surface>
-            </Popover.Content>
-          </Popover.Root>
-        </FocusScope>
-      </section>
+              <LucideIcon name="Plus" size="sm" />
+            </div>
+          </CustomTooltip>
+          <FocusScope
+            onMountAutoFocus={(e) => e.preventDefault()}
+            trapped={false}
+          >
+            <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
+              <Popover.Trigger asChild>
+                <div
+                  className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
+                    }`}
+                  contentEditable={false}
+                  draggable
+                  data-drag-handle
+                  onClick={handleDragClick}
+                >
+                  <LucideIcon name="GripVertical" size="sm" />
+                </div>
+              </Popover.Trigger>
+              <Popover.Content
+                side="bottom"
+                align="start"
+                sideOffset={8}
+                className="z-10"
+              >
+                <Surface className="p-2 flex flex-col min-w-[16rem]">
+                  <Popover.Close>
+                    <DropdownButton onClick={actions.resetTextFormatting}>
+                      <LucideIcon name="RemoveFormatting" size="sm" />
+                      Clear formatting
+                    </DropdownButton>
+                  </Popover.Close>
+                  <Popover.Close>
+                    <DropdownButton onClick={actions.copyNodeToClipboard}>
+                      <LucideIcon name="Clipboard" size="sm" />
+                      Copy to clipboard
+                    </DropdownButton>
+                  </Popover.Close>
+                  <Popover.Close>
+                    <DropdownButton onClick={actions.duplicateNode}>
+                      <LucideIcon name="Copy" size="sm" />
+                      Duplicate
+                    </DropdownButton>
+                  </Popover.Close>
+                  <Toolbar.Divider horizontal />
+                  <Popover.Close>
+                    <DropdownButton
+                      onClick={actions.deleteNode}
+                      className="text-red-500 hover:bg-red-500 bg-opacity-10 hover:bg-opacity-20"
+                    >
+                      <LucideIcon name="Trash2" size="sm" />
+                      Delete
+                    </DropdownButton>
+                  </Popover.Close>
+                </Surface>
+              </Popover.Content>
+            </Popover.Root>
+          </FocusScope>
+        </section>
+      )}
 
       <NodeViewContent
         className={cn('node-view-content w-full relative', {
@@ -389,6 +386,7 @@ export const DBlockNodeView: React.FC<NodeViewProps & { secureImageUploadUrl?: s
             visibleTemplateCount,
             toggleAllTemplates,
             isExpanded,
+            zoomLevel,
           )}
       </NodeViewContent>
     </NodeViewWrapper>

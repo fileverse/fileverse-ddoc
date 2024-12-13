@@ -35,6 +35,9 @@ export interface DdocProps {
   >;
   zoomLevel: string;
   setZoomLevel: React.Dispatch<SetStateAction<string>>;
+  isNavbarVisible: boolean;
+  setIsNavbarVisible: React.Dispatch<SetStateAction<boolean>>;
+  editorCanvasClassNames?: string;
   isCommentSectionOpen?: boolean;
   collaborationId?: string;
   isPreviewMode: boolean;
@@ -60,6 +63,12 @@ export interface DdocProps {
   className?: string;
   scrollPosition?: number;
   unFocused?: boolean;
+  isPresentationMode?: boolean;
+  setIsPresentationMode?: React.Dispatch<SetStateAction<boolean>>;
+  onInlineComment?: () => void; 
+  onMarkdownExport?: () => void;
+  onMarkdownImport?: () => void;
+  sharedSlidesLink?: string;
 }
 
 export interface IEditorSelectionData {

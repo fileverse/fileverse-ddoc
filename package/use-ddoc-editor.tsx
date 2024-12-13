@@ -18,6 +18,7 @@ import { PageBreak } from './extensions/page-break/page-break';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { isJSONString } from './utils/isJsonString';
+import { useZoomLevelListener } from './useZoomLevelListener';
 
 const usercolors = [
   '#30bced',
@@ -40,7 +41,6 @@ export const useDdocEditor = ({
   onChange,
   onCollaboratorChange,
   onCommentInteraction,
-  onTextSelection,
   ensResolutionUrl,
   onError,
   setCharacterCount,
@@ -50,10 +50,12 @@ export const useDdocEditor = ({
   ddocId,
   enableIndexeddbSync,
   unFocused,
+  zoomLevel,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions(
+      zoomLevel as string,
       (error: string) => onError?.(error),
       secureImageUploadUrl,
     ) as AnyExtension[]),
@@ -66,6 +68,16 @@ export const useDdocEditor = ({
   ]);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
+  useZoomLevelListener({
+    zoomLevel,
+    setExtensions,
+    defaultExtensions,
+    onError,
+    secureImageUploadUrl,
+    customTextInputRules,
+    SlashCommand,
+    PageBreak,
+  });
 
   const isHighlightedYellow = (
     state: EditorState,
@@ -275,7 +287,7 @@ export const useDdocEditor = ({
       initialContentSetRef.current = true;
     }
 
-    setTimeout(() => {
+    const scrollTimeoutId = setTimeout(() => {
       if (ref.current && !!scrollPosition && editor) {
         const coords = editor.view.coordsAtPos(scrollPosition);
         const editorContainer = ref.current;
@@ -289,30 +301,11 @@ export const useDdocEditor = ({
         setIsContentLoading(false);
       }
     });
-  }, [initialContent, editor, ydoc]);
 
-  useEffect(() => {
-    if (!editor) {
-      return;
-    }
-    const handleSelection = () => {
-      const { state } = editor;
-      const { from, to } = state.selection;
-
-      const selectedText = state.doc.textBetween(from, to, ' ');
-      onTextSelection?.({
-        text: selectedText,
-        from,
-        to,
-        isHighlightedYellow: isHighlightedYellow(state, from, to),
-      });
-    };
-
-    editor.on('selectionUpdate', handleSelection);
     return () => {
-      editor.off('selectionUpdate', handleSelection);
+      clearTimeout(scrollTimeoutId);
     };
-  }, [editor]);
+  }, [initialContent, editor, ydoc]);
 
   const startCollaboration = async () => {
     let _username = username;
@@ -364,6 +357,14 @@ export const useDdocEditor = ({
       ydoc?.off('update', handler);
     };
   }, [ydoc]);
+
+  useEffect(() => {
+    return () => {
+      if (editor) {
+        editor.destroy();
+      }
+    };
+  }, [editor])
 
   return {
     editor,

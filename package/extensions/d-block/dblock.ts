@@ -2,7 +2,9 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import { DBlockNodeView } from './dblock-node-view';
+import React from 'react';
 export interface DBlockOptions {
+  zoomLevel: string;
   HTMLAttributes: Record<string, any>;
   secureImageUploadUrl?: string;
 }
@@ -32,6 +34,7 @@ export const DBlock = Node.create<DBlockOptions>({
 
   addOptions() {
     return {
+      zoomLevel: '',
       HTMLAttributes: {},
       secureImageUploadUrl: '',
     };
@@ -44,7 +47,7 @@ export const DBlock = Node.create<DBlockOptions>({
   renderHTML({ HTMLAttributes }: { HTMLAttributes: any }) {
     return [
       'div',
-      mergeAttributes(HTMLAttributes, { 'data-type': 'd-block' }),
+      mergeAttributes(HTMLAttributes, { 'data-type': 'd-block', 'data-zoom-level': this.options.zoomLevel }),
       0,
     ];
   },
@@ -52,7 +55,7 @@ export const DBlock = Node.create<DBlockOptions>({
   addCommands() {
     return {
       setDBlock:
-        position =>
+        (position) =>
         ({ state, chain }) => {
           const {
             selection: { from },
@@ -92,7 +95,7 @@ export const DBlock = Node.create<DBlockOptions>({
         const atTheStartOfText = from + 4;
 
         // Check if inside table
-        const isInsideTable = nodePaths.some(path => path.includes('table'));
+        const isInsideTable = nodePaths.some((path) => path.includes('table'));
 
         const isListOrTaskItem =
           parent?.type.name === 'listItem' || parent?.type.name === 'taskItem';
@@ -234,6 +237,15 @@ export const DBlock = Node.create<DBlockOptions>({
           doc,
         } = editor.state;
 
+        // Handle selection deletion first
+        if (from !== to) {
+          // Check if we're at the start of the document
+          if (from <= 2) {
+            return false;
+          }
+          return editor.chain().deleteSelection().focus().run();
+        }
+
         const parent = $head.node($head.depth - 1);
         const node = $head.node($head.depth);
         const nodeStartPos = $head.start();
@@ -268,21 +280,19 @@ export const DBlock = Node.create<DBlockOptions>({
           }
         }
 
-        const isNearestDBlock = doc.nodeAt(from - 4)?.type.name === 'dBlock';
+        // Only check for nearest nodes if we're not at the start of the document
+        const isNearestDBlock =
+          from > 4 ? doc.nodeAt(from - 4)?.type.name === 'dBlock' : false;
 
         const isNearestListItem =
-          doc.nodeAt(from - 2)?.type.name === 'listItem' ||
-          doc.nodeAt(from - 2)?.type.name === 'taskItem';
+          from > 2
+            ? doc.nodeAt(from - 2)?.type.name === 'listItem' ||
+              doc.nodeAt(from - 2)?.type.name === 'taskItem'
+            : false;
 
         const isMultipleListItems =
-          $head.node($head.depth - 2).childCount > 1 ||
-          $head.node($head.depth - 1).childCount > 1;
-
-        const isItemSelected = from !== to && isListOrTaskList;
-
-        if (isItemSelected) {
-          return editor.chain().deleteSelection().focus().run();
-        }
+          $head.node($head.depth - 2)?.childCount > 1 ||
+          $head.node($head.depth - 1)?.childCount > 1;
 
         // Fix for deleting the first item in a list that breaks the list
         if (isAtStartOfNode && isListOrTaskList) {
@@ -309,6 +319,10 @@ export const DBlock = Node.create<DBlockOptions>({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(DBlockNodeView as any);
-  },
+    return ReactNodeViewRenderer((props) => {
+      props.updateAttributes({ zoomLevel: this.options.zoomLevel });
+  
+      return React.createElement(DBlockNodeView, { ...props, zoomLevel: this.options.zoomLevel });
+    });
+  }
 });

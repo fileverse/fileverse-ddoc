@@ -25,6 +25,7 @@ import * as Y from 'yjs';
 import platform from 'platform';
 import MobileToolbar from './components/mobile-toolbar';
 import { fromUint8Array, toUint8Array } from 'js-base64';
+import { PresentationMode } from './components/presentation-mode/presentation-mode';
 
 const checkOs = () => platform.os?.family;
 
@@ -61,11 +62,21 @@ const DdocEditor = forwardRef(
       ddocId,
       zoomLevel,
       setZoomLevel,
+      isPresentationMode,
+      setIsPresentationMode,
+      isNavbarVisible,
+      setIsNavbarVisible,
+      onInlineComment,
+      onMarkdownExport,
+      onMarkdownImport,
+      editorCanvasClassNames,
+      sharedSlidesLink,
     }: DdocProps,
     ref,
   ) => {
-    const [isNavbarVisible, setIsNavbarVisible] = useState(true);
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+
     const btn_ref = useRef(null);
     const isMobile = useMediaQuery('(max-width: 640px)');
     const isWidth1500px = useMediaQuery('(min-width: 1500px)');
@@ -125,6 +136,8 @@ const DdocEditor = forwardRef(
       inlineCommentData,
       zoomLevel,
       setZoomLevel,
+      isNavbarVisible,
+      setIsNavbarVisible,
     });
 
     useImperativeHandle(
@@ -181,6 +194,22 @@ const DdocEditor = forwardRef(
       );
     };
 
+    const handleClosePresentationMode = () => {
+      setIsPresentationMode?.(false);
+
+      // Remove slides parameter from URL
+      const url = new URL(window.location.href);
+      const hash = url.hash;
+
+      // Split the hash to preserve the key parameter
+      const [hashPath, keyParam] = hash.split('&');
+      if (keyParam && keyParam.startsWith('slides=')) {
+        // Remove only the slides parameter while keeping the key
+        url.hash = hashPath;
+        window.history.replaceState({}, '', url.toString());
+      }
+    };
+
     useEffect(() => {
       if (!editor) return;
       if (isNativeMobile) {
@@ -223,43 +252,6 @@ const DdocEditor = forwardRef(
       };
     }, [editor]);
 
-    const [hasEditorContent, setHasEditorContent] = useState(false);
-
-    useEffect(() => {
-      if (editorRef.current) {
-        const checkEditorEmpty = () => {
-          const editorEmpty =
-            editorRef.current?.querySelector('.is-editor-empty');
-          setHasEditorContent(!editorEmpty);
-        };
-
-        checkEditorEmpty();
-
-        const observer = new MutationObserver(() => {
-          checkEditorEmpty();
-        });
-
-        observer.observe(editorRef.current, {
-          childList: true,
-          subtree: true,
-          attributes: true,
-        });
-
-        return () => observer.disconnect();
-      }
-    }, []);
-
-    useEffect(() => {
-      const intervalId = setInterval(() => {
-        if (editorRef.current) {
-          const editorEmpty =
-            editorRef.current.querySelector('.is-editor-empty');
-          setHasEditorContent(!editorEmpty);
-        }
-      }, 1000);
-      return () => clearInterval(intervalId);
-    }, []);
-
     // Push the editor to the top when the keyboard is visible
     useEffect(() => {
       if (!isNativeMobile || !editor) return;
@@ -290,10 +282,16 @@ const DdocEditor = forwardRef(
 
     return (
       <div
-        data-cy="single-webpage"
-        className={`bg-[#f8f9fa] w-full h-screen overflow-y-auto no-scrollbar ${
-          zoomLevel === '2' ? 'overflow-x-auto' : 'overflow-x-hidden'
-        }`}
+        id="editor-canvas"
+        className={cn(
+          'h-[100vh] bg-[#f8f9fa] w-full overflow-y-auto',
+          {
+            'overflow-x-hidden no-scrollbar': zoomLevel !== '2',
+            'overflow-x-auto scroll-container': zoomLevel === '2',
+          },
+          !isPresentationMode ? 'bg-[#f8f9fa]' : 'bg-[#ffffff]',
+          editorCanvasClassNames,
+        )}
       >
         <nav
           id="Navbar"
@@ -301,7 +299,7 @@ const DdocEditor = forwardRef(
             'h-14 bg-[#ffffff] py-2 px-4 flex gap-[40px] items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300',
             {
               'translate-y-0': isNavbarVisible,
-              'translate-y-[-100%]': !isNavbarVisible,
+              'translate-y-[-100%]': !isNavbarVisible || isPresentationMode,
             },
           )}
         >
@@ -311,10 +309,10 @@ const DdocEditor = forwardRef(
           <div
             id="toolbar"
             className={cn(
-              'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 px-1 bg-[#ffffff] border-b color-border-default transition-transform duration-300 top-[3.3rem]',
+              'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 px-1 bg-[#ffffff] border-b color-border-default transition-transform duration-300 top-[3.5rem]',
               {
                 'translate-y-0': isNavbarVisible,
-                'translate-y-[-105%]': !isNavbarVisible,
+                'translate-y-[-108%]': !isNavbarVisible,
               },
             )}
           >
@@ -327,14 +325,28 @@ const DdocEditor = forwardRef(
                 isNavbarVisible={isNavbarVisible}
                 setIsNavbarVisible={setIsNavbarVisible}
                 secureImageUploadUrl={secureImageUploadUrl}
+                onMarkdownExport={onMarkdownExport}
+                onMarkdownImport={onMarkdownImport}
               />
             </div>
           </div>
         )}
+        {isPresentationMode && (
+          <PresentationMode
+            editor={editor}
+            onClose={handleClosePresentationMode}
+            isFullscreen={isFullscreen}
+            setIsFullscreen={setIsFullscreen}
+            onError={onError}
+            setIsCommentSectionOpen={setIsCommentSectionOpen}
+            sharedSlidesLink={sharedSlidesLink}
+            isPreviewMode={isPreviewMode}
+          />
+        )}
         <div
           className={cn(
             'bg-white w-full mx-auto rounded',
-            { 'mt-0 md:!mt-16': isPreviewMode },
+            { 'mt-4 md:!mt-16': isPreviewMode },
             { 'md:!mt-16': !isPreviewMode },
             { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
             { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
@@ -380,7 +392,7 @@ const DdocEditor = forwardRef(
             ref={editorRef}
             className={cn(
               'w-full h-full pt-8 md:pt-0',
-              { '!mt-24': isIOS && hasEditorContent },
+              { 'custom-ios-padding': isIOS },
               { 'bg-white': zoomLevel === '1.4' || '1.5' },
             )}
             style={{
@@ -397,6 +409,9 @@ const DdocEditor = forwardRef(
                 inlineCommentData={inlineCommentData}
                 setInlineCommentData={setInlineCommentData}
                 isPreviewMode={isPreviewMode}
+                username={username as string}
+                walletAddress={walletAddress as string}
+                onInlineComment={onInlineComment}
               />
               <ColumnsMenu
                 editor={editor}

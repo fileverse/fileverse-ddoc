@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // define your extension array
-/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import StarterKit from '@tiptap/starter-kit';
 import FontFamily from '@tiptap/extension-font-family';
 import TextAlign from '@tiptap/extension-text-align';
@@ -41,6 +41,7 @@ import { ResizableMedia } from './resizable-media';
 import { uploadFn } from '../utils/upload-images';
 
 export const defaultExtensions = (
+  zoomLevel: string,
   onError: (error: string) => void,
   secureImageUploadUrl?: string,
 ) => [
@@ -120,7 +121,7 @@ export const defaultExtensions = (
         'color-text-link font-bold transition-colors cursor-pointer select-text pointer-events-auto',
       rel: 'noopener noreferrer',
     },
-    validate: href => /^https?:\/\//.test(href),
+    validate: (href) => /^https?:\/\//.test(href),
     openOnClick: true,
     autolink: true,
   }),
@@ -169,6 +170,7 @@ export const defaultExtensions = (
   }),
   GapCursor,
   DBlock.configure({
+    zoomLevel,
     secureImageUploadUrl,
   }),
   TrailingNode,

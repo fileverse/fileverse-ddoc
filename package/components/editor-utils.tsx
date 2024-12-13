@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable no-useless-escape */
+
 import React, {
   Dispatch,
   SetStateAction,
@@ -153,10 +153,14 @@ export const useEditorToolbar = ({
   editor,
   onError,
   secureImageUploadUrl,
+  onMarkdownExport,
+  onMarkdownImport,
 }: {
   editor: Editor;
   onError?: (errorString: string) => void;
   secureImageUploadUrl?: string;
+  onMarkdownExport?: () => void; 
+  onMarkdownImport?: () => void; 
 }) => {
   const {
     ref: toolRef,
@@ -339,7 +343,7 @@ export const useEditorToolbar = ({
     {
       icon: 'Markdown',
       title: 'Markdown',
-      onClick: () => { },
+      onClick: () => {},
       isActive: false,
     },
   ];
@@ -348,13 +352,19 @@ export const useEditorToolbar = ({
     {
       icon: 'FileInput',
       title: 'Import Markdown',
-      onClick: () => editor?.commands.uploadMarkdownFile(),
+      onClick: () => {
+        editor?.commands.uploadMarkdownFile();
+        onMarkdownImport?.(); 
+      },
       isActive: false,
     },
     {
       icon: 'FileOutput',
       title: 'Export Markdown',
-      onClick: () => setIsExportModalOpen(true),
+      onClick: () => {
+        setIsExportModalOpen(true);
+        onMarkdownExport?.(); 
+      },
       isActive: false,
     },
   ];
@@ -630,8 +640,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${
+            editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="List" />
         </button>
@@ -643,8 +654,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${
+            editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListOrdered" />
         </button>
@@ -656,8 +668,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${
+            editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListChecks" />
         </button>
@@ -752,17 +765,23 @@ export const InlineCommentPopup = ({
   setIsInlineCommentOpen,
   inlineCommentData,
   setInlineCommentData,
+  onInlineComment,
 }: {
   elementRef: React.RefObject<HTMLDivElement>;
   editor: Editor;
   setIsCommentSectionOpen: Dispatch<SetStateAction<boolean>>;
   setIsInlineCommentOpen: Dispatch<SetStateAction<boolean>>;
-  inlineCommentData: { highlightedTextContent: string; inlineCommentText: string; handleClick: boolean };
+  inlineCommentData: {
+    highlightedTextContent: string;
+    inlineCommentText: string;
+    handleClick: boolean;
+  };
   setInlineCommentData: (data: {
     highlightedTextContent?: string;
     inlineCommentText?: string;
     handleClick?: boolean;
   }) => void;
+  onInlineComment?: () => void; 
 }) => {
   const [comment, setComment] = useState(
     inlineCommentData.inlineCommentText || '',
@@ -778,14 +797,21 @@ export const InlineCommentPopup = ({
   const handleClosePopup = () => {
     editor.chain().unsetHighlight().run();
     setComment('');
-    setInlineCommentData({ inlineCommentText: '', highlightedTextContent: "", handleClick: false });
-    setIsInlineCommentOpen(false)
+    setInlineCommentData({
+      inlineCommentText: '',
+      highlightedTextContent: '',
+      handleClick: false,
+    });
+    setIsInlineCommentOpen(false);
   };
 
   // Close popup if click is outside or ESC key is pressed
   useEffect(() => {
     const handleOutsideClick = (event: MouseEvent) => {
-      if (elementRef.current && !elementRef.current.contains(event.target as Node)) {
+      if (
+        elementRef.current &&
+        !elementRef.current.contains(event.target as Node)
+      ) {
         handleClosePopup();
       }
     };
@@ -808,7 +834,7 @@ export const InlineCommentPopup = ({
       setInlineCommentData({ inlineCommentText: comment, handleClick: true });
       editor.chain().unsetHighlight().run();
       setIsCommentSectionOpen(true);
-
+      onInlineComment?.();
       // Reset comment field and close inline comment
       setComment('');
       setIsInlineCommentOpen(false);
@@ -824,10 +850,7 @@ export const InlineCommentPopup = ({
 
       // Clear selection to hide bubble menu by collapsing selection to start
       const { from } = editor.state.selection;
-      editor.chain()
-        .focus()
-        .setTextSelection(from)
-        .run();
+      editor.chain().focus().setTextSelection(from).run();
     }
   };
 
@@ -835,6 +858,7 @@ export const InlineCommentPopup = ({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleClick();
+      onInlineComment?.();
     }
   };
 
@@ -854,12 +878,11 @@ export const InlineCommentPopup = ({
       {comment.trim() !== '' && (
         <div className="h-full flex items-center gap-2 p-3">
           <span className="w-full text-[12px] text-[#77818A]">
-            Press <span className='font-semibold'>{isMobile ? 'Send' : 'Enter'}</span> to send a comment
+            Press{' '}
+            <span className="font-semibold">{isMobile ? 'Send' : 'Enter'}</span>{' '}
+            to send a comment
           </span>
-          <Button
-            className="!min-w-[10px] !h-8 !px-2"
-            onClick={handleClick}
-          >
+          <Button className="!min-w-[10px] !h-8 !px-2" onClick={handleClick}>
             <LucideIcon name="SendHorizontal" size="md" />
           </Button>
         </div>

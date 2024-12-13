@@ -18,6 +18,7 @@ import ToolbarButton from '../common/toolbar-button';
 import { DynamicDropdown, cn } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 import platform from 'platform';
+import tippy from 'tippy.js';
 
 export interface BubbleMenuItem {
   name: string;
@@ -35,6 +36,9 @@ type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   setInlineCommentData?: React.Dispatch<
     React.SetStateAction<InlineCommentData>
   >;
+  walletAddress?: string;
+  username?: string;
+  onInlineComment?: () => void;
 };
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
@@ -100,9 +104,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
 
   const isMobileScreen = useMediaQuery('(max-width: 640px)');
   const isNativeMobile =
-      checkOs() === 'Android' ||
-      checkOs() === 'Windows Phone' ||
-      isMobileScreen;
+    checkOs() === 'Android' || checkOs() === 'Windows Phone' || isMobileScreen;
 
   const bubbleMenuProps: EditorBubbleMenuProps = {
     ...props,
@@ -110,10 +112,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       const { selection } = state;
       const { empty } = selection;
 
-      // don't show bubble menu if:
-      // - the selected node is an image
-      // - the selection is empty
-      // - the selection is a node selection (for drag handles)
       if (editor.isActive('image') || empty || isNodeSelection(selection)) {
         return false;
       }
@@ -123,9 +121,41 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       moveTransition: 'transform 0.15s ease-out',
       duration: 200,
       animation: 'shift-toward-subtle',
-      zIndex: 50,
-      offset: [0, isNativeMobile ? 60 : 0],
+      zIndex: 20,
+      offset: isNativeMobile ? 60 : 20,
+      appendTo: () => document.getElementById('editor-canvas'),
+      popperOptions: {
+        modifiers: [
+          {
+            name: 'computeStyles',
+            options: {
+              gpuAcceleration: false,
+              adaptive: true,
+            },
+          },
+          {
+            name: 'preventOverflow',
+            options: {
+              boundary: 'viewport',
+              padding: 20,
+              altAxis: true,
+            },
+          },
+        ],
+      },
     },
+  };
+
+  const initializeTippy = (element: HTMLElement, clientRect: DOMRect) => {
+    tippy(element, {
+      getReferenceClientRect: () => clientRect,
+      appendTo: () => document.getElementById('editor-canvas'),
+      interactive: true,
+      trigger: 'manual',
+      placement: 'bottom-start',
+      content: element,
+      showOnCreate: true,
+    });
   };
 
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
@@ -184,18 +214,22 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           />
         );
       case 'InlineComment':
-        return (
-          <InlineCommentPopup
-            editor={props.editor}
-            elementRef={toolRef}
-            setIsCommentSectionOpen={props.setIsCommentSectionOpen}
-            setIsInlineCommentOpen={setIsInlineCommentOpen}
-            inlineCommentData={props.inlineCommentData}
-            setInlineCommentData={(data) =>
-              props.setInlineCommentData?.((prev) => ({ ...prev, ...data }))
-            }
-          />
-        );
+        if (props.username || props.walletAddress) {
+          return (
+            <InlineCommentPopup
+              editor={props.editor}
+              elementRef={toolRef}
+              setIsCommentSectionOpen={props.setIsCommentSectionOpen}
+              setIsInlineCommentOpen={setIsInlineCommentOpen}
+              inlineCommentData={props.inlineCommentData}
+              setInlineCommentData={(data) =>
+                props.setInlineCommentData?.((prev) => ({ ...prev, ...data }))
+              }
+              onInlineComment={props.onInlineComment}
+                          />
+          );
+        }
+        return null;
       case 'Scripts':
         return <ScriptsPopup editor={props.editor} elementRef={toolRef} />;
       default:
@@ -206,23 +240,27 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const isMobile = useMediaQuery('(max-width: 1023px)');
 
   const handleHighlight = () => {
-    const selection = window.getSelection();
-    if (selection.rangeCount > 0) {
-      const selectedText = selection.toString().trim();
-      if (selectedText) {
-        props.setInlineCommentData((prevData) => {
-          const updatedData = {
-            ...prevData,
-            highlightedTextContent: selectedText,
-          };
-          return updatedData;
-        });
-
-        setTimeout(() => {
-          props.editor.chain().setHighlight({ color: '#DDFBDF' }).run();
-        }, 10);
-      }
+    if (!(props.username || props.walletAddress)) {
+      props.setIsCommentSectionOpen(true);
+      return;
     }
+    const { state } = props.editor;
+    if (!state) return;
+    const { from, to } = state.selection;
+
+    const selectedText = state.doc.textBetween(from, to, ' ');
+    if (!selectedText) return;
+    props.setInlineCommentData((prevData) => {
+      const updatedData = {
+        ...prevData,
+        highlightedTextContent: selectedText,
+      };
+      return updatedData;
+    });
+
+    setTimeout(() => {
+      props.editor.chain().setHighlight({ color: '#DDFBDF' }).run();
+    }, 10);
     setIsInlineCommentOpen(true);
   };
 
@@ -233,10 +271,17 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       className={cn(
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border bg-white items-center shadow-elevation-3',
         isInlineCommentOpen ? '!invisible' : '!visible',
-        {
-          "ml-[100%] mt-[60%]": props.zoomLevel === '0.5',
-        }
       )}
+      style={{
+        transform: `scale(${1 / parseFloat(props.zoomLevel)})`,
+        transformOrigin: 'center',
+      }}
+      ref={(element) => {
+        if (element) {
+          const clientRect = element.getBoundingClientRect();
+          initializeTippy(element, clientRect);
+        }
+      }}
     >
       {isMobile || props.isPreviewMode ? (
         <div
