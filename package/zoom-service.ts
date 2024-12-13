@@ -34,7 +34,7 @@ class ZoomService {
       '1': '-60%',
       '1.4': '-120%',
       '1.5': '-140%',
-      '2': '-280%'
+      '2': '-300%'
     };
     
     if (window.matchMedia('(min-width: 768px)').matches) {
