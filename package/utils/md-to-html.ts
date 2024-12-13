@@ -19,9 +19,8 @@ markdownIt.renderer.rules.list_item_open = (tokens, idx) => {
     if (match) {
       const isChecked = match[1].toLowerCase() === 'x';
       token.content = match[2];
-      return `<li class="task-list-item"><input type="checkbox" ${
-        isChecked ? 'checked' : ''
-      } disabled>`;
+      return `<li class="task-list-item"><input type="checkbox" ${isChecked ? 'checked' : ''
+        } disabled>`;
     }
   }
   return '<li>';
@@ -218,8 +217,7 @@ export function convertMarkdownToHTML(
         const isChecked = match[1].toLowerCase() === 'x';
         const content = match[2];
         currentSection[currentSection.length - 1].content +=
-          `<li class="task-list-item"><input type="checkbox" ${
-            isChecked ? 'checked' : ''
+          `<li class="task-list-item"><input type="checkbox" ${isChecked ? 'checked' : ''
           } disabled>${content}</li>\n`;
       }
     } else {
@@ -372,6 +370,32 @@ export function convertMarkdownToHTML(
       continue;
     }
 
+    // Handle H3 (Section header)
+    if (line.startsWith('### ')) {
+      if (tableBuffer.length > 0) {
+        const tableHtmlChunks = processTable(tableBuffer);
+
+        for (let i = 0; i < tableHtmlChunks.length; i++) {
+          const tableHtml = tableHtmlChunks[i];
+          if (tableHtml) {
+            if (i > 0 || shouldCreateNewSection(tableHtml, currentSection)) {
+              createNewSection();
+            }
+            currentSection.push({ type: 'table', content: tableHtml });
+          }
+        }
+        tableBuffer = [];
+      }
+      createNewSection();
+
+      // Convert markdown content to HTML, but strip the outer <p> tags
+      const markdownContent = line.substring(4);
+      const htmlContent = markdownIt.renderInline(markdownContent);
+
+      currentSection = [{ type: 'h3', content: htmlContent }];
+      continue;
+    }
+
     // Table handling
     if (line.startsWith('|') || line.match(/^\s*[-|]+\s*$/)) {
       tableBuffer.push(line);
@@ -469,6 +493,8 @@ export function convertMarkdownToHTML(
             return `<h1>${content.content}</h1>`;
           case 'h2':
             return `<h2>${content.content}</h2>`;
+          case 'h3':
+            return `<h3>${content.content}</h3>`;
           case 'image':
             return `<img src="${content.content}" class="slide-image"/>`;
           case 'table':
