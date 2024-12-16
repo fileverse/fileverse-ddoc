@@ -1,5 +1,7 @@
 import { useEffect } from 'react';
 import { AnyExtension } from '@tiptap/react';
+import * as Y from 'yjs';
+import Collaboration from '@tiptap/extension-collaboration';
 
 export function useZoomLevelListener({
   zoomLevel,
@@ -10,6 +12,7 @@ export function useZoomLevelListener({
   customTextInputRules,
   SlashCommand,
   PageBreak,
+  ydoc,
 }: {
   zoomLevel: string | undefined;
   setExtensions: React.Dispatch<React.SetStateAction<AnyExtension[]>>;
@@ -26,6 +29,7 @@ export function useZoomLevelListener({
     secureImageUploadUrl: string,
   ) => AnyExtension;
   PageBreak: AnyExtension;
+  ydoc: Y.Doc;
 }) {
   useEffect(() => {
     if (zoomLevel) {
@@ -41,6 +45,9 @@ export function useZoomLevelListener({
         ),
         customTextInputRules,
         PageBreak,
+        Collaboration.configure({
+          document: ydoc,
+        }),
       ]);
     }
   }, [zoomLevel]);

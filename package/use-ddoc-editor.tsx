@@ -77,6 +77,7 @@ export const useDdocEditor = ({
     customTextInputRules,
     SlashCommand,
     PageBreak,
+    ydoc,
   });
 
   const isHighlightedYellow = (
@@ -85,11 +86,11 @@ export const useDdocEditor = ({
     to: number,
   ) => {
     let _isHighlightedYellow = false;
-    state.doc.nodesBetween(from, to, node => {
+    state.doc.nodesBetween(from, to, (node) => {
       if (
         node.marks &&
         node.marks.some(
-          mark =>
+          (mark) =>
             mark.type.name === 'highlight' && mark.attrs.color === 'yellow',
         )
       ) {
@@ -121,7 +122,7 @@ export const useDdocEditor = ({
         // Find the start and end of the highlighted mark
         state.doc.nodesBetween(from, to, (node, pos) => {
           if (node.marks && node.marks.length) {
-            node.marks.forEach(mark => {
+            node.marks.forEach((mark) => {
               if (mark.type.name === 'highlight') {
                 from = pos;
                 to = pos + node.nodeSize;
@@ -191,7 +192,7 @@ export const useDdocEditor = ({
     });
 
     setExtensions([
-      ...extensions.filter(extension => extension.name !== 'history'),
+      ...extensions.filter((extension) => extension.name !== 'history'),
       CollaborationCursor.configure({
         provider: provider,
         user: {
@@ -234,7 +235,7 @@ export const useDdocEditor = ({
   };
 
   const mergeAndApplyUpdate = (contents: string[]) => {
-    const parsedContents = contents.map(content => toUint8Array(content));
+    const parsedContents = contents.map((content) => toUint8Array(content));
     Y.applyUpdate(ydoc, Y.mergeUpdates(parsedContents));
   };
 
@@ -279,7 +280,7 @@ export const useDdocEditor = ({
           .then(() => {
             setIsContentLoading(false);
           })
-          .catch(error => {
+          .catch((error) => {
             console.log(error);
           });
       });
@@ -348,12 +349,15 @@ export const useDdocEditor = ({
 
   useEffect(() => {
     const handler = () => {
+      console.log('onchange is getting called ');
       onChange?.(fromUint8Array(Y.encodeStateAsUpdate(ydoc)) as any);
     };
     if (ydoc) {
+      console.log('ydoc, on');
       ydoc.on('update', handler);
     }
     return () => {
+      console.log('ydoc, off');
       ydoc?.off('update', handler);
     };
   }, [ydoc]);
@@ -364,7 +368,7 @@ export const useDdocEditor = ({
         editor.destroy();
       }
     };
-  }, [editor])
+  }, [editor]);
 
   return {
     editor,
