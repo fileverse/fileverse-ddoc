@@ -634,19 +634,19 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       h1 {
         font-size: 5vw;
         line-height: 1.2;
-        margin-bottom: 4vh;
+        margin-bottom: 0;
       }
 
       h2 {
         font-size: 3vw;
         line-height: 1.2;
-        margin-bottom: 3vh;
+        margin-bottom: 0;
       }
 
       h3 {
         font-size: 2vw;
         line-height: 1.2;
-        margin-bottom: 2vh;
+        margin-bottom: 0;
       }
 
       p,
@@ -654,7 +654,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       ol {
         font-size: 2vw;
         line-height: 1.5;
-        margin-bottom: 2vh;
+        margin-bottom: 0;
       }
 
       &.solo-slide-image {
@@ -703,6 +703,11 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
         h3 {
           margin-bottom: 0 !important;
           margin-top: 8px !important;
+        }
+
+        img {
+          width: 80vw !important;
+          min-width: 80vw !important;
         }
 
         p,
