@@ -14,7 +14,6 @@ class ZoomService {
   }
 
   setZoom(zoom: string) {
-    if (this._currentZoom !== zoom) {
       this._currentZoom = zoom;
       const elements = document.querySelectorAll('.template-buttons');
       elements.forEach(el => {
@@ -22,7 +21,6 @@ class ZoomService {
           this.updateElementPosition(el, zoom);
         }
       });
-    }
   }
 
   private updateElementPosition(element: HTMLElement, zoom: string) {

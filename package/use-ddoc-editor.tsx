@@ -60,12 +60,6 @@ export const useDdocEditor = ({
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
 
-  useEffect(() => {
-    if (zoomLevel) {
-      zoomService.setZoom(zoomLevel);
-    }
-  }, [zoomLevel]);
-
   const isHighlightedYellow = (
     state: EditorState,
     from: number,
@@ -171,6 +165,12 @@ export const useDdocEditor = ({
     },
     [extensions],
   );
+  
+  useEffect(() => {
+    if (zoomLevel) {
+            zoomService.setZoom(zoomLevel);
+        }
+}, [zoomLevel, editor?.isEmpty]); 
 
   const collaborationCleanupRef = useRef<() => void>(() => { });
 
