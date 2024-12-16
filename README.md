@@ -51,6 +51,21 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `setWordCount` (optional)                      | `React.Dispatch<SetStateAction<number>>`       | Optional. React Set State function to update Word Count                                                   |
 | `scrollPosition`(optional)                     | `number`                                       | User cursor position to scroll to on intitalising the content of the editor                               |
 | `editorCanvasClassNames`(optional)             | `string`                                       | Optional. Extra className for editor-canvas                                                               |
+| `selectedTags` (optional)                      | `TagType[]`                                    | Array of currently selected tags                                                                          |
+| `setSelectedTags` (optional)                   | `React.Dispatch<SetStateAction<TagType[]>>`    | Function to update selected tags                                                                          |
+| `zoomLevel` (required)                         | `string`                                       | Current zoom level of the editor                                                                          |
+| `setZoomLevel` (required)                      | `React.Dispatch<SetStateAction<string>>`       | Function to update zoom level                                                                             |
+| `isNavbarVisible` (required)                   | `boolean`                                      | Controls visibility of the navbar                                                                         |
+| `setIsNavbarVisible` (required)                | `React.Dispatch<SetStateAction<boolean>>`      | Function to toggle navbar visibility                                                                      |
+| `renderNavbar` (optional)                      | `({ editor: JSONContent }) => JSX.Element`     | Function to render custom navbar content                                                                  |
+| `disableBottomToolbar` (optional)              | `boolean`                                      | When true, disables the bottom toolbar                                                                    |
+| `isPresentationMode` (optional)                | `boolean`                                      | Controls if editor is in presentation mode                                                                |
+| `setIsPresentationMode` (optional)             | `React.Dispatch<SetStateAction<boolean>>`      | Function to toggle presentation mode                                                                      |
+| `onInlineComment` (optional)                   | `() => void`                                   | Callback function when inline comment is added                                                            |
+| `onMarkdownExport` (optional)                  | `() => void`                                   | Callback function for markdown export                                                                     |
+| `onMarkdownImport` (optional)                  | `() => void`                                   | Callback function for markdown import                                                                     |
+| `sharedSlidesLink` (optional)                  | `string`                                       | Link for shared slides in presentation mode                                                               |
+| `documentName` (optional)                      | `string`                                       | Name of the document                                                                                      |
 
 ## Data Interface
 
