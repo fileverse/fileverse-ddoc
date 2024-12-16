@@ -112,7 +112,7 @@ const renderTemplateButtons = (
 
   return (
     <ButtonGroup
-      className='template-buttons space-x-0 gap-2 absolute top-8 left-0 md:!left-[unset] md:-translate-y-1 md:!right-0 md:!top-0 z-40'
+      className='template-buttons md:-translate-x-[60%] space-x-0 gap-2 absolute top-8 left-0 md:!left-[unset] md:-translate-y-1 md:!right-0 md:!top-0 z-40'
     >
       {templateButtons.map((button, index) => (
         <Button
