@@ -36,9 +36,9 @@ class ZoomService {
     };
     
     if (window.matchMedia('(min-width: 768px)').matches) {
-      element.style.transform = `translateX(${positions[zoom as ZoomLevel] || '-60%'})`;
+      element.style.transform = `translateX(${positions[zoom as ZoomLevel] || '-60%'}) translateY(-0.25rem)`;
     }
-  }
+    }
 }
 
 export const zoomService = ZoomService.getInstance();
