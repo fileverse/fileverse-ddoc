@@ -148,7 +148,7 @@ const DdocEditor = forwardRef(
         refreshYjsIndexedDbProvider,
         mergeYjsContents: (_contents: string[]) => {
           const contents = Y.mergeUpdates(
-            _contents.map(content => toUint8Array(content)),
+            _contents.map((content) => toUint8Array(content)),
           );
           Y.applyUpdate(ydoc, contents);
 
@@ -159,25 +159,25 @@ const DdocEditor = forwardRef(
     );
 
     const handleAddTag = (tag: TagType) => {
-      setSelectedTags?.(prevTags => {
+      setSelectedTags?.((prevTags) => {
         if (prevTags.length >= 6) {
           // If we already have 6 tags, don't add any more
           return prevTags;
         }
 
-        const newTags = tag.name.split(',').map(name => {
+        const newTags = tag.name.split(',').map((name) => {
           const trimmedName = name.trim();
           const existingTag = tags?.find(
-            t => t.name.toLowerCase() === trimmedName.toLowerCase(),
+            (t) => t.name.toLowerCase() === trimmedName.toLowerCase(),
           );
           return existingTag || { name: trimmedName, color: tag.color };
         });
 
         const uniqueTags = [...prevTags];
-        newTags.forEach(newTag => {
+        newTags.forEach((newTag) => {
           if (
             !uniqueTags.some(
-              t => t.name.toLowerCase() === newTag.name.toLowerCase(),
+              (t) => t.name.toLowerCase() === newTag.name.toLowerCase(),
             )
           ) {
             uniqueTags.push(newTag);
@@ -189,8 +189,8 @@ const DdocEditor = forwardRef(
       });
     };
     const handleRemoveTag = (tagName: string) => {
-      setSelectedTags?.(prevTags =>
-        prevTags.filter(tag => tag.name !== tagName),
+      setSelectedTags?.((prevTags) =>
+        prevTags.filter((tag) => tag.name !== tagName),
       );
     };
 
@@ -413,10 +413,7 @@ const DdocEditor = forwardRef(
                 walletAddress={walletAddress as string}
                 onInlineComment={onInlineComment}
               />
-              <ColumnsMenu
-                editor={editor}
-                appendTo={editorRef}
-              />
+              <ColumnsMenu editor={editor} appendTo={editorRef} />
             </div>
             <EditingProvider isPreviewMode={isPreviewMode}>
               {tags && tags.length > 0 && (
@@ -498,10 +495,7 @@ const DdocEditor = forwardRef(
                 'absolute w-12 h-12 bg-white rounded-full shadow-xl top-[70px] right-[-23px]',
               )}
             >
-              <LucideIcon
-                name="MessageSquareText"
-                size="sm"
-              />
+              <LucideIcon name="MessageSquareText" size="sm" />
             </Button>
           )}
         </div>

@@ -163,7 +163,8 @@ const getSuggestionItems = ({
     },
     {
       title: 'Page breaker',
-      description: 'Insert page break that will split your document into pages.',
+      description:
+        'Insert page break that will split your document into pages.',
       searchTerms: ['pagebreak', 'break', 'line', 'page'],
       icon: <LucideIcon name="PageBreak" src={'md'} />,
       image: '',
@@ -432,8 +433,9 @@ const CommandList = ({
         return (
           <button
             key={index}
-            className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-neutral-500 hover:bg-neutral-100 hover:border-neutral-200 border border-transparent transition-all ${index === selectedIndex ? 'bg-neutral-200 text-neutral-800' : ''
-              }`}
+            className={`flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-neutral-500 hover:bg-neutral-100 hover:border-neutral-200 border border-transparent transition-all ${
+              index === selectedIndex ? 'bg-neutral-200 text-neutral-800' : ''
+            }`}
             onClick={() => selectItem(index)}
           >
             <div className="flex h-10 w-10 items-center justify-center rounded-md border border-neutral-200 bg-white">

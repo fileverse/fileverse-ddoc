@@ -47,7 +47,10 @@ export const DBlock = Node.create<DBlockOptions>({
   renderHTML({ HTMLAttributes }: { HTMLAttributes: any }) {
     return [
       'div',
-      mergeAttributes(HTMLAttributes, { 'data-type': 'd-block', 'data-zoom-level': this.options.zoomLevel }),
+      mergeAttributes(HTMLAttributes, {
+        'data-type': 'd-block',
+        'data-zoom-level': this.options.zoomLevel,
+      }),
       0,
     ];
   },
@@ -321,8 +324,11 @@ export const DBlock = Node.create<DBlockOptions>({
   addNodeView() {
     return ReactNodeViewRenderer((props) => {
       props.updateAttributes({ zoomLevel: this.options.zoomLevel });
-  
-      return React.createElement(DBlockNodeView, { ...props, zoomLevel: this.options.zoomLevel });
+
+      return React.createElement(DBlockNodeView, {
+        ...props,
+        zoomLevel: this.options.zoomLevel,
+      });
     });
-  }
+  },
 });

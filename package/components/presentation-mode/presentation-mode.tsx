@@ -27,8 +27,8 @@ interface PresentationModeProps {
   setIsFullscreen: (isFullscreen: boolean) => void;
   onError?: (error: string) => void;
   setIsCommentSectionOpen:
-  | React.Dispatch<React.SetStateAction<boolean>>
-  | undefined;
+    | React.Dispatch<React.SetStateAction<boolean>>
+    | undefined;
   sharedSlidesLink?: string;
   isPreviewMode: boolean;
 }

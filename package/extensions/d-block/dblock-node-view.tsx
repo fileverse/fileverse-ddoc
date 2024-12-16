@@ -26,7 +26,7 @@ import { LucideIcon } from '@fileverse/ui';
 // import { startImageUpload } from '../../utils/upload-images';
 
 export const DBlockNodeView: React.FC<
-  NodeViewProps & { zoomLevel: string, secureImageUploadUrl?: string }
+  NodeViewProps & { zoomLevel: string; secureImageUploadUrl?: string }
 > = ({ zoomLevel, node, getPos, editor, deleteNode, secureImageUploadUrl }) => {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const actions = useContentItemActions(editor as Editor, node, getPos());
@@ -306,8 +306,9 @@ export const DBlockNodeView: React.FC<
             }
           >
             <div
-              className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
-                }`}
+              className={`d-block-button cursor-pointer ${
+                !isPreviewMode && 'group-hover:opacity-100'
+              }`}
               contentEditable={false}
               onClick={handleClick}
             >
@@ -321,8 +322,9 @@ export const DBlockNodeView: React.FC<
             <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
               <Popover.Trigger asChild>
                 <div
-                  className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
-                    }`}
+                  className={`d-block-button cursor-pointer ${
+                    !isPreviewMode && 'group-hover:opacity-100'
+                  }`}
                   contentEditable={false}
                   draggable
                   data-drag-handle

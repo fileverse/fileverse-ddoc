@@ -110,75 +110,77 @@ const renderTemplateButtons = (
   isExpanded: boolean,
   zoomLevel: string,
 ) => (
-    <ButtonGroup className={cn(
-      "template-buttons space-x-0 gap-2 absolute top-8 left-0 md:!left-[unset] md:-translate-y-1 md:!right-0 md:!top-0 z-40",
+  <ButtonGroup
+    className={cn(
+      'template-buttons space-x-0 gap-2 absolute top-8 left-0 md:!left-[unset] md:-translate-y-1 md:!right-0 md:!top-0 z-40',
       {
-        "md:translate-x-0": zoomLevel === "0.5",
-        "md:-translate-x-[45%]": zoomLevel === "0.75",
-        "md:-translate-x-[60%]": zoomLevel === "1",
-        "md:-translate-x-[120%]": zoomLevel === "1.4",
-        "md:-translate-x-[140%]": zoomLevel === "1.5",
-        "md:-translate-x-[280%]": zoomLevel === "2",
-      }
-    )}>
-      {templateButtons.map((button, index) => (
+        'md:translate-x-0': zoomLevel === '0.5',
+        'md:-translate-x-[45%]': zoomLevel === '0.75',
+        'md:-translate-x-[60%]': zoomLevel === '1',
+        'md:-translate-x-[120%]': zoomLevel === '1.4',
+        'md:-translate-x-[140%]': zoomLevel === '1.5',
+        'md:-translate-x-[280%]': zoomLevel === '2',
+      },
+    )}
+  >
+    {templateButtons.map((button, index) => (
+      <Button
+        key={index}
+        onClick={button.onClick}
+        variant={'ghost'}
+        className="gap-2 color-bg-default-hover text-body-sm color-text-default rounded-lg hover:brightness-95 transition-all min-w-fit"
+      >
+        {renderIcon(button.icon)}
+        <span>{button.label}</span>
+      </Button>
+    ))}
+    <DynamicDropdown
+      key={'More Templates'}
+      align="end"
+      sideOffset={10}
+      anchorTrigger={
         <Button
-          key={index}
-          onClick={button.onClick}
           variant={'ghost'}
-          className="gap-2 color-bg-default-hover text-body-sm color-text-default rounded-lg hover:brightness-95 transition-all min-w-fit"
+          className="gap-2 color-bg-default-hover text-body-sm color-text-default rounded-lg hover:brightness-95 transition-all w-full min-w-0 !p-[10px]"
         >
-          {renderIcon(button.icon)}
-          <span>{button.label}</span>
+          <LucideIcon name={'Ellipsis'} className="color-text-default" />
         </Button>
-      ))}
-      <DynamicDropdown
-        key={'More Templates'}
-        align="end"
-        sideOffset={10}
-        anchorTrigger={
+      }
+      content={
+        <div className="flex flex-col gap-1 p-2 w-[12rem]">
+          <div className="max-h-44 overflow-auto gap-1 flex flex-col">
+            {moreTemplates
+              .slice(0, visibleTemplateCount)
+              .map((button, index) => (
+                <Button
+                  key={index}
+                  onClick={button.onClick}
+                  variant={'ghost'}
+                  className="justify-start gap-2 text-body-sm color-text-default min-w-fit px-2 rounded-lg"
+                >
+                  {renderIcon(button.icon)}
+                  <span>{button.label}</span>
+                </Button>
+              ))}
+          </div>
+          <Divider className="w-full !border-t-[1px]" />
           <Button
             variant={'ghost'}
-            className="gap-2 color-bg-default-hover text-body-sm color-text-default rounded-lg hover:brightness-95 transition-all w-full min-w-0 !p-[10px]"
+            className="justify-between gap-2 text-body-sm color-text-default min-w-fit px-2 rounded-lg"
+            onClick={toggleAllTemplates}
           >
-            <LucideIcon name={'Ellipsis'} className="color-text-default" />
+            <span>{isExpanded ? 'Less' : 'More'}</span>
+            <LucideIcon
+              name="ChevronDown"
+              size="sm"
+              className={cn(isExpanded ? 'rotate-180' : '')}
+            />
           </Button>
-        }
-        content={
-          <div className="flex flex-col gap-1 p-2 w-[12rem]">
-            <div className="max-h-44 overflow-auto gap-1 flex flex-col">
-              {moreTemplates
-                .slice(0, visibleTemplateCount)
-                .map((button, index) => (
-                  <Button
-                    key={index}
-                    onClick={button.onClick}
-                    variant={'ghost'}
-                    className="justify-start gap-2 text-body-sm color-text-default min-w-fit px-2 rounded-lg"
-                  >
-                    {renderIcon(button.icon)}
-                    <span>{button.label}</span>
-                  </Button>
-                ))}
-            </div>
-            <Divider className="w-full !border-t-[1px]" />
-            <Button
-              variant={'ghost'}
-              className="justify-between gap-2 text-body-sm color-text-default min-w-fit px-2 rounded-lg"
-              onClick={toggleAllTemplates}
-            >
-              <span>{isExpanded ? 'Less' : 'More'}</span>
-              <LucideIcon
-                name="ChevronDown"
-                size="sm"
-                className={cn(isExpanded ? 'rotate-180' : '')}
-              />
-            </Button>
-          </div>
-        }
-      />
-    </ButtonGroup>
-  );
+        </div>
+      }
+    />
+  </ButtonGroup>
+);
 
 export {
   renderIcon,
