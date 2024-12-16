@@ -148,7 +148,7 @@ export const handlePrint = (slides: string[]) => {
                             padding: 16px;
                             border-radius: 4px;
                             font-family: monospace;
-                            font-size: 20px;
+                            font-size: 16px;
                             margin: 16px 0;
                         }
 
