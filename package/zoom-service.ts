@@ -26,17 +26,18 @@ class ZoomService {
   private updateElementPosition(element: HTMLElement, zoom: string) {
     type ZoomLevel = '0.5' | '0.75' | '1' | '1.4' | '1.5' | '2';
     
-    const positions: Record<ZoomLevel, string> = {
-      '0.5': '0',
-      '0.75': '-45%',
-      '1': '-60%',
-      '1.4': '-120%',
-      '1.5': '-140%',
-      '2': '-300%'
+    const tailwindPositions: Record<ZoomLevel, string> = {
+      '0.5': '-translate-x-0',
+      '0.75': '-translate-x-[45%]',
+      '1': '-translate-x-[60%]',
+      '1.4': '-translate-x-[120%]',
+      '1.5': '-translate-x-[140%]',
+      '2': '-translate-x-[300%]',
     };
     
-    if (window.matchMedia('(min-width: 768px)').matches) {
-      element.style.transform = `translateX(${positions[zoom as ZoomLevel] || '-60%'}) translateY(-0.25rem)`;
+    if (zoom in tailwindPositions) {
+      element.classList.remove(...Array.from(element.classList).filter(c => c.startsWith('-translate-x-')));
+      element.classList.add(tailwindPositions[zoom as ZoomLevel]);
     }
     }
 }
