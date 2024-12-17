@@ -15,6 +15,7 @@ import SlashCommand from './components/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
 import customTextInputRules from './extensions/customTextInputRules';
 import { PageBreak } from './extensions/page-break/page-break';
+import { zoomService } from './zoom-service';
 
 const usercolors = [
   '#30bced',
@@ -44,6 +45,7 @@ export const useDdocEditor = ({
   secureImageUploadUrl,
   scrollPosition,
   unFocused,
+  zoomLevel,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
@@ -164,6 +166,18 @@ export const useDdocEditor = ({
     [extensions],
   );
 
+useEffect(() => {
+  if (zoomLevel) {
+      zoomService.setZoom(zoomLevel);
+      
+      const timeoutId = setTimeout(() => {
+          zoomService.setZoom(zoomLevel);
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
+  }
+}, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
+
   const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
@@ -212,13 +226,16 @@ export const useDdocEditor = ({
 
   useEffect(() => {
     if (initialContent && editor && !initialContentSetRef.current) {
-      setIsContentLoading(true);
-      queueMicrotask(() => {
-        editor.commands.setContent(initialContent);
-        setIsContentLoading(false);
-      });
-
-      initialContentSetRef.current = true;
+        setIsContentLoading(true);
+        queueMicrotask(() => {
+            editor.commands.setContent(initialContent);
+            setIsContentLoading(false);
+            if (zoomLevel) {
+                zoomService.setZoom(zoomLevel);
+            }
+        });
+  
+        initialContentSetRef.current = true;
     }
 
     const scrollTimeoutId = setTimeout(() => {

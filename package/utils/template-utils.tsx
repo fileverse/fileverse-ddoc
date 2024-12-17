@@ -108,67 +108,71 @@ const renderTemplateButtons = (
   visibleTemplateCount: number,
   toggleAllTemplates: () => void,
   isExpanded: boolean,
-) => (
-  <ButtonGroup className="template-buttons space-x-0 gap-2 absolute top-8 left-0 md:!left-[unset] md:-translate-x-[60%] md:-translate-y-1 md:!right-0 md:!top-0 z-40">
-    {templateButtons.map((button, index) => (
-      <Button
-        key={index}
-        onClick={button.onClick}
-        variant={'ghost'}
-        className="gap-2 color-bg-default-hover text-body-sm color-text-default rounded-lg hover:brightness-95 transition-all min-w-fit"
-      >
-        {renderIcon(button.icon)}
-        <span>{button.label}</span>
-      </Button>
-    ))}
-    <DynamicDropdown
-      key={'More Templates'}
-      align="end"
-      sideOffset={10}
-      anchorTrigger={
+) => {
+
+  return (
+    <ButtonGroup
+      className='template-buttons space-x-0 gap-2 absolute top-8 left-0 md:!left-[unset] md:-translate-y-1 md:!right-0 md:!top-0 z-40'
+    >
+      {templateButtons.map((button, index) => (
         <Button
+          key={index}
+          onClick={button.onClick}
           variant={'ghost'}
-          className="gap-2 color-bg-default-hover text-body-sm color-text-default rounded-lg hover:brightness-95 transition-all w-full min-w-0 !p-[10px]"
+          className="gap-2 color-bg-default-hover text-body-sm color-text-default rounded-lg hover:brightness-95 transition-all min-w-fit"
         >
-          <LucideIcon name={'Ellipsis'} className="color-text-default" />
+          {renderIcon(button.icon)}
+          <span>{button.label}</span>
         </Button>
-      }
-      content={
-        <div className="flex flex-col gap-1 p-2 w-[12rem]">
-          <div className="max-h-44 overflow-auto gap-1 flex flex-col">
-            {moreTemplates
-              .slice(0, visibleTemplateCount)
-              .map((button, index) => (
-                <Button
-                  key={index}
-                  onClick={button.onClick}
-                  variant={'ghost'}
-                  className="justify-start gap-2 text-body-sm color-text-default min-w-fit px-2 rounded-lg"
-                >
-                  {renderIcon(button.icon)}
-                  <span>{button.label}</span>
-                </Button>
-              ))}
-          </div>
-          <Divider className="w-full !border-t-[1px]" />
+      ))}
+      <DynamicDropdown
+        key={'More Templates'}
+        align="end"
+        sideOffset={10}
+        anchorTrigger={
           <Button
             variant={'ghost'}
-            className="justify-between gap-2 text-body-sm color-text-default min-w-fit px-2 rounded-lg"
-            onClick={toggleAllTemplates}
+            className="gap-2 color-bg-default-hover text-body-sm color-text-default rounded-lg hover:brightness-95 transition-all w-full min-w-0 !p-[10px]"
           >
-            <span>{isExpanded ? 'Less' : 'More'}</span>
-            <LucideIcon
-              name="ChevronDown"
-              size="sm"
-              className={cn(isExpanded ? 'rotate-180' : '')}
-            />
+            <LucideIcon name={'Ellipsis'} className="color-text-default" />
           </Button>
-        </div>
-      }
-    />
-  </ButtonGroup>
-);
-
+        }
+        content={
+          <div className="flex flex-col gap-1 p-2 w-[12rem]">
+            <div className="max-h-44 overflow-auto gap-1 flex flex-col">
+              {moreTemplates
+                .slice(0, visibleTemplateCount)
+                .map((button, index) => (
+                  <Button
+                    key={index}
+                    onClick={button.onClick}
+                    variant={'ghost'}
+                    className="justify-start gap-2 text-body-sm color-text-default min-w-fit px-2 rounded-lg"
+                  >
+                    {renderIcon(button.icon)}
+                    <span>{button.label}</span>
+                  </Button>
+                ))}
+            </div>
+            <Divider className="w-full !border-t-[1px]" />
+            <Button
+              variant={'ghost'}
+              className="justify-between gap-2 text-body-sm color-text-default min-w-fit px-2 rounded-lg"
+              onClick={toggleAllTemplates}
+            >
+              <span>{isExpanded ? 'Less' : 'More'}</span>
+              <LucideIcon
+                name="ChevronDown"
+                size="sm"
+                className={cn(isExpanded ? 'rotate-180' : '')}
+              />
+            </Button>
+          </div>
+        }
+      />
+    </ButtonGroup>
+  );
+};
 export {
   renderIcon,
   createTemplateButtons,
