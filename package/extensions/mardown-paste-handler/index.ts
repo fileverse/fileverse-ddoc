@@ -44,7 +44,7 @@ turndownService.addRule('heading', {
 
 // Add this new rule after the other turndownService rules
 turndownService.addRule('taskListItem', {
-  filter: node => {
+  filter: (node) => {
     const parent = node.parentElement;
     return (
       node.nodeName === 'LI' && parent?.getAttribute('data-type') === 'taskList'
@@ -80,13 +80,13 @@ turndownService.addRule('table', {
     const rows = Array.from(table.rows);
 
     // Process header
-    const headers = Array.from(rows[0].cells).map(cell => {
+    const headers = Array.from(rows[0].cells).map((cell) => {
       return turndownService.turndown(cell.innerHTML).trim();
     });
-    const maxColumnWidths = headers.map(header => header.length);
+    const maxColumnWidths = headers.map((header) => header.length);
 
     // Process body and update maxColumnWidths
-    const bodyRows = rows.slice(1).map(row => {
+    const bodyRows = rows.slice(1).map((row) => {
       return Array.from(row.cells).map((cell, index) => {
         let cellContent = cell.innerHTML.trim();
 
@@ -94,7 +94,7 @@ turndownService.addRule('table', {
         if (cell.querySelector('ul, ol')) {
           const listType = cell.querySelector('ul') ? 'ul' : 'ol';
           const listItems = Array.from(cell.querySelectorAll('li')).map(
-            li => li.textContent?.trim() || '',
+            (li) => li.textContent?.trim() || '',
           );
           cellContent = `<${listType}><li>${listItems.join(
             '</li><li>',
@@ -129,8 +129,10 @@ turndownService.addRule('table', {
 
     const headerRow = createAlignedRow(headers);
     const separator =
-      '| ' + maxColumnWidths.map(width => '-'.repeat(width)).join(' | ') + ' |';
-    const bodyRowsFormatted = bodyRows.map(row => createAlignedRow(row));
+      '| ' +
+      maxColumnWidths.map((width) => '-'.repeat(width)).join(' | ') +
+      ' |';
+    const bodyRowsFormatted = bodyRows.map((row) => createAlignedRow(row));
 
     return `\n\n${headerRow}\n${separator}\n${bodyRowsFormatted.join(
       '\n',
@@ -267,7 +269,7 @@ const MarkdownPasteHandler = Extension.create({
               const file = files[0];
               if (file.type === 'text/markdown' || file.name.endsWith('.md')) {
                 const reader = new FileReader();
-                reader.onload = e => {
+                reader.onload = (e) => {
                   const content = e.target?.result as string;
                   handleMarkdownContent(view, content);
                 };
@@ -510,7 +512,7 @@ function handleMarkdownContent(view: any, content: string) {
   const pageBreakRegex = /===\s*$/gm;
 
   // Process superscript and subscript tags in the HTML string
-  convertedHtml = convertedHtml.replace(subsupRegex, content => {
+  convertedHtml = convertedHtml.replace(subsupRegex, (content) => {
     return `${content}`;
   });
 

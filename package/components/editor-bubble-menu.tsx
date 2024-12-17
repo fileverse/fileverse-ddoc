@@ -226,7 +226,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                 props.setInlineCommentData?.((prev) => ({ ...prev, ...data }))
               }
               onInlineComment={props.onInlineComment}
-                          />
+            />
           );
         }
         return null;

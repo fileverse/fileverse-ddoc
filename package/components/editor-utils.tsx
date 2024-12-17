@@ -159,8 +159,8 @@ export const useEditorToolbar = ({
   editor: Editor;
   onError?: (errorString: string) => void;
   secureImageUploadUrl?: string;
-  onMarkdownExport?: () => void; 
-  onMarkdownImport?: () => void; 
+  onMarkdownExport?: () => void;
+  onMarkdownImport?: () => void;
 }) => {
   const {
     ref: toolRef,
@@ -354,7 +354,7 @@ export const useEditorToolbar = ({
       title: 'Import Markdown',
       onClick: () => {
         editor?.commands.uploadMarkdownFile();
-        onMarkdownImport?.(); 
+        onMarkdownImport?.();
       },
       isActive: false,
     },
@@ -363,7 +363,7 @@ export const useEditorToolbar = ({
       title: 'Export Markdown',
       onClick: () => {
         setIsExportModalOpen(true);
-        onMarkdownExport?.(); 
+        onMarkdownExport?.();
       },
       isActive: false,
     },
@@ -781,7 +781,7 @@ export const InlineCommentPopup = ({
     inlineCommentText?: string;
     handleClick?: boolean;
   }) => void;
-  onInlineComment?: () => void; 
+  onInlineComment?: () => void;
 }) => {
   const [comment, setComment] = useState(
     inlineCommentData.inlineCommentText || '',
