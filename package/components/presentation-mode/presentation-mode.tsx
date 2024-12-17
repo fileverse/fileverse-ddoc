@@ -31,6 +31,7 @@ interface PresentationModeProps {
   | undefined;
   sharedSlidesLink?: string;
   isPreviewMode: boolean;
+  documentName: string;
 }
 
 const checkOs = () => platform.os?.family;
@@ -93,6 +94,7 @@ export const PresentationMode = ({
   setIsCommentSectionOpen,
   sharedSlidesLink,
   isPreviewMode,
+  documentName,
 }: PresentationModeProps) => {
   const [showLinkCopied, setShowLinkCopied] = useState(false);
   const [slides, setSlides] = useState<string[]>([]);
@@ -262,7 +264,7 @@ export const PresentationMode = ({
         setSlideDirection('backward');
         setCurrentSlide((prev) => Math.max(prev - 1, 0));
       } else if (e.key === 'Escape') {
-        onClose();
+        !isPreviewMode && onClose();
       } else if (e.key === 'f' || e.key === 'F') {
         toggleFullscreen();
       }
@@ -340,7 +342,9 @@ export const PresentationMode = ({
     return (
       <div className="fixed inset-0 color-bg-default flex flex-col items-center justify-center w-screen h-screen z-50">
         <div className="flex flex-col items-center gap-4">
-          <AnimatedLoader text="Building slides..." />
+          <AnimatedLoader
+            text={isPreviewMode ? 'Loading slides...' : 'Building slides...'}
+          />
         </div>
       </div>
     );
@@ -375,26 +379,36 @@ export const PresentationMode = ({
       >
         {!isFullscreen && (
           <div className="absolute top-0 px-4 py-2 border-b color-border-default right-0 flex gap-2 bg-white w-full justify-between z-50">
-            <div className="flex items-center gap-2">
-              <IconButton
-                variant="ghost"
-                onClick={onClose}
-                icon="ChevronLeft"
-                size="md"
-              />
-              <Label className="hidden xl:block text-body-sm-bold color-text-default">
-                Back to Editor
-              </Label>
-            </div>
-            <div className="flex justify-center items-center gap-2">
-              <Tooltip text="Download" sideOffset={10}>
+            {isPreviewMode ? (
+              <div className="flex items-center">
+                <p className="max-w-[300px] truncate md:max-w-full w-full">
+                  {documentName}
+                </p>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2">
                 <IconButton
                   variant="ghost"
-                  onClick={() => handlePrint(slides)}
-                  icon="FilePdf"
+                  onClick={onClose}
+                  icon="ChevronLeft"
                   size="md"
                 />
-              </Tooltip>
+                <Label className="hidden xl:block text-body-sm-bold color-text-default">
+                  Back to Editor
+                </Label>
+              </div>
+            )}
+            <div className="flex justify-center items-center gap-2">
+              {!isPreviewMode && (
+                <Tooltip text="Download" sideOffset={10}>
+                  <IconButton
+                    variant="ghost"
+                    onClick={() => handlePrint(slides)}
+                    icon="FilePdf"
+                    size="md"
+                  />
+                </Tooltip>
+              )}
               <Tooltip text="Comments" sideOffset={10}>
                 <IconButton
                   variant="ghost"
