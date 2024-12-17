@@ -353,15 +353,12 @@ export const useDdocEditor = ({
 
   useEffect(() => {
     const handler = () => {
-      console.log('onchange is getting called ');
       onChange?.(fromUint8Array(Y.encodeStateAsUpdate(ydoc)) as any);
     };
     if (ydoc) {
-      console.log('ydoc, on');
       ydoc.on('update', handler);
     }
     return () => {
-      console.log('ydoc, off');
       ydoc?.off('update', handler);
     };
   }, [ydoc]);
