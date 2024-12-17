@@ -118,6 +118,30 @@ const splitLongContent = (
   return chunks;
 };
 
+// First, add a helper function to split code blocks into chunks
+const splitCodeBlockIntoChunks = (
+  codeLines: string[],
+  maxLinesPerSlide: number,
+): string[] => {
+  const chunks: string[] = [];
+  const language = codeLines[0].slice(3).trim(); // Get language identifier from ```language
+
+  // Remove first and last lines (``` markers)
+  const contentLines = codeLines.slice(1, -1);
+
+  // Preserve original indentation
+  for (let i = 0; i < contentLines.length; i += maxLinesPerSlide - 2) {
+    const chunk = [
+      `\`\`\`${language}`,
+      ...contentLines.slice(i, i + maxLinesPerSlide - 2).map((line) => line), // Keep original line with indentation
+      '```',
+    ];
+    chunks.push(chunk.join('\n'));
+  }
+
+  return chunks;
+};
+
 export function convertMarkdownToHTML(
   markdown: string,
   options: ConversionOptions = {},
@@ -133,6 +157,7 @@ export function convertMarkdownToHTML(
   const sections: SlideContent[][] = [];
   let currentSection: SlideContent[] = [];
   let tableBuffer: string[] = [];
+  let codeBlockBuffer: string[] = [];
 
   const countWords = (text: string): number => {
     return text
@@ -392,24 +417,87 @@ export function convertMarkdownToHTML(
       tableBuffer = [];
     }
 
+    // Handling for code blocks
+    if (line.startsWith('```')) {
+      if (codeBlockBuffer.length === 0) {
+        // Start of code block
+        codeBlockBuffer.push(line);
+      } else {
+        // End of code block
+        codeBlockBuffer.push(line);
+
+        // If code block is too long, split it into chunks
+        if (codeBlockBuffer.length > maxLinesPerSlide) {
+          const codeChunks = splitCodeBlockIntoChunks(codeBlockBuffer, 23);
+
+          codeChunks.forEach((chunk, index) => {
+            if (index > 0 || shouldCreateNewSection(chunk, currentSection)) {
+              createNewSection();
+            }
+            currentSection.push({
+              type: 'content',
+              content: markdownIt.render(chunk),
+            });
+          });
+        } else {
+          // If code block is short enough, render it as is
+          const codeContent = codeBlockBuffer.join('\n');
+          if (shouldCreateNewSection(codeContent, currentSection)) {
+            createNewSection();
+          }
+          currentSection.push({
+            type: 'content',
+            content: markdownIt.render(codeContent),
+          });
+        }
+        codeBlockBuffer = [];
+      }
+      continue;
+    }
+
+    if (codeBlockBuffer.length > 0) {
+      // Inside code block - preserve original line including whitespace
+      codeBlockBuffer.push(lines[i]); // Use original line instead of trimmed
+      continue;
+    }
+
     // Handle images
     if (line.match(/!\[.*\]\(.*\)/)) {
       const imgMatch = line.match(/!\[(.*)\]\((.*)\)/);
       if (imgMatch) {
-        // Check if current section starts with h2 or h3
-        const hasHeading =
-          currentSection.length > 0 && currentSection[0].type === 'h2';
+        // Check if current section starts with h2 and has content
+        const hasHeadingAndContent =
+          currentSection.length > 0 &&
+          currentSection[0].type === 'h2' &&
+          currentSection.length > 1;
 
+        // Check if the previous content is too long
+        const previousContentLength = currentSection.reduce(
+          (sum, item) => sum + item.content.length,
+          0,
+        );
+        const isPreviousContentLong =
+          previousContentLength > maxCharsPerSlide / 2;
+
+        // Create new section if:
+        // 1. Previous content is too long, OR
+        // 2. We already have an image in current section, OR
+        // 3. We don't have a heading with content and should create new section
         if (
-          currentSection.length === 0 ||
-          (!hasHeading && shouldCreateNewSection(line, currentSection))
+          isPreviousContentLong ||
+          (!hasHeadingAndContent &&
+            currentSection.some((item) => item.type === 'image')) ||
+          (currentSection.length === 0 &&
+            shouldCreateNewSection(line, currentSection))
         ) {
           createNewSection();
         }
+
         currentSection.push({ type: 'image', content: imgMatch[2] });
 
-        // Only create new section if this wasn't following a heading
-        if (!hasHeading) {
+        // Create new section after image unless it's following a heading with content
+        // and the previous content wasn't too long
+        if (!hasHeadingAndContent || isPreviousContentLong) {
           createNewSection();
         }
       }

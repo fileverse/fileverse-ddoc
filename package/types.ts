@@ -67,6 +67,7 @@ export interface DdocProps {
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
   sharedSlidesLink?: string;
+  documentName?: string;
 }
 
 export interface IEditorSelectionData {

@@ -306,8 +306,9 @@ export const DBlockNodeView: React.FC<
             }
           >
             <div
-              className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
-                }`}
+              className={`d-block-button cursor-pointer ${
+                !isPreviewMode && 'group-hover:opacity-100'
+              }`}
               contentEditable={false}
               onClick={handleClick}
             >
@@ -321,8 +322,9 @@ export const DBlockNodeView: React.FC<
             <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
               <Popover.Trigger asChild>
                 <div
-                  className={`d-block-button cursor-pointer ${!isPreviewMode && 'group-hover:opacity-100'
-                    }`}
+                  className={`d-block-button cursor-pointer ${
+                    !isPreviewMode && 'group-hover:opacity-100'
+                  }`}
                   contentEditable={false}
                   draggable
                   data-drag-handle
