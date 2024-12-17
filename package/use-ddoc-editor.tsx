@@ -166,19 +166,19 @@ export const useDdocEditor = ({
     [extensions],
   );
 
-useEffect(() => {
-  if (zoomLevel) {
+  useEffect(() => {
+    if (zoomLevel) {
       zoomService.setZoom(zoomLevel);
-      
+
       const timeoutId = setTimeout(() => {
-          zoomService.setZoom(zoomLevel);
+        zoomService.setZoom(zoomLevel);
       }, 100);
 
       return () => clearTimeout(timeoutId);
-  }
-}, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
+    }
+  }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => { });
+  const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
@@ -226,16 +226,16 @@ useEffect(() => {
 
   useEffect(() => {
     if (initialContent && editor && !initialContentSetRef.current) {
-        setIsContentLoading(true);
-        queueMicrotask(() => {
-            editor.commands.setContent(initialContent);
-            setIsContentLoading(false);
-            if (zoomLevel) {
-                zoomService.setZoom(zoomLevel);
-            }
-        });
-  
-        initialContentSetRef.current = true;
+      setIsContentLoading(true);
+      queueMicrotask(() => {
+        editor.commands.setContent(initialContent);
+        setIsContentLoading(false);
+        if (zoomLevel) {
+          zoomService.setZoom(zoomLevel);
+        }
+      });
+
+      initialContentSetRef.current = true;
     }
 
     const scrollTimeoutId = setTimeout(() => {
