@@ -108,19 +108,12 @@ const renderTemplateButtons = (
   visibleTemplateCount: number,
   toggleAllTemplates: () => void,
   isExpanded: boolean,
-  zoomLevel: string,
-) => (
-    <ButtonGroup className={cn(
-      "template-buttons space-x-0 gap-2 absolute top-8 left-0 md:!left-[unset] md:-translate-y-1 md:!right-0 md:!top-0 z-40",
-      {
-        "md:translate-x-0": zoomLevel === "0.5",
-        "md:-translate-x-[45%]": zoomLevel === "0.75",
-        "md:-translate-x-[60%]": zoomLevel === "1",
-        "md:-translate-x-[120%]": zoomLevel === "1.4",
-        "md:-translate-x-[140%]": zoomLevel === "1.5",
-        "md:-translate-x-[280%]": zoomLevel === "2",
-      }
-    )}>
+) => {
+
+  return (
+    <ButtonGroup
+      className='template-buttons space-x-0 gap-2 absolute top-8 left-0 md:!left-[unset] md:-translate-y-1 md:!right-0 md:!top-0 z-40'
+    >
       {templateButtons.map((button, index) => (
         <Button
           key={index}
@@ -179,7 +172,7 @@ const renderTemplateButtons = (
       />
     </ButtonGroup>
   );
-
+};
 export {
   renderIcon,
   createTemplateButtons,

@@ -15,7 +15,7 @@ import SlashCommand from './components/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
 import customTextInputRules from './extensions/customTextInputRules';
 import { PageBreak } from './extensions/page-break/page-break';
-import { useZoomLevelListener } from './useZoomLevelListener';
+import { zoomService } from './zoom-service';
 
 const usercolors = [
   '#30bced',
@@ -50,7 +50,6 @@ export const useDdocEditor = ({
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions(
-      zoomLevel as string,
       (error: string) => onError?.(error),
       secureImageUploadUrl,
     ) as AnyExtension[]),
@@ -60,16 +59,6 @@ export const useDdocEditor = ({
   ]);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
-  useZoomLevelListener({
-    zoomLevel,
-    setExtensions,
-    defaultExtensions,
-    onError,
-    secureImageUploadUrl,
-    customTextInputRules,
-    SlashCommand,
-    PageBreak,
-  });
 
   const isHighlightedYellow = (
     state: EditorState,
@@ -177,6 +166,18 @@ export const useDdocEditor = ({
     [extensions],
   );
 
+useEffect(() => {
+  if (zoomLevel) {
+      zoomService.setZoom(zoomLevel);
+      
+      const timeoutId = setTimeout(() => {
+          zoomService.setZoom(zoomLevel);
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
+  }
+}, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
+
   const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
@@ -225,13 +226,16 @@ export const useDdocEditor = ({
 
   useEffect(() => {
     if (initialContent && editor && !initialContentSetRef.current) {
-      setIsContentLoading(true);
-      queueMicrotask(() => {
-        editor.commands.setContent(initialContent);
-        setIsContentLoading(false);
-      });
-
-      initialContentSetRef.current = true;
+        setIsContentLoading(true);
+        queueMicrotask(() => {
+            editor.commands.setContent(initialContent);
+            setIsContentLoading(false);
+            if (zoomLevel) {
+                zoomService.setZoom(zoomLevel);
+            }
+        });
+  
+        initialContentSetRef.current = true;
     }
 
     const scrollTimeoutId = setTimeout(() => {
