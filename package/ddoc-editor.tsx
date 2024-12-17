@@ -71,6 +71,7 @@ const DdocEditor = forwardRef(
       onMarkdownImport,
       editorCanvasClassNames,
       sharedSlidesLink,
+      documentName,
     }: DdocProps,
     ref,
   ) => {
@@ -341,6 +342,7 @@ const DdocEditor = forwardRef(
             setIsCommentSectionOpen={setIsCommentSectionOpen}
             sharedSlidesLink={sharedSlidesLink}
             isPreviewMode={isPreviewMode}
+            documentName={documentName as string}
           />
         )}
         <div

@@ -634,19 +634,19 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       h1 {
         font-size: 5vw;
         line-height: 1.2;
-        margin-bottom: 4vh;
+        margin-bottom: 0;
       }
 
       h2 {
         font-size: 3vw;
         line-height: 1.2;
-        margin-bottom: 3vh;
+        margin-bottom: 0;
       }
 
       h3 {
         font-size: 2vw;
         line-height: 1.2;
-        margin-bottom: 2vh;
+        margin-bottom: 0;
       }
 
       p,
@@ -654,25 +654,34 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       ol {
         font-size: 2vw;
         line-height: 1.5;
-        margin-bottom: 2vh;
+        margin-bottom: 0;
+      }
+
+      pre code {
+        font-size: 1.5vw !important;
+        line-height: 1.5;
+      }
+
+      code {
+        font-size: 1.5vw !important;
+        line-height: 1.5;
       }
 
       &.solo-slide-image {
         img {
-          max-width: 100%;
           width: auto;
           top: 25%;
           position: relative !important;
           max-width: 1080px;
           aspect-ratio: 16/9;
           object-fit: contain;
+          border-radius: 0.5rem;
         }
       }
 
       img {
-        max-width: 100%;
         width: auto;
-        margin: 2vh auto;
+        // margin: 2vh auto;
         position: relative !important;
         max-width: 1080px;
         aspect-ratio: 16/9;
@@ -730,6 +739,14 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
           code {
             font-size: 2.5vw !important;
           }
+        }
+
+        pre code {
+          font-size: 2vw !important;
+        }
+
+        code {
+          font-size: 2vw !important;
         }
       }
     }

@@ -18,7 +18,7 @@ import { PageBreak } from './extensions/page-break/page-break';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { isJSONString } from './utils/isJsonString';
-import { useZoomLevelListener } from './useZoomLevelListener';
+import { zoomService } from './zoom-service';
 
 const usercolors = [
   '#30bced',
@@ -55,7 +55,6 @@ export const useDdocEditor = ({
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions(
-      zoomLevel as string,
       (error: string) => onError?.(error),
       secureImageUploadUrl,
     ) as AnyExtension[]),
@@ -68,17 +67,6 @@ export const useDdocEditor = ({
   ]);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
-  useZoomLevelListener({
-    zoomLevel,
-    setExtensions,
-    defaultExtensions,
-    onError,
-    secureImageUploadUrl,
-    customTextInputRules,
-    SlashCommand,
-    PageBreak,
-    ydoc,
-  });
 
   const isHighlightedYellow = (
     state: EditorState,
@@ -178,6 +166,18 @@ export const useDdocEditor = ({
     [extensions],
   );
 
+  useEffect(() => {
+    if (zoomLevel) {
+      zoomService.setZoom(zoomLevel);
+
+      const timeoutId = setTimeout(() => {
+        zoomService.setZoom(zoomLevel);
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
+
   const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
@@ -274,6 +274,10 @@ export const useDdocEditor = ({
           } else {
             editor.commands.setContent(initialContent as JSONContent);
           }
+        }
+
+        if (zoomLevel) {
+          zoomService.setZoom(zoomLevel);
         }
 
         initialiseYjsIndexedDbProvider()

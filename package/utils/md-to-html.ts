@@ -28,7 +28,7 @@ markdownIt.renderer.rules.list_item_open = (tokens, idx) => {
 };
 
 interface SlideContent {
-  type: 'h1' | 'h2' | 'content' | 'image' | 'table';
+  type: 'h1' | 'h2' | 'h3' | 'content' | 'image' | 'table';
   content: string;
 }
 
@@ -68,45 +68,78 @@ const splitTableIntoChunks = (
   return chunks;
 };
 
-// Modify the content processing to keep list items together
-const processContent = (
-  line: string,
-  currentSection: SlideContent[],
-): SlideContent[] => {
-  if (line.startsWith('- [') || line.startsWith('* [')) {
-    // Start or continue a todo list
-    if (
-      !currentSection.length ||
-      currentSection[currentSection.length - 1].type !== 'content'
-    ) {
-      currentSection.push({
-        type: 'content',
-        content: '<ul class="task-list">\n',
-      });
-    }
-    const match = line.match(/^[-*]\s*\[([ xX])\]\s*(.*)$/);
-    if (match) {
-      const isChecked = match[1].toLowerCase() === 'x';
-      const content = match[2];
-      currentSection[currentSection.length - 1].content +=
-        `<li class="task-list-item"><input type="checkbox" ${
-          isChecked ? 'checked' : ''
-        } disabled>${content}</li>\n`;
-    }
-  } else {
-    // Close any open list and add new content
-    if (
-      currentSection.length &&
-      currentSection[currentSection.length - 1].type === 'content' &&
-      currentSection[currentSection.length - 1].content.includes(
-        '<ul class="task-list">',
-      )
-    ) {
-      currentSection[currentSection.length - 1].content += '</ul>';
-    }
-    currentSection.push({ type: 'content', content: markdownIt.render(line) });
+const splitLongContent = (
+  content: string,
+  maxCharsPerSlide: number,
+): string[] => {
+  // If content is short enough, return as is
+  if (content.length <= maxCharsPerSlide) {
+    return [content];
   }
-  return currentSection;
+
+  const chunks: string[] = [];
+  let currentChunk = '';
+
+  // First try to split by sentences
+  const sentences = content.split(/(?<=[.!?])\s+/);
+
+  for (const sentence of sentences) {
+    // If adding this sentence would exceed the limit
+    if (currentChunk.length + sentence.length > maxCharsPerSlide) {
+      if (currentChunk) {
+        chunks.push(currentChunk.trim());
+      }
+
+      // If the sentence itself is too long, split it by words
+      if (sentence.length > maxCharsPerSlide) {
+        const words = sentence.split(/\s+/);
+        currentChunk = '';
+
+        for (const word of words) {
+          if (currentChunk.length + word.length + 1 > maxCharsPerSlide) {
+            chunks.push(currentChunk.trim());
+            currentChunk = word;
+          } else {
+            currentChunk += (currentChunk ? ' ' : '') + word;
+          }
+        }
+      } else {
+        currentChunk = sentence;
+      }
+    } else {
+      currentChunk += (currentChunk ? ' ' : '') + sentence;
+    }
+  }
+
+  if (currentChunk) {
+    chunks.push(currentChunk.trim());
+  }
+
+  return chunks;
+};
+
+// First, add a helper function to split code blocks into chunks
+const splitCodeBlockIntoChunks = (
+  codeLines: string[],
+  maxLinesPerSlide: number,
+): string[] => {
+  const chunks: string[] = [];
+  const language = codeLines[0].slice(3).trim(); // Get language identifier from ```language
+
+  // Remove first and last lines (``` markers)
+  const contentLines = codeLines.slice(1, -1);
+
+  // Preserve original indentation
+  for (let i = 0; i < contentLines.length; i += maxLinesPerSlide - 2) {
+    const chunk = [
+      `\`\`\`${language}`,
+      ...contentLines.slice(i, i + maxLinesPerSlide - 2).map((line) => line), // Keep original line with indentation
+      '```',
+    ];
+    chunks.push(chunk.join('\n'));
+  }
+
+  return chunks;
 };
 
 export function convertMarkdownToHTML(
@@ -124,6 +157,7 @@ export function convertMarkdownToHTML(
   const sections: SlideContent[][] = [];
   let currentSection: SlideContent[] = [];
   let tableBuffer: string[] = [];
+  let codeBlockBuffer: string[] = [];
 
   const countWords = (text: string): number => {
     return text
@@ -136,6 +170,14 @@ export function convertMarkdownToHTML(
     content: string,
     currentContent: SlideContent[],
   ): boolean => {
+    // Don't create a new section if we only have a heading
+    if (
+      currentContent.length === 1 &&
+      (currentContent[0].type === 'h2' || currentContent[0].type === 'h3')
+    ) {
+      return false;
+    }
+
     const totalChars =
       currentContent.reduce((sum, item) => sum + item.content.length, 0) +
       content.length;
@@ -149,6 +191,91 @@ export function convertMarkdownToHTML(
       totalWords > maxWordsPerSlide ||
       totalLines > maxLinesPerSlide
     );
+  };
+
+  const processContent = (
+    line: string,
+    currentSection: SlideContent[],
+    options: ConversionOptions,
+  ): SlideContent[] => {
+    const { maxCharsPerSlide = 1000 } = options;
+
+    // Check if current section starts with a heading
+    const startsWithHeading =
+      currentSection.length > 0 &&
+      (currentSection[0].type === 'h2' || currentSection[0].type === 'h3');
+
+    // If we have a heading, we want to keep at least some content with it
+    if (startsWithHeading && currentSection.length === 1) {
+      const contentChunks = splitLongContent(line, maxCharsPerSlide);
+      currentSection.push({
+        type: 'content',
+        content: markdownIt.render(contentChunks[0]),
+      });
+
+      // Process remaining chunks into new sections if they exist
+      for (let i = 1; i < contentChunks.length; i++) {
+        sections.push(currentSection);
+        currentSection = [
+          {
+            type: 'content',
+            content: markdownIt.render(contentChunks[i]),
+          },
+        ];
+      }
+      return currentSection;
+    }
+
+    // Original todo list and content processing logic remains the same
+    if (line.startsWith('- [') || line.startsWith('* [')) {
+      // Handle todo lists (existing code)
+      if (
+        !currentSection.length ||
+        currentSection[currentSection.length - 1].type !== 'content'
+      ) {
+        currentSection.push({
+          type: 'content',
+          content: '<ul class="task-list">\n',
+        });
+      }
+      const match = line.match(/^[-*]\s*\[([ xX])\]\s*(.*)$/);
+      if (match) {
+        const isChecked = match[1].toLowerCase() === 'x';
+        const content = match[2];
+        currentSection[currentSection.length - 1].content +=
+          `<li class="task-list-item"><input type="checkbox" ${
+            isChecked ? 'checked' : ''
+          } disabled>${content}</li>\n`;
+      }
+    } else {
+      // Close any open list
+      if (
+        currentSection.length &&
+        currentSection[currentSection.length - 1].type === 'content' &&
+        currentSection[currentSection.length - 1].content.includes(
+          '<ul class="task-list">',
+        )
+      ) {
+        currentSection[currentSection.length - 1].content += '</ul>';
+      }
+
+      // Split content if needed and create new sections
+      const contentChunks = splitLongContent(line, maxCharsPerSlide);
+      contentChunks.forEach((chunk, index) => {
+        // Create new section if needed
+        if (index > 0 || shouldCreateNewSection(chunk, currentSection)) {
+          if (currentSection.length > 0) {
+            sections.push(currentSection);
+            currentSection = [];
+          }
+        }
+        currentSection.push({
+          type: 'content',
+          content: markdownIt.render(chunk),
+        });
+      });
+    }
+    return currentSection;
   };
 
   const createNewSection = () => {
@@ -290,24 +417,87 @@ export function convertMarkdownToHTML(
       tableBuffer = [];
     }
 
+    // Handling for code blocks
+    if (line.startsWith('```')) {
+      if (codeBlockBuffer.length === 0) {
+        // Start of code block
+        codeBlockBuffer.push(line);
+      } else {
+        // End of code block
+        codeBlockBuffer.push(line);
+
+        // If code block is too long, split it into chunks
+        if (codeBlockBuffer.length > maxLinesPerSlide) {
+          const codeChunks = splitCodeBlockIntoChunks(codeBlockBuffer, 23);
+
+          codeChunks.forEach((chunk, index) => {
+            if (index > 0 || shouldCreateNewSection(chunk, currentSection)) {
+              createNewSection();
+            }
+            currentSection.push({
+              type: 'content',
+              content: markdownIt.render(chunk),
+            });
+          });
+        } else {
+          // If code block is short enough, render it as is
+          const codeContent = codeBlockBuffer.join('\n');
+          if (shouldCreateNewSection(codeContent, currentSection)) {
+            createNewSection();
+          }
+          currentSection.push({
+            type: 'content',
+            content: markdownIt.render(codeContent),
+          });
+        }
+        codeBlockBuffer = [];
+      }
+      continue;
+    }
+
+    if (codeBlockBuffer.length > 0) {
+      // Inside code block - preserve original line including whitespace
+      codeBlockBuffer.push(lines[i]); // Use original line instead of trimmed
+      continue;
+    }
+
     // Handle images
     if (line.match(/!\[.*\]\(.*\)/)) {
       const imgMatch = line.match(/!\[(.*)\]\((.*)\)/);
       if (imgMatch) {
-        // Check if current section starts with h2 or h3
-        const hasHeading =
-          currentSection.length > 0 && currentSection[0].type === 'h2';
+        // Check if current section starts with h2 and has content
+        const hasHeadingAndContent =
+          currentSection.length > 0 &&
+          currentSection[0].type === 'h2' &&
+          currentSection.length > 1;
 
+        // Check if the previous content is too long
+        const previousContentLength = currentSection.reduce(
+          (sum, item) => sum + item.content.length,
+          0,
+        );
+        const isPreviousContentLong =
+          previousContentLength > maxCharsPerSlide / 2;
+
+        // Create new section if:
+        // 1. Previous content is too long, OR
+        // 2. We already have an image in current section, OR
+        // 3. We don't have a heading with content and should create new section
         if (
-          currentSection.length === 0 ||
-          (!hasHeading && shouldCreateNewSection(line, currentSection))
+          isPreviousContentLong ||
+          (!hasHeadingAndContent &&
+            currentSection.some((item) => item.type === 'image')) ||
+          (currentSection.length === 0 &&
+            shouldCreateNewSection(line, currentSection))
         ) {
           createNewSection();
         }
+
         currentSection.push({ type: 'image', content: imgMatch[2] });
 
-        // Only create new section if this wasn't following a heading
-        if (!hasHeading) {
+        // Create new section after image unless it's following a heading with content
+        // and the previous content wasn't too long
+        if (!hasHeadingAndContent || isPreviousContentLong) {
           createNewSection();
         }
       }
@@ -316,7 +506,12 @@ export function convertMarkdownToHTML(
 
     // Handle regular content
     if (line.length > 0) {
-      if (shouldCreateNewSection(line, currentSection)) {
+      // Only check for new section if we're not right after a heading
+      const isAfterHeading =
+        currentSection.length === 1 &&
+        (currentSection[0].type === 'h2' || currentSection[0].type === 'h3');
+
+      if (!isAfterHeading && shouldCreateNewSection(line, currentSection)) {
         if (
           currentSection.length &&
           currentSection[currentSection.length - 1].content.includes(
@@ -327,7 +522,11 @@ export function convertMarkdownToHTML(
         }
         createNewSection();
       }
-      currentSection = processContent(line, currentSection);
+      currentSection = processContent(line, currentSection, {
+        maxCharsPerSlide: 1100,
+        maxWordsPerSlide,
+        maxLinesPerSlide,
+      });
     }
   }
 
