@@ -485,8 +485,8 @@ export function convertMarkdownToHTML(
             const estimatedLines = paragraphs.reduce((lineCount, paragraph) => {
               // Remove HTML tags for more accurate character count
               const cleanText = paragraph.replace(/<[^>]+>/g, '');
-              // Estimate lines based on characters (assuming ~120 chars per line)
-              const estimatedParagraphLines = Math.ceil(cleanText.length / 120);
+              // Estimate lines based on characters (assuming ~200 chars per line)
+              const estimatedParagraphLines = Math.ceil(cleanText.length / 200);
               return lineCount + Math.max(1, estimatedParagraphLines);
             }, 0);
 
@@ -507,7 +507,7 @@ export function convertMarkdownToHTML(
         // console.log('Max lines per slide:', maxLinesPerSlide);
 
         const isPreviousContentLong =
-          previousContentLines > maxLinesPerSlide - 4; // -4 to account for the image and some padding
+          previousContentLines > maxLinesPerSlide - 3; // -4 to account for the image and some padding
 
         // console.log('Is previous content long?', isPreviousContentLong);
 

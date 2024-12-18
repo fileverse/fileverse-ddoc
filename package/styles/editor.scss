@@ -512,7 +512,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
     }
 
     img {
-      @apply w-full h-auto flex justify-center items-center max-w-[640px] aspect-video object-contain;
+      @apply w-full h-auto flex justify-center items-center max-w-[512px] aspect-video object-contain;
     }
 
     p {
@@ -568,13 +568,14 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       img {
         user-select: none;
         border-radius: 1rem;
+        max-width: 720px;
       }
 
       .node-dBlock {
         @apply translate-x-[0.5rem] md:translate-x-[-4rem];
 
         img {
-          @apply translate-x-[-4.5rem] translate-y-[2rem] md:translate-x-0;
+          @apply translate-x-[-4.5rem] translate-y-[1rem] md:translate-x-0;
         }
       }
     }
@@ -683,7 +684,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
         width: auto;
         // margin: 2vh auto;
         position: relative !important;
-        max-width: 1080px;
+        max-width: 960px;
         aspect-ratio: 16/9;
         object-fit: contain;
       }
