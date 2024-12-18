@@ -512,7 +512,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
     }
 
     img {
-      @apply w-full h-auto flex justify-center items-center max-w-[720px] aspect-video object-contain;
+      @apply w-full h-auto flex justify-center items-center max-w-[512px] aspect-video object-contain;
     }
 
     p {
@@ -568,6 +568,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       img {
         user-select: none;
         border-radius: 1rem;
+        max-width: 720px;
       }
 
       .node-dBlock {
@@ -683,7 +684,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
         width: auto;
         // margin: 2vh auto;
         position: relative !important;
-        max-width: 1080px;
+        max-width: 960px;
         aspect-ratio: 16/9;
         object-fit: contain;
       }
