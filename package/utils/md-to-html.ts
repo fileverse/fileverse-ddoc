@@ -476,8 +476,11 @@ export function convertMarkdownToHTML(
           (sum, item) => sum + item.content.length,
           0,
         );
+
+        const previousContentLengthByLines = previousContentLength / 20;
+
         const isPreviousContentLong =
-          previousContentLength > maxCharsPerSlide / 2;
+          previousContentLengthByLines > maxLinesPerSlide;
 
         // Create new section if:
         // 1. Previous content is too long, OR
