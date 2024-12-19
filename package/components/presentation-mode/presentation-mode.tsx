@@ -118,7 +118,9 @@ export const PresentationMode = ({
 
   const presentationEditor = useEditor(
     {
-      extensions: editor.extensionManager.extensions,
+      extensions: editor.extensionManager.extensions.filter(
+        (b) => b.name !== 'collaboration',
+      ),
       editable: false,
     },
     [],
@@ -203,7 +205,9 @@ export const PresentationMode = ({
     const editors: { [key: number]: Editor } = {};
     slides.forEach((_, index) => {
       editors[index] = new Editor({
-        extensions: editor.extensionManager.extensions,
+        extensions: editor.extensionManager.extensions.filter(
+          (o) => o.name !== 'collaboration',
+        ),
         editable: false,
       });
 

@@ -54,7 +54,6 @@
     "@tiptap/extension-font-family": "^2.5.4",
     "@tiptap/extension-gapcursor": "^2.5.4",
     "@tiptap/extension-highlight": "^2.5.4",
-    "@tiptap/extension-history": "^2.5.4",
     "@tiptap/extension-link": "^2.5.4",
     "@tiptap/extension-list-item": "^2.5.4",
     "@tiptap/extension-placeholder": "^2.5.4",
