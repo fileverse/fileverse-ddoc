@@ -34,9 +34,14 @@ class ZoomService {
       '1.5': '-translate-x-[140%]',
       '2': '-translate-x-[300%]',
     };
-    
-    if (zoom in tailwindPositions) {
-      element.classList.remove(...Array.from(element.classList).filter(c => c.startsWith('-translate-x-')));
+
+    element.classList.remove(
+      ...Array.from(element.classList).filter((c) => c.startsWith('-translate-x-'))
+    );
+
+    if (window.matchMedia('(max-width: 768px)').matches) {
+      element.classList.add('-translate-x-60');
+    } else if (zoom in tailwindPositions) {
       element.classList.add(tailwindPositions[zoom as ZoomLevel]);
     }
     }
