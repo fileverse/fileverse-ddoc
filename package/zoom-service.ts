@@ -40,11 +40,13 @@ class ZoomService {
     );
 
     if (window.matchMedia('(max-width: 768px)').matches) {
-      element.classList.add('-translate-x-60');
-    } else if (zoom in tailwindPositions) {
+      return;
+    }
+  
+    if (zoom in tailwindPositions) {
       element.classList.add(tailwindPositions[zoom as ZoomLevel]);
     }
-    }
+  }
 }
 
 export const zoomService = ZoomService.getInstance();
