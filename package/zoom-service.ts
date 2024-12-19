@@ -39,7 +39,7 @@ class ZoomService {
       ...Array.from(element.classList).filter((c) => c.startsWith('-translate-x-'))
     );
 
-    if (window.matchMedia('(max-width: 768px)').matches) {
+    if (window.matchMedia('(max-width: 1280px)').matches) {
       return;
     }
   
