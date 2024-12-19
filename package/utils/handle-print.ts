@@ -137,9 +137,9 @@ export const handlePrint = (slides: string[]) => {
 
                         /* Images */
                         .ProseMirror img {
-                            max-width: 100%;
+                            max-width: 720px;
                             height: auto;
-                            margin: 16px 0;
+                            margin: 16px auto;
                         }
 
                         /* Code blocks */

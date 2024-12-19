@@ -471,16 +471,48 @@ export function convertMarkdownToHTML(
           currentSection[0].type === 'h2' &&
           currentSection.length > 1;
 
-        // Check if the previous content is too long
-        const previousContentLength = currentSection.reduce(
-          (sum, item) => sum + item.content.length,
-          0,
-        );
+        // console.log('Current Section:', currentSection);
+
+        // Count actual lines in previous content
+        const previousContentLines = currentSection.reduce((sum, item) => {
+          if (item.type === 'content') {
+            // Split content by newlines first
+            const paragraphs = item.content
+              .split('\n')
+              .filter((line) => line.trim().length > 0);
+
+            // For each paragraph, estimate wrapped lines based on character length
+            const estimatedLines = paragraphs.reduce((lineCount, paragraph) => {
+              // Remove HTML tags for more accurate character count
+              const cleanText = paragraph.replace(/<[^>]+>/g, '');
+              // Estimate lines based on characters (assuming ~200 chars per line)
+              const estimatedParagraphLines = Math.ceil(cleanText.length / 200);
+              return lineCount + Math.max(1, estimatedParagraphLines);
+            }, 0);
+
+            // console.log(
+            //   'Content item lines:',
+            //   estimatedLines,
+            //   'Content:',
+            //   item.content,
+            // );
+            return sum + estimatedLines;
+          }
+          // Count other types (h2, etc) as 1 line
+          // console.log('Non-content item type:', item.type);
+          return sum + 1;
+        }, 0);
+
+        // console.log('Total previous content lines:', previousContentLines);
+        // console.log('Max lines per slide:', maxLinesPerSlide);
+
         const isPreviousContentLong =
-          previousContentLength > maxCharsPerSlide / 2;
+          previousContentLines > maxLinesPerSlide - 3; // -4 to account for the image and some padding
+
+        // console.log('Is previous content long?', isPreviousContentLong);
 
         // Create new section if:
-        // 1. Previous content is too long, OR
+        // 1. Previous content has too many lines, OR
         // 2. We already have an image in current section, OR
         // 3. We don't have a heading with content and should create new section
         if (
@@ -490,6 +522,7 @@ export function convertMarkdownToHTML(
           (currentSection.length === 0 &&
             shouldCreateNewSection(line, currentSection))
         ) {
+          // console.log('Creating new section before image');
           createNewSection();
         }
 
@@ -498,6 +531,7 @@ export function convertMarkdownToHTML(
         // Create new section after image unless it's following a heading with content
         // and the previous content wasn't too long
         if (!hasHeadingAndContent || isPreviousContentLong) {
+          // console.log('Creating new section after image');
           createNewSection();
         }
       }
