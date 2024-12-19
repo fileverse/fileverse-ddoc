@@ -34,12 +34,19 @@ class ZoomService {
       '1.5': '-translate-x-[140%]',
       '2': '-translate-x-[300%]',
     };
-    
+
+    element.classList.remove(
+      ...Array.from(element.classList).filter((c) => c.startsWith('-translate-x-'))
+    );
+
+    if (window.matchMedia('(max-width: 1280px)').matches) {
+      return;
+    }
+  
     if (zoom in tailwindPositions) {
-      element.classList.remove(...Array.from(element.classList).filter(c => c.startsWith('-translate-x-')));
       element.classList.add(tailwindPositions[zoom as ZoomLevel]);
     }
-    }
+  }
 }
 
 export const zoomService = ZoomService.getInstance();
