@@ -73,6 +73,7 @@ const DdocEditor = forwardRef(
   ) => {
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [hasInvalidContent, setHasInvalidContent] = useState(false);
 
     const btn_ref = useRef(null);
     const isMobile = useMediaQuery('(max-width: 640px)');
@@ -132,6 +133,7 @@ const DdocEditor = forwardRef(
       setZoomLevel,
       isNavbarVisible,
       setIsNavbarVisible,
+      setHasInvalidContent,
     });
 
     useImperativeHandle(
@@ -365,6 +367,9 @@ const DdocEditor = forwardRef(
               'w-[1062.5px] md:max-w-[1062.5px] h-[100%]': zoomLevel === '1.5',
             },
             { 'w-[1548px] md:max-w-[1548px]': zoomLevel === '2' },
+            {
+              ' !h-[40vh] !overflow-hidden !overscroll-none': hasInvalidContent,
+            },
           )}
           style={{
             transformOrigin:
@@ -401,74 +406,84 @@ const DdocEditor = forwardRef(
               />
               <ColumnsMenu editor={editor} appendTo={editorRef} />
             </div>
-            <EditingProvider isPreviewMode={isPreviewMode}>
-              {tags && tags.length > 0 && (
-                <div
-                  ref={tagsContainerRef}
-                  className={cn(
-                    'flex flex-wrap px-4 md:px-[80px] lg:!px-[124px] items-center gap-1 mb-4 mt-4 lg:!mt-0',
-                    { 'pt-12': isPreviewMode },
-                  )}
-                >
-                  {visibleTags.map((tag, index) => (
-                    <Tag
-                      key={index}
-                      style={{ backgroundColor: tag?.color }}
-                      onRemove={() => handleRemoveTag(tag?.name)}
-                      isRemovable={!isPreviewMode}
-                      className="!h-6 rounded"
-                    >
-                      {tag?.name}
-                    </Tag>
-                  ))}
-                  {hiddenTagsCount > 0 && !isHiddenTagsVisible && (
-                    <Button
-                      variant="ghost"
-                      className="!h-6 rounded min-w-fit !px-2 color-bg-secondary text-helper-text-sm"
-                      onClick={() => setIsHiddenTagsVisible(true)}
-                    >
-                      +{hiddenTagsCount}
-                    </Button>
-                  )}
-                  <AnimatePresence>
-                    {isHiddenTagsVisible && (
-                      <motion.div
-                        initial={{ opacity: 0, height: 0 }}
-                        animate={{ opacity: 1, height: 'auto' }}
-                        exit={{ opacity: 0, height: 0 }}
-                        transition={{ duration: 0.3 }}
-                        className="flex flex-wrap items-center gap-1"
-                      >
-                        {selectedTags?.slice(4).map((tag, index) => (
-                          <Tag
-                            key={index + 4}
-                            style={{ backgroundColor: tag?.color }}
-                            onRemove={() => handleRemoveTag(tag?.name)}
-                            isRemovable={!isPreviewMode}
-                            className="!h-6 rounded"
-                          >
-                            {tag?.name}
-                          </Tag>
-                        ))}
-                      </motion.div>
+            {hasInvalidContent ? (
+              <div className="h-full flex flex-col items-center justify-center gap-2 text-center">
+                <p>
+                  Oops something went wrong with the content of this ddoc. We
+                  are on it.
+                </p>
+                <p>Meanwhile try refreshing the page.</p>
+              </div>
+            ) : (
+              <EditingProvider isPreviewMode={isPreviewMode}>
+                {tags && tags.length > 0 && (
+                  <div
+                    ref={tagsContainerRef}
+                    className={cn(
+                      'flex flex-wrap px-4 md:px-[80px] lg:!px-[124px] items-center gap-1 mb-4 mt-4 lg:!mt-0',
+                      { 'pt-12': isPreviewMode },
                     )}
-                  </AnimatePresence>
-                  {selectedTags && selectedTags?.length < 6 ? (
-                    <TagInput
-                      tags={tags || []}
-                      selectedTags={selectedTags as TagType[]}
-                      onAddTag={handleAddTag}
-                      isPreviewMode={isPreviewMode}
-                    />
-                  ) : null}
-                </div>
-              )}
-              <EditorContent
-                editor={editor}
-                id="editor"
-                className="w-full h-auto py-4 bg-white"
-              />
-            </EditingProvider>
+                  >
+                    {visibleTags.map((tag, index) => (
+                      <Tag
+                        key={index}
+                        style={{ backgroundColor: tag?.color }}
+                        onRemove={() => handleRemoveTag(tag?.name)}
+                        isRemovable={!isPreviewMode}
+                        className="!h-6 rounded"
+                      >
+                        {tag?.name}
+                      </Tag>
+                    ))}
+                    {hiddenTagsCount > 0 && !isHiddenTagsVisible && (
+                      <Button
+                        variant="ghost"
+                        className="!h-6 rounded min-w-fit !px-2 color-bg-secondary text-helper-text-sm"
+                        onClick={() => setIsHiddenTagsVisible(true)}
+                      >
+                        +{hiddenTagsCount}
+                      </Button>
+                    )}
+                    <AnimatePresence>
+                      {isHiddenTagsVisible && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: 'auto' }}
+                          exit={{ opacity: 0, height: 0 }}
+                          transition={{ duration: 0.3 }}
+                          className="flex flex-wrap items-center gap-1"
+                        >
+                          {selectedTags?.slice(4).map((tag, index) => (
+                            <Tag
+                              key={index + 4}
+                              style={{ backgroundColor: tag?.color }}
+                              onRemove={() => handleRemoveTag(tag?.name)}
+                              isRemovable={!isPreviewMode}
+                              className="!h-6 rounded"
+                            >
+                              {tag?.name}
+                            </Tag>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                    {selectedTags && selectedTags?.length < 6 ? (
+                      <TagInput
+                        tags={tags || []}
+                        selectedTags={selectedTags as TagType[]}
+                        onAddTag={handleAddTag}
+                        isPreviewMode={isPreviewMode}
+                      />
+                    ) : null}
+                  </div>
+                )}
+                <EditorContent
+                  editor={editor}
+                  id="editor"
+                  className={cn('w-full h-auto py-4 bg-white')}
+                />
+              </EditingProvider>
+            )}
           </div>
           {showCommentButton && !isNativeMobile && (
             <Button

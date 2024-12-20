@@ -46,6 +46,7 @@ export const useDdocEditor = ({
   scrollPosition,
   unFocused,
   zoomLevel,
+  setHasInvalidContent,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
@@ -162,6 +163,7 @@ export const useDdocEditor = ({
       },
       shouldRerenderOnTransaction: true,
       immediatelyRender: false,
+      enableContentCheck: true,
     },
     [extensions],
   );
@@ -228,10 +230,17 @@ export const useDdocEditor = ({
     if (initialContent && editor && !initialContentSetRef.current) {
       setIsContentLoading(true);
       queueMicrotask(() => {
-        editor.commands.setContent(initialContent);
-        setIsContentLoading(false);
-        if (zoomLevel) {
-          zoomService.setZoom(zoomLevel);
+        try {
+          editor.commands.setContent(initialContent);
+          setHasInvalidContent?.(false);
+          setIsContentLoading(false);
+          if (zoomLevel) {
+            zoomService.setZoom(zoomLevel);
+          }
+        } catch (e) {
+          console.log(e);
+          setIsContentLoading(false);
+          setHasInvalidContent?.(true);
         }
       });
 
