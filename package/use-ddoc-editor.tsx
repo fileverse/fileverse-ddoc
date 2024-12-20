@@ -47,6 +47,7 @@ export const useDdocEditor = ({
   unFocused,
   zoomLevel,
   setHasInvalidContent,
+  onInvalidContentError,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
@@ -241,6 +242,7 @@ export const useDdocEditor = ({
           console.log(e);
           setIsContentLoading(false);
           setHasInvalidContent?.(true);
+          onInvalidContentError?.(e);
         }
       });
 

@@ -69,6 +69,7 @@ export interface DdocProps {
   sharedSlidesLink?: string;
   documentName?: string;
   setHasInvalidContent?: React.Dispatch<SetStateAction<boolean>>;
+  onInvalidContentError?: (e: unknown) => void;
 }
 
 export interface IEditorSelectionData {

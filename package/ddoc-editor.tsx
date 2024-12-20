@@ -68,6 +68,7 @@ const DdocEditor = forwardRef(
       editorCanvasClassNames,
       sharedSlidesLink,
       documentName,
+      onInvalidContentError,
     }: DdocProps,
     ref,
   ) => {
@@ -134,6 +135,7 @@ const DdocEditor = forwardRef(
       isNavbarVisible,
       setIsNavbarVisible,
       setHasInvalidContent,
+      onInvalidContentError,
     });
 
     useImperativeHandle(
