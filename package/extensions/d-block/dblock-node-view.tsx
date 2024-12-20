@@ -378,6 +378,7 @@ export const DBlockNodeView: React.FC<
       <NodeViewContent
         className={cn('node-view-content w-full relative', {
           'is-table': isTable,
+          'invalid-content': node.attrs?.isCorrupted,
         })}
       >
         {isDocEmpty &&

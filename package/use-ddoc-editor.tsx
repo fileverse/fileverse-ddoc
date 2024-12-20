@@ -16,6 +16,7 @@ import { EditorState } from '@tiptap/pm/state';
 import customTextInputRules from './extensions/customTextInputRules';
 import { PageBreak } from './extensions/page-break/page-break';
 import { zoomService } from './zoom-service';
+import { sanitizeContent } from './utils/sanitize-content';
 
 const usercolors = [
   '#30bced',
@@ -46,6 +47,8 @@ export const useDdocEditor = ({
   scrollPosition,
   unFocused,
   zoomLevel,
+  onInvalidContentError,
+  ignoreCorruptedData,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
@@ -228,7 +231,13 @@ export const useDdocEditor = ({
     if (initialContent && editor && !initialContentSetRef.current) {
       setIsContentLoading(true);
       queueMicrotask(() => {
-        editor.commands.setContent(initialContent);
+        editor.commands.setContent(
+          sanitizeContent({
+            data: initialContent,
+            ignoreCorruptedData,
+            onInvalidContentError,
+          }),
+        );
         setIsContentLoading(false);
         if (zoomLevel) {
           zoomService.setZoom(zoomLevel);

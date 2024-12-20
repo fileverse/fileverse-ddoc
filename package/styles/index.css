@@ -97,6 +97,11 @@ li > ol > li > ol > li:before {
   word-break: break-word;
 }
 
+.invalid-content {
+  border: 1px solid #ea9999;
+  padding: 10px;
+}
+
 .node-pageBreak {
   background-color: #f8f9fa;
   height: 30px;

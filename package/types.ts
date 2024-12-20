@@ -63,11 +63,13 @@ export interface DdocProps {
   unFocused?: boolean;
   isPresentationMode?: boolean;
   setIsPresentationMode?: React.Dispatch<SetStateAction<boolean>>;
-  onInlineComment?: () => void; 
+  onInlineComment?: () => void;
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
   sharedSlidesLink?: string;
   documentName?: string;
+  onInvalidContentError?: (e: unknown) => void;
+  ignoreCorruptedData?: boolean;
 }
 
 export interface IEditorSelectionData {
