@@ -66,6 +66,7 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `onMarkdownImport` (optional)                  | `() => void`                                   | Callback function for markdown import                                                                     |
 | `sharedSlidesLink` (optional)                  | `string`                                       | Link for shared slides in presentation mode                                                               |
 | `documentName` (optional)                      | `string`                                       | Name of the document                                                                                      |
+| `onInvalidContentError` (optional)             | `() => void`                                   | Callback when Editor throws Invalid Content Error                                                         |
 
 ## Data Interface
 
