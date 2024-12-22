@@ -875,7 +875,7 @@ export const InlineCommentPopup = ({
         autoFocus
       />
         <div className="h-full flex justify-end pt-2">
-          <Button className="px-4 py-2 w-20 h-9 bg-black rounded" onClick={handleClick}>
+          <Button className="px-4 py-2 w-20 min-w-20 h-9 bg-black rounded" onClick={handleClick}>
             Send
           </Button>
         </div>
