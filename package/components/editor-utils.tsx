@@ -28,7 +28,7 @@ import {
   TextField,
   Tooltip,
 } from '@fileverse/ui';
-import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
+import { useOnClickOutside } from 'usehooks-ts';
 import { colors } from '../utils/colors';
 
 interface IEditorToolElement {
@@ -786,7 +786,6 @@ export const InlineCommentPopup = ({
   const [comment, setComment] = useState(
     inlineCommentData.inlineCommentText || '',
   );
-  const isMobile = useMediaQuery('(max-width: 1023px)');
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setComment(value);
@@ -865,28 +864,21 @@ export const InlineCommentPopup = ({
   return (
     <div
       ref={elementRef}
-      className="w-[300px] bg-[#F8F9FA] shadow-[0px_4px_16px_-4px_rgba(0,0,0,0.15)] rounded-md"
+      className="bg-[#F8F9FA] shadow-elevation-3 rounded p-3 w-80 border border-[#E8EBEC]"
     >
       <TextAreaFieldV2
         value={comment}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        className="bg-[#F8F9FA] w-[296px] font-normal min-h-[44px] max-h-[196px] pt-2 border-none overflow-y-auto no-scrollbar"
+        className="bg-white w-[296px] font-normal min-h-[44px] max-h-[196px] overflow-y-auto no-scrollbar px-3 py-2 border border-[#E8EBEC] rounded focus:border-[#E8EBEC] focus:ring-0 focus:outline-none"
         placeholder="Type your comment"
         autoFocus
       />
-      {comment.trim() !== '' && (
-        <div className="h-full flex items-center gap-2 p-3">
-          <span className="w-full text-[12px] text-[#77818A]">
-            Press{' '}
-            <span className="font-semibold">{isMobile ? 'Send' : 'Enter'}</span>{' '}
-            to send a comment
-          </span>
-          <Button className="!min-w-[10px] !h-8 !px-2" onClick={handleClick}>
-            <LucideIcon name="SendHorizontal" size="md" />
+        <div className="h-full flex justify-end pt-2">
+          <Button className="px-4 py-2 w-20 h-9 bg-black rounded" onClick={handleClick}>
+            Send
           </Button>
         </div>
-      )}
     </div>
   );
 };
