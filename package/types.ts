@@ -70,6 +70,8 @@ export interface DdocProps {
   onMarkdownImport?: () => void;
   sharedSlidesLink?: string;
   documentName?: string;
+  onInvalidContentError?: (e: unknown) => void;
+  ignoreCorruptedData?: boolean;
 }
 
 export interface IEditorSelectionData {

@@ -19,6 +19,7 @@ import { fromUint8Array, toUint8Array } from 'js-base64';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { isJSONString } from './utils/isJsonString';
 import { zoomService } from './zoom-service';
+import { sanitizeContent } from './utils/sanitize-content';
 
 const usercolors = [
   '#30bced',
@@ -51,6 +52,8 @@ export const useDdocEditor = ({
   enableIndexeddbSync,
   unFocused,
   zoomLevel,
+  onInvalidContentError,
+  ignoreCorruptedData,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
@@ -272,7 +275,13 @@ export const useDdocEditor = ({
               Y.applyUpdate(ydoc, toUint8Array(initialContent as string));
             }
           } else {
-            editor.commands.setContent(initialContent as JSONContent);
+            editor.commands.setContent(
+              sanitizeContent({
+                data: initialContent as JSONContent,
+                ignoreCorruptedData,
+                onInvalidContentError,
+              }),
+            );
           }
         }
 

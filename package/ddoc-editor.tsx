@@ -72,6 +72,8 @@ const DdocEditor = forwardRef(
       editorCanvasClassNames,
       sharedSlidesLink,
       documentName,
+      onInvalidContentError,
+      ignoreCorruptedData,
     }: DdocProps,
     ref,
   ) => {
@@ -139,6 +141,8 @@ const DdocEditor = forwardRef(
       setZoomLevel,
       isNavbarVisible,
       setIsNavbarVisible,
+      onInvalidContentError,
+      ignoreCorruptedData,
     });
 
     useImperativeHandle(
