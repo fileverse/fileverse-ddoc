@@ -777,3 +777,11 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
     margin-top: max(env(safe-area-inset-top), 24px);
   }
 }
+
+.my-comment {
+  @apply border-b-2 border-dashed border-yellow-400;
+
+  &:hover {
+    @apply bg-[#e5fbe7];
+  }
+}

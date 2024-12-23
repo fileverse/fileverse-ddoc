@@ -17,6 +17,15 @@ import customTextInputRules from './extensions/customTextInputRules';
 import { PageBreak } from './extensions/page-break/page-break';
 import { zoomService } from './zoom-service';
 import { sanitizeContent } from './utils/sanitize-content';
+import { CommentExtension as Comment } from './extensions/comment';
+import uuid from 'react-uuid';
+
+interface Comment {
+  id: string;
+  content: string;
+  replies: Comment[];
+  createdAt: Date;
+}
 
 const usercolors = [
   '#30bced',
@@ -51,6 +60,28 @@ export const useDdocEditor = ({
   ignoreCorruptedData,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
+  const initialContentSetRef = useRef(false);
+  const [isContentLoading, setIsContentLoading] = useState(true);
+  const [comments, setComments] = useState<Comment[]>([]);
+
+  const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
+
+  const commentsSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const focusCommentWithActiveId = (id: string) => {
+    if (!commentsSectionRef.current) return;
+
+    const commentInput =
+      commentsSectionRef.current.querySelector<HTMLInputElement>(`input#${id}`);
+
+    if (!commentInput) return;
+
+    commentInput.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+      inline: 'center',
+    });
+  };
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions(
       (error: string) => onError?.(error),
@@ -59,9 +90,44 @@ export const useDdocEditor = ({
     SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
     customTextInputRules,
     PageBreak,
+    Comment.configure({
+      HTMLAttributes: {
+        class: 'my-comment',
+      },
+      onCommentActivated: (commentId) => {
+        setActiveCommentId(commentId);
+
+        if (commentId) setTimeout(() => focusCommentWithActiveId(commentId));
+      },
+    }),
   ]);
-  const initialContentSetRef = useRef(false);
-  const [isContentLoading, setIsContentLoading] = useState(true);
+
+  useEffect(() => {
+    if (!activeCommentId) return;
+
+    focusCommentWithActiveId(activeCommentId);
+  }, [activeCommentId]);
+
+  const getNewComment = (content: string): Comment => {
+    return {
+      id: `a${uuid()}a`,
+      content,
+      replies: [],
+      createdAt: new Date(),
+    };
+  };
+
+  const setComment = () => {
+    const newComment = getNewComment('');
+
+    setComments([...comments, newComment]);
+
+    editor?.commands.setComment(newComment.id);
+
+    setActiveCommentId(newComment.id);
+
+    setTimeout(focusCommentWithActiveId);
+  };
 
   const isHighlightedYellow = (
     state: EditorState,
@@ -320,5 +386,13 @@ export const useDdocEditor = ({
     ref,
     connect,
     ydoc,
+    setComment,
+    comments,
+    activeCommentId,
+    setActiveCommentId,
+    getNewComment,
+    setComments,
+    commentsSectionRef,
+    focusCommentWithActiveId,
   };
 };

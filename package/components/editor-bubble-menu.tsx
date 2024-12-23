@@ -39,6 +39,7 @@ type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   walletAddress?: string;
   username?: string;
   onInlineComment?: () => void;
+  setComment?: () => void;
 };
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
@@ -97,6 +98,12 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       isActive: () => props.editor.isActive('inlineComment'),
       command: () => {},
       icon: 'MessageSquarePlus',
+    },
+    {
+      name: 'Comment',
+      isActive: () => props.editor.isActive('comment'),
+      command: () => props.setComment(),
+      icon: 'MessageSquareQuote',
     },
   ];
 
@@ -226,7 +233,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                 props.setInlineCommentData?.((prev) => ({ ...prev, ...data }))
               }
               onInlineComment={props.onInlineComment}
-                          />
+            />
           );
         }
         return null;
@@ -315,7 +322,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               item.name === 'Italic' ||
               item.name === 'Underline' ||
               item.name === 'Strikethrough' ||
-              item.name === 'Code'
+              item.name === 'Code' ||
+              item.name === 'Comment'
             ) {
               return (
                 <div key={index} className="flex items-center">

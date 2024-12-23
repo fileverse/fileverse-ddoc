@@ -110,6 +110,12 @@ const DdocEditor = forwardRef(
       ref: editorRef,
       isContentLoading,
       ydoc,
+      comments,
+      activeCommentId,
+      setActiveCommentId,
+      setComments,
+      commentsSectionRef,
+      setComment,
     } = useDdocEditor({
       isPreviewMode,
       initialContent,
@@ -402,6 +408,7 @@ const DdocEditor = forwardRef(
                 username={username as string}
                 walletAddress={walletAddress as string}
                 onInlineComment={onInlineComment}
+                setComment={setComment}
               />
               <ColumnsMenu editor={editor} appendTo={editorRef} />
             </div>
@@ -506,6 +513,78 @@ const DdocEditor = forwardRef(
               secureImageUploadUrl={secureImageUploadUrl}
             />
           </div>
+        )}
+        {editor && (
+          <section
+            className="fixed right-4 top-[150px] flex flex-col justify-center items-center gap-2 p-2 border rounded-lg w-96 color-border-default"
+            ref={commentsSectionRef}
+          >
+            {comments.length ? (
+              comments.map((comment) => (
+                <div
+                  key={comment.id}
+                  className={`flex flex-col gap-4 p-2 border rounded-lg w-full border-slate-400 ${comment.id === activeCommentId ? 'border-blue-400 border-2' : ''} box-border`}
+                >
+                  <span className="flex items-end gap-2">
+                    <a
+                      href="https://github.com/kylengn"
+                      className="font-semibold border-b border-blue-200"
+                    >
+                      Kyle Nguyen
+                    </a>
+
+                    <span className="text-xs text-slate-400">
+                      {comment.createdAt.toLocaleDateString()}
+                    </span>
+                  </span>
+
+                  <input
+                    value={comment.content || ''}
+                    disabled={comment.id !== activeCommentId}
+                    className={`p-2 rounded-lg text-inherit bg-transparent focus:outline-none ${comment.id === activeCommentId ? 'bg-slate-600' : ''}`}
+                    id={comment.id}
+                    onInput={(event) => {
+                      const value = (event.target as HTMLInputElement).value;
+
+                      setComments(
+                        comments.map((comment) => {
+                          if (comment.id === activeCommentId) {
+                            return {
+                              ...comment,
+                              content: value,
+                            };
+                          }
+
+                          return comment;
+                        }),
+                      );
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key !== 'Enter') return;
+
+                      setActiveCommentId(null);
+                    }}
+                  />
+
+                  {comment.id === activeCommentId && (
+                    <Button
+                      className="w-full"
+                      onClick={() => {
+                        setActiveCommentId(null);
+                        editor.commands.focus();
+                      }}
+                    >
+                      Save
+                    </Button>
+                  )}
+                </div>
+              ))
+            ) : (
+              <span className="text-center color-text-secondary text-body-sm">
+                No comments yet
+              </span>
+            )}
+          </section>
         )}
       </div>
     );
