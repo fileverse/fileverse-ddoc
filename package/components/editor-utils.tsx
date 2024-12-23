@@ -870,12 +870,12 @@ export const InlineCommentPopup = ({
         value={comment}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        className="bg-white w-[296px] font-normal min-h-[44px] max-h-[196px] overflow-y-auto no-scrollbar px-3 py-2 border border-[#E8EBEC] rounded focus:border-[#E8EBEC] focus:ring-0 focus:outline-none"
+        className="bg-white w-[296px] font-normal text-sm text-[#77818A] min-h-[44px] max-h-[196px] overflow-y-auto no-scrollbar px-3 py-2 border border-[#E8EBEC] rounded focus:border-[#E8EBEC] focus:ring-0 focus:outline-none hover:border-[#E8EBEC]"
         placeholder="Type your comment"
         autoFocus
       />
         <div className="h-full flex justify-end pt-2">
-          <Button className="px-4 py-2 w-20 min-w-20 h-9 bg-black rounded" onClick={handleClick}>
+          <Button className="px-4 py-2 w-20 min-w-20 h-9 font-medium text-sm bg-black rounded" onClick={handleClick}>
             Send
           </Button>
         </div>
