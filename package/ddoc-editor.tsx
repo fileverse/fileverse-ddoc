@@ -20,9 +20,11 @@ import cn from 'classnames';
 import { Button, LucideIcon, Tag, TagType, TagInput } from '@fileverse/ui';
 import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
 import { AnimatePresence, motion } from 'framer-motion';
+import * as Y from 'yjs';
 
 import platform from 'platform';
 import MobileToolbar from './components/mobile-toolbar';
+import { fromUint8Array, toUint8Array } from 'js-base64';
 import { PresentationMode } from './components/presentation-mode/presentation-mode';
 
 const checkOs = () => platform.os?.family;
@@ -56,6 +58,8 @@ const DdocEditor = forwardRef(
       setIsCommentSectionOpen,
       setInlineCommentData,
       inlineCommentData,
+      enableIndexeddbSync,
+      ddocId,
       zoomLevel,
       setZoomLevel,
       isPresentationMode,
@@ -110,7 +114,10 @@ const DdocEditor = forwardRef(
       ref: editorRef,
       isContentLoading,
       ydoc,
+      refreshYjsIndexedDbProvider,
     } = useDdocEditor({
+      enableIndexeddbSync,
+      ddocId,
       isPreviewMode,
       initialContent,
       enableCollaboration,
@@ -143,6 +150,15 @@ const DdocEditor = forwardRef(
       () => ({
         getEditor: () => editor,
         getYdoc: () => ydoc,
+        refreshYjsIndexedDbProvider,
+        mergeYjsContents: (_contents: string[]) => {
+          const contents = Y.mergeUpdates(
+            _contents.map((content) => toUint8Array(content)),
+          );
+          Y.applyUpdate(ydoc, contents);
+
+          return fromUint8Array(contents);
+        },
       }),
       [editor, ydoc],
     );

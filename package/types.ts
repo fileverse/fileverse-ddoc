@@ -43,7 +43,9 @@ export interface DdocProps {
   isPreviewMode: boolean;
   ensResolutionUrl?: string;
   secureImageUploadUrl?: string;
-  initialContent?: JSONContent | null;
+  enableIndexeddbSync?: boolean;
+  ddocId?: string;
+  initialContent?: JSONContent | string | string[] | null;
   walletAddress?: string | null;
   username?: string | null;
   renderNavbar?: ({ editor }: { editor: JSONContent }) => JSX.Element;

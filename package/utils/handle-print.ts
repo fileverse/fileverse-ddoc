@@ -7,7 +7,7 @@ export const handlePrint = (slides: string[]) => {
 
   const slidesHTML = slides
     .map(
-      slideContent => `
+      (slideContent) => `
         <div class="print-slide">
             <div class="slide-wrapper">
                 <div class="slide-content ProseMirror presentation-mode">

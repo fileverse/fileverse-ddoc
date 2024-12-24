@@ -26,7 +26,6 @@ import { TrailingNode } from './trailing-node';
 import { NodeType } from '@tiptap/pm/model';
 import { InputRule } from '@tiptap/core';
 import { actionButton } from './action-button';
-import History from '@tiptap/extension-history';
 import BulletList from '@tiptap/extension-bullet-list';
 import { Markdown } from 'tiptap-markdown';
 import ListItem from '@tiptap/extension-list-item';
@@ -105,7 +104,6 @@ export const defaultExtensions = (
     bulletList: false,
     listItem: false,
   }),
-  History,
   Typography,
   TextAlign.configure({
     types: ['heading', 'paragraph'],

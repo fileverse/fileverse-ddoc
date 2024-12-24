@@ -44,8 +44,8 @@ const TiptapToolBar = ({
   isNavbarVisible: boolean;
   setIsNavbarVisible: React.Dispatch<React.SetStateAction<boolean>>;
   secureImageUploadUrl?: string;
-  onMarkdownExport?: () => void; 
-  onMarkdownImport?: () => void;  
+  onMarkdownExport?: () => void;
+  onMarkdownImport?: () => void;
 }) => {
   const {
     toolRef,
