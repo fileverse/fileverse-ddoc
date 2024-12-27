@@ -11,6 +11,7 @@ import {
   TagType,
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
+import { ThreadData, ThreadUpdateData } from '../../package/extensions/thread/thread';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -115,6 +116,34 @@ function App() {
     );
   };
 
+  // Thread handlers that integrate with consumer app's states
+  const threadHandlers = {
+    onCreateThread: async (data: ThreadData) => {
+      console.log(data);
+      return 'threadId';
+    },
+
+    onUpdateThread: async (data: ThreadUpdateData) => {
+      console.log(data);
+    },
+
+    onDeleteThread: async (threadId: string) => {
+      console.log(threadId);
+    },
+
+    onResolveThread: async (threadId: string) => {
+      console.log(threadId);
+    },
+
+    onSelectThread: (threadId: string) => {
+      console.log(threadId);
+    },
+
+    getThreads: async () => {
+      return [];
+    }
+  }
+
   return (
     <div>
       <DdocEditor
@@ -146,9 +175,10 @@ function App() {
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
-        onInlineComment={(): void => {}}
-        onMarkdownImport={(): void => {}}
-        onMarkdownExport={(): void => {}}
+        onInlineComment={(): void => { }}
+        onMarkdownImport={(): void => { }}
+        onMarkdownExport={(): void => { }}
+        threadHandlers={threadHandlers}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

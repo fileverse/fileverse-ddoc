@@ -19,6 +19,7 @@ import { DynamicDropdown, cn } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 import platform from 'platform';
 import tippy from 'tippy.js';
+import { CommentDropdown } from './comment-dropdown';
 
 export interface BubbleMenuItem {
   name: string;
@@ -40,10 +41,14 @@ type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   username?: string;
   onInlineComment?: () => void;
   setComment?: () => void;
+  unsetComment?: () => void;
+  comments?: IComment[];
+  setComments?: (comments: IComment[]) => void;
 };
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const [isInlineCommentOpen, setIsInlineCommentOpen] = useState(false);
+  const [selectedText, setSelectedText] = useState('');
   const items: BubbleMenuItem[] = [
     {
       name: 'Bold',
@@ -84,7 +89,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Link',
       isActive: () => props.editor.isActive('link'),
-      command: () => {},
+      command: () => { },
       icon: 'Link',
     },
     {
@@ -96,13 +101,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'InlineComment',
       isActive: () => props.editor.isActive('inlineComment'),
-      command: () => {},
+      command: () => { },
       icon: 'MessageSquarePlus',
     },
     {
       name: 'Comment',
       isActive: () => props.editor.isActive('comment'),
-      command: () => props.setComment(),
+      command: () => { },
       icon: 'MessageSquareQuote',
     },
   ];
@@ -322,8 +327,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               item.name === 'Italic' ||
               item.name === 'Underline' ||
               item.name === 'Strikethrough' ||
-              item.name === 'Code' ||
-              item.name === 'Comment'
+              item.name === 'Code'
             ) {
               return (
                 <div key={index} className="flex items-center">
@@ -423,6 +427,58 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                     content={renderContent(item)}
                   />
                 </React.Fragment>
+              );
+            }
+
+            if (item.name === 'Comment') {
+              return (
+                <DynamicDropdown
+                  key="Comment"
+                  side="bottom"
+                  sideOffset={10}
+                  alignOffset={-5}
+                  align="end"
+                  anchorTrigger={
+                    <ToolbarButton
+                      icon="MessageSquareQuote"
+                      variant="ghost"
+                      size="sm"
+                      isActive={props.editor.isActive('comment')}
+                      onClick={() => {
+                        if (props.editor.isActive('comment')) {
+                          props.unsetComment?.();
+                        } else {
+                          const { state } = props.editor;
+                          const { from, to } = state.selection;
+                          const text = state.doc.textBetween(from, to, ' ');
+                          setSelectedText(text);
+                        }
+                      }}
+                    />
+                  }
+                  content={
+                    <CommentDropdown
+                      selectedText={selectedText}
+                      elementRef={toolRef}
+                      comments={props.comments}
+                      setComments={props.setComments}
+                      username={props.username}
+                      walletAddress={props.walletAddress}
+                      onSubmit={(commentId) => {
+                        props.setComment?.(commentId);
+                      }}
+                      onClose={() => {
+                        if (toolRef.current?.parentElement) {
+                          const popoverContent =
+                            toolRef.current.closest('[role="dialog"]');
+                          if (popoverContent) {
+                            popoverContent.remove();
+                          }
+                        }
+                      }}
+                    />
+                  }
+                />
               );
             }
 

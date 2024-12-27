@@ -17,7 +17,15 @@ import {
   useState,
 } from 'react';
 import cn from 'classnames';
-import { Button, LucideIcon, Tag, TagType, TagInput } from '@fileverse/ui';
+import {
+  Button,
+  LucideIcon,
+  Tag,
+  TagType,
+  TagInput,
+  TextField,
+  Avatar,
+} from '@fileverse/ui';
 import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
 import { AnimatePresence, motion } from 'framer-motion';
 import * as Y from 'yjs';
@@ -26,8 +34,41 @@ import platform from 'platform';
 import MobileToolbar from './components/mobile-toolbar';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { PresentationMode } from './components/presentation-mode/presentation-mode';
+import uuid from 'react-uuid';
+import { IComment } from './extensions/comment';
 
 const checkOs = () => platform.os?.family;
+
+const handleAddReply = (
+  comments: IComment[],
+  activeCommentId: string,
+  commentContent: string,
+  setComments: (comments: IComment[]) => void,
+) => {
+  if (!commentContent.trim()) return;
+
+  setComments(
+    comments.map((comment) => {
+      if (comment.id === activeCommentId) {
+        return {
+          ...comment,
+          replies: [
+            ...comment.replies,
+            {
+              id: `reply-${uuid()}`,
+              content: commentContent,
+              replies: [],
+              createdAt: new Date(),
+              selectedContent: comment.selectedContent,
+            },
+          ],
+          content: '', // Clear the input after adding reply
+        };
+      }
+      return comment;
+    }),
+  );
+};
 
 const DdocEditor = forwardRef(
   (
@@ -74,6 +115,7 @@ const DdocEditor = forwardRef(
       documentName,
       onInvalidContentError,
       ignoreCorruptedData,
+      threadHandlers,
     }: DdocProps,
     ref,
   ) => {
@@ -120,6 +162,8 @@ const DdocEditor = forwardRef(
       setComments,
       commentsSectionRef,
       setComment,
+      unsetComment,
+      focusCommentInEditor,
       refreshYjsIndexedDbProvider,
     } = useDdocEditor({
       enableIndexeddbSync,
@@ -149,6 +193,7 @@ const DdocEditor = forwardRef(
       setIsNavbarVisible,
       onInvalidContentError,
       ignoreCorruptedData,
+      threadHandlers,
     });
 
     useImperativeHandle(
@@ -425,6 +470,9 @@ const DdocEditor = forwardRef(
                 walletAddress={walletAddress as string}
                 onInlineComment={onInlineComment}
                 setComment={setComment}
+                unsetComment={unsetComment}
+                comments={comments}
+                setComments={setComments}
               />
               <ColumnsMenu editor={editor} appendTo={editorRef} />
             </div>
@@ -532,74 +580,115 @@ const DdocEditor = forwardRef(
         )}
         {editor && (
           <section
-            className="fixed right-4 top-[150px] flex flex-col justify-center items-center gap-2 p-2 border rounded-lg w-96 color-border-default"
+            className={cn(
+              'fixed right-4 top-[120px] flex flex-col justify-start items-center gap-2 p-2 rounded-lg w-96 color-bg-default shadow-elevation-4 h-[calc(100vh-200px)] overflow-y-auto',
+              {
+                hidden: !comments.length,
+              },
+            )}
             ref={commentsSectionRef}
           >
-            {comments.length ? (
-              comments.map((comment) => (
-                <div
-                  key={comment.id}
-                  className={`flex flex-col gap-4 p-2 border rounded-lg w-full border-slate-400 ${comment.id === activeCommentId ? 'border-blue-400 border-2' : ''} box-border`}
-                >
-                  <span className="flex items-end gap-2">
-                    <a
-                      href="https://github.com/kylengn"
-                      className="font-semibold border-b border-blue-200"
-                    >
-                      Kyle Nguyen
-                    </a>
-
-                    <span className="text-xs text-slate-400">
-                      {comment.createdAt.toLocaleDateString()}
+            {comments.map((comment) => (
+              <div
+                key={comment.id}
+                className={cn(
+                  'flex flex-col gap-4 p-3 border rounded-lg w-full color-border-default box-border cursor-pointer transition-opacity duration-300 opacity-50',
+                  comment.id === activeCommentId &&
+                    'opacity-100 border-black/20',
+                )}
+                onClick={() => focusCommentInEditor(comment.id)}
+              >
+                <div className="flex justify-start items-center gap-2">
+                  <Avatar src={''} size="md" className="min-w-10" />
+                  <div className="flex flex-col">
+                    <span className="text-body-sm-bold">
+                      {username || walletAddress || 'Anonymous'}
                     </span>
-                  </span>
-
-                  <input
-                    value={comment.content || ''}
-                    disabled={comment.id !== activeCommentId}
-                    className={`p-2 rounded-lg text-inherit bg-transparent focus:outline-none ${comment.id === activeCommentId ? 'bg-slate-600' : ''}`}
-                    id={comment.id}
-                    onInput={(event) => {
-                      const value = (event.target as HTMLInputElement).value;
-
-                      setComments(
-                        comments.map((comment) => {
-                          if (comment.id === activeCommentId) {
-                            return {
-                              ...comment,
-                              content: value,
-                            };
-                          }
-
-                          return comment;
-                        }),
-                      );
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key !== 'Enter') return;
-
-                      setActiveCommentId(null);
-                    }}
-                  />
-
-                  {comment.id === activeCommentId && (
-                    <Button
-                      className="w-full"
-                      onClick={() => {
-                        setActiveCommentId(null);
-                        editor.commands.focus();
-                      }}
-                    >
-                      Save
-                    </Button>
-                  )}
+                    <span className="text-helper-text-sm color-text-secondary">
+                      {comment.createdAt.toLocaleTimeString([], {
+                        hour: 'numeric',
+                        minute: '2-digit',
+                        hour12: true,
+                      })}
+                    </span>
+                  </div>
                 </div>
-              ))
-            ) : (
-              <span className="text-center color-text-secondary text-body-sm">
-                No comments yet
-              </span>
-            )}
+
+                <div className="flex flex-col gap-2 ml-5 pl-4 border-l-2 color-border-default">
+                  <div className="bg-[#e5fbe7] p-2 rounded">
+                    <span className="text-body-sm italic">
+                      "{comment.selectedContent}"
+                    </span>
+                  </div>
+                  {/* {comment.content && (
+                    <div className="">
+                      <span className="text-body-sm">{comment.content}</span>
+                    </div>
+                  )} */}
+                  {/* Replies section */}
+                  {comment.replies.map((reply, index) => (
+                    <div key={index}>
+                      <span className="text-body-sm">{reply.content}</span>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Reply input */}
+                <TextField
+                  placeholder="Add a reply..."
+                  value={comment.content || ''}
+                  disabled={comment.id !== activeCommentId}
+                  className={cn(
+                    'p-2 text-helper-text-sm bg-transparent focus:outline-none',
+                    comment.id === activeCommentId && 'bg-slate-100',
+                  )}
+                  id={comment.id}
+                  onInput={(event) => {
+                    const value = (event.target as HTMLInputElement).value;
+                    setComments(
+                      comments.map((c) => {
+                        if (c.id === activeCommentId) {
+                          return {
+                            ...c,
+                            content: value,
+                          };
+                        }
+                        return c;
+                      }),
+                    );
+                  }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') {
+                      handleAddReply(
+                        comments,
+                        activeCommentId as string,
+                        comment.content,
+                        setComments,
+                      );
+                    }
+                  }}
+                />
+
+                {comment.id === activeCommentId && (
+                  <Button
+                    className="w-full"
+                    disabled={!comment.content.trim()}
+                    onClick={() => {
+                      handleAddReply(
+                        comments,
+                        activeCommentId,
+                        comment.content,
+                        setComments,
+                      );
+                      setActiveCommentId(null);
+                      editor.commands.focus();
+                    }}
+                  >
+                    Reply
+                  </Button>
+                )}
+              </div>
+            ))}
           </section>
         )}
       </div>

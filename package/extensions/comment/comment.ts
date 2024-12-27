@@ -31,6 +31,14 @@ export interface CommentStorage {
   activeCommentId: string | null;
 }
 
+export interface IComment {
+  id: string;
+  selectedContent: string;
+  content: string;
+  replies: IComment[];
+  createdAt: Date;
+}
+
 export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
   name: 'comment',
 

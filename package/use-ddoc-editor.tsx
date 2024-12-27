@@ -20,15 +20,9 @@ import { IndexeddbPersistence } from 'y-indexeddb';
 import { isJSONString } from './utils/isJsonString';
 import { zoomService } from './zoom-service';
 import { sanitizeContent } from './utils/sanitize-content';
-import { CommentExtension as Comment } from './extensions/comment';
+import { CommentExtension as Comment, IComment } from './extensions/comment';
 import uuid from 'react-uuid';
-
-interface Comment {
-  id: string;
-  content: string;
-  replies: Comment[];
-  createdAt: Date;
-}
+import { ThreadExtension } from './extensions/thread/thread';
 
 const usercolors = [
   '#30bced',
@@ -63,11 +57,12 @@ export const useDdocEditor = ({
   zoomLevel,
   onInvalidContentError,
   ignoreCorruptedData,
+  threadHandlers,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
-  const [comments, setComments] = useState<Comment[]>([]);
+  const [comments, setComments] = useState<IComment[]>([]);
 
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
 
@@ -108,6 +103,7 @@ export const useDdocEditor = ({
     Collaboration.configure({
       document: ydoc,
     }),
+    ThreadExtension.configure(threadHandlers),
   ]);
 
   useEffect(() => {
@@ -116,25 +112,30 @@ export const useDdocEditor = ({
     focusCommentWithActiveId(activeCommentId);
   }, [activeCommentId]);
 
-  const getNewComment = (content: string): Comment => {
+  const getNewComment = (selectedContent: string): IComment => {
     return {
-      id: `a${uuid()}a`,
-      content,
+      id: `comment-${uuid()}`,
+      selectedContent,
+      content: '',
       replies: [],
       createdAt: new Date(),
     };
   };
-
   const setComment = () => {
-    const newComment = getNewComment('');
+    if (!editor) return;
+    const { state } = editor;
+    const { from, to } = state.selection;
+    const selectedContent = state.doc.textBetween(from, to, ' ');
 
+    const newComment = getNewComment(selectedContent);
     setComments([...comments, newComment]);
-
     editor?.commands.setComment(newComment.id);
-
     setActiveCommentId(newComment.id);
-
     setTimeout(focusCommentWithActiveId);
+  };
+
+  const unsetComment = () => {
+    editor?.commands.unsetComment(activeCommentId || '');
   };
 
   const isHighlightedYellow = (
@@ -446,6 +447,38 @@ export const useDdocEditor = ({
     };
   }, [editor]);
 
+  const focusCommentInEditor = (commentId: string) => {
+    if (!editor || !comments.length) return;
+
+    // Find the comment by ID
+    const comment = comments.find((c) => c.id === commentId);
+    if (!comment) return;
+
+    // Find the element with the matching data-comment-id
+    const commentElement = editor.view.dom.querySelector(
+      `[data-comment-id="${commentId}"]`,
+    );
+
+    if (commentElement) {
+      // Get the position of the comment in the editor
+      const from = editor.view.posAtDOM(commentElement, 0);
+      const to = from + commentElement.textContent!.length;
+
+      // Set selection to the comment text
+      editor.commands.setTextSelection({ from, to });
+
+      // Scroll the element into view smoothly
+      commentElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest',
+      });
+
+      // Set this as active comment
+      setActiveCommentId(commentId);
+    }
+  };
+
   return {
     editor,
     isContentLoading,
@@ -453,6 +486,7 @@ export const useDdocEditor = ({
     connect,
     ydoc,
     setComment,
+    unsetComment,
     comments,
     activeCommentId,
     setActiveCommentId,
@@ -461,5 +495,6 @@ export const useDdocEditor = ({
     commentsSectionRef,
     focusCommentWithActiveId,
     refreshYjsIndexedDbProvider: initialiseYjsIndexedDbProvider,
+    focusCommentInEditor,
   };
 };
