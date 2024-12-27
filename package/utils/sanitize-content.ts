@@ -42,7 +42,7 @@ export const sanitizeContent = ({
   const sanitizedContent = { ...data };
 
   sanitizedContent.content = data.content
-    ?.map(node => {
+    ?.map((node) => {
       if (isCorruptedData(node)) {
         console.error('corrupted data:', node);
         onInvalidContentError?.('Invalid content: ' + typeof node);

@@ -7,7 +7,7 @@ import * as Y from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import { defaultExtensions } from './extensions/default-extension';
-import { AnyExtension, useEditor } from '@tiptap/react';
+import { AnyExtension, JSONContent, useEditor } from '@tiptap/react';
 import { getCursor } from './utils/cursor';
 import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
@@ -15,6 +15,9 @@ import SlashCommand from './components/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
 import customTextInputRules from './extensions/customTextInputRules';
 import { PageBreak } from './extensions/page-break/page-break';
+import { fromUint8Array, toUint8Array } from 'js-base64';
+import { IndexeddbPersistence } from 'y-indexeddb';
+import { isJSONString } from './utils/isJsonString';
 import { zoomService } from './zoom-service';
 import { sanitizeContent } from './utils/sanitize-content';
 import { CommentExtension as Comment } from './extensions/comment';
@@ -54,6 +57,8 @@ export const useDdocEditor = ({
   setWordCount,
   secureImageUploadUrl,
   scrollPosition,
+  ddocId,
+  enableIndexeddbSync,
   unFocused,
   zoomLevel,
   onInvalidContentError,
@@ -99,6 +104,9 @@ export const useDdocEditor = ({
 
         if (commentId) setTimeout(() => focusCommentWithActiveId(commentId));
       },
+    }),
+    Collaboration.configure({
+      document: ydoc,
     }),
   ]);
 
@@ -221,14 +229,6 @@ export const useDdocEditor = ({
         handleClick: handleCommentClick,
       },
       autofocus: unFocused ? false : 'start',
-      onTransaction: ({ editor, transaction }) => {
-        if (editor?.isEmpty) {
-          return;
-        }
-        if (transaction.docChanged) {
-          onChange?.(editor.getJSON());
-        }
-      },
       shouldRerenderOnTransaction: true,
       immediatelyRender: false,
     },
@@ -262,9 +262,6 @@ export const useDdocEditor = ({
 
     setExtensions([
       ...extensions.filter((extension) => extension.name !== 'history'),
-      Collaboration.configure({
-        document: ydoc,
-      }),
       CollaborationCursor.configure({
         provider: provider,
         user: {
@@ -293,21 +290,78 @@ export const useDdocEditor = ({
     editor?.setEditable(!isPreviewMode);
   }, [isPreviewMode, editor]);
 
+  const yjsIndexeddbProviderRef = useRef<IndexeddbPersistence | null>(null);
+
+  const initialiseYjsIndexedDbProvider = async () => {
+    const provider = yjsIndexeddbProviderRef.current;
+    if (provider) {
+      await provider.destroy();
+    }
+    if (enableIndexeddbSync && ddocId) {
+      const newYjsIndexeddbProvider = new IndexeddbPersistence(ddocId, ydoc);
+      yjsIndexeddbProviderRef.current = newYjsIndexeddbProvider;
+    }
+  };
+
+  const mergeAndApplyUpdate = (contents: string[]) => {
+    const parsedContents = contents.map((content) => toUint8Array(content));
+    Y.applyUpdate(ydoc, Y.mergeUpdates(parsedContents));
+  };
+
+  const isContentYjsEncoded = (
+    initialContent: string[] | JSONContent | string | null,
+  ) => {
+    return (
+      Array.isArray(initialContent) ||
+      (typeof initialContent === 'string' && !isJSONString(initialContent))
+    );
+  };
+
+  const isLoadingInitialContent = (
+    initialContent: string | JSONContent | string[] | null | undefined,
+  ) => {
+    return !initialContent && initialContent !== '';
+  };
+
   useEffect(() => {
-    if (initialContent && editor && !initialContentSetRef.current) {
+    if (
+      !isLoadingInitialContent(initialContent) &&
+      editor &&
+      !initialContentSetRef.current &&
+      ydoc
+    ) {
       setIsContentLoading(true);
       queueMicrotask(() => {
-        editor.commands.setContent(
-          sanitizeContent({
-            data: initialContent,
-            ignoreCorruptedData,
-            onInvalidContentError,
-          }),
-        );
-        setIsContentLoading(false);
+        if (initialContent !== '') {
+          const isYjsEncoded = isContentYjsEncoded(initialContent as string);
+          if (isYjsEncoded) {
+            if (Array.isArray(initialContent)) {
+              mergeAndApplyUpdate(initialContent);
+            } else {
+              Y.applyUpdate(ydoc, toUint8Array(initialContent as string));
+            }
+          } else {
+            editor.commands.setContent(
+              sanitizeContent({
+                data: initialContent as JSONContent,
+                ignoreCorruptedData,
+                onInvalidContentError,
+              }),
+            );
+          }
+        }
+
         if (zoomLevel) {
           zoomService.setZoom(zoomLevel);
         }
+
+        initialiseYjsIndexedDbProvider()
+          .then(() => {
+            setIsContentLoading(false);
+          })
+          .catch((error) => {
+            console.log(error);
+          });
       });
 
       initialContentSetRef.current = true;
@@ -331,7 +385,7 @@ export const useDdocEditor = ({
     return () => {
       clearTimeout(scrollTimeoutId);
     };
-  }, [initialContent, editor]);
+  }, [initialContent, editor, ydoc]);
 
   const startCollaboration = async () => {
     let _username = username;
@@ -373,6 +427,18 @@ export const useDdocEditor = ({
   ]);
 
   useEffect(() => {
+    const handler = () => {
+      onChange?.(fromUint8Array(Y.encodeStateAsUpdate(ydoc)) as any);
+    };
+    if (ydoc) {
+      ydoc.on('update', handler);
+    }
+    return () => {
+      ydoc?.off('update', handler);
+    };
+  }, [ydoc]);
+
+  useEffect(() => {
     return () => {
       if (editor) {
         editor.destroy();
@@ -394,5 +460,6 @@ export const useDdocEditor = ({
     setComments,
     commentsSectionRef,
     focusCommentWithActiveId,
+    refreshYjsIndexedDbProvider: initialiseYjsIndexedDbProvider,
   };
 };

@@ -14,18 +14,18 @@ class ZoomService {
   }
 
   setZoom(zoom: string) {
-      this._currentZoom = zoom;
-      const elements = document.querySelectorAll('.template-buttons');
-      elements.forEach(el => {
-        if (el instanceof HTMLElement) {
-          this.updateElementPosition(el, zoom);
-        }
-      });
+    this._currentZoom = zoom;
+    const elements = document.querySelectorAll('.template-buttons');
+    elements.forEach((el) => {
+      if (el instanceof HTMLElement) {
+        this.updateElementPosition(el, zoom);
+      }
+    });
   }
 
   private updateElementPosition(element: HTMLElement, zoom: string) {
     type ZoomLevel = '0.5' | '0.75' | '1' | '1.4' | '1.5' | '2';
-    
+
     const tailwindPositions: Record<ZoomLevel, string> = {
       '0.5': '-translate-x-0',
       '0.75': '-translate-x-[45%]',
@@ -36,13 +36,15 @@ class ZoomService {
     };
 
     element.classList.remove(
-      ...Array.from(element.classList).filter((c) => c.startsWith('-translate-x-'))
+      ...Array.from(element.classList).filter((c) =>
+        c.startsWith('-translate-x-'),
+      ),
     );
 
     if (window.matchMedia('(max-width: 1280px)').matches) {
       return;
     }
-  
+
     if (zoom in tailwindPositions) {
       element.classList.add(tailwindPositions[zoom as ZoomLevel]);
     }
