@@ -1,7 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Avatar,
   Button,
+  DynamicDropdown,
+  IconButton,
   LucideIcon,
   TextAreaFieldV2,
   Tooltip,
@@ -19,6 +21,8 @@ interface CommentDropdownProps {
   comments?: IComment[];
   username?: string;
   walletAddress?: string;
+  activeCommentId?: string;
+  unsetComment?: () => void;
 }
 
 export const CommentDropdown = ({
@@ -30,12 +34,24 @@ export const CommentDropdown = ({
   comments = [],
   username,
   walletAddress,
+  activeCommentId,
+  unsetComment,
 }: CommentDropdownProps) => {
   const [comment, setComment] = useState('');
   const [reply, setReply] = useState('');
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [showReplyView, setShowReplyView] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(true);
+  const [showReplyView, setShowReplyView] = useState(!!activeCommentId);
   const isMobile = useMediaQuery('(max-width: 1023px)');
+
+  useEffect(() => {
+    if (activeCommentId) {
+      const activeComment = comments.find(c => c.id === activeCommentId);
+      if (activeComment) {
+        setComment(activeComment.content);
+        setShowReplyView(true);
+      }
+    }
+  }, [activeCommentId, comments]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setComment(e.target.value);
@@ -110,7 +126,7 @@ export const CommentDropdown = ({
         value={comment}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        className="bg-white border color-border-default w-[296px] font-normal min-h-[44px] max-h-[196px] pt-2 overflow-y-auto no-scrollbar"
+        className="bg-white w-[296px] text-body-sm color-text-secondary min-h-[44px] max-h-[196px] pt-2 overflow-y-auto no-scrollbar"
         placeholder="Type your comment"
         autoFocus
       />
@@ -129,35 +145,41 @@ export const CommentDropdown = ({
   const renderReplyView = () => (
     <>
       <div className="flex justify-between items-center px-3 py-2 border-b border-[#E8EBEC]">
-        <p className="text-sm font-medium text-[#363B3F]">Comments</p>
-        <div className="relative flex items-center gap-4">
-          <div
-            className="ellipsis-icon cursor-pointer"
-            onClick={handleEllipsisClick}
-          >
-            <LucideIcon name="Ellipsis" size="sm" />
-          </div>
+        <p className="text-sm font-medium color-text-default">Comments</p>
+        <div className="relative flex items-center gap-2">
+          <DynamicDropdown
+            key="more-actions"
+            align="end"
+            sideOffset={5}
+            anchorTrigger={
+              <IconButton
+                onClick={handleEllipsisClick}
+                icon={'Ellipsis'}
+                variant="ghost"
+              />
+            }
+            content={
+              isDropdownOpen ? (
+                <div className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3">
+                  <button
+                    className="flex items-center text-[#FB3449] text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"
+                    onClick={() => {
+                      unsetComment?.();
+                      setIsDropdownOpen(false);
+                      onClose();
+                    }}
+                  >
+                    <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
+                    Delete thread
+                  </button>
+                </div>
+              ) : null
+            }
+          />
 
-          {isDropdownOpen && (
-            <div className="dropdown-container absolute top-full right-4 rounded-lg z-50 shadow-elevation-3 p-2 border-[#E8EBEC] whitespace-nowrap bg-white w-40">
-              <button
-                className="flex items-center text-[#FB3449] text-sm font-medium gap-2 rounded-md p-2 hover:bg-[#FFF1F2] w-full"
-                onClick={() => {
-                  setIsDropdownOpen(false);
-                  onClose();
-                }}
-              >
-                <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
-                Delete thread
-              </button>
-            </div>
-          )}
-
-          <div className="px-2 py-1 hover:bg-[#F2F4F5] rounded">
-            <Tooltip text="Resolve" sideOffset={5} position="bottom">
-              <LucideIcon name="CircleCheck" size="sm" />
-            </Tooltip>
-          </div>
+          <Tooltip text="Resolve" sideOffset={5} position="bottom">
+            <IconButton icon="CircleCheck" variant="ghost" />
+          </Tooltip>
         </div>
       </div>
 
@@ -194,7 +216,7 @@ export const CommentDropdown = ({
           value={reply}
           onChange={handleReplyChange}
           onKeyDown={handleKeyDown}
-          className="bg-white w-[296px] font-normal text-sm text-[#77818A] min-h-[44px] max-h-[196px] overflow-y-auto no-scrollbar px-3 py-2 border border-[#E8EBEC] rounded focus:border-[#E8EBEC] focus:ring-0 focus:outline-none hover:border-[#E8EBEC]"
+          className="bg-white w-[296px] text-body-sm color-text-secondary min-h-[44px] max-h-[196px] overflow-y-auto no-scrollbar px-3 py-2"
           placeholder="Reply"
         />
 

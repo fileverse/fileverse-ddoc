@@ -44,6 +44,7 @@ type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   unsetComment?: () => void;
   comments?: IComment[];
   setComments?: (comments: IComment[]) => void;
+  activeCommentId?: string;
 };
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
@@ -445,12 +446,19 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                       size="sm"
                       isActive={props.editor.isActive('comment')}
                       onClick={() => {
+                        const { state } = props.editor;
+                        const { from, to } = state.selection;
+                        const text = state.doc.textBetween(from, to, ' ');
+
+                        // If there's an active comment, find it in comments array
                         if (props.editor.isActive('comment')) {
-                          props.unsetComment?.();
+                          const activeComment = props.comments?.find(
+                            (comment) => comment.id === props.activeCommentId,
+                          );
+                          if (activeComment) {
+                            setSelectedText(activeComment.selectedContent);
+                          }
                         } else {
-                          const { state } = props.editor;
-                          const { from, to } = state.selection;
-                          const text = state.doc.textBetween(from, to, ' ');
                           setSelectedText(text);
                         }
                       }}
@@ -462,8 +470,10 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                       elementRef={toolRef}
                       comments={props.comments}
                       setComments={props.setComments}
+                      unsetComment={props.unsetComment}
                       username={props.username}
                       walletAddress={props.walletAddress}
+                      activeCommentId={props.activeCommentId}
                       onSubmit={(commentId) => {
                         props.setComment?.(commentId);
                       }}

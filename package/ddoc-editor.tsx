@@ -23,8 +23,8 @@ import {
   Tag,
   TagType,
   TagInput,
-  TextField,
   Avatar,
+  TextAreaFieldV2,
 } from '@fileverse/ui';
 import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -473,6 +473,7 @@ const DdocEditor = forwardRef(
                 unsetComment={unsetComment}
                 comments={comments}
                 setComments={setComments}
+                activeCommentId={activeCommentId as string}
               />
               <ColumnsMenu editor={editor} appendTo={editorRef} />
             </div>
@@ -592,9 +593,11 @@ const DdocEditor = forwardRef(
               <div
                 key={comment.id}
                 className={cn(
-                  'flex flex-col gap-4 p-3 border rounded-lg w-full color-border-default box-border cursor-pointer transition-opacity duration-300 opacity-50',
+                  'flex flex-col gap-3 p-3 border rounded-lg w-full box-border cursor-pointer transition-opacity duration-300',
                   comment.id === activeCommentId &&
-                    'opacity-100 border-black/20',
+                    '!opacity-100 !border-black/20',
+                  comment.id !== activeCommentId &&
+                    'opacity-50 color-border-default',
                 )}
                 onClick={() => focusCommentInEditor(comment.id)}
               >
@@ -634,13 +637,13 @@ const DdocEditor = forwardRef(
                 </div>
 
                 {/* Reply input */}
-                <TextField
+                <TextAreaFieldV2
                   placeholder="Add a reply..."
                   value={comment.content || ''}
                   disabled={comment.id !== activeCommentId}
                   className={cn(
-                    'p-2 text-helper-text-sm bg-transparent focus:outline-none',
-                    comment.id === activeCommentId && 'bg-slate-100',
+                    'bg-white text-body-sm color-text-secondary min-h-[44px] max-h-[196px] overflow-y-auto no-scrollbar px-3 py-2',
+                    comment.id === activeCommentId && 'bg-white',
                   )}
                   id={comment.id}
                   onInput={(event) => {
