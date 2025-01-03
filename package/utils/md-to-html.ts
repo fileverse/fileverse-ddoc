@@ -227,7 +227,14 @@ export function convertMarkdownToHTML(
     }
 
     // Original todo list and content processing logic remains the same
-    if (line.startsWith('- [') || line.startsWith('* [')) {
+    if (
+      line.startsWith('- [ ') ||
+      line.startsWith('* [ ') ||
+      line.startsWith('- [x') ||
+      line.startsWith('* [x') ||
+      line.startsWith('- [X') ||
+      line.startsWith('* [X')
+    ) {
       // Handle todo lists (existing code)
       if (
         !currentSection.length ||
