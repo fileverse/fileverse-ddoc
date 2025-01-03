@@ -20,6 +20,8 @@ import { IndexeddbPersistence } from 'y-indexeddb';
 import { isJSONString } from './utils/isJsonString';
 import { zoomService } from './zoom-service';
 import { sanitizeContent } from './utils/sanitize-content';
+import { CommentExtension as Comment, IComment } from './extensions/comment';
+import uuid from 'react-uuid';
 
 const usercolors = [
   '#30bced',
@@ -56,6 +58,28 @@ export const useDdocEditor = ({
   ignoreCorruptedData,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
+  const initialContentSetRef = useRef(false);
+  const [isContentLoading, setIsContentLoading] = useState(true);
+  const [comments, setComments] = useState<IComment[]>([]);
+
+  const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
+
+  const commentsSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const focusCommentWithActiveId = (id: string) => {
+    if (!commentsSectionRef.current) return;
+
+    const commentInput =
+      commentsSectionRef.current.querySelector<HTMLInputElement>(`input#${id}`);
+
+    if (!commentInput) return;
+
+    commentInput.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+      inline: 'center',
+    });
+  };
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions(
       (error: string) => onError?.(error),
@@ -64,12 +88,52 @@ export const useDdocEditor = ({
     SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
     customTextInputRules,
     PageBreak,
+    Comment.configure({
+      HTMLAttributes: {
+        class: 'my-comment',
+      },
+      onCommentActivated: (commentId) => {
+        setActiveCommentId(commentId);
+
+        if (commentId) setTimeout(() => focusCommentWithActiveId(commentId));
+      },
+    }),
     Collaboration.configure({
       document: ydoc,
     }),
   ]);
-  const initialContentSetRef = useRef(false);
-  const [isContentLoading, setIsContentLoading] = useState(true);
+
+  useEffect(() => {
+    if (!activeCommentId) return;
+
+    focusCommentWithActiveId(activeCommentId);
+  }, [activeCommentId]);
+
+  const getNewComment = (selectedContent: string): IComment => {
+    return {
+      id: `comment-${uuid()}`,
+      selectedContent,
+      content: '',
+      replies: [],
+      createdAt: new Date(),
+    };
+  };
+  const setComment = () => {
+    if (!editor) return;
+    const { state } = editor;
+    const { from, to } = state.selection;
+    const selectedContent = state.doc.textBetween(from, to, ' ');
+
+    const newComment = getNewComment(selectedContent);
+    setComments([...comments, newComment]);
+    editor?.commands.setComment(newComment.id);
+    setActiveCommentId(newComment.id);
+    setTimeout(focusCommentWithActiveId);
+  };
+
+  const unsetComment = () => {
+    editor?.commands.unsetComment(activeCommentId || '');
+  };
 
   const isHighlightedYellow = (
     state: EditorState,
@@ -380,12 +444,54 @@ export const useDdocEditor = ({
     };
   }, [editor]);
 
+  const focusCommentInEditor = (commentId: string) => {
+    if (!editor || !comments.length) return;
+
+    // Find the comment by ID
+    const comment = comments.find((c) => c.id === commentId);
+    if (!comment) return;
+
+    // Find the element with the matching data-comment-id
+    const commentElement = editor.view.dom.querySelector(
+      `[data-comment-id="${commentId}"]`,
+    );
+
+    if (commentElement) {
+      // Get the position of the comment in the editor
+      const from = editor.view.posAtDOM(commentElement, 0);
+      const to = from + commentElement.textContent!.length;
+
+      // Set selection to the comment text
+      editor.commands.setTextSelection({ from, to });
+
+      // Scroll the element into view smoothly
+      commentElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest',
+      });
+
+      // Set this as active comment
+      setActiveCommentId(commentId);
+    }
+  };
+
   return {
     editor,
     isContentLoading,
     ref,
     connect,
     ydoc,
+    setComment,
+    unsetComment,
+    comments,
+    activeCommentId,
+    setActiveCommentId,
+    getNewComment,
+    setComments,
+    commentsSectionRef,
+    focusCommentWithActiveId,
     refreshYjsIndexedDbProvider: initialiseYjsIndexedDbProvider,
+    focusCommentInEditor,
   };
 };

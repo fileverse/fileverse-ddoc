@@ -19,6 +19,7 @@ import { DynamicDropdown, cn } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 import platform from 'platform';
 import tippy from 'tippy.js';
+import { CommentDropdown } from './comment-dropdown';
 
 export interface BubbleMenuItem {
   name: string;
@@ -39,10 +40,18 @@ type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   walletAddress?: string;
   username?: string;
   onInlineComment?: () => void;
+  setComment?: () => void;
+  unsetComment?: () => void;
+  comments?: IComment[];
+  setComments?: (comments: IComment[]) => void;
+  activeCommentId?: string;
+  inlineCommentOpen?: boolean;
+  setInlineCommentOpen?: React.Dispatch<SetStateAction<boolean>>;
 };
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const [isInlineCommentOpen, setIsInlineCommentOpen] = useState(false);
+  const [selectedText, setSelectedText] = useState('');
   const items: BubbleMenuItem[] = [
     {
       name: 'Bold',
@@ -83,7 +92,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Link',
       isActive: () => props.editor.isActive('link'),
-      command: () => {},
+      command: () => { },
       icon: 'Link',
     },
     {
@@ -95,8 +104,14 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'InlineComment',
       isActive: () => props.editor.isActive('inlineComment'),
-      command: () => {},
+      command: () => { },
       icon: 'MessageSquarePlus',
+    },
+    {
+      name: 'Comment',
+      isActive: () => props.editor.isActive('comment'),
+      command: () => { },
+      icon: 'MessageSquareQuote',
     },
   ];
 
@@ -415,6 +430,69 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                     content={renderContent(item)}
                   />
                 </React.Fragment>
+              );
+            }
+
+            if (item.name === 'Comment') {
+              return (
+                <DynamicDropdown
+                  key="Comment"
+                  side="bottom"
+                  sideOffset={10}
+                  alignOffset={-5}
+                  align="end"
+                  anchorTrigger={
+                    <ToolbarButton
+                      icon="MessageSquareQuote"
+                      variant="ghost"
+                      size="sm"
+                      isActive={props.editor.isActive('comment')}
+                      onClick={() => {
+                        const { state } = props.editor;
+                        const { from, to } = state.selection;
+                        const text = state.doc.textBetween(from, to, ' ');
+
+                        // If there's an active comment, find it in comments array
+                        if (props.editor.isActive('comment')) {
+                          const activeComment = props.comments?.find(
+                            (comment) => comment.id === props.activeCommentId,
+                          );
+                          if (activeComment) {
+                            setSelectedText(activeComment.selectedContent);
+                          }
+                        } else {
+                          setSelectedText(text);
+                        }
+                      }}
+                    />
+                  }
+                  content={
+                    <CommentDropdown
+                      selectedText={selectedText}
+                      elementRef={toolRef}
+                      comments={props.comments}
+                      setComments={props.setComments}
+                      unsetComment={props.unsetComment}
+                      username={props.username}
+                      walletAddress={props.walletAddress}
+                      activeCommentId={props.activeCommentId}
+                      onSubmit={(commentId) => {
+                        props.setComment?.(commentId);
+                      }}
+                      onClose={() => {
+                        if (toolRef.current?.parentElement) {
+                          const popoverContent =
+                            toolRef.current.closest('[role="dialog"]');
+                          if (popoverContent) {
+                            popoverContent.remove();
+                          }
+                        }
+                      }}
+                      inlineCommentOpen={props.inlineCommentOpen}
+                      setInlineCommentOpen={props.setInlineCommentOpen}
+                    />
+                  }
+                />
               );
             }
 

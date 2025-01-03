@@ -30,7 +30,7 @@ function App() {
   const [selectedTags, setSelectedTags] = useState<TagType[]>([]);
   const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(false);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
-
+  const [inlineCommentOpen, setInlineCommentOpen] = useState(false);
   const [inlineCommentData, setInlineCommentData] = useState({
     inlineCommentText: '',
     highlightedTextContent: '',
@@ -87,7 +87,7 @@ function App() {
         </div>
         <div className="flex gap-2">
           <IconButton variant={'ghost'} icon="Presentation" size="md" onClick={() => setIsPresentationMode(true)} />
-          <IconButton variant={'ghost'} icon="MessageSquareText" size="md" />
+          <IconButton variant={'ghost'} icon="MessageSquareText" size="md" onClick={() => setInlineCommentOpen(prev => !prev)} />
           <IconButton
             variant={'ghost'}
             icon="Share2"
@@ -140,15 +140,17 @@ function App() {
         setIsCommentSectionOpen={setIsCommentSectionOpen}
         setInlineCommentData={setInlineCommentData}
         inlineCommentData={inlineCommentData}
+        inlineCommentOpen={inlineCommentOpen}
+        setInlineCommentOpen={setInlineCommentOpen}
         isPresentationMode={isPresentationMode}
         setIsPresentationMode={setIsPresentationMode}
         zoomLevel={zoomLevel}
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
-        onInlineComment={(): void => {}}
-        onMarkdownImport={(): void => {}}
-        onMarkdownExport={(): void => {}}
+        onInlineComment={(): void => { }}
+        onMarkdownImport={(): void => { }}
+        onMarkdownExport={(): void => { }}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

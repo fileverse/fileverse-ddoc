@@ -26,8 +26,42 @@ import platform from 'platform';
 import MobileToolbar from './components/mobile-toolbar';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { PresentationMode } from './components/presentation-mode/presentation-mode';
+import uuid from 'react-uuid';
+import { IComment } from './extensions/comment';
+import { CommentDrawer } from './components/comment-drawer';
 
 const checkOs = () => platform.os?.family;
+
+const handleAddReply = (
+  comments: IComment[],
+  activeCommentId: string,
+  commentContent: string,
+  setComments: (comments: IComment[]) => void,
+) => {
+  if (!commentContent.trim()) return;
+
+  setComments(
+    comments.map((comment) => {
+      if (comment.id === activeCommentId) {
+        return {
+          ...comment,
+          replies: [
+            ...comment.replies,
+            {
+              id: `reply-${uuid()}`,
+              content: commentContent,
+              replies: [],
+              createdAt: new Date(),
+              selectedContent: comment.selectedContent,
+            },
+          ],
+          content: '', // Clear the input after adding reply
+        };
+      }
+      return comment;
+    }),
+  );
+};
 
 const DdocEditor = forwardRef(
   (
@@ -74,6 +108,8 @@ const DdocEditor = forwardRef(
       documentName,
       onInvalidContentError,
       ignoreCorruptedData,
+      inlineCommentOpen,
+      setInlineCommentOpen,
     }: DdocProps,
     ref,
   ) => {
@@ -114,6 +150,14 @@ const DdocEditor = forwardRef(
       ref: editorRef,
       isContentLoading,
       ydoc,
+      comments,
+      activeCommentId,
+      setActiveCommentId,
+      setComments,
+      commentsSectionRef,
+      setComment,
+      unsetComment,
+      focusCommentInEditor,
       refreshYjsIndexedDbProvider,
     } = useDdocEditor({
       enableIndexeddbSync,
@@ -418,6 +462,13 @@ const DdocEditor = forwardRef(
                 username={username as string}
                 walletAddress={walletAddress as string}
                 onInlineComment={onInlineComment}
+                setComment={setComment}
+                unsetComment={unsetComment}
+                comments={comments}
+                setComments={setComments}
+                activeCommentId={activeCommentId as string}
+                inlineCommentOpen={inlineCommentOpen}
+                setInlineCommentOpen={setInlineCommentOpen}
               />
               <ColumnsMenu editor={editor} appendTo={editorRef} />
             </div>
@@ -523,6 +574,22 @@ const DdocEditor = forwardRef(
             />
           </div>
         )}
+        <CommentDrawer
+          commentsSectionRef={commentsSectionRef}
+          isOpen={inlineCommentOpen as boolean}
+          onClose={() => setInlineCommentOpen?.(false)}
+          comments={comments}
+          activeCommentId={activeCommentId}
+          username={username as string}
+          walletAddress={walletAddress as string}
+          editor={editor}
+          setComments={setComments}
+          setActiveCommentId={setActiveCommentId}
+          focusCommentInEditor={focusCommentInEditor}
+          handleAddReply={handleAddReply}
+          isNavbarVisible={isNavbarVisible}
+          isPresentationMode={isPresentationMode as boolean}
+        />
       </div>
     );
   },

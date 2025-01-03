@@ -225,30 +225,37 @@ export const PresentationMode = ({
   // Add this function to handle fullscreen mode
   const toggleFullscreen = useCallback(() => {
     if (isNativeMobile) {
-      // For iOS, just toggle the state without using native fullscreen
-      // @ts-expect-error
+      // For iOS/mobile, just toggle the state without using native fullscreen
       setIsFullscreen((prev) => !prev);
     } else {
-      // For desktop, use native fullscreen API
+      // For desktop browsers, try native fullscreen with fallbacks
       if (!document.fullscreenElement) {
-        document.documentElement
-          .requestFullscreen()
-          .then(() => {
-            setIsFullscreen(true);
-          })
-          .catch(() => {
-            // Fallback if native fullscreen fails
-            setIsFullscreen(true);
-          });
+        // Try standard fullscreen API first
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement
+            .requestFullscreen()
+            .then(() => setIsFullscreen(true))
+            .catch(() => {
+              // Fallback if standard fullscreen fails
+              setIsFullscreen(true);
+            });
+        } else {
+          // If standard fullscreen API not available, just update state
+          setIsFullscreen(true);
+        }
       } else {
-        document
-          .exitFullscreen()
-          .then(() => {
-            setIsFullscreen(false);
-          })
-          .catch(() => {
-            setIsFullscreen(false);
-          });
+        // Exit fullscreen with fallbacks
+        if (document.exitFullscreen) {
+          document
+            .exitFullscreen()
+            .then(() => setIsFullscreen(false))
+            .catch(() => {
+              setIsFullscreen(false);
+            });
+        } else {
+          // If standard exit fullscreen not available, just update state
+          setIsFullscreen(false);
+        }
       }
     }
   }, [isNativeMobile]);

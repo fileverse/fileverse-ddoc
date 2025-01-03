@@ -23,8 +23,9 @@ type InlineCommentData = {
   highlightedTextContent: string;
   handleClick: boolean;
 };
-
 export interface DdocProps {
+  inlineCommentOpen?: boolean;
+  setInlineCommentOpen?: React.Dispatch<SetStateAction<boolean>>;
   selectedTags?: TagType[];
   setSelectedTags?: React.Dispatch<SetStateAction<TagType[]>>;
   enableCollaboration?: boolean | undefined;
