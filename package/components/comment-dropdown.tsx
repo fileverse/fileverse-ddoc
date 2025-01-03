@@ -45,7 +45,7 @@ export const CommentDropdown = ({
 
   useEffect(() => {
     if (activeCommentId) {
-      const activeComment = comments.find(c => c.id === activeCommentId);
+      const activeComment = comments.find((c) => c.id === activeCommentId);
       if (activeComment) {
         setComment(activeComment.content);
         setShowReplyView(true);
@@ -183,7 +183,7 @@ export const CommentDropdown = ({
         </div>
       </div>
 
-      <div className="flex flex-col gap-4 p-3">
+      <div className="flex flex-col gap-1 p-3">
         <div className="flex justify-start items-center gap-2">
           <Avatar src={''} size="md" className="min-w-10" />
           <div className="flex flex-col">
@@ -199,9 +199,11 @@ export const CommentDropdown = ({
             </span>
           </div>
         </div>
-        <div className="flex flex-col gap-2 ml-5 pl-4 border-l-2 color-border-default">
+        <div className="flex flex-col gap-2 ml-5 pl-4 border-l color-border-default">
           <div className="bg-[#e5fbe7] p-2 rounded-lg">
-            <span className="text-body-sm italic">"{selectedText}"</span>
+            <span className="text-body-sm italic line-clamp-2">
+              "{selectedText}"
+            </span>
           </div>
           {comment && (
             <div>
@@ -211,7 +213,7 @@ export const CommentDropdown = ({
         </div>
       </div>
 
-      <div className="bg-[#F8F9FA] border-t border-[#E8EBEC] p-3 rounded-b">
+      <div className="color-bg-secondary border-t color-border-default p-3 rounded-b">
         <TextAreaFieldV2
           value={reply}
           onChange={handleReplyChange}
@@ -223,7 +225,7 @@ export const CommentDropdown = ({
         <div className="h-full flex justify-end pt-2">
           <Button
             onClick={handleReplySubmit}
-            className="px-4 py-2 w-20 min-w-20 h-9 font-medium text-sm bg-black rounded"
+            className="px-4 py-2 w-20 min-w-20 h-9"
           >
             Send
           </Button>
@@ -235,7 +237,7 @@ export const CommentDropdown = ({
   return (
     <div
       ref={elementRef}
-      className="w-[300px] bg-[#F8F9FA] shadow-elevation-1 rounded-md"
+      className="w-[300px] color-bg-default shadow-elevation-1 rounded-md"
     >
       {showReplyView ? renderReplyView() : renderInitialView()}
     </div>

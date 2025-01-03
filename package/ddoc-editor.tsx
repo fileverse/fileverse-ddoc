@@ -25,6 +25,7 @@ import {
   TagInput,
   Avatar,
   TextAreaFieldV2,
+  ButtonGroup,
 } from '@fileverse/ui';
 import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -593,7 +594,7 @@ const DdocEditor = forwardRef(
               <div
                 key={comment.id}
                 className={cn(
-                  'flex flex-col gap-3 p-3 border rounded-lg w-full box-border cursor-pointer transition-opacity duration-300',
+                  'flex flex-col gap-1 p-3 border rounded-lg w-full box-border cursor-pointer transition-opacity duration-300',
                   comment.id === activeCommentId &&
                     '!opacity-100 !border-black/20',
                   comment.id !== activeCommentId &&
@@ -617,9 +618,9 @@ const DdocEditor = forwardRef(
                   </div>
                 </div>
 
-                <div className="flex flex-col gap-2 ml-5 pl-4 border-l-2 color-border-default">
+                <div className="flex flex-col gap-2 ml-5 pl-4 border-l color-border-default">
                   <div className="bg-[#e5fbe7] p-2 rounded">
-                    <span className="text-body-sm italic">
+                    <span className="text-body-sm italic line-clamp-2">
                       "{comment.selectedContent}"
                     </span>
                   </div>
@@ -637,59 +638,68 @@ const DdocEditor = forwardRef(
                 </div>
 
                 {/* Reply input */}
-                <TextAreaFieldV2
-                  placeholder="Add a reply..."
-                  value={comment.content || ''}
-                  disabled={comment.id !== activeCommentId}
-                  className={cn(
-                    'bg-white text-body-sm color-text-secondary min-h-[44px] max-h-[196px] overflow-y-auto no-scrollbar px-3 py-2',
-                    comment.id === activeCommentId && 'bg-white',
-                  )}
-                  id={comment.id}
-                  onInput={(event) => {
-                    const value = (event.target as HTMLInputElement).value;
-                    setComments(
-                      comments.map((c) => {
-                        if (c.id === activeCommentId) {
-                          return {
-                            ...c,
-                            content: value,
-                          };
-                        }
-                        return c;
-                      }),
-                    );
-                  }}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter') {
-                      handleAddReply(
-                        comments,
-                        activeCommentId as string,
-                        comment.content,
-                        setComments,
+                <div className="mt-3 ml-5 pl-4 flex flex-col gap-2">
+                  <TextAreaFieldV2
+                    placeholder="Add a reply..."
+                    value={comment.content || ''}
+                    disabled={comment.id !== activeCommentId}
+                    className={cn(
+                      'bg-white text-body-sm color-text-secondary min-h-[44px] max-h-[196px] overflow-y-auto no-scrollbar px-3 py-2',
+                      comment.id === activeCommentId && 'bg-white',
+                    )}
+                    id={comment.id}
+                    onInput={(event) => {
+                      const value = (event.target as HTMLInputElement).value;
+                      setComments(
+                        comments.map((c) => {
+                          if (c.id === activeCommentId) {
+                            return {
+                              ...c,
+                              content: value,
+                            };
+                          }
+                          return c;
+                        }),
                       );
-                    }
-                  }}
-                />
-
-                {comment.id === activeCommentId && (
-                  <Button
-                    className="w-full"
-                    disabled={!comment.content.trim()}
-                    onClick={() => {
-                      handleAddReply(
-                        comments,
-                        activeCommentId,
-                        comment.content,
-                        setComments,
-                      );
-                      setActiveCommentId(null);
-                      editor.commands.focus();
                     }}
-                  >
-                    Reply
-                  </Button>
-                )}
+                    onKeyDown={(event) => {
+                      if (event.key === 'Enter') {
+                        handleAddReply(
+                          comments,
+                          activeCommentId as string,
+                          comment.content,
+                          setComments,
+                        );
+                      }
+                    }}
+                  />
+                  {comment.id === activeCommentId && (
+                    <ButtonGroup className="w-full justify-end">
+                      <Button
+                        variant="ghost"
+                        className="px-4 py-2 w-20 min-w-20 h-9"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        className="px-4 py-2 w-20 min-w-20 h-9"
+                        disabled={!comment.content.trim()}
+                        onClick={() => {
+                          handleAddReply(
+                            comments,
+                            activeCommentId,
+                            comment.content,
+                            setComments,
+                          );
+                          setActiveCommentId(null);
+                          editor.commands.focus();
+                        }}
+                      >
+                        Reply
+                      </Button>
+                    </ButtonGroup>
+                  )}
+                </div>
               </div>
             ))}
           </section>
