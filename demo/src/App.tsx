@@ -11,7 +11,6 @@ import {
   TagType,
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
-import { ThreadData, ThreadUpdateData } from '../../package/extensions/thread/thread';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -31,7 +30,7 @@ function App() {
   const [selectedTags, setSelectedTags] = useState<TagType[]>([]);
   const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(false);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
-
+  const [inlineCommentOpen, setInlineCommentOpen] = useState(false);
   const [inlineCommentData, setInlineCommentData] = useState({
     inlineCommentText: '',
     highlightedTextContent: '',
@@ -88,7 +87,7 @@ function App() {
         </div>
         <div className="flex gap-2">
           <IconButton variant={'ghost'} icon="Presentation" size="md" onClick={() => setIsPresentationMode(true)} />
-          <IconButton variant={'ghost'} icon="MessageSquareText" size="md" />
+          <IconButton variant={'ghost'} icon="MessageSquareText" size="md" onClick={() => setInlineCommentOpen(prev => !prev)} />
           <IconButton
             variant={'ghost'}
             icon="Share2"
@@ -116,34 +115,6 @@ function App() {
     );
   };
 
-  // Thread handlers that integrate with consumer app's states
-  const threadHandlers = {
-    onCreateThread: async (data: ThreadData) => {
-      console.log(data);
-      return 'threadId';
-    },
-
-    onUpdateThread: async (data: ThreadUpdateData) => {
-      console.log(data);
-    },
-
-    onDeleteThread: async (threadId: string) => {
-      console.log(threadId);
-    },
-
-    onResolveThread: async (threadId: string) => {
-      console.log(threadId);
-    },
-
-    onSelectThread: (threadId: string) => {
-      console.log(threadId);
-    },
-
-    getThreads: async () => {
-      return [];
-    }
-  }
-
   return (
     <div>
       <DdocEditor
@@ -169,6 +140,8 @@ function App() {
         setIsCommentSectionOpen={setIsCommentSectionOpen}
         setInlineCommentData={setInlineCommentData}
         inlineCommentData={inlineCommentData}
+        inlineCommentOpen={inlineCommentOpen}
+        setInlineCommentOpen={setInlineCommentOpen}
         isPresentationMode={isPresentationMode}
         setIsPresentationMode={setIsPresentationMode}
         zoomLevel={zoomLevel}
@@ -178,7 +151,6 @@ function App() {
         onInlineComment={(): void => { }}
         onMarkdownImport={(): void => { }}
         onMarkdownExport={(): void => { }}
-        threadHandlers={threadHandlers}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}
