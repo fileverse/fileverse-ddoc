@@ -22,7 +22,6 @@ import { zoomService } from './zoom-service';
 import { sanitizeContent } from './utils/sanitize-content';
 import { CommentExtension as Comment, IComment } from './extensions/comment';
 import uuid from 'react-uuid';
-import { ThreadExtension } from './extensions/thread/thread';
 
 const usercolors = [
   '#30bced',
@@ -57,7 +56,6 @@ export const useDdocEditor = ({
   zoomLevel,
   onInvalidContentError,
   ignoreCorruptedData,
-  threadHandlers,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const initialContentSetRef = useRef(false);
@@ -103,7 +101,6 @@ export const useDdocEditor = ({
     Collaboration.configure({
       document: ydoc,
     }),
-    ThreadExtension.configure(threadHandlers),
   ]);
 
   useEffect(() => {

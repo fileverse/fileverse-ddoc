@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, SetStateAction } from 'react';
 import {
-  Avatar,
   Button,
   DynamicDropdown,
   IconButton,
@@ -11,6 +10,7 @@ import {
 import { useMediaQuery } from 'usehooks-ts';
 import uuid from 'react-uuid';
 import { IComment } from '../extensions/comment';
+import { CommentCard } from './comment-card';
 
 interface CommentDropdownProps {
   selectedText: string;
@@ -23,6 +23,8 @@ interface CommentDropdownProps {
   walletAddress?: string;
   activeCommentId?: string;
   unsetComment?: () => void;
+  inlineCommentOpen?: boolean;
+  setInlineCommentOpen?: React.Dispatch<SetStateAction<boolean>>;
 }
 
 export const CommentDropdown = ({
@@ -36,6 +38,8 @@ export const CommentDropdown = ({
   walletAddress,
   activeCommentId,
   unsetComment,
+  inlineCommentOpen,
+  setInlineCommentOpen,
 }: CommentDropdownProps) => {
   const [comment, setComment] = useState('');
   const [reply, setReply] = useState('');
@@ -99,6 +103,7 @@ export const CommentDropdown = ({
         return comment;
       });
 
+      setInlineCommentOpen?.(true);
       setComments?.(updatedComments);
       setReply('');
       onClose();
@@ -150,7 +155,7 @@ export const CommentDropdown = ({
           <DynamicDropdown
             key="more-actions"
             align="end"
-            sideOffset={5}
+            sideOffset={4}
             anchorTrigger={
               <IconButton
                 onClick={handleEllipsisClick}
@@ -183,35 +188,12 @@ export const CommentDropdown = ({
         </div>
       </div>
 
-      <div className="flex flex-col gap-1 p-3">
-        <div className="flex justify-start items-center gap-2">
-          <Avatar src={''} size="md" className="min-w-10" />
-          <div className="flex flex-col">
-            <span className="text-body-sm-bold">
-              {username || walletAddress || 'Anonymous'}
-            </span>
-            <span className="text-helper-text-sm color-text-secondary">
-              {new Date().toLocaleTimeString([], {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true,
-              })}
-            </span>
-          </div>
-        </div>
-        <div className="flex flex-col gap-2 ml-5 pl-4 border-l color-border-default">
-          <div className="bg-[#e5fbe7] p-2 rounded-lg">
-            <span className="text-body-sm italic line-clamp-2">
-              "{selectedText}"
-            </span>
-          </div>
-          {comment && (
-            <div>
-              <span className="text-body-sm">{comment}</span>
-            </div>
-          )}
-        </div>
-      </div>
+      <CommentCard
+        username={username}
+        walletAddress={walletAddress}
+        selectedText={selectedText}
+        comment={comment}
+      />
 
       <div className="color-bg-secondary border-t color-border-default p-3 rounded-b">
         <TextAreaFieldV2

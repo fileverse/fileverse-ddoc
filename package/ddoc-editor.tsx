@@ -17,16 +17,7 @@ import {
   useState,
 } from 'react';
 import cn from 'classnames';
-import {
-  Button,
-  LucideIcon,
-  Tag,
-  TagType,
-  TagInput,
-  Avatar,
-  TextAreaFieldV2,
-  ButtonGroup,
-} from '@fileverse/ui';
+import { Button, LucideIcon, Tag, TagType, TagInput } from '@fileverse/ui';
 import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
 import { AnimatePresence, motion } from 'framer-motion';
 import * as Y from 'yjs';
@@ -37,6 +28,7 @@ import { fromUint8Array, toUint8Array } from 'js-base64';
 import { PresentationMode } from './components/presentation-mode/presentation-mode';
 import uuid from 'react-uuid';
 import { IComment } from './extensions/comment';
+import { CommentDrawer } from './components/comment-drawer';
 
 const checkOs = () => platform.os?.family;
 
@@ -116,7 +108,8 @@ const DdocEditor = forwardRef(
       documentName,
       onInvalidContentError,
       ignoreCorruptedData,
-      threadHandlers,
+      inlineCommentOpen,
+      setInlineCommentOpen,
     }: DdocProps,
     ref,
   ) => {
@@ -194,7 +187,6 @@ const DdocEditor = forwardRef(
       setIsNavbarVisible,
       onInvalidContentError,
       ignoreCorruptedData,
-      threadHandlers,
     });
 
     useImperativeHandle(
@@ -475,6 +467,8 @@ const DdocEditor = forwardRef(
                 comments={comments}
                 setComments={setComments}
                 activeCommentId={activeCommentId as string}
+                inlineCommentOpen={inlineCommentOpen}
+                setInlineCommentOpen={setInlineCommentOpen}
               />
               <ColumnsMenu editor={editor} appendTo={editorRef} />
             </div>
@@ -580,130 +574,22 @@ const DdocEditor = forwardRef(
             />
           </div>
         )}
-        {editor && (
-          <section
-            className={cn(
-              'fixed right-4 top-[120px] flex flex-col justify-start items-center gap-2 p-2 rounded-lg w-96 color-bg-default shadow-elevation-4 h-[calc(100vh-200px)] overflow-y-auto',
-              {
-                hidden: !comments.length,
-              },
-            )}
-            ref={commentsSectionRef}
-          >
-            {comments.map((comment) => (
-              <div
-                key={comment.id}
-                className={cn(
-                  'flex flex-col gap-1 p-3 border rounded-lg w-full box-border cursor-pointer transition-opacity duration-300',
-                  comment.id === activeCommentId &&
-                    '!opacity-100 !border-black/20',
-                  comment.id !== activeCommentId &&
-                    'opacity-50 color-border-default',
-                )}
-                onClick={() => focusCommentInEditor(comment.id)}
-              >
-                <div className="flex justify-start items-center gap-2">
-                  <Avatar src={''} size="md" className="min-w-10" />
-                  <div className="flex flex-col">
-                    <span className="text-body-sm-bold">
-                      {username || walletAddress || 'Anonymous'}
-                    </span>
-                    <span className="text-helper-text-sm color-text-secondary">
-                      {comment.createdAt.toLocaleTimeString([], {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true,
-                      })}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex flex-col gap-2 ml-5 pl-4 border-l color-border-default">
-                  <div className="bg-[#e5fbe7] p-2 rounded">
-                    <span className="text-body-sm italic line-clamp-2">
-                      "{comment.selectedContent}"
-                    </span>
-                  </div>
-                  {/* {comment.content && (
-                    <div className="">
-                      <span className="text-body-sm">{comment.content}</span>
-                    </div>
-                  )} */}
-                  {/* Replies section */}
-                  {comment.replies.map((reply, index) => (
-                    <div key={index}>
-                      <span className="text-body-sm">{reply.content}</span>
-                    </div>
-                  ))}
-                </div>
-
-                {/* Reply input */}
-                <div className="mt-3 ml-5 pl-4 flex flex-col gap-2">
-                  <TextAreaFieldV2
-                    placeholder="Add a reply..."
-                    value={comment.content || ''}
-                    disabled={comment.id !== activeCommentId}
-                    className={cn(
-                      'bg-white text-body-sm color-text-secondary min-h-[44px] max-h-[196px] overflow-y-auto no-scrollbar px-3 py-2',
-                      comment.id === activeCommentId && 'bg-white',
-                    )}
-                    id={comment.id}
-                    onInput={(event) => {
-                      const value = (event.target as HTMLInputElement).value;
-                      setComments(
-                        comments.map((c) => {
-                          if (c.id === activeCommentId) {
-                            return {
-                              ...c,
-                              content: value,
-                            };
-                          }
-                          return c;
-                        }),
-                      );
-                    }}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter') {
-                        handleAddReply(
-                          comments,
-                          activeCommentId as string,
-                          comment.content,
-                          setComments,
-                        );
-                      }
-                    }}
-                  />
-                  {comment.id === activeCommentId && (
-                    <ButtonGroup className="w-full justify-end">
-                      <Button
-                        variant="ghost"
-                        className="px-4 py-2 w-20 min-w-20 h-9"
-                      >
-                        Cancel
-                      </Button>
-                      <Button
-                        className="px-4 py-2 w-20 min-w-20 h-9"
-                        disabled={!comment.content.trim()}
-                        onClick={() => {
-                          handleAddReply(
-                            comments,
-                            activeCommentId,
-                            comment.content,
-                            setComments,
-                          );
-                          setActiveCommentId(null);
-                          editor.commands.focus();
-                        }}
-                      >
-                        Reply
-                      </Button>
-                    </ButtonGroup>
-                  )}
-                </div>
-              </div>
-            ))}
-          </section>
-        )}
+        <CommentDrawer
+          commentsSectionRef={commentsSectionRef}
+          isOpen={inlineCommentOpen as boolean}
+          onClose={() => setInlineCommentOpen?.(false)}
+          comments={comments}
+          activeCommentId={activeCommentId}
+          username={username as string}
+          walletAddress={walletAddress as string}
+          editor={editor}
+          setComments={setComments}
+          setActiveCommentId={setActiveCommentId}
+          focusCommentInEditor={focusCommentInEditor}
+          handleAddReply={handleAddReply}
+          isNavbarVisible={isNavbarVisible}
+          isPresentationMode={isPresentationMode as boolean}
+        />
       </div>
     );
   },

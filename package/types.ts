@@ -3,7 +3,6 @@ import { JSONContent } from '@tiptap/core';
 import { EditorProps } from '@tiptap/pm/view';
 import { Editor } from '@tiptap/react';
 import React, { SetStateAction } from 'react';
-import { ThreadData, ThreadUpdateData } from './extensions/thread/thread';
 
 export const DdocEditorProps: EditorProps = {
   attributes: {
@@ -24,18 +23,9 @@ type InlineCommentData = {
   highlightedTextContent: string;
   handleClick: boolean;
 };
-
-export interface ThreadHandlers {
-  threadHandlers?: {
-    onCreateThread?: (data: ThreadData) => Promise<string>;
-    onUpdateThread?: (data: ThreadUpdateData) => Promise<void>;
-    onDeleteThread?: (threadId: string) => Promise<void>;
-    onResolveThread?: (threadId: string) => Promise<void>;
-    onSelectThread?: (threadId: string) => void;
-    getThreads?: () => Promise<ThreadData[]>;
-  };
-}
-export interface DdocProps extends ThreadHandlers {
+export interface DdocProps {
+  inlineCommentOpen?: boolean;
+  setInlineCommentOpen?: React.Dispatch<SetStateAction<boolean>>;
   selectedTags?: TagType[];
   setSelectedTags?: React.Dispatch<SetStateAction<TagType[]>>;
   enableCollaboration?: boolean | undefined;

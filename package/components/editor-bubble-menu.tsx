@@ -45,6 +45,8 @@ type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   comments?: IComment[];
   setComments?: (comments: IComment[]) => void;
   activeCommentId?: string;
+  inlineCommentOpen?: boolean;
+  setInlineCommentOpen?: React.Dispatch<SetStateAction<boolean>>;
 };
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
@@ -486,6 +488,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                           }
                         }
                       }}
+                      inlineCommentOpen={props.inlineCommentOpen}
+                      setInlineCommentOpen={props.setInlineCommentOpen}
                     />
                   }
                 />
