@@ -7,7 +7,6 @@ import {
   TextAreaFieldV2,
   Tooltip,
 } from '@fileverse/ui';
-import { useMediaQuery } from 'usehooks-ts';
 import uuid from 'react-uuid';
 import { IComment } from '../extensions/comment';
 import { CommentCard } from './comment-card';
@@ -38,14 +37,13 @@ export const CommentDropdown = ({
   walletAddress,
   activeCommentId,
   unsetComment,
-  inlineCommentOpen,
+  // inlineCommentOpen,
   setInlineCommentOpen,
 }: CommentDropdownProps) => {
   const [comment, setComment] = useState('');
   const [reply, setReply] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(true);
   const [showReplyView, setShowReplyView] = useState(!!activeCommentId);
-  const isMobile = useMediaQuery('(max-width: 1023px)');
 
   useEffect(() => {
     if (activeCommentId) {
@@ -188,12 +186,14 @@ export const CommentDropdown = ({
         </div>
       </div>
 
-      <CommentCard
-        username={username}
-        walletAddress={walletAddress}
-        selectedText={selectedText}
-        comment={comment}
-      />
+      <div className="max-h-[224px] overflow-y-auto no-scrollbar">
+        <CommentCard
+          username={username}
+          walletAddress={walletAddress}
+          selectedText={selectedText}
+          comment={comment}
+        />
+      </div>
 
       <div className="color-bg-secondary border-t color-border-default p-3 rounded-b">
         <TextAreaFieldV2

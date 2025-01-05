@@ -1,12 +1,13 @@
 import {
   Avatar,
   ButtonGroup,
+  cn,
   DynamicDropdown,
   IconButton,
   LucideIcon,
   Tooltip,
 } from '@fileverse/ui';
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 
 interface CommentCardProps {
   username?: string;
@@ -27,10 +28,25 @@ export const CommentCard = ({
   timestamp = new Date(),
   replies,
 }: CommentCardProps) => {
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isExpanded, setIsExpanded] = useState(false);
 
-  const handleEllipsisClick = () => {
-    setIsDropdownOpen((prev) => !prev);
+  const handleResolveClick = () => {
+    if (dropdownRef.current?.parentElement) {
+      const popoverContent = dropdownRef.current.closest('[role="dialog"]');
+      if (popoverContent) {
+        popoverContent.remove();
+      }
+    }
+  };
+
+  const handleDeleteClick = () => {
+    if (dropdownRef.current?.parentElement) {
+      const popoverContent = dropdownRef.current.closest('[role="dialog"]');
+      if (popoverContent) {
+        popoverContent.remove();
+      }
+    }
   };
 
   return (
@@ -60,13 +76,13 @@ export const CommentCard = ({
               className="group-hover:opacity-100 opacity-0 transition-opacity duration-300"
             />
           </Tooltip>
+
           <DynamicDropdown
             key="comment-card-more-actions"
             align="end"
             sideOffset={4}
             anchorTrigger={
               <IconButton
-                onClick={handleEllipsisClick}
                 icon={'Ellipsis'}
                 variant="ghost"
                 size="sm"
@@ -74,33 +90,48 @@ export const CommentCard = ({
               />
             }
             content={
-              isDropdownOpen ? (
-                <div className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3">
-                  <button
-                    className="flex items-center color-text-default text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"
-                    onClick={() => {}}
-                  >
-                    <LucideIcon name="CircleCheck" size="sm" />
-                    Resolve
-                  </button>
-                  <button
-                    className="flex items-center text-[#FB3449] text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"
-                    onClick={() => setIsDropdownOpen(false)}
-                  >
-                    <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
-                    Delete
-                  </button>
-                </div>
-              ) : null
+              <div
+                ref={dropdownRef}
+                className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3"
+              >
+                <button
+                  className="flex items-center color-text-default text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"
+                  onClick={handleResolveClick}
+                >
+                  <LucideIcon name="CircleCheck" size="sm" />
+                  Resolve
+                </button>
+                <button
+                  className="flex items-center text-[#FB3449] text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"
+                  onClick={handleDeleteClick}
+                >
+                  <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
+                  Delete
+                </button>
+              </div>
             }
           />
         </ButtonGroup>
       </div>
       <div className="flex flex-col gap-2 ml-3 pl-4 border-l color-border-default">
         <div className="bg-[#e5fbe7] p-2 rounded-lg">
-          <span className="text-body-sm italic line-clamp-2">
-            "{selectedText}"
-          </span>
+          <div className="relative">
+            <span
+              className={cn('text-body-sm italic block', {
+                'line-clamp-2': !isExpanded && selectedText.length > 70,
+              })}
+            >
+              "{selectedText}"
+            </span>
+            {selectedText.length > 70 && (
+              <button
+                onClick={() => setIsExpanded(!isExpanded)}
+                className="text-helper-text-sm color-text-secondary hover:underline"
+              >
+                {isExpanded ? 'Show less' : 'Show more'}
+              </button>
+            )}
+          </div>
         </div>
         {comment && (
           <div>

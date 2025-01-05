@@ -156,8 +156,8 @@ export const CommentDrawer = ({
                           comment.id === activeCommentId && 'bg-white',
                         )}
                         id={comment.id}
-                        onInput={(event) => {
-                          const value = (event.target as HTMLInputElement)
+                        onChange={(event) => {
+                          const value = (event.target as HTMLTextAreaElement)
                             .value;
                           setComments(
                             comments.map((c) => {
@@ -173,6 +173,11 @@ export const CommentDrawer = ({
                         }}
                         onKeyDown={(event) => {
                           if (event.key === 'Enter') {
+                            // Allow line breaks with Shift + Enter
+                            if (event.shiftKey) {
+                              return;
+                            }
+                            event.preventDefault();
                             handleAddReply(
                               comments,
                               activeCommentId as string,

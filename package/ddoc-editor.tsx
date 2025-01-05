@@ -29,6 +29,7 @@ import { PresentationMode } from './components/presentation-mode/presentation-mo
 import uuid from 'react-uuid';
 import { IComment } from './extensions/comment';
 import { CommentDrawer } from './components/comment-drawer';
+import { CommentBubbleMenu } from './components/comment-bubble-menu';
 
 const checkOs = () => platform.os?.family;
 
@@ -589,6 +590,30 @@ const DdocEditor = forwardRef(
           handleAddReply={handleAddReply}
           isNavbarVisible={isNavbarVisible}
           isPresentationMode={isPresentationMode as boolean}
+        />
+        <CommentBubbleMenu
+          editor={editor}
+          comments={comments}
+          activeCommentId={activeCommentId}
+          zoomLevel={zoomLevel}
+          onPrevComment={() => {
+            const currentIndex = comments.findIndex(
+              (comment) => comment.id === activeCommentId
+            );
+            if (currentIndex > 0) {
+              const prevComment = comments[currentIndex - 1];
+              focusCommentInEditor(prevComment.id);
+            }
+          }}
+          onNextComment={() => {
+            const currentIndex = comments.findIndex(
+              (comment) => comment.id === activeCommentId
+            );
+            if (currentIndex < comments.length - 1) {
+              const nextComment = comments[currentIndex + 1];
+              focusCommentInEditor(nextComment.id);
+            }
+          }}
         />
       </div>
     );
