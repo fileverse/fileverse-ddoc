@@ -12,7 +12,9 @@ import { Editor } from '@tiptap/react';
 import { IComment } from '../extensions/comment';
 import { CommentCard } from './comment-card';
 import cn from 'classnames';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { commentsService } from '../utils/comments-service';
+import uuid from 'react-uuid';
 
 interface CommentDrawerProps {
   commentsSectionRef: React.RefObject<HTMLDivElement>;
@@ -56,18 +58,84 @@ export const CommentDrawer = ({
   const [openReplyId, setOpenReplyId] = useState<string | null>(null);
   const [showResolved, setShowResolved] = useState(false);
 
+  useEffect(() => {
+    // Subscribe to Y.js updates
+    const unsubscribe = commentsService.subscribe(async () => {
+      const allComments = commentsService.getAllThreads();
+      setComments(allComments);
+
+      // Update active comment if exists
+      if (activeCommentId) {
+        const activeComment = await commentsService.getThread(activeCommentId);
+        if (activeComment) {
+          const updatedComments = allComments.map((c) =>
+            c.id === activeCommentId ? activeComment : c
+          );
+          setComments(updatedComments);
+        }
+      }
+    });
+
+    // Initial load
+    const allComments = commentsService.getAllThreads();
+    setComments(allComments);
+
+    return () => unsubscribe();
+  }, [setComments, activeCommentId]);
+
   const handleReplyChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setReply(event.target.value);
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
       handleReplySubmit();
     }
   };
 
-  const handleReplySubmit = () => {
-    console.log(reply);
+  const handleReplySubmit = async () => {
+    if (reply.trim() && activeCommentId) {
+      const parentThread = await commentsService.getThread(activeCommentId);
+      if (!parentThread) return;
+
+      const replyComment = {
+        id: `reply-${uuid()}`,
+        comment: reply,
+        replies: [],
+        createdAt: new Date(),
+        selectedContent: parentThread.selectedContent,
+      };
+
+      const updatedThread = await commentsService.addReply(
+        activeCommentId,
+        replyComment,
+      );
+      if (updatedThread) {
+        setReply('');
+        setOpenReplyId(null);
+      }
+    }
+  };
+
+  const handleCommentUpdate = (commentId: string, value: string) => {
+    const updatedThread = commentsService.updateThread(commentId, {
+      comment: value,
+    });
+    if (updatedThread) {
+      // Y.js will automatically trigger an update through the subscription
+      setComments(
+        comments.map((c) => (c.id === commentId ? updatedThread : c)),
+      );
+    }
+  };
+
+  const handleReplyToThread = (threadId: string, content: string) => {
+    if (content.trim()) {
+      handleAddReply(comments, threadId, content, setComments);
+      setActiveCommentId(null);
+      editor.commands.focus();
+    }
   };
 
   return (
@@ -90,7 +158,20 @@ export const CommentDrawer = ({
       title="Comments"
       content={
         <>
-          <div className="absolute top-0 right-10 p-3">
+          <div className="absolute top-0 right-10 p-3 space-x-2">
+            {/* TODO: Add a button to clear all comments */}
+            <Tooltip sideOffset={0} position="bottom" text="Clear all comments">
+              <IconButton
+                variant="ghost"
+                size="md"
+                className="text-[#FB3449]"
+                icon="Trash2"
+                onClick={() => {
+                  commentsService.clearAll();
+                  setComments([]);
+                }}
+              />
+            </Tooltip>
             <Tooltip
               text={showResolved ? 'Show resolved' : 'Hide resolved'}
               sideOffset={0}
@@ -108,34 +189,35 @@ export const CommentDrawer = ({
             ref={commentsSectionRef}
             className="flex flex-col max-h-[60vh] overflow-y-scroll no-scrollbar"
           >
-            {comments.map((comment) => (
+            {comments.map((c) => (
               <div
-                key={comment.id}
+                key={c.id}
                 className={cn(
                   'flex flex-col gap-1 w-full box-border transition-opacity duration-300 border-b color-border-default last:border-b-0',
-                  comment.id === activeCommentId && '!opacity-100',
-                  comment.id !== activeCommentId && 'opacity-50',
+                  c.id === activeCommentId && '!opacity-100',
+                  c.id !== activeCommentId && 'opacity-50',
                 )}
-                onClick={() => focusCommentInEditor(comment.id)}
+                onClick={() => focusCommentInEditor(c.id)}
               >
                 <CommentCard
                   username={username as string}
                   walletAddress={walletAddress as string}
-                  selectedText={comment.selectedContent}
-                  replies={comment.replies}
+                  selectedContent={c.selectedContent}
+                  comment={c.comment}
+                  replies={c.replies}
                 />
 
                 <div
                   className={cn(
                     'p-3 flex flex-col gap-2',
-                    openReplyId === comment.id && 'ml-5 pl-4',
+                    openReplyId === c.id && 'ml-5 pl-4',
                   )}
                 >
-                  {openReplyId !== comment.id ? (
+                  {openReplyId !== c.id ? (
                     <Button
                       onClick={(e) => {
                         e.stopPropagation();
-                        setOpenReplyId(comment.id);
+                        setOpenReplyId(c.id);
                       }}
                       className="w-full h-9 rounded-full color-bg-secondary flex items-center justify-center gap-2"
                       variant="ghost"
@@ -149,45 +231,26 @@ export const CommentDrawer = ({
                     <div className="animate-in slide-in-from-bottom flex flex-col gap-2 duration-300">
                       <TextAreaFieldV2
                         placeholder="Reply"
-                        value={comment.content || ''}
-                        disabled={comment.id !== activeCommentId}
+                        value={c.comment || ''}
+                        disabled={c.id !== activeCommentId}
                         className={cn(
                           'bg-white text-body-sm color-text-secondary min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2',
-                          comment.id === activeCommentId && 'bg-white',
+                          c.id === activeCommentId && 'bg-white',
                         )}
-                        id={comment.id}
+                        id={c.id}
                         onChange={(event) => {
                           const value = (event.target as HTMLTextAreaElement)
                             .value;
-                          setComments(
-                            comments.map((c) => {
-                              if (c.id === activeCommentId) {
-                                return {
-                                  ...c,
-                                  content: value,
-                                };
-                              }
-                              return c;
-                            }),
-                          );
+                          handleCommentUpdate(c.id, value);
                         }}
                         onKeyDown={(event) => {
-                          if (event.key === 'Enter') {
-                            // Allow line breaks with Shift + Enter
-                            if (event.shiftKey) {
-                              return;
-                            }
+                          if (event.key === 'Enter' && !event.shiftKey) {
                             event.preventDefault();
-                            handleAddReply(
-                              comments,
-                              activeCommentId as string,
-                              comment.content,
-                              setComments,
-                            );
+                            handleReplyToThread(c.id, c.comment);
                           }
                         }}
                       />
-                      {comment.id === activeCommentId && (
+                      {c.id === activeCommentId && (
                         <ButtonGroup className="w-full justify-end">
                           <Button
                             variant="ghost"
@@ -201,17 +264,8 @@ export const CommentDrawer = ({
                           </Button>
                           <Button
                             className="px-4 py-2 w-20 min-w-20 h-9"
-                            disabled={!comment.content.trim()}
-                            onClick={() => {
-                              handleAddReply(
-                                comments,
-                                activeCommentId,
-                                comment.content,
-                                setComments,
-                              );
-                              setActiveCommentId(null);
-                              editor.commands.focus();
-                            }}
+                            disabled={!c.comment.trim()}
+                            onClick={() => handleReplyToThread(c.id, c.comment)}
                           >
                             Reply
                           </Button>
@@ -226,7 +280,6 @@ export const CommentDrawer = ({
           <div className="flex flex-col gap-3 color-bg-secondary border-t color-border-default p-3 rounded-b-lg min-h-[15vh] fixed bottom-0 w-full">
             <div className="flex justify-start items-center gap-2">
               <Avatar src={''} size="sm" className="min-w-6" />
-
               <span className="text-body-sm-bold">
                 {username || walletAddress || 'Anonymous'}
               </span>
@@ -238,7 +291,6 @@ export const CommentDrawer = ({
               className="bg-white w-full text-body-sm color-text-secondary min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2"
               placeholder="Type your comment"
             />
-
             <div className="flex justify-end">
               <Button
                 onClick={handleReplySubmit}

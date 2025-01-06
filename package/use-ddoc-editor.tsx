@@ -113,7 +113,7 @@ export const useDdocEditor = ({
     return {
       id: `comment-${uuid()}`,
       selectedContent,
-      content: '',
+      comment: '',
       replies: [],
       createdAt: new Date(),
     };

@@ -50,13 +50,13 @@ const handleAddReply = (
             ...comment.replies,
             {
               id: `reply-${uuid()}`,
-              content: commentContent,
+              comment: commentContent,
               replies: [],
               createdAt: new Date(),
               selectedContent: comment.selectedContent,
             },
           ],
-          content: '', // Clear the input after adding reply
+          comment: '', // Clear the input after adding reply
         };
       }
       return comment;

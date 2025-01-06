@@ -8,22 +8,21 @@ import {
   Tooltip,
 } from '@fileverse/ui';
 import { useRef, useState } from 'react';
+import { IComment } from '../extensions/comment';
 
 interface CommentCardProps {
   username?: string;
   walletAddress?: string;
-  selectedText: string;
+  selectedContent: string;
   comment?: string;
   timestamp?: Date;
-  replies?: {
-    content: string;
-  }[];
+  replies?: IComment[];
 }
 
 export const CommentCard = ({
   username,
   walletAddress,
-  selectedText,
+  selectedContent,
   comment,
   timestamp = new Date(),
   replies,
@@ -118,12 +117,12 @@ export const CommentCard = ({
           <div className="relative">
             <span
               className={cn('text-body-sm italic block', {
-                'line-clamp-2': !isExpanded && selectedText.length > 70,
+                'line-clamp-2': !isExpanded && selectedContent.length > 70,
               })}
             >
-              "{selectedText}"
+              "{selectedContent}"
             </span>
-            {selectedText.length > 70 && (
+            {selectedContent.length > 70 && (
               <button
                 onClick={() => setIsExpanded(!isExpanded)}
                 className="text-helper-text-sm color-text-secondary hover:underline"
@@ -141,7 +140,7 @@ export const CommentCard = ({
         {replies &&
           replies.map((reply, index) => (
             <div key={index}>
-              <span className="text-body-sm">{reply.content}</span>
+              <span className="text-body-sm">{reply.comment}</span>
             </div>
           ))}
       </div>

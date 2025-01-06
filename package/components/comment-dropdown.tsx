@@ -10,9 +10,10 @@ import {
 import uuid from 'react-uuid';
 import { IComment } from '../extensions/comment';
 import { CommentCard } from './comment-card';
+import { commentsService } from '../utils/comments-service';
 
 interface CommentDropdownProps {
-  selectedText: string;
+  selectedContent: string;
   onSubmit: (commentId: string) => void;
   onClose: () => void;
   elementRef: React.RefObject<HTMLDivElement>;
@@ -27,7 +28,7 @@ interface CommentDropdownProps {
 }
 
 export const CommentDropdown = ({
-  selectedText,
+  selectedContent,
   onSubmit,
   onClose,
   elementRef,
@@ -37,7 +38,6 @@ export const CommentDropdown = ({
   walletAddress,
   activeCommentId,
   unsetComment,
-  // inlineCommentOpen,
   setInlineCommentOpen,
 }: CommentDropdownProps) => {
   const [comment, setComment] = useState('');
@@ -46,14 +46,41 @@ export const CommentDropdown = ({
   const [showReplyView, setShowReplyView] = useState(!!activeCommentId);
 
   useEffect(() => {
-    if (activeCommentId) {
-      const activeComment = comments.find((c) => c.id === activeCommentId);
-      if (activeComment) {
-        setComment(activeComment.content);
-        setShowReplyView(true);
+    const loadComments = async () => {
+      // Subscribe to Y.js updates for real-time sync
+      const unsubscribe = commentsService.subscribe(async () => {
+        if (activeCommentId) {
+          const storedComment =
+            await commentsService.getThread(activeCommentId);
+          if (storedComment) {
+            setComment(storedComment.comment);
+            setShowReplyView(true);
+          }
+        }
+      });
+
+      // Initial load
+      if (activeCommentId) {
+        const storedComment = await commentsService.getThread(activeCommentId);
+        if (storedComment) {
+          setComment(storedComment.comment);
+          setShowReplyView(true);
+        }
       }
-    }
-  }, [activeCommentId, comments]);
+
+      return unsubscribe;
+    };
+
+    loadComments();
+
+    // Reset state when dropdown closes
+    return () => {
+      if (!activeCommentId) {
+        setComment('');
+        setShowReplyView(false);
+      }
+    };
+  }, [activeCommentId]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setComment(e.target.value);
@@ -63,48 +90,48 @@ export const CommentDropdown = ({
     setReply(e.target.value);
   };
 
-  const handleClick = () => {
+  const handleClick = async () => {
     if (comment.trim()) {
       const newComment = {
-        id: `comment-${uuid()}`,
-        content: comment,
-        selectedContent: selectedText,
+        id: activeCommentId || `comment-${uuid()}`,
+        comment,
+        selectedContent,
         replies: [],
         createdAt: new Date(),
       };
 
-      setComments?.([...comments, newComment]);
-      onSubmit(newComment.id);
-      setShowReplyView(true);
-      setComment('');
+      const createdThread = await commentsService.createThread(newComment);
+      if (createdThread) {
+        onSubmit(newComment.id);
+        setShowReplyView(true);
+        setInlineCommentOpen?.(true);
+        const allComments = commentsService.getAllThreads();
+        setComments?.(allComments);
+      }
     }
   };
 
   const handleReplySubmit = () => {
-    if (reply.trim()) {
-      const updatedComments = comments.map((comment) => {
-        if (comment.id === comments[comments.length - 1].id) {
-          return {
-            ...comment,
-            replies: [
-              ...comment.replies,
-              {
-                id: `reply-${uuid()}`,
-                content: reply,
-                replies: [],
-                createdAt: new Date(),
-                selectedContent: selectedText,
-              },
-            ],
-          };
-        }
-        return comment;
-      });
+    if (reply.trim() && activeCommentId) {
+      const replyComment = {
+        id: `reply-${uuid()}`,
+        comment: reply,
+        replies: [],
+        createdAt: new Date(),
+        selectedContent,
+      };
 
+      const updatedThread = commentsService.addReply(
+        activeCommentId,
+        replyComment,
+      );
+      if (updatedThread) {
+        setComments?.(
+          comments.map((c) => (c.id === activeCommentId ? updatedThread : c)),
+        );
+      }
       setInlineCommentOpen?.(true);
-      setComments?.(updatedComments);
       setReply('');
-      onClose();
     }
   };
 
@@ -190,7 +217,7 @@ export const CommentDropdown = ({
         <CommentCard
           username={username}
           walletAddress={walletAddress}
-          selectedText={selectedText}
+          selectedContent={selectedContent}
           comment={comment}
         />
       </div>

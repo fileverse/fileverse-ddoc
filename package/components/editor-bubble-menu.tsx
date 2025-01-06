@@ -51,7 +51,7 @@ type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const [isInlineCommentOpen, setIsInlineCommentOpen] = useState(false);
-  const [selectedText, setSelectedText] = useState('');
+  const [selectedContent, setSelectedContent] = useState('');
   const items: BubbleMenuItem[] = [
     {
       name: 'Bold',
@@ -92,7 +92,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Link',
       isActive: () => props.editor.isActive('link'),
-      command: () => {},
+      command: () => { },
       icon: 'Link',
     },
     {
@@ -104,13 +104,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'InlineComment',
       isActive: () => props.editor.isActive('inlineComment'),
-      command: () => {},
+      command: () => { },
       icon: 'MessageSquarePlus',
     },
     {
       name: 'Comment',
       isActive: () => props.editor.isActive('comment'),
-      command: () => {},
+      command: () => { },
       icon: 'MessageSquareQuote',
     },
   ];
@@ -248,7 +248,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       case 'Comment':
         return (
           <CommentDropdown
-            selectedText={selectedText}
+            selectedContent={selectedContent}
             elementRef={toolRef}
             comments={props.comments}
             setComments={props.setComments}
@@ -317,10 +317,10 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         (comment) => comment.id === props.activeCommentId,
       );
       if (activeComment) {
-        setSelectedText(activeComment.selectedContent);
+        setSelectedContent(activeComment.selectedContent);
       }
     } else {
-      setSelectedText(text);
+      setSelectedContent(text);
     }
   };
 

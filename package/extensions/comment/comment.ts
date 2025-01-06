@@ -34,7 +34,7 @@ export interface CommentStorage {
 export interface IComment {
   id: string;
   selectedContent: string;
-  content: string;
+  comment: string;
   replies: IComment[];
   createdAt: Date;
 }
