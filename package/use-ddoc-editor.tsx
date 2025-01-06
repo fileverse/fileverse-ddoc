@@ -90,7 +90,7 @@ export const useDdocEditor = ({
     PageBreak,
     Comment.configure({
       HTMLAttributes: {
-        class: 'my-comment',
+        class: 'inline-comment',
       },
       onCommentActivated: (commentId) => {
         setActiveCommentId(commentId);

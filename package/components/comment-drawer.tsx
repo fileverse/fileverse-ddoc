@@ -78,7 +78,7 @@ export const CommentDrawer = ({
       rounded={true}
       dismissible
       className={cn(
-        'w-[calc(100vw-24px)] !z-[60] min-h-[70vh] md:w-[384px] right-0 shadow-elevation-4 rounded-[16px]',
+        'w-[calc(100vw-24px)] !z-[50] min-h-[70vh] md:w-[384px] right-0 shadow-elevation-4 rounded-[16px]',
         isOpen && 'right-2 md:!right-4',
         isNavbarVisible
           ? 'top-[7.25rem] h-[calc(98vh-140px)]'
@@ -112,7 +112,7 @@ export const CommentDrawer = ({
               <div
                 key={comment.id}
                 className={cn(
-                  'flex flex-col gap-1 w-full box-border cursor-pointer transition-opacity duration-300 border-b color-border-default last:border-b-0',
+                  'flex flex-col gap-1 w-full box-border transition-opacity duration-300 border-b color-border-default last:border-b-0',
                   comment.id === activeCommentId && '!opacity-100',
                   comment.id !== activeCommentId && 'opacity-50',
                 )}

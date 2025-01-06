@@ -778,18 +778,18 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   }
 }
 
-p > .my-comment,
-em > .my-comment,
-strong > .my-comment,
-a > .my-comment,
-u > .my-comment,
-s > .my-comment,
-sup > .my-comment,
-sub > .my-comment,
-:not(h1, h2, h3) > span .my-comment {
+p > .inline-comment,
+em > .inline-comment,
+strong > .inline-comment,
+a > .inline-comment,
+u > .inline-comment,
+s > .inline-comment,
+sup > .inline-comment,
+sub > .inline-comment,
+:not(h1, h2, h3) > span .inline-comment {
   @apply bg-[#e5fbe7] transition-all group-hover:bg-[#facc1566];
 }
 
-.my-comment {
+.inline-comment {
   @apply bg-[#e5fbe7] transition-all hover:bg-[#facc1566];
 }
