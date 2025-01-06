@@ -28,7 +28,7 @@ import {
   TextField,
   Tooltip,
 } from '@fileverse/ui';
-import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
+import { useMediaQuery } from 'usehooks-ts';
 import { colors } from '../utils/colors';
 
 interface IEditorToolElement {
@@ -549,7 +549,7 @@ export const EditorFontFamily = ({
           className={cn(
             'flex w-full items-center space-x-2 rounded px-2 py-1 text-left text-sm text-black transition',
             editor.isActive('textStyle', { fontFamily: font.value })
-              ? 'bg-yellow-300 hover:brightness-90'
+              ? 'bg-yellow-300 xl:hover:brightness-90'
               : 'hover:bg-[#f2f2f2]',
           )}
         >
@@ -581,7 +581,7 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'left' })
-            ? 'bg-yellow-300 hover:brightness-90'
+            ? 'bg-yellow-300 xl:hover:brightness-90'
             : 'hover:bg-[#f2f2f2]',
         )}
       >
@@ -595,7 +595,7 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'center' })
-            ? 'bg-yellow-300 hover:brightness-90'
+            ? 'bg-yellow-300 xl:hover:brightness-90'
             : 'hover:bg-[#f2f2f2]',
         )}
       >
@@ -609,7 +609,7 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'right' })
-            ? 'bg-yellow-300 hover:brightness-90'
+            ? 'bg-yellow-300 xl:hover:brightness-90'
             : 'hover:bg-[#f2f2f2]',
         )}
       >
@@ -1071,7 +1071,7 @@ export const TextHeading = ({
           className={cn(
             'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-black transition',
             {
-              ['bg-yellow-300 hover:brightness-90']: heading.isActive(),
+              ['bg-yellow-300 xl:hover:brightness-90']: heading.isActive(),
               ['hover:bg-[#f2f2f2]']: !heading.isActive(),
             },
           )}
@@ -1265,13 +1265,13 @@ export const TextFormatingPopup = ({
     },
   ];
 
-  useOnClickOutside(popupRef, () => setToolVisibility(IEditorTool.NONE));
-
   return (
     <UtilsModal
       title="Text formating"
+      ref={popupRef}
+      onCloseAutoFocus={() => setToolVisibility(IEditorTool.NONE)}
       content={
-        <div ref={popupRef} className="px-4 flex flex-col gap-2 w-full">
+        <div className="px-4 flex flex-col gap-2 w-full">
           <div className="flex justify-start sm:justify-center items-center gap-1">
             {headings.map((heading) => (
               <button
@@ -1280,7 +1280,8 @@ export const TextFormatingPopup = ({
                 className={cn(
                   'flex w-fit items-center font-medium space-x-2 rounded p-2 text-center text-sm text-black transition',
                   {
-                    ['bg-yellow-300 hover:brightness-90']: heading.isActive(),
+                    ['bg-yellow-300 xl:hover:brightness-90']:
+                      heading.isActive(),
                     ['hover:bg-[#f2f2f2]']: !heading.isActive(),
                   },
                 )}
@@ -1298,7 +1299,7 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                     {
-                      ['bg-yellow-300 hover:brightness-90']:
+                      ['bg-yellow-300 xl:hover:brightness-90']:
                         textAlignment.isActive(),
                       ['hover:bg-[#f2f2f2]']: !textAlignment.isActive(),
                     },
@@ -1316,7 +1317,8 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                     {
-                      ['bg-yellow-300 hover:brightness-90']: other.isActive(),
+                      ['bg-yellow-300 xl:hover:brightness-90']:
+                        other.isActive(),
                       ['hover:bg-[#f2f2f2]']: !other.isActive(),
                     },
                   )}
@@ -1335,7 +1337,7 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                     {
-                      ['bg-yellow-300 hover:brightness-90']:
+                      ['bg-yellow-300 xl:hover:brightness-90']:
                         textStyle.isActive(),
                       ['hover:bg-[#f2f2f2]']: !textStyle.isActive(),
                     },
@@ -1353,7 +1355,7 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                     {
-                      ['bg-yellow-300 hover:brightness-90']:
+                      ['bg-yellow-300 xl:hover:brightness-90']:
                         textStyle.isActive(),
                       ['hover:bg-[#f2f2f2]']: !textStyle.isActive(),
                     },
@@ -1372,7 +1374,8 @@ export const TextFormatingPopup = ({
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                   {
-                    ['bg-yellow-300 hover:brightness-90']: listStyle.isActive(),
+                    ['bg-yellow-300 xl:hover:brightness-90']:
+                      listStyle.isActive(),
                     ['hover:bg-[#f2f2f2]']: !listStyle.isActive(),
                   },
                 )}

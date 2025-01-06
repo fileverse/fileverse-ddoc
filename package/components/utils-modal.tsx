@@ -12,11 +12,23 @@ interface UtilsModalProps {
   title: string;
   content: React.ReactNode;
   contentClassName?: string;
+  ref?: React.RefObject<HTMLDivElement>;
+  onCloseAutoFocus?: () => void;
 }
 
-const UtilsModal = ({ title, content, contentClassName }: UtilsModalProps) => {
+const UtilsModal = ({
+  title,
+  content,
+  contentClassName,
+  ref,
+  onCloseAutoFocus,
+}: UtilsModalProps) => {
   return (
-    <DrawerContent className="w-full z-20">
+    <DrawerContent
+      className="w-full z-20"
+      ref={ref}
+      onCloseAutoFocus={onCloseAutoFocus}
+    >
       <DrawerHeader className="p-4">
         <DrawerTitle className="flex justify-between items-center text-left sm:text-center text-base">
           {title}
