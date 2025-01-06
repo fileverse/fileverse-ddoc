@@ -1170,29 +1170,28 @@ export const TextFormatingPopup = ({
       title: 'Bold',
       description: 'Bold text',
       icon: 'Bold',
-      command: (editor: Editor) => editor.chain().focus().toggleBold().run(),
+      command: (editor: Editor) => editor.chain().toggleBold().run(),
       isActive: () => editor.isActive('bold'),
     },
     {
       title: 'Italic',
       description: 'Italic text',
       icon: 'Italic',
-      command: (editor: Editor) => editor.chain().focus().toggleItalic().run(),
+      command: (editor: Editor) => editor.chain().toggleItalic().run(),
       isActive: () => editor.isActive('italic'),
     },
     {
       title: 'Underline',
       description: 'Underline text',
       icon: 'Underline',
-      command: (editor: Editor) =>
-        editor.chain().focus().toggleUnderline().run(),
+      command: (editor: Editor) => editor.chain().toggleUnderline().run(),
       isActive: () => editor.isActive('underline'),
     },
     {
       title: 'Strikethrough',
       description: 'Strikethrough text',
       icon: 'Strikethrough',
-      command: (editor: Editor) => editor.chain().focus().toggleStrike().run(),
+      command: (editor: Editor) => editor.chain().toggleStrike().run(),
       isActive: () => editor.isActive('strike'),
     },
     {
@@ -1200,7 +1199,7 @@ export const TextFormatingPopup = ({
       description: 'Superscript text',
       icon: 'Superscript',
       command: (editor: Editor) =>
-        editor.chain().focus().unsetSubscript().toggleSuperscript().run(),
+        editor.chain().unsetSubscript().toggleSuperscript().run(),
       isActive: () => editor.isActive('superscript'),
     },
     {
@@ -1208,7 +1207,7 @@ export const TextFormatingPopup = ({
       description: 'Subscript text',
       icon: 'Subscript',
       command: (editor: Editor) =>
-        editor.chain().focus().unsetSuperscript().toggleSubscript().run(),
+        editor.chain().unsetSuperscript().toggleSubscript().run(),
       isActive: () => editor.isActive('subscript'),
     },
   ];
@@ -1218,7 +1217,7 @@ export const TextFormatingPopup = ({
       title: 'Code',
       description: 'Code',
       icon: 'Code',
-      command: (editor: Editor) => editor.chain().focus().toggleCode().run(),
+      command: (editor: Editor) => editor.chain().toggleCode().run(),
       isActive: () => editor.isActive('code'),
     },
     {
@@ -1232,8 +1231,7 @@ export const TextFormatingPopup = ({
       title: 'Quote',
       description: 'Quote',
       icon: 'TextQuote',
-      command: (editor: Editor) =>
-        editor.chain().focus().toggleBlockquote().run(),
+      command: (editor: Editor) => editor.chain().toggleBlockquote().run(),
       isActive: () => editor.isActive('blockquote'),
     },
   ];
