@@ -1,4 +1,4 @@
-import React, { useState, SetStateAction } from 'react';
+import React, { useState, SetStateAction, useEffect } from 'react';
 import {
   Button,
   DynamicDropdown,
@@ -24,6 +24,7 @@ interface CommentDropdownProps {
   unsetComment?: () => void;
   inlineCommentOpen?: boolean;
   setInlineCommentOpen?: React.Dispatch<SetStateAction<boolean>>;
+  initialComment?: string;
 }
 
 export const CommentDropdown = ({
@@ -37,13 +38,24 @@ export const CommentDropdown = ({
   walletAddress,
   activeCommentId,
   unsetComment,
-  // inlineCommentOpen,
   setInlineCommentOpen,
+  initialComment = '',
 }: CommentDropdownProps) => {
-  const [comment, setComment] = useState('');
+  const [comment, setComment] = useState(initialComment);
   const [reply, setReply] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(true);
   const [showReplyView, setShowReplyView] = useState(!!activeCommentId);
+
+  useEffect(() => {
+    if (activeCommentId) {
+      const activeComment = comments.find(
+        (comment) => comment.id === activeCommentId
+      );
+      if (activeComment) {
+        setComment(activeComment.content);
+      }
+    }
+  }, [activeCommentId, comments]);
 
   const activeComment = comments.find(
     (comment) => comment.id === activeCommentId,

@@ -92,7 +92,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Link',
       isActive: () => props.editor.isActive('link'),
-      command: () => {},
+      command: () => { },
       icon: 'Link',
     },
     {
@@ -104,13 +104,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'InlineComment',
       isActive: () => props.editor.isActive('inlineComment'),
-      command: () => {},
+      command: () => { },
       icon: 'MessageSquarePlus',
     },
     {
       name: 'Comment',
       isActive: () => props.editor.isActive('comment'),
-      command: () => {},
+      command: () => { },
       icon: 'MessageSquareQuote',
     },
   ];
@@ -173,6 +173,19 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     });
   };
 
+  const handleCommentSubmit = (comment: string) => {
+    props.setComment(comment);
+  };
+
+  const handleCommentClose = () => {
+    if (toolRef.current?.parentElement) {
+      const popoverContent = toolRef.current.closest('[role="dialog"]');
+      if (popoverContent) {
+        popoverContent.remove();
+      }
+    }
+  };
+
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
     editor: props.editor,
   });
@@ -208,7 +221,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     return !hasYellowHighlight;
   };
 
-  const renderContent = (item: BubbleMenuItem) => {
+  const renderContent = (item: { name: string; initialComment?: string }) => {
     switch (item.name) {
       case 'Alignment':
         return (
@@ -249,27 +262,17 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         return (
           <CommentDropdown
             selectedText={selectedText}
+            onSubmit={handleCommentSubmit}
+            onClose={handleCommentClose}
             elementRef={toolRef}
-            comments={props.comments}
             setComments={props.setComments}
-            unsetComment={props.unsetComment}
+            comments={props.comments}
             username={props.username}
             walletAddress={props.walletAddress}
             activeCommentId={props.activeCommentId}
-            onSubmit={(commentId) => {
-              props.setComment?.(commentId);
-            }}
-            onClose={() => {
-              if (toolRef.current?.parentElement) {
-                const popoverContent =
-                  toolRef.current.closest('[role="dialog"]');
-                if (popoverContent) {
-                  popoverContent.remove();
-                }
-              }
-            }}
-            inlineCommentOpen={props.inlineCommentOpen}
+            unsetComment={props.unsetComment}
             setInlineCommentOpen={props.setInlineCommentOpen}
+            initialComment={item.initialComment}
           />
         );
       case 'Scripts':
@@ -494,6 +497,10 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             }
 
             if (item.name === 'Comment') {
+              const activeComment = props.comments?.find(
+                (comment) => comment.id === props.activeCommentId,
+              );
+
               return (
                 <DynamicDropdown
                   key="Comment"
@@ -510,7 +517,10 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                       onClick={handleInlineComment}
                     />
                   }
-                  content={renderContent({ name: 'Comment' })}
+                  content={renderContent({
+                    name: 'Comment',
+                    initialComment: activeComment?.content || '',
+                  })}
                 />
               );
             }

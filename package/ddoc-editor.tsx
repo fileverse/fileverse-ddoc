@@ -56,7 +56,7 @@ const handleAddReply = (
               selectedContent: comment.selectedContent,
             },
           ],
-          content: comment.content, // Clear the input after adding reply
+          content: comment.content,
         };
       }
       return comment;
