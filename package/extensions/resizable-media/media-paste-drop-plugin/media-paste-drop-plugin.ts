@@ -112,6 +112,18 @@ export const getMediaPasteDropPlugin = (
         imagesAndVideos.forEach(async (imageOrVideo) => {
           const reader = new FileReader();
 
+          if (imageOrVideo.type.includes('image')) {
+            if (
+              !imageOrVideo.type.includes('image/png') &&
+              !imageOrVideo.type.includes('image/jpeg')
+            ) {
+              if (onError && typeof onError === 'function') {
+                onError('Invalid image type. Try PNG or JPEG ');
+              }
+              return;
+            }
+          }
+
           if (typeof upload === 'function') {
             try {
               startImageUpload(
