@@ -371,6 +371,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             key="Comment"
             side="top"
             sideOffset={-40}
+            className="!z-40"
             anchorTrigger={
               <ToolbarButton
                 icon="MessageSquareQuote"
@@ -508,6 +509,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                   sideOffset={10}
                   alignOffset={-5}
                   align="end"
+                  className="!z-40"
                   anchorTrigger={
                     <ToolbarButton
                       icon="MessageSquareQuote"

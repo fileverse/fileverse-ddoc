@@ -120,7 +120,7 @@ export const CommentDropdown = ({
   };
 
   const renderInitialView = () => (
-    <div className="p-2 border-b border-[#E8EBEC] flex flex-col gap-2">
+    <div className="p-3 border-b border-[#E8EBEC] flex flex-col gap-2">
       <TextAreaFieldV2
         value={comment}
         onChange={handleInputChange}

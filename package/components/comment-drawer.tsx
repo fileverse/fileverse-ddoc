@@ -107,7 +107,7 @@ export const CommentDrawer = ({
       rounded={true}
       dismissible
       className={cn(
-        'w-[calc(100vw-24px)] !z-[50] min-h-[70vh] md:w-[384px] right-0 shadow-elevation-4 rounded-[16px]',
+        'w-[calc(100vw-24px)] !z-50 min-h-[70vh] md:w-[384px] right-0 shadow-elevation-4 rounded-[16px]',
         isOpen && 'right-2 md:!right-4',
         isNavbarVisible
           ? 'top-[7.25rem] h-[calc(98vh-140px)]'
@@ -135,7 +135,7 @@ export const CommentDrawer = ({
           </div>
           <div
             ref={commentsSectionRef}
-            className="flex flex-col max-h-[60vh] overflow-y-scroll no-scrollbar"
+            className="flex flex-col px-3 max-h-[60vh] overflow-y-scroll no-scrollbar"
           >
             {comments.map((comment) => (
               <div
@@ -216,7 +216,7 @@ export const CommentDrawer = ({
               </div>
             ))}
           </div>
-          <div className="flex flex-col gap-3 color-bg-secondary border-t color-border-default p-3 rounded-b-lg min-h-[15vh] fixed bottom-0 w-full">
+          <div className="flex flex-col gap-3 color-bg-secondary border-t color-border-default px-6 py-5 rounded-b-lg min-h-[15vh] fixed bottom-0 w-full">
             <div className="flex justify-start items-center gap-2">
               <Avatar src={''} size="sm" className="min-w-6" />
 
