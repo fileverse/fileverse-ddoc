@@ -231,10 +231,19 @@ const getSuggestionItems = ({
         // upload image
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = 'image/*';
+        input.accept = 'image/png, image/jpeg';
         input.onchange = async () => {
           if (input.files?.length) {
             const file = input.files[0];
+            if (
+              !file.type.includes('image/png') &&
+              !file.type.includes('image/jpeg')
+            ) {
+              if (onError && typeof onError === 'function') {
+                onError('Invalid image type. Try PNG or JPEG ');
+              }
+              return;
+            }
             const size = file.size;
             const imgConfig = secureImageUploadUrl
               ? IMG_UPLOAD_SETTINGS.Extended

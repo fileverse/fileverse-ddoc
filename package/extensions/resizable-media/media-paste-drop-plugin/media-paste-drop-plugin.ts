@@ -39,6 +39,15 @@ export const getMediaPasteDropPlugin = (
           Object.values(files ?? {}).forEach((file) => {
             const isImage = file?.type.indexOf('image') === 0;
             if (isImage) {
+              if (
+                !file.type.includes('image/png') &&
+                !file.type.includes('image/jpeg')
+              ) {
+                if (onError && typeof onError === 'function') {
+                  onError('Invalid image type. Try PNG or JPEG ');
+                }
+                return;
+              }
               if (file.size > imgConfig.maxSize) {
                 onError(imgConfig.errorMsg);
                 throw new Error(imgConfig.errorMsg);
