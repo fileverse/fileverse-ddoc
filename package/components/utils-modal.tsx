@@ -13,7 +13,7 @@ interface UtilsModalProps {
   title: string;
   content: React.ReactNode;
   isOpen?: boolean;
-  setIsOpen?: (arg0: boolean) => void;
+  setIsOpen?: (open: boolean) => void;
   contentClassName?: string;
   onCloseAutoFocus?: () => void;
 }

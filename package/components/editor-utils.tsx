@@ -1096,7 +1096,7 @@ export const TextFormatingPopup = ({
 }: {
   editor: Editor;
   isOpen: boolean;
-  setIsOpen: (arg0: boolean) => void;
+  setIsOpen: (open: boolean) => void;
   setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
 }) => {
   const headings = [
