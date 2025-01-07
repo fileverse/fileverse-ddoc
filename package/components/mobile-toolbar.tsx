@@ -187,22 +187,22 @@ const MobileToolbar = ({
           />
         </div>
       </div>
-      {toolVisibility === IEditorTool.TEXT_FORMATING && (
-        <TextFormatingPopup
-          editor={editor}
-          setToolVisibility={setToolVisibility}
-        />
-      )}
+      <TextFormatingPopup
+        editor={editor}
+        isOpen={toolVisibility === IEditorTool.TEXT_FORMATING}
+        setIsOpen={(open) => !open && setToolVisibility(IEditorTool.NONE)}
+        setToolVisibility={setToolVisibility}
+      />
       <DynamicModal
         open={toolVisibility === IEditorTool.LINK_POPUP}
         onOpenChange={(open) => !open && setToolVisibility(IEditorTool.NONE)}
         title="Link"
         content={
-          <div className="flex flex-col gap-4 w-full h-full">
+          <div className="flex flex-col gap-4 w-full h-full text-base">
             <TextField
               label="Text"
               placeholder="Link text"
-              className="w-full"
+              className="w-full text-base"
               defaultValue={getSelectedLink().text}
               onChange={(e) => {
                 e.preventDefault();
@@ -214,7 +214,7 @@ const MobileToolbar = ({
             <TextField
               label="Link"
               placeholder="Paste URL"
-              className="w-full"
+              className="w-full text-base"
               defaultValue={getSelectedLink().url}
               onChange={(e) => {
                 e.preventDefault();

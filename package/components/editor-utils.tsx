@@ -6,7 +6,6 @@ import React, {
   SetStateAction,
   useCallback,
   useEffect,
-  useRef,
   useState,
 } from 'react';
 import { IEditorTool, useEditorToolVisiibility } from '../hooks/use-visibility';
@@ -28,7 +27,7 @@ import {
   TextField,
   Tooltip,
 } from '@fileverse/ui';
-import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
+import { useMediaQuery } from 'usehooks-ts';
 import { colors } from '../utils/colors';
 
 interface IEditorToolElement {
@@ -549,7 +548,7 @@ export const EditorFontFamily = ({
           className={cn(
             'flex w-full items-center space-x-2 rounded px-2 py-1 text-left text-sm text-black transition',
             editor.isActive('textStyle', { fontFamily: font.value })
-              ? 'bg-yellow-300 hover:brightness-90'
+              ? 'bg-yellow-300 xl:hover:brightness-90'
               : 'hover:bg-[#f2f2f2]',
           )}
         >
@@ -581,7 +580,7 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'left' })
-            ? 'bg-yellow-300 hover:brightness-90'
+            ? 'bg-yellow-300 xl:hover:brightness-90'
             : 'hover:bg-[#f2f2f2]',
         )}
       >
@@ -595,7 +594,7 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'center' })
-            ? 'bg-yellow-300 hover:brightness-90'
+            ? 'bg-yellow-300 xl:hover:brightness-90'
             : 'hover:bg-[#f2f2f2]',
         )}
       >
@@ -609,7 +608,7 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'right' })
-            ? 'bg-yellow-300 hover:brightness-90'
+            ? 'bg-yellow-300 xl:hover:brightness-90'
             : 'hover:bg-[#f2f2f2]',
         )}
       >
@@ -1071,7 +1070,7 @@ export const TextHeading = ({
           className={cn(
             'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-black transition',
             {
-              ['bg-yellow-300 hover:brightness-90']: heading.isActive(),
+              ['bg-yellow-300 xl:hover:brightness-90']: heading.isActive(),
               ['hover:bg-[#f2f2f2]']: !heading.isActive(),
             },
           )}
@@ -1091,12 +1090,15 @@ export const TextHeading = ({
 
 export const TextFormatingPopup = ({
   editor,
+  isOpen,
+  setIsOpen,
   setToolVisibility,
 }: {
   editor: Editor;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
   setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
 }) => {
-  const popupRef = useRef(null);
   const headings = [
     {
       title: 'Text',
@@ -1143,24 +1145,21 @@ export const TextFormatingPopup = ({
       title: 'Left',
       description: 'Left',
       icon: 'AlignLeft',
-      command: (editor: Editor) =>
-        editor.chain().focus().setTextAlign('left').run(),
+      command: (editor: Editor) => editor.chain().setTextAlign('left').run(),
       isActive: () => editor.isActive({ textAlign: 'left' }),
     },
     {
       title: 'Center',
       description: 'Center',
       icon: 'AlignCenter',
-      command: (editor: Editor) =>
-        editor.chain().focus().setTextAlign('center').run(),
+      command: (editor: Editor) => editor.chain().setTextAlign('center').run(),
       isActive: () => editor.isActive({ textAlign: 'center' }),
     },
     {
       title: 'Right',
       description: 'Right',
       icon: 'AlignRight',
-      command: (editor: Editor) =>
-        editor.chain().focus().setTextAlign('right').run(),
+      command: (editor: Editor) => editor.chain().setTextAlign('right').run(),
       isActive: () => editor.isActive({ textAlign: 'right' }),
     },
   ];
@@ -1170,29 +1169,28 @@ export const TextFormatingPopup = ({
       title: 'Bold',
       description: 'Bold text',
       icon: 'Bold',
-      command: (editor: Editor) => editor.chain().focus().toggleBold().run(),
+      command: (editor: Editor) => editor.chain().toggleBold().run(),
       isActive: () => editor.isActive('bold'),
     },
     {
       title: 'Italic',
       description: 'Italic text',
       icon: 'Italic',
-      command: (editor: Editor) => editor.chain().focus().toggleItalic().run(),
+      command: (editor: Editor) => editor.chain().toggleItalic().run(),
       isActive: () => editor.isActive('italic'),
     },
     {
       title: 'Underline',
       description: 'Underline text',
       icon: 'Underline',
-      command: (editor: Editor) =>
-        editor.chain().focus().toggleUnderline().run(),
+      command: (editor: Editor) => editor.chain().toggleUnderline().run(),
       isActive: () => editor.isActive('underline'),
     },
     {
       title: 'Strikethrough',
       description: 'Strikethrough text',
       icon: 'Strikethrough',
-      command: (editor: Editor) => editor.chain().focus().toggleStrike().run(),
+      command: (editor: Editor) => editor.chain().toggleStrike().run(),
       isActive: () => editor.isActive('strike'),
     },
     {
@@ -1200,7 +1198,7 @@ export const TextFormatingPopup = ({
       description: 'Superscript text',
       icon: 'Superscript',
       command: (editor: Editor) =>
-        editor.chain().focus().unsetSubscript().toggleSuperscript().run(),
+        editor.chain().unsetSubscript().toggleSuperscript().run(),
       isActive: () => editor.isActive('superscript'),
     },
     {
@@ -1208,7 +1206,7 @@ export const TextFormatingPopup = ({
       description: 'Subscript text',
       icon: 'Subscript',
       command: (editor: Editor) =>
-        editor.chain().focus().unsetSuperscript().toggleSubscript().run(),
+        editor.chain().unsetSuperscript().toggleSubscript().run(),
       isActive: () => editor.isActive('subscript'),
     },
   ];
@@ -1218,7 +1216,7 @@ export const TextFormatingPopup = ({
       title: 'Code',
       description: 'Code',
       icon: 'Code',
-      command: (editor: Editor) => editor.chain().focus().toggleCode().run(),
+      command: (editor: Editor) => editor.chain().toggleCode().run(),
       isActive: () => editor.isActive('code'),
     },
     {
@@ -1232,8 +1230,7 @@ export const TextFormatingPopup = ({
       title: 'Quote',
       description: 'Quote',
       icon: 'TextQuote',
-      command: (editor: Editor) =>
-        editor.chain().focus().toggleBlockquote().run(),
+      command: (editor: Editor) => editor.chain().toggleBlockquote().run(),
       isActive: () => editor.isActive('blockquote'),
     },
   ];
@@ -1243,35 +1240,40 @@ export const TextFormatingPopup = ({
       title: 'Bullet List',
       description: 'Bullet list',
       icon: 'List',
-      command: (editor: Editor) =>
-        editor.chain().focus().toggleBulletList().run(),
+      command: (editor: Editor) => editor.chain().toggleBulletList().run(),
       isActive: () => editor.isActive('bulletList'),
     },
     {
       title: 'Ordered List',
       description: 'Ordered list',
       icon: 'ListOrdered',
-      command: (editor: Editor) =>
-        editor.chain().focus().toggleOrderedList().run(),
+      command: (editor: Editor) => editor.chain().toggleOrderedList().run(),
       isActive: () => editor.isActive('orderedList'),
     },
     {
       title: 'Code Block',
       description: 'Code block',
       icon: 'Braces',
-      command: (editor: Editor) =>
-        editor.chain().focus().toggleCodeBlock().run(),
+      command: (editor: Editor) => editor.chain().toggleCodeBlock().run(),
       isActive: () => editor.isActive('codeBlock'),
     },
   ];
 
-  useOnClickOutside(popupRef, () => setToolVisibility(IEditorTool.NONE));
-
   return (
     <UtilsModal
       title="Text formating"
+      isOpen={isOpen}
+      setIsOpen={setIsOpen}
+      onCloseAutoFocus={() => {
+        setToolVisibility((currentToolVisibility) => {
+          if (currentToolVisibility === IEditorTool.TEXT_FORMATING) {
+            return IEditorTool.NONE;
+          }
+          return currentToolVisibility;
+        });
+      }}
       content={
-        <div ref={popupRef} className="px-4 flex flex-col gap-2 w-full">
+        <div className="px-4 flex flex-col gap-2 w-full">
           <div className="flex justify-start sm:justify-center items-center gap-1">
             {headings.map((heading) => (
               <button
@@ -1280,7 +1282,8 @@ export const TextFormatingPopup = ({
                 className={cn(
                   'flex w-fit items-center font-medium space-x-2 rounded p-2 text-center text-sm text-black transition',
                   {
-                    ['bg-yellow-300 hover:brightness-90']: heading.isActive(),
+                    ['bg-yellow-300 xl:hover:brightness-90']:
+                      heading.isActive(),
                     ['hover:bg-[#f2f2f2]']: !heading.isActive(),
                   },
                 )}
@@ -1298,7 +1301,7 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                     {
-                      ['bg-yellow-300 hover:brightness-90']:
+                      ['bg-yellow-300 xl:hover:brightness-90']:
                         textAlignment.isActive(),
                       ['hover:bg-[#f2f2f2]']: !textAlignment.isActive(),
                     },
@@ -1316,7 +1319,8 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                     {
-                      ['bg-yellow-300 hover:brightness-90']: other.isActive(),
+                      ['bg-yellow-300 xl:hover:brightness-90']:
+                        other.isActive(),
                       ['hover:bg-[#f2f2f2]']: !other.isActive(),
                     },
                   )}
@@ -1335,7 +1339,7 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                     {
-                      ['bg-yellow-300 hover:brightness-90']:
+                      ['bg-yellow-300 xl:hover:brightness-90']:
                         textStyle.isActive(),
                       ['hover:bg-[#f2f2f2]']: !textStyle.isActive(),
                     },
@@ -1353,7 +1357,7 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                     {
-                      ['bg-yellow-300 hover:brightness-90']:
+                      ['bg-yellow-300 xl:hover:brightness-90']:
                         textStyle.isActive(),
                       ['hover:bg-[#f2f2f2]']: !textStyle.isActive(),
                     },
@@ -1372,7 +1376,8 @@ export const TextFormatingPopup = ({
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
                   {
-                    ['bg-yellow-300 hover:brightness-90']: listStyle.isActive(),
+                    ['bg-yellow-300 xl:hover:brightness-90']:
+                      listStyle.isActive(),
                     ['hover:bg-[#f2f2f2]']: !listStyle.isActive(),
                   },
                 )}
