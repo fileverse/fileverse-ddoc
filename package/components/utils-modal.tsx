@@ -5,47 +5,51 @@ import {
   DrawerTitle,
   DrawerClose,
   LucideIcon,
+  Drawer,
 } from '@fileverse/ui';
 import cn from 'classnames';
 
 interface UtilsModalProps {
   title: string;
   content: React.ReactNode;
+  isOpen?: boolean;
+  setIsOpen?: (arg0: boolean) => void;
   contentClassName?: string;
-  ref?: React.RefObject<HTMLDivElement>;
   onCloseAutoFocus?: () => void;
 }
 
 const UtilsModal = ({
   title,
   content,
+  isOpen,
+  setIsOpen,
   contentClassName,
-  ref,
   onCloseAutoFocus,
 }: UtilsModalProps) => {
   return (
-    <DrawerContent
-      className="w-full z-20"
-      ref={ref}
-      onCloseAutoFocus={onCloseAutoFocus}
-    >
-      <DrawerHeader className="p-4">
-        <DrawerTitle className="flex justify-between items-center text-left sm:text-center text-base">
-          {title}
-          <DrawerClose>
-            <LucideIcon name="X" size="sm" />
-          </DrawerClose>
-        </DrawerTitle>
-      </DrawerHeader>
-      <div
-        className={cn(
-          'flex flex-col gap-4 w-full h-full pb-4 text-base text-black',
-          contentClassName,
-        )}
+    <Drawer open={isOpen} onOpenChange={setIsOpen}>
+      <DrawerContent
+        className="w-full z-20"
+        onCloseAutoFocus={onCloseAutoFocus}
       >
-        {content && content}
-      </div>
-    </DrawerContent>
+        <DrawerHeader className="p-4">
+          <DrawerTitle className="flex justify-between items-center text-left sm:text-center text-base">
+            {title}
+            <DrawerClose>
+              <LucideIcon name="X" size="sm" />
+            </DrawerClose>
+          </DrawerTitle>
+        </DrawerHeader>
+        <div
+          className={cn(
+            'flex flex-col gap-4 w-full h-full pb-4 text-base text-black',
+            contentClassName,
+          )}
+        >
+          {content && content}
+        </div>
+      </DrawerContent>
+    </Drawer>
   );
 };
 

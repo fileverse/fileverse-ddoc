@@ -187,13 +187,12 @@ const MobileToolbar = ({
           />
         </div>
       </div>
-      {toolVisibility === IEditorTool.TEXT_FORMATING && (
-        <TextFormatingPopup
-          editor={editor}
-          setToolVisibility={setToolVisibility}
-          toolVisibility={toolVisibility}
-        />
-      )}
+      <TextFormatingPopup
+        editor={editor}
+        isOpen={toolVisibility === IEditorTool.TEXT_FORMATING}
+        setIsOpen={(open) => !open && setToolVisibility(IEditorTool.NONE)}
+        setToolVisibility={setToolVisibility}
+      />
       <DynamicModal
         open={toolVisibility === IEditorTool.LINK_POPUP}
         onOpenChange={(open) => !open && setToolVisibility(IEditorTool.NONE)}

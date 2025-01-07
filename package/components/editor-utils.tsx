@@ -6,7 +6,6 @@ import React, {
   SetStateAction,
   useCallback,
   useEffect,
-  useRef,
   useState,
 } from 'react';
 import { IEditorTool, useEditorToolVisiibility } from '../hooks/use-visibility';
@@ -1091,14 +1090,15 @@ export const TextHeading = ({
 
 export const TextFormatingPopup = ({
   editor,
-  toolVisibility,
+  isOpen,
+  setIsOpen,
   setToolVisibility,
 }: {
   editor: Editor;
-  toolVisibility: IEditorTool;
+  isOpen: boolean;
+  setIsOpen: (arg0: boolean) => void;
   setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
 }) => {
-  const popupRef = useRef(null);
   const headings = [
     {
       title: 'Text',
@@ -1262,11 +1262,15 @@ export const TextFormatingPopup = ({
   return (
     <UtilsModal
       title="Text formating"
-      ref={popupRef}
+      isOpen={isOpen}
+      setIsOpen={setIsOpen}
       onCloseAutoFocus={() => {
-        if (toolVisibility === IEditorTool.TEXT_FORMATING) {
-          setToolVisibility(IEditorTool.NONE);
-        }
+        setToolVisibility((currentToolVisibility) => {
+          if (currentToolVisibility === IEditorTool.TEXT_FORMATING) {
+            return IEditorTool.NONE;
+          }
+          return currentToolVisibility;
+        });
       }}
       content={
         <div className="px-4 flex flex-col gap-2 w-full">
