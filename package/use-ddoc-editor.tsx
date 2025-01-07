@@ -109,26 +109,31 @@ export const useDdocEditor = ({
     focusCommentWithActiveId(activeCommentId);
   }, [activeCommentId]);
 
-  const getNewComment = (selectedContent: string): IComment => {
+  const getNewComment = (
+    selectedContent: string,
+    content: string = '',
+  ): IComment => {
     return {
       id: `comment-${uuid()}`,
       selectedContent,
-      content: '',
+      content,
       replies: [],
       createdAt: new Date(),
     };
   };
-  const setComment = () => {
+
+  const setComment = (content?: string) => {
     if (!editor) return;
     const { state } = editor;
     const { from, to } = state.selection;
     const selectedContent = state.doc.textBetween(from, to, ' ');
 
-    const newComment = getNewComment(selectedContent);
+    const newComment = getNewComment(selectedContent, content);
     setComments([...comments, newComment]);
     editor?.commands.setComment(newComment.id);
     setActiveCommentId(newComment.id);
     setTimeout(focusCommentWithActiveId);
+    return newComment.id;
   };
 
   const unsetComment = () => {
@@ -245,7 +250,7 @@ export const useDdocEditor = ({
     }
   }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => {});
+  const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {

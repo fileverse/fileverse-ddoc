@@ -36,10 +36,10 @@ const checkOs = () => platform.os?.family;
 const handleAddReply = (
   comments: IComment[],
   activeCommentId: string,
-  commentContent: string,
+  replyContent: string,
   setComments: (comments: IComment[]) => void,
 ) => {
-  if (!commentContent.trim()) return;
+  if (!replyContent.trim()) return;
 
   setComments(
     comments.map((comment) => {
@@ -50,13 +50,13 @@ const handleAddReply = (
             ...comment.replies,
             {
               id: `reply-${uuid()}`,
-              content: commentContent,
+              content: replyContent,
               replies: [],
               createdAt: new Date(),
               selectedContent: comment.selectedContent,
             },
           ],
-          content: '', // Clear the input after adding reply
+          content: comment.content, // Clear the input after adding reply
         };
       }
       return comment;

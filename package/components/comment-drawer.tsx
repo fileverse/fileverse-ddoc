@@ -29,7 +29,7 @@ interface CommentDrawerProps {
   handleAddReply: (
     comments: IComment[],
     activeCommentId: string,
-    content: string,
+    replyContent: string,
     setComments: (comments: IComment[]) => void,
   ) => void;
   isNavbarVisible: boolean;
@@ -53,6 +53,7 @@ export const CommentDrawer = ({
   isPresentationMode,
 }: CommentDrawerProps) => {
   const [reply, setReply] = useState('');
+  const [comment, setComment] = useState('');
   const [openReplyId, setOpenReplyId] = useState<string | null>(null);
   const [showResolved, setShowResolved] = useState(false);
 
@@ -60,14 +61,42 @@ export const CommentDrawer = ({
     setReply(event.target.value);
   };
 
+  const handleCommentChange = (
+    event: React.ChangeEvent<HTMLTextAreaElement>,
+  ) => {
+    setComment(event.target.value);
+  };
+
+  const handleCommentKeyDown = (
+    event: React.KeyboardEvent<HTMLTextAreaElement>,
+  ) => {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
+      handleCommentSubmit();
+    }
+  };
+
+  const handleCommentSubmit = () => {
+    if (!comment.trim()) return;
+
+    console.log('comment', comment);
+  };
+
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault();
       handleReplySubmit();
     }
   };
 
   const handleReplySubmit = () => {
-    console.log(reply);
+    if (!activeCommentId || !reply.trim()) return;
+
+    handleAddReply(comments, activeCommentId, reply, setComments);
+    setReply('');
+    setOpenReplyId(null);
+    setActiveCommentId(null);
+    editor.commands.focus();
   };
 
   return (
@@ -122,6 +151,7 @@ export const CommentDrawer = ({
                   username={username as string}
                   walletAddress={walletAddress as string}
                   selectedText={comment.selectedContent}
+                  comment={comment.content}
                   replies={comment.replies}
                 />
 
@@ -149,43 +179,15 @@ export const CommentDrawer = ({
                     <div className="animate-in slide-in-from-bottom flex flex-col gap-2 duration-300">
                       <TextAreaFieldV2
                         placeholder="Reply"
-                        value={comment.content || ''}
+                        value={reply}
                         disabled={comment.id !== activeCommentId}
                         className={cn(
                           'bg-white text-body-sm color-text-secondary min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2',
                           comment.id === activeCommentId && 'bg-white',
                         )}
                         id={comment.id}
-                        onChange={(event) => {
-                          const value = (event.target as HTMLTextAreaElement)
-                            .value;
-                          setComments(
-                            comments.map((c) => {
-                              if (c.id === activeCommentId) {
-                                return {
-                                  ...c,
-                                  content: value,
-                                };
-                              }
-                              return c;
-                            }),
-                          );
-                        }}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter') {
-                            // Allow line breaks with Shift + Enter
-                            if (event.shiftKey) {
-                              return;
-                            }
-                            event.preventDefault();
-                            handleAddReply(
-                              comments,
-                              activeCommentId as string,
-                              comment.content,
-                              setComments,
-                            );
-                          }
-                        }}
+                        onChange={handleReplyChange}
+                        onKeyDown={handleKeyDown}
                       />
                       {comment.id === activeCommentId && (
                         <ButtonGroup className="w-full justify-end">
@@ -201,17 +203,8 @@ export const CommentDrawer = ({
                           </Button>
                           <Button
                             className="px-4 py-2 w-20 min-w-20 h-9"
-                            disabled={!comment.content.trim()}
-                            onClick={() => {
-                              handleAddReply(
-                                comments,
-                                activeCommentId,
-                                comment.content,
-                                setComments,
-                              );
-                              setActiveCommentId(null);
-                              editor.commands.focus();
-                            }}
+                            disabled={!reply.trim()}
+                            onClick={handleReplySubmit}
                           >
                             Reply
                           </Button>
@@ -232,16 +225,16 @@ export const CommentDrawer = ({
               </span>
             </div>
             <TextAreaFieldV2
-              value={reply}
-              onChange={handleReplyChange}
-              onKeyDown={handleKeyDown}
+              value={comment}
+              onChange={handleCommentChange}
+              onKeyDown={handleCommentKeyDown}
               className="bg-white w-full text-body-sm color-text-secondary min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2"
               placeholder="Type your comment"
             />
 
             <div className="flex justify-end">
               <Button
-                onClick={handleReplySubmit}
+                onClick={handleCommentSubmit}
                 className="px-4 py-2 w-20 min-w-20 h-9"
               >
                 Send

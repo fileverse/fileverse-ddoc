@@ -50,7 +50,7 @@ export const CommentCard = ({
   };
 
   return (
-    <div className="flex flex-col gap-1 p-3">
+    <div className="flex flex-col gap-3 p-3">
       <div className="flex justify-between items-center">
         <div className="flex justify-start items-center gap-2">
           <Avatar src={''} size="sm" className="min-w-6" />
@@ -138,13 +138,37 @@ export const CommentCard = ({
             <span className="text-body-sm">{comment}</span>
           </div>
         )}
-        {replies &&
-          replies.map((reply, index) => (
-            <div key={index}>
-              <span className="text-body-sm">{reply.content}</span>
+      </div>
+      {replies && (
+        <div className="flex flex-col gap-3">
+          {replies.map((reply, index) => (
+            <div key={index} className="flex flex-col gap-1">
+              <div className="flex justify-start items-center gap-2">
+                <Avatar
+                  src="https://github.com/identicons/random.png"
+                  size="sm"
+                  className="min-w-6"
+                />
+                <div className="flex flex-col">
+                  <span className="text-body-sm-bold">
+                    {username || walletAddress || 'Anonymous'}
+                  </span>
+                  <span className="text-helper-text-sm color-text-secondary">
+                    {timestamp.toLocaleTimeString([], {
+                      hour: 'numeric',
+                      minute: '2-digit',
+                      hour12: true,
+                    })}
+                  </span>
+                </div>
+              </div>
+              <span className="text-body-sm flex flex-col gap-2 ml-3 pl-4 border-l">
+                {reply.content}
+              </span>
             </div>
           ))}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

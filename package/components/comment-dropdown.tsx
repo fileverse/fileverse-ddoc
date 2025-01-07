@@ -1,4 +1,4 @@
-import React, { useState, useEffect, SetStateAction } from 'react';
+import React, { useState, SetStateAction } from 'react';
 import {
   Button,
   DynamicDropdown,
@@ -13,7 +13,7 @@ import { CommentCard } from './comment-card';
 
 interface CommentDropdownProps {
   selectedText: string;
-  onSubmit: (commentId: string) => void;
+  onSubmit: (content: string) => string;
   onClose: () => void;
   elementRef: React.RefObject<HTMLDivElement>;
   setComments?: (comments: IComment[]) => void;
@@ -45,15 +45,9 @@ export const CommentDropdown = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(true);
   const [showReplyView, setShowReplyView] = useState(!!activeCommentId);
 
-  useEffect(() => {
-    if (activeCommentId) {
-      const activeComment = comments.find((c) => c.id === activeCommentId);
-      if (activeComment) {
-        setComment(activeComment.content);
-        setShowReplyView(true);
-      }
-    }
-  }, [activeCommentId, comments]);
+  const activeComment = comments.find(
+    (comment) => comment.id === activeCommentId,
+  );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setComment(e.target.value);
@@ -65,25 +59,16 @@ export const CommentDropdown = ({
 
   const handleClick = () => {
     if (comment.trim()) {
-      const newComment = {
-        id: `comment-${uuid()}`,
-        content: comment,
-        selectedContent: selectedText,
-        replies: [],
-        createdAt: new Date(),
-      };
-
-      setComments?.([...comments, newComment]);
-      onSubmit(newComment.id);
+      onSubmit(comment);
       setShowReplyView(true);
-      setComment('');
+      setInlineCommentOpen?.(true);
     }
   };
 
   const handleReplySubmit = () => {
-    if (reply.trim()) {
+    if (reply.trim() && activeCommentId) {
       const updatedComments = comments.map((comment) => {
-        if (comment.id === comments[comments.length - 1].id) {
+        if (comment.id === activeCommentId) {
           return {
             ...comment,
             replies: [
@@ -104,7 +89,6 @@ export const CommentDropdown = ({
       setInlineCommentOpen?.(true);
       setComments?.(updatedComments);
       setReply('');
-      onClose();
     }
   };
 
@@ -192,6 +176,7 @@ export const CommentDropdown = ({
           walletAddress={walletAddress}
           selectedText={selectedText}
           comment={comment}
+          replies={activeComment?.replies}
         />
       </div>
 
