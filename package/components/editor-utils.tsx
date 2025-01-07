@@ -1091,9 +1091,11 @@ export const TextHeading = ({
 
 export const TextFormatingPopup = ({
   editor,
+  toolVisibility,
   setToolVisibility,
 }: {
   editor: Editor;
+  toolVisibility: IEditorTool;
   setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
 }) => {
   const popupRef = useRef(null);
@@ -1143,24 +1145,21 @@ export const TextFormatingPopup = ({
       title: 'Left',
       description: 'Left',
       icon: 'AlignLeft',
-      command: (editor: Editor) =>
-        editor.chain().focus().setTextAlign('left').run(),
+      command: (editor: Editor) => editor.chain().setTextAlign('left').run(),
       isActive: () => editor.isActive({ textAlign: 'left' }),
     },
     {
       title: 'Center',
       description: 'Center',
       icon: 'AlignCenter',
-      command: (editor: Editor) =>
-        editor.chain().focus().setTextAlign('center').run(),
+      command: (editor: Editor) => editor.chain().setTextAlign('center').run(),
       isActive: () => editor.isActive({ textAlign: 'center' }),
     },
     {
       title: 'Right',
       description: 'Right',
       icon: 'AlignRight',
-      command: (editor: Editor) =>
-        editor.chain().focus().setTextAlign('right').run(),
+      command: (editor: Editor) => editor.chain().setTextAlign('right').run(),
       isActive: () => editor.isActive({ textAlign: 'right' }),
     },
   ];
@@ -1241,24 +1240,21 @@ export const TextFormatingPopup = ({
       title: 'Bullet List',
       description: 'Bullet list',
       icon: 'List',
-      command: (editor: Editor) =>
-        editor.chain().focus().toggleBulletList().run(),
+      command: (editor: Editor) => editor.chain().toggleBulletList().run(),
       isActive: () => editor.isActive('bulletList'),
     },
     {
       title: 'Ordered List',
       description: 'Ordered list',
       icon: 'ListOrdered',
-      command: (editor: Editor) =>
-        editor.chain().focus().toggleOrderedList().run(),
+      command: (editor: Editor) => editor.chain().toggleOrderedList().run(),
       isActive: () => editor.isActive('orderedList'),
     },
     {
       title: 'Code Block',
       description: 'Code block',
       icon: 'Braces',
-      command: (editor: Editor) =>
-        editor.chain().focus().toggleCodeBlock().run(),
+      command: (editor: Editor) => editor.chain().toggleCodeBlock().run(),
       isActive: () => editor.isActive('codeBlock'),
     },
   ];
@@ -1267,7 +1263,11 @@ export const TextFormatingPopup = ({
     <UtilsModal
       title="Text formating"
       ref={popupRef}
-      onCloseAutoFocus={() => setToolVisibility(IEditorTool.NONE)}
+      onCloseAutoFocus={() => {
+        if (toolVisibility === IEditorTool.TEXT_FORMATING) {
+          setToolVisibility(IEditorTool.NONE);
+        }
+      }}
       content={
         <div className="px-4 flex flex-col gap-2 w-full">
           <div className="flex justify-start sm:justify-center items-center gap-1">
