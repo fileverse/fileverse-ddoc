@@ -29,6 +29,7 @@ import {
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 import { colors } from '../utils/colors';
+import { validateImageExtension } from '../utils/check-image-type';
 
 interface IEditorToolElement {
   icon: any;
@@ -292,13 +293,7 @@ export const useEditorToolbar = ({
         input.onchange = async () => {
           if (input.files?.length) {
             const file = input.files[0];
-            if (
-              !file.type.includes('image/png') &&
-              !file.type.includes('image/jpeg')
-            ) {
-              if (onError && typeof onError === 'function') {
-                onError('Invalid image type. Try PNG or JPEG ');
-              }
+            if (!validateImageExtension(file, onError)) {
               return;
             }
             const size = file.size;
@@ -436,13 +431,7 @@ export const useEditorToolbar = ({
         input.onchange = async () => {
           if (input.files?.length) {
             const file = input.files[0];
-            if (
-              !file.type.includes('image/png') &&
-              !file.type.includes('image/jpeg')
-            ) {
-              if (onError && typeof onError === 'function') {
-                onError('Invalid image type. Try PNG or JPEG ');
-              }
+            if (!validateImageExtension(file, onError)) {
               return;
             }
             const size = file.size;

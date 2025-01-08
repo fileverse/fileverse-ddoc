@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 import React, {
   useState,
   useEffect,
@@ -18,6 +17,7 @@ import { LucideIcon } from '@fileverse/ui';
 import { startImageUpload } from '../utils/upload-images';
 import { useMediaQuery } from 'usehooks-ts';
 import { IMG_UPLOAD_SETTINGS } from './editor-utils';
+import { validateImageExtension } from '../utils/check-image-type';
 
 interface CommandItemProps {
   title: string;
@@ -166,7 +166,7 @@ const getSuggestionItems = ({
       description:
         'Insert page break that will split your document into pages.',
       searchTerms: ['pagebreak', 'break', 'line', 'page'],
-      icon: <LucideIcon name="PageBreak" src={'md'} />,
+      icon: <LucideIcon name="PageBreak" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) => {
         editor.chain().focus().deleteRange(range).setPageBreak().run();
@@ -235,13 +235,7 @@ const getSuggestionItems = ({
         input.onchange = async () => {
           if (input.files?.length) {
             const file = input.files[0];
-            if (
-              !file.type.includes('image/png') &&
-              !file.type.includes('image/jpeg')
-            ) {
-              if (onError && typeof onError === 'function') {
-                onError('Invalid image type. Try PNG or JPEG ');
-              }
+            if (!validateImageExtension(file, onError)) {
               return;
             }
             const size = file.size;
