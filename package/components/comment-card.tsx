@@ -73,7 +73,7 @@ export const CommentCard = ({
               variant={'ghost'}
               icon="Smile"
               size="sm"
-              className="group-hover:opacity-100 opacity-0 transition-opacity duration-300"
+              className="md:group-hover:opacity-100 md:opacity-0 transition-opacity duration-300"
             />
           </Tooltip>
 
@@ -86,7 +86,7 @@ export const CommentCard = ({
                 icon={'Ellipsis'}
                 variant="ghost"
                 size="sm"
-                className="group-hover:opacity-100 opacity-0 transition-opacity duration-300"
+                className="md:group-hover:opacity-100 md:opacity-0 transition-opacity duration-300"
               />
             }
             content={

@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
-import { BubbleMenu, BubbleMenuProps, isNodeSelection } from '@tiptap/react';
-import React, { useState } from 'react';
+import { BubbleMenu } from '@tiptap/react';
+import React, { useState, useRef } from 'react';
 import { NodeSelector } from './node-selector';
 import {
   LinkPopup,
@@ -12,69 +12,77 @@ import {
   TextColor,
   ScriptsPopup,
   InlineCommentPopup,
-} from './editor-utils';
-import { IEditorTool } from '../hooks/use-visibility';
-import ToolbarButton from '../common/toolbar-button';
+} from '../editor-utils';
+import { IEditorTool } from '../../hooks/use-visibility';
+import ToolbarButton from '../../common/toolbar-button';
 import { DynamicDropdown, cn } from '@fileverse/ui';
-import { useMediaQuery } from 'usehooks-ts';
-import platform from 'platform';
-import tippy from 'tippy.js';
-import { CommentDropdown } from './comment-dropdown';
-
-export interface BubbleMenuItem {
-  name: string;
-  isActive: () => boolean;
-  command: () => void;
-  icon: any;
-}
-
-type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
-  isPreviewMode: boolean;
-  onError?: (errorString: string) => void;
-  zoomLevel: string;
-  setIsCommentSectionOpen?: (isOpen: boolean) => void;
-  inlineCommentData?: InlineCommentData;
-  setInlineCommentData?: React.Dispatch<
-    React.SetStateAction<InlineCommentData>
-  >;
-  walletAddress?: string;
-  username?: string;
-  onInlineComment?: () => void;
-  setComment?: () => void;
-  unsetComment?: () => void;
-  comments?: IComment[];
-  setComments?: (comments: IComment[]) => void;
-  activeCommentId?: string;
-  inlineCommentOpen?: boolean;
-  setInlineCommentOpen?: React.Dispatch<SetStateAction<boolean>>;
-};
+import { useOnClickOutside } from 'usehooks-ts';
+import { CommentDropdown } from '../comment-dropdown';
+import { createPortal } from 'react-dom';
+import { EditorBubbleMenuProps, BubbleMenuItem } from './types';
+import { useResponsive } from '../../utils/responsive';
+import { bubbleMenuProps, shouldShow } from './props';
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
+  const {
+    editor,
+    zoomLevel,
+    onError,
+    isPreviewMode,
+    setIsCommentSectionOpen,
+    inlineCommentData,
+    setInlineCommentData,
+    walletAddress,
+    username,
+    onInlineComment,
+    setComment,
+    unsetComment,
+    comments,
+    setComments,
+    activeCommentId,
+    // inlineCommentOpen,
+    setInlineCommentOpen,
+  } = props;
+  // TODO: V1
   const [isInlineCommentOpen, setIsInlineCommentOpen] = useState(false);
   const [selectedText, setSelectedText] = useState('');
+  const [isCommentOpen, setIsCommentOpen] = useState(false);
+  const portalRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const { isNativeMobile } = useResponsive();
+  const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
+    editor: editor,
+  });
+
+  useOnClickOutside([portalRef, buttonRef], () => {
+    if (isCommentOpen) {
+      setIsCommentOpen(false);
+    }
+  });
+
   const items: BubbleMenuItem[] = [
     {
       name: 'Bold',
-      isActive: () => props.editor.isActive('bold'),
-      command: () => props.editor.chain().focus().toggleBold().run(),
+      isActive: () => editor.isActive('bold'),
+      command: () => editor.chain().focus().toggleBold().run(),
       icon: 'Bold',
     },
     {
       name: 'Italic',
-      isActive: () => props.editor.isActive('italic'),
-      command: () => props.editor.chain().focus().toggleItalic().run(),
+      isActive: () => editor.isActive('italic'),
+      command: () => editor.chain().focus().toggleItalic().run(),
       icon: 'Italic',
     },
     {
       name: 'Underline',
-      isActive: () => props.editor.isActive('underline'),
-      command: () => props.editor.chain().focus().toggleUnderline().run(),
+      isActive: () => editor.isActive('underline'),
+      command: () => editor.chain().focus().toggleUnderline().run(),
       icon: 'Underline',
     },
     {
       name: 'Strikethrough',
-      isActive: () => props.editor.isActive('strike'),
-      command: () => props.editor.chain().focus().toggleStrike().run(),
+      isActive: () => editor.isActive('strike'),
+      command: () => editor.chain().focus().toggleStrike().run(),
       icon: 'Strikethrough',
     },
     {
@@ -85,13 +93,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     },
     {
       name: 'Code',
-      isActive: () => props.editor.isActive('code'),
-      command: () => props.editor.chain().focus().toggleCode().run(),
+      isActive: () => editor.isActive('code'),
+      command: () => editor.chain().focus().toggleCode().run(),
       icon: 'Code',
     },
     {
       name: 'Link',
-      isActive: () => props.editor.isActive('link'),
+      isActive: () => editor.isActive('link'),
       command: () => { },
       icon: 'Link',
     },
@@ -103,78 +111,46 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     },
     {
       name: 'InlineComment',
-      isActive: () => props.editor.isActive('inlineComment'),
+      isActive: () => editor.isActive('inlineComment'),
       command: () => { },
       icon: 'MessageSquarePlus',
     },
     {
       name: 'Comment',
-      isActive: () => props.editor.isActive('comment'),
+      isActive: () => editor.isActive('comment'),
       command: () => { },
       icon: 'MessageSquareQuote',
     },
   ];
 
-  const checkOs = () => platform.os?.family;
+  // TODO: V1
+  const handleHighlight = () => {
+    if (!(username || walletAddress)) {
+      setIsCommentSectionOpen(true);
+      return;
+    }
+    const { state } = editor;
+    if (!state) return;
+    const { from, to } = state.selection;
 
-  const isMobileScreen = useMediaQuery('(max-width: 640px)');
-  const isNativeMobile =
-    checkOs() === 'Android' || checkOs() === 'Windows Phone' || isMobileScreen;
-
-  const bubbleMenuProps: EditorBubbleMenuProps = {
-    ...props,
-    shouldShow: ({ state, editor }) => {
-      const { selection } = state;
-      const { empty } = selection;
-
-      if (editor.isActive('image') || empty || isNodeSelection(selection)) {
-        return false;
-      }
-      return true;
-    },
-    tippyOptions: {
-      moveTransition: 'transform 0.15s ease-out',
-      duration: 200,
-      animation: 'shift-toward-subtle',
-      zIndex: 20,
-      offset: isNativeMobile ? 60 : 20,
-      appendTo: () => document.getElementById('editor-canvas'),
-      popperOptions: {
-        modifiers: [
-          {
-            name: 'computeStyles',
-            options: {
-              gpuAcceleration: false,
-              adaptive: true,
-            },
-          },
-          {
-            name: 'preventOverflow',
-            options: {
-              boundary: 'viewport',
-              padding: 20,
-              altAxis: true,
-            },
-          },
-        ],
-      },
-    },
-  };
-
-  const initializeTippy = (element: HTMLElement, clientRect: DOMRect) => {
-    tippy(element, {
-      getReferenceClientRect: () => clientRect,
-      appendTo: () => document.getElementById('editor-canvas'),
-      interactive: true,
-      trigger: 'manual',
-      placement: 'bottom-start',
-      content: element,
-      showOnCreate: true,
+    const selectedText = state.doc.textBetween(from, to, ' ');
+    if (!selectedText) return;
+    setInlineCommentData((prevData) => {
+      const updatedData = {
+        ...prevData,
+        highlightedTextContent: selectedText,
+      };
+      return updatedData;
     });
+
+    setTimeout(() => {
+      editor.chain().setHighlight({ color: '#DDFBDF' }).run();
+    }, 10);
+    setIsInlineCommentOpen(true);
   };
 
   const handleCommentSubmit = (comment: string) => {
-    props.setComment(comment);
+    setComment(comment);
   };
 
   const handleCommentClose = () => {
@@ -186,48 +162,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     }
   };
 
-  const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
-    editor: props.editor,
-  });
-  const shouldShow = ({ editor }) => {
-    const { from, to } = editor.state.selection;
-    const isImageSelected =
-      editor.state.doc.nodeAt(from)?.type.name === 'resizableMedia';
-    const isIframeSelected =
-      editor.state.doc.nodeAt(from)?.type.name === 'iframe';
-    const isCodeBlockSelected = editor.isActive('codeBlock');
-    const isPageBreak =
-      editor.state.doc.nodeAt(from)?.type.name === 'pageBreak';
-    if (
-      from === to ||
-      isImageSelected ||
-      isCodeBlockSelected ||
-      isIframeSelected ||
-      isPageBreak
-    ) {
-      return false;
-    }
-
-    let hasYellowHighlight = false;
-    editor.state.doc.nodesBetween(from, to, (node) => {
-      if (node.marks) {
-        node.marks.forEach((mark) => {
-          if (mark.type.name === 'highlight' && mark.attrs.color === 'yellow') {
-            hasYellowHighlight = true;
-          }
-        });
-      }
-    });
-    return !hasYellowHighlight;
-  };
-
   const renderContent = (item: { name: string; initialComment?: string }) => {
     switch (item.name) {
       case 'Alignment':
         return (
           <EditorAlignment
             setToolVisibility={setToolVisibility}
-            editor={props.editor}
+            editor={editor}
             elementRef={toolRef}
           />
         );
@@ -235,25 +176,25 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         return (
           <LinkPopup
             setToolVisibility={setToolVisibility}
-            editor={props.editor}
+            editor={editor}
             elementRef={toolRef}
             bubbleMenu={true}
-            onError={props.onError}
+            onError={onError}
           />
         );
       case 'InlineComment':
-        if (props.username || props.walletAddress) {
+        if (username || walletAddress) {
           return (
             <InlineCommentPopup
-              editor={props.editor}
+              editor={editor}
               elementRef={toolRef}
-              setIsCommentSectionOpen={props.setIsCommentSectionOpen}
+              setIsCommentSectionOpen={setIsCommentSectionOpen}
               setIsInlineCommentOpen={setIsInlineCommentOpen}
-              inlineCommentData={props.inlineCommentData}
+              inlineCommentData={inlineCommentData}
               setInlineCommentData={(data) =>
-                props.setInlineCommentData?.((prev) => ({ ...prev, ...data }))
+                setInlineCommentData?.((prev) => ({ ...prev, ...data }))
               }
-              onInlineComment={props.onInlineComment}
+              onInlineComment={onInlineComment}
             />
           );
         }
@@ -265,59 +206,32 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             onSubmit={handleCommentSubmit}
             onClose={handleCommentClose}
             elementRef={toolRef}
-            setComments={props.setComments}
-            comments={props.comments}
-            username={props.username}
-            walletAddress={props.walletAddress}
-            activeCommentId={props.activeCommentId}
-            unsetComment={props.unsetComment}
-            setInlineCommentOpen={props.setInlineCommentOpen}
+            setComments={setComments}
+            comments={comments}
+            username={username}
+            walletAddress={walletAddress}
+            activeCommentId={activeCommentId}
+            unsetComment={unsetComment}
+            setInlineCommentOpen={setInlineCommentOpen}
             initialComment={item.initialComment}
           />
         );
       case 'Scripts':
-        return <ScriptsPopup editor={props.editor} elementRef={toolRef} />;
+        return <ScriptsPopup editor={editor} elementRef={toolRef} />;
       default:
         return null;
     }
   };
 
-  const isMobile = useMediaQuery('(max-width: 1023px)');
-
-  const handleHighlight = () => {
-    if (!(props.username || props.walletAddress)) {
-      props.setIsCommentSectionOpen(true);
-      return;
-    }
-    const { state } = props.editor;
-    if (!state) return;
-    const { from, to } = state.selection;
-
-    const selectedText = state.doc.textBetween(from, to, ' ');
-    if (!selectedText) return;
-    props.setInlineCommentData((prevData) => {
-      const updatedData = {
-        ...prevData,
-        highlightedTextContent: selectedText,
-      };
-      return updatedData;
-    });
-
-    setTimeout(() => {
-      props.editor.chain().setHighlight({ color: '#DDFBDF' }).run();
-    }, 10);
-    setIsInlineCommentOpen(true);
-  };
-
   const handleInlineComment = () => {
-    const { state } = props.editor;
+    const { state } = editor;
     const { from, to } = state.selection;
     const text = state.doc.textBetween(from, to, ' ');
 
     // If there's an active comment, find it in comments array
-    if (props.editor.isActive('comment')) {
-      const activeComment = props.comments?.find(
-        (comment) => comment.id === props.activeCommentId,
+    if (editor.isActive('comment')) {
+      const activeComment = comments?.find(
+        (comment) => comment.id === activeCommentId,
       );
       if (activeComment) {
         setSelectedText(activeComment.selectedContent);
@@ -327,26 +241,58 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     }
   };
 
+  const activeComment = comments?.find(
+    (comment) => comment.id === activeCommentId,
+  );
+
+  const handleCommentButtonClick = (event: React.MouseEvent) => {
+    event.stopPropagation();
+    handleInlineComment();
+    setIsCommentOpen(true);
+  };
+
+  const mobileCommentButton = (
+    <React.Fragment>
+      <ToolbarButton
+        ref={buttonRef}
+        icon="MessageSquareQuote"
+        variant="ghost"
+        size="sm"
+        isActive={editor.isActive('comment')}
+        onClick={handleCommentButtonClick}
+      />
+      {isCommentOpen &&
+        createPortal(
+          <div
+            ref={portalRef}
+            className={cn(
+              'fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/4',
+            )}
+          >
+            {renderContent({
+              name: 'Comment',
+              initialComment: activeComment?.content || '',
+            })}
+          </div>,
+          document.body,
+        )}
+    </React.Fragment>
+  );
+
   return (
     <BubbleMenu
-      {...bubbleMenuProps}
+      {...bubbleMenuProps(props)}
       shouldShow={shouldShow}
       className={cn(
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border bg-white items-center shadow-elevation-3',
         isInlineCommentOpen ? '!invisible' : '!visible',
       )}
       style={{
-        transform: `scale(${1 / parseFloat(props.zoomLevel)})`,
+        transform: `scale(${1 / parseFloat(zoomLevel)})`,
         transformOrigin: 'center',
       }}
-      ref={(element) => {
-        if (element) {
-          const clientRect = element.getBoundingClientRect();
-          initializeTippy(element, clientRect);
-        }
-      }}
     >
-      {isMobile || props.isPreviewMode ? (
+      {isNativeMobile || isPreviewMode ? (
         <div
           className={cn(
             'relative',
@@ -362,31 +308,16 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                 icon="MessageSquarePlus"
                 variant="ghost"
                 size="sm"
-                onClick={() => handleHighlight()}
+                onClick={handleHighlight}
               />
             }
             content={renderContent({ name: 'InlineComment' })}
           />
-          <DynamicDropdown
-            key="Comment"
-            side="top"
-            sideOffset={-40}
-            className="!z-40"
-            anchorTrigger={
-              <ToolbarButton
-                icon="MessageSquareQuote"
-                variant="ghost"
-                size="sm"
-                isActive={props.editor.isActive('comment')}
-                onClick={handleInlineComment}
-              />
-            }
-            content={renderContent({ name: 'Comment' })}
-          />
+          {mobileCommentButton}
         </div>
       ) : (
-        <>
-          <NodeSelector editor={props.editor} elementRef={toolRef} />
+        <React.Fragment>
+          <NodeSelector editor={editor} elementRef={toolRef} />
 
           {items.map((item, index) => {
             if (
@@ -427,7 +358,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                     content={
                       <TextColor
                         setVisibility={setToolVisibility}
-                        editor={props.editor as Editor}
+                        editor={editor as Editor}
                         elementRef={toolRef}
                       />
                     }
@@ -445,7 +376,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                     content={
                       <TextHighlighter
                         setVisibility={setToolVisibility}
-                        editor={props.editor as Editor}
+                        editor={editor as Editor}
                         elementRef={toolRef}
                       />
                     }
@@ -467,6 +398,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                 </React.Fragment>
               );
             }
+
             if (
               item.name === 'Link' ||
               item.name === 'Scripts' ||
@@ -498,15 +430,11 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             }
 
             if (item.name === 'Comment') {
-              const activeComment = props.comments?.find(
-                (comment) => comment.id === props.activeCommentId,
-              );
-
               return (
                 <DynamicDropdown
                   key="Comment"
                   side="bottom"
-                  sideOffset={10}
+                  sideOffset={15}
                   alignOffset={-5}
                   align="end"
                   className="!z-40"
@@ -515,7 +443,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                       icon="MessageSquareQuote"
                       variant="ghost"
                       size="sm"
-                      isActive={props.editor.isActive('comment')}
+                      isActive={editor.isActive('comment')}
                       onClick={handleInlineComment}
                     />
                   }
@@ -529,7 +457,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
 
             return null;
           })}
-        </>
+        </React.Fragment>
       )}
     </BubbleMenu>
   );

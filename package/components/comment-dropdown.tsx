@@ -10,6 +10,7 @@ import {
 import uuid from 'react-uuid';
 import { IComment } from '../extensions/comment';
 import { CommentCard } from './comment-card';
+import { useResponsive } from '../utils/responsive';
 
 interface CommentDropdownProps {
   selectedText: string;
@@ -45,6 +46,7 @@ export const CommentDropdown = ({
   const [reply, setReply] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(true);
   const [showReplyView, setShowReplyView] = useState(!!activeCommentId);
+  const { isBelow1280px } = useResponsive();
 
   useEffect(() => {
     if (activeCommentId) {
@@ -73,7 +75,7 @@ export const CommentDropdown = ({
     if (comment.trim()) {
       onSubmit(comment);
       setShowReplyView(true);
-      setInlineCommentOpen?.(true);
+      !isBelow1280px && setInlineCommentOpen?.(true);
     }
   };
 
@@ -98,7 +100,7 @@ export const CommentDropdown = ({
         return comment;
       });
 
-      setInlineCommentOpen?.(true);
+      !isBelow1280px && setInlineCommentOpen?.(true);
       setComments?.(updatedComments);
       setReply('');
     }
@@ -199,6 +201,7 @@ export const CommentDropdown = ({
           onKeyDown={handleKeyDown}
           className="bg-white w-[296px] text-body-sm color-text-secondary min-h-[44px] max-h-[196px] overflow-y-auto no-scrollbar px-3 py-2"
           placeholder="Reply"
+          autoFocus
         />
 
         <div className="h-full flex justify-end pt-2">
@@ -216,7 +219,7 @@ export const CommentDropdown = ({
   return (
     <div
       ref={elementRef}
-      className="w-[300px] color-bg-default shadow-elevation-1 rounded-md"
+      className="w-[300px] color-bg-default shadow-elevation-4 md:shadow-none rounded-md"
     >
       {showReplyView ? renderReplyView() : renderInitialView()}
     </div>

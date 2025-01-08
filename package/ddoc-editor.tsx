@@ -1,5 +1,5 @@
 import { EditorContent, isTextSelection } from '@tiptap/react';
-import { EditorBubbleMenu } from './components/editor-bubble-menu';
+import { EditorBubbleMenu } from './components/editor-bubble-menu/editor-bubble-menu';
 import { DdocProps } from './types';
 import { ColumnsMenu } from './extensions/multi-column/menus';
 import { EditingProvider } from './hooks/use-editing-context';
@@ -21,8 +21,6 @@ import { Button, LucideIcon, Tag, TagType, TagInput } from '@fileverse/ui';
 import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
 import { AnimatePresence, motion } from 'framer-motion';
 import * as Y from 'yjs';
-
-import platform from 'platform';
 import MobileToolbar from './components/mobile-toolbar';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { PresentationMode } from './components/presentation-mode/presentation-mode';
@@ -30,8 +28,7 @@ import uuid from 'react-uuid';
 import { IComment } from './extensions/comment';
 import { CommentDrawer } from './components/comment-drawer';
 import { CommentBubbleMenu } from './components/comment-bubble-menu';
-
-const checkOs = () => platform.os?.family;
+import { useResponsive } from './utils/responsive';
 
 const handleAddReply = (
   comments: IComment[],
@@ -118,16 +115,10 @@ const DdocEditor = forwardRef(
     const [isFullscreen, setIsFullscreen] = useState(false);
 
     const btn_ref = useRef(null);
-    const isMobile = useMediaQuery('(max-width: 640px)');
     const isWidth1500px = useMediaQuery('(min-width: 1500px)');
     const isWidth3000px = useMediaQuery('(min-width: 3000px)');
-    const isNativeMobile =
-      checkOs() === 'iOS' ||
-      checkOs() === 'Android' ||
-      checkOs() === 'Windows Phone' ||
-      isMobile;
+    const { isNativeMobile, isIOS } = useResponsive();
 
-    const isIOS = checkOs() === 'iOS';
     const [isHiddenTagsVisible, setIsHiddenTagsVisible] = useState(false);
     const tagsContainerRef = useRef(null);
 
@@ -402,8 +393,8 @@ const DdocEditor = forwardRef(
             { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
             { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
             {
-              'max-[1080px]:!mx-auto min-[1081px]:!ml-[18%] min-[1700px]:!mx-auto':
-                isCommentSectionOpen &&
+              'max-[1080px]:!mx-auto min-[1081px]:!ml-[10%] min-[1700px]:!mx-auto':
+                (isCommentSectionOpen || inlineCommentOpen) &&
                 !isNativeMobile &&
                 zoomLevel !== '0.5' &&
                 zoomLevel !== '0.75' &&
@@ -413,7 +404,7 @@ const DdocEditor = forwardRef(
             },
             {
               '!mx-auto':
-                !isCommentSectionOpen ||
+                !(isCommentSectionOpen || inlineCommentOpen) ||
                 zoomLevel === '0.5' ||
                 zoomLevel === '0.75' ||
                 zoomLevel === '1.4' ||
@@ -591,30 +582,34 @@ const DdocEditor = forwardRef(
           isNavbarVisible={isNavbarVisible}
           isPresentationMode={isPresentationMode as boolean}
         />
-        <CommentBubbleMenu
-          editor={editor}
-          comments={comments}
-          activeCommentId={activeCommentId}
-          zoomLevel={zoomLevel}
-          onPrevComment={() => {
-            const currentIndex = comments.findIndex(
-              (comment) => comment.id === activeCommentId
-            );
-            if (currentIndex > 0) {
-              const prevComment = comments[currentIndex - 1];
-              focusCommentInEditor(prevComment.id);
-            }
-          }}
-          onNextComment={() => {
-            const currentIndex = comments.findIndex(
-              (comment) => comment.id === activeCommentId
-            );
-            if (currentIndex < comments.length - 1) {
-              const nextComment = comments[currentIndex + 1];
-              focusCommentInEditor(nextComment.id);
-            }
-          }}
-        />
+        {!isNativeMobile && (
+          <div>
+            <CommentBubbleMenu
+              editor={editor}
+              comments={comments}
+              activeCommentId={activeCommentId}
+              zoomLevel={zoomLevel}
+              onPrevComment={() => {
+                const currentIndex = comments.findIndex(
+                  (comment) => comment.id === activeCommentId,
+                );
+                if (currentIndex > 0) {
+                  const prevComment = comments[currentIndex - 1];
+                  focusCommentInEditor(prevComment.id);
+                }
+              }}
+              onNextComment={() => {
+                const currentIndex = comments.findIndex(
+                  (comment) => comment.id === activeCommentId,
+                );
+                if (currentIndex < comments.length - 1) {
+                  const nextComment = comments[currentIndex + 1];
+                  focusCommentInEditor(nextComment.id);
+                }
+              }}
+            />
+          </div>
+        )}
       </div>
     );
   },

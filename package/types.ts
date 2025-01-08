@@ -18,7 +18,7 @@ export interface IDocCollabUsers {
   color: string;
 }
 
-type InlineCommentData = {
+export type InlineCommentData = {
   inlineCommentText: string;
   highlightedTextContent: string;
   handleClick: boolean;
