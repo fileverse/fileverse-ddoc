@@ -74,6 +74,7 @@ const DdocEditor = forwardRef(
       documentName,
       onInvalidContentError,
       ignoreCorruptedData,
+      onSlidesShare,
     }: DdocProps,
     ref,
   ) => {
@@ -347,6 +348,7 @@ const DdocEditor = forwardRef(
             sharedSlidesLink={sharedSlidesLink}
             isPreviewMode={isPreviewMode}
             documentName={documentName as string}
+            onSlidesShare={onSlidesShare}
           />
         )}
         <div
