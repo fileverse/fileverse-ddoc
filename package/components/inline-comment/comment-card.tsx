@@ -8,17 +8,7 @@ import {
   Tooltip,
 } from '@fileverse/ui';
 import { useRef, useState } from 'react';
-
-interface CommentCardProps {
-  username?: string;
-  walletAddress?: string;
-  selectedText: string;
-  comment?: string;
-  timestamp?: Date;
-  replies?: {
-    content: string;
-  }[];
-}
+import { CommentCardProps } from './types';
 
 export const CommentCard = ({
   username,
@@ -27,11 +17,17 @@ export const CommentCard = ({
   comment,
   timestamp = new Date(),
   replies,
+  onResolve,
+  onDelete,
+  onUnresolve,
+  isResolved,
+  isDropdown = false,
 }: CommentCardProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const handleResolveClick = () => {
+    onResolve?.();
     if (dropdownRef.current?.parentElement) {
       const popoverContent = dropdownRef.current.closest('[role="dialog"]');
       if (popoverContent) {
@@ -41,6 +37,17 @@ export const CommentCard = ({
   };
 
   const handleDeleteClick = () => {
+    onDelete?.();
+    if (dropdownRef.current?.parentElement) {
+      const popoverContent = dropdownRef.current.closest('[role="dialog"]');
+      if (popoverContent) {
+        popoverContent.remove();
+      }
+    }
+  };
+
+  const handleUnresolveClick = () => {
+    onUnresolve?.();
     if (dropdownRef.current?.parentElement) {
       const popoverContent = dropdownRef.current.closest('[role="dialog"]');
       if (popoverContent) {
@@ -50,7 +57,7 @@ export const CommentCard = ({
   };
 
   return (
-    <div className="flex flex-col gap-3 p-3">
+    <div className={cn('flex flex-col gap-3 p-3', isResolved && 'opacity-30')}>
       <div className="flex justify-between items-center">
         <div className="flex justify-start items-center gap-2">
           <Avatar src={''} size="sm" className="min-w-6" />
@@ -95,11 +102,16 @@ export const CommentCard = ({
                 className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3"
               >
                 <button
-                  className="flex items-center color-text-default text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"
-                  onClick={handleResolveClick}
+                  className={cn(
+                    'flex items-center color-text-default text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full',
+                    isDropdown && 'hidden',
+                  )}
+                  onClick={
+                    isResolved ? handleUnresolveClick : handleResolveClick
+                  }
                 >
                   <LucideIcon name="CircleCheck" size="sm" />
-                  Resolve
+                  {isResolved ? 'Unresolve' : 'Resolve'}
                 </button>
                 <button
                   className="flex items-center text-[#FB3449] text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"

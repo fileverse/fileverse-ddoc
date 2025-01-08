@@ -26,8 +26,8 @@ import { fromUint8Array, toUint8Array } from 'js-base64';
 import { PresentationMode } from './components/presentation-mode/presentation-mode';
 import uuid from 'react-uuid';
 import { IComment } from './extensions/comment';
-import { CommentDrawer } from './components/comment-drawer';
-import { CommentBubbleMenu } from './components/comment-bubble-menu';
+import { CommentDrawer } from './components/inline-comment/comment-drawer';
+import { CommentBubbleMenu } from './components/inline-comment/comment-bubble-menu';
 import { useResponsive } from './utils/responsive';
 
 const handleAddReply = (
@@ -106,8 +106,8 @@ const DdocEditor = forwardRef(
       documentName,
       onInvalidContentError,
       ignoreCorruptedData,
-      inlineCommentOpen,
-      setInlineCommentOpen,
+      commentDrawerOpen,
+      setCommentDrawerOpen,
     }: DdocProps,
     ref,
   ) => {
@@ -148,7 +148,6 @@ const DdocEditor = forwardRef(
       setComments,
       commentsSectionRef,
       setComment,
-      unsetComment,
       focusCommentInEditor,
       refreshYjsIndexedDbProvider,
     } = useDdocEditor({
@@ -394,7 +393,7 @@ const DdocEditor = forwardRef(
             { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
             {
               'max-[1080px]:!mx-auto min-[1081px]:!ml-[10%] min-[1700px]:!mx-auto':
-                (isCommentSectionOpen || inlineCommentOpen) &&
+                (isCommentSectionOpen || commentDrawerOpen) &&
                 !isNativeMobile &&
                 zoomLevel !== '0.5' &&
                 zoomLevel !== '0.75' &&
@@ -404,7 +403,7 @@ const DdocEditor = forwardRef(
             },
             {
               '!mx-auto':
-                !(isCommentSectionOpen || inlineCommentOpen) ||
+                !(isCommentSectionOpen || commentDrawerOpen) ||
                 zoomLevel === '0.5' ||
                 zoomLevel === '0.75' ||
                 zoomLevel === '1.4' ||
@@ -455,12 +454,11 @@ const DdocEditor = forwardRef(
                 walletAddress={walletAddress as string}
                 onInlineComment={onInlineComment}
                 setComment={setComment}
-                unsetComment={unsetComment}
                 comments={comments}
                 setComments={setComments}
                 activeCommentId={activeCommentId as string}
-                inlineCommentOpen={inlineCommentOpen}
-                setInlineCommentOpen={setInlineCommentOpen}
+                commentDrawerOpen={commentDrawerOpen}
+                setCommentDrawerOpen={setCommentDrawerOpen}
               />
               <ColumnsMenu editor={editor} appendTo={editorRef} />
             </div>
@@ -568,8 +566,8 @@ const DdocEditor = forwardRef(
         )}
         <CommentDrawer
           commentsSectionRef={commentsSectionRef}
-          isOpen={inlineCommentOpen as boolean}
-          onClose={() => setInlineCommentOpen?.(false)}
+          isOpen={commentDrawerOpen as boolean}
+          onClose={() => setCommentDrawerOpen?.(false)}
           comments={comments}
           activeCommentId={activeCommentId}
           username={username as string}

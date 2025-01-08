@@ -17,7 +17,7 @@ import { IEditorTool } from '../../hooks/use-visibility';
 import ToolbarButton from '../../common/toolbar-button';
 import { DynamicDropdown, cn } from '@fileverse/ui';
 import { useOnClickOutside } from 'usehooks-ts';
-import { CommentDropdown } from '../comment-dropdown';
+import { CommentDropdown } from '../inline-comment/comment-dropdown';
 import { createPortal } from 'react-dom';
 import { EditorBubbleMenuProps, BubbleMenuItem } from './types';
 import { useResponsive } from '../../utils/responsive';
@@ -36,12 +36,11 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     username,
     onInlineComment,
     setComment,
-    unsetComment,
     comments,
     setComments,
     activeCommentId,
-    // inlineCommentOpen,
-    setInlineCommentOpen,
+    // commentDrawerOpen,
+    setCommentDrawerOpen,
   } = props;
   // TODO: V1
   const [isInlineCommentOpen, setIsInlineCommentOpen] = useState(false);
@@ -202,6 +201,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       case 'Comment':
         return (
           <CommentDropdown
+            editor={editor}
             selectedText={selectedText}
             onSubmit={handleCommentSubmit}
             onClose={handleCommentClose}
@@ -211,8 +211,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             username={username}
             walletAddress={walletAddress}
             activeCommentId={activeCommentId}
-            unsetComment={unsetComment}
-            setInlineCommentOpen={setInlineCommentOpen}
+            setCommentDrawerOpen={setCommentDrawerOpen}
             initialComment={item.initialComment}
           />
         );

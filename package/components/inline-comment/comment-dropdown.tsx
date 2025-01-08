@@ -1,4 +1,4 @@
-import React, { useState, SetStateAction, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Button,
   DynamicDropdown,
@@ -8,27 +8,13 @@ import {
   Tooltip,
 } from '@fileverse/ui';
 import uuid from 'react-uuid';
-import { IComment } from '../extensions/comment';
 import { CommentCard } from './comment-card';
-import { useResponsive } from '../utils/responsive';
-
-interface CommentDropdownProps {
-  selectedText: string;
-  onSubmit: (content: string) => string;
-  onClose: () => void;
-  elementRef: React.RefObject<HTMLDivElement>;
-  setComments?: (comments: IComment[]) => void;
-  comments?: IComment[];
-  username?: string;
-  walletAddress?: string;
-  activeCommentId?: string;
-  unsetComment?: () => void;
-  inlineCommentOpen?: boolean;
-  setInlineCommentOpen?: React.Dispatch<SetStateAction<boolean>>;
-  initialComment?: string;
-}
+import { useResponsive } from '../../utils/responsive';
+import { useCommentActions } from './use-comment-actions';
+import { CommentDropdownProps } from './types';
 
 export const CommentDropdown = ({
+  editor,
   selectedText,
   onSubmit,
   onClose,
@@ -38,8 +24,7 @@ export const CommentDropdown = ({
   username,
   walletAddress,
   activeCommentId,
-  unsetComment,
-  setInlineCommentOpen,
+  setCommentDrawerOpen,
   initialComment = '',
 }: CommentDropdownProps) => {
   const [comment, setComment] = useState(initialComment);
@@ -47,21 +32,18 @@ export const CommentDropdown = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(true);
   const [showReplyView, setShowReplyView] = useState(!!activeCommentId);
   const { isBelow1280px } = useResponsive();
-
-  useEffect(() => {
-    if (activeCommentId) {
-      const activeComment = comments.find(
-        (comment) => comment.id === activeCommentId
-      );
-      if (activeComment) {
-        setComment(activeComment.content);
-      }
-    }
-  }, [activeCommentId, comments]);
+  const commentsContainerRef = useRef<HTMLDivElement>(null);
 
   const activeComment = comments.find(
     (comment) => comment.id === activeCommentId,
   );
+
+  const { handleResolveComment, handleUnresolveComment, handleDeleteComment } =
+    useCommentActions({
+      editor,
+      comments,
+      setComments: setComments ?? (() => { }),
+    });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setComment(e.target.value);
@@ -75,7 +57,7 @@ export const CommentDropdown = ({
     if (comment.trim()) {
       onSubmit(comment);
       setShowReplyView(true);
-      !isBelow1280px && setInlineCommentOpen?.(true);
+      !isBelow1280px && setCommentDrawerOpen?.(true);
     }
   };
 
@@ -100,7 +82,7 @@ export const CommentDropdown = ({
         return comment;
       });
 
-      !isBelow1280px && setInlineCommentOpen?.(true);
+      !isBelow1280px && setCommentDrawerOpen?.(true);
       setComments?.(updatedComments);
       setReply('');
     }
@@ -120,6 +102,34 @@ export const CommentDropdown = ({
   const handleEllipsisClick = () => {
     setIsDropdownOpen((prev) => !prev);
   };
+
+  const handleDeleteThread = () => {
+    handleDeleteComment(activeCommentId as string);
+    setIsDropdownOpen(false);
+    onClose();
+  };
+
+  useEffect(() => {
+    if (activeCommentId) {
+      const activeComment = comments.find(
+        (comment) => comment.id === activeCommentId,
+      );
+      if (activeComment) {
+        setComment(activeComment.content);
+      } else {
+        setShowReplyView(false);
+      }
+    }
+  }, [activeCommentId, comments]);
+
+  useEffect(() => {
+    if (commentsContainerRef.current && activeComment?.replies) {
+      commentsContainerRef.current.scrollTo({
+        top: commentsContainerRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  }, [activeComment?.replies]);
 
   const renderInitialView = () => (
     <div className="p-3 border-b border-[#E8EBEC] flex flex-col gap-2">
@@ -164,11 +174,8 @@ export const CommentDropdown = ({
                 <div className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3">
                   <button
                     className="flex items-center text-[#FB3449] text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"
-                    onClick={() => {
-                      unsetComment?.();
-                      setIsDropdownOpen(false);
-                      onClose();
-                    }}
+                    onClick={handleDeleteThread}
+                    onTouchEnd={handleDeleteThread}
                   >
                     <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
                     Delete thread
@@ -178,19 +185,36 @@ export const CommentDropdown = ({
             }
           />
 
-          <Tooltip text="Resolve" sideOffset={5} position="bottom">
-            <IconButton icon="CircleCheck" variant="ghost" />
+          <Tooltip
+            text={activeComment?.resolved ? 'Unresolve' : 'Resolve'}
+            sideOffset={5}
+            position="bottom"
+          >
+            <IconButton
+              icon={activeComment?.resolved ? 'CircleCheck2' : 'CircleCheck'}
+              variant="ghost"
+              onClick={() =>
+                activeComment?.resolved
+                  ? handleUnresolveComment(activeCommentId as string)
+                  : handleResolveComment(activeCommentId as string)
+              }
+            />
           </Tooltip>
         </div>
       </div>
 
-      <div className="max-h-[224px] overflow-y-auto no-scrollbar">
+      <div
+        ref={commentsContainerRef}
+        className="max-h-[224px] overflow-y-auto no-scrollbar"
+      >
         <CommentCard
           username={username}
           walletAddress={walletAddress}
           selectedText={selectedText}
           comment={comment}
           replies={activeComment?.replies}
+          isResolved={activeComment?.resolved}
+          isDropdown
         />
       </div>
 
@@ -199,15 +223,17 @@ export const CommentDropdown = ({
           value={reply}
           onChange={handleReplyChange}
           onKeyDown={handleKeyDown}
-          className="bg-white w-[296px] text-body-sm color-text-secondary min-h-[44px] max-h-[196px] overflow-y-auto no-scrollbar px-3 py-2"
+          className="bg-white w-[296px] text-body-sm color-text-secondary min-h-[44px] max-h-[196px] overflow-y-auto no-scrollbar px-3 py-2 disabled:!border-none"
           placeholder="Reply"
           autoFocus
+          disabled={activeComment?.resolved}
         />
 
         <div className="h-full flex justify-end pt-2">
           <Button
             onClick={handleReplySubmit}
             className="px-4 py-2 w-20 min-w-20 h-9"
+            disabled={activeComment?.resolved}
           >
             Send
           </Button>

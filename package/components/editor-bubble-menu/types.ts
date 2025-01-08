@@ -24,12 +24,11 @@ export type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   username?: string;
   onInlineComment?: () => void;
   setComment?: () => void;
-  unsetComment?: () => void;
   comments?: IComment[];
   setComments?: (comments: IComment[]) => void;
   activeCommentId?: string;
-  inlineCommentOpen?: boolean;
-  setInlineCommentOpen?: React.Dispatch<SetStateAction<boolean>>;
+  commentDrawerOpen?: boolean;
+  setCommentDrawerOpen?: React.Dispatch<SetStateAction<boolean>>;
 };
 
 export interface NodeSelectorProps {

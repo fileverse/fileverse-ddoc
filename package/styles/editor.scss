@@ -778,21 +778,21 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   }
 }
 
-p > .inline-comment,
-em > .inline-comment,
-strong > .inline-comment,
-a > .inline-comment,
-u > .inline-comment,
-s > .inline-comment,
-sup > .inline-comment,
-sub > .inline-comment,
-:not(h1, h2, h3) > span .inline-comment {
-  @apply bg-[#e5fbe7] transition-all group-hover:bg-[#facc1566];
-}
+// p > .inline-comment,
+// em > .inline-comment,
+// strong > .inline-comment,
+// a > .inline-comment,
+// u > .inline-comment,
+// s > .inline-comment,
+// sup > .inline-comment,
+// sub > .inline-comment,
+// :not(h1, h2, h3) > span .inline-comment {
+//   @apply bg-[#e5fbe7] transition-all group-hover:bg-[#facc1566];
+// }
 
-.inline-comment {
-  @apply bg-[#e5fbe7] transition-all hover:bg-[#facc1566];
-}
+// .inline-comment {
+//   @apply bg-[#e5fbe7] transition-all hover:bg-[#facc1566];
+// }
 
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
   select,
@@ -810,3 +810,10 @@ sub > .inline-comment,
   }
 }
 
+.inline-comment--unresolved {
+  @apply bg-[#e5fbe7] cursor-pointer group-hover:bg-[#facc1566] transition-all;
+}
+
+.inline-comment--resolved {
+  @apply bg-transparent;
+}

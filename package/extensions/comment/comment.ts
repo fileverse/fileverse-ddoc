@@ -10,9 +10,17 @@ declare module '@tiptap/core' {
        */
       setComment: (commentId: string) => ReturnType;
       /**
-       * Unset a comment (remove)
+       * Unset a comment (remove completely)
        */
       unsetComment: (commentId: string) => ReturnType;
+      /**
+       * Resolve a comment (keep ID but update styling)
+       */
+      resolveComment: (commentId: string) => ReturnType;
+      /**
+       * Unresolve a comment (switch back to unresolved state)
+       */
+      unresolveComment: (commentId: string) => ReturnType;
     };
   }
 }
@@ -25,6 +33,9 @@ export interface MarkWithRange {
 export interface CommentOptions {
   HTMLAttributes: Record<string, any>;
   onCommentActivated: (commentId: string) => void;
+  onCommentResolved?: (commentId: string) => void;
+  onCommentUnresolved?: (commentId: string) => void;
+  onCommentDeleted?: (commentId: string) => void;
 }
 
 export interface CommentStorage {
@@ -37,6 +48,7 @@ export interface IComment {
   content: string;
   replies: IComment[];
   createdAt: Date;
+  resolved?: boolean;
 }
 
 export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
@@ -56,6 +68,17 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
         parseHTML: (el) =>
           (el as HTMLSpanElement).getAttribute('data-comment-id'),
         renderHTML: (attrs) => ({ 'data-comment-id': attrs.commentId }),
+      },
+      resolved: {
+        default: false,
+        parseHTML: (el) =>
+          (el as HTMLSpanElement).getAttribute('data-resolved'),
+        renderHTML: (attrs) => ({
+          'data-resolved': attrs.resolved,
+          class: attrs.resolved
+            ? 'inline-comment--resolved'
+            : 'inline-comment--unresolved',
+        }),
       },
     };
   },
@@ -144,6 +167,85 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
             tr.removeMark(range.from, range.to, mark);
           });
 
+          this.options.onCommentDeleted?.(commentId);
+          return dispatch?.(tr);
+        },
+      resolveComment:
+        (commentId: string) =>
+        ({ tr, dispatch }) => {
+          if (!commentId) return false;
+
+          const commentMarksWithRange: MarkWithRange[] = [];
+
+          tr.doc.descendants((node, pos) => {
+            const commentMark = node.marks.find(
+              (mark) =>
+                mark.type.name === 'comment' &&
+                mark.attrs.commentId === commentId,
+            );
+
+            if (!commentMark) return;
+
+            commentMarksWithRange.push({
+              mark: commentMark,
+              range: {
+                from: pos,
+                to: pos + node.nodeSize,
+              },
+            });
+          });
+
+          commentMarksWithRange.forEach(({ range }) => {
+            tr.addMark(
+              range.from,
+              range.to,
+              this.editor.schema.marks.comment.create({
+                commentId,
+                resolved: true,
+              }),
+            );
+          });
+
+          this.options.onCommentResolved?.(commentId);
+          return dispatch?.(tr);
+        },
+      unresolveComment:
+        (commentId: string) =>
+        ({ tr, dispatch }) => {
+          if (!commentId) return false;
+
+          const commentMarksWithRange: MarkWithRange[] = [];
+
+          tr.doc.descendants((node, pos) => {
+            const commentMark = node.marks.find(
+              (mark) =>
+                mark.type.name === 'comment' &&
+                mark.attrs.commentId === commentId,
+            );
+
+            if (!commentMark) return;
+
+            commentMarksWithRange.push({
+              mark: commentMark,
+              range: {
+                from: pos,
+                to: pos + node.nodeSize,
+              },
+            });
+          });
+
+          commentMarksWithRange.forEach(({ range }) => {
+            tr.addMark(
+              range.from,
+              range.to,
+              this.editor.schema.marks.comment.create({
+                commentId,
+                resolved: false,
+              }),
+            );
+          });
+
+          this.options.onCommentUnresolved?.(commentId);
           return dispatch?.(tr);
         },
     };

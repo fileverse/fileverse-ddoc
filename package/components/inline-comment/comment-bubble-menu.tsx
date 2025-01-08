@@ -1,19 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
-import { BubbleMenu, BubbleMenuProps } from '@tiptap/react';
+import { BubbleMenu } from '@tiptap/react';
 import { cn, IconButton } from '@fileverse/ui';
 import { Editor } from '@tiptap/core';
-import tippy from 'tippy.js';
-import { IComment } from '../extensions/comment';
-
-type CommentBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
-  editor: Editor;
-  comments: IComment[];
-  activeCommentId: string | null;
-  zoomLevel: string;
-  onPrevComment: () => void;
-  onNextComment: () => void;
-};
+import { CommentBubbleMenuProps } from './types';
 
 export const CommentBubbleMenu = ({
   editor,
@@ -42,17 +32,6 @@ export const CommentBubbleMenu = ({
     },
   };
 
-  const initializeTippy = (element: HTMLElement, clientRect: DOMRect) => {
-    tippy(element as Element, {
-      getReferenceClientRect: () => clientRect,
-      interactive: true,
-      trigger: 'manual',
-      placement: 'bottom-start',
-      content: element,
-      showOnCreate: true,
-    });
-  };
-
   return (
     <BubbleMenu
       {...bubbleMenuProps}
@@ -63,12 +42,6 @@ export const CommentBubbleMenu = ({
       style={{
         transform: `scale(${1 / parseFloat(zoomLevel)})`,
         transformOrigin: 'center',
-      }}
-      ref={(element: HTMLElement) => {
-        if (element) {
-          const clientRect = element.getBoundingClientRect();
-          initializeTippy(element, clientRect);
-        }
       }}
     >
       <IconButton
