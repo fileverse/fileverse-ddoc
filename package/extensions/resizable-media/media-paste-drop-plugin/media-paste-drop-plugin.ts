@@ -1,6 +1,7 @@
 import { Plugin, PluginKey } from 'prosemirror-state';
 import { IMG_UPLOAD_SETTINGS } from '../../../components/editor-utils';
 import { startImageUpload } from '../../../utils/upload-images.tsx';
+import { validateImageExtension } from '../../../utils/check-image-type.ts';
 
 export type UploadFnType = (image: File) => Promise<string>;
 
@@ -39,6 +40,9 @@ export const getMediaPasteDropPlugin = (
           Object.values(files ?? {}).forEach((file) => {
             const isImage = file?.type.indexOf('image') === 0;
             if (isImage) {
+              if (!validateImageExtension(file, onError)) {
+                return;
+              }
               if (file.size > imgConfig.maxSize) {
                 onError(imgConfig.errorMsg);
                 throw new Error(imgConfig.errorMsg);
@@ -102,6 +106,10 @@ export const getMediaPasteDropPlugin = (
 
         imagesAndVideos.forEach(async (imageOrVideo) => {
           const reader = new FileReader();
+
+          if (!validateImageExtension(imageOrVideo, onError)) {
+            return;
+          }
 
           if (typeof upload === 'function') {
             try {

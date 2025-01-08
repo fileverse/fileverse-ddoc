@@ -29,6 +29,7 @@ import {
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 import { colors } from '../utils/colors';
+import { validateImageExtension } from '../utils/check-image-type';
 
 interface IEditorToolElement {
   icon: any;
@@ -288,10 +289,13 @@ export const useEditorToolbar = ({
         editor?.chain().focus().deleteRange(editor.state.selection).run();
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = 'image/*';
+        input.accept = 'image/png, image/jpeg';
         input.onchange = async () => {
           if (input.files?.length) {
             const file = input.files[0];
+            if (!validateImageExtension(file, onError)) {
+              return;
+            }
             const size = file.size;
             const imgConfig = secureImageUploadUrl
               ? IMG_UPLOAD_SETTINGS.Extended
@@ -423,10 +427,13 @@ export const useEditorToolbar = ({
         // upload image
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = 'image/*';
+        input.accept = 'image/png, image/jpeg';
         input.onchange = async () => {
           if (input.files?.length) {
             const file = input.files[0];
+            if (!validateImageExtension(file, onError)) {
+              return;
+            }
             const size = file.size;
 
             const imgConfig = secureImageUploadUrl
