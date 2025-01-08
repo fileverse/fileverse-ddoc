@@ -7,7 +7,7 @@ import {
   LucideIcon,
   Tooltip,
 } from '@fileverse/ui';
-import { useRef, useState } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import { CommentCardProps } from './types';
 
 export const CommentCard = ({
@@ -22,9 +22,18 @@ export const CommentCard = ({
   onUnresolve,
   isResolved,
   isDropdown = false,
+  activeCommentId,
+  id,
 }: CommentCardProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showAllReplies, setShowAllReplies] = useState(false);
+
+  useEffect(() => {
+    if (id !== activeCommentId) {
+      setShowAllReplies(false);
+    }
+  }, [activeCommentId, id]);
 
   const handleResolveClick = () => {
     onResolve?.();
@@ -54,6 +63,55 @@ export const CommentCard = ({
         popoverContent.remove();
       }
     }
+  };
+
+  const renderReplies = () => {
+    if (!replies?.length) return null;
+
+    let displayedReplies = replies;
+    if (!showAllReplies && replies.length > 4) {
+      displayedReplies = replies.slice(-2);
+    }
+
+    return (
+      <div className="flex flex-col gap-3">
+        {replies.length > 4 && !showAllReplies && (
+          <button
+            onClick={() => setShowAllReplies(true)}
+            className="text-helper-text-sm color-text-secondary hover:underline text-left ml-3 pl-4"
+          >
+            {replies.length - 2} more replies in this thread
+          </button>
+        )}
+
+        {displayedReplies.map((reply, index) => (
+          <div key={index} className="flex flex-col gap-1">
+            <div className="flex justify-start items-center gap-2">
+              <Avatar
+                src="https://github.com/identicons/random.png"
+                size="sm"
+                className="min-w-6"
+              />
+              <div className="flex flex-col">
+                <span className="text-body-sm-bold">
+                  {username || walletAddress || 'Anonymous'}
+                </span>
+                <span className="text-helper-text-sm color-text-secondary">
+                  {timestamp.toLocaleTimeString([], {
+                    hour: 'numeric',
+                    minute: '2-digit',
+                    hour12: true,
+                  })}
+                </span>
+              </div>
+            </div>
+            <span className="text-body-sm flex flex-col gap-2 ml-3 pl-4 border-l">
+              {reply.content}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -93,7 +151,10 @@ export const CommentCard = ({
                 icon={'Ellipsis'}
                 variant="ghost"
                 size="sm"
-                className="md:group-hover:opacity-100 md:opacity-0 transition-opacity duration-300"
+                className={cn(
+                  'md:group-hover:opacity-100 md:opacity-0 transition-opacity duration-300',
+                  isDropdown && 'hidden',
+                )}
               />
             }
             content={
@@ -104,7 +165,6 @@ export const CommentCard = ({
                 <button
                   className={cn(
                     'flex items-center color-text-default text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full',
-                    isDropdown && 'hidden',
                   )}
                   onClick={
                     isResolved ? handleUnresolveClick : handleResolveClick
@@ -151,36 +211,7 @@ export const CommentCard = ({
           </div>
         )}
       </div>
-      {replies && (
-        <div className="flex flex-col gap-3">
-          {replies.map((reply, index) => (
-            <div key={index} className="flex flex-col gap-1">
-              <div className="flex justify-start items-center gap-2">
-                <Avatar
-                  src="https://github.com/identicons/random.png"
-                  size="sm"
-                  className="min-w-6"
-                />
-                <div className="flex flex-col">
-                  <span className="text-body-sm-bold">
-                    {username || walletAddress || 'Anonymous'}
-                  </span>
-                  <span className="text-helper-text-sm color-text-secondary">
-                    {timestamp.toLocaleTimeString([], {
-                      hour: 'numeric',
-                      minute: '2-digit',
-                      hour12: true,
-                    })}
-                  </span>
-                </div>
-              </div>
-              <span className="text-body-sm flex flex-col gap-2 ml-3 pl-4 border-l">
-                {reply.content}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
+      {replies && renderReplies()}
     </div>
   );
 };

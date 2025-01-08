@@ -136,10 +136,6 @@ export const useDdocEditor = ({
     return newComment.id;
   };
 
-  // const unsetComment = () => {
-  //   editor?.commands.unsetComment(activeCommentId || '');
-  // };
-
   const isHighlightedYellow = (
     state: EditorState,
     from: number,
@@ -488,7 +484,6 @@ export const useDdocEditor = ({
     connect,
     ydoc,
     setComment,
-    // unsetComment,
     comments,
     activeCommentId,
     setActiveCommentId,

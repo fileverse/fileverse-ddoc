@@ -42,7 +42,7 @@ export const CommentDropdown = ({
     useCommentActions({
       editor,
       comments,
-      setComments: setComments ?? (() => { }),
+      setComments: setComments ?? (() => {}),
     });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {

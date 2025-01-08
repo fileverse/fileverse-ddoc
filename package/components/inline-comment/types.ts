@@ -87,6 +87,8 @@ export interface CommentCardProps {
   onUnresolve?: () => void;
   isResolved?: boolean;
   isDropdown?: boolean;
+  activeCommentId?: string;
+  id?: string;
 }
 
 export type CommentBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {

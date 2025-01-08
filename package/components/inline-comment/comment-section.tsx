@@ -53,6 +53,8 @@ export const CommentSection = ({
             onClick={() => focusCommentInEditor(comment.id)}
           >
             <CommentCard
+              id={comment.id}
+              activeCommentId={activeCommentId as string}
               username={username as string}
               walletAddress={walletAddress as string}
               selectedText={comment.selectedContent}
