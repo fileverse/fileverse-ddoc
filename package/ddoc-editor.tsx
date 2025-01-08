@@ -34,34 +34,21 @@ import { CommentBubbleMenu } from './components/comment-bubble-menu';
 const checkOs = () => platform.os?.family;
 
 const handleAddReply = (
-  comments: IComment[],
   activeCommentId: string,
   replyContent: string,
-  setComments: (comments: IComment[]) => void,
+  onCommentReply?: (activeCommentId: string, reply: IComment) => void,
 ) => {
   if (!replyContent.trim()) return;
 
-  setComments(
-    comments.map((comment) => {
-      if (comment.id === activeCommentId) {
-        return {
-          ...comment,
-          replies: [
-            ...comment.replies,
-            {
-              id: `reply-${uuid()}`,
-              content: replyContent,
-              replies: [],
-              createdAt: new Date(),
-              selectedContent: comment.selectedContent,
-            },
-          ],
-          content: comment.content,
-        };
-      }
-      return comment;
-    }),
-  );
+  const newReply = {
+    id: `reply-${uuid()}`,
+    content: replyContent,
+    replies: [],
+    createdAt: new Date(),
+    selectedContent: '',
+  };
+
+  onCommentReply?.(activeCommentId, newReply);
 };
 
 const DdocEditor = forwardRef(
@@ -72,6 +59,7 @@ const DdocEditor = forwardRef(
       enableCollaboration,
       collaborationId,
       username,
+      onCommentReply,
       renderNavbar,
       walletAddress,
       onChange,
@@ -110,6 +98,7 @@ const DdocEditor = forwardRef(
       onInvalidContentError,
       ignoreCorruptedData,
       inlineCommentOpen,
+      onNewComment,
       setInlineCommentOpen,
     }: DdocProps,
     ref,
@@ -156,7 +145,7 @@ const DdocEditor = forwardRef(
       setActiveCommentId,
       setComments,
       commentsSectionRef,
-      setComment,
+      onSaveComment,
       unsetComment,
       focusCommentInEditor,
       refreshYjsIndexedDbProvider,
@@ -188,6 +177,7 @@ const DdocEditor = forwardRef(
       setIsNavbarVisible,
       onInvalidContentError,
       ignoreCorruptedData,
+      onNewComment,
     });
 
     useImperativeHandle(
@@ -463,7 +453,7 @@ const DdocEditor = forwardRef(
                 username={username as string}
                 walletAddress={walletAddress as string}
                 onInlineComment={onInlineComment}
-                setComment={setComment}
+                setComment={onSaveComment}
                 unsetComment={unsetComment}
                 comments={comments}
                 setComments={setComments}
@@ -582,6 +572,7 @@ const DdocEditor = forwardRef(
           comments={comments}
           activeCommentId={activeCommentId}
           username={username as string}
+          onCommentReply={onCommentReply}
           walletAddress={walletAddress as string}
           editor={editor}
           setComments={setComments}
@@ -598,7 +589,7 @@ const DdocEditor = forwardRef(
           zoomLevel={zoomLevel}
           onPrevComment={() => {
             const currentIndex = comments.findIndex(
-              (comment) => comment.id === activeCommentId
+              (comment) => comment.id === activeCommentId,
             );
             if (currentIndex > 0) {
               const prevComment = comments[currentIndex - 1];
@@ -607,7 +598,7 @@ const DdocEditor = forwardRef(
           }}
           onNextComment={() => {
             const currentIndex = comments.findIndex(
-              (comment) => comment.id === activeCommentId
+              (comment) => comment.id === activeCommentId,
             );
             if (currentIndex < comments.length - 1) {
               const nextComment = comments[currentIndex + 1];

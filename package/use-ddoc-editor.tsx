@@ -56,11 +56,13 @@ export const useDdocEditor = ({
   zoomLevel,
   onInvalidContentError,
   ignoreCorruptedData,
+  initialComments,
+  onNewComment,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
-  const [comments, setComments] = useState<IComment[]>([]);
+  const [comments, setComments] = useState<IComment[]>(initialComments || []);
 
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
 
@@ -122,19 +124,23 @@ export const useDdocEditor = ({
     };
   };
 
-  const setComment = (content?: string) => {
+  const onSaveComment = (content?: string) => {
     if (!editor) return;
     const { state } = editor;
     const { from, to } = state.selection;
     const selectedContent = state.doc.textBetween(from, to, ' ');
 
     const newComment = getNewComment(selectedContent, content);
-    setComments([...comments, newComment]);
+    onNewComment?.(newComment);
     editor?.commands.setComment(newComment.id);
     setActiveCommentId(newComment.id);
     setTimeout(focusCommentWithActiveId);
     return newComment.id;
   };
+
+  useEffect(() => {
+    setComments(initialComments || []);
+  }, [initialComments]);
 
   const unsetComment = () => {
     editor?.commands.unsetComment(activeCommentId || '');
@@ -250,7 +256,7 @@ export const useDdocEditor = ({
     }
   }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => { });
+  const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
@@ -487,7 +493,7 @@ export const useDdocEditor = ({
     ref,
     connect,
     ydoc,
-    setComment,
+    onSaveComment,
     unsetComment,
     comments,
     activeCommentId,

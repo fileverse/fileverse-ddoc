@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { useEffect, useState, useCallback } from 'react';
+import {
+  useEffect,
+  useState,
+  useCallback,
+  Dispatch,
+  SetStateAction,
+} from 'react';
 import { Editor, EditorContent, useEditor } from '@tiptap/react';
 import {
   AnimatedLoader,
@@ -24,7 +30,7 @@ interface PresentationModeProps {
   editor: Editor;
   onClose: () => void;
   isFullscreen: boolean;
-  setIsFullscreen: (isFullscreen: boolean) => void;
+  setIsFullscreen: Dispatch<SetStateAction<boolean>>;
   onError?: (error: string) => void;
   setIsCommentSectionOpen:
     | React.Dispatch<React.SetStateAction<boolean>>

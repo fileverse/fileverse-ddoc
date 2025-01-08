@@ -92,7 +92,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Link',
       isActive: () => props.editor.isActive('link'),
-      command: () => { },
+      command: () => {},
       icon: 'Link',
     },
     {
@@ -104,13 +104,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'InlineComment',
       isActive: () => props.editor.isActive('inlineComment'),
-      command: () => { },
+      command: () => {},
       icon: 'MessageSquarePlus',
     },
     {
       name: 'Comment',
       isActive: () => props.editor.isActive('comment'),
-      command: () => { },
+      command: () => {},
       icon: 'MessageSquareQuote',
     },
   ];

@@ -3,6 +3,7 @@ import { JSONContent } from '@tiptap/core';
 import { EditorProps } from '@tiptap/pm/view';
 import { Editor } from '@tiptap/react';
 import React, { SetStateAction } from 'react';
+import { IComment } from './extensions/comment';
 
 export const DdocEditorProps: EditorProps = {
   attributes: {
@@ -25,6 +26,7 @@ type InlineCommentData = {
 };
 export interface DdocProps {
   inlineCommentOpen?: boolean;
+  onCommentReply?: (activeCommentId: string, reply: IComment) => void;
   setInlineCommentOpen?: React.Dispatch<SetStateAction<boolean>>;
   selectedTags?: TagType[];
   setSelectedTags?: React.Dispatch<SetStateAction<TagType[]>>;
@@ -35,6 +37,8 @@ export interface DdocProps {
     React.SetStateAction<InlineCommentData>
   >;
   zoomLevel: string;
+  onNewComment?: (n: IComment) => void;
+  initialComments?: IComment[];
   setZoomLevel: React.Dispatch<SetStateAction<string>>;
   isNavbarVisible: boolean;
   setIsNavbarVisible: React.Dispatch<SetStateAction<boolean>>;

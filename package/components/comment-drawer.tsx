@@ -27,13 +27,13 @@ interface CommentDrawerProps {
   setActiveCommentId: (id: string | null) => void;
   focusCommentInEditor: (id: string) => void;
   handleAddReply: (
-    comments: IComment[],
     activeCommentId: string,
     replyContent: string,
-    setComments: (comments: IComment[]) => void,
+    onCommentReply?: (activeCommentId: string, reply: IComment) => void,
   ) => void;
   isNavbarVisible: boolean;
   isPresentationMode: boolean;
+  onCommentReply?: (activeCommentId: string, reply: IComment) => void;
 }
 
 export const CommentDrawer = ({
@@ -45,9 +45,9 @@ export const CommentDrawer = ({
   username,
   walletAddress,
   editor,
-  setComments,
   setActiveCommentId,
   focusCommentInEditor,
+  onCommentReply,
   handleAddReply,
   isNavbarVisible,
   isPresentationMode,
@@ -92,7 +92,7 @@ export const CommentDrawer = ({
   const handleReplySubmit = () => {
     if (!activeCommentId || !reply.trim()) return;
 
-    handleAddReply(comments, activeCommentId, reply, setComments);
+    handleAddReply(activeCommentId, reply, onCommentReply);
     setReply('');
     setOpenReplyId(null);
     setActiveCommentId(null);

@@ -49,7 +49,7 @@ export const CommentDropdown = ({
   useEffect(() => {
     if (activeCommentId) {
       const activeComment = comments.find(
-        (comment) => comment.id === activeCommentId
+        (comment) => comment.id === activeCommentId,
       );
       if (activeComment) {
         setComment(activeComment.content);
