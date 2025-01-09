@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 import { BubbleMenu } from '@tiptap/react';
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { NodeSelector } from './node-selector';
 import {
   LinkPopup,
@@ -16,7 +16,6 @@ import {
 import { IEditorTool } from '../../hooks/use-visibility';
 import ToolbarButton from '../../common/toolbar-button';
 import { DynamicDropdown, cn } from '@fileverse/ui';
-import { useOnClickOutside } from 'usehooks-ts';
 import { CommentDropdown } from '../inline-comment/comment-dropdown';
 import { createPortal } from 'react-dom';
 import { EditorBubbleMenuProps, BubbleMenuItem } from './types';
@@ -95,7 +94,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Link',
       isActive: () => editor.isActive('link'),
-      command: () => { },
+      command: () => {},
       icon: 'Link',
     },
     {
@@ -107,13 +106,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'InlineComment',
       isActive: () => editor.isActive('inlineComment'),
-      command: () => { },
+      command: () => {},
       icon: 'MessageSquarePlus',
     },
     {
       name: 'Comment',
       isActive: () => editor.isActive('comment'),
-      command: () => { },
+      command: () => {},
       icon: 'MessageSquareQuote',
     },
   ];

@@ -11,13 +11,15 @@ export const CommentProvider = ({
   children,
   editor,
   initialComments = [],
+  setInitialComments,
   username,
   walletAddress,
   activeCommentId,
   setActiveCommentId,
   focusCommentWithActiveId,
+  onNewComment,
+  onCommentReply,
 }: CommentProviderProps) => {
-  const [comments, setComments] = useState<IComment[]>(initialComments);
   const [showResolved, setShowResolved] = useState(false);
   const [reply, setReply] = useState('');
   const [comment, setComment] = useState('');
@@ -75,7 +77,7 @@ export const CommentProvider = ({
     const selectedContent = state.doc.textBetween(from, to, ' ');
 
     const newComment = getNewComment(selectedContent, content);
-    setComments([...comments, newComment]);
+    onNewComment?.(newComment);
     editor?.commands.setComment(newComment.id);
     setActiveCommentId(newComment.id);
     setTimeout(focusCommentWithActiveId);
@@ -83,8 +85,8 @@ export const CommentProvider = ({
   };
 
   const resolveComment = (commentId: string) => {
-    setComments(
-      comments.map((comment) =>
+    setInitialComments?.(
+      initialComments.map((comment) =>
         comment.id === commentId ? { ...comment, resolved: true } : comment,
       ),
     );
@@ -92,8 +94,8 @@ export const CommentProvider = ({
   };
 
   const unresolveComment = (commentId: string) => {
-    setComments(
-      comments.map((comment) =>
+    setInitialComments?.(
+      initialComments.map((comment) =>
         comment.id === commentId ? { ...comment, resolved: false } : comment,
       ),
     );
@@ -101,46 +103,35 @@ export const CommentProvider = ({
   };
 
   const deleteComment = (commentId: string) => {
-    setComments(comments.filter((comment) => comment.id !== commentId));
+    setInitialComments?.(
+      initialComments.filter((comment) => comment.id !== commentId),
+    );
     editor.commands.unsetComment(commentId);
   };
 
   const handleAddReply = (
-    comments: IComment[],
     activeCommentId: string,
     replyContent: string,
-    setComments: (comments: IComment[]) => void,
+    onCommentReply?: (activeCommentId: string, reply: IComment) => void,
   ) => {
     if (!replyContent.trim()) return;
 
-    setComments(
-      comments.map((comment) => {
-        if (comment.id === activeCommentId) {
-          return {
-            ...comment,
-            replies: [
-              ...comment.replies,
-              {
-                id: `reply-${uuid()}`,
-                content: replyContent,
-                replies: [],
-                createdAt: new Date(),
-                selectedContent: comment.selectedContent,
-              },
-            ],
-            content: comment.content,
-          };
-        }
-        return comment;
-      }),
-    );
+    const newReply = {
+      id: `reply-${uuid()}`,
+      content: replyContent,
+      replies: [],
+      createdAt: new Date(),
+      selectedContent: '',
+    };
+
+    onCommentReply?.(activeCommentId, newReply);
   };
 
   const focusCommentInEditor = (commentId: string) => {
-    if (!editor || !comments.length) return;
+    if (!editor || !initialComments.length) return;
 
     // Find the comment by ID
-    const comment = comments.find((c) => c.id === commentId);
+    const comment = initialComments.find((c) => c.id === commentId);
     if (!comment) return;
 
     // Find the element with the matching data-comment-id
@@ -236,7 +227,7 @@ export const CommentProvider = ({
   const handleReplySubmit = () => {
     if (!activeCommentId || !reply.trim()) return;
 
-    handleAddReply(comments, activeCommentId, reply, setComments);
+    handleAddReply(activeCommentId, reply, onCommentReply);
     setReply('');
   };
 
@@ -246,35 +237,35 @@ export const CommentProvider = ({
 
   const onPrevComment = () => {
     if (activeCommentIndex > 0) {
-      const prevComment = comments[activeCommentIndex - 1];
+      const prevComment = initialComments[activeCommentIndex - 1];
       focusCommentInEditor(prevComment.id);
     }
   };
 
   const onNextComment = () => {
-    if (activeCommentIndex < comments.length - 1) {
-      const nextComment = comments[activeCommentIndex + 1];
+    if (activeCommentIndex < initialComments.length - 1) {
+      const nextComment = initialComments[activeCommentIndex + 1];
       focusCommentInEditor(nextComment.id);
     }
   };
 
-  const activeCommentIndex = comments.findIndex(
+  const activeCommentIndex = initialComments.findIndex(
     (comment) => comment.id === activeCommentId,
   );
 
-  const activeComment = comments.find(
+  const activeComment = initialComments.find(
     (comment) => comment.id === activeCommentId,
   );
 
   return (
     <CommentContext.Provider
       value={{
-        comments,
+        comments: initialComments,
         showResolved,
         editor,
         username,
         walletAddress,
-        setComments,
+        setComments: setInitialComments!,
         setShowResolved,
         resolveComment,
         unresolveComment,

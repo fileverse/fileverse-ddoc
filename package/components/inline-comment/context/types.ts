@@ -1,9 +1,10 @@
 import { Editor } from '@tiptap/react';
 import { IComment } from '../../../extensions/comment';
+import { SetStateAction } from 'react';
 
 export interface CommentContextType {
   comments: IComment[];
-  setComments: (comments: IComment[]) => void;
+  setComments: React.Dispatch<SetStateAction<IComment[]>>;
   editor: Editor;
   username?: string;
   walletAddress?: string;
@@ -13,10 +14,9 @@ export interface CommentContextType {
   unresolveComment: (commentId: string) => void;
   deleteComment: (commentId: string) => void;
   handleAddReply: (
-    comments: IComment[],
     activeCommentId: string,
     replyContent: string,
-    setComments: (comments: IComment[]) => void,
+    onCommentReply: (activeCommentId: string, reply: IComment) => void,
   ) => void;
   focusCommentInEditor: (commentId: string) => void;
   handleReplyChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
@@ -52,9 +52,12 @@ export interface CommentProviderProps {
   children: React.ReactNode;
   editor: Editor;
   initialComments?: IComment[];
+  setInitialComments?: React.Dispatch<SetStateAction<IComment[]>>;
+  onCommentReply?: (activeCommentId: string, reply: IComment) => void;
+  onNewComment?: (newComment: IComment) => void;
   username: string;
   walletAddress: string;
   activeCommentId: string | null;
-  setActiveCommentId: (commentId: string | null) => void;
+  setActiveCommentId: React.Dispatch<React.SetStateAction<string | null>>;
   focusCommentWithActiveId: (id: string) => void;
 }

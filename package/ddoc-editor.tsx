@@ -74,8 +74,13 @@ const DdocEditor = forwardRef(
       documentName,
       onInvalidContentError,
       ignoreCorruptedData,
+      //Comments V2
       commentDrawerOpen,
       setCommentDrawerOpen,
+      initialComments = [],
+      onNewComment,
+      onCommentReply,
+      setInitialComments,
     }: DdocProps,
     ref,
   ) => {
@@ -316,7 +321,10 @@ const DdocEditor = forwardRef(
           activeCommentId={activeCommentId}
           setActiveCommentId={setActiveCommentId}
           focusCommentWithActiveId={focusCommentWithActiveId}
-          initialComments={[]}
+          initialComments={initialComments}
+          setInitialComments={setInitialComments}
+          onNewComment={onNewComment}
+          onCommentReply={onCommentReply}
         >
           {!isPreviewMode && (
             <div
