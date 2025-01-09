@@ -80,6 +80,7 @@ export interface DdocProps {
   documentName?: string;
   onInvalidContentError?: (e: unknown) => void;
   ignoreCorruptedData?: boolean;
+  onSlidesShare?: () => void;
 }
 
 export interface IEditorSelectionData {

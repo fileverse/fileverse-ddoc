@@ -32,6 +32,7 @@ interface PresentationModeProps {
   sharedSlidesLink?: string;
   isPreviewMode: boolean;
   documentName: string;
+  onSlidesShare?: () => void;
 }
 
 const checkOs = () => platform.os?.family;
@@ -95,6 +96,7 @@ export const PresentationMode = ({
   sharedSlidesLink,
   isPreviewMode,
   documentName,
+  onSlidesShare,
 }: PresentationModeProps) => {
   const [showLinkCopied, setShowLinkCopied] = useState(false);
   const [slides, setSlides] = useState<string[]>([]);
@@ -340,6 +342,7 @@ export const PresentationMode = ({
     if (sharedSlidesLink) {
       copy(sharedSlidesLink);
       setShowLinkCopied(true);
+      onSlidesShare?.();
 
       const timeoutId = setTimeout(() => {
         setShowLinkCopied(false);
