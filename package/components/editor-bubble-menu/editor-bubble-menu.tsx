@@ -22,6 +22,7 @@ import { createPortal } from 'react-dom';
 import { EditorBubbleMenuProps, BubbleMenuItem } from './types';
 import { useResponsive } from '../../utils/responsive';
 import { bubbleMenuProps, shouldShow } from './props';
+import { useComments } from '../inline-comment/context/comment-context';
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const {
@@ -35,29 +36,24 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     walletAddress,
     username,
     onInlineComment,
-    setComment,
-    comments,
-    setComments,
-    activeCommentId,
-    // commentDrawerOpen,
     setCommentDrawerOpen,
+    activeCommentId,
   } = props;
   // TODO: V1
   const [isInlineCommentOpen, setIsInlineCommentOpen] = useState(false);
-  const [selectedText, setSelectedText] = useState('');
-  const [isCommentOpen, setIsCommentOpen] = useState(false);
-  const portalRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
   const { isNativeMobile } = useResponsive();
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
     editor: editor,
   });
 
-  useOnClickOutside([portalRef, buttonRef], () => {
-    if (isCommentOpen) {
-      setIsCommentOpen(false);
-    }
-  });
+  const {
+    activeComment,
+    isCommentOpen,
+    onInlineCommentClick,
+    handleInlineComment,
+    portalRef,
+    buttonRef,
+  } = useComments();
 
   const items: BubbleMenuItem[] = [
     {
@@ -148,10 +144,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     setIsInlineCommentOpen(true);
   };
 
-  const handleCommentSubmit = (comment: string) => {
-    setComment(comment);
-  };
-
   const handleCommentClose = () => {
     if (toolRef.current?.parentElement) {
       const popoverContent = toolRef.current.closest('[role="dialog"]');
@@ -201,15 +193,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       case 'Comment':
         return (
           <CommentDropdown
-            editor={editor}
-            selectedText={selectedText}
-            onSubmit={handleCommentSubmit}
             onClose={handleCommentClose}
             elementRef={toolRef}
-            setComments={setComments}
-            comments={comments}
-            username={username}
-            walletAddress={walletAddress}
             activeCommentId={activeCommentId}
             setCommentDrawerOpen={setCommentDrawerOpen}
             initialComment={item.initialComment}
@@ -222,34 +207,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     }
   };
 
-  const handleInlineComment = () => {
-    const { state } = editor;
-    const { from, to } = state.selection;
-    const text = state.doc.textBetween(from, to, ' ');
-
-    // If there's an active comment, find it in comments array
-    if (editor.isActive('comment')) {
-      const activeComment = comments?.find(
-        (comment) => comment.id === activeCommentId,
-      );
-      if (activeComment) {
-        setSelectedText(activeComment.selectedContent);
-      }
-    } else {
-      setSelectedText(text);
-    }
-  };
-
-  const activeComment = comments?.find(
-    (comment) => comment.id === activeCommentId,
-  );
-
-  const handleCommentButtonClick = (event: React.MouseEvent) => {
-    event.stopPropagation();
-    handleInlineComment();
-    setIsCommentOpen(true);
-  };
-
   const mobileCommentButton = (
     <React.Fragment>
       <ToolbarButton
@@ -258,7 +215,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         variant="ghost"
         size="sm"
         isActive={editor.isActive('comment')}
-        onClick={handleCommentButtonClick}
+        onClick={onInlineCommentClick}
       />
       {isCommentOpen &&
         createPortal(

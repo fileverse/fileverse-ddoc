@@ -12,17 +12,11 @@ import { CommentCard } from './comment-card';
 import { useResponsive } from '../../utils/responsive';
 import { useCommentActions } from './use-comment-actions';
 import { CommentDropdownProps } from './types';
+import { useComments } from './context/comment-context';
 
 export const CommentDropdown = ({
-  editor,
-  selectedText,
-  onSubmit,
   onClose,
   elementRef,
-  setComments,
-  comments = [],
-  username,
-  walletAddress,
   activeCommentId,
   setCommentDrawerOpen,
   initialComment = '',
@@ -34,9 +28,16 @@ export const CommentDropdown = ({
   const { isBelow1280px } = useResponsive();
   const commentsContainerRef = useRef<HTMLDivElement>(null);
 
-  const activeComment = comments.find(
-    (comment) => comment.id === activeCommentId,
-  );
+  const {
+    editor,
+    addComment,
+    setComments,
+    comments,
+    username,
+    walletAddress,
+    activeComment,
+    selectedText,
+  } = useComments();
 
   const { handleResolveComment, handleUnresolveComment, handleDeleteComment } =
     useCommentActions({
@@ -45,7 +46,7 @@ export const CommentDropdown = ({
       setComments: setComments ?? (() => {}),
     });
 
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setComment(e.target.value);
   };
 
@@ -55,7 +56,7 @@ export const CommentDropdown = ({
 
   const handleClick = () => {
     if (comment.trim()) {
-      onSubmit(comment);
+      addComment(comment);
       setShowReplyView(true);
       !isBelow1280px && setCommentDrawerOpen?.(true);
     }
@@ -111,16 +112,13 @@ export const CommentDropdown = ({
 
   useEffect(() => {
     if (activeCommentId) {
-      const activeComment = comments.find(
-        (comment) => comment.id === activeCommentId,
-      );
       if (activeComment) {
         setComment(activeComment.content);
       } else {
         setShowReplyView(false);
       }
     }
-  }, [activeCommentId, comments]);
+  }, [activeComment, activeCommentId, comments]);
 
   useEffect(() => {
     if (commentsContainerRef.current && activeComment?.replies) {
@@ -135,7 +133,7 @@ export const CommentDropdown = ({
     <div className="p-3 border-b border-[#E8EBEC] flex flex-col gap-2">
       <TextAreaFieldV2
         value={comment}
-        onChange={handleInputChange}
+        onChange={handleCommentChange}
         onKeyDown={handleKeyDown}
         className="bg-white w-[296px] text-body-sm color-text-secondary min-h-[44px] max-h-[196px] pt-2 overflow-y-auto no-scrollbar"
         placeholder="Type your comment"
@@ -233,7 +231,7 @@ export const CommentDropdown = ({
           <Button
             onClick={handleReplySubmit}
             className="px-4 py-2 w-20 min-w-20 h-9"
-            disabled={activeComment?.resolved}
+            disabled={activeComment?.resolved || !reply.trim()}
           >
             Send
           </Button>

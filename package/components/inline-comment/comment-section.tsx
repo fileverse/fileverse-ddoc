@@ -8,30 +8,41 @@ import {
   cn,
 } from '@fileverse/ui';
 import { CommentCard } from './comment-card';
-import { CommentSectionProps } from './types';
+import { useComments } from './context/comment-context';
+import { useCommentActions } from './use-comment-actions';
 
 export const CommentSection = ({
-  commentsSectionRef,
-  comments,
   activeCommentId,
-  username,
-  walletAddress,
-  reply,
-  comment,
-  openReplyId,
-  handleReplyChange,
-  handleCommentChange,
-  handleCommentKeyDown,
-  handleCommentSubmit,
-  handleKeyDown,
-  handleReplySubmit,
-  setOpenReplyId,
-  focusCommentInEditor,
-  handleResolveComment,
-  handleDeleteComment,
-  handleUnresolveComment,
-  showResolved,
-}: CommentSectionProps) => {
+}: {
+  activeCommentId: string | null;
+}) => {
+  const {
+    comments,
+    username,
+    walletAddress,
+    focusCommentInEditor,
+    editor,
+    setComments,
+    handleReplyChange,
+    handleCommentChange,
+    handleCommentKeyDown,
+    handleReplySubmit,
+    setOpenReplyId,
+    handleReplyKeyDown,
+    openReplyId,
+    showResolved,
+    commentsSectionRef,
+    comment,
+    reply,
+    handleCommentSubmit,
+  } = useComments();
+  const { handleResolveComment, handleUnresolveComment, handleDeleteComment } =
+    useCommentActions({
+      editor,
+      comments,
+      setComments,
+    });
+
   const filteredComments = comments.filter((comment) =>
     showResolved ? true : !comment.resolved,
   );
@@ -47,7 +58,8 @@ export const CommentSection = ({
             key={comment.id}
             className={cn(
               'flex flex-col gap-1 w-full box-border transition-all border-b color-border-default last:border-b-0',
-              comment.id === activeCommentId && 'translate-x-[-4px] !opacity-100',
+              comment.id === activeCommentId &&
+                'translate-x-[-4px] !opacity-100',
               comment.id !== activeCommentId && 'translate-x-0 !opacity-70',
             )}
             onClick={() => focusCommentInEditor(comment.id)}
@@ -101,7 +113,7 @@ export const CommentSection = ({
                     )}
                     id={comment.id}
                     onChange={handleReplyChange}
-                    onKeyDown={handleKeyDown}
+                    onKeyDown={handleReplyKeyDown}
                     autoFocus
                   />
                   {comment.id === activeCommentId && (
@@ -151,6 +163,7 @@ export const CommentSection = ({
           <Button
             onClick={handleCommentSubmit}
             className="px-4 py-2 w-20 min-w-20 h-9"
+            disabled={!comment.trim()}
           >
             Send
           </Button>

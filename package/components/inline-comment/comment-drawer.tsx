@@ -6,108 +6,20 @@ import {
   DynamicDrawer,
 } from '@fileverse/ui';
 import cn from 'classnames';
-import { useState } from 'react';
-import { useResponsive } from '../../utils/responsive';
-import { useCommentActions } from './use-comment-actions';
 import { CommentDrawerProps } from './types';
 import { CommentSection } from './comment-section';
+import { useComments } from './context/comment-context';
+import { useResponsive } from '../../utils/responsive';
 
 export const CommentDrawer = ({
-  commentsSectionRef,
   isOpen,
   onClose,
-  comments,
-  activeCommentId,
-  username,
-  walletAddress,
-  editor,
-  setComments,
-  setActiveCommentId,
-  focusCommentInEditor,
-  handleAddReply,
   isNavbarVisible,
   isPresentationMode,
+  activeCommentId,
 }: CommentDrawerProps) => {
-  const [reply, setReply] = useState('');
-  const [comment, setComment] = useState('');
-  const [openReplyId, setOpenReplyId] = useState<string | null>(null);
-  const [showResolved, setShowResolved] = useState(false);
+  const { toggleResolved, showResolved } = useComments();
   const { isBelow1280px } = useResponsive();
-
-  const handleReplyChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setReply(event.target.value);
-  };
-
-  const handleCommentChange = (
-    event: React.ChangeEvent<HTMLTextAreaElement>,
-  ) => {
-    setComment(event.target.value);
-  };
-
-  const handleCommentKeyDown = (
-    event: React.KeyboardEvent<HTMLTextAreaElement>,
-  ) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      handleCommentSubmit();
-    }
-  };
-
-  const handleCommentSubmit = () => {
-    if (!comment.trim()) return;
-
-    console.log('comment', comment);
-  };
-
-  const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (event.key === 'Enter' && !event.shiftKey) {
-      event.preventDefault();
-      handleReplySubmit();
-    }
-  };
-
-  const handleReplySubmit = () => {
-    if (!activeCommentId || !reply.trim()) return;
-
-    handleAddReply(comments, activeCommentId, reply, setComments);
-    setReply('');
-    // setActiveCommentId(null);
-    // editor.commands.focus();
-  };
-
-  const { handleResolveComment, handleUnresolveComment, handleDeleteComment } =
-    useCommentActions({
-      editor,
-      comments,
-      setComments,
-    });
-
-  const commentSectionProps = {
-    commentsSectionRef,
-    comments,
-    activeCommentId,
-    username,
-    walletAddress,
-    reply,
-    comment,
-    openReplyId,
-    handleReplyChange,
-    handleCommentChange,
-    handleCommentKeyDown,
-    handleCommentSubmit,
-    handleKeyDown,
-    handleReplySubmit,
-    setOpenReplyId,
-    focusCommentInEditor,
-    handleResolveComment,
-    handleUnresolveComment,
-    handleDeleteComment,
-    showResolved,
-  };
-
-  const toggleResolved = () => {
-    setShowResolved(!showResolved);
-  };
 
   return (
     <div>
@@ -138,7 +50,7 @@ export const CommentDrawer = ({
                   </Tooltip>
                 </div>
               </div>
-              <CommentSection {...commentSectionProps} />
+              <CommentSection activeCommentId={activeCommentId} />
             </React.Fragment>
           }
         />
@@ -176,7 +88,7 @@ export const CommentDrawer = ({
                   />
                 </Tooltip>
               </div>
-              <CommentSection {...commentSectionProps} />
+              <CommentSection activeCommentId={activeCommentId} />
             </React.Fragment>
           }
         />

@@ -4,18 +4,14 @@ import { BubbleMenu } from '@tiptap/react';
 import { cn, IconButton } from '@fileverse/ui';
 import { Editor } from '@tiptap/core';
 import { CommentBubbleMenuProps } from './types';
+import { useComments } from './context/comment-context';
 
 export const CommentBubbleMenu = ({
-  editor,
-  comments,
-  activeCommentId,
   zoomLevel,
-  onPrevComment,
-  onNextComment,
+  editor,
 }: CommentBubbleMenuProps) => {
-  const currentCommentIndex = comments.findIndex(
-    (comment) => comment.id === activeCommentId,
-  );
+  const { comments, onPrevComment, onNextComment, activeCommentIndex } =
+    useComments();
 
   const bubbleMenuProps = {
     shouldShow: ({ editor }: { editor: Editor }) => {
@@ -49,7 +45,7 @@ export const CommentBubbleMenu = ({
         variant="ghost"
         size="sm"
         onClick={onPrevComment}
-        disabled={currentCommentIndex <= 0}
+        disabled={activeCommentIndex <= 0}
       />
 
       <IconButton
@@ -57,7 +53,7 @@ export const CommentBubbleMenu = ({
         variant="ghost"
         size="sm"
         onClick={onNextComment}
-        disabled={currentCommentIndex >= comments.length - 1}
+        disabled={activeCommentIndex >= comments.length - 1}
       />
       <div className="px-2 text-sm color-text-secondary">
         {comments.length} comments

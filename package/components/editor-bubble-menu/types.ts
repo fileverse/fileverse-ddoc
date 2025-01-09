@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BubbleMenuProps, Editor } from '@tiptap/react';
-import { IComment } from '../../extensions/comment';
 import { SetStateAction } from 'react';
 import { InlineCommentData } from '../../types';
 
@@ -12,6 +11,7 @@ export interface BubbleMenuItem {
 }
 
 export type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
+  activeCommentId: string | null;
   isPreviewMode: boolean;
   onError?: (errorString: string) => void;
   zoomLevel: string;
@@ -23,11 +23,6 @@ export type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   walletAddress?: string;
   username?: string;
   onInlineComment?: () => void;
-  setComment?: () => void;
-  comments?: IComment[];
-  setComments?: (comments: IComment[]) => void;
-  activeCommentId?: string;
-  commentDrawerOpen?: boolean;
   setCommentDrawerOpen?: React.Dispatch<SetStateAction<boolean>>;
 };
 

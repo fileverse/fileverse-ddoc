@@ -10,7 +10,6 @@ export interface UseCommentActionsProps {
 
 export interface CommentDropdownProps {
   editor: Editor;
-  selectedText: string;
   onSubmit: (content: string) => string;
   onClose: () => void;
   elementRef: React.RefObject<HTMLDivElement>;
@@ -25,53 +24,12 @@ export interface CommentDropdownProps {
 }
 
 export interface CommentDrawerProps {
-  commentsSectionRef: React.RefObject<HTMLDivElement>;
   isOpen: boolean;
   onClose: () => void;
-  comments: IComment[];
-  activeCommentId: string | null;
-  username?: string;
-  walletAddress?: string;
-  editor: Editor;
-  setComments: (comments: IComment[]) => void;
-  setActiveCommentId: (id: string | null) => void;
-  focusCommentInEditor: (id: string) => void;
-  handleAddReply: (
-    comments: IComment[],
-    activeCommentId: string,
-    replyContent: string,
-    setComments: (comments: IComment[]) => void,
-  ) => void;
   isNavbarVisible: boolean;
   isPresentationMode: boolean;
+  activeCommentId: string | null;
 }
-
-export type CommentSectionProps = Pick<
-  CommentDrawerProps,
-  | 'commentsSectionRef'
-  | 'comments'
-  | 'activeCommentId'
-  | 'username'
-  | 'walletAddress'
-  | 'focusCommentInEditor'
-> & {
-  reply: string;
-  comment: string;
-  openReplyId: string | null;
-  handleReplyChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  handleCommentChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  handleCommentKeyDown: (
-    event: React.KeyboardEvent<HTMLTextAreaElement>,
-  ) => void;
-  handleCommentSubmit: () => void;
-  handleKeyDown: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
-  handleReplySubmit: () => void;
-  setOpenReplyId: (id: string | null) => void;
-  handleResolveComment: (commentId: string) => void;
-  handleUnresolveComment: (commentId: string) => void;
-  handleDeleteComment: (commentId: string) => void;
-  showResolved: boolean;
-};
 
 export interface CommentCardProps {
   username?: string;
@@ -92,10 +50,5 @@ export interface CommentCardProps {
 }
 
 export type CommentBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
-  editor: Editor;
-  comments: IComment[];
-  activeCommentId: string | null;
   zoomLevel: string;
-  onPrevComment: () => void;
-  onNextComment: () => void;
 };
