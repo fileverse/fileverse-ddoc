@@ -11,6 +11,7 @@ import {
   TagType,
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
+import { IComment } from '../../package/extensions/comment';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -30,7 +31,6 @@ function App() {
   const [selectedTags, setSelectedTags] = useState<TagType[]>([]);
   const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(false);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
-  const [inlineCommentOpen, setInlineCommentOpen] = useState(false);
   const [inlineCommentData, setInlineCommentData] = useState({
     inlineCommentText: '',
     highlightedTextContent: '',
@@ -40,6 +40,28 @@ function App() {
   const [zoomLevel, setZoomLevel] = useState<string>('1');
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const isPreviewMode = false;
+
+  //To handle comments from consumer side
+  const [inlineCommentOpen, setInlineCommentOpen] = useState(false);
+  const [initialComments, setInitialComment] = useState<IComment[]>([]);
+  const handleReplyOnComment = (id: string, reply: IComment) => {
+    setInitialComment((prev) => {
+      prev.map((comment) => {
+        if (comment.id === id) {
+          return {
+            ...comment,
+            replies: [...comment.replies, reply],
+            content: comment.content,
+          };
+        }
+      });
+      return prev;
+    });
+  };
+  const handleNewComment = (comment: IComment) => {
+    setInitialComment((prev) => [...prev, comment]);
+  };
+  //To handle comments from consumer side
 
   const collaborationId = window.location.pathname.split('/')[2]; // example url - /doc/1234, that why's used second element of array
 
@@ -86,8 +108,18 @@ function App() {
           </div>
         </div>
         <div className="flex gap-2">
-          <IconButton variant={'ghost'} icon="Presentation" size="md" onClick={() => setIsPresentationMode(true)} />
-          <IconButton variant={'ghost'} icon="MessageSquareText" size="md" onClick={() => setInlineCommentOpen(prev => !prev)} />
+          <IconButton
+            variant={'ghost'}
+            icon="Presentation"
+            size="md"
+            onClick={() => setIsPresentationMode(true)}
+          />
+          <IconButton
+            variant={'ghost'}
+            icon="MessageSquareText"
+            size="md"
+            onClick={() => setInlineCommentOpen((prev) => !prev)}
+          />
           <IconButton
             variant={'ghost'}
             icon="Share2"
@@ -140,17 +172,20 @@ function App() {
         setIsCommentSectionOpen={setIsCommentSectionOpen}
         setInlineCommentData={setInlineCommentData}
         inlineCommentData={inlineCommentData}
-        inlineCommentOpen={inlineCommentOpen}
-        setInlineCommentOpen={setInlineCommentOpen}
         isPresentationMode={isPresentationMode}
         setIsPresentationMode={setIsPresentationMode}
         zoomLevel={zoomLevel}
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
-        onInlineComment={(): void => { }}
-        onMarkdownImport={(): void => { }}
-        onMarkdownExport={(): void => { }}
+        onInlineComment={(): void => {}}
+        onMarkdownImport={(): void => {}}
+        onMarkdownExport={(): void => {}}
+        initialComments={initialComments}
+        inlineCommentOpen={inlineCommentOpen}
+        setInlineCommentOpen={setInlineCommentOpen}
+        onCommentReply={handleReplyOnComment}
+        onNewComment={handleNewComment}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

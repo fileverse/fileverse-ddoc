@@ -100,6 +100,7 @@ const DdocEditor = forwardRef(
       inlineCommentOpen,
       onNewComment,
       setInlineCommentOpen,
+      initialComments,
     }: DdocProps,
     ref,
   ) => {
@@ -178,6 +179,7 @@ const DdocEditor = forwardRef(
       onInvalidContentError,
       ignoreCorruptedData,
       onNewComment,
+      initialComments,
     });
 
     useImperativeHandle(
