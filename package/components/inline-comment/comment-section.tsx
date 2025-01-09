@@ -143,7 +143,7 @@ export const CommentSection = ({
           </div>
         ))}
       </div>
-      <div className="flex flex-col gap-3 color-bg-secondary border-t color-border-default px-6 py-5 rounded-b-lg min-h-[15vh] fixed bottom-0 w-full">
+      <div className="flex flex-col gap-3 color-bg-secondary border-t color-border-default px-6 py-5 rounded-b-lg min-h-[15vh] absolute bottom-0 w-full">
         <div className="flex justify-start items-center gap-2">
           <Avatar src={''} size="sm" className="min-w-6" />
 

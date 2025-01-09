@@ -28,6 +28,16 @@ export const CommentCard = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAllReplies, setShowAllReplies] = useState(false);
+  const commentsContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (commentsContainerRef.current && replies) {
+      commentsContainerRef.current.scrollTo({
+        top: commentsContainerRef.current.scrollHeight,
+        behavior: 'smooth',
+      });
+    }
+  }, [replies]);
 
   useEffect(() => {
     if (id !== activeCommentId) {
@@ -69,13 +79,13 @@ export const CommentCard = ({
     if (!replies?.length) return null;
 
     let displayedReplies = replies;
-    if (!showAllReplies && replies.length > 4) {
+    if (!showAllReplies && replies.length > 3) {
       displayedReplies = replies.slice(-2);
     }
 
     return (
       <div className="flex flex-col gap-3">
-        {replies.length > 4 && !showAllReplies && (
+        {replies.length > 3 && !showAllReplies && (
           <button
             onClick={() => setShowAllReplies(true)}
             className="text-helper-text-sm color-text-secondary hover:underline text-left ml-3 pl-4"
@@ -115,7 +125,13 @@ export const CommentCard = ({
   };
 
   return (
-    <div className={cn('flex flex-col gap-3 p-3', isResolved && 'opacity-30')}>
+    <div
+      ref={commentsContainerRef}
+      className={cn(
+        'flex flex-col gap-3 p-3  max-h-[400px] overflow-y-auto no-scrollbar',
+        isResolved && 'opacity-30',
+      )}
+    >
       <div className="flex justify-between items-center">
         <div className="flex justify-start items-center gap-2">
           <Avatar src={''} size="sm" className="min-w-6" />
