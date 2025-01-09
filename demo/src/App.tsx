@@ -11,6 +11,7 @@ import {
   TagType,
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
+import { IComment } from '../../package/extensions/comment';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -30,7 +31,6 @@ function App() {
   const [selectedTags, setSelectedTags] = useState<TagType[]>([]);
   const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(false);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
-  const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
   const [inlineCommentData, setInlineCommentData] = useState({
     inlineCommentText: '',
     highlightedTextContent: '',
@@ -42,6 +42,27 @@ function App() {
   const isPreviewMode = false;
 
   const collaborationId = window.location.pathname.split('/')[2]; // example url - /doc/1234, that why's used second element of array
+
+  //To handle comments from consumer side
+  const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
+  const [initialComments, setInitialComment] = useState<IComment[]>([]);
+  const handleReplyOnComment = (id: string, reply: IComment) => {
+    setInitialComment((prev) =>
+      prev.map((comment) => {
+        if (comment.id === id) {
+          return {
+            ...comment,
+            replies: [...comment.replies, reply],
+          };
+        }
+        return comment; // Ensure you return the unchanged comment
+      }),
+    );
+  };
+  const handleNewComment = (comment: IComment) => {
+    setInitialComment((prev) => [...prev, comment]);
+  };
+  //To handle comments from consumer side
 
   useEffect(() => {
     if (collaborationId) {
@@ -86,8 +107,18 @@ function App() {
           </div>
         </div>
         <div className="flex gap-2">
-          <IconButton variant={'ghost'} icon="Presentation" size="md" onClick={() => setIsPresentationMode(true)} />
-          <IconButton variant={'ghost'} icon="MessageSquareText" size="md" onClick={() => setCommentDrawerOpen(prev => !prev)} />
+          <IconButton
+            variant={'ghost'}
+            icon="Presentation"
+            size="md"
+            onClick={() => setIsPresentationMode(true)}
+          />
+          <IconButton
+            variant={'ghost'}
+            icon="MessageSquareText"
+            size="md"
+            onClick={() => setCommentDrawerOpen((prev) => !prev)}
+          />
           <IconButton
             variant={'ghost'}
             icon="Share2"
@@ -148,9 +179,13 @@ function App() {
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
-        onInlineComment={(): void => { }}
-        onMarkdownImport={(): void => { }}
-        onMarkdownExport={(): void => { }}
+        onInlineComment={(): void => {}}
+        onMarkdownImport={(): void => {}}
+        onMarkdownExport={(): void => {}}
+        initialComments={initialComments}
+        onCommentReply={handleReplyOnComment}
+        onNewComment={handleNewComment}
+        setInitialComments={setInitialComment}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

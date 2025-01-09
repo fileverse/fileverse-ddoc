@@ -24,7 +24,7 @@ interface PresentationModeProps {
   editor: Editor;
   onClose: () => void;
   isFullscreen: boolean;
-  setIsFullscreen: (isFullscreen: boolean) => void;
+  setIsFullscreen: React.Dispatch<React.SetStateAction<boolean>>;
   onError?: (error: string) => void;
   setIsCommentSectionOpen:
     | React.Dispatch<React.SetStateAction<boolean>>

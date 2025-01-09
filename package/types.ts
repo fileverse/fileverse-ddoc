@@ -3,6 +3,7 @@ import { JSONContent } from '@tiptap/core';
 import { EditorProps } from '@tiptap/pm/view';
 import { Editor } from '@tiptap/react';
 import React, { SetStateAction } from 'react';
+import { IComment } from './extensions/comment';
 
 export const DdocEditorProps: EditorProps = {
   attributes: {
@@ -24,8 +25,14 @@ export type InlineCommentData = {
   handleClick: boolean;
 };
 export interface DdocProps {
+  //Comments V2 Props
   commentDrawerOpen?: boolean;
   setCommentDrawerOpen?: React.Dispatch<SetStateAction<boolean>>;
+  initialComments?: IComment[];
+  setInitialComments?: React.Dispatch<SetStateAction<IComment[]>>;
+  onCommentReply?: (activeCommentId: string, reply: IComment) => void;
+  onNewComment?: (n: IComment) => void;
+  //Comments V2 Props
   selectedTags?: TagType[];
   setSelectedTags?: React.Dispatch<SetStateAction<TagType[]>>;
   enableCollaboration?: boolean | undefined;

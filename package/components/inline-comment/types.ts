@@ -33,17 +33,17 @@ export interface CommentDrawerProps {
   username?: string;
   walletAddress?: string;
   editor: Editor;
-  setComments: (comments: IComment[]) => void;
+  setComments: React.Dispatch<React.SetStateAction<IComment[]>>;
   setActiveCommentId: (id: string | null) => void;
   focusCommentInEditor: (id: string) => void;
   handleAddReply: (
-    comments: IComment[],
     activeCommentId: string,
     replyContent: string,
-    setComments: (comments: IComment[]) => void,
+    onCommentReply?: (activeCommentId: string, reply: IComment) => void,
   ) => void;
   isNavbarVisible: boolean;
   isPresentationMode: boolean;
+  onCommentReply?: (activeCommentId: string, reply: IComment) => void;
 }
 
 export type CommentSectionProps = Pick<

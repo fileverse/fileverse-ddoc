@@ -35,7 +35,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     walletAddress,
     username,
     onInlineComment,
-    setComment,
+    onSaveComment,
     comments,
     setComments,
     activeCommentId,
@@ -99,7 +99,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Link',
       isActive: () => editor.isActive('link'),
-      command: () => { },
+      command: () => {},
       icon: 'Link',
     },
     {
@@ -111,13 +111,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'InlineComment',
       isActive: () => editor.isActive('inlineComment'),
-      command: () => { },
+      command: () => {},
       icon: 'MessageSquarePlus',
     },
     {
       name: 'Comment',
       isActive: () => editor.isActive('comment'),
-      command: () => { },
+      command: () => {},
       icon: 'MessageSquareQuote',
     },
   ];
@@ -149,7 +149,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   };
 
   const handleCommentSubmit = (comment: string) => {
-    setComment(comment);
+    onSaveComment(comment);
   };
 
   const handleCommentClose = () => {

@@ -23,7 +23,7 @@ export type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   walletAddress?: string;
   username?: string;
   onInlineComment?: () => void;
-  setComment?: () => void;
+  onSaveComment?: () => void;
   comments?: IComment[];
   setComments?: (comments: IComment[]) => void;
   activeCommentId?: string;

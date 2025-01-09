@@ -22,11 +22,11 @@ export const CommentDrawer = ({
   walletAddress,
   editor,
   setComments,
-  setActiveCommentId,
   focusCommentInEditor,
   handleAddReply,
   isNavbarVisible,
   isPresentationMode,
+  onCommentReply,
 }: CommentDrawerProps) => {
   const [reply, setReply] = useState('');
   const [comment, setComment] = useState('');
@@ -67,9 +67,10 @@ export const CommentDrawer = ({
   };
 
   const handleReplySubmit = () => {
+    console.log({ activeCommentId });
     if (!activeCommentId || !reply.trim()) return;
 
-    handleAddReply(comments, activeCommentId, reply, setComments);
+    handleAddReply(activeCommentId, reply, onCommentReply);
     setReply('');
     // setActiveCommentId(null);
     // editor.commands.focus();

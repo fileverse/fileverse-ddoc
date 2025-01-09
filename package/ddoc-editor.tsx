@@ -31,34 +31,21 @@ import { CommentBubbleMenu } from './components/inline-comment/comment-bubble-me
 import { useResponsive } from './utils/responsive';
 
 const handleAddReply = (
-  comments: IComment[],
   activeCommentId: string,
   replyContent: string,
-  setComments: (comments: IComment[]) => void,
+  onCommentReply?: (activeCommentId: string, reply: IComment) => void,
 ) => {
   if (!replyContent.trim()) return;
 
-  setComments(
-    comments.map((comment) => {
-      if (comment.id === activeCommentId) {
-        return {
-          ...comment,
-          replies: [
-            ...comment.replies,
-            {
-              id: `reply-${uuid()}`,
-              content: replyContent,
-              replies: [],
-              createdAt: new Date(),
-              selectedContent: comment.selectedContent,
-            },
-          ],
-          content: comment.content,
-        };
-      }
-      return comment;
-    }),
-  );
+  const newReply = {
+    id: `reply-${uuid()}`,
+    content: replyContent,
+    replies: [],
+    createdAt: new Date(),
+    selectedContent: '',
+  };
+
+  onCommentReply?.(activeCommentId, newReply);
 };
 
 const DdocEditor = forwardRef(
@@ -106,8 +93,13 @@ const DdocEditor = forwardRef(
       documentName,
       onInvalidContentError,
       ignoreCorruptedData,
+      //Comments V2
       commentDrawerOpen,
       setCommentDrawerOpen,
+      initialComments = [],
+      onNewComment,
+      onCommentReply,
+      setInitialComments,
     }: DdocProps,
     ref,
   ) => {
@@ -142,14 +134,12 @@ const DdocEditor = forwardRef(
       ref: editorRef,
       isContentLoading,
       ydoc,
-      comments,
       activeCommentId,
       setActiveCommentId,
-      setComments,
       commentsSectionRef,
-      setComment,
       focusCommentInEditor,
       refreshYjsIndexedDbProvider,
+      onSaveComment,
     } = useDdocEditor({
       enableIndexeddbSync,
       ddocId,
@@ -178,6 +168,8 @@ const DdocEditor = forwardRef(
       setIsNavbarVisible,
       onInvalidContentError,
       ignoreCorruptedData,
+      onNewComment,
+      initialComments,
     });
 
     useImperativeHandle(
@@ -453,9 +445,9 @@ const DdocEditor = forwardRef(
                 username={username as string}
                 walletAddress={walletAddress as string}
                 onInlineComment={onInlineComment}
-                setComment={setComment}
-                comments={comments}
-                setComments={setComments}
+                onSaveComment={onSaveComment}
+                comments={initialComments}
+                setComments={setInitialComments}
                 activeCommentId={activeCommentId as string}
                 commentDrawerOpen={commentDrawerOpen}
                 setCommentDrawerOpen={setCommentDrawerOpen}
@@ -568,15 +560,16 @@ const DdocEditor = forwardRef(
           commentsSectionRef={commentsSectionRef}
           isOpen={commentDrawerOpen as boolean}
           onClose={() => setCommentDrawerOpen?.(false)}
-          comments={comments}
+          comments={initialComments as IComment[]}
           activeCommentId={activeCommentId}
           username={username as string}
           walletAddress={walletAddress as string}
           editor={editor}
-          setComments={setComments}
+          setComments={setInitialComments!}
           setActiveCommentId={setActiveCommentId}
           focusCommentInEditor={focusCommentInEditor}
           handleAddReply={handleAddReply}
+          onCommentReply={onCommentReply}
           isNavbarVisible={isNavbarVisible}
           isPresentationMode={isPresentationMode as boolean}
         />
@@ -584,24 +577,24 @@ const DdocEditor = forwardRef(
           <div>
             <CommentBubbleMenu
               editor={editor}
-              comments={comments}
+              comments={initialComments as IComment[]}
               activeCommentId={activeCommentId}
               zoomLevel={zoomLevel}
               onPrevComment={() => {
-                const currentIndex = comments.findIndex(
+                const currentIndex = initialComments.findIndex(
                   (comment) => comment.id === activeCommentId,
                 );
                 if (currentIndex > 0) {
-                  const prevComment = comments[currentIndex - 1];
+                  const prevComment = initialComments[currentIndex - 1];
                   focusCommentInEditor(prevComment.id);
                 }
               }}
               onNextComment={() => {
-                const currentIndex = comments.findIndex(
+                const currentIndex = initialComments.findIndex(
                   (comment) => comment.id === activeCommentId,
                 );
-                if (currentIndex < comments.length - 1) {
-                  const nextComment = comments[currentIndex + 1];
+                if (currentIndex < initialComments.length - 1) {
+                  const nextComment = initialComments[currentIndex + 1];
                   focusCommentInEditor(nextComment.id);
                 }
               }}
