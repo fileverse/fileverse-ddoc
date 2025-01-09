@@ -64,7 +64,8 @@ export const CommentProvider = ({
     return {
       id: `comment-${uuid()}`,
       selectedContent,
-      content,
+      // Preserve line breaks in content
+      content: content || '',
       replies: [],
       createdAt: new Date(),
     };

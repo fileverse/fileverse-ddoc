@@ -115,7 +115,7 @@ export const CommentCard = ({
                 </span>
               </div>
             </div>
-            <span className="text-body-sm flex flex-col gap-2 ml-3 pl-4 border-l">
+            <span className="text-body-sm flex flex-col gap-2 ml-3 pl-4 border-l whitespace-pre-wrap">
               {reply.content}
             </span>
           </div>
@@ -223,7 +223,7 @@ export const CommentCard = ({
         </div>
         {comment && (
           <div>
-            <span className="text-body-sm">{comment}</span>
+            <span className="text-body-sm whitespace-pre-wrap">{comment}</span>
           </div>
         )}
       </div>

@@ -108,7 +108,7 @@ export const CommentSection = ({
                     value={reply}
                     disabled={comment.id !== activeCommentId}
                     className={cn(
-                      'bg-white text-body-sm color-text-secondary min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2',
+                      'bg-white text-body-sm color-text-secondary min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap',
                       comment.id === activeCommentId && 'bg-white',
                     )}
                     id={comment.id}
@@ -155,7 +155,7 @@ export const CommentSection = ({
           value={comment}
           onChange={handleCommentChange}
           onKeyDown={handleCommentKeyDown}
-          className="bg-white w-full text-body-sm color-text-secondary min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2"
+          className="bg-white w-full text-body-sm color-text-secondary min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
           placeholder="Type your comment"
         />
 

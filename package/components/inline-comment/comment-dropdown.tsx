@@ -47,11 +47,13 @@ export const CommentDropdown = ({
     });
 
   const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setComment(e.target.value);
+    const value = e.target.value;
+    setComment(value);
   };
 
   const handleReplyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setReply(e.target.value);
+    const value = e.target.value;
+    setReply(value);
   };
 
   const handleClick = () => {
@@ -135,7 +137,7 @@ export const CommentDropdown = ({
         value={comment}
         onChange={handleCommentChange}
         onKeyDown={handleKeyDown}
-        className="bg-white w-[296px] text-body-sm color-text-secondary min-h-[44px] max-h-[196px] pt-2 overflow-y-auto no-scrollbar"
+        className="bg-white w-full text-body-sm color-text-secondary min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
         placeholder="Type your comment"
         autoFocus
       />
@@ -221,7 +223,7 @@ export const CommentDropdown = ({
           value={reply}
           onChange={handleReplyChange}
           onKeyDown={handleKeyDown}
-          className="bg-white w-[296px] text-body-sm color-text-secondary min-h-[44px] max-h-[196px] overflow-y-auto no-scrollbar px-3 py-2 disabled:!border-none"
+          className="bg-white text-body-sm color-text-secondary min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
           placeholder="Reply"
           autoFocus
           disabled={activeComment?.resolved}
