@@ -1,23 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { ReactNode } from 'react';
-import { Editor, Range } from '@tiptap/core';
 import { LucideIcon } from '@fileverse/ui';
-
 import { startImageUpload } from '../../utils/upload-images';
 import { IMG_UPLOAD_SETTINGS } from '../../components/editor-utils';
 import { validateImageExtension } from '../../utils/check-image-type';
-
-export interface CommandItemProps {
-  title: string;
-  description: string;
-  icon: ReactNode;
-  image?: string;
-}
-export interface CommandProps {
-  editor: Editor;
-  range: Range;
-}
+import { CommandProps } from './types';
 
 export const getSuggestionItems = ({
   query,

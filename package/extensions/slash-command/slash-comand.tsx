@@ -11,11 +11,8 @@ import { useMediaQuery } from 'usehooks-ts';
 import { ReactRenderer } from '@tiptap/react';
 import tippy from 'tippy.js';
 import { Editor, Extension } from '@tiptap/core';
-import {
-  CommandItemProps,
-  getSuggestionItems,
-  updateScrollView,
-} from './slash-command-utils';
+import { getSuggestionItems, updateScrollView } from './slash-command-utils';
+import { CommandItemProps } from './types';
 import Suggestion from '@tiptap/suggestion';
 
 export const Command = Extension.create({
