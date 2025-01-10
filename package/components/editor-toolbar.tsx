@@ -17,12 +17,12 @@ import {
   LucideIcon,
   IconButton,
   DynamicDropdown,
-  ButtonGroup,
   Button,
   LucideIconProps,
   DynamicModal,
   TextField,
   DynamicDropdownV2,
+  cn,
 } from '@fileverse/ui';
 import ToolbarButton from '../common/toolbar-button';
 
@@ -144,19 +144,29 @@ const TiptapToolBar = ({
           isOpen={fileExportsOpen}
           onClose={() => setFileExportsOpen(false)}
           anchorTrigger={
-            <Tooltip text="Export/Import">
-              <IconButton
-                icon="FileExport"
-                variant="ghost"
-                size="md"
-                onClick={() => setFileExportsOpen((prev) => !prev)}
-                className={fileExportsOpen ? '!bg-[#FFDF0A]' : ''}
-              />
-            </Tooltip>
+            <button
+            className={cn(
+              'bg-transparent hover:!bg-[#F2F4F5] rounded',
+              { '!bg-[#FFDF0A]': fileExportsOpen }
+            )}
+              onClick={() => setFileExportsOpen((prev) => !prev)}
+            >
+              <Tooltip text="Export/Import">
+                <IconButton
+                  icon="FileExport"
+                  variant="ghost"
+                  size="md"
+                  className={fileExportsOpen ? '!bg-[#FFDF0A]' : ''}
+                />
+              </Tooltip>
+            </button>
           }
           content={
-            <ButtonGroup className="flex-col space-x-0 gap-1 p-1">
-              <span className="text-[12px] px-2 font-normal text-[#77818A]">PDF</span>
+            <div className="px-1 py-2 gap-1 text-body-sm scroll-smooth bg-white shadow-elevation-1 transition-all rounded">
+              <div>
+              <span className="text-[12px] px-2 font-normal text-[#77818A] py-1">
+                PDF
+              </span>
               {pdfExportOption.length > 0 && (
                 <Button
                   variant="ghost"
@@ -165,16 +175,18 @@ const TiptapToolBar = ({
                     pdfExportOption[0]?.onClick();
                     setFileExportsOpen(false);
                   }}
-                  className="space-x-2 justify-start"
+                  className="hover:bg-[#f2f2f2] h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
                 >
                   <LucideIcon
                     name={pdfExportOption[0]?.icon as LucideIconProps['name']}
                     className="w-5 h-5"
                   />
-                  <span>{pdfExportOption[0]?.title}</span>
+                  <span className='text-sm font-medium text-[#363B3F]'>{pdfExportOption[0]?.title}</span>
                 </Button>
               )}
-              <span className="text-[12px] px-2 font-normal text-[#77818A]">
+              </div>
+              <div>
+              <span className="text-[12px] px-2 font-normal text-[#77818A] py-1">
                 Markdown
               </span>
 
@@ -185,17 +197,18 @@ const TiptapToolBar = ({
                   onClick={() => {
                     option?.onClick();
                     setFileExportsOpen(false);
-                  }}                  
-                  className="space-x-2 justify-start"
+                  }}
+                  className="hover:bg-[#f2f2f2] h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
                 >
                   <LucideIcon
                     name={option?.icon as LucideIconProps['name']}
                     className="w-5 h-5"
                   />
-                  <span>{option?.title}</span>
+                  <span className='text-sm font-medium text-[#363B3F]'>{option?.title}</span>
                 </Button>
               ))}
-            </ButtonGroup>
+              </div>
+            </div>
           }
         />
         <div className="w-[1px] h-4 bg-gray-200 mx-2"></div>
@@ -247,7 +260,7 @@ const TiptapToolBar = ({
               {zoomLevels.map((zoom) => (
                 <button
                   key={zoom.title}
-                  className="hover:bg-[#f2f2f2] rounded py-1 px-2 w-full text-left flex items-center space-x-2 text-sm text-black transition"
+                  className="hover:bg-[#f2f2f2] h-8 rounded py-1 px-2 w-full text-left flex items-center space-x-2 text-sm text-black transition"
                   onClick={() => {
                     setZoomLevel(zoom.value);
                     setDropdownOpen(false);
