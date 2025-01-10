@@ -25,6 +25,7 @@ export const CommentProvider = ({
   const [comment, setComment] = useState('');
   const [openReplyId, setOpenReplyId] = useState<string | null>(null);
   const commentsSectionRef = useRef<HTMLDivElement | null>(null);
+  const replySectionRef = useRef<HTMLDivElement | null>(null);
   const [selectedText, setSelectedText] = useState('');
   const [isCommentOpen, setIsCommentOpen] = useState(false);
   const portalRef = useRef<HTMLDivElement>(null);
@@ -298,6 +299,7 @@ export const CommentProvider = ({
         handleInlineComment,
         portalRef,
         buttonRef,
+        replySectionRef,
       }}
     >
       {children}

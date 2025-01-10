@@ -30,6 +30,7 @@ export interface CommentContextType {
   setOpenReplyId: (id: string | null) => void;
   handleReplyKeyDown: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   commentsSectionRef: React.RefObject<HTMLDivElement>;
+  replySectionRef: React.RefObject<HTMLDivElement>;
   addComment: (content?: string) => void;
   handleCommentSubmit: () => void;
   reply: string;

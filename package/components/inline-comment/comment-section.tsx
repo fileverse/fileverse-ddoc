@@ -32,6 +32,7 @@ export const CommentSection = ({
     openReplyId,
     showResolved,
     commentsSectionRef,
+    replySectionRef,
     comment,
     reply,
     handleCommentSubmit,
@@ -59,7 +60,7 @@ export const CommentSection = ({
             className={cn(
               'flex flex-col gap-1 w-full box-border transition-all border-b color-border-default last:border-b-0',
               comment.id === activeCommentId &&
-                'translate-x-[-4px] !opacity-100',
+              'translate-x-[-4px] !opacity-100',
               comment.id !== activeCommentId && 'translate-x-0 !opacity-70',
             )}
             onClick={() => focusCommentInEditor(comment.id)}
@@ -79,11 +80,12 @@ export const CommentSection = ({
             />
 
             <div
+              ref={replySectionRef}
               className={cn(
                 'p-3 flex flex-col gap-2',
                 openReplyId === comment.id && 'ml-5 pl-4',
                 (comment.id !== activeCommentId || comment.resolved) &&
-                  'hidden',
+                'hidden',
               )}
             >
               {openReplyId !== comment.id ? (
@@ -115,6 +117,14 @@ export const CommentSection = ({
                     onChange={handleReplyChange}
                     onKeyDown={handleReplyKeyDown}
                     autoFocus
+                    onFocus={() => {
+                      if (replySectionRef.current) {
+                        replySectionRef.current.scrollIntoView({
+                          behavior: 'smooth',
+                          block: 'end',
+                        });
+                      }
+                    }}
                   />
                   {comment.id === activeCommentId && (
                     <ButtonGroup className="w-full justify-end">
