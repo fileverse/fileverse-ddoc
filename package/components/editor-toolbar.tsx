@@ -183,9 +183,9 @@ const TiptapToolBar = ({
                   variant="ghost"
                   key={index}
                   onClick={() => {
-                    option?.onClick;
+                    option?.onClick();
                     setFileExportsOpen(false);
-                  }}
+                  }}                  
                   className="space-x-2 justify-start"
                 >
                   <LucideIcon
