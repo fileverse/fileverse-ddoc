@@ -223,15 +223,15 @@ export const handleContentPrint = (content: string) => {
       <head>
         <title>Print Preview</title>
         <style>
-          @page {
-            margin: 0;
-            size: auto;
+          @page { 
+            margin: 0; 
+            size: auto; 
           }
           @media print {
             @page { margin: 0; }
             html {
-              -webkit-print-color-adjust: exact;
-              print-color-adjust: exact;
+              -webkit-print-color-adjust: exact; 
+              print-color-adjust: exact; 
             }
               
             body {
@@ -246,28 +246,58 @@ export const handleContentPrint = (content: string) => {
               }
               html:before, html:after,
           }
-          body {
+            body {
             font-family: Arial, sans-serif;
             line-height: 1.6;
             margin: 0;
-          }
-          img {
-            max-width: 100%;
-            height: auto;
-          }
-          pre {
-            background-color: #f5f5f5;
-            padding: 15px;
+}
+            img {
+              max-width: 100%;
+              height: auto;
+            }
+            /* Lists */
+            ul, ol {
+              font-size: 24px;
+              line-height: 1.5;
+              margin: 0 0 16px 0;
+              padding-left: 24px;
+            }
+            li {
+              margin-bottom: 8px;
+            }
+            /* Tables */
+            table {
+              width: 100%;
+              border-collapse: collapse;
+              margin: 16px 0;
+              font-size: 20px;
+            }
+            th {
+              background: #F8F9FA;
+              font-weight: 600;
+              text-align: left;
+            }
+            td, th {
+              border: 1px solid #E8EBEC;
+              padding: 12px;
+            }
+            /* Code blocks */
+            pre {
+            background: #F8F9FA;
+            padding: 16px;
             border-radius: 4px;
-            overflow-x: auto;
+            font-family: monospace;
+            font-size: 16px;
+            margin: 16px 0;
           }
-          blockquote {
-            border-left: 4px solid #ddd;
-            padding-left: 15px;
-            margin-left: 0;
-            color: #666;
-          }
-          body {
+            /* Blockquotes */
+            blockquote {
+              border-left: 4px solid #E8EBEC;
+              margin: 16px 0;
+              padding-left: 16px;
+              font-style: italic;
+            }
+            body {
             padding: 10mm; 
           }
         </style>
