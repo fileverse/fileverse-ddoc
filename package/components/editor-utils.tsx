@@ -170,19 +170,6 @@ export const useEditorToolbar = ({
   } = useEditorToolVisiibility(IEditorTool.NONE);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
-  useEffect(() => {
-    const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.key === 'p') {
-        event.preventDefault();
-        handleContentPrint(editor.getHTML());
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [editor]);
-
     const undoRedoTools: Array<IEditorToolElement | null> = [
     {
       icon: 'Undo',
