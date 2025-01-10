@@ -162,14 +162,13 @@ const TiptapToolBar = ({
             </button>
           }
           content={
-            <div className="px-1 py-2 gap-1 text-body-sm scroll-smooth bg-white shadow-elevation-1 transition-all rounded">
+            <div className="p-2 gap-1 text-body-sm scroll-smooth bg-white shadow-elevation-1 transition-all rounded">
               <div>
               <span className="text-[12px] px-2 font-normal text-[#77818A] py-1">
                 PDF
               </span>
               {pdfExportOption.length > 0 && (
-                <Button
-                  variant="ghost"
+                <button
                   key={`pdf-0`}
                   onClick={() => {
                     pdfExportOption[0]?.onClick();
@@ -182,7 +181,7 @@ const TiptapToolBar = ({
                     className="w-5 h-5"
                   />
                   <span className='text-sm text-[#363B3F]'>{pdfExportOption[0]?.title}</span>
-                </Button>
+                </button>
               )}
               </div>
               <div>
@@ -191,8 +190,7 @@ const TiptapToolBar = ({
               </span>
 
               {markdownOptions.map((option, index) => (
-                <Button
-                  variant="ghost"
+                <button
                   key={index}
                   onClick={() => {
                     option?.onClick();
@@ -205,7 +203,7 @@ const TiptapToolBar = ({
                     className="w-5 h-5"
                   />
                   <span className='text-sm text-[#363B3F]'>{option?.title}</span>
-                </Button>
+                </button>
               ))}
               </div>
             </div>
