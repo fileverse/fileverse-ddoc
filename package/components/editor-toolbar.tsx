@@ -53,6 +53,7 @@ const TiptapToolBar = ({
     toolbar,
     undoRedoTools,
     markdownOptions,
+    pdfExportOption,
     isExportModalOpen,
     setIsExportModalOpen,
   } = useEditorToolbar({
@@ -72,6 +73,7 @@ const TiptapToolBar = ({
     { title: '200%', value: '2' },
   ];
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [fileExportsOpen, setFileExportsOpen] = useState(false);
   const handleExport = () => {
     if (editor) {
       const generateDownloadUrl = editor.commands.exportMarkdownFile();
@@ -94,25 +96,6 @@ const TiptapToolBar = ({
     icon: LucideIconProps['name'];
   }) => {
     switch (tool.title) {
-      case 'Markdown':
-        return (
-          <ButtonGroup className="flex-col space-x-0 gap-1 p-1">
-            {markdownOptions.map((option, index) => (
-              <Button
-                variant="ghost"
-                key={index}
-                onClick={option?.onClick}
-                className="space-x-2"
-              >
-                <LucideIcon
-                  name={option?.icon as LucideIconProps['name']}
-                  className="w-5 h-5"
-                />
-                <span>{option?.title}</span>
-              </Button>
-            ))}
-          </ButtonGroup>
-        );
       case 'Highlight':
         return (
           <TextHighlighter
@@ -154,6 +137,69 @@ const TiptapToolBar = ({
   return (
     <div className="w-full bg-transparent py-2 px-4 items-center h-9 flex justify-between relative">
       <div className="flex h-9 items-center gap-1 justify-center">
+        <DynamicDropdownV2
+          key="Markdown"
+          align="start"
+          controlled={true}
+          isOpen={fileExportsOpen}
+          onClose={() => setFileExportsOpen(false)}
+          anchorTrigger={
+            <Tooltip text="Export/Import">
+              <IconButton
+                icon="FileExport"
+                variant="ghost"
+                size="md"
+                onClick={() => setFileExportsOpen((prev) => !prev)}
+                className={fileExportsOpen ? '!bg-[#FFDF0A]' : ''}
+              />
+            </Tooltip>
+          }
+          content={
+            <ButtonGroup className="flex-col space-x-0 gap-1 p-1">
+              <span className="text-[12px] px-2 font-normal text-[#77818A]">PDF</span>
+              {pdfExportOption.length > 0 && (
+                <Button
+                  variant="ghost"
+                  key={`pdf-0`}
+                  onClick={() => {
+                    pdfExportOption[0]?.onClick();
+                    setFileExportsOpen(false);
+                  }}
+                  className="space-x-2 justify-start"
+                >
+                  <LucideIcon
+                    name={pdfExportOption[0]?.icon as LucideIconProps['name']}
+                    className="w-5 h-5"
+                  />
+                  <span>{pdfExportOption[0]?.title}</span>
+                </Button>
+              )}
+              <span className="text-[12px] px-2 font-normal text-[#77818A]">
+                Markdown
+              </span>
+
+              {markdownOptions.map((option, index) => (
+                <Button
+                  variant="ghost"
+                  key={index}
+                  onClick={() => {
+                    option?.onClick;
+                    setFileExportsOpen(false);
+                  }}
+                  className="space-x-2 justify-start"
+                >
+                  <LucideIcon
+                    name={option?.icon as LucideIconProps['name']}
+                    className="w-5 h-5"
+                  />
+                  <span>{option?.title}</span>
+                </Button>
+              ))}
+            </ButtonGroup>
+          }
+        />
+        <div className="w-[1px] h-4 bg-gray-200 mx-2"></div>
+
         <div className="flex gap-1 justify-center items-center">
           {undoRedoTools.map((tool, _index) => {
             if (tool) {
@@ -269,7 +315,6 @@ const TiptapToolBar = ({
         <div className="flex gap-2 justify-center items-center">
           {toolbar.map((tool, index) => {
             if (
-              tool?.title === 'Markdown' ||
               tool?.title === 'Highlight' ||
               tool?.title === 'Text Color' ||
               tool?.title === 'Alignment' ||

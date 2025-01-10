@@ -30,6 +30,7 @@ import {
 import { useMediaQuery } from 'usehooks-ts';
 import { colors } from '../utils/colors';
 import { validateImageExtension } from '../utils/check-image-type';
+import { handleContentPrint } from '../utils/handle-print';
 
 interface IEditorToolElement {
   icon: any;
@@ -169,7 +170,7 @@ export const useEditorToolbar = ({
   } = useEditorToolVisiibility(IEditorTool.NONE);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
-  const undoRedoTools: Array<IEditorToolElement | null> = [
+    const undoRedoTools: Array<IEditorToolElement | null> = [
     {
       icon: 'Undo',
       title: 'Undo',
@@ -343,10 +344,17 @@ export const useEditorToolbar = ({
           .run(),
       isActive: false,
     },
+  ];
+
+  const pdfExportOption: Array<IEditorToolElement | null> = [
     {
-      icon: 'Markdown',
-      title: 'Markdown',
-      onClick: () => {},
+      icon: 'FileExport',
+      title: 'Export PDF',
+      onClick: () => {
+        if (editor) {
+          handleContentPrint(editor.getHTML());
+        }
+      },
       isActive: false,
     },
   ];
@@ -459,6 +467,7 @@ export const useEditorToolbar = ({
     undoRedoTools,
     toolbar,
     markdownOptions,
+    pdfExportOption,
     bottomToolbar,
     toolRef,
     toolVisibility,

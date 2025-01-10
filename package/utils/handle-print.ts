@@ -204,3 +204,89 @@ export const handlePrint = (slides: string[]) => {
   printWindow.document.write(printContent);
   printWindow.document.close();
 };
+
+export const handleContentPrint = (content: string) => {
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'absolute';
+  iframe.style.width = '0';
+  iframe.style.height = '0';
+  iframe.style.border = 'none';
+
+  document.body.appendChild(iframe);
+
+  const printDocument = iframe.contentDocument || iframe.contentWindow?.document;
+  if (!printDocument) return;
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+      <head>
+        <title>Print Preview</title>
+        <style>
+          @page {
+            margin: 0;
+            size: auto;
+          }
+          @media print {
+            @page { margin: 0; }
+            html {
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+              
+            body {
+              -webkit-print-color-adjust: exact;
+              print-color-adjust: exact;
+            }
+             body:before, body:after,
+             head:before, head:after,
+             div:before, div:after {
+              content: none !important;
+              display: none !important;
+              }
+              html:before, html:after,
+          }
+          body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+          }
+          img {
+            max-width: 100%;
+            height: auto;
+          }
+          pre {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+          }
+          blockquote {
+            border-left: 4px solid #ddd;
+            padding-left: 15px;
+            margin-left: 0;
+            color: #666;
+          }
+          body {
+            padding: 10mm; 
+          }
+        </style>
+      </head>
+      <body>
+        ${content}
+        <script>
+          window.onload = () => {
+            window.print();
+            setTimeout(() => {
+              document.body.removeChild(iframe);
+            }, 1000);
+          }
+        </script>
+      </body>
+    </html>
+  `;
+
+  printDocument.open();
+  printDocument.write(htmlContent);
+  printDocument.close();
+};
