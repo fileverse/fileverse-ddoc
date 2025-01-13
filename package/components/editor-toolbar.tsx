@@ -165,7 +165,7 @@ const TiptapToolBar = ({
             </button>
           }
           content={
-            <div className="p-2 gap-1 text-body-sm scroll-smooth bg-white shadow-elevation-1 transition-all rounded">
+            <div className="p-2 flex flex-col gap-1 text-body-sm scroll-smooth bg-white shadow-elevation-1 transition-all rounded">
               <div>
                 <span className="text-[12px] px-2 font-normal text-[#77818A] py-1">
                   PDF
