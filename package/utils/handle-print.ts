@@ -233,9 +233,8 @@ export const handleContentPrint = (content: string) => {
       <head>
         <title>Print Preview</title>
         <style>
-          @page { 
-            margin: 0; 
-            size: auto; 
+          @page {
+            margin: 0.3in 0.5in 0.3in 0.5in !important
           }
           @media print {
             @page { margin: 0; }
