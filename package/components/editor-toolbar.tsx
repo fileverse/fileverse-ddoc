@@ -56,6 +56,8 @@ const TiptapToolBar = ({
     pdfExportOption,
     isExportModalOpen,
     setIsExportModalOpen,
+    fileExportsOpen,
+    setFileExportsOpen,
   } = useEditorToolbar({
     editor: editor,
     onError,
@@ -73,7 +75,6 @@ const TiptapToolBar = ({
     { title: '200%', value: '2' },
   ];
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [fileExportsOpen, setFileExportsOpen] = useState(false);
   const handleExport = () => {
     if (editor) {
       const generateDownloadUrl = editor.commands.exportMarkdownFile();
@@ -145,11 +146,13 @@ const TiptapToolBar = ({
           onClose={() => setFileExportsOpen(false)}
           anchorTrigger={
             <button
-            className={cn(
-              'bg-transparent hover:!bg-[#F2F4F5] rounded',
-              { '!bg-[#FFDF0A]': fileExportsOpen }
-            )}
-              onClick={() => setFileExportsOpen((prev) => !prev)}
+              className={cn('bg-transparent hover:!bg-[#F2F4F5] rounded', {
+                '!bg-[#FFDF0A]': fileExportsOpen,
+              })}
+              onClick={() => {
+                setFileExportsOpen((prev) => !prev);
+                setDropdownOpen(false);
+              }}
             >
               <Tooltip text="Export/Import">
                 <IconButton
@@ -164,47 +167,47 @@ const TiptapToolBar = ({
           content={
             <div className="p-2 gap-1 text-body-sm scroll-smooth bg-white shadow-elevation-1 transition-all rounded">
               <div>
-              <span className="text-[12px] px-2 font-normal text-[#77818A] py-1">
-                PDF
-              </span>
-              {pdfExportOption.length > 0 && (
-                <button
-                  key={`pdf-0`}
-                  onClick={() => {
-                    pdfExportOption[0]?.onClick();
-                    setFileExportsOpen(false);
-                  }}
-                  className="hover:bg-[#f2f2f2] h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
-                >
-                  <LucideIcon
-                    name={pdfExportOption[0]?.icon as LucideIconProps['name']}
-                    className="w-5 h-5"
-                  />
+                <span className="text-[12px] px-2 font-normal text-[#77818A] py-1">
+                  PDF
+                </span>
+                {pdfExportOption.length > 0 && (
+                  <button
+                    key={`pdf-0`}
+                    onClick={() => {
+                      pdfExportOption[0]?.onClick();
+                      setFileExportsOpen(false);
+                    }}
+                    className="hover:bg-[#f2f2f2] h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
+                  >
+                    <LucideIcon
+                      name={pdfExportOption[0]?.icon as LucideIconProps['name']}
+                      className="w-5 h-5"
+                    />
                   <span className='text-sm text-[#363B3F]'>{pdfExportOption[0]?.title}</span>
-                </button>
-              )}
+                  </button>
+                )}
               </div>
               <div>
-              <span className="text-[12px] px-2 font-normal text-[#77818A] py-1">
-                Markdown
-              </span>
+                <span className="text-[12px] px-2 font-normal text-[#77818A] py-1">
+                  Markdown
+                </span>
 
-              {markdownOptions.map((option, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    option?.onClick();
-                    setFileExportsOpen(false);
-                  }}
-                  className="hover:bg-[#f2f2f2] h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
-                >
-                  <LucideIcon
-                    name={option?.icon as LucideIconProps['name']}
-                    className="w-5 h-5"
-                  />
+                {markdownOptions.map((option, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setFileExportsOpen(false);
+                      option?.onClick();
+                    }}
+                    className="hover:bg-[#f2f2f2] h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
+                  >
+                    <LucideIcon
+                      name={option?.icon as LucideIconProps['name']}
+                      className="w-5 h-5"
+                    />
                   <span className='text-sm text-[#363B3F]'>{option?.title}</span>
-                </button>
-              ))}
+                  </button>
+                ))}
               </div>
             </div>
           }
@@ -245,7 +248,10 @@ const TiptapToolBar = ({
           anchorTrigger={
             <button
               className="bg-transparent hover:!bg-[#F2F4F5] rounded py-2 px-4 flex items-center gap-2"
-              onClick={() => setDropdownOpen((prev) => !prev)}
+              onClick={() => {
+                setDropdownOpen((prev) => !prev);
+                setFileExportsOpen(false);
+              }}
             >
               <span className="text-body-sm">
                 {zoomLevels.find((z) => z.value === zoomLevel)?.title || '100%'}

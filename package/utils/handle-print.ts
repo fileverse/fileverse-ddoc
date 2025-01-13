@@ -206,11 +206,21 @@ export const handlePrint = (slides: string[]) => {
 };
 
 export const handleContentPrint = (content: string) => {
+  const overlay = document.createElement('div');
+  overlay.style.position = 'fixed';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.width = '100%';
+  overlay.style.height = '100%';
+  overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.48)'; 
+  overlay.style.zIndex = '9998'; 
+
+  document.body.appendChild(overlay);
+
   const iframe = document.createElement('iframe');
-  iframe.style.position = 'absolute';
-  iframe.style.width = '0';
-  iframe.style.height = '0';
+  iframe.style.position = 'fixed';
   iframe.style.border = 'none';
+  iframe.style.zIndex = '9999'; 
 
   document.body.appendChild(iframe);
 
@@ -302,14 +312,14 @@ export const handleContentPrint = (content: string) => {
           }
         </style>
       </head>
-      <body>
+       <body>
         ${content}
         <script>
           window.onload = () => {
             window.print();
-            setTimeout(() => {
-              document.body.removeChild(iframe);
-            }, 1000);
+            window.onafterprint = () => {
+              window.close();
+            };
           }
         </script>
       </body>
@@ -319,4 +329,12 @@ export const handleContentPrint = (content: string) => {
   printDocument.open();
   printDocument.write(htmlContent);
   printDocument.close();
+
+  const iframeWindow = iframe.contentWindow;
+  if (iframeWindow) {
+    iframeWindow.onafterprint = () => {
+      document.body.removeChild(iframe);
+      document.body.removeChild(overlay);
+    };
+  }
 };

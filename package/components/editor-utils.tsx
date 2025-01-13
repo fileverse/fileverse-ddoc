@@ -169,6 +169,7 @@ export const useEditorToolbar = ({
     setToolVisibility,
   } = useEditorToolVisiibility(IEditorTool.NONE);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [fileExportsOpen, setFileExportsOpen] = useState(false);
 
     const undoRedoTools: Array<IEditorToolElement | null> = [
     {
@@ -352,7 +353,11 @@ export const useEditorToolbar = ({
       title: 'Export PDF',
       onClick: () => {
         if (editor) {
-          handleContentPrint(editor.getHTML());
+          const closeAndPrint = () => {
+            handleContentPrint(editor.getHTML());
+          };
+          setFileExportsOpen(false);
+          setTimeout(closeAndPrint, 200);
         }
       },
       isActive: false,
@@ -474,6 +479,8 @@ export const useEditorToolbar = ({
     setToolVisibility,
     isExportModalOpen,
     setIsExportModalOpen,
+    fileExportsOpen,
+    setFileExportsOpen,
   };
 };
 
