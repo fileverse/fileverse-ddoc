@@ -289,15 +289,13 @@ export const handleContentPrint = (content: string) => {
             li {
               margin-bottom: 8px;
             }
-            li > input[type="checkbox"] {
-              list-style-type: none;
+            li:has(input[type="checkbox"]) { 
+            list-style-type: none; 
+            display: flex;
+            align-items: center;
             }
             li > input[type="checkbox"]::marker {
               content: ''; 
-            }
-            li {
-              display: flex;
-              align-items: center;
             }
             input[type="checkbox"] { 
             margin-right: 10px; 
