@@ -260,17 +260,18 @@ export const useDdocEditor = ({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.ctrlKey && event.key === 'p') {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
         event.preventDefault();
-        if(editor)
-        handleContentPrint(editor.getHTML());
+        if (editor) {
+          handleContentPrint(editor.getHTML());
+        }
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [editor]);
+  }, [editor]);  
 
   useEffect(() => {
     if (
