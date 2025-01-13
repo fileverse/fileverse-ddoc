@@ -11,7 +11,7 @@ import { AnyExtension, JSONContent, useEditor } from '@tiptap/react';
 import { getCursor } from './utils/cursor';
 import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
-import SlashCommand from './components/slash-comand';
+import SlashCommand from './extensions/slash-command/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
 import customTextInputRules from './extensions/customTextInputRules';
 import { PageBreak } from './extensions/page-break/page-break';
