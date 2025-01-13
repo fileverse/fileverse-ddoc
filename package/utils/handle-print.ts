@@ -212,15 +212,15 @@ export const handleContentPrint = (content: string) => {
   overlay.style.left = '0';
   overlay.style.width = '100%';
   overlay.style.height = '100%';
-  overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.48)'; 
-  overlay.style.zIndex = '9998'; 
+  overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.48)';
+  overlay.style.zIndex = '9998';
 
   document.body.appendChild(overlay);
 
   const iframe = document.createElement('iframe');
   iframe.style.position = 'fixed';
   iframe.style.border = 'none';
-  iframe.style.zIndex = '9999'; 
+  iframe.style.zIndex = '9999';
 
   document.body.appendChild(iframe);
 
@@ -233,16 +233,19 @@ export const handleContentPrint = (content: string) => {
       <head>
         <title>Print Preview</title>
         <style>
-          @page {
-            margin: 0.3in 0.5in 0.3in 0.5in !important
-          }
+       @page {
+        margin: 0.3in 0.5in 0.3in 0.5in !important;
+        }
+       @page :first {
+         margin: -0.25in 0.5in 0.3in 0.5in !important; 
+     }
           @media print {
             @page { margin: 0; }
             html {
               -webkit-print-color-adjust: exact; 
               print-color-adjust: exact; 
             }
-              
+
             body {
               -webkit-print-color-adjust: exact;
               print-color-adjust: exact;
@@ -264,9 +267,21 @@ export const handleContentPrint = (content: string) => {
               max-width: 100%;
               height: auto;
             }
+            h3 {
+              font-weight: 600;
+              color: #0D0D0D;
+              font-size: 20px;
+              line-height: 1.2;
+              }
+              p {
+                line-height: 1.5;
+                color: #0D0D0D;
+                font-size: 16px;
+              }
+
             /* Lists */
             ul, ol {
-              font-size: 24px;
+              font-size: 16px;
               line-height: 1.5;
               margin: 0 0 16px 0;
               padding-left: 24px;
@@ -279,7 +294,7 @@ export const handleContentPrint = (content: string) => {
               width: 100%;
               border-collapse: collapse;
               margin: 16px 0;
-              font-size: 20px;
+              font-size: 16px;
             }
             th {
               background: #F8F9FA;
