@@ -20,6 +20,7 @@ import { IndexeddbPersistence } from 'y-indexeddb';
 import { isJSONString } from './utils/isJsonString';
 import { zoomService } from './zoom-service';
 import { sanitizeContent } from './utils/sanitize-content';
+import { CommentExtension as Comment } from './extensions/comment';
 import { handleContentPrint } from './utils/handle-print';
 
 const usercolors = [
@@ -57,6 +58,35 @@ export const useDdocEditor = ({
   ignoreCorruptedData,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
+  const initialContentSetRef = useRef(false);
+  const [isContentLoading, setIsContentLoading] = useState(true);
+  // V2 - comment
+  const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
+
+  const commentsSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const focusCommentWithActiveId = (id: string) => {
+    if (!commentsSectionRef.current) return;
+
+    const commentInput =
+      commentsSectionRef.current.querySelector<HTMLInputElement>(`input#${id}`);
+
+    if (!commentInput) return;
+
+    commentInput.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+      inline: 'center',
+    });
+  };
+
+  useEffect(() => {
+    if (!activeCommentId) return;
+
+    focusCommentWithActiveId(activeCommentId);
+  }, [activeCommentId]);
+  // V2 - comment
+
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions(
       (error: string) => onError?.(error),
@@ -65,12 +95,20 @@ export const useDdocEditor = ({
     SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
     customTextInputRules,
     PageBreak,
+    Comment.configure({
+      HTMLAttributes: {
+        class: 'inline-comment',
+      },
+      onCommentActivated: (commentId) => {
+        setActiveCommentId(commentId);
+
+        if (commentId) setTimeout(() => focusCommentWithActiveId(commentId));
+      },
+    }),
     Collaboration.configure({
       document: ydoc,
     }),
   ]);
-  const initialContentSetRef = useRef(false);
-  const [isContentLoading, setIsContentLoading] = useState(true);
 
   const isHighlightedYellow = (
     state: EditorState,
@@ -271,7 +309,7 @@ export const useDdocEditor = ({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [editor]);  
+  }, [editor]);
 
   useEffect(() => {
     if (
@@ -403,5 +441,8 @@ export const useDdocEditor = ({
     connect,
     ydoc,
     refreshYjsIndexedDbProvider: initialiseYjsIndexedDbProvider,
+    activeCommentId,
+    setActiveCommentId,
+    focusCommentWithActiveId,
   };
 };

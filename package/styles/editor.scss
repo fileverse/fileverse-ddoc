@@ -777,3 +777,43 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
     margin-top: max(env(safe-area-inset-top), 24px);
   }
 }
+
+// p > .inline-comment,
+// em > .inline-comment,
+// strong > .inline-comment,
+// a > .inline-comment,
+// u > .inline-comment,
+// s > .inline-comment,
+// sup > .inline-comment,
+// sub > .inline-comment,
+// :not(h1, h2, h3) > span .inline-comment {
+//   @apply bg-[#e5fbe7] transition-all group-hover:bg-[#facc1566];
+// }
+
+// .inline-comment {
+//   @apply bg-[#e5fbe7] transition-all hover:bg-[#facc1566];
+// }
+
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  select,
+  textarea,
+  input {
+    font-size: 16px !important;
+  }
+}
+
+@media screen and (min-width: 768px) {
+  select,
+  textarea,
+  input {
+    font-size: 14px !important;
+  }
+}
+
+.inline-comment--unresolved {
+  @apply bg-[#e5fbe7] cursor-pointer group-hover:bg-[#facc1566] transition-all;
+}
+
+.inline-comment--resolved {
+  @apply bg-transparent;
+}
