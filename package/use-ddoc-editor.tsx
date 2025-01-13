@@ -21,6 +21,7 @@ import { isJSONString } from './utils/isJsonString';
 import { zoomService } from './zoom-service';
 import { sanitizeContent } from './utils/sanitize-content';
 import { CommentExtension as Comment } from './extensions/comment';
+import { handleContentPrint } from './utils/handle-print';
 
 const usercolors = [
   '#30bced',
@@ -294,6 +295,21 @@ export const useDdocEditor = ({
   ) => {
     return !initialContent && initialContent !== '';
   };
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
+        event.preventDefault();
+        if (editor) {
+          handleContentPrint(editor.getHTML());
+        }
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [editor]);
 
   useEffect(() => {
     if (

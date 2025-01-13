@@ -30,6 +30,7 @@ import {
 import { useMediaQuery } from 'usehooks-ts';
 import { colors } from '../utils/colors';
 import { validateImageExtension } from '../utils/check-image-type';
+import { handleContentPrint } from '../utils/handle-print';
 
 interface IEditorToolElement {
   icon: any;
@@ -168,8 +169,9 @@ export const useEditorToolbar = ({
     setToolVisibility,
   } = useEditorToolVisiibility(IEditorTool.NONE);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [fileExportsOpen, setFileExportsOpen] = useState(false);
 
-  const undoRedoTools: Array<IEditorToolElement | null> = [
+    const undoRedoTools: Array<IEditorToolElement | null> = [
     {
       icon: 'Undo',
       title: 'Undo',
@@ -343,10 +345,21 @@ export const useEditorToolbar = ({
           .run(),
       isActive: false,
     },
+  ];
+
+  const pdfExportOption: Array<IEditorToolElement | null> = [
     {
-      icon: 'Markdown',
-      title: 'Markdown',
-      onClick: () => {},
+      icon: 'FileExport',
+      title: 'Export PDF',
+      onClick: () => {
+        if (editor) {
+          const closeAndPrint = () => {
+            handleContentPrint(editor.getHTML());
+          };
+          setFileExportsOpen(false);
+          setTimeout(closeAndPrint, 200);
+        }
+      },
       isActive: false,
     },
   ];
@@ -459,12 +472,15 @@ export const useEditorToolbar = ({
     undoRedoTools,
     toolbar,
     markdownOptions,
+    pdfExportOption,
     bottomToolbar,
     toolRef,
     toolVisibility,
     setToolVisibility,
     isExportModalOpen,
     setIsExportModalOpen,
+    fileExportsOpen,
+    setFileExportsOpen,
   };
 };
 
