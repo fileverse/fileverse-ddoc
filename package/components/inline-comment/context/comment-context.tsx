@@ -137,59 +137,61 @@ export const CommentProvider = ({
     if (!comment) return;
 
     // Find the element with the matching data-comment-id
-    const commentElement = editor.view.dom.querySelector(
-      `[data-comment-id="${commentId}"]`,
-    );
-
-    if (commentElement) {
-      // Get the position of the comment in the editor
-      const from = editor.view.posAtDOM(commentElement, 0);
-      const to = from + commentElement.textContent!.length;
-
-      // Set selection to the comment text
-      editor.commands.setTextSelection({ from, to });
-
-      // Find all possible scroll containers
-      const possibleContainers = [
-        document.querySelector('.ProseMirror'),
-        document.getElementById('editor-canvas'),
-        commentElement.closest('.ProseMirror'),
-        commentElement.closest('[class*="editor"]'),
-        editor.view.dom.parentElement,
-      ].filter(Boolean);
-
-      // Find the first scrollable container
-      const scrollContainer = possibleContainers.find(
-        (container) =>
-          container &&
-          (container.scrollHeight > container.clientHeight ||
-            window.getComputedStyle(container).overflow === 'auto' ||
-            window.getComputedStyle(container).overflowY === 'auto'),
+    if (comment.selectedContent) {
+      const commentElement = editor.view.dom.querySelector(
+        `[data-comment-id="${commentId}"]`,
       );
 
-      if (scrollContainer) {
-        // Use requestAnimationFrame to ensure DOM updates are complete
-        requestAnimationFrame(() => {
-          const containerRect = scrollContainer.getBoundingClientRect();
-          const elementRect = commentElement.getBoundingClientRect();
+      if (commentElement) {
+        // Get the position of the comment in the editor
+        const from = editor.view.posAtDOM(commentElement, 0);
+        const to = from + commentElement.textContent!.length;
 
-          // Calculate the scroll position to center the element
-          const scrollTop =
-            elementRect.top -
-            containerRect.top -
-            containerRect.height / 2 +
-            elementRect.height / 2;
+        // Set selection to the comment text
+        editor.commands.setTextSelection({ from, to });
 
-          scrollContainer.scrollBy({
-            top: scrollTop,
-            behavior: 'smooth',
+        // Find all possible scroll containers
+        const possibleContainers = [
+          document.querySelector('.ProseMirror'),
+          document.getElementById('editor-canvas'),
+          commentElement.closest('.ProseMirror'),
+          commentElement.closest('[class*="editor"]'),
+          editor.view.dom.parentElement,
+        ].filter(Boolean);
+
+        // Find the first scrollable container
+        const scrollContainer = possibleContainers.find(
+          (container) =>
+            container &&
+            (container.scrollHeight > container.clientHeight ||
+              window.getComputedStyle(container).overflow === 'auto' ||
+              window.getComputedStyle(container).overflowY === 'auto'),
+        );
+
+        if (scrollContainer) {
+          // Use requestAnimationFrame to ensure DOM updates are complete
+          requestAnimationFrame(() => {
+            const containerRect = scrollContainer.getBoundingClientRect();
+            const elementRect = commentElement.getBoundingClientRect();
+
+            // Calculate the scroll position to center the element
+            const scrollTop =
+              elementRect.top -
+              containerRect.top -
+              containerRect.height / 2 +
+              elementRect.height / 2;
+
+            scrollContainer.scrollBy({
+              top: scrollTop,
+              behavior: 'smooth',
+            });
           });
-        });
+        }
       }
-
-      // Set this as active comment
-      setActiveCommentId(commentId);
     }
+
+    // Set this as active comment
+    setActiveCommentId(commentId);
   };
 
   const handleReplyChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -214,7 +216,17 @@ export const CommentProvider = ({
   const handleCommentSubmit = () => {
     if (!comment.trim()) return;
 
-    console.log('comment', comment);
+    const newComment = {
+      id: `comment-${uuid()}`,
+      selectedContent: '', // Empty for generic comments
+      content: comment,
+      replies: [],
+      createdAt: new Date(),
+    };
+
+    onNewComment?.(newComment);
+    setActiveCommentId(newComment.id);
+    setComment('');
   };
 
   const handleReplyKeyDown = (

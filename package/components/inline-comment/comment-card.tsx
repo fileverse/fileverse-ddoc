@@ -150,12 +150,13 @@ export const CommentCard = ({
           </div>
         </div>
         <ButtonGroup className="group">
-          <Tooltip text="Add reaction" sideOffset={0} position="bottom">
+          <Tooltip text="Coming soon" sideOffset={0} position="bottom">
             <IconButton
               variant={'ghost'}
               icon="Smile"
+              disabled
               size="sm"
-              className="md:group-hover:opacity-100 md:opacity-0 transition-opacity duration-300"
+              className="md:group-hover:disabled:opacity-50 md:opacity-0 transition-opacity duration-300 disabled:bg-transparent"
             />
           </Tooltip>
 
@@ -203,25 +204,27 @@ export const CommentCard = ({
         </ButtonGroup>
       </div>
       <div className="flex flex-col gap-2 ml-3 pl-4 border-l color-border-default">
-        <div className="bg-[#e5fbe7] p-2 rounded-lg">
-          <div className="relative">
-            <span
-              className={cn('text-body-sm italic block', {
-                'line-clamp-2': !isExpanded && selectedText.length > 70,
-              })}
-            >
-              "{selectedText}"
-            </span>
-            {selectedText.length > 70 && (
-              <button
-                onClick={() => setIsExpanded(!isExpanded)}
-                className="text-helper-text-sm color-text-secondary hover:underline"
+        {selectedText && (
+          <div className="bg-[#e5fbe7] p-2 rounded-lg">
+            <div className="relative">
+              <span
+                className={cn('text-body-sm italic block', {
+                  'line-clamp-2': !isExpanded && selectedText.length > 70,
+                })}
               >
-                {isExpanded ? 'Show less' : 'Show more'}
-              </button>
-            )}
+                "{selectedText}"
+              </span>
+              {selectedText.length > 70 && (
+                <button
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="text-helper-text-sm color-text-secondary hover:underline"
+                >
+                  {isExpanded ? 'Show less' : 'Show more'}
+                </button>
+              )}
+            </div>
           </div>
-        </div>
+        )}
         {comment && (
           <div>
             <span className="text-body-sm whitespace-pre-wrap">{comment}</span>
