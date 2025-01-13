@@ -17,7 +17,6 @@ import {
   LucideIcon,
   IconButton,
   DynamicDropdown,
-  Button,
   LucideIconProps,
   DynamicModal,
   TextField,
@@ -183,7 +182,9 @@ const TiptapToolBar = ({
                       name={pdfExportOption[0]?.icon as LucideIconProps['name']}
                       className="w-5 h-5"
                     />
-                  <span className='text-sm text-[#363B3F]'>{pdfExportOption[0]?.title}</span>
+                    <span className="text-sm text-[#363B3F]">
+                      {pdfExportOption[0]?.title}
+                    </span>
                   </button>
                 )}
               </div>
@@ -205,7 +206,9 @@ const TiptapToolBar = ({
                       name={option?.icon as LucideIconProps['name']}
                       className="w-5 h-5"
                     />
-                  <span className='text-sm text-[#363B3F]'>{option?.title}</span>
+                    <span className="text-sm text-[#363B3F]">
+                      {option?.title}
+                    </span>
                   </button>
                 ))}
               </div>
