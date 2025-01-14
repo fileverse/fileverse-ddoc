@@ -116,6 +116,8 @@ const DdocEditor = forwardRef(
       isContentLoading,
       ydoc,
       refreshYjsIndexedDbProvider,
+      slides,
+      setSlides,
     } = useDdocEditor({
       enableIndexeddbSync,
       ddocId,
@@ -144,6 +146,7 @@ const DdocEditor = forwardRef(
       setIsNavbarVisible,
       onInvalidContentError,
       ignoreCorruptedData,
+      isPresentationMode,
     });
 
     useImperativeHandle(
@@ -349,6 +352,8 @@ const DdocEditor = forwardRef(
             isPreviewMode={isPreviewMode}
             documentName={documentName as string}
             onSlidesShare={onSlidesShare}
+            slides={slides}
+            setSlides={setSlides}
           />
         )}
         <div

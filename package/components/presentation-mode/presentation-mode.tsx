@@ -33,6 +33,8 @@ interface PresentationModeProps {
   isPreviewMode: boolean;
   documentName: string;
   onSlidesShare?: () => void;
+  slides: string[];
+  setSlides: React.Dispatch<React.SetStateAction<string[]>>;
 }
 
 const checkOs = () => platform.os?.family;
@@ -97,9 +99,10 @@ export const PresentationMode = ({
   isPreviewMode,
   documentName,
   onSlidesShare,
+  slides,
+  setSlides,
 }: PresentationModeProps) => {
   const [showLinkCopied, setShowLinkCopied] = useState(false);
-  const [slides, setSlides] = useState<string[]>([]);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [previewEditors, setPreviewEditors] = useState<{
     [key: number]: Editor;
@@ -151,6 +154,8 @@ export const PresentationMode = ({
       maxWordsPerSlide: 250,
       maxLinesPerSlide: 7,
     });
+
+    console.log(html);
 
     // Create a temporary div to properly parse the HTML
     const tempDiv = document.createElement('div');

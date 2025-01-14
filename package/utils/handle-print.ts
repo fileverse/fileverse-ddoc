@@ -1,10 +1,4 @@
 export const handlePrint = (slides: string[]) => {
-  const printWindow = window.open('', '_blank');
-  if (!printWindow) {
-    alert('Please allow pop-ups to print slides');
-    return;
-  }
-
   const slidesHTML = slides
     .map(
       (slideContent) => `
@@ -115,6 +109,45 @@ export const handlePrint = (slides: string[]) => {
                             margin-bottom: 8px;
                         }
 
+                        /* Task List Styles */
+                        input[type='checkbox'] {
+                            -webkit-appearance: none;
+                            appearance: none;
+                            background-color: #fff;
+                            margin: 0;
+                            cursor: pointer;
+                            width: 1.5em;
+                            height: 1.5em;
+                            position: relative;
+                            border: 2px solid black;
+                            margin-right: 0.5rem;
+                            display: grid;
+                            place-content: center;
+                        }
+
+                        input[type='checkbox']::before {
+                            content: '';
+                            width: 1em;
+                            height: 1em;
+                            transform: scale(0);
+                            transition: 120ms transform ease-in-out;
+                            box-shadow: inset 1em 1em;
+                            transform-origin: center;
+                            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+                        }
+
+                        input[type='checkbox']:checked::before {
+                            transform: scale(1);
+                        }
+
+                        li:has(input[type="checkbox"]) {
+                            list-style-type: none;
+                            font-size: 24px;
+                            display: flex;
+                            align-items: center;
+                            margin: 0 0 24px 0;
+                        }
+
                         /* Tables */
                         .ProseMirror table {
                             width: 100%;
@@ -201,32 +234,10 @@ export const handlePrint = (slides: string[]) => {
         </html>
     `;
 
-  printWindow.document.write(printContent);
-  printWindow.document.close();
+  printHelper(printContent);
 };
 
 export const handleContentPrint = (content: string) => {
-  const overlay = document.createElement('div');
-  overlay.style.position = 'fixed';
-  overlay.style.top = '0';
-  overlay.style.left = '0';
-  overlay.style.width = '100%';
-  overlay.style.height = '100%';
-  overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.48)';
-  overlay.style.zIndex = '9998';
-
-  document.body.appendChild(overlay);
-
-  const iframe = document.createElement('iframe');
-  iframe.style.position = 'fixed';
-  iframe.style.border = 'none';
-  iframe.style.zIndex = '9999';
-
-  document.body.appendChild(iframe);
-
-  const printDocument = iframe.contentDocument || iframe.contentWindow?.document;
-  if (!printDocument) return;
-
   const htmlContent = `
   <!DOCTYPE html>
   <html>
@@ -284,8 +295,43 @@ export const handleContentPrint = (content: string) => {
           margin: 0 0 16px 0;
           padding-left: 24px;
         }
-        li {
-          margin-bottom: 8px;
+        /* Task List Styles */
+        input[type='checkbox'] {
+            -webkit-appearance: none;
+            appearance: none;
+            background-color: #fff;
+            margin: 0;
+            cursor: pointer;
+            width: 1.5em;
+            height: 1.5em;
+            position: relative;
+            border: 2px solid black;
+            margin-right: 0.5rem;
+            display: grid;
+            place-content: center;
+        }
+
+        input[type='checkbox']::before {
+            content: '';
+            width: 1em;
+            height: 1em;
+            transform: scale(0);
+            transition: 120ms transform ease-in-out;
+            box-shadow: inset 1em 1em;
+            transform-origin: center;
+            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+        }
+
+        input[type='checkbox']:checked::before {
+            transform: scale(1);
+        }
+
+        li:has(input[type="checkbox"]) {
+            list-style-type: none;
+            transform: translateX(-16px);
+            font-size: 24px;
+            display: flex;
+            align-items: center;
         }
         ol {
           list-style-type: decimal;
@@ -295,17 +341,6 @@ export const handleContentPrint = (content: string) => {
         }
         ol ol ol {
           list-style-type: lower-roman;
-        }
-        li:has(input[type="checkbox"]) {
-          list-style-type: none;
-          display: flex;
-          align-items: center;
-        }
-        li > input[type="checkbox"]::marker {
-          content: '';
-        }
-        input[type="checkbox"] {
-          margin-right: 10px;
         }
         /* Tables */
         table {
@@ -329,7 +364,7 @@ export const handleContentPrint = (content: string) => {
           padding: 16px;
           border-radius: 4px;
           font-family: monospace;
-          font-size: 16px;
+          font-size: 12px;
           margin: 16px 0;
         }
         /* Blockquotes */
@@ -358,8 +393,34 @@ export const handleContentPrint = (content: string) => {
   </html>
 `;
 
+  printHelper(htmlContent);
+};
+
+const printHelper = (content: string) => {
+  const overlay = document.createElement('div');
+  overlay.style.position = 'fixed';
+  overlay.style.top = '0';
+  overlay.style.left = '0';
+  overlay.style.width = '100%';
+  overlay.style.height = '100%';
+  overlay.style.backgroundColor = 'rgba(0, 0, 0, 0.48)';
+  overlay.style.zIndex = '9999';
+
+  document.body.appendChild(overlay);
+
+  const iframe = document.createElement('iframe');
+  iframe.style.position = 'fixed';
+  iframe.style.border = 'none';
+  iframe.style.zIndex = '9999';
+
+  document.body.appendChild(iframe);
+
+  const printDocument =
+    iframe.contentDocument || iframe.contentWindow?.document;
+  if (!printDocument) return;
+
   printDocument.open();
-  printDocument.write(htmlContent);
+  printDocument.write(content);
   printDocument.close();
 
   const iframeWindow = iframe.contentWindow;
