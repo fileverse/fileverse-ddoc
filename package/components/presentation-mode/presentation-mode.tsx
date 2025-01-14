@@ -155,8 +155,6 @@ export const PresentationMode = ({
       maxLinesPerSlide: 7,
     });
 
-    console.log(html);
-
     // Create a temporary div to properly parse the HTML
     const tempDiv = document.createElement('div');
     tempDiv.innerHTML = html;
