@@ -57,7 +57,10 @@ export interface DdocProps {
   walletAddress?: string | null;
   username?: string | null;
   renderNavbar?: ({ editor }: { editor: JSONContent }) => JSX.Element;
-  onChange?: (changes: Data['editorJSONData']) => void;
+  onChange?: (
+    updatedDocContent: Data['editorJSONData'],
+    updateChunk: string,
+  ) => void;
   onCollaboratorChange?: (collaborators: undefined | IDocCollabUsers[]) => void;
   onTextSelection?: (data: IEditorSelectionData) => void;
   onCommentInteraction?: (data: IEditorSelectionData) => void;
@@ -91,7 +94,7 @@ export interface IEditorSelectionData {
 }
 
 export interface Data {
-  editorJSONData: JSONContent;
+  editorJSONData: string | JSONContent;
 }
 export interface IUser {
   name: string;
