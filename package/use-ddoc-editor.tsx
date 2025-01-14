@@ -20,7 +20,7 @@ import { IndexeddbPersistence } from 'y-indexeddb';
 import { isJSONString } from './utils/isJsonString';
 import { zoomService } from './zoom-service';
 import { sanitizeContent } from './utils/sanitize-content';
-import { handleContentPrint } from './utils/handle-print';
+import { handleContentPrint, handlePrint } from './utils/handle-print';
 
 const usercolors = [
   '#30bced',
@@ -55,6 +55,7 @@ export const useDdocEditor = ({
   zoomLevel,
   onInvalidContentError,
   ignoreCorruptedData,
+  isPresentationMode,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [extensions, setExtensions] = useState([
@@ -71,6 +72,7 @@ export const useDdocEditor = ({
   ]);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
+  const [slides, setSlides] = useState<string[]>([]);
 
   const isHighlightedYellow = (
     state: EditorState,
@@ -263,7 +265,9 @@ export const useDdocEditor = ({
       if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
         event.preventDefault();
         if (editor) {
-          handleContentPrint(editor.getHTML());
+          isPresentationMode
+            ? handlePrint(slides)
+            : handleContentPrint(editor.getHTML());
         }
       }
     };
@@ -271,7 +275,7 @@ export const useDdocEditor = ({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [editor]);  
+  }, [editor, isPresentationMode]);
 
   useEffect(() => {
     if (
@@ -403,5 +407,7 @@ export const useDdocEditor = ({
     connect,
     ydoc,
     refreshYjsIndexedDbProvider: initialiseYjsIndexedDbProvider,
+    slides,
+    setSlides,
   };
 };
