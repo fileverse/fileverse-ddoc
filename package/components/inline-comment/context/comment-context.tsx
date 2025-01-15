@@ -31,6 +31,7 @@ export const CommentProvider = ({
   const portalRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const isCommentActive = editor.isActive('comment');
 
   useOnClickOutside([portalRef, buttonRef, dropdownRef], () => {
     if (isCommentOpen) {
@@ -44,21 +45,19 @@ export const CommentProvider = ({
     const text = state.doc.textBetween(from, to, ' ');
 
     // If there's an active comment, find it in comments array
-    if (editor.isActive('comment')) {
+    if (isCommentActive) {
       if (activeComment) {
         setSelectedText(activeComment.selectedContent);
       }
     } else {
       setSelectedText(text);
     }
-
     setIsCommentOpen(true);
   };
 
   const onInlineCommentClick = (event: React.MouseEvent) => {
     event.stopPropagation();
     handleInlineComment();
-    setIsCommentOpen(true);
   };
 
   const getNewComment = (
@@ -147,11 +146,11 @@ export const CommentProvider = ({
 
       if (commentElement) {
         // Get the position of the comment in the editor
-        const from = editor.view.posAtDOM(commentElement, 0);
-        const to = from + commentElement.textContent!.length;
+        // const from = editor.view.posAtDOM(commentElement, 0);
+        // const to = from + commentElement.textContent!.length;
 
         // Set selection to the comment text
-        editor.commands.setTextSelection({ from, to });
+        // editor.commands.setTextSelection({ from, to });
 
         // Find all possible scroll containers
         const possibleContainers = [
@@ -198,13 +197,21 @@ export const CommentProvider = ({
   };
 
   const handleReplyChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setReply(event.target.value);
+    const value = event.target.value;
+    setReply(value);
+    if (!value) {
+      event.target.style.height = '40px';
+    }
   };
 
   const handleCommentChange = (
     event: React.ChangeEvent<HTMLTextAreaElement>,
   ) => {
-    setComment(event.target.value);
+    const value = event.target.value;
+    setComment(value);
+    if (!value) {
+      event.target.style.height = '40px';
+    }
   };
 
   const handleCommentKeyDown = (
@@ -252,21 +259,35 @@ export const CommentProvider = ({
     setShowResolved(!showResolved);
   };
 
+  const handleInput = (
+    e: React.FormEvent<HTMLTextAreaElement>,
+    content: string,
+  ) => {
+    e.currentTarget.style.height = 'auto';
+    const newHeight = Math.min(
+      Math.max(40, e.currentTarget.scrollHeight),
+      content.length > 30 || content.includes('\n') ? 96 : 40,
+    );
+    e.currentTarget.style.height = `${newHeight}px`;
+  };
+
+  const activeComments = initialComments.filter((comment) => !comment.resolved);
+
   const onPrevComment = () => {
     if (activeCommentIndex > 0) {
-      const prevComment = initialComments[activeCommentIndex - 1];
+      const prevComment = activeComments[activeCommentIndex - 1];
       focusCommentInEditor(prevComment.id);
     }
   };
 
   const onNextComment = () => {
-    if (activeCommentIndex < initialComments.length - 1) {
-      const nextComment = initialComments[activeCommentIndex + 1];
+    if (activeCommentIndex < activeComments.length - 1) {
+      const nextComment = activeComments[activeCommentIndex + 1];
       focusCommentInEditor(nextComment.id);
     }
   };
 
-  const activeCommentIndex = initialComments.findIndex(
+  const activeCommentIndex = activeComments.findIndex(
     (comment) => comment.id === activeCommentId,
   );
 
@@ -316,6 +337,9 @@ export const CommentProvider = ({
         buttonRef,
         replySectionRef,
         dropdownRef,
+        activeComments,
+        handleInput,
+        isCommentActive,
       }}
     >
       {children}

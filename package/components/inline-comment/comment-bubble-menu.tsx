@@ -10,12 +10,13 @@ export const CommentBubbleMenu = ({
   zoomLevel,
   editor,
 }: CommentBubbleMenuProps) => {
-  const { comments, onPrevComment, onNextComment, activeCommentIndex } =
+  const { onPrevComment, onNextComment, activeCommentIndex, activeComments } =
     useComments();
 
   const bubbleMenuProps = {
     shouldShow: ({ editor }: { editor: Editor }) => {
-      return editor.isActive('comment');
+      const isCommentResolved = editor.getAttributes('comment')?.resolved;
+      return editor.isActive('comment') && !isCommentResolved;
     },
     tippyOptions: {
       moveTransition: 'transform 0.15s ease-out',
@@ -53,10 +54,10 @@ export const CommentBubbleMenu = ({
         variant="ghost"
         size="sm"
         onClick={onNextComment}
-        disabled={activeCommentIndex >= comments.length - 1}
+        disabled={activeCommentIndex >= activeComments.length - 1}
       />
       <div className="px-2 text-sm color-text-secondary">
-        {comments.length} comments
+        {activeComments.length} comments
       </div>
     </BubbleMenu>
   );

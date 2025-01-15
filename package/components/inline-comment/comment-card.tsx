@@ -115,7 +115,7 @@ export const CommentCard = ({
                 </span>
               </div>
             </div>
-            <span className="text-body-sm flex flex-col gap-2 ml-3 pl-4 border-l whitespace-pre-wrap">
+            <span className="text-body-sm flex flex-col gap-2 ml-3 pl-4 border-l whitespace-pre-wrap break-words">
               {reply.content}
             </span>
           </div>
@@ -200,7 +200,8 @@ export const CommentCard = ({
                   </button>
                 </div>
               }
-            />)}
+            />
+          )}
         </ButtonGroup>
       </div>
       <div className="flex flex-col gap-2 ml-3 pl-4 border-l color-border-default">
@@ -227,7 +228,9 @@ export const CommentCard = ({
         )}
         {comment && (
           <div>
-            <span className="text-body-sm whitespace-pre-wrap">{comment}</span>
+            <span className="text-body-sm whitespace-pre-wrap break-words">
+              {comment}
+            </span>
           </div>
         )}
       </div>

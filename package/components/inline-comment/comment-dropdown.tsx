@@ -9,22 +9,21 @@ import {
 } from '@fileverse/ui';
 import uuid from 'react-uuid';
 import { CommentCard } from './comment-card';
-import { useResponsive } from '../../utils/responsive';
 import { useCommentActions } from './use-comment-actions';
 import { CommentDropdownProps } from './types';
 import { useComments } from './context/comment-context';
+import { IComment } from '../../extensions/comment/comment';
 
 export const CommentDropdown = ({
-  onClose,
   activeCommentId,
-  setCommentDrawerOpen,
   initialComment = '',
+  isBubbleMenu = false,
+  selectedContent,
 }: CommentDropdownProps) => {
   const [comment, setComment] = useState(initialComment);
   const [reply, setReply] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(true);
   const [showReplyView, setShowReplyView] = useState(!!activeCommentId);
-  const { isBelow1280px } = useResponsive();
   const commentsContainerRef = useRef<HTMLDivElement>(null);
 
   const {
@@ -32,23 +31,31 @@ export const CommentDropdown = ({
     addComment,
     setComments,
     comments,
+    activeComments,
     username,
     walletAddress,
     activeComment,
     selectedText,
     dropdownRef,
+    handleInput,
+    isCommentActive,
+    onNextComment,
+    onPrevComment,
+    activeCommentIndex,
   } = useComments();
-
   const { handleResolveComment, handleUnresolveComment, handleDeleteComment } =
     useCommentActions({
       editor,
       comments,
-      setComments: setComments ?? (() => { }),
+      setComments: setComments ?? (() => {}),
     });
 
   const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setComment(value);
+    if (!value) {
+      e.target.style.height = '40px';
+    }
   };
 
   const handleReplyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -60,7 +67,6 @@ export const CommentDropdown = ({
     if (comment.trim()) {
       addComment(comment);
       setShowReplyView(true);
-      !isBelow1280px && setCommentDrawerOpen?.(true);
     }
   };
 
@@ -77,7 +83,7 @@ export const CommentDropdown = ({
                 content: reply,
                 replies: [],
                 createdAt: new Date(),
-                selectedContent: selectedText,
+                selectedContent: selectedContent,
               },
             ],
           };
@@ -85,8 +91,7 @@ export const CommentDropdown = ({
         return comment;
       });
 
-      !isBelow1280px && setCommentDrawerOpen?.(true);
-      setComments?.(updatedComments);
+      setComments?.(updatedComments as IComment[]);
       setReply('');
     }
   };
@@ -108,8 +113,6 @@ export const CommentDropdown = ({
 
   const handleDeleteThread = () => {
     handleDeleteComment(activeCommentId as string);
-    setIsDropdownOpen(false);
-    onClose();
   };
 
   useEffect(() => {
@@ -140,6 +143,7 @@ export const CommentDropdown = ({
         className="bg-white w-full text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
         placeholder="Type your comment"
         autoFocus
+        onInput={(e) => handleInput(e, comment)}
       />
 
       <div className="h-full flex items-center justify-end">
@@ -156,8 +160,24 @@ export const CommentDropdown = ({
   const renderReplyView = () => (
     <>
       <div className="flex justify-between items-center px-3 py-2 border-b border-[#E8EBEC]">
-        <p className="text-sm font-medium color-text-default">Comments</p>
-        <div className="relative flex items-center gap-2">
+        <p className="text-sm font-medium color-text-default">
+          Comments ({activeComments.length})
+        </p>
+        <div className="relative flex items-center gap-1">
+          <IconButton
+            icon="ChevronUp"
+            variant="ghost"
+            onClick={onPrevComment}
+            disabled={activeCommentIndex <= 0}
+            className="disabled:!bg-transparent"
+          />
+          <IconButton
+            icon="ChevronDown"
+            variant="ghost"
+            onClick={onNextComment}
+            disabled={activeCommentIndex >= activeComments.length - 1}
+            className="disabled:!bg-transparent"
+          />
           <DynamicDropdown
             key="more-actions"
             align="end"
@@ -210,7 +230,7 @@ export const CommentDropdown = ({
         <CommentCard
           username={username}
           walletAddress={walletAddress}
-          selectedText={selectedText}
+          selectedText={selectedContent || selectedText}
           comment={comment}
           replies={activeComment?.replies}
           isResolved={activeComment?.resolved}
@@ -227,6 +247,7 @@ export const CommentDropdown = ({
           placeholder="Reply"
           autoFocus
           disabled={activeComment?.resolved}
+          onInput={(e) => handleInput(e, reply)}
         />
 
         <div className="h-full flex justify-end pt-2">
@@ -242,12 +263,18 @@ export const CommentDropdown = ({
     </>
   );
 
-  return (
+  const renderDropdownWrapper = (children: React.ReactNode) => (
     <div
       ref={dropdownRef}
       className="w-[300px] color-bg-default shadow-elevation-4 md:shadow-none rounded-md"
     >
-      {showReplyView ? renderReplyView() : renderInitialView()}
+      {children}
     </div>
   );
+
+  if (isBubbleMenu) {
+    return isCommentActive ? renderDropdownWrapper(renderReplyView()) : null;
+  }
+
+  return !isCommentActive ? renderDropdownWrapper(renderInitialView()) : null;
 };

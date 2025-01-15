@@ -20,6 +20,8 @@ export interface CommentDropdownProps {
   commentDrawerOpen?: boolean;
   setCommentDrawerOpen?: React.Dispatch<SetStateAction<boolean>>;
   initialComment?: string;
+  isBubbleMenu?: boolean;
+  selectedContent?: string;
 }
 
 export interface CommentDrawerProps {

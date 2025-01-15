@@ -52,6 +52,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     handleInlineComment,
     portalRef,
     buttonRef,
+    isCommentActive,
   } = useComments();
 
   const items: BubbleMenuItem[] = [
@@ -111,7 +112,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     },
     {
       name: 'Comment',
-      isActive: () => editor.isActive('comment'),
+      isActive: () => isCommentActive,
       command: () => {},
       icon: 'MessageSquareQuote',
     },
@@ -141,15 +142,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       editor.chain().setHighlight({ color: '#DDFBDF' }).run();
     }, 10);
     setIsInlineCommentOpen(true);
-  };
-
-  const handleCommentClose = () => {
-    if (toolRef.current?.parentElement) {
-      const popoverContent = toolRef.current.closest('[role="dialog"]');
-      if (popoverContent) {
-        popoverContent.remove();
-      }
-    }
   };
 
   const renderContent = (item: { name: string; initialComment?: string }) => {
@@ -192,7 +184,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       case 'Comment':
         return (
           <CommentDropdown
-            onClose={handleCommentClose}
             activeCommentId={activeCommentId}
             setCommentDrawerOpen={setCommentDrawerOpen}
             initialComment={item.initialComment}
@@ -212,7 +203,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         icon="MessageSquareQuote"
         variant="ghost"
         size="sm"
-        isActive={editor.isActive('comment')}
+        isActive={isCommentActive}
         onClick={onInlineCommentClick}
       />
       {isCommentOpen &&
@@ -397,14 +388,18 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                       icon="MessageSquareQuote"
                       variant="ghost"
                       size="sm"
-                      isActive={editor.isActive('comment')}
+                      isActive={isCommentActive}
                       onClick={handleInlineComment}
                     />
                   }
-                  content={renderContent({
-                    name: 'Comment',
-                    initialComment: activeComment?.content || '',
-                  })}
+                  content={
+                    !isCommentActive
+                      ? renderContent({
+                          name: 'Comment',
+                          initialComment: activeComment?.content || '',
+                        })
+                      : null
+                  }
                 />
               );
             }

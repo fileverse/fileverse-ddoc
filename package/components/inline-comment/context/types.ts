@@ -48,6 +48,12 @@ export interface CommentContextType {
   portalRef: React.RefObject<HTMLDivElement>;
   buttonRef: React.RefObject<HTMLDivElement>;
   dropdownRef: React.RefObject<HTMLDivElement>;
+  activeComments: IComment[];
+  handleInput: (
+    e: React.FormEvent<HTMLTextAreaElement>,
+    content: string,
+  ) => void;
+  isCommentActive: boolean;
 }
 
 export interface CommentProviderProps {

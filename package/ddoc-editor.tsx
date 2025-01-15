@@ -25,9 +25,10 @@ import MobileToolbar from './components/mobile-toolbar';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { PresentationMode } from './components/presentation-mode/presentation-mode';
 import { CommentDrawer } from './components/inline-comment/comment-drawer';
-import { CommentBubbleMenu } from './components/inline-comment/comment-bubble-menu';
+// import { CommentBubbleMenu } from './components/inline-comment/comment-bubble-menu';
 import { useResponsive } from './utils/responsive';
 import { CommentProvider } from './components/inline-comment/context/comment-context';
+import { CommentBubbleCard } from './components/inline-comment/comment-bubble-card';
 
 const DdocEditor = forwardRef(
   (
@@ -308,7 +309,7 @@ const DdocEditor = forwardRef(
         <nav
           id="Navbar"
           className={cn(
-            'h-14 bg-[#ffffff] py-2 px-4 flex gap-[40px] items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-[60] transition-transform duration-300',
+            'h-14 bg-[#ffffff] py-2 px-4 flex gap-[40px] items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default md:!z-[60] z-[50] transition-transform duration-300',
             {
               'translate-y-0': isNavbarVisible,
               'translate-y-[-100%]': !isNavbarVisible || isPresentationMode,
@@ -356,20 +357,22 @@ const DdocEditor = forwardRef(
             </div>
           )}
           {isPresentationMode && (
-            <PresentationMode
-              editor={editor}
-              onClose={handleClosePresentationMode}
-              isFullscreen={isFullscreen}
-              setIsFullscreen={setIsFullscreen}
-              onError={onError}
-              setIsCommentSectionOpen={setIsCommentSectionOpen}
-              sharedSlidesLink={sharedSlidesLink}
-              isPreviewMode={isPreviewMode}
-              documentName={documentName as string}
-              onSlidesShare={onSlidesShare}
-              slides={slides}
-              setSlides={setSlides}
-            />
+            <div className="z-[70] fixed top-0 left-0 w-full h-full bg-white">
+              <PresentationMode
+                editor={editor}
+                onClose={handleClosePresentationMode}
+                isFullscreen={isFullscreen}
+                setIsFullscreen={setIsFullscreen}
+                onError={onError}
+                setIsCommentSectionOpen={setIsCommentSectionOpen}
+                sharedSlidesLink={sharedSlidesLink}
+                isPreviewMode={isPreviewMode}
+                documentName={documentName as string}
+                onSlidesShare={onSlidesShare}
+                slides={slides}
+                setSlides={setSlides}
+              />
+            </div>
           )}
           <div
             className={cn(
@@ -533,7 +536,7 @@ const DdocEditor = forwardRef(
           {!isPreviewMode && !disableBottomToolbar && (
             <div
               className={cn(
-                'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-40 px-4 bg-[#ffffff] transition-all duration-300 ease-in-out border-b border-color-default',
+                'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-[50] md:!z-[60] px-4 bg-[#ffffff] transition-all duration-300 ease-in-out border-b border-color-default',
                 isKeyboardVisible && 'hidden',
                 { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
               )}
@@ -555,11 +558,17 @@ const DdocEditor = forwardRef(
             isPresentationMode={isPresentationMode as boolean}
             activeCommentId={activeCommentId}
           />
-          {!isNativeMobile && (
+          {/* {!isNativeMobile && (
             <div>
               <CommentBubbleMenu editor={editor} zoomLevel={zoomLevel} />
             </div>
-          )}
+          )} */}
+          <div>
+            <CommentBubbleCard
+              editor={editor}
+              activeCommentId={activeCommentId as string}
+            />
+          </div>
         </CommentProvider>
       </div>
     );

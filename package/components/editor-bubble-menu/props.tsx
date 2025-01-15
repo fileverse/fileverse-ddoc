@@ -5,7 +5,7 @@ export const bubbleMenuProps = (props: EditorBubbleMenuProps) => {
   return {
     ...props,
     tippyOptions: {
-      moveTransition: 'transform 0.15s ease-out',
+      moveTransition: 'transform 0.2s ease-out',
       duration: 200,
       animation: 'shift-toward-subtle',
       zIndex: 50,
@@ -42,13 +42,15 @@ export const shouldShow = ({ editor }: { editor: Editor }) => {
     editor.state.doc.nodeAt(from)?.type.name === 'iframe';
   const isCodeBlockSelected = editor.isActive('codeBlock');
   const isPageBreak = editor.state.doc.nodeAt(from)?.type.name === 'pageBreak';
+  const isCommentActive = editor.isActive('comment') && from === to;
 
   if (
     empty ||
     isImageSelected ||
     isCodeBlockSelected ||
     isIframeSelected ||
-    isPageBreak
+    isPageBreak ||
+    isCommentActive
   ) {
     return false;
   }

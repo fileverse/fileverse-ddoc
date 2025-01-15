@@ -10,6 +10,8 @@ import {
 import { CommentCard } from './comment-card';
 import { useComments } from './context/comment-context';
 import { useCommentActions } from './use-comment-actions';
+import { useMediaQuery } from 'usehooks-ts';
+import { useResponsive } from '../../utils/responsive';
 
 export const CommentSection = ({
   activeCommentId,
@@ -36,6 +38,7 @@ export const CommentSection = ({
     comment,
     reply,
     handleCommentSubmit,
+    handleInput,
   } = useComments();
   const { handleResolveComment, handleUnresolveComment, handleDeleteComment } =
     useCommentActions({
@@ -43,6 +46,10 @@ export const CommentSection = ({
       comments,
       setComments,
     });
+
+  const isMaxHeight860px = useMediaQuery('(max-height: 860px)');
+  const { isBelow1280px } = useResponsive();
+  const edgeCase = isMaxHeight860px && !isBelow1280px;
 
   const filteredComments = comments.filter((comment) =>
     showResolved ? true : !comment.resolved,
@@ -52,7 +59,10 @@ export const CommentSection = ({
     <React.Fragment>
       <div
         ref={commentsSectionRef}
-        className="flex flex-col max-h-[60vh] overflow-y-scroll no-scrollbar"
+        className={cn(
+          'flex flex-col max-h-[60vh] overflow-y-scroll no-scrollbar',
+          edgeCase && '!max-h-[45vh]',
+        )}
       >
         {filteredComments.map((comment) => (
           <div
@@ -84,7 +94,7 @@ export const CommentSection = ({
                 'px-6 pb-3 flex flex-col gap-2',
                 openReplyId === comment.id && 'ml-5 pl-4',
                 (comment.id !== activeCommentId || comment.resolved) &&
-                  'hidden',
+                'hidden',
               )}
             >
               {openReplyId !== comment.id ? (
@@ -116,6 +126,7 @@ export const CommentSection = ({
                     onChange={handleReplyChange}
                     onKeyDown={handleReplyKeyDown}
                     autoFocus
+                    onInput={(e) => handleInput(e, reply)}
                     onFocus={() => {
                       if (replySectionRef.current) {
                         replySectionRef.current.scrollIntoView({
@@ -166,6 +177,7 @@ export const CommentSection = ({
           onKeyDown={handleCommentKeyDown}
           className="bg-white w-full text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
           placeholder="Type your comment"
+          onInput={(e) => handleInput(e, comment)}
         />
 
         <div className="flex justify-end">

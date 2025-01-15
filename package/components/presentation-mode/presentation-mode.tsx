@@ -10,15 +10,13 @@ import {
 } from '@fileverse/ui';
 import { EditingProvider } from '../../hooks/use-editing-context';
 import { convertToMarkdown } from '../../utils/md-to-slides';
-// import { convertMarkdownToHTML } from '@fileverse-dev/md2slides';
 import { handlePrint } from '../../utils/handle-print';
 import { PreviewPanel } from './preview-panel';
 import { cn } from '@fileverse/ui';
-import platform from 'platform';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useMediaQuery } from 'usehooks-ts';
 import copy from 'copy-to-clipboard';
 import { convertMarkdownToHTML } from '../../utils/md-to-html';
+import { useResponsive } from '../../utils/responsive';
 
 interface PresentationModeProps {
   editor: Editor;
@@ -36,8 +34,6 @@ interface PresentationModeProps {
   slides: string[];
   setSlides: React.Dispatch<React.SetStateAction<string[]>>;
 }
-
-const checkOs = () => platform.os?.family;
 
 const SlideContent = ({
   content,
@@ -108,12 +104,7 @@ export const PresentationMode = ({
     [key: number]: Editor;
   }>({});
   const [isLoading, setIsLoading] = useState(true);
-  const isMobile = useMediaQuery('(max-width: 640px)');
-  const isNativeMobile =
-    checkOs() === 'iOS' ||
-    checkOs() === 'Android' ||
-    checkOs() === 'Windows Phone' ||
-    isMobile;
+  const { isNativeMobile } = useResponsive();
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const minSwipeDistance = 50;
