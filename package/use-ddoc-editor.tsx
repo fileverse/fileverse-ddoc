@@ -11,7 +11,7 @@ import { AnyExtension, JSONContent, useEditor } from '@tiptap/react';
 import { getCursor } from './utils/cursor';
 import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
-import SlashCommand from './components/slash-comand';
+import SlashCommand from './extensions/slash-command/slash-comand';
 import { EditorState } from '@tiptap/pm/state';
 import customTextInputRules from './extensions/customTextInputRules';
 import { PageBreak } from './extensions/page-break/page-break';
@@ -21,7 +21,7 @@ import { isJSONString } from './utils/isJsonString';
 import { zoomService } from './zoom-service';
 import { sanitizeContent } from './utils/sanitize-content';
 import { CommentExtension as Comment } from './extensions/comment';
-import { handleContentPrint } from './utils/handle-print';
+import { handleContentPrint, handlePrint } from './utils/handle-print';
 
 const usercolors = [
   '#30bced',
@@ -56,10 +56,13 @@ export const useDdocEditor = ({
   zoomLevel,
   onInvalidContentError,
   ignoreCorruptedData,
+  isPresentationMode,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
+  const [slides, setSlides] = useState<string[]>([]);
+
   // V2 - comment
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
 
@@ -301,7 +304,9 @@ export const useDdocEditor = ({
       if ((event.ctrlKey || event.metaKey) && event.key === 'p') {
         event.preventDefault();
         if (editor) {
-          handleContentPrint(editor.getHTML());
+          isPresentationMode
+            ? handlePrint(slides)
+            : handleContentPrint(editor.getHTML());
         }
       }
     };
@@ -309,7 +314,7 @@ export const useDdocEditor = ({
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [editor]);
+  }, [editor, isPresentationMode]);
 
   useEffect(() => {
     if (
@@ -447,5 +452,7 @@ export const useDdocEditor = ({
     activeCommentId,
     setActiveCommentId,
     focusCommentWithActiveId,
+    slides,
+    setSlides,
   };
 };

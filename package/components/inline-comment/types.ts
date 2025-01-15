@@ -12,7 +12,6 @@ export interface CommentDropdownProps {
   editor: Editor;
   onSubmit: (content: string) => string;
   onClose: () => void;
-  elementRef: React.RefObject<HTMLDivElement>;
   setComments?: (comments: IComment[]) => void;
   comments?: IComment[];
   username?: string;

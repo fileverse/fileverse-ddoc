@@ -52,16 +52,15 @@ export const CommentSection = ({
     <React.Fragment>
       <div
         ref={commentsSectionRef}
-        className="flex flex-col px-3 max-h-[60vh] overflow-y-scroll no-scrollbar"
+        className="flex flex-col max-h-[60vh] overflow-y-scroll no-scrollbar"
       >
         {filteredComments.map((comment) => (
           <div
             key={comment.id}
             className={cn(
-              'flex flex-col gap-1 w-full box-border transition-all border-b color-border-default last:border-b-0',
-              comment.id === activeCommentId &&
-              'translate-x-[-4px] !opacity-100',
-              comment.id !== activeCommentId && 'translate-x-0 !opacity-70',
+              'flex flex-col w-full box-border transition-all border-b color-border-default last:border-b-0',
+              comment.id === activeCommentId && 'translate-x-[-4px]',
+              comment.id !== activeCommentId && 'translate-x-0',
             )}
             onClick={() => focusCommentInEditor(comment.id)}
           >
@@ -82,10 +81,10 @@ export const CommentSection = ({
             <div
               ref={replySectionRef}
               className={cn(
-                'p-3 flex flex-col gap-2',
+                'px-6 pb-3 flex flex-col gap-2',
                 openReplyId === comment.id && 'ml-5 pl-4',
                 (comment.id !== activeCommentId || comment.resolved) &&
-                'hidden',
+                  'hidden',
               )}
             >
               {openReplyId !== comment.id ? (
@@ -104,13 +103,13 @@ export const CommentSection = ({
                   </span>
                 </Button>
               ) : (
-                <div className="animate-in slide-in-from-bottom flex flex-col gap-2 duration-300">
+                <div className="pl-4 animate-in slide-in-from-bottom flex flex-col gap-2 duration-300">
                   <TextAreaFieldV2
                     placeholder="Reply"
                     value={reply}
                     disabled={comment.id !== activeCommentId}
                     className={cn(
-                      'bg-white text-body-sm color-text-secondary min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap',
+                      'bg-white text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap',
                       comment.id === activeCommentId && 'bg-white',
                     )}
                     id={comment.id}
@@ -165,7 +164,7 @@ export const CommentSection = ({
           value={comment}
           onChange={handleCommentChange}
           onKeyDown={handleCommentKeyDown}
-          className="bg-white w-full text-body-sm color-text-secondary min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
+          className="bg-white w-full text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
           placeholder="Type your comment"
         />
 

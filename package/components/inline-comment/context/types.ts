@@ -47,6 +47,7 @@ export interface CommentContextType {
   handleInlineComment: () => void;
   portalRef: React.RefObject<HTMLDivElement>;
   buttonRef: React.RefObject<HTMLDivElement>;
+  dropdownRef: React.RefObject<HTMLDivElement>;
 }
 
 export interface CommentProviderProps {

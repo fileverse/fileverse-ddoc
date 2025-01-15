@@ -128,9 +128,9 @@ export const CommentCard = ({
     <div
       ref={commentsContainerRef}
       className={cn(
-        'flex flex-col gap-3 p-3',
-        isResolved && 'opacity-30',
-        !isDropdown && 'max-h-[400px] overflow-y-auto no-scrollbar',
+        'flex flex-col gap-3 py-3 px-3 group',
+        isResolved && 'opacity-70',
+        !isDropdown && 'max-h-[400px] overflow-y-auto no-scrollbar !px-6',
       )}
     >
       <div className="flex justify-between items-center">
@@ -149,7 +149,7 @@ export const CommentCard = ({
             </span>
           </div>
         </div>
-        <ButtonGroup className="group">
+        <ButtonGroup>
           <Tooltip text="Coming soon" sideOffset={0} position="bottom">
             <IconButton
               variant={'ghost'}
@@ -160,47 +160,47 @@ export const CommentCard = ({
             />
           </Tooltip>
 
-          <DynamicDropdown
-            key="comment-card-more-actions"
-            align="end"
-            sideOffset={4}
-            anchorTrigger={
-              <IconButton
-                icon={'Ellipsis'}
-                variant="ghost"
-                size="sm"
-                className={cn(
-                  'md:group-hover:opacity-100 md:opacity-0 transition-opacity duration-300',
-                  isDropdown && 'hidden',
-                )}
-              />
-            }
-            content={
-              <div
-                ref={dropdownRef}
-                className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3"
-              >
-                <button
+          {!isDropdown && (
+            <DynamicDropdown
+              key="comment-card-more-actions"
+              align="end"
+              sideOffset={4}
+              anchorTrigger={
+                <IconButton
+                  icon={'Ellipsis'}
+                  variant="ghost"
+                  size="sm"
                   className={cn(
-                    'flex items-center color-text-default text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full',
+                    'md:group-hover:opacity-100 md:opacity-0 transition-opacity duration-300',
                   )}
-                  onClick={
-                    isResolved ? handleUnresolveClick : handleResolveClick
-                  }
+                />
+              }
+              content={
+                <div
+                  ref={dropdownRef}
+                  className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3"
                 >
-                  <LucideIcon name="CircleCheck" size="sm" />
-                  {isResolved ? 'Unresolve' : 'Resolve'}
-                </button>
-                <button
-                  className="flex items-center text-[#FB3449] text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"
-                  onClick={handleDeleteClick}
-                >
-                  <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
-                  Delete
-                </button>
-              </div>
-            }
-          />
+                  <button
+                    className={cn(
+                      'flex items-center color-text-default text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full',
+                    )}
+                    onClick={
+                      isResolved ? handleUnresolveClick : handleResolveClick
+                    }
+                  >
+                    <LucideIcon name="CircleCheck" size="sm" />
+                    {isResolved ? 'Unresolve' : 'Resolve'}
+                  </button>
+                  <button
+                    className="flex items-center text-[#FB3449] text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"
+                    onClick={handleDeleteClick}
+                  >
+                    <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
+                    Delete
+                  </button>
+                </div>
+              }
+            />)}
         </ButtonGroup>
       </div>
       <div className="flex flex-col gap-2 ml-3 pl-4 border-l color-border-default">

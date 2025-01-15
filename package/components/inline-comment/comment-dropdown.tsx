@@ -16,7 +16,6 @@ import { useComments } from './context/comment-context';
 
 export const CommentDropdown = ({
   onClose,
-  elementRef,
   activeCommentId,
   setCommentDrawerOpen,
   initialComment = '',
@@ -37,13 +36,14 @@ export const CommentDropdown = ({
     walletAddress,
     activeComment,
     selectedText,
+    dropdownRef,
   } = useComments();
 
   const { handleResolveComment, handleUnresolveComment, handleDeleteComment } =
     useCommentActions({
       editor,
       comments,
-      setComments: setComments ?? (() => {}),
+      setComments: setComments ?? (() => { }),
     });
 
   const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -137,7 +137,7 @@ export const CommentDropdown = ({
         value={comment}
         onChange={handleCommentChange}
         onKeyDown={handleKeyDown}
-        className="bg-white w-full text-body-sm color-text-secondary min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
+        className="bg-white w-full text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
         placeholder="Type your comment"
         autoFocus
       />
@@ -223,7 +223,7 @@ export const CommentDropdown = ({
           value={reply}
           onChange={handleReplyChange}
           onKeyDown={handleKeyDown}
-          className="bg-white text-body-sm color-text-secondary min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
+          className="bg-white text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
           placeholder="Reply"
           autoFocus
           disabled={activeComment?.resolved}
@@ -244,7 +244,7 @@ export const CommentDropdown = ({
 
   return (
     <div
-      ref={elementRef}
+      ref={dropdownRef}
       className="w-[300px] color-bg-default shadow-elevation-4 md:shadow-none rounded-md"
     >
       {showReplyView ? renderReplyView() : renderInitialView()}

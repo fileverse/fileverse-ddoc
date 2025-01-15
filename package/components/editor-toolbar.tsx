@@ -13,7 +13,6 @@ import { Editor } from '@tiptap/react';
 import { IEditorTool } from '../hooks/use-visibility';
 import {
   Tooltip,
-  Divider,
   LucideIcon,
   IconButton,
   DynamicDropdown,
@@ -24,6 +23,7 @@ import {
   cn,
 } from '@fileverse/ui';
 import ToolbarButton from '../common/toolbar-button';
+import { useMediaQuery } from 'usehooks-ts';
 
 const TiptapToolBar = ({
   editor,
@@ -64,6 +64,7 @@ const TiptapToolBar = ({
     onMarkdownExport,
     onMarkdownImport,
   });
+  const isBelow1480px = useMediaQuery('(max-width: 1480px)');
   const [filename, setFilename] = useState('exported_document.md');
   const zoomLevels = [
     { title: 'Fit', value: '1.4' },
@@ -215,7 +216,7 @@ const TiptapToolBar = ({
             </div>
           }
         />
-        <div className="w-[1px] h-4 bg-gray-200 mx-2"></div>
+        <div className="w-[1px] h-4 bg-gray-200 mx-1"></div>
 
         <div className="flex gap-1 justify-center items-center">
           {undoRedoTools.map((tool, _index) => {
@@ -236,7 +237,7 @@ const TiptapToolBar = ({
               return (
                 <div
                   key={_index}
-                  className="w-[2px] h-4 bg-gray-200 mx-2"
+                  className="w-[2px] h-4 bg-gray-200 mx-1"
                 ></div>
               );
             }
@@ -256,7 +257,7 @@ const TiptapToolBar = ({
                 setFileExportsOpen(false);
               }}
             >
-              <span className="text-body-sm">
+              <span className="text-body-sm line-clamp-1 w-fit">
                 {zoomLevels.find((z) => z.value === zoomLevel)?.title || '100%'}
               </span>
               <LucideIcon name="ChevronDown" size="sm" />
@@ -279,7 +280,7 @@ const TiptapToolBar = ({
             </div>
           }
         />
-        <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
+        <div className="w-[2px] h-4 bg-gray-200 mx-1"></div>
         <DynamicDropdown
           key={IEditorTool.FONT_FAMILY}
           anchorTrigger={
@@ -287,7 +288,14 @@ const TiptapToolBar = ({
               className="bg-transparent hover:!bg-[#F2F4F5] rounded py-2 px-4 flex items-center justify-center gap-2 w-fit"
               onClick={() => setToolVisibility(IEditorTool.FONT_FAMILY)}
             >
-              <span className="text-body-sm">
+              <span
+                className="text-body-sm line-clamp-1 w-8"
+                style={{
+                  fontFamily: fonts.find((font) =>
+                    editor?.isActive('textStyle', { fontFamily: font.value }),
+                  )?.value,
+                }}
+              >
                 {fonts.find((font) =>
                   editor?.isActive('textStyle', { fontFamily: font.value }),
                 )?.title || 'Font'}
@@ -303,7 +311,7 @@ const TiptapToolBar = ({
             />
           }
         />
-        <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
+        <div className="w-[2px] h-4 bg-gray-200 mx-1"></div>
         <DynamicDropdown
           key={IEditorTool.HEADING}
           anchorTrigger={
@@ -311,7 +319,7 @@ const TiptapToolBar = ({
               className="bg-transparent hover:!bg-[#F2F4F5] rounded gap-2 py-2 px-4 flex items-center justify-center w-fit"
               onClick={() => setToolVisibility(IEditorTool.HEADING)}
             >
-              <span className="text-sm">
+              <span className="text-body-sm line-clamp-1 w-fit">
                 {editor?.isActive('heading', { level: 1 })
                   ? 'Heading 1'
                   : editor?.isActive('heading', { level: 2 })
@@ -331,18 +339,25 @@ const TiptapToolBar = ({
             />
           }
         />
-        <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
+        <div className="w-[2px] h-4 bg-gray-200 mx-1"></div>
         <div className="flex gap-2 justify-center items-center">
           {toolbar.map((tool, index) => {
+            if (!tool) {
+              return (
+                <div key={index} className="w-[2px] h-4 bg-gray-200 mx-1"></div>
+              );
+            }
+
             if (
-              tool?.title === 'Highlight' ||
-              tool?.title === 'Text Color' ||
-              tool?.title === 'Alignment' ||
-              tool?.title === 'Link'
+              tool.title === 'Highlight' ||
+              tool.title === 'Text Color' ||
+              tool.title === 'Alignment' ||
+              tool.title === 'Link'
             ) {
               return (
                 <DynamicDropdown
                   key={tool.title}
+                  align={tool.title === 'Link' ? 'end' : 'center'}
                   anchorTrigger={
                     <Tooltip text={tool.title}>
                       <IconButton icon={tool.icon} variant="ghost" size="md" />
@@ -351,21 +366,54 @@ const TiptapToolBar = ({
                   content={renderContent(tool)}
                 />
               );
-            } else if (tool) {
-              return (
-                <Tooltip key={tool.title} text={tool.title}>
-                  <ToolbarButton
-                    icon={tool.icon}
-                    onClick={tool.onClick}
-                    isActive={tool.isActive}
-                  />
-                </Tooltip>
-              );
-            } else {
-              return (
-                <div key={index} className="w-[2px] h-4 bg-gray-200 mx-2"></div>
-              );
             }
+
+            // Show "More" dropdown only once when below 1480px
+            if (tool.group === 'More') {
+              if (isBelow1480px) {
+                // Only render the dropdown for the first "More" item
+                const isFirstMoreItem =
+                  toolbar.findIndex((t) => t?.group === 'More') === index;
+                if (!isFirstMoreItem) return null;
+
+                return (
+                  <DynamicDropdown
+                    key="more-dropdown"
+                    align="end"
+                    anchorTrigger={
+                      <Tooltip text="More">
+                        <IconButton icon="Ellipsis" variant="ghost" size="md" />
+                      </Tooltip>
+                    }
+                    content={
+                      <div className="flex p-1 gap-1">
+                        {toolbar
+                          .filter((t) => t?.group === 'More')
+                          .map((moreTool) => (
+                            <ToolbarButton
+                              key={moreTool?.title}
+                              icon={moreTool?.icon}
+                              onClick={moreTool?.onClick || (() => {})}
+                              isActive={moreTool?.isActive || false}
+                            />
+                          ))}
+                      </div>
+                    }
+                  />
+                );
+              }
+            }
+
+            // Regular toolbar button
+            return (
+              <Tooltip key={tool.title} text={tool.title}>
+                <ToolbarButton
+                  icon={tool.icon}
+                  onClick={tool.onClick}
+                  isActive={tool.isActive}
+                />
+              </Tooltip>
+            );
           })}
           <DynamicModal
             open={isExportModalOpen}
@@ -392,15 +440,14 @@ const TiptapToolBar = ({
           />
         </div>
       </div>
-      <div className="flex h-9 gap-[10px]">
-        <Divider direction="vertical" />
-        <div className="w-9 h-9 flex justify-center items-center cursor-pointer">
-          <LucideIcon
-            size={'md'}
-            name={isNavbarVisible ? 'ChevronUp' : 'ChevronDown'}
-            onClick={() => setIsNavbarVisible((prev) => !prev)}
-          />
-        </div>
+      <div className="flex items-center gap-1">
+        <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
+        <IconButton
+          size="md"
+          variant="ghost"
+          icon={isNavbarVisible ? 'ChevronUp' : 'ChevronDown'}
+          onClick={() => setIsNavbarVisible((prev) => !prev)}
+        />
       </div>
     </div>
   );

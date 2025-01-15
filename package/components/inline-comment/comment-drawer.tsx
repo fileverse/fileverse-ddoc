@@ -29,7 +29,7 @@ export const CommentDrawer = ({
           onOpenChange={onClose}
           noOverlay
           side="right"
-          className="p-0 !w-screen md:!w-[384px]"
+          className="p-0 !w-screen md:!w-[384px] !z-[60]"
           content={
             <React.Fragment>
               <div className="flex px-4 py-3 border-b flex-row gap-4 items-center">

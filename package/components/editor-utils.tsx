@@ -37,6 +37,7 @@ interface IEditorToolElement {
   title: string;
   onClick: () => void;
   isActive: boolean;
+  group?: string;
 }
 
 export const fonts = [
@@ -171,7 +172,7 @@ export const useEditorToolbar = ({
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [fileExportsOpen, setFileExportsOpen] = useState(false);
 
-    const undoRedoTools: Array<IEditorToolElement | null> = [
+  const undoRedoTools: Array<IEditorToolElement | null> = [
     {
       icon: 'Undo',
       title: 'Undo',
@@ -285,6 +286,12 @@ export const useEditorToolbar = ({
     },
     null,
     {
+      icon: 'Link',
+      title: 'Link',
+      onClick: () => setToolVisibility(IEditorTool.LINK),
+      isActive: editor?.isActive('link'),
+    },
+    {
       icon: 'ImagePlus',
       title: 'Upload Image',
       onClick: () => {
@@ -315,24 +322,21 @@ export const useEditorToolbar = ({
         input.click();
       },
       isActive: false,
-    },
-    {
-      icon: 'Link',
-      title: 'Link',
-      onClick: () => setToolVisibility(IEditorTool.LINK),
-      isActive: editor?.isActive('link'),
+      group: 'More',
     },
     {
       icon: 'Code',
       title: 'Code',
       onClick: () => editor?.chain().focus().toggleCode().run(),
       isActive: editor?.isActive('code'),
+      group: 'More',
     },
     {
       icon: 'Braces',
       title: 'Code Block',
       onClick: () => editor?.chain().focus().toggleCodeBlock().run(),
       isActive: editor?.isActive('codeBlock'),
+      group: 'More',
     },
     {
       icon: 'Table',
@@ -344,6 +348,7 @@ export const useEditorToolbar = ({
           .insertTable({ rows: 3, cols: 2, withHeaderRow: true })
           .run(),
       isActive: false,
+      group: 'More',
     },
   ];
 

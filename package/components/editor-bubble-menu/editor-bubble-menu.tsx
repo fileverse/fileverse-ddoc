@@ -193,7 +193,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         return (
           <CommentDropdown
             onClose={handleCommentClose}
-            elementRef={toolRef}
             activeCommentId={activeCommentId}
             setCommentDrawerOpen={setCommentDrawerOpen}
             initialComment={item.initialComment}
@@ -240,7 +239,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       shouldShow={shouldShow}
       className={cn(
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border bg-white items-center shadow-elevation-3',
-        isInlineCommentOpen ? '!invisible' : '!visible',
+        isInlineCommentOpen || isCommentOpen ? '!invisible' : '!visible',
       )}
       style={{
         transform: `scale(${1 / parseFloat(zoomLevel)})`,
@@ -392,7 +391,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                   sideOffset={15}
                   alignOffset={-5}
                   align="end"
-                  className="!z-40"
+                  className="!z-[50] shadow-elevation-4"
                   anchorTrigger={
                     <ToolbarButton
                       icon="MessageSquareQuote"

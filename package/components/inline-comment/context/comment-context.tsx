@@ -30,8 +30,9 @@ export const CommentProvider = ({
   const [isCommentOpen, setIsCommentOpen] = useState(false);
   const portalRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useOnClickOutside([portalRef, buttonRef], () => {
+  useOnClickOutside([portalRef, buttonRef, dropdownRef], () => {
     if (isCommentOpen) {
       setIsCommentOpen(false);
     }
@@ -50,6 +51,8 @@ export const CommentProvider = ({
     } else {
       setSelectedText(text);
     }
+
+    setIsCommentOpen(true);
   };
 
   const onInlineCommentClick = (event: React.MouseEvent) => {
@@ -312,6 +315,7 @@ export const CommentProvider = ({
         portalRef,
         buttonRef,
         replySectionRef,
+        dropdownRef,
       }}
     >
       {children}

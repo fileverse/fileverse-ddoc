@@ -28,6 +28,7 @@ body {
 body {
   position: static;
   user-select: none;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .no-scrollbar::-webkit-scrollbar {
