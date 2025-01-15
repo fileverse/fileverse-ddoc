@@ -327,14 +327,24 @@ export const useEditorToolbar = ({
     {
       icon: 'Code',
       title: 'Code',
-      onClick: () => editor?.chain().focus().toggleCode().run(),
+      onClick: () => {
+        if (editor?.isActive('codeBlock')) {
+          editor?.chain().focus().toggleCodeBlock().run();
+        }
+        editor?.chain().focus().toggleCode().run();
+      },
       isActive: editor?.isActive('code'),
       group: 'More',
     },
     {
       icon: 'Braces',
       title: 'Code Block',
-      onClick: () => editor?.chain().focus().toggleCodeBlock().run(),
+      onClick: () => {
+        if (editor?.isActive('code')) {
+          editor?.chain().focus().toggleCode().run();
+        }
+        editor?.chain().focus().toggleCodeBlock().run();
+      },
       isActive: editor?.isActive('codeBlock'),
       group: 'More',
     },
