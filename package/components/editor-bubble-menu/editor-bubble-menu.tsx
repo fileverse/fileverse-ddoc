@@ -35,6 +35,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     walletAddress,
     username,
     onInlineComment,
+    commentDrawerOpen,
     setCommentDrawerOpen,
     activeCommentId,
   } = props;
@@ -104,17 +105,17 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       command: () => setToolVisibility(IEditorTool.SCRIPTS),
       icon: 'Superscript',
     },
-    {
-      name: 'InlineComment',
-      isActive: () => editor.isActive('inlineComment'),
-      command: () => {},
-      icon: 'MessageSquarePlus',
-    },
+    // {
+    //   name: 'InlineComment',
+    //   isActive: () => editor.isActive('inlineComment'),
+    //   command: () => {},
+    //   icon: 'MessageSquarePlus',
+    // },
     {
       name: 'Comment',
       isActive: () => isCommentActive,
       command: () => {},
-      icon: 'MessageSquareQuote',
+      icon: 'MessageSquarePlus',
     },
   ];
 
@@ -200,7 +201,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     <React.Fragment>
       <ToolbarButton
         ref={buttonRef}
-        icon="MessageSquareQuote"
+        icon="MessageSquarePlus"
         variant="ghost"
         size="sm"
         isActive={isCommentActive}
@@ -230,7 +231,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       shouldShow={shouldShow}
       className={cn(
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border bg-white items-center shadow-elevation-3',
-        isInlineCommentOpen || isCommentOpen ? '!invisible' : '!visible',
+        isInlineCommentOpen || isCommentOpen || commentDrawerOpen
+          ? '!invisible'
+          : '!visible',
       )}
       style={{
         transform: `scale(${1 / parseFloat(zoomLevel)})`,
@@ -385,7 +388,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                   className="!z-[50] shadow-elevation-4"
                   anchorTrigger={
                     <ToolbarButton
-                      icon="MessageSquareQuote"
+                      icon="MessageSquarePlus"
                       variant="ghost"
                       size="sm"
                       isActive={isCommentActive}

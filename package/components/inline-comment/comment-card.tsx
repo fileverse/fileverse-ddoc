@@ -9,6 +9,7 @@ import {
 } from '@fileverse/ui';
 import { useRef, useState, useEffect } from 'react';
 import { CommentCardProps } from './types';
+import { useComments } from './context/comment-context';
 
 export const CommentCard = ({
   username,
@@ -29,6 +30,7 @@ export const CommentCard = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAllReplies, setShowAllReplies] = useState(false);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
+  const { setOpenReplyId } = useComments();
 
   useEffect(() => {
     if (commentsContainerRef.current && replies) {
@@ -130,7 +132,7 @@ export const CommentCard = ({
       className={cn(
         'flex flex-col gap-2 px-3 group',
         isResolved && 'opacity-70',
-        !isDropdown && 'max-h-[400px] overflow-y-auto !px-6',
+        !isDropdown && '!px-6',
         isDropdown && 'py-3',
       )}
     >
@@ -150,7 +152,19 @@ export const CommentCard = ({
             </span>
           </div>
         </div>
-        <ButtonGroup>
+        <ButtonGroup className="!space-x-0">
+          {!isDropdown && replies && replies.length === 0 && (
+            <Tooltip text="Add reply" sideOffset={0} position="bottom">
+              <IconButton
+                variant={'ghost'}
+                icon="MessageSquarePlus"
+                size="sm"
+                className="md:group-hover:opacity-100 md:opacity-0 transition-opacity duration-300"
+                onClick={() => setOpenReplyId(id as string)}
+              />
+            </Tooltip>
+          )}
+
           <Tooltip text="Coming soon" sideOffset={0} position="bottom">
             <IconButton
               variant={'ghost'}
@@ -183,7 +197,7 @@ export const CommentCard = ({
                 >
                   <button
                     className={cn(
-                      'flex items-center color-text-default text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full',
+                      'flex items-center color-text-default text-sm font-medium gap-2 rounded p-2 transition-all hover:color-bg-default-hover w-full',
                     )}
                     onClick={
                       isResolved ? handleUnresolveClick : handleResolveClick

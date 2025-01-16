@@ -99,7 +99,7 @@ export const CommentDropdown = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (showReplyView) {
+      if (!showReplyView && isBubbleMenu) {
         handleReplySubmit();
       } else {
         handleClick();
@@ -266,7 +266,7 @@ export const CommentDropdown = ({
   const renderDropdownWrapper = (children: React.ReactNode) => (
     <div
       ref={dropdownRef}
-      className="w-[300px] color-bg-default shadow-elevation-4 md:shadow-none rounded-md"
+      className="w-[300px] color-bg-default shadow-elevation-4 md:shadow-none rounded-md select-text"
     >
       {children}
     </div>

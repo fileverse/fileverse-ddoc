@@ -201,6 +201,9 @@ export const useDdocEditor = ({
               }
             }
           },
+          blur: () => {
+            editor?.commands.unsetCommentActive();
+          },
         },
         handleClick: handleCommentClick,
       },

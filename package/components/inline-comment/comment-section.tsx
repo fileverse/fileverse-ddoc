@@ -15,8 +15,10 @@ import { useResponsive } from '../../utils/responsive';
 
 export const CommentSection = ({
   activeCommentId,
+  isNavbarVisible,
 }: {
   activeCommentId: string | null;
+  isNavbarVisible?: boolean;
 }) => {
   const {
     comments,
@@ -56,14 +58,15 @@ export const CommentSection = ({
   );
 
   return (
-    <React.Fragment>
+    <div
+      className={cn(
+        'flex flex-col h-[calc(100vh-120px)] sm:!h-[calc(100vh-40px)] xl:!h-[77vh]',
+        !isNavbarVisible && 'xl:!h-[calc(100vh-150px)]',
+      )}
+    >
       <div
         ref={commentsSectionRef}
-        className={cn(
-          'flex flex-col max-h-[60vh] overflow-y-scroll',
-          edgeCase && '!max-h-[45vh]',
-        )}
-      >
+        className="flex flex-col overflow-y-auto no-scrollbar flex-1">
         {filteredComments.map((comment) => (
           <div
             key={comment.id}
@@ -94,7 +97,7 @@ export const CommentSection = ({
                 'px-6 flex flex-col gap-2',
                 openReplyId === comment.id && 'ml-5 pl-4',
                 (comment.id !== activeCommentId || comment.resolved) &&
-                  'hidden',
+                'hidden',
               )}
             >
               {openReplyId !== comment.id ? (
@@ -103,9 +106,11 @@ export const CommentSection = ({
                     e.stopPropagation();
                     setOpenReplyId(comment.id);
                   }}
-                  className="w-full h-9 rounded-full color-bg-secondary flex items-center justify-center gap-2"
+                  className={cn(
+                    'w-full h-9 rounded-full color-bg-secondary flex items-center justify-center gap-2',
+                    comment.replies?.length === 0 && 'hidden',
+                  )}
                   variant="ghost"
-                  disabled={comment.id !== activeCommentId}
                 >
                   <LucideIcon name="MessageSquarePlus" />
                   <span className="text-body-sm-bold">
@@ -163,7 +168,7 @@ export const CommentSection = ({
           </div>
         ))}
       </div>
-      <div className="flex flex-col gap-3 color-bg-secondary border-t color-border-default px-6 py-5 rounded-b-lg min-h-[15vh] absolute bottom-0 w-full">
+      <div className="flex flex-col gap-3 color-bg-secondary border-t color-border-default px-6 py-5 rounded-b-lg">
         <div className="flex justify-start items-center gap-2">
           <Avatar src={''} size="sm" className="min-w-6" />
 
@@ -190,6 +195,6 @@ export const CommentSection = ({
           </Button>
         </div>
       </div>
-    </React.Fragment>
+    </div>
   );
 };

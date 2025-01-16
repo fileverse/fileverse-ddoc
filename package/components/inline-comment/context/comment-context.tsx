@@ -271,7 +271,9 @@ export const CommentProvider = ({
     e.currentTarget.style.height = `${newHeight}px`;
   };
 
-  const activeComments = initialComments.filter((comment) => !comment.resolved);
+  const activeComments = initialComments.filter(
+    (comment) => !comment.resolved && comment.selectedContent.length > 0,
+  );
 
   const onPrevComment = () => {
     if (activeCommentIndex > 0) {

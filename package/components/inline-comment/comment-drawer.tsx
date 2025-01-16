@@ -29,7 +29,7 @@ export const CommentDrawer = ({
           onOpenChange={onClose}
           noOverlay
           side="right"
-          className="p-0 !w-screen md:!w-[384px] !z-50"
+          className="p-0 !w-screen md:!w-[384px] !z-50 !h-[calc(100vh-90px)]"
           content={
             <React.Fragment>
               <div className="flex px-4 py-3 border-b flex-row gap-4 items-center">
@@ -88,7 +88,10 @@ export const CommentDrawer = ({
                   />
                 </Tooltip>
               </div>
-              <CommentSection activeCommentId={activeCommentId} />
+              <CommentSection
+                activeCommentId={activeCommentId}
+                isNavbarVisible={isNavbarVisible}
+              />
             </React.Fragment>
           }
         />

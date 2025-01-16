@@ -23,6 +23,7 @@ export type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   walletAddress?: string;
   username?: string;
   onInlineComment?: () => void;
+  commentDrawerOpen?: boolean;
   setCommentDrawerOpen?: React.Dispatch<SetStateAction<boolean>>;
 };
 

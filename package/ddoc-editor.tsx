@@ -444,6 +444,7 @@ const DdocEditor = forwardRef(
                   username={username as string}
                   walletAddress={walletAddress as string}
                   onInlineComment={onInlineComment}
+                  commentDrawerOpen={commentDrawerOpen as boolean}
                   setCommentDrawerOpen={setCommentDrawerOpen}
                   activeCommentId={activeCommentId}
                 />
@@ -558,15 +559,11 @@ const DdocEditor = forwardRef(
             isPresentationMode={isPresentationMode as boolean}
             activeCommentId={activeCommentId}
           />
-          {/* {!isNativeMobile && (
-            <div>
-              <CommentBubbleMenu editor={editor} zoomLevel={zoomLevel} />
-            </div>
-          )} */}
           <div>
             <CommentBubbleCard
               editor={editor}
-              activeCommentId={activeCommentId as string}
+              activeCommentId={activeCommentId}
+              commentDrawerOpen={commentDrawerOpen as boolean}
             />
           </div>
         </CommentProvider>
