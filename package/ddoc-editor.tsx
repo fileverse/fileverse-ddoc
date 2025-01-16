@@ -309,7 +309,7 @@ const DdocEditor = forwardRef(
         <nav
           id="Navbar"
           className={cn(
-            'h-14 bg-[#ffffff] py-2 px-4 flex gap-[40px] items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default md:!z-[60] z-[50] transition-transform duration-300',
+            'h-14 bg-[#ffffff] py-2 px-4 flex gap-[40px] items-center justify-between w-screen z-[50] xl:!z-[60] fixed left-0 top-0 border-b color-border-default transition-transform duration-300',
             {
               'translate-y-0': isNavbarVisible,
               'translate-y-[-100%]': !isNavbarVisible || isPresentationMode,
@@ -536,7 +536,7 @@ const DdocEditor = forwardRef(
           {!isPreviewMode && !disableBottomToolbar && (
             <div
               className={cn(
-                'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-[50] md:!z-[60] px-4 bg-[#ffffff] transition-all duration-300 ease-in-out border-b border-color-default',
+                'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-[50] xl:!z-[60] px-4 bg-[#ffffff] transition-all duration-300 ease-in-out border-b border-color-default',
                 isKeyboardVisible && 'hidden',
                 { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
               )}

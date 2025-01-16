@@ -128,9 +128,9 @@ export const CommentCard = ({
     <div
       ref={commentsContainerRef}
       className={cn(
-        'flex flex-col gap-3 py-3 px-3 group',
+        'flex flex-col gap-3 px-3 group',
         isResolved && 'opacity-70',
-        !isDropdown && 'max-h-[400px] overflow-y-auto no-scrollbar !px-6',
+        !isDropdown && 'max-h-[400px] overflow-y-auto !px-6',
       )}
     >
       <div className="flex justify-between items-center">

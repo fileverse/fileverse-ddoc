@@ -32,6 +32,9 @@ export const CommentBubbleCard = ({
       placement: 'auto-start',
       interactive: true,
       appendTo: () => document.getElementById('editor-canvas'),
+      followCursor: 'horizontal',
+      inertia: true,
+      inlinePositioning: true,
       popperOptions: {
         strategy: 'fixed',
         modifiers: [
