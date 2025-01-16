@@ -158,6 +158,7 @@ turndownService.addRule('listItem', {
       .replace(/\n+$/, '') // remove trailing newlines
       .replace(/\n\s*\n/g, '\n') // replace multiple newlines with single newline
       .replace(/\n/gm, '\n    '); // indent
+
     let prefix = options.bulletListMarker + ' ';
     const parent: any = node.parentNode;
     if (parent && parent.nodeName === 'OL') {
@@ -165,9 +166,26 @@ turndownService.addRule('listItem', {
       const index = Array.prototype.indexOf.call(parent.children, node);
       prefix = (start ? Number(start) + index : index + 1) + '. ';
     }
-    return (
-      prefix + content + (node.nextSibling && !/\n$/.test(content) ? '\n' : '')
-    );
+
+    // Calculate the nesting level
+    let level = 0;
+    let currentNode = node.parentNode;
+    while (
+      currentNode &&
+      (currentNode.nodeName === 'UL' || currentNode.nodeName === 'OL')
+    ) {
+      level++;
+      currentNode = currentNode.parentNode;
+    }
+
+    // Add indentation based on nesting level
+    if (level > 1) {
+      prefix = '    '.repeat(level - 1) + prefix;
+    }
+
+    // Only add newline if it's not a nested list item or if it's the last item in its list
+    const needsNewline = !node.nextSibling || level === 1;
+    return prefix + content + (needsNewline ? '\n' : '');
   },
 });
 
