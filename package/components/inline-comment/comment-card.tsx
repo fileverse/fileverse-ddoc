@@ -128,7 +128,7 @@ export const CommentCard = ({
     <div
       ref={commentsContainerRef}
       className={cn(
-        'flex flex-col gap-3 px-3 group',
+        'flex flex-col gap-2 px-3 group',
         isResolved && 'opacity-70',
         !isDropdown && 'max-h-[400px] overflow-y-auto !px-6',
         isDropdown && 'py-3',
@@ -207,7 +207,7 @@ export const CommentCard = ({
       </div>
       <div className="flex flex-col gap-2 ml-3 pl-4 border-l color-border-default">
         {selectedText && (
-          <div className="bg-[#e5fbe7] p-2 rounded-lg">
+          <div className="bg-[#e5fbe7] p-1 rounded-lg">
             <div className="relative">
               <span
                 className={cn('text-body-sm italic block', {
@@ -219,7 +219,7 @@ export const CommentCard = ({
               {selectedText.length > 70 && (
                 <button
                   onClick={() => setIsExpanded(!isExpanded)}
-                  className="text-helper-text-sm color-text-secondary hover:underline"
+                  className="text-helper-text-sm pt-1 color-text-secondary hover:underline"
                 >
                   {isExpanded ? 'Show less' : 'Show more'}
                 </button>
