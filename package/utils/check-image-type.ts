@@ -3,9 +3,9 @@ export const validateImageExtension = (
   onError?: (message: string) => void,
 ) => {
   if (file.type.includes('image')) {
-    if (!file.type.includes('image/png') && !file.type.includes('image/jpeg')) {
+    if (!['image/png', 'image/jpeg', 'image/gif'].includes(file.type)) {
       if (onError && typeof onError === 'function') {
-        onError('Invalid image type. Try PNG or JPEG.');
+        onError('Invalid image type. Try PNG, JPEG or GIF.');
       }
       return false;
     }
