@@ -131,6 +131,7 @@ export const CommentCard = ({
         'flex flex-col gap-3 px-3 group',
         isResolved && 'opacity-70',
         !isDropdown && 'max-h-[400px] overflow-y-auto !px-6',
+        isDropdown && 'py-3',
       )}
     >
       <div className="flex justify-between items-center">
