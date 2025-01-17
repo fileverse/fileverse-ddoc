@@ -298,7 +298,7 @@ export const useEditorToolbar = ({
         editor?.chain().focus().deleteRange(editor.state.selection).run();
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = 'image/png, image/jpeg';
+        input.accept = 'image/png, image/jpeg, image/gif';
         input.onchange = async () => {
           if (input.files?.length) {
             const file = input.files[0];
@@ -455,7 +455,7 @@ export const useEditorToolbar = ({
         // upload image
         const input = document.createElement('input');
         input.type = 'file';
-        input.accept = 'image/png, image/jpeg';
+        input.accept = 'image/png, image/jpeg, image/gif';
         input.onchange = async () => {
           if (input.files?.length) {
             const file = input.files[0];
