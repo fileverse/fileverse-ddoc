@@ -231,9 +231,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       shouldShow={shouldShow}
       className={cn(
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border bg-white items-center shadow-elevation-3',
-        isInlineCommentOpen || isCommentOpen || commentDrawerOpen
-          ? '!invisible'
-          : '!visible',
+        isInlineCommentOpen || isCommentOpen ? '!invisible' : '!visible',
       )}
       style={{
         transform: `scale(${1 / parseFloat(zoomLevel)})`,

@@ -47,11 +47,11 @@ export const CommentBubbleCard = ({
       zIndex: 50,
       offset: [0, 20],
       placement: 'bottom',
+      appendTo: () => document.getElementById('editor-canvas'),
       followCursor: 'vertical',
       interactive: true,
-      appendTo: () => document.getElementById('editor-canvas'),
       inertia: true,
-      trigger: 'mouseenter click',
+      trigger: 'focusin',
       inlinePositioning: true,
       popperOptions: {
         strategy: 'fixed',
