@@ -35,7 +35,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     walletAddress,
     username,
     onInlineComment,
-    commentDrawerOpen,
+    // commentDrawerOpen,
     setCommentDrawerOpen,
     activeCommentId,
   } = props;

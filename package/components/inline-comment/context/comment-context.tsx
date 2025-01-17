@@ -275,50 +275,82 @@ export const CommentProvider = ({
     (comment) => !comment.resolved && comment.selectedContent.length > 0,
   );
 
-  const onPrevComment = () => {
-    if (activeCommentIndex > 0) {
-      const prevComment = activeComments[activeCommentIndex - 1];
+  const getCommentPositions = () => {
+    const positions: { id: string; position: number }[] = [];
 
-      // Find the comment element in the editor
-      const commentElement = editor.view.dom.querySelector(
-        `[data-comment-id="${prevComment.id}"]`,
+    // Find all comment elements in the editor
+    const commentElements =
+      editor.view.dom.querySelectorAll('[data-comment-id]');
+
+    // Get their positions and IDs
+    commentElements.forEach((element) => {
+      const id = element.getAttribute('data-comment-id');
+      if (id && activeComments.some((comment) => comment.id === id)) {
+        const position = editor.view.posAtDOM(element, 0);
+        positions.push({ id, position });
+      }
+    });
+
+    // Sort by position in document
+    return positions.sort((a, b) => a.position - b.position);
+  };
+
+  const onPrevComment = () => {
+    const sortedComments = getCommentPositions();
+    const currentIndex = sortedComments.findIndex(
+      (c) => c.id === activeCommentId,
+    );
+
+    if (currentIndex > 0) {
+      const prevComment = activeComments.find(
+        (comment) => comment.id === sortedComments[currentIndex - 1].id,
       );
 
-      if (commentElement) {
-        // Get the position of the comment in the editor
-        const from = editor.view.posAtDOM(commentElement, 0);
-        const to = from + commentElement.textContent!.length;
+      if (prevComment) {
+        const commentElement = editor.view.dom.querySelector(
+          `[data-comment-id="${prevComment.id}"]`,
+        );
 
-        // Set selection to the comment text
-        editor.commands.setTextSelection({ from, to });
-        focusCommentInEditor(prevComment.id);
+        if (commentElement) {
+          const from = editor.view.posAtDOM(commentElement, 0);
+          const to = from + commentElement.textContent!.length;
+
+          editor.commands.setTextSelection({ from, to });
+          focusCommentInEditor(prevComment.id);
+        }
       }
     }
   };
 
   const onNextComment = () => {
-    if (activeCommentIndex < activeComments.length - 1) {
-      const nextComment = activeComments[activeCommentIndex + 1];
+    const sortedComments = getCommentPositions();
+    const currentIndex = sortedComments.findIndex(
+      (c) => c.id === activeCommentId,
+    );
 
-      // Find the comment element in the editor
-      const commentElement = editor.view.dom.querySelector(
-        `[data-comment-id="${nextComment.id}"]`,
+    if (currentIndex < sortedComments.length - 1) {
+      const nextComment = activeComments.find(
+        (comment) => comment.id === sortedComments[currentIndex + 1].id,
       );
 
-      if (commentElement) {
-        // Get the position of the comment in the editor
-        const from = editor.view.posAtDOM(commentElement, 0);
-        const to = from + commentElement.textContent!.length;
+      if (nextComment) {
+        const commentElement = editor.view.dom.querySelector(
+          `[data-comment-id="${nextComment.id}"]`,
+        );
 
-        // Set selection to the comment text
-        editor.commands.setTextSelection({ from, to });
-        focusCommentInEditor(nextComment.id);
+        if (commentElement) {
+          const from = editor.view.posAtDOM(commentElement, 0);
+          const to = from + commentElement.textContent!.length;
+
+          editor.commands.setTextSelection({ from, to });
+          focusCommentInEditor(nextComment.id);
+        }
       }
     }
   };
 
-  const activeCommentIndex = activeComments.findIndex(
-    (comment) => comment.id === activeCommentId,
+  const activeCommentIndex = getCommentPositions().findIndex(
+    (c) => c.id === activeCommentId,
   );
 
   const activeComment = initialComments.find(
