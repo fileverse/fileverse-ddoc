@@ -5,6 +5,7 @@ import { BubbleMenu } from '@tiptap/react';
 import { Editor } from '@tiptap/core';
 import { useComments } from './context/comment-context';
 import { CommentDropdown } from './comment-dropdown';
+import { useResponsive } from '../../utils/responsive';
 
 export const CommentBubbleCard = ({
   editor,
@@ -16,6 +17,7 @@ export const CommentBubbleCard = ({
   commentDrawerOpen: boolean;
 }) => {
   const { comments } = useComments();
+  const { isNativeMobile } = useResponsive();
 
   const currentComment = comments?.find(
     (comment) => comment.id === activeCommentId,
@@ -41,7 +43,7 @@ export const CommentBubbleCard = ({
       editor.commands.unsetCommentActive();
     },
     tippyOptions: {
-      moveTransition: 'transform 0.2s ease-out',
+      moveTransition: isNativeMobile ? 'transform 0.2s ease-in' : 'none',
       duration: 200,
       animation: 'shift-toward-subtle',
       zIndex: 50,
@@ -59,7 +61,7 @@ export const CommentBubbleCard = ({
           {
             name: 'flip',
             options: {
-              fallbackPlacements: ['bottom', 'right'],
+              fallbackPlacements: ['top'],
             },
           },
           {

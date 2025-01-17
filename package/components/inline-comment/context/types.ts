@@ -54,6 +54,7 @@ export interface CommentContextType {
     content: string,
   ) => void;
   isCommentActive: boolean;
+  isCommentResolved: boolean;
 }
 
 export interface CommentProviderProps {

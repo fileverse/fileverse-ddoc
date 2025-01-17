@@ -54,6 +54,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     portalRef,
     buttonRef,
     isCommentActive,
+    isCommentResolved,
   } = useComments();
 
   const items: BubbleMenuItem[] = [
@@ -204,8 +205,10 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         icon="MessageSquarePlus"
         variant="ghost"
         size="sm"
+        disabled={isCommentResolved}
         isActive={isCommentActive}
         onClick={onInlineCommentClick}
+        classNames="disabled:!bg-transparent"
       />
       {isCommentOpen &&
         createPortal(
@@ -390,8 +393,11 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                       icon="MessageSquarePlus"
                       variant="ghost"
                       size="sm"
+                      tooltip={isCommentResolved ? 'Comment resolved' : ''}
+                      disabled={isCommentResolved}
                       isActive={isCommentActive}
                       onClick={handleInlineComment}
+                      classNames="disabled:!bg-transparent"
                     />
                   }
                   content={

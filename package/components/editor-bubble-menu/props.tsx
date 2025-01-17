@@ -5,7 +5,7 @@ export const bubbleMenuProps = (props: EditorBubbleMenuProps) => {
   return {
     ...props,
     tippyOptions: {
-      moveTransition: 'transform 0.2s ease-out',
+      moveTransition: 'transform 0.2s ease-in',
       duration: 200,
       animation: 'shift-toward-subtle',
       zIndex: 40,
@@ -16,7 +16,7 @@ export const bubbleMenuProps = (props: EditorBubbleMenuProps) => {
           {
             name: 'flip',
             options: {
-              fallbackPlacements: ['bottom', 'right'],
+              fallbackPlacements: ['top'],
             },
           },
           {
@@ -33,6 +33,21 @@ export const bubbleMenuProps = (props: EditorBubbleMenuProps) => {
 };
 
 export const shouldShow = ({ editor }: { editor: Editor }) => {
+  // Check if selection is within editor canvas and not in comment drawer
+  const selection = window.getSelection();
+  const commentCards = document.querySelectorAll('.comment-card');
+
+  if (selection) {
+    for (const card of commentCards) {
+      if (
+        card.contains(selection.anchorNode) ||
+        card.contains(selection.focusNode)
+      ) {
+        return false;
+      }
+    }
+  }
+
   const { from, to, empty } = editor.state.selection;
   const isImageSelected =
     editor.state.doc.nodeAt(from)?.type.name === 'resizableMedia' ||
@@ -41,15 +56,13 @@ export const shouldShow = ({ editor }: { editor: Editor }) => {
     editor.state.doc.nodeAt(from)?.type.name === 'iframe';
   const isCodeBlockSelected = editor.isActive('codeBlock');
   const isPageBreak = editor.state.doc.nodeAt(from)?.type.name === 'pageBreak';
-  const isCommentActive = editor.isActive('comment') && from === to;
 
   if (
     empty ||
     isImageSelected ||
     isCodeBlockSelected ||
     isIframeSelected ||
-    isPageBreak ||
-    isCommentActive
+    isPageBreak
   ) {
     return false;
   }

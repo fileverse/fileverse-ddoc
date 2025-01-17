@@ -50,6 +50,10 @@ export const CommentSection = ({
     showResolved ? true : !comment.resolved,
   );
 
+  const handleCommentClick = (commentId: string) => {
+    focusCommentInEditor(commentId);
+  };
+
   return (
     <div
       className={cn(
@@ -65,11 +69,9 @@ export const CommentSection = ({
           <div
             key={comment.id}
             className={cn(
-              'flex flex-col w-full box-border transition-all border-b color-border-default last:border-b-0 py-3 gap-3',
-              comment.id === activeCommentId && 'translate-x-[-4px]',
-              comment.id !== activeCommentId && 'translate-x-0',
+              'flex flex-col w-full box-border transition-all border-b color-border-default hover:!bg-[#F8F9FA] last:border-b-0 py-3 gap-3',
             )}
-            onClick={() => focusCommentInEditor(comment.id)}
+            onClick={() => handleCommentClick(comment.id)}
           >
             <CommentCard
               id={comment.id}

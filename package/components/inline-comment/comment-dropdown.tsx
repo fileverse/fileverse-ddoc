@@ -135,7 +135,7 @@ export const CommentDropdown = ({
   }, [activeComment?.replies]);
 
   const renderInitialView = () => (
-    <div className="p-3 border-b border-[#E8EBEC] flex flex-col gap-2">
+    <div className="p-3 border-b border-[#E8EBEC] flex flex-col gap-2 color-bg-secondary">
       <TextAreaFieldV2
         value={comment}
         onChange={handleCommentChange}
@@ -165,14 +165,14 @@ export const CommentDropdown = ({
         </p>
         <div className="relative flex items-center gap-1">
           <IconButton
-            icon="ChevronUp"
+            icon="ChevronLeft"
             variant="ghost"
             onClick={onPrevComment}
             disabled={activeCommentIndex <= 0}
             className="disabled:!bg-transparent"
           />
           <IconButton
-            icon="ChevronDown"
+            icon="ChevronRight"
             variant="ghost"
             onClick={onNextComment}
             disabled={activeCommentIndex >= activeComments.length - 1}

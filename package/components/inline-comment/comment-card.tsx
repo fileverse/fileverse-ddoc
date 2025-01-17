@@ -33,19 +33,21 @@ export const CommentCard = ({
   const { setOpenReplyId } = useComments();
 
   useEffect(() => {
+    if (isDropdown) {
+      setShowAllReplies(true);
+    }
+
+    if (id !== activeCommentId) {
+      setShowAllReplies(false);
+    }
+
     if (commentsContainerRef.current && replies) {
       commentsContainerRef.current.scrollTo({
         top: commentsContainerRef.current.scrollHeight,
         behavior: 'smooth',
       });
     }
-  }, [replies]);
-
-  useEffect(() => {
-    if (id !== activeCommentId) {
-      setShowAllReplies(false);
-    }
-  }, [activeCommentId, id]);
+  }, [isDropdown, activeCommentId, id, replies]);
 
   const handleResolveClick = () => {
     onResolve?.();
@@ -97,7 +99,7 @@ export const CommentCard = ({
         )}
 
         {displayedReplies.map((reply, index) => (
-          <div key={index} className="flex flex-col gap-1">
+          <div key={index} className="flex flex-col gap-2">
             <div className="flex justify-start items-center gap-2">
               <Avatar
                 src="https://github.com/identicons/random.png"
@@ -130,7 +132,7 @@ export const CommentCard = ({
     <div
       ref={commentsContainerRef}
       className={cn(
-        'flex flex-col gap-2 px-3 group',
+        'flex flex-col gap-3 px-3 group comment-card',
         isResolved && 'opacity-70',
         !isDropdown && '!px-6',
         isDropdown && 'py-3',
