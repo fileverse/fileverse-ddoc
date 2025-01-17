@@ -8,23 +8,22 @@ export const bubbleMenuProps = (props: EditorBubbleMenuProps) => {
       moveTransition: 'transform 0.2s ease-out',
       duration: 200,
       animation: 'shift-toward-subtle',
-      zIndex: 50,
+      zIndex: 40,
       appendTo: () => document.getElementById('editor-canvas'),
       popperOptions: {
+        strategy: 'fixed',
         modifiers: [
           {
-            name: 'computeStyles',
+            name: 'flip',
             options: {
-              gpuAcceleration: false,
-              adaptive: true,
+              fallbackPlacements: ['bottom', 'right'],
             },
           },
           {
             name: 'preventOverflow',
             options: {
-              boundary: 'viewport',
-              padding: 20,
               altAxis: true,
+              tether: false,
             },
           },
         ],

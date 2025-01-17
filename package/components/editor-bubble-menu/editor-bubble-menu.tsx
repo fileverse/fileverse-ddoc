@@ -232,6 +232,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       className={cn(
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border bg-white items-center shadow-elevation-3',
         isInlineCommentOpen || isCommentOpen ? '!invisible' : '!visible',
+        isNativeMobile ? '!-translate-y-1/2' : '',
       )}
       style={{
         transform: `scale(${1 / parseFloat(zoomLevel)})`,
