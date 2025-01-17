@@ -278,14 +278,42 @@ export const CommentProvider = ({
   const onPrevComment = () => {
     if (activeCommentIndex > 0) {
       const prevComment = activeComments[activeCommentIndex - 1];
-      focusCommentInEditor(prevComment.id);
+
+      // Find the comment element in the editor
+      const commentElement = editor.view.dom.querySelector(
+        `[data-comment-id="${prevComment.id}"]`,
+      );
+
+      if (commentElement) {
+        // Get the position of the comment in the editor
+        const from = editor.view.posAtDOM(commentElement, 0);
+        const to = from + commentElement.textContent!.length;
+
+        // Set selection to the comment text
+        editor.commands.setTextSelection({ from, to });
+        focusCommentInEditor(prevComment.id);
+      }
     }
   };
 
   const onNextComment = () => {
     if (activeCommentIndex < activeComments.length - 1) {
       const nextComment = activeComments[activeCommentIndex + 1];
-      focusCommentInEditor(nextComment.id);
+
+      // Find the comment element in the editor
+      const commentElement = editor.view.dom.querySelector(
+        `[data-comment-id="${nextComment.id}"]`,
+      );
+
+      if (commentElement) {
+        // Get the position of the comment in the editor
+        const from = editor.view.posAtDOM(commentElement, 0);
+        const to = from + commentElement.textContent!.length;
+
+        // Set selection to the comment text
+        editor.commands.setTextSelection({ from, to });
+        focusCommentInEditor(nextComment.id);
+      }
     }
   };
 

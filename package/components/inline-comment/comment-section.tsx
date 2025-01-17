@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   Avatar,
   ButtonGroup,
@@ -10,8 +9,6 @@ import {
 import { CommentCard } from './comment-card';
 import { useComments } from './context/comment-context';
 import { useCommentActions } from './use-comment-actions';
-import { useMediaQuery } from 'usehooks-ts';
-import { useResponsive } from '../../utils/responsive';
 
 export const CommentSection = ({
   activeCommentId,
@@ -49,10 +46,6 @@ export const CommentSection = ({
       setComments,
     });
 
-  const isMaxHeight860px = useMediaQuery('(max-height: 860px)');
-  const { isBelow1280px } = useResponsive();
-  const edgeCase = isMaxHeight860px && !isBelow1280px;
-
   const filteredComments = comments.filter((comment) =>
     showResolved ? true : !comment.resolved,
   );
@@ -60,13 +53,14 @@ export const CommentSection = ({
   return (
     <div
       className={cn(
-        'flex flex-col h-[calc(100vh-120px)] sm:!h-[calc(100vh-40px)] xl:!h-[77vh]',
+        'flex flex-col h-[calc(100vh-120px)] sm:!h-[calc(100vh-40px)] xl:!h-[77vh] !bg-white !rounded-b-lg',
         !isNavbarVisible && 'xl:!h-[calc(100vh-150px)]',
       )}
     >
       <div
         ref={commentsSectionRef}
-        className="flex flex-col overflow-y-auto no-scrollbar flex-1">
+        className="flex flex-col overflow-y-auto no-scrollbar flex-1"
+      >
         {filteredComments.map((comment) => (
           <div
             key={comment.id}
@@ -97,7 +91,7 @@ export const CommentSection = ({
                 'px-6 flex flex-col gap-2',
                 openReplyId === comment.id && 'ml-5 pl-4',
                 (comment.id !== activeCommentId || comment.resolved) &&
-                'hidden',
+                  'hidden',
               )}
             >
               {openReplyId !== comment.id ? (

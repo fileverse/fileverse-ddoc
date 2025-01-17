@@ -46,7 +46,7 @@ export const CommentBubbleCard = ({
       animation: 'shift-toward-subtle',
       zIndex: 50,
       offset: [0, 20],
-      placement: 'top',
+      placement: 'bottom',
       followCursor: 'vertical',
       interactive: true,
       appendTo: () => document.getElementById('editor-canvas'),

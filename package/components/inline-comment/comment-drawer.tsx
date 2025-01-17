@@ -69,8 +69,8 @@ export const CommentDrawer = ({
               : 'top-[4rem] h-[calc(100vh-90px)] xl:h-[calc(99vh-90px)]',
             isPresentationMode && 'h-[calc(100vh-5rem)] top-[4rem]',
           )}
-          headerClassName="border-b color-border-default p-4"
-          contentClassName="!rounded-lg min-h-[70vh] p-0 !h-full select-text"
+          headerClassName="border-b color-border-default p-4 !bg-white !rounded-t-lg"
+          contentClassName="!rounded-lg min-h-[70vh] p-0 !h-full select-text !bg-[#F8F9FA]"
           title="Comments"
           content={
             <React.Fragment>

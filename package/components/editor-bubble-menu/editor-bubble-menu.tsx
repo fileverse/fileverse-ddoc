@@ -247,7 +247,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             isInlineCommentOpen ? 'left-1/2 translate-x-1/2' : '',
           )}
         >
-          <DynamicDropdown
+          {/* <DynamicDropdown
             key="InlineComment"
             side="top"
             sideOffset={-40}
@@ -260,7 +260,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               />
             }
             content={renderContent({ name: 'InlineComment' })}
-          />
+          /> */}
           {mobileCommentButton}
         </div>
       ) : (
