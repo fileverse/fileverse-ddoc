@@ -142,6 +142,62 @@ const splitCodeBlockIntoChunks = (
   return chunks;
 };
 
+// Add this helper function to detect if a line is part of a list
+const isListItem = (line: string): boolean => {
+  if (/^[-*]\s*\[([ xX])\]\s*(.*)$/.test(line)) {
+    return false;
+  }
+  return (
+    // Ordered list items
+    /^\d+\.\s/.test(line) ||
+    // Unordered list items
+    /^[-*+]\s/.test(line) ||
+    // Indented list items (nested)
+    /^\s+[-*+]\s/.test(line) ||
+    /^\s+\d+\.\s/.test(line)
+  );
+};
+
+// Add this function to collect the entire list
+const collectList = (
+  lines: string[],
+  startIndex: number,
+): {
+  listContent: string;
+  endIndex: number;
+} => {
+  const listLines: string[] = [];
+  let currentIndex = startIndex;
+
+  // Collect lines until we hit a non-list line or empty line
+  while (
+    currentIndex < lines.length &&
+    (isListItem(lines[currentIndex]) || lines[currentIndex].trim() === '')
+  ) {
+    listLines.push(lines[currentIndex]);
+    currentIndex++;
+  }
+
+  return {
+    listContent: listLines.join('\n'),
+    endIndex: currentIndex - 1,
+  };
+};
+
+const splitListIntoChunks = (
+  listContent: string,
+  maxLines: number = 10,
+): string[] => {
+  const lines = listContent.split('\n');
+  const chunks: string[] = [];
+
+  for (let i = 0; i < lines.length; i += maxLines) {
+    chunks.push(lines.slice(i, i + maxLines).join('\n'));
+  }
+
+  return chunks;
+};
+
 export function convertMarkdownToHTML(
   markdown: string,
   options: ConversionOptions = {},
@@ -242,7 +298,7 @@ export function convertMarkdownToHTML(
       ) {
         currentSection.push({
           type: 'content',
-          content: '<ul class="task-list">\n',
+          content: '',
         });
       }
       const match = line.match(/^[-*]\s*\[([ xX])\]\s*(.*)$/);
@@ -255,17 +311,6 @@ export function convertMarkdownToHTML(
           } disabled>${content}</li>\n`;
       }
     } else {
-      // Close any open list
-      if (
-        currentSection.length &&
-        currentSection[currentSection.length - 1].type === 'content' &&
-        currentSection[currentSection.length - 1].content.includes(
-          '<ul class="task-list">',
-        )
-      ) {
-        currentSection[currentSection.length - 1].content += '</ul>';
-      }
-
       // Split content if needed and create new sections
       const contentChunks = splitLongContent(line, maxCharsPerSlide);
       contentChunks.forEach((chunk, index) => {
@@ -331,6 +376,56 @@ export function convertMarkdownToHTML(
 
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i].trim();
+
+    // If we detect a list item, collect the entire list
+    if (isListItem(line)) {
+      const { listContent, endIndex } = collectList(lines, i);
+      const listLines = listContent.split('\n').filter((line) => line.trim());
+      const totalLineWords = listLines.reduce(
+        (sum, line) => sum + countWords(line),
+        0,
+      );
+
+      if (listLines.length > 10) {
+        // Split long list into chunks
+        const chunks = splitListIntoChunks(listContent);
+
+        chunks.forEach((chunk, index) => {
+          if (index > 0 || shouldCreateNewSection(chunk, currentSection)) {
+            createNewSection();
+          }
+          currentSection.push({
+            type: 'content',
+            content: markdownIt.render(chunk),
+          });
+        });
+      } else if (listLines.length < 10 && totalLineWords > 50) {
+        // Split long list into chunks
+        const chunks = splitListIntoChunks(listContent, 6);
+
+        chunks.forEach((chunk, index) => {
+          if (index > 0 || shouldCreateNewSection(chunk, currentSection)) {
+            createNewSection();
+          }
+          currentSection.push({
+            type: 'content',
+            content: markdownIt.render(chunk),
+          });
+        });
+      } else {
+        // Handle shorter lists as before
+        if (shouldCreateNewSection(listContent, currentSection)) {
+          createNewSection();
+        }
+        currentSection.push({
+          type: 'content',
+          content: markdownIt.render(listContent),
+        });
+      }
+
+      i = endIndex;
+      continue;
+    }
 
     // Handle page breaks
     if (line === '===') {
@@ -497,26 +592,14 @@ export function convertMarkdownToHTML(
               return lineCount + Math.max(1, estimatedParagraphLines);
             }, 0);
 
-            // console.log(
-            //   'Content item lines:',
-            //   estimatedLines,
-            //   'Content:',
-            //   item.content,
-            // );
             return sum + estimatedLines;
           }
           // Count other types (h2, etc) as 1 line
-          // console.log('Non-content item type:', item.type);
           return sum + 1;
         }, 0);
 
-        // console.log('Total previous content lines:', previousContentLines);
-        // console.log('Max lines per slide:', maxLinesPerSlide);
-
         const isPreviousContentLong =
           previousContentLines > maxLinesPerSlide - 3; // -4 to account for the image and some padding
-
-        // console.log('Is previous content long?', isPreviousContentLong);
 
         // Create new section if:
         // 1. Previous content has too many lines, OR
@@ -529,7 +612,6 @@ export function convertMarkdownToHTML(
           (currentSection.length === 0 &&
             shouldCreateNewSection(line, currentSection))
         ) {
-          // console.log('Creating new section before image');
           createNewSection();
         }
 
@@ -538,23 +620,44 @@ export function convertMarkdownToHTML(
         // Create new section after image unless it's following a heading with content
         // and the previous content wasn't too long
         if (!hasHeadingAndContent || isPreviousContentLong) {
-          // console.log('Creating new section after image');
           createNewSection();
         }
       }
       continue;
     }
 
-    // Handle regular content
+    // Handle regular content, including todo lists
     if (line.length > 0) {
       // Only check for new section if we're not right after a heading
       const isAfterHeading =
         currentSection.length === 1 &&
         (currentSection[0].type === 'h2' || currentSection[0].type === 'h3');
 
-      if (!isAfterHeading && shouldCreateNewSection(line, currentSection)) {
+      // Check if current line is a todo list item
+      const isTodoItem =
+        line.includes('[ ]') || line.includes('[x]') || line.includes('[X]');
+
+      // Count existing todo items in current section
+      const currentTodoItems =
+        currentSection.length > 0
+          ? (
+              currentSection[currentSection.length - 1]?.content?.match(
+                /<li class="task-list-item">/g,
+              ) || []
+            ).length
+          : 0;
+
+      // Create new section if:
+      // 1. We have too many todo items (>6) OR
+      // 2. We should create new section for other reasons (except right after heading)
+      if (
+        (isTodoItem && currentTodoItems >= 6) ||
+        (!isAfterHeading && shouldCreateNewSection(line, currentSection))
+      ) {
+        // Close any open task list before creating new section
         if (
           currentSection.length &&
+          currentSection[currentSection.length - 1].type === 'content' &&
           currentSection[currentSection.length - 1].content.includes(
             '<ul class="task-list">',
           )
@@ -563,6 +666,7 @@ export function convertMarkdownToHTML(
         }
         createNewSection();
       }
+
       currentSection = processContent(line, currentSection, {
         maxCharsPerSlide: 1100,
         maxWordsPerSlide,
