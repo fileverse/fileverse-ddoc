@@ -60,7 +60,7 @@ export const DBlock = Node.create<DBlockOptions>({
   addCommands() {
     return {
       setDBlock:
-        (position) =>
+        position =>
         ({ state, chain }) => {
           const {
             selection: { from },
@@ -100,7 +100,7 @@ export const DBlock = Node.create<DBlockOptions>({
         const atTheStartOfText = from + 4;
 
         // Check if inside table
-        const isInsideTable = nodePaths.some((path) => path.includes('table'));
+        const isInsideTable = nodePaths.some(path => path.includes('table'));
 
         const isListOrTaskItem =
           parent?.type.name === 'listItem' || parent?.type.name === 'taskItem';
@@ -272,15 +272,21 @@ export const DBlock = Node.create<DBlockOptions>({
           let isPrevNodePageBreak = false;
           let currentNodePos = -1;
 
+          // Find the nearest previous node that is a page break
           doc.descendants((node, pos) => {
             if (currentNodePos !== -1) return false;
-            if (node.type.name === 'pageBreak') {
+            if (node.type.name === 'pageBreak' && pos < from) {
               isPrevNodePageBreak = true;
               currentNodePos = pos;
             }
           });
 
-          if (isPrevNodePageBreak) {
+          // Only prevent deletion if we're immediately after a page break and the current node is empty
+          if (
+            isPrevNodePageBreak &&
+            isNodeEmpty &&
+            from === currentNodePos + 2
+          ) {
             return true;
           }
         }
