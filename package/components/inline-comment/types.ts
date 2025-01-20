@@ -32,24 +32,37 @@ export interface CommentDrawerProps {
   activeCommentId: string | null;
 }
 
-export interface CommentCardProps {
-  username?: string;
-  walletAddress?: string;
-  selectedText: string;
+export interface CommentCardProps extends IComment {
   comment?: string;
-  timestamp?: Date;
-  replies?: {
-    content: string;
-  }[];
   onResolve?: () => void;
   onDelete?: () => void;
   onUnresolve?: () => void;
   isResolved?: boolean;
   isDropdown?: boolean;
   activeCommentId?: string;
-  id?: string;
 }
 
 export type CommentBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   zoomLevel: string;
 };
+
+export interface CommentReplyProps {
+  reply: string;
+  username: string;
+  createdAt: Date;
+}
+
+export interface EnsStatus {
+  name: string;
+  isEns: boolean;
+}
+
+export interface CommentSectionProps {
+  activeCommentId: string | null;
+  isNavbarVisible?: boolean;
+}
+
+export interface UserDisplayProps {
+  ensStatus: EnsStatus;
+  createdAt: Date;
+}

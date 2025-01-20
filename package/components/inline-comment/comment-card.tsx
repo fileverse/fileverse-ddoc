@@ -8,15 +8,53 @@ import {
   Tooltip,
 } from '@fileverse/ui';
 import { useRef, useState, useEffect } from 'react';
-import { CommentCardProps } from './types';
-import { useComments } from './context/comment-context';
+import { CommentCardProps, CommentReplyProps, UserDisplayProps } from './types';
+import { useComments, useEnsName } from './context/comment-context';
+import EnsLogo from '../../assets/ens.svg';
+import verifiedMark from '../../assets/verified-mark.png';
+import { dateFormatter, nameFormatter } from '../../utils/helpers';
+
+export const UserDisplay = ({ ensStatus, createdAt }: UserDisplayProps) => {
+  return (
+    <div className="flex justify-start items-center gap-2">
+      <Avatar
+        src={ensStatus.isEns ? EnsLogo : undefined}
+        size="sm"
+        className="min-w-6"
+      />
+      <div className="flex flex-col">
+        <span className="text-body-sm-bold inline-flex items-center gap-1">
+          {nameFormatter(ensStatus.name)}
+          {ensStatus.isEns && (
+            <img src={verifiedMark} alt="verified" className="w-3.5 h-3.5" />
+          )}
+        </span>
+        <span className="text-helper-text-sm color-text-secondary inline-flex items-center gap-1">
+          {dateFormatter(createdAt)}
+        </span>
+      </div>
+    </div>
+  );
+};
+
+const CommentReply = ({ reply, username, createdAt }: CommentReplyProps) => {
+  const ensStatus = useEnsName(username);
+
+  return (
+    <div className="flex flex-col gap-2">
+      <UserDisplay ensStatus={ensStatus} createdAt={createdAt} />
+      <span className="text-body-sm flex flex-col gap-2 ml-3 pl-4 border-l whitespace-pre-wrap break-words">
+        {reply}
+      </span>
+    </div>
+  );
+};
 
 export const CommentCard = ({
   username,
-  walletAddress,
-  selectedText,
+  selectedContent,
   comment,
-  timestamp = new Date(),
+  createdAt,
   replies,
   onResolve,
   onDelete,
@@ -31,6 +69,7 @@ export const CommentCard = ({
   const [showAllReplies, setShowAllReplies] = useState(false);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
   const { setOpenReplyId } = useComments();
+  const ensStatus = useEnsName(username);
 
   useEffect(() => {
     if (isDropdown) {
@@ -99,30 +138,12 @@ export const CommentCard = ({
         )}
 
         {displayedReplies.map((reply, index) => (
-          <div key={index} className="flex flex-col gap-2">
-            <div className="flex justify-start items-center gap-2">
-              <Avatar
-                src="https://github.com/identicons/random.png"
-                size="sm"
-                className="min-w-6"
-              />
-              <div className="flex flex-col">
-                <span className="text-body-sm-bold">
-                  {username || walletAddress || 'Anonymous'}
-                </span>
-                <span className="text-helper-text-sm color-text-secondary">
-                  {timestamp.toLocaleTimeString([], {
-                    hour: 'numeric',
-                    minute: '2-digit',
-                    hour12: true,
-                  })}
-                </span>
-              </div>
-            </div>
-            <span className="text-body-sm flex flex-col gap-2 ml-3 pl-4 border-l whitespace-pre-wrap break-words">
-              {reply.content}
-            </span>
-          </div>
+          <CommentReply
+            key={index}
+            reply={reply.content || ''}
+            username={reply.username || ''}
+            createdAt={reply.createdAt || new Date()}
+          />
         ))}
       </div>
     );
@@ -139,21 +160,7 @@ export const CommentCard = ({
       )}
     >
       <div className="flex justify-between items-center">
-        <div className="flex justify-start items-center gap-2">
-          <Avatar src={''} size="sm" className="min-w-6" />
-          <div className="flex flex-col">
-            <span className="text-body-sm-bold">
-              {username || walletAddress || 'Anonymous'}
-            </span>
-            <span className="text-helper-text-sm color-text-secondary">
-              {timestamp.toLocaleTimeString([], {
-                hour: 'numeric',
-                minute: '2-digit',
-                hour12: true,
-              })}
-            </span>
-          </div>
-        </div>
+        <UserDisplay ensStatus={ensStatus} createdAt={createdAt} />
         <ButtonGroup className="!space-x-0">
           {!isDropdown && replies && replies.length === 0 && (
             <Tooltip text="Add reply" sideOffset={0} position="bottom">
@@ -222,17 +229,17 @@ export const CommentCard = ({
         </ButtonGroup>
       </div>
       <div className="flex flex-col gap-2 ml-3 pl-4 border-l color-border-default">
-        {selectedText && (
+        {selectedContent && (
           <div className="bg-[#e5fbe7] p-1 rounded-lg">
             <div className="relative">
               <span
                 className={cn('text-body-sm italic block', {
-                  'line-clamp-2': !isExpanded && selectedText.length > 70,
+                  'line-clamp-2': !isExpanded && selectedContent.length > 70,
                 })}
               >
-                "{selectedText}"
+                "{selectedContent}"
               </span>
-              {selectedText.length > 70 && (
+              {selectedContent.length > 70 && (
                 <button
                   onClick={() => setIsExpanded(!isExpanded)}
                   className="text-helper-text-sm pt-1 color-text-secondary hover:underline"

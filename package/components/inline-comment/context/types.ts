@@ -7,7 +7,6 @@ export interface CommentContextType {
   setComments: React.Dispatch<SetStateAction<IComment[]>>;
   editor: Editor;
   username?: string;
-  walletAddress?: string;
   showResolved: boolean;
   setShowResolved: (show: boolean) => void;
   resolveComment: (commentId: string) => void;
@@ -55,6 +54,7 @@ export interface CommentContextType {
   ) => void;
   isCommentActive: boolean;
   isCommentResolved: boolean;
+  ensResolutionUrl: string;
 }
 
 export interface CommentProviderProps {
@@ -65,8 +65,8 @@ export interface CommentProviderProps {
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
   onNewComment?: (newComment: IComment) => void;
   username: string;
-  walletAddress: string;
   activeCommentId: string | null;
   setActiveCommentId: React.Dispatch<React.SetStateAction<string | null>>;
   focusCommentWithActiveId: (id: string) => void;
+  ensResolutionUrl: string;
 }

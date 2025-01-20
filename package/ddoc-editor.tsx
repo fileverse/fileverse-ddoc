@@ -320,7 +320,6 @@ const DdocEditor = forwardRef(
         <CommentProvider
           editor={editor}
           username={username as string}
-          walletAddress={walletAddress as string}
           activeCommentId={activeCommentId}
           setActiveCommentId={setActiveCommentId}
           focusCommentWithActiveId={focusCommentWithActiveId}
@@ -328,6 +327,7 @@ const DdocEditor = forwardRef(
           setInitialComments={setInitialComments}
           onNewComment={onNewComment}
           onCommentReply={onCommentReply}
+          ensResolutionUrl={ensResolutionUrl as string}
         >
           {!isPreviewMode && (
             <div

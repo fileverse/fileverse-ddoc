@@ -33,7 +33,6 @@ export const CommentDropdown = ({
     comments,
     activeComments,
     username,
-    walletAddress,
     activeComment,
     selectedText,
     dropdownRef,
@@ -77,7 +76,7 @@ export const CommentDropdown = ({
           return {
             ...comment,
             replies: [
-              ...comment.replies,
+              ...(comment.replies || []),
               {
                 id: `reply-${uuid()}`,
                 content: reply,
@@ -229,8 +228,7 @@ export const CommentDropdown = ({
       >
         <CommentCard
           username={username}
-          walletAddress={walletAddress}
-          selectedText={selectedContent || selectedText}
+          selectedContent={selectedContent || selectedText}
           comment={comment}
           replies={activeComment?.replies}
           isResolved={activeComment?.resolved}

@@ -1,9 +1,18 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, useRef, useState } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useRef,
+  useState,
+  useEffect,
+} from 'react';
 import { IComment } from '../../../extensions/comment';
 import uuid from 'react-uuid';
 import { useOnClickOutside } from 'usehooks-ts';
 import { CommentContextType, CommentProviderProps } from './types';
+import { getAddressName } from '../../../utils/getAddressName';
+import { EnsStatus } from '../types';
+import { useLocalStorage } from 'usehooks-ts';
 
 const CommentContext = createContext<CommentContextType | undefined>(undefined);
 
@@ -13,12 +22,12 @@ export const CommentProvider = ({
   initialComments = [],
   setInitialComments,
   username,
-  walletAddress,
   activeCommentId,
   setActiveCommentId,
   focusCommentWithActiveId,
   onNewComment,
   onCommentReply,
+  ensResolutionUrl,
 }: CommentProviderProps) => {
   const [showResolved, setShowResolved] = useState(false);
   const [reply, setReply] = useState('');
@@ -333,7 +342,6 @@ export const CommentProvider = ({
         showResolved,
         editor,
         username,
-        walletAddress,
         setComments: setInitialComments!,
         setShowResolved,
         resolveComment,
@@ -372,6 +380,7 @@ export const CommentProvider = ({
         handleInput,
         isCommentActive,
         isCommentResolved,
+        ensResolutionUrl,
       }}
     >
       {children}
@@ -385,4 +394,57 @@ export const useComments = () => {
     throw new Error('useComments must be used within a CommentProvider');
   }
   return context;
+};
+
+const LS_ENS_MAP = 'ENS_MAP_v2';
+
+export const useEnsName = (username?: string) => {
+  const { ensResolutionUrl } = useComments();
+  const [ensStatus, setEnsStatus] = useState<EnsStatus>({
+    name: '',
+    isEns: false,
+  });
+  const [ensMap, setEnsMap] = useLocalStorage<{
+    [key: string]: { name: string; isEns: boolean };
+  }>(LS_ENS_MAP, {});
+
+  useEffect(() => {
+    const fetchEnsName = async () => {
+      if (username && ensResolutionUrl) {
+        // Only use cache if it exists AND has isEns true
+        if (ensMap[username] && ensMap[username].isEns) {
+          setEnsStatus(ensMap[username]);
+          return;
+        }
+
+        try {
+          const { name, isEns } = await getAddressName(
+            username,
+            ensResolutionUrl,
+          );
+          const newStatus = { name, isEns };
+          setEnsStatus(newStatus);
+          // Only cache after successful fetch
+          if (name) {
+            setEnsMap((prev) => ({
+              ...prev,
+              [username]: newStatus,
+            }));
+          }
+        } catch (error) {
+          console.error('Error fetching ENS name:', error);
+          setEnsStatus({
+            name: username,
+            isEns: false,
+          });
+        }
+      } else {
+        setEnsStatus({ name: 'Anonymous', isEns: false });
+      }
+    };
+
+    fetchEnsName();
+  }, [username, ensResolutionUrl, ensMap, setEnsMap]);
+
+  return ensStatus;
 };
