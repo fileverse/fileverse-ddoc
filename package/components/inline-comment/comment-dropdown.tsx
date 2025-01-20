@@ -230,6 +230,7 @@ export const CommentDropdown = ({
           username={username}
           selectedContent={selectedContent || selectedText}
           comment={comment}
+          createdAt={activeComment?.createdAt}
           replies={activeComment?.replies}
           isResolved={activeComment?.resolved}
           isDropdown
