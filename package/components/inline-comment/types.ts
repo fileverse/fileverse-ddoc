@@ -64,5 +64,5 @@ export interface CommentSectionProps {
 
 export interface UserDisplayProps {
   ensStatus: EnsStatus;
-  createdAt: Date;
+  createdAt: Date | undefined;
 }
