@@ -7,20 +7,20 @@ import {
   cn,
 } from '@fileverse/ui';
 import { CommentCard } from './comment-card';
-import { useComments } from './context/comment-context';
+import { useComments, useEnsName } from './context/comment-context';
 import { useCommentActions } from './use-comment-actions';
+import EnsLogo from '../../assets/ens.svg';
+import verifiedMark from '../../assets/verified-mark.png';
+import { nameFormatter } from '../../utils/helpers';
+import { CommentSectionProps } from './types';
 
 export const CommentSection = ({
   activeCommentId,
   isNavbarVisible,
-}: {
-  activeCommentId: string | null;
-  isNavbarVisible?: boolean;
-}) => {
+}: CommentSectionProps) => {
   const {
     comments,
     username,
-    walletAddress,
     focusCommentInEditor,
     editor,
     setComments,
@@ -54,6 +54,8 @@ export const CommentSection = ({
     focusCommentInEditor(commentId);
   };
 
+  const ensStatus = useEnsName(username);
+
   return (
     <div
       className={cn(
@@ -72,19 +74,19 @@ export const CommentSection = ({
               'flex flex-col w-full box-border transition-all border-b color-border-default hover:!bg-[#F8F9FA] last:border-b-0 py-3',
               comment.id === activeCommentId ? '' : 'gap-3',
             )}
-            onClick={() => handleCommentClick(comment.id)}
+            onClick={() => handleCommentClick(comment.id as string)}
           >
             <CommentCard
               id={comment.id}
               activeCommentId={activeCommentId as string}
               username={username as string}
-              walletAddress={walletAddress as string}
-              selectedText={comment.selectedContent}
+              selectedContent={comment.selectedContent}
+              createdAt={comment.createdAt}
               comment={comment.content}
               replies={comment.replies}
-              onResolve={() => handleResolveComment(comment.id)}
-              onUnresolve={() => handleUnresolveComment(comment.id)}
-              onDelete={() => handleDeleteComment(comment.id)}
+              onResolve={() => handleResolveComment(comment.id as string)}
+              onUnresolve={() => handleUnresolveComment(comment.id as string)}
+              onDelete={() => handleDeleteComment(comment.id as string)}
               isResolved={comment.resolved}
             />
 
@@ -101,10 +103,10 @@ export const CommentSection = ({
                 <Button
                   onClick={(e) => {
                     e.stopPropagation();
-                    setOpenReplyId(comment.id);
+                    setOpenReplyId(comment.id as string);
                   }}
                   className={cn(
-                    'w-full h-9 rounded-full color-bg-secondary flex items-center justify-center gap-2',
+                    'w-full h-9 rounded-full color-bg-secondary flex items-center justify-center gap-2 mt-3',
                     comment.replies?.length === 0 && 'hidden',
                   )}
                   variant="ghost"
@@ -115,7 +117,7 @@ export const CommentSection = ({
                   </span>
                 </Button>
               ) : (
-                <div className="pl-4 animate-in slide-in-from-bottom flex flex-col gap-2 duration-300">
+                <div className="pl-4 animate-in slide-in-from-bottom flex flex-col gap-2 duration-300 mt-3">
                   <TextAreaFieldV2
                     placeholder="Reply"
                     value={reply}
@@ -167,10 +169,17 @@ export const CommentSection = ({
       </div>
       <div className="flex flex-col gap-3 color-bg-secondary border-t color-border-default px-6 py-5 rounded-b-lg">
         <div className="flex justify-start items-center gap-2">
-          <Avatar src={''} size="sm" className="min-w-6" />
+          <Avatar
+            src={ensStatus.isEns ? EnsLogo : undefined}
+            size="sm"
+            className="min-w-6"
+          />
 
-          <span className="text-body-sm-bold">
-            {username || walletAddress || 'Anonymous'}
+          <span className="text-body-sm-bold inline-flex items-center gap-1">
+            {nameFormatter(ensStatus.name)}
+            {ensStatus.isEns && (
+              <img src={verifiedMark} alt="verified" className="w-3.5 h-3.5" />
+            )}
           </span>
         </div>
         <TextAreaFieldV2

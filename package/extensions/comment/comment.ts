@@ -51,11 +51,16 @@ export interface CommentStorage {
 }
 
 export interface IComment {
-  id: string;
-  selectedContent: string;
-  content: string;
-  replies: IComment[];
-  createdAt: Date;
+  id?: string;
+  username?: string;
+  reactions?: {
+    count: number;
+    type: string;
+  }[];
+  selectedContent?: string;
+  content?: string;
+  replies?: IComment[];
+  createdAt?: Date;
   resolved?: boolean;
 }
 
