@@ -25,7 +25,6 @@ import MobileToolbar from './components/mobile-toolbar';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { PresentationMode } from './components/presentation-mode/presentation-mode';
 import { CommentDrawer } from './components/inline-comment/comment-drawer';
-// import { CommentBubbleMenu } from './components/inline-comment/comment-bubble-menu';
 import { useResponsive } from './utils/responsive';
 import { CommentProvider } from './components/inline-comment/context/comment-context';
 import { CommentBubbleCard } from './components/inline-comment/comment-bubble-card';
