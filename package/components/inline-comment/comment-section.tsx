@@ -69,7 +69,8 @@ export const CommentSection = ({
           <div
             key={comment.id}
             className={cn(
-              'flex flex-col w-full box-border transition-all border-b color-border-default hover:!bg-[#F8F9FA] last:border-b-0 py-3 gap-3',
+              'flex flex-col w-full box-border transition-all border-b color-border-default hover:!bg-[#F8F9FA] last:border-b-0 py-3',
+              comment.id === activeCommentId ? '' : 'gap-3',
             )}
             onClick={() => handleCommentClick(comment.id)}
           >
