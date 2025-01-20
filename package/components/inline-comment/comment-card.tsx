@@ -14,7 +14,7 @@ import EnsLogo from '../../assets/ens.svg';
 import verifiedMark from '../../assets/verified-mark.png';
 import { dateFormatter, nameFormatter } from '../../utils/helpers';
 
-export const UserDisplay = ({ ensStatus, createdAt }: UserDisplayProps) => {
+const UserDisplay = ({ ensStatus, createdAt }: UserDisplayProps) => {
   return (
     <div className="flex justify-start items-center gap-2">
       <Avatar
@@ -30,7 +30,7 @@ export const UserDisplay = ({ ensStatus, createdAt }: UserDisplayProps) => {
           )}
         </span>
         <span className="text-helper-text-sm color-text-secondary inline-flex items-center gap-1">
-          {dateFormatter(createdAt)}
+          {createdAt && dateFormatter(createdAt)}
         </span>
       </div>
     </div>

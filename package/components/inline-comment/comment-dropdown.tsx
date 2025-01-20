@@ -117,7 +117,7 @@ export const CommentDropdown = ({
   useEffect(() => {
     if (activeCommentId) {
       if (activeComment) {
-        setComment(activeComment.content);
+        setComment(activeComment.content || '');
       } else {
         setShowReplyView(false);
       }
