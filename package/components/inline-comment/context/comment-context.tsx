@@ -57,7 +57,7 @@ export const CommentProvider = ({
     // If there's an active comment, find it in comments array
     if (isCommentActive) {
       if (activeComment) {
-        setSelectedText(activeComment.selectedContent);
+        setSelectedText(activeComment.selectedContent || '');
       }
     } else {
       setSelectedText(text);
@@ -92,8 +92,8 @@ export const CommentProvider = ({
 
     const newComment = getNewComment(selectedContent, content);
     onNewComment?.(newComment);
-    editor?.commands.setComment(newComment.id);
-    setActiveCommentId(newComment.id);
+    editor?.commands.setComment(newComment.id || '');
+    setActiveCommentId(newComment.id || '');
     setTimeout(focusCommentWithActiveId);
     return newComment.id;
   };
@@ -280,9 +280,11 @@ export const CommentProvider = ({
     );
     e.currentTarget.style.height = `${newHeight}px`;
   };
-
   const activeComments = initialComments.filter(
-    (comment) => !comment.resolved && comment.selectedContent.length > 0,
+    (comment) =>
+      !comment.resolved &&
+      comment.selectedContent &&
+      comment.selectedContent.length > 0,
   );
 
   const onPrevComment = () => {
@@ -301,7 +303,7 @@ export const CommentProvider = ({
 
         // Set selection to the comment text
         editor.commands.setTextSelection({ from, to });
-        focusCommentInEditor(prevComment.id);
+        focusCommentInEditor(prevComment.id || '');
       }
     }
   };
@@ -322,7 +324,7 @@ export const CommentProvider = ({
 
         // Set selection to the comment text
         editor.commands.setTextSelection({ from, to });
-        focusCommentInEditor(nextComment.id);
+        focusCommentInEditor(nextComment.id || '');
       }
     }
   };
