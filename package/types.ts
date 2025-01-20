@@ -101,3 +101,5 @@ export interface IUser {
   color: string;
   isEns: boolean;
 }
+
+export { type IComment };
