@@ -24,7 +24,7 @@ interface PresentationModeProps {
   isFullscreen: boolean;
   setIsFullscreen: React.Dispatch<React.SetStateAction<boolean>>;
   onError?: (error: string) => void;
-  setIsCommentSectionOpen:
+  setCommentDrawerOpen:
     | React.Dispatch<React.SetStateAction<boolean>>
     | undefined;
   sharedSlidesLink?: string;
@@ -90,7 +90,7 @@ export const PresentationMode = ({
   isFullscreen,
   setIsFullscreen,
   onError,
-  setIsCommentSectionOpen,
+  setCommentDrawerOpen,
   sharedSlidesLink,
   isPreviewMode,
   documentName,
@@ -422,7 +422,7 @@ export const PresentationMode = ({
                   variant="ghost"
                   icon="MessageSquareText"
                   size="md"
-                  onClick={() => setIsCommentSectionOpen?.((prev) => !prev)}
+                  onClick={() => setCommentDrawerOpen?.((prev) => !prev)}
                 />
               </Tooltip>
               {!isPreviewMode && (

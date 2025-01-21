@@ -67,7 +67,7 @@ export const CommentDrawer = ({
             isNavbarVisible
               ? 'top-[7.25rem] h-[calc(98vh-140px)]'
               : 'top-[4rem] h-[calc(100vh-90px)] xl:h-[calc(99vh-90px)]',
-            isPresentationMode && 'h-[calc(100vh-5rem)] top-[4rem]',
+            isPresentationMode && 'h-[calc(100vh-5rem)] top-[4rem] !z-[60]',
           )}
           headerClassName="border-b color-border-default p-4 !bg-white !rounded-t-lg"
           contentClassName="!rounded-lg min-h-[70vh] p-0 !h-full select-text !bg-[#F8F9FA]"

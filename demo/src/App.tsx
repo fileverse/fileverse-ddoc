@@ -52,7 +52,7 @@ function App() {
         if (comment.id === id) {
           return {
             ...comment,
-            replies: [...comment.replies, reply],
+            replies: [...(comment.replies || []), reply],
           };
         }
         return comment; // Ensure you return the unchanged comment
@@ -111,7 +111,10 @@ function App() {
             variant={'ghost'}
             icon="Presentation"
             size="md"
-            onClick={() => setIsPresentationMode(true)}
+            onClick={() => {
+              commentDrawerOpen && setCommentDrawerOpen(false);
+              setIsPresentationMode(true);
+            }}
           />
           <IconButton
             variant={'ghost'}

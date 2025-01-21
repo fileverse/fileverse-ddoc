@@ -133,6 +133,7 @@ export const CommentProvider = ({
     const newReply = {
       id: `reply-${uuid()}`,
       content: replyContent,
+      username: username,
       replies: [],
       createdAt: new Date(),
       selectedContent: '',
@@ -398,12 +399,12 @@ export const useComments = () => {
   return context;
 };
 
-const LS_ENS_MAP = 'ENS_MAP_v2';
+const LS_ENS_MAP = 'ens_map_storage';
 
 export const useEnsName = (username?: string) => {
   const { ensResolutionUrl } = useComments();
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
-    name: '',
+    name: username || '',
     isEns: false,
   });
   const [ensMap, setEnsMap] = useLocalStorage<{

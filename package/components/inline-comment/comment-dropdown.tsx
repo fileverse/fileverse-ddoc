@@ -79,6 +79,7 @@ export const CommentDropdown = ({
               ...(comment.replies || []),
               {
                 id: `reply-${uuid()}`,
+                username: username,
                 content: reply,
                 replies: [],
                 createdAt: new Date(),

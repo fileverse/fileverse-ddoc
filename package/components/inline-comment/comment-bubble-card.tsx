@@ -46,7 +46,7 @@ export const CommentBubbleCard = ({
       moveTransition: isNativeMobile ? 'transform 0.2s ease-in' : 'none',
       duration: 200,
       animation: 'shift-toward-subtle',
-      zIndex: 50,
+      zIndex: 40,
       offset: [0, 20],
       placement: 'bottom',
       appendTo: () => document.getElementById('editor-canvas'),
