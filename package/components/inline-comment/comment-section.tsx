@@ -117,7 +117,7 @@ export const CommentSection = ({
                   </span>
                 </Button>
               ) : (
-                <div className="pl-4 animate-in slide-in-from-bottom flex flex-col gap-2 duration-300 mt-3">
+                <div className="pl-4 animate-in fade-in-5 flex flex-col gap-2 duration-300 mt-3">
                   <TextAreaFieldV2
                     placeholder="Reply"
                     value={reply}

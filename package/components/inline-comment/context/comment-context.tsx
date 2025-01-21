@@ -412,42 +412,68 @@ export const useEnsName = (username?: string) => {
   }>(LS_ENS_MAP, {});
 
   useEffect(() => {
-    const fetchEnsName = async () => {
-      if (username && ensResolutionUrl) {
-        // Only use cache if it exists AND has isEns true
-        if (ensMap[username] && ensMap[username].isEns) {
-          setEnsStatus(ensMap[username]);
-          return;
-        }
+    let isMounted = true;
 
-        try {
-          const { name, isEns } = await getAddressName(
-            username,
-            ensResolutionUrl,
-          );
-          const newStatus = { name, isEns };
-          setEnsStatus(newStatus);
-          // Only cache after successful fetch
-          if (name) {
-            setEnsMap((prev) => ({
+    const fetchEnsName = async () => {
+      if (!username || !ensResolutionUrl) {
+        if (isMounted) {
+          setEnsStatus({ name: username || 'Anonymous', isEns: false });
+        }
+        return;
+      }
+
+      // Check cache first
+      const cachedValue = ensMap[username];
+      if (cachedValue?.isEns) {
+        if (isMounted) {
+          setEnsStatus(cachedValue);
+        }
+        return;
+      }
+
+      try {
+        const { name, isEns } = await getAddressName(
+          username,
+          ensResolutionUrl,
+        );
+
+        if (!isMounted) return;
+
+        const newStatus = { name, isEns };
+        setEnsStatus(newStatus);
+
+        if (name) {
+          setEnsMap((prev) => {
+            // Prevent unnecessary updates if value hasn't changed
+            if (
+              prev[username]?.name === name &&
+              prev[username]?.isEns === isEns
+            ) {
+              return prev;
+            }
+            return {
               ...prev,
               [username]: newStatus,
-            }));
-          }
-        } catch (error) {
-          console.error('Error fetching ENS name:', error);
+            };
+          });
+        }
+      } catch (error) {
+        console.error('Error fetching ENS name:', error);
+        if (isMounted) {
           setEnsStatus({
             name: username,
             isEns: false,
           });
         }
-      } else {
-        setEnsStatus({ name: 'Anonymous', isEns: false });
       }
     };
 
     fetchEnsName();
-  }, [username, ensResolutionUrl, ensMap, setEnsMap]);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [username, ensResolutionUrl]); // Remove ensMap from dependencies
 
   return ensStatus;
 };
