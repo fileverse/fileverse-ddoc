@@ -79,7 +79,7 @@ export const CommentSection = ({
             <CommentCard
               id={comment.id}
               activeCommentId={activeCommentId as string}
-              username={username as string}
+              username={comment.username}
               selectedContent={comment.selectedContent}
               createdAt={comment.createdAt}
               comment={comment.content}

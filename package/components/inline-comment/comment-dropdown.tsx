@@ -228,9 +228,9 @@ export const CommentDropdown = ({
         className="max-h-[224px] overflow-y-auto no-scrollbar"
       >
         <CommentCard
-          username={username}
-          selectedContent={selectedContent || selectedText}
-          comment={comment}
+          username={activeComment?.username}
+          selectedContent={activeComment?.selectedContent || selectedText}
+          comment={activeComment?.content || comment}
           createdAt={activeComment?.createdAt}
           replies={activeComment?.replies}
           isResolved={activeComment?.resolved}
