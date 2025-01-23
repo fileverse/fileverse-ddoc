@@ -81,6 +81,9 @@ const DdocEditor = forwardRef(
       onCommentReply,
       setInitialComments,
       onSlidesShare,
+      onResolveComment,
+      onUnresolveComment,
+      onDeleteComment,
     }: DdocProps,
     ref,
   ) => {
@@ -327,6 +330,9 @@ const DdocEditor = forwardRef(
           setInitialComments={setInitialComments}
           onNewComment={onNewComment}
           onCommentReply={onCommentReply}
+          onResolveComment={onResolveComment}
+          onUnresolveComment={onUnresolveComment}
+          onDeleteComment={onDeleteComment}
           ensResolutionUrl={ensResolutionUrl as string}
         >
           {!isPreviewMode && (

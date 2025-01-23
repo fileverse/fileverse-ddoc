@@ -34,9 +34,9 @@ export interface CommentDrawerProps {
 
 export interface CommentCardProps extends IComment {
   comment?: string;
-  onResolve?: () => void;
-  onDelete?: () => void;
-  onUnresolve?: () => void;
+  onResolve?: (commentId: string) => void;
+  onDelete?: (commentId: string) => void;
+  onUnresolve?: (commentId: string) => void;
   isResolved?: boolean;
   isDropdown?: boolean;
   activeCommentId?: string;

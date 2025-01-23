@@ -32,6 +32,9 @@ export interface DdocProps {
   setInitialComments?: React.Dispatch<SetStateAction<IComment[]>>;
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
   onNewComment?: (newComment: IComment) => void;
+  onResolveComment?: (activeCommentId: string) => void;
+  onUnresolveComment?: (activeCommentId: string) => void;
+  onDeleteComment?: (activeCommentId: string) => void;
   //Comments V2 Props
   selectedTags?: TagType[];
   setSelectedTags?: React.Dispatch<SetStateAction<TagType[]>>;

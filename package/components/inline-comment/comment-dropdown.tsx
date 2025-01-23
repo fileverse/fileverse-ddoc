@@ -9,7 +9,6 @@ import {
 } from '@fileverse/ui';
 import uuid from 'react-uuid';
 import { CommentCard } from './comment-card';
-import { useCommentActions } from './use-comment-actions';
 import { CommentDropdownProps } from './types';
 import { useComments } from './context/comment-context';
 
@@ -26,9 +25,7 @@ export const CommentDropdown = ({
   const commentsContainerRef = useRef<HTMLDivElement>(null);
 
   const {
-    editor,
     addComment,
-    setComments,
     comments,
     activeComments,
     username,
@@ -41,13 +38,10 @@ export const CommentDropdown = ({
     onPrevComment,
     activeCommentIndex,
     onCommentReply,
+    resolveComment,
+    unresolveComment,
+    deleteComment,
   } = useComments();
-  const { handleResolveComment, handleUnresolveComment, handleDeleteComment } =
-    useCommentActions({
-      editor,
-      comments,
-      setComments: setComments ?? (() => {}),
-    });
 
   const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
@@ -101,7 +95,7 @@ export const CommentDropdown = ({
   };
 
   const handleDeleteThread = () => {
-    handleDeleteComment(activeCommentId as string);
+    deleteComment(activeCommentId as string);
   };
 
   useEffect(() => {
@@ -204,8 +198,8 @@ export const CommentDropdown = ({
               variant="ghost"
               onClick={() =>
                 activeComment?.resolved
-                  ? handleUnresolveComment(activeCommentId as string)
-                  : handleResolveComment(activeCommentId as string)
+                  ? unresolveComment(activeCommentId as string)
+                  : resolveComment(activeCommentId as string)
               }
             />
           </Tooltip>

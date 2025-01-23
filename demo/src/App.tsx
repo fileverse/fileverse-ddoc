@@ -62,6 +62,27 @@ function App() {
   const handleNewComment = (comment: IComment) => {
     setInitialComment((prev) => [...prev, comment]);
   };
+  const handleResolveComment = (commentId: string) => {
+    setInitialComment(
+      initialComments.map((comment) =>
+        comment.id === commentId ? { ...comment, resolved: true } : comment,
+      ),
+    );
+  };
+
+  const handleUnresolveComment = (commentId: string) => {
+    setInitialComment(
+      initialComments.map((comment) =>
+        comment.id === commentId ? { ...comment, resolved: false } : comment,
+      ),
+    );
+  };
+  const handleDeleteComment = (commentId: string) => {
+    setInitialComment(
+      initialComments.filter((comment) => comment.id !== commentId),
+    );
+  };
+
   //To handle comments from consumer side
 
   useEffect(() => {
@@ -189,6 +210,9 @@ function App() {
         onCommentReply={handleReplyOnComment}
         onNewComment={handleNewComment}
         setInitialComments={setInitialComment}
+        onResolveComment={handleResolveComment}
+        onUnresolveComment={handleUnresolveComment}
+        onDeleteComment={handleDeleteComment}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

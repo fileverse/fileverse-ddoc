@@ -65,6 +65,9 @@ export interface CommentProviderProps {
   setInitialComments?: React.Dispatch<SetStateAction<IComment[]>>;
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
   onNewComment?: (newComment: IComment) => void;
+  onResolveComment?: (activeCommentId: string) => void;
+  onUnresolveComment?: (activeCommentId: string) => void;
+  onDeleteComment?: (activeCommentId: string) => void;
   username: string;
   activeCommentId: string | null;
   setActiveCommentId: React.Dispatch<React.SetStateAction<string | null>>;

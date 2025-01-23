@@ -28,6 +28,9 @@ export const CommentProvider = ({
   onNewComment,
   onCommentReply,
   ensResolutionUrl,
+  onResolveComment,
+  onUnresolveComment,
+  onDeleteComment,
 }: CommentProviderProps) => {
   const [showResolved, setShowResolved] = useState(false);
   const [reply, setReply] = useState('');
@@ -100,27 +103,17 @@ export const CommentProvider = ({
   };
 
   const resolveComment = (commentId: string) => {
-    setInitialComments?.(
-      initialComments.map((comment) =>
-        comment.id === commentId ? { ...comment, resolved: true } : comment,
-      ),
-    );
+    onResolveComment?.(commentId);
     editor.commands.resolveComment(commentId);
   };
 
   const unresolveComment = (commentId: string) => {
-    setInitialComments?.(
-      initialComments.map((comment) =>
-        comment.id === commentId ? { ...comment, resolved: false } : comment,
-      ),
-    );
+    onUnresolveComment?.(commentId);
     editor.commands.unresolveComment(commentId);
   };
 
   const deleteComment = (commentId: string) => {
-    setInitialComments?.(
-      initialComments.filter((comment) => comment.id !== commentId),
-    );
+    onDeleteComment?.(commentId);
     editor.commands.unsetComment(commentId);
   };
 

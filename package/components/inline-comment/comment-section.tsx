@@ -8,7 +8,6 @@ import {
 } from '@fileverse/ui';
 import { CommentCard } from './comment-card';
 import { useComments, useEnsName } from './context/comment-context';
-import { useCommentActions } from './use-comment-actions';
 import EnsLogo from '../../assets/ens.svg';
 import verifiedMark from '../../assets/verified-mark.png';
 import { nameFormatter } from '../../utils/helpers';
@@ -22,8 +21,6 @@ export const CommentSection = ({
     comments,
     username,
     focusCommentInEditor,
-    editor,
-    setComments,
     handleReplyChange,
     handleCommentChange,
     handleCommentKeyDown,
@@ -38,13 +35,10 @@ export const CommentSection = ({
     reply,
     handleCommentSubmit,
     handleInput,
+    resolveComment,
+    unresolveComment,
+    deleteComment,
   } = useComments();
-  const { handleResolveComment, handleUnresolveComment, handleDeleteComment } =
-    useCommentActions({
-      editor,
-      comments,
-      setComments,
-    });
 
   const filteredComments = comments.filter((comment) =>
     showResolved ? true : !comment.resolved,
@@ -84,9 +78,9 @@ export const CommentSection = ({
               createdAt={comment.createdAt}
               comment={comment.content}
               replies={comment.replies}
-              onResolve={() => handleResolveComment(comment.id as string)}
-              onUnresolve={() => handleUnresolveComment(comment.id as string)}
-              onDelete={() => handleDeleteComment(comment.id as string)}
+              onResolve={resolveComment}
+              onUnresolve={unresolveComment}
+              onDelete={deleteComment}
               isResolved={comment.resolved}
             />
 

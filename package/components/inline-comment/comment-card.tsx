@@ -89,7 +89,7 @@ export const CommentCard = ({
   }, [isDropdown, activeCommentId, id, replies]);
 
   const handleResolveClick = () => {
-    onResolve?.();
+    onResolve?.(id as string);
     if (dropdownRef.current?.parentElement) {
       const popoverContent = dropdownRef.current.closest('[role="dialog"]');
       if (popoverContent) {
@@ -99,7 +99,7 @@ export const CommentCard = ({
   };
 
   const handleDeleteClick = () => {
-    onDelete?.();
+    onDelete?.(id as string);
     if (dropdownRef.current?.parentElement) {
       const popoverContent = dropdownRef.current.closest('[role="dialog"]');
       if (popoverContent) {
@@ -109,7 +109,7 @@ export const CommentCard = ({
   };
 
   const handleUnresolveClick = () => {
-    onUnresolve?.();
+    onUnresolve?.(id as string);
     if (dropdownRef.current?.parentElement) {
       const popoverContent = dropdownRef.current.closest('[role="dialog"]');
       if (popoverContent) {
