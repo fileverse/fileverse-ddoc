@@ -21,6 +21,10 @@ import { isJSONString } from './utils/isJsonString';
 import { zoomService } from './zoom-service';
 import { sanitizeContent } from './utils/sanitize-content';
 import { handleContentPrint, handlePrint } from './utils/handle-print';
+import {
+  getHierarchicalIndexes,
+  TableOfContents,
+} from '@tiptap-pro/extension-table-of-contents';
 
 const usercolors = [
   '#30bced',
@@ -56,8 +60,12 @@ export const useDdocEditor = ({
   onInvalidContentError,
   ignoreCorruptedData,
   isPresentationMode,
+  proEnabled,
+  proToken,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
+  const [tocItems, setTocItems] = useState<any[]>([]);
+
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions(
       (error: string) => onError?.(error),
@@ -171,6 +179,20 @@ export const useDdocEditor = ({
     },
     [extensions],
   );
+
+  useEffect(() => {
+    if (proEnabled && proToken) {
+      setExtensions([
+        ...extensions,
+        TableOfContents.configure({
+          getIndex: getHierarchicalIndexes,
+          onUpdate(content) {
+            setTocItems(content);
+          },
+        }),
+      ]);
+    }
+  }, [proEnabled, proToken]);
 
   useEffect(() => {
     if (zoomLevel) {
@@ -409,5 +431,7 @@ export const useDdocEditor = ({
     refreshYjsIndexedDbProvider: initialiseYjsIndexedDbProvider,
     slides,
     setSlides,
+    tocItems,
+    setTocItems,
   };
 };

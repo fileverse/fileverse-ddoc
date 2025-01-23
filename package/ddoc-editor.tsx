@@ -26,6 +26,7 @@ import platform from 'platform';
 import MobileToolbar from './components/mobile-toolbar';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { PresentationMode } from './components/presentation-mode/presentation-mode';
+import { DocumentOutline } from './components/toc/document-outline';
 
 const checkOs = () => platform.os?.family;
 
@@ -75,6 +76,10 @@ const DdocEditor = forwardRef(
       onInvalidContentError,
       ignoreCorruptedData,
       onSlidesShare,
+      proToken,
+      proEnabled,
+      showTOC,
+      setShowTOC,
     }: DdocProps,
     ref,
   ) => {
@@ -118,6 +123,8 @@ const DdocEditor = forwardRef(
       refreshYjsIndexedDbProvider,
       slides,
       setSlides,
+      tocItems,
+      setTocItems,
     } = useDdocEditor({
       enableIndexeddbSync,
       ddocId,
@@ -147,6 +154,8 @@ const DdocEditor = forwardRef(
       onInvalidContentError,
       ignoreCorruptedData,
       isPresentationMode,
+      proToken,
+      proEnabled,
     });
 
     useImperativeHandle(
@@ -356,6 +365,15 @@ const DdocEditor = forwardRef(
             setSlides={setSlides}
           />
         )}
+        <DocumentOutline
+          editor={editor}
+          hasToC={true}
+          items={tocItems}
+          setItems={setTocItems}
+          showTOC={showTOC}
+          setShowTOC={setShowTOC}
+        />
+
         <div
           className={cn(
             'bg-white w-full mx-auto rounded',

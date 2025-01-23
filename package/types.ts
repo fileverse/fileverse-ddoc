@@ -25,6 +25,10 @@ type InlineCommentData = {
 };
 
 export interface DdocProps {
+  showTOC?: boolean;
+  setShowTOC?: React.Dispatch<SetStateAction<boolean>>;
+  proEnabled?: boolean;
+  proToken?: string;
   selectedTags?: TagType[];
   setSelectedTags?: React.Dispatch<SetStateAction<TagType[]>>;
   enableCollaboration?: boolean | undefined;
