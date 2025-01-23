@@ -386,6 +386,7 @@ export const CommentProvider = ({
         isCommentActive,
         isCommentResolved,
         ensResolutionUrl,
+        onCommentReply,
       }}
     >
       {children}

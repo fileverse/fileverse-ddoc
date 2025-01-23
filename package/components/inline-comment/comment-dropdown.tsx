@@ -12,7 +12,6 @@ import { CommentCard } from './comment-card';
 import { useCommentActions } from './use-comment-actions';
 import { CommentDropdownProps } from './types';
 import { useComments } from './context/comment-context';
-import { IComment } from '../../extensions/comment/comment';
 
 export const CommentDropdown = ({
   activeCommentId,
@@ -41,6 +40,7 @@ export const CommentDropdown = ({
     onNextComment,
     onPrevComment,
     activeCommentIndex,
+    onCommentReply,
   } = useComments();
   const { handleResolveComment, handleUnresolveComment, handleDeleteComment } =
     useCommentActions({
@@ -70,28 +70,17 @@ export const CommentDropdown = ({
   };
 
   const handleReplySubmit = () => {
-    if (reply.trim() && activeCommentId) {
-      const updatedComments = comments.map((comment) => {
-        if (comment.id === activeCommentId) {
-          return {
-            ...comment,
-            replies: [
-              ...(comment.replies || []),
-              {
-                id: `reply-${uuid()}`,
-                username: username,
-                content: reply,
-                replies: [],
-                createdAt: new Date(),
-                selectedContent: selectedContent,
-              },
-            ],
-          };
-        }
-        return comment;
-      });
+    const newReply = {
+      id: `reply-${uuid()}`,
+      username: username,
+      content: reply,
+      replies: [],
+      createdAt: new Date(),
+      selectedContent: selectedContent,
+    };
 
-      setComments?.(updatedComments as IComment[]);
+    if (reply.trim() && activeCommentId) {
+      onCommentReply?.(activeCommentId, newReply);
       setReply('');
     }
   };

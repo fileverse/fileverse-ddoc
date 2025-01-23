@@ -55,6 +55,7 @@ export interface CommentContextType {
   isCommentActive: boolean;
   isCommentResolved: boolean;
   ensResolutionUrl: string;
+  onCommentReply?: (activeCommentId: string, reply: IComment) => void;
 }
 
 export interface CommentProviderProps {
