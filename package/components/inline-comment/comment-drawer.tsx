@@ -41,7 +41,7 @@ export const CommentDrawer = ({
                     position="bottom"
                   >
                     <IconButton
-                      icon={showResolved ? 'CircleCheck2' : 'CircleCheck'}
+                      icon={showResolved ? 'EyeOff' : 'Eye'}
                       variant="ghost"
                       size="md"
                       className="p-1 !min-w-8 !w-8 !h-8 aspect-square"
@@ -81,7 +81,7 @@ export const CommentDrawer = ({
                   position="bottom"
                 >
                   <IconButton
-                    icon={showResolved ? 'CircleCheck2' : 'CircleCheck'}
+                    icon={showResolved ? 'EyeOff' : 'Eye'}
                     variant="ghost"
                     size="md"
                     onClick={toggleResolved}
