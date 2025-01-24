@@ -24,7 +24,7 @@ export const DocumentOutline = ({
     return (
       <div
         className={cn(
-          'flex flex-col gap-4 items-start justify-start absolute top-32 left-4',
+          'flex flex-col gap-4 items-start justify-start absolute top-[7.3rem] left-4',
           (!hasToC || shouldHideToC) && 'hidden',
         )}
       >
