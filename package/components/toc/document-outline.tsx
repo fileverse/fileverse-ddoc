@@ -37,7 +37,7 @@ export const DocumentOutline = ({
             variant="ghost"
             size="lg"
             onClick={() => setShowTOC?.((prev) => !prev)}
-            className="color-text-default min-w-8 h-8"
+            className="color-text-default min-w-9 h-9"
           />
         </Tooltip>
         <div className={cn('table-of-contents', showTOC ? 'block' : 'hidden')}>
