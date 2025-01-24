@@ -40,7 +40,12 @@ export const DocumentOutline = ({
             className="color-text-default min-w-9 h-9"
           />
         </Tooltip>
-        <div className={cn('table-of-contents', showTOC ? 'block' : 'hidden')}>
+        <div
+          className={cn(
+            'table-of-contents animate-in fade-in slide-in-from-left-5',
+            showTOC ? 'block' : 'hidden',
+          )}
+        >
           <MemorizedToC editor={editor} items={items} setItems={setItems} />
         </div>
       </div>
