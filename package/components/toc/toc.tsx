@@ -17,7 +17,7 @@ export const ToCItem = ({
         paddingLeft: `${(item.level - 1) * 8}px`,
       }}
       className={cn(
-        'flex items-center transition-all text-body-sm-bold max-[1280px]:h-[32px] max-[1280px]:px-2 max-[1280px]:py-1 h-4 max-[1280px]:max-w-full xl:!max-w-[200px] min-[1440px]:!max-w-[280px] min-[1600px]:!max-w-[320px] border-l-2',
+        'flex items-center transition-all text-body-sm-bold max-[1280px]:h-[32px] max-[1280px]:px-2 max-[1280px]:py-1 h-4 max-[1280px]:max-w-full xl:!max-w-[200px] min-[1440px]:!max-w-[280px] min-[1600px]:!max-w-[320px] xl:border-l-2',
         item.isActive
           ? 'border-[#363B3F] color-text-default max-[1280px]:border-none max-[1280px]:bg-[#F8F9FA] max-[1280px]:rounded'
           : 'color-text-secondary border-transparent',
@@ -36,7 +36,7 @@ export const ToCItem = ({
           variant="ghost"
           className={cn(
             '!bg-transparent group-hover:opacity-100 opacity-0 transition-all color-text-secondary',
-            item.isActive ? 'visible' : 'invisible',
+            item.isActive ? 'max-[1280px]:visible' : 'max-[1280px]:invisible',
           )}
           onClick={(e) => onItemRemove(e, item.id)}
         />
@@ -129,8 +129,8 @@ export const ToC = ({ items = [], editor, setItems }: ToCProps) => {
       const removedIndex = prev.findIndex((item) => item.id === id);
       const filtered = prev.filter((item) => item.id !== id);
 
-      // If there are items left after removal
-      if (filtered.length > 0) {
+      // Only update active item if we're removing the currently active item
+      if (id === activeId && filtered.length > 0) {
         // If we removed the last item, set the previous one active
         if (removedIndex === prev.length - 1) {
           onItemClick(e, filtered[filtered.length - 1].id);
@@ -139,7 +139,7 @@ export const ToC = ({ items = [], editor, setItems }: ToCProps) => {
         else {
           onItemClick(e, filtered[removedIndex]?.id);
         }
-      } else {
+      } else if (filtered.length === 0) {
         setActiveId(null);
       }
 
