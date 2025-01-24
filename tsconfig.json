@@ -25,7 +25,7 @@
     "./index.ts",
     "package/**/*",
     "demo/src/vite-env.d.ts",
-    "tiptap-pro.d.ts"
+    "./tiptap-pro.d.ts"
   ],
   "exclude": ["demo", "public"],
   "references": [{ "path": "./tsconfig.node.json" }]
