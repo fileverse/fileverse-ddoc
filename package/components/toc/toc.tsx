@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { cn, IconButton } from '@fileverse/ui';
 import { TextSelection } from '@tiptap/pm/state';
 import { useState } from 'react';
@@ -35,7 +34,10 @@ export const ToCItem = ({
           icon="X"
           size="sm"
           variant="ghost"
-          className="!bg-transparent group-hover:opacity-100 opacity-0 transition-all color-text-secondary"
+          className={cn(
+            '!bg-transparent group-hover:opacity-100 opacity-0 transition-all color-text-secondary',
+            item.isActive ? 'visible' : 'invisible',
+          )}
           onClick={(e) => onItemRemove(e, item.id)}
         />
       </a>
@@ -60,8 +62,9 @@ export const ToC = ({ items = [], editor, setItems }: ToCProps) => {
     return <ToCEmptyState />;
   }
 
-  const onItemClick = (e: any, id: any) => {
+  const onItemClick = (e: React.MouseEvent, id: string) => {
     e.preventDefault();
+    e.stopPropagation();
     // Update active item
     setActiveId(id);
 
@@ -75,7 +78,7 @@ export const ToC = ({ items = [], editor, setItems }: ToCProps) => {
       const tr = editor.view.state.tr;
       tr.setSelection(new TextSelection(tr.doc.resolve(pos)));
       editor.view.dispatch(tr);
-      editor.view.focus();
+      // editor.view.focus();
 
       // Find all possible scroll containers
       const possibleContainers = [
@@ -105,8 +108,8 @@ export const ToC = ({ items = [], editor, setItems }: ToCProps) => {
           const scrollTop =
             elementRect.top -
             containerRect.top -
-            containerRect.height / (isMobile ? 4 : 7) +
-            elementRect.height / (isMobile ? 4 : 7);
+            containerRect.height / (isMobile ? 5 : 7) +
+            elementRect.height / (isMobile ? 5 : 7);
 
           scrollContainer.scrollBy({
             top: scrollTop,
@@ -117,12 +120,31 @@ export const ToC = ({ items = [], editor, setItems }: ToCProps) => {
     }
   };
 
-  const onItemRemove = (e: any, id: any) => {
+  const onItemRemove = (e: React.MouseEvent, id: string) => {
     e.preventDefault();
-    setItems((prev: ToCItemType[]) =>
-      prev.filter((item: ToCItemType) => item.id !== id),
-    );
-    // TODO: find the way to persist the changes
+    e.stopPropagation();
+
+    setItems((prev: ToCItemType[]) => {
+      // Find the index of the item being removed
+      const removedIndex = prev.findIndex((item) => item.id === id);
+      const filtered = prev.filter((item) => item.id !== id);
+
+      // If there are items left after removal
+      if (filtered.length > 0) {
+        // If we removed the last item, set the previous one active
+        if (removedIndex === prev.length - 1) {
+          onItemClick(e, filtered[filtered.length - 1].id);
+        }
+        // Otherwise set the next item active
+        else {
+          onItemClick(e, filtered[removedIndex]?.id);
+        }
+      } else {
+        setActiveId(null);
+      }
+
+      return filtered;
+    });
   };
 
   return (

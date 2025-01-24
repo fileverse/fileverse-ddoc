@@ -92,8 +92,8 @@ function App() {
           {isMediaMax1280px ?
             <DynamicDropdown
               key="navbar-more-actions"
-              align="end"
-              sideOffset={4}
+              align="center"
+              sideOffset={10}
               anchorTrigger={
                 <IconButton
                   icon={'EllipsisVertical'}
