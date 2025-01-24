@@ -115,6 +115,8 @@ const DdocEditor = forwardRef(
       }
     }, [selectedTags]);
 
+    console.log('===hello world====');
+
     const {
       editor,
       ref: editorRef,

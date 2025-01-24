@@ -18,7 +18,11 @@ export default defineConfig({
       fileName: (format) => `index.${format}.js`,
     },
     rollupOptions: {
-      external: ['react', 'react-dom'],
+      external: [
+        'react',
+        'react-dom',
+        '@tiptap-pro/extension-table-of-contents',
+      ],
       output: {
         globals: {
           react: 'React',

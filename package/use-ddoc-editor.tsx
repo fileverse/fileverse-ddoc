@@ -21,10 +21,6 @@ import { isJSONString } from './utils/isJsonString';
 import { zoomService } from './zoom-service';
 import { sanitizeContent } from './utils/sanitize-content';
 import { handleContentPrint, handlePrint } from './utils/handle-print';
-import {
-  getHierarchicalIndexes,
-  TableOfContents,
-} from '@tiptap-pro/extension-table-of-contents';
 
 const usercolors = [
   '#30bced',
@@ -63,8 +59,11 @@ export const useDdocEditor = ({
   proEnabled,
   proToken,
 }: Partial<DdocProps>) => {
+  console.log('proEnabled', proEnabled);
+  console.log('proToken', proToken);
   const [ydoc] = useState(new Y.Doc());
   const [tocItems, setTocItems] = useState<any[]>([]);
+  console.log('tocItems', tocItems);
 
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions(
@@ -78,6 +77,8 @@ export const useDdocEditor = ({
       document: ydoc,
     }),
   ]);
+
+  console.log('extensions', extensions);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
   const [slides, setSlides] = useState<string[]>([]);
@@ -181,16 +182,24 @@ export const useDdocEditor = ({
   );
 
   useEffect(() => {
+    console.log('===hello world====');
     if (proEnabled && proToken) {
-      setExtensions([
-        ...extensions,
-        TableOfContents.configure({
-          getIndex: getHierarchicalIndexes,
-          onUpdate(content) {
-            setTocItems(content);
-          },
-        }),
-      ]);
+      import('@tiptap-pro/extension-table-of-contents')
+        .then(({ TableOfContents, getHierarchicalIndexes }) => {
+          console.log('TableOfContents', TableOfContents);
+          setExtensions([
+            ...extensions,
+            TableOfContents.configure({
+              getIndex: getHierarchicalIndexes,
+              onUpdate(content: any) {
+                setTocItems(content);
+              },
+            }),
+          ]);
+        })
+        .catch((err) => {
+          console.warn('Table of contents pro extension failed to load:', err);
+        });
     }
   }, [proEnabled, proToken]);
 
