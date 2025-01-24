@@ -56,14 +56,10 @@ export const useDdocEditor = ({
   onInvalidContentError,
   ignoreCorruptedData,
   isPresentationMode,
-  proEnabled,
-  proToken,
+  proExtensions,
 }: Partial<DdocProps>) => {
-  console.log('proEnabled', proEnabled);
-  console.log('proToken', proToken);
   const [ydoc] = useState(new Y.Doc());
   const [tocItems, setTocItems] = useState<any[]>([]);
-  console.log('tocItems', tocItems);
 
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions(
@@ -78,7 +74,6 @@ export const useDdocEditor = ({
     }),
   ]);
 
-  console.log('extensions', extensions);
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
   const [slides, setSlides] = useState<string[]>([]);
@@ -182,26 +177,18 @@ export const useDdocEditor = ({
   );
 
   useEffect(() => {
-    console.log('===hello world====');
-    if (proEnabled && proToken) {
-      import('@tiptap-pro/extension-table-of-contents')
-        .then(({ TableOfContents, getHierarchicalIndexes }) => {
-          console.log('TableOfContents', TableOfContents);
-          setExtensions([
-            ...extensions,
-            TableOfContents.configure({
-              getIndex: getHierarchicalIndexes,
-              onUpdate(content: any) {
-                setTocItems(content);
-              },
-            }),
-          ]);
-        })
-        .catch((err) => {
-          console.warn('Table of contents pro extension failed to load:', err);
-        });
+    if (proExtensions?.TableOfContents) {
+      setExtensions([
+        ...extensions.filter((ext) => ext.name !== 'tableOfContents'),
+        proExtensions.TableOfContents.configure({
+          getIndex: proExtensions.getHierarchicalIndexes,
+          onUpdate(content: any) {
+            setTocItems(content);
+          },
+        }),
+      ]);
     }
-  }, [proEnabled, proToken]);
+  }, [proExtensions]);
 
   useEffect(() => {
     if (zoomLevel) {

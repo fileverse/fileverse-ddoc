@@ -76,10 +76,9 @@ const DdocEditor = forwardRef(
       onInvalidContentError,
       ignoreCorruptedData,
       onSlidesShare,
-      proToken,
-      proEnabled,
       showTOC,
       setShowTOC,
+      proExtensions,
     }: DdocProps,
     ref,
   ) => {
@@ -114,8 +113,6 @@ const DdocEditor = forwardRef(
         setIsHiddenTagsVisible(false);
       }
     }, [selectedTags]);
-
-    console.log('===hello world====');
 
     const {
       editor,
@@ -158,6 +155,7 @@ const DdocEditor = forwardRef(
       isPresentationMode,
       proToken,
       proEnabled,
+      proExtensions,
     });
 
     useImperativeHandle(

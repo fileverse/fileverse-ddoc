@@ -98,14 +98,6 @@
     "y-webrtc": "^10.3.0",
     "yjs": "^13.6.15"
   },
-  "peerDependencies": {
-    "@tiptap-pro/extension-table-of-contents": "^2.17.2"
-  },
-  "peerDependenciesMeta": {
-    "@tiptap-pro/extension-table-of-contents": {
-      "optional": true
-    }
-  },
   "devDependencies": {
     "@types/dompurify": "^3.0.5",
     "@types/katex": "^0.16.7",
