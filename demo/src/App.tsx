@@ -12,6 +12,7 @@ import {
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 import { IComment } from '../../package/extensions/comment';
+import { CommentNotification } from './components/CommentNotification';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -60,7 +61,13 @@ function App() {
     );
   };
   const handleNewComment = (comment: IComment) => {
-    setInitialComment((prev) => [...prev, comment]);
+    setInitialComment((prev) => {
+      const newComments = [...prev, comment];
+      localStorage.setItem('initialComments', JSON.stringify(newComments));
+      // Dispatch custom event to notify of changes
+      window.dispatchEvent(new Event('commentsUpdated'));
+      return newComments;
+    });
   };
   const handleResolveComment = (commentId: string) => {
     setInitialComment(
@@ -137,12 +144,26 @@ function App() {
               setIsPresentationMode(true);
             }}
           />
-          <IconButton
-            variant={'ghost'}
-            icon="MessageSquareText"
-            size="md"
-            onClick={() => setCommentDrawerOpen((prev) => !prev)}
-          />
+          <div className="relative">
+            <IconButton
+              variant={'ghost'}
+              icon="MessageSquareText"
+              size="md"
+              onClick={() => {
+                // Mark all comments as viewed when opening drawer
+                if (!commentDrawerOpen) {
+                  const allComments = initialComments.map(comment => comment.id);
+                  localStorage.setItem('viewedComments', JSON.stringify(allComments));
+                  // Dispatch custom event to notify of changes
+                  window.dispatchEvent(new Event('commentsUpdated'));
+                }
+                setCommentDrawerOpen((prev) => !prev);
+              }}
+            />
+            <div className="absolute top-0 right-0">
+              <CommentNotification />
+            </div>
+          </div>
           <IconButton
             variant={'ghost'}
             icon="Share2"
@@ -203,9 +224,9 @@ function App() {
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
-        onInlineComment={(): void => {}}
-        onMarkdownImport={(): void => {}}
-        onMarkdownExport={(): void => {}}
+        onInlineComment={(): void => { }}
+        onMarkdownImport={(): void => { }}
+        onMarkdownExport={(): void => { }}
         initialComments={initialComments}
         onCommentReply={handleReplyOnComment}
         onNewComment={handleNewComment}
