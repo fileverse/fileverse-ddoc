@@ -153,8 +153,6 @@ const DdocEditor = forwardRef(
       onInvalidContentError,
       ignoreCorruptedData,
       isPresentationMode,
-      proToken,
-      proEnabled,
       proExtensions,
     });
 
