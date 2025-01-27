@@ -27,7 +27,8 @@ type InlineCommentData = {
 export interface DdocProps {
   showTOC?: boolean;
   setShowTOC?: React.Dispatch<SetStateAction<boolean>>;
-  proExtensions?: Record<string, Extension>;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  proExtensions?: Record<string, Extension | any>;
   selectedTags?: TagType[];
   setSelectedTags?: React.Dispatch<SetStateAction<TagType[]>>;
   enableCollaboration?: boolean | undefined;

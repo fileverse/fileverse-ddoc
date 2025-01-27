@@ -12,6 +12,10 @@ import {
   DynamicDropdown,
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
+import {
+  TableOfContents,
+  getHierarchicalIndexes,
+} from '@tiptap-pro/extension-table-of-contents';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -89,7 +93,7 @@ function App() {
           </div>
         </div>
         <div className="flex gap-2">
-          {isMediaMax1280px ?
+          {isMediaMax1280px ? (
             <DynamicDropdown
               key="navbar-more-actions"
               align="center"
@@ -102,9 +106,7 @@ function App() {
                 />
               }
               content={
-                <div
-                  className="flex flex-col gap-1 p-2 w-fit shadow-elevation-3 "
-                >
+                <div className="flex flex-col gap-1 p-2 w-fit shadow-elevation-3 ">
                   <Button
                     variant={'ghost'}
                     onClick={() => setIsPresentationMode(true)}
@@ -123,9 +125,15 @@ function App() {
                   </Button>
                 </div>
               }
-            /> :
-            <IconButton variant={'ghost'} icon="Presentation" size="md" onClick={() => setIsPresentationMode(true)} />
-          }
+            />
+          ) : (
+            <IconButton
+              variant={'ghost'}
+              icon="Presentation"
+              size="md"
+              onClick={() => setIsPresentationMode(true)}
+            />
+          )}
           <IconButton variant={'ghost'} icon="MessageSquareText" size="md" />
           <IconButton
             variant={'ghost'}
@@ -185,13 +193,15 @@ function App() {
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
-        onInlineComment={(): void => { }}
-        onMarkdownImport={(): void => { }}
-        onMarkdownExport={(): void => { }}
+        onInlineComment={(): void => {}}
+        onMarkdownImport={(): void => {}}
+        onMarkdownExport={(): void => {}}
         showTOC={showTOC}
         setShowTOC={setShowTOC}
-        proEnabled={true}
-        proToken={"YOUR_TIPTAP_PRO_TOKEN"}
+        proExtensions={{
+          TableOfContents,
+          getHierarchicalIndexes,
+        }}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}
