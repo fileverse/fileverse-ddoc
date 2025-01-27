@@ -1,5 +1,5 @@
 import { TagType } from '@fileverse/ui';
-import { JSONContent } from '@tiptap/core';
+import { Extension, JSONContent } from '@tiptap/core';
 import { EditorProps } from '@tiptap/pm/view';
 import { Editor } from '@tiptap/react';
 import React, { SetStateAction } from 'react';
@@ -27,8 +27,7 @@ type InlineCommentData = {
 export interface DdocProps {
   showTOC?: boolean;
   setShowTOC?: React.Dispatch<SetStateAction<boolean>>;
-  proEnabled?: boolean;
-  proToken?: string;
+  proExtensions?: Record<string, Extension>;
   selectedTags?: TagType[];
   setSelectedTags?: React.Dispatch<SetStateAction<TagType[]>>;
   enableCollaboration?: boolean | undefined;

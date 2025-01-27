@@ -76,10 +76,9 @@ const DdocEditor = forwardRef(
       onInvalidContentError,
       ignoreCorruptedData,
       onSlidesShare,
-      proToken,
-      proEnabled,
       showTOC,
       setShowTOC,
+      proExtensions,
     }: DdocProps,
     ref,
   ) => {
@@ -154,8 +153,7 @@ const DdocEditor = forwardRef(
       onInvalidContentError,
       ignoreCorruptedData,
       isPresentationMode,
-      proToken,
-      proEnabled,
+      proExtensions,
     });
 
     useImperativeHandle(
