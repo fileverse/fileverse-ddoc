@@ -17,7 +17,7 @@ export const ToCItem = ({
         paddingLeft: `${(item.level - 1) * 8}px`,
       }}
       className={cn(
-        'flex items-center transition-all text-body-sm-bold max-[1280px]:h-[32px] max-[1280px]:px-2 max-[1280px]:py-1 h-4 max-[1280px]:max-w-full xl:!max-w-[200px] min-[1440px]:!max-w-[280px] min-[1600px]:!max-w-[320px] xl:border-l-2',
+        'flex items-center transition-all text-body-sm-bold max-[1280px]:h-[32px] max-[1280px]:px-2 max-[1280px]:py-1 h-5 max-[1280px]:max-w-full xl:!max-w-[200px] min-[1440px]:!max-w-[280px] min-[1600px]:!max-w-[320px] xl:border-l-2',
         item.isActive
           ? 'border-[#363B3F] color-text-default max-[1280px]:border-none max-[1280px]:bg-[#F8F9FA] max-[1280px]:rounded'
           : 'color-text-secondary border-transparent',
@@ -138,9 +138,9 @@ export const ToC = ({ items = [], editor, setItems }: ToCProps) => {
         // Otherwise set the next item active
         else {
           onItemClick(e, filtered[removedIndex]?.id);
-        }
+            }
       } else if (filtered.length === 0) {
-        setActiveId(null);
+            setActiveId(null);
       }
 
       return filtered;
@@ -150,16 +150,16 @@ export const ToC = ({ items = [], editor, setItems }: ToCProps) => {
   return (
     <div className="flex flex-col max-[1280px]:gap-2 gap-4 overflow-auto no-scrollbar max-[1280px]:max-h-[168px] max-h-[calc(80vh-40px)]">
       {items.map((item, i) => (
-        <ToCItem
-          onItemClick={onItemClick}
-          onItemRemove={onItemRemove}
-          key={item.id}
-          item={{
-            ...item,
-            isActive: item.id === activeId,
-          }}
-          index={i + 1}
-        />
+          <ToCItem
+            onItemClick={onItemClick}
+            onItemRemove={onItemRemove}
+            key={item.id}
+            item={{
+              ...item,
+              isActive: item.id === activeId,
+            }}
+            index={i + 1}
+          />
       ))}
     </div>
   );
