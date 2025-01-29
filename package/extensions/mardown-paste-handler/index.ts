@@ -257,10 +257,27 @@ const MarkdownPasteHandler = Extension.create({
             const clipboardData = event.clipboardData;
             if (!clipboardData) return false;
 
-            // Get the Markdown content from the clipboard
             const copiedData = clipboardData.getData('text/plain');
 
-            // Check if the copied content is Markdown
+            // Check for common math formula patterns
+            const mathPatterns = [
+              /^\\\[/, // Display math
+              /^\\\(/, // Inline math
+              /^\$\$/, // Display math alternative
+              /^\$/, // Inline math alternative
+            ];
+
+            // If any line starts with a math pattern, don't process as markdown
+            const lines = copiedData.split('\n');
+            if (
+              lines.some((line) =>
+                mathPatterns.some((pattern) => pattern.test(line.trim())),
+              )
+            ) {
+              return false;
+            }
+
+            // Check if the content contains Markdown patterns
             if (isMarkdown(copiedData)) {
               handleMarkdownContent(view, copiedData);
               return true;
@@ -289,6 +306,7 @@ const MarkdownPasteHandler = Extension.create({
                 const reader = new FileReader();
                 reader.onload = (e) => {
                   const content = e.target?.result as string;
+
                   handleMarkdownContent(view, content);
                 };
                 reader.readAsText(file);
@@ -441,7 +459,22 @@ const MarkdownPasteHandler = Extension.create({
 });
 
 function isMarkdown(content: string): boolean {
-  return (
+  // First check if it's purely math content
+  const mathPatterns = [
+    /^\\\[/, // Display math
+    /^\\\(/, // Inline math
+    /^\$\$/, // Display math alternative
+    /^\$/, // Inline math alternative
+  ];
+
+  const lines = content.split('\n');
+  // If any line starts with a math pattern and there are no other markdown patterns,
+  // treat it as math content only
+  const hasMathLines = lines.some((line) =>
+    mathPatterns.some((pattern) => pattern.test(line.trim())),
+  );
+
+  const hasMarkdownPatterns =
     content.match(/^#{1,6}\s/) !== null || // Headings
     content.startsWith('*') ||
     content.startsWith('-') ||
@@ -454,15 +487,33 @@ function isMarkdown(content: string): boolean {
     content.match(/`{1,3}[^`]+`{1,3}/g) !== null ||
     content.match(/<sup>(.*?)<\/sup>/g) !== null ||
     content.match(/<sub>(.*?)<\/sub>/g) !== null ||
-    content.match(/\^(.*?)\^/g) !== null || // New superscript syntax
-    content.match(/~(.*?)~/g) !== null || // New subscript syntax
-    content.match(/^===\s*$/m) !== null // Page break
-  );
+    content.match(/\^(.*?)\^/g) !== null || // Superscript syntax
+    content.match(/~(.*?)~/g) !== null || // Subscript syntax
+    content.match(/^===\s*$/m) !== null; // Page break
+
+  // Return true if there are markdown patterns or if it's not exclusively math content
+  return hasMarkdownPatterns || !hasMathLines;
 }
 
 function handleMarkdownContent(view: any, content: string) {
+  // Preserve math blocks by temporarily replacing them
+  const mathBlocks: string[] = [];
+  let processedContent = content.replace(
+    /(\$\$[\s\S]*?\$\$|\$[^\$\n]+\$|\\\([^\)]+\\\)|\\\[[\s\S]*?\\\])/g,
+    (match) => {
+      mathBlocks.push(match);
+      return `MATH_PLACEHOLDER_${mathBlocks.length - 1}`;
+    },
+  );
+
   // Convert Markdown to HTML
-  let convertedHtml = markdownIt.render(content);
+  let convertedHtml = markdownIt.render(processedContent);
+
+  // Restore math blocks
+  convertedHtml = convertedHtml.replace(
+    /MATH_PLACEHOLDER_(\d+)/g,
+    (_, index) => mathBlocks[parseInt(index)],
+  );
 
   // Decode HTML entities
   const textarea = document.createElement('textarea');
