@@ -441,6 +441,14 @@ const MarkdownPasteHandler = Extension.create({
 });
 
 function isMarkdown(content: string): boolean {
+  // Ignore LaTeX math blocks before checking other Markdown elements
+  if (
+    content.match(/\$\$[^$]*\$\$/g) !== null ||
+    content.match(/\$[^$\n]*\$/g) !== null
+  ) {
+    return false; // Treat as LaTeX, not Markdown
+  }
+
   return (
     content.match(/^#{1,6}\s/) !== null || // Headings
     content.startsWith('*') ||
