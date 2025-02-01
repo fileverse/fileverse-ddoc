@@ -381,8 +381,11 @@ export const useDdocEditor = ({
   ]);
 
   useEffect(() => {
-    const handler = () => {
-      onChange?.(fromUint8Array(Y.encodeStateAsUpdate(ydoc)) as any);
+    const handler = (update: Uint8Array) => {
+      onChange?.(
+        fromUint8Array(Y.encodeStateAsUpdate(ydoc)),
+        fromUint8Array(update),
+      );
     };
     if (ydoc) {
       ydoc.on('update', handler);
