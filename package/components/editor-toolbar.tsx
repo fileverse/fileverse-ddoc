@@ -251,7 +251,7 @@ const TiptapToolBar = ({
           onClose={() => setDropdownOpen(false)}
           anchorTrigger={
             <button
-              className="bg-transparent hover:!bg-[#F2F4F5] rounded py-2 px-4 flex items-center gap-2"
+              className="bg-transparent hover:!bg-[#F2F4F5] rounded p-2 flex items-center justify-center gap-2 w-20"
               onClick={() => {
                 setDropdownOpen((prev) => !prev);
                 setFileExportsOpen(false);
@@ -285,11 +285,11 @@ const TiptapToolBar = ({
           key={IEditorTool.FONT_FAMILY}
           anchorTrigger={
             <button
-              className="bg-transparent hover:!bg-[#F2F4F5] rounded py-2 px-4 flex items-center justify-center gap-2 w-fit"
+              className="bg-transparent hover:!bg-[#F2F4F5] rounded p-2 flex items-center justify-center gap-2 w-24"
               onClick={() => setToolVisibility(IEditorTool.FONT_FAMILY)}
             >
               <span
-                className="text-body-sm line-clamp-1 w-8"
+                className="text-body-sm line-clamp-1"
                 style={{
                   fontFamily: fonts.find((font) =>
                     editor?.isActive('textStyle', { fontFamily: font.value }),
@@ -300,7 +300,7 @@ const TiptapToolBar = ({
                   editor?.isActive('textStyle', { fontFamily: font.value }),
                 )?.title || 'Font'}
               </span>
-              <LucideIcon name="ChevronDown" size="sm" />
+              <LucideIcon name="ChevronDown" size="sm" className="min-w-fit" />
             </button>
           }
           content={
@@ -316,10 +316,10 @@ const TiptapToolBar = ({
           key={IEditorTool.HEADING}
           anchorTrigger={
             <button
-              className="bg-transparent hover:!bg-[#F2F4F5] rounded gap-2 py-2 px-4 flex items-center justify-center w-fit"
+              className="bg-transparent hover:!bg-[#F2F4F5] rounded gap-2 p-2 flex items-center justify-center w-28"
               onClick={() => setToolVisibility(IEditorTool.HEADING)}
             >
-              <span className="text-body-sm line-clamp-1 w-fit">
+              <span className="text-body-sm line-clamp-1">
                 {editor?.isActive('heading', { level: 1 })
                   ? 'Heading 1'
                   : editor?.isActive('heading', { level: 2 })

@@ -69,6 +69,7 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `sharedSlidesLink` (optional)                  | `string`                                       | Link for shared slides in presentation mode                                                               |
 | `documentName` (optional)                      | `string`                                       | Name of the document                                                                                      |
 | `onSlidesShare` (optional)                     | `() => void`                                   | Callback                                                                                                  |
+| `proExtensions` (optional)                     | `Record<string, Extension \| any>`             | Object mapping extension names to their configurations. **Note:** Requires proper `.npmrc` setup and installing the corresponding extension packages. Example: `{ ai: AiExtension, slides: SlidesExtension }` |
 |                                                |
 
 ## Data Interface
@@ -89,3 +90,17 @@ The `Data` interface defines the structure of the data object
 It will open up a vite server, that will have the Ddoc Editor
 
 ⚠️ This repository is currently undergoing rapid development, with frequent updates and changes. We recommend not to use in production yet
+
+## Pro Extensions Setup
+
+1. Configure your `.npmrc` with the appropriate registry and authentication token:
+
+2. Install the corresponding extension packages:
+
+3. Use the extension in your DdocEditor component:
+
+```tsx
+proExtensions={{
+  TableOfContents
+}}
+```
