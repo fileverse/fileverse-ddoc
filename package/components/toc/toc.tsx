@@ -1,4 +1,7 @@
-import { cn, IconButton } from '@fileverse/ui';
+import {
+  cn,
+  // IconButton
+} from '@fileverse/ui';
 import { TextSelection } from '@tiptap/pm/state';
 import { useState } from 'react';
 import { ToCProps, ToCItemProps, ToCItemType } from './types';
@@ -8,7 +11,7 @@ export const ToCItem = ({
   item,
   onItemClick,
   index,
-  onItemRemove,
+  // onItemRemove,
 }: ToCItemProps) => {
   return (
     <div
@@ -30,7 +33,7 @@ export const ToCItem = ({
         className="flex items-center justify-between pl-2 gap-1 h-[32px] transition-all no-underline hover:text-[#363B3F] w-full group"
       >
         <span className="truncate">{item.textContent}</span>
-        <IconButton
+        {/* <IconButton
           icon="X"
           size="sm"
           variant="ghost"
@@ -39,7 +42,7 @@ export const ToCItem = ({
             item.isActive ? 'max-[1280px]:visible' : 'max-[1280px]:invisible',
           )}
           onClick={(e) => onItemRemove(e, item.id)}
-        />
+        /> */}
       </a>
     </div>
   );
@@ -138,9 +141,9 @@ export const ToC = ({ items = [], editor, setItems }: ToCProps) => {
         // Otherwise set the next item active
         else {
           onItemClick(e, filtered[removedIndex]?.id);
-            }
+        }
       } else if (filtered.length === 0) {
-            setActiveId(null);
+        setActiveId(null);
       }
 
       return filtered;
@@ -150,16 +153,16 @@ export const ToC = ({ items = [], editor, setItems }: ToCProps) => {
   return (
     <div className="flex flex-col max-[1280px]:gap-2 gap-4 overflow-auto no-scrollbar max-[1280px]:max-h-[168px] max-h-[calc(80vh-40px)]">
       {items.map((item, i) => (
-          <ToCItem
-            onItemClick={onItemClick}
-            onItemRemove={onItemRemove}
-            key={item.id}
-            item={{
-              ...item,
-              isActive: item.id === activeId,
-            }}
-            index={i + 1}
-          />
+        <ToCItem
+          onItemClick={onItemClick}
+          onItemRemove={onItemRemove}
+          key={item.id}
+          item={{
+            ...item,
+            isActive: item.id === activeId,
+          }}
+          index={i + 1}
+        />
       ))}
     </div>
   );
