@@ -33,4 +33,5 @@ export interface DocumentOutlineProps {
   ) => void;
   showTOC: boolean | undefined;
   setShowTOC: React.Dispatch<SetStateAction<boolean>> | undefined;
+  isPreviewMode: boolean;
 }

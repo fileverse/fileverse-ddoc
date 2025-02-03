@@ -370,6 +370,7 @@ const DdocEditor = forwardRef(
           setItems={setTocItems}
           showTOC={showTOC}
           setShowTOC={setShowTOC}
+          isPreviewMode={isPreviewMode || !isNavbarVisible}
         />
 
         <div

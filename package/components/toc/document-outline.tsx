@@ -15,6 +15,7 @@ export const DocumentOutline = ({
   setItems,
   showTOC,
   setShowTOC,
+  isPreviewMode,
 }: DocumentOutlineProps) => {
   const isMediaMax1280px = useMediaQuery('(max-width:1280px)');
 
@@ -24,8 +25,9 @@ export const DocumentOutline = ({
     return (
       <div
         className={cn(
-          'flex flex-col gap-4 items-start justify-start absolute top-[7.3rem] left-4',
+          'flex flex-col gap-4 items-start justify-start absolute left-4',
           (!hasToC || shouldHideToC) && 'hidden',
+          isPreviewMode ? 'top-[4rem]' : 'top-[7.3rem]',
         )}
       >
         <Tooltip

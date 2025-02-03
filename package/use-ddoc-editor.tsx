@@ -173,11 +173,14 @@ export const useDdocEditor = ({
       shouldRerenderOnTransaction: true,
       immediatelyRender: false,
     },
-    [extensions],
+    [extensions, isPresentationMode],
   );
 
   useEffect(() => {
-    if (proExtensions?.TableOfContents) {
+    if (
+      proExtensions?.TableOfContents &&
+      !extensions.some((ext) => ext.name === 'tableOfContents')
+    ) {
       setExtensions([
         ...extensions.filter((ext) => ext.name !== 'tableOfContents'),
         proExtensions.TableOfContents.configure({
@@ -202,7 +205,7 @@ export const useDdocEditor = ({
     }
   }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => {});
+  const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
