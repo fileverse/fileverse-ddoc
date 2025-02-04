@@ -40,7 +40,9 @@ export const CommentSection = ({
     deleteComment,
   } = useComments();
 
-  const filteredComments = comments.filter((comment) =>
+  const _filteredComments = comments.filter((comment) => !comment.deleted);
+
+  const filteredComments = _filteredComments.filter((comment) =>
     showResolved ? true : !comment.resolved,
   );
 
