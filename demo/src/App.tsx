@@ -9,9 +9,14 @@ import {
   toast,
   Toaster,
   TagType,
+  DynamicDropdown,
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 import { IComment } from '../../package/extensions/comment';
+import {
+  TableOfContents,
+  getHierarchicalIndexes,
+} from '@tiptap-pro/extension-table-of-contents';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -28,9 +33,12 @@ function App() {
   const [username, setUsername] = useState('');
   const [title, setTitle] = useState('Untitled');
   const isMobile = useMediaQuery('(max-width: 768px)');
+  const isMediaMax1280px = useMediaQuery('(max-width: 1280px)');
   const [selectedTags, setSelectedTags] = useState<TagType[]>([]);
   const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(false);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
+  const [showTOC, setShowTOC] = useState<boolean>(false);
+
   const [inlineCommentData, setInlineCommentData] = useState({
     inlineCommentText: '',
     highlightedTextContent: '',
@@ -128,15 +136,47 @@ function App() {
           </div>
         </div>
         <div className="flex gap-2">
-          <IconButton
-            variant={'ghost'}
-            icon="Presentation"
-            size="md"
-            onClick={() => {
-              commentDrawerOpen && setCommentDrawerOpen(false);
-              setIsPresentationMode(true);
-            }}
-          />
+          {isMediaMax1280px ? (
+            <DynamicDropdown
+              key="navbar-more-actions"
+              align="center"
+              sideOffset={10}
+              anchorTrigger={
+                <IconButton
+                  icon={'EllipsisVertical'}
+                  variant="ghost"
+                  size="md"
+                />
+              }
+              content={
+                <div className="flex flex-col gap-1 p-2 w-fit shadow-elevation-3 ">
+                  <Button
+                    variant={'ghost'}
+                    onClick={() => setIsPresentationMode(true)}
+                    className="flex justify-start gap-2"
+                  >
+                    <LucideIcon name="Presentation" size="sm" />
+                    Slides
+                  </Button>
+                  <Button
+                    variant={'ghost'}
+                    onClick={() => setShowTOC(true)}
+                    className="flex justify-start gap-2"
+                  >
+                    <LucideIcon name="List" size="sm" />
+                    Document Outline
+                  </Button>
+                </div>
+              }
+            />
+          ) : (
+            <IconButton
+              variant={'ghost'}
+              icon="Presentation"
+              size="md"
+              onClick={() => setIsPresentationMode(true)}
+            />
+          )}
           <IconButton
             variant={'ghost'}
             icon="MessageSquareText"
@@ -213,6 +253,12 @@ function App() {
         onResolveComment={handleResolveComment}
         onUnresolveComment={handleUnresolveComment}
         onDeleteComment={handleDeleteComment}
+        showTOC={showTOC}
+        setShowTOC={setShowTOC}
+        proExtensions={{
+          TableOfContents,
+          getHierarchicalIndexes,
+        }}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

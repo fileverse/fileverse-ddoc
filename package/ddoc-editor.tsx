@@ -28,6 +28,7 @@ import { CommentDrawer } from './components/inline-comment/comment-drawer';
 import { useResponsive } from './utils/responsive';
 import { CommentProvider } from './components/inline-comment/context/comment-context';
 import { CommentBubbleCard } from './components/inline-comment/comment-bubble-card';
+import { DocumentOutline } from './components/toc/document-outline';
 
 const DdocEditor = forwardRef(
   (
@@ -84,6 +85,9 @@ const DdocEditor = forwardRef(
       onResolveComment,
       onUnresolveComment,
       onDeleteComment,
+      showTOC,
+      setShowTOC,
+      proExtensions,
     }: DdocProps,
     ref,
   ) => {
@@ -124,6 +128,8 @@ const DdocEditor = forwardRef(
       focusCommentWithActiveId,
       slides,
       setSlides,
+      tocItems,
+      setTocItems,
     } = useDdocEditor({
       enableIndexeddbSync,
       ddocId,
@@ -153,6 +159,7 @@ const DdocEditor = forwardRef(
       onInvalidContentError,
       ignoreCorruptedData,
       isPresentationMode,
+      proExtensions,
     });
 
     useImperativeHandle(
@@ -294,7 +301,6 @@ const DdocEditor = forwardRef(
         </div>
       );
     }
-
     return (
       <div
         id="editor-canvas"
@@ -311,7 +317,7 @@ const DdocEditor = forwardRef(
         <nav
           id="Navbar"
           className={cn(
-            'h-14 bg-[#ffffff] py-2 px-4 flex gap-[40px] items-center justify-between w-screen z-50 fixed left-0 top-0 border-b color-border-default transition-transform duration-300',
+            'h-14 bg-[#ffffff] py-2 px-4 flex gap-[40px] items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300',
             {
               'translate-y-0': isNavbarVisible,
               'translate-y-[-100%]': !isNavbarVisible || isPresentationMode,
@@ -339,7 +345,7 @@ const DdocEditor = forwardRef(
             <div
               id="toolbar"
               className={cn(
-                'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 px-1 bg-[#ffffff] border-b color-border-default transition-transform duration-300 top-[3.5rem]',
+                'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 bg-[#ffffff] border-b color-border-default transition-transform duration-300 top-[3.5rem]',
                 {
                   'translate-y-0': isNavbarVisible,
                   'translate-y-[-108%]': !isNavbarVisible,
@@ -362,23 +368,31 @@ const DdocEditor = forwardRef(
             </div>
           )}
           {isPresentationMode && (
-            <div className="z-[60] fixed top-0 left-0 w-full h-full bg-white">
-              <PresentationMode
-                editor={editor}
-                onClose={handleClosePresentationMode}
-                isFullscreen={isFullscreen}
-                setIsFullscreen={setIsFullscreen}
-                onError={onError}
-                setCommentDrawerOpen={setCommentDrawerOpen}
-                sharedSlidesLink={sharedSlidesLink}
-                isPreviewMode={isPreviewMode}
-                documentName={documentName as string}
-                onSlidesShare={onSlidesShare}
-                slides={slides}
-                setSlides={setSlides}
-              />
-            </div>
+            <PresentationMode
+              editor={editor}
+              onClose={handleClosePresentationMode}
+              isFullscreen={isFullscreen}
+              setIsFullscreen={setIsFullscreen}
+              onError={onError}
+              setCommentDrawerOpen={setIsCommentSectionOpen}
+              sharedSlidesLink={sharedSlidesLink}
+              isPreviewMode={isPreviewMode}
+              documentName={documentName as string}
+              onSlidesShare={onSlidesShare}
+              slides={slides}
+              setSlides={setSlides}
+            />
           )}
+          <DocumentOutline
+            editor={editor}
+            hasToC={true}
+            items={tocItems}
+            setItems={setTocItems}
+            showTOC={showTOC}
+            setShowTOC={setShowTOC}
+            isPreviewMode={isPreviewMode || !isNavbarVisible}
+          />
+
           <div
             className={cn(
               'bg-white w-full mx-auto rounded',
@@ -387,8 +401,8 @@ const DdocEditor = forwardRef(
               { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
               { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
               {
-                'max-[1080px]:!mx-auto min-[1081px]:!ml-[10%] min-[1700px]:!mx-auto':
-                  (isCommentSectionOpen || commentDrawerOpen) &&
+                'max-[1080px]:!mx-auto min-[1081px]:!ml-[18%] min-[1700px]:!mx-auto':
+                  isCommentSectionOpen &&
                   !isNativeMobile &&
                   zoomLevel !== '0.5' &&
                   zoomLevel !== '0.75' &&
@@ -398,7 +412,7 @@ const DdocEditor = forwardRef(
               },
               {
                 '!mx-auto':
-                  !(isCommentSectionOpen || commentDrawerOpen) ||
+                  !isCommentSectionOpen ||
                   zoomLevel === '0.5' ||
                   zoomLevel === '0.75' ||
                   zoomLevel === '1.4' ||
@@ -449,8 +463,6 @@ const DdocEditor = forwardRef(
                   username={username as string}
                   walletAddress={walletAddress as string}
                   onInlineComment={onInlineComment}
-                  commentDrawerOpen={commentDrawerOpen as boolean}
-                  setCommentDrawerOpen={setCommentDrawerOpen}
                   activeCommentId={activeCommentId}
                 />
                 <ColumnsMenu editor={editor} appendTo={editorRef} />
@@ -542,7 +554,7 @@ const DdocEditor = forwardRef(
           {!isPreviewMode && !disableBottomToolbar && (
             <div
               className={cn(
-                'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-50 px-4 bg-[#ffffff] transition-all duration-300 ease-in-out border-b border-color-default',
+                'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-10 px-4 bg-[#ffffff] transition-all duration-300 ease-in-out border-b border-color-default',
                 isKeyboardVisible && 'hidden',
                 { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
               )}

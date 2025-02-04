@@ -57,11 +57,9 @@ export const useDdocEditor = ({
   onInvalidContentError,
   ignoreCorruptedData,
   isPresentationMode,
+  proExtensions,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
-  const initialContentSetRef = useRef(false);
-  const [isContentLoading, setIsContentLoading] = useState(true);
-  const [slides, setSlides] = useState<string[]>([]);
 
   // V2 - comment
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
@@ -89,6 +87,7 @@ export const useDdocEditor = ({
     focusCommentWithActiveId(activeCommentId);
   }, [activeCommentId]);
   // V2 - comment
+  const [tocItems, setTocItems] = useState<any[]>([]);
 
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions(
@@ -112,6 +111,10 @@ export const useDdocEditor = ({
       document: ydoc,
     }),
   ]);
+
+  const initialContentSetRef = useRef(false);
+  const [isContentLoading, setIsContentLoading] = useState(true);
+  const [slides, setSlides] = useState<string[]>([]);
 
   const isHighlightedYellow = (
     state: EditorState,
@@ -211,8 +214,25 @@ export const useDdocEditor = ({
       shouldRerenderOnTransaction: true,
       immediatelyRender: false,
     },
-    [extensions],
+    [extensions, isPresentationMode],
   );
+
+  useEffect(() => {
+    if (
+      proExtensions?.TableOfContents &&
+      !extensions.some((ext) => ext.name === 'tableOfContents')
+    ) {
+      setExtensions([
+        ...extensions.filter((ext) => ext.name !== 'tableOfContents'),
+        proExtensions.TableOfContents.configure({
+          getIndex: proExtensions.getHierarchicalIndexes,
+          onUpdate(content: any) {
+            setTocItems(content);
+          },
+        }),
+      ]);
+    }
+  }, [proExtensions]);
 
   useEffect(() => {
     if (zoomLevel) {
@@ -457,5 +477,7 @@ export const useDdocEditor = ({
     focusCommentWithActiveId,
     slides,
     setSlides,
+    tocItems,
+    setTocItems,
   };
 };
