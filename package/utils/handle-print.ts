@@ -174,7 +174,7 @@ export const handlePrint = (slides: string[]) => {
                             max-height: calc(100vh - 96px);
                             width: initial !important;
                             height: initial !important;
-                            object-fit: contain;
+                            object-fit: scale-down;
                             display: block;
                             margin: 16px auto;
                             position: relative;
@@ -277,7 +277,7 @@ export const handleContentPrint = (content: string) => {
         img {
           max-width: initial;
           height: initial;
-          object-fit: contain;
+          object-fit: scale-down;
           aspect-ratio: auto;
           display: block;
           margin-left: auto;
