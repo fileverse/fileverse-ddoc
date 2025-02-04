@@ -1,7 +1,7 @@
 export const handlePrint = (slides: string[]) => {
   const slidesHTML = slides
     .map(
-      slideContent => `
+      (slideContent) => `
         <div class="print-slide">
             <div class="slide-wrapper">
                 <div class="slide-content ProseMirror presentation-mode">
@@ -172,13 +172,11 @@ export const handlePrint = (slides: string[]) => {
                         .ProseMirror img {
                             max-width: 720px;
                             max-height: calc(100vh - 96px);
-                            width: auto !important;
-                            height: auto !important;
-                            object-fit: contain;
                             display: block;
                             margin: 16px auto;
                             position: relative;
                             box-sizing: border-box;
+                            aspect-ratio: auto;
                         }
 
                         /* Code blocks */
@@ -246,7 +244,7 @@ export const handleContentPrint = (content: string) => {
   let currentPageContent: Node[] = [];
 
   // Iterate through all nodes
-  Array.from(tempDiv.childNodes).forEach(node => {
+  Array.from(tempDiv.childNodes).forEach((node) => {
     if (
       node instanceof HTMLElement &&
       ((node.getAttribute('data-type') === 'page-break' &&
@@ -257,7 +255,9 @@ export const handleContentPrint = (content: string) => {
       // Only create a new page if we have content
       if (currentPageContent.length > 0) {
         const pageDiv = document.createElement('div');
-        currentPageContent.forEach(n => pageDiv.appendChild(n.cloneNode(true)));
+        currentPageContent.forEach((n) =>
+          pageDiv.appendChild(n.cloneNode(true)),
+        );
         pages.push(pageDiv.innerHTML);
         currentPageContent = [];
       }
@@ -270,13 +270,13 @@ export const handleContentPrint = (content: string) => {
   // Add the last page if it has content
   if (currentPageContent.length > 0) {
     const pageDiv = document.createElement('div');
-    currentPageContent.forEach(n => pageDiv.appendChild(n.cloneNode(true)));
+    currentPageContent.forEach((n) => pageDiv.appendChild(n.cloneNode(true)));
     pages.push(pageDiv.innerHTML);
   }
 
   const pagesHTML = pages
     .map(
-      pageContent => `
+      (pageContent) => `
         <div class="print-page">
             ${pageContent}
         </div>
@@ -302,6 +302,51 @@ export const handleContentPrint = (content: string) => {
           body {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
+          }
+          body:before, body:after,
+          head:before, head:after,
+          div:before, div:after {
+            content: none !important;
+            display: none !important;
+          }
+          html:before, html:after,
+        }
+        body {
+          font-family: Arial, sans-serif;
+          line-height: 1.6;
+          margin: 0;
+        }
+        img {
+          max-width: fit-content;
+          height: auto;
+          aspect-ratio: auto;
+          display: block;
+          margin-left: auto;
+          margin-right: auto;
+        }
+        h3 {
+          font-weight: 600;
+          color: #0D0D0D;
+          font-size: 20px;
+          line-height: 1.2;
+        }
+        p {
+          line-height: 1.5;
+          color: #0D0D0D;
+          font-size: 16px;
+        }
+        /* Lists */
+        ul, ol {
+          font-size: 16px;
+          line-height: 1.5;
+          margin: 0 0 16px 0;
+          padding-left: 24px;
+        }
+        /* Task List Styles */
+        input[type='checkbox'] {
+            -webkit-appearance: none;
+            appearance: none;
+            background-color: #fff;
             margin: 0;
             font-family: 'Inter', sans-serif;
           }

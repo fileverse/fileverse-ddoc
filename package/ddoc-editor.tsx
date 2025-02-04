@@ -26,6 +26,7 @@ import platform from 'platform';
 import MobileToolbar from './components/mobile-toolbar';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { PresentationMode } from './components/presentation-mode/presentation-mode';
+import { DocumentOutline } from './components/toc/document-outline';
 
 const checkOs = () => platform.os?.family;
 
@@ -75,6 +76,9 @@ const DdocEditor = forwardRef(
       onInvalidContentError,
       ignoreCorruptedData,
       onSlidesShare,
+      showTOC,
+      setShowTOC,
+      proExtensions,
     }: DdocProps,
     ref,
   ) => {
@@ -118,6 +122,8 @@ const DdocEditor = forwardRef(
       refreshYjsIndexedDbProvider,
       slides,
       setSlides,
+      tocItems,
+      setTocItems,
     } = useDdocEditor({
       enableIndexeddbSync,
       ddocId,
@@ -147,6 +153,7 @@ const DdocEditor = forwardRef(
       onInvalidContentError,
       ignoreCorruptedData,
       isPresentationMode,
+      proExtensions,
     });
 
     useImperativeHandle(
@@ -318,7 +325,7 @@ const DdocEditor = forwardRef(
           <div
             id="toolbar"
             className={cn(
-              'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 px-1 bg-[#ffffff] border-b color-border-default transition-transform duration-300 top-[3.5rem]',
+              'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 bg-[#ffffff] border-b color-border-default transition-transform duration-300 top-[3.5rem]',
               {
                 'translate-y-0': isNavbarVisible,
                 'translate-y-[-108%]': !isNavbarVisible,
@@ -356,6 +363,16 @@ const DdocEditor = forwardRef(
             setSlides={setSlides}
           />
         )}
+        <DocumentOutline
+          editor={editor}
+          hasToC={true}
+          items={tocItems}
+          setItems={setTocItems}
+          showTOC={showTOC}
+          setShowTOC={setShowTOC}
+          isPreviewMode={isPreviewMode || !isNavbarVisible}
+        />
+
         <div
           className={cn(
             'bg-white w-full mx-auto rounded',

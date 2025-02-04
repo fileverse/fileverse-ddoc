@@ -1,5 +1,5 @@
 import { Node as ProseMirrorNode } from 'prosemirror-model';
-import { NodeView } from 'prosemirror-view';
+import { NodeView, ViewMutationRecord } from 'prosemirror-view';
 
 export class TableRowNodeView implements NodeView {
   node: ProseMirrorNode;
@@ -34,9 +34,7 @@ export class TableRowNodeView implements NodeView {
     return true;
   }
 
-  ignoreMutation(
-    mutation: MutationRecord | { type: 'selection'; target: Element },
-  ) {
+  ignoreMutation(mutation: ViewMutationRecord) {
     return (
       mutation.type === 'attributes' &&
       (mutation.target === this.table ||

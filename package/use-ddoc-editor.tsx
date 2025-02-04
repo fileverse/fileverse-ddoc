@@ -56,8 +56,11 @@ export const useDdocEditor = ({
   onInvalidContentError,
   ignoreCorruptedData,
   isPresentationMode,
+  proExtensions,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
+  const [tocItems, setTocItems] = useState<any[]>([]);
+
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions(
       (error: string) => onError?.(error),
@@ -70,6 +73,7 @@ export const useDdocEditor = ({
       document: ydoc,
     }),
   ]);
+
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
   const [slides, setSlides] = useState<string[]>([]);
@@ -169,8 +173,25 @@ export const useDdocEditor = ({
       shouldRerenderOnTransaction: true,
       immediatelyRender: false,
     },
-    [extensions],
+    [extensions, isPresentationMode],
   );
+
+  useEffect(() => {
+    if (
+      proExtensions?.TableOfContents &&
+      !extensions.some((ext) => ext.name === 'tableOfContents')
+    ) {
+      setExtensions([
+        ...extensions.filter((ext) => ext.name !== 'tableOfContents'),
+        proExtensions.TableOfContents.configure({
+          getIndex: proExtensions.getHierarchicalIndexes,
+          onUpdate(content: any) {
+            setTocItems(content);
+          },
+        }),
+      ]);
+    }
+  }, [proExtensions]);
 
   useEffect(() => {
     if (zoomLevel) {
@@ -184,7 +205,7 @@ export const useDdocEditor = ({
     }
   }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => {});
+  const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
@@ -409,5 +430,7 @@ export const useDdocEditor = ({
     refreshYjsIndexedDbProvider: initialiseYjsIndexedDbProvider,
     slides,
     setSlides,
+    tocItems,
+    setTocItems,
   };
 };

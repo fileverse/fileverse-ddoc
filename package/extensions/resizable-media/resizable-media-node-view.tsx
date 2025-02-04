@@ -285,8 +285,8 @@ export const ResizableMediaNodeView = ({
       )}
     >
       <div
-        draggable
-        data-drag-handle
+        draggable={isDragging}
+        data-drag-handle={isDragging}
         className={cn(
           'w-fit flex flex-col gap-2 relative group transition-all ease-in-out',
           isDragging && 'opacity-50',
