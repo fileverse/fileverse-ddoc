@@ -172,13 +172,14 @@ export const handlePrint = (slides: string[]) => {
                         .ProseMirror img {
                             max-width: 720px;
                             max-height: calc(100vh - 96px);
-                            width: auto !important;
-                            height: auto !important;
+                            width: initial !important;
+                            height: initial !important;
                             object-fit: contain;
                             display: block;
                             margin: 16px auto;
                             position: relative;
                             box-sizing: border-box;
+                            aspect-ratio: auto;
                         }
 
                         /* Code blocks */
@@ -274,8 +275,13 @@ export const handleContentPrint = (content: string) => {
           margin: 0;
         }
         img {
-          max-width: 100%;
-          height: auto;
+          max-width: initial;
+          height: initial;
+          object-fit: contain;
+          aspect-ratio: auto;
+          display: block;
+          margin-left: auto;
+          margin-right: auto;
         }
         h3 {
           font-weight: 600;
