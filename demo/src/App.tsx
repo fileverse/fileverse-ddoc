@@ -216,6 +216,7 @@ function App() {
         enableCollaboration={enableCollaboration}
         collaborationId={collaborationId}
         username={username}
+        setUsername={setUsername}
         isPreviewMode={isPreviewMode}
         onError={(error) => {
           toast({
@@ -258,6 +259,12 @@ function App() {
         proExtensions={{
           TableOfContents,
           getHierarchicalIndexes,
+        }}
+        isConnected={true}
+        connectViaWallet={async () => {}}
+        isLoading={false}
+        connectViaUsername={async (username: string) => {
+          console.log(username);
         }}
       />
       <Toaster

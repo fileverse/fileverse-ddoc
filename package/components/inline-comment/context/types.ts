@@ -1,12 +1,14 @@
 import { Editor } from '@tiptap/react';
 import { IComment } from '../../../extensions/comment';
 import { SetStateAction } from 'react';
+import { CommentAccountProps } from '../../../types';
 
-export interface CommentContextType {
+export interface CommentContextType extends CommentAccountProps {
   comments: IComment[];
   setComments: React.Dispatch<SetStateAction<IComment[]>>;
   editor: Editor;
-  username?: string;
+  username?: string | null;
+  setUsername?: React.Dispatch<SetStateAction<string>>;
   showResolved: boolean;
   setShowResolved: (show: boolean) => void;
   resolveComment: (commentId: string) => void;
@@ -58,7 +60,7 @@ export interface CommentContextType {
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
 }
 
-export interface CommentProviderProps {
+export interface CommentProviderProps extends CommentAccountProps {
   children: React.ReactNode;
   editor: Editor;
   initialComments?: IComment[];
@@ -68,9 +70,15 @@ export interface CommentProviderProps {
   onResolveComment?: (activeCommentId: string) => void;
   onUnresolveComment?: (activeCommentId: string) => void;
   onDeleteComment?: (activeCommentId: string) => void;
-  username: string;
+  username: string | null;
+  setUsername?: React.Dispatch<SetStateAction<string>>;
   activeCommentId: string | null;
   setActiveCommentId: React.Dispatch<React.SetStateAction<string | null>>;
   focusCommentWithActiveId: (id: string) => void;
   ensResolutionUrl: string;
+}
+export interface CommentUsernameProps extends CommentAccountProps {
+  username?: string | null;
+  setUsername?: React.Dispatch<SetStateAction<string>>;
+  isNavbarVisible?: boolean;
 }

@@ -22,6 +22,7 @@ export const CommentProvider = ({
   initialComments = [],
   setInitialComments,
   username,
+  setUsername,
   activeCommentId,
   setActiveCommentId,
   focusCommentWithActiveId,
@@ -31,6 +32,10 @@ export const CommentProvider = ({
   onResolveComment,
   onUnresolveComment,
   onDeleteComment,
+  isConnected,
+  connectViaWallet,
+  isLoading,
+  connectViaUsername,
 }: CommentProviderProps) => {
   const [showResolved, setShowResolved] = useState(false);
   const [reply, setReply] = useState('');
@@ -340,6 +345,7 @@ export const CommentProvider = ({
         showResolved,
         editor,
         username,
+        setUsername,
         setComments: setInitialComments!,
         setShowResolved,
         resolveComment,
@@ -380,6 +386,10 @@ export const CommentProvider = ({
         isCommentResolved,
         ensResolutionUrl,
         onCommentReply,
+        isConnected,
+        connectViaWallet,
+        isLoading,
+        connectViaUsername,
       }}
     >
       {children}

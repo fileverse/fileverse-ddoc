@@ -24,7 +24,14 @@ export type InlineCommentData = {
   highlightedTextContent: string;
   handleClick: boolean;
 };
-export interface DdocProps {
+
+export interface CommentAccountProps {
+  isConnected?: boolean;
+  connectViaWallet?: () => Promise<void>;
+  isLoading?: boolean;
+  connectViaUsername?: (username: string) => Promise<void>;
+}
+export interface DdocProps extends CommentAccountProps {
   //Comments V2 Props
   commentDrawerOpen?: boolean;
   setCommentDrawerOpen?: React.Dispatch<SetStateAction<boolean>>;
@@ -63,6 +70,7 @@ export interface DdocProps {
   initialContent?: JSONContent | string | string[] | null;
   walletAddress?: string | null;
   username?: string | null;
+  setUsername?: React.Dispatch<SetStateAction<string>>;
   renderNavbar?: ({ editor }: { editor: JSONContent }) => JSX.Element;
   onChange?: (
     updatedDocContent: Data['editorJSONData'],

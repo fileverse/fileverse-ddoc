@@ -40,6 +40,7 @@ export interface CommentCardProps extends IComment {
   isResolved?: boolean;
   isDropdown?: boolean;
   activeCommentId?: string;
+  isDisabled?: boolean;
 }
 
 export type CommentBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {

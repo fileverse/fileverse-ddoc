@@ -38,6 +38,7 @@ const DdocEditor = forwardRef(
       enableCollaboration,
       collaborationId,
       username,
+      setUsername,
       renderNavbar,
       walletAddress,
       onChange,
@@ -88,6 +89,10 @@ const DdocEditor = forwardRef(
       showTOC,
       setShowTOC,
       proExtensions,
+      isConnected,
+      connectViaWallet,
+      isLoading,
+      connectViaUsername,
     }: DdocProps,
     ref,
   ) => {
@@ -329,6 +334,7 @@ const DdocEditor = forwardRef(
         <CommentProvider
           editor={editor}
           username={username as string}
+          setUsername={setUsername}
           activeCommentId={activeCommentId}
           setActiveCommentId={setActiveCommentId}
           focusCommentWithActiveId={focusCommentWithActiveId}
@@ -340,6 +346,10 @@ const DdocEditor = forwardRef(
           onUnresolveComment={onUnresolveComment}
           onDeleteComment={onDeleteComment}
           ensResolutionUrl={ensResolutionUrl as string}
+          isConnected={isConnected}
+          connectViaWallet={connectViaWallet}
+          isLoading={isLoading}
+          connectViaUsername={connectViaUsername}
         >
           {!isPreviewMode && (
             <div

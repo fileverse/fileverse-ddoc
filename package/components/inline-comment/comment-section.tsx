@@ -12,6 +12,7 @@ import EnsLogo from '../../assets/ens.svg';
 import verifiedMark from '../../assets/verified-mark.png';
 import { nameFormatter } from '../../utils/helpers';
 import { CommentSectionProps } from './types';
+import { CommentUsername } from './comment-username';
 
 export const CommentSection = ({
   activeCommentId,
@@ -20,6 +21,7 @@ export const CommentSection = ({
   const {
     comments,
     username,
+    setUsername,
     focusCommentInEditor,
     handleReplyChange,
     handleCommentChange,
@@ -38,6 +40,10 @@ export const CommentSection = ({
     resolveComment,
     unresolveComment,
     deleteComment,
+    isConnected,
+    connectViaWallet,
+    isLoading,
+    connectViaUsername,
   } = useComments();
 
   const _filteredComments = comments.filter((comment) => !comment.deleted);
@@ -50,7 +56,19 @@ export const CommentSection = ({
     focusCommentInEditor(commentId);
   };
 
-  const ensStatus = useEnsName(username);
+  const ensStatus = useEnsName(username as string);
+
+  if (!isConnected) {
+    return (
+      <CommentUsername
+        connectViaWallet={connectViaWallet}
+        username={username as string}
+        setUsername={setUsername}
+        isNavbarVisible={isNavbarVisible as boolean}
+        onConnectViaUsername={connectViaUsername}
+      />
+    );
+  }
 
   return (
     <div
@@ -84,6 +102,7 @@ export const CommentSection = ({
               onUnresolve={unresolveComment}
               onDelete={deleteComment}
               isResolved={comment.resolved}
+              isDisabled={true}
             />
 
             <div
@@ -92,7 +111,7 @@ export const CommentSection = ({
                 'px-6 flex flex-col gap-2',
                 openReplyId === comment.id && 'ml-5 pl-4',
                 (comment.id !== activeCommentId || comment.resolved) &&
-                  'hidden',
+                'hidden',
               )}
             >
               {openReplyId !== comment.id ? (

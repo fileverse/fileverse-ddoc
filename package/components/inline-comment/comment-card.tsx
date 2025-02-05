@@ -63,6 +63,7 @@ export const CommentCard = ({
   isDropdown = false,
   activeCommentId,
   id,
+  isDisabled = false,
 }: CommentCardProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -161,72 +162,88 @@ export const CommentCard = ({
     >
       <div className="flex justify-between items-center">
         <UserDisplay ensStatus={ensStatus} createdAt={createdAt} />
-        <ButtonGroup className="!space-x-0">
-          {!isDropdown && replies && replies.length === 0 && (
-            <Tooltip text="Add reply" sideOffset={0} position="bottom">
+        <Tooltip
+          text={isDisabled ? 'Available in a moment' : ''}
+          sideOffset={0}
+          position="top"
+        >
+          <ButtonGroup className="!space-x-0">
+            {!isDropdown && replies && replies.length === 0 && (
+              <Tooltip
+                text={!isDisabled ? 'Add reply' : ''}
+                sideOffset={0}
+                position="bottom"
+              >
+                <IconButton
+                  variant={'ghost'}
+                  icon="MessageSquarePlus"
+                  size="sm"
+                  disabled={isDisabled}
+                  className="md:group-hover:disabled:opacity-50 md:opacity-0 transition-opacity duration-300 disabled:bg-transparent"
+                  onClick={() => setOpenReplyId(id as string)}
+                />
+              </Tooltip>
+            )}
+
+            <Tooltip
+              text={!isDisabled ? 'Coming soon' : ''}
+              sideOffset={0}
+              position="bottom"
+            >
               <IconButton
                 variant={'ghost'}
-                icon="MessageSquarePlus"
+                icon="Smile"
+                disabled
                 size="sm"
-                className="md:group-hover:opacity-100 md:opacity-0 transition-opacity duration-300"
-                onClick={() => setOpenReplyId(id as string)}
+                className="md:group-hover:disabled:opacity-50 md:opacity-0 transition-opacity duration-300 disabled:bg-transparent"
               />
             </Tooltip>
-          )}
 
-          <Tooltip text="Coming soon" sideOffset={0} position="bottom">
-            <IconButton
-              variant={'ghost'}
-              icon="Smile"
-              disabled
-              size="sm"
-              className="md:group-hover:disabled:opacity-50 md:opacity-0 transition-opacity duration-300 disabled:bg-transparent"
-            />
-          </Tooltip>
-
-          {!isDropdown && (
-            <DynamicDropdown
-              key="comment-card-more-actions"
-              align="end"
-              sideOffset={4}
-              anchorTrigger={
-                <IconButton
-                  icon={'Ellipsis'}
-                  variant="ghost"
-                  size="sm"
-                  className={cn(
-                    'md:group-hover:opacity-100 md:opacity-0 transition-opacity duration-300',
-                  )}
-                />
-              }
-              content={
-                <div
-                  ref={dropdownRef}
-                  className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3"
-                >
-                  <button
+            {!isDropdown && (
+              <DynamicDropdown
+                key="comment-card-more-actions"
+                align="end"
+                sideOffset={4}
+                anchorTrigger={
+                  <IconButton
+                    icon={'Ellipsis'}
+                    variant="ghost"
+                    disabled={isDisabled}
+                    size="sm"
                     className={cn(
-                      'flex items-center color-text-default text-sm font-medium gap-2 rounded p-2 transition-all hover:color-bg-default-hover w-full',
+                      'md:group-hover:disabled:opacity-50 md:opacity-0 transition-opacity duration-300 disabled:bg-transparent',
                     )}
-                    onClick={
-                      isResolved ? handleUnresolveClick : handleResolveClick
-                    }
+                  />
+                }
+                content={
+                  <div
+                    ref={dropdownRef}
+                    className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3"
                   >
-                    <LucideIcon name="CircleCheck" size="sm" />
-                    {isResolved ? 'Unresolve' : 'Resolve'}
-                  </button>
-                  <button
-                    className="flex items-center text-[#FB3449] text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"
-                    onClick={handleDeleteClick}
-                  >
-                    <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
-                    Delete
-                  </button>
-                </div>
-              }
-            />
-          )}
-        </ButtonGroup>
+                    <button
+                      className={cn(
+                        'flex items-center color-text-default text-sm font-medium gap-2 rounded p-2 transition-all hover:color-bg-default-hover w-full',
+                      )}
+                      onClick={
+                        isResolved ? handleUnresolveClick : handleResolveClick
+                      }
+                    >
+                      <LucideIcon name="CircleCheck" size="sm" />
+                      {isResolved ? 'Unresolve' : 'Resolve'}
+                    </button>
+                    <button
+                      className="flex items-center text-[#FB3449] text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"
+                      onClick={handleDeleteClick}
+                    >
+                      <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
+                      Delete
+                    </button>
+                  </div>
+                }
+              />
+            )}
+          </ButtonGroup>
+        </Tooltip>
       </div>
       <div className="flex flex-col gap-2 ml-3 pl-4 border-l color-border-default">
         {selectedContent && (
