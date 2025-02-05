@@ -1243,7 +1243,7 @@ export const getTemplateContent = (
                           target: '_blank',
                           rel: 'noopener noreferrer',
                           class:
-                            'color-text-link transition-colors cursor-pointer select-text pointer-events-auto',
+                            'color-text-link visited:text-[#3D03AF] hover:underline transition-colors cursor-pointer select-text pointer-events-auto',
                         },
                       },
                     ],
@@ -1300,7 +1300,7 @@ export const getTemplateContent = (
                               target: '_blank',
                               rel: 'noopener noreferrer',
                               class:
-                                'color-text-link transition-colors cursor-pointer select-text pointer-events-auto',
+                                'color-text-link visited:text-[#3D03AF] hover:underline transition-colors cursor-pointer select-text pointer-events-auto',
                             },
                           },
                         ],
