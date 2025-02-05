@@ -115,7 +115,7 @@ export const defaultExtensions = (
   }).configure({
     HTMLAttributes: {
       class:
-        'color-text-link font-bold transition-colors cursor-pointer select-text pointer-events-auto',
+        'color-text-link transition-colors cursor-pointer select-text pointer-events-auto',
       rel: 'noopener noreferrer',
     },
     validate: (href) => /^https?:\/\//.test(href),
