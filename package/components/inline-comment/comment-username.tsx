@@ -13,7 +13,7 @@ const CommentUsername = ({
   return (
     <div
       className={cn(
-        'flex flex-col h-[calc(100vh-60px)] sm:!h-[calc(100vh-40px)] xl:!h-[80vh] !bg-white !rounded-b-lg',
+        'flex flex-col h-screen xl:!h-[80vh] !bg-white !rounded-b-lg',
         !isNavbarVisible && 'xl:!h-[calc(100vh-150px)]',
       )}
     >

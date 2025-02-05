@@ -18,7 +18,7 @@ export const CommentDrawer = ({
   isPresentationMode,
   activeCommentId,
 }: CommentDrawerProps) => {
-  const { toggleResolved, showResolved } = useComments();
+  const { toggleResolved, showResolved, isConnected } = useComments();
   const { isBelow1280px } = useResponsive();
 
   return (
@@ -29,7 +29,10 @@ export const CommentDrawer = ({
           onOpenChange={onClose}
           noOverlay
           side="right"
-          className="p-0 !w-screen md:!w-[384px] !z-50 !h-[calc(100vh-90px)]"
+          className={cn(
+            'p-0 !w-screen md:!w-[384px] !z-50 !h-[calc(100vh-90px)]',
+            !isConnected && '!h-screen',
+          )}
           content={
             <React.Fragment>
               <div className="flex px-4 py-3 border-b flex-row gap-4 items-center">

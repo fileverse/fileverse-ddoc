@@ -65,7 +65,7 @@ export const CommentSection = ({
         username={username as string}
         setUsername={setUsername}
         isNavbarVisible={isNavbarVisible as boolean}
-        onConnectViaUsername={connectViaUsername}
+        connectViaUsername={connectViaUsername}
       />
     );
   }
