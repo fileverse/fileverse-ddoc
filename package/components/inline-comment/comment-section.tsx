@@ -42,7 +42,7 @@ export const CommentSection = ({
     deleteComment,
     isConnected,
     connectViaWallet,
-    isLoading,
+    // isLoading,
     connectViaUsername,
   } = useComments();
 

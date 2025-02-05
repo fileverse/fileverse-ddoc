@@ -66,7 +66,7 @@ export const CommentDropdown = ({
   const handleReplySubmit = () => {
     const newReply = {
       id: `reply-${uuid()}`,
-      username: username,
+      username: username!,
       content: reply,
       replies: [],
       createdAt: new Date(),

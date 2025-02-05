@@ -84,7 +84,7 @@ export const CommentProvider = ({
   ): IComment => {
     return {
       id: `comment-${uuid()}`,
-      username: username,
+      username: username!,
       selectedContent,
       // Preserve line breaks in content
       content: content || '',
@@ -132,7 +132,7 @@ export const CommentProvider = ({
     const newReply = {
       id: `reply-${uuid()}`,
       content: replyContent,
-      username: username,
+      username: username!,
       replies: [],
       createdAt: new Date(),
       selectedContent: '',
@@ -238,7 +238,7 @@ export const CommentProvider = ({
 
     const newComment = {
       id: `comment-${uuid()}`,
-      username: username,
+      username: username!,
       selectedContent: '', // Empty for generic comments
       content: comment,
       replies: [],
