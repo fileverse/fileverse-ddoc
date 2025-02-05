@@ -289,6 +289,7 @@ export const DBlockNodeView: React.FC<
         'flex px-4 md:px-[80px] gap-2 group w-full relative justify-center items-start',
         isPreviewMode && 'pointer-events-none',
         isTable && 'pointer-events-auto',
+        isTable && isPreviewMode && '!pointer-events-none',
       )}
     >
       {!isPreviewMode && (
