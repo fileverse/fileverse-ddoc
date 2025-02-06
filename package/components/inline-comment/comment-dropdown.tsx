@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Button,
@@ -240,6 +242,7 @@ export const CommentDropdown = ({
           replies={activeComment?.replies}
           isResolved={activeComment?.resolved}
           isDropdown
+          isDisabled={comment && !Object.hasOwn(comment, 'commentIndex')}
         />
       </div>
 

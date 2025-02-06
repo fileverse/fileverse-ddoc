@@ -179,7 +179,7 @@ export const CommentCard = ({
                   icon="MessageSquarePlus"
                   size="sm"
                   disabled={isDisabled}
-                  className="md:group-hover:disabled:opacity-50 md:opacity-0 transition-opacity duration-300 disabled:bg-transparent"
+                  className="opacity-0 group-hover:opacity-100  transition-opacity duration-300 disabled:bg-transparent"
                   onClick={() => setOpenReplyId(id as string)}
                 />
               </Tooltip>
@@ -195,7 +195,7 @@ export const CommentCard = ({
                 icon="Smile"
                 disabled
                 size="sm"
-                className="md:group-hover:disabled:opacity-50 md:opacity-0 transition-opacity duration-300 disabled:bg-transparent"
+                className="opacity-0 group-hover:opacity-100  transition-opacity duration-300 disabled:bg-transparent"
               />
             </Tooltip>
 
@@ -211,7 +211,7 @@ export const CommentCard = ({
                     disabled={isDisabled}
                     size="sm"
                     className={cn(
-                      'md:group-hover:disabled:opacity-50 md:opacity-0 transition-opacity duration-300 disabled:bg-transparent',
+                      'opacity-0 group-hover:opacity-100  transition-opacity duration-300 disabled:bg-transparent',
                     )}
                   />
                 }
