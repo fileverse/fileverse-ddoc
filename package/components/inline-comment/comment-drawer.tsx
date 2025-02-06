@@ -17,6 +17,7 @@ export const CommentDrawer = ({
   isNavbarVisible,
   isPresentationMode,
   activeCommentId,
+  isPreviewMode,
 }: CommentDrawerProps) => {
   const { toggleResolved, showResolved, isConnected } = useComments();
   const { isBelow1280px } = useResponsive();
@@ -68,7 +69,7 @@ export const CommentDrawer = ({
             'w-[calc(100vw-24px)] !z-40 min-h-[70vh] md:w-[384px] right-0 shadow-elevation-4 rounded-[16px]',
             isOpen && 'right-2 md:!right-4',
             isNavbarVisible
-              ? 'top-[7.25rem] h-[calc(98vh-140px)]'
+              ? `h-[calc(98vh-140px)] ${isPreviewMode ? 'top-[4rem]' : 'top-[7.25rem] '}`
               : 'top-[4rem] h-[calc(100vh-90px)] xl:h-[calc(99vh-90px)]',
             isPresentationMode && 'h-[calc(100vh-5rem)] top-[4rem] !z-[60]',
           )}

@@ -93,6 +93,7 @@ const DdocEditor = forwardRef(
       connectViaWallet,
       isLoading,
       connectViaUsername,
+      isDDocOwner,
     }: DdocProps,
     ref,
   ) => {
@@ -350,6 +351,7 @@ const DdocEditor = forwardRef(
           connectViaWallet={connectViaWallet}
           isLoading={isLoading}
           connectViaUsername={connectViaUsername}
+          isDDocOwner={isDDocOwner}
         >
           {!isPreviewMode && (
             <div
@@ -585,6 +587,7 @@ const DdocEditor = forwardRef(
             isNavbarVisible={isNavbarVisible}
             isPresentationMode={isPresentationMode as boolean}
             activeCommentId={activeCommentId}
+            isPreviewMode={isPreviewMode}
           />
           <div>
             <CommentBubbleCard

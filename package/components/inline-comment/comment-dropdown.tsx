@@ -21,6 +21,7 @@ export const CommentDropdown = ({
   isBubbleMenu = false,
   selectedContent,
   isDisabled,
+  isCommentOwner,
 }: CommentDropdownProps) => {
   const [comment, setComment] = useState(initialComment);
   const [reply, setReply] = useState('');
@@ -45,6 +46,7 @@ export const CommentDropdown = ({
     resolveComment,
     unresolveComment,
     deleteComment,
+    isDDocOwner,
   } = useComments();
 
   const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -165,68 +167,70 @@ export const CommentDropdown = ({
             disabled={activeCommentIndex >= activeComments.length - 1}
             className="disabled:!bg-transparent"
           />
-          <Tooltip
-            text={isDisabled ? 'Available in a moment' : ''}
-            sideOffset={0}
-            position="top"
-          >
-            <DynamicDropdown
-              key="more-actions"
-              align="end"
-              sideOffset={4}
-              anchorTrigger={
+          {(isDDocOwner || isCommentOwner) && (
+            <Tooltip
+              text={isDisabled ? 'Available in a moment' : ''}
+              sideOffset={0}
+              position="top"
+            >
+              <DynamicDropdown
+                key="more-actions"
+                align="end"
+                sideOffset={4}
+                anchorTrigger={
+                  <IconButton
+                    onClick={handleEllipsisClick}
+                    icon={'Ellipsis'}
+                    variant="ghost"
+                    disabled={isDisabled}
+                    className={cn({
+                      '!bg-transparent': isDisabled,
+                    })}
+                  />
+                }
+                content={
+                  isDropdownOpen ? (
+                    <div className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3">
+                      <button
+                        className="flex items-center text-[#FB3449] text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"
+                        onClick={handleDeleteThread}
+                        onTouchEnd={handleDeleteThread}
+                      >
+                        <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
+                        Delete thread
+                      </button>
+                    </div>
+                  ) : null
+                }
+              />
+
+              <Tooltip
+                text={
+                  !isDisabled
+                    ? activeComment?.resolved
+                      ? 'Unresolve'
+                      : 'Resolve'
+                    : ''
+                }
+                sideOffset={5}
+                position="bottom"
+              >
                 <IconButton
-                  onClick={handleEllipsisClick}
-                  icon={'Ellipsis'}
+                  icon={activeComment?.resolved ? 'CircleCheck2' : 'CircleCheck'}
                   variant="ghost"
                   disabled={isDisabled}
                   className={cn({
                     '!bg-transparent': isDisabled,
                   })}
+                  onClick={() =>
+                    activeComment?.resolved
+                      ? unresolveComment(activeCommentId as string)
+                      : resolveComment(activeCommentId as string)
+                  }
                 />
-              }
-              content={
-                isDropdownOpen ? (
-                  <div className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3">
-                    <button
-                      className="flex items-center text-[#FB3449] text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"
-                      onClick={handleDeleteThread}
-                      onTouchEnd={handleDeleteThread}
-                    >
-                      <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
-                      Delete thread
-                    </button>
-                  </div>
-                ) : null
-              }
-            />
-
-            <Tooltip
-              text={
-                !isDisabled
-                  ? activeComment?.resolved
-                    ? 'Unresolve'
-                    : 'Resolve'
-                  : ''
-              }
-              sideOffset={5}
-              position="bottom"
-            >
-              <IconButton
-                icon={activeComment?.resolved ? 'CircleCheck2' : 'CircleCheck'}
-                variant="ghost"
-                disabled={isDisabled}
-                className={cn({
-                  '!bg-transparent': isDisabled,
-                })}
-                onClick={() =>
-                  activeComment?.resolved
-                    ? unresolveComment(activeCommentId as string)
-                    : resolveComment(activeCommentId as string)
-                }
-              />
+              </Tooltip>
             </Tooltip>
-          </Tooltip>
+          )}
         </div>
       </div>
 

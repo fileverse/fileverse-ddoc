@@ -36,6 +36,7 @@ export const CommentProvider = ({
   connectViaWallet,
   isLoading,
   connectViaUsername,
+  isDDocOwner,
 }: CommentProviderProps) => {
   const [showResolved, setShowResolved] = useState(false);
   const [reply, setReply] = useState('');
@@ -390,6 +391,7 @@ export const CommentProvider = ({
         connectViaWallet,
         isLoading,
         connectViaUsername,
+        isDDocOwner,
       }}
     >
       {children}

@@ -47,7 +47,7 @@ function App() {
 
   const [zoomLevel, setZoomLevel] = useState<string>('1');
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
-  const isPreviewMode = false;
+  const isPreviewMode = true;
 
   const collaborationId = window.location.pathname.split('/')[2]; // example url - /doc/1234, that why's used second element of array
 
@@ -272,6 +272,7 @@ function App() {
         connectViaUsername={async (username: string) => {
           console.log(username);
         }}
+        isDDocOwner={true}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

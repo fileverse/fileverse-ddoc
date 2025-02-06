@@ -64,6 +64,7 @@ export const CommentCard = ({
   activeCommentId,
   id,
   isDisabled = false,
+  isCommentOwner,
 }: CommentCardProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -199,7 +200,7 @@ export const CommentCard = ({
               />
             </Tooltip>
 
-            {!isDropdown && (
+            {!isDropdown && isCommentOwner && (
               <DynamicDropdown
                 key="comment-card-more-actions"
                 align="end"

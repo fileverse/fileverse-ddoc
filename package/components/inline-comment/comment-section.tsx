@@ -46,6 +46,7 @@ export const CommentSection = ({
     connectViaWallet,
     // isLoading,
     connectViaUsername,
+    isDDocOwner,
   } = useComments();
 
   const _filteredComments = comments.filter((comment) => !comment.deleted);
@@ -105,6 +106,7 @@ export const CommentSection = ({
               onDelete={deleteComment}
               isResolved={comment.resolved}
               isDisabled={comment && !Object.hasOwn(comment, 'commentIndex')}
+              isCommentOwner={comment.username === username || isDDocOwner}
             />
 
             <div

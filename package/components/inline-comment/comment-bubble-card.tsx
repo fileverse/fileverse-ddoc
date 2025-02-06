@@ -16,7 +16,7 @@ export const CommentBubbleCard = ({
   activeCommentId: string | null;
   commentDrawerOpen: boolean;
 }) => {
-  const { comments } = useComments();
+  const { comments, username } = useComments();
   const { isNativeMobile } = useResponsive();
 
   const currentComment = comments?.find(
@@ -93,6 +93,7 @@ export const CommentBubbleCard = ({
         isDisabled={
           currentComment && !Object.hasOwn(currentComment, 'commentIndex')
         }
+        isCommentOwner={currentComment?.username === username}
       />
     </BubbleMenu>
   );

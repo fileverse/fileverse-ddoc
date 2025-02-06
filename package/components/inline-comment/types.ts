@@ -23,6 +23,7 @@ export interface CommentDropdownProps {
   isBubbleMenu?: boolean;
   selectedContent?: string;
   isDisabled?: boolean;
+  isCommentOwner?: boolean;
 }
 
 export interface CommentDrawerProps {
@@ -31,6 +32,7 @@ export interface CommentDrawerProps {
   isNavbarVisible: boolean;
   isPresentationMode: boolean;
   activeCommentId: string | null;
+  isPreviewMode: boolean;
 }
 
 export interface CommentCardProps extends IComment {
@@ -42,6 +44,7 @@ export interface CommentCardProps extends IComment {
   isDropdown?: boolean;
   activeCommentId?: string;
   isDisabled?: boolean;
+  isCommentOwner?: boolean;
 }
 
 export type CommentBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {

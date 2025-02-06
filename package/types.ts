@@ -30,6 +30,7 @@ export interface CommentAccountProps {
   connectViaWallet?: () => Promise<void>;
   isLoading?: boolean;
   connectViaUsername?: (username: string) => Promise<void>;
+  isDDocOwner?: boolean;
 }
 export interface DdocProps extends CommentAccountProps {
   //Comments V2 Props
