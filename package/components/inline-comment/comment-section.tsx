@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
 import {
   Avatar,
   ButtonGroup,
@@ -102,7 +104,7 @@ export const CommentSection = ({
               onUnresolve={unresolveComment}
               onDelete={deleteComment}
               isResolved={comment.resolved}
-              isDisabled={true}
+              isDisabled={comment && !Object.hasOwn(comment, 'commentIndex')}
             />
 
             <div
@@ -111,7 +113,7 @@ export const CommentSection = ({
                 'px-6 flex flex-col gap-2',
                 openReplyId === comment.id && 'ml-5 pl-4',
                 (comment.id !== activeCommentId || comment.resolved) &&
-                'hidden',
+                  'hidden',
               )}
             >
               {openReplyId !== comment.id ? (

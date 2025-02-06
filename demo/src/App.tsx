@@ -60,7 +60,10 @@ function App() {
         if (comment.id === id) {
           return {
             ...comment,
-            replies: [...(comment.replies || []), reply],
+            replies: [
+              ...(comment.replies || []),
+              { ...reply, commentIndex: comment.replies?.length },
+            ],
           };
         }
         return comment; // Ensure you return the unchanged comment
@@ -68,7 +71,10 @@ function App() {
     );
   };
   const handleNewComment = (comment: IComment) => {
-    setInitialComment((prev) => [...prev, comment]);
+    setInitialComment((prev) => [
+      ...prev,
+      { ...comment, commentIndex: prev.length },
+    ]);
   };
   const handleResolveComment = (commentId: string) => {
     setInitialComment(

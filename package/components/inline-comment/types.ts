@@ -22,6 +22,7 @@ export interface CommentDropdownProps {
   initialComment?: string;
   isBubbleMenu?: boolean;
   selectedContent?: string;
+  isDisabled?: boolean;
 }
 
 export interface CommentDrawerProps {

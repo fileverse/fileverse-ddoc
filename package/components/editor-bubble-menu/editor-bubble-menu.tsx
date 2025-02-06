@@ -188,6 +188,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             activeCommentId={activeCommentId}
             setCommentDrawerOpen={setCommentDrawerOpen}
             initialComment={item.initialComment}
+            isDisabled={
+              activeComment && !Object.hasOwn(activeComment, 'commentIndex')
+            }
           />
         );
       case 'Scripts':

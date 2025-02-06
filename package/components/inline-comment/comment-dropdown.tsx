@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
   Button,
+  cn,
   DynamicDropdown,
   IconButton,
   LucideIcon,
@@ -17,6 +18,7 @@ export const CommentDropdown = ({
   initialComment = '',
   isBubbleMenu = false,
   selectedContent,
+  isDisabled,
 }: CommentDropdownProps) => {
   const [comment, setComment] = useState(initialComment);
   const [reply, setReply] = useState('');
@@ -161,47 +163,67 @@ export const CommentDropdown = ({
             disabled={activeCommentIndex >= activeComments.length - 1}
             className="disabled:!bg-transparent"
           />
-          <DynamicDropdown
-            key="more-actions"
-            align="end"
-            sideOffset={4}
-            anchorTrigger={
-              <IconButton
-                onClick={handleEllipsisClick}
-                icon={'Ellipsis'}
-                variant="ghost"
-              />
-            }
-            content={
-              isDropdownOpen ? (
-                <div className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3">
-                  <button
-                    className="flex items-center text-[#FB3449] text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"
-                    onClick={handleDeleteThread}
-                    onTouchEnd={handleDeleteThread}
-                  >
-                    <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
-                    Delete thread
-                  </button>
-                </div>
-              ) : null
-            }
-          />
-
           <Tooltip
-            text={activeComment?.resolved ? 'Unresolve' : 'Resolve'}
-            sideOffset={5}
-            position="bottom"
+            text={isDisabled ? 'Available in a moment' : ''}
+            sideOffset={0}
+            position="top"
           >
-            <IconButton
-              icon={activeComment?.resolved ? 'CircleCheck2' : 'CircleCheck'}
-              variant="ghost"
-              onClick={() =>
-                activeComment?.resolved
-                  ? unresolveComment(activeCommentId as string)
-                  : resolveComment(activeCommentId as string)
+            <DynamicDropdown
+              key="more-actions"
+              align="end"
+              sideOffset={4}
+              anchorTrigger={
+                <IconButton
+                  onClick={handleEllipsisClick}
+                  icon={'Ellipsis'}
+                  variant="ghost"
+                  disabled={isDisabled}
+                  className={cn({
+                    '!bg-transparent': isDisabled,
+                  })}
+                />
+              }
+              content={
+                isDropdownOpen ? (
+                  <div className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3">
+                    <button
+                      className="flex items-center text-[#FB3449] text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"
+                      onClick={handleDeleteThread}
+                      onTouchEnd={handleDeleteThread}
+                    >
+                      <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
+                      Delete thread
+                    </button>
+                  </div>
+                ) : null
               }
             />
+
+            <Tooltip
+              text={
+                !isDisabled
+                  ? activeComment?.resolved
+                    ? 'Unresolve'
+                    : 'Resolve'
+                  : ''
+              }
+              sideOffset={5}
+              position="bottom"
+            >
+              <IconButton
+                icon={activeComment?.resolved ? 'CircleCheck2' : 'CircleCheck'}
+                variant="ghost"
+                disabled={isDisabled}
+                className={cn({
+                  '!bg-transparent': isDisabled,
+                })}
+                onClick={() =>
+                  activeComment?.resolved
+                    ? unresolveComment(activeCommentId as string)
+                    : resolveComment(activeCommentId as string)
+                }
+              />
+            </Tooltip>
           </Tooltip>
         </div>
       </div>
@@ -227,9 +249,9 @@ export const CommentDropdown = ({
           onChange={handleReplyChange}
           onKeyDown={handleKeyDown}
           className="bg-white text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
-          placeholder="Reply"
+          placeholder={isDisabled ? 'Available in a moment' : 'Reply'}
           autoFocus
-          disabled={activeComment?.resolved}
+          disabled={activeComment?.resolved || isDisabled}
           onInput={(e) => handleInput(e, reply)}
         />
 

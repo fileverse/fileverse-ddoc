@@ -90,6 +90,9 @@ export const CommentBubbleCard = ({
         isBubbleMenu={true}
         initialComment={currentComment?.content}
         selectedContent={currentComment?.selectedContent}
+        isDisabled={
+          currentComment && !Object.hasOwn(currentComment, 'commentIndex')
+        }
       />
     </BubbleMenu>
   );
