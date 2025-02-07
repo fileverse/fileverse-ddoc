@@ -47,7 +47,7 @@ function App() {
 
   const [zoomLevel, setZoomLevel] = useState<string>('1');
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
-  const isPreviewMode = false;
+  const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   const collaborationId = window.location.pathname.split('/')[2]; // example url - /doc/1234, that why's used second element of array
 
@@ -142,6 +142,13 @@ function App() {
           </div>
         </div>
         <div className="flex gap-2">
+          <IconButton
+            variant={'ghost'}
+            icon={isPreviewMode ? 'Eye' : 'EyeOff'}
+            size="md"
+            onClick={() => setIsPreviewMode(!isPreviewMode)}
+          />
+
           {isMediaMax1280px ? (
             <DynamicDropdown
               key="navbar-more-actions"

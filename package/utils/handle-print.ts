@@ -172,13 +172,11 @@ export const handlePrint = (slides: string[]) => {
                         .ProseMirror img {
                             max-width: 720px;
                             max-height: calc(100vh - 96px);
-                            width: auto !important;
-                            height: auto !important;
-                            object-fit: contain;
                             display: block;
                             margin: 16px auto;
                             position: relative;
                             box-sizing: border-box;
+                            aspect-ratio: auto;
                         }
 
                         /* Code blocks */
@@ -238,20 +236,65 @@ export const handlePrint = (slides: string[]) => {
 };
 
 export const handleContentPrint = (content: string) => {
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = content;
+
+  // Find all page breaks and split content
+  const pages: string[] = [];
+  let currentPageContent: Node[] = [];
+
+  // Iterate through all nodes
+  Array.from(tempDiv.childNodes).forEach((node) => {
+    if (
+      node instanceof HTMLElement &&
+      ((node.getAttribute('data-type') === 'page-break' &&
+        node.getAttribute('data-page-break') === 'true') ||
+        (node.tagName.toLowerCase() === 'br' &&
+          node.getAttribute('data-page-break') === 'true'))
+    ) {
+      // Only create a new page if we have content
+      if (currentPageContent.length > 0) {
+        const pageDiv = document.createElement('div');
+        currentPageContent.forEach((n) =>
+          pageDiv.appendChild(n.cloneNode(true)),
+        );
+        pages.push(pageDiv.innerHTML);
+        currentPageContent = [];
+      }
+      // Skip adding the page break element itself
+    } else {
+      currentPageContent.push(node.cloneNode(true));
+    }
+  });
+
+  // Add the last page if it has content
+  if (currentPageContent.length > 0) {
+    const pageDiv = document.createElement('div');
+    currentPageContent.forEach((n) => pageDiv.appendChild(n.cloneNode(true)));
+    pages.push(pageDiv.innerHTML);
+  }
+
+  const pagesHTML = pages
+    .map(
+      (pageContent) => `
+        <div class="print-page">
+            ${pageContent}
+        </div>
+    `,
+    )
+    .join('');
+
   const htmlContent = `
   <!DOCTYPE html>
   <html>
     <head>
+      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
       <title>Print Preview</title>
       <style>
-        @page {
-          margin: 0.3in 0.5in 0.3in 0.5in !important;
-        }
-        @page :first {
-          margin: -0.25in 0.5in 0.3in 0.5in !important;
-        }
         @media print {
-          @page { margin: 0; }
+          @page { 
+            margin: 0.25in 0.5in;
+          }
           html {
             -webkit-print-color-adjust: exact;
             print-color-adjust: exact;
@@ -274,8 +317,12 @@ export const handleContentPrint = (content: string) => {
           margin: 0;
         }
         img {
-          max-width: 100%;
+          max-width: fit-content;
           height: auto;
+          aspect-ratio: auto;
+          display: block;
+          margin-left: auto;
+          margin-right: auto;
         }
         h3 {
           font-weight: 600;
@@ -301,86 +348,122 @@ export const handleContentPrint = (content: string) => {
             appearance: none;
             background-color: #fff;
             margin: 0;
-            cursor: pointer;
-            width: 1.5em;
-            height: 1.5em;
-            position: relative;
-            border: 2px solid black;
-            margin-right: 0.5rem;
-            display: grid;
-            place-content: center;
-        }
+            font-family: 'Inter', sans-serif;
+          }
+          .print-page {
+            page-break-after: always;
+            box-sizing: border-box;
+          }
+          .print-page:last-child {
+            page-break-after: auto;
+          }
+          
+          img {
+            max-width: 100%;
+            height: auto;
+          }
+          h3 {
+            font-weight: 600;
+            color: #0D0D0D;
+            font-size: 20px;
+            line-height: 1.2;
+          }
+          p {
+            line-height: 1.5;
+            color: #0D0D0D;
+            font-size: 16px;
+          }
+          /* Lists */
+          ul, ol {
+            font-size: 16px;
+            line-height: 1.5;
+            margin: 0 0 16px 0;
+            padding-left: 24px;
+          }
+          /* Task List Styles */
+          input[type='checkbox'] {
+              -webkit-appearance: none;
+              appearance: none;
+              background-color: #fff;
+              margin: 0;
+              cursor: pointer;
+              width: 1.5em;
+              height: 1.5em;
+              position: relative;
+              border: 2px solid black;
+              margin-right: 0.5rem;
+              display: grid;
+              place-content: center;
+          }
 
-        input[type='checkbox']::before {
-            content: '';
-            width: 1em;
-            height: 1em;
-            transform: scale(0);
-            transition: 120ms transform ease-in-out;
-            box-shadow: inset 1em 1em;
-            transform-origin: center;
-            clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-        }
+          input[type='checkbox']::before {
+              content: '';
+              width: 1em;
+              height: 1em;
+              transform: scale(0);
+              transition: 120ms transform ease-in-out;
+              box-shadow: inset 1em 1em;
+              transform-origin: center;
+              clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+          }
 
-        input[type='checkbox']:checked::before {
-            transform: scale(1);
-        }
+          input[type='checkbox']:checked::before {
+              transform: scale(1);
+          }
 
-        li:has(input[type="checkbox"]) {
-            list-style-type: none;
-            transform: translateX(-16px);
-            font-size: 24px;
-            display: flex;
-            align-items: center;
-        }
-        ol {
-          list-style-type: decimal;
-        }
-        ol ol {
-          list-style-type: lower-latin;
-        }
-        ol ol ol {
-          list-style-type: lower-roman;
-        }
-        /* Tables */
-        table {
-          width: 100%;
-          border-collapse: collapse;
-          margin: 16px 0;
-          font-size: 16px;
-        }
-        th {
-          background: #F8F9FA;
-          font-weight: 600;
-          text-align: left;
-        }
-        td, th {
-          border: 1px solid #E8EBEC;
-          padding: 12px;
-        }
-        /* Code blocks */
-        pre {
-          background: #F8F9FA;
-          padding: 16px;
-          border-radius: 4px;
-          font-family: monospace;
-          font-size: 12px;
-          margin: 16px 0;
-        }
-        /* Blockquotes */
-        blockquote {
-          border-left: 4px solid #E8EBEC;
-          margin: 16px 0;
-          padding-left: 16px;
-          font-style: italic;
-        }
-        body {
-          padding: 10mm;
+          li:has(input[type="checkbox"]) {
+              list-style-type: none;
+              transform: translateX(-16px);
+              font-size: 24px;
+              display: flex;
+              align-items: center;
+          }
+          ol {
+            list-style-type: decimal;
+          }
+          ol ol {
+            list-style-type: lower-latin;
+          }
+          ol ol ol {
+            list-style-type: lower-roman;
+          }
+          /* Tables */
+          table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 16px;
+          }
+          th {
+            background: #F8F9FA;
+            font-weight: 600;
+            text-align: left;
+          }
+          td, th {
+            border: 1px solid #E8EBEC;
+            padding: 12px;
+          }
+          /* Code blocks */
+          pre {
+            background: #F8F9FA;
+            padding: 16px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            margin: 16px 0;
+          }
+          /* Blockquotes */
+          blockquote {
+            border-left: 4px solid #E8EBEC;
+            margin: 16px 0;
+            padding-left: 16px;
+            font-style: italic;
+          }
         }
       </style>
     </head>
     <body>
-      ${content}
+      ${pagesHTML}
       <script>
         window.onload = () => {
           window.print();
@@ -390,8 +473,7 @@ export const handleContentPrint = (content: string) => {
         }
       </script>
     </body>
-  </html>
-`;
+  </html>`;
 
   printHelper(htmlContent);
 };
