@@ -216,7 +216,9 @@ export const CommentDropdown = ({
                 position="bottom"
               >
                 <IconButton
-                  icon={activeComment?.resolved ? 'CircleCheck2' : 'CircleCheck'}
+                  icon={
+                    activeComment?.resolved ? 'CircleCheck2' : 'CircleCheck'
+                  }
                   variant="ghost"
                   disabled={isDisabled}
                   className={cn({
@@ -246,7 +248,10 @@ export const CommentDropdown = ({
           replies={activeComment?.replies}
           isResolved={activeComment?.resolved}
           isDropdown
-          isDisabled={comment && !Object.hasOwn(comment, 'commentIndex')}
+          isDisabled={
+            activeComment && !Object.hasOwn(activeComment, 'commentIndex')
+          }
+          version={activeComment?.version}
         />
       </div>
 

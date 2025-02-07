@@ -125,6 +125,7 @@ export const CommentSection = ({
                 isResolved={comment.resolved}
                 isDisabled={comment && !Object.hasOwn(comment, 'commentIndex')}
                 isCommentOwner={comment.username === username || isDDocOwner}
+                version={comment.version}
               />
 
               <div

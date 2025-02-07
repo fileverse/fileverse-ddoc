@@ -64,6 +64,7 @@ export interface IComment {
   resolved?: boolean;
   deleted?: boolean;
   commentIndex?: number;
+  version?: string;
 }
 
 export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({

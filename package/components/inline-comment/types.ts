@@ -45,6 +45,7 @@ export interface CommentCardProps extends IComment {
   activeCommentId?: string;
   isDisabled?: boolean;
   isCommentOwner?: boolean;
+  version?: string
 }
 
 export type CommentBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {

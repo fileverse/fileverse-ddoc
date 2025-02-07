@@ -73,7 +73,7 @@ function App() {
   const handleNewComment = (comment: IComment) => {
     setInitialComment((prev) => [
       ...prev,
-      { ...comment, commentIndex: prev.length },
+      { ...comment, commentIndex: prev.length, version: '2' },
     ]);
   };
   const handleResolveComment = (commentId: string) => {
@@ -260,9 +260,9 @@ function App() {
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
-        onInlineComment={(): void => { }}
-        onMarkdownImport={(): void => { }}
-        onMarkdownExport={(): void => { }}
+        onInlineComment={(): void => {}}
+        onMarkdownImport={(): void => {}}
+        onMarkdownExport={(): void => {}}
         initialComments={initialComments}
         onCommentReply={handleReplyOnComment}
         onNewComment={handleNewComment}
@@ -277,7 +277,7 @@ function App() {
           getHierarchicalIndexes,
         }}
         isConnected={true}
-        connectViaWallet={async () => { }}
+        connectViaWallet={async () => {}}
         isLoading={false}
         connectViaUsername={async (username: string) => {
           console.log(username);
