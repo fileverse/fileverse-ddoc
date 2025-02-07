@@ -12,7 +12,6 @@ import { useOnClickOutside } from 'usehooks-ts';
 import { CommentContextType, CommentProviderProps } from './types';
 import { getAddressName } from '../../../utils/getAddressName';
 import { EnsStatus } from '../types';
-import { useLocalStorage } from 'usehooks-ts';
 
 const CommentContext = createContext<CommentContextType | undefined>(undefined);
 
@@ -417,17 +416,12 @@ export const useComments = () => {
   return context;
 };
 
-const LS_ENS_MAP = 'ens_map_storage';
-
 export const useEnsName = (username?: string) => {
   const { ensResolutionUrl } = useComments();
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
     name: username || '',
     isEns: false,
   });
-  const [ensMap, setEnsMap] = useLocalStorage<{
-    [key: string]: { name: string; isEns: boolean };
-  }>(LS_ENS_MAP, {});
 
   useEffect(() => {
     let isMounted = true;
@@ -436,15 +430,6 @@ export const useEnsName = (username?: string) => {
       if (!username || !ensResolutionUrl) {
         if (isMounted) {
           setEnsStatus({ name: username || 'Anonymous', isEns: false });
-        }
-        return;
-      }
-
-      // Check cache first
-      const cachedValue = ensMap[username];
-      if (cachedValue?.isEns) {
-        if (isMounted) {
-          setEnsStatus(cachedValue);
         }
         return;
       }
@@ -459,22 +444,6 @@ export const useEnsName = (username?: string) => {
 
         const newStatus = { name, isEns };
         setEnsStatus(newStatus);
-
-        if (name) {
-          setEnsMap((prev) => {
-            // Prevent unnecessary updates if value hasn't changed
-            if (
-              prev[username]?.name === name &&
-              prev[username]?.isEns === isEns
-            ) {
-              return prev;
-            }
-            return {
-              ...prev,
-              [username]: newStatus,
-            };
-          });
-        }
       } catch (error) {
         console.error('Error fetching ENS name:', error);
         if (isMounted) {
