@@ -47,6 +47,7 @@ export const CommentDropdown = ({
     unresolveComment,
     deleteComment,
     isDDocOwner,
+    onComment,
   } = useComments();
 
   const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -66,6 +67,7 @@ export const CommentDropdown = ({
     if (comment.trim()) {
       addComment(comment);
       setShowReplyView(true);
+      onComment?.();
     }
   };
 

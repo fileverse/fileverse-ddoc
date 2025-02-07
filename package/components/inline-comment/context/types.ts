@@ -58,6 +58,7 @@ export interface CommentContextType extends CommentAccountProps {
   isCommentResolved: boolean;
   ensResolutionUrl: string;
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
+  onComment?: () => void;
 }
 
 export interface CommentProviderProps extends CommentAccountProps {
@@ -76,6 +77,8 @@ export interface CommentProviderProps extends CommentAccountProps {
   setActiveCommentId: React.Dispatch<React.SetStateAction<string | null>>;
   focusCommentWithActiveId: (id: string) => void;
   ensResolutionUrl: string;
+  onInlineComment?: () => void;
+  onComment?: () => void;
 }
 export interface CommentUsernameProps extends CommentAccountProps {
   username?: string | null;
