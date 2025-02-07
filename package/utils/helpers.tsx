@@ -1,11 +1,13 @@
 import { formatDistanceToNow, isAfter, subDays } from 'date-fns';
 
-export const nameFormatter = (address: string) => {
-  const isEthereumAddress = /^0x[a-fA-F0-9]{40}$/.test(address);
+export const nameFormatter = (username: string) => {
+  if (!username) return username;
 
-  if (!address || !isEthereumAddress) return address;
+  if (username.length > 20) {
+    return username.slice(0, 5) + '...' + username.slice(username.length - 5);
+  }
 
-  return address.slice(0, 5) + '...' + address.slice(address.length - 5);
+  return username;
 };
 
 export const dateFormatter = (date: Date) => {

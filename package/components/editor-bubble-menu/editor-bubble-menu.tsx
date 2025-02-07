@@ -244,178 +244,199 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         transformOrigin: 'center',
       }}
     >
-      {isNativeMobile || isPreviewMode ? (
+      {isNativeMobile ? (
         <div
           className={cn(
             'relative',
             isInlineCommentOpen ? 'left-1/2 translate-x-1/2' : '',
           )}
         >
-          {/* <DynamicDropdown
-            key="InlineComment"
-            side="top"
-            sideOffset={-40}
-            anchorTrigger={
-              <ToolbarButton
-                icon="MessageSquarePlus"
-                variant="ghost"
-                size="sm"
-                onClick={handleHighlight}
-              />
-            }
-            content={renderContent({ name: 'InlineComment' })}
-          /> */}
           {mobileCommentButton}
         </div>
       ) : (
         <React.Fragment>
-          <NodeSelector editor={editor} elementRef={toolRef} />
+          {isPreviewMode ? (
+            <DynamicDropdown
+              key="Comment"
+              side="bottom"
+              sideOffset={15}
+              alignOffset={-5}
+              align="end"
+              className="!z-[50] shadow-elevation-4"
+              anchorTrigger={
+                <ToolbarButton
+                  icon="MessageSquarePlus"
+                  variant="ghost"
+                  size="sm"
+                  tooltip={isCommentResolved ? 'Comment resolved' : ''}
+                  disabled={isCommentResolved}
+                  isActive={isCommentActive}
+                  onClick={handleInlineComment}
+                  classNames="disabled:!bg-transparent"
+                />
+              }
+              content={
+                !isCommentActive
+                  ? renderContent({
+                      name: 'Comment',
+                      initialComment: activeComment?.content || '',
+                    })
+                  : null
+              }
+            />
+          ) : (
+            <React.Fragment>
+              <NodeSelector editor={editor} elementRef={toolRef} />
 
-          {items.map((item, index) => {
-            if (
-              item.name === 'Bold' ||
-              item.name === 'Italic' ||
-              item.name === 'Underline' ||
-              item.name === 'Strikethrough' ||
-              item.name === 'Code'
-            ) {
-              return (
-                <div key={index} className="flex items-center">
-                  <ToolbarButton
-                    icon={item.icon}
-                    size="sm"
-                    onClick={item.command}
-                    isActive={item.isActive()}
-                  />
-                  {index === 3 && (
-                    <div className="w-[1px] h-4 bg-gray-200 ml-2"></div>
-                  )}
-                </div>
-              );
-            }
-
-            if (item.name === 'Alignment') {
-              return (
-                <React.Fragment key={index}>
-                  <DynamicDropdown
-                    key={IEditorTool.TEXT_COLOR}
-                    sideOffset={15}
-                    anchorTrigger={
-                      <ToolbarButton
-                        icon="Baseline"
-                        size="sm"
-                        isActive={toolVisibility === IEditorTool.TEXT_COLOR}
-                      />
-                    }
-                    content={
-                      <TextColor
-                        setVisibility={setToolVisibility}
-                        editor={editor as Editor}
-                        elementRef={toolRef}
-                      />
-                    }
-                  />
-                  <DynamicDropdown
-                    key={IEditorTool.HIGHLIGHT}
-                    sideOffset={15}
-                    anchorTrigger={
-                      <ToolbarButton
-                        icon="Highlighter"
-                        size="sm"
-                        isActive={toolVisibility === IEditorTool.HIGHLIGHT}
-                      />
-                    }
-                    content={
-                      <TextHighlighter
-                        setVisibility={setToolVisibility}
-                        editor={editor as Editor}
-                        elementRef={toolRef}
-                      />
-                    }
-                  />
-                  <div className="w-[1px] h-4 bg-gray-200"></div>
-                  <DynamicDropdown
-                    key={item.name}
-                    sideOffset={15}
-                    anchorTrigger={
+              {items.map((item, index) => {
+                if (
+                  item.name === 'Bold' ||
+                  item.name === 'Italic' ||
+                  item.name === 'Underline' ||
+                  item.name === 'Strikethrough' ||
+                  item.name === 'Code'
+                ) {
+                  return (
+                    <div key={index} className="flex items-center">
                       <ToolbarButton
                         icon={item.icon}
-                        variant="ghost"
                         size="sm"
-                        onClick={() => setToolVisibility(IEditorTool.ALIGNMENT)}
+                        onClick={item.command}
+                        isActive={item.isActive()}
                       />
-                    }
-                    content={renderContent(item)}
-                  />
-                </React.Fragment>
-              );
-            }
+                      {index === 3 && (
+                        <div className="w-[1px] h-4 bg-gray-200 ml-2"></div>
+                      )}
+                    </div>
+                  );
+                }
 
-            if (
-              item.name === 'Link' ||
-              item.name === 'Scripts' ||
-              item.name === 'InlineComment'
-            ) {
-              return (
-                <React.Fragment key={item.name}>
-                  {item.name === 'InlineComment' && (
-                    <div className="w-[1px] h-4 bg-gray-200"></div>
-                  )}
-                  <DynamicDropdown
-                    sideOffset={isInlineCommentOpen ? 5 : 15}
-                    anchorTrigger={
-                      <ToolbarButton
-                        icon={item.icon}
-                        variant="ghost"
-                        size="sm"
-                        onClick={() =>
-                          item.name === 'InlineComment'
-                            ? handleHighlight()
-                            : null
+                if (item.name === 'Alignment') {
+                  return (
+                    <React.Fragment key={index}>
+                      <DynamicDropdown
+                        key={IEditorTool.TEXT_COLOR}
+                        sideOffset={15}
+                        anchorTrigger={
+                          <ToolbarButton
+                            icon="Baseline"
+                            size="sm"
+                            isActive={toolVisibility === IEditorTool.TEXT_COLOR}
+                          />
+                        }
+                        content={
+                          <TextColor
+                            setVisibility={setToolVisibility}
+                            editor={editor as Editor}
+                            elementRef={toolRef}
+                          />
                         }
                       />
-                    }
-                    content={renderContent(item)}
-                  />
-                </React.Fragment>
-              );
-            }
+                      <DynamicDropdown
+                        key={IEditorTool.HIGHLIGHT}
+                        sideOffset={15}
+                        anchorTrigger={
+                          <ToolbarButton
+                            icon="Highlighter"
+                            size="sm"
+                            isActive={toolVisibility === IEditorTool.HIGHLIGHT}
+                          />
+                        }
+                        content={
+                          <TextHighlighter
+                            setVisibility={setToolVisibility}
+                            editor={editor as Editor}
+                            elementRef={toolRef}
+                          />
+                        }
+                      />
+                      <div className="w-[1px] h-4 bg-gray-200"></div>
+                      <DynamicDropdown
+                        key={item.name}
+                        sideOffset={15}
+                        anchorTrigger={
+                          <ToolbarButton
+                            icon={item.icon}
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              setToolVisibility(IEditorTool.ALIGNMENT)
+                            }
+                          />
+                        }
+                        content={renderContent(item)}
+                      />
+                    </React.Fragment>
+                  );
+                }
 
-            if (item.name === 'Comment') {
-              return (
-                <DynamicDropdown
-                  key="Comment"
-                  side="bottom"
-                  sideOffset={15}
-                  alignOffset={-5}
-                  align="end"
-                  className="!z-[50] shadow-elevation-4"
-                  anchorTrigger={
-                    <ToolbarButton
-                      icon="MessageSquarePlus"
-                      variant="ghost"
-                      size="sm"
-                      tooltip={isCommentResolved ? 'Comment resolved' : ''}
-                      disabled={isCommentResolved}
-                      isActive={isCommentActive}
-                      onClick={handleInlineComment}
-                      classNames="disabled:!bg-transparent"
+                if (
+                  item.name === 'Link' ||
+                  item.name === 'Scripts' ||
+                  item.name === 'InlineComment'
+                ) {
+                  return (
+                    <React.Fragment key={item.name}>
+                      {item.name === 'InlineComment' && (
+                        <div className="w-[1px] h-4 bg-gray-200"></div>
+                      )}
+                      <DynamicDropdown
+                        sideOffset={isInlineCommentOpen ? 5 : 15}
+                        anchorTrigger={
+                          <ToolbarButton
+                            icon={item.icon}
+                            variant="ghost"
+                            size="sm"
+                            onClick={() =>
+                              item.name === 'InlineComment'
+                                ? handleHighlight()
+                                : null
+                            }
+                          />
+                        }
+                        content={renderContent(item)}
+                      />
+                    </React.Fragment>
+                  );
+                }
+
+                if (item.name === 'Comment') {
+                  return (
+                    <DynamicDropdown
+                      key="Comment"
+                      side="bottom"
+                      sideOffset={15}
+                      alignOffset={-5}
+                      align="end"
+                      className="!z-[50] shadow-elevation-4"
+                      anchorTrigger={
+                        <ToolbarButton
+                          icon="MessageSquarePlus"
+                          variant="ghost"
+                          size="sm"
+                          tooltip={isCommentResolved ? 'Comment resolved' : ''}
+                          disabled={isCommentResolved}
+                          isActive={isCommentActive}
+                          onClick={handleInlineComment}
+                          classNames="disabled:!bg-transparent"
+                        />
+                      }
+                      content={
+                        !isCommentActive
+                          ? renderContent({
+                              name: 'Comment',
+                              initialComment: activeComment?.content || '',
+                            })
+                          : null
+                      }
                     />
-                  }
-                  content={
-                    !isCommentActive
-                      ? renderContent({
-                          name: 'Comment',
-                          initialComment: activeComment?.content || '',
-                        })
-                      : null
-                  }
-                />
-              );
-            }
+                  );
+                }
 
-            return null;
-          })}
+                return null;
+              })}
+            </React.Fragment>
+          )}
         </React.Fragment>
       )}
     </BubbleMenu>
