@@ -55,9 +55,12 @@ export const CommentSection = ({
 
   const _filteredComments = comments.filter((comment) => !comment.deleted);
 
-  const filteredComments = _filteredComments.filter((comment) =>
-    showResolved ? true : !comment.resolved,
-  );
+  const filteredComments = _filteredComments
+    .filter((comment) => (showResolved ? true : !comment.resolved))
+    .sort(
+      (a, b) =>
+        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+    );
 
   const handleCommentClick = (commentId: string) => {
     focusCommentInEditor(commentId);
@@ -134,7 +137,7 @@ export const CommentSection = ({
                   'px-6 flex flex-col gap-2',
                   openReplyId === comment.id && 'ml-5 pl-4',
                   (comment.id !== activeCommentId || comment.resolved) &&
-                    'hidden',
+                  'hidden',
                 )}
               >
                 {openReplyId !== comment.id ? (
