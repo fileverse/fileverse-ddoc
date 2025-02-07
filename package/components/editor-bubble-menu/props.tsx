@@ -8,7 +8,7 @@ export const bubbleMenuProps = (props: EditorBubbleMenuProps) => {
       moveTransition: 'transform 0.2s ease-in',
       duration: 200,
       animation: 'shift-toward-subtle',
-      zIndex: 40,
+      zIndex: 50,
       appendTo: () => document.getElementById('editor-canvas'),
       popperOptions: {
         strategy: 'fixed',

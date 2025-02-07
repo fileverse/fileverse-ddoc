@@ -39,6 +39,7 @@ export const CommentProvider = ({
   isDDocOwner,
   onInlineComment,
   onComment,
+  setCommentDrawerOpen,
 }: CommentProviderProps) => {
   const [showResolved, setShowResolved] = useState(false);
   const [reply, setReply] = useState('');
@@ -79,7 +80,11 @@ export const CommentProvider = ({
 
   const onInlineCommentClick = (event: React.MouseEvent) => {
     event.stopPropagation();
-    handleInlineComment();
+    if (!isConnected) {
+      setCommentDrawerOpen?.(true);
+    } else {
+      handleInlineComment();
+    }
   };
 
   const getNewComment = (

@@ -54,6 +54,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     buttonRef,
     isCommentActive,
     isCommentResolved,
+    isConnected,
   } = useComments();
 
   const items: BubbleMenuItem[] = [
@@ -237,7 +238,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       className={cn(
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border bg-white items-center shadow-elevation-3',
         isInlineCommentOpen || isCommentOpen ? '!invisible' : '!visible',
-        isNativeMobile ? '!-translate-y-1/2' : '',
+        isNativeMobile ? '!-translate-y-[120%]' : '',
       )}
       style={{
         transform: `scale(${1 / parseFloat(zoomLevel)})`,
@@ -271,7 +272,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                   tooltip={isCommentResolved ? 'Comment resolved' : ''}
                   disabled={isCommentResolved}
                   isActive={isCommentActive}
-                  onClick={handleInlineComment}
+                  onClick={
+                    isConnected ? handleInlineComment : onInlineCommentClick
+                  }
                   classNames="disabled:!bg-transparent"
                 />
               }
@@ -417,7 +420,11 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                           tooltip={isCommentResolved ? 'Comment resolved' : ''}
                           disabled={isCommentResolved}
                           isActive={isCommentActive}
-                          onClick={handleInlineComment}
+                          onClick={
+                            isConnected
+                              ? handleInlineComment
+                              : onInlineCommentClick
+                          }
                           classNames="disabled:!bg-transparent"
                         />
                       }

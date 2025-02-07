@@ -59,6 +59,7 @@ export interface CommentContextType extends CommentAccountProps {
   ensResolutionUrl: string;
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
   onComment?: () => void;
+  setCommentDrawerOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export interface CommentProviderProps extends CommentAccountProps {
@@ -79,6 +80,7 @@ export interface CommentProviderProps extends CommentAccountProps {
   ensResolutionUrl: string;
   onInlineComment?: () => void;
   onComment?: () => void;
+  setCommentDrawerOpen?: React.Dispatch<React.SetStateAction<boolean>>;
 }
 export interface CommentUsernameProps extends CommentAccountProps {
   username?: string | null;

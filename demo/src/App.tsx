@@ -278,7 +278,7 @@ function App() {
           getHierarchicalIndexes,
         }}
         isConnected={true}
-        connectViaWallet={async () => {}}
+        connectViaWallet={async () => { }}
         isLoading={false}
         connectViaUsername={async (username: string) => {
           console.log(username);

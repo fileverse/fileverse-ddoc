@@ -355,6 +355,7 @@ const DdocEditor = forwardRef(
           isDDocOwner={isDDocOwner}
           onInlineComment={onInlineComment}
           onComment={onComment}
+          setCommentDrawerOpen={setCommentDrawerOpen}
         >
           {!isPreviewMode && (
             <div
