@@ -205,6 +205,7 @@ export const CommentCard = ({
                 key="comment-card-more-actions"
                 align="end"
                 sideOffset={4}
+                className="!z-[999]"
                 anchorTrigger={
                   <IconButton
                     icon={'Ellipsis'}
