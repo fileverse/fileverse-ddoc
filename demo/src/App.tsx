@@ -187,7 +187,10 @@ function App() {
               variant={'ghost'}
               icon="Presentation"
               size="md"
-              onClick={() => setIsPresentationMode(true)}
+              onClick={() => {
+                commentDrawerOpen && setCommentDrawerOpen(false);
+                setIsPresentationMode(true);
+              }}
             />
           )}
           <IconButton
@@ -257,9 +260,9 @@ function App() {
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
-        onInlineComment={(): void => {}}
-        onMarkdownImport={(): void => {}}
-        onMarkdownExport={(): void => {}}
+        onInlineComment={(): void => { }}
+        onMarkdownImport={(): void => { }}
+        onMarkdownExport={(): void => { }}
         initialComments={initialComments}
         onCommentReply={handleReplyOnComment}
         onNewComment={handleNewComment}
@@ -274,7 +277,7 @@ function App() {
           getHierarchicalIndexes,
         }}
         isConnected={true}
-        connectViaWallet={async () => {}}
+        connectViaWallet={async () => { }}
         isLoading={false}
         connectViaUsername={async (username: string) => {
           console.log(username);

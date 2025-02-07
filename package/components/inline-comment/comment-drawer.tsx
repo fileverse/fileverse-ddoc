@@ -95,6 +95,7 @@ export const CommentDrawer = ({
               <CommentSection
                 activeCommentId={activeCommentId}
                 isNavbarVisible={isNavbarVisible}
+                isPresentationMode={isPresentationMode}
               />
             </React.Fragment>
           }

@@ -65,6 +65,7 @@ export interface EnsStatus {
 export interface CommentSectionProps {
   activeCommentId: string | null;
   isNavbarVisible?: boolean;
+  isPresentationMode?: boolean;
 }
 
 export interface UserDisplayProps {

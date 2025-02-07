@@ -19,6 +19,7 @@ import { CommentUsername } from './comment-username';
 export const CommentSection = ({
   activeCommentId,
   isNavbarVisible,
+  isPresentationMode,
 }: CommentSectionProps) => {
   const {
     comments,
@@ -79,6 +80,7 @@ export const CommentSection = ({
       className={cn(
         'flex flex-col h-[calc(100vh-120px)] sm:!h-[calc(100vh-40px)] xl:!h-[77vh] !bg-white !rounded-b-lg',
         !isNavbarVisible && 'xl:!h-[calc(100vh-150px)]',
+        isPresentationMode && 'xl:!h-[84vh]',
       )}
     >
       <div
@@ -116,7 +118,7 @@ export const CommentSection = ({
                 'px-6 flex flex-col gap-2',
                 openReplyId === comment.id && 'ml-5 pl-4',
                 (comment.id !== activeCommentId || comment.resolved) &&
-                  'hidden',
+                'hidden',
               )}
             >
               {openReplyId !== comment.id ? (
