@@ -20,6 +20,7 @@ import { IndexeddbPersistence } from 'y-indexeddb';
 import { isJSONString } from './utils/isJsonString';
 import { zoomService } from './zoom-service';
 import { sanitizeContent } from './utils/sanitize-content';
+import { CommentExtension as Comment } from './extensions/comment';
 import { handleContentPrint, handlePrint } from './utils/handle-print';
 
 const usercolors = [
@@ -59,6 +60,33 @@ export const useDdocEditor = ({
   proExtensions,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
+
+  // V2 - comment
+  const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
+
+  const commentsSectionRef = useRef<HTMLDivElement | null>(null);
+
+  const focusCommentWithActiveId = (id: string) => {
+    if (!commentsSectionRef.current) return;
+
+    const commentInput =
+      commentsSectionRef.current.querySelector<HTMLInputElement>(`input#${id}`);
+
+    if (!commentInput) return;
+
+    commentInput.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center',
+      inline: 'center',
+    });
+  };
+
+  useEffect(() => {
+    if (!activeCommentId) return;
+
+    focusCommentWithActiveId(activeCommentId);
+  }, [activeCommentId]);
+  // V2 - comment
   const [tocItems, setTocItems] = useState<any[]>([]);
 
   const [extensions, setExtensions] = useState([
@@ -69,6 +97,16 @@ export const useDdocEditor = ({
     SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
     customTextInputRules,
     PageBreak,
+    Comment.configure({
+      HTMLAttributes: {
+        class: 'inline-comment',
+      },
+      onCommentActivated: (commentId) => {
+        setActiveCommentId(commentId);
+
+        if (commentId) setTimeout(() => focusCommentWithActiveId(commentId));
+      },
+    }),
     Collaboration.configure({
       document: ydoc,
     }),
@@ -166,6 +204,9 @@ export const useDdocEditor = ({
               }
             }
           },
+          blur: () => {
+            editor?.commands.unsetCommentActive();
+          },
         },
         handleClick: handleCommentClick,
       },
@@ -205,7 +246,7 @@ export const useDdocEditor = ({
     }
   }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => { });
+  const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
@@ -402,8 +443,11 @@ export const useDdocEditor = ({
   ]);
 
   useEffect(() => {
-    const handler = () => {
-      onChange?.(fromUint8Array(Y.encodeStateAsUpdate(ydoc)) as any);
+    const handler = (update: Uint8Array) => {
+      onChange?.(
+        fromUint8Array(Y.encodeStateAsUpdate(ydoc)),
+        fromUint8Array(update),
+      );
     };
     if (ydoc) {
       ydoc.on('update', handler);
@@ -428,6 +472,9 @@ export const useDdocEditor = ({
     connect,
     ydoc,
     refreshYjsIndexedDbProvider: initialiseYjsIndexedDbProvider,
+    activeCommentId,
+    setActiveCommentId,
+    focusCommentWithActiveId,
     slides,
     setSlides,
     tocItems,

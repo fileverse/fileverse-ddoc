@@ -3,6 +3,7 @@ import { Extension, JSONContent } from '@tiptap/core';
 import { EditorProps } from '@tiptap/pm/view';
 import { Editor } from '@tiptap/react';
 import React, { SetStateAction } from 'react';
+import { IComment } from './extensions/comment';
 
 export const DdocEditorProps: EditorProps = {
   attributes: {
@@ -18,13 +19,31 @@ export interface IDocCollabUsers {
   color: string;
 }
 
-type InlineCommentData = {
+export type InlineCommentData = {
   inlineCommentText: string;
   highlightedTextContent: string;
   handleClick: boolean;
 };
 
-export interface DdocProps {
+export interface CommentAccountProps {
+  isConnected?: boolean;
+  connectViaWallet?: () => Promise<void>;
+  isLoading?: boolean;
+  connectViaUsername?: (username: string) => Promise<void>;
+  isDDocOwner?: boolean;
+}
+export interface DdocProps extends CommentAccountProps {
+  //Comments V2 Props
+  commentDrawerOpen?: boolean;
+  setCommentDrawerOpen?: React.Dispatch<SetStateAction<boolean>>;
+  initialComments?: IComment[];
+  setInitialComments?: React.Dispatch<SetStateAction<IComment[]>>;
+  onCommentReply?: (activeCommentId: string, reply: IComment) => void;
+  onNewComment?: (newComment: IComment) => void;
+  onResolveComment?: (activeCommentId: string) => void;
+  onUnresolveComment?: (activeCommentId: string) => void;
+  onDeleteComment?: (activeCommentId: string) => void;
+  //Comments V2 Props
   showTOC?: boolean;
   setShowTOC?: React.Dispatch<SetStateAction<boolean>>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -52,8 +71,12 @@ export interface DdocProps {
   initialContent?: JSONContent | string | string[] | null;
   walletAddress?: string | null;
   username?: string | null;
+  setUsername?: React.Dispatch<SetStateAction<string>>;
   renderNavbar?: ({ editor }: { editor: JSONContent }) => JSX.Element;
-  onChange?: (changes: Data['editorJSONData']) => void;
+  onChange?: (
+    updatedDocContent: Data['editorJSONData'],
+    updateChunk: string,
+  ) => void;
   onCollaboratorChange?: (collaborators: undefined | IDocCollabUsers[]) => void;
   onTextSelection?: (data: IEditorSelectionData) => void;
   onCommentInteraction?: (data: IEditorSelectionData) => void;
@@ -87,10 +110,12 @@ export interface IEditorSelectionData {
 }
 
 export interface Data {
-  editorJSONData: JSONContent;
+  editorJSONData: string | JSONContent;
 }
 export interface IUser {
   name: string;
   color: string;
   isEns: boolean;
 }
+
+export { type IComment };

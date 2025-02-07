@@ -1,13 +1,6 @@
-import React from 'react';
-import { Editor } from '@tiptap/core';
 import cn from 'classnames';
-import { BubbleMenuItem } from './editor-bubble-menu';
 import { DynamicDropdown, LucideIcon } from '@fileverse/ui';
-
-interface NodeSelectorProps {
-  editor: Editor;
-  elementRef: React.RefObject<HTMLDivElement>;
-}
+import { BubbleMenuItem, NodeSelectorProps } from './types';
 
 export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
   const items: BubbleMenuItem[] = [

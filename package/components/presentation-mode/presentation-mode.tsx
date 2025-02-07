@@ -10,23 +10,21 @@ import {
 } from '@fileverse/ui';
 import { EditingProvider } from '../../hooks/use-editing-context';
 import { convertToMarkdown } from '../../utils/md-to-slides';
-// import { convertMarkdownToHTML } from '@fileverse-dev/md2slides';
 import { handlePrint } from '../../utils/handle-print';
 import { PreviewPanel } from './preview-panel';
 import { cn } from '@fileverse/ui';
-import platform from 'platform';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useMediaQuery } from 'usehooks-ts';
 import copy from 'copy-to-clipboard';
 import { convertMarkdownToHTML } from '../../utils/md-to-html';
+import { useResponsive } from '../../utils/responsive';
 
 interface PresentationModeProps {
   editor: Editor;
   onClose: () => void;
   isFullscreen: boolean;
-  setIsFullscreen: (isFullscreen: boolean) => void;
+  setIsFullscreen: React.Dispatch<React.SetStateAction<boolean>>;
   onError?: (error: string) => void;
-  setIsCommentSectionOpen:
+  setCommentDrawerOpen:
     | React.Dispatch<React.SetStateAction<boolean>>
     | undefined;
   sharedSlidesLink?: string;
@@ -36,8 +34,6 @@ interface PresentationModeProps {
   slides: string[];
   setSlides: React.Dispatch<React.SetStateAction<string[]>>;
 }
-
-const checkOs = () => platform.os?.family;
 
 const SlideContent = ({
   content,
@@ -94,7 +90,7 @@ export const PresentationMode = ({
   isFullscreen,
   setIsFullscreen,
   onError,
-  setIsCommentSectionOpen,
+  setCommentDrawerOpen,
   sharedSlidesLink,
   isPreviewMode,
   documentName,
@@ -108,12 +104,7 @@ export const PresentationMode = ({
     [key: number]: Editor;
   }>({});
   const [isLoading, setIsLoading] = useState(true);
-  const isMobile = useMediaQuery('(max-width: 640px)');
-  const isNativeMobile =
-    checkOs() === 'iOS' ||
-    checkOs() === 'Android' ||
-    checkOs() === 'Windows Phone' ||
-    isMobile;
+  const { isNativeMobile } = useResponsive();
   const [touchStart, setTouchStart] = useState<number | null>(null);
   const [touchEnd, setTouchEnd] = useState<number | null>(null);
   const minSwipeDistance = 50;
@@ -229,30 +220,37 @@ export const PresentationMode = ({
   // Add this function to handle fullscreen mode
   const toggleFullscreen = useCallback(() => {
     if (isNativeMobile) {
-      // For iOS, just toggle the state without using native fullscreen
-      // @ts-expect-error
+      // For iOS/mobile, just toggle the state without using native fullscreen
       setIsFullscreen((prev) => !prev);
     } else {
-      // For desktop, use native fullscreen API
+      // For desktop browsers, try native fullscreen with fallbacks
       if (!document.fullscreenElement) {
-        document.documentElement
-          .requestFullscreen()
-          .then(() => {
-            setIsFullscreen(true);
-          })
-          .catch(() => {
-            // Fallback if native fullscreen fails
-            setIsFullscreen(true);
-          });
+        // Try standard fullscreen API first
+        if (document.documentElement.requestFullscreen) {
+          document.documentElement
+            .requestFullscreen()
+            .then(() => setIsFullscreen(true))
+            .catch(() => {
+              // Fallback if standard fullscreen fails
+              setIsFullscreen(true);
+            });
+        } else {
+          // If standard fullscreen API not available, just update state
+          setIsFullscreen(true);
+        }
       } else {
-        document
-          .exitFullscreen()
-          .then(() => {
-            setIsFullscreen(false);
-          })
-          .catch(() => {
-            setIsFullscreen(false);
-          });
+        // Exit fullscreen with fallbacks
+        if (document.exitFullscreen) {
+          document
+            .exitFullscreen()
+            .then(() => setIsFullscreen(false))
+            .catch(() => {
+              setIsFullscreen(false);
+            });
+        } else {
+          // If standard exit fullscreen not available, just update state
+          setIsFullscreen(false);
+        }
       }
     }
   }, [isNativeMobile]);
@@ -423,7 +421,7 @@ export const PresentationMode = ({
                   variant="ghost"
                   icon="MessageSquareText"
                   size="md"
-                  onClick={() => setIsCommentSectionOpen?.((prev) => !prev)}
+                  onClick={() => setCommentDrawerOpen?.((prev) => !prev)}
                 />
               </Tooltip>
               {!isPreviewMode && (

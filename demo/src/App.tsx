@@ -12,6 +12,7 @@ import {
   DynamicDropdown,
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
+import { IComment } from '../../package/extensions/comment';
 import {
   TableOfContents,
   getHierarchicalIndexes,
@@ -49,6 +50,54 @@ function App() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
 
   const collaborationId = window.location.pathname.split('/')[2]; // example url - /doc/1234, that why's used second element of array
+
+  //To handle comments from consumer side
+  const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
+  const [initialComments, setInitialComment] = useState<IComment[]>([]);
+  const handleReplyOnComment = (id: string, reply: IComment) => {
+    setInitialComment((prev) =>
+      prev.map((comment) => {
+        if (comment.id === id) {
+          return {
+            ...comment,
+            replies: [
+              ...(comment.replies || []),
+              { ...reply, commentIndex: comment.replies?.length },
+            ],
+          };
+        }
+        return comment; // Ensure you return the unchanged comment
+      }),
+    );
+  };
+  const handleNewComment = (comment: IComment) => {
+    setInitialComment((prev) => [
+      ...prev,
+      { ...comment, commentIndex: prev.length, version: '2' },
+    ]);
+  };
+  const handleResolveComment = (commentId: string) => {
+    setInitialComment(
+      initialComments.map((comment) =>
+        comment.id === commentId ? { ...comment, resolved: true } : comment,
+      ),
+    );
+  };
+
+  const handleUnresolveComment = (commentId: string) => {
+    setInitialComment(
+      initialComments.map((comment) =>
+        comment.id === commentId ? { ...comment, resolved: false } : comment,
+      ),
+    );
+  };
+  const handleDeleteComment = (commentId: string) => {
+    setInitialComment(
+      initialComments.filter((comment) => comment.id !== commentId),
+    );
+  };
+
+  //To handle comments from consumer side
 
   useEffect(() => {
     if (collaborationId) {
@@ -138,10 +187,18 @@ function App() {
               variant={'ghost'}
               icon="Presentation"
               size="md"
-              onClick={() => setIsPresentationMode(true)}
+              onClick={() => {
+                commentDrawerOpen && setCommentDrawerOpen(false);
+                setIsPresentationMode(true);
+              }}
             />
           )}
-          <IconButton variant={'ghost'} icon="MessageSquareText" size="md" />
+          <IconButton
+            variant={'ghost'}
+            icon="MessageSquareText"
+            size="md"
+            onClick={() => setCommentDrawerOpen((prev) => !prev)}
+          />
           <IconButton
             variant={'ghost'}
             icon="Share2"
@@ -175,6 +232,7 @@ function App() {
         enableCollaboration={enableCollaboration}
         collaborationId={collaborationId}
         username={username}
+        setUsername={setUsername}
         isPreviewMode={isPreviewMode}
         onError={(error) => {
           toast({
@@ -194,21 +252,37 @@ function App() {
         setIsCommentSectionOpen={setIsCommentSectionOpen}
         setInlineCommentData={setInlineCommentData}
         inlineCommentData={inlineCommentData}
+        commentDrawerOpen={commentDrawerOpen}
+        setCommentDrawerOpen={setCommentDrawerOpen}
         isPresentationMode={isPresentationMode}
         setIsPresentationMode={setIsPresentationMode}
         zoomLevel={zoomLevel}
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
-        onInlineComment={(): void => { }}
-        onMarkdownImport={(): void => { }}
-        onMarkdownExport={(): void => { }}
+        onInlineComment={(): void => {}}
+        onMarkdownImport={(): void => {}}
+        onMarkdownExport={(): void => {}}
+        initialComments={initialComments}
+        onCommentReply={handleReplyOnComment}
+        onNewComment={handleNewComment}
+        setInitialComments={setInitialComment}
+        onResolveComment={handleResolveComment}
+        onUnresolveComment={handleUnresolveComment}
+        onDeleteComment={handleDeleteComment}
         showTOC={showTOC}
         setShowTOC={setShowTOC}
         proExtensions={{
           TableOfContents,
           getHierarchicalIndexes,
         }}
+        isConnected={true}
+        connectViaWallet={async () => {}}
+        isLoading={false}
+        connectViaUsername={async (username: string) => {
+          console.log(username);
+        }}
+        isDDocOwner={true}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

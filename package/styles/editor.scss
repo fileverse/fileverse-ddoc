@@ -777,3 +777,31 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
     margin-top: max(env(safe-area-inset-top), 24px);
   }
 }
+
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+  select,
+  textarea,
+  input {
+    font-size: 16px !important;
+  }
+}
+
+@media screen and (min-width: 768px) {
+  select,
+  textarea,
+  input {
+    font-size: 14px !important;
+  }
+}
+
+.inline-comment--active {
+  @apply bg-[#DDFBDF] cursor-pointer transition-all;
+}
+
+.inline-comment--unresolved {
+  @apply bg-[#E9FFEB] cursor-pointer hover:bg-[#DDFBDF] transition-all;
+}
+
+.inline-comment--resolved {
+  @apply bg-transparent;
+}

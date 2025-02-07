@@ -297,6 +297,7 @@ export const DBlockNodeView: React.FC<
           className="lg:flex gap-1 hidden"
           aria-label="left-menu"
           contentEditable={false}
+          suppressContentEditableWarning={true}
         >
           <CustomTooltip
             content={
