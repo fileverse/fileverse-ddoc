@@ -124,8 +124,7 @@ export const TableRow = Node.create<TableRowOptions>({
       const controlSection = getElementWithAttributes(
         'section',
         {
-          class:
-            'absolute hidden flex items-center w-2 bg-gray-200 z-50 cursor-pointer border-1 border-indigo-600 rounded-l opacity-25 hover:opacity-100',
+          class: '',
           contenteditable: 'false',
         },
         {

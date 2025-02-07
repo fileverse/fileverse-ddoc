@@ -22,6 +22,7 @@ import { zoomService } from './zoom-service';
 import { sanitizeContent } from './utils/sanitize-content';
 import { CommentExtension as Comment } from './extensions/comment';
 import { handleContentPrint, handlePrint } from './utils/handle-print';
+import { Table } from './extensions/supercharged-table/extension-table';
 
 const usercolors = [
   '#30bced',
@@ -111,6 +112,15 @@ export const useDdocEditor = ({
       document: ydoc,
     }),
   ]);
+
+  useEffect(() => {
+    setExtensions((prev) => [
+      ...prev.filter((ext) => ext.name !== 'table'),
+      Table.configure({
+        resizable: !isPreviewMode,
+      }),
+    ]);
+  }, [isPreviewMode]);
 
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);

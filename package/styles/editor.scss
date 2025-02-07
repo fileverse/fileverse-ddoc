@@ -133,6 +133,7 @@
 
     p {
       margin: 0;
+      overflow: hidden;
 
       &.is-empty::before {
         content: '' !important;
