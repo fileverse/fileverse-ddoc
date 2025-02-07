@@ -31,12 +31,12 @@ export const CommentDrawer = ({
           noOverlay
           side="right"
           className={cn(
-            'p-0 !w-screen md:!w-[384px] !z-50 !h-[calc(100vh-90px)]',
+            'p-0 !w-screen md:!w-[384px] !z-50 !bg-[#F8F9FA]',
             !isConnected && '!h-screen',
           )}
           content={
             <React.Fragment>
-              <div className="flex px-4 py-3 border-b flex-row gap-4 items-center">
+              <div className="flex px-4 py-3 border-b flex-row gap-4 items-center bg-white">
                 <p className="text-heading-sm">Comments</p>
                 <div className="absolute top-[2px] right-10 p-2">
                   <Tooltip
