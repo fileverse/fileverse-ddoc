@@ -9,6 +9,7 @@ const CommentUsername = ({
   isConnected,
   connectViaUsername,
   connectViaWallet,
+  isLoading,
 }: CommentUsernameProps) => {
   return (
     <div
@@ -45,7 +46,8 @@ const CommentUsername = ({
               />
               <Button
                 onClick={() => connectViaUsername?.(username!)}
-                disabled={!username}
+                disabled={!username || isLoading}
+                isLoading={isLoading}
                 className="min-w-[80px]"
               >
                 Join
@@ -70,9 +72,11 @@ const CommentUsername = ({
             <div className="text-center">
               <button
                 onClick={isConnected ? () => {} : connectViaWallet}
-                className="bg-[#F0F6FF] h-10 flex gap-2 items-center justify-center p-3 w-full text-[#388CFB] font-medium rounded"
+                disabled={isLoading}
+                className="bg-[#F0F6FF] disabled:opacity-50 disabled:cursor-not-allowed disabled:color-bg-disabled h-10 flex gap-2 items-center justify-center p-3 w-full text-[#388CFB] font-medium rounded"
               >
-                <img alt="ens-logo" src={EnsLogo} /> Continue with ENS
+                <img alt="ens-logo" src={EnsLogo} />{' '}
+                {isLoading ? 'Connecting with ENS ...' : 'Continue with ENS'}
               </button>
             </div>
           </div>

@@ -44,7 +44,7 @@ export const CommentSection = ({
     deleteComment,
     isConnected,
     connectViaWallet,
-    // isLoading,
+    isLoading,
     connectViaUsername,
     isDDocOwner,
   } = useComments();
@@ -69,6 +69,7 @@ export const CommentSection = ({
         setUsername={setUsername}
         isNavbarVisible={isNavbarVisible as boolean}
         connectViaUsername={connectViaUsername}
+        isLoading={isLoading}
       />
     );
   }
