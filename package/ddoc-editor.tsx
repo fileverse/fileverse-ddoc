@@ -68,6 +68,7 @@ const DdocEditor = forwardRef(
       setIsPresentationMode,
       isNavbarVisible,
       setIsNavbarVisible,
+      onComment,
       onInlineComment,
       onMarkdownExport,
       onMarkdownImport,
@@ -352,6 +353,8 @@ const DdocEditor = forwardRef(
           isLoading={isLoading}
           connectViaUsername={connectViaUsername}
           isDDocOwner={isDDocOwner}
+          onInlineComment={onInlineComment}
+          onComment={onComment}
         >
           {!isPreviewMode && (
             <div

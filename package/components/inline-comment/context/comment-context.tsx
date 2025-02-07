@@ -37,6 +37,8 @@ export const CommentProvider = ({
   isLoading,
   connectViaUsername,
   isDDocOwner,
+  onInlineComment,
+  onComment,
 }: CommentProviderProps) => {
   const [showResolved, setShowResolved] = useState(false);
   const [reply, setReply] = useState('');
@@ -72,6 +74,7 @@ export const CommentProvider = ({
       setSelectedText(text);
     }
     setIsCommentOpen(true);
+    onInlineComment?.();
   };
 
   const onInlineCommentClick = (event: React.MouseEvent) => {
@@ -249,6 +252,7 @@ export const CommentProvider = ({
     onNewComment?.(newComment);
     setActiveCommentId(newComment.id);
     setComment('');
+    onComment?.();
   };
 
   const handleReplyKeyDown = (
@@ -392,6 +396,7 @@ export const CommentProvider = ({
         isLoading,
         connectViaUsername,
         isDDocOwner,
+        onComment,
       }}
     >
       {children}

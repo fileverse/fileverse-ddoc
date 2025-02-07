@@ -92,6 +92,7 @@ export interface DdocProps extends CommentAccountProps {
   unFocused?: boolean;
   isPresentationMode?: boolean;
   setIsPresentationMode?: React.Dispatch<SetStateAction<boolean>>;
+  onComment?: () => void;
   onInlineComment?: () => void;
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;

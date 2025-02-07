@@ -260,6 +260,7 @@ function App() {
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
+        onComment={(): void => {}}
         onInlineComment={(): void => {}}
         onMarkdownImport={(): void => {}}
         onMarkdownExport={(): void => {}}
