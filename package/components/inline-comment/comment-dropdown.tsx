@@ -39,9 +39,9 @@ export const CommentDropdown = ({
     dropdownRef,
     handleInput,
     isCommentActive,
-    onNextComment,
-    onPrevComment,
-    activeCommentIndex,
+    // onNextComment,
+    // onPrevComment,
+    // activeCommentIndex,
     onCommentReply,
     resolveComment,
     unresolveComment,
@@ -152,10 +152,10 @@ export const CommentDropdown = ({
     <>
       <div className="flex justify-between items-center px-3 py-2 border-b border-[#E8EBEC]">
         <p className="text-sm font-medium color-text-default">
-          Comments ({activeComments.length})
+          Highlighted Comments ({activeComments.length})
         </p>
         <div className="relative flex items-center gap-1">
-          <IconButton
+          {/* <IconButton
             icon="ChevronLeft"
             variant="ghost"
             onClick={onPrevComment}
@@ -168,7 +168,7 @@ export const CommentDropdown = ({
             onClick={onNextComment}
             disabled={activeCommentIndex >= activeComments.length - 1}
             className="disabled:!bg-transparent"
-          />
+          /> */}
           {(isDDocOwner || isCommentOwner) && (
             <Tooltip
               text={isDisabled ? 'Available in a moment' : ''}

@@ -93,7 +93,16 @@ function App() {
   };
   const handleDeleteComment = (commentId: string) => {
     setInitialComment(
-      initialComments.filter((comment) => comment.id !== commentId),
+      initialComments.map((comment) => {
+        if (comment.id === commentId) {
+          return {
+            ...comment,
+            deleted: true,
+          };
+        } else {
+          return { ...comment };
+        }
+      }),
     );
   };
 
@@ -278,7 +287,7 @@ function App() {
           getHierarchicalIndexes,
         }}
         isConnected={true}
-        connectViaWallet={async () => { }}
+        connectViaWallet={async () => {}}
         isLoading={false}
         connectViaUsername={async (username: string) => {
           console.log(username);

@@ -294,7 +294,8 @@ export const CommentProvider = ({
     (comment) =>
       !comment.resolved &&
       comment.selectedContent &&
-      comment.selectedContent.length > 0,
+      comment.selectedContent.length > 0 &&
+      !comment.deleted,
   );
 
   const onPrevComment = () => {
