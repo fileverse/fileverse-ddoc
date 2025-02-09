@@ -17,6 +17,7 @@ import { CommentSectionProps } from './types';
 import { CommentUsername } from './comment-username';
 import { useEffect } from 'react';
 import { EmptyComments } from './empty-comments';
+import { useResponsive } from '../../utils/responsive';
 
 export const CommentSection = ({
   activeCommentId,
@@ -52,6 +53,7 @@ export const CommentSection = ({
     connectViaUsername,
     isDDocOwner,
   } = useComments();
+  const { isNativeMobile } = useResponsive();
 
   const _filteredComments = comments.filter((comment) => !comment.deleted);
 
@@ -69,13 +71,30 @@ export const CommentSection = ({
   const ensStatus = useEnsName(username as string);
 
   useEffect(() => {
-    if (commentsSectionRef.current) {
-      commentsSectionRef.current.scrollTo({
-        top: commentsSectionRef.current.scrollHeight,
-        behavior: 'smooth',
-      });
+    if (commentsSectionRef.current && isOpen) {
+      // If there's an active comment, scroll to it
+      if (activeCommentId) {
+        const activeElement = commentsSectionRef.current.querySelector(
+          `[data-comment-id="${activeCommentId}"]`,
+        );
+
+        if (activeElement) {
+          setTimeout(() => {
+            activeElement.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+            });
+          });
+        }
+      } else {
+        // Default scroll to bottom for new comments
+        commentsSectionRef.current.scrollTo({
+          top: commentsSectionRef.current.scrollHeight,
+          behavior: 'smooth',
+        });
+      }
     }
-  }, [comments, isOpen]);
+  }, [comments, isOpen, activeCommentId, commentsSectionRef]);
 
   if (!isConnected) {
     return (
@@ -108,9 +127,10 @@ export const CommentSection = ({
           {filteredComments.map((comment) => (
             <div
               key={comment.id}
+              data-comment-id={comment.id}
               className={cn(
                 'flex flex-col w-full box-border transition-all border-b color-border-default hover:!bg-[#F8F9FA] last:border-b-0 py-3',
-                comment.id === activeCommentId ? '' : 'gap-3',
+                comment.id === activeCommentId ? 'bg-[#F8F9FA]' : 'gap-3',
               )}
               onClick={() => handleCommentClick(comment.id as string)}
             >
@@ -137,7 +157,7 @@ export const CommentSection = ({
                   'px-6 flex flex-col gap-2',
                   openReplyId === comment.id && 'ml-5 pl-4',
                   (comment.id !== activeCommentId || comment.resolved) &&
-                  'hidden',
+                    'hidden',
                 )}
               >
                 {openReplyId !== comment.id ? (
@@ -170,7 +190,7 @@ export const CommentSection = ({
                       id={comment.id}
                       onChange={handleReplyChange}
                       onKeyDown={handleReplyKeyDown}
-                      autoFocus
+                      autoFocus={isNativeMobile}
                       onInput={(e) => handleInput(e, reply)}
                       onFocus={() => {
                         if (replySectionRef.current) {
