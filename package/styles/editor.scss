@@ -796,11 +796,11 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
 }
 
 .inline-comment--active {
-  @apply bg-[#BCF6C1]  cursor-pointer transition-all;
+  @apply bg-[#BCF6C1] cursor-pointer transition-all;
 }
 
 .inline-comment--unresolved {
-  @apply bg-[#DDFBDF] cursor-pointer hover:bg-[#BCF6C1] transition-all;
+  @apply bg-[#DDFBDF] cursor-pointer transition-all;
 }
 
 .inline-comment--resolved {

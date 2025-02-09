@@ -81,14 +81,15 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
     return {
       commentId: {
         default: null,
-        parseHTML: el =>
+        parseHTML: (el) =>
           (el as HTMLSpanElement).getAttribute('data-comment-id'),
-        renderHTML: attrs => ({ 'data-comment-id': attrs.commentId }),
+        renderHTML: (attrs) => ({ 'data-comment-id': attrs.commentId }),
       },
       resolved: {
         default: false,
-        parseHTML: el => (el as HTMLSpanElement).getAttribute('data-resolved'),
-        renderHTML: attrs => ({
+        parseHTML: (el) =>
+          (el as HTMLSpanElement).getAttribute('data-resolved'),
+        renderHTML: (attrs) => ({
           'data-resolved': attrs.resolved,
           class: attrs.active
             ? 'inline-comment--active'
@@ -99,9 +100,9 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
       },
       active: {
         default: false,
-        parseHTML: el =>
+        parseHTML: (el) =>
           (el as HTMLSpanElement).getAttribute('data-active') === 'true',
-        renderHTML: attrs => ({ 'data-active': attrs.active }),
+        renderHTML: (attrs) => ({ 'data-active': attrs.active }),
       },
     };
   },
@@ -110,7 +111,7 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
     return [
       {
         tag: 'span[data-comment-id]',
-        getAttrs: el =>
+        getAttrs: (el) =>
           !!(el as HTMLSpanElement).getAttribute('data-comment-id')?.trim() &&
           null,
       },
@@ -138,7 +139,7 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
 
     const commentMark = this.editor.schema.marks.comment;
 
-    const activeCommentMark = marks.find(mark => mark.type === commentMark);
+    const activeCommentMark = marks.find((mark) => mark.type === commentMark);
 
     this.storage.activeCommentId = activeCommentMark?.attrs.commentId || null;
 
@@ -162,7 +163,7 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
           return true;
         },
       unsetComment:
-        commentId =>
+        (commentId) =>
         ({ tr, dispatch }) => {
           if (!commentId) return false;
 
@@ -170,7 +171,7 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
 
           tr.doc.descendants((node, pos) => {
             const commentMark = node.marks.find(
-              mark =>
+              (mark) =>
                 mark.type.name === 'comment' &&
                 mark.attrs.commentId === commentId,
             );
@@ -202,7 +203,7 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
 
           tr.doc.descendants((node, pos) => {
             const commentMark = node.marks.find(
-              mark =>
+              (mark) =>
                 mark.type.name === 'comment' &&
                 mark.attrs.commentId === commentId,
             );
@@ -241,7 +242,7 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
 
           tr.doc.descendants((node, pos) => {
             const commentMark = node.marks.find(
-              mark =>
+              (mark) =>
                 mark.type.name === 'comment' &&
                 mark.attrs.commentId === commentId,
             );
@@ -279,7 +280,7 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
           // First, remove active state from all comments
           tr.doc.descendants((node, pos) => {
             const commentMark = node.marks.find(
-              mark => mark.type.name === 'comment',
+              (mark) => mark.type.name === 'comment',
             );
             if (commentMark) {
               tr.addMark(

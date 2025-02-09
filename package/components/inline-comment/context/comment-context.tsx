@@ -40,7 +40,7 @@ export const CommentProvider = ({
   onComment,
   setCommentDrawerOpen,
 }: CommentProviderProps) => {
-  const [showResolved, setShowResolved] = useState(false);
+  const [showResolved, setShowResolved] = useState(true);
   const [reply, setReply] = useState('');
   const [comment, setComment] = useState('');
   const [openReplyId, setOpenReplyId] = useState<string | null>(null);
