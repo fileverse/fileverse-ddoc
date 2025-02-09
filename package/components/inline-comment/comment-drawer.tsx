@@ -10,6 +10,7 @@ import { CommentDrawerProps } from './types';
 import { CommentSection } from './comment-section';
 import { useComments } from './context/comment-context';
 import { useResponsive } from '../../utils/responsive';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 export const CommentDrawer = ({
   isOpen,
@@ -21,6 +22,10 @@ export const CommentDrawer = ({
 }: CommentDrawerProps) => {
   const { toggleResolved, showResolved, isConnected } = useComments();
   const { isBelow1280px } = useResponsive();
+
+  useEscapeKey(() => {
+    onClose();
+  });
 
   return (
     <div>
