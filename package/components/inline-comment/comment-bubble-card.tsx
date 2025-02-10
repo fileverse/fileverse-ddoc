@@ -26,7 +26,9 @@ export const CommentBubbleCard = ({
   const bubbleMenuProps = {
     shouldShow: ({ editor }: { editor: Editor }) => {
       const isCommentResolved = editor.getAttributes('comment')?.resolved;
-      const shouldShow = editor.isActive('comment') && !isCommentResolved;
+      const isEditorFocused = editor.view.hasFocus();
+      const shouldShow =
+        editor.isActive('comment') && !isCommentResolved && isEditorFocused;
 
       if (shouldShow) {
         const commentId = editor.getAttributes('comment')?.commentId;
@@ -53,7 +55,8 @@ export const CommentBubbleCard = ({
       followCursor: 'vertical',
       interactive: true,
       inertia: true,
-      trigger: 'focusin',
+      trigger: 'manual',
+      hideOnClick: true,
       inlinePositioning: true,
       popperOptions: {
         strategy: 'fixed',
