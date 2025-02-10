@@ -130,9 +130,7 @@ export const CommentCard = ({
     if (!replies?.length) return null;
 
     let displayedReplies = replies.sort(
-      (a, b) =>
-        new Date(a.createdAt || new Date()).getTime() -
-        new Date(b.createdAt || new Date()).getTime(),
+      (a, b) => (a.commentIndex || 0) - (b.commentIndex || 0),
     );
     if (!showAllReplies && replies.length > 3) {
       displayedReplies = replies.slice(-2);
