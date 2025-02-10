@@ -45,7 +45,7 @@ export interface CommentCardProps extends IComment {
   activeCommentId?: string;
   isDisabled?: boolean;
   isCommentOwner?: boolean;
-  version?: string
+  version?: string;
 }
 
 export type CommentBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
@@ -61,6 +61,7 @@ export interface CommentReplyProps {
 export interface EnsStatus {
   name: string;
   isEns: boolean;
+  isLoading: boolean;
 }
 
 export interface CommentSectionProps {

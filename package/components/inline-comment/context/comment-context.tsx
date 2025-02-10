@@ -417,20 +417,39 @@ export const useComments = () => {
   return context;
 };
 
+// Add this cache outside the hook to persist between renders
+const ensCache: Record<string, { name: string; isEns: boolean }> = {};
+
 export const useEnsName = (username?: string) => {
   const { ensResolutionUrl } = useComments();
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
-    name: username || '',
-    isEns: false,
+    name: ensCache[username || '']?.name || username || '',
+    isEns: ensCache[username || '']?.isEns || false,
+    isLoading: !ensCache[username || ''],
   });
 
   useEffect(() => {
     let isMounted = true;
 
     const fetchEnsName = async () => {
+      // If we have a cached result, use it immediately
+      if (username && ensCache[username]) {
+        if (isMounted) {
+          setEnsStatus({
+            ...ensCache[username],
+            isLoading: false,
+          });
+        }
+        return;
+      }
+
       if (!username || !ensResolutionUrl) {
         if (isMounted) {
-          setEnsStatus({ name: username || 'Anonymous', isEns: false });
+          setEnsStatus({
+            name: username || 'Anonymous',
+            isEns: false,
+            isLoading: false,
+          });
         }
         return;
       }
@@ -441,27 +460,41 @@ export const useEnsName = (username?: string) => {
           ensResolutionUrl,
         );
 
+        // Cache the result
+        ensCache[username] = { name: isEns ? name : username, isEns };
+
         if (!isMounted) return;
 
-        const newStatus = { name, isEns };
-        setEnsStatus(newStatus);
+        setEnsStatus({
+          ...ensCache[username],
+          isLoading: false,
+        });
       } catch (error) {
         console.error('Error fetching ENS name:', error);
         if (isMounted) {
           setEnsStatus({
             name: username,
             isEns: false,
+            isLoading: false,
           });
         }
       }
     };
+
+    // Only set loading true if we don't have a cached result
+    if (!ensCache[username || '']) {
+      setEnsStatus((prev) => ({
+        ...prev,
+        isLoading: true,
+      }));
+    }
 
     fetchEnsName();
 
     return () => {
       isMounted = false;
     };
-  }, [username, ensResolutionUrl]); // Remove ensMap from dependencies
+  }, [username, ensResolutionUrl]);
 
   return ensStatus;
 };

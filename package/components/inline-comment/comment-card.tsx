@@ -5,6 +5,7 @@ import {
   DynamicDropdown,
   IconButton,
   LucideIcon,
+  Skeleton,
   Tooltip,
 } from '@fileverse/ui';
 import { useRef, useState, useEffect, useCallback } from 'react';
@@ -18,7 +19,11 @@ const UserDisplay = ({ ensStatus, createdAt }: UserDisplayProps) => {
   return (
     <div className="flex justify-start items-center gap-2">
       <Avatar
-        src={ensStatus.isEns ? EnsLogo : undefined}
+        src={
+          ensStatus.isEns
+            ? EnsLogo
+            : `https://api.dicebear.com/9.x/glass/svg?seed=${encodeURIComponent(ensStatus.name)}`
+        }
         size="sm"
         className="min-w-6"
       />
@@ -42,7 +47,11 @@ const CommentReply = ({ reply, username, createdAt }: CommentReplyProps) => {
 
   return (
     <div className="flex flex-col gap-2">
-      <UserDisplay ensStatus={ensStatus} createdAt={createdAt} />
+      {ensStatus.isLoading ? (
+        <UserDisplaySkeleton />
+      ) : (
+        <UserDisplay ensStatus={ensStatus} createdAt={createdAt} />
+      )}
       <span className="text-body-sm flex flex-col gap-2 ml-3 pl-4 border-l whitespace-pre-wrap break-words">
         {reply}
       </span>
@@ -163,7 +172,11 @@ export const CommentCard = ({
       )}
     >
       <div className="flex justify-between items-center">
-        <UserDisplay ensStatus={ensStatus} createdAt={createdAt} />
+        {ensStatus.isLoading ? (
+          <UserDisplaySkeleton />
+        ) : (
+          <UserDisplay ensStatus={ensStatus} createdAt={createdAt} />
+        )}
         {version === '2' ? (
           <Tooltip
             text={isDisabled ? 'Available in a moment' : ''}
@@ -292,6 +305,15 @@ export const CommentCard = ({
         )}
       </div>
       {replies && renderReplies()}
+    </div>
+  );
+};
+
+export const UserDisplaySkeleton = () => {
+  return (
+    <div className="flex justify-start items-center gap-2">
+      <Skeleton className="w-6 h-6 rounded-full" />
+      <Skeleton className="w-32 h-4 rounded" />
     </div>
   );
 };

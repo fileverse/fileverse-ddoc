@@ -18,6 +18,7 @@ import { CommentUsername } from './comment-username';
 import { useEffect } from 'react';
 import { EmptyComments } from './empty-comments';
 import { useResponsive } from '../../utils/responsive';
+import { UserDisplaySkeleton } from './comment-card';
 
 export const CommentSection = ({
   activeCommentId,
@@ -230,20 +231,32 @@ export const CommentSection = ({
         </div>
       )}
       <div className="flex flex-col gap-3 color-bg-secondary border-t color-border-default px-6 py-5 rounded-b-lg">
-        <div className="flex justify-start items-center gap-2">
-          <Avatar
-            src={ensStatus.isEns ? EnsLogo : undefined}
-            size="sm"
-            className="min-w-6"
-          />
+        {ensStatus.isLoading ? (
+          <UserDisplaySkeleton />
+        ) : (
+          <div className="flex justify-start items-center gap-2">
+            <Avatar
+              src={
+                ensStatus.isEns
+                  ? EnsLogo
+                  : `https://api.dicebear.com/9.x/glass/svg?seed=${encodeURIComponent(ensStatus.name)}`
+              }
+              size="sm"
+              className="min-w-6"
+            />
 
-          <span className="text-body-sm-bold inline-flex items-center gap-1">
-            {nameFormatter(ensStatus.name)}
-            {ensStatus.isEns && (
-              <img src={verifiedMark} alt="verified" className="w-3.5 h-3.5" />
-            )}
-          </span>
-        </div>
+            <span className="text-body-sm-bold inline-flex items-center gap-1">
+              {nameFormatter(ensStatus.name)}
+              {ensStatus.isEns && (
+                <img
+                  src={verifiedMark}
+                  alt="verified"
+                  className="w-3.5 h-3.5"
+                />
+              )}
+            </span>
+          </div>
+        )}
         <TextAreaFieldV2
           value={comment}
           onChange={handleCommentChange}
