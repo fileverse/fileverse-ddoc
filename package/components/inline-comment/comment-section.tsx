@@ -62,7 +62,7 @@ export const CommentSection = ({
     .filter((comment) => (showResolved ? true : !comment.resolved))
     .sort(
       (a, b) =>
-        new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime(),
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
   const handleCommentClick = (commentId: string) => {
@@ -87,15 +87,9 @@ export const CommentSection = ({
             });
           });
         }
-      } else {
-        // Default scroll to bottom for new comments
-        commentsSectionRef.current.scrollTo({
-          top: commentsSectionRef.current.scrollHeight,
-          behavior: 'smooth',
-        });
       }
     }
-  }, [comments, isOpen, activeCommentId, commentsSectionRef]);
+  }, [activeCommentId, commentsSectionRef, isOpen]);
 
   if (!isConnected) {
     return (
@@ -236,11 +230,7 @@ export const CommentSection = ({
         ) : (
           <div className="flex justify-start items-center gap-2">
             <Avatar
-              src={
-                ensStatus.isEns
-                  ? EnsLogo
-                  : `https://api.dicebear.com/9.x/glass/svg?seed=${encodeURIComponent(ensStatus.name)}`
-              }
+              src={ensStatus.isEns ? EnsLogo : undefined}
               size="sm"
               className="min-w-6"
             />

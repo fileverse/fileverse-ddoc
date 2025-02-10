@@ -19,11 +19,7 @@ const UserDisplay = ({ ensStatus, createdAt }: UserDisplayProps) => {
   return (
     <div className="flex justify-start items-center gap-2">
       <Avatar
-        src={
-          ensStatus.isEns
-            ? EnsLogo
-            : `https://api.dicebear.com/9.x/glass/svg?seed=${encodeURIComponent(ensStatus.name)}`
-        }
+        src={ensStatus.isEns ? EnsLogo : undefined}
         size="sm"
         className="min-w-6"
       />
@@ -133,7 +129,11 @@ export const CommentCard = ({
   const renderReplies = useCallback(() => {
     if (!replies?.length) return null;
 
-    let displayedReplies = replies;
+    let displayedReplies = replies.sort(
+      (a, b) =>
+        new Date(a.createdAt || new Date()).getTime() -
+        new Date(b.createdAt || new Date()).getTime(),
+    );
     if (!showAllReplies && replies.length > 3) {
       displayedReplies = replies.slice(-2);
     }
