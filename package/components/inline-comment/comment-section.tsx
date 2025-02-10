@@ -60,7 +60,10 @@ export const CommentSection = ({
 
   const filteredComments = _filteredComments
     .filter((comment) => (showResolved ? true : !comment.resolved))
-    .sort((a, b) => b?.commentIndex - a?.commentIndex);
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+    );
 
   const handleCommentClick = (commentId: string) => {
     focusCommentInEditor(commentId);
