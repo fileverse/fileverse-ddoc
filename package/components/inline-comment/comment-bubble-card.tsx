@@ -26,9 +26,7 @@ export const CommentBubbleCard = ({
   const bubbleMenuProps = {
     shouldShow: ({ editor }: { editor: Editor }) => {
       const isCommentResolved = editor.getAttributes('comment')?.resolved;
-      const isEditorFocused = editor.view.hasFocus();
-      const shouldShow =
-        editor.isActive('comment') && !isCommentResolved && isEditorFocused;
+      const shouldShow = editor.isActive('comment') && !isCommentResolved;
 
       if (shouldShow) {
         const commentId = editor.getAttributes('comment')?.commentId;
