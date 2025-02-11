@@ -25,6 +25,7 @@ export type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   onInlineComment?: () => void;
   commentDrawerOpen?: boolean;
   setCommentDrawerOpen?: React.Dispatch<SetStateAction<boolean>>;
+  isCollabDocumentPublished?: boolean | undefined;
 };
 
 export interface NodeSelectorProps {

@@ -37,6 +37,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     onInlineComment,
     setCommentDrawerOpen,
     activeCommentId,
+    isCollabDocumentPublished,
   } = props;
   // TODO: V1
   const [isInlineCommentOpen, setIsInlineCommentOpen] = useState(false);
@@ -208,7 +209,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         icon="MessageSquarePlus"
         variant="ghost"
         size="sm"
-        disabled={isCommentResolved}
+        disabled={isCommentResolved || !isCollabDocumentPublished}
         isActive={isCommentActive}
         onClick={onInlineCommentClick}
         classNames="disabled:!bg-transparent"
@@ -270,7 +271,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                   variant="ghost"
                   size="sm"
                   tooltip={isCommentResolved ? 'Comment resolved' : ''}
-                  disabled={isCommentResolved}
+                  disabled={isCommentResolved || !isCollabDocumentPublished}
                   isActive={isCommentActive}
                   onClick={
                     isConnected ? handleInlineComment : onInlineCommentClick
@@ -418,7 +419,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                           variant="ghost"
                           size="sm"
                           tooltip={isCommentResolved ? 'Comment resolved' : ''}
-                          disabled={isCommentResolved}
+                          disabled={
+                            isCommentResolved || !isCollabDocumentPublished
+                          }
                           isActive={isCommentActive}
                           onClick={
                             isConnected

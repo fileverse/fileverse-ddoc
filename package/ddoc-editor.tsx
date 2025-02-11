@@ -95,6 +95,7 @@ const DdocEditor = forwardRef(
       isLoading,
       connectViaUsername,
       isDDocOwner,
+      isCollabDocumentPublished = true,
     }: DdocProps,
     ref,
   ) => {
@@ -480,6 +481,7 @@ const DdocEditor = forwardRef(
                   walletAddress={walletAddress as string}
                   onInlineComment={onInlineComment}
                   activeCommentId={activeCommentId}
+                  isCollabDocumentPublished={isCollabDocumentPublished}
                 />
                 <ColumnsMenu editor={editor} appendTo={editorRef} />
               </div>
@@ -598,6 +600,7 @@ const DdocEditor = forwardRef(
               editor={editor}
               activeCommentId={activeCommentId}
               commentDrawerOpen={commentDrawerOpen as boolean}
+              isCollabDocumentPublished={isCollabDocumentPublished}
             />
           </div>
         </CommentProvider>

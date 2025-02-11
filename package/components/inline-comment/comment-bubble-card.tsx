@@ -11,10 +11,12 @@ export const CommentBubbleCard = ({
   editor,
   activeCommentId,
   commentDrawerOpen,
+  isCollabDocumentPublished,
 }: {
   editor: Editor;
   activeCommentId: string | null;
   commentDrawerOpen: boolean;
+  isCollabDocumentPublished: boolean | undefined;
 }) => {
   const { comments, username } = useComments();
   const { isNativeMobile } = useResponsive();
@@ -26,7 +28,10 @@ export const CommentBubbleCard = ({
   const bubbleMenuProps = {
     shouldShow: ({ editor }: { editor: Editor }) => {
       const isCommentResolved = editor.getAttributes('comment')?.resolved;
-      const shouldShow = editor.isActive('comment') && !isCommentResolved;
+      const shouldShow =
+        editor.isActive('comment') &&
+        !isCommentResolved &&
+        isCollabDocumentPublished;
 
       if (shouldShow) {
         const commentId = editor.getAttributes('comment')?.commentId;

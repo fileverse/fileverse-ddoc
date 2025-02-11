@@ -33,6 +33,7 @@ export interface CommentAccountProps {
   isDDocOwner?: boolean;
 }
 export interface DdocProps extends CommentAccountProps {
+  isCollabDocumentPublished?: boolean;
   //Comments V2 Props
   commentDrawerOpen?: boolean;
   setCommentDrawerOpen?: React.Dispatch<SetStateAction<boolean>>;
