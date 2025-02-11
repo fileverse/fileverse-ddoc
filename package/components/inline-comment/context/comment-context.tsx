@@ -242,7 +242,7 @@ export const CommentProvider = ({
   };
 
   const handleCommentSubmit = () => {
-    if (!comment.trim()) return;
+    if (!comment.trim() || !username) return;
 
     const newComment = {
       id: `comment-${uuid()}`,

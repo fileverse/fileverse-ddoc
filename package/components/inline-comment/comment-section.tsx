@@ -260,7 +260,7 @@ export const CommentSection = ({
           <Button
             onClick={handleCommentSubmit}
             className="px-4 py-2 w-20 min-w-20 h-9"
-            disabled={!comment.trim()}
+            disabled={!comment.trim() || !username}
           >
             Send
           </Button>
