@@ -64,7 +64,7 @@ export const CommentDropdown = ({
   };
 
   const handleClick = () => {
-    if (comment.trim()) {
+    if (comment.trim() && username) {
       addComment(comment);
       setShowReplyView(true);
       onComment?.();
@@ -140,6 +140,7 @@ export const CommentDropdown = ({
       <div className="h-full flex items-center justify-end">
         <Button
           onClick={handleClick}
+          disabled={!username}
           className="px-4 py-2 w-20 min-w-20 h-9 font-medium text-sm bg-black rounded"
         >
           Send
@@ -273,7 +274,7 @@ export const CommentDropdown = ({
           <Button
             onClick={handleReplySubmit}
             className="px-4 py-2 w-20 min-w-20 h-9"
-            disabled={activeComment?.resolved || !reply.trim()}
+            disabled={activeComment?.resolved || !reply.trim() || !username}
           >
             Send
           </Button>
