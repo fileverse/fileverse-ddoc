@@ -50,6 +50,11 @@ export const CommentDropdown = ({
     onComment,
   } = useComments();
 
+  const emptyComment =
+    !activeComment?.content &&
+    !activeComment?.username &&
+    !activeComment?.createdAt;
+
   const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setComment(value);
@@ -170,7 +175,7 @@ export const CommentDropdown = ({
             disabled={activeCommentIndex >= activeComments.length - 1}
             className="disabled:!bg-transparent"
           /> */}
-          {(isDDocOwner || isCommentOwner) && (
+          {(isDDocOwner || isCommentOwner) && !emptyComment && (
             <Tooltip
               text={isDisabled ? 'Available in a moment' : ''}
               sideOffset={0}
@@ -255,6 +260,7 @@ export const CommentDropdown = ({
             activeComment && !Object.hasOwn(activeComment, 'commentIndex')
           }
           version={activeComment?.version}
+          emptyComment={emptyComment}
         />
       </div>
 
@@ -266,7 +272,7 @@ export const CommentDropdown = ({
           className="bg-white text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
           placeholder={isDisabled ? 'Available in a moment' : 'Reply'}
           autoFocus
-          disabled={activeComment?.resolved || isDisabled}
+          disabled={activeComment?.resolved || isDisabled || emptyComment}
           onInput={(e) => handleInput(e, reply)}
         />
 

@@ -30,7 +30,7 @@ const sampleTags = [
 
 function App() {
   const [enableCollaboration, setEnableCollaboration] = useState(false);
-  const [username, setUsername] = useState('');
+  const [username, setUsername] = useState('username');
   const [title, setTitle] = useState('Untitled');
   const isMobile = useMediaQuery('(max-width: 768px)');
   const isMediaMax1280px = useMediaQuery('(max-width: 1280px)');
