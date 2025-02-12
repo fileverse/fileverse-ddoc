@@ -144,6 +144,9 @@ export const CommentSection = ({
                 isDisabled={comment && !Object.hasOwn(comment, 'commentIndex')}
                 isCommentOwner={comment.username === username || isDDocOwner}
                 version={comment.version}
+                emptyComment={
+                  !comment.content && !comment.username && !comment.createdAt
+                }
               />
 
               <div

@@ -14,6 +14,7 @@ import { useComments, useEnsName } from './context/comment-context';
 import EnsLogo from '../../assets/ens.svg';
 import verifiedMark from '../../assets/verified-mark.png';
 import { dateFormatter, nameFormatter } from '../../utils/helpers';
+import { Spinner } from '../../common/spinner';
 
 const UserDisplay = ({ ensStatus, createdAt }: UserDisplayProps) => {
   return (
@@ -71,6 +72,7 @@ export const CommentCard = ({
   isDisabled = false,
   isCommentOwner,
   version,
+  emptyComment,
 }: CommentCardProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -160,6 +162,28 @@ export const CommentCard = ({
       </div>
     );
   }, [replies, showAllReplies]);
+
+  if (emptyComment)
+    return (
+      <div
+        ref={commentsContainerRef}
+        className={cn(
+          'flex flex-col gap-3 px-3 group comment-card',
+          !isDropdown && '!px-6',
+          isDropdown && 'py-3',
+        )}
+      >
+        <div className="flex justify-start items-center">
+          <UserDisplay ensStatus={ensStatus} createdAt={createdAt} />
+        </div>
+        <div className="flex flex-col gap-2 ml-3 pl-4 border-l color-border-default">
+          <div className="flex items-center gap-2 color-text-secondary">
+            <Spinner size="sm" />
+            <p className="text-helper-text-sm">Syncing onchain comments</p>
+          </div>
+        </div>
+      </div>
+    );
 
   return (
     <div
