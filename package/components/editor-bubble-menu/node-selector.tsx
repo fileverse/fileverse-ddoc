@@ -79,17 +79,15 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
       key="NodeSelector"
       sideOffset={15}
       anchorTrigger={
-        <button className="bg-transparent hover:!bg-[#F2F4F5] !text-[#363B3F] rounded p-1 flex items-center justify-between gap-2 w-fit max-w-36">
-          <span className="text-body-sm !text-[#363B3F] truncate">
-            {activeItem.name}
-          </span>
+        <button className="bg-transparent hover:!color-bg-default-hover color-text-default rounded p-1 flex items-center justify-between gap-2 w-fit max-w-36">
+          <span className="text-body-sm truncate">{activeItem.name}</span>
           <LucideIcon name="ChevronDown" size="sm" className="mt-1" />
         </button>
       }
       content={
         <div
           ref={elementRef}
-          className="h-auto flex w-48 flex-col overflow-hidden rounded bg-white p-1 shadow-elevation-2"
+          className="h-auto flex w-48 flex-col overflow-hidden rounded color-bg-default p-1 shadow-elevation-3 color-text-default transition-all"
         >
           {items.map((item, index) => (
             <button
@@ -98,14 +96,14 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
                 item.command();
               }}
               className={cn(
-                'flex items-center justify-between rounded-sm px-2 py-1 text-sm text-stone-600 hover:bg-stone-100',
+                'flex items-center justify-between rounded-sm px-2 py-1 text-sm hover:color-bg-default-hover transition-all',
                 {
-                  'text-blue-600': item.isActive(),
+                  'color-bg-brand hover:color-bg-brand-hover': item.isActive(),
                 },
               )}
             >
               <div className="flex items-center space-x-2">
-                <div className="rounded-sm border border-stone-200 p-1">
+                <div className="rounded-sm p-1">
                   <LucideIcon name={item.icon} size="sm" />
                 </div>
                 <span>{item.name}</span>

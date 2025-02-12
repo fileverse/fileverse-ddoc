@@ -10,19 +10,23 @@ import {
 import { useEditingContext } from '../../hooks/use-editing-context';
 import cn from 'classnames';
 import { debounce } from '../../utils/debounce';
-import * as Popover from '@radix-ui/react-popover';
 import { Surface } from '../../common/surface';
-import { DropdownButton } from '../../common/dropdown';
 import useContentItemActions from '../../hooks/use-content-item-actions';
-import { Toolbar } from '../../common/toolbar';
-import CustomTooltip from '../../common/cutsom-tooltip';
+import { CustomTooltip } from '../../common/cutsom-tooltip';
 import { FocusScope } from '@radix-ui/react-focus-scope';
 import {
   createTemplateButtons,
   createMoreTemplates,
   renderTemplateButtons,
 } from '../../utils/template-utils';
-import { LucideIcon } from '@fileverse/ui';
+import {
+  LucideIcon,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverClose,
+  Button,
+} from '@fileverse/ui';
 // import { startImageUpload } from '../../utils/upload-images';
 
 export const DBlockNodeView: React.FC<
@@ -307,9 +311,10 @@ export const DBlockNodeView: React.FC<
             }
           >
             <div
-              className={`d-block-button cursor-pointer ${
-                !isPreviewMode && 'group-hover:opacity-100'
-              }`}
+              className={cn(
+                'd-block-button color-text-default',
+                !isPreviewMode && 'group-hover:opacity-100',
+              )}
               contentEditable={false}
               onClick={handleClick}
             >
@@ -320,12 +325,13 @@ export const DBlockNodeView: React.FC<
             onMountAutoFocus={(e) => e.preventDefault()}
             trapped={false}
           >
-            <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
-              <Popover.Trigger asChild>
+            <Popover open={menuOpen} onOpenChange={setMenuOpen}>
+              <PopoverTrigger asChild>
                 <div
-                  className={`d-block-button cursor-pointer ${
-                    !isPreviewMode && 'group-hover:opacity-100'
-                  }`}
+                  className={cn(
+                    'd-block-button color-text-default',
+                    !isPreviewMode && 'group-hover:opacity-100',
+                  )}
                   contentEditable={false}
                   draggable
                   data-drag-handle
@@ -333,45 +339,57 @@ export const DBlockNodeView: React.FC<
                 >
                   <LucideIcon name="GripVertical" size="sm" />
                 </div>
-              </Popover.Trigger>
-              <Popover.Content
+              </PopoverTrigger>
+              <PopoverContent
                 side="bottom"
                 align="start"
                 sideOffset={8}
                 className="z-10"
               >
                 <Surface className="p-2 flex flex-col min-w-[16rem]">
-                  <Popover.Close>
-                    <DropdownButton onClick={actions.resetTextFormatting}>
+                  <PopoverClose asChild>
+                    <Button
+                      variant="ghost"
+                      onClick={actions.resetTextFormatting}
+                      className="justify-start gap-2"
+                    >
                       <LucideIcon name="RemoveFormatting" size="sm" />
                       Clear formatting
-                    </DropdownButton>
-                  </Popover.Close>
-                  <Popover.Close>
-                    <DropdownButton onClick={actions.copyNodeToClipboard}>
+                    </Button>
+                  </PopoverClose>
+                  <PopoverClose asChild>
+                    <Button
+                      variant="ghost"
+                      onClick={actions.copyNodeToClipboard}
+                      className="justify-start gap-2"
+                    >
                       <LucideIcon name="Clipboard" size="sm" />
                       Copy to clipboard
-                    </DropdownButton>
-                  </Popover.Close>
-                  <Popover.Close>
-                    <DropdownButton onClick={actions.duplicateNode}>
+                    </Button>
+                  </PopoverClose>
+                  <PopoverClose asChild>
+                    <Button
+                      variant="ghost"
+                      onClick={actions.duplicateNode}
+                      className="justify-start gap-2"
+                    >
                       <LucideIcon name="Copy" size="sm" />
                       Duplicate
-                    </DropdownButton>
-                  </Popover.Close>
-                  <Toolbar.Divider horizontal />
-                  <Popover.Close>
-                    <DropdownButton
+                    </Button>
+                  </PopoverClose>
+                  <PopoverClose asChild>
+                    <Button
+                      variant="ghost"
                       onClick={actions.deleteNode}
-                      className="text-red-500 hover:bg-red-500 bg-opacity-10 hover:bg-opacity-20"
+                      className="justify-start gap-2 color-text-danger"
                     >
                       <LucideIcon name="Trash2" size="sm" />
                       Delete
-                    </DropdownButton>
-                  </Popover.Close>
+                    </Button>
+                  </PopoverClose>
                 </Surface>
-              </Popover.Content>
-            </Popover.Root>
+              </PopoverContent>
+            </Popover>
           </FocusScope>
         </section>
       )}

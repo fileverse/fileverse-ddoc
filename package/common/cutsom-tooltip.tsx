@@ -1,11 +1,11 @@
-import { ReactNode, FC, useState } from 'react';
+import { ReactNode, useState } from 'react';
 
 interface CustomTooltipProps {
   content: ReactNode;
   children: ReactNode;
 }
 
-const CustomTooltip: FC<CustomTooltipProps> = ({ content, children }) => {
+const CustomTooltip = ({ content, children }: CustomTooltipProps) => {
   const [visible, setVisible] = useState(false);
 
   return (
@@ -16,7 +16,7 @@ const CustomTooltip: FC<CustomTooltipProps> = ({ content, children }) => {
     >
       {children}
       {visible && (
-        <div className="absolute z-10 p-2 mt-2 text-sm text-white bg-gray-800 rounded shadow-lg">
+        <div className="absolute z-10 p-2 mt-2 text-sm color-text-inverse dark:text-[#363B3F] color-bg-default-inverse rounded shadow-lg">
           {content}
         </div>
       )}
@@ -24,4 +24,4 @@ const CustomTooltip: FC<CustomTooltipProps> = ({ content, children }) => {
   );
 };
 
-export default CustomTooltip;
+export { CustomTooltip };

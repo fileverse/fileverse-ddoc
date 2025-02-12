@@ -264,7 +264,7 @@ const CarouselPrevious = React.forwardRef<
     <button
       ref={ref}
       className={cn(
-        'btn bg-white hover:bg-[#F2F4F5] transition text-black flex items-center border-2 rounded h-9 px-4 py-2 text-sm font-medium disabled:bg-[#E8EBEC] disabled:text-[#A1AAB1]',
+        'btn color-bg-default hover:color-bg-default-hover transition color-text-default flex items-center border-2 rounded h-9 px-4 py-2 text-sm font-medium disabled:bg-[#E8EBEC] disabled:text-[#A1AAB1]',
         className,
       )}
       disabled={!canScrollPrev}
@@ -287,7 +287,7 @@ const CarouselNext = React.forwardRef<
     <button
       ref={ref}
       className={cn(
-        'btn bg-black hover:bg-black text-white flex items-center border-2 rounded h-9 px-4 py-2 text-sm font-medium disabled:bg-[#E8EBEC] disabled:text-[#A1AAB1]',
+        'btn bg-black hover:bg-black color-text-default flex items-center border-2 rounded h-9 px-4 py-2 text-sm font-medium disabled:bg-[#E8EBEC] disabled:text-[#A1AAB1]',
         className,
       )}
       disabled={!canScrollNext}

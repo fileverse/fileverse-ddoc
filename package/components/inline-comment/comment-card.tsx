@@ -272,10 +272,10 @@ export const CommentCard = ({
                         {isResolved ? 'Unresolve' : 'Resolve'}
                       </button>
                       <button
-                        className="flex items-center text-[#FB3449] text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"
+                        className="flex items-center color-text-danger text-sm font-medium gap-2 rounded p-2 transition-all hover:color-bg-default-hover w-full"
                         onClick={handleDeleteClick}
                       >
-                        <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
+                        <LucideIcon name="Trash2" size="sm" />
                         Delete
                       </button>
                     </div>

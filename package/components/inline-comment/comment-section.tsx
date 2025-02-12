@@ -107,7 +107,7 @@ export const CommentSection = ({
   return (
     <div
       className={cn(
-        'flex flex-col h-[calc(100vh-120px)] sm:!h-[calc(100vh-40px)] xl:!h-[77vh] !bg-white !rounded-b-lg',
+        'flex flex-col h-[calc(100vh-120px)] sm:!h-[calc(100vh-40px)] xl:!h-[calc(100vh-210px)] !color-bg-default !rounded-b-lg',
         !isNavbarVisible && 'xl:!h-[calc(100vh-150px)]',
         isPresentationMode && 'xl:!h-[84vh]',
       )}
@@ -124,8 +124,10 @@ export const CommentSection = ({
               key={comment.id}
               data-comment-id={comment.id}
               className={cn(
-                'flex flex-col w-full box-border transition-all border-b color-border-default hover:!bg-[#F8F9FA] last:border-b-0 py-3',
-                comment.id === activeCommentId ? 'bg-[#F8F9FA]' : 'gap-3',
+                'flex flex-col w-full box-border transition-all border-b color-border-default hover:color-bg-default-hover last:border-b-0 py-3',
+                comment.id === activeCommentId
+                  ? 'color-bg-default-hover'
+                  : 'gap-3',
               )}
               onClick={() => handleCommentClick(comment.id as string)}
             >
@@ -155,7 +157,7 @@ export const CommentSection = ({
                   'px-6 flex flex-col gap-2',
                   openReplyId === comment.id && 'ml-5 pl-4',
                   (comment.id !== activeCommentId || comment.resolved) &&
-                    'hidden',
+                  'hidden',
                 )}
               >
                 {openReplyId !== comment.id ? (
@@ -182,8 +184,8 @@ export const CommentSection = ({
                       value={reply}
                       disabled={comment.id !== activeCommentId}
                       className={cn(
-                        'bg-white text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap',
-                        comment.id === activeCommentId && 'bg-white',
+                        'color-bg-default text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap',
+                        comment.id === activeCommentId && 'color-bg-default',
                       )}
                       id={comment.id}
                       onChange={handleReplyChange}
@@ -227,7 +229,7 @@ export const CommentSection = ({
           ))}
         </div>
       )}
-      <div className="flex flex-col gap-3 color-bg-secondary border-t color-border-default px-6 py-5 rounded-b-lg">
+      <div className="flex flex-col gap-3 color-bg-secondary border-t border-b color-border-default px-6 py-5 rounded-b-lg">
         {ensStatus.isLoading ? (
           <UserDisplaySkeleton />
         ) : (
@@ -254,7 +256,7 @@ export const CommentSection = ({
           value={comment}
           onChange={handleCommentChange}
           onKeyDown={handleCommentKeyDown}
-          className="bg-white w-full text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
+          className="color-bg-default w-full text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
           placeholder="Type your comment"
           onInput={(e) => handleInput(e, comment)}
         />

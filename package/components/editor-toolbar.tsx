@@ -146,8 +146,8 @@ const TiptapToolBar = ({
           onClose={() => setFileExportsOpen(false)}
           anchorTrigger={
             <button
-              className={cn('bg-transparent hover:!bg-[#F2F4F5] rounded', {
-                '!bg-[#FFDF0A]': fileExportsOpen,
+              className={cn('bg-transparent rounded', {
+                'color-bg-brand xl:hover:brightness-90': fileExportsOpen,
               })}
               onClick={() => {
                 setFileExportsOpen((prev) => !prev);
@@ -159,15 +159,19 @@ const TiptapToolBar = ({
                   icon="FileExport"
                   variant="ghost"
                   size="md"
-                  className={fileExportsOpen ? '!bg-[#FFDF0A]' : ''}
+                  className={
+                    fileExportsOpen
+                      ? 'color-bg-brand xl:hover:brightness-90'
+                      : ''
+                  }
                 />
               </Tooltip>
             </button>
           }
           content={
-            <div className="p-2 flex flex-col gap-1 text-body-sm scroll-smooth bg-white shadow-elevation-1 transition-all rounded">
+            <div className="p-2 flex flex-col gap-1 text-body-sm scroll-smooth color-bg-default shadow-elevation-1 transition-all rounded color-text-default">
               <div>
-                <span className="text-[12px] px-2 font-normal text-[#77818A] py-1">
+                <span className="text-[12px] px-2 font-normal color-text-secondary py-1">
                   PDF
                 </span>
                 {pdfExportOption.length > 0 && (
@@ -177,20 +181,18 @@ const TiptapToolBar = ({
                       pdfExportOption[0]?.onClick();
                       setFileExportsOpen(false);
                     }}
-                    className="hover:bg-[#f2f2f2] h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
+                    className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
                   >
                     <LucideIcon
                       name={pdfExportOption[0]?.icon as LucideIconProps['name']}
                       className="w-5 h-5"
                     />
-                    <span className="text-sm text-[#363B3F]">
-                      {pdfExportOption[0]?.title}
-                    </span>
+                    <span className="text-sm">{pdfExportOption[0]?.title}</span>
                   </button>
                 )}
               </div>
               <div>
-                <span className="text-[12px] px-2 font-normal text-[#77818A] py-1">
+                <span className="text-[12px] px-2 font-normal color-text-secondary py-1">
                   Markdown
                 </span>
 
@@ -201,15 +203,13 @@ const TiptapToolBar = ({
                       setFileExportsOpen(false);
                       option?.onClick();
                     }}
-                    className="hover:bg-[#f2f2f2] h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
+                    className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
                   >
                     <LucideIcon
                       name={option?.icon as LucideIconProps['name']}
                       className="w-5 h-5"
                     />
-                    <span className="text-sm text-[#363B3F]">
-                      {option?.title}
-                    </span>
+                    <span className="text-sm">{option?.title}</span>
                   </button>
                 ))}
               </div>
@@ -251,7 +251,7 @@ const TiptapToolBar = ({
           onClose={() => setDropdownOpen(false)}
           anchorTrigger={
             <button
-              className="bg-transparent hover:!bg-[#F2F4F5] rounded p-2 flex items-center justify-center gap-2 w-20"
+              className="bg-transparent hover:!color-bg-default-hover rounded p-2 flex items-center justify-center gap-2 w-20"
               onClick={() => {
                 setDropdownOpen((prev) => !prev);
                 setFileExportsOpen(false);
@@ -264,11 +264,11 @@ const TiptapToolBar = ({
             </button>
           }
           content={
-            <div className="zoom-level-options w-[110px] text-body-sm scroll-smooth bg-white px-1 py-2 shadow-elevation-1 transition-all rounded">
+            <div className="zoom-level-options w-[110px] text-body-sm scroll-smooth color-bg-default px-1 py-2 shadow-elevation-1 transition-all rounded">
               {zoomLevels.map((zoom) => (
                 <button
                   key={zoom.title}
-                  className="hover:bg-[#f2f2f2] h-8 rounded py-1 px-2 w-full text-left flex items-center space-x-2 text-sm text-black transition"
+                  className="hover:color-bg-default-hover h-8 rounded py-1 px-2 w-full text-left flex items-center space-x-2 text-sm color-text-default transition"
                   onClick={() => {
                     setZoomLevel(zoom.value);
                     setDropdownOpen(false);
@@ -285,7 +285,7 @@ const TiptapToolBar = ({
           key={IEditorTool.FONT_FAMILY}
           anchorTrigger={
             <button
-              className="bg-transparent hover:!bg-[#F2F4F5] rounded p-2 flex items-center justify-center gap-2 w-24"
+              className="bg-transparent hover:!color-bg-default-hover rounded p-2 flex items-center justify-center gap-2 w-24"
               onClick={() => setToolVisibility(IEditorTool.FONT_FAMILY)}
             >
               <span
@@ -316,7 +316,7 @@ const TiptapToolBar = ({
           key={IEditorTool.HEADING}
           anchorTrigger={
             <button
-              className="bg-transparent hover:!bg-[#F2F4F5] rounded gap-2 p-2 flex items-center justify-center w-28"
+              className="bg-transparent hover:!color-bg-default-hover rounded gap-2 p-2 flex items-center justify-center w-28"
               onClick={() => setToolVisibility(IEditorTool.HEADING)}
             >
               <span className="text-body-sm line-clamp-1">

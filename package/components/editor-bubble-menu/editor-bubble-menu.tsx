@@ -98,7 +98,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Link',
       isActive: () => editor.isActive('link'),
-      command: () => {},
+      command: () => { },
       icon: 'Link',
     },
     {
@@ -116,7 +116,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Comment',
       isActive: () => isCommentActive,
-      command: () => {},
+      command: () => { },
       icon: 'MessageSquarePlus',
     },
   ];
@@ -237,7 +237,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       {...bubbleMenuProps(props)}
       shouldShow={shouldShow}
       className={cn(
-        'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border bg-white items-center shadow-elevation-3',
+        'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border color-bg-default items-center shadow-elevation-3',
         isInlineCommentOpen || isCommentOpen ? '!invisible' : '!visible',
         isNativeMobile ? '!-translate-y-[120%]' : '',
       )}
@@ -282,9 +282,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               content={
                 !isCommentActive
                   ? renderContent({
-                      name: 'Comment',
-                      initialComment: activeComment?.content || '',
-                    })
+                    name: 'Comment',
+                    initialComment: activeComment?.content || '',
+                  })
                   : null
               }
             />
@@ -434,9 +434,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                       content={
                         !isCommentActive
                           ? renderContent({
-                              name: 'Comment',
-                              initialComment: activeComment?.content || '',
-                            })
+                            name: 'Comment',
+                            initialComment: activeComment?.content || '',
+                          })
                           : null
                       }
                     />

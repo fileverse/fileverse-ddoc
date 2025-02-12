@@ -9,6 +9,20 @@
   ol {
     list-style: revert;
   }
+
+  *,
+  ::before,
+  ::after {
+    @apply color-border-default;
+  }
+
+  .ProseMirror .is-empty::before {
+    @apply color-text-default opacity-40;
+  }
+
+  .ProseMirror .node-pageBreak {
+    @apply color-bg-secondary;
+  }
 }
 
 * {
@@ -22,7 +36,6 @@ body {
   height: 100%;
   width: 100%;
   overflow: hidden;
-  background-color: #f8f9fa;
 }
 
 body {
@@ -104,7 +117,6 @@ li > ol > li > ol > li:before {
 }
 
 .node-pageBreak {
-  background-color: #f8f9fa;
   height: 30px;
   margin-top: 4rem;
   margin-bottom: 4rem;

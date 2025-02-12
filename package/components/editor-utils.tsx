@@ -511,7 +511,7 @@ export const TextHighlighter = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto gap-0.5 flex flex-wrap max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded bg-white px-2 py-2 shadow-elevation-1 transition-all"
+      className="z-50 h-auto gap-0.5 flex flex-wrap max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded color-bg-default px-2 py-2 shadow-elevation-1 transition-all"
     >
       {colors.map((color) => (
         <div
@@ -570,7 +570,7 @@ export const EditorFontFamily = ({
     <div
       ref={elementRef}
       className={cn(
-        'z-50 h-auto max-h-[330px] w-48 overflow-y-auto scroll-smooth bg-white px-1 py-2 shadow-elevation-1 transition-all rounded',
+        'z-50 h-auto max-h-[330px] w-48 overflow-y-auto scroll-smooth color-bg-default px-1 py-2 shadow-elevation-1 transition-all rounded',
       )}
     >
       {fonts.map((font) => (
@@ -584,10 +584,10 @@ export const EditorFontFamily = ({
             fontFamily: font.title,
           }}
           className={cn(
-            'flex w-full items-center space-x-2 rounded px-2 py-1 text-left text-sm text-black transition',
+            'flex w-full items-center space-x-2 rounded px-2 py-1 text-left text-sm color-text-default transition',
             editor.isActive('textStyle', { fontFamily: font.value })
-              ? 'bg-yellow-300 xl:hover:brightness-90'
-              : 'hover:bg-[#f2f2f2]',
+              ? 'color-bg-brand xl:hover:brightness-90'
+              : 'hover:color-bg-default-hover',
           )}
         >
           <p className="font-medium">{font.title}</p>
@@ -608,7 +608,7 @@ export const EditorAlignment = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto left-[47rem] flex flex-wrap gap-1 max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-elevation-1 transition-all"
+      className="z-50 h-auto left-[47rem] flex flex-wrap gap-1 max-h-[330px] overflow-y-auto scroll-smooth rounded color-bg-default px-1 py-2 shadow-elevation-1 transition-all"
     >
       <button
         onClick={() => {
@@ -618,8 +618,8 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'left' })
-            ? 'bg-yellow-300 xl:hover:brightness-90'
-            : 'hover:bg-[#f2f2f2]',
+            ? 'color-bg-brand xl:hover:brightness-90'
+            : 'hover:color-bg-default-hover',
         )}
       >
         <LucideIcon name="AlignLeft" />
@@ -632,8 +632,8 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'center' })
-            ? 'bg-yellow-300 xl:hover:brightness-90'
-            : 'hover:bg-[#f2f2f2]',
+            ? 'color-bg-brand xl:hover:brightness-90'
+            : 'hover:color-bg-default-hover',
         )}
       >
         <LucideIcon name="AlignCenter" />
@@ -646,8 +646,8 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'right' })
-            ? 'bg-yellow-300 xl:hover:brightness-90'
-            : 'hover:bg-[#f2f2f2]',
+            ? 'color-bg-brand xl:hover:brightness-90'
+            : 'hover:color-bg-default-hover',
         )}
       >
         <LucideIcon name="AlignRight" />
@@ -668,7 +668,7 @@ export const EditorList = ({
     <div
       ref={elementRef}
       className={cn(
-        'z-50 h-auto gap-2 flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-elevation-1 transition-all',
+        'z-50 h-auto gap-2 flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded color-bg-default px-1 py-2 shadow-elevation-1 transition-all',
       )}
     >
       <Tooltip text="unordered list">
@@ -677,9 +677,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${
-            editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${editor.isActive('bulletList') ? 'color-bg-default-hover' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="List" />
         </button>
@@ -691,9 +690,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${
-            editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${editor.isActive('orderedList') ? 'color-bg-default-hover' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListOrdered" />
         </button>
@@ -705,9 +703,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${
-            editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${editor.isActive('taskList') ? 'color-bg-default-hover' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListChecks" />
         </button>
@@ -769,7 +766,7 @@ export const LinkPopup = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto gap-2 items-center flex max-h-[330px] overflow-y-auto scroll-smooth rounded-lg bg-white p-2 shadow-elevation-1 transition-all"
+      className="z-50 h-auto gap-2 items-center flex max-h-[330px] overflow-y-auto scroll-smooth rounded-lg color-bg-default p-2 shadow-elevation-1 transition-all"
     >
       <TextField
         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -914,7 +911,7 @@ export const InlineCommentPopup = ({
       />
       {comment.trim() !== '' && (
         <div className="h-full flex items-center gap-2 p-3">
-          <span className="w-full text-[12px] text-[#77818A]">
+          <span className="w-full text-[12px] color-text-secondary">
             Press{' '}
             <span className="font-semibold">{isMobile ? 'Send' : 'Enter'}</span>{' '}
             to send a comment
@@ -963,7 +960,7 @@ export const ScriptsPopup = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 w-48 bg-white rounded shadow-elevation-1 p-1"
+      className="z-50 w-48 color-bg-default rounded shadow-elevation-1 p-1"
     >
       <div className="flex flex-col gap-1 justify-center w-fit sm:w-full">
         {options.map((option) => (
@@ -1000,7 +997,7 @@ export const TextColor = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto gap-0.5 flex flex-wrap max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded bg-white px-2 py-2 shadow-elevation-1 transition-all"
+      className="z-50 h-auto gap-0.5 flex flex-wrap max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded color-bg-default px-2 py-2 shadow-elevation-1 transition-all"
     >
       {colors.map((color) => (
         <div
@@ -1095,7 +1092,7 @@ export const TextHeading = ({
     <div
       ref={elementRef}
       className={cn(
-        'z-50 flex w-48 flex-col overflow-hidden rounded bg-white p-1 shadow-elevation-1',
+        'z-50 flex w-48 flex-col overflow-hidden rounded color-bg-default p-1 shadow-elevation-1',
       )}
     >
       {headings.map((heading) => (
@@ -1106,14 +1103,14 @@ export const TextHeading = ({
           }}
           key={heading.title}
           className={cn(
-            'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-black transition',
+            'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm color-text-default transition',
             {
-              ['bg-yellow-300 xl:hover:brightness-90']: heading.isActive(),
-              ['hover:bg-[#f2f2f2]']: !heading.isActive(),
+              ['color-bg-brand xl:hover:brightness-90']: heading.isActive(),
+              ['hover:color-bg-default-hover']: !heading.isActive(),
             },
           )}
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded bg-white">
+          <div className="flex h-10 w-10 items-center justify-center rounded color-bg-default">
             <LucideIcon name={heading.icon} size="md" />
           </div>
           <div>
@@ -1318,11 +1315,11 @@ export const TextFormatingPopup = ({
                 onClick={() => heading.command(editor)}
                 key={heading.title}
                 className={cn(
-                  'flex w-fit items-center font-medium space-x-2 rounded p-2 text-center text-sm text-black transition',
+                  'flex w-fit items-center font-medium space-x-2 rounded p-2 text-center text-sm color-text-default transition',
                   {
-                    ['bg-yellow-300 xl:hover:brightness-90']:
+                    ['color-bg-brand xl:hover:brightness-90']:
                       heading.isActive(),
-                    ['hover:bg-[#f2f2f2]']: !heading.isActive(),
+                    ['hover:color-bg-default-hover']: !heading.isActive(),
                   },
                 )}
               >
@@ -1337,11 +1334,11 @@ export const TextFormatingPopup = ({
                   onClick={() => textAlignment.command(editor)}
                   key={textAlignment.title}
                   className={cn(
-                    'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
+                    'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['bg-yellow-300 xl:hover:brightness-90']:
+                      ['color-bg-brand xl:hover:brightness-90']:
                         textAlignment.isActive(),
-                      ['hover:bg-[#f2f2f2]']: !textAlignment.isActive(),
+                      ['hover:color-bg-default-hover']: !textAlignment.isActive(),
                     },
                   )}
                 >
@@ -1355,11 +1352,11 @@ export const TextFormatingPopup = ({
                   onClick={() => other.command(editor)}
                   key={other.title}
                   className={cn(
-                    'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
+                    'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['bg-yellow-300 xl:hover:brightness-90']:
+                      ['color-bg-brand xl:hover:brightness-90']:
                         other.isActive(),
-                      ['hover:bg-[#f2f2f2]']: !other.isActive(),
+                      ['hover:color-bg-default-hover']: !other.isActive(),
                     },
                   )}
                 >
@@ -1375,11 +1372,11 @@ export const TextFormatingPopup = ({
                   onClick={() => textStyle.command(editor)}
                   key={textStyle.title}
                   className={cn(
-                    'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
+                    'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['bg-yellow-300 xl:hover:brightness-90']:
+                      ['color-bg-brand xl:hover:brightness-90']:
                         textStyle.isActive(),
-                      ['hover:bg-[#f2f2f2]']: !textStyle.isActive(),
+                      ['hover:color-bg-default-hover']: !textStyle.isActive(),
                     },
                   )}
                 >
@@ -1393,11 +1390,11 @@ export const TextFormatingPopup = ({
                   onClick={() => textStyle.command(editor)}
                   key={textStyle.title}
                   className={cn(
-                    'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
+                    'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['bg-yellow-300 xl:hover:brightness-90']:
+                      ['color-bg-brand xl:hover:brightness-90']:
                         textStyle.isActive(),
-                      ['hover:bg-[#f2f2f2]']: !textStyle.isActive(),
+                      ['hover:color-bg-default-hover']: !textStyle.isActive(),
                     },
                   )}
                 >
@@ -1412,11 +1409,11 @@ export const TextFormatingPopup = ({
                 onClick={() => listStyle.command(editor)}
                 key={listStyle.title}
                 className={cn(
-                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
+                  'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                   {
-                    ['bg-yellow-300 xl:hover:brightness-90']:
+                    ['color-bg-brand xl:hover:brightness-90']:
                       listStyle.isActive(),
-                    ['hover:bg-[#f2f2f2]']: !listStyle.isActive(),
+                    ['hover:color-bg-default-hover']: !listStyle.isActive(),
                   },
                 )}
               >
