@@ -402,6 +402,7 @@ export const CommentProvider = ({
         connectViaUsername,
         isDDocOwner,
         onComment,
+        setCommentDrawerOpen,
       }}
     >
       {children}

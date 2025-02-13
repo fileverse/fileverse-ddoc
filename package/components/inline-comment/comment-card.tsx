@@ -20,7 +20,13 @@ const UserDisplay = ({ ensStatus, createdAt }: UserDisplayProps) => {
   return (
     <div className="flex justify-start items-center gap-2">
       <Avatar
-        src={ensStatus.isEns ? EnsLogo : undefined}
+        src={
+          ensStatus.isEns
+            ? EnsLogo
+            : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                ensStatus.name,
+              )}`
+        }
         size="sm"
         className="min-w-6"
       />
@@ -174,7 +180,7 @@ export const CommentCard = ({
         )}
       >
         <div className="flex justify-start items-center">
-          <UserDisplay ensStatus={ensStatus} createdAt={createdAt} />
+          <UserDisplaySkeleton />
         </div>
         <div className="flex flex-col gap-2 ml-3 pl-4 border-l color-border-default">
           <div className="flex items-center gap-2 color-text-secondary">
