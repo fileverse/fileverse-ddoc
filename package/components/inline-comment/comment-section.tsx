@@ -144,6 +144,9 @@ export const CommentSection = ({
                 isDisabled={comment && !Object.hasOwn(comment, 'commentIndex')}
                 isCommentOwner={comment.username === username || isDDocOwner}
                 version={comment.version}
+                emptyComment={
+                  !comment.content && !comment.username && !comment.createdAt
+                }
               />
 
               <div
@@ -230,7 +233,13 @@ export const CommentSection = ({
         ) : (
           <div className="flex justify-start items-center gap-2">
             <Avatar
-              src={ensStatus.isEns ? EnsLogo : undefined}
+              src={
+                ensStatus.isEns
+                  ? EnsLogo
+                  : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                      ensStatus.name,
+                    )}`
+              }
               size="sm"
               className="min-w-6"
             />

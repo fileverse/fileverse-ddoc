@@ -257,6 +257,16 @@ export const CommentProvider = ({
     setActiveCommentId(newComment.id);
     setComment('');
     onComment?.();
+
+    // Scroll to top of comments section
+    requestAnimationFrame(() => {
+      if (commentsSectionRef.current) {
+        commentsSectionRef.current.scrollTo({
+          top: 0,
+          behavior: 'smooth',
+        });
+      }
+    });
   };
 
   const handleReplyKeyDown = (
@@ -402,6 +412,7 @@ export const CommentProvider = ({
         connectViaUsername,
         isDDocOwner,
         onComment,
+        setCommentDrawerOpen,
       }}
     >
       {children}
