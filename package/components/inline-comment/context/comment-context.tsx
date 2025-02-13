@@ -258,18 +258,13 @@ export const CommentProvider = ({
     setComment('');
     onComment?.();
 
-    setTimeout(() => {
+    // Scroll to top of comments section
+    requestAnimationFrame(() => {
       if (commentsSectionRef.current) {
-        const activeElement = commentsSectionRef.current.querySelector(
-          `[data-comment-id="${newComment.id}"]`,
-        );
-
-        if (activeElement) {
-          activeElement.scrollIntoView({
-            behavior: 'smooth',
-            block: 'center',
-          });
-        }
+        commentsSectionRef.current.scrollTo({
+          top: 0,
+          behavior: 'smooth',
+        });
       }
     });
   };
