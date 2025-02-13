@@ -257,6 +257,21 @@ export const CommentProvider = ({
     setActiveCommentId(newComment.id);
     setComment('');
     onComment?.();
+
+    setTimeout(() => {
+      if (commentsSectionRef.current) {
+        const activeElement = commentsSectionRef.current.querySelector(
+          `[data-comment-id="${newComment.id}"]`,
+        );
+
+        if (activeElement) {
+          activeElement.scrollIntoView({
+            behavior: 'smooth',
+            block: 'center',
+          });
+        }
+      }
+    });
   };
 
   const handleReplyKeyDown = (
