@@ -57,6 +57,7 @@ export interface CommentReplyProps {
   reply: string;
   username: string;
   createdAt: Date;
+  isLast: boolean;
 }
 
 export interface EnsStatus {

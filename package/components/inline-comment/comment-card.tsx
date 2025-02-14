@@ -45,11 +45,24 @@ const UserDisplay = ({ ensStatus, createdAt }: UserDisplayProps) => {
   );
 };
 
-const CommentReply = ({ reply, username, createdAt }: CommentReplyProps) => {
+const CommentReply = ({
+  reply,
+  username,
+  createdAt,
+  isLast,
+}: CommentReplyProps) => {
   const ensStatus = useEnsName(username);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 relative pl-4 pb-3 last:pb-0">
+      <div
+        className={cn('absolute left-0 top-0 h-full w-[1px] bg-[#E8EBEC]', {
+          hidden: isLast,
+        })}
+      />
+      <div className="absolute left-0 top-0 w-4">
+        <div className="w-[10px] h-[20px] border-l border-b rounded-bl-md color-border-default" />
+      </div>
       {ensStatus.isLoading ? (
         <UserDisplaySkeleton />
       ) : (
@@ -147,22 +160,48 @@ export const CommentCard = ({
     }
 
     return (
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-0 ml-3 relative">
         {replies.length > 3 && !showAllReplies && (
-          <button
+          <div
             onClick={() => setShowAllReplies(true)}
-            className="text-helper-text-sm color-text-secondary hover:underline text-left ml-3 pl-4"
+            className="text-helper-text-sm color-text-secondary hover:underline text-left pl-2 pb-3 border-l color-border-default cursor-pointer flex items-center gap-1"
           >
+            <IconButton
+              icon="ChevronDown"
+              variant="ghost"
+              size="sm"
+              rounded
+              className="color-text-secondary border color-border-default scale-[0.8]"
+              onClick={() => setShowAllReplies(true)}
+            />
+            <div className="flex items-center -space-x-1">
+              {replies.slice(0, 2).map((reply) => (
+                <Avatar
+                  src={
+                    ensStatus.isEns
+                      ? EnsLogo
+                      : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                          reply.username || '',
+                        )}`
+                  }
+                  size="sm"
+                  className="w-4 h-4 last:z-10 bg-transparent"
+                  bordered="border"
+                  key={reply.id}
+                />
+              ))}
+            </div>
             {replies.length - 2} more replies in this thread
-          </button>
+          </div>
         )}
 
-        {displayedReplies.map((reply) => (
+        {displayedReplies.map((reply, index) => (
           <CommentReply
             key={reply.id}
             reply={reply.content || ''}
             username={reply.username || ''}
             createdAt={reply.createdAt || new Date()}
+            isLast={index === displayedReplies.length - 1}
           />
         ))}
       </div>
@@ -195,7 +234,7 @@ export const CommentCard = ({
     <div
       ref={commentsContainerRef}
       className={cn(
-        'flex flex-col gap-3 px-3 group comment-card',
+        'flex flex-col gap-0 px-3 group comment-card',
         isResolved && 'opacity-70',
         !isDropdown && '!px-6',
         isDropdown && 'py-3',
@@ -304,7 +343,7 @@ export const CommentCard = ({
           </Tooltip>
         )}
       </div>
-      <div className="flex flex-col gap-2 ml-3 pl-4 border-l color-border-default">
+      <div className="flex flex-col gap-2 ml-3 pl-4 border-l color-border-default py-3">
         {selectedContent && (
           <div className="bg-[#e5fbe7] p-1 rounded-lg">
             <div className="relative">

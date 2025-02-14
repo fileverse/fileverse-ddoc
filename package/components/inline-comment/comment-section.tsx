@@ -125,7 +125,8 @@ export const CommentSection = ({
               data-comment-id={comment.id}
               className={cn(
                 'flex flex-col w-full box-border transition-all border-b color-border-default hover:!bg-[#F8F9FA] last:border-b-0 py-3',
-                comment.id === activeCommentId ? 'bg-[#F8F9FA]' : 'gap-3',
+                comment.id === activeCommentId && 'bg-[#F8F9FA]',
+                comment.replies?.length > 0 && 'gap-0',
               )}
               onClick={() => handleCommentClick(comment.id as string)}
             >
@@ -152,10 +153,9 @@ export const CommentSection = ({
               <div
                 ref={replySectionRef}
                 className={cn(
-                  'px-6 flex flex-col gap-2',
+                  'pr-6 pl-8 flex flex-col gap-2',
                   openReplyId === comment.id && 'ml-5 pl-4',
-                  (comment.id !== activeCommentId || comment.resolved) &&
-                    'hidden',
+                  comment.resolved && 'hidden',
                 )}
               >
                 {openReplyId !== comment.id ? (
@@ -165,13 +165,17 @@ export const CommentSection = ({
                       setOpenReplyId(comment.id as string);
                     }}
                     className={cn(
-                      'w-full h-9 rounded-full color-bg-secondary flex items-center justify-center gap-2 mt-3',
+                      'w-full flex items-center justify-start gap-2 mt-3 hover:!bg-transparent pl-6',
                       comment.replies?.length === 0 && 'hidden',
                     )}
                     variant="ghost"
                   >
-                    <LucideIcon name="MessageSquarePlus" />
-                    <span className="text-body-sm-bold">
+                    <LucideIcon
+                      name="MessageSquarePlus"
+                      className="color-text-secondary"
+                      size="sm"
+                    />
+                    <span className="text-xs font-medium">
                       Reply to this thread
                     </span>
                   </Button>
