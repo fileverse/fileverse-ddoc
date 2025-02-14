@@ -70,7 +70,6 @@ export interface CommentSectionProps {
   activeCommentId: string | null;
   isNavbarVisible?: boolean;
   isPresentationMode?: boolean;
-  isOpen?: boolean;
 }
 
 export interface UserDisplayProps {

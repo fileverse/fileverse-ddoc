@@ -13,7 +13,11 @@ import { CommentCardProps, CommentReplyProps, UserDisplayProps } from './types';
 import { useComments, useEnsName } from './context/comment-context';
 import EnsLogo from '../../assets/ens.svg';
 import verifiedMark from '../../assets/verified-mark.png';
-import { dateFormatter, nameFormatter } from '../../utils/helpers';
+import {
+  dateFormatter,
+  nameFormatter,
+  renderTextWithLinks,
+} from '../../utils/helpers';
 import { Spinner } from '../../common/spinner';
 
 const UserDisplay = ({ ensStatus, createdAt }: UserDisplayProps) => {
@@ -69,7 +73,7 @@ const CommentReply = ({
         <UserDisplay ensStatus={ensStatus} createdAt={createdAt} />
       )}
       <span className="text-body-sm flex flex-col gap-2 ml-3 pl-4 border-l whitespace-pre-wrap break-words">
-        {reply}
+        {renderTextWithLinks(reply)}
       </span>
     </div>
   );
@@ -368,7 +372,7 @@ export const CommentCard = ({
         {comment && (
           <div>
             <span className="text-body-sm whitespace-pre-wrap break-words">
-              {comment}
+              {renderTextWithLinks(comment)}
             </span>
           </div>
         )}

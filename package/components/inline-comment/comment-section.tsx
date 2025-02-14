@@ -15,7 +15,6 @@ import verifiedMark from '../../assets/verified-mark.png';
 import { nameFormatter } from '../../utils/helpers';
 import { CommentSectionProps } from './types';
 import { CommentUsername } from './comment-username';
-import { useEffect } from 'react';
 import { EmptyComments } from './empty-comments';
 import { useResponsive } from '../../utils/responsive';
 import { UserDisplaySkeleton } from './comment-card';
@@ -24,7 +23,6 @@ export const CommentSection = ({
   activeCommentId,
   isNavbarVisible,
   isPresentationMode,
-  isOpen,
 }: CommentSectionProps) => {
   const {
     comments,
@@ -67,29 +65,13 @@ export const CommentSection = ({
 
   const handleCommentClick = (commentId: string) => {
     focusCommentInEditor(commentId);
+    // Close reply section if clicking on a different comment
+    if (openReplyId && openReplyId !== commentId) {
+      setOpenReplyId(null);
+    }
   };
 
   const ensStatus = useEnsName(username as string);
-
-  useEffect(() => {
-    if (commentsSectionRef.current && isOpen) {
-      // If there's an active comment, scroll to it
-      if (activeCommentId) {
-        const activeElement = commentsSectionRef.current.querySelector(
-          `[data-comment-id="${activeCommentId}"]`,
-        );
-
-        if (activeElement) {
-          setTimeout(() => {
-            activeElement.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
-            });
-          });
-        }
-      }
-    }
-  }, [activeCommentId, commentsSectionRef, isOpen]);
 
   if (!isConnected) {
     return (
@@ -184,7 +166,6 @@ export const CommentSection = ({
                     <TextAreaFieldV2
                       placeholder="Reply"
                       value={reply}
-                      disabled={comment.id !== activeCommentId}
                       className={cn(
                         'bg-white text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap',
                         comment.id === activeCommentId && 'bg-white',
@@ -194,14 +175,6 @@ export const CommentSection = ({
                       onKeyDown={handleReplyKeyDown}
                       autoFocus={isNativeMobile}
                       onInput={(e) => handleInput(e, reply)}
-                      onFocus={() => {
-                        if (replySectionRef.current) {
-                          replySectionRef.current.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'end',
-                          });
-                        }
-                      }}
                     />
                     {comment.id === activeCommentId && (
                       <ButtonGroup className="w-full justify-end">
