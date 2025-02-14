@@ -108,26 +108,26 @@ export const CommentProvider = ({
     const selectedContent = state.doc.textBetween(from, to, ' ');
 
     const newComment = getNewComment(selectedContent, content);
-    onNewComment?.(newComment);
     editor?.commands.setComment(newComment.id || '');
     setActiveCommentId(newComment.id || '');
     setTimeout(focusCommentWithActiveId);
+    onNewComment?.(newComment);
     return newComment.id;
   };
 
   const resolveComment = (commentId: string) => {
-    onResolveComment?.(commentId);
     editor.commands.resolveComment(commentId);
+    onResolveComment?.(commentId);
   };
 
   const unresolveComment = (commentId: string) => {
-    onUnresolveComment?.(commentId);
     editor.commands.unresolveComment(commentId);
+    onUnresolveComment?.(commentId);
   };
 
   const deleteComment = (commentId: string) => {
-    onDeleteComment?.(commentId);
     editor.commands.unsetComment(commentId);
+    onDeleteComment?.(commentId);
   };
 
   const handleAddReply = (
