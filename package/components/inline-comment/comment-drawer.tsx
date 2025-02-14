@@ -59,10 +59,7 @@ export const CommentDrawer = ({
                   </Tooltip>
                 </div>
               </div>
-              <CommentSection
-                activeCommentId={activeCommentId}
-                isOpen={isOpen}
-              />
+              <CommentSection activeCommentId={activeCommentId} />
             </React.Fragment>
           }
         />
@@ -104,7 +101,6 @@ export const CommentDrawer = ({
                 activeCommentId={activeCommentId}
                 isNavbarVisible={isNavbarVisible}
                 isPresentationMode={isPresentationMode}
-                isOpen={isOpen}
               />
             </React.Fragment>
           }
