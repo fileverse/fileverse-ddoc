@@ -15,6 +15,7 @@ import verifiedMark from '../../assets/verified-mark.png';
 import { nameFormatter } from '../../utils/helpers';
 import { CommentSectionProps } from './types';
 import { CommentUsername } from './comment-username';
+import { useEffect } from 'react';
 import { EmptyComments } from './empty-comments';
 import { useResponsive } from '../../utils/responsive';
 import { UserDisplaySkeleton } from './comment-card';
@@ -72,6 +73,26 @@ export const CommentSection = ({
   };
 
   const ensStatus = useEnsName(username as string);
+
+  useEffect(() => {
+    if (commentsSectionRef.current) {
+      // If there's an active comment, scroll to it
+      if (activeCommentId) {
+        const activeElement = commentsSectionRef.current.querySelector(
+          `[data-comment-id="${activeCommentId}"]`,
+        );
+
+        if (activeElement) {
+          setTimeout(() => {
+            activeElement.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
+            });
+          });
+        }
+      }
+    }
+  }, [activeCommentId, commentsSectionRef]);
 
   if (!isConnected) {
     return (
