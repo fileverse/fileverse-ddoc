@@ -144,7 +144,7 @@ export const CommentDropdown = ({
   }, [isConnected]);
 
   const renderInitialView = () => (
-    <div className="p-3 flex flex-col gap-2 color-bg-secondary">
+    <div className="p-3 flex flex-col gap-2 color-bg-secondary rounded-md">
       <TextAreaFieldV2
         value={comment}
         onChange={handleCommentChange}

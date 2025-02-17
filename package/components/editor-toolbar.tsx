@@ -163,7 +163,7 @@ const TiptapToolBar = ({
             </Tooltip>
           }
           content={
-            <div className="p-2 flex flex-col gap-1 text-body-sm scroll-smooth color-bg-default shadow-elevation-1 transition-all rounded color-text-default">
+            <div className="p-2 flex flex-col gap-1 text-body-sm scroll-smooth color-bg-default shadow-elevation-3 transition-all rounded color-text-default">
               <div>
                 <span className="text-[12px] px-2 font-normal color-text-secondary py-1">
                   PDF
@@ -258,7 +258,7 @@ const TiptapToolBar = ({
             </button>
           }
           content={
-            <div className="zoom-level-options w-[110px] text-body-sm scroll-smooth color-bg-default px-1 py-2 shadow-elevation-1 transition-all rounded">
+            <div className="zoom-level-options w-[110px] text-body-sm scroll-smooth color-bg-default px-1 py-2 shadow-elevation-3 transition-all rounded">
               {zoomLevels.map((zoom) => (
                 <button
                   key={zoom.title}

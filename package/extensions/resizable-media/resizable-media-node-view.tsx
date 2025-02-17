@@ -350,7 +350,7 @@ export const ResizableMediaNodeView = ({
         {!isPreview && (
           <>
             <div
-              className="horizontal-resize-handle group-hover:bg-black group-hover:border-2 group-hover:border-white/80"
+              className="horizontal-resize-handle group-hover:bg-[#2E2E2E] group-hover:border-2 group-hover:border-[#E8EBEC]"
               title="Resize"
               onClick={({ clientX }) => setLastClientX(clientX)}
               onMouseDown={(e: any) => startHorizontalResize(e)}

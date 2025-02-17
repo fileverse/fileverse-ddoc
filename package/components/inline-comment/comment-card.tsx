@@ -65,7 +65,7 @@ const CommentReply = ({
         })}
       />
       <div className="absolute left-0 top-0 w-4">
-        <div className="w-[10px] h-[20px] border-l border-b rounded-bl-md custom-border" />
+        <div className="w-[10px] h-[20px] border-l border-b rounded-bl-lg custom-border" />
       </div>
       {ensStatus.isLoading ? (
         <UserDisplaySkeleton />

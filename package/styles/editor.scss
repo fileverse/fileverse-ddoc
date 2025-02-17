@@ -59,7 +59,7 @@
     }
 
     .horizontal-resize-handle {
-      @apply h-12 lg:h-24 w-2 top-[50%] right-1 cursor-col-resize absolute z-20 translate-y-[-50%] rounded;
+      @apply h-12 w-2 top-[50%] right-1 cursor-col-resize absolute z-20 translate-y-[-50%] rounded;
     }
 
     .btn {
@@ -397,8 +397,8 @@ ul[data-type='taskList'] li > label input[type='checkbox'] {
   background-color: #fff;
   margin: 0;
   cursor: pointer;
-  width: 1.5em;
-  height: 1.5em;
+  width: 20px;
+  height: 20px;
   position: relative;
   top: 3px;
   border: 1px solid black;
@@ -431,8 +431,8 @@ ul[data-type='taskList'] li > label input[type='checkbox']:active {
 
 ul[data-type='taskList'] li > label input[type='checkbox']::before {
   content: '';
-  width: 0.8em;
-  height: 0.8em;
+  width: 11px;
+  height: 11px;
   transform: scale(0);
   transition: 120ms transform ease-in-out;
   box-shadow: inset 1em 1em black;

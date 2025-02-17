@@ -84,10 +84,11 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
           <LucideIcon name="ChevronDown" size="sm" className="mt-1" />
         </button>
       }
+      className="shadow-elevation-3"
       content={
         <div
           ref={elementRef}
-          className="h-auto flex w-48 flex-col overflow-hidden rounded color-bg-default p-1 shadow-elevation-3 color-text-default transition-all"
+          className="h-auto flex w-48 flex-col gap-1 overflow-hidden rounded color-bg-default p-1 color-text-default transition-all"
         >
           {items.map((item, index) => (
             <button
@@ -96,7 +97,7 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
                 item.command();
               }}
               className={cn(
-                'flex items-center justify-between rounded-sm px-2 py-1 text-sm hover:color-bg-default-hover transition-all',
+                'flex items-center justify-between rounded-sm px-2 py-1 text-body-sm hover:color-bg-default-hover transition-all',
                 {
                   'color-bg-brand hover:color-bg-brand-hover dark:text-[#363B3F]':
                     item.isActive(),
