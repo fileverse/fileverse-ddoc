@@ -16,7 +16,7 @@ const CustomTooltip = ({ content, children }: CustomTooltipProps) => {
     >
       {children}
       {visible && (
-        <div className="absolute z-10 p-2 mt-2 text-sm color-text-inverse dark:text-[#363B3F] color-bg-default-inverse rounded shadow-lg">
+        <div className="absolute z-10 p-2 mt-2 text-sm color-text-inverse dark:bg-[#000] color-bg-default-inverse rounded shadow-lg animate-in fade-in-10 zoom-in-75">
           {content}
         </div>
       )}

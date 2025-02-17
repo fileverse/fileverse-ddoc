@@ -141,3 +141,35 @@ div[data-page-break='false'] {
 div[data-type='page-break']:hover .remove-page-break-icon {
   display: inline-block;
 }
+
+.custom-border {
+  border-color: #e8ebec;
+}
+
+.dark .custom-border {
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.custom-border-bg {
+  background-color: #e8ebec;
+}
+
+.dark .custom-border-bg {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.mobile-util-btn-group {
+  background-color: #f8f9fa;
+}
+
+.dark .mobile-util-btn-group {
+  background-color: #1a1a1a;
+}
+
+.vertical-divider {
+  background-color: #e8ebec;
+}
+
+.dark .vertical-divider {
+  background-color: #404040;
+}

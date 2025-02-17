@@ -12,7 +12,7 @@ import cn from 'classnames';
 import { debounce } from '../../utils/debounce';
 import { Surface } from '../../common/surface';
 import useContentItemActions from '../../hooks/use-content-item-actions';
-import { CustomTooltip } from '../../common/cutsom-tooltip';
+import { CustomTooltip } from '../../common/custom-tooltip';
 import { FocusScope } from '@radix-ui/react-focus-scope';
 import {
   createTemplateButtons,
@@ -344,7 +344,7 @@ export const DBlockNodeView: React.FC<
                 side="bottom"
                 align="start"
                 sideOffset={8}
-                className="z-10"
+                className="z-10 shadow-elevation-3"
               >
                 <Surface className="p-2 flex flex-col min-w-[16rem]">
                   <PopoverClose asChild>

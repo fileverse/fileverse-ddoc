@@ -87,7 +87,7 @@ export const ResizableMediaNodeView = ({
         // Aspect Ratio from its original size
         setAspectRatio(
           (resizableImgRef.current as HTMLImageElement).naturalWidth /
-            (resizableImgRef.current as HTMLImageElement).naturalHeight,
+          (resizableImgRef.current as HTMLImageElement).naturalHeight,
         );
       };
     }
@@ -359,7 +359,7 @@ export const ResizableMediaNodeView = ({
               onTouchEnd={stopHorizontalResize}
             />
 
-            <span className="media-control-buttons opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex gap-1 p-1">
+            <span className="absolute top-2 right-2 transition-all rounded-md overflow-hidden box-border border color-border-default color-bg-default shadow-elevation-3 opacity-0 group-hover:opacity-100 flex gap-1 p-1">
               {resizableMediaActions.map((btn, index) => {
                 return (
                   <ToolbarButton
@@ -373,6 +373,7 @@ export const ResizableMediaNodeView = ({
                     }
                     icon={btn.icon as string}
                     classNames="min-w-6 aspect-square"
+                    size="sm"
                   />
                 );
               })}

@@ -69,10 +69,6 @@
     .btn.active {
       @apply bg-yellow-300 hover:brightness-90;
     }
-
-    .media-control-buttons {
-      @apply absolute top-2 right-2 bg-white transition-all duration-200 ease-linear shadow-xl rounded-md overflow-hidden border border-slate-200 box-border;
-    }
   }
 
   table {
@@ -95,6 +91,10 @@
       > * {
         margin-bottom: 0;
       }
+
+      .dark & {
+        border-color: hsla(var(--color-border-default));
+      }
     }
 
     tr {
@@ -107,6 +107,10 @@
       font-weight: bold;
       text-align: left;
       background-color: #f8f9fa;
+
+      .dark & {
+        background-color: hsla(var(--color-bg-secondary));
+      }
     }
 
     .selectedCell:after {
@@ -137,6 +141,23 @@
 
       &.is-empty::before {
         content: '' !important;
+      }
+    }
+  }
+
+  .custom-text-link {
+    @apply hover:underline transition-colors cursor-pointer select-text pointer-events-auto;
+    color: #5c0aff;
+
+    &:visited {
+      color: #3d03af;
+    }
+
+    .dark & {
+      color: #b6a6ff;
+
+      &:visited {
+        color: #9373ff;
       }
     }
   }
@@ -316,6 +337,10 @@
 .ProseMirror code {
   background-color: rgba(97, 97, 97, 0.1);
   color: #616161;
+
+  .dark & {
+    color: hsla(var(--color-text-default));
+  }
 }
 .ProseMirror pre {
   background-color: transparent;
@@ -323,6 +348,10 @@
   font-family: 'JetBrainsMono', monospace;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
+
+  .dark & {
+    color: hsla(var(--color-text-default));
+  }
 }
 .ProseMirror pre code {
   color: inherit;
@@ -368,31 +397,53 @@ ul[data-type='taskList'] li > label input[type='checkbox'] {
   background-color: #fff;
   margin: 0;
   cursor: pointer;
-  width: 1.2em;
-  height: 1.2em;
+  width: 1.5em;
+  height: 1.5em;
   position: relative;
   top: 3px;
-  border: 2px solid black;
+  border: 1px solid black;
+  border-radius: 4px;
   margin-right: 0.3rem;
   display: grid;
   place-content: center;
+
+  .dark & {
+    background-color: hsla(var(--color-bg-default));
+    border-color: hsla(var(--color-border-default));
+  }
 }
+
 ul[data-type='taskList'] li > label input[type='checkbox']:hover {
   background-color: #f8f9fa;
+
+  .dark & {
+    background-color: hsla(var(--color-bg-secondary));
+  }
 }
+
 ul[data-type='taskList'] li > label input[type='checkbox']:active {
   background-color: #e9ecef;
+
+  .dark & {
+    background-color: hsla(var(--color-bg-tertiary));
+  }
 }
+
 ul[data-type='taskList'] li > label input[type='checkbox']::before {
   content: '';
-  width: 0.65em;
-  height: 0.65em;
+  width: 0.8em;
+  height: 0.8em;
   transform: scale(0);
   transition: 120ms transform ease-in-out;
-  box-shadow: inset 1em 1em;
+  box-shadow: inset 1em 1em black;
   transform-origin: center;
   clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+
+  .dark & {
+    box-shadow: inset 1em 1em white;
+  }
 }
+
 ul[data-type='taskList'] li > label input[type='checkbox']:checked::before {
   transform: scale(1);
 }
@@ -401,6 +452,10 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   color: #a8a29e;
   text-decoration: line-through;
   text-decoration-thickness: 2px;
+
+  .dark & {
+    color: hsla(var(--color-text-tertiary));
+  }
 }
 
 .collaboration-cursor__caret {
@@ -594,7 +649,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
 
       th,
       td {
-        border: 1px solid #ddd;
         padding: 8px;
         text-align: left;
 
@@ -604,7 +658,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       }
 
       th {
-        background-color: #f8f9fa;
         font-weight: bold;
 
         p {
@@ -797,12 +850,30 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
 
 .inline-comment--active {
   @apply bg-[#BCF6C1] cursor-pointer transition-all;
+
+  .dark & {
+    background-color: #177e23;
+    color: #1a1a1a;
+  }
 }
 
 .inline-comment--unresolved {
   @apply bg-[#DDFBDF] cursor-pointer transition-all;
+
+  .dark & {
+    background-color: #ddfbdf;
+    color: #1a1a1a;
+  }
 }
 
 .inline-comment--resolved {
   @apply bg-transparent;
+}
+
+.highlight-comment-bg {
+  background-color: #e5fbe7;
+
+  .dark & {
+    background-color: #177e23;
+  }
 }

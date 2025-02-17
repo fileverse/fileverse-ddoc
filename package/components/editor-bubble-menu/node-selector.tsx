@@ -98,12 +98,13 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
               className={cn(
                 'flex items-center justify-between rounded-sm px-2 py-1 text-sm hover:color-bg-default-hover transition-all',
                 {
-                  'color-bg-brand hover:color-bg-brand-hover': item.isActive(),
+                  'color-bg-brand hover:color-bg-brand-hover dark:text-[#363B3F]':
+                    item.isActive(),
                 },
               )}
             >
               <div className="flex items-center space-x-2">
-                <div className="rounded-sm p-1">
+                <div className="rounded color-bg-default color-text-default p-1">
                   <LucideIcon name={item.icon} size="sm" />
                 </div>
                 <span>{item.name}</span>

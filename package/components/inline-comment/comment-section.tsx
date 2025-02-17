@@ -24,7 +24,6 @@ export const CommentSection = ({
   activeCommentId,
   isNavbarVisible,
   isPresentationMode,
-  isOpen,
 }: CommentSectionProps) => {
   const {
     comments,
@@ -67,12 +66,16 @@ export const CommentSection = ({
 
   const handleCommentClick = (commentId: string) => {
     focusCommentInEditor(commentId);
+    // Close reply section if clicking on a different comment
+    if (openReplyId && openReplyId !== commentId) {
+      setOpenReplyId(null);
+    }
   };
 
   const ensStatus = useEnsName(username as string);
 
   useEffect(() => {
-    if (commentsSectionRef.current && isOpen) {
+    if (commentsSectionRef.current) {
       // If there's an active comment, scroll to it
       if (activeCommentId) {
         const activeElement = commentsSectionRef.current.querySelector(
@@ -89,7 +92,7 @@ export const CommentSection = ({
         }
       }
     }
-  }, [activeCommentId, commentsSectionRef, isOpen]);
+  }, [activeCommentId, commentsSectionRef]);
 
   if (!isConnected) {
     return (
@@ -109,7 +112,7 @@ export const CommentSection = ({
       className={cn(
         'flex flex-col h-[calc(100vh-120px)] sm:!h-[calc(100vh-40px)] xl:!h-[calc(100vh-210px)] !color-bg-default !rounded-b-lg',
         !isNavbarVisible && 'xl:!h-[calc(100vh-150px)]',
-        isPresentationMode && 'xl:!h-[84vh]',
+        isPresentationMode && 'xl:!h-[86vh]',
       )}
     >
       {filteredComments.length === 0 ? (
@@ -125,9 +128,8 @@ export const CommentSection = ({
               data-comment-id={comment.id}
               className={cn(
                 'flex flex-col w-full box-border transition-all border-b color-border-default hover:color-bg-default-hover last:border-b-0 py-3',
-                comment.id === activeCommentId
-                  ? 'color-bg-default-hover'
-                  : 'gap-3',
+                comment.id === activeCommentId && 'color-bg-default-selected',
+                comment.replies?.length > 0 && 'gap-0',
               )}
               onClick={() => handleCommentClick(comment.id as string)}
             >
@@ -154,10 +156,9 @@ export const CommentSection = ({
               <div
                 ref={replySectionRef}
                 className={cn(
-                  'px-6 flex flex-col gap-2',
+                  'pr-6 pl-8 flex flex-col gap-2',
                   openReplyId === comment.id && 'ml-5 pl-4',
-                  (comment.id !== activeCommentId || comment.resolved) &&
-                  'hidden',
+                  comment.resolved && 'hidden',
                 )}
               >
                 {openReplyId !== comment.id ? (
@@ -167,13 +168,17 @@ export const CommentSection = ({
                       setOpenReplyId(comment.id as string);
                     }}
                     className={cn(
-                      'w-full h-9 rounded-full color-bg-secondary flex items-center justify-center gap-2 mt-3',
+                      'w-full flex items-center justify-start gap-2 mt-3 hover:!bg-transparent pl-6',
                       comment.replies?.length === 0 && 'hidden',
                     )}
                     variant="ghost"
                   >
-                    <LucideIcon name="MessageSquarePlus" />
-                    <span className="text-body-sm-bold">
+                    <LucideIcon
+                      name="MessageSquarePlus"
+                      className="color-text-secondary"
+                      size="sm"
+                    />
+                    <span className="text-xs font-medium">
                       Reply to this thread
                     </span>
                   </Button>
@@ -182,7 +187,6 @@ export const CommentSection = ({
                     <TextAreaFieldV2
                       placeholder="Reply"
                       value={reply}
-                      disabled={comment.id !== activeCommentId}
                       className={cn(
                         'color-bg-default text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap',
                         comment.id === activeCommentId && 'color-bg-default',
@@ -192,14 +196,6 @@ export const CommentSection = ({
                       onKeyDown={handleReplyKeyDown}
                       autoFocus={isNativeMobile}
                       onInput={(e) => handleInput(e, reply)}
-                      onFocus={() => {
-                        if (replySectionRef.current) {
-                          replySectionRef.current.scrollIntoView({
-                            behavior: 'smooth',
-                            block: 'end',
-                          });
-                        }
-                      }}
                     />
                     {comment.id === activeCommentId && (
                       <ButtonGroup className="w-full justify-end">
@@ -235,7 +231,13 @@ export const CommentSection = ({
         ) : (
           <div className="flex justify-start items-center gap-2">
             <Avatar
-              src={ensStatus.isEns ? EnsLogo : undefined}
+              src={
+                ensStatus.isEns
+                  ? EnsLogo
+                  : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                    ensStatus.name,
+                  )}`
+              }
               size="sm"
               className="min-w-6"
             />

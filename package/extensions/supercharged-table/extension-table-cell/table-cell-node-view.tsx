@@ -195,7 +195,7 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
             <article className="w-screen lg:w-full" contentEditable={false}>
               <div
                 tabIndex={1}
-                className="static z-50 top-8 right-1/2 translate-x-1/2 lg:-translate-x-full p-2 shadow color-bg-default rounded-lg w-56"
+                className="static z-50 top-8 right-1/2 translate-x-1/2 lg:-translate-x-full p-2 shadow-elevation-3 color-bg-default rounded-lg w-56 border color-border-default"
                 style={gimmeDropdownStyles()}
               >
                 {cellButtonsConfig.map((btn) => {

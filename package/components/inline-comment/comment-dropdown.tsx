@@ -48,6 +48,8 @@ export const CommentDropdown = ({
     deleteComment,
     isDDocOwner,
     onComment,
+    isConnected,
+    setCommentDrawerOpen,
   } = useComments();
 
   const emptyComment =
@@ -77,6 +79,11 @@ export const CommentDropdown = ({
   };
 
   const handleReplySubmit = () => {
+    if (!isConnected) {
+      setCommentDrawerOpen(true);
+      return;
+    }
+
     const newReply = {
       id: `reply-${uuid()}`,
       username: username!,
@@ -129,6 +136,12 @@ export const CommentDropdown = ({
       });
     }
   }, [activeComment?.replies]);
+
+  useEffect(() => {
+    if (isConnected && reply.trim()) {
+      handleReplySubmit();
+    }
+  }, [isConnected]);
 
   const renderInitialView = () => (
     <div className="p-3 flex flex-col gap-2 color-bg-secondary">
@@ -280,7 +293,7 @@ export const CommentDropdown = ({
           <Button
             onClick={handleReplySubmit}
             className="px-4 py-2 w-20 min-w-20 h-9"
-            disabled={activeComment?.resolved || !reply.trim() || !username}
+            disabled={activeComment?.resolved || !reply.trim()}
           >
             Send
           </Button>

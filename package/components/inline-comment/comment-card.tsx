@@ -13,14 +13,24 @@ import { CommentCardProps, CommentReplyProps, UserDisplayProps } from './types';
 import { useComments, useEnsName } from './context/comment-context';
 import EnsLogo from '../../assets/ens.svg';
 import verifiedMark from '../../assets/verified-mark.png';
-import { dateFormatter, nameFormatter } from '../../utils/helpers';
+import {
+  dateFormatter,
+  nameFormatter,
+  renderTextWithLinks,
+} from '../../utils/helpers';
 import { Spinner } from '../../common/spinner';
 
 const UserDisplay = ({ ensStatus, createdAt }: UserDisplayProps) => {
   return (
     <div className="flex justify-start items-center gap-2">
       <Avatar
-        src={ensStatus.isEns ? EnsLogo : undefined}
+        src={
+          ensStatus.isEns
+            ? EnsLogo
+            : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+              ensStatus.name,
+            )}`
+        }
         size="sm"
         className="min-w-6"
       />
@@ -39,18 +49,31 @@ const UserDisplay = ({ ensStatus, createdAt }: UserDisplayProps) => {
   );
 };
 
-const CommentReply = ({ reply, username, createdAt }: CommentReplyProps) => {
+const CommentReply = ({
+  reply,
+  username,
+  createdAt,
+  isLast,
+}: CommentReplyProps) => {
   const ensStatus = useEnsName(username);
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="flex flex-col gap-2 relative pl-4 pb-3 last:pb-0">
+      <div
+        className={cn('absolute left-0 top-0 h-full w-[1px] custom-border-bg', {
+          hidden: isLast,
+        })}
+      />
+      <div className="absolute left-0 top-0 w-4">
+        <div className="w-[10px] h-[20px] border-l border-b rounded-bl-md custom-border" />
+      </div>
       {ensStatus.isLoading ? (
         <UserDisplaySkeleton />
       ) : (
         <UserDisplay ensStatus={ensStatus} createdAt={createdAt} />
       )}
-      <span className="text-body-sm flex flex-col gap-2 ml-3 pl-4 border-l whitespace-pre-wrap break-words">
-        {reply}
+      <span className="text-body-sm flex flex-col gap-2 ml-3 pl-4 border-l custom-border whitespace-pre-wrap break-words">
+        {renderTextWithLinks(reply)}
       </span>
     </div>
   );
@@ -141,22 +164,48 @@ export const CommentCard = ({
     }
 
     return (
-      <div className="flex flex-col gap-3">
+      <div className="flex flex-col gap-0 ml-3 relative">
         {replies.length > 3 && !showAllReplies && (
-          <button
+          <div
             onClick={() => setShowAllReplies(true)}
-            className="text-helper-text-sm color-text-secondary hover:underline text-left ml-3 pl-4"
+            className="text-helper-text-sm color-text-secondary hover:underline text-left pl-2 pb-3 border-l custom-border cursor-pointer flex items-center gap-1"
           >
+            <IconButton
+              icon="ChevronDown"
+              variant="ghost"
+              size="sm"
+              rounded
+              className="color-text-secondary border custom-border scale-[0.8]"
+              onClick={() => setShowAllReplies(true)}
+            />
+            <div className="flex items-center -space-x-1">
+              {replies.slice(0, 2).map((reply) => (
+                <Avatar
+                  src={
+                    ensStatus.isEns
+                      ? EnsLogo
+                      : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                        reply.username || '',
+                      )}`
+                  }
+                  size="sm"
+                  className="w-4 h-4 last:z-10 bg-transparent"
+                  bordered="border"
+                  key={reply.id}
+                />
+              ))}
+            </div>
             {replies.length - 2} more replies in this thread
-          </button>
+          </div>
         )}
 
-        {displayedReplies.map((reply) => (
+        {displayedReplies.map((reply, index) => (
           <CommentReply
             key={reply.id}
             reply={reply.content || ''}
             username={reply.username || ''}
             createdAt={reply.createdAt || new Date()}
+            isLast={index === displayedReplies.length - 1}
           />
         ))}
       </div>
@@ -174,9 +223,9 @@ export const CommentCard = ({
         )}
       >
         <div className="flex justify-start items-center">
-          <UserDisplay ensStatus={ensStatus} createdAt={createdAt} />
+          <UserDisplaySkeleton />
         </div>
-        <div className="flex flex-col gap-2 ml-3 pl-4 border-l color-border-default">
+        <div className="flex flex-col gap-2 ml-3 pl-4 border-l custom-border">
           <div className="flex items-center gap-2 color-text-secondary">
             <Spinner size="sm" />
             <p className="text-helper-text-sm">Syncing onchain comments</p>
@@ -189,7 +238,7 @@ export const CommentCard = ({
     <div
       ref={commentsContainerRef}
       className={cn(
-        'flex flex-col gap-3 px-3 group comment-card',
+        'flex flex-col gap-0 px-3 group comment-card',
         isResolved && 'opacity-70',
         !isDropdown && '!px-6',
         isDropdown && 'py-3',
@@ -298,9 +347,9 @@ export const CommentCard = ({
           </Tooltip>
         )}
       </div>
-      <div className="flex flex-col gap-2 ml-3 pl-4 border-l color-border-default">
+      <div className="flex flex-col gap-2 ml-3 pl-4 border-l custom-border py-3">
         {selectedContent && (
-          <div className="bg-[#e5fbe7] p-1 rounded-lg">
+          <div className="highlight-comment-bg p-1 rounded-lg">
             <div className="relative">
               <span
                 className={cn('text-body-sm italic block', {
@@ -323,7 +372,7 @@ export const CommentCard = ({
         {comment && (
           <div>
             <span className="text-body-sm whitespace-pre-wrap break-words">
-              {comment}
+              {renderTextWithLinks(comment)}
             </span>
           </div>
         )}

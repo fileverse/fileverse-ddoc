@@ -586,7 +586,7 @@ export const EditorFontFamily = ({
           className={cn(
             'flex w-full items-center space-x-2 rounded px-2 py-1 text-left text-sm color-text-default transition',
             editor.isActive('textStyle', { fontFamily: font.value })
-              ? 'color-bg-brand xl:hover:brightness-90'
+              ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
               : 'hover:color-bg-default-hover',
           )}
         >
@@ -618,7 +618,7 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'left' })
-            ? 'color-bg-brand xl:hover:brightness-90'
+            ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
             : 'hover:color-bg-default-hover',
         )}
       >
@@ -632,7 +632,7 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'center' })
-            ? 'color-bg-brand xl:hover:brightness-90'
+            ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
             : 'hover:color-bg-default-hover',
         )}
       >
@@ -646,7 +646,7 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'right' })
-            ? 'color-bg-brand xl:hover:brightness-90'
+            ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
             : 'hover:color-bg-default-hover',
         )}
       >
@@ -1105,12 +1105,12 @@ export const TextHeading = ({
           className={cn(
             'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm color-text-default transition',
             {
-              ['color-bg-brand xl:hover:brightness-90']: heading.isActive(),
+              ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']: heading.isActive(),
               ['hover:color-bg-default-hover']: !heading.isActive(),
             },
           )}
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded color-bg-default">
+          <div className="flex h-10 w-10 items-center justify-center rounded color-bg-default color-text-default">
             <LucideIcon name={heading.icon} size="md" />
           </div>
           <div>
@@ -1317,7 +1317,7 @@ export const TextFormatingPopup = ({
                 className={cn(
                   'flex w-fit items-center font-medium space-x-2 rounded p-2 text-center text-sm color-text-default transition',
                   {
-                    ['color-bg-brand xl:hover:brightness-90']:
+                    ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
                       heading.isActive(),
                     ['hover:color-bg-default-hover']: !heading.isActive(),
                   },
@@ -1328,7 +1328,7 @@ export const TextFormatingPopup = ({
             ))}
           </div>
           <div className="flex justify-between sm:justify-center items-center gap-1">
-            <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
+            <div className="mobile-util-btn-group rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
               {textAlignments.map((textAlignment) => (
                 <button
                   onClick={() => textAlignment.command(editor)}
@@ -1336,9 +1336,10 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['color-bg-brand xl:hover:brightness-90']:
+                      ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
                         textAlignment.isActive(),
-                      ['hover:color-bg-default-hover']: !textAlignment.isActive(),
+                      ['hover:color-bg-default-hover']:
+                        !textAlignment.isActive(),
                     },
                   )}
                 >
@@ -1346,7 +1347,7 @@ export const TextFormatingPopup = ({
                 </button>
               ))}
             </div>
-            <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
+            <div className="mobile-util-btn-group rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
               {others.map((other) => (
                 <button
                   onClick={() => other.command(editor)}
@@ -1354,7 +1355,7 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['color-bg-brand xl:hover:brightness-90']:
+                      ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
                         other.isActive(),
                       ['hover:color-bg-default-hover']: !other.isActive(),
                     },
@@ -1366,7 +1367,7 @@ export const TextFormatingPopup = ({
             </div>
           </div>
           <div className="flex gap-1 justify-center">
-            <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly p-1 w-full sm:w-fit ">
+            <div className="mobile-util-btn-group rounded flex gap-1 justify-evenly p-1 w-full sm:w-fit ">
               {textStyles.slice(0, 4).map((textStyle) => (
                 <button
                   onClick={() => textStyle.command(editor)}
@@ -1374,7 +1375,7 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['color-bg-brand xl:hover:brightness-90']:
+                      ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
                         textStyle.isActive(),
                       ['hover:color-bg-default-hover']: !textStyle.isActive(),
                     },
@@ -1384,7 +1385,7 @@ export const TextFormatingPopup = ({
                 </button>
               ))}
             </div>
-            <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly p-1 w-full sm:w-fit ">
+            <div className="mobile-util-btn-group rounded flex gap-1 justify-evenly p-1 w-full sm:w-fit ">
               {textStyles.slice(4).map((textStyle) => (
                 <button
                   onClick={() => textStyle.command(editor)}
@@ -1392,7 +1393,7 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['color-bg-brand xl:hover:brightness-90']:
+                      ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
                         textStyle.isActive(),
                       ['hover:color-bg-default-hover']: !textStyle.isActive(),
                     },
@@ -1403,7 +1404,7 @@ export const TextFormatingPopup = ({
               ))}
             </div>
           </div>
-          <div className="bg-[#f8f9fa] rounded flex gap-1 justify-center self-center w-fit p-1">
+          <div className="mobile-util-btn-group rounded flex gap-1 justify-center self-center w-fit p-1">
             {listStyles.map((listStyle) => (
               <button
                 onClick={() => listStyle.command(editor)}
@@ -1411,7 +1412,7 @@ export const TextFormatingPopup = ({
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                   {
-                    ['color-bg-brand xl:hover:brightness-90']:
+                    ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
                       listStyle.isActive(),
                     ['hover:color-bg-default-hover']: !listStyle.isActive(),
                   },

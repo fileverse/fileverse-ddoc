@@ -36,7 +36,7 @@ export const CommentDrawer = ({
           noOverlay
           side="right"
           className={cn(
-            'p-0 !w-screen md:!w-[384px] !z-50 !bg-[#F8F9FA]',
+            'p-0 !w-screen md:!w-[384px] !z-50 !color-bg-default',
             !isConnected && '!h-screen',
           )}
           content={
@@ -59,10 +59,7 @@ export const CommentDrawer = ({
                   </Tooltip>
                 </div>
               </div>
-              <CommentSection
-                activeCommentId={activeCommentId}
-                isOpen={isOpen}
-              />
+              <CommentSection activeCommentId={activeCommentId} />
             </React.Fragment>
           }
         />
@@ -104,7 +101,6 @@ export const CommentDrawer = ({
                 activeCommentId={activeCommentId}
                 isNavbarVisible={isNavbarVisible}
                 isPresentationMode={isPresentationMode}
-                isOpen={isOpen}
               />
             </React.Fragment>
           }
