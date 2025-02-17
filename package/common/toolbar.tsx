@@ -20,7 +20,7 @@ const ToolbarWrapper = forwardRef<HTMLDivElement, ToolbarWrapperProps>(
     ref,
   ) => {
     const toolbarClassName = clx(
-      'text-black inline-flex h-full leading-none gap-0.5',
+      'color-text-default inline-flex h-full leading-none gap-0.5',
       isVertical ? 'flex-col p-2' : 'flex-row p-1 items-center',
       className,
     );

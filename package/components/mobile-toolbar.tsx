@@ -174,11 +174,14 @@ const MobileToolbar = ({
             );
           } else {
             return (
-              <div key={_index} className="w-[2px] h-4 bg-gray-200 mx-2"></div>
+              <div
+                key={_index}
+                className="w-[2px] h-4 vertical-divider mx-2"
+              ></div>
             );
           }
         })}
-        <div className="w-[2px] h-4 bg-gray-200 mx-2"></div>
+        <div className="w-[2px] h-4 vertical-divider mx-2"></div>
         <div className="w-9 h-9 flex justify-center items-center">
           <LucideIcon
             size={'md'}

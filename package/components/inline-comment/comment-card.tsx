@@ -28,8 +28,8 @@ const UserDisplay = ({ ensStatus, createdAt }: UserDisplayProps) => {
           ensStatus.isEns
             ? EnsLogo
             : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-                ensStatus.name,
-              )}`
+              ensStatus.name,
+            )}`
         }
         size="sm"
         className="min-w-6"
@@ -60,19 +60,19 @@ const CommentReply = ({
   return (
     <div className="flex flex-col gap-2 relative pl-4 pb-3 last:pb-0">
       <div
-        className={cn('absolute left-0 top-0 h-full w-[1px] bg-[#E8EBEC]', {
+        className={cn('absolute left-0 top-0 h-full w-[1px] custom-border-bg', {
           hidden: isLast,
         })}
       />
       <div className="absolute left-0 top-0 w-4">
-        <div className="w-[10px] h-[20px] border-l border-b rounded-bl-md color-border-default" />
+        <div className="w-[10px] h-[20px] border-l border-b rounded-bl-lg custom-border" />
       </div>
       {ensStatus.isLoading ? (
         <UserDisplaySkeleton />
       ) : (
         <UserDisplay ensStatus={ensStatus} createdAt={createdAt} />
       )}
-      <span className="text-body-sm flex flex-col gap-2 ml-3 pl-4 border-l whitespace-pre-wrap break-words">
+      <span className="text-body-sm flex flex-col gap-2 ml-3 pl-4 border-l custom-border whitespace-pre-wrap break-words">
         {renderTextWithLinks(reply)}
       </span>
     </div>
@@ -168,14 +168,14 @@ export const CommentCard = ({
         {replies.length > 3 && !showAllReplies && (
           <div
             onClick={() => setShowAllReplies(true)}
-            className="text-helper-text-sm color-text-secondary hover:underline text-left pl-2 pb-3 border-l color-border-default cursor-pointer flex items-center gap-1"
+            className="text-helper-text-sm color-text-secondary hover:underline text-left pl-2 pb-3 border-l custom-border cursor-pointer flex items-center gap-1"
           >
             <IconButton
               icon="ChevronDown"
               variant="ghost"
               size="sm"
               rounded
-              className="color-text-secondary border color-border-default scale-[0.8]"
+              className="color-text-secondary border custom-border scale-[0.8]"
               onClick={() => setShowAllReplies(true)}
             />
             <div className="flex items-center -space-x-1">
@@ -185,8 +185,8 @@ export const CommentCard = ({
                     ensStatus.isEns
                       ? EnsLogo
                       : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-                          reply.username || '',
-                        )}`
+                        reply.username || '',
+                      )}`
                   }
                   size="sm"
                   className="w-4 h-4 last:z-10 bg-transparent"
@@ -225,7 +225,7 @@ export const CommentCard = ({
         <div className="flex justify-start items-center">
           <UserDisplaySkeleton />
         </div>
-        <div className="flex flex-col gap-2 ml-3 pl-4 border-l color-border-default">
+        <div className="flex flex-col gap-2 ml-3 pl-4 border-l custom-border">
           <div className="flex items-center gap-2 color-text-secondary">
             <Spinner size="sm" />
             <p className="text-helper-text-sm">Syncing onchain comments</p>
@@ -321,10 +321,10 @@ export const CommentCard = ({
                         {isResolved ? 'Unresolve' : 'Resolve'}
                       </button>
                       <button
-                        className="flex items-center text-[#FB3449] text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"
+                        className="flex items-center color-text-danger text-sm font-medium gap-2 rounded p-2 transition-all hover:color-bg-default-hover w-full"
                         onClick={handleDeleteClick}
                       >
-                        <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
+                        <LucideIcon name="Trash2" size="sm" />
                         Delete
                       </button>
                     </div>
@@ -347,9 +347,9 @@ export const CommentCard = ({
           </Tooltip>
         )}
       </div>
-      <div className="flex flex-col gap-2 ml-3 pl-4 border-l color-border-default py-3">
+      <div className="flex flex-col gap-2 ml-3 pl-4 border-l custom-border py-3">
         {selectedContent && (
-          <div className="bg-[#e5fbe7] p-1 rounded-lg">
+          <div className="highlight-comment-bg p-1 rounded-lg">
             <div className="relative">
               <span
                 className={cn('text-body-sm italic block', {

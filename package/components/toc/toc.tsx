@@ -22,7 +22,7 @@ export const ToCItem = ({
       className={cn(
         'flex items-center transition-all text-body-sm-bold max-[1280px]:h-[32px] max-[1280px]:px-2 max-[1280px]:py-1 h-5 max-[1280px]:max-w-full xl:!max-w-[200px] min-[1440px]:!max-w-[280px] min-[1600px]:!max-w-[320px] xl:border-l-2',
         item.isActive
-          ? 'border-[#363B3F] color-text-default max-[1280px]:border-none max-[1280px]:bg-[#F8F9FA] max-[1280px]:rounded'
+          ? 'color-border-active color-text-default max-[1280px]:border-none max-[1280px]:bg-[#F8F9FA] max-[1280px]:rounded'
           : 'color-text-secondary border-transparent',
       )}
     >

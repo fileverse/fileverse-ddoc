@@ -36,7 +36,7 @@ export const PageBreakNodeView: React.FC<NodeViewProps> = ({
         <LucideIcon
           name="PageBreakRemove"
           onClick={handleDeleteNode}
-          className="text-[#77818A] cursor-pointer"
+          className="color-text-secondary cursor-pointer"
         />
       </Tooltip>
       <div className="absolute bottom-[-15px] left-0 right-0 h-4">
