@@ -41,7 +41,7 @@ export const CommentDrawer = ({
           )}
           content={
             <React.Fragment>
-              <div className="flex px-4 py-3 border-b flex-row gap-4 items-center color-bg-default">
+              <div className="flex p-4 border-b flex-row gap-4 items-center color-bg-default">
                 <p className="text-heading-sm">Comments</p>
                 <div className="absolute top-[2px] right-10 p-2">
                   <Tooltip
@@ -83,7 +83,7 @@ export const CommentDrawer = ({
           title="Comments"
           content={
             <React.Fragment>
-              <div className="absolute top-0 right-10 p-3">
+              <div className="absolute -top-[2px] right-10 p-3">
                 <Tooltip
                   text={showResolved ? 'Hide resolved' : 'Show resolved'}
                   sideOffset={0}
@@ -94,6 +94,7 @@ export const CommentDrawer = ({
                     variant="ghost"
                     size="md"
                     onClick={toggleResolved}
+                    className="p-1 !min-w-8 !w-8 !h-8 aspect-square"
                   />
                 </Tooltip>
               </div>

@@ -309,7 +309,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                         isActive={item.isActive()}
                       />
                       {index === 3 && (
-                        <div className="w-[2px] h-4 vertical-divider ml-2"></div>
+                        <div className="w-[1px] h-4 vertical-divider ml-2"></div>
                       )}
                     </div>
                   );
@@ -354,7 +354,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                           />
                         }
                       />
-                      <div className="w-[2px] h-4 vertical-divider"></div>
+                      <div className="w-[1px] h-4 vertical-divider"></div>
                       <DynamicDropdown
                         key={item.name}
                         sideOffset={15}
@@ -383,7 +383,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                   return (
                     <React.Fragment key={item.name}>
                       {item.name === 'InlineComment' && (
-                        <div className="w-[2px] h-4 vertical-divider"></div>
+                        <div className="w-[1px] h-4 vertical-divider"></div>
                       )}
                       <DynamicDropdown
                         sideOffset={isInlineCommentOpen ? 5 : 15}

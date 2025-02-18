@@ -155,7 +155,7 @@ function App() {
           <ThemeToggle />
           <IconButton
             variant={'ghost'}
-            icon={isPreviewMode ? 'Eye' : 'EyeOff'}
+            icon={isPreviewMode ? 'PencilOff' : 'Pencil'}
             size="md"
             onClick={() => setIsPreviewMode(!isPreviewMode)}
           />

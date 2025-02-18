@@ -210,7 +210,7 @@ const TiptapToolBar = ({
             </div>
           }
         />
-        <div className="w-[2px] h-4 vertical-divider mx-1"></div>
+        <div className="w-[1px] h-4 vertical-divider mx-1"></div>
 
         <div className="flex gap-1 justify-center items-center">
           {undoRedoTools.map((tool, _index) => {
@@ -231,7 +231,7 @@ const TiptapToolBar = ({
               return (
                 <div
                   key={_index}
-                  className="w-[2px] h-4 vertical-divider mx-1"
+                  className="w-[1px] h-4 vertical-divider mx-1"
                 ></div>
               );
             }
@@ -274,7 +274,7 @@ const TiptapToolBar = ({
             </div>
           }
         />
-        <div className="w-[2px] h-4 vertical-divider mx-1"></div>
+        <div className="w-[1px] h-4 vertical-divider mx-1"></div>
         <DynamicDropdown
           key={IEditorTool.FONT_FAMILY}
           anchorTrigger={
@@ -305,7 +305,7 @@ const TiptapToolBar = ({
             />
           }
         />
-        <div className="w-[2px] h-4 vertical-divider mx-1"></div>
+        <div className="w-[1px] h-4 vertical-divider mx-1"></div>
         <DynamicDropdown
           key={IEditorTool.HEADING}
           anchorTrigger={
@@ -333,14 +333,14 @@ const TiptapToolBar = ({
             />
           }
         />
-        <div className="w-[2px] h-4 vertical-divider mx-1"></div>
+        <div className="w-[1px] h-4 vertical-divider mx-1"></div>
         <div className="flex gap-2 justify-center items-center">
           {toolbar.map((tool, index) => {
             if (!tool) {
               return (
                 <div
                   key={index}
-                  className="w-[2px] h-4 vertical-divider mx-1"
+                  className="w-[1px] h-4 vertical-divider mx-1"
                 ></div>
               );
             }
@@ -390,7 +390,7 @@ const TiptapToolBar = ({
                             <ToolbarButton
                               key={moreTool?.title}
                               icon={moreTool?.icon}
-                              onClick={moreTool?.onClick || (() => {})}
+                              onClick={moreTool?.onClick || (() => { })}
                               isActive={moreTool?.isActive || false}
                             />
                           ))}
@@ -438,7 +438,7 @@ const TiptapToolBar = ({
         </div>
       </div>
       <div className="flex items-center gap-1">
-        <div className="w-[2px] h-4 vertical-divider mx-2"></div>
+        <div className="w-[1px] h-4 vertical-divider mx-2"></div>
         <IconButton
           size="md"
           variant="ghost"
