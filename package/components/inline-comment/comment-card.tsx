@@ -3,6 +3,7 @@ import {
   ButtonGroup,
   cn,
   DynamicDropdown,
+  EmojiClickData,
   IconButton,
   LucideIcon,
   Skeleton,
@@ -19,6 +20,7 @@ import {
   renderTextWithLinks,
 } from '../../utils/helpers';
 import { Spinner } from '../../common/spinner';
+import { CommentReactions } from './comment-reactions';
 
 const UserDisplay = ({ ensStatus, createdAt }: UserDisplayProps) => {
   return (
@@ -79,6 +81,56 @@ const CommentReply = ({
   );
 };
 
+const renderReactions = (
+  reactions: {
+    type: EmojiClickData;
+    users: string[];
+    count: number;
+  }[],
+  username: string,
+  id: string,
+  handleAddReaction: (id: string, emoji: EmojiClickData) => void,
+  handleRemoveReaction: (id: string, emoji: EmojiClickData) => void,
+) => {
+  return reactions
+    ?.reduce(
+      (acc, reaction) => {
+        const existing = acc.find((r) => r.emoji.emoji === reaction.type.emoji);
+        if (existing) {
+          existing.count++;
+          return acc;
+        }
+        return [...acc, { emoji: reaction.type, count: 1 }];
+      },
+      [] as { emoji: EmojiClickData; count: number }[],
+    )
+    .map((reaction, index) => {
+      const hasReacted = reactions.some(
+        (r) =>
+          r.type.emoji === reaction.emoji.emoji && r.users.includes(username!),
+      );
+
+      return (
+        <span
+          key={index}
+          className="inline-flex items-center gap-1 color-bg-secondary color-border-default border rounded-full px-2 py-0.5 hover:color-bg-default-hover cursor-pointer transition-all text-helper-text-sm"
+          onClick={() => {
+            if (hasReacted) {
+              handleRemoveReaction(id, reaction.emoji);
+            } else {
+              handleAddReaction(id, reaction.emoji);
+            }
+          }}
+        >
+          {reaction.emoji.emoji}
+          {reaction.count > 1 && (
+            <span className="text-helper-text-sm">{reaction.count}</span>
+          )}
+        </span>
+      );
+    });
+};
+
 export const CommentCard = ({
   username,
   selectedContent,
@@ -96,12 +148,14 @@ export const CommentCard = ({
   isCommentOwner,
   version,
   emptyComment,
+  reactions,
 }: CommentCardProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAllReplies, setShowAllReplies] = useState(false);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
-  const { setOpenReplyId } = useComments();
+  const { setOpenReplyId, handleAddReaction, handleRemoveReaction } =
+    useComments();
   const ensStatus = useEnsName(username);
 
   useEffect(() => {
@@ -274,19 +328,10 @@ export const CommentCard = ({
                 </Tooltip>
               )}
 
-              <Tooltip
-                text={!isDisabled ? 'Coming soon' : ''}
-                sideOffset={0}
-                position="bottom"
-              >
-                <IconButton
-                  variant={'ghost'}
-                  icon="Smile"
-                  disabled
-                  size="sm"
-                  className="opacity-0 group-hover:opacity-100  transition-opacity duration-300 disabled:bg-transparent"
-                />
-              </Tooltip>
+              <CommentReactions
+                commentId={id as string}
+                isDropdown={isDropdown}
+              />
 
               {!isDropdown && isCommentOwner && (
                 <DynamicDropdown
@@ -374,6 +419,16 @@ export const CommentCard = ({
             <span className="text-body-sm whitespace-pre-wrap break-words">
               {renderTextWithLinks(comment)}
             </span>
+            <div className="flex items-center gap-1 mt-2">
+              {reactions &&
+                renderReactions(
+                  reactions,
+                  username!,
+                  id as string,
+                  handleAddReaction,
+                  handleRemoveReaction,
+                )}
+            </div>
           </div>
         )}
       </div>

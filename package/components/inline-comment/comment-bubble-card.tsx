@@ -59,7 +59,7 @@ export const CommentBubbleCard = ({
       interactive: true,
       inertia: true,
       trigger: 'manual',
-      hideOnClick: true,
+      hideOnClick: false,
       inlinePositioning: true,
       popperOptions: {
         strategy: 'fixed',
