@@ -8,11 +8,9 @@ import {
   JSONContent,
 } from '@tiptap/react';
 import { useEditingContext } from '../../hooks/use-editing-context';
-import cn from 'classnames';
 import { debounce } from '../../utils/debounce';
 import { Surface } from '../../common/surface';
 import useContentItemActions from '../../hooks/use-content-item-actions';
-import { CustomTooltip } from '../../common/custom-tooltip';
 import { FocusScope } from '@radix-ui/react-focus-scope';
 import {
   createTemplateButtons,
@@ -26,6 +24,8 @@ import {
   PopoverContent,
   PopoverClose,
   Button,
+  Tooltip,
+  cn,
 } from '@fileverse/ui';
 // import { startImageUpload } from '../../utils/upload-images';
 
@@ -302,17 +302,18 @@ export const DBlockNodeView: React.FC<
           contentEditable={false}
           suppressContentEditableWarning={true}
         >
-          <CustomTooltip
-            content={
-              <div className="flex flex-col w-40">
+          <Tooltip
+            text={
+              <div className="flex flex-col">
                 <div className="text-xs">Click to add below</div>
                 <div className="text-xs">Opt + Click to add above</div>
               </div>
             }
+            position="bottom"
           >
             <div
               className={cn(
-                'd-block-button color-text-default',
+                'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
                 !isPreviewMode && 'group-hover:opacity-100',
               )}
               contentEditable={false}
@@ -320,25 +321,35 @@ export const DBlockNodeView: React.FC<
             >
               <LucideIcon name="Plus" size="sm" />
             </div>
-          </CustomTooltip>
+          </Tooltip>
           <FocusScope
             onMountAutoFocus={(e) => e.preventDefault()}
             trapped={false}
           >
             <Popover open={menuOpen} onOpenChange={setMenuOpen}>
               <PopoverTrigger asChild>
-                <div
-                  className={cn(
-                    'd-block-button color-text-default',
-                    !isPreviewMode && 'group-hover:opacity-100',
-                  )}
-                  contentEditable={false}
-                  draggable
-                  data-drag-handle
-                  onClick={handleDragClick}
+                <Tooltip
+                  text={
+                    <div className="flex flex-col">
+                      <div className="text-xs">Hold to drag</div>
+                      <div className="text-xs">Opt + Click to delete</div>
+                    </div>
+                  }
+                  position="bottom"
                 >
-                  <LucideIcon name="GripVertical" size="sm" />
-                </div>
+                  <div
+                    className={cn(
+                      'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
+                      !isPreviewMode && 'group-hover:opacity-100',
+                    )}
+                    contentEditable={false}
+                    draggable
+                    data-drag-handle
+                    onClick={handleDragClick}
+                  >
+                    <LucideIcon name="GripVertical" size="sm" />
+                  </div>
+                </Tooltip>
               </PopoverTrigger>
               <PopoverContent
                 side="bottom"

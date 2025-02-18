@@ -153,12 +153,6 @@ function App() {
         </div>
         <div className="flex gap-2">
           <ThemeToggle />
-          <IconButton
-            variant={'ghost'}
-            icon={isPreviewMode ? 'PencilOff' : 'Pencil'}
-            size="md"
-            onClick={() => setIsPreviewMode(!isPreviewMode)}
-          />
 
           {isMediaMax1280px ? (
             <DynamicDropdown
@@ -190,19 +184,49 @@ function App() {
                     <LucideIcon name="List" size="sm" />
                     Document Outline
                   </Button>
+                  <Button
+                    variant={'ghost'}
+                    onClick={() => setIsPreviewMode(!isPreviewMode)}
+                    className="flex justify-start gap-2"
+                  >
+                    <LucideIcon name={isPreviewMode ? 'Pencil' : 'PencilOff'} size="sm" />
+                    {isPreviewMode ? 'Edit' : 'Preview'}
+                  </Button>
+                  <Button
+                    variant={'ghost'}
+                    onClick={() => { }}
+                    className="flex justify-start gap-2"
+                  >
+                    <LucideIcon name="Share2" size="sm" />
+                    Share
+                  </Button>
                 </div>
               }
             />
           ) : (
-            <IconButton
-              variant={'ghost'}
-              icon="Presentation"
-              size="md"
-              onClick={() => {
-                commentDrawerOpen && setCommentDrawerOpen(false);
-                setIsPresentationMode(true);
-              }}
-            />
+            <>
+              <IconButton
+                variant={'ghost'}
+                icon={isPreviewMode ? 'PencilOff' : 'Pencil'}
+                size="md"
+                onClick={() => setIsPreviewMode(!isPreviewMode)}
+              />
+              <IconButton
+                variant={'ghost'}
+                icon="Presentation"
+                size="md"
+                onClick={() => {
+                  commentDrawerOpen && setCommentDrawerOpen(false);
+                  setIsPresentationMode(true);
+                }}
+              />
+              <IconButton
+                variant={'ghost'}
+                icon="Share2"
+                className="flex xl:hidden"
+                size="md"
+              />
+            </>
           )}
           <IconButton
             variant={'ghost'}
@@ -210,12 +234,7 @@ function App() {
             size="md"
             onClick={() => setCommentDrawerOpen((prev) => !prev)}
           />
-          <IconButton
-            variant={'ghost'}
-            icon="Share2"
-            className="flex xl:hidden"
-            size="md"
-          />
+
           <Button
             onClick={publishDoc}
             toggleLeftIcon={true}
