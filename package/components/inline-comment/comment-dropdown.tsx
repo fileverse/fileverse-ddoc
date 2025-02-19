@@ -274,6 +274,8 @@ export const CommentDropdown = ({
           }
           version={activeComment?.version}
           emptyComment={emptyComment}
+          id={activeCommentId}
+          reactions={activeComment?.reactions}
         />
       </div>
 

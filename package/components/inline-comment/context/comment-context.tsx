@@ -12,6 +12,7 @@ import { useOnClickOutside } from 'usehooks-ts';
 import { CommentContextType, CommentProviderProps } from './types';
 import { getAddressName } from '../../../utils/getAddressName';
 import { EnsStatus } from '../types';
+import { EmojiClickData } from '@fileverse/ui';
 
 const CommentContext = createContext<CommentContextType | undefined>(undefined);
 
@@ -358,6 +359,56 @@ export const CommentProvider = ({
     (comment) => comment.id === activeCommentId,
   );
 
+  const handleAddReaction = (commentId: string, emoji: EmojiClickData) => {
+    const updatedComments = initialComments.map((comment) => {
+      if (comment.id === commentId) {
+        const existingReaction = comment.reactions?.find(
+          (r) => r.type === emoji,
+        );
+
+        if (existingReaction) {
+          if (!existingReaction.users.includes(username as string)) {
+            existingReaction.users.push(username as string);
+            existingReaction.count += 1;
+          }
+        } else {
+          comment.reactions = [
+            ...(comment.reactions || []),
+            {
+              type: emoji,
+              users: [username as string],
+              count: 1,
+            },
+          ];
+        }
+      }
+      return comment;
+    });
+
+    setInitialComments?.(updatedComments);
+  };
+
+  const handleRemoveReaction = (commentId: string, emoji: EmojiClickData) => {
+    const updatedComments = initialComments.map((comment) => {
+      if (comment.id === commentId) {
+        comment.reactions = comment.reactions
+          ?.map((reaction) => {
+            if (reaction.type === emoji) {
+              reaction.users = reaction.users.filter(
+                (user) => user !== username,
+              );
+              reaction.count -= 1;
+            }
+            return reaction;
+          })
+          .filter((reaction) => reaction.count > 0);
+      }
+      return comment;
+    });
+
+    setInitialComments?.(updatedComments);
+  };
+
   return (
     <CommentContext.Provider
       value={{
@@ -413,6 +464,8 @@ export const CommentProvider = ({
         isDDocOwner,
         onComment,
         setCommentDrawerOpen,
+        handleAddReaction,
+        handleRemoveReaction,
       }}
     >
       {children}

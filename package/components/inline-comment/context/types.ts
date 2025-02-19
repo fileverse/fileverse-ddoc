@@ -2,6 +2,7 @@ import { Editor } from '@tiptap/react';
 import { IComment } from '../../../extensions/comment';
 import { SetStateAction } from 'react';
 import { CommentAccountProps } from '../../../types';
+import { EmojiClickData } from '@fileverse/ui';
 
 export interface CommentContextType extends CommentAccountProps {
   comments: IComment[];
@@ -60,6 +61,8 @@ export interface CommentContextType extends CommentAccountProps {
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
   onComment?: () => void;
   setCommentDrawerOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  handleAddReaction: (commentId: string, reaction: EmojiClickData) => void;
+  handleRemoveReaction: (commentId: string, reaction: EmojiClickData) => void;
 }
 
 export interface CommentProviderProps extends CommentAccountProps {

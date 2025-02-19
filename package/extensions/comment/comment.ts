@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { EmojiClickData } from '@fileverse/ui';
 import { CommandProps, Mark, mergeAttributes, Range } from '@tiptap/core';
 import { Mark as PMMark } from '@tiptap/pm/model';
 
@@ -54,8 +55,9 @@ export interface IComment {
   id?: string;
   username?: string;
   reactions?: {
+    type: EmojiClickData;
+    users: string[];
     count: number;
-    type: string;
   }[];
   selectedContent?: string;
   content?: string;

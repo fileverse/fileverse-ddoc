@@ -151,6 +151,7 @@ export const CommentSection = ({
                 emptyComment={
                   !comment.content && !comment.username && !comment.createdAt
                 }
+                reactions={comment.reactions}
               />
 
               <div
