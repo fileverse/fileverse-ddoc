@@ -219,7 +219,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           <div
             ref={portalRef}
             className={cn(
-              'fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/4',
+              'fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/4 rounded-md border color-border-default color-bg-default shadow-elevation-3',
             )}
           >
             {renderContent({
@@ -237,7 +237,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       {...bubbleMenuProps(props)}
       shouldShow={shouldShow}
       className={cn(
-        'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border bg-white items-center shadow-elevation-3',
+        'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border color-bg-default items-center shadow-elevation-3',
         isInlineCommentOpen || isCommentOpen ? '!invisible' : '!visible',
         isNativeMobile ? '!-translate-y-[120%]' : '',
       )}
@@ -264,7 +264,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               sideOffset={15}
               alignOffset={-5}
               align="end"
-              className="!z-[50] shadow-elevation-4"
+              className="!z-[50] shadow-elevation-3"
               anchorTrigger={
                 <ToolbarButton
                   icon="MessageSquarePlus"
@@ -309,7 +309,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                         isActive={item.isActive()}
                       />
                       {index === 3 && (
-                        <div className="w-[1px] h-4 bg-gray-200 ml-2"></div>
+                        <div className="w-[1px] h-4 vertical-divider ml-2"></div>
                       )}
                     </div>
                   );
@@ -354,7 +354,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                           />
                         }
                       />
-                      <div className="w-[1px] h-4 bg-gray-200"></div>
+                      <div className="w-[1px] h-4 vertical-divider"></div>
                       <DynamicDropdown
                         key={item.name}
                         sideOffset={15}
@@ -368,6 +368,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                             }
                           />
                         }
+                        className="shadow-elevation-3"
                         content={renderContent(item)}
                       />
                     </React.Fragment>
@@ -382,7 +383,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                   return (
                     <React.Fragment key={item.name}>
                       {item.name === 'InlineComment' && (
-                        <div className="w-[1px] h-4 bg-gray-200"></div>
+                        <div className="w-[1px] h-4 vertical-divider"></div>
                       )}
                       <DynamicDropdown
                         sideOffset={isInlineCommentOpen ? 5 : 15}
@@ -398,6 +399,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                             }
                           />
                         }
+                        className="shadow-elevation-3"
                         content={renderContent(item)}
                       />
                     </React.Fragment>
@@ -412,7 +414,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                       sideOffset={15}
                       alignOffset={-5}
                       align="end"
-                      className="!z-[50] shadow-elevation-4"
+                      className="!z-[50] shadow-elevation-3"
                       anchorTrigger={
                         <ToolbarButton
                           icon="MessageSquarePlus"

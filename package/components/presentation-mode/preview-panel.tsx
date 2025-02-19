@@ -76,7 +76,7 @@ export const PreviewPanel = ({
     <div
       ref={previewPanelRef}
       className={cn(
-        'bg-white flex gap-3 py-4 px-4 color-border-default-hover relative',
+        'color-bg-default flex gap-3 py-4 px-4 color-border-default-hover relative',
         isMobile
           ? 'flex-row overflow-x-auto border-t min-h-[12rem] order-2 w-full pt-10 xl:pt-0'
           : 'w-[251px] h-full overflow-y-auto flex-col py-16 border-r',
@@ -106,7 +106,7 @@ export const PreviewPanel = ({
             <div
               onClick={() => setCurrentSlide(index)}
               className={cn(
-                'bg-white border rounded-lg p-2 cursor-pointer transition-all transform overflow-hidden aspect-video w-[188px] h-[106px]',
+                'color-bg-default border rounded-lg p-2 cursor-pointer transition-all transform overflow-hidden aspect-video w-[188px] h-[106px]',
                 currentSlide === index
                   ? 'border-[#FFDF0A]'
                   : 'color-border-default',

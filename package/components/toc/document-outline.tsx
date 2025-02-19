@@ -67,7 +67,7 @@ export const DocumentOutline = ({
         hasCloseIcon
         content={
           <React.Fragment>
-            <div className="flex justify-between items-center px-4 py-3">
+            <div className="flex justify-between items-center p-4">
               <h2 className="text-heading-sm-bold">Document outline</h2>
             </div>
             <div className={cn('table-of-contents px-4')}>

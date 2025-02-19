@@ -36,12 +36,12 @@ export const CommentDrawer = ({
           noOverlay
           side="right"
           className={cn(
-            'p-0 !w-screen md:!w-[384px] !z-50 !bg-[#F8F9FA]',
+            'p-0 !w-screen md:!w-[384px] !z-50 !color-bg-default',
             !isConnected && '!h-screen',
           )}
           content={
             <React.Fragment>
-              <div className="flex px-4 py-3 border-b flex-row gap-4 items-center bg-white">
+              <div className="flex p-4 border-b flex-row gap-4 items-center color-bg-default">
                 <p className="text-heading-sm">Comments</p>
                 <div className="absolute top-[2px] right-10 p-2">
                   <Tooltip
@@ -71,19 +71,19 @@ export const CommentDrawer = ({
           rounded={true}
           dismissible
           className={cn(
-            'w-[calc(100vw-24px)] !z-40 min-h-[70vh] md:w-[384px] right-0 shadow-elevation-4 rounded-[16px]',
+            'w-[calc(100vw-24px)] !z-40 md:w-[384px] right-0 shadow-elevation-4 rounded-lg border color-border-default',
             isOpen && 'right-2 md:!right-4',
             isNavbarVisible
               ? `h-[calc(98vh-140px)] ${isPreviewMode ? 'top-[4rem]' : 'top-[7.25rem] '}`
               : 'top-[4rem] h-[calc(100vh-90px)] xl:h-[calc(99vh-90px)]',
             isPresentationMode && 'h-[calc(100vh-5rem)] top-[4rem] !z-[60]',
           )}
-          headerClassName="border-b color-border-default p-4 !bg-white !rounded-t-lg"
-          contentClassName="!rounded-lg min-h-[70vh] p-0 !h-full select-text !bg-[#F8F9FA]"
+          headerClassName="border-b color-border-default p-4 !color-bg-default !rounded-t-lg"
+          contentClassName="!rounded-lg p-0 !h-full select-text color-bg-default"
           title="Comments"
           content={
             <React.Fragment>
-              <div className="absolute top-0 right-10 p-3">
+              <div className="absolute -top-[2px] right-10 p-3">
                 <Tooltip
                   text={showResolved ? 'Hide resolved' : 'Show resolved'}
                   sideOffset={0}
@@ -94,6 +94,7 @@ export const CommentDrawer = ({
                     variant="ghost"
                     size="md"
                     onClick={toggleResolved}
+                    className="p-1 !min-w-8 !w-8 !h-8 aspect-square"
                   />
                 </Tooltip>
               </div>
