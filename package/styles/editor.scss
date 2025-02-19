@@ -844,7 +844,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   $thumb-color: rgba(0, 0, 0, 0.3),
   $thumb-hover-color: rgba(0, 0, 0, 0.3)
 ) {
-  scrollbar-width: thin;
   scrollbar-color: $thumb-color transparent;
 
   &:hover {
