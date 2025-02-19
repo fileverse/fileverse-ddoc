@@ -9,6 +9,11 @@
   ol {
     list-style: revert;
   }
+
+  .ProseMirror .presentation-mode .table-wrapper,
+  .is-table div {
+    @apply no-scrollbar;
+  }
 }
 
 * {

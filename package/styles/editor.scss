@@ -95,6 +95,10 @@
       > * {
         margin-bottom: 0;
       }
+
+      p {
+        @apply text-wrap max-w-[85%];
+      }
     }
 
     tr {
@@ -243,6 +247,7 @@
 .is-table div {
   padding: 0px;
   width: auto;
+  overflow-x: auto;
 }
 
 .resize-cursor {
@@ -806,21 +811,70 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   @apply bg-transparent;
 }
 
-.custom-scrollbar {
-  overflow-y: scroll;
-  scrollbar-width: thin; /* Firefox */
-  scrollbar-color: rgba(155, 155, 155, 0.5) transparent; /* Firefox */
-
+// Custom scrollbar for WebKit browsers (Chrome, Edge, Safari, Opera)
+@mixin scrollbar-styling(
+  $width: 8px,
+  $thumb-color: #e8ebec,
+  $track-color: #f1f1f1,
+  $thumb-hover-color: #e8ebec
+) {
   &::-webkit-scrollbar {
-    width: 8px; /* width of the entire scrollbar */
+    width: $width;
+    height: $width;
   }
 
   &::-webkit-scrollbar-track {
-    background: transparent; /* color of the tracking area */
+    background: $track-color;
+    border-radius: 10px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background-color: rgba(155, 155, 155, 0.5); /* color of the scroll thumb */
-    border-radius: 20px; /* roundness of the scroll thumb */
+    background: $thumb-color;
+    border-radius: 10px;
+    transition: background 0.3s;
   }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: $thumb-hover-color;
+  }
+}
+
+// Scrollbar for Firefox
+@mixin firefox-scrollbar(
+  $thumb-color: rgba(0, 0, 0, 0.3),
+  $thumb-hover-color: rgba(0, 0, 0, 0.3)
+) {
+  scrollbar-width: thin;
+  scrollbar-color: $thumb-color transparent;
+
+  &:hover {
+    scrollbar-color: $thumb-hover-color transparent;
+  }
+}
+
+// Apply styles globally
+* {
+  @include scrollbar-styling;
+  @include firefox-scrollbar;
+
+  // Smooth scrolling behavior
+  scroll-behavior: smooth;
+}
+
+// Fallback for Internet Explorer
+@supports (-ms-ime-align: auto) {
+  * {
+    scrollbar-face-color: rgba(0, 0, 0, 0.3);
+    scrollbar-track-color: #f1f1f1;
+  }
+}
+
+.custom-scrollbar {
+  @include scrollbar-styling(
+    10px,
+    rgba(0, 0, 0, 0.3),
+    #ecf0f1,
+    rgba(0, 0, 0, 0.3)
+  );
+  @include firefox-scrollbar(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3));
 }
