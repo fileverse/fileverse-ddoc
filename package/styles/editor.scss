@@ -243,7 +243,6 @@
 .is-table div {
   padding: 0px;
   width: auto;
-  overflow-x: auto;
 }
 
 .resize-cursor {
@@ -805,4 +804,23 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
 
 .inline-comment--resolved {
   @apply bg-transparent;
+}
+
+.custom-scrollbar {
+  overflow-y: scroll;
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(155, 155, 155, 0.5) transparent; /* Firefox */
+
+  &::-webkit-scrollbar {
+    width: 8px; /* width of the entire scrollbar */
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent; /* color of the tracking area */
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(155, 155, 155, 0.5); /* color of the scroll thumb */
+    border-radius: 20px; /* roundness of the scroll thumb */
+  }
 }
