@@ -184,6 +184,21 @@ const DdocEditor = forwardRef(
 
           return fromUint8Array(contents);
         },
+        exportContentAsMarkDown: (filename: string) => {
+          if (editor) {
+            const generateDownloadUrl = editor.commands.exportMarkdownFile();
+            if (generateDownloadUrl) {
+              const url = generateDownloadUrl;
+              const link = document.createElement('a');
+              link.href = url;
+              link.download = filename;
+              document.body.appendChild(link);
+              link.click();
+              document.body.removeChild(link);
+              URL.revokeObjectURL(url);
+            }
+          }
+        },
       }),
       [editor, ydoc],
     );
