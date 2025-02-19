@@ -95,34 +95,34 @@ const renderReactions = (
   return reactions
     ?.reduce(
       (acc, reaction) => {
-        const existing = acc.find((r) => r.emoji.emoji === reaction.type.emoji);
+        const existing = acc.find((r) => r.type.emoji === reaction.type.emoji);
         if (existing) {
           existing.count++;
           return acc;
         }
-        return [...acc, { emoji: reaction.type, count: 1 }];
+        return [...acc, { type: reaction.type, count: 1 }];
       },
-      [] as { emoji: EmojiClickData; count: number }[],
+      [] as { type: EmojiClickData; count: number }[],
     )
     .map((reaction, index) => {
       const hasReacted = reactions.some(
         (r) =>
-          r.type.emoji === reaction.emoji.emoji && r.users.includes(username!),
+          r.type.emoji === reaction.type.emoji && r.users.includes(username!),
       );
 
       return (
         <span
           key={index}
-          className="inline-flex items-center gap-1 color-bg-secondary color-border-default border rounded-full px-2 py-0.5 hover:color-bg-default-hover cursor-pointer transition-all text-helper-text-sm"
+          className="inline-flex items-center justify-center gap-1 color-bg-secondary color-border-default border rounded-full px-2 py-0.5 hover:color-bg-default-hover cursor-pointer transition-all text-helper-text-sm min-w-6"
           onClick={() => {
             if (hasReacted) {
-              handleRemoveReaction(id, reaction.emoji);
+              handleRemoveReaction(id, reaction.type);
             } else {
-              handleAddReaction(id, reaction.emoji);
+              handleAddReaction(id, reaction.type);
             }
           }}
         >
-          {reaction.emoji.emoji}
+          {reaction.type.emoji}
           {reaction.count > 1 && (
             <span className="text-helper-text-sm">{reaction.count}</span>
           )}
@@ -419,7 +419,7 @@ export const CommentCard = ({
             <span className="text-body-sm whitespace-pre-wrap break-words">
               {renderTextWithLinks(comment)}
             </span>
-            <div className="flex items-center gap-1 mt-2">
+            <div className="flex flex-wrap items-center gap-1 mt-2">
               {reactions &&
                 renderReactions(
                   reactions,

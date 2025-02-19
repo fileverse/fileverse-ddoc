@@ -75,6 +75,7 @@ export const CommentReactions = ({
               )}
             >
               <EmojiPicker
+                reactionsDefaultOpen={true}
                 previewConfig={{
                   showPreview: false,
                 }}
@@ -109,6 +110,7 @@ export const CommentReactions = ({
           className="absolute z-50 top-full left-full -translate-x-[92%] mt-3 border color-border-default shadow-elevation-4 rounded-lg"
         >
           <EmojiPicker
+            reactionsDefaultOpen={true}
             previewConfig={{
               showPreview: false,
             }}
