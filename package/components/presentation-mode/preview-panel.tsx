@@ -1,76 +1,32 @@
 import { cn } from '@fileverse/ui';
 import { useRef, useEffect } from 'react';
-import platform from 'platform';
-const checkOs = () => platform.os?.family;
 import { useMediaQuery } from 'usehooks-ts';
-import { EditingProvider } from '../../hooks/use-editing-context';
-import { Editor, EditorContent } from '@tiptap/react';
+import { useResponsive } from '../../utils/responsive';
 
 interface PreviewPanelProps {
   slides: string[];
   currentSlide: number;
   setCurrentSlide: (index: number) => void;
-  previewEditors: { [key: number]: Editor };
 }
 
 export const PreviewPanel = ({
   slides,
   currentSlide,
   setCurrentSlide,
-  previewEditors,
 }: PreviewPanelProps) => {
   const slideRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const previewPanelRef = useRef<HTMLDivElement>(null);
-  const isNativeMobile =
-    checkOs() === 'iOS' ||
-    checkOs() === 'Android' ||
-    checkOs() === 'Windows Phone';
-  const isMobile = useMediaQuery('(max-width: 1280px)');
-
-  const scrollToCurrentSlide = (slideIndex: number) => {
-    if (!previewPanelRef.current || !slideRefs.current[slideIndex]) return;
-
-    const panel = previewPanelRef.current;
-    const slideElement = slideRefs.current[slideIndex];
-
-    if (!slideElement) return;
-
-    if (isMobile) {
-      const slideLeft = slideElement.offsetLeft;
-      const slideWidth = slideElement.offsetWidth;
-      const panelWidth = panel.clientWidth;
-      const currentScroll = panel.scrollLeft;
-
-      if (
-        slideLeft < currentScroll ||
-        slideLeft + slideWidth > currentScroll + panelWidth
-      ) {
-        panel.scrollTo({
-          left: slideLeft - (panelWidth - slideWidth) / 2,
-          behavior: 'smooth',
-        });
-      }
-    } else {
-      const slideTop = slideElement.offsetTop;
-      const slideHeight = slideElement.offsetHeight;
-      const panelHeight = panel.clientHeight;
-      const currentScroll = panel.scrollTop;
-
-      if (
-        slideTop < currentScroll ||
-        slideTop + slideHeight > currentScroll + panelHeight
-      ) {
-        panel.scrollTo({
-          top: slideTop - (panelHeight - slideHeight) / 2,
-          behavior: 'smooth',
-        });
-      }
-    }
-  };
+  const { isNativeMobile } = useResponsive();
+  const isMobile = useMediaQuery('(max-width: 1279px)');
 
   useEffect(() => {
-    scrollToCurrentSlide(currentSlide);
-  }, [currentSlide]);
+    if (!isMobile && slideRefs.current[currentSlide]) {
+      slideRefs.current[currentSlide]?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    }
+  }, [currentSlide, isMobile]);
 
   return (
     <div
@@ -88,40 +44,36 @@ export const PreviewPanel = ({
           Slides: <span className="color-text-default">{slides.length}</span>
         </div>
       )}
-      {slides.map((_slideContent, index) => {
-        return (
+      {slides.map((slideContent, index) => (
+        <div
+          key={index}
+          ref={(el) => (slideRefs.current[index] = el)}
+          className={cn(
+            'flex p-2 rounded-xl w-[219px] h-[122px] transition-all',
+            currentSlide === index
+              ? 'color-bg-brand hover:color-bg-brand-hover'
+              : 'bg-transparent hover:color-bg-default-hover',
+          )}
+        >
+          <span className="text-body-sm color-text-default h-full w-[20px] pr-1 text-center">
+            {index + 1}
+          </span>
           <div
-            key={index}
-            ref={(el) => (slideRefs.current[index] = el)}
+            onClick={() => setCurrentSlide(index)}
             className={cn(
-              'flex p-2 rounded-xl w-[219px] h-[122px] transition-all',
+              'bg-white border rounded-lg p-2 cursor-pointer transition-all transform overflow-hidden aspect-video w-[188px] h-[106px]',
               currentSlide === index
-                ? 'color-bg-brand hover:color-bg-brand-hover'
-                : 'bg-transparent hover:color-bg-default-hover',
+                ? 'border-[#FFDF0A]'
+                : 'color-border-default',
             )}
           >
-            <span className="text-body-sm color-text-default h-full w-[20px] pr-1 text-center">
-              {index + 1}
-            </span>
             <div
-              onClick={() => setCurrentSlide(index)}
-              className={cn(
-                'bg-white border rounded-lg p-2 cursor-pointer transition-all transform overflow-hidden aspect-video w-[188px] h-[106px]',
-                currentSlide === index
-                  ? 'border-[#FFDF0A]'
-                  : 'color-border-default',
-              )}
-            >
-              <EditingProvider isPreviewMode={true}>
-                <EditorContent
-                  editor={previewEditors[index]}
-                  className="presentation-mode preview-slide"
-                />
-              </EditingProvider>
-            </div>
+              className="presentation-mode preview-slide w-[400%] h-[400%] top-0 left-0 absolute"
+              dangerouslySetInnerHTML={{ __html: slideContent }}
+            />
           </div>
-        );
-      })}
+        </div>
+      ))}
     </div>
   );
 };

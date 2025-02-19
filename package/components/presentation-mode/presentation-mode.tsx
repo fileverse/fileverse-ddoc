@@ -100,9 +100,6 @@ export const PresentationMode = ({
 }: PresentationModeProps) => {
   const [showLinkCopied, setShowLinkCopied] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [previewEditors, setPreviewEditors] = useState<{
-    [key: number]: Editor;
-  }>({});
   const [isLoading, setIsLoading] = useState(true);
   const { isNativeMobile } = useResponsive();
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -195,28 +192,6 @@ export const PresentationMode = ({
     return () => clearTimeout(timeoutId);
   }, [editor]);
 
-  // Create preview editors for each slide
-  useEffect(() => {
-    const editors: { [key: number]: Editor } = {};
-    slides.forEach((_, index) => {
-      editors[index] = new Editor({
-        extensions: editor.extensionManager.extensions.filter(
-          (o) => o.name !== 'collaboration',
-        ),
-        editable: false,
-      });
-
-      setTimeout(() => {
-        editors[index].commands.setContent(slides[index]);
-      });
-    });
-    setPreviewEditors(editors);
-
-    return () => {
-      Object.values(editors).forEach((editor) => editor.destroy());
-    };
-  }, [slides]);
-
   // Add this function to handle fullscreen mode
   const toggleFullscreen = useCallback(() => {
     if (isNativeMobile) {
@@ -282,14 +257,6 @@ export const PresentationMode = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [slides.length, currentSlide]);
-
-  useEffect(() => {
-    return () => {
-      if (presentationEditor) {
-        presentationEditor.destroy();
-      }
-    };
-  }, [presentationEditor]);
 
   // Update the fullscreen change event listener
   useEffect(() => {
@@ -372,7 +339,6 @@ export const PresentationMode = ({
           slides={slides}
           currentSlide={currentSlide}
           setCurrentSlide={setCurrentSlide}
-          previewEditors={previewEditors}
         />
       )}
       {/* Main Content */}

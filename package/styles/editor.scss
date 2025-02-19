@@ -543,42 +543,101 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   }
 
   &.preview-slide {
-    transform: scale(0.2);
+    transform: scale(0.25);
     transform-origin: top left;
+    padding: 1.5rem 2rem;
     pointer-events: none;
-    min-width: 950px;
 
-    .ProseMirror {
-      h1 {
-        font-size: 4rem;
-        user-select: none;
-      }
-      h2 {
-        font-size: 3rem;
-        user-select: none;
-      }
-      p {
-        font-size: 2rem;
-        user-select: none;
-      }
-      a {
-        pointer-events: none;
-        user-select: none;
-      }
+    h1 {
+      font-size: 82px;
+      font-weight: 700;
+      margin: 0;
+      line-height: 1.2;
+      user-select: none;
+    }
 
-      img {
-        user-select: none;
-        border-radius: 1rem;
-        max-width: 720px;
+    h2 {
+      font-size: 40px;
+      font-weight: 700;
+      margin: 1rem 0;
+      user-select: none;
+    }
+
+    h3 {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0.5rem 0;
+      user-select: none;
+    }
+
+    p {
+      font-size: 24px;
+      line-height: 36px;
+      font-weight: 400;
+      margin: 1rem 0;
+      user-select: none;
+    }
+
+    img {
+      width: 100%;
+      height: auto;
+      aspect-ratio: 16/9;
+      object-fit: contain;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      user-select: none;
+      border-radius: 1rem;
+    }
+
+    ol,
+    ul {
+      font-size: 24px;
+      margin: 1rem 0;
+      padding-left: 2rem;
+      user-select: none;
+    }
+
+    .task-list-item {
+      list-style-type: none;
+      margin: 0.5rem 0;
+
+      input[type='checkbox'] {
+        margin-right: 0.5em;
       }
+    }
 
-      .node-dBlock {
-        @apply translate-x-[0.5rem] md:translate-x-[-4rem];
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      user-select: none;
 
-        img {
-          @apply translate-x-[-4.5rem] translate-y-[1rem] md:translate-x-0;
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+
+        p {
+          font-size: 20px;
         }
       }
+
+      th {
+        background-color: #f8f9fa;
+        font-weight: 700;
+      }
+    }
+
+    pre {
+      border: 1px solid hsla(195, 10%, 92%, 1);
+      padding: 1rem;
+      border-radius: 0.5rem;
+    }
+
+    code {
+      text-wrap: wrap;
     }
   }
 
