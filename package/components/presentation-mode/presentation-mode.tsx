@@ -444,7 +444,7 @@ export const PresentationMode = ({
             className={cn(
               'w-full bg-white rounded-lg overflow-hidden relative',
               isFullscreen
-                ? 'h-full max-w-none'
+                ? 'h-full max-w-none flex items-center justify-center'
                 : 'px-8 md:px-0 scale-[0.35] md:scale-[0.75] xl:scale-100 min-w-[1080px] max-w-[1080px] aspect-video py-[48px]',
             )}
             style={{
@@ -467,13 +467,14 @@ export const PresentationMode = ({
                     }}
                     transition={{ duration: 0.2 }}
                   >
-                    <SlideContent
-                      content={slides[currentSlide]}
-                      editor={presentationEditor}
+                    <div
+                      className={cn(
+                        'presentation-mode fullscreen w-full h-full',
+                      )}
+                      dangerouslySetInnerHTML={{ __html: slides[currentSlide] }}
                       onTouchStart={onTouchStart}
                       onTouchMove={onTouchMove}
                       onTouchEnd={onTouchEnd}
-                      isFullscreen={isFullscreen}
                     />
                   </motion.div>
                 </AnimatePresence>
