@@ -1,5 +1,10 @@
 # Ddoc Editor
 
+[ddocs.new](http://ddocs.new/) is your onchain, privacy-first alternative to G**gle D*cs: peer-to-peer, end-to-end encrypted, and decentralized. It enables secure, real-time, and async collaboration without compromising user privacy.
+
+<img width="4410" alt="github_banner_final@3x" src="https://github.com/user-attachments/assets/c6ee706d-979d-41b6-9f73-d29fbabb5152" />
+
+
 This repo contains example - demo source code and package code
 
 `/package` contains the package code
