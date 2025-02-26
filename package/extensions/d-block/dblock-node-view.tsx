@@ -327,7 +327,7 @@ export const DBlockNodeView: React.FC<
             trapped={false}
           >
             <Popover open={menuOpen} onOpenChange={setMenuOpen}>
-              <PopoverTrigger asChild>
+              <PopoverTrigger>
                 <Tooltip
                   text={
                     <div className="flex flex-col">
