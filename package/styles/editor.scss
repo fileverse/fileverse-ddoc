@@ -95,6 +95,10 @@
       .dark & {
         border-color: hsla(var(--color-border-default));
       }
+
+      p {
+        @apply text-wrap max-w-[85%];
+      }
     }
 
     tr {

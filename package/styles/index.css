@@ -23,6 +23,11 @@
   .ProseMirror .node-pageBreak {
     @apply color-bg-secondary;
   }
+
+  .ProseMirror .presentation-mode .table-wrapper,
+  .is-table div {
+    @apply no-scrollbar;
+  }
 }
 
 * {
