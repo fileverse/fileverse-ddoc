@@ -6,17 +6,17 @@
 
 
 This repository contains:
-`/package` – The core package code. 
-Example & demo source code to showcase dDocs functionalities.
+- `/package` – The core package code. 
+- Example & demo source code to showcase dDocs functionalities.
 
 ## Usage
 
 ### Prequisites
 
-To use dDocs, ensure your project is set up with Tailwind CSS and have a Tailwind configuration file
+To use dDocs, ensure your project is set up with Tailwind CSS and have a Tailwind configuration file.
 
 ### Install & import
-Add the following imports
+Add the following imports :
 ```javascript
 import { DdocEditor } from '@fileverse-dev/ddoc'
 import '@fileverse-dev/ddoc/styles' // in App.jsx/App.tsx
@@ -24,7 +24,8 @@ import '@fileverse-dev/ddoc/styles' // in App.jsx/App.tsx
 
 
 ### Update Tailwind Config
-In your tailwind config, add this line to content array
+In your tailwind config, add this line to content array :
+
 `@fileverse-dev/ddoc/dist/index.es.js`
 
 You should now be set to use dDocs!
