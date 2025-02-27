@@ -94,9 +94,9 @@ The `Data` interface defines the structure of the data object
 - `npm i`
 - `npm run dev`
 
-It will open up a vite server, that will have the Ddoc Editor
+It will open up a vite server, that will have the Ddoc Editor.
 
-⚠️ This repository is currently undergoing rapid development, with frequent updates and changes. We recommend not to use in production yet
+⚠️ This repository is currently undergoing rapid development, with frequent updates and changes. We recommend not to use in production yet.
 
 ## Pro Extensions Setup
 
