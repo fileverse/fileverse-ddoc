@@ -81,7 +81,7 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 
 ## Data Interface
 
-The `Data` interface defines the structure of the data object
+The `Data` interface defines the structure of the data object.
 
 ### Properties
 
