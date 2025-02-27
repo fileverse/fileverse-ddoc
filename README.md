@@ -5,31 +5,34 @@
 <img width="4410" alt="github_banner_final@3x" src="https://github.com/user-attachments/assets/c6ee706d-979d-41b6-9f73-d29fbabb5152" />
 
 
-This repo contains example - demo source code and package code
-
-`/package` contains the package code
+This repository contains:
+`/package` – The core package code. 
+Example & demo source code to showcase dDocs functionalities.
 
 ## Usage
 
 ### Prequisites
 
-- You should be using tailwindcss and it must have tailwind configuration
+To use dDocs, ensure your project is set up with Tailwind CSS and have a Tailwind configuration file
 
-`import { DdocEditor } from '@fileverse-dev/ddoc'`
+### Install & import
+Add the following imports
+```javascript
+import { DdocEditor } from '@fileverse-dev/ddoc'
+import '@fileverse-dev/ddoc/styles' // in App.jsx/App.tsx
+```
 
-`import '@fileverse-dev/ddoc/styles'` in App.jsx/App.tsx
 
+### Update Tailwind Config
 In your tailwind config, add this line to content array
-
 `@fileverse-dev/ddoc/dist/index.es.js`
 
-That's it, you should be able to use DdocEditor now
+You should now be set to use dDocs!
 
-### Props
 
-# DdocProps Interface
+# dDocProps Interface
 
-The `DdocProps` interface is a TypeScript interface that defines the properties for a component related to a page. This interface includes properties for handling preview mode, publishing data, and optional data related to the page's metadata and content.
+The `DdocProps` interface is a TypeScript interface that defines the properties for a page-related component. It includes properties for handling preview mode, managing publishing data, and optionally storing metadata and content associated with the page.
 
 ## Properties
 
