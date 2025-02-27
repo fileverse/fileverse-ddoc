@@ -527,7 +527,7 @@ export const PresentationMode = ({
 
         {isFullscreen && (
           <div className="absolute bottom-8 left-[50%] translate-x-[-50%] z-50 opacity-0 transition-opacity duration-300 ease-in-out hover:opacity-100">
-            <div className="bg-black/80 rounded-full px-4 py-2">
+            <div className="color-utility-overlay rounded-full px-4 py-2">
               <p className="color-text-default text-helper-text-sm">
                 Press <strong>ESC</strong> to exit fullscreen
               </p>
@@ -545,7 +545,7 @@ export const PresentationMode = ({
                 size="md"
               />
             </div>
-            <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 color-bg-default/80 px-3 py-1 rounded">
+            <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 color-utility-overlay px-3 py-1 rounded">
               <span className="color-text-default">
                 {currentSlide + 1} / {slides.length}
               </span>

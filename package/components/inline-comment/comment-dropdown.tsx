@@ -159,7 +159,7 @@ export const CommentDropdown = ({
         <Button
           onClick={handleClick}
           disabled={!username}
-          className="px-4 py-2 w-20 min-w-20 h-9 font-medium text-sm bg-black rounded"
+          className="px-4 py-2 w-20 min-w-20 h-9 font-medium text-sm"
         >
           Send
         </Button>

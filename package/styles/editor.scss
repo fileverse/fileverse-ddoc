@@ -852,7 +852,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
 
   .dark & {
     background-color: #177e23;
-    color: #1a1a1a;
   }
 }
 
@@ -860,8 +859,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   @apply bg-[#DDFBDF] cursor-pointer transition-all;
 
   .dark & {
-    background-color: #ddfbdf;
-    color: #1a1a1a;
+    background-color: #15521d;
   }
 }
 
@@ -873,7 +871,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   background-color: #e5fbe7;
 
   .dark & {
-    background-color: #177e23;
+    background-color: #15521d;
   }
 }
 

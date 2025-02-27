@@ -902,13 +902,13 @@ export const InlineCommentPopup = ({
   return (
     <div
       ref={elementRef}
-      className="w-[300px] bg-[#F8F9FA] shadow-[0px_4px_16px_-4px_rgba(0,0,0,0.15)] rounded-md"
+      className="w-[300px] color-bg-default-selected shadow-[0px_4px_16px_-4px_rgba(0,0,0,0.15)] rounded-md"
     >
       <TextAreaFieldV2
         value={comment}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        className="bg-[#F8F9FA] w-[296px] font-normal min-h-[44px] max-h-[196px] pt-2 border-none overflow-y-auto no-scrollbar"
+        className="color-bg-default-selected w-[296px] font-normal min-h-[44px] max-h-[196px] pt-2 border-none overflow-y-auto no-scrollbar"
         placeholder="Type your comment"
         autoFocus
       />
