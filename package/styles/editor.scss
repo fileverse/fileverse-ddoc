@@ -669,7 +669,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   &.fullscreen {
     height: 100vh;
     width: 100vw;
-    background-color: #ffffff;
 
     @media (max-width: 640px) {
       padding-top: max(env(safe-area-inset-top), 15vh);

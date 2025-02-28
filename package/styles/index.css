@@ -28,6 +28,14 @@
   .is-table div {
     @apply no-scrollbar;
   }
+
+  .custom-ens-button {
+    @apply bg-[#F0F6FF] hover:!bg-[#E0F0FF] w-full text-[#388CFB] h-10 gap-2 p-3;
+  }
+
+  .dark .custom-ens-button {
+    @apply color-button-default hover:!bg-[#5C5C5C];
+  }
 }
 
 * {

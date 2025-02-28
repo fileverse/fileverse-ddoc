@@ -70,14 +70,14 @@ const CommentUsername = ({
             </div>
 
             <div className="text-center">
-              <button
+              <Button
                 onClick={isConnected ? () => { } : connectViaWallet}
                 disabled={isLoading}
-                className="bg-[#F0F6FF] disabled:opacity-50 disabled:cursor-not-allowed disabled:color-bg-disabled h-10 flex gap-2 items-center justify-center p-3 w-full text-[#388CFB] font-medium rounded"
+                className="custom-ens-button"
               >
                 <img alt="ens-logo" src={EnsLogo} />{' '}
                 {isLoading ? 'Connecting with ENS ...' : 'Continue with ENS'}
-              </button>
+              </Button>
             </div>
           </div>
         </div>
