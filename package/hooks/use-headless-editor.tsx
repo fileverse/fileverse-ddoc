@@ -1,4 +1,4 @@
-import { JSONContent, useEditor } from '@tiptap/react';
+import { Editor, JSONContent } from '@tiptap/react';
 import { defaultExtensions } from '../extensions/default-extension';
 import { useState } from 'react';
 import customTextInputRules from '../extensions/customTextInputRules';
@@ -19,15 +19,13 @@ export const useHeadlessEditor = () => {
       document: ydoc,
     }),
   ]);
-  const editor = useEditor(
-    {
+
+  const getEditor = () => {
+    return new Editor({
       extensions,
       autofocus: false,
-      shouldRerenderOnTransaction: true,
-      immediatelyRender: false,
-    },
-    [extensions],
-  );
+    });
+  };
 
   const isContentYjsEncoded = (
     initialContent: string[] | JSONContent | string | null,
@@ -43,7 +41,10 @@ export const useHeadlessEditor = () => {
     Y.applyUpdate(ydoc, Y.mergeUpdates(parsedContents));
   };
 
-  const setContent = (initialContent: string | string[] | JSONContent) => {
+  const setContent = (
+    initialContent: string | string[] | JSONContent,
+    editor: Editor,
+  ) => {
     if (!editor) throw new Error('cannot set content without editor');
     const isYjsEncoded = isContentYjsEncoded(initialContent as string);
     if (isYjsEncoded) {
@@ -61,5 +62,5 @@ export const useHeadlessEditor = () => {
     }
   };
 
-  return { editor, setContent };
+  return { setContent, getEditor };
 };
