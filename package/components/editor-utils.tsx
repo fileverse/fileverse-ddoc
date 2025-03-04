@@ -157,12 +157,14 @@ export const useEditorToolbar = ({
   secureImageUploadUrl,
   onMarkdownExport,
   onMarkdownImport,
+  setIsCommentSectionOpen,
 }: {
   editor: Editor;
   onError?: (errorString: string) => void;
   secureImageUploadUrl?: string;
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
+  setIsCommentSectionOpen?: (open: boolean) => void;
 }) => {
   const {
     ref: toolRef,
@@ -171,6 +173,63 @@ export const useEditorToolbar = ({
   } = useEditorToolVisiibility(IEditorTool.NONE);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [fileExportsOpen, setFileExportsOpen] = useState(false);
+
+  useEffect(() => {
+    if (!editor) return;
+
+    // Add keyboard shortcuts to the editor's keymap
+    editor.setOptions({
+      editorProps: {
+        handleKeyDown: (view, event) => {
+
+          // Strikethrough shortcut (Alt + Shift + 5)
+          if (
+            event.altKey &&
+            event.shiftKey &&
+            (event.key === '5' || event.key === '%')
+          ) {
+            event.preventDefault();
+            editor.chain().focus().toggleStrike().run();
+            return true;
+          }
+
+          // Open link popup (Alt/Option + Enter)
+          if ((event.altKey || event.metaKey) && event.key === 'Enter') {
+            event.preventDefault();
+            setToolVisibility(IEditorTool.LINK_POPUP);
+            return true;
+          }
+
+          // Inline comment shortcut (Ctrl/Cmd + Alt + M)
+          if (
+            (event.ctrlKey || event.metaKey) &&
+            event.altKey &&
+            event.key.toLowerCase() === 'm'
+          ) {
+            event.preventDefault();
+            const { from, to } = editor.state.selection;
+            const selectedText = editor.state.doc.textBetween(from, to, ' ');
+
+            if (selectedText) {
+              editor.chain().focus().setHighlight({ color: '#DDFBDF' }).run();
+              setIsCommentSectionOpen?.(true);
+            }
+            return true;
+          }
+          return false;
+        },
+      },
+    });
+
+    return () => {
+      // Clean up by resetting editor props when component unmounts
+      if (editor) {
+        editor.setOptions({
+          editorProps: {},
+        });
+      }
+    };
+  }, [editor, setIsCommentSectionOpen]);
 
   const undoRedoTools: Array<IEditorToolElement | null> = [
     {
