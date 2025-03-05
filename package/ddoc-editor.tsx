@@ -565,7 +565,11 @@ const DdocEditor = forwardRef(
                 <EditorContent
                   editor={editor}
                   id="editor"
-                  className="w-full h-auto py-4 bg-white"
+                  className={cn('w-full h-auto bg-white', {
+                    'py-20': isPreviewMode,
+                    'py-4': !isPreviewMode,
+                    'px-4 py-6': isPreviewMode && isNativeMobile,
+                  })}
                 />
               </EditingProvider>
             </div>
