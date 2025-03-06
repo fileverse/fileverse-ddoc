@@ -42,7 +42,7 @@ const UtilsModal = ({
         </DrawerHeader>
         <div
           className={cn(
-            'flex flex-col gap-4 w-full h-full pb-4 text-base text-black',
+            'flex flex-col gap-4 w-full h-full pb-4 text-base color-text-default',
             contentClassName,
           )}
         >

@@ -34,14 +34,14 @@ export const Modal = ({
         case /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/.test(
           inputValue,
         ): {
-          const matches = inputValue.match(
-            /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/,
-          );
-          if (matches && matches.length > 0) {
-            formattedUrl = `https://www.youtube.com/embed/${matches[1]}`;
+            const matches = inputValue.match(
+              /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/,
+            );
+            if (matches && matches.length > 0) {
+              formattedUrl = `https://www.youtube.com/embed/${matches[1]}`;
+            }
+            break;
           }
-          break;
-        }
         case /vimeo\.com\/([a-zA-Z0-9-_]+)/.test(inputValue): {
           const matches = inputValue.match(/vimeo\.com\/([a-zA-Z0-9-_]+)/);
           if (matches && matches.length > 0) {
@@ -120,7 +120,7 @@ export const Modal = ({
   return (
     <div
       ref={ref}
-      className="iframe-input-modal z-50 h-auto absolute gap-2 top-[50px] items-center flex left-[50px] max-h-[330px] overflow-y-auto scroll-smooth rounded-md border border-stone-200 bg-white p-2 shadow-md"
+      className="iframe-input-modal z-50 h-auto absolute gap-2 top-[50px] items-center flex left-[50px] max-h-[330px] overflow-y-auto scroll-smooth rounded-md border border-stone-200 color-bg-default p-2 shadow-md"
     >
       <input
         value={inputValue}

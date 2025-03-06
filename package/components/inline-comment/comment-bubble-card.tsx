@@ -87,7 +87,7 @@ export const CommentBubbleCard = ({
       {...bubbleMenuProps}
       editor={editor}
       className={cn(
-        'shadow-elevation-4 rounded-lg bg-white border color-border-default',
+        'shadow-elevation-4 rounded-lg color-bg-default border color-border-default',
         commentDrawerOpen && 'hidden',
       )}
     >

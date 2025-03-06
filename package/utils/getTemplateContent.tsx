@@ -1242,8 +1242,7 @@ export const getTemplateContent = (
                           href: 'https://vitalik.eth.limo/general/2020/03/21/garbled.html',
                           target: '_blank',
                           rel: 'noopener noreferrer',
-                          class:
-                            'color-text-link visited:text-[#3D03AF] hover:underline transition-colors cursor-pointer select-text pointer-events-auto',
+                          class: 'custom-text-link',
                         },
                       },
                     ],
@@ -1299,8 +1298,7 @@ export const getTemplateContent = (
                               href: 'https://vitalik.eth.limo/general/2021/01/26/snarks.html',
                               target: '_blank',
                               rel: 'noopener noreferrer',
-                              class:
-                                'color-text-link visited:text-[#3D03AF] hover:underline transition-colors cursor-pointer select-text pointer-events-auto',
+                              class: 'custom-text-link',
                             },
                           },
                         ],

@@ -144,12 +144,12 @@ export const CommentDropdown = ({
   }, [isConnected]);
 
   const renderInitialView = () => (
-    <div className="p-3 border-b border-[#E8EBEC] flex flex-col gap-2 color-bg-secondary">
+    <div className="p-3 flex flex-col gap-2 color-bg-secondary rounded-md">
       <TextAreaFieldV2
         value={comment}
         onChange={handleCommentChange}
         onKeyDown={handleKeyDown}
-        className="bg-white w-full text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
+        className="color-bg-default w-full text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
         placeholder="Type your comment"
         autoFocus
         onInput={(e) => handleInput(e, comment)}
@@ -159,7 +159,7 @@ export const CommentDropdown = ({
         <Button
           onClick={handleClick}
           disabled={!username}
-          className="px-4 py-2 w-20 min-w-20 h-9 font-medium text-sm bg-black rounded"
+          className="px-4 py-2 w-20 min-w-20 h-9 font-medium text-sm"
         >
           Send
         </Button>
@@ -169,7 +169,7 @@ export const CommentDropdown = ({
 
   const renderReplyView = () => (
     <>
-      <div className="flex justify-between items-center px-3 py-2 border-b border-[#E8EBEC]">
+      <div className="flex justify-between items-center px-3 py-2 border-b color-border-default">
         <p className="text-sm font-medium color-text-default">
           Highlighted Comments ({activeComments.length})
         </p>
@@ -213,11 +213,11 @@ export const CommentDropdown = ({
                   isDropdownOpen ? (
                     <div className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3">
                       <button
-                        className="flex items-center text-[#FB3449] text-sm font-medium gap-2 rounded p-2 transition-all hover:bg-[#FFF1F2] w-full"
+                        className="flex items-center color-text-danger text-sm font-medium gap-2 rounded p-2 transition-all hover:color-bg-default-hover w-full"
                         onClick={handleDeleteThread}
                         onTouchEnd={handleDeleteThread}
                       >
-                        <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
+                        <LucideIcon name="Trash2" size="sm" />
                         Delete thread
                       </button>
                     </div>
@@ -282,7 +282,7 @@ export const CommentDropdown = ({
           value={reply}
           onChange={handleReplyChange}
           onKeyDown={handleKeyDown}
-          className="bg-white text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
+          className="color-bg-default text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
           placeholder={isDisabled ? 'Available in a moment' : 'Reply'}
           autoFocus
           disabled={activeComment?.resolved || isDisabled || emptyComment}
