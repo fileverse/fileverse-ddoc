@@ -432,6 +432,7 @@ const DdocEditor = forwardRef(
               { 'md:!mt-16': !isPreviewMode },
               { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
               { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
+              { 'mt-4 md:!mt-16 px-4 py-6': isPreviewMode && isNativeMobile },
               {
                 'max-[1080px]:!mx-auto min-[1081px]:!ml-[18%] min-[1700px]:!mx-auto':
                   isCommentSectionOpen &&
