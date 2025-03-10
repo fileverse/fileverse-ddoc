@@ -109,6 +109,8 @@ function App() {
 
   //To handle comments from consumer side
 
+  const [isConnected, setIsConnected] = useState(false);
+
   useEffect(() => {
     if (collaborationId) {
       const name = prompt('Whats your username');
@@ -256,6 +258,11 @@ function App() {
     );
   };
 
+  const handleConnectViaUsername = async (username: string) => {
+    setUsername(username);
+    setIsConnected(true);
+  };
+
   return (
     <div>
       <DdocEditor
@@ -307,12 +314,10 @@ function App() {
           TableOfContents,
           getHierarchicalIndexes,
         }}
-        isConnected={true}
+        isConnected={isConnected}
         connectViaWallet={async () => { }}
         isLoading={false}
-        connectViaUsername={async (username: string) => {
-          console.log(username);
-        }}
+        connectViaUsername={handleConnectViaUsername}
         isDDocOwner={true}
       />
       <Toaster

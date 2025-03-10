@@ -71,7 +71,7 @@ const CommentUsername = ({
 
             <div className="text-center">
               <Button
-                onClick={isConnected ? () => { } : connectViaWallet}
+                onClick={isConnected ? () => null : connectViaWallet}
                 disabled={isLoading}
                 className="custom-ens-button"
               >

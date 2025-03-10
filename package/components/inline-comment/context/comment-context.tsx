@@ -53,6 +53,10 @@ export const CommentProvider = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const isCommentActive = editor.isActive('comment');
   const isCommentResolved = editor.getAttributes('comment').resolved;
+  const [inlineCommentData, setInlineCommentData] = useState({
+    inlineCommentText: '',
+    handleClick: false,
+  });
 
   useOnClickOutside([portalRef, buttonRef, dropdownRef], () => {
     if (isCommentOpen) {
@@ -77,22 +81,14 @@ export const CommentProvider = ({
     onInlineComment?.();
   };
 
-  const onInlineCommentClick = (event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (!isConnected) {
-      setCommentDrawerOpen?.(true);
-    } else {
-      handleInlineComment();
-    }
-  };
-
   const getNewComment = (
     selectedContent: string,
     content: string = '',
+    username: string,
   ): IComment => {
     return {
       id: `comment-${uuid()}`,
-      username: username!,
+      username,
       selectedContent,
       // Preserve line breaks in content
       content: content || '',
@@ -101,13 +97,13 @@ export const CommentProvider = ({
     };
   };
 
-  const addComment = (content?: string) => {
+  const addComment = (content?: string, username?: string) => {
     if (!editor) return;
     const { state } = editor;
     const { from, to } = state.selection;
     const selectedContent = state.doc.textBetween(from, to, ' ');
 
-    const newComment = getNewComment(selectedContent, content);
+    const newComment = getNewComment(selectedContent, content, username!);
     editor?.commands.setComment(newComment.id || '');
     setActiveCommentId(newComment.id || '');
     setTimeout(focusCommentWithActiveId);
@@ -394,7 +390,6 @@ export const CommentProvider = ({
         activeComment,
         selectedText,
         isCommentOpen,
-        onInlineCommentClick,
         handleInlineComment,
         portalRef,
         buttonRef,
@@ -413,6 +408,8 @@ export const CommentProvider = ({
         isDDocOwner,
         onComment,
         setCommentDrawerOpen,
+        inlineCommentData,
+        setInlineCommentData,
       }}
     >
       {children}
