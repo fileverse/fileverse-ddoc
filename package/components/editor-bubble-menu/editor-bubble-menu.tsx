@@ -49,13 +49,11 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const {
     activeComment,
     isCommentOpen,
-    onInlineCommentClick,
     handleInlineComment,
     portalRef,
     buttonRef,
     isCommentActive,
     isCommentResolved,
-    isConnected,
   } = useComments();
 
   const items: BubbleMenuItem[] = [
@@ -211,7 +209,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         size="sm"
         disabled={isCommentResolved || !isCollabDocumentPublished}
         isActive={isCommentActive}
-        onClick={onInlineCommentClick}
+        onClick={handleInlineComment}
         classNames="disabled:!bg-transparent"
       />
       {isCommentOpen &&
@@ -273,9 +271,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                   tooltip={isCommentResolved ? 'Comment resolved' : ''}
                   disabled={isCommentResolved || !isCollabDocumentPublished}
                   isActive={isCommentActive}
-                  onClick={
-                    isConnected ? handleInlineComment : onInlineCommentClick
-                  }
+                  onClick={handleInlineComment}
                   classNames="disabled:!bg-transparent"
                 />
               }
@@ -425,11 +421,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                             isCommentResolved || !isCollabDocumentPublished
                           }
                           isActive={isCommentActive}
-                          onClick={
-                            isConnected
-                              ? handleInlineComment
-                              : onInlineCommentClick
-                          }
+                          onClick={handleInlineComment}
                           classNames="disabled:!bg-transparent"
                         />
                       }
