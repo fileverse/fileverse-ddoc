@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 import { BubbleMenu } from '@tiptap/react';
-import React, { useState } from 'react';
+import React from 'react';
 import { NodeSelector } from './node-selector';
 import {
   LinkPopup,
@@ -11,7 +11,6 @@ import {
   EditorAlignment,
   TextColor,
   ScriptsPopup,
-  InlineCommentPopup,
 } from '../editor-utils';
 import { IEditorTool } from '../../hooks/use-visibility';
 import ToolbarButton from '../../common/toolbar-button';
@@ -29,23 +28,14 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     zoomLevel,
     onError,
     isPreviewMode,
-    setIsCommentSectionOpen,
-    inlineCommentData,
-    setInlineCommentData,
-    walletAddress,
-    username,
-    onInlineComment,
     setCommentDrawerOpen,
     activeCommentId,
     isCollabDocumentPublished,
   } = props;
-  // TODO: V1
-  const [isInlineCommentOpen, setIsInlineCommentOpen] = useState(false);
   const { isNativeMobile } = useResponsive();
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
     editor: editor,
     onError,
-    handleHighlight: () => handleHighlight(),
   });
 
   const {
@@ -107,12 +97,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       command: () => setToolVisibility(IEditorTool.SCRIPTS),
       icon: 'Superscript',
     },
-    // {
-    //   name: 'InlineComment',
-    //   isActive: () => editor.isActive('inlineComment'),
-    //   command: () => {},
-    //   icon: 'MessageSquarePlus',
-    // },
     {
       name: 'Comment',
       isActive: () => isCommentActive,
@@ -120,32 +104,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       icon: 'MessageSquarePlus',
     },
   ];
-
-  // TODO: V1
-  const handleHighlight = () => {
-    if (!(username || walletAddress)) {
-      setIsCommentSectionOpen(true);
-      return;
-    }
-    const { state } = editor;
-    if (!state) return;
-    const { from, to } = state.selection;
-
-    const selectedText = state.doc.textBetween(from, to, ' ');
-    if (!selectedText) return;
-    setInlineCommentData((prevData) => {
-      const updatedData = {
-        ...prevData,
-        highlightedTextContent: selectedText,
-      };
-      return updatedData;
-    });
-
-    setTimeout(() => {
-      editor.chain().setHighlight({ color: '#DDFBDF' }).run();
-    }, 10);
-    setIsInlineCommentOpen(true);
-  };
 
   const renderContent = (item: { name: string; initialComment?: string }) => {
     switch (item.name) {
@@ -167,23 +125,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             onError={onError}
           />
         );
-      case 'InlineComment':
-        if (username || walletAddress) {
-          return (
-            <InlineCommentPopup
-              editor={editor}
-              elementRef={toolRef}
-              setIsCommentSectionOpen={setIsCommentSectionOpen}
-              setIsInlineCommentOpen={setIsInlineCommentOpen}
-              inlineCommentData={inlineCommentData}
-              setInlineCommentData={(data) =>
-                setInlineCommentData?.((prev) => ({ ...prev, ...data }))
-              }
-              onInlineComment={onInlineComment}
-            />
-          );
-        }
-        return null;
       case 'Comment':
         return (
           <CommentDropdown
@@ -238,7 +179,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       shouldShow={shouldShow}
       className={cn(
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border color-bg-default items-center shadow-elevation-3',
-        isInlineCommentOpen || isCommentOpen ? '!invisible' : '!visible',
+        isCommentOpen ? '!invisible' : '!visible',
         isNativeMobile ? '!-translate-y-[120%]' : '',
       )}
       style={{
@@ -250,7 +191,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         <div
           className={cn(
             'relative',
-            isInlineCommentOpen ? 'left-1/2 translate-x-1/2' : '',
+            isCommentOpen ? 'left-1/2 translate-x-1/2' : '',
           )}
         >
           {mobileCommentButton}
@@ -373,28 +314,16 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                   );
                 }
 
-                if (
-                  item.name === 'Link' ||
-                  item.name === 'Scripts' ||
-                  item.name === 'InlineComment'
-                ) {
+                if (item.name === 'Link' || item.name === 'Scripts') {
                   return (
                     <React.Fragment key={item.name}>
-                      {item.name === 'InlineComment' && (
-                        <div className="w-[1px] h-4 vertical-divider"></div>
-                      )}
                       <DynamicDropdown
-                        sideOffset={isInlineCommentOpen ? 5 : 15}
+                        sideOffset={15}
                         anchorTrigger={
                           <ToolbarButton
                             icon={item.icon}
                             variant="ghost"
                             size="sm"
-                            onClick={() =>
-                              item.name === 'InlineComment'
-                                ? handleHighlight()
-                                : null
-                            }
                           />
                         }
                         className="shadow-elevation-3"

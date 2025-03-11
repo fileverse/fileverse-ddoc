@@ -164,8 +164,6 @@ export const useEditorToolbar = ({
   secureImageUploadUrl?: string;
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
-  setIsCommentSectionOpen?: (open: boolean) => void;
-  onInlineCommentClick: (event: React.MouseEvent) => void;
 }) => {
   const {
     ref: toolRef,
@@ -175,8 +173,7 @@ export const useEditorToolbar = ({
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [fileExportsOpen, setFileExportsOpen] = useState(false);
 
-  const { handleInlineComment, isConnected, onInlineCommentClick, buttonRef } =
-    useComments();
+  const { buttonRef } = useComments();
 
   useEffect(() => {
     if (!editor) return;
@@ -244,14 +241,7 @@ export const useEditorToolbar = ({
         });
       }
     };
-  }, [
-    editor,
-    handleInlineComment,
-    isConnected,
-    onInlineCommentClick,
-    setToolVisibility,
-    buttonRef,
-  ]);
+  }, [editor, setToolVisibility, buttonRef]);
 
   const undoRedoTools: Array<IEditorToolElement | null> = [
     {
@@ -758,7 +748,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${editor.isActive('bulletList') ? 'color-bg-default-hover' : ''
+          className={`hover:color-bg-default-hover ${
+            editor.isActive('bulletList') ? 'color-bg-default-hover' : ''
           } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="List" />
@@ -771,7 +762,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${editor.isActive('orderedList') ? 'color-bg-default-hover' : ''
+          className={`hover:color-bg-default-hover ${
+            editor.isActive('orderedList') ? 'color-bg-default-hover' : ''
           } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListOrdered" />
@@ -784,7 +776,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${editor.isActive('taskList') ? 'color-bg-default-hover' : ''
+          className={`hover:color-bg-default-hover ${
+            editor.isActive('taskList') ? 'color-bg-default-hover' : ''
           } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListChecks" />
