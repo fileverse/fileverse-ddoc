@@ -1,5 +1,5 @@
-import clx from 'classnames';
 import { HTMLProps, forwardRef } from 'react';
+import { cn } from '@fileverse/ui';
 
 export type SurfaceProps = HTMLProps<HTMLDivElement> & {
   withShadow?: boolean;
@@ -11,9 +11,9 @@ export const Surface = forwardRef<HTMLDivElement, SurfaceProps>(
     { children, className, withShadow = true, withBorder = false, ...props },
     ref,
   ) => {
-    const surfaceClass = clx(
+    const surfaceClass = cn(
       className,
-      'bg-white rounded',
+      'color-bg-default rounded',
       withShadow ? 'shadow-lg' : '',
       withBorder ? 'border border-neutral-200' : '',
     );

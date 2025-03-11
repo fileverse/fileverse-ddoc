@@ -49,7 +49,7 @@ export const renderTextWithLinks = (text: string) => {
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          className="color-text-link visited:text-[#3D03AF] hover:underline transition-colors"
+          className="custom-text-link"
         >
           {part}
         </a>

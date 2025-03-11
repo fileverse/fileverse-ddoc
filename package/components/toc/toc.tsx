@@ -22,15 +22,15 @@ export const ToCItem = ({
       className={cn(
         'flex items-center transition-all text-body-sm-bold max-[1280px]:h-[32px] max-[1280px]:px-2 max-[1280px]:py-1 h-5 max-[1280px]:max-w-full xl:!max-w-[200px] min-[1440px]:!max-w-[280px] min-[1600px]:!max-w-[320px] xl:border-l-2',
         item.isActive
-          ? 'border-[#363B3F] color-text-default max-[1280px]:border-none max-[1280px]:bg-[#F8F9FA] max-[1280px]:rounded'
-          : 'color-text-secondary border-transparent',
+          ? 'color-border-active color-text-default max-[1280px]:border-none max-[1280px]:bg-[#F8F9FA] max-[1280px]:rounded max-[1280px]:text-[#363B3F]'
+          : 'color-text-secondary border-transparent lg:hover:!brightness-90',
       )}
     >
       <a
         href={`#${item.id}`}
         onClick={(e) => onItemClick(e, item.id)}
         data-item-index={item.itemIndex}
-        className="flex items-center justify-between pl-2 gap-1 h-[32px] transition-all no-underline hover:text-[#363B3F] w-full group"
+        className="flex items-center justify-between pl-2 gap-1 h-[32px] transition-all no-underline  w-full group"
       >
         <span className="truncate">{item.textContent}</span>
         {/* <IconButton

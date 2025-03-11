@@ -44,7 +44,6 @@ export interface CommentContextType extends CommentAccountProps {
   activeComment: IComment | undefined;
   selectedText: string;
   isCommentOpen: boolean;
-  onInlineCommentClick: (event: React.MouseEvent) => void;
   handleInlineComment: () => void;
   portalRef: React.RefObject<HTMLDivElement>;
   buttonRef: React.RefObject<HTMLDivElement>;
@@ -60,6 +59,16 @@ export interface CommentContextType extends CommentAccountProps {
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
   onComment?: () => void;
   setCommentDrawerOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  inlineCommentData: {
+    inlineCommentText: string;
+    handleClick: boolean;
+  };
+  setInlineCommentData: React.Dispatch<
+    React.SetStateAction<{
+      inlineCommentText: string;
+      handleClick: boolean;
+    }>
+  >;
 }
 
 export interface CommentProviderProps extends CommentAccountProps {

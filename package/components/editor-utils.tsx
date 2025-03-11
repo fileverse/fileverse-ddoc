@@ -590,7 +590,7 @@ export const TextHighlighter = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto gap-0.5 flex flex-wrap max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded bg-white px-2 py-2 shadow-elevation-1 transition-all"
+      className="z-50 h-auto gap-0.5 flex flex-wrap max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded color-bg-default px-2 py-2 shadow-elevation-3 transition-all"
     >
       {colors.map((color) => (
         <div
@@ -649,7 +649,7 @@ export const EditorFontFamily = ({
     <div
       ref={elementRef}
       className={cn(
-        'z-50 h-auto max-h-[330px] w-48 overflow-y-auto scroll-smooth bg-white px-1 py-2 shadow-elevation-1 transition-all rounded',
+        'z-50 h-auto max-h-[330px] w-48 overflow-y-auto scroll-smooth color-bg-default px-1 py-2 shadow-elevation-1 transition-all rounded',
       )}
     >
       {fonts.map((font) => (
@@ -663,10 +663,10 @@ export const EditorFontFamily = ({
             fontFamily: font.title,
           }}
           className={cn(
-            'flex w-full items-center space-x-2 rounded px-2 py-1 text-left text-sm text-black transition',
+            'flex w-full items-center space-x-2 rounded px-2 py-1 text-left text-sm color-text-default transition',
             editor.isActive('textStyle', { fontFamily: font.value })
-              ? 'bg-yellow-300 xl:hover:brightness-90'
-              : 'hover:bg-[#f2f2f2]',
+              ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
+              : 'hover:color-bg-default-hover',
           )}
         >
           <p className="font-medium">{font.title}</p>
@@ -687,7 +687,7 @@ export const EditorAlignment = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto left-[47rem] flex flex-wrap gap-1 max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-elevation-1 transition-all"
+      className="z-50 h-auto left-[47rem] flex flex-wrap gap-1 max-h-[330px] overflow-y-auto scroll-smooth rounded color-bg-default px-1 py-2 shadow-elevation-3 transition-all"
     >
       <button
         onClick={() => {
@@ -697,8 +697,8 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'left' })
-            ? 'bg-yellow-300 xl:hover:brightness-90'
-            : 'hover:bg-[#f2f2f2]',
+            ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
+            : 'hover:color-bg-default-hover',
         )}
       >
         <LucideIcon name="AlignLeft" />
@@ -711,8 +711,8 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'center' })
-            ? 'bg-yellow-300 xl:hover:brightness-90'
-            : 'hover:bg-[#f2f2f2]',
+            ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
+            : 'hover:color-bg-default-hover',
         )}
       >
         <LucideIcon name="AlignCenter" />
@@ -725,8 +725,8 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'right' })
-            ? 'bg-yellow-300 xl:hover:brightness-90'
-            : 'hover:bg-[#f2f2f2]',
+            ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
+            : 'hover:color-bg-default-hover',
         )}
       >
         <LucideIcon name="AlignRight" />
@@ -747,7 +747,7 @@ export const EditorList = ({
     <div
       ref={elementRef}
       className={cn(
-        'z-50 h-auto gap-2 flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded bg-white px-1 py-2 shadow-elevation-1 transition-all',
+        'z-50 h-auto gap-2 flex flex-wrap max-h-[330px] overflow-y-auto scroll-smooth rounded color-bg-default px-1 py-2 shadow-elevation-1 transition-all',
       )}
     >
       <Tooltip text="unordered list">
@@ -756,7 +756,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
+          className={`hover:color-bg-default-hover ${
+            editor.isActive('bulletList') ? 'color-bg-default-hover' : ''
           } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="List" />
@@ -769,7 +770,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
+          className={`hover:color-bg-default-hover ${
+            editor.isActive('orderedList') ? 'color-bg-default-hover' : ''
           } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListOrdered" />
@@ -782,7 +784,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
+          className={`hover:color-bg-default-hover ${
+            editor.isActive('taskList') ? 'color-bg-default-hover' : ''
           } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListChecks" />
@@ -845,7 +848,7 @@ export const LinkPopup = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto gap-2 items-center flex max-h-[330px] overflow-y-auto scroll-smooth rounded-lg bg-white p-2 shadow-elevation-1 transition-all"
+      className="z-50 h-auto gap-2 items-center flex max-h-[330px] overflow-y-auto scroll-smooth rounded-lg color-bg-default p-2 shadow-elevation-1 transition-all"
     >
       <TextField
         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -978,19 +981,19 @@ export const InlineCommentPopup = ({
   return (
     <div
       ref={elementRef}
-      className="w-[300px] bg-[#F8F9FA] shadow-[0px_4px_16px_-4px_rgba(0,0,0,0.15)] rounded-md"
+      className="w-[300px] color-bg-default-selected shadow-[0px_4px_16px_-4px_rgba(0,0,0,0.15)] rounded-md"
     >
       <TextAreaFieldV2
         value={comment}
         onChange={handleInputChange}
         onKeyDown={handleKeyDown}
-        className="bg-[#F8F9FA] w-[296px] font-normal min-h-[44px] max-h-[196px] pt-2 border-none overflow-y-auto no-scrollbar"
+        className="color-bg-default-selected w-[296px] font-normal min-h-[44px] max-h-[196px] pt-2 border-none overflow-y-auto no-scrollbar"
         placeholder="Type your comment"
         autoFocus
       />
       {comment.trim() !== '' && (
         <div className="h-full flex items-center gap-2 p-3">
-          <span className="w-full text-[12px] text-[#77818A]">
+          <span className="w-full text-[12px] color-text-secondary">
             Press{' '}
             <span className="font-semibold">{isMobile ? 'Send' : 'Enter'}</span>{' '}
             to send a comment
@@ -1037,11 +1040,8 @@ export const ScriptsPopup = ({
   ];
 
   return (
-    <div
-      ref={elementRef}
-      className="z-50 w-48 bg-white rounded shadow-elevation-1 p-1"
-    >
-      <div className="flex flex-col gap-1 justify-center w-fit sm:w-full">
+    <div ref={elementRef} className="z-50 w-48 color-bg-default rounded p-1">
+      <div className="flex flex-col gap-1 justify-center w-fit sm:w-full transition-all">
         {options.map((option) => (
           <Button
             key={option.title}
@@ -1049,10 +1049,16 @@ export const ScriptsPopup = ({
             onClick={() => {
               option.command();
             }}
-            className="flex items-center justify-between w-full px-2 py-1"
+            className={cn(
+              'flex items-center justify-between w-full px-2 py-1 text-body-sm',
+              option.isActive() &&
+                'color-bg-brand hover:!bg-[#B6A02E] dark:text-[#363B3F]',
+            )}
           >
             <div className="flex items-center gap-2">
-              <LucideIcon name={option.icon} />
+              <div className="rounded color-bg-default color-text-default p-1">
+                <LucideIcon name={option.icon} size="sm" />
+              </div>
               <span>{option.title}</span>
             </div>
             {option.isActive() && (
@@ -1076,7 +1082,7 @@ export const TextColor = ({
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto gap-0.5 flex flex-wrap max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded bg-white px-2 py-2 shadow-elevation-1 transition-all"
+      className="z-50 h-auto gap-0.5 flex flex-wrap max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded color-bg-default px-2 py-2 shadow-elevation-3 transition-all"
     >
       {colors.map((color) => (
         <div
@@ -1171,7 +1177,7 @@ export const TextHeading = ({
     <div
       ref={elementRef}
       className={cn(
-        'z-50 flex w-48 flex-col overflow-hidden rounded bg-white p-1 shadow-elevation-1',
+        'z-50 flex w-48 flex-col overflow-hidden rounded color-bg-default p-1 shadow-elevation-1',
       )}
     >
       {headings.map((heading) => (
@@ -1182,14 +1188,15 @@ export const TextHeading = ({
           }}
           key={heading.title}
           className={cn(
-            'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm text-black transition',
+            'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm color-text-default transition',
             {
-              ['bg-yellow-300 xl:hover:brightness-90']: heading.isActive(),
-              ['hover:bg-[#f2f2f2]']: !heading.isActive(),
+              ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+                heading.isActive(),
+              ['hover:color-bg-default-hover']: !heading.isActive(),
             },
           )}
         >
-          <div className="flex h-10 w-10 items-center justify-center rounded bg-white">
+          <div className="flex h-10 w-10 items-center justify-center rounded color-bg-default color-text-default">
             <LucideIcon name={heading.icon} size="md" />
           </div>
           <div>
@@ -1394,11 +1401,11 @@ export const TextFormatingPopup = ({
                 onClick={() => heading.command(editor)}
                 key={heading.title}
                 className={cn(
-                  'flex w-fit items-center font-medium space-x-2 rounded p-2 text-center text-sm text-black transition',
+                  'flex w-fit items-center font-medium space-x-2 rounded p-2 text-center text-sm color-text-default transition',
                   {
-                    ['bg-yellow-300 xl:hover:brightness-90']:
+                    ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
                       heading.isActive(),
-                    ['hover:bg-[#f2f2f2]']: !heading.isActive(),
+                    ['hover:color-bg-default-hover']: !heading.isActive(),
                   },
                 )}
               >
@@ -1407,17 +1414,18 @@ export const TextFormatingPopup = ({
             ))}
           </div>
           <div className="flex justify-between sm:justify-center items-center gap-1">
-            <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
+            <div className="mobile-util-btn-group rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
               {textAlignments.map((textAlignment) => (
                 <button
                   onClick={() => textAlignment.command(editor)}
                   key={textAlignment.title}
                   className={cn(
-                    'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
+                    'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['bg-yellow-300 xl:hover:brightness-90']:
+                      ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
                         textAlignment.isActive(),
-                      ['hover:bg-[#f2f2f2]']: !textAlignment.isActive(),
+                      ['hover:color-bg-default-hover']:
+                        !textAlignment.isActive(),
                     },
                   )}
                 >
@@ -1425,17 +1433,17 @@ export const TextFormatingPopup = ({
                 </button>
               ))}
             </div>
-            <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
+            <div className="mobile-util-btn-group rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
               {others.map((other) => (
                 <button
                   onClick={() => other.command(editor)}
                   key={other.title}
                   className={cn(
-                    'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
+                    'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['bg-yellow-300 xl:hover:brightness-90']:
+                      ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
                         other.isActive(),
-                      ['hover:bg-[#f2f2f2]']: !other.isActive(),
+                      ['hover:color-bg-default-hover']: !other.isActive(),
                     },
                   )}
                 >
@@ -1445,17 +1453,17 @@ export const TextFormatingPopup = ({
             </div>
           </div>
           <div className="flex gap-1 justify-center">
-            <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly p-1 w-full sm:w-fit ">
+            <div className="mobile-util-btn-group rounded flex gap-1 justify-evenly p-1 w-full sm:w-fit ">
               {textStyles.slice(0, 4).map((textStyle) => (
                 <button
                   onClick={() => textStyle.command(editor)}
                   key={textStyle.title}
                   className={cn(
-                    'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
+                    'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['bg-yellow-300 xl:hover:brightness-90']:
+                      ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
                         textStyle.isActive(),
-                      ['hover:bg-[#f2f2f2]']: !textStyle.isActive(),
+                      ['hover:color-bg-default-hover']: !textStyle.isActive(),
                     },
                   )}
                 >
@@ -1463,17 +1471,17 @@ export const TextFormatingPopup = ({
                 </button>
               ))}
             </div>
-            <div className="bg-[#f8f9fa] rounded flex gap-1 justify-evenly p-1 w-full sm:w-fit ">
+            <div className="mobile-util-btn-group rounded flex gap-1 justify-evenly p-1 w-full sm:w-fit ">
               {textStyles.slice(4).map((textStyle) => (
                 <button
                   onClick={() => textStyle.command(editor)}
                   key={textStyle.title}
                   className={cn(
-                    'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
+                    'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['bg-yellow-300 xl:hover:brightness-90']:
+                      ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
                         textStyle.isActive(),
-                      ['hover:bg-[#f2f2f2]']: !textStyle.isActive(),
+                      ['hover:color-bg-default-hover']: !textStyle.isActive(),
                     },
                   )}
                 >
@@ -1482,17 +1490,17 @@ export const TextFormatingPopup = ({
               ))}
             </div>
           </div>
-          <div className="bg-[#f8f9fa] rounded flex gap-1 justify-center self-center w-fit p-1">
+          <div className="mobile-util-btn-group rounded flex gap-1 justify-center self-center w-fit p-1">
             {listStyles.map((listStyle) => (
               <button
                 onClick={() => listStyle.command(editor)}
                 key={listStyle.title}
                 className={cn(
-                  'flex items-center space-x-2 rounded px-4 py-1 text-black transition h-9',
+                  'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                   {
-                    ['bg-yellow-300 xl:hover:brightness-90']:
+                    ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
                       listStyle.isActive(),
-                    ['hover:bg-[#f2f2f2]']: !listStyle.isActive(),
+                    ['hover:color-bg-default-hover']: !listStyle.isActive(),
                   },
                 )}
               >
