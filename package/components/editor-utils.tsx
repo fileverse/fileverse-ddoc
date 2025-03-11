@@ -185,11 +185,12 @@ export const useEditorToolbar = ({
     editor.setOptions({
       editorProps: {
         handleKeyDown: (_, event) => {
-          // Strikethrough shortcut (Alt + Shift + 5)
+          // Strikethrough shortcut (Alt + Shift + 5 or Cmd + Shift + X for Mac)
           if (
-            event.altKey &&
-            event.shiftKey &&
-            (event.key === '5' || event.key === '%')
+            (event.altKey &&
+              event.shiftKey &&
+              (event.key === '5' || event.key === '%')) ||
+            (event.metaKey && event.shiftKey && event.key.toLowerCase() === 'x')
           ) {
             event.preventDefault();
             editor.chain().focus().toggleStrike().run();
@@ -756,7 +757,7 @@ export const EditorList = ({
             setToolVisibility(IEditorTool.NONE);
           }}
           className={` hover:bg-[#f2f2f2] ${editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="List" />
         </button>
@@ -769,7 +770,7 @@ export const EditorList = ({
             setToolVisibility(IEditorTool.NONE);
           }}
           className={` hover:bg-[#f2f2f2] ${editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListOrdered" />
         </button>
@@ -782,7 +783,7 @@ export const EditorList = ({
             setToolVisibility(IEditorTool.NONE);
           }}
           className={` hover:bg-[#f2f2f2] ${editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListChecks" />
         </button>
