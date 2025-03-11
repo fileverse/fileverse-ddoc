@@ -13,6 +13,7 @@ export interface BubbleMenuItem {
 export type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   activeCommentId: string | null;
   isPreviewMode: boolean;
+  disableInlineComment: boolean;
   onError?: (errorString: string) => void;
   zoomLevel: string;
   setIsCommentSectionOpen?: (isOpen: boolean) => void;

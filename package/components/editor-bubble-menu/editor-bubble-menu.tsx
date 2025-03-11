@@ -31,6 +31,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     setCommentDrawerOpen,
     activeCommentId,
     isCollabDocumentPublished,
+    disableInlineComment,
   } = props;
   const { isNativeMobile } = useResponsive();
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
@@ -150,7 +151,11 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         icon="MessageSquarePlus"
         variant="ghost"
         size="sm"
-        disabled={isCommentResolved || !isCollabDocumentPublished}
+        disabled={
+          isCommentResolved ||
+          !isCollabDocumentPublished ||
+          disableInlineComment
+        }
         isActive={isCommentActive}
         onClick={handleInlineComment}
         classNames="disabled:!bg-transparent"
@@ -212,7 +217,11 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                   variant="ghost"
                   size="sm"
                   tooltip={isCommentResolved ? 'Comment resolved' : ''}
-                  disabled={isCommentResolved || !isCollabDocumentPublished}
+                  disabled={
+                    isCommentResolved ||
+                    !isCollabDocumentPublished ||
+                    disableInlineComment
+                  }
                   isActive={isCommentActive}
                   onClick={handleInlineComment}
                   classNames="disabled:!bg-transparent"
@@ -350,7 +359,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                           size="sm"
                           tooltip={isCommentResolved ? 'Comment resolved' : ''}
                           disabled={
-                            isCommentResolved || !isCollabDocumentPublished
+                            isCommentResolved ||
+                            !isCollabDocumentPublished ||
+                            disableInlineComment
                           }
                           isActive={isCommentActive}
                           onClick={handleInlineComment}

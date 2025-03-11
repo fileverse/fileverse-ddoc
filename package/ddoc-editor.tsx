@@ -96,6 +96,7 @@ const DdocEditor = forwardRef(
       connectViaUsername,
       isDDocOwner,
       isCollabDocumentPublished = true,
+      disableInlineComment,
     }: DdocProps,
     ref,
   ) => {
@@ -489,6 +490,7 @@ const DdocEditor = forwardRef(
                   editor={editor}
                   onError={onError}
                   zoomLevel={zoomLevel}
+                  disableInlineComment={disableInlineComment || false}
                   setIsCommentSectionOpen={setIsCommentSectionOpen}
                   inlineCommentData={inlineCommentData}
                   setInlineCommentData={setInlineCommentData}
