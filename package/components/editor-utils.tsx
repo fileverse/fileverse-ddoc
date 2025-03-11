@@ -185,12 +185,11 @@ export const useEditorToolbar = ({
     editor.setOptions({
       editorProps: {
         handleKeyDown: (_, event) => {
-          // Strikethrough shortcut (Alt + Shift + 5 or Cmd + Shift + X for Mac)
+          // Strikethrough shortcut (Shift + Ctrl + S for Both)
           if (
-            (event.altKey &&
-              event.shiftKey &&
-              (event.key === '5' || event.key === '%')) ||
-            (event.metaKey && event.shiftKey && event.key === 'X')
+            event.shiftKey &&
+            event.ctrlKey &&
+            event.key.toLowerCase() === 's'
           ) {
             event.preventDefault();
             editor.chain().focus().toggleStrike().run();
@@ -756,9 +755,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${
-            editor.isActive('bulletList') ? 'color-bg-default-hover' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${editor.isActive('bulletList') ? 'color-bg-default-hover' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="List" />
         </button>
@@ -770,9 +768,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${
-            editor.isActive('orderedList') ? 'color-bg-default-hover' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${editor.isActive('orderedList') ? 'color-bg-default-hover' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListOrdered" />
         </button>
@@ -784,9 +781,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${
-            editor.isActive('taskList') ? 'color-bg-default-hover' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${editor.isActive('taskList') ? 'color-bg-default-hover' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListChecks" />
         </button>
@@ -1052,7 +1048,7 @@ export const ScriptsPopup = ({
             className={cn(
               'flex items-center justify-between w-full px-2 py-1 text-body-sm',
               option.isActive() &&
-                'color-bg-brand hover:!bg-[#B6A02E] dark:text-[#363B3F]',
+              'color-bg-brand hover:!bg-[#B6A02E] dark:text-[#363B3F]',
             )}
           >
             <div className="flex items-center gap-2">
