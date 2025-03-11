@@ -28,7 +28,8 @@ export const CommentDropdown = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(true);
   const [showReplyView, setShowReplyView] = useState(!!activeCommentId);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
-
+  const [hideCommentDropdown, setHideCommentDropdown] = useState(false);
+  
   const {
     inlineCommentData,
     setInlineCommentData,
@@ -88,6 +89,7 @@ export const CommentDropdown = ({
         handleClick: true,
       }));
 
+      setHideCommentDropdown(true);
       return;
     }
 
@@ -98,6 +100,7 @@ export const CommentDropdown = ({
       onComment?.();
       // Clear the comment after adding
       setComment('');
+      setHideCommentDropdown(true); // Hide the dropdown after sending
     }
   };
 
@@ -167,18 +170,22 @@ export const CommentDropdown = ({
       inlineCommentData.handleClick &&
       inlineCommentData.inlineCommentText
     ) {
-      // Only add comment if it was pending from auth
-      addComment(inlineCommentData.inlineCommentText, username);
-      setShowReplyView(true);
-      onComment?.();
-
-      // Clear both the stored comment data and the input
+      // Clear the stored comment data without adding a new comment
       setInlineCommentData((prev) => ({
         ...prev,
         inlineCommentText: '',
         handleClick: false,
       }));
+
+      // Add the comment only if it wasn't already added
+      if (!hideCommentDropdown) {
+        addComment(inlineCommentData.inlineCommentText, username);
+        setShowReplyView(true);
+        onComment?.();
+      }
+
       setComment('');
+      setHideCommentDropdown(true);
     }
   }, [
     isConnected,
@@ -203,8 +210,7 @@ export const CommentDropdown = ({
         <Button
           onClick={handleClick}
           className="px-4 py-2 w-20 min-w-20 h-9 font-medium text-sm"
-          isLoading={inlineCommentData.handleClick}
-          disabled={inlineCommentData.handleClick || !comment.trim()}
+          disabled={!comment.trim()}
         >
           Send
         </Button>
@@ -360,5 +366,7 @@ export const CommentDropdown = ({
     return isCommentActive ? renderDropdownWrapper(renderReplyView()) : null;
   }
 
-  return !isCommentActive ? renderDropdownWrapper(renderInitialView()) : null;
+  return !isCommentActive && !hideCommentDropdown
+    ? renderDropdownWrapper(renderInitialView())
+    : null;
 };
