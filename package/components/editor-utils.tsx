@@ -31,6 +31,7 @@ import { useMediaQuery } from 'usehooks-ts';
 import { colors } from '../utils/colors';
 import { validateImageExtension } from '../utils/check-image-type';
 import { handleContentPrint } from '../utils/handle-print';
+import { useComments } from '../components/inline-comment/context/comment-context';
 
 interface IEditorToolElement {
   icon: any;
@@ -157,7 +158,6 @@ export const useEditorToolbar = ({
   secureImageUploadUrl,
   onMarkdownExport,
   onMarkdownImport,
-  setIsCommentSectionOpen,
 }: {
   editor: Editor;
   onError?: (errorString: string) => void;
@@ -165,6 +165,7 @@ export const useEditorToolbar = ({
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
   setIsCommentSectionOpen?: (open: boolean) => void;
+  onInlineCommentClick: (event: React.MouseEvent) => void;
 }) => {
   const {
     ref: toolRef,
@@ -173,6 +174,9 @@ export const useEditorToolbar = ({
   } = useEditorToolVisiibility(IEditorTool.NONE);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [fileExportsOpen, setFileExportsOpen] = useState(false);
+
+  const { handleInlineComment, isConnected, onInlineCommentClick } =
+    useComments();
 
   useEffect(() => {
     if (!editor) return;
@@ -201,21 +205,21 @@ export const useEditorToolbar = ({
           }
 
           // Inline comment shortcut (Ctrl/Cmd + Alt + M)
-          if (
-            (event.ctrlKey || event.metaKey) &&
-            event.altKey &&
-            event.key.toLowerCase() === 'm'
-          ) {
-            event.preventDefault();
-            const { from, to } = editor.state.selection;
-            const selectedText = editor.state.doc.textBetween(from, to, ' ');
-
-            if (selectedText) {
-              editor.chain().focus().setHighlight({ color: '#DDFBDF' }).run();
-              setIsCommentSectionOpen?.(true);
-            }
-            return true;
-          }
+                    if (
+                      (event.ctrlKey || event.metaKey) &&
+                      event.altKey &&
+                      event.key.toLowerCase() === 'm'
+                    ) {
+                      event.preventDefault();
+          
+                      // Use the same logic as the bubble menu button
+                      if (isConnected) {
+                        handleInlineComment();
+                      } else {
+                        onInlineCommentClick({} as React.MouseEvent);
+                      }
+                      return true;
+                    }
           return false;
         },
       },
@@ -229,7 +233,13 @@ export const useEditorToolbar = ({
         });
       }
     };
-  }, [editor, setIsCommentSectionOpen]);
+  }, [
+    editor,
+    handleInlineComment,
+    isConnected,
+    onInlineCommentClick,
+    setToolVisibility,
+  ]);
 
   const undoRedoTools: Array<IEditorToolElement | null> = [
     {

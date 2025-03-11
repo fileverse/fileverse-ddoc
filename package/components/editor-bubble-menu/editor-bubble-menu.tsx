@@ -44,6 +44,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const { isNativeMobile } = useResponsive();
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
     editor: editor,
+    onError,
+    handleHighlight: () => handleHighlight(),
   });
 
   const {
