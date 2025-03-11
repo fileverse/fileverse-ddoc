@@ -417,6 +417,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                       className="!z-[50] shadow-elevation-4"
                       anchorTrigger={
                         <ToolbarButton
+                          ref={buttonRef}
                           icon="MessageSquarePlus"
                           variant="ghost"
                           size="sm"

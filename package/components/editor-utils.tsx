@@ -175,7 +175,7 @@ export const useEditorToolbar = ({
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [fileExportsOpen, setFileExportsOpen] = useState(false);
 
-  const { handleInlineComment, isConnected, onInlineCommentClick } =
+  const { handleInlineComment, isConnected, onInlineCommentClick, buttonRef } =
     useComments();
 
   useEffect(() => {
@@ -184,8 +184,7 @@ export const useEditorToolbar = ({
     // Add keyboard shortcuts to the editor's keymap
     editor.setOptions({
       editorProps: {
-        handleKeyDown: (view, event) => {
-
+        handleKeyDown: (_, event) => {
           // Strikethrough shortcut (Alt + Shift + 5)
           if (
             event.altKey &&
@@ -204,22 +203,31 @@ export const useEditorToolbar = ({
             return true;
           }
 
-          // Inline comment shortcut (Ctrl/Cmd + Alt + M)
-                    if (
-                      (event.ctrlKey || event.metaKey) &&
-                      event.altKey &&
-                      event.key.toLowerCase() === 'm'
-                    ) {
-                      event.preventDefault();
-          
-                      // Use the same logic as the bubble menu button
-                      if (isConnected) {
-                        handleInlineComment();
-                      } else {
-                        onInlineCommentClick({} as React.MouseEvent);
-                      }
-                      return true;
-                    }
+          // Inline comment shortcut (Shift + Cmd + M for Mac, Ctrl + Alt + M for others)
+          if (
+            (navigator.platform.includes('Mac')
+              ? event.shiftKey && event.metaKey
+              : (event.ctrlKey || event.metaKey) && event.altKey) &&
+            event.key.toLowerCase() === 'm'
+          ) {
+            event.preventDefault();
+
+            // First check if there's text selected
+            const { state } = editor;
+            const { from, to } = state.selection;
+            const selectedText = state.doc.textBetween(from, to, ' ');
+
+            if (selectedText) {
+              // First highlight the text
+              editor.chain().setHighlight({ color: '#DDFBDF' }).run();
+
+              if (buttonRef.current) {
+                buttonRef.current.click();
+              }
+              editor.chain().unsetHighlight().run();
+            }
+            return true;
+          }
           return false;
         },
       },
@@ -239,6 +247,7 @@ export const useEditorToolbar = ({
     isConnected,
     onInlineCommentClick,
     setToolVisibility,
+    buttonRef,
   ]);
 
   const undoRedoTools: Array<IEditorToolElement | null> = [
@@ -746,9 +755,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${
-            editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${editor.isActive('bulletList') ? 'bg-[#f2f2f2]' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="List" />
         </button>
@@ -760,9 +768,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${
-            editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${editor.isActive('orderedList') ? 'bg-[#f2f2f2]' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListOrdered" />
         </button>
@@ -774,9 +781,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={` hover:bg-[#f2f2f2] ${
-            editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={` hover:bg-[#f2f2f2] ${editor.isActive('taskList') ? 'bg-[#f2f2f2]' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListChecks" />
         </button>
