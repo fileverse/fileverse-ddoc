@@ -31,6 +31,7 @@ import { useMediaQuery } from 'usehooks-ts';
 import { colors } from '../utils/colors';
 import { validateImageExtension } from '../utils/check-image-type';
 import { handleContentPrint } from '../utils/handle-print';
+import { useComments } from '../components/inline-comment/context/comment-context';
 
 interface IEditorToolElement {
   icon: any;
@@ -163,6 +164,8 @@ export const useEditorToolbar = ({
   secureImageUploadUrl?: string;
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
+  setIsCommentSectionOpen?: (open: boolean) => void;
+  onInlineCommentClick: (event: React.MouseEvent) => void;
 }) => {
   const {
     ref: toolRef,
@@ -171,6 +174,84 @@ export const useEditorToolbar = ({
   } = useEditorToolVisiibility(IEditorTool.NONE);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [fileExportsOpen, setFileExportsOpen] = useState(false);
+
+  const { handleInlineComment, isConnected, onInlineCommentClick, buttonRef } =
+    useComments();
+
+  useEffect(() => {
+    if (!editor) return;
+
+    // Add keyboard shortcuts to the editor's keymap
+    editor.setOptions({
+      editorProps: {
+        handleKeyDown: (_, event) => {
+          // Strikethrough shortcut (Shift + Ctrl + S for Mac, Alt + Shift + 5 for Windows/Linux)
+          if (
+            (event.shiftKey &&
+              event.ctrlKey &&
+              event.key.toLowerCase() === 's') ||
+            (event.altKey &&
+              event.shiftKey &&
+              (event.key === '5' || event.key === '%'))
+          ) {
+            event.preventDefault();
+            editor.chain().focus().toggleStrike().run();
+            return true;
+          }
+
+          // Open link popup (Alt/Option + Enter)
+          if ((event.altKey || event.metaKey) && event.key === 'Enter') {
+            event.preventDefault();
+            setToolVisibility(IEditorTool.LINK_POPUP);
+            return true;
+          }
+
+          // Inline comment shortcut (Shift + Cmd + M for Mac, Ctrl + Alt + m for others)
+          if (
+            (navigator.platform.includes('Mac')
+              ? event.shiftKey && event.metaKey
+              : (event.ctrlKey || event.metaKey) && event.altKey) &&
+            event.key.toLowerCase() === 'm'
+          ) {
+            event.preventDefault();
+
+            // First check if there's text selected
+            const { state } = editor;
+            const { from, to } = state.selection;
+            const selectedText = state.doc.textBetween(from, to, ' ');
+
+            if (selectedText) {
+              // First highlight the text
+              editor.chain().setHighlight({ color: '#DDFBDF' }).run();
+
+              if (buttonRef.current) {
+                buttonRef.current.click();
+              }
+              editor.chain().unsetHighlight().run();
+            }
+            return true;
+          }
+          return false;
+        },
+      },
+    });
+
+    return () => {
+      // Clean up by resetting editor props when component unmounts
+      if (editor) {
+        editor.setOptions({
+          editorProps: {},
+        });
+      }
+    };
+  }, [
+    editor,
+    handleInlineComment,
+    isConnected,
+    onInlineCommentClick,
+    setToolVisibility,
+    buttonRef,
+  ]);
 
   const undoRedoTools: Array<IEditorToolElement | null> = [
     {
@@ -677,8 +758,7 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${
-            editor.isActive('bulletList') ? 'color-bg-default-hover' : ''
+          className={`hover:color-bg-default-hover ${editor.isActive('bulletList') ? 'color-bg-default-hover' : ''
           } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="List" />
@@ -691,8 +771,7 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${
-            editor.isActive('orderedList') ? 'color-bg-default-hover' : ''
+          className={`hover:color-bg-default-hover ${editor.isActive('orderedList') ? 'color-bg-default-hover' : ''
           } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListOrdered" />
@@ -705,8 +784,7 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${
-            editor.isActive('taskList') ? 'color-bg-default-hover' : ''
+          className={`hover:color-bg-default-hover ${editor.isActive('taskList') ? 'color-bg-default-hover' : ''
           } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListChecks" />

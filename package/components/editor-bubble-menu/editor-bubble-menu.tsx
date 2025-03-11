@@ -44,6 +44,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const { isNativeMobile } = useResponsive();
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
     editor: editor,
+    onError,
+    handleHighlight: () => handleHighlight(),
   });
 
   const {
@@ -413,6 +415,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                       className="!z-[50] shadow-elevation-3"
                       anchorTrigger={
                         <ToolbarButton
+                          ref={buttonRef}
                           icon="MessageSquarePlus"
                           variant="ghost"
                           size="sm"
