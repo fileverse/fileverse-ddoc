@@ -28,8 +28,11 @@ export const CommentDropdown = ({
   const [isDropdownOpen, setIsDropdownOpen] = useState(true);
   const [showReplyView, setShowReplyView] = useState(!!activeCommentId);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
-
+  const [hideCommentDropdown, setHideCommentDropdown] = useState(false);
+  
   const {
+    inlineCommentData,
+    setInlineCommentData,
     addComment,
     comments,
     activeComments,
@@ -70,11 +73,34 @@ export const CommentDropdown = ({
     setReply(value);
   };
 
-  const handleClick = () => {
-    if (comment.trim() && username) {
-      addComment(comment);
+  const handleClick = async () => {
+    // First check if user is connected and has username
+    if (!isConnected || !username) {
+      // Store the comment text temporarily
+      const pendingComment = comment.trim();
+
+      // Open auth drawer
+      setCommentDrawerOpen(true);
+
+      // Store the pending comment data for after auth
+      setInlineCommentData((prev) => ({
+        ...prev,
+        inlineCommentText: pendingComment,
+        handleClick: true,
+      }));
+
+      setHideCommentDropdown(true);
+      return;
+    }
+
+    // If we reach here, user is authenticated
+    if (comment.trim()) {
+      addComment(comment, username);
       setShowReplyView(true);
       onComment?.();
+      // Clear the comment after adding
+      setComment('');
+      setHideCommentDropdown(true); // Hide the dropdown after sending
     }
   };
 
@@ -138,10 +164,35 @@ export const CommentDropdown = ({
   }, [activeComment?.replies]);
 
   useEffect(() => {
-    if (isConnected && reply.trim()) {
-      handleReplySubmit();
+    if (
+      isConnected &&
+      username &&
+      inlineCommentData.handleClick &&
+      inlineCommentData.inlineCommentText
+    ) {
+      // Clear the stored comment data without adding a new comment
+      setInlineCommentData((prev) => ({
+        ...prev,
+        inlineCommentText: '',
+        handleClick: false,
+      }));
+
+      // Add the comment only if it wasn't already added
+      if (!hideCommentDropdown) {
+        addComment(inlineCommentData.inlineCommentText, username);
+        setShowReplyView(true);
+        onComment?.();
+      }
+
+      setComment('');
+      setHideCommentDropdown(true);
     }
-  }, [isConnected]);
+  }, [
+    isConnected,
+    username,
+    inlineCommentData.handleClick,
+    inlineCommentData.inlineCommentText,
+  ]);
 
   const renderInitialView = () => (
     <div className="p-3 flex flex-col gap-2 color-bg-secondary rounded-md">
@@ -158,8 +209,8 @@ export const CommentDropdown = ({
       <div className="h-full flex items-center justify-end">
         <Button
           onClick={handleClick}
-          disabled={!username}
           className="px-4 py-2 w-20 min-w-20 h-9 font-medium text-sm"
+          disabled={!comment.trim()}
         >
           Send
         </Button>
@@ -315,5 +366,7 @@ export const CommentDropdown = ({
     return isCommentActive ? renderDropdownWrapper(renderReplyView()) : null;
   }
 
-  return !isCommentActive ? renderDropdownWrapper(renderInitialView()) : null;
+  return !isCommentActive && !hideCommentDropdown
+    ? renderDropdownWrapper(renderInitialView())
+    : null;
 };
