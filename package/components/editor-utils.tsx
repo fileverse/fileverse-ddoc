@@ -190,7 +190,7 @@ export const useEditorToolbar = ({
             (event.altKey &&
               event.shiftKey &&
               (event.key === '5' || event.key === '%')) ||
-            (event.metaKey && event.shiftKey && event.key.toLowerCase() === 'x')
+            (event.metaKey && event.shiftKey && event.key === 'X')
           ) {
             event.preventDefault();
             editor.chain().focus().toggleStrike().run();
@@ -204,7 +204,7 @@ export const useEditorToolbar = ({
             return true;
           }
 
-          // Inline comment shortcut (Shift + Cmd + M for Mac, Ctrl + Alt + M for others)
+          // Inline comment shortcut (Shift + Cmd + M for Mac, Ctrl + Alt + m for others)
           if (
             (navigator.platform.includes('Mac')
               ? event.shiftKey && event.metaKey
