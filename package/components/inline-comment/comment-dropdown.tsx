@@ -8,12 +8,15 @@ import {
   IconButton,
   LucideIcon,
   TextAreaFieldV2,
+  TextField,
   Tooltip,
+  Divider,
 } from '@fileverse/ui';
 import uuid from 'react-uuid';
 import { CommentCard } from './comment-card';
 import { CommentDropdownProps } from './types';
 import { useComments } from './context/comment-context';
+import EnsLogo from '../../assets/ens.svg';
 
 export const CommentDropdown = ({
   activeCommentId,
@@ -53,6 +56,11 @@ export const CommentDropdown = ({
     onComment,
     isConnected,
     setCommentDrawerOpen,
+    isLoading,
+    connectViaUsername,
+    connectViaWallet,
+    setUsername,
+    // setIsCommentOpen,
   } = useComments();
 
   const emptyComment =
@@ -193,6 +201,73 @@ export const CommentDropdown = ({
     inlineCommentData.handleClick,
     inlineCommentData.inlineCommentText,
   ]);
+
+  const renderAuthView = () => (
+    <div className="flex flex-col color-bg-secondary rounded-md">
+      <p className="inline-flex gap-2 border-b color-border-default text-heading-xsm p-3">
+        What would you like to be identified with
+      </p>
+      <div className="flex flex-col gap-2 p-3">
+        <div className="flex flex-col gap-3">
+          <TextField
+            type="text"
+            value={username!}
+            onChange={(e) => setUsername?.(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && username) {
+                connectViaUsername?.(username);
+              }
+            }}
+            className="font-normal"
+            placeholder="Enter a name"
+          />
+          <Button
+            onClick={() => connectViaUsername?.(username!)}
+            disabled={!username || isLoading}
+            isLoading={isLoading}
+            className="w-full"
+          >
+            Join
+          </Button>
+        </div>
+
+        <div className="text-[12px] text-gray-400 flex items-center my-3">
+          <Divider
+            direction="horizontal"
+            size="md"
+            className="flex-grow md:!mr-4"
+          />
+          or join with your&nbsp;
+          <span className="font-semibold">.eth&nbsp;</span> domain
+          <Divider
+            direction="horizontal"
+            size="md"
+            className="flex-grow md:!ml-4"
+          />
+        </div>
+
+        <div className="text-center">
+          <Button
+            onClick={
+              !isConnected &&
+              (() => {
+                connectViaWallet();
+                setInlineCommentData((prev) => ({
+                  ...prev,
+                  handleClick: true,
+                }));
+              })
+            }
+            disabled={isLoading}
+            className="custom-ens-button"
+          >
+            <img alt="ens-logo" src={EnsLogo} />{' '}
+            {isLoading ? 'Connecting with ENS ...' : 'Continue with ENS'}
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
 
   const renderInitialView = () => (
     <div className="p-3 flex flex-col gap-2 color-bg-secondary rounded-md">
@@ -366,7 +441,9 @@ export const CommentDropdown = ({
     return isCommentActive ? renderDropdownWrapper(renderReplyView()) : null;
   }
 
-  return !isCommentActive && !hideCommentDropdown
-    ? renderDropdownWrapper(renderInitialView())
-    : null;
+  if (!isConnected && !inlineCommentData.handleClick) {
+    return renderDropdownWrapper(renderAuthView());
+  } else {
+    return !isCommentActive ? renderDropdownWrapper(renderInitialView()) : null;
+  }
 };

@@ -428,7 +428,7 @@ const DdocEditor = forwardRef(
 
           <div
             className={cn(
-              'color-bg-default w-full mx-auto rounded',
+              'color-bg-default w-full mx-auto rounded h-screen',
               { 'mt-4 md:!mt-16 !py-20': isPreviewMode && !isNativeMobile },
               { 'md:!mt-16': !isPreviewMode },
               { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
@@ -455,12 +455,16 @@ const DdocEditor = forwardRef(
               { '!ml-0': zoomLevel === '2' && isWidth1500px && !isWidth3000px },
               { 'min-h-[83vh]': isNavbarVisible },
               { 'min-h-[90vh]': !isNavbarVisible },
-              { 'w-[700px] md:max-w-[700px] h-[150%]': zoomLevel === '0.5' },
-              { 'w-[800px] md:max-w-[800px] h-[200%]': zoomLevel === '0.75' },
-              { 'w-[850px] md:max-w-[850px] h-[100%]': zoomLevel === '1' },
-              { 'w-[70%] md:max-w-[70%] h-[200%]': zoomLevel === '1.4' },
               {
-                'w-[1062.5px] md:max-w-[1062.5px] h-[100%]':
+                'w-[700px] md:max-w-[700px] min-h-[150%]': zoomLevel === '0.5',
+              },
+              {
+                'w-[800px] md:max-w-[800px] min-h-[200%]': zoomLevel === '0.75',
+              },
+              { 'w-[850px] md:max-w-[850px] min-h-[100%]': zoomLevel === '1' },
+              { 'w-[70%] md:max-w-[70%] min-h-[200%]': zoomLevel === '1.4' },
+              {
+                'w-[1062.5px] md:max-w-[1062.5px] min-h-[100%]':
                   zoomLevel === '1.5',
               },
               { 'w-[1548px] md:max-w-[1548px]': zoomLevel === '2' },
