@@ -896,3 +896,16 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
     border-radius: 20px; /* roundness of the scroll thumb */
   }
 }
+
+/* Collapsible Heading Styles */
+.collapsible-heading-collapsed {
+  margin-bottom: 0.5rem;
+}
+
+.collapsed-content {
+  display: none !important;
+}
+
+.contents {
+  display: contents;
+}
