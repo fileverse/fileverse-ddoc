@@ -429,7 +429,7 @@ const DdocEditor = forwardRef(
           <div
             className={cn(
               'color-bg-default w-full mx-auto rounded',
-              { 'mt-4 md:!mt-16': isPreviewMode },
+              { 'mt-4 md:!mt-16 !py-20': isPreviewMode && !isNativeMobile },
               { 'md:!mt-16': !isPreviewMode },
               { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
               { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
