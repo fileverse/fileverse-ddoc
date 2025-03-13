@@ -453,8 +453,6 @@ const DdocEditor = forwardRef(
                   zoomLevel === '1.5',
               },
               { '!ml-0': zoomLevel === '2' && isWidth1500px && !isWidth3000px },
-              // { 'min-h-[83vh]': isNavbarVisible },
-              // { 'min-h-[90vh]': !isNavbarVisible },
               {
                 'w-[700px] md:max-w-[700px] min-h-[150%]': zoomLevel === '0.5',
               },

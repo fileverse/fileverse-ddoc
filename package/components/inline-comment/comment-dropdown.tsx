@@ -32,7 +32,7 @@ export const CommentDropdown = ({
   const [showReplyView, setShowReplyView] = useState(!!activeCommentId);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
   const [hideCommentDropdown, setHideCommentDropdown] = useState(false);
-  
+
   const {
     inlineCommentData,
     setInlineCommentData,
@@ -60,7 +60,6 @@ export const CommentDropdown = ({
     connectViaUsername,
     connectViaWallet,
     setUsername,
-    // setIsCommentOpen,
   } = useComments();
 
   const emptyComment =
