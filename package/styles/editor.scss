@@ -705,12 +705,16 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
 
       th,
       td {
-        border: 1px solid #ddd;
+        border: 1px solid hsla(195, 10%, 92%, 1);
         padding: 8px;
         text-align: left;
 
         p {
           font-size: 20px;
+        }
+
+        .dark & {
+          border-color: hsla(var(--color-border-default));
         }
       }
 
@@ -728,6 +732,10 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       border: 1px solid hsla(195, 10%, 92%, 1);
       padding: 1rem;
       border-radius: 0.5rem;
+
+      .dark & {
+        border-color: hsla(var(--color-border-default));
+      }
     }
 
     code {
@@ -820,7 +828,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
     }
 
     a {
-      color: #5c0aff;
+      color: hsla(var(--color-text-link));
     }
 
     // Text content
@@ -861,9 +869,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       li {
         list-style-type: inherit;
         margin: 0.5vh 0;
-        &::marker {
-          color: black;
-        }
       }
     }
 
@@ -873,9 +878,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       padding-left: 2rem;
       li {
         display: list-item;
-        &::marker {
-          color: black;
-        }
       }
     }
 
@@ -916,8 +918,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
     pre {
       width: 80vw;
       margin: 2vh 0;
-      background-color: transparent;
-      color: #000;
       padding: 0.75rem 1rem;
       border-radius: 0.5rem;
       border: 1px solid hsla(195, 10%, 92%, 1);

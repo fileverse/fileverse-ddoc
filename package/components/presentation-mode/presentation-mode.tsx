@@ -6,7 +6,7 @@ import {
   DynamicDropdownV2,
   IconButton,
   Label,
-  // ThemeToggle,
+  ThemeToggle,
   Tooltip,
 } from '@fileverse/ui';
 import { EditingProvider } from '../../hooks/use-editing-context';
@@ -373,9 +373,9 @@ export const PresentationMode = ({
               </div>
             )}
             <div className="flex justify-center items-center gap-2">
-              {/* <Tooltip text="Toggle theme" sideOffset={10}>
+              <Tooltip text="Toggle theme" sideOffset={10}>
                 <ThemeToggle />
-              </Tooltip> */}
+              </Tooltip>
               {!isPreviewMode && (
                 <Tooltip text="Download" sideOffset={10}>
                   <IconButton

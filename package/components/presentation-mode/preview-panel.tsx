@@ -68,7 +68,7 @@ export const PreviewPanel = ({
           <div
             onClick={() => setCurrentSlide(index)}
             className={cn(
-              'bg-white border rounded-lg p-2 cursor-pointer transition-all transform overflow-hidden aspect-video w-[188px] h-[106px]',
+              'border rounded-lg p-2 cursor-pointer transition-all transform overflow-hidden aspect-video w-[188px] h-[106px]',
               currentSlide === index
                 ? 'border-[#FFDF0A]'
                 : 'color-border-default',
