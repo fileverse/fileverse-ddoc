@@ -428,7 +428,7 @@ const DdocEditor = forwardRef(
 
           <div
             className={cn(
-              'color-bg-default w-full mx-auto rounded h-screen',
+              'color-bg-default w-full mx-auto rounded',
               { 'mt-4 md:!mt-16 !py-20': isPreviewMode && !isNativeMobile },
               { 'md:!mt-16': !isPreviewMode },
               { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
@@ -453,8 +453,8 @@ const DdocEditor = forwardRef(
                   zoomLevel === '1.5',
               },
               { '!ml-0': zoomLevel === '2' && isWidth1500px && !isWidth3000px },
-              { 'min-h-[83vh]': isNavbarVisible },
-              { 'min-h-[90vh]': !isNavbarVisible },
+              // { 'min-h-[83vh]': isNavbarVisible },
+              // { 'min-h-[90vh]': !isNavbarVisible },
               {
                 'w-[700px] md:max-w-[700px] min-h-[150%]': zoomLevel === '0.5',
               },
