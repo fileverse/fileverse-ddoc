@@ -74,15 +74,6 @@ const createMoreTemplates = (
     content: getTemplateContent('meeting-notes'),
   },
   {
-    label: 'Intern notes',
-    icon: '📝',
-    onClick: () => {
-      const content = getTemplateContent('intern-notes');
-      if (content) addTemplate(content);
-    },
-    content: getTemplateContent('intern-notes'),
-  },
-  {
     label: 'Brainstorm',
     icon: 'Lightbulb',
     onClick: () => {
