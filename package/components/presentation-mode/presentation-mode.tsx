@@ -444,7 +444,7 @@ export const PresentationMode = ({
             className={cn(
               'w-full bg-white rounded-lg overflow-hidden relative',
               isFullscreen
-                ? 'h-full max-w-none flex items-center justify-start'
+                ? 'h-full max-w-none flex items-start justify-center'
                 : 'px-8 md:px-0 scale-[0.35] md:scale-[0.75] xl:scale-100 min-w-[1080px] max-w-[1080px] aspect-video py-[48px]',
             )}
             style={{
