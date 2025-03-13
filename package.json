@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "2.1.4-patch-5.1",
+  "version": "2.1.4-patch-7",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
@@ -86,7 +86,7 @@
     "prosemirror-state": "^1.4.3",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
-    "react-twitter-embed": "^4.0.4",
+    "react-tweet": "^3.2.2",
     "react-uuid": "^2.0.0",
     "tailwindcss-animate": "^1.0.7",
     "tippy.js": "^6.3.7",
