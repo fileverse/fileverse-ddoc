@@ -32,7 +32,7 @@ export const PreviewPanel = ({
     <div
       ref={previewPanelRef}
       className={cn(
-        'bg-white flex gap-3 py-4 px-4 color-border-default-hover relative',
+        'color-bg-default flex gap-3 py-4 px-4 color-border-default-hover relative',
         isMobile
           ? 'flex-row overflow-x-auto border-t min-h-[12rem] order-2 w-full pt-10 xl:pt-0'
           : 'w-[251px] h-full overflow-y-auto flex-col py-16 border-r',
@@ -49,13 +49,20 @@ export const PreviewPanel = ({
           key={index}
           ref={(el) => (slideRefs.current[index] = el)}
           className={cn(
-            'flex p-2 rounded-xl w-[219px] h-[122px] transition-all',
+            'flex p-2 rounded-xl w-[219px] h-[122px] transition-all ',
             currentSlide === index
               ? 'color-bg-brand hover:color-bg-brand-hover'
-              : 'bg-transparent hover:color-bg-default-hover',
+              : 'color-bg-default hover:color-bg-default-hover',
           )}
         >
-          <span className="text-body-sm color-text-default h-full w-[20px] pr-1 text-center">
+          <span
+            className={cn(
+              'text-body-sm h-full w-[20px] pr-1 text-center',
+              currentSlide === index
+                ? 'color-text-default dark:text-[#363B3F]'
+                : 'color-text-default',
+            )}
+          >
             {index + 1}
           </span>
           <div
@@ -68,7 +75,7 @@ export const PreviewPanel = ({
             )}
           >
             <div
-              className="presentation-mode preview-slide w-[400%] h-[400%] top-0 left-0 absolute"
+              className="presentation-mode preview-slide color-bg-default w-[400%] h-[400%] top-0 left-0 absolute"
               dangerouslySetInnerHTML={{ __html: slideContent }}
             />
           </div>

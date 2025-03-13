@@ -6,6 +6,7 @@ import {
   DynamicDropdownV2,
   IconButton,
   Label,
+  // ThemeToggle,
   Tooltip,
 } from '@fileverse/ui';
 import { EditingProvider } from '../../hooks/use-editing-context';
@@ -25,8 +26,8 @@ interface PresentationModeProps {
   setIsFullscreen: React.Dispatch<React.SetStateAction<boolean>>;
   onError?: (error: string) => void;
   setCommentDrawerOpen:
-    | React.Dispatch<React.SetStateAction<boolean>>
-    | undefined;
+  | React.Dispatch<React.SetStateAction<boolean>>
+  | undefined;
   sharedSlidesLink?: string;
   isPreviewMode: boolean;
   documentName: string;
@@ -351,7 +352,7 @@ export const PresentationMode = ({
         )}
       >
         {!isFullscreen && (
-          <div className="absolute top-0 px-4 py-2 border-b color-border-default right-0 flex gap-2 bg-white w-full justify-between z-50">
+          <div className="absolute top-0 px-4 py-2 border-b color-border-default right-0 flex gap-2 color-bg-default w-full justify-between z-50">
             {isPreviewMode ? (
               <div className="flex items-center">
                 <p className="max-w-[300px] truncate md:max-w-full w-full">
@@ -372,6 +373,9 @@ export const PresentationMode = ({
               </div>
             )}
             <div className="flex justify-center items-center gap-2">
+              {/* <Tooltip text="Toggle theme" sideOffset={10}>
+                <ThemeToggle />
+              </Tooltip> */}
               {!isPreviewMode && (
                 <Tooltip text="Download" sideOffset={10}>
                   <IconButton
@@ -414,7 +418,7 @@ export const PresentationMode = ({
                       isOpen={showLinkCopied}
                       onClose={() => setShowLinkCopied?.(false)}
                       content={
-                        <div className="flex items-start gap-3 bg-black text-white rounded shadow-elevation-3 p-2 text-helper-text-sm">
+                        <div className="flex items-start gap-3 bg-black color-text-default rounded shadow-elevation-3 p-2 text-helper-text-sm">
                           Link copied
                         </div>
                       }
@@ -442,7 +446,7 @@ export const PresentationMode = ({
         >
           <div
             className={cn(
-              'w-full bg-white rounded-lg overflow-hidden relative',
+              'w-full color-bg-default rounded-lg overflow-hidden relative',
               isFullscreen
                 ? 'h-full max-w-none flex items-start justify-center'
                 : 'px-8 md:px-0 scale-[0.35] md:scale-[0.75] xl:scale-100 min-w-[1080px] max-w-[1080px] aspect-video py-[48px]',
@@ -494,8 +498,8 @@ export const PresentationMode = ({
 
         {isFullscreen && (
           <div className="absolute bottom-8 left-[50%] translate-x-[-50%] z-50 opacity-0 transition-opacity duration-300 ease-in-out hover:opacity-100">
-            <div className="bg-black/80 rounded-full px-4 py-2">
-              <p className="text-white text-helper-text-sm">
+            <div className="color-utility-overlay rounded-full px-4 py-2">
+              <p className="color-text-default text-helper-text-sm">
                 Press <strong>ESC</strong> to exit fullscreen
               </p>
             </div>
@@ -512,8 +516,8 @@ export const PresentationMode = ({
                 size="md"
               />
             </div>
-            <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 bg-white/80 px-3 py-1 rounded">
-              <span className="text-black">
+            <div className="fixed bottom-4 right-4 z-50 flex items-center gap-2 color-utility-overlay px-3 py-1 rounded">
+              <span className="color-text-default">
                 {currentSlide + 1} / {slides.length}
               </span>
             </div>

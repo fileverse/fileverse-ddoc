@@ -699,138 +699,6 @@ export const getTemplateContent = (
         ],
         title: 'Breathe',
       };
-    case 'intern-notes':
-      return {
-        type: 'doc',
-        content: [
-          {
-            type: 'dBlock',
-            content: [
-              {
-                type: 'heading',
-                attrs: {
-                  textAlign: 'left',
-                  level: 1,
-                },
-                content: [
-                  {
-                    type: 'text',
-                    text: '📝 Intern notes',
-                  },
-                ],
-              },
-            ],
-          },
-          {
-            type: 'dBlock',
-            content: [
-              {
-                type: 'paragraph',
-                attrs: {
-                  textAlign: 'left',
-                },
-                content: [
-                  {
-                    type: 'text',
-                    text: 'Source:',
-                  },
-                ],
-              },
-            ],
-          },
-          {
-            type: 'dBlock',
-            content: [
-              {
-                type: 'actionButton',
-                attrs: {
-                  data: null,
-                },
-              },
-            ],
-          },
-          {
-            type: 'dBlock',
-            content: [
-              {
-                type: 'actionButton',
-                attrs: {
-                  data: null,
-                },
-              },
-            ],
-          },
-          {
-            type: 'columns',
-            attrs: {
-              layout: 'align-center',
-            },
-            content: [
-              {
-                type: 'column',
-                attrs: {
-                  position: '',
-                },
-                content: [
-                  {
-                    type: 'dBlock',
-                    content: [
-                      {
-                        type: 'paragraph',
-                        attrs: {
-                          textAlign: 'left',
-                        },
-                        content: [
-                          {
-                            type: 'text',
-                            marks: [
-                              {
-                                type: 'bold',
-                              },
-                            ],
-                            text: 'Person 1 quotes',
-                          },
-                        ],
-                      },
-                    ],
-                  },
-                ],
-              },
-              {
-                type: 'column',
-                attrs: {
-                  position: '',
-                },
-                content: [
-                  {
-                    type: 'dBlock',
-                    content: [
-                      {
-                        type: 'paragraph',
-                        attrs: {
-                          textAlign: 'left',
-                        },
-                        content: [
-                          {
-                            type: 'text',
-                            marks: [
-                              {
-                                type: 'bold',
-                              },
-                            ],
-                            text: 'Person 2 quotes',
-                          },
-                        ],
-                      },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
-        ],
-        title: 'Intern Notes',
-      };
     case 'pretend-to-work':
       return {
         type: 'doc',
@@ -1242,8 +1110,7 @@ export const getTemplateContent = (
                           href: 'https://vitalik.eth.limo/general/2020/03/21/garbled.html',
                           target: '_blank',
                           rel: 'noopener noreferrer',
-                          class:
-                            'color-text-link visited:text-[#3D03AF] hover:underline transition-colors cursor-pointer select-text pointer-events-auto',
+                          class: 'custom-text-link',
                         },
                       },
                     ],
@@ -1299,8 +1166,7 @@ export const getTemplateContent = (
                               href: 'https://vitalik.eth.limo/general/2021/01/26/snarks.html',
                               target: '_blank',
                               rel: 'noopener noreferrer',
-                              class:
-                                'color-text-link visited:text-[#3D03AF] hover:underline transition-colors cursor-pointer select-text pointer-events-auto',
+                              class: 'custom-text-link',
                             },
                           },
                         ],

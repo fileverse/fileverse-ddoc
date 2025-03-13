@@ -10,6 +10,7 @@ import {
   Toaster,
   TagType,
   DynamicDropdown,
+  ThemeToggle,
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 import { IComment } from '../../package/extensions/comment';
@@ -108,6 +109,8 @@ function App() {
 
   //To handle comments from consumer side
 
+  const [isConnected, setIsConnected] = useState(false);
+
   useEffect(() => {
     if (collaborationId) {
       const name = prompt('Whats your username');
@@ -124,12 +127,12 @@ function App() {
         <div className="flex items-center gap-[12px]">
           <IconButton variant={'ghost'} icon="Menu" size="md" />
 
-          <div className="relative truncate inline-block xl:!max-w-[300px] !max-w-[108px] bg-[#ffffff] text-[14px] font-medium leading-[20px]">
+          <div className="relative truncate inline-block xl:!max-w-[300px] !max-w-[108px] color-bg-default text-[14px] font-medium leading-[20px]">
             <span className="invisible whitespace-pre">
               {title || 'Untitled'}
             </span>
             <input
-              className="focus:outline-none truncate bg-[#ffffff] absolute top-0 left-0 right-0 bottom-0 select-text"
+              className="focus:outline-none truncate color-bg-default absolute top-0 left-0 right-0 bottom-0 select-text"
               type="text"
               placeholder="Untitled"
               value={title}
@@ -146,17 +149,12 @@ function App() {
             <LucideIcon
               name="BadgeCheck"
               size="sm"
-              className="text-[#77818A]"
+              className="color-text-secondary"
             />
           </div>
         </div>
         <div className="flex gap-2">
-          <IconButton
-            variant={'ghost'}
-            icon={isPreviewMode ? 'Eye' : 'EyeOff'}
-            size="md"
-            onClick={() => setIsPreviewMode(!isPreviewMode)}
-          />
+          <ThemeToggle />
 
           {isMediaMax1280px ? (
             <DynamicDropdown
@@ -188,19 +186,49 @@ function App() {
                     <LucideIcon name="List" size="sm" />
                     Document Outline
                   </Button>
+                  <Button
+                    variant={'ghost'}
+                    onClick={() => setIsPreviewMode(!isPreviewMode)}
+                    className="flex justify-start gap-2"
+                  >
+                    <LucideIcon name={isPreviewMode ? 'Pencil' : 'PencilOff'} size="sm" />
+                    {isPreviewMode ? 'Edit' : 'Preview'}
+                  </Button>
+                  <Button
+                    variant={'ghost'}
+                    onClick={() => { }}
+                    className="flex justify-start gap-2"
+                  >
+                    <LucideIcon name="Share2" size="sm" />
+                    Share
+                  </Button>
                 </div>
               }
             />
           ) : (
-            <IconButton
-              variant={'ghost'}
-              icon="Presentation"
-              size="md"
-              onClick={() => {
-                commentDrawerOpen && setCommentDrawerOpen(false);
-                setIsPresentationMode(true);
-              }}
-            />
+            <>
+              <IconButton
+                variant={'ghost'}
+                icon={isPreviewMode ? 'PencilOff' : 'Pencil'}
+                size="md"
+                onClick={() => setIsPreviewMode(!isPreviewMode)}
+              />
+              <IconButton
+                variant={'ghost'}
+                icon="Presentation"
+                size="md"
+                onClick={() => {
+                  commentDrawerOpen && setCommentDrawerOpen(false);
+                  setIsPresentationMode(true);
+                }}
+              />
+              <IconButton
+                variant={'ghost'}
+                icon="Share2"
+                className="flex xl:hidden"
+                size="md"
+              />
+            </>
           )}
           <IconButton
             variant={'ghost'}
@@ -208,12 +236,7 @@ function App() {
             size="md"
             onClick={() => setCommentDrawerOpen((prev) => !prev)}
           />
-          <IconButton
-            variant={'ghost'}
-            icon="Share2"
-            className="flex xl:hidden"
-            size="md"
-          />
+
           <Button
             onClick={publishDoc}
             toggleLeftIcon={true}
@@ -233,6 +256,11 @@ function App() {
         </div>
       </>
     );
+  };
+
+  const handleConnectViaUsername = async (username: string) => {
+    setUsername(username);
+    setIsConnected(true);
   };
 
   return (
@@ -269,10 +297,10 @@ function App() {
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
-        onComment={(): void => {}}
-        onInlineComment={(): void => {}}
-        onMarkdownImport={(): void => {}}
-        onMarkdownExport={(): void => {}}
+        onComment={(): void => { }}
+        onInlineComment={(): void => { }}
+        onMarkdownImport={(): void => { }}
+        onMarkdownExport={(): void => { }}
         initialComments={initialComments}
         onCommentReply={handleReplyOnComment}
         onNewComment={handleNewComment}
@@ -286,12 +314,10 @@ function App() {
           TableOfContents,
           getHierarchicalIndexes,
         }}
-        isConnected={true}
-        connectViaWallet={async () => {}}
+        isConnected={isConnected}
+        connectViaWallet={async () => { }}
         isLoading={false}
-        connectViaUsername={async (username: string) => {
-          console.log(username);
-        }}
+        connectViaUsername={handleConnectViaUsername}
         isDDocOwner={true}
       />
       <Toaster

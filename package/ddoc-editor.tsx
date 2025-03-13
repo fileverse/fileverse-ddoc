@@ -96,6 +96,7 @@ const DdocEditor = forwardRef(
       connectViaUsername,
       isDDocOwner,
       isCollabDocumentPublished = true,
+      disableInlineComment,
     }: DdocProps,
     ref,
   ) => {
@@ -328,19 +329,19 @@ const DdocEditor = forwardRef(
       <div
         id="editor-canvas"
         className={cn(
-          'h-[100vh] bg-[#f8f9fa] w-full custom-scrollbar',
+          'h-[100vh] w-full custom-scrollbar',
           {
             'overflow-x-hidden': zoomLevel !== '2',
             'overflow-x-auto scroll-container': zoomLevel === '2',
           },
-          !isPresentationMode ? 'bg-[#f8f9fa]' : 'bg-[#ffffff]',
+          !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
           editorCanvasClassNames,
         )}
       >
         <nav
           id="Navbar"
           className={cn(
-            'h-14 bg-[#ffffff] py-2 px-4 flex gap-[40px] items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300',
+            'h-14 color-bg-default py-2 px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300',
             {
               'translate-y-0': isNavbarVisible,
               'translate-y-[-100%]': !isNavbarVisible || isPresentationMode,
@@ -377,14 +378,14 @@ const DdocEditor = forwardRef(
             <div
               id="toolbar"
               className={cn(
-                'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 bg-[#ffffff] border-b color-border-default transition-transform duration-300 top-[3.5rem]',
+                'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 color-bg-default border-b color-border-default transition-transform duration-300 top-[3.5rem]',
                 {
                   'translate-y-0': isNavbarVisible,
                   'translate-y-[-108%]': !isNavbarVisible,
                 },
               )}
             >
-              <div className="justify-center items-center grow relative">
+              <div className="justify-center items-center grow relative color-text-default">
                 <EditorToolBar
                   onError={onError}
                   editor={editor}
@@ -427,11 +428,12 @@ const DdocEditor = forwardRef(
 
           <div
             className={cn(
-              'bg-white w-full mx-auto rounded',
-              { 'mt-4 md:!mt-16': isPreviewMode },
+              'color-bg-default w-full mx-auto rounded',
+              { 'mt-4 md:!mt-16 !py-20': isPreviewMode && !isNativeMobile },
               { 'md:!mt-16': !isPreviewMode },
               { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
               { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
+              { 'mt-4 md:!mt-16 px-4 py-6': isPreviewMode && isNativeMobile },
               {
                 'max-[1080px]:!mx-auto min-[1081px]:!ml-[18%] min-[1700px]:!mx-auto':
                   isCommentSectionOpen &&
@@ -451,14 +453,16 @@ const DdocEditor = forwardRef(
                   zoomLevel === '1.5',
               },
               { '!ml-0': zoomLevel === '2' && isWidth1500px && !isWidth3000px },
-              { 'min-h-[83vh]': isNavbarVisible },
-              { 'min-h-[90vh]': !isNavbarVisible },
-              { 'w-[700px] md:max-w-[700px] h-[150%]': zoomLevel === '0.5' },
-              { 'w-[800px] md:max-w-[800px] h-[200%]': zoomLevel === '0.75' },
-              { 'w-[850px] md:max-w-[850px] h-[100%]': zoomLevel === '1' },
-              { 'w-[70%] md:max-w-[70%] h-[200%]': zoomLevel === '1.4' },
               {
-                'w-[1062.5px] md:max-w-[1062.5px] h-[100%]':
+                'w-[700px] md:max-w-[700px] min-h-[150%]': zoomLevel === '0.5',
+              },
+              {
+                'w-[800px] md:max-w-[800px] min-h-[200%]': zoomLevel === '0.75',
+              },
+              { 'w-[850px] md:max-w-[850px] min-h-[100%]': zoomLevel === '1' },
+              { 'w-[70%] md:max-w-[70%] min-h-[200%]': zoomLevel === '1.4' },
+              {
+                'w-[1062.5px] md:max-w-[1062.5px] min-h-[100%]':
                   zoomLevel === '1.5',
               },
               { 'w-[1548px] md:max-w-[1548px]': zoomLevel === '2' },
@@ -476,7 +480,7 @@ const DdocEditor = forwardRef(
               className={cn(
                 'w-full h-full pt-8 md:pt-0',
                 { 'custom-ios-padding': isIOS },
-                { 'bg-white': zoomLevel === '1.4' || '1.5' },
+                { 'color-bg-default': zoomLevel === '1.4' || '1.5' },
               )}
               style={{
                 transformOrigin: 'top center',
@@ -488,6 +492,7 @@ const DdocEditor = forwardRef(
                   editor={editor}
                   onError={onError}
                   zoomLevel={zoomLevel}
+                  disableInlineComment={disableInlineComment || false}
                   setIsCommentSectionOpen={setIsCommentSectionOpen}
                   inlineCommentData={inlineCommentData}
                   setInlineCommentData={setInlineCommentData}
@@ -565,7 +570,7 @@ const DdocEditor = forwardRef(
                 <EditorContent
                   editor={editor}
                   id="editor"
-                  className="w-full h-auto py-4 bg-white"
+                  className="w-full h-auto py-4 color-bg-default"
                 />
               </EditingProvider>
             </div>
@@ -577,7 +582,7 @@ const DdocEditor = forwardRef(
                 }}
                 variant="ghost"
                 className={cn(
-                  'absolute w-12 h-12 bg-white rounded-full shadow-xl top-[70px] right-[-23px]',
+                  'absolute w-12 h-12 color-bg-default rounded-full shadow-xl top-[70px] right-[-23px]',
                 )}
               >
                 <LucideIcon name="MessageSquareText" size="sm" />
@@ -587,7 +592,7 @@ const DdocEditor = forwardRef(
           {!isPreviewMode && !disableBottomToolbar && (
             <div
               className={cn(
-                'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-10 px-4 bg-[#ffffff] transition-all duration-300 ease-in-out border-b border-color-default',
+                'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-10 px-4 color-bg-default transition-all duration-300 ease-in-out border-b border-color-default',
                 isKeyboardVisible && 'hidden',
                 { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
               )}

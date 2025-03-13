@@ -8,21 +8,25 @@ import {
   JSONContent,
 } from '@tiptap/react';
 import { useEditingContext } from '../../hooks/use-editing-context';
-import cn from 'classnames';
 import { debounce } from '../../utils/debounce';
-import * as Popover from '@radix-ui/react-popover';
 import { Surface } from '../../common/surface';
-import { DropdownButton } from '../../common/dropdown';
 import useContentItemActions from '../../hooks/use-content-item-actions';
-import { Toolbar } from '../../common/toolbar';
-import CustomTooltip from '../../common/cutsom-tooltip';
 import { FocusScope } from '@radix-ui/react-focus-scope';
 import {
   createTemplateButtons,
   createMoreTemplates,
   renderTemplateButtons,
 } from '../../utils/template-utils';
-import { LucideIcon } from '@fileverse/ui';
+import {
+  LucideIcon,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+  PopoverClose,
+  Button,
+  Tooltip,
+  cn,
+} from '@fileverse/ui';
 // import { startImageUpload } from '../../utils/upload-images';
 
 export const DBlockNodeView: React.FC<
@@ -298,80 +302,105 @@ export const DBlockNodeView: React.FC<
           contentEditable={false}
           suppressContentEditableWarning={true}
         >
-          <CustomTooltip
-            content={
-              <div className="flex flex-col w-40">
+          <Tooltip
+            text={
+              <div className="flex flex-col">
                 <div className="text-xs">Click to add below</div>
                 <div className="text-xs">Opt + Click to add above</div>
               </div>
             }
+            position="bottom"
           >
             <div
-              className={`d-block-button cursor-pointer ${
-                !isPreviewMode && 'group-hover:opacity-100'
-              }`}
+              className={cn(
+                'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
+                !isPreviewMode && 'group-hover:opacity-100',
+              )}
               contentEditable={false}
               onClick={handleClick}
             >
               <LucideIcon name="Plus" size="sm" />
             </div>
-          </CustomTooltip>
+          </Tooltip>
           <FocusScope
             onMountAutoFocus={(e) => e.preventDefault()}
             trapped={false}
           >
-            <Popover.Root open={menuOpen} onOpenChange={setMenuOpen}>
-              <Popover.Trigger asChild>
-                <div
-                  className={`d-block-button cursor-pointer ${
-                    !isPreviewMode && 'group-hover:opacity-100'
-                  }`}
-                  contentEditable={false}
-                  draggable
-                  data-drag-handle
-                  onClick={handleDragClick}
+            <Popover open={menuOpen} onOpenChange={setMenuOpen}>
+              <PopoverTrigger>
+                <Tooltip
+                  text={
+                    <div className="flex flex-col">
+                      <div className="text-xs">Hold to drag</div>
+                      <div className="text-xs">Opt + Click to delete</div>
+                    </div>
+                  }
+                  position="bottom"
                 >
-                  <LucideIcon name="GripVertical" size="sm" />
-                </div>
-              </Popover.Trigger>
-              <Popover.Content
+                  <div
+                    className={cn(
+                      'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
+                      !isPreviewMode && 'group-hover:opacity-100',
+                    )}
+                    contentEditable={false}
+                    draggable
+                    data-drag-handle
+                    onClick={handleDragClick}
+                  >
+                    <LucideIcon name="GripVertical" size="sm" />
+                  </div>
+                </Tooltip>
+              </PopoverTrigger>
+              <PopoverContent
                 side="bottom"
                 align="start"
                 sideOffset={8}
-                className="z-10"
+                className="z-10 shadow-elevation-3"
               >
                 <Surface className="p-2 flex flex-col min-w-[16rem]">
-                  <Popover.Close>
-                    <DropdownButton onClick={actions.resetTextFormatting}>
+                  <PopoverClose asChild>
+                    <Button
+                      variant="ghost"
+                      onClick={actions.resetTextFormatting}
+                      className="justify-start gap-2"
+                    >
                       <LucideIcon name="RemoveFormatting" size="sm" />
                       Clear formatting
-                    </DropdownButton>
-                  </Popover.Close>
-                  <Popover.Close>
-                    <DropdownButton onClick={actions.copyNodeToClipboard}>
+                    </Button>
+                  </PopoverClose>
+                  <PopoverClose asChild>
+                    <Button
+                      variant="ghost"
+                      onClick={actions.copyNodeToClipboard}
+                      className="justify-start gap-2"
+                    >
                       <LucideIcon name="Clipboard" size="sm" />
                       Copy to clipboard
-                    </DropdownButton>
-                  </Popover.Close>
-                  <Popover.Close>
-                    <DropdownButton onClick={actions.duplicateNode}>
+                    </Button>
+                  </PopoverClose>
+                  <PopoverClose asChild>
+                    <Button
+                      variant="ghost"
+                      onClick={actions.duplicateNode}
+                      className="justify-start gap-2"
+                    >
                       <LucideIcon name="Copy" size="sm" />
                       Duplicate
-                    </DropdownButton>
-                  </Popover.Close>
-                  <Toolbar.Divider horizontal />
-                  <Popover.Close>
-                    <DropdownButton
+                    </Button>
+                  </PopoverClose>
+                  <PopoverClose asChild>
+                    <Button
+                      variant="ghost"
                       onClick={actions.deleteNode}
-                      className="text-red-500 hover:bg-red-500 bg-opacity-10 hover:bg-opacity-20"
+                      className="justify-start gap-2 color-text-danger"
                     >
                       <LucideIcon name="Trash2" size="sm" />
                       Delete
-                    </DropdownButton>
-                  </Popover.Close>
+                    </Button>
+                  </PopoverClose>
                 </Surface>
-              </Popover.Content>
-            </Popover.Root>
+              </PopoverContent>
+            </Popover>
           </FocusScope>
         </section>
       )}

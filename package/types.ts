@@ -34,6 +34,7 @@ export interface CommentAccountProps {
 }
 export interface DdocProps extends CommentAccountProps {
   isCollabDocumentPublished?: boolean;
+  disableInlineComment?: boolean;
   //Comments V2 Props
   commentDrawerOpen?: boolean;
   setCommentDrawerOpen?: React.Dispatch<SetStateAction<boolean>>;

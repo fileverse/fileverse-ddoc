@@ -53,9 +53,14 @@ export const CommentProvider = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const isCommentActive = editor.isActive('comment');
   const isCommentResolved = editor.getAttributes('comment').resolved;
+  const [inlineCommentData, setInlineCommentData] = useState({
+    inlineCommentText: '',
+    handleClick: false,
+  });
 
   useOnClickOutside([portalRef, buttonRef, dropdownRef], () => {
     if (isCommentOpen) {
+      editor.chain().unsetHighlight().run();
       setIsCommentOpen(false);
     }
   });
@@ -75,24 +80,24 @@ export const CommentProvider = ({
     }
     setIsCommentOpen(true);
     onInlineComment?.();
-  };
 
-  const onInlineCommentClick = (event: React.MouseEvent) => {
-    event.stopPropagation();
-    if (!isConnected) {
-      setCommentDrawerOpen?.(true);
-    } else {
-      handleInlineComment();
-    }
+    const isDarkTheme = localStorage.getItem('theme') === 'dark';
+    editor
+      .chain()
+      .setHighlight({
+        color: isDarkTheme ? '#15521d' : '#DDFBDF',
+      })
+      .run();
   };
 
   const getNewComment = (
     selectedContent: string,
     content: string = '',
+    username: string,
   ): IComment => {
     return {
       id: `comment-${uuid()}`,
-      username: username!,
+      username,
       selectedContent,
       // Preserve line breaks in content
       content: content || '',
@@ -101,13 +106,13 @@ export const CommentProvider = ({
     };
   };
 
-  const addComment = (content?: string) => {
+  const addComment = (content?: string, username?: string) => {
     if (!editor) return;
     const { state } = editor;
     const { from, to } = state.selection;
     const selectedContent = state.doc.textBetween(from, to, ' ');
 
-    const newComment = getNewComment(selectedContent, content);
+    const newComment = getNewComment(selectedContent, content, username!);
     editor?.commands.setComment(newComment.id || '');
     setActiveCommentId(newComment.id || '');
     setTimeout(focusCommentWithActiveId);
@@ -242,6 +247,7 @@ export const CommentProvider = ({
   };
 
   const handleCommentSubmit = () => {
+    editor.chain().unsetHighlight().run();
     if (!comment.trim() || !username) return;
 
     const newComment = {
@@ -394,7 +400,6 @@ export const CommentProvider = ({
         activeComment,
         selectedText,
         isCommentOpen,
-        onInlineCommentClick,
         handleInlineComment,
         portalRef,
         buttonRef,
@@ -413,6 +418,8 @@ export const CommentProvider = ({
         isDDocOwner,
         onComment,
         setCommentDrawerOpen,
+        inlineCommentData,
+        setInlineCommentData,
       }}
     >
       {children}

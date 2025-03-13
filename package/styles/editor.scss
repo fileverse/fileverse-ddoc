@@ -1,6 +1,6 @@
 .ProseMirror {
   .is-empty::before {
-    @apply text-black/40 float-left h-0 pointer-events-none w-full;
+    @apply float-left h-0 pointer-events-none w-full;
   }
 
   &.ProseMirror-focused {
@@ -28,7 +28,7 @@
   }
 
   p {
-    @apply leading-relaxed my-3 first:mt-0 last:mb-0;
+    @apply leading-normal my-3 first:mt-0 last:mb-0;
   }
 
   & > p {
@@ -59,7 +59,7 @@
     }
 
     .horizontal-resize-handle {
-      @apply h-12 lg:h-24 w-2 top-[50%] right-1 cursor-col-resize absolute z-20 translate-y-[-50%] rounded;
+      @apply h-12 w-2 top-[50%] right-1 cursor-col-resize absolute z-20 translate-y-[-50%] rounded;
     }
 
     .btn {
@@ -69,10 +69,10 @@
     .btn.active {
       @apply bg-yellow-300 hover:brightness-90;
     }
+  }
 
-    .media-control-buttons {
-      @apply absolute top-2 right-2 bg-white transition-all duration-200 ease-linear shadow-xl rounded-md overflow-hidden border border-slate-200 box-border;
-    }
+  .tableWrapper {
+    @apply overflow-x-scroll custom-scrollbar;
   }
 
   table {
@@ -96,6 +96,10 @@
         margin-bottom: 0;
       }
 
+      .dark & {
+        border-color: hsla(var(--color-border-default));
+      }
+
       p {
         @apply text-wrap max-w-[85%];
       }
@@ -111,6 +115,10 @@
       font-weight: bold;
       text-align: left;
       background-color: #f8f9fa;
+
+      .dark & {
+        background-color: hsla(var(--color-bg-secondary));
+      }
     }
 
     .selectedCell:after {
@@ -145,8 +153,25 @@
     }
   }
 
+  .custom-text-link {
+    @apply hover:underline transition-colors cursor-pointer select-text pointer-events-auto;
+    color: #5c0aff;
+
+    &:visited {
+      color: #3d03af;
+    }
+
+    .dark & {
+      color: #b6a6ff;
+
+      &:visited {
+        color: #9373ff;
+      }
+    }
+  }
+
   .d-block-button {
-    @apply bg-transparent text-lg py-1 opacity-0 transition-all duration-300 ease-out text-black h-fit rounded flex justify-center items-center;
+    @apply bg-transparent text-lg py-1 opacity-0 transition-all duration-300 ease-out h-fit rounded flex justify-center items-center cursor-pointer;
   }
 
   ul {
@@ -247,7 +272,6 @@
 .is-table div {
   padding: 0px;
   width: auto;
-  overflow-x: auto;
 }
 
 .resize-cursor {
@@ -320,6 +344,10 @@
 .ProseMirror code {
   background-color: rgba(97, 97, 97, 0.1);
   color: #616161;
+
+  .dark & {
+    color: hsla(var(--color-text-default));
+  }
 }
 .ProseMirror pre {
   background-color: transparent;
@@ -327,6 +355,10 @@
   font-family: 'JetBrainsMono', monospace;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
+
+  .dark & {
+    color: hsla(var(--color-text-default));
+  }
 }
 .ProseMirror pre code {
   color: inherit;
@@ -337,10 +369,6 @@
 .ProseMirror img {
   max-width: 100%;
   height: auto;
-}
-.ProseMirror blockquote {
-  padding-left: 1rem;
-  border-left: 2px solid rgba(13, 13, 13, 0.1);
 }
 .ProseMirror img:hover {
   @apply hover:shadow-lg transition-shadow duration-200 cursor-pointer;
@@ -372,31 +400,53 @@ ul[data-type='taskList'] li > label input[type='checkbox'] {
   background-color: #fff;
   margin: 0;
   cursor: pointer;
-  width: 1.2em;
-  height: 1.2em;
+  width: 20px;
+  height: 20px;
   position: relative;
   top: 3px;
-  border: 2px solid black;
+  border: 1px solid black;
+  border-radius: 4px;
   margin-right: 0.3rem;
   display: grid;
   place-content: center;
+
+  .dark & {
+    background-color: hsla(var(--color-bg-default));
+    border-color: hsla(var(--color-border-default));
+  }
 }
+
 ul[data-type='taskList'] li > label input[type='checkbox']:hover {
   background-color: #f8f9fa;
+
+  .dark & {
+    background-color: hsla(var(--color-bg-secondary));
+  }
 }
+
 ul[data-type='taskList'] li > label input[type='checkbox']:active {
   background-color: #e9ecef;
+
+  .dark & {
+    background-color: hsla(var(--color-bg-tertiary));
+  }
 }
+
 ul[data-type='taskList'] li > label input[type='checkbox']::before {
   content: '';
-  width: 0.65em;
-  height: 0.65em;
+  width: 11px;
+  height: 11px;
   transform: scale(0);
   transition: 120ms transform ease-in-out;
-  box-shadow: inset 1em 1em;
+  box-shadow: inset 1em 1em black;
   transform-origin: center;
   clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+
+  .dark & {
+    box-shadow: inset 1em 1em white;
+  }
 }
+
 ul[data-type='taskList'] li > label input[type='checkbox']:checked::before {
   transform: scale(1);
 }
@@ -405,6 +455,10 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   color: #a8a29e;
   text-decoration: line-through;
   text-decoration-thickness: 2px;
+
+  .dark & {
+    color: hsla(var(--color-text-tertiary));
+  }
 }
 
 .collaboration-cursor__caret {
@@ -585,7 +639,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
     pointer-events: none;
 
     h1 {
-      font-size: 82px;
+      font-size: 64px;
       font-weight: 700;
       margin: 0;
       line-height: 1.2;
@@ -661,8 +715,12 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       }
 
       th {
-        background-color: #f8f9fa;
         font-weight: 700;
+        background-color: #f8f9fa;
+
+        .dark & {
+          background-color: hsla(var(--color-bg-secondary));
+        }
       }
     }
 
@@ -689,7 +747,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
 
       th,
       td {
-        border: 1px solid #ddd;
         padding: 8px;
         text-align: left;
 
@@ -699,7 +756,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       }
 
       th {
-        background-color: #f8f9fa;
         font-weight: bold;
 
         p {
@@ -710,7 +766,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   }
 
   &.fullscreen {
-    background-color: #ffffff;
     overflow: hidden;
     padding: max(100px, 5vh) 5vw;
     margin: 0 auto;
@@ -881,6 +936,10 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       background: #f6f8fa;
       padding: 2px 6px;
       border-radius: 4px;
+
+      .dark & {
+        background: hsla(var(--color-bg-tertiary));
+      }
     }
 
     // Images
@@ -900,17 +959,20 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       width: 80vw;
       margin: 2vh auto;
       border-collapse: collapse;
-      background: white;
 
       th,
       td {
         padding: 12px;
         border: 1px solid #e0e0e0;
         font-size: min(1.5vw, 23.04px) !important;
+
+        .dark & {
+          border-color: hsla(var(--color-border-default));
+        }
       }
 
       th {
-        background: #f6f8fa;
+        background-color: hsla(var(--color-bg-secondary));
       }
     }
 
@@ -971,7 +1033,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       position: fixed;
       top: 0;
       left: 0;
-      background-color: #fff;
     }
   }
 }
@@ -1000,79 +1061,47 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
 
 .inline-comment--active {
   @apply bg-[#BCF6C1] cursor-pointer transition-all;
+
+  .dark & {
+    background-color: #177e23;
+  }
 }
 
 .inline-comment--unresolved {
   @apply bg-[#DDFBDF] cursor-pointer transition-all;
+
+  .dark & {
+    background-color: #15521d;
+  }
 }
 
 .inline-comment--resolved {
   @apply bg-transparent;
 }
 
-// Custom scrollbar for WebKit browsers (Chrome, Edge, Safari, Opera)
-@mixin scrollbar-styling(
-  $width: 8px,
-  $thumb-color: #e8ebec,
-  $track-color: #f1f1f1,
-  $thumb-hover-color: #e8ebec
-) {
-  &::-webkit-scrollbar {
-    width: $width;
-    height: $width;
-  }
+.highlight-comment-bg {
+  background-color: #e5fbe7;
 
-  &::-webkit-scrollbar-track {
-    background: $track-color;
-    border-radius: 10px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: $thumb-color;
-    border-radius: 10px;
-    transition: background 0.3s;
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: $thumb-hover-color;
-  }
-}
-
-// Scrollbar for Firefox
-@mixin firefox-scrollbar(
-  $thumb-color: rgba(0, 0, 0, 0.3),
-  $thumb-hover-color: rgba(0, 0, 0, 0.3)
-) {
-  scrollbar-color: $thumb-color transparent;
-
-  &:hover {
-    scrollbar-color: $thumb-hover-color transparent;
-  }
-}
-
-// Apply styles globally
-* {
-  @include scrollbar-styling;
-  @include firefox-scrollbar;
-
-  // Smooth scrolling behavior
-  scroll-behavior: smooth;
-}
-
-// Fallback for Internet Explorer
-@supports (-ms-ime-align: auto) {
-  * {
-    scrollbar-face-color: rgba(0, 0, 0, 0.3);
-    scrollbar-track-color: #f1f1f1;
+  .dark & {
+    background-color: #15521d;
   }
 }
 
 .custom-scrollbar {
-  @include scrollbar-styling(
-    10px,
-    rgba(0, 0, 0, 0.3),
-    #ecf0f1,
-    rgba(0, 0, 0, 0.3)
-  );
-  @include firefox-scrollbar(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3));
+  overflow-y: scroll;
+  scrollbar-width: thin; /* Firefox */
+  scrollbar-color: rgba(155, 155, 155, 0.5) transparent; /* Firefox */
+
+  &::-webkit-scrollbar {
+    width: 8px; /* width of the entire scrollbar */
+  }
+
+  &::-webkit-scrollbar-track {
+    background: transparent; /* color of the tracking area */
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background-color: rgba(155, 155, 155, 0.5); /* color of the scroll thumb */
+    border-radius: 20px; /* roundness of the scroll thumb */
+  }
 }
