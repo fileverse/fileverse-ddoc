@@ -710,14 +710,14 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   }
 
   &.fullscreen {
-    height: 85vh;
     background-color: #ffffff;
     overflow: hidden;
-    padding: 0;
+    padding: max(100px, 5vh) 5vw;
     margin: 0 auto;
     display: flex;
     flex-direction: column;
     justify-content: start;
+    max-width: 100vw;
     align-items: start;
 
     @media (max-width: 640px) {
@@ -765,14 +765,14 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
     }
 
     a {
-      color: #3d03af;
+      color: #5c0aff;
     }
 
     // Text content
     p,
     ul,
     ol {
-      font-size: min(2vw, 24px);
+      font-size: min(2vw, 30.72px);
       line-height: 1.5;
       margin: 1vh 0;
       max-width: 80vw;
@@ -787,34 +787,56 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       margin-top: 1rem;
     }
 
-    ul {
+    // Unordered lists
+    ul:not([data-type='taskList']) {
       list-style-type: disc;
-      padding-left: 1rem;
+      padding-left: 2rem;
+      margin: 1vh 0;
+
+      &[data-tight='true'] {
+        margin: 0;
+        list-style-type: circle;
+        > li {
+          margin: 0;
+          padding: 0;
+          list-style-type: circle !important;
+        }
+      }
+
+      li {
+        list-style-type: inherit;
+        margin: 0.5vh 0;
+        &::marker {
+          color: black;
+        }
+      }
     }
 
-    /* Normal bullets for list items */
-    ul li::marker {
-      content: '•';
-      color: black;
-      font-size: 1.2em;
-      margin-right: 8px;
-    }
-
+    // Ordered lists
     ol {
       list-style-type: decimal;
-      padding-left: 1.5rem;
-    }
-
-    ol li {
-      display: list-item;
+      padding-left: 2rem;
+      li {
+        display: list-item;
+        &::marker {
+          color: black;
+        }
+      }
     }
 
     .task-list-item {
       list-style-type: none;
       margin: 0.5rem 0;
+      font-size: min(2vw, 30.72px);
+      line-height: 1.5;
 
       input[type='checkbox'] {
         margin-right: 0.5em;
+        width: 20px;
+        height: 20px;
+        appearance: none;
+        border: 2px solid black;
+        background-color: white;
       }
     }
 
@@ -824,6 +846,15 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       color: #a8a29e;
       text-decoration: line-through;
       text-decoration-thickness: 2px;
+    }
+
+    // Nested lists
+    ul ul,
+    ol ol,
+    ul ol,
+    ol ul {
+      margin-top: 0.5rem;
+      margin-bottom: 0.5rem;
     }
 
     // Code blocks
@@ -838,7 +869,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       padding: 1rem;
 
       code {
-        font-size: min(1.5vw, 18px);
+        font-size: min(1.5vw, 23.04px);
         line-height: 1.5;
         background: transparent !important;
       }
