@@ -218,13 +218,17 @@ export const useEditorToolbar = ({
             const selectedText = state.doc.textBetween(from, to, ' ');
 
             if (selectedText) {
-              // First highlight the text
-              editor.chain().setHighlight({ color: '#DDFBDF' }).run();
+              const isDarkTheme = localStorage.getItem('theme') === 'dark';
+              editor
+                .chain()
+                .setHighlight({
+                  color: isDarkTheme ? '#15521d' : '#DDFBDF',
+                })
+                .run();
 
               if (buttonRef.current) {
                 buttonRef.current.click();
               }
-              editor.chain().unsetHighlight().run();
             }
             return true;
           }
@@ -748,9 +752,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${
-            editor.isActive('bulletList') ? 'color-bg-default-hover' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${editor.isActive('bulletList') ? 'color-bg-default-hover' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="List" />
         </button>
@@ -762,9 +765,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${
-            editor.isActive('orderedList') ? 'color-bg-default-hover' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${editor.isActive('orderedList') ? 'color-bg-default-hover' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListOrdered" />
         </button>
@@ -776,9 +778,8 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${
-            editor.isActive('taskList') ? 'color-bg-default-hover' : ''
-          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${editor.isActive('taskList') ? 'color-bg-default-hover' : ''
+            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListChecks" />
         </button>
@@ -1044,7 +1045,7 @@ export const ScriptsPopup = ({
             className={cn(
               'flex items-center justify-between w-full px-2 py-1 text-body-sm',
               option.isActive() &&
-                'color-bg-brand hover:!bg-[#B6A02E] dark:text-[#363B3F]',
+              'color-bg-brand hover:!bg-[#B6A02E] dark:text-[#363B3F]',
             )}
           >
             <div className="flex items-center gap-2">

@@ -60,6 +60,7 @@ export const CommentProvider = ({
 
   useOnClickOutside([portalRef, buttonRef, dropdownRef], () => {
     if (isCommentOpen) {
+      editor.chain().unsetHighlight().run();
       setIsCommentOpen(false);
     }
   });
@@ -79,6 +80,14 @@ export const CommentProvider = ({
     }
     setIsCommentOpen(true);
     onInlineComment?.();
+
+    const isDarkTheme = localStorage.getItem('theme') === 'dark';
+    editor
+      .chain()
+      .setHighlight({
+        color: isDarkTheme ? '#15521d' : '#DDFBDF',
+      })
+      .run();
   };
 
   const getNewComment = (
@@ -238,6 +247,7 @@ export const CommentProvider = ({
   };
 
   const handleCommentSubmit = () => {
+    editor.chain().unsetHighlight().run();
     if (!comment.trim() || !username) return;
 
     const newComment = {
