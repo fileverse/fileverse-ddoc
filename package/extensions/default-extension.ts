@@ -38,7 +38,6 @@ import Superscript from '@tiptap/extension-superscript';
 import Subscript from '@tiptap/extension-subscript';
 import { ResizableMedia } from './resizable-media';
 import { uploadFn } from '../utils/upload-images';
-import { CollapsibleHeading } from './collapsible-heading';
 
 export const defaultExtensions = (
   onError: (error: string) => void,
@@ -61,7 +60,11 @@ export const defaultExtensions = (
         class: 'select-text pointer-events-auto',
       },
     },
-    heading: false,
+    heading: {
+      HTMLAttributes: {
+        class: 'select-text pointer-events-auto',
+      },
+    },
     paragraph: {
       HTMLAttributes: {
         class: 'select-text pointer-events-auto',
@@ -199,12 +202,6 @@ export const defaultExtensions = (
   Subscript.configure({
     HTMLAttributes: {
       class: 'subscript',
-    },
-  }),
-  CollapsibleHeading.configure({
-    levels: [1, 2, 3],
-    HTMLAttributes: {
-      class: 'select-text pointer-events-auto',
     },
   }),
 ];
