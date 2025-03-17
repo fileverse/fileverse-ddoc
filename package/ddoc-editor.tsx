@@ -97,6 +97,7 @@ const DdocEditor = forwardRef(
       isDDocOwner,
       isCollabDocumentPublished = true,
       disableInlineComment,
+      renderThemeToggle,
     }: DdocProps,
     ref,
   ) => {
@@ -414,6 +415,7 @@ const DdocEditor = forwardRef(
               onSlidesShare={onSlidesShare}
               slides={slides}
               setSlides={setSlides}
+              renderThemeToggle={renderThemeToggle}
             />
           )}
           <DocumentOutline
