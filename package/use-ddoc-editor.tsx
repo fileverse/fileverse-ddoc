@@ -256,7 +256,7 @@ export const useDdocEditor = ({
     }
   }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => {});
+  const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
@@ -475,34 +475,84 @@ export const useDdocEditor = ({
     };
   }, [editor]);
 
-  // Single, focused theme effect
+  // FOR REAL TIME TEXT STYLE CLEANUP WHEN PASTING
+  const wasPasteEvent = useRef(false);
+
   useEffect(() => {
     if (!editor) return;
 
-    const handleThemeChange = () => {
-      const isDarkTheme = localStorage.getItem('theme') === 'dark';
-      if (isDarkTheme) {
-        editor
-          .chain()
-          .selectAll()
-          .unsetMark('textStyle', { extendEmptyMarkRange: true })
-          .run();
-      }
+    const cleanupStyles = () => {
+      // Store current selection
+      const { from, to } = editor.state.selection;
+
+      // Apply style cleanup
+      editor
+        .chain()
+        .selectAll()
+        .unsetMark('textStyle', { extendEmptyMarkRange: true })
+        .run();
+
+      // Restore selection
+      editor.commands.setTextSelection({ from, to });
     };
 
-    // Observe theme changes
-    const observer = new MutationObserver(() => {
-      handleThemeChange();
-    });
+    // Handle paste events
+    const handlePaste = () => {
+      wasPasteEvent.current = true;
 
-    // Watch for class changes on html element that indicate theme switches
-    observer.observe(document.documentElement, {
+      // Clean up styles after a short delay
+      setTimeout(() => {
+        cleanupStyles();
+        wasPasteEvent.current = false;
+      }, 100);
+    };
+
+    // Add paste event listener to editor DOM
+    const editorElement = editor.view.dom;
+    editorElement.addEventListener('paste', handlePaste);
+
+    // Watch for theme changes
+    const themeObserver = new MutationObserver(cleanupStyles);
+    themeObserver.observe(document.documentElement, {
       attributes: true,
       attributeFilter: ['class'],
     });
 
-    return () => observer.disconnect();
+    // Cleanup function
+    return () => {
+      editorElement.removeEventListener('paste', handlePaste);
+      themeObserver.disconnect();
+    };
   }, [editor]);
+
+  // FOR AUTO TEXT STYLE CLEANUP WHEN DOCUMENT IS RENDERED
+  const isDarkMode = useRef(localStorage.getItem('theme') !== null);
+
+  useEffect(() => {
+    if (!editor || !initialContent || isContentLoading) return;
+
+    // Check if we're in dark mode and need to clean up text styles
+    if (isDarkMode.current) {
+      // Wait for content to be fully loaded
+      const timeoutId = setTimeout(() => {
+        // Store current selection or cursor position
+        const { from, to } = editor.state.selection;
+
+        // Clean up all text styles that might cause visibility issues in dark mode
+        editor
+          .chain()
+          .selectAll()
+          .unsetColor()
+          .unsetMark('textStyle', { extendEmptyMarkRange: true })
+          .run();
+
+        // Restore selection
+        editor.commands.setTextSelection({ from, to });
+      }, 100);
+
+      return () => clearTimeout(timeoutId);
+    }
+  }, [editor, initialContent, isContentLoading]);
 
   return {
     editor,
