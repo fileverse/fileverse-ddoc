@@ -40,6 +40,11 @@ export const useHeadlessEditor = () => {
     Y.applyUpdate(ydoc, Y.mergeUpdates(parsedContents));
   };
 
+  const mergeYjsUpdates = (contents: string[]) => {
+    const parsedContents = contents.map((content) => toUint8Array(content));
+    return fromUint8Array(Y.mergeUpdates(parsedContents));
+  };
+
   const setContent = (
     initialContent: string | string[] | JSONContent,
     editor: Editor,
@@ -98,5 +103,6 @@ export const useHeadlessEditor = () => {
     getEditor,
     convertJSONContentToYjsEncodedString,
     downloadContentAsMd,
+    mergeYjsUpdates,
   };
 };
