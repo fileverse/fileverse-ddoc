@@ -49,7 +49,7 @@ export const PreviewPanel = ({
           key={index}
           ref={(el) => (slideRefs.current[index] = el)}
           className={cn(
-            'flex p-2 rounded-xl w-[219px] h-[122px] transition-all ',
+            'flex p-2 rounded-xl w-[219px] h-[122px] transition-all',
             currentSlide === index
               ? 'color-bg-brand hover:color-bg-brand-hover'
               : 'color-bg-default hover:color-bg-default-hover',

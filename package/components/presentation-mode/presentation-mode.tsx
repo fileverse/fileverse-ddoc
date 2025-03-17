@@ -6,7 +6,6 @@ import {
   DynamicDropdownV2,
   IconButton,
   Label,
-  ThemeToggle,
   Tooltip,
 } from '@fileverse/ui';
 import { EditingProvider } from '../../hooks/use-editing-context';
@@ -26,14 +25,15 @@ interface PresentationModeProps {
   setIsFullscreen: React.Dispatch<React.SetStateAction<boolean>>;
   onError?: (error: string) => void;
   setCommentDrawerOpen:
-  | React.Dispatch<React.SetStateAction<boolean>>
-  | undefined;
+    | React.Dispatch<React.SetStateAction<boolean>>
+    | undefined;
   sharedSlidesLink?: string;
   isPreviewMode: boolean;
   documentName: string;
   onSlidesShare?: () => void;
   slides: string[];
   setSlides: React.Dispatch<React.SetStateAction<string[]>>;
+  renderThemeToggle?: () => JSX.Element;
 }
 
 const SlideContent = ({
@@ -98,6 +98,7 @@ export const PresentationMode = ({
   onSlidesShare,
   slides,
   setSlides,
+  renderThemeToggle,
 }: PresentationModeProps) => {
   const [showLinkCopied, setShowLinkCopied] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -373,9 +374,7 @@ export const PresentationMode = ({
               </div>
             )}
             <div className="flex justify-center items-center gap-2">
-              <Tooltip text="Toggle theme" sideOffset={10}>
-                <ThemeToggle />
-              </Tooltip>
+              {renderThemeToggle?.()}
               {!isPreviewMode && (
                 <Tooltip text="Download" sideOffset={10}>
                   <IconButton
@@ -499,7 +498,7 @@ export const PresentationMode = ({
         {isFullscreen && (
           <div className="absolute bottom-8 left-[50%] translate-x-[-50%] z-50 opacity-0 transition-opacity duration-300 ease-in-out hover:opacity-100">
             <div className="color-utility-overlay rounded-full px-4 py-2">
-              <p className="color-text-default text-helper-text-sm">
+              <p className="color-text-inverse text-helper-text-sm">
                 Press <strong>ESC</strong> to exit fullscreen
               </p>
             </div>
