@@ -475,6 +475,35 @@ export const useDdocEditor = ({
     };
   }, [editor]);
 
+  // Single, focused theme effect
+  useEffect(() => {
+    if (!editor) return;
+
+    const handleThemeChange = () => {
+      const isDarkTheme = localStorage.getItem('theme') === 'dark';
+      if (isDarkTheme) {
+        editor
+          .chain()
+          .selectAll()
+          .unsetMark('textStyle', { extendEmptyMarkRange: true })
+          .run();
+      }
+    };
+
+    // Observe theme changes
+    const observer = new MutationObserver(() => {
+      handleThemeChange();
+    });
+
+    // Watch for class changes on html element that indicate theme switches
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class'],
+    });
+
+    return () => observer.disconnect();
+  }, [editor]);
+
   return {
     editor,
     isContentLoading,
