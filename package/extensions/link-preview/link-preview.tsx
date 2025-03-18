@@ -5,16 +5,15 @@ import { createRoot, type Root } from 'react-dom/client';
 import { LinkPreviewCard } from '../../components/link-preview-card';
 
 export interface LinkPreviewOptions {
-  metadataProxyUrl: string; // URL endpoint for fetching metadata
+  metadataProxyUrl: string;
 }
 
 const LinkPreview = Extension.create<LinkPreviewOptions>({
   name: 'linkPreview',
 
   addProseMirrorPlugins() {
-    // Check if metadataProxyUrl is an empty string
     if (!this.options.metadataProxyUrl) {
-      return []; // Do nothing if the URL is empty
+      return [];
     }
 
     const pluginKey = new PluginKey('link-preview');
@@ -31,13 +30,10 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
               const target = event.target as HTMLElement;
               const anchor = target.closest('a') as HTMLAnchorElement;
 
-              if (anchor && currentAnchor !== anchor) {
-                currentAnchor = anchor;
+              if (anchor) {
                 const href = anchor.getAttribute('href');
-
                 if (!href) return false;
 
-                // Reuse the hoverDiv if it already exists
                 if (!hoverDiv) {
                   hoverDiv = document.createElement('div');
                   hoverDiv.className = 'hover-link-popup';
@@ -46,15 +42,22 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
                   document.body.appendChild(hoverDiv);
                 }
 
-                // Update Positioning
+                if (currentAnchor === anchor) {
+                  hoverDiv.style.display = 'block';
+                  return false;
+                }
+
+                currentAnchor = anchor;
+
                 const rect = anchor.getBoundingClientRect();
                 hoverDiv.style.left = `${rect.left}px`;
                 hoverDiv.style.top = `${rect.bottom + 5}px`;
+                hoverDiv.style.display = 'block';
 
-                // Reuse or create the React Root
                 if (!root) {
                   root = createRoot(hoverDiv);
                 }
+
                 root.render(
                   <LinkPreviewCard
                     link={href}
@@ -72,11 +75,7 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
                 !hoverDiv.contains(relatedTarget) &&
                 !relatedTarget?.closest('.hover-link-popup')
               ) {
-                root?.unmount();
-                hoverDiv.remove();
-                hoverDiv = null;
-                root = null;
-                currentAnchor = null;
+                hoverDiv.style.display = 'none';
               }
               return false;
             },

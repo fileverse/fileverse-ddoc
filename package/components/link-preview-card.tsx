@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 export interface LinkPreviewData {
   image: string;
@@ -18,21 +18,33 @@ export const LinkPreviewCard = ({
   const [previewData, setPreviewData] = useState<LinkPreviewData | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const metadataCache = useRef(new Map<string, LinkPreviewData>());
+
   useEffect(() => {
+    if (!link) return;
+
+    if (metadataCache.current.has(link)) {
+      setPreviewData(metadataCache.current.get(link)!);
+      setLoading(false);
+      return;
+    }
+
     const fetchMetadata = async () => {
       try {
         setLoading(true);
-
         const response = await fetch(`${metadataProxyUrl}?url=${link}`);
         const { metadata } = await response.json();
 
-        setPreviewData({
+        const newPreviewData: LinkPreviewData = {
           title: metadata.title,
           description: metadata.description,
           image: metadata.image,
           favicon: metadata.favicon,
           link: link,
-        });
+        };
+
+        metadataCache.current.set(link, newPreviewData);
+        setPreviewData(newPreviewData);
       } catch (error) {
         console.error('Error fetching link preview:', error);
       } finally {
