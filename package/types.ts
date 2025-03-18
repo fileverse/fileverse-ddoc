@@ -104,6 +104,7 @@ export interface DdocProps extends CommentAccountProps {
   ignoreCorruptedData?: boolean;
   onSlidesShare?: () => void;
   renderThemeToggle?: () => JSX.Element;
+  metadataProxyUrl?: string;
 }
 
 export interface IEditorSelectionData {

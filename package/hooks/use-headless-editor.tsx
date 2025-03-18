@@ -12,7 +12,7 @@ export const useHeadlessEditor = () => {
   const getEditor = () => {
     const ydoc = new Y.Doc();
     const extensions = [
-      ...defaultExtensions(() => null, ''),
+      ...defaultExtensions(() => null, '', ''),
       customTextInputRules,
       PageBreak,
       Collaboration.configure({
