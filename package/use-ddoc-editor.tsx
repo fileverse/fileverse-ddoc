@@ -59,6 +59,7 @@ export const useDdocEditor = ({
   ignoreCorruptedData,
   isPresentationMode,
   proExtensions,
+  metadataProxyUrl,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
 
@@ -94,6 +95,7 @@ export const useDdocEditor = ({
     ...(defaultExtensions(
       (error: string) => onError?.(error),
       secureImageUploadUrl,
+      metadataProxyUrl,
     ) as AnyExtension[]),
     SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
     customTextInputRules,

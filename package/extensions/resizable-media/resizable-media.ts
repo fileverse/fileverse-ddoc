@@ -91,18 +91,12 @@ export const ResizableMedia = Node.create<MediaOptions>({
       dataFloat: {
         default: null, // 'left' | 'right'
       },
-      encryptedKey: {
-        default: null,
-      },
-      url: {
-        default: null,
-      },
-      iv: {
-        default: null,
-      },
-      privateKey: {
-        default: null,
-      },
+      encryptedKey: { default: null },
+      url: { default: null },
+      iv: { default: null },
+      privateKey: { default: null },
+      caption: { default: null },
+      showCaptionInput: { default: false },
       // TODO: For figure caption later
       // caption: {
       //   default: null,

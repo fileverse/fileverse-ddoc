@@ -191,7 +191,10 @@ function App() {
                     onClick={() => setIsPreviewMode(!isPreviewMode)}
                     className="flex justify-start gap-2"
                   >
-                    <LucideIcon name={isPreviewMode ? 'Pencil' : 'PencilOff'} size="sm" />
+                    <LucideIcon
+                      name={isPreviewMode ? 'Pencil' : 'PencilOff'}
+                      size="sm"
+                    />
                     {isPreviewMode ? 'Edit' : 'Preview'}
                   </Button>
                   <Button

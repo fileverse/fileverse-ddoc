@@ -67,6 +67,33 @@
       @apply justify-end;
     }
 
+    .caption-input-container {
+      @apply relative;
+
+      textarea {
+        @apply w-full px-3 !text-xs font-normal border-0 outline-none mt-1;
+
+        &::placeholder {
+          @apply text-gray-400;
+        }
+
+        &:focus {
+          @apply outline-none border-0 ring-0;
+        }
+
+        &:hover {
+          @apply outline-none border-0;
+        }
+
+        .dark & {
+          @apply bg-transparent text-gray-200;
+          &::placeholder {
+            @apply text-gray-600;
+          }
+        }
+      }
+    }
+
     .horizontal-resize-handle {
       @apply h-12 w-2 top-[50%] right-1 cursor-col-resize absolute z-20 translate-y-[-50%] rounded;
     }
@@ -804,7 +831,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       font-size: min(5vw, 64px);
       line-height: 1.2;
       margin: 0 0 2vh;
-      text-align: center;
       font-weight: 700;
     }
 
@@ -812,7 +838,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       font-size: min(3vw, 48px);
       line-height: 1.2;
       margin: 0 0 2vh;
-      text-align: center;
       font-weight: 700;
     }
 
@@ -820,7 +845,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
       font-size: min(2vw, 32px);
       line-height: 1.2;
       margin: 0 0 2vh;
-      text-align: center;
       font-weight: 700;
     }
 
@@ -1113,4 +1137,8 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
     background-color: rgba(155, 155, 155, 0.5); /* color of the scroll thumb */
     border-radius: 20px; /* roundness of the scroll thumb */
   }
+}
+
+.placeholder-disabled::placeholder {
+  color: rgba(var(--color-text-disabled));
 }

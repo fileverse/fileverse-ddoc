@@ -99,6 +99,7 @@ const DdocEditor = forwardRef(
       isCollabDocumentPublished = true,
       disableInlineComment,
       renderThemeToggle,
+      metadataProxyUrl,
     }: DdocProps,
     ref,
   ) => {
@@ -171,6 +172,7 @@ const DdocEditor = forwardRef(
       ignoreCorruptedData,
       isPresentationMode,
       proExtensions,
+      metadataProxyUrl,
     });
 
     useImperativeHandle(
