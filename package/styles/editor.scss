@@ -62,7 +62,7 @@
       @apply relative;
 
       input {
-        @apply w-full px-3 text-xs font-normal text-[#77818A] border-0 outline-none h-5;
+        @apply w-full px-3 text-xs font-normal border-0 outline-none h-5;
 
         &::placeholder {
           @apply text-gray-400;
@@ -922,4 +922,8 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
     background-color: rgba(155, 155, 155, 0.5); /* color of the scroll thumb */
     border-radius: 20px; /* roundness of the scroll thumb */
   }
+}
+
+.placeholder-disabled::placeholder {
+  color: rgba(var(--color-text-disabled));
 }

@@ -370,6 +370,8 @@ export const ResizableMediaNodeView = ({
               }}
               autoFocus
               className={cn(
+                'color-text-secondary',
+                'placeholder-disabled',
                 node.attrs.dataAlign === 'start' && 'text-left',
                 node.attrs.dataAlign === 'center' && 'text-center',
                 node.attrs.dataAlign === 'end' && 'text-right',
