@@ -6,6 +6,7 @@ import { TextSelection } from '@tiptap/pm/state';
 import { useState } from 'react';
 import { ToCProps, ToCItemProps, ToCItemType } from './types';
 import { useMediaQuery } from 'usehooks-ts';
+import { useEditorContext } from '../../context/editor-context';
 
 export const ToCItem = ({
   item,
@@ -57,9 +58,10 @@ export const ToCEmptyState = () => {
 };
 
 export const ToC = ({ items = [], editor, setItems }: ToCProps) => {
-  // Add state to track active item
   const [activeId, setActiveId] = useState<string | null>(null);
   const isMobile = useMediaQuery('(max-width: 1280px)');
+
+  const { setCollapsedHeadings } = useEditorContext();
 
   if (items.length === 0) {
     return <ToCEmptyState />;
@@ -75,51 +77,92 @@ export const ToC = ({ items = [], editor, setItems }: ToCProps) => {
       const element = editor.view.dom.querySelector(`[data-toc-id="${id}"]`);
       if (!element) return;
 
-      const pos = editor.view.posAtDOM(element as Node, 0);
+      // Find the clicked heading's level and expand all parent headings
+      const expandHeadingAndParents = () => {
+        // Find the clicked heading's level from items array
+        const clickedItem = items.find((item) => item.id === id);
+        if (!clickedItem) return;
 
-      // set focus
-      const tr = editor.view.state.tr;
-      tr.setSelection(new TextSelection(tr.doc.resolve(pos)));
-      editor.view.dispatch(tr);
-      // editor.view.focus();
+        const clickedLevel = clickedItem.level;
 
-      // Find all possible scroll containers
-      const possibleContainers = [
-        document.querySelector('.ProseMirror'),
-        document.getElementById('editor-canvas'),
-        element.closest('.ProseMirror'),
-        element.closest('[class*="editor"]'),
-        editor.view.dom.parentElement,
-      ].filter(Boolean);
-
-      // Find the first scrollable container
-      const scrollContainer = possibleContainers.find(
-        (container) =>
-          container &&
-          (container.scrollHeight > container.clientHeight ||
-            window.getComputedStyle(container).overflow === 'auto' ||
-            window.getComputedStyle(container).overflowY === 'auto'),
-      );
-
-      if (scrollContainer) {
-        // Use requestAnimationFrame to ensure DOM updates are complete
-        requestAnimationFrame(() => {
-          const containerRect = scrollContainer.getBoundingClientRect();
-          const elementRect = (element as HTMLElement).getBoundingClientRect();
-
-          // Calculate the scroll position to start the element at the top of the container
-          const scrollTop =
-            elementRect.top -
-            containerRect.top -
-            containerRect.height / (isMobile ? 5 : 7) +
-            elementRect.height / (isMobile ? 5 : 7);
-
-          scrollContainer.scrollBy({
-            top: scrollTop,
-            behavior: 'smooth',
-          });
+        // Find and expand all parent headings
+        items.forEach((item) => {
+          // A heading is a parent if:
+          // 1. It appears before the clicked heading in the array (lower itemIndex)
+          // 2. Its level is lower than the clicked heading's level
+          if (
+            item.level < clickedLevel &&
+            item.itemIndex < clickedItem.itemIndex
+          ) {
+            setCollapsedHeadings((prev) => {
+              const newSet = new Set(prev);
+              newSet.delete(item.id);
+              return newSet;
+            });
+          }
         });
-      }
+
+        // Also expand the clicked heading itself
+        setCollapsedHeadings((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(id);
+          return newSet;
+        });
+      };
+
+      expandHeadingAndParents();
+
+      // Add a small delay to allow DOM updates before scrolling
+      const timeout = setTimeout(() => {
+        const pos = editor.view.posAtDOM(element as Node, 0);
+
+        // set focus
+        const tr = editor.view.state.tr;
+        tr.setSelection(new TextSelection(tr.doc.resolve(pos)));
+        editor.view.dispatch(tr);
+
+        // Find all possible scroll containers
+        const possibleContainers = [
+          document.querySelector('.ProseMirror'),
+          document.getElementById('editor-canvas'),
+          element.closest('.ProseMirror'),
+          element.closest('[class*="editor"]'),
+          editor.view.dom.parentElement,
+        ].filter(Boolean);
+
+        // Find the first scrollable container
+        const scrollContainer = possibleContainers.find(
+          (container) =>
+            container &&
+            (container.scrollHeight > container.clientHeight ||
+              window.getComputedStyle(container).overflow === 'auto' ||
+              window.getComputedStyle(container).overflowY === 'auto'),
+        );
+
+        if (scrollContainer) {
+          // Use requestAnimationFrame to ensure DOM updates are complete
+          requestAnimationFrame(() => {
+            const containerRect = scrollContainer.getBoundingClientRect();
+            const elementRect = (
+              element as HTMLElement
+            ).getBoundingClientRect();
+
+            // Calculate the scroll position to start the element at the top of the container
+            const scrollTop =
+              elementRect.top -
+              containerRect.top -
+              containerRect.height / (isMobile ? 5 : 7) +
+              elementRect.height / (isMobile ? 5 : 7);
+
+            scrollContainer.scrollBy({
+              top: scrollTop,
+              behavior: 'smooth',
+            });
+          });
+        }
+      }, 0);
+
+      return () => clearTimeout(timeout);
     }
   };
 

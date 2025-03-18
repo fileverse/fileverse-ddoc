@@ -456,14 +456,20 @@ const DdocEditor = forwardRef(
                     zoomLevel === '1.4' ||
                     zoomLevel === '1.5',
                 },
-                { '!ml-0': zoomLevel === '2' && isWidth1500px && !isWidth3000px },
                 {
-                  'w-[700px] md:max-w-[700px] min-h-[150%]': zoomLevel === '0.5',
+                  '!ml-0': zoomLevel === '2' && isWidth1500px && !isWidth3000px,
                 },
                 {
-                  'w-[800px] md:max-w-[800px] min-h-[200%]': zoomLevel === '0.75',
+                  'w-[700px] md:max-w-[700px] min-h-[150%]':
+                    zoomLevel === '0.5',
                 },
-                { 'w-[850px] md:max-w-[850px] min-h-[100%]': zoomLevel === '1' },
+                {
+                  'w-[800px] md:max-w-[800px] min-h-[200%]':
+                    zoomLevel === '0.75',
+                },
+                {
+                  'w-[850px] md:max-w-[850px] min-h-[100%]': zoomLevel === '1',
+                },
                 { 'w-[70%] md:max-w-[70%] min-h-[200%]': zoomLevel === '1.4' },
                 {
                   'w-[1062.5px] md:max-w-[1062.5px] min-h-[100%]':
@@ -514,7 +520,7 @@ const DdocEditor = forwardRef(
                     <div
                       ref={tagsContainerRef}
                       className={cn(
-                        'flex flex-wrap px-4 md:px-[80px] lg:!px-[124px] items-center gap-1 mb-4 mt-4 lg:!mt-0',
+                        'flex flex-wrap px-4 lg:px-[80px] items-center gap-1 mb-4 mt-4 lg:!mt-0',
                         { 'pt-12': isPreviewMode },
                       )}
                     >

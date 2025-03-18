@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useState, ReactNode } from 'react';
+import React, { createContext, useState, ReactNode, useContext } from 'react';
 
 interface EditorContextType {
   collapsedHeadings: Set<string>;
@@ -9,6 +9,14 @@ interface EditorContextType {
 export const EditorContext = createContext<EditorContextType | undefined>(
   undefined,
 );
+
+export const useEditorContext = () => {
+  const context = useContext(EditorContext);
+  if (!context) {
+    throw new Error('useEditorContext must be used within an EditorProvider');
+  }
+  return context;
+};
 
 export const EditorProvider: React.FC<{ children: ReactNode }> = ({
   children,

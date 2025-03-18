@@ -1,11 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, {
-  useEffect,
-  useMemo,
-  useState,
-  useCallback,
-  useContext,
-} from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   NodeViewWrapper,
   NodeViewProps,
@@ -33,8 +27,7 @@ import {
   Tooltip,
   cn,
 } from '@fileverse/ui';
-import { motion, AnimatePresence } from 'framer-motion';
-import { EditorContext } from '../../context/editor-context';
+import { useEditorContext } from '../../context/editor-context';
 // import { startImageUpload } from '../../utils/upload-images';
 
 export const DBlockNodeView: React.FC<
@@ -294,12 +287,7 @@ export const DBlockNodeView: React.FC<
     setVisibleTemplateCount(isExpanded ? 2 : moreTemplates.length);
   };
 
-  const { collapsedHeadings, setCollapsedHeadings } = useContext(
-    EditorContext,
-  ) || {
-    collapsedHeadings: new Set(),
-    setCollapsedHeadings: () => {},
-  };
+  const { collapsedHeadings, setCollapsedHeadings } = useEditorContext();
 
   const isHeading = useMemo(() => {
     const { content } = node.content as any;
@@ -319,6 +307,25 @@ export const DBlockNodeView: React.FC<
   }, [headingId, collapsedHeadings]);
 
   const shouldBeHidden = useMemo(() => {
+    // Check if this is the last empty dBlock
+    const position = getPos();
+    const { doc: document } = editor.state;
+    const currentNode = document.nodeAt(position);
+
+    // Check if this is the last dBlock
+    const isLastBlock =
+      position + (currentNode?.nodeSize || 0) >= document.content.size;
+
+    // Check if it's an empty paragraph
+    const isEmpty =
+      currentNode?.content?.content?.[0]?.type?.name === 'paragraph' &&
+      !currentNode?.content?.content?.[0]?.content?.size;
+
+    // Never hide the last empty dBlock
+    if (isLastBlock && isEmpty) {
+      return false;
+    }
+
     if (isHeading) {
       // Check if this heading should be hidden based on parent heading collapse status
       const { content } = node.content as any;
@@ -328,17 +335,14 @@ export const DBlockNodeView: React.FC<
       const thisHeadingLevel = headingNode.attrs.level || 1;
       if (thisHeadingLevel === 1) return false; // Never hide H1
 
-      const pos = getPos();
-      const { doc } = editor.state;
-
       // Find the closest parent heading
-      let checkPos = pos;
+      let checkPos = position;
       let closestParentHeadingId = null;
       let closestParentLevel = 0;
 
       while (checkPos > 0) {
         checkPos--;
-        const nodeAtPos = doc.nodeAt(checkPos);
+        const nodeAtPos = document.nodeAt(checkPos);
 
         if (nodeAtPos?.type.name === 'dBlock') {
           const dBlockContent = nodeAtPos.content.content[0];
@@ -373,18 +377,14 @@ export const DBlockNodeView: React.FC<
         : false;
     }
 
-    // For non-heading nodes
-    const pos = getPos();
-    const { doc } = editor.state;
-
     // Find the closest heading that could affect this node
-    let checkPos = pos;
+    let checkPos = position;
     let closestHeadingId = null;
     let closestHeadingLevel = 0;
 
     while (checkPos > 0) {
       checkPos--;
-      const nodeAtPos = doc.nodeAt(checkPos);
+      const nodeAtPos = document.nodeAt(checkPos);
 
       if (nodeAtPos?.type.name === 'dBlock') {
         const dBlockContent = nodeAtPos.content.content[0];
@@ -547,13 +547,20 @@ export const DBlockNodeView: React.FC<
 
       return newSet;
     });
-  }, [headingId, node.content, getPos, editor.state, setCollapsedHeadings]);
+  }, [
+    headingId,
+    setCollapsedHeadings,
+    node.content,
+    node.nodeSize,
+    getPos,
+    editor.state,
+  ]);
 
   if (isPresentationMode && isPreviewMode) {
     return (
       <NodeViewWrapper
         className={cn(
-          'flex px-4 md:px-[80px] gap-2 group w-full relative justify-center',
+          'flex px-4 md:px-[80px] gap-2 group w-full relative justify-center items-start',
           isTable && 'pointer-events-auto',
         )}
       >
@@ -581,15 +588,14 @@ export const DBlockNodeView: React.FC<
   return (
     <NodeViewWrapper
       className={cn(
-        'flex px-4 lg:pr-[80px] lg:pl-[16px] gap-2 group w-full relative justify-center',
+        'flex px-4 lg:pr-[80px] lg:pl-[8px] gap-2 group w-full relative justify-center items-start',
         isTable && 'pointer-events-auto',
         shouldBeHidden && 'hidden',
-        isHeading ? 'items-center' : 'items-start',
       )}
     >
       {!isPreviewMode ? (
         <section
-          className="lg:flex gap-1 hidden min-w-16 justify-end"
+          className="lg:flex gap-[2px] hidden min-w-16 justify-end"
           aria-label="left-menu"
           contentEditable={false}
           suppressContentEditableWarning={true}
@@ -720,7 +726,7 @@ export const DBlockNodeView: React.FC<
         </section>
       ) : (
         <section
-          className="lg:flex gap-1 hidden min-w-16 justify-end"
+          className="lg:flex gap-[2px] hidden min-w-16 justify-center"
           aria-label="left-menu"
           contentEditable={false}
           suppressContentEditableWarning={true}
