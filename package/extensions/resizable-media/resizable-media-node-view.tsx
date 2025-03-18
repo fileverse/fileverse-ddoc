@@ -298,7 +298,7 @@ export const ResizableMediaNodeView = ({
       >
         <div
           className={cn(
-            'w-fit',
+            'relative',
             node.attrs.dataAlign === 'start' && 'self-start',
             node.attrs.dataAlign === 'center' && 'self-center',
             node.attrs.dataAlign === 'end' && 'self-end',
@@ -355,39 +355,7 @@ export const ResizableMediaNodeView = ({
             />
           )}
 
-          {node.attrs.showCaptionInput && (
-            <div className="caption-input-container">
-              <textarea
-                placeholder="Type image caption or click at any space to close caption adding"
-                value={node.attrs.caption || ''}
-                onChange={(e) => updateAttributes({ caption: e.target.value })}
-                onBlur={() => {
-                  if (!node.attrs.caption) {
-                    updateAttributes({ showCaptionInput: false });
-                  }
-                }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = 'auto';
-                  target.style.height = `${target.scrollHeight}px`; 
-                }}
-                autoFocus
-                className={cn('color-text-secondary resize-none', 'placeholder-disabled', {
-                    'text-left': node.attrs.dataAlign === 'start',
-                    'text-center': node.attrs.dataAlign === 'center',
-                    'text-right': node.attrs.dataAlign === 'end',
-              })}
-              />
-            </div>
-          )}
-
-          {node.attrs.caption && !node.attrs.showCaptionInput && (
-            <div className="caption">{node.attrs.caption}</div>
-          )}
-        </div>
-
-        {!isPreview && (
-          <>
+          {!isPreview && (
             <div
               className="horizontal-resize-handle group-hover:bg-[#2E2E2E] group-hover:border-2 group-hover:border-[#E8EBEC]"
               title="Resize"
@@ -397,27 +365,59 @@ export const ResizableMediaNodeView = ({
               onTouchStart={(e: any) => startHorizontalResize(e)}
               onTouchEnd={stopHorizontalResize}
             />
+          )}
+        </div>
 
-            <span className="absolute top-2 right-2 transition-all rounded-md overflow-hidden box-border border color-border-default color-bg-default shadow-elevation-3 opacity-0 group-hover:opacity-100 flex gap-1 p-1">
-              {resizableMediaActions.map((btn, index) => {
-                return (
-                  <ToolbarButton
-                    key={index}
-                    tooltip={btn.tooltip}
-                    isActive={mediaActionActiveState[btn.tooltip]}
-                    onClick={() =>
-                      btn.tooltip === 'Delete'
-                        ? deleteNode()
-                        : btn.action?.(updateAttributes)
-                    }
-                    icon={btn.icon as string}
-                    classNames="min-w-6 aspect-square"
-                    size="sm"
-                  />
-                );
+        {node.attrs.showCaptionInput && (
+          <div className="caption-input-container">
+            <textarea
+              placeholder="Type image caption or click at any space to close caption adding"
+              value={node.attrs.caption || ''}
+              onChange={(e) => updateAttributes({ caption: e.target.value })}
+              onBlur={() => {
+                if (!node.attrs.caption) {
+                  updateAttributes({ showCaptionInput: false });
+                }
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = `${target.scrollHeight}px`;
+              }}
+              autoFocus
+                className={cn('color-text-secondary resize-none', 'placeholder-disabled', {
+                  'text-left': node.attrs.dataAlign === 'start',
+                  'text-center': node.attrs.dataAlign === 'center',
+                  'text-right': node.attrs.dataAlign === 'end',
               })}
-            </span>
-          </>
+            />
+          </div>
+        )}
+
+        {node.attrs.caption && !node.attrs.showCaptionInput && (
+          <div className="caption">{node.attrs.caption}</div>
+        )}
+
+        {!isPreview && (
+          <span className="absolute top-2 right-2 transition-all rounded-md overflow-hidden box-border border color-border-default color-bg-default shadow-elevation-3 opacity-0 group-hover:opacity-100 flex gap-1 p-1">
+            {resizableMediaActions.map((btn, index) => {
+              return (
+                <ToolbarButton
+                  key={index}
+                  tooltip={btn.tooltip}
+                  isActive={mediaActionActiveState[btn.tooltip]}
+                  onClick={() =>
+                    btn.tooltip === 'Delete'
+                      ? deleteNode()
+                      : btn.action?.(updateAttributes)
+                  }
+                  icon={btn.icon as string}
+                  classNames="min-w-6 aspect-square"
+                  size="sm"
+                />
+              );
+            })}
+          </span>
         )}
       </div>
     </NodeViewWrapper>
