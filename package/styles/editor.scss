@@ -31,6 +31,15 @@
     @apply leading-normal my-3 first:mt-0 last:mb-0;
   }
 
+  h3 {
+    @apply translate-y-0.5;
+  }
+
+  h1 {
+    @apply -translate-y-1;
+  }
+
+
   & > p {
     @apply my-6 first:mt-0 last:mb-0;
   }
@@ -329,7 +338,7 @@
 .ProseMirror h1,
 .ProseMirror h2,
 .ProseMirror h3 {
-  line-height: 1.1;
+  line-height: 1.2;
   font-weight: 600;
 }
 .ProseMirror h1 {
