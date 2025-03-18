@@ -58,6 +58,33 @@
       @apply justify-end;
     }
 
+    .caption-input-container {
+      @apply w-full relative;
+
+      input {
+        @apply w-full px-3 text-xs font-normal text-[#77818A] border-0 outline-none;
+
+        &::placeholder {
+          @apply text-gray-400;
+        }
+
+        &:focus {
+          @apply outline-none border-0 ring-0;
+        }
+
+        &:hover {
+          @apply outline-none border-0;
+        }
+
+        .dark & {
+          @apply bg-transparent text-gray-200;
+          &::placeholder {
+            @apply text-gray-600;
+          }
+        }
+      }
+    }
+
     .horizontal-resize-handle {
       @apply h-12 w-2 top-[50%] right-1 cursor-col-resize absolute z-20 translate-y-[-50%] rounded;
     }

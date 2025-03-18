@@ -87,7 +87,7 @@ export const ResizableMediaNodeView = ({
         // Aspect Ratio from its original size
         setAspectRatio(
           (resizableImgRef.current as HTMLImageElement).naturalWidth /
-          (resizableImgRef.current as HTMLImageElement).naturalHeight,
+            (resizableImgRef.current as HTMLImageElement).naturalHeight,
         );
       };
     }
@@ -288,7 +288,7 @@ export const ResizableMediaNodeView = ({
         draggable={isDragging}
         data-drag-handle={isDragging}
         className={cn(
-          'w-fit flex flex-col gap-2 relative group transition-all ease-in-out',
+          'w-fit flex flex-col relative group transition-all ease-in-out',
           isDragging && 'opacity-50',
         )}
         onTouchStart={handleTouchStart}
@@ -345,6 +345,27 @@ export const ResizableMediaNodeView = ({
             width={node.attrs.width}
             height={node.attrs.height}
           />
+        )}
+
+        {node.attrs.showCaptionInput && (
+          <div className="caption-input-container">
+            <input
+              type="text"
+              placeholder="Type image caption or click at any space to close caption adding"
+              value={node.attrs.caption || ''}
+              onChange={(e) => updateAttributes({ caption: e.target.value })}
+              onBlur={() => {
+                if (!node.attrs.caption) {
+                  updateAttributes({ showCaptionInput: false });
+                }
+              }}
+              autoFocus
+            />
+          </div>
+        )}
+
+        {node.attrs.caption && !node.attrs.showCaptionInput && (
+          <div className="caption">{node.attrs.caption}</div>
         )}
 
         {!isPreview && (
