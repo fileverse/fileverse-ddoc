@@ -299,7 +299,7 @@ export const DBlockNodeView: React.FC<
     EditorContext,
   ) || {
     collapsedHeadings: new Set(),
-    setCollapsedHeadings: () => {},
+    setCollapsedHeadings: () => { },
   };
 
   const isHeading = useMemo(() => {
@@ -362,12 +362,11 @@ export const DBlockNodeView: React.FC<
     <NodeViewWrapper
       className={cn(
         'flex px-4 md:px-[80px] gap-2 group w-full relative justify-center items-start',
-        isPreviewMode && 'pointer-events-none',
         isTable && 'pointer-events-auto',
         shouldBeHidden && 'hidden',
       )}
     >
-      {!isPreviewMode && (
+      {!isPreviewMode ? (
         <section
           className="lg:flex gap-1 hidden min-w-16 justify-end"
           aria-label="left-menu"
@@ -498,40 +497,56 @@ export const DBlockNodeView: React.FC<
             </Tooltip>
           )}
         </section>
+      ) : (
+        <section
+          className="lg:flex gap-1 hidden min-w-16 justify-end"
+          aria-label="left-menu"
+          contentEditable={false}
+          suppressContentEditableWarning={true}
+        >
+          {isHeading && (
+            <Tooltip
+              position="bottom"
+              text={
+                isThisHeadingCollapsed ? 'Expand section' : 'Collapse section'
+              }
+            >
+              <div
+                className={cn(
+                  'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
+                  'group-hover:opacity-100',
+                )}
+                contentEditable={false}
+                onClick={toggleCollapse}
+                data-test="collapse-button"
+              >
+                <LucideIcon
+                  name={isThisHeadingCollapsed ? 'ChevronRight' : 'ChevronDown'}
+                  size="sm"
+                />
+              </div>
+            </Tooltip>
+          )}
+        </section>
       )}
 
-      <AnimatePresence>
-        <motion.div
-          className="w-full"
-          initial={false}
-          animate={{
-            height: isThisHeadingCollapsed && isHeading ? 'auto' : 'auto',
-            opacity: 1,
-          }}
-          transition={{
-            duration: 0.2,
-            ease: 'easeInOut',
-          }}
-          style={{ overflow: 'hidden' }}
-        >
-          <NodeViewContent
-            className={cn('node-view-content w-full relative', {
-              'is-table': isTable,
-              'invalid-content': node.attrs?.isCorrupted,
-            })}
-          >
-            {isDocEmpty &&
-              !isPreviewMode &&
-              renderTemplateButtons(
-                templateButtons,
-                moreTemplates,
-                visibleTemplateCount,
-                toggleAllTemplates,
-                isExpanded,
-              )}
-          </NodeViewContent>
-        </motion.div>
-      </AnimatePresence>
+      <NodeViewContent
+        className={cn('node-view-content w-full relative', {
+          'is-table': isTable,
+          'invalid-content': node.attrs?.isCorrupted,
+          'pointer-events-none': isPreviewMode,
+        })}
+      >
+        {isDocEmpty &&
+          !isPreviewMode &&
+          renderTemplateButtons(
+            templateButtons,
+            moreTemplates,
+            visibleTemplateCount,
+            toggleAllTemplates,
+            isExpanded,
+          )}
+      </NodeViewContent>
     </NodeViewWrapper>
   );
 };
