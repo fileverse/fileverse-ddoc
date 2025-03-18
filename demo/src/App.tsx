@@ -199,7 +199,7 @@ function App() {
                   </Button>
                   <Button
                     variant={'ghost'}
-                    onClick={() => {}}
+                    onClick={() => { }}
                     className="flex justify-start gap-2"
                   >
                     <LucideIcon name="Share2" size="sm" />
@@ -300,10 +300,10 @@ function App() {
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
-        onComment={(): void => {}}
-        onInlineComment={(): void => {}}
-        onMarkdownImport={(): void => {}}
-        onMarkdownExport={(): void => {}}
+        onComment={(): void => { }}
+        onInlineComment={(): void => { }}
+        onMarkdownImport={(): void => { }}
+        onMarkdownExport={(): void => { }}
         initialComments={initialComments}
         onCommentReply={handleReplyOnComment}
         onNewComment={handleNewComment}
@@ -318,7 +318,7 @@ function App() {
           getHierarchicalIndexes,
         }}
         isConnected={isConnected}
-        connectViaWallet={async () => {}}
+        connectViaWallet={async () => { }}
         isLoading={false}
         connectViaUsername={handleConnectViaUsername}
         isDDocOwner={true}
