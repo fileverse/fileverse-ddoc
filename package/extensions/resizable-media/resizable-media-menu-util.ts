@@ -4,8 +4,13 @@ import { Attrs } from '@tiptap/pm/model';
 interface ResizableMediaAttributes {
   dataAlign: string;
   dataFloat: null | string;
+  showCaptionInput?: boolean;
+  caption?: string;
 }
-type Action = (updateAttributes: (o: ResizableMediaAttributes) => void) => void;
+
+type UpdateAttributes = (attrs: Partial<ResizableMediaAttributes>) => void;
+type Action = (updateAttributes: UpdateAttributes) => void;
+
 interface ResizableMediaAction {
   tooltip: string;
   icon?: string;
@@ -46,6 +51,12 @@ export const resizableMediaActions: ResizableMediaAction[] = [
     isActive: (attrs) => attrs.dataAlign === 'end',
   },
   {
+    tooltip: 'Add Caption',
+    icon: 'Captions',
+    action: (updateAttributes) => updateAttributes({ showCaptionInput: true }),
+    isActive: (attrs) => attrs.showCaptionInput === true,
+  },
+  { 
     tooltip: 'Delete',
     icon: 'Trash2',
     delete: (deleteNode) => deleteNode(),
