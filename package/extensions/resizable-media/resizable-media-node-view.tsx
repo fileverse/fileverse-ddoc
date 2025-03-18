@@ -288,7 +288,7 @@ export const ResizableMediaNodeView = ({
         draggable={isDragging}
         data-drag-handle={isDragging}
         className={cn(
-          'w-fit flex flex-col relative group transition-all ease-in-out',
+          'w-full flex flex-col relative group transition-all ease-in-out',
           isDragging && 'opacity-50',
         )}
         onTouchStart={handleTouchStart}
@@ -296,56 +296,65 @@ export const ResizableMediaNodeView = ({
         onTouchEnd={handleTouchEnd}
         onTouchCancel={handleTouchEnd}
       >
-        {mediaType === 'img' && (
-          <img
-            src={node.attrs.src}
-            ref={resizableImgRef as LegacyRef<HTMLImageElement>}
-            className="rounded-lg"
-            alt={node.attrs.src}
-            width={node.attrs.width}
-            height={node.attrs.height}
-          />
-        )}
+        <div
+          className={cn(
+            'w-fit',
+            node.attrs.dataAlign === 'start' && 'self-start',
+            node.attrs.dataAlign === 'center' && 'self-center',
+            node.attrs.dataAlign === 'end' && 'self-end',
+          )}
+        >
+          {mediaType === 'img' && (
+            <img
+              src={node.attrs.src}
+              ref={resizableImgRef as LegacyRef<HTMLImageElement>}
+              className="rounded-lg"
+              alt={node.attrs.src}
+              width={node.attrs.width}
+              height={node.attrs.height}
+            />
+          )}
 
-        {mediaType === 'secure-img' && (
-          <SecureImage
-            encryptedKey={node.attrs.encryptedKey}
-            url={node.attrs.url}
-            iv={node.attrs.iv}
-            privateKey={node.attrs.privateKey}
-            alt={node.attrs.alt}
-            // caption={node.attrs.caption}
-            className="rounded-lg"
-            width={node.attrs.width}
-            height={node.attrs.height}
-            ref={resizableImgRef as LegacyRef<HTMLImageElement>}
-          />
-        )}
+          {mediaType === 'secure-img' && (
+            <SecureImage
+              encryptedKey={node.attrs.encryptedKey}
+              url={node.attrs.url}
+              iv={node.attrs.iv}
+              privateKey={node.attrs.privateKey}
+              alt={node.attrs.alt}
+              // caption={node.attrs.caption}
+              className="rounded-lg"
+              width={node.attrs.width}
+              height={node.attrs.height}
+              ref={resizableImgRef as LegacyRef<HTMLImageElement>}
+            />
+          )}
 
-        {mediaType === 'video' && (
-          <video
-            ref={resizableImgRef as LegacyRef<HTMLVideoElement>}
-            className="rounded-lg"
-            controls
-            width={node.attrs.width}
-            height={node.attrs.height}
-          >
-            <source src={node.attrs.src} />
-          </video>
-        )}
+          {mediaType === 'video' && (
+            <video
+              ref={resizableImgRef as LegacyRef<HTMLVideoElement>}
+              className="rounded-lg"
+              controls
+              width={node.attrs.width}
+              height={node.attrs.height}
+            >
+              <source src={node.attrs.src} />
+            </video>
+          )}
 
-        {mediaType === 'iframe' && (
-          <iframe
-            ref={resizableImgRef as LegacyRef<HTMLIFrameElement>}
-            className={cn(
-              'rounded-lg max-w-full',
-              isMouseDown && 'pointer-events-none',
-            )}
-            src={node.attrs.src}
-            width={node.attrs.width}
-            height={node.attrs.height}
-          />
-        )}
+          {mediaType === 'iframe' && (
+            <iframe
+              ref={resizableImgRef as LegacyRef<HTMLIFrameElement>}
+              className={cn(
+                'rounded-lg max-w-full',
+                isMouseDown && 'pointer-events-none',
+              )}
+              src={node.attrs.src}
+              width={node.attrs.width}
+              height={node.attrs.height}
+            />
+          )}
+        </div>
 
         {node.attrs.showCaptionInput && (
           <div className="caption-input-container">
@@ -360,6 +369,11 @@ export const ResizableMediaNodeView = ({
                 }
               }}
               autoFocus
+              className={cn(
+                node.attrs.dataAlign === 'start' && 'text-left',
+                node.attrs.dataAlign === 'center' && 'text-center',
+                node.attrs.dataAlign === 'end' && 'text-right',
+              )}
             />
           </div>
         )}
