@@ -288,7 +288,7 @@ export const ResizableMediaNodeView = ({
         draggable={isDragging}
         data-drag-handle={isDragging}
         className={cn(
-          'w-full flex flex-col relative group transition-all ease-in-out',
+          'w-fit flex flex-col relative group transition-all ease-in-out',
           isDragging && 'opacity-50',
         )}
         onTouchStart={handleTouchStart}
@@ -358,8 +358,7 @@ export const ResizableMediaNodeView = ({
 
         {node.attrs.showCaptionInput && (
           <div className="caption-input-container">
-            <input
-              type="text"
+            <textarea
               placeholder="Type image caption or click at any space to close caption adding"
               value={node.attrs.caption || ''}
               onChange={(e) => updateAttributes({ caption: e.target.value })}
@@ -369,13 +368,11 @@ export const ResizableMediaNodeView = ({
                 }
               }}
               autoFocus
-              className={cn(
-                'color-text-secondary',
-                'placeholder-disabled',
-                node.attrs.dataAlign === 'start' && 'text-left',
-                node.attrs.dataAlign === 'center' && 'text-center',
-                node.attrs.dataAlign === 'end' && 'text-right',
-              )}
+              className={cn('color-text-secondary resize-none', 'placeholder-disabled', {
+                'text-left': node.attrs.dataAlign === 'start',
+                'text-center': node.attrs.dataAlign === 'center',
+                'text-right': node.attrs.dataAlign === 'end',
+              })}
             />
           </div>
         )}
