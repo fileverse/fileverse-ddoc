@@ -314,7 +314,7 @@ export const useDdocEditor = ({
 
   const mergeAndApplyUpdate = (contents: string[]) => {
     const parsedContents = contents.map((content) => toUint8Array(content));
-    Y.applyUpdate(ydoc, Y.mergeUpdates(parsedContents));
+    Y.applyUpdate(ydoc, Y.mergeUpdates(parsedContents), 'self');
   };
 
   const isContentYjsEncoded = (
@@ -364,7 +364,11 @@ export const useDdocEditor = ({
             if (Array.isArray(initialContent)) {
               mergeAndApplyUpdate(initialContent);
             } else {
-              Y.applyUpdate(ydoc, toUint8Array(initialContent as string));
+              Y.applyUpdate(
+                ydoc,
+                toUint8Array(initialContent as string),
+                'self',
+              );
             }
           } else {
             editor.commands.setContent(
@@ -453,7 +457,8 @@ export const useDdocEditor = ({
   ]);
 
   useEffect(() => {
-    const handler = (update: Uint8Array) => {
+    const handler = (update: Uint8Array, origin: any) => {
+      if (origin === 'self') return;
       onChange?.(
         fromUint8Array(Y.encodeStateAsUpdate(ydoc)),
         fromUint8Array(update),
