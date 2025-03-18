@@ -68,14 +68,14 @@ export const PreviewPanel = ({
           <div
             onClick={() => setCurrentSlide(index)}
             className={cn(
-              'border rounded-lg p-2 cursor-pointer transition-all transform overflow-hidden aspect-video w-[188px] h-[106px]',
+              'border rounded-lg cursor-pointer transition-all transform overflow-hidden aspect-video w-[188px] h-[106px]',
               currentSlide === index
                 ? 'border-[#FFDF0A]'
                 : 'color-border-default',
             )}
           >
             <div
-              className="presentation-mode preview-slide color-bg-default w-[400%] h-[400%] top-0 left-0 absolute"
+              className="presentation-mode preview-slide color-bg-default w-[400%] h-[400%]"
               dangerouslySetInnerHTML={{ __html: slideContent }}
             />
           </div>

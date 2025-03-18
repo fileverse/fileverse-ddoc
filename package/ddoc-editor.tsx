@@ -184,7 +184,7 @@ const DdocEditor = forwardRef(
           const contents = Y.mergeUpdates(
             _contents.map((content) => toUint8Array(content)),
           );
-          Y.applyUpdate(ydoc, contents);
+          Y.applyUpdate(ydoc, contents, 'self');
 
           return fromUint8Array(contents);
         },
