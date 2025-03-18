@@ -322,7 +322,6 @@ function App() {
         isLoading={false}
         connectViaUsername={handleConnectViaUsername}
         isDDocOwner={true}
-        metadataProxyUrl="http://localhost:3000/api/metadata"
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}
