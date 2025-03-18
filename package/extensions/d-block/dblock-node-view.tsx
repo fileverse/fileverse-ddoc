@@ -42,8 +42,7 @@ export const DBlockNodeView: React.FC<
 > = ({ node, getPos, editor, deleteNode, secureImageUploadUrl }) => {
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const actions = useContentItemActions(editor as Editor, node, getPos());
-  const isPreviewMode = useEditingContext();
-
+  const { isPreviewMode, isPresentationMode } = useEditingContext();
   //const twitterUrls = ['https://twitter.com', 'https://x.com'];
 
   const isTable = useMemo(() => {
@@ -299,7 +298,7 @@ export const DBlockNodeView: React.FC<
     EditorContext,
   ) || {
     collapsedHeadings: new Set(),
-    setCollapsedHeadings: () => { },
+    setCollapsedHeadings: () => {},
   };
 
   const isHeading = useMemo(() => {
@@ -320,50 +319,272 @@ export const DBlockNodeView: React.FC<
   }, [headingId, collapsedHeadings]);
 
   const shouldBeHidden = useMemo(() => {
-    if (isHeading) return false;
+    if (isHeading) {
+      // Check if this heading should be hidden based on parent heading collapse status
+      const { content } = node.content as any;
+      const headingNode = content?.[0];
+      if (!headingNode || headingNode.type.name !== 'heading') return false;
 
+      const thisHeadingLevel = headingNode.attrs.level || 1;
+      if (thisHeadingLevel === 1) return false; // Never hide H1
+
+      const pos = getPos();
+      const { doc } = editor.state;
+
+      // Find the closest parent heading
+      let checkPos = pos;
+      let closestParentHeadingId = null;
+      let closestParentLevel = 0;
+
+      while (checkPos > 0) {
+        checkPos--;
+        const nodeAtPos = doc.nodeAt(checkPos);
+
+        if (nodeAtPos?.type.name === 'dBlock') {
+          const dBlockContent = nodeAtPos.content.content[0];
+          if (dBlockContent?.type.name === 'heading') {
+            const parentHeadingLevel = dBlockContent.attrs.level || 1;
+
+            // Only consider headings that are higher in hierarchy
+            if (parentHeadingLevel < thisHeadingLevel) {
+              const headingId = dBlockContent.attrs.id || `heading-${checkPos}`;
+
+              // Store the closest parent heading info
+              if (
+                !closestParentHeadingId ||
+                parentHeadingLevel > closestParentLevel
+              ) {
+                closestParentHeadingId = headingId;
+                closestParentLevel = parentHeadingLevel;
+              }
+
+              // If we've found a level 1 heading, we can stop looking
+              if (parentHeadingLevel === 1) {
+                break;
+              }
+            }
+          }
+        }
+      }
+
+      // Only check if the immediate parent heading is collapsed
+      return closestParentHeadingId
+        ? collapsedHeadings.has(closestParentHeadingId)
+        : false;
+    }
+
+    // For non-heading nodes
     const pos = getPos();
     const { doc } = editor.state;
 
-    let parentPos = pos;
-    while (parentPos > 0) {
-      parentPos--;
-      const nodeAtPos = doc.nodeAt(parentPos);
+    // Find the closest heading that could affect this node
+    let checkPos = pos;
+    let closestHeadingId = null;
+    let closestHeadingLevel = 0;
+
+    while (checkPos > 0) {
+      checkPos--;
+      const nodeAtPos = doc.nodeAt(checkPos);
 
       if (nodeAtPos?.type.name === 'dBlock') {
         const dBlockContent = nodeAtPos.content.content[0];
         if (dBlockContent?.type.name === 'heading') {
-          const headingId = dBlockContent.attrs.id || `heading-${parentPos}`;
-          if (collapsedHeadings.has(headingId)) {
-            return true;
+          const headingId = dBlockContent.attrs.id || `heading-${checkPos}`;
+          const headingLevel = dBlockContent.attrs.level || 1;
+
+          // Store the closest heading info
+          if (!closestHeadingId || headingLevel > closestHeadingLevel) {
+            closestHeadingId = headingId;
+            closestHeadingLevel = headingLevel;
+          }
+
+          // If we've found a level 1 heading, we can stop looking
+          if (headingLevel === 1) {
+            break;
           }
         }
       }
     }
 
-    return false;
-  }, [editor.state, getPos, isHeading, collapsedHeadings]);
+    // Only check if the immediate parent heading is collapsed
+    return closestHeadingId ? collapsedHeadings.has(closestHeadingId) : false;
+  }, [editor.state, getPos, isHeading, node.content, collapsedHeadings]);
 
   const toggleCollapse = useCallback(() => {
     if (!headingId) return;
 
     setCollapsedHeadings((prev) => {
       const newSet = new Set(prev);
+      const { content } = node.content as any;
+      const headingNode = content?.[0];
+      const headingLevel = headingNode?.attrs?.level || 1;
+
       if (newSet.has(headingId)) {
+        // Expanding
         newSet.delete(headingId);
+
+        const pos = getPos();
+        const { doc } = editor.state;
+        let checkPos = pos + node.nodeSize;
+
+        // For H1, expand all nested headings
+        if (headingLevel === 1) {
+          while (checkPos < doc.content.size) {
+            const nodeAtPos = doc.nodeAt(checkPos);
+
+            if (nodeAtPos?.type.name === 'dBlock') {
+              const dBlockContent = nodeAtPos.content.content[0];
+              if (dBlockContent?.type.name === 'heading') {
+                const currentLevel = dBlockContent.attrs.level || 1;
+
+                // Stop if we find another H1
+                if (currentLevel === 1) {
+                  break;
+                }
+
+                // Expand all nested headings under this H1
+                const subHeadingId =
+                  dBlockContent.attrs.id || `heading-${checkPos}`;
+                newSet.delete(subHeadingId);
+              }
+            }
+
+            checkPos += nodeAtPos?.nodeSize || 1;
+          }
+        } else {
+          // For other heading levels, only expand direct children
+          let foundNextSameOrHigherLevel = false;
+
+          while (checkPos < doc.content.size && !foundNextSameOrHigherLevel) {
+            const nodeAtPos = doc.nodeAt(checkPos);
+
+            if (nodeAtPos?.type.name === 'dBlock') {
+              const dBlockContent = nodeAtPos.content.content[0];
+              if (dBlockContent?.type.name === 'heading') {
+                const currentLevel = dBlockContent.attrs.level || 1;
+
+                // Stop if we find a heading of same or higher level
+                if (currentLevel <= headingLevel) {
+                  foundNextSameOrHigherLevel = true;
+                  break;
+                }
+
+                // Only expand direct child headings
+                if (currentLevel === headingLevel + 1) {
+                  const subHeadingId =
+                    dBlockContent.attrs.id || `heading-${checkPos}`;
+                  newSet.delete(subHeadingId);
+                }
+              }
+            }
+
+            checkPos += nodeAtPos?.nodeSize || 1;
+          }
+        }
       } else {
+        // Collapsing
         newSet.add(headingId);
+
+        const pos = getPos();
+        const { doc } = editor.state;
+        let checkPos = pos + node.nodeSize;
+
+        // For H1, collapse all nested headings
+        if (headingLevel === 1) {
+          while (checkPos < doc.content.size) {
+            const nodeAtPos = doc.nodeAt(checkPos);
+
+            if (nodeAtPos?.type.name === 'dBlock') {
+              const dBlockContent = nodeAtPos.content.content[0];
+              if (dBlockContent?.type.name === 'heading') {
+                const currentLevel = dBlockContent.attrs.level || 1;
+
+                // Stop if we find another H1
+                if (currentLevel === 1) {
+                  break;
+                }
+
+                // Collapse all nested headings under this H1
+                const subHeadingId =
+                  dBlockContent.attrs.id || `heading-${checkPos}`;
+                newSet.add(subHeadingId);
+              }
+            }
+
+            checkPos += nodeAtPos?.nodeSize || 1;
+          }
+        } else {
+          // For other heading levels, only collapse direct children
+          let foundNextSameOrHigherLevel = false;
+
+          while (checkPos < doc.content.size && !foundNextSameOrHigherLevel) {
+            const nodeAtPos = doc.nodeAt(checkPos);
+
+            if (nodeAtPos?.type.name === 'dBlock') {
+              const dBlockContent = nodeAtPos.content.content[0];
+              if (dBlockContent?.type.name === 'heading') {
+                const currentLevel = dBlockContent.attrs.level || 1;
+
+                // Stop if we find a heading of same or higher level
+                if (currentLevel <= headingLevel) {
+                  foundNextSameOrHigherLevel = true;
+                  break;
+                }
+
+                // Only collapse direct child headings
+                if (currentLevel === headingLevel + 1) {
+                  const subHeadingId =
+                    dBlockContent.attrs.id || `heading-${checkPos}`;
+                  newSet.add(subHeadingId);
+                }
+              }
+            }
+
+            checkPos += nodeAtPos?.nodeSize || 1;
+          }
+        }
       }
+
       return newSet;
     });
-  }, [headingId, setCollapsedHeadings]);
+  }, [headingId, node.content, getPos, editor.state, setCollapsedHeadings]);
+
+  if (isPresentationMode && isPreviewMode) {
+    return (
+      <NodeViewWrapper
+        className={cn(
+          'flex px-4 md:px-[80px] gap-2 group w-full relative justify-center',
+          isTable && 'pointer-events-auto',
+        )}
+      >
+        <NodeViewContent
+          className={cn('node-view-content w-full relative', {
+            'is-table': isTable,
+            'invalid-content': node.attrs?.isCorrupted,
+            'pointer-events-none': isPreviewMode,
+          })}
+        >
+          {isDocEmpty &&
+            !isPreviewMode &&
+            renderTemplateButtons(
+              templateButtons,
+              moreTemplates,
+              visibleTemplateCount,
+              toggleAllTemplates,
+              isExpanded,
+            )}
+        </NodeViewContent>
+      </NodeViewWrapper>
+    );
+  }
 
   return (
     <NodeViewWrapper
       className={cn(
-        'flex px-4 md:px-[80px] gap-2 group w-full relative justify-center items-start',
+        'flex px-4 lg:pr-[80px] lg:pl-[16px] gap-2 group w-full relative justify-center',
         isTable && 'pointer-events-auto',
         shouldBeHidden && 'hidden',
+        isHeading ? 'items-center' : 'items-start',
       )}
     >
       {!isPreviewMode ? (

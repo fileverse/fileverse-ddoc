@@ -454,7 +454,7 @@ export const PresentationMode = ({
               transformOrigin: 'center',
             }}
           >
-            <EditingProvider isPreviewMode={true}>
+            <EditingProvider isPreviewMode={true} isPresentationMode={true}>
               {isFullscreen ? (
                 <AnimatePresence mode="wait">
                   <motion.div

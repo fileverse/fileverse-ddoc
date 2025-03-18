@@ -42,16 +42,6 @@ export const DBlock = Node.create<DBlockOptions>({
       isCorrupted: {
         default: false,
       },
-      isCollapsed: {
-        default: false,
-        parseHTML: (element) =>
-          element.getAttribute('data-collapsed') === 'true',
-        renderHTML: (attributes) => {
-          return {
-            'data-collapsed': attributes.isCollapsed,
-          };
-        },
-      },
     };
   },
 
