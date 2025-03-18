@@ -434,12 +434,12 @@ const DdocEditor = forwardRef(
 
             <div
               className={cn(
-                'color-bg-default w-full mx-auto rounded',
+                'color-bg-default w-full mx-auto rounded px-4',
                 { 'mt-4 md:!mt-16 !py-20': isPreviewMode && !isNativeMobile },
                 { 'md:!mt-16': !isPreviewMode },
                 { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
                 { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
-                { 'mt-4 md:!mt-16 px-4 py-6': isPreviewMode && isNativeMobile },
+                { 'mt-4 md:!mt-16 py-6': isPreviewMode && isNativeMobile },
                 {
                   'max-[1080px]:!mx-auto min-[1081px]:!ml-[18%] min-[1700px]:!mx-auto':
                     isCommentSectionOpen &&
@@ -522,7 +522,7 @@ const DdocEditor = forwardRef(
                     <div
                       ref={tagsContainerRef}
                       className={cn(
-                        'flex flex-wrap px-4 lg:px-[80px] items-center gap-1 mb-4 mt-4 lg:!mt-0',
+                        'flex flex-wrap px-4 md:px-8 lg:px-[80px] items-center gap-1 mb-4 mt-4 lg:!mt-0',
                         { 'pt-12': isPreviewMode },
                       )}
                     >
