@@ -50,7 +50,7 @@ export const useHeadlessEditor = () => {
     editor: Editor,
     ydoc: Y.Doc,
   ) => {
-    if (!editor) throw new Error('cannot set content without editor');
+    if (!editor) throw new Error('cannot set content without Editor');
     const isYjsEncoded = isContentYjsEncoded(initialContent as string);
     if (isYjsEncoded) {
       if (Array.isArray(initialContent)) {
