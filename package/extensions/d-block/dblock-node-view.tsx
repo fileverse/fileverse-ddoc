@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useMemo, useState } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useContext,
+} from 'react';
 import {
   NodeViewWrapper,
   NodeViewProps,
@@ -27,6 +33,8 @@ import {
   Tooltip,
   cn,
 } from '@fileverse/ui';
+import { motion, AnimatePresence } from 'framer-motion';
+import { EditorContext } from '../../context/editor-context';
 // import { startImageUpload } from '../../utils/upload-images';
 
 export const DBlockNodeView: React.FC<
@@ -287,17 +295,81 @@ export const DBlockNodeView: React.FC<
     setVisibleTemplateCount(isExpanded ? 2 : moreTemplates.length);
   };
 
+  const { collapsedHeadings, setCollapsedHeadings } = useContext(
+    EditorContext,
+  ) || {
+    collapsedHeadings: new Set(),
+    setCollapsedHeadings: () => {},
+  };
+
+  const isHeading = useMemo(() => {
+    const { content } = node.content as any;
+    return content?.[0]?.type?.name === 'heading';
+  }, [node.content]);
+
+  const headingId = useMemo(() => {
+    if (!isHeading) return null;
+
+    const { content } = node.content as any;
+    const headingNode = content?.[0];
+    return headingNode?.attrs?.id || `heading-${getPos()}`;
+  }, [isHeading, node.content, getPos]);
+
+  const isThisHeadingCollapsed = useMemo(() => {
+    return headingId ? collapsedHeadings.has(headingId) : false;
+  }, [headingId, collapsedHeadings]);
+
+  const shouldBeHidden = useMemo(() => {
+    if (isHeading) return false;
+
+    const pos = getPos();
+    const { doc } = editor.state;
+
+    let parentPos = pos;
+    while (parentPos > 0) {
+      parentPos--;
+      const nodeAtPos = doc.nodeAt(parentPos);
+
+      if (nodeAtPos?.type.name === 'dBlock') {
+        const dBlockContent = nodeAtPos.content.content[0];
+        if (dBlockContent?.type.name === 'heading') {
+          const headingId = dBlockContent.attrs.id || `heading-${parentPos}`;
+          if (collapsedHeadings.has(headingId)) {
+            return true;
+          }
+        }
+      }
+    }
+
+    return false;
+  }, [editor.state, getPos, isHeading, collapsedHeadings]);
+
+  const toggleCollapse = useCallback(() => {
+    if (!headingId) return;
+
+    setCollapsedHeadings((prev) => {
+      const newSet = new Set(prev);
+      if (newSet.has(headingId)) {
+        newSet.delete(headingId);
+      } else {
+        newSet.add(headingId);
+      }
+      return newSet;
+    });
+  }, [headingId, setCollapsedHeadings]);
+
   return (
     <NodeViewWrapper
       className={cn(
         'flex px-4 md:px-[80px] gap-2 group w-full relative justify-center items-start',
         isPreviewMode && 'pointer-events-none',
         isTable && 'pointer-events-auto',
+        shouldBeHidden && 'hidden',
       )}
     >
       {!isPreviewMode && (
         <section
-          className="lg:flex gap-1 hidden"
+          className="lg:flex gap-1 hidden min-w-16 justify-end"
           aria-label="left-menu"
           contentEditable={false}
           suppressContentEditableWarning={true}
@@ -402,25 +474,64 @@ export const DBlockNodeView: React.FC<
               </PopoverContent>
             </Popover>
           </FocusScope>
+          {isHeading && (
+            <Tooltip
+              position="bottom"
+              text={
+                isThisHeadingCollapsed ? 'Expand section' : 'Collapse section'
+              }
+            >
+              <div
+                className={cn(
+                  'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
+                  'group-hover:opacity-100',
+                )}
+                contentEditable={false}
+                onClick={toggleCollapse}
+                data-test="collapse-button"
+              >
+                <LucideIcon
+                  name={isThisHeadingCollapsed ? 'ChevronRight' : 'ChevronDown'}
+                  size="sm"
+                />
+              </div>
+            </Tooltip>
+          )}
         </section>
       )}
 
-      <NodeViewContent
-        className={cn('node-view-content w-full relative', {
-          'is-table': isTable,
-          'invalid-content': node.attrs?.isCorrupted,
-        })}
-      >
-        {isDocEmpty &&
-          !isPreviewMode &&
-          renderTemplateButtons(
-            templateButtons,
-            moreTemplates,
-            visibleTemplateCount,
-            toggleAllTemplates,
-            isExpanded,
-          )}
-      </NodeViewContent>
+      <AnimatePresence>
+        <motion.div
+          className="w-full"
+          initial={false}
+          animate={{
+            height: isThisHeadingCollapsed && isHeading ? 'auto' : 'auto',
+            opacity: 1,
+          }}
+          transition={{
+            duration: 0.2,
+            ease: 'easeInOut',
+          }}
+          style={{ overflow: 'hidden' }}
+        >
+          <NodeViewContent
+            className={cn('node-view-content w-full relative', {
+              'is-table': isTable,
+              'invalid-content': node.attrs?.isCorrupted,
+            })}
+          >
+            {isDocEmpty &&
+              !isPreviewMode &&
+              renderTemplateButtons(
+                templateButtons,
+                moreTemplates,
+                visibleTemplateCount,
+                toggleAllTemplates,
+                isExpanded,
+              )}
+          </NodeViewContent>
+        </motion.div>
+      </AnimatePresence>
     </NodeViewWrapper>
   );
 };
