@@ -206,7 +206,6 @@ export const defaultExtensions = (
         class: 'subscript',
       },
     }),
-    metadataProxyUrl &&
     LinkPreview.configure({
       metadataProxyUrl: metadataProxyUrl,
     }),

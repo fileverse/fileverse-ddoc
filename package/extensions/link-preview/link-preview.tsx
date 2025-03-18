@@ -12,6 +12,11 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
   name: 'linkPreview',
 
   addProseMirrorPlugins() {
+    // Check if metadataProxyUrl is an empty string
+    if (!this.options.metadataProxyUrl) {
+      return []; // Do nothing if the URL is empty
+    }
+
     const pluginKey = new PluginKey('link-preview');
     let hoverDiv: HTMLElement | null = null;
     let root: Root | null = null;
@@ -22,7 +27,7 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
         key: pluginKey,
         props: {
           handleDOMEvents: {
-            mouseover: (view: EditorView, event: MouseEvent) => {
+            mouseover: (_view: EditorView, event: MouseEvent) => {
               const target = event.target as HTMLElement;
               const anchor = target.closest('a') as HTMLAnchorElement;
 
@@ -59,7 +64,7 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
               }
               return false;
             },
-            mouseout: (view: EditorView, event: MouseEvent) => {
+            mouseout: (_view: EditorView, event: MouseEvent) => {
               const relatedTarget = event.relatedTarget as HTMLElement;
 
               if (
