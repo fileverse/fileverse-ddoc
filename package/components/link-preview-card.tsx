@@ -47,6 +47,7 @@ export const LinkPreviewCard = ({
         setPreviewData(newPreviewData);
       } catch (error) {
         console.error('Error fetching link preview:', error);
+        setPreviewData(null);
       } finally {
         setLoading(false);
       }
