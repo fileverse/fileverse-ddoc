@@ -10,10 +10,10 @@ export interface LinkPreviewData {
 
 export const LinkPreviewCard = ({
   link,
-  fetchMetadataUrl,
+  metadataProxyUrl,
 }: {
   link: string;
-  fetchMetadataUrl: string;
+  metadataProxyUrl: string;
 }) => {
   const [previewData, setPreviewData] = useState<LinkPreviewData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -23,7 +23,7 @@ export const LinkPreviewCard = ({
       try {
         setLoading(true);
 
-        const response = await fetch(`${fetchMetadataUrl}?url=${link}`);
+        const response = await fetch(`${metadataProxyUrl}?url=${link}`);
         const { metadata } = await response.json();
 
         setPreviewData({
@@ -79,6 +79,9 @@ export const LinkPreviewCard = ({
                   src={previewData.favicon}
                   className="w-[18px] aspect-square rounded"
                   alt="Favicon"
+                  onError={(e) => {
+                    e.currentTarget.style.display = 'none';
+                  }}
                 />
               )}
               {previewData.link && (

@@ -43,7 +43,7 @@ import LinkPreview from './link-preview/link-preview';
 export const defaultExtensions = (
   onError: (error: string) => void,
   secureImageUploadUrl?: string,
-  fetchMetadataUrl?: string,
+  metadataProxyUrl?: string,
 ) => [
     FontFamily,
     StarterKit.configure({
@@ -206,9 +206,9 @@ export const defaultExtensions = (
         class: 'subscript',
       },
     }),
-    fetchMetadataUrl &&
+    metadataProxyUrl &&
     LinkPreview.configure({
-      fetchMetadataUrl: fetchMetadataUrl,
+      metadataProxyUrl: metadataProxyUrl,
     }),
   ];
 

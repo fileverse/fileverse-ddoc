@@ -5,7 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { LinkPreviewCard } from '../../components/link-preview-card';
 
 export interface LinkPreviewOptions {
-  fetchMetadataUrl: string; // URL endpoint for fetching metadata
+  metadataProxyUrl: string; // URL endpoint for fetching metadata
 }
 
 const LinkPreview = Extension.create<LinkPreviewOptions>({
@@ -53,7 +53,7 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
                 root.render(
                   <LinkPreviewCard
                     link={href}
-                    fetchMetadataUrl={this.options.fetchMetadataUrl}
+                    metadataProxyUrl={this.options.metadataProxyUrl}
                   />,
                 );
               }
