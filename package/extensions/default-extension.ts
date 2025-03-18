@@ -45,171 +45,171 @@ export const defaultExtensions = (
   secureImageUploadUrl?: string,
   metadataProxyUrl?: string,
 ) => [
-    FontFamily,
-    StarterKit.configure({
-      strike: {
-        HTMLAttributes: {
-          class: 'select-text pointer-events-auto',
-        },
-      },
-      bold: {
-        HTMLAttributes: {
-          class: 'select-text pointer-events-auto',
-        },
-      },
-      italic: {
-        HTMLAttributes: {
-          class: 'select-text pointer-events-auto',
-        },
-      },
-      heading: {
-        HTMLAttributes: {
-          class: 'select-text pointer-events-auto',
-        },
-      },
-      paragraph: {
-        HTMLAttributes: {
-          class: 'select-text pointer-events-auto',
-        },
-      },
-      orderedList: {
-        HTMLAttributes: {
-          class:
-            'flex flex-col items-start list-decimal list-outside space-y-4 ml-6',
-        },
-      },
-      blockquote: {
-        HTMLAttributes: {
-          class:
-            'pl-4 border-l-4 color-border-default italic color-text-secondary my-2',
-        },
-      },
-      codeBlock: {
-        HTMLAttributes: {
-          class:
-            'rounded-lg bg-transparent border color-border-default p-5 font-mono font-medium color-text-default select-text pointer-events-auto',
-        },
-        exitOnArrowDown: true,
-      },
-      code: {
-        HTMLAttributes: {
-          class:
-            'rounded bg-transparent p-1.5 font-mono font-medium color-text-default text-body-sm',
-          spellcheck: 'false',
-        },
-      },
-      history: false,
-      gapcursor: false,
-      dropcursor: false,
-      document: false,
-      horizontalRule: false,
-      bulletList: false,
-      listItem: false,
-    }),
-    Typography,
-    TextAlign.configure({
-      types: ['heading', 'paragraph'],
-    }),
-    HorizontalRule,
-    Link.extend({
-      exitable: true,
-      inclusive: false,
-    }).configure({
-      HTMLAttributes: {
-        class: 'custom-text-link',
-        rel: 'noopener noreferrer',
-      },
-      validate: (href) => /^https?:\/\//.test(href),
-      openOnClick: true,
-      autolink: true,
-    }),
-    Placeholder.configure({
-      placeholder: () => '',
-      includeChildren: true,
-      showOnlyCurrent: true,
-    }),
-    Highlight.configure({ multicolor: true }),
-    TiptapUnderline.configure({
+  FontFamily,
+  StarterKit.configure({
+    strike: {
       HTMLAttributes: {
         class: 'select-text pointer-events-auto',
       },
-    }),
-    TextStyle,
-    Color,
-    TaskList.configure({
+    },
+    bold: {
       HTMLAttributes: {
-        class: 'not-prose space-y-4 !ml-0',
+        class: 'select-text pointer-events-auto',
       },
-    }),
-    TaskItem.configure({
+    },
+    italic: {
       HTMLAttributes: {
-        class: 'flex items-start',
+        class: 'select-text pointer-events-auto',
       },
-      nested: true,
-    }),
-    BulletList.configure({
+    },
+    heading: {
       HTMLAttributes: {
-        class: 'space-y-4 !ml-6',
+        class: 'select-text pointer-events-auto',
       },
-    }),
-    ListItem.configure({
+    },
+    paragraph: {
       HTMLAttributes: {
-        class: 'leading-normal',
+        class: 'select-text pointer-events-auto',
       },
-    }),
-    DropCursor.configure({
-      width: 3,
-      color: '#d1d5db',
-    }),
-    ResizableMedia.configure({
-      uploadFn: uploadFn,
-      onError: onError,
-      secureImageUploadUrl,
-    }),
-    GapCursor,
-    DBlock.configure({
-      secureImageUploadUrl,
-    }),
-    TrailingNode,
-    Document,
-    ...SuperchargedTableExtensions,
-    CustomKeymap,
-    Iframe,
-    EmbeddedTweet,
-    actionButton,
-    ColumnExtension,
-    MarkdownPasteHandler,
-    Markdown.configure({
-      html: true, // Allow HTML input/output
-      tightLists: true, // No <p> inside <li> in markdown output
-      tightListClass: 'tight', // Add class to <ul> allowing you to remove <p> margins when tight
-      bulletListMarker: '-', // <li> prefix in markdown output
-      linkify: true, // Create links from "https://..." text
-      breaks: true, // New lines (\n) in markdown input are converted to <br>
-      transformPastedText: true, // Allow to paste markdown text in the editor
-      // transformCopiedText: true, // Copied text is transformed to markdown
-    }),
-    CharacterCount,
-    MathExtension.configure({
-      addInlineMath: true,
-      evaluation: false,
-      delimiters: 'dollar',
-    }),
-    Footnote,
-    Superscript.configure({
+    },
+    orderedList: {
       HTMLAttributes: {
-        class: 'superscript',
+        class:
+          'flex flex-col items-start list-decimal list-outside space-y-4 ml-6',
       },
-    }),
-    Subscript.configure({
+    },
+    blockquote: {
       HTMLAttributes: {
-        class: 'subscript',
+        class:
+          'pl-4 border-l-4 color-border-default italic color-text-secondary my-2',
       },
-    }),
-    LinkPreview.configure({
-      metadataProxyUrl: metadataProxyUrl,
-    }),
-  ];
+    },
+    codeBlock: {
+      HTMLAttributes: {
+        class:
+          'rounded-lg bg-transparent border color-border-default p-5 font-mono font-medium color-text-default select-text pointer-events-auto',
+      },
+      exitOnArrowDown: true,
+    },
+    code: {
+      HTMLAttributes: {
+        class:
+          'rounded bg-transparent p-1.5 font-mono font-medium color-text-default text-body-sm',
+        spellcheck: 'false',
+      },
+    },
+    history: false,
+    gapcursor: false,
+    dropcursor: false,
+    document: false,
+    horizontalRule: false,
+    bulletList: false,
+    listItem: false,
+  }),
+  Typography,
+  TextAlign.configure({
+    types: ['heading', 'paragraph'],
+  }),
+  HorizontalRule,
+  Link.extend({
+    exitable: true,
+    inclusive: false,
+  }).configure({
+    HTMLAttributes: {
+      class: 'custom-text-link',
+      rel: 'noopener noreferrer',
+    },
+    validate: (href) => /^https?:\/\//.test(href),
+    openOnClick: true,
+    autolink: true,
+  }),
+  Placeholder.configure({
+    placeholder: () => '',
+    includeChildren: true,
+    showOnlyCurrent: true,
+  }),
+  Highlight.configure({ multicolor: true }),
+  TiptapUnderline.configure({
+    HTMLAttributes: {
+      class: 'select-text pointer-events-auto',
+    },
+  }),
+  TextStyle,
+  Color,
+  TaskList.configure({
+    HTMLAttributes: {
+      class: 'not-prose space-y-4 !ml-0',
+    },
+  }),
+  TaskItem.configure({
+    HTMLAttributes: {
+      class: 'flex items-start',
+    },
+    nested: true,
+  }),
+  BulletList.configure({
+    HTMLAttributes: {
+      class: 'space-y-4 !ml-6',
+    },
+  }),
+  ListItem.configure({
+    HTMLAttributes: {
+      class: 'leading-normal',
+    },
+  }),
+  DropCursor.configure({
+    width: 3,
+    color: '#d1d5db',
+  }),
+  ResizableMedia.configure({
+    uploadFn: uploadFn,
+    onError: onError,
+    secureImageUploadUrl,
+  }),
+  GapCursor,
+  DBlock.configure({
+    secureImageUploadUrl,
+  }),
+  TrailingNode,
+  Document,
+  ...SuperchargedTableExtensions,
+  CustomKeymap,
+  Iframe,
+  EmbeddedTweet,
+  actionButton,
+  ColumnExtension,
+  MarkdownPasteHandler,
+  Markdown.configure({
+    html: true, // Allow HTML input/output
+    tightLists: true, // No <p> inside <li> in markdown output
+    tightListClass: 'tight', // Add class to <ul> allowing you to remove <p> margins when tight
+    bulletListMarker: '-', // <li> prefix in markdown output
+    linkify: true, // Create links from "https://..." text
+    breaks: true, // New lines (\n) in markdown input are converted to <br>
+    transformPastedText: true, // Allow to paste markdown text in the editor
+    // transformCopiedText: true, // Copied text is transformed to markdown
+  }),
+  CharacterCount,
+  MathExtension.configure({
+    addInlineMath: true,
+    evaluation: false,
+    delimiters: 'dollar',
+  }),
+  Footnote,
+  Superscript.configure({
+    HTMLAttributes: {
+      class: 'superscript',
+    },
+  }),
+  Subscript.configure({
+    HTMLAttributes: {
+      class: 'subscript',
+    },
+  }),
+  LinkPreview.configure({
+    metadataProxyUrl: metadataProxyUrl,
+  }),
+];
 
 export const createInputRule = (
   pattern: RegExp,
