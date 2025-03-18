@@ -373,7 +373,12 @@ export const ResizableMediaNodeView = ({
             <textarea
               placeholder="Type image caption or click at any space to close caption adding"
               value={node.attrs.caption || ''}
-              onChange={(e) => updateAttributes({ caption: e.target.value })}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                if (newValue.length <= 300) {
+                  updateAttributes({ caption: newValue });
+                }
+              }}
               onBlur={() => {
                 if (!node.attrs.caption) {
                   updateAttributes({ showCaptionInput: false });
