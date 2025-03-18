@@ -354,32 +354,37 @@ export const ResizableMediaNodeView = ({
               height={node.attrs.height}
             />
           )}
-        </div>
 
-        {node.attrs.showCaptionInput && (
-          <div className="caption-input-container">
-            <textarea
-              placeholder="Type image caption or click at any space to close caption adding"
-              value={node.attrs.caption || ''}
-              onChange={(e) => updateAttributes({ caption: e.target.value })}
-              onBlur={() => {
-                if (!node.attrs.caption) {
-                  updateAttributes({ showCaptionInput: false });
-                }
-              }}
-              autoFocus
-              className={cn('color-text-secondary resize-none', 'placeholder-disabled', {
-                'text-left': node.attrs.dataAlign === 'start',
-                'text-center': node.attrs.dataAlign === 'center',
-                'text-right': node.attrs.dataAlign === 'end',
+          {node.attrs.showCaptionInput && (
+            <div className="caption-input-container">
+              <textarea
+                placeholder="Type image caption or click at any space to close caption adding"
+                value={node.attrs.caption || ''}
+                onChange={(e) => updateAttributes({ caption: e.target.value })}
+                onBlur={() => {
+                  if (!node.attrs.caption) {
+                    updateAttributes({ showCaptionInput: false });
+                  }
+                }}
+                onInput={(e) => {
+                  const target = e.target as HTMLTextAreaElement;
+                  target.style.height = 'auto';
+                  target.style.height = `${target.scrollHeight}px`; 
+                }}
+                autoFocus
+                className={cn('color-text-secondary resize-none', 'placeholder-disabled', {
+                    'text-left': node.attrs.dataAlign === 'start',
+                    'text-center': node.attrs.dataAlign === 'center',
+                    'text-right': node.attrs.dataAlign === 'end',
               })}
-            />
-          </div>
-        )}
+              />
+            </div>
+          )}
 
-        {node.attrs.caption && !node.attrs.showCaptionInput && (
-          <div className="caption">{node.attrs.caption}</div>
-        )}
+          {node.attrs.caption && !node.attrs.showCaptionInput && (
+            <div className="caption">{node.attrs.caption}</div>
+          )}
+        </div>
 
         {!isPreview && (
           <>

@@ -62,7 +62,7 @@
       @apply relative;
 
       textarea {
-        @apply w-full px-3 !text-xs font-normal border-0 outline-none min-h-20;
+        @apply w-full px-3 !text-xs font-normal border-0 outline-none mt-1;
 
         &::placeholder {
           @apply text-gray-400;
