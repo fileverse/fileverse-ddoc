@@ -97,6 +97,8 @@ const DdocEditor = forwardRef(
       isDDocOwner,
       isCollabDocumentPublished = true,
       disableInlineComment,
+      renderThemeToggle,
+      metadataProxyUrl,
     }: DdocProps,
     ref,
   ) => {
@@ -169,6 +171,7 @@ const DdocEditor = forwardRef(
       ignoreCorruptedData,
       isPresentationMode,
       proExtensions,
+      metadataProxyUrl,
     });
 
     useImperativeHandle(
@@ -181,7 +184,7 @@ const DdocEditor = forwardRef(
           const contents = Y.mergeUpdates(
             _contents.map((content) => toUint8Array(content)),
           );
-          Y.applyUpdate(ydoc, contents);
+          Y.applyUpdate(ydoc, contents, 'self');
 
           return fromUint8Array(contents);
         },
@@ -414,6 +417,7 @@ const DdocEditor = forwardRef(
               onSlidesShare={onSlidesShare}
               slides={slides}
               setSlides={setSlides}
+              renderThemeToggle={renderThemeToggle}
             />
           )}
           <DocumentOutline

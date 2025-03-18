@@ -3,12 +3,13 @@ import { NodeViewProps } from '@tiptap/core';
 import { NodeViewWrapper } from '@tiptap/react';
 import { useEditingContext } from '../../hooks/use-editing-context';
 import { debounce } from '../../utils/debounce';
-import { LucideIcon } from '@fileverse/ui';
+import { LucideIcon, TextField, toast } from '@fileverse/ui';
 
 export const ActionButtonNodeView = ({
   node,
   editor,
   getPos,
+  deleteNode,
 }: NodeViewProps) => {
   const [inputValue, setInputValue] = useState<string>('');
   const isPreview = useEditingContext();
@@ -38,7 +39,10 @@ export const ActionButtonNodeView = ({
 
   const iframeRender = () => {
     if (!inputValue) {
-      alert('Please enter a url');
+      toast({
+        title: 'Please enter a valid URL',
+        variant: 'secondary',
+      });
       return;
     }
 
@@ -70,7 +74,10 @@ export const ActionButtonNodeView = ({
           break;
         }
         default: {
-          alert('Please enter a valid url');
+          toast({
+            title: 'Please enter a valid URL',
+            variant: 'secondary',
+          });
           return;
         }
       }
@@ -93,7 +100,10 @@ export const ActionButtonNodeView = ({
 
   const twitterRender = () => {
     if (!inputValue) {
-      alert('Please enter a url');
+      toast({
+        title: 'Please enter a valid URL',
+        variant: 'secondary',
+      });
       return;
     }
 
@@ -106,7 +116,10 @@ export const ActionButtonNodeView = ({
     if (isValidUrl && isValidTweetId) {
       filteredTweetId = matches[1];
     } else {
-      alert('invalid url');
+      toast({
+        title: 'Please enter a valid URL',
+        variant: 'secondary',
+      });
       return;
     }
 
@@ -124,7 +137,10 @@ export const ActionButtonNodeView = ({
 
   const multiRender = () => {
     if (!inputValue) {
-      alert('Please enter a URL');
+      toast({
+        title: 'Please enter a valid URL',
+        variant: 'secondary',
+      });
       return;
     }
 
@@ -169,7 +185,10 @@ export const ActionButtonNodeView = ({
           break;
         }
         default: {
-          alert('Please enter a valid URL');
+          toast({
+            title: 'Please enter a valid URL',
+            variant: 'secondary',
+          });
           return;
         }
       }
@@ -208,30 +227,7 @@ export const ActionButtonNodeView = ({
     }
   };
 
-  const debouncedHandleSave = debounce(handleSave, 500);
-
-  useEffect(() => {
-    const handleBackspace = (event: KeyboardEvent) => {
-      if (event.key === 'Backspace' && inputValue === '') {
-        const pos = getPos();
-        const to = pos + node.nodeSize;
-
-        // Check if the node is actually empty or if it's just the input value that's empty
-        if (node.content.size === 0 || node.textContent === '') {
-          editor?.chain().focus(pos).deleteRange({ from: pos, to }).run();
-          event.preventDefault(); // Prevent the default backspace behavior
-        }
-      }
-    };
-
-    // Add the event listener
-    document.addEventListener('keydown', handleBackspace);
-
-    // Cleanup function to remove the event listener
-    return () => {
-      document.removeEventListener('keydown', handleBackspace);
-    };
-  }, [inputValue, editor, getPos, node]);
+  const debouncedHandleSave = debounce(handleSave, 1000);
 
   useEffect(() => {
     if (inputValue) {
@@ -246,8 +242,13 @@ export const ActionButtonNodeView = ({
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    inputRef.current?.focus();
-  }, []);
+    // Small delay to ensure the DOM is ready
+    const timeoutId = setTimeout(() => {
+      inputRef.current?.focus();
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, []); // Empty dependency array means this runs once on mount
 
   return (
     <NodeViewWrapper
@@ -256,16 +257,22 @@ export const ActionButtonNodeView = ({
     >
       {!isPreview && (
         <div className="relative w-full">
-          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-[#A1AAB1]">
+          <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none color-text-default">
             {renderIcon()}
           </div>
-          <input
+          <TextField
             ref={inputRef}
             value={inputValue}
             placeholder={renderTitle()}
             onChange={(e) => setInputValue(e.target.value)}
             onClick={(e) => e.stopPropagation()}
-            className="rounded bg-[#f2f2f2] p-3 pl-10 w-full cursor-pointer transition-all ease-in-out text-sm"
+            className="p-3 pl-10 w-full"
+            autoFocus
+            onKeyDown={(e) => {
+              if (e.key === 'Backspace' && inputValue === '') {
+                deleteNode();
+              }
+            }}
           />
         </div>
       )}
