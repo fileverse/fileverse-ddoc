@@ -43,8 +43,12 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
                 }
 
                 if (currentAnchor === anchor) {
-                  hoverDiv.style.display = 'block';
-                  return false;
+                  setTimeout(() => {
+                    if (hoverDiv) {
+                      hoverDiv.style.display = 'block';
+                      return false;
+                    }
+                  }, 600);
                 }
 
                 currentAnchor = anchor;
@@ -52,18 +56,23 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
                 const rect = anchor.getBoundingClientRect();
                 hoverDiv.style.left = `${rect.left}px`;
                 hoverDiv.style.top = `${rect.bottom + 5}px`;
-                hoverDiv.style.display = 'block';
+                setTimeout(() => {
+                  if (hoverDiv) {
+                    hoverDiv.style.display = 'block';
 
-                if (!root) {
-                  root = createRoot(hoverDiv);
-                }
-
-                root.render(
-                  <LinkPreviewCard
-                    link={href}
-                    metadataProxyUrl={this.options.metadataProxyUrl}
-                  />,
-                );
+                    if (!root) {
+                      root = createRoot(hoverDiv);
+                    }
+                  }
+                  if (root) {
+                    root.render(
+                      <LinkPreviewCard
+                        link={href}
+                        metadataProxyUrl={this.options.metadataProxyUrl}
+                      />,
+                    );
+                  }
+                }, 600);
               }
               return false;
             },

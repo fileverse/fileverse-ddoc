@@ -16,7 +16,7 @@ export const LinkPreviewCard = ({
   metadataProxyUrl: string;
 }) => {
   const [previewData, setPreviewData] = useState<LinkPreviewData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
 
   const metadataCache = useRef(new Map<string, LinkPreviewData>());
 
@@ -45,10 +45,12 @@ export const LinkPreviewCard = ({
 
         metadataCache.current.set(link, newPreviewData);
         setPreviewData(newPreviewData);
+        setTimeout(() => {
+          setLoading(false);
+        }, 1000);
       } catch (error) {
         console.error('Error fetching link preview:', error);
         setPreviewData(null);
-      } finally {
         setLoading(false);
       }
     };
@@ -57,7 +59,7 @@ export const LinkPreviewCard = ({
   }, [link]);
 
   return (
-    <div className="w-[250px] border color-border-default shadow-elevation-3 rounded p-3 flex flex-col gap-2 justify-center hover-link-popup bg-white">
+    <div className="w-[250px] border color-border-default shadow-elevation-3 rounded p-3 flex flex-col gap-2 justify-center hover-link-popup color-bg-default">
       {loading ? (
         <p className="text-helper-text-sm color-text-secondary">
           Loading preview...
@@ -75,12 +77,12 @@ export const LinkPreviewCard = ({
             {(previewData.title || previewData.description) && (
               <div className="flex flex-col gap-[2px]">
                 {previewData.title && (
-                  <p className="text-heading-xsm w-full truncate">
+                  <p className="text-heading-xsm w-full truncate color-text-default select-text">
                     {previewData.title}
                   </p>
                 )}
                 {previewData.description && (
-                  <p className="text-helper-text-sm color-text-secondary w-full truncate">
+                  <p className="text-helper-text-sm color-text-secondary w-full truncate select-text">
                     {previewData.description}
                   </p>
                 )}
@@ -98,9 +100,14 @@ export const LinkPreviewCard = ({
                 />
               )}
               {previewData.link && (
-                <p className="text-helper-text-sm color-text-link w-full truncate">
+                <a
+                  href={previewData.link}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-helper-text-sm color-text-link w-full truncate hover:underline hover:cursor-pointer"
+                >
                   {previewData.link}
-                </p>
+                </a>
               )}
             </div>
           </div>

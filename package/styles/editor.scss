@@ -84,13 +84,6 @@
         &:hover {
           @apply outline-none border-0;
         }
-
-        .dark & {
-          @apply bg-transparent text-gray-200;
-          &::placeholder {
-            @apply text-gray-600;
-          }
-        }
       }
     }
 
