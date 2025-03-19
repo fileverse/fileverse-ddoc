@@ -28,7 +28,6 @@ import {
   cn,
 } from '@fileverse/ui';
 import { useEditorContext } from '../../context/editor-context';
-// import { startImageUpload } from '../../utils/upload-images';
 
 export const DBlockNodeView: React.FC<
   NodeViewProps & { secureImageUploadUrl?: string }
@@ -36,7 +35,6 @@ export const DBlockNodeView: React.FC<
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const actions = useContentItemActions(editor as Editor, node, getPos());
   const { isPreviewMode, isPresentationMode } = useEditingContext();
-  //const twitterUrls = ['https://twitter.com', 'https://x.com'];
 
   const isTable = useMemo(() => {
     const { content } = node.content as any;
@@ -133,9 +131,6 @@ export const DBlockNodeView: React.FC<
     } else if (type === 'secure-img') {
       // Convert base64 to File object
       console.log('secureImageUploadUrl', secureImageUploadUrl);
-
-      // Use startImageUpload function
-      // startImageUpload(file, editor.view, pos, secureImageUploadUrl);
     } else {
       editor
         ?.chain()
@@ -593,169 +588,173 @@ export const DBlockNodeView: React.FC<
         shouldBeHidden && 'hidden',
       )}
     >
-      {!isPreviewMode ? (
-        <section
-          className="lg:flex gap-[2px] hidden min-w-16 justify-end"
-          aria-label="left-menu"
-          contentEditable={false}
-          suppressContentEditableWarning={true}
-        >
-          <Tooltip
-            text={
-              <div className="flex flex-col">
-                <div className="text-xs">Click to add below</div>
-                <div className="text-xs">Opt + Click to add above</div>
-              </div>
-            }
-            position="bottom"
-          >
-            <div
-              className={cn(
-                'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
-                !isPreviewMode && 'group-hover:opacity-100',
-              )}
-              contentEditable={false}
-              onClick={handleClick}
+      <section
+        className={cn('lg:flex gap-[2px] hidden min-w-16', {
+          'justify-end': !isPreviewMode,
+          'justify-center': isPreviewMode,
+        })}
+        aria-label="left-menu"
+        contentEditable={false}
+        suppressContentEditableWarning={true}
+      >
+        {!isPreviewMode ? (
+          <>
+            <Tooltip
+              text={
+                <div className="flex flex-col">
+                  <div className="text-xs">Click to add below</div>
+                  <div className="text-xs">Opt + Click to add above</div>
+                </div>
+              }
+              position="bottom"
             >
-              <LucideIcon name="Plus" size="sm" />
-            </div>
-          </Tooltip>
-          <FocusScope
-            onMountAutoFocus={(e) => e.preventDefault()}
-            trapped={false}
-          >
-            <Popover open={menuOpen} onOpenChange={setMenuOpen}>
-              <PopoverTrigger>
-                <Tooltip
-                  text={
-                    <div className="flex flex-col">
-                      <div className="text-xs">Hold to drag</div>
-                      <div className="text-xs">Opt + Click to delete</div>
-                    </div>
-                  }
-                  position="bottom"
-                >
-                  <div
-                    className={cn(
-                      'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
-                      !isPreviewMode && 'group-hover:opacity-100',
-                    )}
-                    contentEditable={false}
-                    draggable
-                    data-drag-handle
-                    onClick={handleDragClick}
+              <div
+                className={cn(
+                  'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
+                  !isPreviewMode && 'group-hover:opacity-100',
+                )}
+                contentEditable={false}
+                onClick={handleClick}
+              >
+                <LucideIcon name="Plus" size="sm" />
+              </div>
+            </Tooltip>
+            <FocusScope
+              onMountAutoFocus={(e) => e.preventDefault()}
+              trapped={false}
+            >
+              <Popover open={menuOpen} onOpenChange={setMenuOpen}>
+                <PopoverTrigger>
+                  <Tooltip
+                    text={
+                      <div className="flex flex-col">
+                        <div className="text-xs">Hold to drag</div>
+                        <div className="text-xs">Opt + Click to delete</div>
+                      </div>
+                    }
+                    position="bottom"
                   >
-                    <LucideIcon name="GripVertical" size="sm" />
-                  </div>
-                </Tooltip>
-              </PopoverTrigger>
-              <PopoverContent
-                side="bottom"
-                align="start"
-                sideOffset={8}
-                className="z-10 shadow-elevation-3"
+                    <div
+                      className={cn(
+                        'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
+                        !isPreviewMode && 'group-hover:opacity-100',
+                      )}
+                      contentEditable={false}
+                      draggable
+                      data-drag-handle
+                      onClick={handleDragClick}
+                    >
+                      <LucideIcon name="GripVertical" size="sm" />
+                    </div>
+                  </Tooltip>
+                </PopoverTrigger>
+                <PopoverContent
+                  side="bottom"
+                  align="start"
+                  sideOffset={8}
+                  className="z-10 shadow-elevation-3"
+                >
+                  <Surface className="p-2 flex flex-col min-w-[16rem]">
+                    <PopoverClose asChild>
+                      <Button
+                        variant="ghost"
+                        onClick={actions.resetTextFormatting}
+                        className="justify-start gap-2"
+                      >
+                        <LucideIcon name="RemoveFormatting" size="sm" />
+                        Clear formatting
+                      </Button>
+                    </PopoverClose>
+                    <PopoverClose asChild>
+                      <Button
+                        variant="ghost"
+                        onClick={actions.copyNodeToClipboard}
+                        className="justify-start gap-2"
+                      >
+                        <LucideIcon name="Clipboard" size="sm" />
+                        Copy to clipboard
+                      </Button>
+                    </PopoverClose>
+                    <PopoverClose asChild>
+                      <Button
+                        variant="ghost"
+                        onClick={actions.duplicateNode}
+                        className="justify-start gap-2"
+                      >
+                        <LucideIcon name="Copy" size="sm" />
+                        Duplicate
+                      </Button>
+                    </PopoverClose>
+                    <PopoverClose asChild>
+                      <Button
+                        variant="ghost"
+                        onClick={actions.deleteNode}
+                        className="justify-start gap-2 color-text-danger"
+                      >
+                        <LucideIcon name="Trash2" size="sm" />
+                        Delete
+                      </Button>
+                    </PopoverClose>
+                  </Surface>
+                </PopoverContent>
+              </Popover>
+            </FocusScope>
+            {isHeading && (
+              <Tooltip
+                position="bottom"
+                text={
+                  isThisHeadingCollapsed ? 'Expand section' : 'Collapse section'
+                }
               >
-                <Surface className="p-2 flex flex-col min-w-[16rem]">
-                  <PopoverClose asChild>
-                    <Button
-                      variant="ghost"
-                      onClick={actions.resetTextFormatting}
-                      className="justify-start gap-2"
-                    >
-                      <LucideIcon name="RemoveFormatting" size="sm" />
-                      Clear formatting
-                    </Button>
-                  </PopoverClose>
-                  <PopoverClose asChild>
-                    <Button
-                      variant="ghost"
-                      onClick={actions.copyNodeToClipboard}
-                      className="justify-start gap-2"
-                    >
-                      <LucideIcon name="Clipboard" size="sm" />
-                      Copy to clipboard
-                    </Button>
-                  </PopoverClose>
-                  <PopoverClose asChild>
-                    <Button
-                      variant="ghost"
-                      onClick={actions.duplicateNode}
-                      className="justify-start gap-2"
-                    >
-                      <LucideIcon name="Copy" size="sm" />
-                      Duplicate
-                    </Button>
-                  </PopoverClose>
-                  <PopoverClose asChild>
-                    <Button
-                      variant="ghost"
-                      onClick={actions.deleteNode}
-                      className="justify-start gap-2 color-text-danger"
-                    >
-                      <LucideIcon name="Trash2" size="sm" />
-                      Delete
-                    </Button>
-                  </PopoverClose>
-                </Surface>
-              </PopoverContent>
-            </Popover>
-          </FocusScope>
-          {isHeading && (
-            <Tooltip
-              position="bottom"
-              text={
-                isThisHeadingCollapsed ? 'Expand section' : 'Collapse section'
-              }
-            >
-              <div
-                className={cn(
-                  'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
-                  'group-hover:opacity-100',
-                )}
-                contentEditable={false}
-                onClick={toggleCollapse}
-                data-test="collapse-button"
+                <div
+                  className={cn(
+                    'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
+                    'group-hover:opacity-100',
+                  )}
+                  contentEditable={false}
+                  onClick={toggleCollapse}
+                  data-test="collapse-button"
+                >
+                  <LucideIcon
+                    name={
+                      isThisHeadingCollapsed ? 'ChevronRight' : 'ChevronDown'
+                    }
+                    size="sm"
+                  />
+                </div>
+              </Tooltip>
+            )}
+          </>
+        ) : (
+          <>
+            {isHeading && (
+              <Tooltip
+                position="bottom"
+                text={
+                  isThisHeadingCollapsed ? 'Expand section' : 'Collapse section'
+                }
               >
-                <LucideIcon
-                  name={isThisHeadingCollapsed ? 'ChevronRight' : 'ChevronDown'}
-                  size="sm"
-                />
-              </div>
-            </Tooltip>
-          )}
-        </section>
-      ) : (
-        <section
-          className="lg:flex gap-[2px] hidden min-w-16 justify-center"
-          aria-label="left-menu"
-          contentEditable={false}
-          suppressContentEditableWarning={true}
-        >
-          {isHeading && (
-            <Tooltip
-              position="bottom"
-              text={
-                isThisHeadingCollapsed ? 'Expand section' : 'Collapse section'
-              }
-            >
-              <div
-                className={cn(
-                  'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
-                  'group-hover:opacity-100',
-                )}
-                contentEditable={false}
-                onClick={toggleCollapse}
-                data-test="collapse-button"
-              >
-                <LucideIcon
-                  name={isThisHeadingCollapsed ? 'ChevronRight' : 'ChevronDown'}
-                  size="sm"
-                />
-              </div>
-            </Tooltip>
-          )}
-        </section>
-      )}
+                <div
+                  className={cn(
+                    'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
+                    'group-hover:opacity-100',
+                  )}
+                  contentEditable={false}
+                  onClick={toggleCollapse}
+                  data-test="collapse-button"
+                >
+                  <LucideIcon
+                    name={
+                      isThisHeadingCollapsed ? 'ChevronRight' : 'ChevronDown'
+                    }
+                    size="sm"
+                  />
+                </div>
+              </Tooltip>
+            )}
+          </>
+        )}
+      </section>
 
       <NodeViewContent
         className={cn('node-view-content w-full relative', {

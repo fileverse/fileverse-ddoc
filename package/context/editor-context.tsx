@@ -1,14 +1,19 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useState, ReactNode, useContext } from 'react';
+import React, {
+  createContext,
+  ReactNode,
+  useContext,
+  useMemo,
+  useState,
+} from 'react';
 
-interface EditorContextType {
+export const EditorContext = createContext<{
   collapsedHeadings: Set<string>;
-  setCollapsedHeadings: React.Dispatch<React.SetStateAction<Set<string>>>;
-}
-
-export const EditorContext = createContext<EditorContextType | undefined>(
-  undefined,
-);
+  setCollapsedHeadings: (updater: (prev: Set<string>) => Set<string>) => void;
+}>({
+  collapsedHeadings: new Set(),
+  setCollapsedHeadings: () => {},
+});
 
 export const useEditorContext = () => {
   const context = useContext(EditorContext);
@@ -25,8 +30,16 @@ export const EditorProvider: React.FC<{ children: ReactNode }> = ({
     new Set(),
   );
 
+  const memoizedValue = useMemo(
+    () => ({
+      collapsedHeadings,
+      setCollapsedHeadings,
+    }),
+    [collapsedHeadings],
+  );
+
   return (
-    <EditorContext.Provider value={{ collapsedHeadings, setCollapsedHeadings }}>
+    <EditorContext.Provider value={memoizedValue}>
       {children}
     </EditorContext.Provider>
   );
