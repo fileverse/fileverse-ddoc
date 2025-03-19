@@ -612,7 +612,7 @@ export const DBlockNodeView: React.FC<
             >
               <div
                 className={cn(
-                  'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
+                  'd-block-button opacity-0 color-text-default hover:color-bg-default-hover aspect-square min-w-5',
                   !isPreviewMode && 'group-hover:opacity-100',
                 )}
                 contentEditable={false}
@@ -638,7 +638,7 @@ export const DBlockNodeView: React.FC<
                   >
                     <div
                       className={cn(
-                        'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
+                        'd-block-button opacity-0 color-text-default hover:color-bg-default-hover aspect-square min-w-5',
                         !isPreviewMode && 'group-hover:opacity-100',
                       )}
                       contentEditable={false}
@@ -712,6 +712,7 @@ export const DBlockNodeView: React.FC<
                   className={cn(
                     'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
                     'group-hover:opacity-100',
+                    isThisHeadingCollapsed ? 'opacity-100' : 'opacity-0',
                   )}
                   contentEditable={false}
                   onClick={toggleCollapse}
@@ -738,8 +739,9 @@ export const DBlockNodeView: React.FC<
               >
                 <div
                   className={cn(
-                    'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
+                    'd-block-button opacity-0 color-text-default hover:color-bg-default-hover aspect-square min-w-5',
                     'group-hover:opacity-100',
+                    isThisHeadingCollapsed ? 'opacity-100' : 'opacity-0',
                   )}
                   contentEditable={false}
                   onClick={toggleCollapse}
