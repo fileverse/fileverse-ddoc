@@ -302,7 +302,7 @@ export const DBlockNodeView: React.FC<
   }, [headingId, collapsedHeadings]);
 
   const shouldBeHidden = useMemo(() => {
-    // Check if this is the last empty dBlock
+    // Check if this is the last dBlock
     const position = getPos();
     const { doc: document } = editor.state;
     const currentNode = document.nodeAt(position);
@@ -311,13 +311,8 @@ export const DBlockNodeView: React.FC<
     const isLastBlock =
       position + (currentNode?.nodeSize || 0) >= document.content.size;
 
-    // Check if it's an empty paragraph
-    const isEmpty =
-      currentNode?.content?.content?.[0]?.type?.name === 'paragraph' &&
-      !currentNode?.content?.content?.[0]?.content?.size;
-
-    // Never hide the last empty dBlock
-    if (isLastBlock && isEmpty) {
+    // Always show if it's the last block, regardless of heading collapse state
+    if (isLastBlock) {
       return false;
     }
 
@@ -376,6 +371,7 @@ export const DBlockNodeView: React.FC<
     let checkPos = position;
     let closestHeadingId = null;
     let closestHeadingLevel = 0;
+    let foundParentHeading = false;
 
     while (checkPos > 0) {
       checkPos--;
@@ -384,6 +380,7 @@ export const DBlockNodeView: React.FC<
       if (nodeAtPos?.type.name === 'dBlock') {
         const dBlockContent = nodeAtPos.content.content[0];
         if (dBlockContent?.type.name === 'heading') {
+          foundParentHeading = true;
           const headingId = dBlockContent.attrs.id || `heading-${checkPos}`;
           const headingLevel = dBlockContent.attrs.level || 1;
 
@@ -399,6 +396,11 @@ export const DBlockNodeView: React.FC<
           }
         }
       }
+    }
+
+    // If no parent heading was found, always show the block
+    if (!foundParentHeading) {
+      return false;
     }
 
     // Only check if the immediate parent heading is collapsed
