@@ -35,6 +35,7 @@ const TiptapToolBar = ({
   secureImageUploadUrl,
   onMarkdownExport,
   onMarkdownImport,
+  onPdfExport,
 }: {
   editor: Editor;
   onError?: (errorString: string) => void;
@@ -45,6 +46,7 @@ const TiptapToolBar = ({
   secureImageUploadUrl?: string;
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
+  onPdfExport?: () => void;
 }) => {
   const {
     toolRef,
@@ -63,6 +65,7 @@ const TiptapToolBar = ({
     secureImageUploadUrl,
     onMarkdownExport,
     onMarkdownImport,
+    onPdfExport,
   });
   const isBelow1480px = useMediaQuery('(max-width: 1480px)');
   const [filename, setFilename] = useState('exported_document.md');
