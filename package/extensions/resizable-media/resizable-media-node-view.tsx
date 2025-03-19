@@ -374,20 +374,41 @@ export const ResizableMediaNodeView = ({
               placeholder="Type image caption or click at any space to close caption adding"
               value={node.attrs.caption || ''}
               onChange={(e) => {
-                const newValue = e.target.value;
-                if (newValue.length <= 300) {
-                  updateAttributes({ caption: newValue });
+                let newValue = e.target.value;
+                if (newValue.length > 300) {
+                  newValue = newValue.substring(0, 300);
                 }
+                updateAttributes({ caption: newValue });
+
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto';
+                target.style.height = `${target.scrollHeight}px`;
+              }}
+              onPaste={(e: React.ClipboardEvent<HTMLTextAreaElement>) => {
+                e.preventDefault();
+                const paste = e.clipboardData.getData('text');
+                const currentText = e.currentTarget.value;
+                const newText = (currentText + paste).substring(0, 300);
+                updateAttributes({ caption: newText });
+
+                const target = e.currentTarget;
+                target.style.height = 'auto'; 
+                target.style.height = `${target.scrollHeight}px`; 
               }}
               onBlur={() => {
                 if (!node.attrs.caption) {
                   updateAttributes({ showCaptionInput: false });
                 }
               }}
-              onInput={(e) => {
+              onFocus={(e) => {
                 const target = e.target as HTMLTextAreaElement;
                 target.style.height = 'auto';
-                target.style.height = `${target.scrollHeight}px`;
+                target.style.height = `${target.scrollHeight}px`; 
+              }}
+              onInput={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.height = 'auto'; 
+                target.style.height = `${target.scrollHeight}px`; 
               }}
               autoFocus
                 className={cn('color-text-secondary resize-none', 'placeholder-disabled', {
