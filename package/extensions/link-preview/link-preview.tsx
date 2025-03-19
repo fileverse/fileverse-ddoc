@@ -20,6 +20,7 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
     let hoverDiv: HTMLElement | null = null;
     let root: Root | null = null;
     let currentAnchor: HTMLAnchorElement | null = null;
+    let timeoutId: NodeJS.Timeout | null = null;
 
     return [
       new Plugin({
@@ -78,14 +79,20 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
             },
             mouseout: (_view: EditorView, event: MouseEvent) => {
               const relatedTarget = event.relatedTarget as HTMLElement;
-
-              if (
-                hoverDiv &&
-                !hoverDiv.contains(relatedTarget) &&
-                !relatedTarget?.closest('.hover-link-popup')
-              ) {
-                hoverDiv.style.display = 'none';
+              if (timeoutId) {
+                clearTimeout(timeoutId);
               }
+
+              timeoutId = setTimeout(() => {
+                if (
+                  hoverDiv &&
+                  !hoverDiv.contains(relatedTarget) &&
+                  !relatedTarget?.closest('.hover-link-popup')
+                ) {
+                  hoverDiv.style.display = 'none';
+                }
+              }, 300);
+
               return false;
             },
             touchstart: (_view: EditorView, event: TouchEvent) => {
@@ -109,18 +116,21 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
                 const rect = anchor.getBoundingClientRect();
                 hoverDiv.style.left = `${rect.left}px`;
                 hoverDiv.style.top = `${rect.bottom + 5}px`;
-                hoverDiv.style.display = 'block';
 
-                if (!root) {
-                  root = createRoot(hoverDiv);
-                }
-
-                root.render(
-                  <LinkPreviewCard
-                    link={href}
-                    metadataProxyUrl={this.options.metadataProxyUrl}
-                  />,
-                );
+                setTimeout(() => {
+                  if (hoverDiv) {
+                    hoverDiv.style.display = 'block';
+                    if (!root) {
+                      root = createRoot(hoverDiv);
+                    }
+                    root.render(
+                      <LinkPreviewCard
+                        link={href}
+                        metadataProxyUrl={this.options.metadataProxyUrl}
+                      />,
+                    );
+                  }
+                }, 600);
               }
               return false;
             },
