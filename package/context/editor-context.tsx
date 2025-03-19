@@ -7,13 +7,12 @@ import React, {
   useState,
 } from 'react';
 
-export const EditorContext = createContext<{
+interface EditorContextType {
   collapsedHeadings: Set<string>;
   setCollapsedHeadings: (updater: (prev: Set<string>) => Set<string>) => void;
-}>({
-  collapsedHeadings: new Set(),
-  setCollapsedHeadings: () => {},
-});
+}
+
+export const EditorContext = createContext<EditorContextType | null>(null);
 
 export const useEditorContext = () => {
   const context = useContext(EditorContext);
@@ -30,7 +29,7 @@ export const EditorProvider: React.FC<{ children: ReactNode }> = ({
     new Set(),
   );
 
-  const memoizedValue = useMemo(
+  const value = useMemo(
     () => ({
       collapsedHeadings,
       setCollapsedHeadings,
@@ -39,8 +38,6 @@ export const EditorProvider: React.FC<{ children: ReactNode }> = ({
   );
 
   return (
-    <EditorContext.Provider value={memoizedValue}>
-      {children}
-    </EditorContext.Provider>
+    <EditorContext.Provider value={value}>{children}</EditorContext.Provider>
   );
 };
