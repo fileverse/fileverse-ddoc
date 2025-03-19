@@ -1,5 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, {
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+  useRef,
+} from 'react';
 import {
   NodeViewWrapper,
   NodeViewProps,
@@ -35,6 +41,7 @@ export const DBlockNodeView: React.FC<
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const actions = useContentItemActions(editor as Editor, node, getPos());
   const { isPreviewMode, isPresentationMode } = useEditingContext();
+  const hasExpandedOnCreate = useRef(false);
 
   const isTable = useMemo(() => {
     const { content } = node.content as any;
@@ -302,22 +309,75 @@ export const DBlockNodeView: React.FC<
   }, [headingId, collapsedHeadings]);
 
   const shouldBeHidden = useMemo(() => {
-    // Check if this is the last dBlock
     const position = getPos();
     const { doc: document } = editor.state;
     const currentNode = document.nodeAt(position);
 
-    // Check if this is the last dBlock
+    // Check if this is the last block
     const isLastBlock =
       position + (currentNode?.nodeSize || 0) >= document.content.size;
 
-    // Always show if it's the last block, regardless of heading collapse state
+    // Check if this is an empty paragraph (spacing block)
+    const isEmptyParagraph =
+      node.content?.content?.[0]?.type.name === 'paragraph' &&
+      (!node.content?.content?.[0]?.content?.content?.length ||
+        (node.content?.content?.[0]?.content?.content?.length === 1 &&
+          !node.content?.content?.[0]?.content?.content?.[0]?.text));
+
+    // Find previous node
+    let prevNode = null;
+    let prevPos = position;
+    while (prevPos > 0) {
+      prevPos--;
+      const nodeAtPos = document.nodeAt(prevPos);
+      if (nodeAtPos?.type.name === 'dBlock') {
+        prevNode = nodeAtPos;
+        break;
+      }
+    }
+
+    // If this is an empty paragraph after a heading, treat it as a section break
+    const isPrevHeading =
+      prevNode?.content?.content?.[0]?.type.name === 'heading';
+
+    if (isEmptyParagraph && isPrevHeading) {
+      // Get the heading's ID
+      const prevHeadingContent = prevNode?.content?.content?.[0];
+      const prevHeadingId =
+        prevHeadingContent?.attrs?.id || `heading-${prevPos}`;
+
+      // Check if this block was just created by checking if it has focus
+      const position = getPos();
+      const { selection } = editor.state;
+      const isBlockFocused =
+        selection.$anchor.pos >= position &&
+        selection.$anchor.pos <= position + node.nodeSize;
+
+      // Auto-expand only once when the block is first created
+      if (
+        isBlockFocused &&
+        !hasExpandedOnCreate.current &&
+        collapsedHeadings.has(prevHeadingId)
+      ) {
+        hasExpandedOnCreate.current = true;
+        setCollapsedHeadings((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(prevHeadingId);
+          return newSet;
+        });
+      }
+
+      // Follow the parent heading's collapsed state
+      return collapsedHeadings.has(prevHeadingId);
+    }
+
+    // Always show if it's the last block
     if (isLastBlock) {
       return false;
     }
 
     if (isHeading) {
-      // Check if this heading should be hidden based on parent heading collapse status
+      // Rest of the heading logic remains the same
       const { content } = node.content as any;
       const headingNode = content?.[0];
       if (!headingNode || headingNode.type.name !== 'heading') return false;
@@ -367,7 +427,7 @@ export const DBlockNodeView: React.FC<
         : false;
     }
 
-    // Find the closest heading that could affect this node
+    // For non-heading blocks
     let checkPos = position;
     let closestHeadingId = null;
     let closestHeadingLevel = 0;
