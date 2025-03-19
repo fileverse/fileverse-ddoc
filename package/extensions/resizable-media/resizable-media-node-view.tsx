@@ -392,8 +392,8 @@ export const ResizableMediaNodeView = ({
                 updateAttributes({ caption: newText });
 
                 const target = e.currentTarget;
-                target.style.height = 'auto'; 
-                target.style.height = `${target.scrollHeight}px`; 
+                target.style.height = 'auto';
+                target.style.height = `${target.scrollHeight}px`;
               }}
               onBlur={() => {
                 if (!node.attrs.caption) {
@@ -403,19 +403,23 @@ export const ResizableMediaNodeView = ({
               onFocus={(e) => {
                 const target = e.target as HTMLTextAreaElement;
                 target.style.height = 'auto';
-                target.style.height = `${target.scrollHeight}px`; 
+                target.style.height = `${target.scrollHeight}px`;
               }}
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
-                target.style.height = 'auto'; 
-                target.style.height = `${target.scrollHeight}px`; 
+                target.style.height = 'auto';
+                target.style.height = `${target.scrollHeight}px`;
               }}
               autoFocus
-                className={cn('color-text-secondary resize-none', 'placeholder-disabled', {
+              className={cn(
+                'color-bg-default color-text-secondary dark:!text-[#888888] resize-none',
+                'placeholder-disabled',
+                {
                   'text-left': node.attrs.dataAlign === 'start',
                   'text-center': node.attrs.dataAlign === 'center',
                   'text-right': node.attrs.dataAlign === 'end',
-              })}
+                },
+              )}
             />
           </div>
         )}
