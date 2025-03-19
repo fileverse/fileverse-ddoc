@@ -38,10 +38,12 @@ import Superscript from '@tiptap/extension-superscript';
 import Subscript from '@tiptap/extension-subscript';
 import { ResizableMedia } from './resizable-media';
 import { uploadFn } from '../utils/upload-images';
+import LinkPreview from './link-preview/link-preview';
 
 export const defaultExtensions = (
   onError: (error: string) => void,
   secureImageUploadUrl?: string,
+  metadataProxyUrl?: string,
 ) => [
   FontFamily,
   StarterKit.configure({
@@ -203,6 +205,9 @@ export const defaultExtensions = (
     HTMLAttributes: {
       class: 'subscript',
     },
+  }),
+  LinkPreview.configure({
+    metadataProxyUrl: metadataProxyUrl,
   }),
 ];
 

@@ -25,14 +25,15 @@ interface PresentationModeProps {
   setIsFullscreen: React.Dispatch<React.SetStateAction<boolean>>;
   onError?: (error: string) => void;
   setCommentDrawerOpen:
-  | React.Dispatch<React.SetStateAction<boolean>>
-  | undefined;
+    | React.Dispatch<React.SetStateAction<boolean>>
+    | undefined;
   sharedSlidesLink?: string;
   isPreviewMode: boolean;
   documentName: string;
   onSlidesShare?: () => void;
   slides: string[];
   setSlides: React.Dispatch<React.SetStateAction<string[]>>;
+  renderThemeToggle?: () => JSX.Element;
 }
 
 const SlideContent = ({
@@ -97,12 +98,10 @@ export const PresentationMode = ({
   onSlidesShare,
   slides,
   setSlides,
+  renderThemeToggle,
 }: PresentationModeProps) => {
   const [showLinkCopied, setShowLinkCopied] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
-  const [previewEditors, setPreviewEditors] = useState<{
-    [key: number]: Editor;
-  }>({});
   const [isLoading, setIsLoading] = useState(true);
   const { isNativeMobile } = useResponsive();
   const [touchStart, setTouchStart] = useState<number | null>(null);
@@ -195,28 +194,6 @@ export const PresentationMode = ({
     return () => clearTimeout(timeoutId);
   }, [editor]);
 
-  // Create preview editors for each slide
-  useEffect(() => {
-    const editors: { [key: number]: Editor } = {};
-    slides.forEach((_, index) => {
-      editors[index] = new Editor({
-        extensions: editor.extensionManager.extensions.filter(
-          (o) => o.name !== 'collaboration',
-        ),
-        editable: false,
-      });
-
-      setTimeout(() => {
-        editors[index].commands.setContent(slides[index]);
-      });
-    });
-    setPreviewEditors(editors);
-
-    return () => {
-      Object.values(editors).forEach((editor) => editor.destroy());
-    };
-  }, [slides]);
-
   // Add this function to handle fullscreen mode
   const toggleFullscreen = useCallback(() => {
     if (isNativeMobile) {
@@ -282,14 +259,6 @@ export const PresentationMode = ({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [slides.length, currentSlide]);
-
-  useEffect(() => {
-    return () => {
-      if (presentationEditor) {
-        presentationEditor.destroy();
-      }
-    };
-  }, [presentationEditor]);
 
   // Update the fullscreen change event listener
   useEffect(() => {
@@ -372,7 +341,6 @@ export const PresentationMode = ({
           slides={slides}
           currentSlide={currentSlide}
           setCurrentSlide={setCurrentSlide}
-          previewEditors={previewEditors}
         />
       )}
       {/* Main Content */}
@@ -406,6 +374,7 @@ export const PresentationMode = ({
               </div>
             )}
             <div className="flex justify-center items-center gap-2">
+              {renderThemeToggle?.()}
               {!isPreviewMode && (
                 <Tooltip text="Download" sideOffset={10}>
                   <IconButton
@@ -478,7 +447,7 @@ export const PresentationMode = ({
             className={cn(
               'w-full color-bg-default rounded-lg overflow-hidden relative',
               isFullscreen
-                ? 'h-full max-w-none'
+                ? 'h-full max-w-none flex items-start justify-start'
                 : 'px-8 md:px-0 scale-[0.35] md:scale-[0.75] xl:scale-100 min-w-[1080px] max-w-[1080px] aspect-video py-[48px]',
             )}
             style={{
@@ -501,13 +470,14 @@ export const PresentationMode = ({
                     }}
                     transition={{ duration: 0.2 }}
                   >
-                    <SlideContent
-                      content={slides[currentSlide]}
-                      editor={presentationEditor}
+                    <div
+                      className={cn(
+                        'presentation-mode fullscreen w-full h-full',
+                      )}
+                      dangerouslySetInnerHTML={{ __html: slides[currentSlide] }}
                       onTouchStart={onTouchStart}
                       onTouchMove={onTouchMove}
                       onTouchEnd={onTouchEnd}
-                      isFullscreen={isFullscreen}
                     />
                   </motion.div>
                 </AnimatePresence>
@@ -528,7 +498,7 @@ export const PresentationMode = ({
         {isFullscreen && (
           <div className="absolute bottom-8 left-[50%] translate-x-[-50%] z-50 opacity-0 transition-opacity duration-300 ease-in-out hover:opacity-100">
             <div className="color-utility-overlay rounded-full px-4 py-2">
-              <p className="color-text-default text-helper-text-sm">
+              <p className="color-text-inverse text-helper-text-sm">
                 Press <strong>ESC</strong> to exit fullscreen
               </p>
             </div>

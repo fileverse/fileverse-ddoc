@@ -12,7 +12,7 @@ export const useHeadlessEditor = () => {
   const getEditor = () => {
     const ydoc = new Y.Doc();
     const extensions = [
-      ...defaultExtensions(() => null, ''),
+      ...defaultExtensions(() => null, '', ''),
       customTextInputRules,
       PageBreak,
       Collaboration.configure({
@@ -40,12 +40,17 @@ export const useHeadlessEditor = () => {
     Y.applyUpdate(ydoc, Y.mergeUpdates(parsedContents));
   };
 
+  const mergeYjsUpdates = (contents: string[]) => {
+    const parsedContents = contents.map((content) => toUint8Array(content));
+    return fromUint8Array(Y.mergeUpdates(parsedContents));
+  };
+
   const setContent = (
     initialContent: string | string[] | JSONContent,
     editor: Editor,
     ydoc: Y.Doc,
   ) => {
-    if (!editor) throw new Error('cannot set content without editor');
+    if (!editor) throw new Error('cannot set content without Editor');
     const isYjsEncoded = isContentYjsEncoded(initialContent as string);
     if (isYjsEncoded) {
       if (Array.isArray(initialContent)) {
@@ -98,5 +103,6 @@ export const useHeadlessEditor = () => {
     getEditor,
     convertJSONContentToYjsEncodedString,
     downloadContentAsMd,
+    mergeYjsUpdates,
   };
 };

@@ -103,6 +103,8 @@ export interface DdocProps extends CommentAccountProps {
   onInvalidContentError?: (e: unknown) => void;
   ignoreCorruptedData?: boolean;
   onSlidesShare?: () => void;
+  renderThemeToggle?: () => JSX.Element;
+  metadataProxyUrl?: string;
 }
 
 export interface IEditorSelectionData {
