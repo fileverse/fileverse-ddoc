@@ -32,7 +32,9 @@ export const LinkPreviewCard = ({
     const fetchMetadata = async () => {
       try {
         setLoading(true);
-        const response = await fetch(`${metadataProxyUrl}?url=${link}`);
+        const response = await fetch(
+          `${metadataProxyUrl}/${encodeURIComponent(link)}`,
+        );
         const { metadata } = await response.json();
 
         const newPreviewData: LinkPreviewData = {
@@ -71,6 +73,9 @@ export const LinkPreviewCard = ({
               src={previewData.image}
               className="w-[225px] h-[125px] object-contain rounded"
               alt="Preview"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
             />
           )}
           <div className="flex flex-col gap-2">
