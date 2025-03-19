@@ -98,6 +98,7 @@ export interface DdocProps extends CommentAccountProps {
   onInlineComment?: () => void;
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
+  onPdfExport?: () => void;
   sharedSlidesLink?: string;
   documentName?: string;
   onInvalidContentError?: (e: unknown) => void;

@@ -72,6 +72,7 @@ const DdocEditor = forwardRef(
       onInlineComment,
       onMarkdownExport,
       onMarkdownImport,
+      onPdfExport,
       editorCanvasClassNames,
       sharedSlidesLink,
       documentName,
@@ -399,6 +400,7 @@ const DdocEditor = forwardRef(
                   secureImageUploadUrl={secureImageUploadUrl}
                   onMarkdownExport={onMarkdownExport}
                   onMarkdownImport={onMarkdownImport}
+                  onPdfExport={onPdfExport}
                 />
               </div>
             </div>

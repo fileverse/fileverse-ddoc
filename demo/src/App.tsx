@@ -304,6 +304,7 @@ function App() {
         onInlineComment={(): void => { }}
         onMarkdownImport={(): void => { }}
         onMarkdownExport={(): void => { }}
+        onPdfExport={(): void => { }}
         initialComments={initialComments}
         onCommentReply={handleReplyOnComment}
         onNewComment={handleNewComment}

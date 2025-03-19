@@ -158,12 +158,14 @@ export const useEditorToolbar = ({
   secureImageUploadUrl,
   onMarkdownExport,
   onMarkdownImport,
+  onPdfExport,
 }: {
   editor: Editor;
   onError?: (errorString: string) => void;
   secureImageUploadUrl?: string;
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
+  onPdfExport?: () => void;
 }) => {
   const {
     ref: toolRef,
@@ -448,6 +450,7 @@ export const useEditorToolbar = ({
           };
           setFileExportsOpen(false);
           setTimeout(closeAndPrint, 200);
+          onPdfExport?.();
         }
       },
       isActive: false,
