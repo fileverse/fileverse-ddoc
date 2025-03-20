@@ -417,7 +417,7 @@ export const PresentationMode = ({
                       isOpen={showLinkCopied}
                       onClose={() => setShowLinkCopied?.(false)}
                       content={
-                        <div className="flex items-start gap-3 bg-black color-text-default rounded shadow-elevation-3 p-2 text-helper-text-sm">
+                        <div className="flex items-start gap-3 bg-black color-text-inverse rounded shadow-elevation-3 p-2 text-helper-text-sm">
                           Link copied
                         </div>
                       }
