@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import { useMediaQuery } from 'usehooks-ts';
 
 export interface LinkPreviewData {
   image: string;
@@ -17,6 +18,7 @@ export const LinkPreviewCard = ({
   metadataProxyUrl: string;
   hoverEvent: EventTarget;
 }) => {
+  const isMediaMax768px = useMediaQuery('(max-width:768px)');
   const [previewData, setPreviewData] = useState<LinkPreviewData | null>(null);
   const [loading, setLoading] = useState<boolean>(false);
 
@@ -72,6 +74,7 @@ export const LinkPreviewCard = ({
           loadPreviewData(link);
         }
       } else {
+        setLoading(true);
         setPreviewData(null);
       }
     };
@@ -88,6 +91,8 @@ export const LinkPreviewCard = ({
       );
     };
   }, [hoverEvent, link]);
+
+  if (isMediaMax768px) return <></>;
 
   return (
     <div className="w-[250px] border color-border-default shadow-elevation-3 rounded p-3 flex flex-col gap-2 justify-center hover-link-popup color-bg-default">
