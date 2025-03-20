@@ -11,55 +11,83 @@ export interface LinkPreviewData {
 export const LinkPreviewCard = ({
   link,
   metadataProxyUrl,
+  hoverEvent,
 }: {
   link: string;
   metadataProxyUrl: string;
+  hoverEvent: EventTarget;
 }) => {
   const [previewData, setPreviewData] = useState<LinkPreviewData | null>(null);
-  const [loading, setLoading] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const metadataCache = useRef(new Map<string, LinkPreviewData>());
 
-  useEffect(() => {
+  const loadPreviewData = async (link: string) => {
     if (!link) return;
-    setPreviewData(null);
-    setLoading(true);
+
     if (metadataCache.current.has(link)) {
       setPreviewData(metadataCache.current.get(link)!);
       setLoading(false);
       return;
     }
 
-    const fetchMetadata = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch(
-          `${metadataProxyUrl}/${encodeURIComponent(link)}`,
-        );
-        const { metadata } = await response.json();
+    setLoading(true);
+    try {
+      const response = await fetch(
+        `${metadataProxyUrl}/${encodeURIComponent(link)}`,
+      );
+      const { metadata } = await response.json();
 
-        const newPreviewData: LinkPreviewData = {
-          title: metadata.title,
-          description: metadata.description,
-          image: metadata.image,
-          favicon: metadata.favicon,
-          link: link,
-        };
+      const newPreviewData: LinkPreviewData = {
+        title: metadata.title,
+        description: metadata.description,
+        image: metadata.image,
+        favicon: metadata.favicon,
+        link: link,
+      };
 
-        metadataCache.current.set(link, newPreviewData);
-        setPreviewData(newPreviewData);
-        setTimeout(() => {
+      metadataCache.current.set(link, newPreviewData);
+      setPreviewData(newPreviewData);
+    } catch (error) {
+      console.error('Error fetching link preview:', error);
+      setPreviewData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (link) {
+      loadPreviewData(link);
+    }
+  }, [link]);
+
+  useEffect(() => {
+    const handleHoverChange = (event: CustomEvent) => {
+      if (event.detail) {
+        if (metadataCache.current.has(link)) {
+          setPreviewData(metadataCache.current.get(link)!);
           setLoading(false);
-        }, 1000);
-      } catch (error) {
-        console.error('Error fetching link preview:', error);
+        } else {
+          loadPreviewData(link);
+        }
+      } else {
         setPreviewData(null);
-        setLoading(false);
       }
     };
 
-    fetchMetadata();
-  }, [link]);
+    hoverEvent.addEventListener(
+      'hoverStateChange',
+      handleHoverChange as EventListener,
+    );
+
+    return () => {
+      hoverEvent.removeEventListener(
+        'hoverStateChange',
+        handleHoverChange as EventListener,
+      );
+    };
+  }, [hoverEvent, link]);
 
   return (
     <div className="w-[250px] border color-border-default shadow-elevation-3 rounded p-3 flex flex-col gap-2 justify-center hover-link-popup color-bg-default">

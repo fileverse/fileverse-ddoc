@@ -22,6 +22,8 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
     let currentAnchor: HTMLAnchorElement | null = null;
     let timeoutId: NodeJS.Timeout | null = null;
 
+    const hoverEvent = new EventTarget();
+
     return [
       new Plugin({
         key: pluginKey,
@@ -47,6 +49,9 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
                   setTimeout(() => {
                     if (hoverDiv) {
                       hoverDiv.style.display = 'block';
+                      hoverEvent.dispatchEvent(
+                        new CustomEvent('hoverStateChange', { detail: true }),
+                      );
                       return false;
                     }
                   }, 600);
@@ -57,6 +62,7 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
                 const rect = anchor.getBoundingClientRect();
                 hoverDiv.style.left = `${rect.left}px`;
                 hoverDiv.style.top = `${rect.bottom + 5}px`;
+
                 setTimeout(() => {
                   if (hoverDiv) {
                     hoverDiv.style.display = 'block';
@@ -70,6 +76,7 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
                       <LinkPreviewCard
                         link={href}
                         metadataProxyUrl={this.options.metadataProxyUrl}
+                        hoverEvent={hoverEvent} // Pass event listener
                       />,
                     );
                   }
@@ -90,8 +97,11 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
                   !relatedTarget?.closest('.hover-link-popup')
                 ) {
                   hoverDiv.style.display = 'none';
+                  hoverEvent.dispatchEvent(
+                    new CustomEvent('hoverStateChange', { detail: false }),
+                  );
                 }
-              }, 300);
+              }, 100);
 
               return false;
             },
@@ -127,7 +137,11 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
                       <LinkPreviewCard
                         link={href}
                         metadataProxyUrl={this.options.metadataProxyUrl}
+                        hoverEvent={hoverEvent}
                       />,
+                    );
+                    hoverEvent.dispatchEvent(
+                      new CustomEvent('hoverStateChange', { detail: true }),
                     );
                   }
                 }, 600);
