@@ -400,15 +400,14 @@ export const ResizableMediaNodeView = ({
                   updateAttributes({ showCaptionInput: false });
                 }
               }}
-              onFocus={(e) => {
-                const target = e.target as HTMLTextAreaElement;
-                target.style.height = 'auto';
-                target.style.height = `${target.scrollHeight}px`;
-              }}
               onInput={(e) => {
                 const target = e.target as HTMLTextAreaElement;
                 target.style.height = 'auto';
                 target.style.height = `${target.scrollHeight}px`;
+              }}
+              onFocus={(e) => {
+                const target = e.target as HTMLTextAreaElement;
+                target.style.fontSize = '16px';
               }}
               autoFocus
               className={cn(
