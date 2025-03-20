@@ -15,14 +15,9 @@ export const useHeadlessEditor = () => {
       ...defaultExtensions(() => null, '', ''),
       customTextInputRules,
       PageBreak,
-      Collaboration.configure({
-        document: ydoc,
-      }),
+      Collaboration.configure({ document: ydoc }),
     ];
-    const editor = new Editor({
-      extensions,
-      autofocus: false,
-    });
+    const editor = new Editor({ extensions, autofocus: false });
     return { editor, ydoc };
   };
 
@@ -60,17 +55,27 @@ export const useHeadlessEditor = () => {
       }
     } else {
       editor.commands.setContent(
-        sanitizeContent({
-          data: initialContent as JSONContent,
-        }),
+        sanitizeContent({ data: initialContent as JSONContent }),
       );
     }
   };
 
-  const convertJSONContentToYjsEncodedString = (content: JSONContent) => {
+  const getYjsConvertor = () => {
     const { editor, ydoc } = getEditor();
-    setContent(content, editor, ydoc);
-    return fromUint8Array(Y.encodeStateAsUpdate(ydoc));
+    return {
+      convertJSONContentToYjsEncodedString: (content: JSONContent) => {
+        setContent(content, editor, ydoc);
+        return fromUint8Array(Y.encodeStateAsUpdate(ydoc));
+      },
+      cleanup: () => {
+        if (editor) {
+          editor.destroy();
+        }
+        if (ydoc) {
+          ydoc.destroy();
+        }
+      },
+    };
   };
 
   const downloadContentAsMd = (
@@ -101,7 +106,7 @@ export const useHeadlessEditor = () => {
   return {
     setContent,
     getEditor,
-    convertJSONContentToYjsEncodedString,
+    getYjsConvertor,
     downloadContentAsMd,
     mergeYjsUpdates,
   };
