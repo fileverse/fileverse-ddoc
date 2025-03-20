@@ -33,6 +33,25 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
               const target = event.target as HTMLElement;
               const anchor = target.closest('a') as HTMLAnchorElement;
 
+              if (
+                !anchor &&
+                hoverDiv &&
+                !hoverDiv.contains(target) &&
+                target !== hoverDiv
+              ) {
+                if (timeoutId) {
+                  clearTimeout(timeoutId);
+                }
+                timeoutId = setTimeout(() => {
+                  if (hoverDiv) {
+                    hoverDiv.style.display = 'none';
+                    hoverEvent.dispatchEvent(
+                      new CustomEvent('hoverStateChange', { detail: false }),
+                    );
+                  }
+                }, 100);
+              }
+
               if (anchor) {
                 const href = anchor.getAttribute('href');
                 if (!href) return false;
@@ -94,7 +113,7 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
                 if (
                   hoverDiv &&
                   !hoverDiv.contains(relatedTarget) &&
-                  !relatedTarget?.closest('.hover-link-popup')
+                  relatedTarget !== hoverDiv
                 ) {
                   hoverDiv.style.display = 'none';
                   hoverEvent.dispatchEvent(
@@ -103,49 +122,6 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
                 }
               }, 100);
 
-              return false;
-            },
-            touchstart: (_view: EditorView, event: TouchEvent) => {
-              const target = event.target as HTMLElement;
-              const anchor = target.closest('a') as HTMLAnchorElement;
-
-              if (anchor) {
-                const href = anchor.getAttribute('href');
-                if (!href) return false;
-
-                if (!hoverDiv) {
-                  hoverDiv = document.createElement('div');
-                  hoverDiv.className = 'hover-link-popup';
-                  hoverDiv.style.position = 'absolute';
-                  hoverDiv.style.zIndex = '999';
-                  document.body.appendChild(hoverDiv);
-                }
-
-                currentAnchor = anchor;
-
-                const rect = anchor.getBoundingClientRect();
-                hoverDiv.style.left = `${rect.left}px`;
-                hoverDiv.style.top = `${rect.bottom + 5}px`;
-
-                setTimeout(() => {
-                  if (hoverDiv) {
-                    hoverDiv.style.display = 'block';
-                    if (!root) {
-                      root = createRoot(hoverDiv);
-                    }
-                    root.render(
-                      <LinkPreviewCard
-                        link={href}
-                        metadataProxyUrl={this.options.metadataProxyUrl}
-                        hoverEvent={hoverEvent}
-                      />,
-                    );
-                    hoverEvent.dispatchEvent(
-                      new CustomEvent('hoverStateChange', { detail: true }),
-                    );
-                  }
-                }, 600);
-              }
               return false;
             },
           },
