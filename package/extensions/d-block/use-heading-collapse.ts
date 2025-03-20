@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useCallback, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Editor } from '@tiptap/react';
 
 interface UseHeadingCollapseProps {
@@ -39,11 +39,6 @@ export const useHeadingCollapse = ({
   const shouldBeHidden = useMemo(() => {
     const position = getPos();
     const { doc: document } = editor.state;
-    const currentNode = document.nodeAt(position);
-
-    // Check if this is the last block
-    const isLastBlock =
-      position + (currentNode?.nodeSize || 0) >= document.content.size;
 
     // Check if this is an empty paragraph (spacing block)
     const isEmptyParagraph =
@@ -97,11 +92,6 @@ export const useHeadingCollapse = ({
 
       // Follow the parent heading's collapsed state
       return collapsedHeadings.has(prevHeadingId);
-    }
-
-    // Always show if it's the last block
-    if (isLastBlock) {
-      return false;
     }
 
     if (isHeading) {
@@ -340,6 +330,53 @@ export const useHeadingCollapse = ({
     getPos,
     editor.state,
   ]);
+
+  const addHiddenClassToTheLastEmptyBlock = useCallback(() => {
+    const { doc, selection } = editor.state;
+    const pos = getPos();
+    const currentNode = doc.nodeAt(pos);
+    const isLastBlock = pos + (currentNode?.nodeSize || 0) >= doc.content.size;
+    const isParagraph =
+      currentNode?.type.name === 'dBlock' &&
+      currentNode?.content.firstChild?.type.name === 'paragraph';
+    const isLastBlockFocused =
+      selection.$anchor.pos >= pos &&
+      selection.$anchor.pos <= pos + (currentNode?.nodeSize || 0);
+
+    // Find previous heading node
+    let prevNode = null;
+    let prevPos = pos;
+    while (prevPos > 0) {
+      prevPos--;
+      const nodeAtPos = doc.nodeAt(prevPos);
+      if (
+        nodeAtPos?.type.name === 'dBlock' &&
+        nodeAtPos?.content?.content?.[0]?.type?.name === 'heading'
+      ) {
+        prevNode = nodeAtPos;
+        break;
+      }
+    }
+
+    // Get previous heading's ID and check if it's collapsed
+    const prevHeadingContent = prevNode?.content?.content?.[0];
+    const prevHeadingId = prevHeadingContent?.attrs?.id || `heading-${prevPos}`;
+    const isPrevHeadingCollapsed = collapsedHeadings.has(prevHeadingId);
+
+    if (
+      isLastBlock &&
+      isParagraph &&
+      isLastBlockFocused &&
+      isPrevHeadingCollapsed
+    ) {
+      const domNode = editor.view.nodeDOM(pos) as HTMLElement;
+      domNode?.classList.add('hidden');
+    }
+  }, [editor.state, getPos, collapsedHeadings]);
+
+  useEffect(() => {
+    addHiddenClassToTheLastEmptyBlock();
+  }, [addHiddenClassToTheLastEmptyBlock]);
 
   return {
     isHeading,
