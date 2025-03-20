@@ -22,6 +22,7 @@ export const LinkPreviewCard = ({
 
   useEffect(() => {
     if (!link) return;
+    setPreviewData(null);
     setLoading(true);
     if (metadataCache.current.has(link)) {
       setPreviewData(metadataCache.current.get(link)!);
