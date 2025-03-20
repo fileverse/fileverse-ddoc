@@ -407,7 +407,7 @@ export const ResizableMediaNodeView = ({
               }}
               onFocus={(e) => {
                 const target = e.target as HTMLTextAreaElement;
-                target.style.fontSize = '14px';
+                target.style.fontSize = '16px';
               }}
               autoFocus
               className={cn(
