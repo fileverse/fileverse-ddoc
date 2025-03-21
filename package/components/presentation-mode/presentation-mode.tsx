@@ -447,14 +447,14 @@ export const PresentationMode = ({
             className={cn(
               'w-full color-bg-default rounded-lg overflow-hidden relative',
               isFullscreen
-                ? 'h-full max-w-none flex items-start justify-start'
+                ? 'h-full max-w-none flex items-start justify-center'
                 : 'px-8 md:px-0 scale-[0.35] md:scale-[0.75] xl:scale-100 min-w-[1080px] max-w-[1080px] aspect-video py-[48px]',
             )}
             style={{
               transformOrigin: 'center',
             }}
           >
-            <EditingProvider isPreviewMode={true}>
+            <EditingProvider isPreviewMode={true} isPresentationMode={true}>
               {isFullscreen ? (
                 <AnimatePresence mode="wait">
                   <motion.div

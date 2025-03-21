@@ -18,7 +18,7 @@ export const ResizableMediaNodeView = ({
   updateAttributes,
   deleteNode,
 }: NodeViewProps) => {
-  const isPreview = useEditingContext();
+  const { isPreviewMode } = useEditingContext();
 
   const [mediaType, setMediaType] = useState<
     'img' | 'secure-img' | 'video' | 'iframe'
@@ -355,7 +355,7 @@ export const ResizableMediaNodeView = ({
             />
           )}
 
-          {!isPreview && (
+          {!isPreviewMode && (
             <div
               className="horizontal-resize-handle group-hover:bg-[#2E2E2E] group-hover:border-2 group-hover:border-[#E8EBEC]"
               title="Resize"
@@ -427,7 +427,7 @@ export const ResizableMediaNodeView = ({
           <div className="caption">{node.attrs.caption}</div>
         )}
 
-        {!isPreview && (
+        {!isPreviewMode && (
           <span className="absolute top-2 right-2 transition-all rounded-md overflow-hidden box-border border color-border-default color-bg-default shadow-elevation-3 opacity-0 group-hover:opacity-100 flex gap-1 p-1">
             {resizableMediaActions.map((btn, index) => {
               return (

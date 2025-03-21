@@ -144,7 +144,7 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
 }) => {
   const [isCurrentCellActive, setIsCurrentCellActive] = useState(false);
 
-  const isPreviewMode = useEditingContext();
+  const { isPreviewMode } = useEditingContext();
 
   const tableCellOptionsButtonRef = useRef<HTMLLabelElement>(null);
 

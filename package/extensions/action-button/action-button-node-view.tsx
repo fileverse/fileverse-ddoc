@@ -12,7 +12,7 @@ export const ActionButtonNodeView = ({
   deleteNode,
 }: NodeViewProps) => {
   const [inputValue, setInputValue] = useState<string>('');
-  const isPreview = useEditingContext();
+  const { isPreviewMode } = useEditingContext();
   const twitterUrls = ['https://twitter.com', 'https://x.com'];
 
   const renderIcon = () => {
@@ -255,7 +255,7 @@ export const ActionButtonNodeView = ({
       as="div"
       className="flex gap-2 group w-full relative justify-center items-start"
     >
-      {!isPreview && (
+      {!isPreviewMode && (
         <div className="relative w-full">
           <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none color-text-default">
             {renderIcon()}

@@ -112,6 +112,7 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `onInlineComment`      | `() => void`                             | Callback for inline comments |
 | `onMarkdownExport`     | `() => void`                             | Callback for markdown export |
 | `onMarkdownImport`     | `() => void`                             | Callback for markdown import |
+| `onPdfExport`          | `() => void`                             | Callback for pdf export      |
 | `onSlidesShare`        | `() => void`                             | Callback for slides sharing  |
 | `onComment`            | `() => void`                             | General comment callback     |
 
