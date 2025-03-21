@@ -23,6 +23,7 @@ import { sanitizeContent } from './utils/sanitize-content';
 import { CommentExtension as Comment } from './extensions/comment';
 import { handleContentPrint, handlePrint } from './utils/handle-print';
 import { Table } from './extensions/supercharged-table/extension-table';
+import { isBlackOrWhiteShade } from './utils/color-utils';
 
 const usercolors = [
   '#30bced',
@@ -483,52 +484,63 @@ export const useDdocEditor = ({
   }, [editor]);
 
   // FOR REAL TIME TEXT STYLE CLEANUP WHEN PASTING
-  const wasPasteEvent = useRef(false);
-
   useEffect(() => {
     if (!editor) return;
 
-    const cleanupStyles = () => {
-      // Store current selection
-      const { from, to } = editor.state.selection;
+    const handlePaste = ({ editor: pasteEditor }: { editor: any }) => {
+      const from = pasteEditor.state.selection.from;
 
-      // Apply style cleanup
-      editor
-        .chain()
-        .selectAll()
-        .unsetMark('textStyle', { extendEmptyMarkRange: true })
-        .run();
-
-      // Restore selection
-      editor.commands.setTextSelection({ from, to });
-    };
-
-    // Handle paste events
-    const handlePaste = () => {
-      wasPasteEvent.current = true;
-
-      // Clean up styles after a short delay
       setTimeout(() => {
-        cleanupStyles();
-        wasPasteEvent.current = false;
-      }, 100);
+        const to = pasteEditor.state.selection.from;
+
+        // Get all marks in the pasted content
+        const marks: { from: number; to: number; mark: any }[] = [];
+        pasteEditor.state.doc.nodesBetween(
+          from,
+          to,
+          (node: any, pos: number) => {
+            if (node.marks) {
+              node.marks.forEach((mark: any) => {
+                if (mark.type.name === 'textStyle' && mark.attrs.color) {
+                  marks.push({
+                    from: pos,
+                    to: pos + node.nodeSize,
+                    mark,
+                  });
+                }
+              });
+            }
+          },
+        );
+
+        // First, only remove color attribute from text styles
+        pasteEditor
+          .chain()
+          .setTextSelection({ from, to })
+          .setColor('') // This removes only the color attribute
+          .run();
+
+        // Then, restore colors that aren't black/white shades
+        marks.forEach(({ from: markFrom, to: markTo, mark }) => {
+          const color = mark.attrs.color;
+          if (!isBlackOrWhiteShade(color)) {
+            pasteEditor
+              .chain()
+              .setTextSelection({ from: markFrom, to: markTo })
+              .setColor(color)
+              .run();
+          }
+        });
+
+        // Restore cursor position to end of paste
+        pasteEditor.commands.setTextSelection(to);
+      }, 0);
     };
 
-    // Add paste event listener to editor DOM
-    const editorElement = editor.view.dom;
-    editorElement.addEventListener('paste', handlePaste);
+    editor.on('paste', handlePaste);
 
-    // Watch for theme changes
-    const themeObserver = new MutationObserver(cleanupStyles);
-    themeObserver.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class'],
-    });
-
-    // Cleanup function
     return () => {
-      editorElement.removeEventListener('paste', handlePaste);
-      themeObserver.disconnect();
+      editor.off('paste', handlePaste);
     };
   }, [editor]);
 
@@ -538,22 +550,46 @@ export const useDdocEditor = ({
   useEffect(() => {
     if (!editor || !initialContent || isContentLoading) return;
 
-    // Check if we're in dark mode and need to clean up text styles
     if (isDarkMode.current) {
-      // Wait for content to be fully loaded
       const timeoutId = setTimeout(() => {
-        // Store current selection or cursor position
         const { from, to } = editor.state.selection;
 
-        // Clean up all text styles that might cause visibility issues in dark mode
+        // Get all text color marks
+        const marks: { from: number; to: number; mark: any }[] = [];
+        editor.state.doc.descendants((node, pos) => {
+          if (node.marks) {
+            node.marks.forEach((mark) => {
+              if (mark.type.name === 'textStyle' && mark.attrs.color) {
+                marks.push({
+                  from: pos,
+                  to: pos + node.nodeSize,
+                  mark,
+                });
+              }
+            });
+          }
+        });
+
+        // First, only remove color attribute from text styles
         editor
           .chain()
           .selectAll()
-          .unsetColor()
-          .unsetMark('textStyle', { extendEmptyMarkRange: true })
+          .setColor('') // This removes only the color attribute
           .run();
 
-        // Restore selection
+        // Then, restore colors that aren't black/white shades
+        marks.forEach(({ from: markFrom, to: markTo, mark }) => {
+          const color = mark.attrs.color;
+          if (!isBlackOrWhiteShade(color)) {
+            editor
+              .chain()
+              .setTextSelection({ from: markFrom, to: markTo })
+              .setColor(color)
+              .run();
+          }
+        });
+
+        // Restore original selection
         editor.commands.setTextSelection({ from, to });
       }, 100);
 
