@@ -75,7 +75,7 @@ export const defaultExtensions = (
     orderedList: {
       HTMLAttributes: {
         class:
-          'flex flex-col items-start list-decimal list-outside space-y-4 ml-6',
+          'flex flex-col items-start list-decimal list-outside space-y-2 !ml-[1.25rem]',
       },
     },
     blockquote: {
@@ -149,7 +149,7 @@ export const defaultExtensions = (
   }),
   BulletList.configure({
     HTMLAttributes: {
-      class: 'not-prose space-y-2 !ml-6',
+      class: 'not-prose space-y-2 !ml-[1.25rem]',
     },
   }),
   ListItem.configure({
