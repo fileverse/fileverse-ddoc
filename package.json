@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "2.1.7-collapse-heading-patch-3",
+  "version": "2.1.7-patch-3",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
