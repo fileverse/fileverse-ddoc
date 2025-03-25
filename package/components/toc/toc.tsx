@@ -6,6 +6,7 @@ import { TextSelection } from '@tiptap/pm/state';
 import { useState } from 'react';
 import { ToCProps, ToCItemProps, ToCItemType } from './types';
 import { useMediaQuery } from 'usehooks-ts';
+import { useEditorContext } from '../../context/editor-context';
 
 export const ToCItem = ({
   item,
@@ -57,9 +58,10 @@ export const ToCEmptyState = () => {
 };
 
 export const ToC = ({ items = [], editor, setItems }: ToCProps) => {
-  // Add state to track active item
   const [activeId, setActiveId] = useState<string | null>(null);
   const isMobile = useMediaQuery('(max-width: 1280px)');
+
+  const { setCollapsedHeadings } = useEditorContext();
 
   if (items.length === 0) {
     return <ToCEmptyState />;
@@ -75,51 +77,114 @@ export const ToC = ({ items = [], editor, setItems }: ToCProps) => {
       const element = editor.view.dom.querySelector(`[data-toc-id="${id}"]`);
       if (!element) return;
 
-      const pos = editor.view.posAtDOM(element as Node, 0);
+      // Find the clicked heading's level and expand itself and its ancestors
+      const expandHeadingAndItsAncestors = () => {
+        // Find the clicked item
+        const clickedItem = items.find((item) => item.id === id);
+        if (!clickedItem) return;
 
-      // set focus
-      const tr = editor.view.state.tr;
-      tr.setSelection(new TextSelection(tr.doc.resolve(pos)));
-      editor.view.dispatch(tr);
-      // editor.view.focus();
+        const clickedLevel = clickedItem.level;
 
-      // Find all possible scroll containers
-      const possibleContainers = [
-        document.querySelector('.ProseMirror'),
-        document.getElementById('editor-canvas'),
-        element.closest('.ProseMirror'),
-        element.closest('[class*="editor"]'),
-        editor.view.dom.parentElement,
-      ].filter(Boolean);
+        // Expand the clicked heading itself
+        setCollapsedHeadings((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(id);
 
-      // Find the first scrollable container
-      const scrollContainer = possibleContainers.find(
-        (container) =>
-          container &&
-          (container.scrollHeight > container.clientHeight ||
-            window.getComputedStyle(container).overflow === 'auto' ||
-            window.getComputedStyle(container).overflowY === 'auto'),
-      );
+          // If clicked item is H1, expand all its nested content
+          if (clickedLevel === 1) {
+            let isWithinCurrentH1 = false;
+            items.forEach((item) => {
+              // Start collecting items after current H1
+              if (item.id === id) {
+                isWithinCurrentH1 = true;
+                return;
+              }
 
-      if (scrollContainer) {
-        // Use requestAnimationFrame to ensure DOM updates are complete
-        requestAnimationFrame(() => {
-          const containerRect = scrollContainer.getBoundingClientRect();
-          const elementRect = (element as HTMLElement).getBoundingClientRect();
+              // Stop when we hit the next H1
+              if (item.level === 1) {
+                isWithinCurrentH1 = false;
+                return;
+              }
 
-          // Calculate the scroll position to start the element at the top of the container
-          const scrollTop =
-            elementRect.top -
-            containerRect.top -
-            containerRect.height / (isMobile ? 5 : 7) +
-            elementRect.height / (isMobile ? 5 : 7);
+              // Expand all items between current H1 and next H1
+              if (isWithinCurrentH1) {
+                newSet.delete(item.id);
+              }
+            });
+          } else {
+            // For non-H1 headings, find and expand only direct ancestors
+            let currentLevel = clickedLevel;
+            for (
+              let i = items.findIndex((item) => item.id === id) - 1;
+              i >= 0;
+              i--
+            ) {
+              const item = items[i];
+              if (item.level < currentLevel) {
+                newSet.delete(item.id);
+                currentLevel = item.level;
+                if (currentLevel === 1) break;
+              }
+            }
+          }
 
-          scrollContainer.scrollBy({
-            top: scrollTop,
-            behavior: 'smooth',
-          });
+          return newSet;
         });
-      }
+      };
+
+      expandHeadingAndItsAncestors();
+
+      // Add a small delay to allow DOM updates before scrolling
+      const timeout = setTimeout(() => {
+        const pos = editor.view.posAtDOM(element as Node, 0);
+
+        // set focus
+        const tr = editor.view.state.tr;
+        tr.setSelection(new TextSelection(tr.doc.resolve(pos)));
+        editor.view.dispatch(tr);
+
+        // Find all possible scroll containers
+        const possibleContainers = [
+          document.querySelector('.ProseMirror'),
+          document.getElementById('editor-canvas'),
+          element.closest('.ProseMirror'),
+          element.closest('[class*="editor"]'),
+          editor.view.dom.parentElement,
+        ].filter(Boolean);
+
+        // Find the first scrollable container
+        const scrollContainer = possibleContainers.find(
+          (container) =>
+            container &&
+            (container.scrollHeight > container.clientHeight ||
+              window.getComputedStyle(container).overflow === 'auto' ||
+              window.getComputedStyle(container).overflowY === 'auto'),
+        );
+
+        if (scrollContainer) {
+          // Use requestAnimationFrame to ensure DOM updates are complete
+          requestAnimationFrame(() => {
+            const containerRect = scrollContainer.getBoundingClientRect();
+            const elementRect = (
+              element as HTMLElement
+            ).getBoundingClientRect();
+
+            // Calculate the scroll position to start the element at the top of the container
+            const scrollTop =
+              elementRect.top -
+              containerRect.top -
+              containerRect.height / (isMobile ? 5 : 7) +
+              elementRect.height / (isMobile ? 5 : 7);
+
+            scrollContainer.scrollBy({
+              top: scrollTop,
+              behavior: 'smooth',
+            });
+          });
+        }
+      }, 0);
+
+      return () => clearTimeout(timeout);
     }
   };
 

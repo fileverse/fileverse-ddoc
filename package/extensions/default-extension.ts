@@ -75,7 +75,7 @@ export const defaultExtensions = (
     orderedList: {
       HTMLAttributes: {
         class:
-          'flex flex-col items-start list-decimal list-outside space-y-4 ml-6',
+          'flex flex-col items-start list-decimal list-outside space-y-2 !ml-[1.25rem]',
       },
     },
     blockquote: {
@@ -138,7 +138,7 @@ export const defaultExtensions = (
   Color,
   TaskList.configure({
     HTMLAttributes: {
-      class: 'not-prose space-y-4 !ml-0',
+      class: 'not-prose space-y-2 !ml-0',
     },
   }),
   TaskItem.configure({
@@ -149,7 +149,7 @@ export const defaultExtensions = (
   }),
   BulletList.configure({
     HTMLAttributes: {
-      class: 'space-y-4 !ml-6',
+      class: 'not-prose space-y-2 !ml-[1.25rem]',
     },
   }),
   ListItem.configure({
