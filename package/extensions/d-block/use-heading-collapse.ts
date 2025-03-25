@@ -40,34 +40,6 @@ export const useHeadingCollapse = ({
     const position = getPos();
     const { doc: document } = editor.state;
 
-    // Helper function to find parent H1
-    const findParentH1 = (startPos: number) => {
-      let checkPos = startPos;
-      while (checkPos > 0) {
-        checkPos--;
-        const nodeAtPos = document.nodeAt(checkPos);
-        if (nodeAtPos?.type.name === 'dBlock') {
-          const dBlockContent = nodeAtPos.content.content[0];
-          if (dBlockContent?.type.name === 'heading') {
-            const headingLevel = dBlockContent.attrs.level || 1;
-            if (headingLevel === 1) {
-              return {
-                id: dBlockContent.attrs.id || `heading-${checkPos}`,
-                level: headingLevel,
-              };
-            }
-          }
-        }
-      }
-      return null;
-    };
-
-    // Check if parent H1 is collapsed first
-    const parentH1 = findParentH1(position);
-    if (parentH1 && collapsedHeadings.has(parentH1.id)) {
-      return true;
-    }
-
     // Rest of the existing empty paragraph check
     const isEmptyParagraph =
       node.content?.content?.[0]?.type.name === 'paragraph' &&
@@ -97,7 +69,6 @@ export const useHeadingCollapse = ({
         prevHeadingContent?.attrs?.id || `heading-${prevPos}`;
 
       // Check if this block was just created by checking if it has focus
-      const position = getPos();
       const { selection } = editor.state;
       const isBlockFocused =
         selection.$anchor.pos >= position &&
@@ -110,7 +81,7 @@ export const useHeadingCollapse = ({
         collapsedHeadings.has(prevHeadingId)
       ) {
         hasExpandedOnCreate.current = true;
-        setCollapsedHeadings((prev) => {
+        setCollapsedHeadings(prev => {
           const newSet = new Set(prev);
           newSet.delete(prevHeadingId);
           return newSet;
@@ -119,6 +90,32 @@ export const useHeadingCollapse = ({
       return collapsedHeadings.has(prevHeadingId);
     }
 
+    // Find immediate parent heading (closest heading above with lower level)
+    const findImmediateParentHeading = (
+      startPos: number,
+      currentLevel: number,
+    ) => {
+      let checkPos = startPos;
+      while (checkPos > 0) {
+        checkPos--;
+        const nodeAtPos = document.nodeAt(checkPos);
+        if (nodeAtPos?.type.name === 'dBlock') {
+          const dBlockContent = nodeAtPos.content.content[0];
+          if (dBlockContent?.type.name === 'heading') {
+            const parentLevel = dBlockContent.attrs.level || 1;
+            if (parentLevel < currentLevel) {
+              return {
+                id: dBlockContent.attrs.id || `heading-${checkPos}`,
+                level: parentLevel,
+              };
+            }
+          }
+        }
+      }
+      return null;
+    };
+
+    // For headings, check if their direct parent is collapsed
     if (isHeading) {
       const { content } = node.content as any;
       const headingNode = content?.[0];
@@ -128,78 +125,49 @@ export const useHeadingCollapse = ({
       if (thisHeadingLevel === 1) return false; // Never hide H1
 
       // Find the immediate parent heading
-      let checkPos = position;
-      let immediateParentId = null;
-
-      while (checkPos > 0) {
-        checkPos--;
-        const nodeAtPos = document.nodeAt(checkPos);
-
-        if (nodeAtPos?.type.name === 'dBlock') {
-          const dBlockContent = nodeAtPos.content.content[0];
-          if (dBlockContent?.type.name === 'heading') {
-            const parentLevel = dBlockContent.attrs.level || 1;
-
-            // Consider both immediate parent and H1
-            if (parentLevel === thisHeadingLevel - 1 || parentLevel === 1) {
-              immediateParentId =
-                dBlockContent.attrs.id || `heading-${checkPos}`;
-              if (collapsedHeadings.has(immediateParentId)) {
-                return true;
-              }
-              if (parentLevel === 1) {
-                break; // Stop at H1
-              }
-            }
-          }
-        }
+      const immediateParent = findImmediateParentHeading(
+        position,
+        thisHeadingLevel,
+      );
+      if (immediateParent && collapsedHeadings.has(immediateParent.id)) {
+        return true;
       }
 
       return false;
     }
 
     // For non-heading blocks
-    let checkPos = position;
-    let immediateParentId = null;
-    let immediateParentLevel = 0;
-
-    while (checkPos > 0) {
-      checkPos--;
-      const nodeAtPos = document.nodeAt(checkPos);
-
-      if (nodeAtPos?.type.name === 'dBlock') {
-        const dBlockContent = nodeAtPos.content.content[0];
-        if (dBlockContent?.type.name === 'heading') {
-          const headingId = dBlockContent.attrs.id || `heading-${checkPos}`;
-          const headingLevel = dBlockContent.attrs.level || 1;
-
-          // Check H1 first
-          if (headingLevel === 1) {
-            if (collapsedHeadings.has(headingId)) {
-              return true;
-            }
-            break; // Stop at H1 if not collapsed
-          }
-
-          // Store the immediate parent heading
-          if (!immediateParentId) {
-            immediateParentId = headingId;
-            immediateParentLevel = headingLevel;
-          } else if (headingLevel <= immediateParentLevel) {
-            break;
+    const findParentHeading = (startPos: number) => {
+      let checkPos = startPos;
+      while (checkPos > 0) {
+        checkPos--;
+        const nodeAtPos = document.nodeAt(checkPos);
+        if (nodeAtPos?.type.name === 'dBlock') {
+          const dBlockContent = nodeAtPos.content.content[0];
+          if (dBlockContent?.type.name === 'heading') {
+            return {
+              id: dBlockContent.attrs.id || `heading-${checkPos}`,
+              level: dBlockContent.attrs.level || 1,
+            };
           }
         }
       }
+      return null;
+    };
+
+    // Find the immediate parent heading for this block
+    const parentHeading = findParentHeading(position);
+    if (parentHeading && collapsedHeadings.has(parentHeading.id)) {
+      return true;
     }
 
-    // Check immediate parent if no H1 is collapsed
-    return immediateParentId ? collapsedHeadings.has(immediateParentId) : false;
+    return false;
   }, [editor.state, getPos, isHeading, node.content, collapsedHeadings]);
 
   const toggleCollapse = useCallback(() => {
     if (!headingId) return;
 
-    setCollapsedHeadings((prev) => {
+    setCollapsedHeadings(prev => {
       const newSet = new Set(prev);
       const { content } = node.content as any;
       const headingNode = content?.[0];
@@ -237,7 +205,7 @@ export const useHeadingCollapse = ({
             checkPos += nodeAtPos?.nodeSize || 1;
           }
         } else {
-          // For other heading levels, expand all nested headings until we find same or higher level
+          // For other heading levels, only expand direct children under this heading
           let checkPos = pos + node.nodeSize;
           let foundNextSameOrHigherLevel = false;
 
@@ -255,26 +223,25 @@ export const useHeadingCollapse = ({
                   break;
                 }
 
-                // Expand all nested headings
-                const subHeadingId =
-                  dBlockContent.attrs.id || `heading-${checkPos}`;
-                newSet.delete(subHeadingId);
+                // Only expand headings that are direct children of this heading
+                if (currentLevel === headingLevel + 1) {
+                  const subHeadingId =
+                    dBlockContent.attrs.id || `heading-${checkPos}`;
+                  newSet.delete(subHeadingId);
+                }
               }
             }
 
             checkPos += nodeAtPos?.nodeSize || 1;
           }
         }
-
-        return newSet;
       } else {
-        // Collapsing - keep existing collapse logic
+        // Collapsing
         newSet.add(headingId);
-
-        let checkPos = pos + node.nodeSize;
 
         // For H1, collapse all nested headings
         if (headingLevel === 1) {
+          let checkPos = pos + node.nodeSize;
           while (checkPos < doc.content.size) {
             const nodeAtPos = doc.nodeAt(checkPos);
 
@@ -298,7 +265,8 @@ export const useHeadingCollapse = ({
             checkPos += nodeAtPos?.nodeSize || 1;
           }
         } else {
-          // For other heading levels, only collapse direct children
+          // For other heading levels, only collapse direct children under this specific heading
+          let checkPos = pos + node.nodeSize;
           let foundNextSameOrHigherLevel = false;
 
           while (checkPos < doc.content.size && !foundNextSameOrHigherLevel) {
@@ -315,7 +283,7 @@ export const useHeadingCollapse = ({
                   break;
                 }
 
-                // Only collapse direct child headings
+                // Only collapse direct children (H3 under H2, etc.)
                 if (currentLevel === headingLevel + 1) {
                   const subHeadingId =
                     dBlockContent.attrs.id || `heading-${checkPos}`;
@@ -327,9 +295,9 @@ export const useHeadingCollapse = ({
             checkPos += nodeAtPos?.nodeSize || 1;
           }
         }
-
-        return newSet;
       }
+
+      return newSet;
     });
   }, [
     headingId,

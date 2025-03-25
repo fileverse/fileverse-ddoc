@@ -77,40 +77,62 @@ export const ToC = ({ items = [], editor, setItems }: ToCProps) => {
       const element = editor.view.dom.querySelector(`[data-toc-id="${id}"]`);
       if (!element) return;
 
-      // Find the clicked heading's level and expand all parent headings
-      const expandHeadingAndParents = () => {
-        // Find the clicked heading's level from items array
+      // Find the clicked heading's level and expand itself and its ancestors
+      const expandHeadingAndItsAncestors = () => {
+        // Find the clicked item
         const clickedItem = items.find((item) => item.id === id);
         if (!clickedItem) return;
 
         const clickedLevel = clickedItem.level;
 
-        // Find and expand all parent headings
-        items.forEach((item) => {
-          // A heading is a parent if:
-          // 1. It appears before the clicked heading in the array (lower itemIndex)
-          // 2. Its level is lower than the clicked heading's level
-          if (
-            item.level < clickedLevel &&
-            item.itemIndex < clickedItem.itemIndex
-          ) {
-            setCollapsedHeadings((prev) => {
-              const newSet = new Set(prev);
-              newSet.delete(item.id);
-              return newSet;
-            });
-          }
-        });
-
-        // Also expand the clicked heading itself
+        // Expand the clicked heading itself
         setCollapsedHeadings((prev) => {
           const newSet = new Set(prev);
           newSet.delete(id);
+
+          // If clicked item is H1, expand all its nested content
+          if (clickedLevel === 1) {
+            let isWithinCurrentH1 = false;
+            items.forEach((item) => {
+              // Start collecting items after current H1
+              if (item.id === id) {
+                isWithinCurrentH1 = true;
+                return;
+              }
+
+              // Stop when we hit the next H1
+              if (item.level === 1) {
+                isWithinCurrentH1 = false;
+                return;
+              }
+
+              // Expand all items between current H1 and next H1
+              if (isWithinCurrentH1) {
+                newSet.delete(item.id);
+              }
+            });
+          } else {
+            // For non-H1 headings, find and expand only direct ancestors
+            let currentLevel = clickedLevel;
+            for (
+              let i = items.findIndex((item) => item.id === id) - 1;
+              i >= 0;
+              i--
+            ) {
+              const item = items[i];
+              if (item.level < currentLevel) {
+                newSet.delete(item.id);
+                currentLevel = item.level;
+                if (currentLevel === 1) break;
+              }
+            }
+          }
+
           return newSet;
         });
       };
 
-      expandHeadingAndParents();
+      expandHeadingAndItsAncestors();
 
       // Add a small delay to allow DOM updates before scrolling
       const timeout = setTimeout(() => {
