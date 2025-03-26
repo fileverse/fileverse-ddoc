@@ -244,7 +244,6 @@ export const DBlock = Node.create<DBlockOptions>({
 
         // Handle selection deletion first
         if (from !== to) {
-          // Check if we're at the start of the document
           if (from <= 2) {
             return false;
           }
@@ -257,22 +256,22 @@ export const DBlock = Node.create<DBlockOptions>({
         const isAtStartOfNode = nodeStartPos === from;
         const isAtTheStartOfDocument = from === 2;
 
+        // Handle start of document
         if (isAtTheStartOfDocument && from === to) {
           return editor.chain().deleteNode(this.name).focus().run();
         }
 
         const isListOrTaskList =
           parent?.type.name === 'listItem' || parent?.type.name === 'taskItem';
-
         const isTaskList = parent?.type.name === 'taskItem';
-
         const isNodeEmpty = node?.textContent === '';
 
+        // If not in a dBlock, handle special cases
         if (parent?.type.name !== 'dBlock') {
+          // Handle page break
           let isPrevNodePageBreak = false;
           let currentNodePos = -1;
 
-          // Find the nearest previous node that is a page break
           doc.descendants((node, pos) => {
             if (currentNodePos !== -1) return false;
             if (node.type.name === 'pageBreak' && pos < from) {
@@ -281,7 +280,6 @@ export const DBlock = Node.create<DBlockOptions>({
             }
           });
 
-          // Only prevent deletion if we're immediately after a page break and the current node is empty
           if (
             isPrevNodePageBreak &&
             isNodeEmpty &&
@@ -289,37 +287,149 @@ export const DBlock = Node.create<DBlockOptions>({
           ) {
             return true;
           }
-        }
 
-        // Only check for nearest nodes if we're not at the start of the document
-        const isNearestDBlock =
-          from > 4 ? doc.nodeAt(from - 4)?.type.name === 'dBlock' : false;
+          // Handle list items
+          if (isAtStartOfNode && isListOrTaskList) {
+            const isNearestDBlock =
+              from > 4 ? doc.nodeAt(from - 4)?.type.name === 'dBlock' : false;
+            const grandParent = $head.node($head.depth - 2);
+            const isFirstItem = $head.index($head.depth - 2) === 0;
+            const hasNestedList = node.content.content.length > 1;
+            const isOnlyItem = grandParent.childCount === 1;
 
-        const isNearestListItem =
-          from > 2
-            ? doc.nodeAt(from - 2)?.type.name === 'listItem' ||
-              doc.nodeAt(from - 2)?.type.name === 'taskItem'
-            : false;
+            // Helper function to merge nested content with parent list
+            const mergeNestedContent = (listNode: any) => {
+              const json = listNode.toJSON();
+              if (!json.content || !json.content.length) return json;
 
-        const isMultipleListItems =
-          $head.node($head.depth - 2)?.childCount > 1 ||
-          $head.node($head.depth - 1)?.childCount > 1;
+              const firstItem = json.content[0];
+              if (!firstItem.content || firstItem.content.length <= 1)
+                return json;
 
-        // Fix for deleting the first item in a list that breaks the list
-        if (isAtStartOfNode && isListOrTaskList) {
-          if (isNodeEmpty && isNearestDBlock) {
-            if (!isMultipleListItems) {
-              return editor.commands.deleteNode(this.name);
-            } else {
-              return true;
-            }
-          } else {
-            if (isNearestListItem) {
-              return editor.commands.liftListItem(
-                isTaskList ? 'taskItem' : 'listItem',
+              // Get the nested list from the first item
+              const nestedLists = firstItem.content.filter((content: any) =>
+                ['bulletList', 'orderedList', 'taskList'].includes(
+                  content.type,
+                ),
               );
-            } else {
-              return editor.commands.joinTextblockBackward();
+
+              if (nestedLists.length === 0) return json;
+
+              // Merge the nested list items with the parent list
+              const nestedItems = nestedLists[0].content || [];
+              return {
+                type: json.type,
+                attrs: json.attrs,
+                content: [
+                  // Keep any non-empty content from the first item
+                  ...(firstItem.content[0].content
+                    ? [
+                        {
+                          type: 'listItem',
+                          content: [firstItem.content[0]],
+                        },
+                      ]
+                    : []),
+                  ...nestedItems,
+                  ...json.content.slice(1),
+                ],
+              };
+            };
+
+            // Case 1: Empty item with nested content
+            if (isNodeEmpty && hasNestedList) {
+              const listNode = $head.node($head.depth - 2);
+              const restructuredContent = mergeNestedContent(listNode);
+
+              return editor
+                .chain()
+                .command(({ tr, dispatch }) => {
+                  if (dispatch) {
+                    const pos = $head.before($head.depth - 2);
+                    const end = pos + listNode.nodeSize;
+                    tr.replaceWith(
+                      pos,
+                      end,
+                      editor.schema.nodeFromJSON(restructuredContent),
+                    );
+                  }
+                  return true;
+                })
+                .focus()
+                .run();
+            }
+
+            // Case 2: Empty first item without nested content
+            if (isNodeEmpty && isFirstItem) {
+              if (isOnlyItem) {
+                // If it's the only item and we're next to a dBlock
+                if (isNearestDBlock) {
+                  return editor.commands.deleteNode(this.name);
+                }
+                // Otherwise just remove the list but preserve any nested content
+                return editor
+                  .chain()
+                  .command(({ tr, dispatch }) => {
+                    if (dispatch) {
+                      const pos = $head.before($head.depth - 2);
+                      const end = pos + grandParent.nodeSize;
+                      tr.delete(pos, end);
+                    }
+                    return true;
+                  })
+                  .focus()
+                  .run();
+              }
+              // If there are other items, just delete this one and maintain list
+              return editor
+                .chain()
+                .deleteNode(isTaskList ? 'taskItem' : 'listItem')
+                .focus()
+                .run();
+            }
+
+            // Case 3: Empty non-first item
+            if (isNodeEmpty && !isFirstItem) {
+              if (hasNestedList) {
+                // Preserve nested content when lifting
+                const listNode = $head.node($head.depth - 2);
+                const restructuredContent = mergeNestedContent(listNode);
+
+                return editor
+                  .chain()
+                  .command(({ tr, dispatch }) => {
+                    if (dispatch) {
+                      const pos = $head.before($head.depth - 2);
+                      const end = pos + listNode.nodeSize;
+                      tr.replaceWith(
+                        pos,
+                        end,
+                        editor.schema.nodeFromJSON(restructuredContent),
+                      );
+                    }
+                    return true;
+                  })
+                  .focus()
+                  .run();
+              }
+              return editor
+                .chain()
+                .liftListItem(isTaskList ? 'taskItem' : 'listItem')
+                .focus()
+                .run();
+            }
+
+            // Case 4: Non-empty item at start
+            if (isAtStartOfNode) {
+              if (isFirstItem && isNearestDBlock) {
+                // Join with previous block if possible
+                return editor.commands.joinTextblockBackward();
+              } else {
+                // Handle normal list item joining while preserving nested structure
+                return editor.commands.liftListItem(
+                  isTaskList ? 'taskItem' : 'listItem',
+                );
+              }
             }
           }
         }
