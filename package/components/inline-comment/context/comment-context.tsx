@@ -438,6 +438,15 @@ export const useComments = () => {
 // Add this cache outside the hook to persist between renders
 const ensCache: Record<string, { name: string; isEns: boolean }> = {};
 
+const cachedData = localStorage.getItem('ensCache');
+if (cachedData) {
+  try {
+    Object.assign(ensCache, JSON.parse(cachedData));
+  } catch (err) {
+    console.error('Failed to parse ENS cache from localStorage', err);
+  }
+}
+
 export const useEnsName = (username?: string) => {
   const { ensResolutionUrl } = useComments();
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
@@ -478,13 +487,22 @@ export const useEnsName = (username?: string) => {
           ensResolutionUrl,
         );
 
-        // Cache the result
-        ensCache[username] = { name: isEns ? name : username, isEns };
+        const finalName = isEns ? name : username;
+        const result = { name: finalName, isEns };
+        ensCache[username] = result;
+
+        if (isEns) {
+          try {
+            localStorage.setItem('ensCache', JSON.stringify(ensCache));
+          } catch (err) {
+            console.warn('Failed to save ENS cache to localStorage', err);
+          }
+        }
 
         if (!isMounted) return;
 
         setEnsStatus({
-          ...ensCache[username],
+          ...result,
           isLoading: false,
         });
       } catch (error) {
