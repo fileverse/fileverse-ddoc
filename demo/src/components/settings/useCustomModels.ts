@@ -1,10 +1,14 @@
 import { useState, useCallback } from 'react';
 import { useModelContext } from './ModelContext';
 import { ModelService } from './ModelService';
+import { OllamaService } from './OllamaService';
 import { CustomModel } from './ModelSettings';
 
 interface UseCustomModelsReturnType {
   models: CustomModel[];
+  defaultModels: CustomModel[];
+  isLoadingDefaultModels: boolean;
+  ollamaError: string | null;
   selectedModelId: string | null;
   selectModel: (id: string) => void;
   isLoading: boolean;
@@ -20,7 +24,13 @@ interface UseCustomModelsReturnType {
  * Hook to interact with custom LLM models
  */
 export function useCustomModels(): UseCustomModelsReturnType {
-  const { models } = useModelContext();
+  const {
+    models,
+    defaultModels,
+    isLoadingDefaultModels,
+    ollamaError,
+    getModelById,
+  } = useModelContext();
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -46,17 +56,18 @@ export function useCustomModels(): UseCustomModelsReturnType {
           throw new Error('No model selected');
         }
 
-        const model = models.find(m => m.id === selectedModelId);
+        const model = getModelById(selectedModelId);
         if (!model) {
           throw new Error('Selected model not found');
         }
 
-        const response = await ModelService.callModel(
-          model,
-          prompt,
-          systemPrompt,
-        );
-        return response;
+        // Check if it's an Ollama model (ID starts with 'ollama-')
+        if (model.id?.startsWith('ollama-')) {
+          return await OllamaService.callModel(model, prompt, systemPrompt);
+        } else {
+          // Use the standard model service for other models
+          return await ModelService.callModel(model, prompt, systemPrompt);
+        }
       } catch (err) {
         const errorMessage =
           err instanceof Error ? err.message : 'An unknown error occurred';
@@ -67,7 +78,7 @@ export function useCustomModels(): UseCustomModelsReturnType {
         setIsLoading(false);
       }
     },
-    [selectedModelId, models],
+    [selectedModelId, getModelById],
   );
 
   /**
@@ -76,7 +87,12 @@ export function useCustomModels(): UseCustomModelsReturnType {
   const validateModelEndpoint = useCallback(
     async (endpoint: string, apiKey?: string): Promise<boolean> => {
       try {
-        return await ModelService.validateEndpoint(endpoint, apiKey);
+        // Check if it's an Ollama endpoint (contains 'ollama')
+        if (endpoint.includes('ollama')) {
+          return await OllamaService.validateEndpoint(endpoint);
+        } else {
+          return await ModelService.validateEndpoint(endpoint, apiKey);
+        }
       } catch (err) {
         return false;
       }
@@ -86,6 +102,9 @@ export function useCustomModels(): UseCustomModelsReturnType {
 
   return {
     models,
+    defaultModels,
+    isLoadingDefaultModels,
+    ollamaError,
     selectedModelId,
     selectModel,
     isLoading,

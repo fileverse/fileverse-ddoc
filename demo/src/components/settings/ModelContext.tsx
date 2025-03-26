@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { CustomModel } from './ModelSettings';
+import { DefaultModelProvider } from './DefaultModelProvider';
 
 interface ModelContextType {
   models: CustomModel[];
@@ -8,6 +9,9 @@ interface ModelContextType {
   deleteModel: (id: string) => void;
   getModelById: (id: string) => CustomModel | undefined;
   getModelByName: (name: string) => CustomModel | undefined;
+  defaultModels: CustomModel[];
+  isLoadingDefaultModels: boolean;
+  ollamaError: string | null;
 }
 
 const ModelContext = createContext<ModelContextType | undefined>(undefined);
@@ -16,8 +20,42 @@ export const ModelProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [models, setModels] = useState<CustomModel[]>([]);
+  const [defaultModels, setDefaultModels] = useState<CustomModel[]>([]);
+  const [isLoadingDefaultModels, setIsLoadingDefaultModels] = useState(true);
+  const [ollamaError, setOllamaError] = useState<string | null>(null);
 
-  // Load models from localStorage on initial load
+  // Load Ollama default models
+  useEffect(() => {
+    const loadDefaultModels = async () => {
+      try {
+        console.log('Attempting to load default Ollama models...');
+        setIsLoadingDefaultModels(true);
+        setOllamaError(null);
+
+        const ollamaModels = await DefaultModelProvider.getDefaultOllamaModels();
+        setDefaultModels(ollamaModels);
+
+        if (ollamaModels.length === 0) {
+          setOllamaError(
+            'No Ollama models found. Make sure Ollama is running and accessible from the browser.'
+          );
+        }
+      } catch (error) {
+        console.error('Error loading default Ollama models:', error);
+        setOllamaError(
+          error instanceof Error
+            ? error.message
+            : 'Failed to connect to Ollama'
+        );
+      } finally {
+        setIsLoadingDefaultModels(false);
+      }
+    };
+
+    loadDefaultModels();
+  }, []);
+
+  // Load custom models from localStorage on initial load
   useEffect(() => {
     const savedModels = localStorage.getItem('customLLMModels');
     if (savedModels) {
@@ -50,12 +88,22 @@ export const ModelProvider: React.FC<{ children: React.ReactNode }> = ({
 
   // Get a model by its ID
   const getModelById = (id: string) => {
-    return models.find((model) => model.id === id);
+    // Check custom models first
+    const customModel = models.find((model) => model.id === id);
+    if (customModel) return customModel;
+
+    // Then check default models
+    return defaultModels.find((model) => model.id === id);
   };
 
   // Get a model by its name
   const getModelByName = (name: string) => {
-    return models.find((model) => model.modelName === name);
+    // Check custom models first
+    const customModel = models.find((model) => model.modelName === name);
+    if (customModel) return customModel;
+
+    // Then check default models
+    return defaultModels.find((model) => model.modelName === name);
   };
 
   return (
@@ -66,6 +114,9 @@ export const ModelProvider: React.FC<{ children: React.ReactNode }> = ({
         deleteModel,
         getModelById,
         getModelByName,
+        defaultModels,
+        isLoadingDefaultModels,
+        ollamaError,
       }}
     >
       {children}

@@ -125,4 +125,23 @@ export class ModelService {
       return false;
     }
   }
+
+  /**
+   * Check if a model is an Ollama model based on its properties
+   * @param model The model to check
+   * @returns True if it's an Ollama model, false otherwise
+   */
+  static isOllamaModel(model: CustomModel): boolean {
+    // Check if the model ID starts with 'ollama-'
+    if (model.id?.startsWith('ollama-')) {
+      return true;
+    }
+
+    // Check if the endpoint contains 'ollama'
+    if (model.endpoint.includes('ollama')) {
+      return true;
+    }
+
+    return false;
+  }
 }
