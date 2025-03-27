@@ -4,10 +4,11 @@ import { isAddress } from 'ethers';
 export const getAddressName = async (
   address: string,
   ensProviderUrl: string,
-): Promise<{ name: string; isEns: boolean }> => {
+): Promise<{ name: string; isEns: boolean; resolved: boolean }> => {
   const response = {
     name: address,
     isEns: false,
+    resolved: false,
   };
   if (!ensProviderUrl)
     throw new Error('cannot fetch ens name without a provider url');
@@ -17,6 +18,11 @@ export const getAddressName = async (
     if (ensName) {
       response.name = ensName;
       response.isEns = true;
+      response.resolved = true;
+    } else {
+      response.name = address;
+      response.isEns = false;
+      response.resolved = true;
     }
   } catch (error) {
     console.log(error);

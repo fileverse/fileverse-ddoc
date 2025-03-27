@@ -9,13 +9,13 @@ import {
   cn,
 } from '@fileverse/ui';
 import { CommentCard } from './comment-card';
-import { useComments, useEnsName } from './context/comment-context';
+import { useComments } from './context/comment-context';
 import EnsLogo from '../../assets/ens.svg';
 import verifiedMark from '../../assets/verified-mark.png';
 import { nameFormatter } from '../../utils/helpers';
 import { CommentSectionProps } from './types';
 import { CommentUsername } from './comment-username';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { EmptyComments } from './empty-comments';
 import { useResponsive } from '../../utils/responsive';
 import { UserDisplaySkeleton } from './comment-card';
@@ -52,6 +52,7 @@ export const CommentSection = ({
     isLoading,
     connectViaUsername,
     isDDocOwner,
+    getEnsStatus,
   } = useComments();
   const { isNativeMobile } = useResponsive();
 
@@ -72,7 +73,14 @@ export const CommentSection = ({
     }
   };
 
-  const ensStatus = useEnsName(username as string);
+  const [ensStatus, setEnsStatus] = useState<EnsStatus>({
+    name: username as string,
+    isEns: false,
+  });
+
+  useEffect(() => {
+    getEnsStatus(username as string, setEnsStatus);
+  }, [username]);
 
   useEffect(() => {
     if (commentsSectionRef.current) {
@@ -226,34 +234,27 @@ export const CommentSection = ({
         </div>
       )}
       <div className="flex flex-col gap-3 color-bg-secondary border-t border-b color-border-default px-6 py-5 rounded-b-lg">
-        {ensStatus.isLoading ? (
-          <UserDisplaySkeleton />
-        ) : (
-          <div className="flex justify-start items-center gap-2">
-            <Avatar
-              src={
-                ensStatus.isEns
-                  ? EnsLogo
-                  : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+        <div className="flex justify-start items-center gap-2">
+          <Avatar
+            src={
+              ensStatus.isEns
+                ? EnsLogo
+                : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
                     ensStatus.name,
                   )}`
-              }
-              size="sm"
-              className="min-w-6"
-            />
+            }
+            size="sm"
+            className="min-w-6"
+          />
 
-            <span className="text-body-sm-bold inline-flex items-center gap-1">
-              {nameFormatter(ensStatus.name)}
-              {ensStatus.isEns && (
-                <img
-                  src={verifiedMark}
-                  alt="verified"
-                  className="w-3.5 h-3.5"
-                />
-              )}
-            </span>
-          </div>
-        )}
+          <span className="text-body-sm-bold inline-flex items-center gap-1">
+            {nameFormatter(ensStatus.name)}
+            {ensStatus.isEns && (
+              <img src={verifiedMark} alt="verified" className="w-3.5 h-3.5" />
+            )}
+          </span>
+        </div>
+
         <TextAreaFieldV2
           value={comment}
           onChange={handleCommentChange}
