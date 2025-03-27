@@ -18,7 +18,6 @@ import { CommentUsername } from './comment-username';
 import { useEffect, useState } from 'react';
 import { EmptyComments } from './empty-comments';
 import { useResponsive } from '../../utils/responsive';
-import { UserDisplaySkeleton } from './comment-card';
 
 export const CommentSection = ({
   activeCommentId,

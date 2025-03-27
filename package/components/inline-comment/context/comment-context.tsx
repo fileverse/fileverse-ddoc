@@ -73,10 +73,8 @@ export const CommentProvider = ({
       return;
     }
 
-    console.log(ensCache, ensCache[walletAddress]);
     // Check if the wallet address is already cached
     if (walletAddress && ensCache[walletAddress]) {
-      console.log('hrerrreerreerer');
       setEnsStatus({
         ...ensCache[walletAddress],
       });

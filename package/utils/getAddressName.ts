@@ -1,5 +1,5 @@
-import { getDefaultProvider } from 'ethers';
-import { isAddress } from 'ethers';
+import { createPublicClient, Hex, http, isAddress, PublicClient } from 'viem';
+import { mainnet } from 'viem/chains';
 
 export const getAddressName = async (
   address: string,
@@ -34,16 +34,10 @@ export const resolveEnsAddress = async (
   address: string,
   ensProviderUrl: string,
 ) => {
-  const provider = getEnsProvider(ensProviderUrl);
-
-  const ensName = await provider.lookupAddress(address);
+  const client = MainnetPublicClient.getClient(ensProviderUrl);
+  const ensName = await client.getEnsName({ address: address as Hex });
 
   return ensName;
-};
-
-export const getEnsProvider = (network: string) => {
-  const provider = getDefaultProvider(network);
-  return provider;
 };
 
 export const getTrimmedName = (name: string, length: number, limit: number) => {
@@ -54,3 +48,17 @@ export const getTrimmedName = (name: string, length: number, limit: number) => {
   }
   return name;
 };
+
+class MainnetPublicClient {
+  static client: PublicClient | undefined;
+
+  static getClient(url: string) {
+    if (this.client) return this.client;
+
+    this.client = createPublicClient({
+      transport: http(url),
+      chain: mainnet,
+    });
+    return this.client;
+  }
+}
