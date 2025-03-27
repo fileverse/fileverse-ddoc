@@ -435,7 +435,6 @@ export const useComments = () => {
   return context;
 };
 
-// Add this cache outside the hook to persist between renders
 const ensCache: Record<string, { name: string; isEns: boolean }> = {};
 
 const cachedData = localStorage.getItem('ensCache');
@@ -459,17 +458,6 @@ export const useEnsName = (username?: string) => {
     let isMounted = true;
 
     const fetchEnsName = async () => {
-      // If we have a cached result, use it immediately
-      if (username && ensCache[username]) {
-        if (isMounted) {
-          setEnsStatus({
-            ...ensCache[username],
-            isLoading: false,
-          });
-        }
-        return;
-      }
-
       if (!username || !ensResolutionUrl) {
         if (isMounted) {
           setEnsStatus({
@@ -499,12 +487,12 @@ export const useEnsName = (username?: string) => {
           }
         }
 
-        if (!isMounted) return;
-
-        setEnsStatus({
-          ...result,
-          isLoading: false,
-        });
+        if (isMounted) {
+          setEnsStatus({
+            ...result,
+            isLoading: false,
+          });
+        }
       } catch (error) {
         console.error('Error fetching ENS name:', error);
         if (isMounted) {
@@ -517,15 +505,26 @@ export const useEnsName = (username?: string) => {
       }
     };
 
-    // Only set loading true if we don't have a cached result
-    if (!ensCache[username || '']) {
-      setEnsStatus((prev) => ({
-        ...prev,
-        isLoading: true,
-      }));
-    }
+    const cached = ensCache[username || ''];
 
-    fetchEnsName();
+    // Always fetch if not cached or isEns is false
+    if (!cached || !cached.isEns) {
+      if (isMounted) {
+        setEnsStatus((prev) => ({
+          ...prev,
+          isLoading: true,
+        }));
+      }
+      fetchEnsName();
+    } else {
+      // Use cached ENS
+      if (isMounted) {
+        setEnsStatus({
+          ...cached,
+          isLoading: false,
+        });
+      }
+    }
 
     return () => {
       isMounted = false;
