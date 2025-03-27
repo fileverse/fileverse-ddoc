@@ -39,6 +39,7 @@ import Subscript from '@tiptap/extension-subscript';
 import { ResizableMedia } from './resizable-media';
 import { uploadFn } from '../utils/upload-images';
 import LinkPreview from './link-preview/link-preview';
+import { AIWriter } from './ai-writer';
 
 export const defaultExtensions = (
   onError: (error: string) => void,
@@ -209,6 +210,7 @@ export const defaultExtensions = (
   LinkPreview.configure({
     metadataProxyUrl: metadataProxyUrl,
   }),
+  AIWriter,
 ];
 
 export const createInputRule = (

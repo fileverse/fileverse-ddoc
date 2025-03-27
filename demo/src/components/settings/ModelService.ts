@@ -1,4 +1,5 @@
 import { CustomModel } from './ModelSettings';
+import { OllamaService } from './OllamaService';
 
 interface ModelRequestPayload {
   model: string;
@@ -34,6 +35,12 @@ export class ModelService {
     systemPrompt?: string,
   ): Promise<string> {
     try {
+      // Check if it's an Ollama model
+      if (this.isOllamaModel(model)) {
+        return await OllamaService.callModel(model, prompt, systemPrompt);
+      }
+
+      // For other API models, use the standard API implementation:
       // Format the system prompt with dynamic variables
       const formattedSystemPrompt = (
         systemPrompt || model.systemPrompt
@@ -52,7 +59,7 @@ export class ModelService {
             content: prompt,
           },
         ],
-        temperature: 0.7, // Default value, could be configurable
+        temperature: 0.3, // Default value, could be configurable
         max_tokens: model.contextSize,
       };
 
@@ -105,6 +112,12 @@ export class ModelService {
     apiKey?: string,
   ): Promise<boolean> {
     try {
+      // Check if it's an Ollama endpoint
+      if (endpoint.includes('ollama')) {
+        return await OllamaService.validateEndpoint(endpoint);
+      }
+
+      // For standard API endpoints
       const headers: HeadersInit = {
         'Content-Type': 'application/json',
       };
@@ -138,7 +151,7 @@ export class ModelService {
     }
 
     // Check if the endpoint contains 'ollama'
-    if (model.endpoint.includes('ollama')) {
+    if (model.endpoint?.includes('ollama')) {
       return true;
     }
 

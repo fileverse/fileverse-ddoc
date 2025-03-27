@@ -2,6 +2,8 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { CustomModel } from './ModelSettings';
 import { DefaultModelProvider } from './DefaultModelProvider';
+import { ModelService } from './ModelService';
+import { OllamaService } from './OllamaService';
 
 interface ModelContextType {
   models: CustomModel[];
@@ -12,17 +14,43 @@ interface ModelContextType {
   defaultModels: CustomModel[];
   isLoadingDefaultModels: boolean;
   ollamaError: string | null;
+  activeModel?: CustomModel; // Add activeModel to context
+  setActiveModel: (model: CustomModel | undefined) => void; // Add setter for activeModel
 }
 
-const ModelContext = createContext<ModelContextType | undefined>(undefined);
+interface ModelProviderProps {
+  children: React.ReactNode;
+}
 
-export const ModelProvider: React.FC<{ children: React.ReactNode }> = ({
+// Define interface for window with modelService
+interface WindowWithModelService extends Window {
+  modelService?: {
+    callModel: (prompt: string, tone: string) => Promise<string>;
+    streamModel: (prompt: string, tone: string, onChunk: (chunk: string) => void) => Promise<void>;
+  };
+}
+
+export const ModelContext = createContext<ModelContextType>({
+  models: [],
+  addModel: () => { },
+  deleteModel: () => { },
+  getModelById: () => undefined,
+  getModelByName: () => undefined,
+  defaultModels: [],
+  isLoadingDefaultModels: true,
+  ollamaError: null,
+  activeModel: undefined,
+  setActiveModel: () => { },
+});
+
+export const ModelProvider: React.FC<ModelProviderProps> = ({
   children,
 }) => {
   const [models, setModels] = useState<CustomModel[]>([]);
   const [defaultModels, setDefaultModels] = useState<CustomModel[]>([]);
   const [isLoadingDefaultModels, setIsLoadingDefaultModels] = useState(true);
   const [ollamaError, setOllamaError] = useState<string | null>(null);
+  const [activeModel, setActiveModel] = useState<CustomModel | undefined>(undefined);
 
   // Load Ollama default models
   useEffect(() => {
@@ -34,6 +62,11 @@ export const ModelProvider: React.FC<{ children: React.ReactNode }> = ({
 
         const ollamaModels = await DefaultModelProvider.getDefaultOllamaModels();
         setDefaultModels(ollamaModels);
+
+        if (ollamaModels.length > 0 && !activeModel) {
+          // Set the first model as active if there is no active model
+          setActiveModel(ollamaModels[0]);
+        }
 
         if (ollamaModels.length === 0) {
           setOllamaError(
@@ -53,7 +86,7 @@ export const ModelProvider: React.FC<{ children: React.ReactNode }> = ({
     };
 
     loadDefaultModels();
-  }, []);
+  }, [activeModel]);
 
   // Load custom models from localStorage on initial load
   useEffect(() => {
@@ -106,6 +139,60 @@ export const ModelProvider: React.FC<{ children: React.ReactNode }> = ({
     return defaultModels.find((model) => model.modelName === name);
   };
 
+  // Expose model service to window for AIWriter extension
+  useEffect(() => {
+    const win = window as WindowWithModelService;
+
+    win.modelService = {
+      callModel: async (prompt: string, tone: string) => {
+        if (!activeModel) {
+          return "No AI model selected. Please select a model in settings.";
+        }
+
+        // Format the prompt with the tone
+        const promptWithTone = `Generate text in a ${tone} tone: ${prompt}`;
+
+        try {
+          // Use the static method from ModelService
+          return await ModelService.callModel(activeModel, promptWithTone);
+        } catch (error) {
+          console.error('Error calling model:', error);
+          return "Error while generating text. Please check the model settings and try again.";
+        }
+      },
+      streamModel: async (prompt: string, tone: string, onChunk: (chunk: string) => void) => {
+        if (!activeModel) {
+          onChunk("No AI model selected. Please select a model in settings.");
+          return;
+        }
+
+        // Format the prompt with the tone
+        const promptWithTone = `Generate text in a ${tone} tone: ${prompt}`;
+
+        try {
+          if (ModelService.isOllamaModel(activeModel)) {
+            // If it's an Ollama model, use streaming
+            for await (const chunk of OllamaService.streamModel(activeModel, promptWithTone)) {
+              onChunk(chunk);
+            }
+          } else {
+            // For non-Ollama models, fall back to regular model call
+            const result = await ModelService.callModel(activeModel, promptWithTone);
+            onChunk(result);
+          }
+        } catch (error) {
+          console.error('Error streaming from model:', error);
+          onChunk("Error while generating text. Please check the model settings and try again.");
+        }
+      }
+    };
+
+    return () => {
+      // Clean up on unmount
+      delete win.modelService;
+    };
+  }, [activeModel]);
+
   return (
     <ModelContext.Provider
       value={{
@@ -117,6 +204,8 @@ export const ModelProvider: React.FC<{ children: React.ReactNode }> = ({
         defaultModels,
         isLoadingDefaultModels,
         ollamaError,
+        activeModel,
+        setActiveModel,
       }}
     >
       {children}
@@ -126,7 +215,7 @@ export const ModelProvider: React.FC<{ children: React.ReactNode }> = ({
 
 export const useModelContext = (): ModelContextType => {
   const context = useContext(ModelContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useModelContext must be used within a ModelProvider');
   }
   return context;
