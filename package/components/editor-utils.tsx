@@ -32,6 +32,10 @@ import { colors } from '../utils/colors';
 import { validateImageExtension } from '../utils/check-image-type';
 import { handleContentPrint } from '../utils/handle-print';
 import { useComments } from '../components/inline-comment/context/comment-context';
+import {
+  convertListToParagraphs,
+  convertToList,
+} from './editor-bubble-menu/node-selector';
 
 interface IEditorToolElement {
   icon: any;
@@ -311,8 +315,36 @@ export const useEditorToolbar = ({
       icon: 'List',
       title: 'List',
       onClick: () => {
-        editor?.chain().focus().toggleBulletList().run();
-        setToolVisibility(IEditorTool.NONE);
+        const { state } = editor;
+        const { from, to } = state.selection;
+
+        if (editor.isActive('bulletList')) {
+          return editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .run();
+        }
+
+        return editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'bulletList',
+                itemType: 'listItem',
+              },
+            }),
+          )
+          .run();
+        // setToolVisibility(IEditorTool.NONE);
       },
       isActive: editor?.isActive('bulletList'),
     },
@@ -320,8 +352,36 @@ export const useEditorToolbar = ({
       icon: 'ListOrdered',
       title: 'Ordered List',
       onClick: () => {
-        editor?.chain().focus().toggleOrderedList().run();
-        setToolVisibility(IEditorTool.NONE);
+        const { state } = editor;
+        const { from, to } = state.selection;
+
+        if (editor.isActive('orderedList')) {
+          return editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .run();
+        }
+
+        return editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'orderedList',
+                itemType: 'listItem',
+              },
+            }),
+          )
+          .run();
+        // setToolVisibility(IEditorTool.NONE);
       },
       isActive: editor?.isActive('orderedList'),
     },
@@ -329,8 +389,37 @@ export const useEditorToolbar = ({
       icon: 'ListChecks',
       title: 'To-do List',
       onClick: () => {
-        editor?.chain().focus().toggleTaskList().run();
-        setToolVisibility(IEditorTool.NONE);
+        const { state } = editor;
+        const { from, to } = state.selection;
+
+        if (editor.isActive('taskList')) {
+          return editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .run();
+        }
+
+        return editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'taskList',
+                itemType: 'taskItem',
+                hasAttrs: true,
+              },
+            }),
+          )
+          .run();
+        // setToolVisibility(IEditorTool.NONE);
       },
       isActive: editor?.isActive('taskList'),
     },
@@ -755,8 +844,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${editor.isActive('bulletList') ? 'color-bg-default-hover' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${
+            editor.isActive('bulletList') ? 'color-bg-default-hover' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="List" />
         </button>
@@ -768,8 +858,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${editor.isActive('orderedList') ? 'color-bg-default-hover' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${
+            editor.isActive('orderedList') ? 'color-bg-default-hover' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListOrdered" />
         </button>
@@ -781,8 +872,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${editor.isActive('taskList') ? 'color-bg-default-hover' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${
+            editor.isActive('taskList') ? 'color-bg-default-hover' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListChecks" />
         </button>
@@ -1048,7 +1140,7 @@ export const ScriptsPopup = ({
             className={cn(
               'flex items-center justify-between w-full px-2 py-1 text-body-sm',
               option.isActive() &&
-              'color-bg-brand hover:!bg-[#B6A02E] dark:text-[#363B3F]',
+                'color-bg-brand hover:!bg-[#B6A02E] dark:text-[#363B3F]',
             )}
           >
             <div className="flex items-center gap-2">

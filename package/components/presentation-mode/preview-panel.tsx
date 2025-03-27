@@ -35,7 +35,7 @@ export const PreviewPanel = ({
         'color-bg-default flex gap-3 py-4 px-4 color-border-default-hover relative',
         isMobile
           ? 'flex-row overflow-x-auto border-t min-h-[12rem] order-2 w-full pt-10 xl:pt-0'
-          : 'w-[251px] h-full overflow-y-auto flex-col py-16 border-r',
+          : 'w-[251px] h-full overflow-y-auto overflow-x-hidden flex-col py-16 border-r',
         isNativeMobile && 'min-h-[20rem]',
       )}
     >
