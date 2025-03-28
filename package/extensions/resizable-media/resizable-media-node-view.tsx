@@ -39,7 +39,9 @@ export const ResizableMediaNodeView = ({
   const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
 
   const [isDragging, setIsDragging] = useState(false);
-  const [touchTimeout, setTouchTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [touchTimeout, setTouchTimeout] = useState<ReturnType<
+    typeof setTimeout
+  > | null>(null);
   const dragStartPos = useRef<{ x: number; y: number } | null>(null);
 
   const calculateMediaActionActiveStates = () => {

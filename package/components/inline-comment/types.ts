@@ -63,7 +63,6 @@ export interface CommentReplyProps {
 export interface EnsStatus {
   name: string;
   isEns: boolean;
-  isLoading: boolean;
 }
 
 export interface CommentSectionProps {
@@ -73,6 +72,6 @@ export interface CommentSectionProps {
 }
 
 export interface UserDisplayProps {
-  ensStatus: EnsStatus;
+  username: string;
   createdAt: Date | undefined;
 }

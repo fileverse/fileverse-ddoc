@@ -4,7 +4,7 @@ export function debounce<T extends (...args: any) => any>(
   func: T,
   wait: number,
 ): T {
-  let h: NodeJS.Timeout;
+  let h: ReturnType<typeof setTimeout>;
 
   const callable = (...args: Parameters<T>) => {
     clearTimeout(h);
