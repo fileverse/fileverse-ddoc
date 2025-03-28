@@ -18,8 +18,8 @@ const LinkPreview = Extension.create<LinkPreviewOptions>({
     let hoverDiv: HTMLElement | null = null;
     let root: Root | null = null;
     let currentAnchor: HTMLAnchorElement | null = null;
-    let showTimeoutId: NodeJS.Timeout | null = null;
-    let hideTimeoutId: NodeJS.Timeout | null = null;
+    let showTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    let hideTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
     const hoverEvent = new EventTarget();
 
