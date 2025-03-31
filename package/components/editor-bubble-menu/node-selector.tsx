@@ -232,6 +232,8 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
             .command((props) =>
               convertListToParagraphs({ ...props, state, from, to }),
             )
+            .setTextSelection({ from, to })
+            .focus()
             .run();
         }
 
@@ -240,6 +242,8 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
           .chain()
           .focus()
           .toggleNode('paragraph', 'paragraph')
+          .setTextSelection({ from, to })
+          .focus()
           .run();
       },
       isActive: () =>

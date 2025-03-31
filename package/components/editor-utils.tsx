@@ -325,6 +325,8 @@ export const useEditorToolbar = ({
             .command((props) =>
               convertListToParagraphs({ ...props, state, from, to }),
             )
+            .setTextSelection({ from, to })
+            .focus()
             .run();
 
           setToolVisibility(IEditorTool.NONE);
@@ -346,6 +348,8 @@ export const useEditorToolbar = ({
               },
             }),
           )
+          .setTextSelection({ from, to })
+          .focus()
           .run();
 
         setToolVisibility(IEditorTool.NONE);
@@ -631,6 +635,8 @@ export const useEditorToolbar = ({
             .command((props) =>
               convertListToParagraphs({ ...props, state, from, to }),
             )
+            .setTextSelection({ from, to })
+            .focus()
             .run();
 
           setToolVisibility(IEditorTool.NONE);
@@ -653,6 +659,8 @@ export const useEditorToolbar = ({
               },
             }),
           )
+          .setTextSelection({ from, to })
+          .focus()
           .run();
 
         setToolVisibility(IEditorTool.NONE);
@@ -1361,8 +1369,40 @@ export const TextFormatingPopup = ({
       description: 'Normal',
       icon: 'Type',
       command: (editor: Editor) => {
-        editor.chain().toggleNode('paragraph', 'paragraph').run();
+        const { state } = editor;
+        const { from, to } = state.selection;
+
+        // If it's already a list type, convert to paragraphs
+        if (
+          editor.isActive('bulletList') ||
+          editor.isActive('orderedList') ||
+          editor.isActive('taskList')
+        ) {
+          const result = editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .setTextSelection({ from, to })
+            .focus()
+            .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
+        }
+
+        // Otherwise use the default paragraph toggle
+        const result = editor
+          .chain()
+          .focus()
+          .toggleNode('paragraph', 'paragraph')
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
         setToolVisibility(IEditorTool.NONE);
+        return result;
       },
       isActive: () =>
         editor.isActive('paragraph') &&
@@ -1521,6 +1561,8 @@ export const TextFormatingPopup = ({
             .command((props) =>
               convertListToParagraphs({ ...props, state, from, to }),
             )
+            .setTextSelection({ from, to })
+            .focus()
             .run();
 
           setToolVisibility(IEditorTool.NONE);
@@ -1542,6 +1584,8 @@ export const TextFormatingPopup = ({
               },
             }),
           )
+          .setTextSelection({ from, to })
+          .focus()
           .run();
 
         setToolVisibility(IEditorTool.NONE);
@@ -1564,6 +1608,8 @@ export const TextFormatingPopup = ({
             .command((props) =>
               convertListToParagraphs({ ...props, state, from, to }),
             )
+            .setTextSelection({ from, to })
+            .focus()
             .run();
 
           setToolVisibility(IEditorTool.NONE);
@@ -1585,6 +1631,8 @@ export const TextFormatingPopup = ({
               },
             }),
           )
+          .setTextSelection({ from, to })
+          .focus()
           .run();
 
         setToolVisibility(IEditorTool.NONE);
