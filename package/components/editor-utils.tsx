@@ -319,18 +319,19 @@ export const useEditorToolbar = ({
         const { from, to } = state.selection;
 
         if (editor.isActive('bulletList')) {
-          return editor
+          const result = editor
             .chain()
             .focus()
             .command((props) =>
               convertListToParagraphs({ ...props, state, from, to }),
             )
-            .setTextSelection({ from, to })
-            .focus()
             .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
         }
 
-        return editor
+        const result = editor
           .chain()
           .focus()
           .command((props) =>
@@ -345,10 +346,10 @@ export const useEditorToolbar = ({
               },
             }),
           )
-          .setTextSelection({ from, to })
-          .focus()
           .run();
-        // setToolVisibility(IEditorTool.NONE);
+
+        setToolVisibility(IEditorTool.NONE);
+        return result;
       },
       isActive: editor?.isActive('bulletList'),
     },
@@ -624,18 +625,19 @@ export const useEditorToolbar = ({
         const { from, to } = state.selection;
 
         if (editor.isActive('taskList')) {
-          return editor
+          const result = editor
             .chain()
             .focus()
             .command((props) =>
               convertListToParagraphs({ ...props, state, from, to }),
             )
-            .setTextSelection({ from, to })
-            .focus()
             .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
         }
 
-        return editor
+        const result = editor
           .chain()
           .focus()
           .command((props) =>
@@ -651,9 +653,10 @@ export const useEditorToolbar = ({
               },
             }),
           )
-          .setTextSelection({ from, to })
-          .focus()
           .run();
+
+        setToolVisibility(IEditorTool.NONE);
+        return result;
       },
       isActive: false,
     },
@@ -1357,8 +1360,10 @@ export const TextFormatingPopup = ({
       title: 'Text',
       description: 'Normal',
       icon: 'Type',
-      command: (editor: Editor) =>
-        editor.chain().toggleNode('paragraph', 'paragraph').run(),
+      command: (editor: Editor) => {
+        editor.chain().toggleNode('paragraph', 'paragraph').run();
+        setToolVisibility(IEditorTool.NONE);
+      },
       isActive: () =>
         editor.isActive('paragraph') &&
         !editor.isActive('bulletList') &&
@@ -1370,6 +1375,7 @@ export const TextFormatingPopup = ({
       icon: 'Heading1',
       command: (editor: Editor) => {
         editor.chain().toggleHeading({ level: 1 }).run();
+        setToolVisibility(IEditorTool.NONE);
       },
       isActive: () => editor.isActive('heading', { level: 1 }),
     },
@@ -1379,6 +1385,7 @@ export const TextFormatingPopup = ({
       icon: 'Heading2',
       command: (editor: Editor) => {
         editor.chain().toggleHeading({ level: 2 }).run();
+        setToolVisibility(IEditorTool.NONE);
       },
       isActive: () => editor.isActive('heading', { level: 2 }),
     },
@@ -1388,6 +1395,7 @@ export const TextFormatingPopup = ({
       icon: 'Heading3',
       command: (editor: Editor) => {
         editor.chain().toggleHeading({ level: 3 }).run();
+        setToolVisibility(IEditorTool.NONE);
       },
       isActive: () => editor.isActive('heading', { level: 3 }),
     },
@@ -1398,21 +1406,30 @@ export const TextFormatingPopup = ({
       title: 'Left',
       description: 'Left',
       icon: 'AlignLeft',
-      command: (editor: Editor) => editor.chain().setTextAlign('left').run(),
+      command: (editor: Editor) => {
+        editor.chain().setTextAlign('left').focus().run();
+        setToolVisibility(IEditorTool.NONE);
+      },
       isActive: () => editor.isActive({ textAlign: 'left' }),
     },
     {
       title: 'Center',
       description: 'Center',
       icon: 'AlignCenter',
-      command: (editor: Editor) => editor.chain().setTextAlign('center').run(),
+      command: (editor: Editor) => {
+        editor.chain().setTextAlign('center').focus().run();
+        setToolVisibility(IEditorTool.NONE);
+      },
       isActive: () => editor.isActive({ textAlign: 'center' }),
     },
     {
       title: 'Right',
       description: 'Right',
       icon: 'AlignRight',
-      command: (editor: Editor) => editor.chain().setTextAlign('right').run(),
+      command: (editor: Editor) => {
+        editor.chain().setTextAlign('right').focus().run();
+        setToolVisibility(IEditorTool.NONE);
+      },
       isActive: () => editor.isActive({ textAlign: 'right' }),
     },
   ];
@@ -1498,18 +1515,19 @@ export const TextFormatingPopup = ({
         const { from, to } = state.selection;
 
         if (editor.isActive('bulletList')) {
-          return editor
+          const result = editor
             .chain()
             .focus()
             .command((props) =>
               convertListToParagraphs({ ...props, state, from, to }),
             )
-            .setTextSelection({ from, to })
-            .focus()
             .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
         }
 
-        return editor
+        const result = editor
           .chain()
           .focus()
           .command((props) =>
@@ -1524,9 +1542,10 @@ export const TextFormatingPopup = ({
               },
             }),
           )
-          .setTextSelection({ from, to })
-          .focus()
           .run();
+
+        setToolVisibility(IEditorTool.NONE);
+        return result;
       },
       isActive: () => editor.isActive('bulletList'),
     },
@@ -1539,18 +1558,19 @@ export const TextFormatingPopup = ({
         const { from, to } = state.selection;
 
         if (editor.isActive('orderedList')) {
-          return editor
+          const result = editor
             .chain()
             .focus()
             .command((props) =>
               convertListToParagraphs({ ...props, state, from, to }),
             )
-            .setTextSelection({ from, to })
-            .focus()
             .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
         }
 
-        return editor
+        const result = editor
           .chain()
           .focus()
           .command((props) =>
@@ -1565,9 +1585,10 @@ export const TextFormatingPopup = ({
               },
             }),
           )
-          .setTextSelection({ from, to })
-          .focus()
           .run();
+
+        setToolVisibility(IEditorTool.NONE);
+        return result;
       },
       isActive: () => editor.isActive('orderedList'),
     },
