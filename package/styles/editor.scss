@@ -676,6 +676,12 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
         user-select: none;
       }
     }
+
+    [data-type='horizontalRule'] {
+      &.ProseMirror-selectednode {
+        @apply bg-transparent;
+      }
+    }
   }
 
   &.preview-slide {
