@@ -325,6 +325,8 @@ export const useEditorToolbar = ({
             .command((props) =>
               convertListToParagraphs({ ...props, state, from, to }),
             )
+            .setTextSelection({ from, to })
+            .focus()
             .run();
         }
 
@@ -343,6 +345,8 @@ export const useEditorToolbar = ({
               },
             }),
           )
+          .setTextSelection({ from, to })
+          .focus()
           .run();
         // setToolVisibility(IEditorTool.NONE);
       },
@@ -362,6 +366,8 @@ export const useEditorToolbar = ({
             .command((props) =>
               convertListToParagraphs({ ...props, state, from, to }),
             )
+            .setTextSelection({ from, to })
+            .focus()
             .run();
         }
 
@@ -380,6 +386,8 @@ export const useEditorToolbar = ({
               },
             }),
           )
+          .setTextSelection({ from, to })
+          .focus()
           .run();
         // setToolVisibility(IEditorTool.NONE);
       },
@@ -399,6 +407,8 @@ export const useEditorToolbar = ({
             .command((props) =>
               convertListToParagraphs({ ...props, state, from, to }),
             )
+            .setTextSelection({ from, to })
+            .focus()
             .run();
         }
 
@@ -418,6 +428,8 @@ export const useEditorToolbar = ({
               },
             }),
           )
+          .setTextSelection({ from, to })
+          .focus()
           .run();
         // setToolVisibility(IEditorTool.NONE);
       },
@@ -608,8 +620,40 @@ export const useEditorToolbar = ({
       icon: 'ListChecks',
       title: 'To-do list',
       onClick: () => {
-        editor?.chain().focus().toggleTaskList().run();
-        setToolVisibility(IEditorTool.NONE);
+        const { state } = editor;
+        const { from, to } = state.selection;
+
+        if (editor.isActive('taskList')) {
+          return editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .setTextSelection({ from, to })
+            .focus()
+            .run();
+        }
+
+        return editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'taskList',
+                itemType: 'taskItem',
+                hasAttrs: true,
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
       },
       isActive: false,
     },
@@ -1449,14 +1493,82 @@ export const TextFormatingPopup = ({
       title: 'Bullet List',
       description: 'Bullet list',
       icon: 'List',
-      command: (editor: Editor) => editor.chain().toggleBulletList().run(),
+      command: (editor: Editor) => {
+        const { state } = editor;
+        const { from, to } = state.selection;
+
+        if (editor.isActive('bulletList')) {
+          return editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .setTextSelection({ from, to })
+            .focus()
+            .run();
+        }
+
+        return editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'bulletList',
+                itemType: 'listItem',
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+      },
       isActive: () => editor.isActive('bulletList'),
     },
     {
       title: 'Ordered List',
       description: 'Ordered list',
       icon: 'ListOrdered',
-      command: (editor: Editor) => editor.chain().toggleOrderedList().run(),
+      command: (editor: Editor) => {
+        const { state } = editor;
+        const { from, to } = state.selection;
+
+        if (editor.isActive('orderedList')) {
+          return editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .setTextSelection({ from, to })
+            .focus()
+            .run();
+        }
+
+        return editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'orderedList',
+                itemType: 'listItem',
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+      },
       isActive: () => editor.isActive('orderedList'),
     },
     {

@@ -280,6 +280,8 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
             .command((props) =>
               convertListToParagraphs({ ...props, state, from, to }),
             )
+            .setTextSelection({ from, to })
+            .focus()
             .run();
         }
 
@@ -299,6 +301,8 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
               },
             }),
           )
+          .setTextSelection({ from, to })
+          .focus()
           .run();
       },
       isActive: () => editor.isActive('taskItem'),
@@ -317,6 +321,8 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
             .command((props) =>
               convertListToParagraphs({ ...props, state, from, to }),
             )
+            .setTextSelection({ from, to })
+            .focus()
             .run();
         }
 
@@ -335,6 +341,8 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
               },
             }),
           )
+          .setTextSelection({ from, to })
+          .focus()
           .run();
       },
       isActive: () => editor.isActive('bulletList'),
@@ -353,6 +361,8 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
             .command((props) =>
               convertListToParagraphs({ ...props, state, from, to }),
             )
+            .setTextSelection({ from, to })
+            .focus()
             .run();
         }
 
@@ -371,6 +381,8 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
               },
             }),
           )
+          .setTextSelection({ from, to })
+          .focus()
           .run();
       },
       isActive: () => editor.isActive('orderedList'),
