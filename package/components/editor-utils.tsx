@@ -365,7 +365,7 @@ export const useEditorToolbar = ({
         const { from, to } = state.selection;
 
         if (editor.isActive('orderedList')) {
-          return editor
+          const result = editor
             .chain()
             .focus()
             .command((props) =>
@@ -374,9 +374,12 @@ export const useEditorToolbar = ({
             .setTextSelection({ from, to })
             .focus()
             .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
         }
 
-        return editor
+        const result = editor
           .chain()
           .focus()
           .command((props) =>
@@ -394,7 +397,9 @@ export const useEditorToolbar = ({
           .setTextSelection({ from, to })
           .focus()
           .run();
-        // setToolVisibility(IEditorTool.NONE);
+
+        setToolVisibility(IEditorTool.NONE);
+        return result;
       },
       isActive: editor?.isActive('orderedList'),
     },
@@ -406,7 +411,7 @@ export const useEditorToolbar = ({
         const { from, to } = state.selection;
 
         if (editor.isActive('taskList')) {
-          return editor
+          const result = editor
             .chain()
             .focus()
             .command((props) =>
@@ -415,9 +420,12 @@ export const useEditorToolbar = ({
             .setTextSelection({ from, to })
             .focus()
             .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
         }
 
-        return editor
+        const result = editor
           .chain()
           .focus()
           .command((props) =>
@@ -436,7 +444,9 @@ export const useEditorToolbar = ({
           .setTextSelection({ from, to })
           .focus()
           .run();
-        // setToolVisibility(IEditorTool.NONE);
+
+        setToolVisibility(IEditorTool.NONE);
+        return result;
       },
       isActive: editor?.isActive('taskList'),
     },
