@@ -186,3 +186,8 @@ div[data-type='page-break']:hover .remove-page-break-icon {
 .dark .vertical-divider {
   background-color: #404040;
 }
+
+[data-type='emoji'] img {
+  height: 1em;
+  width: 1em;
+}

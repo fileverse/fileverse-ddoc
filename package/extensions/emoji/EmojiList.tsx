@@ -71,13 +71,13 @@ export const EmojiList = forwardRef<HTMLDivElement, EmojiListProps>(
 
     return (
       <div
-        className="relative flex flex-col gap-1 overflow-auto rounded-lg border color-border-default color-bg-default p-2 shadow-elevation-3"
+        className="relative flex flex-col gap-1 overflow-auto rounded-lg border color-border-default color-bg-default p-2 shadow-elevation-3 no-scrollbar"
         ref={ref}
         id="emoji-list"
       >
         {props.items.map((item, index) => (
           <button
-            className={`flex w-full items-center gap-1 text-left hover:color-bg-default-hover py-1 px-2 rounded ${
+            className={`flex w-full items-center gap-1 text-left text-xs hover:color-bg-default-hover py-1 px-2 rounded ${
               index === selectedIndex ? 'color-bg-default-hover' : ''
             }`}
             key={index}
