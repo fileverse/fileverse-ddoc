@@ -24,6 +24,7 @@ import { CommentExtension as Comment } from './extensions/comment';
 import { handleContentPrint, handlePrint } from './utils/handle-print';
 import { Table } from './extensions/supercharged-table/extension-table';
 import { isBlackOrWhiteShade } from './utils/color-utils';
+import suggestion from './extensions/emoji/suggestion';
 
 const usercolors = [
   '#30bced',
@@ -212,7 +213,8 @@ export const useDdocEditor = ({
             // prevent default event listeners from firing when slash command is active
             if (['ArrowUp', 'ArrowDown', 'Enter'].includes(event.key)) {
               const slashCommand = document.querySelector('#slash-command');
-              if (slashCommand) {
+              const emojiList = document.querySelector('#emoji-list');
+              if (slashCommand || emojiList) {
                 return true;
               }
             }
@@ -245,6 +247,20 @@ export const useDdocEditor = ({
         }),
       ]);
     }
+
+    if (
+      proExtensions?.Emoji &&
+      !extensions.some((ext) => ext.name === 'emoji')
+    ) {
+      setExtensions([
+        ...extensions.filter((ext) => ext.name !== 'emoji'),
+        proExtensions.Emoji.configure({
+          enableEmoticons: true,
+          emojis: proExtensions?.gitHubEmojis,
+          suggestion: suggestion,
+        }),
+      ]);
+    }
   }, [proExtensions]);
 
   useEffect(() => {
@@ -259,7 +275,7 @@ export const useDdocEditor = ({
     }
   }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => { });
+  const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
