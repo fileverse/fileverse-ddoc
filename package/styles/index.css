@@ -190,4 +190,6 @@ div[data-type='page-break']:hover .remove-page-break-icon {
 [data-type='emoji'] img {
   height: 1em;
   width: 1em;
+  display: inline;
+  vertical-align: sub;
 }
