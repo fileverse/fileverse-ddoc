@@ -3,7 +3,7 @@ import React, { createContext, useContext, useRef, useState } from 'react';
 import { IComment } from '../../../extensions/comment';
 import uuid from 'react-uuid';
 import { useOnClickOutside } from 'usehooks-ts';
-import { CommentContextType, CommentProviderProps } from './types';
+import { CommentContextType, CommentProviderProps, EnsCache } from './types';
 import { getAddressName } from '../../../utils/getAddressName';
 import { EnsStatus } from '../types';
 
@@ -54,9 +54,9 @@ export const CommentProvider = ({
 
   const cachedData = localStorage.getItem('ensCache');
 
-  const [ensCache, setEnsCache] = useState<
-    Record<string, { name: string; isEns: boolean }>
-  >(cachedData ? JSON.parse(cachedData) : {});
+  const [ensCache, setEnsCache] = useState<EnsCache>(
+    cachedData ? JSON.parse(cachedData) : {},
+  );
 
   const [inProgressFetch, setInProgressFetch] = useState<string[]>([]);
 
@@ -491,6 +491,7 @@ export const CommentProvider = ({
         inlineCommentData,
         setInlineCommentData,
         getEnsStatus,
+        ensCache,
       }}
     >
       {children}

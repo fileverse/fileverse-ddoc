@@ -26,7 +26,7 @@ import {
 import { Spinner } from '../../common/spinner';
 
 const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
-  const { getEnsStatus } = useComments();
+  const { getEnsStatus, ensCache } = useComments();
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
     name: username,
     isEns: false,
@@ -34,7 +34,7 @@ const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
 
   useEffect(() => {
     getEnsStatus(username, setEnsStatus);
-  }, [username]);
+  }, [username, ensCache]);
 
   return (
     <div className="flex justify-start items-center gap-2">
@@ -111,7 +111,7 @@ export const CommentCard = ({
   const [showAllReplies, setShowAllReplies] = useState(false);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
   const { setOpenReplyId } = useComments();
-  const { getEnsStatus } = useComments();
+  const { getEnsStatus, ensCache } = useComments();
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
     name: username as string,
     isEns: false,
@@ -119,7 +119,7 @@ export const CommentCard = ({
 
   useEffect(() => {
     getEnsStatus(username as string, setEnsStatus);
-  }, [username]);
+  }, [username, ensCache]);
 
   useEffect(() => {
     if (isDropdown) {

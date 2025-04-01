@@ -52,6 +52,7 @@ export const CommentSection = ({
     connectViaUsername,
     isDDocOwner,
     getEnsStatus,
+    ensCache,
   } = useComments();
   const { isNativeMobile } = useResponsive();
 
@@ -79,7 +80,7 @@ export const CommentSection = ({
 
   useEffect(() => {
     getEnsStatus(username as string, setEnsStatus);
-  }, [username]);
+  }, [username, ensCache]);
 
   useEffect(() => {
     if (commentsSectionRef.current) {
