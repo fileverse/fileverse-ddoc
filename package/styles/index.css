@@ -36,6 +36,38 @@
   .dark .custom-ens-button {
     @apply color-button-default hover:!bg-[#5C5C5C];
   }
+
+  .reminder-wrapper {
+    @apply border-[#5C0AFF] bg-[#F2F0FF] pr-2;
+  }
+
+  .dark .reminder-wrapper {
+    @apply border-[#D4CDFF] bg-transparent pr-2;
+  }
+
+  .reminder-wrapper-overdue {
+    @apply border-[#9F6B04] color-bg-danger-light pr-8;
+  }
+
+  .dark .reminder-wrapper-overdue {
+    @apply border-[#EFC703] dark:bg-transparent pr-8;
+  }
+
+  .reminder-wrapper-text {
+    @apply text-[#5C0AFF];
+  }
+
+  .dark .reminder-wrapper-text {
+    @apply text-[#D4CDFF];
+  }
+
+  .reminder-wrapper-text-overdue {
+    @apply text-[#9F6B04];
+  }
+
+  .dark .reminder-wrapper-text-overdue {
+    @apply text-[#EFC703];
+  }
 }
 
 * {

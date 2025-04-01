@@ -56,13 +56,16 @@ export const shouldShow = ({ editor }: { editor: Editor }) => {
     editor.state.doc.nodeAt(from)?.type.name === 'iframe';
   const isCodeBlockSelected = editor.isActive('codeBlock');
   const isPageBreak = editor.state.doc.nodeAt(from)?.type.name === 'pageBreak';
+  const isReminderBlockSelected =
+    editor.state.doc.nodeAt(from)?.type.name === 'reminderBlock';
 
   if (
     empty ||
     isImageSelected ||
     isCodeBlockSelected ||
     isIframeSelected ||
-    isPageBreak
+    isPageBreak ||
+    isReminderBlockSelected
   ) {
     return false;
   }

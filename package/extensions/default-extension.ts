@@ -39,6 +39,7 @@ import Subscript from '@tiptap/extension-subscript';
 import { ResizableMedia } from './resizable-media';
 import { uploadFn } from '../utils/upload-images';
 import LinkPreview from './link-preview/link-preview';
+import { ReminderBlock } from './reminder-block/reminder-block';
 
 export const defaultExtensions = (
   onError: (error: string) => void,
@@ -208,6 +209,21 @@ export const defaultExtensions = (
   }),
   LinkPreview.configure({
     metadataProxyUrl: metadataProxyUrl,
+  }),
+  ReminderBlock.configure({
+    onReminderCreate: (reminder) => {
+      // Handle reminder creation
+      console.log('reminder', reminder);
+    },
+    onReminderDelete: (reminderId) => {
+      // Handle reminder deletion
+      console.log('reminderId', reminderId);
+    },
+    onReminderUpdate: (reminder) => {
+      // Handle reminder updates
+      console.log('reminder', reminder);
+    },
+    reminders: [], // Existing reminders
   }),
 ];
 

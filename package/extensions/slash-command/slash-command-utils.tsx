@@ -5,6 +5,7 @@ import { startImageUpload } from '../../utils/upload-images';
 import { IMG_UPLOAD_SETTINGS } from '../../components/editor-utils';
 import { validateImageExtension } from '../../utils/check-image-type';
 import { CommandProps } from './types';
+import { showReminderMenu } from '../reminder-block/reminder-menu-renderer';
 
 export const getSuggestionItems = ({
   query,
@@ -104,6 +105,17 @@ export const getSuggestionItems = ({
       image: '',
       command: ({ editor, range }: CommandProps) => {
         editor.chain().focus().deleteRange(range).toggleOrderedList().run();
+      },
+    },
+    {
+      title: 'Reminder',
+      description: `We'll send you a push notification, so you don't forget about important.`,
+      searchTerms: ['reminder', 'alert', 'notification'],
+      icon: <LucideIcon name="AlarmClock" size={'md'} />,
+      image: '',
+      command: ({ editor, range }: CommandProps) => {
+        showReminderMenu(editor, range);
+        return true;
       },
     },
     {
