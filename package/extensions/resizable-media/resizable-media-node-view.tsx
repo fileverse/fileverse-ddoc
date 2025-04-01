@@ -371,7 +371,7 @@ export const ResizableMediaNodeView = ({
         {node.attrs.showCaptionInput && (
           <div className="caption-input-container">
             <textarea
-              placeholder="Type image caption or click at any space to close caption adding"
+              placeholder="Add a caption"
               value={node.attrs.caption || ''}
               onChange={(e) => {
                 let newValue = e.target.value;
