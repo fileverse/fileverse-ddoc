@@ -28,8 +28,8 @@ const UserDisplay = ({ ensStatus, createdAt }: UserDisplayProps) => {
           ensStatus.isEns
             ? EnsLogo
             : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-              ensStatus.name,
-            )}`
+                ensStatus.name,
+              )}`
         }
         size="sm"
         className="min-w-6"
@@ -185,8 +185,8 @@ export const CommentCard = ({
                     ensStatus.isEns
                       ? EnsLogo
                       : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-                        reply.username || '',
-                      )}`
+                          reply.username || '',
+                        )}`
                   }
                   size="sm"
                   className="w-4 h-4 last:z-10 bg-transparent"
@@ -385,7 +385,7 @@ export const CommentCard = ({
 export const UserDisplaySkeleton = () => {
   return (
     <div className="flex justify-start items-center gap-2">
-      <Skeleton className="w-6 h-6 rounded-full" />
+      <Skeleton className="w-6  h-6 rounded-full" />
       <Skeleton className="w-32 h-4 rounded" />
     </div>
   );
