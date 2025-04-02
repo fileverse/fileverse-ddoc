@@ -256,7 +256,6 @@ export const useDdocEditor = ({
         ...extensions.filter((ext) => ext.name !== 'emoji'),
         proExtensions.Emoji.configure({
           enableEmoticons: true,
-          emojis: proExtensions?.gitHubEmojis,
           suggestion: suggestion,
         }),
       ]);

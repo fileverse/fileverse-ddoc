@@ -18,7 +18,7 @@ import {
   TableOfContents,
   getHierarchicalIndexes,
 } from '@tiptap-pro/extension-table-of-contents';
-import Emoji, { gitHubEmojis } from '@tiptap-pro/extension-emoji';
+import Emoji from '@tiptap-pro/extension-emoji';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -319,7 +319,6 @@ function App() {
           TableOfContents,
           getHierarchicalIndexes,
           Emoji,
-          gitHubEmojis,
         }}
         isConnected={isConnected}
         connectViaWallet={async () => {}}
