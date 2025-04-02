@@ -1,11 +1,12 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import cn from 'classnames';
-import { DynamicDropdown, LucideIcon } from '@fileverse/ui';
+import { DynamicDropdown, LucideIcon, toast } from '@fileverse/ui';
 import { BubbleMenuItem, NodeSelectorProps } from './types';
 import { EditorState, Transaction } from 'prosemirror-state';
 import { Dispatch } from '@tiptap/react';
 import { Node } from 'prosemirror-model';
+import { checkActiveListsAndDBlocks } from '../editor-utils';
 
 // Types
 interface ListConfig {
@@ -30,42 +31,41 @@ const processListContent = (node: any): any[] => {
     return [];
   }
 
-  return node.content.flatMap((item: any) => {
+  // Helper function to create indented paragraph
+  const createIndentedParagraph = (content: any, level: number) => ({
+    type: 'dBlock',
+    content: [
+      {
+        type: 'paragraph',
+        attrs: { indent: level }, // Add indentation level
+        content: content,
+      },
+    ],
+  });
+
+  // Helper function to process list items recursively
+  const processListItem = (item: any, level: number = 0): any[] => {
     const result = [];
-    // Process the main paragraph content
+
+    // Process the main paragraph content with indentation
     if (item.content?.[0]?.content) {
-      result.push({
-        type: 'dBlock',
-        content: [
-          {
-            type: 'paragraph',
-            content: item.content[0].content,
-          },
-        ],
-      });
+      result.push(createIndentedParagraph(item.content[0].content, level));
     }
 
-    // Process nested lists if they exist (after the first paragraph)
+    // Process nested lists recursively with increased indentation
     item.content?.slice(1)?.forEach((nestedNode: any) => {
       if (['bulletList', 'orderedList', 'taskList'].includes(nestedNode.type)) {
-        result.push({
-          type: 'dBlock',
-          content: [
-            {
-              type: nestedNode.type,
-              content: nestedNode.content.map((nestedItem: any) => ({
-                type: nestedItem.type,
-                ...(nestedItem.attrs ? { attrs: nestedItem.attrs } : {}),
-                content: nestedItem.content,
-              })),
-            },
-          ],
+        nestedNode.content.forEach((nestedItem: any) => {
+          result.push(...processListItem(nestedItem, level + 1));
         });
       }
     });
 
     return result;
-  });
+  };
+
+  // Process each list item with initial indentation level
+  return node.content.flatMap((item: any) => processListItem(item, 0));
 };
 
 export const convertListToParagraphs = ({
@@ -150,37 +150,49 @@ export const convertToList = ({
   if (listContent) {
     // Converting from one list type to another
     const listJSON = (listContent as Node).toJSON();
+
+    if (!listConfig?.type || !listConfig?.itemType) return false;
+
+    // Helper function to recursively convert list items and their nested lists
+    const convertListItems = (items: any[]): any[] => {
+      return items.map((item) => {
+        const newItem: {
+          type: string;
+          attrs?: { checked: boolean };
+          content: any[];
+        } = {
+          type: listConfig.itemType,
+          ...(listConfig.hasAttrs ? { attrs: { checked: false } } : {}),
+          content: [],
+        };
+
+        // Process each content item
+        item.content.forEach((contentItem: any) => {
+          if (contentItem.type === 'paragraph') {
+            newItem.content.push(contentItem);
+          } else if (
+            ['bulletList', 'orderedList', 'taskList'].includes(contentItem.type)
+          ) {
+            // Convert nested list
+            newItem.content.push({
+              type: listConfig.type,
+              content: convertListItems(contentItem.content),
+            });
+          } else {
+            newItem.content.push(contentItem);
+          }
+        });
+
+        return newItem;
+      });
+    };
+
     newList = {
       type: 'dBlock',
       content: [
         {
-          type: listConfig?.type,
-          content: listJSON.content.map((item: any) => ({
-            type: listConfig?.itemType,
-            ...(listConfig?.hasAttrs ? { attrs: { checked: false } } : {}),
-            content: item.content.map((contentItem: any) => {
-              if (contentItem.type === 'paragraph') {
-                return contentItem;
-              } else if (
-                ['bulletList', 'orderedList', 'taskList'].includes(
-                  contentItem.type,
-                )
-              ) {
-                return {
-                  ...contentItem,
-                  type: listConfig?.type,
-                  content: contentItem.content.map((nestedItem: any) => ({
-                    ...nestedItem,
-                    type: listConfig?.itemType,
-                    ...(listConfig?.hasAttrs
-                      ? { attrs: { checked: false } }
-                      : {}),
-                  })),
-                };
-              }
-              return contentItem;
-            }),
-          })),
+          type: listConfig.type,
+          content: convertListItems(listJSON.content),
         },
       ],
     };
@@ -217,8 +229,17 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
       name: 'Text',
       icon: 'Type',
       command: () => {
-        const { state } = editor;
-        const { from, to } = state.selection;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          toast({
+            title: 'Multiple blocks found',
+            description: 'Please select one block to convert list.',
+            variant: 'danger',
+          });
+          return;
+        }
 
         // If it's already a list type, convert to paragraphs
         if (
@@ -274,8 +295,17 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
       name: 'To-do List',
       icon: 'ListChecks',
       command: () => {
-        const { state } = editor;
-        const { from, to } = state.selection;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          toast({
+            title: 'Multiple blocks found',
+            description: 'Please select one block to convert list.',
+            variant: 'danger',
+          });
+          return;
+        }
 
         if (editor.isActive('taskList')) {
           return editor
@@ -315,8 +345,17 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
       name: 'Bullet List',
       icon: 'ListOrdered',
       command: () => {
-        const { state } = editor;
-        const { from, to } = state.selection;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          toast({
+            title: 'Multiple blocks found',
+            description: 'Please select one block to convert list.',
+            variant: 'danger',
+          });
+          return;
+        }
 
         if (editor.isActive('bulletList')) {
           return editor
@@ -355,8 +394,17 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
       name: 'Numbered List',
       icon: 'ListOrdered',
       command: () => {
-        const { state } = editor;
-        const { from, to } = state.selection;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          toast({
+            title: 'Multiple blocks found',
+            description: 'Please select one block to convert list.',
+            variant: 'danger',
+          });
+          return;
+        }
 
         if (editor.isActive('orderedList')) {
           return editor

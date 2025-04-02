@@ -25,6 +25,7 @@ import {
   LucideIcon,
   TextAreaFieldV2,
   TextField,
+  toast,
   Tooltip,
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
@@ -315,8 +316,17 @@ export const useEditorToolbar = ({
       icon: 'List',
       title: 'List',
       onClick: () => {
-        const { state } = editor;
-        const { from, to } = state.selection;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          toast({
+            title: 'Multiple blocks found',
+            description: 'Please select one block to convert list.',
+            variant: 'danger',
+          });
+          return;
+        }
 
         if (editor.isActive('bulletList')) {
           const result = editor
@@ -361,8 +371,17 @@ export const useEditorToolbar = ({
       icon: 'ListOrdered',
       title: 'Ordered List',
       onClick: () => {
-        const { state } = editor;
-        const { from, to } = state.selection;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          toast({
+            title: 'Multiple blocks found',
+            description: 'Please select one block to convert list.',
+            variant: 'danger',
+          });
+          return;
+        }
 
         if (editor.isActive('orderedList')) {
           const result = editor
@@ -407,8 +426,17 @@ export const useEditorToolbar = ({
       icon: 'ListChecks',
       title: 'To-do List',
       onClick: () => {
-        const { state } = editor;
-        const { from, to } = state.selection;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          toast({
+            title: 'Multiple blocks found',
+            description: 'Please select one block to convert list.',
+            variant: 'danger',
+          });
+          return;
+        }
 
         if (editor.isActive('taskList')) {
           const result = editor
@@ -635,8 +663,17 @@ export const useEditorToolbar = ({
       icon: 'ListChecks',
       title: 'To-do list',
       onClick: () => {
-        const { state } = editor;
-        const { from, to } = state.selection;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          toast({
+            title: 'Multiple blocks found',
+            description: 'Please select one block to convert list.',
+            variant: 'danger',
+          });
+          return;
+        }
 
         if (editor.isActive('taskList')) {
           const result = editor
@@ -1379,8 +1416,17 @@ export const TextFormatingPopup = ({
       description: 'Normal',
       icon: 'Type',
       command: (editor: Editor) => {
-        const { state } = editor;
-        const { from, to } = state.selection;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          toast({
+            title: 'Multiple blocks found',
+            description: 'Please select one block to convert list.',
+            variant: 'danger',
+          });
+          return;
+        }
 
         // If it's already a list type, convert to paragraphs
         if (
@@ -1561,8 +1607,17 @@ export const TextFormatingPopup = ({
       description: 'Bullet list',
       icon: 'List',
       command: (editor: Editor) => {
-        const { state } = editor;
-        const { from, to } = state.selection;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          toast({
+            title: 'Multiple blocks found',
+            description: 'Please select one block to convert list.',
+            variant: 'danger',
+          });
+          return;
+        }
 
         if (editor.isActive('bulletList')) {
           const result = editor
@@ -1608,8 +1663,17 @@ export const TextFormatingPopup = ({
       description: 'Ordered list',
       icon: 'ListOrdered',
       command: (editor: Editor) => {
-        const { state } = editor;
-        const { from, to } = state.selection;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          toast({
+            title: 'Multiple blocks found',
+            description: 'Please select one block to convert list.',
+            variant: 'danger',
+          });
+          return;
+        }
 
         if (editor.isActive('orderedList')) {
           const result = editor
@@ -1928,4 +1992,69 @@ export const TextColorPicker = ({ editor }: { editor: Editor }) => {
       }
     />
   );
+};
+
+export const checkActiveListsAndDBlocks = (editor: Editor) => {
+  const { state } = editor;
+  const { from, to } = state.selection;
+
+  const activeListTypes = ['bulletList', 'orderedList', 'taskList'].filter(
+    (type) => editor.isActive(type),
+  );
+
+  const activeDBlocks: number[] = [];
+  const activeListDBlocks: number[] = [];
+
+  // First pass: collect all dBlocks in selection
+  state.doc.nodesBetween(from, to, (node, pos) => {
+    if (node.type.name === 'dBlock') {
+      activeDBlocks.push(pos);
+      let containsList = false;
+      node.content.forEach((child) => {
+        if (
+          ['bulletList', 'orderedList', 'taskList'].includes(child.type.name)
+        ) {
+          containsList = true;
+        }
+      });
+      if (containsList) {
+        activeListDBlocks.push(pos);
+      }
+    }
+  });
+
+  // Check if there are multiple dBlocks with different content types
+  const hasMultipleContentTypes =
+    activeDBlocks.length > 1 &&
+    activeDBlocks.some((pos) => {
+      const node = state.doc.nodeAt(pos);
+      if (!node) return false;
+
+      // Check if this dBlock has a different content type than others
+      const hasListContent = node.content.content.some((child) =>
+        ['bulletList', 'orderedList', 'taskList'].includes(child.type.name),
+      );
+      const hasNonListContent = node.content.content.some(
+        (child) =>
+          !['bulletList', 'orderedList', 'taskList'].includes(child.type.name),
+      );
+
+      return (
+        (hasListContent && hasNonListContent) || // Mixed content in same dBlock
+        (hasListContent && activeListDBlocks.length < activeDBlocks.length)
+      ); // Some dBlocks don't have lists
+    });
+
+  return {
+    activeListTypes,
+    activeListDBlocks,
+    activeDBlocks,
+    from,
+    to,
+    state,
+    hasMultipleLists:
+      activeListTypes.length > 1 ||
+      (activeListDBlocks.length > 1 && activeListTypes.length === 1) ||
+      hasMultipleContentTypes,
+  };
 };
