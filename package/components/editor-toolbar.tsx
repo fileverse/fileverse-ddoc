@@ -140,16 +140,13 @@ const TiptapToolBar = ({
         return null;
     }
   };
-  const isMobile = useMediaQuery('(max-width: 640px)');
 
   return (
     <div className="w-full bg-transparent py-2 px-4 items-center h-9 flex justify-between relative">
       <div className="flex h-9 items-center gap-1 justify-center">
         {/* Export/Import Dropdown */}
         {isLoading ? (
-          <Skeleton
-            className={`${isMobile ? 'w-[100px]' : 'w-[36px]'} h-[36px] rounded-sm`}
-          />
+          <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />
         ) : (
           <DynamicDropdownV2
             key="Markdown"
@@ -236,9 +233,7 @@ const TiptapToolBar = ({
               return (
                 <Tooltip key={tool.title} text={tool.title}>
                   {isLoading ? (
-                    <Skeleton
-                      className={`${isMobile ? 'w-[100px]' : 'w-[36px]'} h-[36px] rounded-sm`}
-                    />
+                    <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />
                   ) : (
                     <IconButton
                       className="disabled:bg-transparent"
@@ -264,9 +259,7 @@ const TiptapToolBar = ({
 
         {/* Zoom Levels Dropdown */}
         {isLoading ? (
-          <Skeleton
-            className={`${isMobile ? 'w-[100px]' : 'w-[80px]'} h-[36px] rounded-sm`}
-          />
+          <Skeleton className={`w-[80px] h-[36px] rounded-sm`} />
         ) : (
           <DynamicDropdownV2
             key="zoom-levels"
@@ -311,9 +304,7 @@ const TiptapToolBar = ({
 
         {/* Font Family Dropdown */}
         {isLoading ? (
-          <Skeleton
-            className={`${isMobile ? 'w-[100px]' : 'w-[96px]'} h-[36px] rounded-sm`}
-          />
+          <Skeleton className={`w-[96px] h-[36px] rounded-sm`} />
         ) : (
           <DynamicDropdown
             key={IEditorTool.FONT_FAMILY}
@@ -354,9 +345,7 @@ const TiptapToolBar = ({
 
         {/* Heading Dropdown */}
         {isLoading ? (
-          <Skeleton
-            className={`${isMobile ? 'w-[100px]' : 'w-[112px]'} h-[36px] rounded-sm`}
-          />
+          <Skeleton className={`w-[112px] h-[36px] rounded-sm`} />
         ) : (
           <DynamicDropdown
             key={IEditorTool.HEADING}
@@ -418,9 +407,7 @@ const TiptapToolBar = ({
                   content={renderContent(tool)}
                 />
               ) : (
-                <Skeleton
-                  className={`${isMobile ? 'w-[100px]' : 'w-[36px]'} h-[36px] rounded-sm`}
-                />
+                <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />
               );
             }
 
@@ -455,9 +442,7 @@ const TiptapToolBar = ({
                     }
                   />
                 ) : (
-                  <Skeleton
-                    className={`${isMobile ? 'w-[100px]' : 'w-[36px]'} h-[36px] rounded-sm`}
-                  />
+                  <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />
                 );
               }
             }
@@ -472,9 +457,7 @@ const TiptapToolBar = ({
                 />
               </Tooltip>
             ) : (
-              <Skeleton
-                className={`${isMobile ? 'w-[100px]' : 'w-[36px]'} h-[36px] rounded-sm`}
-              />
+              <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />
             );
           })}
           <DynamicModal
@@ -505,9 +488,7 @@ const TiptapToolBar = ({
       <div className="flex items-center gap-1">
         <div className="w-[1px] h-4 vertical-divider mx-2"></div>
         {isLoading ? (
-          <Skeleton
-            className={`${isMobile ? 'w-[100px]' : 'w-[36px]'} h-[36px] rounded-sm`}
-          />
+          <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />
         ) : (
           <IconButton
             size="md"
