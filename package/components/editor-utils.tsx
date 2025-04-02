@@ -160,7 +160,7 @@ export const useEditorToolbar = ({
   onMarkdownImport,
   onPdfExport,
 }: {
-  editor: Editor;
+  editor: Editor | null;
   onError?: (errorString: string) => void;
   secureImageUploadUrl?: string;
   onMarkdownExport?: () => void;
@@ -256,7 +256,7 @@ export const useEditorToolbar = ({
       onClick: () => {
         editor?.chain().undo().run();
       },
-      isActive: editor?.can().undo(),
+      isActive: editor?.can().undo() || false,
     },
     {
       icon: 'Redo',
@@ -264,7 +264,7 @@ export const useEditorToolbar = ({
       onClick: () => {
         editor?.chain().redo().run();
       },
-      isActive: editor?.can().redo(),
+      isActive: editor?.can().redo() || false,
     },
     null,
   ];
@@ -286,25 +286,25 @@ export const useEditorToolbar = ({
       icon: 'Bold',
       title: 'Bold',
       onClick: () => editor?.chain().focus().toggleBold().run(),
-      isActive: editor?.isActive('bold'),
+      isActive: editor?.isActive('bold') || false,
     },
     {
       icon: 'Italic',
       title: 'Italic',
       onClick: () => editor?.chain().focus().toggleItalic().run(),
-      isActive: editor?.isActive('italic'),
+      isActive: editor?.isActive('italic') || false,
     },
     {
       icon: 'Underline',
       title: 'Underlined',
       onClick: () => editor?.chain().focus().toggleUnderline().run(),
-      isActive: editor?.isActive('underline'),
+      isActive: editor?.isActive('underline') || false,
     },
     {
       icon: 'Strikethrough',
       title: 'Strikethrough',
       onClick: () => editor?.chain().focus().toggleStrike().run(),
-      isActive: editor?.isActive('strike'),
+      isActive: editor?.isActive('strike') || false,
     },
     null,
     {
@@ -314,7 +314,7 @@ export const useEditorToolbar = ({
         editor?.chain().focus().toggleBulletList().run();
         setToolVisibility(IEditorTool.NONE);
       },
-      isActive: editor?.isActive('bulletList'),
+      isActive: editor?.isActive('bulletList') || false,
     },
     {
       icon: 'ListOrdered',
@@ -323,7 +323,7 @@ export const useEditorToolbar = ({
         editor?.chain().focus().toggleOrderedList().run();
         setToolVisibility(IEditorTool.NONE);
       },
-      isActive: editor?.isActive('orderedList'),
+      isActive: editor?.isActive('orderedList') || false,
     },
     {
       icon: 'ListChecks',
@@ -332,7 +332,7 @@ export const useEditorToolbar = ({
         editor?.chain().focus().toggleTaskList().run();
         setToolVisibility(IEditorTool.NONE);
       },
-      isActive: editor?.isActive('taskList'),
+      isActive: editor?.isActive('taskList') || false,
     },
     {
       icon: 'AlignLeft',
@@ -344,7 +344,7 @@ export const useEditorToolbar = ({
       icon: 'TextQuote',
       title: 'Quote',
       onClick: () => editor?.chain().focus().toggleBlockquote().run(),
-      isActive: editor?.isActive('blockquote'),
+      isActive: editor?.isActive('blockquote') || false,
     },
     null,
     {
@@ -352,26 +352,27 @@ export const useEditorToolbar = ({
       title: 'Superscript',
       onClick: () =>
         editor?.chain().focus().unsetSubscript().toggleSuperscript().run(),
-      isActive: editor?.isActive('superscript'),
+      isActive: editor?.isActive('superscript') || false,
     },
     {
       icon: 'Subscript',
       title: 'Subscript',
       onClick: () =>
         editor?.chain().focus().unsetSuperscript().toggleSubscript().run(),
-      isActive: editor?.isActive('subscript'),
+      isActive: editor?.isActive('subscript') || false,
     },
     null,
     {
       icon: 'Link',
       title: 'Link',
       onClick: () => setToolVisibility(IEditorTool.LINK),
-      isActive: editor?.isActive('link'),
+      isActive: editor?.isActive('link') || false,
     },
     {
       icon: 'ImagePlus',
       title: 'Upload Image',
       onClick: () => {
+        if (!editor) return;
         editor?.chain().focus().deleteRange(editor.state.selection).run();
         const input = document.createElement('input');
         input.type = 'file';
@@ -410,7 +411,7 @@ export const useEditorToolbar = ({
         }
         editor?.chain().focus().toggleCode().run();
       },
-      isActive: editor?.isActive('code'),
+      isActive: editor?.isActive('code') || false,
       group: 'More',
     },
     {
@@ -422,7 +423,7 @@ export const useEditorToolbar = ({
         }
         editor?.chain().focus().toggleCodeBlock().run();
       },
-      isActive: editor?.isActive('codeBlock'),
+      isActive: editor?.isActive('codeBlock') || false,
       group: 'More',
     },
     {
@@ -485,7 +486,7 @@ export const useEditorToolbar = ({
       onClick: () => {
         editor?.chain().undo().run();
       },
-      isActive: editor?.can().undo(),
+      isActive: editor?.can().undo() || false,
     },
     {
       icon: 'Redo',
@@ -493,7 +494,7 @@ export const useEditorToolbar = ({
       onClick: () => {
         editor?.chain().redo().run();
       },
-      isActive: editor?.can().redo(),
+      isActive: editor?.can().redo() || false,
     },
     null,
     {
@@ -529,6 +530,7 @@ export const useEditorToolbar = ({
       icon: 'ImagePlus',
       title: 'Add image',
       onClick: () => {
+        if (!editor) return;
         editor?.chain().focus().deleteRange(editor.state.selection).run();
         // upload image
         const input = document.createElement('input');
@@ -755,8 +757,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${editor.isActive('bulletList') ? 'color-bg-default-hover' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${
+            editor.isActive('bulletList') ? 'color-bg-default-hover' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="List" />
         </button>
@@ -768,8 +771,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${editor.isActive('orderedList') ? 'color-bg-default-hover' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${
+            editor.isActive('orderedList') ? 'color-bg-default-hover' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListOrdered" />
         </button>
@@ -781,8 +785,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${editor.isActive('taskList') ? 'color-bg-default-hover' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${
+            editor.isActive('taskList') ? 'color-bg-default-hover' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListChecks" />
         </button>
@@ -1048,7 +1053,7 @@ export const ScriptsPopup = ({
             className={cn(
               'flex items-center justify-between w-full px-2 py-1 text-body-sm',
               option.isActive() &&
-              'color-bg-brand hover:!bg-[#B6A02E] dark:text-[#363B3F]',
+                'color-bg-brand hover:!bg-[#B6A02E] dark:text-[#363B3F]',
             )}
           >
             <div className="flex items-center gap-2">
@@ -1071,7 +1076,7 @@ export const TextColor = ({
   setVisibility,
   elementRef,
 }: {
-  editor: Editor;
+  editor: Editor | null;
   elementRef: React.RefObject<HTMLDivElement>;
   setVisibility: Dispatch<SetStateAction<IEditorTool>>;
 }) => {
@@ -1083,6 +1088,7 @@ export const TextColor = ({
       {colors.map((color) => (
         <div
           onClick={() => {
+            if (!editor) return;
             editor.chain().focus().setColor(color.color).run();
             setVisibility(IEditorTool.NONE);
           }}
@@ -1096,9 +1102,9 @@ export const TextColor = ({
             name="Check"
             className={cn(
               'w-[14px] aspect-square',
-              editor.isActive('textStyle', {
+              editor?.isActive('textStyle', {
                 color: color.color,
-              })
+              }) || false
                 ? 'visible'
                 : 'invisible',
             )}
@@ -1108,6 +1114,7 @@ export const TextColor = ({
       <Button
         variant="ghost"
         onClick={() => {
+          if (!editor) return;
           editor.chain().focus().unsetColor().run();
           setVisibility(IEditorTool.NONE);
         }}
@@ -1211,7 +1218,7 @@ export const TextFormatingPopup = ({
   setIsOpen,
   setToolVisibility,
 }: {
-  editor: Editor;
+  editor: Editor | null;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
@@ -1224,9 +1231,9 @@ export const TextFormatingPopup = ({
       command: (editor: Editor) =>
         editor.chain().toggleNode('paragraph', 'paragraph').run(),
       isActive: () =>
-        editor.isActive('paragraph') &&
-        !editor.isActive('bulletList') &&
-        !editor.isActive('orderedList'),
+        editor?.isActive('paragraph') &&
+        !editor?.isActive('bulletList') &&
+        !editor?.isActive('orderedList'),
     },
     {
       title: 'Heading 1',
@@ -1235,7 +1242,7 @@ export const TextFormatingPopup = ({
       command: (editor: Editor) => {
         editor.chain().toggleHeading({ level: 1 }).run();
       },
-      isActive: () => editor.isActive('heading', { level: 1 }),
+      isActive: () => editor?.isActive('heading', { level: 1 }),
     },
     {
       title: 'Heading 2',
@@ -1244,7 +1251,7 @@ export const TextFormatingPopup = ({
       command: (editor: Editor) => {
         editor.chain().toggleHeading({ level: 2 }).run();
       },
-      isActive: () => editor.isActive('heading', { level: 2 }),
+      isActive: () => editor?.isActive('heading', { level: 2 }),
     },
     {
       title: 'Heading 3',
@@ -1253,7 +1260,7 @@ export const TextFormatingPopup = ({
       command: (editor: Editor) => {
         editor.chain().toggleHeading({ level: 3 }).run();
       },
-      isActive: () => editor.isActive('heading', { level: 3 }),
+      isActive: () => editor?.isActive('heading', { level: 3 }),
     },
   ];
 
@@ -1263,21 +1270,21 @@ export const TextFormatingPopup = ({
       description: 'Left',
       icon: 'AlignLeft',
       command: (editor: Editor) => editor.chain().setTextAlign('left').run(),
-      isActive: () => editor.isActive({ textAlign: 'left' }),
+      isActive: () => editor?.isActive({ textAlign: 'left' }),
     },
     {
       title: 'Center',
       description: 'Center',
       icon: 'AlignCenter',
       command: (editor: Editor) => editor.chain().setTextAlign('center').run(),
-      isActive: () => editor.isActive({ textAlign: 'center' }),
+      isActive: () => editor?.isActive({ textAlign: 'center' }),
     },
     {
       title: 'Right',
       description: 'Right',
       icon: 'AlignRight',
       command: (editor: Editor) => editor.chain().setTextAlign('right').run(),
-      isActive: () => editor.isActive({ textAlign: 'right' }),
+      isActive: () => editor?.isActive({ textAlign: 'right' }),
     },
   ];
 
@@ -1287,28 +1294,28 @@ export const TextFormatingPopup = ({
       description: 'Bold text',
       icon: 'Bold',
       command: (editor: Editor) => editor.chain().toggleBold().run(),
-      isActive: () => editor.isActive('bold'),
+      isActive: () => editor?.isActive('bold'),
     },
     {
       title: 'Italic',
       description: 'Italic text',
       icon: 'Italic',
       command: (editor: Editor) => editor.chain().toggleItalic().run(),
-      isActive: () => editor.isActive('italic'),
+      isActive: () => editor?.isActive('italic'),
     },
     {
       title: 'Underline',
       description: 'Underline text',
       icon: 'Underline',
       command: (editor: Editor) => editor.chain().toggleUnderline().run(),
-      isActive: () => editor.isActive('underline'),
+      isActive: () => editor?.isActive('underline'),
     },
     {
       title: 'Strikethrough',
       description: 'Strikethrough text',
       icon: 'Strikethrough',
       command: (editor: Editor) => editor.chain().toggleStrike().run(),
-      isActive: () => editor.isActive('strike'),
+      isActive: () => editor?.isActive('strike'),
     },
     {
       title: 'Superscript',
@@ -1316,7 +1323,7 @@ export const TextFormatingPopup = ({
       icon: 'Superscript',
       command: (editor: Editor) =>
         editor.chain().unsetSubscript().toggleSuperscript().run(),
-      isActive: () => editor.isActive('superscript'),
+      isActive: () => editor?.isActive('superscript'),
     },
     {
       title: 'Subscript',
@@ -1324,7 +1331,7 @@ export const TextFormatingPopup = ({
       icon: 'Subscript',
       command: (editor: Editor) =>
         editor.chain().unsetSuperscript().toggleSubscript().run(),
-      isActive: () => editor.isActive('subscript'),
+      isActive: () => editor?.isActive('subscript'),
     },
   ];
 
@@ -1334,7 +1341,7 @@ export const TextFormatingPopup = ({
       description: 'Code',
       icon: 'Code',
       command: (editor: Editor) => editor.chain().toggleCode().run(),
-      isActive: () => editor.isActive('code'),
+      isActive: () => editor?.isActive('code'),
     },
     {
       title: 'Link',
@@ -1348,7 +1355,7 @@ export const TextFormatingPopup = ({
       description: 'Quote',
       icon: 'TextQuote',
       command: (editor: Editor) => editor.chain().toggleBlockquote().run(),
-      isActive: () => editor.isActive('blockquote'),
+      isActive: () => editor?.isActive('blockquote'),
     },
   ];
 
@@ -1358,21 +1365,21 @@ export const TextFormatingPopup = ({
       description: 'Bullet list',
       icon: 'List',
       command: (editor: Editor) => editor.chain().toggleBulletList().run(),
-      isActive: () => editor.isActive('bulletList'),
+      isActive: () => editor?.isActive('bulletList'),
     },
     {
       title: 'Ordered List',
       description: 'Ordered list',
       icon: 'ListOrdered',
       command: (editor: Editor) => editor.chain().toggleOrderedList().run(),
-      isActive: () => editor.isActive('orderedList'),
+      isActive: () => editor?.isActive('orderedList'),
     },
     {
       title: 'Code Block',
       description: 'Code block',
       icon: 'Braces',
       command: (editor: Editor) => editor.chain().toggleCodeBlock().run(),
-      isActive: () => editor.isActive('codeBlock'),
+      isActive: () => editor?.isActive('codeBlock'),
     },
   ];
 
@@ -1394,7 +1401,7 @@ export const TextFormatingPopup = ({
           <div className="flex justify-start sm:justify-center items-center gap-1">
             {headings.map((heading) => (
               <button
-                onClick={() => heading.command(editor)}
+                onClick={() => editor && heading.command(editor)}
                 key={heading.title}
                 className={cn(
                   'flex w-fit items-center font-medium space-x-2 rounded p-2 text-center text-sm color-text-default transition',
@@ -1413,7 +1420,7 @@ export const TextFormatingPopup = ({
             <div className="mobile-util-btn-group rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
               {textAlignments.map((textAlignment) => (
                 <button
-                  onClick={() => textAlignment.command(editor)}
+                  onClick={() => editor && textAlignment.command(editor)}
                   key={textAlignment.title}
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
@@ -1432,7 +1439,7 @@ export const TextFormatingPopup = ({
             <div className="mobile-util-btn-group rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
               {others.map((other) => (
                 <button
-                  onClick={() => other.command(editor)}
+                  onClick={() => editor && other.command(editor)}
                   key={other.title}
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
@@ -1452,7 +1459,7 @@ export const TextFormatingPopup = ({
             <div className="mobile-util-btn-group rounded flex gap-1 justify-evenly p-1 w-full sm:w-fit ">
               {textStyles.slice(0, 4).map((textStyle) => (
                 <button
-                  onClick={() => textStyle.command(editor)}
+                  onClick={() => editor && textStyle.command(editor)}
                   key={textStyle.title}
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
@@ -1470,7 +1477,7 @@ export const TextFormatingPopup = ({
             <div className="mobile-util-btn-group rounded flex gap-1 justify-evenly p-1 w-full sm:w-fit ">
               {textStyles.slice(4).map((textStyle) => (
                 <button
-                  onClick={() => textStyle.command(editor)}
+                  onClick={() => editor && textStyle.command(editor)}
                   key={textStyle.title}
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
@@ -1489,7 +1496,7 @@ export const TextFormatingPopup = ({
           <div className="mobile-util-btn-group rounded flex gap-1 justify-center self-center w-fit p-1">
             {listStyles.map((listStyle) => (
               <button
-                onClick={() => listStyle.command(editor)}
+                onClick={() => editor && listStyle.command(editor)}
                 key={listStyle.title}
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
@@ -1527,7 +1534,7 @@ export const TextFormatingPopup = ({
                   <button
                     className="mb-1 drop-shadow flex justify-center items-center cursor-pointer transition"
                     onClick={() => {
-                      editor.chain().unsetColor().run();
+                      editor && editor.chain().unsetColor().run();
                     }}
                   >
                     <LucideIcon name="Ban" className="w-6 h-6" />
@@ -1542,7 +1549,7 @@ export const TextFormatingPopup = ({
                   >
                     <button
                       onClick={() => {
-                        editor.chain().setColor(color.color).run();
+                        editor && editor.chain().setColor(color.color).run();
                       }}
                       key={color.color}
                       className={cn(
@@ -1554,7 +1561,7 @@ export const TextFormatingPopup = ({
                         name="Check"
                         className={cn(
                           'w-[14px] aspect-square',
-                          editor.isActive('textStyle', {
+                          editor?.isActive('textStyle', {
                             color: color.color,
                           })
                             ? 'visible'

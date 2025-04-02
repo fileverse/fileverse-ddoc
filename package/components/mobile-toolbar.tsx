@@ -8,6 +8,7 @@ import {
   Drawer,
   DrawerTrigger,
   DynamicModal,
+  Skeleton,
 } from '@fileverse/ui';
 import ToolbarButton from '../common/toolbar-button';
 
@@ -18,13 +19,15 @@ const MobileToolbar = ({
   isNavbarVisible,
   setIsNavbarVisible,
   secureImageUploadUrl,
+  isLoading,
 }: {
-  editor: Editor;
+  editor: Editor | null;
   onError?: (errorString: string) => void;
   isKeyboardVisible: boolean;
   isNavbarVisible: boolean;
   setIsNavbarVisible: React.Dispatch<React.SetStateAction<boolean>>;
   secureImageUploadUrl?: string;
+  isLoading: boolean;
 }) => {
   const { toolVisibility, setToolVisibility, bottomToolbar } = useEditorToolbar(
     {
@@ -39,6 +42,7 @@ const MobileToolbar = ({
   const [isUrlValid, setIsUrlValid] = useState(true);
 
   const saveLink = () => {
+    if (!editor) return;
     if (
       (url === null || url === '') &&
       (linkText === '' || linkText === null)
@@ -96,6 +100,7 @@ const MobileToolbar = ({
   };
 
   const getSelectedLink = () => {
+    if (!editor) return { text: '', url: '' };
     const { from, to } = editor.state.selection;
     const selectedText = editor.state.doc.textBetween(from, to);
     const linkMark = editor.getAttributes('link');
@@ -149,20 +154,30 @@ const MobileToolbar = ({
               <div key={tool.title} className="flex items-center">
                 {tool.title === 'Text formating' ? (
                   <DrawerTrigger asChild>
-                    <ToolbarButton
-                      onClick={tool.onClick}
-                      isActive={tool.isActive}
-                      icon={tool.icon}
-                    />
+                    {isLoading ? (
+                      <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />
+                    ) : (
+                      <ToolbarButton
+                        onClick={tool.onClick}
+                        isActive={tool.isActive}
+                        icon={tool.icon}
+                      />
+                    )}
                   </DrawerTrigger>
                 ) : tool.title === 'Text color' ? (
                   <DrawerTrigger asChild>
-                    <ToolbarButton
-                      onClick={tool.onClick}
-                      icon={tool.icon}
-                      isActive={false}
-                    />
+                    {isLoading ? (
+                      <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />
+                    ) : (
+                      <ToolbarButton
+                        onClick={tool.onClick}
+                        icon={tool.icon}
+                        isActive={false}
+                      />
+                    )}
                   </DrawerTrigger>
+                ) : isLoading ? (
+                  <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />
                 ) : (
                   <ToolbarButton
                     onClick={tool.onClick}
