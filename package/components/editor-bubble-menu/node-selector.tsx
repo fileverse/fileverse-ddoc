@@ -139,8 +139,17 @@ export const convertToList = ({
       listContent = node;
       return false;
     }
-    if (node.type.name === 'paragraph') {
-      paragraphs.push(node);
+    if (node.type.name === 'paragraph' || node.type.name === 'heading') {
+      // Convert heading to paragraph if it's a heading
+      if (node.type.name === 'heading') {
+        const paragraph = state.schema.nodes.paragraph.create(
+          null,
+          node.content,
+        );
+        paragraphs.push(paragraph);
+      } else {
+        paragraphs.push(node);
+      }
     }
   });
 
