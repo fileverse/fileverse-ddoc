@@ -312,7 +312,7 @@ const TiptapToolBar = ({
         {/* Font Family Dropdown */}
         {isLoading ? (
           <Skeleton
-            className={`${isMobile ? 'w-[100px]' : 'w-[96x]'} h-[36px] rounded-sm`}
+            className={`${isMobile ? 'w-[100px]' : 'w-[96px]'} h-[36px] rounded-sm`}
           />
         ) : (
           <DynamicDropdown
