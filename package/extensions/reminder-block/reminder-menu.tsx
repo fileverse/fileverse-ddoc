@@ -37,7 +37,6 @@ const QUICK_OPTIONS = [
 ];
 
 export const ReminderMenu = ({
-  editor,
   isOpen,
   onClose,
   onCreateReminder,
@@ -123,6 +122,7 @@ export const ReminderMenu = ({
         value={title}
         onChange={(e) => setTitle(e.target.value)}
         className=""
+        autoFocus
       />
 
       <div className="flex flex-col gap-2">
@@ -198,6 +198,7 @@ export const ReminderMenu = ({
           <Button
             variant="ghost"
             size="md"
+            disabled
             className="!min-w-fit rounded-l-none rounded-r-md"
             onClick={() => setIs24hFormat(!is24hFormat)}
           >

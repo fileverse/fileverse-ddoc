@@ -1,5 +1,3 @@
-import { Editor } from '@tiptap/react';
-
 export interface Reminder {
   id: string;
   title: string;
@@ -16,7 +14,6 @@ export interface ReminderBlockOptions {
 }
 
 export interface ReminderMenuProps {
-  editor: Editor;
   isOpen: boolean;
   onClose: () => void;
   onCreateReminder: (reminder: Reminder) => void;

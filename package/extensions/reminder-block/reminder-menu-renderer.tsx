@@ -6,10 +6,20 @@ import { Reminder, ReminderBlockOptions } from './types';
 
 export function showReminderMenu(editor: Editor, range: Range) {
   let popup: TippyInstance[] = [];
+  let timeout: ReturnType<typeof setTimeout>;
+
+  // Delete the slash command text immediately when showing the menu
+  editor.chain().focus().deleteRange(range).run();
 
   const getReferenceClientRect = () => {
     const node = editor.view.domAtPos(range.from).node as HTMLElement;
     return node.getBoundingClientRect();
+  };
+
+  const destroyPopup = () => {
+    clearTimeout(timeout);
+    popup[0]?.destroy();
+    component.destroy();
   };
 
   // Create the React component first
@@ -17,15 +27,11 @@ export function showReminderMenu(editor: Editor, range: Range) {
     props: {
       editor,
       isOpen: true,
-      onClose: () => {
-        popup[0]?.destroy();
-        component.destroy();
-      },
+      onClose: destroyPopup,
       onCreateReminder: (reminder: Reminder) => {
         editor
           .chain()
           .focus()
-          .deleteRange(range)
           .setReminderBlock({
             id: reminder.id,
             reminder: reminder,
@@ -40,8 +46,7 @@ export function showReminderMenu(editor: Editor, range: Range) {
           extensionOptions.onReminderCreate(reminder);
         }
 
-        popup[0]?.destroy();
-        component.destroy();
+        destroyPopup();
       },
     },
     editor,
@@ -57,6 +62,18 @@ export function showReminderMenu(editor: Editor, range: Range) {
     trigger: 'manual',
     placement: 'bottom-start',
     animation: 'shift-toward-subtle',
+    onMount: () => {
+      // Focus the input after Tippy mounts the component
+      timeout = setTimeout(() => {
+        const input = component.element.querySelector('input');
+        if (input) {
+          input.focus();
+        }
+      }, 0);
+    },
+    onDestroy: () => {
+      clearTimeout(timeout);
+    },
     popperOptions: {
       strategy: 'fixed',
       modifiers: [

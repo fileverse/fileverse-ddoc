@@ -19,12 +19,16 @@ import { fromUint8Array, toUint8Array } from 'js-base64';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { isJSONString } from './utils/isJsonString';
 import { zoomService } from './zoom-service';
-import { sanitizeContent } from './utils/sanitize-content';
+import {
+  sanitizeContent,
+  filterReminderBlocks,
+} from './utils/sanitize-content';
 import { CommentExtension as Comment } from './extensions/comment';
 import { handleContentPrint, handlePrint } from './utils/handle-print';
 import { Table } from './extensions/supercharged-table/extension-table';
 import { isBlackOrWhiteShade } from './utils/color-utils';
 import { ReminderBlock } from './extensions/reminder-block/reminder-block';
+import { RemoveRemindersExtension } from './extensions/reminder-block/remove-reminders';
 
 const usercolors = [
   '#30bced',
@@ -116,12 +120,16 @@ export const useDdocEditor = ({
         if (commentId) setTimeout(() => focusCommentWithActiveId(commentId));
       },
     }),
-    ReminderBlock.configure({
-      onReminderCreate: onReminderCreate,
-      onReminderDelete: onReminderDelete,
-      onReminderUpdate: onReminderUpdate,
-      reminders: reminders,
-    }),
+    ...(isPreviewMode
+      ? [RemoveRemindersExtension]
+      : [
+          ReminderBlock.configure({
+            onReminderCreate: onReminderCreate,
+            onReminderDelete: onReminderDelete,
+            onReminderUpdate: onReminderUpdate,
+            reminders: reminders,
+          }),
+        ]),
     Collaboration.configure({
       document: ydoc,
     }),
@@ -237,6 +245,9 @@ export const useDdocEditor = ({
       autofocus: unFocused ? false : 'start',
       shouldRerenderOnTransaction: true,
       immediatelyRender: false,
+      content: isPreviewMode
+        ? filterReminderBlocks(initialContent as JSONContent)
+        : initialContent,
     },
     [extensions, isPresentationMode],
   );
@@ -607,6 +618,43 @@ export const useDdocEditor = ({
       return () => clearTimeout(timeoutId);
     }
   }, [editor, initialContent, isContentLoading]);
+
+  // Store the original content when entering preview mode
+  const originalContentRef = useRef<JSONContent | null>(null);
+  const previousModeRef = useRef<boolean>(false);
+
+  useEffect(() => {
+    if (!editor) return;
+
+    // Only act if the mode has actually changed
+    if (isPreviewMode !== previousModeRef.current) {
+      if (isPreviewMode) {
+        // Store current content before filtering
+        originalContentRef.current = editor.getJSON();
+
+        // Apply the filtered content
+        const filteredContent = filterReminderBlocks(
+          originalContentRef.current,
+        );
+        editor.commands.setContent(filteredContent, false, {
+          preserveWhitespace: true,
+        });
+      } else if (originalContentRef.current) {
+        // Restore the original content when leaving preview mode
+        editor.commands.setContent(originalContentRef.current, false, {
+          preserveWhitespace: true,
+        });
+      }
+      // Update the previous mode reference
+      previousModeRef.current = isPreviewMode ?? false;
+    }
+  }, [editor, isPreviewMode]);
+
+  // Reset stored content when initial content changes
+  useEffect(() => {
+    originalContentRef.current = null;
+    previousModeRef.current = false;
+  }, [initialContent]);
 
   return {
     editor,

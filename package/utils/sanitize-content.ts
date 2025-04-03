@@ -54,3 +54,29 @@ export const sanitizeContent = ({
 
   return sanitizedContent;
 };
+
+export const filterReminderBlocks = (content: JSONContent): JSONContent => {
+  if (!content) return content;
+
+  const filterNode = (node: JSONContent): JSONContent | null => {
+    if (node.type === 'reminderBlock') {
+      return null;
+    }
+
+    if (node.content) {
+      const filteredContent = node.content
+        .map((child) => filterNode(child))
+        .filter(Boolean);
+
+      return {
+        ...node,
+        content: filteredContent as JSONContent[],
+      };
+    }
+
+    return node;
+  };
+
+  const filteredContent = filterNode(content);
+  return filteredContent || { type: 'doc', content: [] };
+};
