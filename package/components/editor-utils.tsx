@@ -25,7 +25,6 @@ import {
   LucideIcon,
   TextAreaFieldV2,
   TextField,
-  toast,
   Tooltip,
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
@@ -320,11 +319,6 @@ export const useEditorToolbar = ({
           checkActiveListsAndDBlocks(editor);
 
         if (hasMultipleLists) {
-          toast({
-            title: 'Multiple blocks found',
-            description: 'Please select one block to convert list.',
-            variant: 'danger',
-          });
           return;
         }
 
@@ -375,11 +369,6 @@ export const useEditorToolbar = ({
           checkActiveListsAndDBlocks(editor);
 
         if (hasMultipleLists) {
-          toast({
-            title: 'Multiple blocks found',
-            description: 'Please select one block to convert list.',
-            variant: 'danger',
-          });
           return;
         }
 
@@ -430,11 +419,6 @@ export const useEditorToolbar = ({
           checkActiveListsAndDBlocks(editor);
 
         if (hasMultipleLists) {
-          toast({
-            title: 'Multiple blocks found',
-            description: 'Please select one block to convert list.',
-            variant: 'danger',
-          });
           return;
         }
 
@@ -667,11 +651,6 @@ export const useEditorToolbar = ({
           checkActiveListsAndDBlocks(editor);
 
         if (hasMultipleLists) {
-          toast({
-            title: 'Multiple blocks found',
-            description: 'Please select one block to convert list.',
-            variant: 'danger',
-          });
           return;
         }
 
@@ -1420,11 +1399,6 @@ export const TextFormatingPopup = ({
           checkActiveListsAndDBlocks(editor);
 
         if (hasMultipleLists) {
-          toast({
-            title: 'Multiple blocks found',
-            description: 'Please select one block to convert list.',
-            variant: 'danger',
-          });
           return;
         }
 
@@ -1611,11 +1585,6 @@ export const TextFormatingPopup = ({
           checkActiveListsAndDBlocks(editor);
 
         if (hasMultipleLists) {
-          toast({
-            title: 'Multiple blocks found',
-            description: 'Please select one block to convert list.',
-            variant: 'danger',
-          });
           return;
         }
 
@@ -1667,11 +1636,6 @@ export const TextFormatingPopup = ({
           checkActiveListsAndDBlocks(editor);
 
         if (hasMultipleLists) {
-          toast({
-            title: 'Multiple blocks found',
-            description: 'Please select one block to convert list.',
-            variant: 'danger',
-          });
           return;
         }
 

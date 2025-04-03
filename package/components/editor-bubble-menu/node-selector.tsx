@@ -1,7 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import cn from 'classnames';
-import { DynamicDropdown, LucideIcon, toast } from '@fileverse/ui';
+import { DynamicDropdown, LucideIcon } from '@fileverse/ui';
 import { BubbleMenuItem, NodeSelectorProps } from './types';
 import { EditorState, Transaction } from 'prosemirror-state';
 import { Dispatch } from '@tiptap/react';
@@ -242,11 +242,6 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
           checkActiveListsAndDBlocks(editor);
 
         if (hasMultipleLists) {
-          toast({
-            title: 'Multiple blocks found',
-            description: 'Please select one block to convert list.',
-            variant: 'danger',
-          });
           return;
         }
 
@@ -308,11 +303,6 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
           checkActiveListsAndDBlocks(editor);
 
         if (hasMultipleLists) {
-          toast({
-            title: 'Multiple blocks found',
-            description: 'Please select one block to convert list.',
-            variant: 'danger',
-          });
           return;
         }
 
@@ -358,11 +348,6 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
           checkActiveListsAndDBlocks(editor);
 
         if (hasMultipleLists) {
-          toast({
-            title: 'Multiple blocks found',
-            description: 'Please select one block to convert list.',
-            variant: 'danger',
-          });
           return;
         }
 
@@ -407,11 +392,6 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
           checkActiveListsAndDBlocks(editor);
 
         if (hasMultipleLists) {
-          toast({
-            title: 'Multiple blocks found',
-            description: 'Please select one block to convert list.',
-            variant: 'danger',
-          });
           return;
         }
 

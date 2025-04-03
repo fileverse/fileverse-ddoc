@@ -2,6 +2,8 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import { DBlockNodeView } from './dblock-node-view';
+import { convertListToParagraphs } from '../../components/editor-bubble-menu/node-selector';
+
 export interface DBlockOptions {
   HTMLAttributes: Record<string, any>;
   secureImageUploadUrl?: string;
@@ -305,6 +307,22 @@ export const DBlock = Node.create<DBlockOptions>({
                 content.type.name === 'orderedList' ||
                 content.type.name === 'taskList',
             );
+
+            // Check if this is the first list in the first dBlock
+            const isFirstDBlock = from <= 4;
+            const isFirstList = isFirstItem && isFirstDBlock;
+
+            // If we're at the first list in the first dBlock, convert to paragraphs
+            if (isFirstList && from === 4) {
+              return editor
+                .chain()
+                .focus()
+                .command(({ tr, dispatch, state }) =>
+                  convertListToParagraphs({ tr, dispatch, state, from, to }),
+                )
+                .focus('start')
+                .run();
+            }
 
             // Helper function to find previous table
             const isPreviousNodeTable = () => {
