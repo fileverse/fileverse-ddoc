@@ -323,6 +323,10 @@ function App() {
         isLoading={false}
         connectViaUsername={handleConnectViaUsername}
         isDDocOwner={true}
+        onReminderCreate={() => { }}
+        onReminderDelete={() => { }}
+        onReminderUpdate={() => { }}
+        reminders={[]}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

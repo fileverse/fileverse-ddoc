@@ -4,6 +4,7 @@ import { EditorProps } from '@tiptap/pm/view';
 import { Editor } from '@tiptap/react';
 import React, { SetStateAction } from 'react';
 import { IComment } from './extensions/comment';
+import { ReminderBlockOptions } from './extensions/reminder-block/types';
 
 export const DdocEditorProps: EditorProps = {
   attributes: {
@@ -32,7 +33,7 @@ export interface CommentAccountProps {
   connectViaUsername?: (username: string) => Promise<void>;
   isDDocOwner?: boolean;
 }
-export interface DdocProps extends CommentAccountProps {
+export interface DdocProps extends CommentAccountProps, ReminderBlockOptions {
   isCollabDocumentPublished?: boolean;
   disableInlineComment?: boolean;
   //Comments V2 Props

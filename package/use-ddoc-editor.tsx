@@ -24,6 +24,7 @@ import { CommentExtension as Comment } from './extensions/comment';
 import { handleContentPrint, handlePrint } from './utils/handle-print';
 import { Table } from './extensions/supercharged-table/extension-table';
 import { isBlackOrWhiteShade } from './utils/color-utils';
+import { ReminderBlock } from './extensions/reminder-block/reminder-block';
 
 const usercolors = [
   '#30bced',
@@ -61,6 +62,10 @@ export const useDdocEditor = ({
   isPresentationMode,
   proExtensions,
   metadataProxyUrl,
+  reminders,
+  onReminderCreate,
+  onReminderDelete,
+  onReminderUpdate,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
 
@@ -110,6 +115,12 @@ export const useDdocEditor = ({
 
         if (commentId) setTimeout(() => focusCommentWithActiveId(commentId));
       },
+    }),
+    ReminderBlock.configure({
+      onReminderCreate: onReminderCreate,
+      onReminderDelete: onReminderDelete,
+      onReminderUpdate: onReminderUpdate,
+      reminders: reminders,
     }),
     Collaboration.configure({
       document: ydoc,
