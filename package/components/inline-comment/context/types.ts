@@ -2,6 +2,7 @@ import { Editor } from '@tiptap/react';
 import { IComment } from '../../../extensions/comment';
 import { SetStateAction } from 'react';
 import { CommentAccountProps } from '../../../types';
+import { EnsStatus } from '../types';
 
 export interface CommentContextType extends CommentAccountProps {
   comments: IComment[];
@@ -69,6 +70,11 @@ export interface CommentContextType extends CommentAccountProps {
       handleClick: boolean;
     }>
   >;
+  getEnsStatus: (
+    walletAddress: string,
+    setEnsStatus: React.Dispatch<React.SetStateAction<EnsStatus>>,
+  ) => void;
+  ensCache: EnsCache;
 }
 
 export interface CommentProviderProps extends CommentAccountProps {
@@ -96,3 +102,10 @@ export interface CommentUsernameProps extends CommentAccountProps {
   setUsername?: React.Dispatch<SetStateAction<string>>;
   isNavbarVisible?: boolean;
 }
+
+export interface EnsEntry {
+  name: string;
+  isEns: boolean;
+}
+
+export type EnsCache = Record<string, EnsEntry>;
