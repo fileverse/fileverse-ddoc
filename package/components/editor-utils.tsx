@@ -32,6 +32,10 @@ import { colors } from '../utils/colors';
 import { validateImageExtension } from '../utils/check-image-type';
 import { handleContentPrint } from '../utils/handle-print';
 import { useComments } from '../components/inline-comment/context/comment-context';
+import {
+  convertListToParagraphs,
+  convertToList,
+} from './editor-bubble-menu/node-selector';
 
 interface IEditorToolElement {
   icon: any;
@@ -311,8 +315,49 @@ export const useEditorToolbar = ({
       icon: 'List',
       title: 'List',
       onClick: () => {
-        editor?.chain().focus().toggleBulletList().run();
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          return;
+        }
+
+        if (editor.isActive('bulletList')) {
+          const result = editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .setTextSelection({ from, to })
+            .focus()
+            .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
+        }
+
+        const result = editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'bulletList',
+                itemType: 'listItem',
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
         setToolVisibility(IEditorTool.NONE);
+        return result;
       },
       isActive: editor?.isActive('bulletList'),
     },
@@ -320,8 +365,49 @@ export const useEditorToolbar = ({
       icon: 'ListOrdered',
       title: 'Ordered List',
       onClick: () => {
-        editor?.chain().focus().toggleOrderedList().run();
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          return;
+        }
+
+        if (editor.isActive('orderedList')) {
+          const result = editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .setTextSelection({ from, to })
+            .focus()
+            .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
+        }
+
+        const result = editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'orderedList',
+                itemType: 'listItem',
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
         setToolVisibility(IEditorTool.NONE);
+        return result;
       },
       isActive: editor?.isActive('orderedList'),
     },
@@ -329,8 +415,50 @@ export const useEditorToolbar = ({
       icon: 'ListChecks',
       title: 'To-do List',
       onClick: () => {
-        editor?.chain().focus().toggleTaskList().run();
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          return;
+        }
+
+        if (editor.isActive('taskList')) {
+          const result = editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .setTextSelection({ from, to })
+            .focus()
+            .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
+        }
+
+        const result = editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'taskList',
+                itemType: 'taskItem',
+                hasAttrs: true,
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
         setToolVisibility(IEditorTool.NONE);
+        return result;
       },
       isActive: editor?.isActive('taskList'),
     },
@@ -519,8 +647,50 @@ export const useEditorToolbar = ({
       icon: 'ListChecks',
       title: 'To-do list',
       onClick: () => {
-        editor?.chain().focus().toggleTaskList().run();
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          return;
+        }
+
+        if (editor.isActive('taskList')) {
+          const result = editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .setTextSelection({ from, to })
+            .focus()
+            .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
+        }
+
+        const result = editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'taskList',
+                itemType: 'taskItem',
+                hasAttrs: true,
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
         setToolVisibility(IEditorTool.NONE);
+        return result;
       },
       isActive: false,
     },
@@ -755,8 +925,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${editor.isActive('bulletList') ? 'color-bg-default-hover' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${
+            editor.isActive('bulletList') ? 'color-bg-default-hover' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="List" />
         </button>
@@ -768,8 +939,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${editor.isActive('orderedList') ? 'color-bg-default-hover' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${
+            editor.isActive('orderedList') ? 'color-bg-default-hover' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListOrdered" />
         </button>
@@ -781,8 +953,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${editor.isActive('taskList') ? 'color-bg-default-hover' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${
+            editor.isActive('taskList') ? 'color-bg-default-hover' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListChecks" />
         </button>
@@ -1048,7 +1221,7 @@ export const ScriptsPopup = ({
             className={cn(
               'flex items-center justify-between w-full px-2 py-1 text-body-sm',
               option.isActive() &&
-              'color-bg-brand hover:!bg-[#B6A02E] dark:text-[#363B3F]',
+                'color-bg-brand hover:!bg-[#B6A02E] dark:text-[#363B3F]',
             )}
           >
             <div className="flex items-center gap-2">
@@ -1221,8 +1394,46 @@ export const TextFormatingPopup = ({
       title: 'Text',
       description: 'Normal',
       icon: 'Type',
-      command: (editor: Editor) =>
-        editor.chain().toggleNode('paragraph', 'paragraph').run(),
+      command: (editor: Editor) => {
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          return;
+        }
+
+        // If it's already a list type, convert to paragraphs
+        if (
+          editor.isActive('bulletList') ||
+          editor.isActive('orderedList') ||
+          editor.isActive('taskList')
+        ) {
+          const result = editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .setTextSelection({ from, to })
+            .focus()
+            .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
+        }
+
+        // Otherwise use the default paragraph toggle
+        const result = editor
+          .chain()
+          .focus()
+          .toggleNode('paragraph', 'paragraph')
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
+        setToolVisibility(IEditorTool.NONE);
+        return result;
+      },
       isActive: () =>
         editor.isActive('paragraph') &&
         !editor.isActive('bulletList') &&
@@ -1234,6 +1445,7 @@ export const TextFormatingPopup = ({
       icon: 'Heading1',
       command: (editor: Editor) => {
         editor.chain().toggleHeading({ level: 1 }).run();
+        setToolVisibility(IEditorTool.NONE);
       },
       isActive: () => editor.isActive('heading', { level: 1 }),
     },
@@ -1243,6 +1455,7 @@ export const TextFormatingPopup = ({
       icon: 'Heading2',
       command: (editor: Editor) => {
         editor.chain().toggleHeading({ level: 2 }).run();
+        setToolVisibility(IEditorTool.NONE);
       },
       isActive: () => editor.isActive('heading', { level: 2 }),
     },
@@ -1252,6 +1465,7 @@ export const TextFormatingPopup = ({
       icon: 'Heading3',
       command: (editor: Editor) => {
         editor.chain().toggleHeading({ level: 3 }).run();
+        setToolVisibility(IEditorTool.NONE);
       },
       isActive: () => editor.isActive('heading', { level: 3 }),
     },
@@ -1262,21 +1476,30 @@ export const TextFormatingPopup = ({
       title: 'Left',
       description: 'Left',
       icon: 'AlignLeft',
-      command: (editor: Editor) => editor.chain().setTextAlign('left').run(),
+      command: (editor: Editor) => {
+        editor.chain().setTextAlign('left').focus().run();
+        setToolVisibility(IEditorTool.NONE);
+      },
       isActive: () => editor.isActive({ textAlign: 'left' }),
     },
     {
       title: 'Center',
       description: 'Center',
       icon: 'AlignCenter',
-      command: (editor: Editor) => editor.chain().setTextAlign('center').run(),
+      command: (editor: Editor) => {
+        editor.chain().setTextAlign('center').focus().run();
+        setToolVisibility(IEditorTool.NONE);
+      },
       isActive: () => editor.isActive({ textAlign: 'center' }),
     },
     {
       title: 'Right',
       description: 'Right',
       icon: 'AlignRight',
-      command: (editor: Editor) => editor.chain().setTextAlign('right').run(),
+      command: (editor: Editor) => {
+        editor.chain().setTextAlign('right').focus().run();
+        setToolVisibility(IEditorTool.NONE);
+      },
       isActive: () => editor.isActive({ textAlign: 'right' }),
     },
   ];
@@ -1357,14 +1580,102 @@ export const TextFormatingPopup = ({
       title: 'Bullet List',
       description: 'Bullet list',
       icon: 'List',
-      command: (editor: Editor) => editor.chain().toggleBulletList().run(),
+      command: (editor: Editor) => {
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          return;
+        }
+
+        if (editor.isActive('bulletList')) {
+          const result = editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .setTextSelection({ from, to })
+            .focus()
+            .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
+        }
+
+        const result = editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'bulletList',
+                itemType: 'listItem',
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
+        setToolVisibility(IEditorTool.NONE);
+        return result;
+      },
       isActive: () => editor.isActive('bulletList'),
     },
     {
       title: 'Ordered List',
       description: 'Ordered list',
       icon: 'ListOrdered',
-      command: (editor: Editor) => editor.chain().toggleOrderedList().run(),
+      command: (editor: Editor) => {
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          return;
+        }
+
+        if (editor.isActive('orderedList')) {
+          const result = editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .setTextSelection({ from, to })
+            .focus()
+            .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
+        }
+
+        const result = editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'orderedList',
+                itemType: 'listItem',
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
+        setToolVisibility(IEditorTool.NONE);
+        return result;
+      },
       isActive: () => editor.isActive('orderedList'),
     },
     {
@@ -1645,4 +1956,69 @@ export const TextColorPicker = ({ editor }: { editor: Editor }) => {
       }
     />
   );
+};
+
+export const checkActiveListsAndDBlocks = (editor: Editor) => {
+  const { state } = editor;
+  const { from, to } = state.selection;
+
+  const activeListTypes = ['bulletList', 'orderedList', 'taskList'].filter(
+    (type) => editor.isActive(type),
+  );
+
+  const activeDBlocks: number[] = [];
+  const activeListDBlocks: number[] = [];
+
+  // First pass: collect all dBlocks in selection
+  state.doc.nodesBetween(from, to, (node, pos) => {
+    if (node.type.name === 'dBlock') {
+      activeDBlocks.push(pos);
+      let containsList = false;
+      node.content.forEach((child) => {
+        if (
+          ['bulletList', 'orderedList', 'taskList'].includes(child.type.name)
+        ) {
+          containsList = true;
+        }
+      });
+      if (containsList) {
+        activeListDBlocks.push(pos);
+      }
+    }
+  });
+
+  // Check if there are multiple dBlocks with different content types
+  const hasMultipleContentTypes =
+    activeDBlocks.length > 1 &&
+    activeDBlocks.some((pos) => {
+      const node = state.doc.nodeAt(pos);
+      if (!node) return false;
+
+      // Check if this dBlock has a different content type than others
+      const hasListContent = node.content.content.some((child) =>
+        ['bulletList', 'orderedList', 'taskList'].includes(child.type.name),
+      );
+      const hasNonListContent = node.content.content.some(
+        (child) =>
+          !['bulletList', 'orderedList', 'taskList'].includes(child.type.name),
+      );
+
+      return (
+        (hasListContent && hasNonListContent) || // Mixed content in same dBlock
+        (hasListContent && activeListDBlocks.length < activeDBlocks.length)
+      ); // Some dBlocks don't have lists
+    });
+
+  return {
+    activeListTypes,
+    activeListDBlocks,
+    activeDBlocks,
+    from,
+    to,
+    state,
+    hasMultipleLists:
+      activeListTypes.length > 1 ||
+      (activeListDBlocks.length > 1 && activeListTypes.length === 1) ||
+      hasMultipleContentTypes,
+  };
 };
