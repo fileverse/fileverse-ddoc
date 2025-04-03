@@ -232,6 +232,33 @@ turndownService.addRule('strikethrough', {
   },
 });
 
+//to remove emoji in markdown and slides
+turndownService.addRule('removeEmojiSpanWithWhitespace', {
+  filter: (node) => {
+    return (
+      node.nodeName === 'SPAN' &&
+      (node as HTMLElement).getAttribute('data-type') === 'emoji'
+    );
+  },
+  replacement: (_content, node) => {
+    const prev = node.previousSibling;
+    const next = node.nextSibling;
+
+    // Remove trailing whitespace from previous text node
+    if (prev && prev.nodeType === Node.TEXT_NODE && prev.textContent) {
+      prev.textContent = prev.textContent.trim();
+    }
+
+    // Remove leading whitespace from next text node
+    if (next && next.nodeType === Node.TEXT_NODE && next.textContent) {
+      next.textContent = next.textContent.trim();
+    }
+
+    // Remove the emoji span and its content
+    return '';
+  },
+});
+
 // Define the command type
 declare module '@tiptap/core' {
   interface Commands {
