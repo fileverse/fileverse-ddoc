@@ -2,7 +2,7 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import { DBlockNodeView } from './dblock-node-view';
-import { convertListToParagraphs } from '../../components/editor-bubble-menu/node-selector';
+import { TextSelection } from '@tiptap/pm/state';
 
 export interface DBlockOptions {
   HTMLAttributes: Record<string, any>;
@@ -15,6 +15,22 @@ declare module '@tiptap/core' {
       setDBlock: (position?: number) => ReturnType;
     };
   }
+}
+
+interface ListContent {
+  type: string;
+  content?: any[];
+  attrs?: Record<string, any>;
+}
+
+interface DBlockContent {
+  type: 'dBlock';
+  content: ListContent[];
+}
+
+interface NestedList {
+  type: string;
+  content: any[];
 }
 
 export const DBlock = Node.create<DBlockOptions>({
@@ -312,128 +328,132 @@ export const DBlock = Node.create<DBlockOptions>({
             const isFirstDBlock = from <= 4;
             const isFirstList = isFirstItem && isFirstDBlock;
 
-            // If we're at the first list in the first dBlock, convert to paragraphs
-            if (isFirstList && from === 4) {
-              return editor
-                .chain()
-                .focus()
-                .command(({ tr, dispatch, state }) =>
-                  convertListToParagraphs({ tr, dispatch, state, from, to }),
-                )
-                .focus('start')
-                .run();
-            }
-
-            // Helper function to find previous table
-            const isPreviousNodeTable = () => {
-              // Get the position of the list
-              const listPos = $head.before($head.depth - 2);
-              let tablePos = -1;
-
-              // Find the last table before our list position
-              doc.nodesBetween(0, listPos, (node, pos) => {
-                if (node.type.name === 'table') {
-                  tablePos = pos;
-                }
-                return true;
-              });
-
-              // Check if the table is directly before our list
-              if (tablePos === -1) return false;
-
-              const tableNode = doc.nodeAt(tablePos);
-              return tablePos + (tableNode?.nodeSize ?? 0) + 2 === listPos;
-            };
-
             // Helper function to restructure the list with nested content
             const restructureWithNestedContent = () => {
+              // Get the list node and its content
               const listNode = $head.node($head.depth - 2);
               const listPos = $head.before($head.depth - 2);
               const listEnd = listPos + listNode.nodeSize;
 
-              // Extract JSON representation
-              const listJSON = listNode.toJSON();
-              let newContent = [];
+              // Process remaining list items
+              if (listNode.content && listNode.content.size > 0) {
+                const firstItem = listNode.content.firstChild;
+                const remainingContent: DBlockContent[] = [];
 
-              if (listJSON.content && listJSON.content.length > 0) {
-                const firstItem = listJSON.content[0];
+                // If first item has nested lists, lift them up
+                if (firstItem) {
+                  const firstItemContent = firstItem.content?.toJSON() || [];
 
-                // Check for nested lists in the first item
-                if (firstItem.content) {
-                  const nestedLists = firstItem.content.filter((content: any) =>
-                    ['bulletList', 'orderedList', 'taskList'].includes(
-                      content.type,
-                    ),
+                  // Extract text content from the first item
+                  const nonListContent = firstItemContent.filter(
+                    (content: any) =>
+                      !['bulletList', 'orderedList', 'taskList'].includes(
+                        content.type,
+                      ),
                   );
 
-                  if (nestedLists.length > 0) {
-                    // Get items from nested list
-                    const nestedItems = nestedLists[0].content || [];
+                  // Create new dBlock with first item's text content
+                  remainingContent.push({
+                    type: 'dBlock',
+                    content:
+                      nonListContent.length > 0
+                        ? nonListContent
+                        : [
+                            {
+                              type: 'paragraph',
+                            },
+                          ],
+                  });
 
-                    // Combine: any non-list content from first item (if not empty) + nested items + remaining items
-                    const nonListContent = firstItem.content.filter(
-                      (content: any) =>
-                        !['bulletList', 'orderedList', 'taskList'].includes(
-                          content.type,
-                        ),
-                    );
+                  const nestedLists = firstItemContent.filter(
+                    (content: NestedList) =>
+                      ['bulletList', 'orderedList', 'taskList'].includes(
+                        content.type,
+                      ),
+                  );
 
-                    // Only include non-list content if it's not empty
-                    const hasNonEmptyContent = nonListContent.some(
-                      (content: any) => {
-                        if (content.type === 'paragraph') {
-                          return content.content && content.content.length > 0;
-                        }
-                        return true;
-                      },
-                    );
+                  if (nestedLists && nestedLists.length > 0) {
+                    // Add lifted nested lists
+                    nestedLists.forEach((nestedList: NestedList) => {
+                      remainingContent.push({
+                        type: 'dBlock',
+                        content: [nestedList],
+                      });
+                    });
+                  }
 
-                    // Build new content
-                    if (hasNonEmptyContent) {
-                      newContent.push({
-                        type: firstItem.type,
-                        content: nonListContent,
+                  // Add remaining list items if they exist
+                  if (listNode.content.size > 1) {
+                    const remainingListContent = listNode.content
+                      .toJSON()
+                      .slice(1);
+                    // Only add if there are actual remaining items
+                    if (remainingListContent.length > 0) {
+                      remainingContent.push({
+                        type: 'dBlock',
+                        content: [
+                          {
+                            type: listNode.type.name,
+                            content: remainingListContent,
+                          },
+                        ],
                       });
                     }
-
-                    // Add all nested items
-                    newContent = [...newContent, ...nestedItems];
-
-                    // Add remaining items
-                    if (listJSON.content.length > 1) {
-                      newContent = [
-                        ...newContent,
-                        ...listJSON.content.slice(1),
-                      ];
-                    }
-
-                    // Create new list structure
-                    const newList = {
-                      type: listJSON.type,
-                      attrs: listJSON.attrs,
-                      content: newContent,
-                    };
-
-                    // Replace the list with restructured version
-                    return editor
-                      .chain()
-                      .command(({ tr, dispatch }) => {
-                        if (dispatch) {
-                          tr.replaceWith(
-                            listPos,
-                            listEnd,
-                            editor.schema.nodeFromJSON(newList),
-                          );
-                        }
-                        return true;
-                      })
-                      .focus()
-                      .run();
                   }
                 }
+
+                // Replace the content and move cursor to new dBlock
+                return editor
+                  .chain()
+                  .command(({ tr, dispatch }) => {
+                    if (dispatch) {
+                      // Replace the list with remaining content
+                      tr.replaceWith(
+                        listPos,
+                        listEnd,
+                        editor.schema.nodeFromJSON({
+                          type: 'doc',
+                          content: remainingContent,
+                        }),
+                      );
+
+                      // Move cursor to end of first paragraph
+                      const paragraphPos = listPos + 4;
+                      tr.setSelection(
+                        TextSelection.create(tr.doc, paragraphPos),
+                      );
+                    }
+                    return false;
+                  })
+                  .run();
               }
-              return false;
             };
+
+            // Helper function to find previous table
+            // const isPreviousNodeTable = () => {
+            //   // Get the position of the list
+            //   const listPos = $head.before($head.depth - 2);
+            //   let tablePos = -1;
+
+            //   // Find the last table before our list position
+            //   doc.nodesBetween(0, listPos, (node, pos) => {
+            //     if (node.type.name === 'table') {
+            //       tablePos = pos;
+            //     }
+            //     return true;
+            //   });
+
+            //   // Check if the table is directly before our list
+            //   if (tablePos === -1) return false;
+
+            //   const tableNode = doc.nodeAt(tablePos);
+            //   return tablePos + (tableNode?.nodeSize ?? 0) + 2 === listPos;
+            // };
+
+            // If we're at the first list in the first dBlock, create empty dBlock and lift nested lists
+            if (isFirstList && from === 4) {
+              return restructureWithNestedContent();
+            }
 
             // CASE 1: Empty node with nested list
             if (isNodeEmpty && hasNestedList) {
@@ -445,7 +465,7 @@ export const DBlock = Node.create<DBlockOptions>({
               if (isOnlyItem) {
                 // If it's the only item in the list and we're near a dBlock
                 if (isNearestDBlock) {
-                  return editor.commands.joinTextblockBackward();
+                  return restructureWithNestedContent();
                 }
                 // Just lift the list item to remove the list
                 return editor
@@ -480,15 +500,14 @@ export const DBlock = Node.create<DBlockOptions>({
             // CASE 4: At start of non-empty item
             if (isAtStartOfNode) {
               if (isFirstItem) {
-                // Check for table before the list
-                if (isPreviousNodeTable()) {
-                  // Prevent joining with table
-                  return true;
-                }
+                // // Check for table before the list
+                // if (isPreviousNodeTable()) {
+                //   // Prevent joining with table
+                //   return true;
+                // }
 
                 if (isNearestDBlock) {
-                  // Join with previous block if possible
-                  return editor.commands.joinTextblockBackward();
+                  return restructureWithNestedContent();
                 }
               }
 
