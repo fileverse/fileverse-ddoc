@@ -427,6 +427,8 @@ export const DBlock = Node.create<DBlockOptions>({
                   })
                   .run();
               }
+
+              return false;
             };
 
             // Helper function to find previous table
