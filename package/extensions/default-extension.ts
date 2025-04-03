@@ -154,7 +154,7 @@ export const defaultExtensions = (
   }),
   ListItem.configure({
     HTMLAttributes: {
-      class: 'leading-normal',
+      class: 'leading-normal w-full',
     },
   }),
   DropCursor.configure({
