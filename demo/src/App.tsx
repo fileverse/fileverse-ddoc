@@ -320,8 +320,8 @@ function App() {
           TableOfContents,
           getHierarchicalIndexes,
         }}
-        extensions={{
-          ReminderBlock: ReminderBlock.configure({
+        extensions={[
+          ReminderBlock.configure({
             onReminderCreate: async (reminder: Reminder) => {
               console.log(reminder);
             },
@@ -333,7 +333,7 @@ function App() {
             },
             reminders: [],
           }),
-        }}
+        ]}
         isConnected={isConnected}
         connectViaWallet={async () => { }}
         isLoading={false}
