@@ -18,6 +18,8 @@ import {
   TableOfContents,
   getHierarchicalIndexes,
 } from '@tiptap-pro/extension-table-of-contents';
+import { ReminderBlock } from '../../package/extensions/reminder-block/reminder-block';
+import { Reminder } from '../../package/extensions/reminder-block/types';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -318,15 +320,25 @@ function App() {
           TableOfContents,
           getHierarchicalIndexes,
         }}
+        extensions={{
+          ReminderBlock: ReminderBlock.configure({
+            onReminderCreate: async (reminder: Reminder) => {
+              console.log(reminder);
+            },
+            onReminderDelete: async (reminderId: string) => {
+              console.log(reminderId);
+            },
+            onReminderUpdate: async (reminder: Reminder) => {
+              console.log(reminder);
+            },
+            reminders: [],
+          }),
+        }}
         isConnected={isConnected}
         connectViaWallet={async () => { }}
         isLoading={false}
         connectViaUsername={handleConnectViaUsername}
         isDDocOwner={true}
-        onReminderCreate={() => { }}
-        onReminderDelete={() => { }}
-        onReminderUpdate={() => { }}
-        reminders={[]}
         walletAddress={username}
       />
       <Toaster

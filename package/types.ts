@@ -1,10 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { TagType } from '@fileverse/ui';
 import { Extension, JSONContent } from '@tiptap/core';
 import { EditorProps } from '@tiptap/pm/view';
 import { Editor } from '@tiptap/react';
 import React, { SetStateAction } from 'react';
 import { IComment } from './extensions/comment';
-import { ReminderBlockOptions } from './extensions/reminder-block/types';
 
 export const DdocEditorProps: EditorProps = {
   attributes: {
@@ -33,7 +33,7 @@ export interface CommentAccountProps {
   connectViaUsername?: (username: string) => Promise<void>;
   isDDocOwner?: boolean;
 }
-export interface DdocProps extends CommentAccountProps, ReminderBlockOptions {
+export interface DdocProps extends CommentAccountProps {
   isCollabDocumentPublished?: boolean;
   disableInlineComment?: boolean;
   //Comments V2 Props
@@ -49,8 +49,8 @@ export interface DdocProps extends CommentAccountProps, ReminderBlockOptions {
   //Comments V2 Props
   showTOC?: boolean;
   setShowTOC?: React.Dispatch<SetStateAction<boolean>>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   proExtensions?: Record<string, Extension | any>;
+  extensions?: Record<string, Extension | any>;
   selectedTags?: TagType[];
   setSelectedTags?: React.Dispatch<SetStateAction<TagType[]>>;
   enableCollaboration?: boolean | undefined;

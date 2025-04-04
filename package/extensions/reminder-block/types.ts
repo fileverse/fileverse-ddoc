@@ -8,9 +8,9 @@ export interface Reminder {
 }
 
 export interface ReminderBlockOptions {
-  onReminderCreate?: (reminder: Reminder) => void;
-  onReminderDelete?: (reminderId: string) => void;
-  onReminderUpdate?: (reminder: Reminder) => void;
+  onReminderCreate?: (reminder: Reminder) => Promise<void>;
+  onReminderDelete?: (reminderId: string) => Promise<void>;
+  onReminderUpdate?: (reminder: Reminder) => Promise<void>;
   reminders?: Reminder[];
 }
 
