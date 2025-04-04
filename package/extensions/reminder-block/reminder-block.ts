@@ -66,7 +66,7 @@ export const ReminderBlock = Node.create<ReminderBlockOptions>({
   addCommands() {
     return {
       setReminderBlock:
-        attributes =>
+        (attributes) =>
         ({ commands }) => {
           return commands.insertContent({
             type: this.name,

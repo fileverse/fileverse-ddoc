@@ -327,6 +327,7 @@ function App() {
         onReminderDelete={() => { }}
         onReminderUpdate={() => { }}
         reminders={[]}
+        walletAddress={username}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

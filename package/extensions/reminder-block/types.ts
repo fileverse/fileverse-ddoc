@@ -4,6 +4,7 @@ export interface Reminder {
   timestamp: number;
   createdAt: number;
   status: 'pending' | 'completed' | 'cancelled';
+  walletAddress?: string;
 }
 
 export interface ReminderBlockOptions {

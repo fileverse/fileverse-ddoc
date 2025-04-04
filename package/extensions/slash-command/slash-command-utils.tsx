@@ -11,10 +11,12 @@ export const getSuggestionItems = ({
   query,
   onError,
   secureImageUploadUrl,
+  walletAddress,
 }: {
   query: string;
   onError?: (errorString: string) => void;
   secureImageUploadUrl?: string;
+  walletAddress?: string;
 }) => {
   return [
     {
@@ -117,6 +119,7 @@ export const getSuggestionItems = ({
         showReminderMenu(editor, range);
         return true;
       },
+      disabled: !walletAddress,
     },
     {
       title: 'Page breaker',

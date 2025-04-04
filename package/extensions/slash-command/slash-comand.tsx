@@ -135,26 +135,28 @@ const CommandList = ({
       ref={commandListContainer}
       className="z-50 h-auto max-h-[330px] w-72 overflow-y-auto scroll-smooth rounded-lg border color-border-default color-bg-default p-2 shadow-elevation-3 transition-all"
     >
-      {items.map((item: CommandItemProps, index: number) => {
-        return (
-          <button
-            key={index}
-            className={cn(
-              'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm hover:color-bg-default-hover border border-transparent transition-all',
-              index === selectedIndex && 'color-bg-default-hover'
-            )}
-            onClick={() => selectItem(index)}
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-md border color-border-default color-bg-default">
-              {item.icon}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium">{item.title}</p>
-              <p className="text-xs text-neutral-500">{item.description}</p>
-            </div>
-          </button>
-        );
-      })}
+      {items
+        .filter((item: CommandItemProps) => !item.disabled)
+        .map((item: CommandItemProps, index: number) => {
+          return (
+            <button
+              key={index}
+              className={cn(
+                'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm hover:color-bg-default-hover border border-transparent transition-all',
+                index === selectedIndex && 'color-bg-default-hover',
+              )}
+              onClick={() => selectItem(index)}
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-md border color-border-default color-bg-default">
+                {item.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium">{item.title}</p>
+                <p className="text-xs text-neutral-500">{item.description}</p>
+              </div>
+            </button>
+          );
+        })}
     </div>
   ) : null;
 };
@@ -209,9 +211,15 @@ const renderItems = () => {
 const SlashCommand = (
   onError?: (errorString: string) => void,
   secureImageUploadUrl?: string,
+  walletAddress?: string,
 ) => {
   const items = ({ query }: { query: string }) => {
-    return getSuggestionItems({ query, onError, secureImageUploadUrl });
+    return getSuggestionItems({
+      query,
+      onError,
+      secureImageUploadUrl,
+      walletAddress,
+    });
   };
   return Command.configure({
     suggestion: {

@@ -10,6 +10,8 @@ export const ReminderNodeView = ({
 }: NodeViewProps) => {
   const reminder = node.attrs.reminder;
 
+  const isPreviewMode = editor.isEditable === false;
+
   const handleDelete = useCallback(() => {
     const extensionOptions = editor.extensionManager.extensions.find(
       (ext) => ext.name === 'reminderBlock',
@@ -28,7 +30,10 @@ export const ReminderNodeView = ({
   return (
     <NodeViewWrapper
       as="span"
-      className="inline-block align-baseline !font-normal"
+      className={cn(
+        'inline-block align-baseline !font-normal',
+        isPreviewMode && 'hidden',
+      )}
       contentEditable={false}
     >
       <DynamicDropdown
