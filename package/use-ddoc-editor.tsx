@@ -61,6 +61,7 @@ export const useDdocEditor = ({
   isPresentationMode,
   proExtensions,
   metadataProxyUrl,
+  extensions: externalExtensions,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
 
@@ -98,7 +99,11 @@ export const useDdocEditor = ({
       secureImageUploadUrl,
       metadataProxyUrl,
     ) as AnyExtension[]),
-    SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
+    SlashCommand(
+      (error: string) => onError?.(error),
+      secureImageUploadUrl,
+      walletAddress as string,
+    ),
     customTextInputRules,
     PageBreak,
     Comment.configure({
@@ -114,6 +119,7 @@ export const useDdocEditor = ({
     Collaboration.configure({
       document: ydoc,
     }),
+    ...(externalExtensions ? Object.values(externalExtensions) : []),
   ]);
 
   useEffect(() => {
@@ -259,7 +265,7 @@ export const useDdocEditor = ({
     }
   }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => {});
+  const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
