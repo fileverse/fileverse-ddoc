@@ -469,20 +469,11 @@ export const DBlock = Node.create<DBlockOptions>({
                 if (isNearestDBlock) {
                   return restructureWithNestedContent();
                 }
-                // Just lift the list item to remove the list
-                return editor
-                  .chain()
-                  .liftListItem(isTaskList ? 'taskItem' : 'listItem')
-                  .focus()
-                  .run();
+
+                return false;
               }
 
-              // Not the only item, delete this item and reorder the list
-              return editor
-                .chain()
-                .deleteNode(isTaskList ? 'taskItem' : 'listItem')
-                .focus()
-                .run();
+              return false;
             }
 
             // CASE 3: Empty non-first item
@@ -492,11 +483,7 @@ export const DBlock = Node.create<DBlockOptions>({
               }
 
               // Just join text backward for empty non-first items
-              return editor
-                .chain()
-                .liftListItem(isTaskList ? 'taskItem' : 'listItem')
-                .focus()
-                .run();
+              return false;
             }
 
             // CASE 4: At start of non-empty item
