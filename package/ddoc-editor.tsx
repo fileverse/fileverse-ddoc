@@ -479,7 +479,7 @@ const DdocEditor = forwardRef(
               {!editor || isContentLoading ? (
                 <div className={`${!isMobile ? 'ml-20' : 'ml-10 mt-10'}`}>
                   <Skeleton
-                    className={`${isMobile ? 'w-[200px]' : 'w-[400px]'}  h-[36px] rounded-sm`}
+                    className={`${isMobile ? 'w-[200px]' : 'w-[400px]'}  h-[32px] rounded-sm`}
                   />
                 </div>
               ) : (
