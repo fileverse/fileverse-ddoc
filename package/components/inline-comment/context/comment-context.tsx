@@ -1,15 +1,9 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, {
-  createContext,
-  useContext,
-  useRef,
-  useState,
-  useEffect,
-} from 'react';
+import React, { createContext, useContext, useRef, useState } from 'react';
 import { IComment } from '../../../extensions/comment';
 import uuid from 'react-uuid';
 import { useOnClickOutside } from 'usehooks-ts';
-import { CommentContextType, CommentProviderProps } from './types';
+import { CommentContextType, CommentProviderProps, EnsCache } from './types';
 import { getAddressName } from '../../../utils/getAddressName';
 import { EnsStatus } from '../types';
 
@@ -57,6 +51,82 @@ export const CommentProvider = ({
     inlineCommentText: '',
     handleClick: false,
   });
+
+  const cachedData = localStorage.getItem('ensCache');
+
+  const [ensCache, setEnsCache] = useState<EnsCache>(
+    cachedData ? JSON.parse(cachedData) : {},
+  );
+
+  const [inProgressFetch, setInProgressFetch] = useState<string[]>([]);
+
+  const getEnsStatus = async (
+    walletAddress: string,
+    setEnsStatus: React.Dispatch<React.SetStateAction<EnsStatus>>,
+  ) => {
+    // Check if the wallet address is already being fetched
+    if (inProgressFetch.includes(walletAddress)) {
+      setEnsStatus({
+        name: walletAddress || 'Anonymous',
+        isEns: false,
+      });
+      return;
+    }
+
+    // Check if the wallet address is already cached
+    if (walletAddress && ensCache[walletAddress]) {
+      setEnsStatus({
+        ...ensCache[walletAddress],
+      });
+      return;
+    }
+
+    // Handle case where wallet address is not provided or ensResolutionUrl is missing
+    if (!walletAddress || !ensResolutionUrl) {
+      setEnsStatus({
+        name: walletAddress || 'Anonymous',
+        isEns: false,
+      });
+      return;
+    }
+
+    try {
+      // Mark the wallet address as being fetched
+      setInProgressFetch((prev) => [...prev, walletAddress]);
+
+      // Fetch the ENS name
+      const { name, isEns, resolved } = await getAddressName(
+        walletAddress,
+        ensResolutionUrl,
+      );
+
+      // Update the cache state only if Ens is resolved successfully
+      if (resolved) {
+        setEnsCache((prevCache) => {
+          const newCache = {
+            ...prevCache,
+            [walletAddress]: { name, isEns },
+          };
+          localStorage.setItem('ensCache', JSON.stringify(newCache));
+          return newCache;
+        });
+      }
+
+      // Remove the walletAddress from the in-progress fetch list
+      setInProgressFetch((prev) =>
+        prev.filter((item) => item !== walletAddress),
+      );
+
+      // Update the ENS status with the latest cached value
+      setEnsStatus({ name, isEns });
+    } catch (error) {
+      console.error('Error fetching ENS name:', error);
+      setEnsStatus({
+        name: walletAddress || 'Anonymous',
+        isEns: false,
+      });
+    }
+  };
 
   useOnClickOutside([portalRef, buttonRef, dropdownRef], () => {
     if (isCommentOpen) {
@@ -420,6 +490,8 @@ export const CommentProvider = ({
         setCommentDrawerOpen,
         inlineCommentData,
         setInlineCommentData,
+        getEnsStatus,
+        ensCache,
       }}
     >
       {children}
@@ -433,86 +505,4 @@ export const useComments = () => {
     return {} as CommentContextType;
   }
   return context;
-};
-
-// Add this cache outside the hook to persist between renders
-const ensCache: Record<string, { name: string; isEns: boolean }> = {};
-
-export const useEnsName = (username?: string) => {
-  const { ensResolutionUrl } = useComments();
-  const [ensStatus, setEnsStatus] = useState<EnsStatus>({
-    name: ensCache[username || '']?.name || username || '',
-    isEns: ensCache[username || '']?.isEns || false,
-    isLoading: !ensCache[username || ''],
-  });
-
-  useEffect(() => {
-    let isMounted = true;
-
-    const fetchEnsName = async () => {
-      // If we have a cached result, use it immediately
-      if (username && ensCache[username]) {
-        if (isMounted) {
-          setEnsStatus({
-            ...ensCache[username],
-            isLoading: false,
-          });
-        }
-        return;
-      }
-
-      if (!username || !ensResolutionUrl) {
-        if (isMounted) {
-          setEnsStatus({
-            name: username || 'Anonymous',
-            isEns: false,
-            isLoading: false,
-          });
-        }
-        return;
-      }
-
-      try {
-        const { name, isEns } = await getAddressName(
-          username,
-          ensResolutionUrl,
-        );
-
-        // Cache the result
-        ensCache[username] = { name: isEns ? name : username, isEns };
-
-        if (!isMounted) return;
-
-        setEnsStatus({
-          ...ensCache[username],
-          isLoading: false,
-        });
-      } catch (error) {
-        console.error('Error fetching ENS name:', error);
-        if (isMounted) {
-          setEnsStatus({
-            name: username,
-            isEns: false,
-            isLoading: false,
-          });
-        }
-      }
-    };
-
-    // Only set loading true if we don't have a cached result
-    if (!ensCache[username || '']) {
-      setEnsStatus((prev) => ({
-        ...prev,
-        isLoading: true,
-      }));
-    }
-
-    fetchEnsName();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [username, ensResolutionUrl]);
-
-  return ensStatus;
 };

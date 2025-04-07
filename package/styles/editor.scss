@@ -222,6 +222,10 @@
   [data-type='columns'] {
     @apply grid grid-cols-1 md:grid-cols-[repeat(auto-fit,_minmax(100px,_1fr))] gap-2 mt-3 mb-3;
 
+    & > [data-type='column'] > div > div {
+      @apply px-2;
+    }
+
     &.layout-align-right {
       > *:first-child {
         @apply col-span-1;
@@ -670,6 +674,12 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
         gap: 0.5rem;
         margin-right: 0.5em;
         user-select: none;
+      }
+    }
+
+    [data-type='horizontalRule'] {
+      &.ProseMirror-selectednode {
+        @apply bg-transparent;
       }
     }
   }
