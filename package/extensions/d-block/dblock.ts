@@ -7,6 +7,7 @@ import { TextSelection } from '@tiptap/pm/state';
 export interface DBlockOptions {
   HTMLAttributes: Record<string, any>;
   secureImageUploadUrl?: string;
+  onCopyHeadingLink?: (link: string) => void;
 }
 
 declare module '@tiptap/core' {
@@ -52,6 +53,7 @@ export const DBlock = Node.create<DBlockOptions>({
     return {
       HTMLAttributes: {},
       secureImageUploadUrl: '',
+      onCopyHeadingLink: undefined,
     };
   },
 
@@ -78,7 +80,7 @@ export const DBlock = Node.create<DBlockOptions>({
   addCommands() {
     return {
       setDBlock:
-        position =>
+        (position) =>
         ({ state, chain }) => {
           const {
             selection: { from },
@@ -118,7 +120,7 @@ export const DBlock = Node.create<DBlockOptions>({
         const atTheStartOfText = from + 4;
 
         // Check if inside table
-        const isInsideTable = nodePaths.some(path => path.includes('table'));
+        const isInsideTable = nodePaths.some((path) => path.includes('table'));
 
         const isListOrTaskItem =
           parent?.type.name === 'listItem' || parent?.type.name === 'taskItem';

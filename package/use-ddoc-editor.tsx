@@ -61,6 +61,7 @@ export const useDdocEditor = ({
   isPresentationMode,
   proExtensions,
   metadataProxyUrl,
+  onCopyHeadingLink,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
 
@@ -97,6 +98,7 @@ export const useDdocEditor = ({
       (error: string) => onError?.(error),
       secureImageUploadUrl,
       metadataProxyUrl,
+      onCopyHeadingLink,
     ) as AnyExtension[]),
     SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
     customTextInputRules,
