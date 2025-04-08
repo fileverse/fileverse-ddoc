@@ -36,6 +36,7 @@ import {
   convertListToParagraphs,
   convertToList,
 } from './editor-bubble-menu/node-selector';
+import { searchForSecureImageNodeAndEmbedImageContent } from '../extensions/mardown-paste-handler';
 
 interface IEditorToolElement {
   icon: any;
@@ -573,8 +574,20 @@ export const useEditorToolbar = ({
       title: 'Export PDF',
       onClick: () => {
         if (editor) {
-          const closeAndPrint = () => {
-            handleContentPrint(editor.getHTML());
+          const closeAndPrint = async () => {
+            const originalDoc = editor.state.doc;
+            const docWithEmbedImageContent =
+              await searchForSecureImageNodeAndEmbedImageContent(originalDoc);
+
+            const temporalEditor = new Editor({
+              extensions: editor.extensionManager.extensions.filter(
+                (e) => e.name !== 'collaboration',
+              ),
+              content: docWithEmbedImageContent.toJSON(),
+            });
+
+            const inlineHtml = temporalEditor.getHTML();
+            handleContentPrint(inlineHtml);
           };
           setFileExportsOpen(false);
           setTimeout(closeAndPrint, 200);
