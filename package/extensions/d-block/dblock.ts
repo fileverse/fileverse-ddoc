@@ -111,17 +111,39 @@ export const DBlock = Node.create<DBlockOptions>({
           doc,
         } = editor.state;
 
-        console.log($head.node($head.depth - 1));
-
         const parent = $head.node($head.depth - 1);
-        // List logic
-        const isList =
+        const currentNode = $head.node($head.depth);
+        const isListOrTaskItem =
           parent?.type.name === 'listItem' || parent?.type.name === 'taskItem';
-        const isAtTheEndOfList =
-          parent.children[parent.children.length - 1].textContent === '';
+        const isTaskList = parent?.type.name === 'taskList';
         const headString = $head.toString();
         const nodePaths = headString.split('/');
         const atTheStartOfText = from + 4;
+
+        const isThatFromNestedItem = () => {
+          // Get the nesting depth by counting listItem/taskItem ancestors
+          let depth = 0;
+          let currentDepth = $head.depth;
+
+          while (currentDepth > 0) {
+            const node = $head.node(currentDepth - 1);
+            if (
+              node?.type.name === 'listItem' ||
+              node?.type.name === 'taskItem'
+            ) {
+              depth++;
+            }
+            currentDepth--;
+          }
+
+          return (
+            currentNode.type.name === 'paragraph' &&
+            parent?.type.name === 'listItem' &&
+            currentNode.textContent === '' &&
+            depth >= 2 // Only apply for nested items level 2 and deeper
+          );
+        };
+
         // Check if inside table
         const isInsideTable = nodePaths.some((path) => path.includes('table'));
         if (parent?.type.name !== 'dBlock') {
@@ -129,21 +151,70 @@ export const DBlock = Node.create<DBlockOptions>({
           if (isInsideTable) {
             return false;
           }
-          if (isList && isAtTheEndOfList && parent.nodeSize !== 4) {
-            return editor
-              .chain()
-              .insertContent({
-                type: 'dBlock',
-                content: [
-                  {
-                    type: 'paragraph',
-                  },
-                ],
-              })
-              .focus(atTheStartOfText)
-              .run();
+          const isCurrentItemEmpty =
+            currentNode.textContent === '' &&
+            currentNode.type.name === 'paragraph' &&
+            isListOrTaskItem;
+
+          const grandParent = $head.node($head.depth - 2);
+
+          const isLastItemOfList =
+            $head.index($head.depth - 2) === grandParent.childCount - 1;
+          const isInList = ['bulletList', 'orderedList', 'taskList'].includes(
+            $head.node($head.depth - 2).type.name,
+          );
+
+          const isLastItemOfListWithoutContent = isLastItemOfList && isInList;
+          const isMiddleItemOfListWithoutContent =
+            !isLastItemOfList && isInList;
+          const isMultipleListItems =
+            $head.node($head.depth - 2).childCount > 1;
+
+          if (isCurrentItemEmpty && isMultipleListItems) {
+            if (isLastItemOfListWithoutContent) {
+              // Handle the case when it's the last empty item in the list
+              if (isThatFromNestedItem()) {
+                return false;
+              } else {
+                return editor
+                  .chain()
+                  .insertContentAt(from, {
+                    type: 'dBlock',
+                    content: [
+                      {
+                        type: 'paragraph',
+                      },
+                    ],
+                  })
+                  .focus()
+                  .run();
+              }
+            } else if (isMiddleItemOfListWithoutContent) {
+              // Handle the case when it's an empty middle item in the list
+              return editor
+                .chain()
+                .deleteCurrentNode()
+                .insertContentAt(from, {
+                  type: isTaskList ? 'taskItem' : 'listItem',
+                  content: [
+                    {
+                      type: 'paragraph',
+                    },
+                  ],
+                })
+                .focus(atTheStartOfText)
+                .run();
+            } else {
+              // Handle the case for the first empty item in the list
+              return editor
+                .chain()
+                .liftListItem(isTaskList ? 'taskItem' : 'listItem')
+                .focus()
+                .run();
+            }
+          } else {
+            return false;
           }
-          return false;
         }
 
         let currentActiveNodeTo = -1;
