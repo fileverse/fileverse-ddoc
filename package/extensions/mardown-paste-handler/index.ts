@@ -3,10 +3,20 @@ import { Editor, Extension, InputRule } from '@tiptap/core';
 import MarkdownIt from 'markdown-it';
 import { Plugin } from 'prosemirror-state';
 import DOMPurify from 'dompurify';
-import { DOMParser as ProseMirrorDOMParser } from 'prosemirror-model';
+import {
+  Fragment,
+  DOMParser as ProseMirrorDOMParser,
+  Node as PMNode,
+} from 'prosemirror-model';
 import { Command } from '@tiptap/core';
 import markdownItFootnote from 'markdown-it-footnote';
 import TurndownService from 'turndown';
+import {
+  arrayBufferToBase64,
+  decryptImage,
+  fetchImage,
+} from '../../utils/security';
+import { toByteArray } from 'base64-js';
 
 // Initialize MarkdownIt for converting Markdown back to HTML with footnote support
 const markdownIt = new MarkdownIt().use(markdownItFootnote);
@@ -300,24 +310,26 @@ const MarkdownPasteHandler = Extension.create({
         },
       exportMarkdownFile:
         () =>
-        ({ editor }: { editor: Editor }) => {
-          // Get the HTML content from the editor
-          const html = editor.getHTML();
+        async ({ editor }: { editor: Editor }): Promise<string> => {
+          const originalDoc: any = editor.state.doc;
 
-          // Convert HTML to Markdown
-          const markdown = turndownService.turndown(html);
+          const docWithEmbedImageContent: any =
+            await searchForSecureImageNodeAndEmbedImageContent(originalDoc);
 
-          // Function to generate download URL
-          const generateDownloadUrl = () => {
-            // Create a Blob with the Markdown content
-            const blob = new Blob([markdown], {
-              type: 'text/markdown;charset=utf-8',
-            });
-            return URL.createObjectURL(blob);
-          };
+          const temporalEditor = new Editor({
+            extensions: editor.extensionManager.extensions.filter(
+              (e) => e.name !== 'collaboration',
+            ),
+            content: docWithEmbedImageContent.toJSON(),
+          });
 
-          // Return the generateDownloadUrl function
-          return generateDownloadUrl();
+          const inlineHtml = temporalEditor.getHTML();
+          const markdown = turndownService.turndown(inlineHtml);
+          const blob = new Blob([markdown], {
+            type: 'text/markdown;charset=utf-8',
+          });
+          const downloadUrl = URL.createObjectURL(blob);
+          return downloadUrl;
         },
     };
   },
@@ -620,3 +632,112 @@ function handleMarkdownContent(view: any, content: string) {
 }
 
 export default MarkdownPasteHandler;
+
+async function recreateNodeWithImageContent(node: PMNode): Promise<PMNode> {
+  const { url, encryptedKey, iv, privateKey } = node.attrs;
+  if (!url || !encryptedKey || !iv || !privateKey) return node;
+
+  try {
+    const imageBuffer = await fetchImage(url);
+
+    if (!imageBuffer) return node;
+    const decryptedArrayBuffer = await decryptImage({
+      encryptedKey,
+      privateKey: toByteArray(privateKey),
+      iv,
+      imageBuffer,
+    });
+    if (!decryptedArrayBuffer) return node;
+    const base64 = arrayBufferToBase64(decryptedArrayBuffer);
+    const dataUrl = `data:image/jpeg;base64,${base64}`;
+
+    console.log({ base64, dataUrl });
+
+    // Return a NEW node, same type & marks, updated attrs
+    const newAttrs = {
+      ...node.attrs,
+      src: dataUrl,
+    };
+    return node.type.createChecked(newAttrs, node.content, node.marks);
+  } catch (error) {
+    console.error('Error decrypting image node:', error);
+    return node; // fallback: return original
+  }
+}
+
+type StackItem = {
+  node: PMNode;
+  index: number;
+  childResults: PMNode[];
+  parent: StackItem | null;
+  newNode?: Node; // once we build it
+};
+
+export async function searchForSecureImageNodeAndEmbedImageContent(
+  originalDoc: PMNode,
+): Promise<PMNode> {
+  // We'll do a post-order traversal using a stack
+  // so that we can handle children first, then build the parent node.
+
+  // Each stack item has:
+  //  node: the original node
+  //  index: which child index we're processing
+  //  childResults: the array of new child nodes we've built
+  //  parent: reference to the parent stack item (for building up the tree)
+  const rootItem: StackItem = {
+    node: originalDoc,
+    index: 0,
+    childResults: [],
+    parent: null,
+  };
+
+  const stack: StackItem[] = [rootItem];
+
+  while (stack.length > 0) {
+    const current = stack[stack.length - 1];
+
+    // If we've not visited all children...
+    if (current.index < current.node.childCount) {
+      const childNode = current.node.child(current.index);
+      // push a new item for that child
+      const childItem: StackItem = {
+        node: childNode,
+        index: 0,
+        childResults: [],
+        parent: current,
+      };
+      current.index++;
+      stack.push(childItem);
+      continue;
+    }
+
+    // All children are processed => we can build/transform this node
+    if (!current.newNode) {
+      if (current.node.attrs['media-type'] === 'secure-img') {
+        current.newNode = (await recreateNodeWithImageContent(
+          current.node,
+        )) as any;
+      } else {
+        // Not a secure image => just copy node with new children
+        // Build a Fragment from our childResults
+        const newFrag = Fragment.fromArray(current.childResults);
+        current.newNode = current.node.copy(newFrag) as any;
+      }
+    }
+
+    // Now we have built a `newNode`.
+    // Pop from stack, and add this newNode to parent's childResults (unless we're the root).
+    stack.pop();
+
+    if (current.parent) {
+      current.parent.childResults.push(current.newNode as any);
+    } else {
+      // If no parent => this is the root => we are done, return newNode
+      return current.newNode as any;
+    }
+  }
+
+  // we never get here because we return inside
+  // the block above when we pop the root item.
+  throw new Error('transformDocIterative: unexpected stack exit');
+}

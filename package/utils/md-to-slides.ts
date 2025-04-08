@@ -1,6 +1,9 @@
 import MarkdownIt from 'markdown-it';
 import { Editor } from '@tiptap/react';
-import { turndownService } from '../extensions/mardown-paste-handler';
+import {
+  searchForSecureImageNodeAndEmbedImageContent,
+  turndownService,
+} from '../extensions/mardown-paste-handler';
 import TurndownService from 'turndown';
 
 interface SlideContent {
@@ -157,10 +160,21 @@ turndownService.addRule('taskListItem', {
   },
 });
 
-export const convertToMarkdown = (editor: Editor) => {
-  const html = editor.getHTML();
+export const convertToMarkdown = async (editor: Editor) => {
+  const originalDoc = editor.state.doc;
+  const docWithEmbedImageContent =
+    await searchForSecureImageNodeAndEmbedImageContent(originalDoc);
 
-  return turndownService.turndown(html);
+  const temporalEditor = new Editor({
+    extensions: editor.extensionManager.extensions.filter(
+      (e) => e.name !== 'collaboration',
+    ),
+    content: docWithEmbedImageContent.toJSON(),
+  });
+
+  const inlineHtml = temporalEditor.getHTML();
+
+  return turndownService.turndown(inlineHtml);
 };
 
 export const processMarkdownContent = (markdown: string): Slides => {

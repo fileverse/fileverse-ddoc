@@ -120,9 +120,8 @@ export const PresentationMode = ({
     },
     [],
   );
-
-  // Add check for empty editor
-  useEffect(() => {
+  const handlePresentationMode = async () => {
+    if (!editor) return;
     const editorElement = editor.view.dom;
     const isEditorEmpty = editorElement.querySelector('.is-editor-empty');
 
@@ -134,7 +133,7 @@ export const PresentationMode = ({
     }
 
     setIsLoading(true);
-    const markdown = convertToMarkdown(editor);
+    const markdown = await convertToMarkdown(editor);
 
     // First convert markdown to HTML with proper page breaks
     const html = convertMarkdownToHTML(markdown, {
@@ -185,13 +184,11 @@ export const PresentationMode = ({
     // Filter out empty slides and set the state
     setSlides(slideArray.filter((slide) => slide.trim().length > 0));
 
-    // Add artificial delay of 3 seconds
-    const timeoutId = setTimeout(() => {
-      setIsLoading(false);
-    }, 3000);
-
-    // Cleanup function to clear the timeout
-    return () => clearTimeout(timeoutId);
+    setIsLoading(false);
+  };
+  // Add check for empty editor
+  useEffect(() => {
+    handlePresentationMode();
   }, [editor]);
 
   // Add this function to handle fullscreen mode
