@@ -30,6 +30,7 @@ import { CommentProvider } from './components/inline-comment/context/comment-con
 import { CommentBubbleCard } from './components/inline-comment/comment-bubble-card';
 import { DocumentOutline } from './components/toc/document-outline';
 import { EditorProvider } from './context/editor-context';
+import { TextSelection } from '@tiptap/pm/state';
 
 const DdocEditor = forwardRef(
   (
@@ -323,6 +324,71 @@ const DdocEditor = forwardRef(
         editorElement.removeEventListener('resize', handleKeyboardShow);
       };
     }, [editor, editorRef, isNativeMobile]);
+
+    const hash = window.location.hash.startsWith('#')
+      ? window.location.hash.substring(1)
+      : window.location.hash;
+
+    const hashParams = new URLSearchParams(hash);
+    const heading = hashParams.get('heading');
+    const headingId = heading?.split('-').pop();
+
+    useEffect(() => {
+      if (!isPreviewMode || !headingId) return;
+      if (editor) {
+        const allHeadings = editor.view.dom.querySelectorAll('[data-toc-id]');
+        const element = Array.from(allHeadings).find((el) =>
+          (el as HTMLElement).dataset.tocId?.includes(headingId),
+        );
+        if (!element) return;
+
+        const pos = editor.view.posAtDOM(element as Node, 0);
+
+        // set focus
+        const tr = editor.view.state.tr;
+        tr.setSelection(new TextSelection(tr.doc.resolve(pos)));
+        editor.view.dispatch(tr);
+
+        // Find all possible scroll containers
+        const possibleContainers = [
+          document.querySelector('.ProseMirror'),
+          document.getElementById('editor-canvas'),
+          element.closest('.ProseMirror'),
+          element.closest('[class*="editor"]'),
+          editor.view.dom.parentElement,
+        ].filter(Boolean);
+
+        // Find the first scrollable container
+        const scrollContainer = possibleContainers.find(
+          (container) =>
+            container &&
+            (container.scrollHeight > container.clientHeight ||
+              window.getComputedStyle(container).overflow === 'auto' ||
+              window.getComputedStyle(container).overflowY === 'auto'),
+        );
+        if (scrollContainer) {
+          // Use requestAnimationFrame to ensure DOM updates are complete
+          requestAnimationFrame(() => {
+            const containerRect = scrollContainer.getBoundingClientRect();
+            const elementRect = (
+              element as HTMLElement
+            ).getBoundingClientRect();
+
+            // Calculate the scroll position to start the element at the top of the container
+            const scrollTop =
+              elementRect.top -
+              containerRect.top -
+              containerRect.height / (isNativeMobile ? 5 : 7) +
+              elementRect.height / (isNativeMobile ? 5 : 7);
+
+            scrollContainer.scrollBy({
+              top: scrollTop,
+              behavior: 'smooth',
+            });
+          });
+        }
+      }
+    }, [editor, isPreviewMode, isNativeMobile, headingId]);
 
     if (!editor || isContentLoading) {
       return (
