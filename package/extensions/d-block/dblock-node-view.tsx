@@ -55,7 +55,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
       setCollapsedHeadings,
     });
 
-  const copyLink = () => {
+  const copyHeadingLink = () => {
     const { content } = node.content as any;
     const id = content[0].attrs.id;
     const title = content[0].content.content[0].text;
@@ -516,28 +516,6 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
                     />
                   </div>
                 </Tooltip>
-                <Tooltip
-                  position="bottom"
-                  text={
-                    isThisHeadingCollapsed
-                      ? 'Expand section'
-                      : 'Collapse section'
-                  }
-                >
-                  <div
-                    className={cn(
-                      'd-block-button opacity-0 color-text-default hover:color-bg-default-hover aspect-square min-w-5',
-                      'group-hover:opacity-100',
-                    )}
-                    contentEditable={false}
-                    onClick={() => {
-                      copyLink();
-                    }}
-                    data-test="copy-heading-link-button"
-                  >
-                    <LucideIcon name={'Link'} size={'sm'} />
-                  </div>
-                </Tooltip>
               </>
             )}
           </>
@@ -548,7 +526,8 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
         className={cn('node-view-content w-full relative', {
           'is-table': isTable,
           'invalid-content': node.attrs?.isCorrupted,
-          'pointer-events-none': isPreviewMode,
+          'pointer-events-none': isPreviewMode && !isHeading,
+          'flex justify-end flex-row-reverse gap-2 items-center': isHeading,
         })}
       >
         {isDocEmpty &&
@@ -560,6 +539,29 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
             toggleAllTemplates,
             isExpanded,
           )}
+        {isHeading && isPreviewMode && (
+          <section>
+            <Tooltip
+              position="bottom"
+              text={'Copy link to heading'}
+              className="!cursor-pointer"
+            >
+              <div
+                className={cn(
+                  'd-block-button opacity-0 color-text-default hover:color-bg-default-hover aspect-square min-w-5',
+                  'group-hover:opacity-100',
+                )}
+                contentEditable={false}
+                onClick={() => {
+                  copyHeadingLink();
+                }}
+                data-test="copy-heading-link-button"
+              >
+                <LucideIcon name={'Link'} size={'sm'} />
+              </div>
+            </Tooltip>
+          </section>
+        )}
       </NodeViewContent>
     </NodeViewWrapper>
   );

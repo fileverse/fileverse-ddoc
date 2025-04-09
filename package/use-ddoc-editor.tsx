@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
 import { DdocProps, DdocEditorProps } from './types';
 import * as Y from 'yjs';
@@ -12,7 +12,7 @@ import { getCursor } from './utils/cursor';
 import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from './extensions/slash-command/slash-comand';
-import { EditorState } from '@tiptap/pm/state';
+import { EditorState, TextSelection } from '@tiptap/pm/state';
 import customTextInputRules from './extensions/customTextInputRules';
 import { PageBreak } from './extensions/page-break/page-break';
 import { fromUint8Array, toUint8Array } from 'js-base64';
@@ -24,6 +24,8 @@ import { CommentExtension as Comment } from './extensions/comment';
 import { handleContentPrint, handlePrint } from './utils/handle-print';
 import { Table } from './extensions/supercharged-table/extension-table';
 import { isBlackOrWhiteShade } from './utils/color-utils';
+import { useResponsive } from './utils/responsive';
+import { headingToSlug } from './utils/heading-to-slug';
 
 const usercolors = [
   '#30bced',
@@ -336,6 +338,97 @@ export const useDdocEditor = ({
   ) => {
     return !initialContent && initialContent !== '';
   };
+
+  const hash = window.location.hash.startsWith('#')
+    ? window.location.hash.substring(1)
+    : window.location.hash;
+
+  const hashParams = new URLSearchParams(hash);
+  const heading = hashParams.get('heading');
+  const headingId = heading?.split('-').pop();
+  const { isNativeMobile } = useResponsive();
+
+  const scrollToHeading = useCallback(
+    (headingId: string) => {
+      if (editor) {
+        const allHeadings = editor.view.dom.querySelectorAll('[data-toc-id]');
+        const element = Array.from(allHeadings).find((el) =>
+          (el as HTMLElement).dataset.tocId?.includes(headingId),
+        );
+
+        if (!element) return;
+
+        console.log(element?.innerHTML);
+        const currentHeadingText = headingToSlug(element?.innerHTML as string);
+        const urlHeadingText = heading?.split('-').slice(0, -1).join('-');
+        if (currentHeadingText !== urlHeadingText) {
+          hashParams.set('heading', `${currentHeadingText}-${headingId}`);
+          window.location.hash = hashParams.toString();
+        }
+
+        const pos = editor.view.posAtDOM(element as Node, 0);
+
+        // set focus
+        const tr = editor.view.state.tr;
+        tr.setSelection(new TextSelection(tr.doc.resolve(pos)));
+        editor.view.dispatch(tr);
+
+        // Find all possible scroll containers
+        const possibleContainers = [
+          document.querySelector('.ProseMirror'),
+          document.getElementById('editor-canvas'),
+          element.closest('.ProseMirror'),
+          element.closest('[class*="editor"]'),
+          editor.view.dom.parentElement,
+        ].filter(Boolean);
+
+        // Find the first scrollable container
+        const scrollContainer = possibleContainers.find(
+          (container) =>
+            container &&
+            (container.scrollHeight > container.clientHeight ||
+              window.getComputedStyle(container).overflow === 'auto' ||
+              window.getComputedStyle(container).overflowY === 'auto'),
+        );
+        if (scrollContainer) {
+          // Use requestAnimationFrame to ensure DOM updates are complete
+          requestAnimationFrame(() => {
+            const containerRect = scrollContainer.getBoundingClientRect();
+            const elementRect = (
+              element as HTMLElement
+            ).getBoundingClientRect();
+
+            // Calculate the scroll position to start the element at the top of the container
+            const scrollTop =
+              elementRect.top -
+              containerRect.top -
+              containerRect.height / (isNativeMobile ? 5 : 7) +
+              elementRect.height / (isNativeMobile ? 5 : 7);
+
+            scrollContainer.scrollBy({
+              top: scrollTop,
+              behavior: 'smooth',
+            });
+          });
+        }
+      }
+    },
+    [editor, isNativeMobile],
+  );
+
+  useEffect(() => {
+    if (!isPreviewMode || !headingId || isContentLoading) return;
+    setTimeout(() => {
+      scrollToHeading(headingId);
+    }, 100);
+  }, [
+    editor,
+    isPreviewMode,
+    isNativeMobile,
+    headingId,
+    isContentLoading,
+    scrollToHeading,
+  ]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
