@@ -335,7 +335,7 @@ const DdocEditor = forwardRef(
         <div
           id="editor-canvas"
           className={cn(
-            'h-[100vh] w-full custom-scrollbar',
+            'h-[100vh] w-full custom-scrollbar relative',
             {
               'overflow-x-hidden': zoomLevel !== '2',
               'overflow-x-auto scroll-container': zoomLevel === '2',
@@ -343,6 +343,9 @@ const DdocEditor = forwardRef(
             !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
             editorCanvasClassNames,
           )}
+          style={{
+            zIndex: 1,
+          }}
         >
           <nav
             id="Navbar"

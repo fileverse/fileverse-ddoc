@@ -78,7 +78,7 @@ export const DBlock = Node.create<DBlockOptions>({
   addCommands() {
     return {
       setDBlock:
-        (position) =>
+        position =>
         ({ state, chain }) => {
           const {
             selection: { from },
@@ -111,165 +111,216 @@ export const DBlock = Node.create<DBlockOptions>({
           doc,
         } = editor.state;
 
-        const parent = $head.node($head.depth - 1);
+        // Get the current node and its parent
         const currentNode = $head.node($head.depth);
-        const isListOrTaskItem =
-          parent?.type.name === 'listItem' || parent?.type.name === 'taskItem';
-        const isTaskList = parent?.type.name === 'taskList';
-        const headString = $head.toString();
-        const nodePaths = headString.split('/');
-        const atTheStartOfText = from + 4;
+        const parent = $head.node($head.depth - 1);
+        const grandParent = $head.node($head.depth - 2);
 
-        const isThatFromNestedItem = () => {
-          // Get the nesting depth by counting listItem/taskItem ancestors
-          let depth = 0;
-          let currentDepth = $head.depth;
+        // Handle lists first
+        if (
+          parent?.type.name === 'listItem' ||
+          parent?.type.name === 'taskItem'
+        ) {
+          // const isTaskList = grandParent?.type.name === 'taskList';
+          const isCurrentItemEmpty = currentNode.textContent === '';
+          // const isLastItem =
+          //   $head.index($head.depth - 2) === grandParent.childCount - 1;
+          const isOnlyItem = grandParent.childCount === 1;
 
-          while (currentDepth > 0) {
-            const node = $head.node(currentDepth - 1);
-            if (
-              node?.type.name === 'listItem' ||
-              node?.type.name === 'taskItem'
-            ) {
-              depth++;
-            }
-            currentDepth--;
-          }
+          const isThatFromNestedItem = () => {
+            // Get the nesting depth by counting listItem/taskItem ancestors
+            let depth = 0;
+            let currentDepth = $head.depth;
 
-          return (
-            currentNode.type.name === 'paragraph' &&
-            parent?.type.name === 'listItem' &&
-            currentNode.textContent === '' &&
-            depth >= 2 // Only apply for nested items level 2 and deeper
-          );
-        };
-
-        // Check if inside table
-        const isInsideTable = nodePaths.some((path) => path.includes('table'));
-        if (parent?.type.name !== 'dBlock') {
-          // If inside table, do nothing
-          if (isInsideTable) {
-            return false;
-          }
-          const isCurrentItemEmpty =
-            currentNode.textContent === '' &&
-            currentNode.type.name === 'paragraph' &&
-            isListOrTaskItem;
-
-          const grandParent = $head.node($head.depth - 2);
-
-          const isLastItemOfList =
-            $head.index($head.depth - 2) === grandParent.childCount - 1;
-          const isInList = ['bulletList', 'orderedList', 'taskList'].includes(
-            $head.node($head.depth - 2).type.name,
-          );
-
-          const isLastItemOfListWithoutContent = isLastItemOfList && isInList;
-          const isMiddleItemOfListWithoutContent =
-            !isLastItemOfList && isInList;
-          const isMultipleListItems =
-            $head.node($head.depth - 2).childCount > 1;
-
-          if (isCurrentItemEmpty && isMultipleListItems) {
-            if (isLastItemOfListWithoutContent) {
-              // Handle the case when it's the last empty item in the list
-              if (isThatFromNestedItem()) {
-                return false;
-              } else {
-                return editor
-                  .chain()
-                  .insertContentAt(from, {
-                    type: 'dBlock',
-                    content: [
-                      {
-                        type: 'paragraph',
-                      },
-                    ],
-                  })
-                  .focus()
-                  .run();
+            while (currentDepth > 0) {
+              const node = $head.node(currentDepth - 1);
+              if (
+                node?.type.name === 'listItem' ||
+                node?.type.name === 'taskItem'
+              ) {
+                depth++;
               }
-            } else if (isMiddleItemOfListWithoutContent) {
-              // Handle the case when it's an empty middle item in the list
+              currentDepth--;
+            }
+
+            return (
+              currentNode.type.name === 'paragraph' &&
+              parent?.type.name === 'listItem' &&
+              currentNode.textContent === '' &&
+              depth >= 2 // Only apply for nested items level 2 and deeper
+            );
+          };
+
+          // Handle empty list items
+          if (isCurrentItemEmpty) {
+            if (isThatFromNestedItem()) {
+              return false;
+            }
+
+            // Get the list node and its content
+            const listNode = $head.node($head.depth - 2);
+            const listPos = $head.before($head.depth - 2);
+            const listEnd = listPos + listNode.nodeSize;
+
+            // If it's the only item in the list
+            if (isOnlyItem) {
               return editor
                 .chain()
-                .deleteCurrentNode()
-                .insertContentAt(from, {
-                  type: isTaskList ? 'taskItem' : 'listItem',
+                .deleteRange({ from, to })
+                .setDBlock()
+                .focus(from + 4)
+                .run();
+            }
+
+            // For last or middle items, we need to restructure the content
+            const remainingContent: DBlockContent[] = [];
+
+            // Add new dBlock for the current position
+            remainingContent.push({
+              type: 'dBlock',
+              content: [
+                {
+                  type: 'paragraph',
+                },
+              ],
+            });
+
+            // Process remaining list items if they exist
+            if (listNode.content.size > 1) {
+              // Get the current item index
+              const currentIndex = $head.index($head.depth - 2);
+
+              // Get remaining items after current position
+              const remainingItems = listNode.content
+                .toJSON()
+                .slice(currentIndex + 1);
+
+              if (remainingItems.length > 0) {
+                // Create new dBlock with remaining list items
+                remainingContent.push({
+                  type: 'dBlock',
+                  content: [
+                    {
+                      type: grandParent.type.name,
+                      content: remainingItems,
+                    },
+                  ],
+                });
+              }
+            }
+
+            // Replace the content and move cursor to new dBlock
+            if (currentNode.type.name === 'paragraph') {
+              return editor
+                .chain()
+                .command(({ tr, dispatch }) => {
+                  if (dispatch) {
+                    // Replace from current list item to end of list
+                    tr.replaceWith(
+                      from,
+                      listEnd,
+                      editor.schema.nodeFromJSON({
+                        type: 'doc',
+                        content: remainingContent,
+                      }),
+                    );
+
+                    // Move cursor to end of first paragraph
+                    const paragraphPos = listPos + 4;
+                    tr.setSelection(TextSelection.create(tr.doc, paragraphPos));
+                  }
+                  return false;
+                })
+                .focus(from + 6)
+                .run();
+            }
+
+            return editor
+              .chain()
+              .command(({ tr, dispatch }) => {
+                if (dispatch) {
+                  // Replace from current list item to end of list
+                  tr.replaceWith(
+                    from,
+                    listEnd,
+                    editor.schema.nodeFromJSON({
+                      type: 'doc',
+                      content: remainingContent,
+                    }),
+                  );
+
+                  // Move cursor to end of first paragraph
+                  const paragraphPos = listPos + 4;
+                  tr.setSelection(TextSelection.create(tr.doc, paragraphPos));
+                }
+                return false;
+              })
+              .focus(from + 6)
+              .run();
+          }
+          // For non-empty items, let Tiptap handle the list behavior
+          return false;
+        }
+
+        // Handle dBlock content
+        if (parent?.type.name === 'dBlock') {
+          let currentActiveNodeTo = -1;
+          let currentActiveNodeType = '';
+
+          doc.descendants((node, pos) => {
+            if (currentActiveNodeTo !== -1) return false;
+            if (node.type.name === this.name) return;
+
+            const [nodeFrom, nodeTo] = [pos, pos + node.nodeSize];
+
+            if (nodeFrom <= from && to <= nodeTo) {
+              currentActiveNodeTo = nodeTo;
+              currentActiveNodeType = node.type.name;
+            }
+            return false;
+          });
+
+          const content = doc
+            .slice(from, currentActiveNodeTo)
+            ?.toJSON().content;
+
+          try {
+            if (currentActiveNodeType === 'codeBlock') {
+              return editor.chain().newlineInCode().focus().run();
+            }
+
+            if (['columns', 'heading'].includes(currentActiveNodeType)) {
+              return editor
+                .chain()
+                .insertContent({
+                  type: 'dBlock',
                   content: [
                     {
                       type: 'paragraph',
                     },
                   ],
                 })
-                .focus(atTheStartOfText)
-                .run();
-            } else {
-              // Handle the case for the first empty item in the list
-              return editor
-                .chain()
-                .liftListItem(isTaskList ? 'taskItem' : 'listItem')
-                .focus()
+                .focus(from + 4)
                 .run();
             }
-          } else {
+            return editor
+              .chain()
+              .insertContentAt(
+                { from, to: currentActiveNodeTo },
+                {
+                  type: this.name,
+                  content,
+                },
+              )
+              .focus(from + 4)
+              .run();
+          } catch (error) {
+            console.error(`Error inserting content into dBlock node: ${error}`);
             return false;
           }
         }
 
-        let currentActiveNodeTo = -1;
-        let currentActiveNodeType = '';
-
-        doc.descendants((node, pos) => {
-          if (currentActiveNodeTo !== -1) return false;
-          if (node.type.name === this.name) return;
-
-          const [nodeFrom, nodeTo] = [pos, pos + node.nodeSize];
-
-          if (nodeFrom <= from && to <= nodeTo) {
-            currentActiveNodeTo = nodeTo;
-            currentActiveNodeType = node.type.name;
-          }
-          return false;
-        });
-
-        const content = doc.slice(from, currentActiveNodeTo)?.toJSON().content;
-
-        try {
-          if (currentActiveNodeType === 'codeBlock') {
-            return editor.chain().newlineInCode().focus().run();
-          }
-
-          if (['columns', 'heading'].includes(currentActiveNodeType)) {
-            return editor
-              .chain()
-              .insertContent({
-                type: 'dBlock',
-                content: [
-                  {
-                    type: 'paragraph',
-                  },
-                ],
-              })
-              .focus(atTheStartOfText)
-              .run();
-          }
-
-          return editor
-            .chain()
-            .insertContentAt(
-              { from, to: currentActiveNodeTo },
-              {
-                type: this.name,
-                content,
-              },
-            )
-            .focus(atTheStartOfText)
-            .run();
-        } catch (error) {
-          console.error(`Error inserting content into dBlock node: ${error}`);
-          return false;
-        }
+        return false;
       },
       Backspace: ({ editor }) => {
         const {
