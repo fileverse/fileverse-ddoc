@@ -358,8 +358,9 @@ export const useDdocEditor = ({
 
         if (!element) return;
 
-        console.log(element?.innerHTML);
-        const currentHeadingText = headingToSlug(element?.innerHTML as string);
+        const currentHeadingText = headingToSlug(
+          element?.textContent as string,
+        );
         const urlHeadingText = heading?.split('-').slice(0, -1).join('-');
         if (currentHeadingText !== urlHeadingText) {
           hashParams.set('heading', `${currentHeadingText}-${headingId}`);
