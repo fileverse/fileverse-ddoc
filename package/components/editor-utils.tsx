@@ -588,6 +588,7 @@ export const useEditorToolbar = ({
 
             const inlineHtml = temporalEditor.getHTML();
             handleContentPrint(inlineHtml);
+            temporalEditor.destroy();
           };
           setFileExportsOpen(false);
           setTimeout(closeAndPrint, 200);

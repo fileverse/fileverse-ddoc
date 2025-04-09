@@ -334,6 +334,7 @@ const MarkdownPasteHandler = Extension.create({
             type: 'text/markdown;charset=utf-8',
           });
           const downloadUrl = URL.createObjectURL(blob);
+          temporalEditor.destroy();
           return downloadUrl;
         },
     };
@@ -614,8 +615,6 @@ async function handleMarkdownContent(
     }
   }
 
-  console.log('boom', doc.body);
-
   // Get the modified HTML content
   convertedHtml = doc.body.innerHTML;
 
@@ -734,8 +733,6 @@ async function recreateNodeWithImageContent(node: PMNode): Promise<PMNode> {
     if (!decryptedArrayBuffer) return node;
     const base64 = arrayBufferToBase64(decryptedArrayBuffer);
     const dataUrl = `data:image/jpeg;base64,${base64}`;
-
-    console.log({ base64, dataUrl });
 
     // Return a NEW node, same type & marks, updated attrs
     const newAttrs = {

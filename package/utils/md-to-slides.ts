@@ -174,7 +174,9 @@ export const convertToMarkdown = async (editor: Editor) => {
 
   const inlineHtml = temporalEditor.getHTML();
 
-  return turndownService.turndown(inlineHtml);
+  const md = turndownService.turndown(inlineHtml);
+  temporalEditor.destroy();
+  return md;
 };
 
 export const processMarkdownContent = (markdown: string): Slides => {
