@@ -31,7 +31,8 @@ export const PageBreakNodeView: React.FC<NodeViewProps> = ({
             <div
               className="absolute inset-0 border-b-1 border-transparent"
               style={{
-                background: 'linear-gradient(to bottom, transparent, #FFDF0A33)',
+                background:
+                  'linear-gradient(to bottom, transparent, #FFDF0A33)',
               }}
             ></div>
           </div>
@@ -47,7 +48,8 @@ export const PageBreakNodeView: React.FC<NodeViewProps> = ({
             <div
               className="absolute inset-0 border-b-1 border-transparent"
               style={{
-                background: 'linear-gradient(to bottom, #FFDF0A33, transparent)',
+                background:
+                  'linear-gradient(to bottom, #FFDF0A33, transparent)',
               }}
             ></div>
           </div>
