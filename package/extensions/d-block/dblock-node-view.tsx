@@ -349,10 +349,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
       )}
     >
       <section
-        className={cn('lg:flex gap-[2px] hidden min-w-16', {
-          'justify-end': !isPreviewMode,
-          'justify-center': isPreviewMode,
-        })}
+        className={cn('lg:flex gap-[2px] hidden min-w-16 justify-end')}
         aria-label="left-menu"
         contentEditable={false}
         suppressContentEditableWarning={true}
@@ -548,7 +545,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
             >
               <div
                 className={cn(
-                  'd-block-button opacity-0 color-text-default hover:color-bg-default-hover aspect-square min-w-5',
+                  'd-block-button opacity-0 color-text-default hover:color-bg-default-hover aspect-square w-6 h-6',
                   'group-hover:opacity-100',
                 )}
                 contentEditable={false}
