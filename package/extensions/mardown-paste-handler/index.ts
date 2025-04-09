@@ -8,15 +8,16 @@ import {
   DOMParser as ProseMirrorDOMParser,
   Node as PMNode,
 } from 'prosemirror-model';
-import { Command } from '@tiptap/core';
 import markdownItFootnote from 'markdown-it-footnote';
 import TurndownService from 'turndown';
 import {
   arrayBufferToBase64,
   decryptImage,
   fetchImage,
+  generateRSAKeyPair,
 } from '../../utils/security';
-import { toByteArray } from 'base64-js';
+import { fromByteArray, toByteArray } from 'base64-js';
+import { uploadSecureImage } from '../../utils/upload-images';
 
 // Initialize MarkdownIt for converting Markdown back to HTML with footnote support
 const markdownIt = new MarkdownIt().use(markdownItFootnote);
@@ -246,7 +247,7 @@ turndownService.addRule('strikethrough', {
 declare module '@tiptap/core' {
   interface Commands {
     uploadMarkdownFile: {
-      uploadMarkdownFile: () => Command;
+      uploadMarkdownFile: (secureImageUploadUrl?: string) => any;
     };
     exportMarkdownFile: {
       exportMarkdownFile: () => any;
@@ -286,20 +287,24 @@ const MarkdownPasteHandler = Extension.create({
   addCommands() {
     return {
       uploadMarkdownFile:
-        () =>
-        ({ view }) => {
+        (secureImageUploadUrl?: string) =>
+        async ({ view }: any) => {
           const input = document.createElement('input');
           input.type = 'file';
           input.accept = '.md, text/markdown';
-          input.onchange = (event: any) => {
+          input.onchange = async (event: any) => {
             const files = event.target.files;
             if (files.length > 0) {
               const file = files[0];
               if (file.type === 'text/markdown' || file.name.endsWith('.md')) {
                 const reader = new FileReader();
-                reader.onload = (e) => {
+                reader.onload = async (e) => {
                   const content = e.target?.result as string;
-                  handleMarkdownContent(view, content);
+                  await handleMarkdownContent(
+                    view,
+                    content,
+                    secureImageUploadUrl,
+                  );
                 };
                 reader.readAsText(file);
               }
@@ -480,7 +485,51 @@ function isMarkdown(content: string): boolean {
   );
 }
 
-function handleMarkdownContent(view: any, content: string) {
+function base64ToFile(base64Data: string, contentType: string): File {
+  const byteCharacters = atob(base64Data);
+  const len = byteCharacters.length;
+  const bytes = new Uint8Array(len);
+  for (let i = 0; i < len; i++) {
+    bytes[i] = byteCharacters.charCodeAt(i);
+  }
+  const blob = new Blob([bytes], { type: contentType });
+  return new File([blob], 'image', { type: contentType });
+}
+
+async function uploadBase64ImageContent(
+  base64Image: string,
+  secureImageUploadUrl: string,
+) {
+  // Remove the data URL prefix. e.g., "data:image/jpeg;base64,"
+  const prefixMatch = base64Image.match(/^(data:(image\/[a-zA-Z]+);base64,)/);
+  if (!prefixMatch) {
+    throw new Error('Invalid base64 image string.');
+  }
+  const contentType = prefixMatch[2];
+  const base64Data = base64Image.slice(prefixMatch[1].length);
+
+  const file = base64ToFile(base64Data, contentType);
+  const { publicKey, privateKey } = await generateRSAKeyPair();
+  const { key, url, iv } = await uploadSecureImage(
+    secureImageUploadUrl,
+    file,
+    publicKey,
+  );
+
+  return {
+    url,
+    encryptedKey: key,
+    iv,
+    privateKey: fromByteArray(privateKey),
+    downloadUrl: URL.createObjectURL(file),
+  };
+}
+
+async function handleMarkdownContent(
+  view: any,
+  content: string,
+  secureImageUploadUrl?: string,
+) {
   // Convert Markdown to HTML
   let convertedHtml = markdownIt.render(content);
 
@@ -541,6 +590,32 @@ function handleMarkdownContent(view: any, content: string) {
     }
   }
 
+  const images = Array.from(doc.getElementsByTagName('img'));
+
+  if (secureImageUploadUrl) {
+    for (const imgElement of images) {
+      const src = imgElement.getAttribute('src') || '';
+      if (src.startsWith('data:image')) {
+        try {
+          const uploadResult = await uploadBase64ImageContent(
+            src,
+            secureImageUploadUrl,
+          );
+          imgElement.setAttribute('url', uploadResult.url);
+          imgElement.setAttribute('src', uploadResult.downloadUrl);
+          imgElement.setAttribute('media-type', 'secure-img');
+          imgElement.setAttribute('encryptedKey', uploadResult.encryptedKey);
+          imgElement.setAttribute('iv', uploadResult.iv);
+          imgElement.setAttribute('privateKey', uploadResult.privateKey);
+        } catch (error) {
+          console.error('Error uploading secure image to IPFS:', error);
+        }
+      }
+    }
+  }
+
+  console.log('boom', doc.body);
+
   // Get the modified HTML content
   convertedHtml = doc.body.innerHTML;
 
@@ -574,7 +649,16 @@ function handleMarkdownContent(view: any, content: string) {
   // Sanitize the converted HTML
   convertedHtml = DOMPurify.sanitize(convertedHtml, {
     ADD_TAGS: ['div'],
-    ADD_ATTR: ['data-type', 'data-page-break'],
+    ADD_ATTR: [
+      'data-type',
+      'data-page-break',
+      'url',
+      'src',
+      'media-type',
+      'encryptedKey',
+      'iv',
+      'privateKey',
+    ],
   });
 
   // Parse the sanitized HTML string into DOM nodes

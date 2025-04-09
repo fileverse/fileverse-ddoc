@@ -602,8 +602,8 @@ export const useEditorToolbar = ({
     {
       icon: 'FileInput',
       title: 'Import Markdown',
-      onClick: () => {
-        editor?.commands.uploadMarkdownFile();
+      onClick: async () => {
+        await editor?.commands.uploadMarkdownFile(secureImageUploadUrl);
         onMarkdownImport?.();
       },
       isActive: false,
