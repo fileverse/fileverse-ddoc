@@ -255,208 +255,212 @@ declare module '@tiptap/core' {
   }
 }
 
-const MarkdownPasteHandler = Extension.create({
-  name: 'markdownPasteHandler',
+const MarkdownPasteHandler = (secureImageUploadUrl?: string) =>
+  Extension.create({
+    name: 'markdownPasteHandler',
 
-  addProseMirrorPlugins() {
-    return [
-      new Plugin({
-        props: {
-          handlePaste: (view, event) => {
-            event.preventDefault();
+    addProseMirrorPlugins() {
+      return [
+        new Plugin({
+          props: {
+            handlePaste: (view, event) => {
+              event.preventDefault();
 
-            const clipboardData = event.clipboardData;
-            if (!clipboardData) return false;
+              const clipboardData = event.clipboardData;
+              if (!clipboardData) return false;
 
-            // Get the Markdown content from the clipboard
-            const copiedData = clipboardData.getData('text/plain');
+              // Get the Markdown content from the clipboard
+              const copiedData = clipboardData.getData('text/plain');
 
-            // Check if the copied content is Markdown
-            if (isMarkdown(copiedData)) {
-              handleMarkdownContent(view, copiedData);
-              return true;
-            }
-
-            return false;
-          },
-        },
-      }),
-    ];
-  },
-
-  addCommands() {
-    return {
-      uploadMarkdownFile:
-        (secureImageUploadUrl?: string) =>
-        async ({ view }: any) => {
-          const input = document.createElement('input');
-          input.type = 'file';
-          input.accept = '.md, text/markdown';
-          input.onchange = async (event: any) => {
-            const files = event.target.files;
-            if (files.length > 0) {
-              const file = files[0];
-              if (file.type === 'text/markdown' || file.name.endsWith('.md')) {
-                const reader = new FileReader();
-                reader.onload = async (e) => {
-                  const content = e.target?.result as string;
-                  await handleMarkdownContent(
-                    view,
-                    content,
-                    secureImageUploadUrl,
-                  );
-                };
-                reader.readAsText(file);
+              // Check if the copied content is Markdown
+              if (isMarkdown(copiedData)) {
+                handleMarkdownContent(view, copiedData, secureImageUploadUrl);
+                return true;
               }
-            }
-          };
-          input.click();
-          return true;
-        },
-      exportMarkdownFile:
-        () =>
-        async ({ editor }: { editor: Editor }): Promise<string> => {
-          const originalDoc: any = editor.state.doc;
 
-          const docWithEmbedImageContent: any =
-            await searchForSecureImageNodeAndEmbedImageContent(originalDoc);
+              return false;
+            },
+          },
+        }),
+      ];
+    },
 
-          const temporalEditor = new Editor({
-            extensions: editor.extensionManager.extensions.filter(
-              (e) => e.name !== 'collaboration',
-            ),
-            content: docWithEmbedImageContent.toJSON(),
-          });
+    addCommands() {
+      return {
+        uploadMarkdownFile:
+          (secureImageUploadUrl?: string) =>
+          async ({ view }: any) => {
+            const input = document.createElement('input');
+            input.type = 'file';
+            input.accept = '.md, text/markdown';
+            input.onchange = async (event: any) => {
+              const files = event.target.files;
+              if (files.length > 0) {
+                const file = files[0];
+                if (
+                  file.type === 'text/markdown' ||
+                  file.name.endsWith('.md')
+                ) {
+                  const reader = new FileReader();
+                  reader.onload = async (e) => {
+                    const content = e.target?.result as string;
+                    await handleMarkdownContent(
+                      view,
+                      content,
+                      secureImageUploadUrl,
+                    );
+                  };
+                  reader.readAsText(file);
+                }
+              }
+            };
+            input.click();
+            return true;
+          },
+        exportMarkdownFile:
+          () =>
+          async ({ editor }: { editor: Editor }): Promise<string> => {
+            const originalDoc: any = editor.state.doc;
 
-          const inlineHtml = temporalEditor.getHTML();
-          const markdown = turndownService.turndown(inlineHtml);
-          const blob = new Blob([markdown], {
-            type: 'text/markdown;charset=utf-8',
-          });
-          const downloadUrl = URL.createObjectURL(blob);
-          temporalEditor.destroy();
-          return downloadUrl;
-        },
-    };
-  },
+            const docWithEmbedImageContent: any =
+              await searchForSecureImageNodeAndEmbedImageContent(originalDoc);
 
-  addInputRules() {
-    return [
-      new InputRule({
-        find: /<sup>(.*?)<\/sup>/,
-        handler: ({ state, range, match }) => {
-          const { tr } = state;
-          const start = range.from;
-          const end = range.to;
-          const content = match[1];
-          tr.replaceWith(
-            start,
-            end,
-            this.editor.schema.text(content, [
-              this.editor.schema.marks.superscript.create(),
-            ]),
-          );
-        },
-      }),
-      new InputRule({
-        find: /<sub>(.*?)<\/sub>/,
-        handler: ({ state, range, match }) => {
-          const { tr } = state;
-          const start = range.from;
-          const end = range.to;
-          const content = match[1];
-          tr.replaceWith(
-            start,
-            end,
-            this.editor.schema.text(content, [
-              this.editor.schema.marks.subscript.create(),
-            ]),
-          );
-        },
-      }),
-      new InputRule({
-        // eslint-disable-next-line no-useless-escape
-        find: /(\S*)\^((?:[^\^]|\\\^)+)\^/,
-        handler: ({ state, range, match }) => {
-          const { tr } = state;
-          const start = range.from + match[1].length;
-          const end = range.to;
-          const content = match[2].replace(/\\\^/g, '^');
-          tr.replaceWith(
-            start,
-            end,
-            this.editor.schema.text(content, [
-              this.editor.schema.marks.superscript.create(),
-            ]),
-          );
-        },
-      }),
-      new InputRule({
-        find: /(\S*)~((?:[^~]|\\~)+)~/,
-        handler: ({ state, range, match }) => {
-          const { tr } = state;
-          const start = range.from + match[1].length;
-          const end = range.to;
-          const content = match[2].replace(/\\~/g, '~');
-          tr.replaceWith(
-            start,
-            end,
-            this.editor.schema.text(content, [
-              this.editor.schema.marks.subscript.create(),
-            ]),
-          );
-        },
-      }),
-      new InputRule({
-        find: /(?:^|\s)\[([^\]]+)\]\((\S+)\)/,
-        handler: ({ state, range, match }) => {
-          const { tr } = state;
-          const [fullMatch, linkText, url] = match;
-          const start = range.from;
-          const end = range.to;
+            const temporalEditor = new Editor({
+              extensions: editor.extensionManager.extensions.filter(
+                (e) => e.name !== 'collaboration',
+              ),
+              content: docWithEmbedImageContent.toJSON(),
+            });
 
-          if (fullMatch) {
-            const nodeBeforeLink = state.doc.resolve(start).nodeBefore;
-            const needsSpace =
-              nodeBeforeLink &&
-              nodeBeforeLink.isText &&
-              nodeBeforeLink.text?.endsWith(' ');
+            const inlineHtml = temporalEditor.getHTML();
+            const markdown = turndownService.turndown(inlineHtml);
+            const blob = new Blob([markdown], {
+              type: 'text/markdown;charset=utf-8',
+            });
+            const downloadUrl = URL.createObjectURL(blob);
+            temporalEditor.destroy();
+            return downloadUrl;
+          },
+      };
+    },
 
-            if (needsSpace) {
-              tr.insertText(' ', start);
-            }
-
-            tr.replaceWith(
-              needsSpace ? start + 1 : start,
-              needsSpace ? end + 1 : end,
-              this.editor.schema.text(linkText, [
-                this.editor.schema.marks.link.create({ href: url }),
-              ]),
-            );
-          }
-        },
-      }),
-      new InputRule({
-        find: /===\s*$/m,
-        handler: ({ state, range }) => {
-          const { tr } = state;
-          const start = range.from - 2;
-          const end = range.to;
-
-          const isDBlock = state.doc.nodeAt(start)?.type.name === 'dBlock';
-          // Create a page break node
-          if (isDBlock) {
+    addInputRules() {
+      return [
+        new InputRule({
+          find: /<sup>(.*?)<\/sup>/,
+          handler: ({ state, range, match }) => {
+            const { tr } = state;
+            const start = range.from;
+            const end = range.to;
+            const content = match[1];
             tr.replaceWith(
               start,
               end,
-              this.editor.schema.nodes.pageBreak.create(),
+              this.editor.schema.text(content, [
+                this.editor.schema.marks.superscript.create(),
+              ]),
             );
-          }
-        },
-      }),
-    ];
-  },
-});
+          },
+        }),
+        new InputRule({
+          find: /<sub>(.*?)<\/sub>/,
+          handler: ({ state, range, match }) => {
+            const { tr } = state;
+            const start = range.from;
+            const end = range.to;
+            const content = match[1];
+            tr.replaceWith(
+              start,
+              end,
+              this.editor.schema.text(content, [
+                this.editor.schema.marks.subscript.create(),
+              ]),
+            );
+          },
+        }),
+        new InputRule({
+          // eslint-disable-next-line no-useless-escape
+          find: /(\S*)\^((?:[^\^]|\\\^)+)\^/,
+          handler: ({ state, range, match }) => {
+            const { tr } = state;
+            const start = range.from + match[1].length;
+            const end = range.to;
+            const content = match[2].replace(/\\\^/g, '^');
+            tr.replaceWith(
+              start,
+              end,
+              this.editor.schema.text(content, [
+                this.editor.schema.marks.superscript.create(),
+              ]),
+            );
+          },
+        }),
+        new InputRule({
+          find: /(\S*)~((?:[^~]|\\~)+)~/,
+          handler: ({ state, range, match }) => {
+            const { tr } = state;
+            const start = range.from + match[1].length;
+            const end = range.to;
+            const content = match[2].replace(/\\~/g, '~');
+            tr.replaceWith(
+              start,
+              end,
+              this.editor.schema.text(content, [
+                this.editor.schema.marks.subscript.create(),
+              ]),
+            );
+          },
+        }),
+        new InputRule({
+          find: /(?:^|\s)\[([^\]]+)\]\((\S+)\)/,
+          handler: ({ state, range, match }) => {
+            const { tr } = state;
+            const [fullMatch, linkText, url] = match;
+            const start = range.from;
+            const end = range.to;
+
+            if (fullMatch) {
+              const nodeBeforeLink = state.doc.resolve(start).nodeBefore;
+              const needsSpace =
+                nodeBeforeLink &&
+                nodeBeforeLink.isText &&
+                nodeBeforeLink.text?.endsWith(' ');
+
+              if (needsSpace) {
+                tr.insertText(' ', start);
+              }
+
+              tr.replaceWith(
+                needsSpace ? start + 1 : start,
+                needsSpace ? end + 1 : end,
+                this.editor.schema.text(linkText, [
+                  this.editor.schema.marks.link.create({ href: url }),
+                ]),
+              );
+            }
+          },
+        }),
+        new InputRule({
+          find: /===\s*$/m,
+          handler: ({ state, range }) => {
+            const { tr } = state;
+            const start = range.from - 2;
+            const end = range.to;
+
+            const isDBlock = state.doc.nodeAt(start)?.type.name === 'dBlock';
+            // Create a page break node
+            if (isDBlock) {
+              tr.replaceWith(
+                start,
+                end,
+                this.editor.schema.nodes.pageBreak.create(),
+              );
+            }
+          },
+        }),
+      ];
+    },
+  });
 
 function isMarkdown(content: string): boolean {
   // Ignore LaTeX math blocks before checking other Markdown elements
