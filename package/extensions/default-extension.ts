@@ -178,7 +178,7 @@ export const defaultExtensions = (
   EmbeddedTweet,
   actionButton,
   ColumnExtension,
-  MarkdownPasteHandler,
+  MarkdownPasteHandler(secureImageUploadUrl),
   Markdown.configure({
     html: true, // Allow HTML input/output
     tightLists: true, // No <p> inside <li> in markdown output
