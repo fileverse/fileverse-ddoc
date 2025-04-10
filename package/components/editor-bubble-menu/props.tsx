@@ -56,13 +56,16 @@ export const shouldShow = ({ editor }: { editor: Editor }) => {
     editor.state.doc.nodeAt(from)?.type.name === 'iframe';
   const isCodeBlockSelected = editor.isActive('codeBlock');
   const isPageBreak = editor.state.doc.nodeAt(from)?.type.name === 'pageBreak';
+  const isAIWriterSelected =
+    editor.state.doc.nodeAt(from)?.type.name === 'aiWriter';
 
   if (
     empty ||
     isImageSelected ||
     isCodeBlockSelected ||
     isIframeSelected ||
-    isPageBreak
+    isPageBreak ||
+    isAIWriterSelected
   ) {
     return false;
   }
