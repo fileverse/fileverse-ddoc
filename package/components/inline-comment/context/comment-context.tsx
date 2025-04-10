@@ -502,7 +502,7 @@ export const CommentProvider = ({
 export const useComments = () => {
   const context = useContext(CommentContext);
   if (!context) {
-    throw new Error('useComments must be used within a CommentProvider');
+    return {} as CommentContextType;
   }
   return context;
 };

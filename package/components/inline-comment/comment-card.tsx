@@ -398,7 +398,7 @@ export const CommentCard = ({
 export const UserDisplaySkeleton = () => {
   return (
     <div className="flex justify-start items-center gap-2">
-      <Skeleton className="w-6 h-6 rounded-full" />
+      <Skeleton className="w-6  h-6 rounded-full" />
       <Skeleton className="w-32 h-4 rounded" />
     </div>
   );
