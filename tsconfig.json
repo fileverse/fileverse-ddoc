@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "ES2020",
     "useDefineForClassFields": true,
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
+    "lib": ["ES2020", "DOM", "DOM.Iterable", "webworker"],
     "module": "ESNext",
     "skipLibCheck": true,
     "moduleResolution": "bundler",
@@ -18,7 +18,8 @@
     /* The "typeRoots" configuration specifies the locations where 
        TypeScript looks for type definitions (.d.ts files) to 
        include in the compilation process.*/
-    "typeRoots": ["./dist/index.d.ts", "./dist/package/types.d.ts"]
+    "typeRoots": ["./dist/index.d.ts", "./dist/package/types.d.ts"],
+    "types": ["@serwist/vite/typings"],
   },
   /* include /index.ts*/
   "include": ["./index.ts", "package/**/*", "demo/src/vite-env.d.ts"],

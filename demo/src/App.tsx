@@ -20,6 +20,8 @@ import {
 } from '@tiptap-pro/extension-table-of-contents';
 import { ReminderBlock } from '../../package/extensions/reminder-block/reminder-block';
 import { Reminder } from '../../package/extensions/reminder-block/types';
+import notificationService from './services/NotificationService';
+import reminderDB from './services/ReminderDB';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -113,6 +115,10 @@ function App() {
 
   const [isConnected, setIsConnected] = useState(false);
 
+  // Add state for reminders
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+
   useEffect(() => {
     if (collaborationId) {
       const name = prompt('Whats your username');
@@ -121,6 +127,151 @@ function App() {
       setEnableCollaboration(true);
     }
   }, [collaborationId]);
+
+  // Initialize notification service and load reminders
+  useEffect(() => {
+    // Get the current notification permission status
+    setNotificationPermission(Notification.permission);
+
+    // Load existing reminders from the database
+    const loadReminders = async () => {
+      try {
+        const storedReminders = await reminderDB.getAllReminders();
+        console.log('Loaded reminders from database:', storedReminders);
+        setReminders(storedReminders);
+      } catch (error) {
+        console.error('Error loading reminders:', error);
+      }
+    };
+
+    loadReminders();
+
+    // Initialize notification service if permission is granted
+    if (Notification.permission === 'granted') {
+      notificationService.initialize()
+        .then(initialized => {
+          if (initialized) {
+            console.log('Notification service initialized successfully');
+          } else {
+            console.warn('Failed to initialize notification service');
+          }
+        });
+    }
+  }, []);
+
+  // Handle requesting notification permission
+  const requestNotificationPermission = async () => {
+    try {
+      const permission = await notificationService.requestPermission();
+      setNotificationPermission(permission);
+
+      if (permission === 'granted') {
+        await notificationService.initialize();
+        toast({
+          title: 'Notifications enabled!',
+          description: 'You will receive reminders when they are due.',
+          variant: 'success'
+        });
+      } else {
+        toast({
+          title: 'Notification permission denied',
+          description: 'You will not receive reminder notifications.',
+          variant: 'danger'
+        });
+      }
+    } catch (error) {
+      console.error('Error requesting notification permission:', error);
+      toast({
+        title: 'Permission Error',
+        description: 'Failed to request notification permission.',
+        variant: 'danger'
+      });
+    }
+  };
+
+  // Handle creating a reminder
+  const handleReminderCreate = async (reminder: Reminder) => {
+    try {
+      console.log('Creating reminder:', reminder);
+
+      // Add reminder to state
+      setReminders(prev => [...prev, reminder]);
+
+      // Schedule notification for the reminder
+      await notificationService.scheduleReminderNotification(reminder);
+
+      // Show toast notification
+      toast({
+        title: 'Reminder Scheduled',
+        description: `Reminder scheduled for ${new Date(reminder.timestamp).toLocaleString()}`,
+        variant: 'success'
+      });
+
+      // Request notification permission if not granted yet
+      if (notificationPermission !== 'granted') {
+        await requestNotificationPermission();
+      }
+    } catch (error) {
+      console.error('Error creating reminder:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to create reminder',
+        variant: 'danger'
+      });
+    }
+  };
+
+  // Handle deleting a reminder
+  const handleReminderDelete = async (reminderId: string) => {
+    try {
+      console.log('Deleting reminder:', reminderId);
+
+      // Remove from state
+      setReminders(prev => prev.filter(r => r.id !== reminderId));
+
+      // Delete from database
+      await reminderDB.deleteReminder(reminderId);
+
+      toast({
+        title: 'Success',
+        description: 'Reminder deleted',
+        variant: 'success'
+      });
+    } catch (error) {
+      console.error('Error deleting reminder:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to delete reminder',
+        variant: 'danger'
+      });
+    }
+  };
+
+  // Handle updating a reminder
+  const handleReminderUpdate = async (reminder: Reminder) => {
+    try {
+      console.log('Updating reminder:', reminder);
+
+      // Update in state
+      setReminders(prev => prev.map(r => (r.id === reminder.id ? reminder : r)));
+
+      // Update in database
+      await reminderDB.updateReminder(reminder);
+
+      toast({
+        title: 'Success',
+        description: 'Reminder updated',
+        variant: 'success'
+      });
+    } catch (error) {
+      console.error('Error updating reminder:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to update reminder',
+        variant: 'danger'
+      });
+    }
+  };
 
   const renderNavbar = ({ editor }: { editor: JSONContent }): JSX.Element => {
     const publishDoc = () => console.log(editor, title);
@@ -322,16 +473,10 @@ function App() {
         }}
         extensions={[
           ReminderBlock.configure({
-            onReminderCreate: async (reminder: Reminder) => {
-              console.log(reminder);
-            },
-            onReminderDelete: async (reminderId: string) => {
-              console.log(reminderId);
-            },
-            onReminderUpdate: async (reminder: Reminder) => {
-              console.log(reminder);
-            },
-            reminders: [],
+            onReminderCreate: handleReminderCreate,
+            onReminderDelete: handleReminderDelete,
+            onReminderUpdate: handleReminderUpdate,
+            reminders: reminders,
           }),
         ]}
         isConnected={isConnected}

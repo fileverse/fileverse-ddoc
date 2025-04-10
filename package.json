@@ -100,6 +100,8 @@
     "yjs": "^13.6.15"
   },
   "devDependencies": {
+    "@serwist/vite": "^9.0.13",
+    "@serwist/window": "^9.0.13",
     "@types/dompurify": "^3.0.5",
     "@types/katex": "^0.16.7",
     "@types/markdown-it-footnote": "^3.0.4",
@@ -122,6 +124,7 @@
     "postcss": "^8.4.38",
     "prettier": "^3.4.2",
     "sass": "^1.77.2",
+    "serwist": "^9.0.13",
     "tailwindcss": "^3.4.3",
     "typescript": "^5.2.2",
     "vite": "^5.0.0"
