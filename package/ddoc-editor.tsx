@@ -107,6 +107,7 @@ const DdocEditor = forwardRef(
       disableInlineComment,
       renderThemeToggle,
       metadataProxyUrl,
+      onCopyHeadingLink,
     }: DdocProps,
     ref,
   ) => {
@@ -180,6 +181,7 @@ const DdocEditor = forwardRef(
       isPresentationMode,
       proExtensions,
       metadataProxyUrl,
+      onCopyHeadingLink,
     });
 
     useImperativeHandle(
@@ -618,7 +620,7 @@ const DdocEditor = forwardRef(
         <div
           id="editor-canvas"
           className={cn(
-            'h-[100vh] w-full custom-scrollbar',
+            'h-[100vh] w-full custom-scrollbar relative z-10',
             {
               'overflow-x-hidden': zoomLevel !== '2',
               'overflow-x-auto scroll-container': zoomLevel === '2',
