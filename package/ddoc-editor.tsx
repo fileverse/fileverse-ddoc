@@ -107,6 +107,7 @@ const DdocEditor = forwardRef(
       disableInlineComment,
       renderThemeToggle,
       metadataProxyUrl,
+      onCopyHeadingLink,
     }: DdocProps,
     ref,
   ) => {
@@ -180,6 +181,7 @@ const DdocEditor = forwardRef(
       isPresentationMode,
       proExtensions,
       metadataProxyUrl,
+      onCopyHeadingLink,
     });
 
     useImperativeHandle(

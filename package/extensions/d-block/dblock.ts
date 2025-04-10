@@ -7,6 +7,7 @@ import { TextSelection } from '@tiptap/pm/state';
 export interface DBlockOptions {
   HTMLAttributes: Record<string, any>;
   secureImageUploadUrl?: string;
+  onCopyHeadingLink?: (link: string) => void;
 }
 
 declare module '@tiptap/core' {
@@ -52,6 +53,7 @@ export const DBlock = Node.create<DBlockOptions>({
     return {
       HTMLAttributes: {},
       secureImageUploadUrl: '',
+      onCopyHeadingLink: undefined,
     };
   },
 

@@ -29,10 +29,18 @@ import {
 } from '@fileverse/ui';
 import { useEditorContext } from '../../context/editor-context';
 import { useHeadingCollapse } from './use-heading-collapse';
+import { headingToSlug } from '../../utils/heading-to-slug';
 
-export const DBlockNodeView: React.FC<
-  NodeViewProps & { secureImageUploadUrl?: string }
-> = ({ node, getPos, editor, deleteNode, secureImageUploadUrl }) => {
+export const DBlockNodeView: React.FC<NodeViewProps> = ({
+  node,
+  getPos,
+  editor,
+  deleteNode,
+  ...props
+}) => {
+  const secureImageUploadUrl = props.extension?.options?.secureImageUploadUrl;
+  const onCopyHeadingLink = props.extension?.options?.onCopyHeadingLink;
+
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const actions = useContentItemActions(editor as Editor, node, getPos());
   const { isPreviewMode, isPresentationMode } = useEditingContext();
@@ -46,6 +54,16 @@ export const DBlockNodeView: React.FC<
       collapsedHeadings,
       setCollapsedHeadings,
     });
+
+  const copyHeadingLink = () => {
+    const { content } = node.content as any;
+    const id = content[0].attrs.id;
+    const title = content[0].content.content[0].text;
+    const heading = headingToSlug(title);
+    const uuid = id.replace(/-/g, '').substring(0, 8);
+    const headingSlug = `heading=${heading}-${uuid}`;
+    onCopyHeadingLink?.(headingSlug);
+  };
 
   const isTable = useMemo(() => {
     const { content } = node.content as any;
@@ -331,10 +349,7 @@ export const DBlockNodeView: React.FC<
       )}
     >
       <section
-        className={cn('lg:flex gap-[2px] hidden min-w-16', {
-          'justify-end': !isPreviewMode,
-          'justify-center': isPreviewMode,
-        })}
+        className={cn('lg:flex gap-[2px] hidden min-w-16 justify-end')}
         aria-label="left-menu"
         contentEditable={false}
         suppressContentEditableWarning={true}
@@ -471,30 +486,34 @@ export const DBlockNodeView: React.FC<
         ) : (
           <>
             {isHeading && (
-              <Tooltip
-                position="bottom"
-                text={
-                  isThisHeadingCollapsed ? 'Expand section' : 'Collapse section'
-                }
-              >
-                <div
-                  className={cn(
-                    'd-block-button opacity-0 color-text-default hover:color-bg-default-hover aspect-square min-w-5',
-                    'group-hover:opacity-100',
-                    isThisHeadingCollapsed ? 'opacity-100' : 'opacity-0',
-                  )}
-                  contentEditable={false}
-                  onClick={toggleCollapse}
-                  data-test="collapse-button"
+              <>
+                <Tooltip
+                  position="bottom"
+                  text={
+                    isThisHeadingCollapsed
+                      ? 'Expand section'
+                      : 'Collapse section'
+                  }
                 >
-                  <LucideIcon
-                    name={
-                      isThisHeadingCollapsed ? 'ChevronRight' : 'ChevronDown'
-                    }
-                    size="sm"
-                  />
-                </div>
-              </Tooltip>
+                  <div
+                    className={cn(
+                      'd-block-button opacity-0 color-text-default hover:color-bg-default-hover aspect-square min-w-5',
+                      'group-hover:opacity-100',
+                      isThisHeadingCollapsed ? 'opacity-100' : 'opacity-0',
+                    )}
+                    contentEditable={false}
+                    onClick={toggleCollapse}
+                    data-test="collapse-button"
+                  >
+                    <LucideIcon
+                      name={
+                        isThisHeadingCollapsed ? 'ChevronRight' : 'ChevronDown'
+                      }
+                      size="sm"
+                    />
+                  </div>
+                </Tooltip>
+              </>
             )}
           </>
         )}
@@ -504,7 +523,8 @@ export const DBlockNodeView: React.FC<
         className={cn('node-view-content w-full relative', {
           'is-table': isTable,
           'invalid-content': node.attrs?.isCorrupted,
-          'pointer-events-none': isPreviewMode,
+          'pointer-events-none': isPreviewMode && !isHeading,
+          'flex justify-end flex-row-reverse gap-2 items-center': isHeading,
         })}
       >
         {isDocEmpty &&
@@ -516,6 +536,29 @@ export const DBlockNodeView: React.FC<
             toggleAllTemplates,
             isExpanded,
           )}
+        {isHeading && isPreviewMode && (
+          <section>
+            <Tooltip
+              position="bottom"
+              text={'Copy link to heading'}
+              className="!cursor-pointer"
+            >
+              <div
+                className={cn(
+                  'd-block-button opacity-0 color-text-default hover:color-bg-default-hover aspect-square w-6 h-6',
+                  'group-hover:opacity-100',
+                )}
+                contentEditable={false}
+                onClick={() => {
+                  copyHeadingLink();
+                }}
+                data-test="copy-heading-link-button"
+              >
+                <LucideIcon name={'Link'} size={'sm'} />
+              </div>
+            </Tooltip>
+          </section>
+        )}
       </NodeViewContent>
     </NodeViewWrapper>
   );
