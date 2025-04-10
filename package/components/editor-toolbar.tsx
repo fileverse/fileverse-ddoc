@@ -81,9 +81,9 @@ const TiptapToolBar = ({
     { title: '200%', value: '2' },
   ];
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const handleExport = () => {
+  const handleExport = async () => {
     if (editor) {
-      const generateDownloadUrl = editor.commands.exportMarkdownFile();
+      const generateDownloadUrl = await editor.commands.exportMarkdownFile();
       if (generateDownloadUrl) {
         const url = generateDownloadUrl;
         const link = document.createElement('a');
