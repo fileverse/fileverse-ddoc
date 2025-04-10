@@ -78,7 +78,7 @@ export const DBlock = Node.create<DBlockOptions>({
   addCommands() {
     return {
       setDBlock:
-        position =>
+        (position) =>
         ({ state, chain }) => {
           const {
             selection: { from },
@@ -115,7 +115,18 @@ export const DBlock = Node.create<DBlockOptions>({
         const currentNode = $head.node($head.depth);
         const parent = $head.node($head.depth - 1);
         const grandParent = $head.node($head.depth - 2);
+        const headString = $head.toString();
+        const nodePaths = headString.split('/');
 
+        // Check if inside table
+        const isInsideTable = nodePaths.some((path) => path.includes('table'));
+
+        if (parent?.type.name !== 'dBlock') {
+          // If inside table, do nothing
+          if (isInsideTable) {
+            return false;
+          }
+        }
         // Handle lists first
         if (
           parent?.type.name === 'listItem' ||
@@ -126,6 +137,7 @@ export const DBlock = Node.create<DBlockOptions>({
           // const isLastItem =
           //   $head.index($head.depth - 2) === grandParent.childCount - 1;
           const isOnlyItem = grandParent.childCount === 1;
+        // Check if inside table
 
           const isThatFromNestedItem = () => {
             // Get the nesting depth by counting listItem/taskItem ancestors

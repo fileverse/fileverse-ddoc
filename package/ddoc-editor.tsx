@@ -3,7 +3,6 @@ import { EditorBubbleMenu } from './components/editor-bubble-menu/editor-bubble-
 import { DdocProps } from './types';
 import { ColumnsMenu } from './extensions/multi-column/menus';
 import { EditingProvider } from './hooks/use-editing-context';
-import { Spinner } from './common/spinner';
 import EditorToolBar from './components/editor-toolbar';
 import './styles/editor.scss';
 import 'tippy.js/animations/shift-toward-subtle.css';
@@ -17,7 +16,14 @@ import {
   useState,
 } from 'react';
 import cn from 'classnames';
-import { Button, LucideIcon, Tag, TagType, TagInput } from '@fileverse/ui';
+import {
+  Button,
+  LucideIcon,
+  Tag,
+  TagType,
+  TagInput,
+  Skeleton,
+} from '@fileverse/ui';
 import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
 import { AnimatePresence, motion } from 'framer-motion';
 import * as Y from 'yjs';
@@ -322,111 +328,57 @@ const DdocEditor = forwardRef(
       };
     }, [editor, editorRef, isNativeMobile]);
 
-    if (!editor || isContentLoading) {
+    const isMobile = useMediaQuery('(max-width: 768px)');
+
+    const renderComp = () => {
       return (
-        <div className="w-screen h-screen flex flex-col gap-4 justify-center items-center">
-          <Spinner />
-          <p>Loading Editor...</p>
-        </div>
-      );
-    }
-    return (
-      <EditorProvider>
-        <div
-          id="editor-canvas"
-          className={cn(
-            'h-[100vh] w-full custom-scrollbar relative',
-            {
-              'overflow-x-hidden': zoomLevel !== '2',
-              'overflow-x-auto scroll-container': zoomLevel === '2',
-            },
-            !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
-            editorCanvasClassNames,
-          )}
-          style={{
-            zIndex: 1,
-          }}
-        >
-          <nav
-            id="Navbar"
-            className={cn(
-              'h-14 color-bg-default py-2 px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300',
-              {
-                'translate-y-0': isNavbarVisible,
-                'translate-y-[-100%]': !isNavbarVisible || isPresentationMode,
-              },
-            )}
-          >
-            {renderNavbar?.({ editor: editor.getJSON() })}
-          </nav>
-          <CommentProvider
-            editor={editor}
-            username={username as string}
-            setUsername={setUsername}
-            activeCommentId={activeCommentId}
-            setActiveCommentId={setActiveCommentId}
-            focusCommentWithActiveId={focusCommentWithActiveId}
-            initialComments={initialComments}
-            setInitialComments={setInitialComments}
-            onNewComment={onNewComment}
-            onCommentReply={onCommentReply}
-            onResolveComment={onResolveComment}
-            onUnresolveComment={onUnresolveComment}
-            onDeleteComment={onDeleteComment}
-            ensResolutionUrl={ensResolutionUrl as string}
-            isConnected={isConnected}
-            connectViaWallet={connectViaWallet}
-            isLoading={isLoading}
-            connectViaUsername={connectViaUsername}
-            isDDocOwner={isDDocOwner}
-            onInlineComment={onInlineComment}
-            onComment={onComment}
-            setCommentDrawerOpen={setCommentDrawerOpen}
-          >
-            {!isPreviewMode && (
-              <div
-                id="toolbar"
-                className={cn(
-                  'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 color-bg-default border-b color-border-default transition-transform duration-300 top-[3.5rem]',
-                  {
-                    'translate-y-0': isNavbarVisible,
-                    'translate-y-[-108%]': !isNavbarVisible,
-                  },
-                )}
-              >
-                <div className="justify-center items-center grow relative color-text-default">
-                  <EditorToolBar
-                    onError={onError}
-                    editor={editor}
-                    zoomLevel={zoomLevel}
-                    setZoomLevel={setZoomLevel}
-                    isNavbarVisible={isNavbarVisible}
-                    setIsNavbarVisible={setIsNavbarVisible}
-                    secureImageUploadUrl={secureImageUploadUrl}
-                    onMarkdownExport={onMarkdownExport}
-                    onMarkdownImport={onMarkdownImport}
-                    onPdfExport={onPdfExport}
-                  />
-                </div>
+        <>
+          {!isPreviewMode && (
+            <div
+              id="toolbar"
+              className={cn(
+                'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 color-bg-default border-b color-border-default transition-transform duration-300 top-[3.5rem]',
+                {
+                  'translate-y-0': isNavbarVisible,
+                  'translate-y-[-108%]': !isNavbarVisible,
+                },
+              )}
+            >
+              <div className="justify-center items-center grow relative color-text-default">
+                <EditorToolBar
+                  onError={onError}
+                  editor={editor}
+                  zoomLevel={zoomLevel}
+                  setZoomLevel={setZoomLevel}
+                  isNavbarVisible={isNavbarVisible}
+                  setIsNavbarVisible={setIsNavbarVisible}
+                  secureImageUploadUrl={secureImageUploadUrl}
+                  onMarkdownExport={onMarkdownExport}
+                  onMarkdownImport={onMarkdownImport}
+                  onPdfExport={onPdfExport}
+                  isLoading={!editor || isContentLoading}
+                />
               </div>
-            )}
-            {isPresentationMode && (
-              <PresentationMode
-                editor={editor}
-                onClose={handleClosePresentationMode}
-                isFullscreen={isFullscreen}
-                setIsFullscreen={setIsFullscreen}
-                onError={onError}
-                setCommentDrawerOpen={setCommentDrawerOpen}
-                sharedSlidesLink={sharedSlidesLink}
-                isPreviewMode={isPreviewMode}
-                documentName={documentName as string}
-                onSlidesShare={onSlidesShare}
-                slides={slides}
-                setSlides={setSlides}
-                renderThemeToggle={renderThemeToggle}
-              />
-            )}
+            </div>
+          )}
+          {isPresentationMode && editor && (
+            <PresentationMode
+              editor={editor}
+              onClose={handleClosePresentationMode}
+              isFullscreen={isFullscreen}
+              setIsFullscreen={setIsFullscreen}
+              onError={onError}
+              setCommentDrawerOpen={setCommentDrawerOpen}
+              sharedSlidesLink={sharedSlidesLink}
+              isPreviewMode={isPreviewMode}
+              documentName={documentName as string}
+              onSlidesShare={onSlidesShare}
+              slides={slides}
+              setSlides={setSlides}
+              renderThemeToggle={renderThemeToggle}
+            />
+          )}
+          {editor && (
             <DocumentOutline
               editor={editor}
               hasToC={true}
@@ -436,75 +388,75 @@ const DdocEditor = forwardRef(
               setShowTOC={setShowTOC}
               isPreviewMode={isPreviewMode || !isNavbarVisible}
             />
+          )}
 
+          <div
+            className={cn(
+              'color-bg-default w-full mx-auto rounded',
+              { 'mt-4 md:!mt-16 !py-20': isPreviewMode && !isNativeMobile },
+              { 'md:!mt-16': !isPreviewMode },
+              { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
+              { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
+              { 'mt-4 md:!mt-16 py-6': isPreviewMode && isNativeMobile },
+              {
+                'max-[1080px]:!mx-auto min-[1081px]:!ml-[18%] min-[1700px]:!mx-auto':
+                  isCommentSectionOpen &&
+                  !isNativeMobile &&
+                  zoomLevel !== '0.5' &&
+                  zoomLevel !== '0.75' &&
+                  zoomLevel !== '1.4' &&
+                  zoomLevel !== '1.5' &&
+                  zoomLevel !== '2',
+              },
+              {
+                '!mx-auto':
+                  !isCommentSectionOpen ||
+                  zoomLevel === '0.5' ||
+                  zoomLevel === '0.75' ||
+                  zoomLevel === '1.4' ||
+                  zoomLevel === '1.5',
+              },
+              {
+                '!ml-0': zoomLevel === '2' && isWidth1500px && !isWidth3000px,
+              },
+              {
+                'w-[700px] md:max-w-[700px] min-h-[150%]': zoomLevel === '0.5',
+              },
+              {
+                'w-[800px] md:max-w-[800px] min-h-[200%]': zoomLevel === '0.75',
+              },
+              {
+                'w-[850px] md:max-w-[850px] min-h-[100%]': zoomLevel === '1',
+              },
+              { 'w-[70%] md:max-w-[70%] min-h-[200%]': zoomLevel === '1.4' },
+              {
+                'w-[1062.5px] md:max-w-[1062.5px] min-h-[100%]':
+                  zoomLevel === '1.5',
+              },
+              { 'w-[1548px] md:max-w-[1548px]': zoomLevel === '2' },
+            )}
+            style={{
+              transformOrigin:
+                zoomLevel === '2' && !isWidth3000px
+                  ? 'left center'
+                  : 'top center',
+              transform: `scaleX(${zoomLevel})`,
+            }}
+          >
             <div
+              ref={editorRef}
               className={cn(
-                'color-bg-default w-full mx-auto rounded',
-                { 'mt-4 md:!mt-16 !py-20': isPreviewMode && !isNativeMobile },
-                { 'md:!mt-16': !isPreviewMode },
-                { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
-                { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
-                { 'mt-4 md:!mt-16 py-6': isPreviewMode && isNativeMobile },
-                {
-                  'max-[1080px]:!mx-auto min-[1081px]:!ml-[18%] min-[1700px]:!mx-auto':
-                    isCommentSectionOpen &&
-                    !isNativeMobile &&
-                    zoomLevel !== '0.5' &&
-                    zoomLevel !== '0.75' &&
-                    zoomLevel !== '1.4' &&
-                    zoomLevel !== '1.5' &&
-                    zoomLevel !== '2',
-                },
-                {
-                  '!mx-auto':
-                    !isCommentSectionOpen ||
-                    zoomLevel === '0.5' ||
-                    zoomLevel === '0.75' ||
-                    zoomLevel === '1.4' ||
-                    zoomLevel === '1.5',
-                },
-                {
-                  '!ml-0': zoomLevel === '2' && isWidth1500px && !isWidth3000px,
-                },
-                {
-                  'w-[700px] md:max-w-[700px] min-h-[150%]':
-                    zoomLevel === '0.5',
-                },
-                {
-                  'w-[800px] md:max-w-[800px] min-h-[200%]':
-                    zoomLevel === '0.75',
-                },
-                {
-                  'w-[850px] md:max-w-[850px] min-h-[100%]': zoomLevel === '1',
-                },
-                { 'w-[70%] md:max-w-[70%] min-h-[200%]': zoomLevel === '1.4' },
-                {
-                  'w-[1062.5px] md:max-w-[1062.5px] min-h-[100%]':
-                    zoomLevel === '1.5',
-                },
-                { 'w-[1548px] md:max-w-[1548px]': zoomLevel === '2' },
+                'w-full h-full pt-8 md:pt-0',
+                { 'custom-ios-padding': isIOS },
+                { 'color-bg-default': zoomLevel === '1.4' || '1.5' },
               )}
               style={{
-                transformOrigin:
-                  zoomLevel === '2' && !isWidth3000px
-                    ? 'left center'
-                    : 'top center',
-                transform: `scaleX(${zoomLevel})`,
+                transformOrigin: 'top center',
+                transform: `scaleY(${zoomLevel})`,
               }}
             >
-              <div
-                ref={editorRef}
-                className={cn(
-                  'w-full h-full pt-8 md:pt-0',
-                  { 'custom-ios-padding': isIOS },
-                  { 'color-bg-default': zoomLevel === '1.4' || '1.5' },
-                )}
-                style={{
-                  transformOrigin: 'top center',
-                  transform: `scaleY(${zoomLevel})`,
-                }}
-              >
-                <div>
+              <div>
+                {editor && (
                   <EditorBubbleMenu
                     editor={editor}
                     onError={onError}
@@ -520,8 +472,17 @@ const DdocEditor = forwardRef(
                     activeCommentId={activeCommentId}
                     isCollabDocumentPublished={isCollabDocumentPublished}
                   />
-                  <ColumnsMenu editor={editor} appendTo={editorRef} />
+                )}
+
+                {editor && <ColumnsMenu editor={editor} appendTo={editorRef} />}
+              </div>
+              {!editor || isContentLoading ? (
+                <div className={`${!isMobile ? 'ml-20' : 'ml-10 mt-10'}`}>
+                  <Skeleton
+                    className={`${isMobile ? 'w-[200px]' : 'w-[400px]'}  h-[32px] rounded-sm`}
+                  />
                 </div>
+              ) : (
                 <EditingProvider isPreviewMode={isPreviewMode}>
                   {tags && tags.length > 0 && (
                     <div
@@ -590,40 +551,44 @@ const DdocEditor = forwardRef(
                     className="w-full h-auto py-4 color-bg-default"
                   />
                 </EditingProvider>
-              </div>
-              {showCommentButton && !isNativeMobile && (
-                <Button
-                  ref={btn_ref}
-                  onClick={() => {
-                    handleCommentButtonClick?.(editor);
-                  }}
-                  variant="ghost"
-                  className={cn(
-                    'absolute w-12 h-12 color-bg-default rounded-full shadow-xl top-[70px] right-[-23px]',
-                  )}
-                >
-                  <LucideIcon name="MessageSquareText" size="sm" />
-                </Button>
               )}
             </div>
-            {!isPreviewMode && !disableBottomToolbar && (
-              <div
+            {showCommentButton && !isNativeMobile && (
+              <Button
+                ref={btn_ref}
+                onClick={() => {
+                  if (!editor) return;
+                  handleCommentButtonClick?.(editor);
+                }}
+                variant="ghost"
                 className={cn(
-                  'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-10 px-4 color-bg-default transition-all duration-300 ease-in-out border-b border-color-default',
-                  isKeyboardVisible && 'hidden',
-                  { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
+                  'absolute w-12 h-12 color-bg-default rounded-full shadow-xl top-[70px] right-[-23px]',
                 )}
               >
-                <MobileToolbar
-                  onError={onError}
-                  editor={editor}
-                  isKeyboardVisible={isKeyboardVisible}
-                  isNavbarVisible={isNavbarVisible}
-                  setIsNavbarVisible={setIsNavbarVisible}
-                  secureImageUploadUrl={secureImageUploadUrl}
-                />
-              </div>
+                <LucideIcon name="MessageSquareText" size="sm" />
+              </Button>
             )}
+          </div>
+          {!isPreviewMode && !disableBottomToolbar && (
+            <div
+              className={cn(
+                'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-10 px-4 color-bg-default transition-all duration-300 ease-in-out border-b border-color-default',
+                isKeyboardVisible && 'hidden',
+                { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
+              )}
+            >
+              <MobileToolbar
+                onError={onError}
+                editor={editor}
+                isKeyboardVisible={isKeyboardVisible}
+                isNavbarVisible={isNavbarVisible}
+                setIsNavbarVisible={setIsNavbarVisible}
+                secureImageUploadUrl={secureImageUploadUrl}
+                isLoading={!editor || isContentLoading}
+              />
+            </div>
+          )}
+          {editor && (
             <CommentDrawer
               isOpen={commentDrawerOpen as boolean}
               onClose={() => setCommentDrawerOpen?.(false)}
@@ -632,15 +597,78 @@ const DdocEditor = forwardRef(
               activeCommentId={activeCommentId}
               isPreviewMode={isPreviewMode}
             />
-            <div>
+          )}
+
+          <div>
+            {editor && (
               <CommentBubbleCard
                 editor={editor}
                 activeCommentId={activeCommentId}
                 commentDrawerOpen={commentDrawerOpen as boolean}
                 isCollabDocumentPublished={isCollabDocumentPublished}
               />
-            </div>
-          </CommentProvider>
+            )}
+          </div>
+        </>
+      );
+    };
+
+    return (
+      <EditorProvider>
+        <div
+          id="editor-canvas"
+          className={cn(
+            'h-[100vh] w-full custom-scrollbar relative z-10',
+            {
+              'overflow-x-hidden': zoomLevel !== '2',
+              'overflow-x-auto scroll-container': zoomLevel === '2',
+            },
+            !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
+            editorCanvasClassNames,
+          )}
+        >
+          <nav
+            id="Navbar"
+            className={cn(
+              'h-14 color-bg-default py-2 px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300',
+              {
+                'translate-y-0': isNavbarVisible,
+                'translate-y-[-100%]': !isNavbarVisible || isPresentationMode,
+              },
+            )}
+          >
+            {editor && renderNavbar?.({ editor: editor.getJSON() })}
+          </nav>
+          {!editor ? (
+            renderComp()
+          ) : (
+            <CommentProvider
+              editor={editor}
+              username={username as string}
+              setUsername={setUsername}
+              activeCommentId={activeCommentId}
+              setActiveCommentId={setActiveCommentId}
+              focusCommentWithActiveId={focusCommentWithActiveId}
+              initialComments={initialComments}
+              setInitialComments={setInitialComments}
+              onNewComment={onNewComment}
+              onCommentReply={onCommentReply}
+              onResolveComment={onResolveComment}
+              onUnresolveComment={onUnresolveComment}
+              onDeleteComment={onDeleteComment}
+              ensResolutionUrl={ensResolutionUrl as string}
+              isConnected={isConnected}
+              connectViaWallet={connectViaWallet}
+              isLoading={isLoading}
+              connectViaUsername={connectViaUsername}
+              isDDocOwner={isDDocOwner}
+              onInlineComment={onInlineComment}
+              onComment={onComment}
+              setCommentDrawerOpen={setCommentDrawerOpen}
+            >
+              {renderComp()}
+            </CommentProvider>
+          )}
         </div>
       </EditorProvider>
     );

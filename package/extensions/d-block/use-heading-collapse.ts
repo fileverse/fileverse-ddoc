@@ -81,7 +81,7 @@ export const useHeadingCollapse = ({
         collapsedHeadings.has(prevHeadingId)
       ) {
         hasExpandedOnCreate.current = true;
-        setCollapsedHeadings(prev => {
+        setCollapsedHeadings((prev) => {
           const newSet = new Set(prev);
           newSet.delete(prevHeadingId);
           return newSet;
@@ -167,7 +167,7 @@ export const useHeadingCollapse = ({
   const toggleCollapse = useCallback(() => {
     if (!headingId) return;
 
-    setCollapsedHeadings(prev => {
+    setCollapsedHeadings((prev) => {
       const newSet = new Set(prev);
       const { content } = node.content as any;
       const headingNode = content?.[0];
