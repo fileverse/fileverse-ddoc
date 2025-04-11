@@ -106,13 +106,6 @@ export async function startImageUpload(
         publicKey,
       );
 
-      const imgSrc = await handleDecryptImage(
-        url,
-        key,
-        fromByteArray(privateKey),
-        iv,
-      );
-
       const node = schema.nodes.resizableMedia.create({
         encryptedKey: key,
         url,
@@ -121,7 +114,6 @@ export async function startImageUpload(
         'media-type': 'secure-img',
         width: '100%',
         height: 'auto',
-        src: imgSrc,
       });
 
       const transaction = view.state.tr

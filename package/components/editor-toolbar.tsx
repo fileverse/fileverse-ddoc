@@ -21,6 +21,7 @@ import {
   TextField,
   DynamicDropdownV2,
   cn,
+  Skeleton,
 } from '@fileverse/ui';
 import ToolbarButton from '../common/toolbar-button';
 import { useMediaQuery } from 'usehooks-ts';
@@ -36,8 +37,9 @@ const TiptapToolBar = ({
   onMarkdownExport,
   onMarkdownImport,
   onPdfExport,
+  isLoading,
 }: {
-  editor: Editor;
+  editor: Editor | null;
   onError?: (errorString: string) => void;
   zoomLevel: string;
   setZoomLevel: (zoom: string) => void;
@@ -47,6 +49,7 @@ const TiptapToolBar = ({
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
   onPdfExport?: () => void;
+  isLoading: boolean;
 }) => {
   const {
     toolRef,
@@ -78,9 +81,9 @@ const TiptapToolBar = ({
     { title: '200%', value: '2' },
   ];
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const handleExport = () => {
+  const handleExport = async () => {
     if (editor) {
-      const generateDownloadUrl = editor.commands.exportMarkdownFile();
+      const generateDownloadUrl = await editor.commands.exportMarkdownFile();
       if (generateDownloadUrl) {
         const url = generateDownloadUrl;
         const link = document.createElement('a');
@@ -141,93 +144,106 @@ const TiptapToolBar = ({
   return (
     <div className="w-full bg-transparent py-2 px-4 items-center h-9 flex justify-between relative">
       <div className="flex h-9 items-center gap-1 justify-center">
-        <DynamicDropdownV2
-          key="Markdown"
-          align="start"
-          controlled={true}
-          isOpen={fileExportsOpen}
-          onClose={() => setFileExportsOpen(false)}
-          anchorTrigger={
-            <Tooltip text="Export/Import">
-              <IconButton
-                icon="FileExport"
-                variant="ghost"
-                size="md"
-                isActive={fileExportsOpen}
-                className={cn(
-                  'color-text-default',
-                  fileExportsOpen && 'dark:text-[#363B3F]',
-                )}
-                onClick={() => {
-                  setFileExportsOpen((prev) => !prev);
-                  setDropdownOpen(false);
-                }}
-              />
-            </Tooltip>
-          }
-          content={
-            <div className="p-2 flex flex-col gap-1 text-body-sm scroll-smooth color-bg-default shadow-elevation-3 transition-all rounded color-text-default">
-              <div>
-                <span className="text-[12px] px-2 font-normal color-text-secondary py-1">
-                  PDF
-                </span>
-                {pdfExportOption.length > 0 && (
-                  <button
-                    key={`pdf-0`}
-                    onClick={() => {
-                      pdfExportOption[0]?.onClick();
-                      setFileExportsOpen(false);
-                    }}
-                    className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
-                  >
-                    <LucideIcon
-                      name={pdfExportOption[0]?.icon as LucideIconProps['name']}
-                      className="w-5 h-5"
-                    />
-                    <span className="text-sm">{pdfExportOption[0]?.title}</span>
-                  </button>
-                )}
+        {/* Export/Import Dropdown */}
+        {isLoading ? (
+          <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />
+        ) : (
+          <DynamicDropdownV2
+            key="Markdown"
+            align="start"
+            controlled={true}
+            isOpen={fileExportsOpen}
+            onClose={() => setFileExportsOpen(false)}
+            anchorTrigger={
+              <Tooltip text="Export/Import">
+                <IconButton
+                  icon="FileExport"
+                  variant="ghost"
+                  size="md"
+                  isActive={fileExportsOpen}
+                  className={cn(
+                    'color-text-default',
+                    fileExportsOpen && 'dark:text-[#363B3F]',
+                  )}
+                  onClick={() => {
+                    setFileExportsOpen((prev) => !prev);
+                    setDropdownOpen(false);
+                  }}
+                />
+              </Tooltip>
+            }
+            content={
+              <div className="p-2 flex flex-col gap-1 text-body-sm scroll-smooth color-bg-default shadow-elevation-3 transition-all rounded color-text-default">
+                <div>
+                  <span className="text-[12px] px-2 font-normal color-text-secondary py-1">
+                    PDF
+                  </span>
+                  {pdfExportOption.length > 0 && (
+                    <button
+                      key={`pdf-0`}
+                      onClick={() => {
+                        pdfExportOption[0]?.onClick();
+                        setFileExportsOpen(false);
+                      }}
+                      className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
+                    >
+                      <LucideIcon
+                        name={
+                          pdfExportOption[0]?.icon as LucideIconProps['name']
+                        }
+                        className="w-5 h-5"
+                      />
+                      <span className="text-sm">
+                        {pdfExportOption[0]?.title}
+                      </span>
+                    </button>
+                  )}
+                </div>
+                <div>
+                  <span className="text-[12px] px-2 font-normal color-text-secondary py-1">
+                    Markdown
+                  </span>
+                  {markdownOptions.map((option, index) => (
+                    <button
+                      key={index}
+                      onClick={() => {
+                        setFileExportsOpen(false);
+                        option?.onClick();
+                      }}
+                      className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
+                    >
+                      <LucideIcon
+                        name={option?.icon as LucideIconProps['name']}
+                        className="w-5 h-5"
+                      />
+                      <span className="text-sm">{option?.title}</span>
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div>
-                <span className="text-[12px] px-2 font-normal color-text-secondary py-1">
-                  Markdown
-                </span>
-
-                {markdownOptions.map((option, index) => (
-                  <button
-                    key={index}
-                    onClick={() => {
-                      setFileExportsOpen(false);
-                      option?.onClick();
-                    }}
-                    className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
-                  >
-                    <LucideIcon
-                      name={option?.icon as LucideIconProps['name']}
-                      className="w-5 h-5"
-                    />
-                    <span className="text-sm">{option?.title}</span>
-                  </button>
-                ))}
-              </div>
-            </div>
-          }
-        />
+            }
+          />
+        )}
         <div className="w-[1px] h-4 vertical-divider mx-1"></div>
 
+        {/* Undo/Redo Tools */}
         <div className="flex gap-1 justify-center items-center">
           {undoRedoTools.map((tool, _index) => {
             if (tool) {
               return (
                 <Tooltip key={tool.title} text={tool.title}>
-                  <IconButton
-                    className="disabled:bg-transparent"
-                    variant={'ghost'}
-                    icon={tool.icon}
-                    onClick={() => tool.onClick()}
-                    size="md"
-                    disabled={!tool.isActive}
-                  />
+                  {isLoading ? (
+                    <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />
+                  ) : (
+                    <IconButton
+                      className="disabled:bg-transparent"
+                      variant={'ghost'}
+                      icon={tool.icon}
+                      onClick={() => tool.onClick()}
+                      size="md"
+                      disabled={!tool.isActive}
+                    />
+                  )}
                 </Tooltip>
               );
             } else {
@@ -240,103 +256,128 @@ const TiptapToolBar = ({
             }
           })}
         </div>
-        <DynamicDropdownV2
-          key="zoom-levels"
-          align="start"
-          controlled={true}
-          isOpen={dropdownOpen}
-          onClose={() => setDropdownOpen(false)}
-          anchorTrigger={
-            <button
-              className="bg-transparent hover:!color-bg-default-hover rounded p-2 flex items-center justify-center gap-2 w-20"
-              onClick={() => {
-                setDropdownOpen((prev) => !prev);
-                setFileExportsOpen(false);
-              }}
-            >
-              <span className="text-body-sm line-clamp-1 w-fit">
-                {zoomLevels.find((z) => z.value === zoomLevel)?.title || '100%'}
-              </span>
-              <LucideIcon name="ChevronDown" size="sm" />
-            </button>
-          }
-          content={
-            <div className="zoom-level-options w-[110px] text-body-sm scroll-smooth color-bg-default px-1 py-2 shadow-elevation-3 transition-all rounded">
-              {zoomLevels.map((zoom) => (
-                <button
-                  key={zoom.title}
-                  className="hover:color-bg-default-hover h-8 rounded py-1 px-2 w-full text-left flex items-center space-x-2 text-sm color-text-default transition"
-                  onClick={() => {
-                    setZoomLevel(zoom.value);
-                    setDropdownOpen(false);
-                  }}
-                >
-                  {zoom.title}
-                </button>
-              ))}
-            </div>
-          }
-        />
-        <div className="w-[1px] h-4 vertical-divider mx-1"></div>
-        <DynamicDropdown
-          key={IEditorTool.FONT_FAMILY}
-          anchorTrigger={
-            <button
-              className="bg-transparent hover:!color-bg-default-hover rounded p-2 flex items-center justify-center gap-2 w-24"
-              onClick={() => setToolVisibility(IEditorTool.FONT_FAMILY)}
-            >
-              <span
-                className="text-body-sm line-clamp-1"
-                style={{
-                  fontFamily: fonts.find((font) =>
-                    editor?.isActive('textStyle', { fontFamily: font.value }),
-                  )?.value,
+
+        {/* Zoom Levels Dropdown */}
+        {isLoading ? (
+          <Skeleton className={`w-[80px] h-[36px] rounded-sm`} />
+        ) : (
+          <DynamicDropdownV2
+            key="zoom-levels"
+            align="start"
+            controlled={true}
+            isOpen={dropdownOpen}
+            onClose={() => setDropdownOpen(false)}
+            anchorTrigger={
+              <button
+                className="bg-transparent hover:!color-bg-default-hover rounded p-2 flex items-center justify-center gap-2 w-20"
+                onClick={() => {
+                  setDropdownOpen((prev) => !prev);
+                  setFileExportsOpen(false);
                 }}
               >
-                {fonts.find((font) =>
-                  editor?.isActive('textStyle', { fontFamily: font.value }),
-                )?.title || 'Font'}
-              </span>
-              <LucideIcon name="ChevronDown" size="sm" className="min-w-fit" />
-            </button>
-          }
-          content={
-            <EditorFontFamily
-              editor={editor as Editor}
-              elementRef={toolRef}
-              setToolVisibility={setToolVisibility}
-            />
-          }
-        />
+                <span className="text-body-sm line-clamp-1 w-fit">
+                  {zoomLevels.find((z) => z.value === zoomLevel)?.title ||
+                    '100%'}
+                </span>
+                <LucideIcon name="ChevronDown" size="sm" />
+              </button>
+            }
+            content={
+              <div className="zoom-level-options w-[110px] text-body-sm scroll-smooth color-bg-default px-1 py-2 shadow-elevation-3 transition-all rounded">
+                {zoomLevels.map((zoom) => (
+                  <button
+                    key={zoom.title}
+                    className="hover:color-bg-default-hover h-8 rounded py-1 px-2 w-full text-left flex items-center space-x-2 text-sm color-text-default transition"
+                    onClick={() => {
+                      setZoomLevel(zoom.value);
+                      setDropdownOpen(false);
+                    }}
+                  >
+                    {zoom.title}
+                  </button>
+                ))}
+              </div>
+            }
+          />
+        )}
         <div className="w-[1px] h-4 vertical-divider mx-1"></div>
-        <DynamicDropdown
-          key={IEditorTool.HEADING}
-          anchorTrigger={
-            <button
-              className="bg-transparent hover:!color-bg-default-hover rounded gap-2 p-2 flex items-center justify-center w-28"
-              onClick={() => setToolVisibility(IEditorTool.HEADING)}
-            >
-              <span className="text-body-sm line-clamp-1">
-                {editor?.isActive('heading', { level: 1 })
-                  ? 'Heading 1'
-                  : editor?.isActive('heading', { level: 2 })
-                    ? 'Heading 2'
-                    : editor?.isActive('heading', { level: 3 })
-                      ? 'Heading 3'
-                      : 'Text'}
-              </span>
-              <LucideIcon name="ChevronDown" size="sm" />
-            </button>
-          }
-          content={
-            <TextHeading
-              setVisibility={setToolVisibility}
-              editor={editor as Editor}
-              elementRef={toolRef}
-            />
-          }
-        />
+
+        {/* Font Family Dropdown */}
+        {isLoading ? (
+          <Skeleton className={`w-[96px] h-[36px] rounded-sm`} />
+        ) : (
+          <DynamicDropdown
+            key={IEditorTool.FONT_FAMILY}
+            anchorTrigger={
+              <button
+                className="bg-transparent hover:!color-bg-default-hover rounded p-2 flex items-center justify-center gap-2 w-24"
+                onClick={() => setToolVisibility(IEditorTool.FONT_FAMILY)}
+              >
+                <span
+                  className="text-body-sm line-clamp-1"
+                  style={{
+                    fontFamily: fonts.find((font) =>
+                      editor?.isActive('textStyle', { fontFamily: font.value }),
+                    )?.value,
+                  }}
+                >
+                  {fonts.find((font) =>
+                    editor?.isActive('textStyle', { fontFamily: font.value }),
+                  )?.title || 'Font'}
+                </span>
+                <LucideIcon
+                  name="ChevronDown"
+                  size="sm"
+                  className="min-w-fit"
+                />
+              </button>
+            }
+            content={
+              <EditorFontFamily
+                editor={editor as Editor}
+                elementRef={toolRef}
+                setToolVisibility={setToolVisibility}
+              />
+            }
+          />
+        )}
         <div className="w-[1px] h-4 vertical-divider mx-1"></div>
+
+        {/* Heading Dropdown */}
+        {isLoading ? (
+          <Skeleton className={`w-[112px] h-[36px] rounded-sm`} />
+        ) : (
+          <DynamicDropdown
+            key={IEditorTool.HEADING}
+            anchorTrigger={
+              <button
+                className="bg-transparent hover:!color-bg-default-hover rounded gap-2 p-2 flex items-center justify-center w-28"
+                onClick={() => setToolVisibility(IEditorTool.HEADING)}
+              >
+                <span className="text-body-sm line-clamp-1">
+                  {editor?.isActive('heading', { level: 1 })
+                    ? 'Heading 1'
+                    : editor?.isActive('heading', { level: 2 })
+                      ? 'Heading 2'
+                      : editor?.isActive('heading', { level: 3 })
+                        ? 'Heading 3'
+                        : 'Text'}
+                </span>
+                <LucideIcon name="ChevronDown" size="sm" />
+              </button>
+            }
+            content={
+              <TextHeading
+                setVisibility={setToolVisibility}
+                editor={editor as Editor}
+                elementRef={toolRef}
+              />
+            }
+          />
+        )}
+        <div className="w-[1px] h-4 vertical-divider mx-1"></div>
+
+        {/* Toolbar Items */}
         <div className="flex gap-2 justify-center items-center">
           {toolbar.map((tool, index) => {
             if (!tool) {
@@ -354,7 +395,7 @@ const TiptapToolBar = ({
               tool.title === 'Alignment' ||
               tool.title === 'Link'
             ) {
-              return (
+              return !isLoading ? (
                 <DynamicDropdown
                   key={tool.title}
                   align={tool.title === 'Link' ? 'end' : 'center'}
@@ -365,18 +406,18 @@ const TiptapToolBar = ({
                   }
                   content={renderContent(tool)}
                 />
+              ) : (
+                <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />
               );
             }
 
-            // Show "More" dropdown only once when below 1480px
             if (tool.group === 'More') {
               if (isBelow1480px) {
-                // Only render the dropdown for the first "More" item
                 const isFirstMoreItem =
                   toolbar.findIndex((t) => t?.group === 'More') === index;
                 if (!isFirstMoreItem) return null;
 
-                return (
+                return !isLoading ? (
                   <DynamicDropdown
                     key="more-dropdown"
                     align="end"
@@ -393,19 +434,21 @@ const TiptapToolBar = ({
                             <ToolbarButton
                               key={moreTool?.title}
                               icon={moreTool?.icon}
-                              onClick={moreTool?.onClick || (() => { })}
+                              onClick={moreTool?.onClick || (() => {})}
                               isActive={moreTool?.isActive || false}
                             />
                           ))}
                       </div>
                     }
                   />
+                ) : (
+                  <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />
                 );
               }
             }
 
             // Regular toolbar button
-            return (
+            return !isLoading ? (
               <Tooltip key={tool.title} text={tool.title}>
                 <ToolbarButton
                   icon={tool.icon}
@@ -413,6 +456,8 @@ const TiptapToolBar = ({
                   isActive={tool.isActive}
                 />
               </Tooltip>
+            ) : (
+              <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />
             );
           })}
           <DynamicModal
@@ -442,12 +487,16 @@ const TiptapToolBar = ({
       </div>
       <div className="flex items-center gap-1">
         <div className="w-[1px] h-4 vertical-divider mx-2"></div>
-        <IconButton
-          size="md"
-          variant="ghost"
-          icon={isNavbarVisible ? 'ChevronUp' : 'ChevronDown'}
-          onClick={() => setIsNavbarVisible((prev) => !prev)}
-        />
+        {isLoading ? (
+          <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />
+        ) : (
+          <IconButton
+            size="md"
+            variant="ghost"
+            icon={isNavbarVisible ? 'ChevronUp' : 'ChevronDown'}
+            onClick={() => setIsNavbarVisible((prev) => !prev)}
+          />
+        )}
       </div>
     </div>
   );

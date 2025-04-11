@@ -107,6 +107,7 @@ export interface DdocProps extends CommentAccountProps {
   onSlidesShare?: () => void;
   renderThemeToggle?: () => JSX.Element;
   metadataProxyUrl?: string;
+  onCopyHeadingLink?: (link: string) => void;
 }
 
 export interface IEditorSelectionData {

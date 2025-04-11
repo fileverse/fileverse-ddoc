@@ -44,6 +44,7 @@ export const defaultExtensions = (
   onError: (error: string) => void,
   secureImageUploadUrl?: string,
   metadataProxyUrl?: string,
+  onCopyHeadingLink?: (link: string) => void,
 ) => [
   FontFamily,
   StarterKit.configure({
@@ -169,6 +170,7 @@ export const defaultExtensions = (
   GapCursor,
   DBlock.configure({
     secureImageUploadUrl,
+    onCopyHeadingLink,
   }),
   TrailingNode,
   Document,
@@ -178,7 +180,7 @@ export const defaultExtensions = (
   EmbeddedTweet,
   actionButton,
   ColumnExtension,
-  MarkdownPasteHandler,
+  MarkdownPasteHandler(secureImageUploadUrl),
   Markdown.configure({
     html: true, // Allow HTML input/output
     tightLists: true, // No <p> inside <li> in markdown output
