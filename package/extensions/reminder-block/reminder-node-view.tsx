@@ -1,6 +1,6 @@
 import { NodeViewProps, NodeViewWrapper } from '@tiptap/react';
 import { LucideIcon, IconButton, cn, DynamicDropdown } from '@fileverse/ui';
-import { useCallback } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { formatDateForReminder } from './utils';
 
 export const ReminderNodeView = ({
@@ -9,8 +9,30 @@ export const ReminderNodeView = ({
   deleteNode,
 }: NodeViewProps) => {
   const reminder = node.attrs.reminder;
+  const [isOverdue, setIsOverdue] = useState(reminder.timestamp < Date.now());
 
   const isPreviewMode = editor.isEditable === false;
+
+  useEffect(() => {
+    // Only set up the interval if the reminder is not yet overdue
+    if (!isOverdue) {
+      const checkOverdue = () => {
+        const now = Date.now();
+        if (reminder.timestamp <= now) {
+          setIsOverdue(true);
+        }
+      };
+
+      // Check immediately
+      checkOverdue();
+
+      // Set up interval to check every minute
+      const intervalId = setInterval(checkOverdue, 60000);
+
+      // Clean up interval on unmount
+      return () => clearInterval(intervalId);
+    }
+  }, [isOverdue, reminder.timestamp]);
 
   const handleDelete = useCallback(() => {
     const extensionOptions = editor.extensionManager.extensions.find(
@@ -24,8 +46,6 @@ export const ReminderNodeView = ({
   }, [editor, reminder?.id, deleteNode]);
 
   if (!reminder) return null;
-
-  const isOverdue = reminder.timestamp < Date.now();
 
   return (
     <NodeViewWrapper
