@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import DdocEditor from '../../package/ddoc-editor';
+import { PermissionAlert } from '../../package/components/notifications/permission-alert';
 import { JSONContent } from '@tiptap/react';
 import {
   Button,
@@ -118,6 +119,7 @@ function App() {
   // Add state for reminders
   const [reminders, setReminders] = useState<Reminder[]>([]);
   const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
+  const [showNotificationDialog, setShowNotificationDialog] = useState(false);
 
   useEffect(() => {
     if (collaborationId) {
@@ -161,17 +163,19 @@ function App() {
 
   // Handle requesting notification permission
   const requestNotificationPermission = async () => {
+    // Show our custom UI first instead of the browser prompt
+    setShowNotificationDialog(true);
+  };
+
+  // Handle when user accepts our custom prompt
+  const handleAcceptNotifications = async () => {
+    setShowNotificationDialog(false);
     try {
       const permission = await notificationService.requestPermission();
       setNotificationPermission(permission);
 
       if (permission === 'granted') {
         await notificationService.initialize();
-        toast({
-          title: 'Notifications enabled!',
-          description: 'You will receive reminders when they are due.',
-          variant: 'success'
-        });
       } else {
         toast({
           title: 'Notification permission denied',
@@ -187,6 +191,11 @@ function App() {
         variant: 'danger'
       });
     }
+  };
+
+  // Handle when user rejects our custom prompt
+  const handleRejectNotifications = () => {
+    setShowNotificationDialog(false);
   };
 
   // Handle creating a reminder
@@ -207,8 +216,8 @@ function App() {
         variant: 'success'
       });
 
-      // Request notification permission if not granted yet
-      if (notificationPermission !== 'granted') {
+      // Request notification permission if it's in default state (not yet decided)
+      if (notificationPermission === 'default') {
         await requestNotificationPermission();
       }
     } catch (error) {
@@ -232,11 +241,6 @@ function App() {
       // Delete from database
       await reminderDB.deleteReminder(reminderId);
 
-      toast({
-        title: 'Success',
-        description: 'Reminder deleted',
-        variant: 'success'
-      });
     } catch (error) {
       console.error('Error deleting reminder:', error);
       toast({
@@ -258,11 +262,6 @@ function App() {
       // Update in database
       await reminderDB.updateReminder(reminder);
 
-      toast({
-        title: 'Success',
-        description: 'Reminder updated',
-        variant: 'success'
-      });
     } catch (error) {
       console.error('Error updating reminder:', error);
       toast({
@@ -352,7 +351,7 @@ function App() {
                   </Button>
                   <Button
                     variant={'ghost'}
-                    onClick={() => {}}
+                    onClick={() => { }}
                     className="flex justify-start gap-2"
                   >
                     <LucideIcon name="Share2" size="sm" />
@@ -421,6 +420,14 @@ function App() {
 
   return (
     <div>
+      {/* Custom notification permission dialog */}
+      {showNotificationDialog && notificationPermission === 'default' && (
+        <PermissionAlert
+          handleRejectNotifications={handleRejectNotifications}
+          handleAcceptNotifications={handleAcceptNotifications}
+        />
+      )}
+
       <DdocEditor
         enableCollaboration={enableCollaboration}
         collaborationId={collaborationId}
@@ -453,11 +460,11 @@ function App() {
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
-        onComment={(): void => {}}
-        onInlineComment={(): void => {}}
-        onMarkdownImport={(): void => {}}
-        onMarkdownExport={(): void => {}}
-        onPdfExport={(): void => {}}
+        onComment={(): void => { }}
+        onInlineComment={(): void => { }}
+        onMarkdownImport={(): void => { }}
+        onMarkdownExport={(): void => { }}
+        onPdfExport={(): void => { }}
         initialComments={initialComments}
         onCommentReply={handleReplyOnComment}
         onNewComment={handleNewComment}
@@ -480,7 +487,7 @@ function App() {
           }),
         ]}
         isConnected={isConnected}
-        connectViaWallet={async () => {}}
+        connectViaWallet={async () => { }}
         isLoading={false}
         connectViaUsername={handleConnectViaUsername}
         isDDocOwner={true}
