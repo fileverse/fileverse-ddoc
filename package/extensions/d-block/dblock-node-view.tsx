@@ -27,8 +27,8 @@ import {
   Tooltip,
   cn,
 } from '@fileverse/ui';
-import { useEditorContext } from '../../context/editor-context';
-import { useHeadingCollapse } from './use-heading-collapse';
+// import { useEditorContext } from '../../context/editor-context';
+// import { useHeadingCollapse } from './use-heading-collapse';
 
 export const DBlockNodeView: React.FC<
   NodeViewProps & { secureImageUploadUrl?: string }
@@ -36,16 +36,16 @@ export const DBlockNodeView: React.FC<
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const actions = useContentItemActions(editor as Editor, node, getPos());
   const { isPreviewMode, isPresentationMode } = useEditingContext();
-  const { collapsedHeadings, setCollapsedHeadings } = useEditorContext();
+  // const { collapsedHeadings, setCollapsedHeadings } = useEditorContext();
 
-  const { isHeading, isThisHeadingCollapsed, shouldBeHidden, toggleCollapse } =
-    useHeadingCollapse({
-      node,
-      getPos,
-      editor,
-      collapsedHeadings,
-      setCollapsedHeadings,
-    });
+  // const { isHeading, isThisHeadingCollapsed, shouldBeHidden, toggleCollapse } =
+  //   useHeadingCollapse({
+  //     node,
+  //     getPos,
+  //     editor,
+  //     collapsedHeadings,
+  //     setCollapsedHeadings,
+  //   });
 
   const isTable = useMemo(() => {
     const { content } = node.content as any;
@@ -327,7 +327,7 @@ export const DBlockNodeView: React.FC<
       className={cn(
         'flex px-4 md:px-8 lg:pr-[80px] lg:pl-[8px] gap-2 group w-full relative justify-center items-start',
         isTable && 'pointer-events-auto',
-        shouldBeHidden && 'hidden',
+        // shouldBeHidden && 'hidden',
       )}
     >
       <section
@@ -441,7 +441,7 @@ export const DBlockNodeView: React.FC<
                 </PopoverContent>
               </Popover>
             </FocusScope>
-            {isHeading && (
+            {/* {isHeading && (
               <Tooltip
                 position="bottom"
                 text={
@@ -466,11 +466,11 @@ export const DBlockNodeView: React.FC<
                   />
                 </div>
               </Tooltip>
-            )}
+            )} */}
           </>
         ) : (
           <>
-            {isHeading && (
+            {/* {isHeading && (
               <Tooltip
                 position="bottom"
                 text={
@@ -495,7 +495,7 @@ export const DBlockNodeView: React.FC<
                   />
                 </div>
               </Tooltip>
-            )}
+            )} */}
           </>
         )}
       </section>
