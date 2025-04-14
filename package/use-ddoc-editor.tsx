@@ -51,7 +51,6 @@ export const useDdocEditor = ({
   setCharacterCount,
   setWordCount,
   secureImageUploadUrl,
-  scrollPosition,
   ddocId,
   enableIndexeddbSync,
   unFocused,
@@ -399,25 +398,6 @@ export const useDdocEditor = ({
 
       initialContentSetRef.current = true;
     }
-
-    const scrollTimeoutId = setTimeout(() => {
-      if (ref.current && !!scrollPosition && editor) {
-        const coords = editor.view.coordsAtPos(scrollPosition);
-        const editorContainer = ref.current;
-        editorContainer.scrollTo({
-          top: editorContainer.scrollTop + coords.top - 500,
-          behavior: 'smooth',
-        });
-      }
-      initialContentSetRef.current = false;
-      if (editor && initialContent === undefined) {
-        setIsContentLoading(false);
-      }
-    });
-
-    return () => {
-      clearTimeout(scrollTimeoutId);
-    };
   }, [initialContent, editor, ydoc]);
 
   const startCollaboration = async () => {
