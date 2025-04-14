@@ -397,6 +397,8 @@ export const useDdocEditor = ({
       });
 
       initialContentSetRef.current = true;
+    } else {
+      setIsContentLoading(false);
     }
   }, [initialContent, editor, ydoc]);
 
