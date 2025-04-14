@@ -6,13 +6,14 @@ import {
   BottomDrawer,
   IconButton,
   Divider,
+  DynamicDropdown,
+  DatePicker,
+  TimePicker,
 } from '@fileverse/ui';
+import { format } from 'date-fns';
 import { useMediaQuery } from 'usehooks-ts';
 import { ReminderMenuProps } from './types';
 import uuid from 'react-uuid';
-import React from 'react';
-import { formatTime, parseCustomDateTime } from './utils';
-import { formatDate } from './utils';
 
 const getTomorrowMorning = () => {
   const tomorrow = new Date();
@@ -42,23 +43,22 @@ export const ReminderMenu = ({
   onCreateReminder,
 }: ReminderMenuProps) => {
   const [title, setTitle] = useState('');
-  const [date, setDate] = useState('');
-  const [time, setTime] = useState('');
+  const [date, setDate] = useState<Date | undefined>(undefined);
   const [error, setError] = useState('');
   const isMobile = useMediaQuery('(max-width: 768px)');
-  const [is24hFormat, setIs24hFormat] = useState(true);
+  const [use12Hours, setUse12Hours] = useState(true);
 
-  const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatDate(e.target.value);
-    setDate(formatted);
-    setError('');
-  };
+  // const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const formatted = formatDate(e.target.value);
+  //   setDate(formatted);
+  //   setError('');
+  // };
 
-  const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const formatted = formatTime(e.target.value);
-    setTime(formatted);
-    setError('');
-  };
+  // const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  //   const formatted = formatTime(e.target.value);
+  //   setTime(formatted);
+  //   setError('');
+  // };
 
   const createReminder = (timeOffset: number) => {
     if (!title) {
@@ -83,12 +83,12 @@ export const ReminderMenu = ({
       return;
     }
 
-    if (!date || !time) {
+    if (!date) {
       setError('Please enter both date and time');
       return;
     }
 
-    const timestamp = parseCustomDateTime(date, time);
+    const timestamp = date.getTime();
     if (!timestamp) {
       setError('Invalid date or time format');
       return;
@@ -160,49 +160,49 @@ export const ReminderMenu = ({
       <h3 className="text-heading-xsm">Custom</h3>
 
       <div className="flex gap-2">
-        <TextField
-          type="text"
-          placeholder="DD.MM.YYY"
-          value={date}
-          onChange={handleDateChange}
-          className=""
-          pattern="\d{2}\.\d{2}\.\d{4}"
-          inputMode="numeric"
-          maxLength={10}
-          style={
-            {
-              '--input-padding': '8px',
-              '--input-height': '36px',
-            } as React.CSSProperties
+        <DynamicDropdown
+          anchorTrigger={
+            <TextField
+              placeholder="MM/DD/YYYY"
+              value={date ? format(date, 'P') : 'MM/DD/YYYY'}
+              readOnly
+              className="cursor-pointer"
+            />
+          }
+          content={
+            <div className="p-2 color-bg-default shadow-elevation-3 rounded-md">
+              <DatePicker mode="single" selected={date} onSelect={setDate} />
+            </div>
           }
         />
 
-        <div className="flex items-center text-body-sm">
-          <TextField
-            type="text"
-            placeholder="HH:MM"
-            value={time}
-            onChange={handleTimeChange}
-            className="w-24 rounded-r-none"
-            pattern="\d{2}:\d{2}"
-            inputMode="numeric"
-            maxLength={5}
-            style={
-              {
-                '--input-padding': '8px',
-                '--input-height': '36px',
-              } as React.CSSProperties
+        <div className="flex items-center">
+          <DynamicDropdown
+            anchorTrigger={
+              <TextField
+                placeholder="HH:MM"
+                value={date ? format(date, 'p') : 'HH:MM'}
+                readOnly
+                className="cursor-pointer rounded-r-none !w-24"
+              />
+            }
+            content={
+              <div className="p-2 color-bg-default shadow-elevation-3 rounded-md">
+                <TimePicker
+                  date={date}
+                  setDate={setDate}
+                  use12Hours={use12Hours}
+                />
+              </div>
             }
           />
-
           <Button
             variant="ghost"
             size="md"
-            disabled
-            className="!min-w-fit rounded-l-none rounded-r-md"
-            onClick={() => setIs24hFormat(!is24hFormat)}
+            className="!min-w-fit rounded-l-none rounded-r-md color-bg-tertiary"
+            onClick={() => setUse12Hours(!use12Hours)}
           >
-            {is24hFormat ? '24h' : '12h'}
+            {use12Hours ? '12h' : '24h'}
           </Button>
         </div>
       </div>

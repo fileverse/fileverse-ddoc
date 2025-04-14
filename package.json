@@ -100,8 +100,6 @@
     "yjs": "^13.6.15"
   },
   "devDependencies": {
-    "@serwist/vite": "^9.0.13",
-    "@serwist/window": "^9.0.13",
     "@types/dompurify": "^3.0.5",
     "@types/katex": "^0.16.7",
     "@types/markdown-it-footnote": "^3.0.4",
