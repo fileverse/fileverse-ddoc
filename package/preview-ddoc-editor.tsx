@@ -90,9 +90,10 @@ const PreviewDdocEditor = forwardRef(
       () => ({
         getEditor: () => editor,
         getYdoc: () => ydoc,
-        exportContentAsMarkDown: (filename: string) => {
+        exportContentAsMarkDown: async (filename: string) => {
           if (editor) {
-            const generateDownloadUrl = editor.commands.exportMarkdownFile();
+            const generateDownloadUrl =
+              await editor.commands.exportMarkdownFile();
             if (generateDownloadUrl) {
               const url = generateDownloadUrl;
               const link = document.createElement('a');
