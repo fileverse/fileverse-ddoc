@@ -11,6 +11,8 @@ import {
   Skeleton,
 } from '@fileverse/ui';
 import ToolbarButton from '../common/toolbar-button';
+import { AnimatePresence } from 'framer-motion';
+import { fadeInTransition } from './motion-div';
 
 const MobileToolbar = ({
   editor,
@@ -154,15 +156,21 @@ const MobileToolbar = ({
               <div key={tool.title} className="flex items-center">
                 {tool.title === 'Text formating' ? (
                   <DrawerTrigger asChild>
-                    {isLoading ? (
-                      <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />
-                    ) : (
-                      <ToolbarButton
-                        onClick={tool.onClick}
-                        isActive={tool.isActive}
-                        icon={tool.icon}
-                      />
-                    )}
+                    <AnimatePresence>
+                      {isLoading
+                        ? fadeInTransition(
+                            <Skeleton
+                              className={`w-[36px] h-[36px] rounded-sm`}
+                            />,
+                          )
+                        : fadeInTransition(
+                            <ToolbarButton
+                              onClick={tool.onClick}
+                              isActive={tool.isActive}
+                              icon={tool.icon}
+                            />,
+                          )}
+                    </AnimatePresence>
                   </DrawerTrigger>
                 ) : tool.title === 'Text color' ? (
                   <DrawerTrigger asChild>
