@@ -1,6 +1,7 @@
 import { useState, useEffect, forwardRef } from 'react';
 import { fetchImage, decryptImage } from '../utils/security.ts';
 import { toByteArray } from 'base64-js';
+import { Skeleton } from '@fileverse/ui';
 
 type Props = {
   encryptedKey: string;
@@ -74,7 +75,7 @@ export const SecureImage = forwardRef<HTMLImageElement, Props>(
       };
     }, [encryptedKey, url, iv, privateKey]);
 
-    return (
+    return source ? (
       <img
         src={source}
         alt={alt}
@@ -83,28 +84,30 @@ export const SecureImage = forwardRef<HTMLImageElement, Props>(
         height={height}
         ref={ref}
       />
-
-      // TODO: For figure caption later
-      //   <figure>
-      //   <img
-      //     src={imageData}
-      //     alt={alt}
-      //     className={className}
-      //     width={width}
-      //     height={height}
-      //     ref={ref}
-      //   />
-      //   <figcaption
-      //     contentEditable
-      //     className="text-center italic mt-2"
-      //     onInput={(e) => {
-      //       // const caption = (e.target as HTMLElement).innerText;
-      //       // updateAttributes({ caption, alt: caption });
-      //     }}
-      //     defaultValue={caption || alt || 'Add a caption'}
-      //   >
-      //   </figcaption>
-      // </figure>
+    ) : (
+      <Skeleton className={`w-[500px] h-[300px] rounded-lg`} />
     );
+
+    // TODO: For figure caption later
+    //   <figure>
+    //   <img
+    //     src={imageData}
+    //     alt={alt}
+    //     className={className}
+    //     width={width}
+    //     height={height}
+    //     ref={ref}
+    //   />
+    //   <figcaption
+    //     contentEditable
+    //     className="text-center italic mt-2"
+    //     onInput={(e) => {
+    //       // const caption = (e.target as HTMLElement).innerText;
+    //       // updateAttributes({ caption, alt: caption });
+    //     }}
+    //     defaultValue={caption || alt || 'Add a caption'}
+    //   >
+    //   </figcaption>
+    // </figure>
   },
 );
