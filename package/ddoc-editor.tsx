@@ -108,6 +108,7 @@ const DdocEditor = forwardRef(
       renderThemeToggle,
       metadataProxyUrl,
       onCopyHeadingLink,
+      footerHeight,
     }: DdocProps,
     ref,
   ) => {
@@ -624,14 +625,16 @@ const DdocEditor = forwardRef(
       <EditorProvider>
         <div
           className={cn(
-            ' w-full',
-            !isPreviewMode &&
-              (isNavbarVisible
-                ? 'h-[calc(100vh-108px)]'
-                : 'h-[calc(100vh-52px)]'),
-            isPreviewMode && 'h-[calc(100vh-52px)]',
+            'w-full',
             !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
           )}
+          style={{
+            height: !isPreviewMode
+              ? isNavbarVisible
+                ? `calc(100vh - 108px - ${footerHeight || '0px'})`
+                : `calc(100vh - 52px - ${footerHeight || '0px'})`
+              : `calc(100vh - 52px - ${footerHeight || '0px'})`,
+          }}
         >
           <div
             id="editor-canvas"

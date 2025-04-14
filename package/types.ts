@@ -107,6 +107,7 @@ export interface DdocProps extends CommentAccountProps {
   renderThemeToggle?: () => JSX.Element;
   metadataProxyUrl?: string;
   onCopyHeadingLink?: (link: string) => void;
+  footerHeight?: string;
 }
 
 export interface IEditorSelectionData {
