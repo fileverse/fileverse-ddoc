@@ -399,7 +399,7 @@ const DdocEditor = forwardRef(
                 (isNavbarVisible
                   ? '-mt-[1.5rem] md:!mt-[0.8rem] pt-0 md:pt-[5rem]'
                   : 'pt-0 md:pt-[1.5rem]'),
-              isPreviewMode && 'md:!mt-[1rem] pt-0 md:!pt-[1.5rem]',
+              isPreviewMode && 'md:!mt-[1rem] pt-0 md:!pt-[5rem]',
               { 'md:!mt-[0.7rem]': !isPreviewMode },
               {
                 '-mt-[1.5rem] md:!mt-[0.7rem]':
@@ -624,14 +624,19 @@ const DdocEditor = forwardRef(
       <EditorProvider>
         <div
           className={cn(
-            'h-[100vh] w-full',
+            ' w-full',
+            !isPreviewMode &&
+              (isNavbarVisible
+                ? 'h-[calc(100vh-108px)]'
+                : 'h-[calc(100vh-52px)]'),
+            isPreviewMode && 'h-[calc(100vh-52px)]',
             !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
           )}
         >
           <div
             id="editor-canvas"
             className={cn(
-              'h-[100vh] w-full custom-scrollbar',
+              'h-[100%] w-full custom-scrollbar',
               !isPreviewMode &&
                 (isNavbarVisible ? 'mt-[6.7rem]' : 'mt-[3.3rem]'),
               isPreviewMode && 'mt-[3rem]',
