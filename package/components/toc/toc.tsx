@@ -6,7 +6,7 @@ import { TextSelection } from '@tiptap/pm/state';
 import { useState } from 'react';
 import { ToCProps, ToCItemProps, ToCItemType } from './types';
 import { useMediaQuery } from 'usehooks-ts';
-// import { useEditorContext } from '../../context/editor-context';
+import { useEditorContext } from '../../context/editor-context';
 
 export const ToCItem = ({
   item,
@@ -61,7 +61,7 @@ export const ToC = ({ items = [], editor, setItems }: ToCProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const isMobile = useMediaQuery('(max-width: 1280px)');
 
-  // const { setCollapsedHeadings } = useEditorContext();
+  const { setHeadingCollapsed } = useEditorContext();
 
   if (items.length === 0) {
     return <ToCEmptyState />;
@@ -78,61 +78,56 @@ export const ToC = ({ items = [], editor, setItems }: ToCProps) => {
       if (!element) return;
 
       // Find the clicked heading's level and expand itself and its ancestors
-      // const expandHeadingAndItsAncestors = () => {
-      //   // Find the clicked item
-      //   const clickedItem = items.find((item) => item.id === id);
-      //   if (!clickedItem) return;
+      const expandHeadingAndItsAncestors = () => {
+        // Find the clicked item
+        const clickedItem = items.find((item) => item.id === id);
+        if (!clickedItem) return;
 
-      //   const clickedLevel = clickedItem.level;
+        const clickedLevel = clickedItem.level;
 
-      //   // Expand the clicked heading itself
-      //   // setCollapsedHeadings((prev) => {
-      //   //   const newSet = new Set(prev);
-      //   //   newSet.delete(id);
+        // Expand the clicked heading itself
+        setHeadingCollapsed(id, false, clickedLevel);
 
-      //   //   // If clicked item is H1, expand all its nested content
-      //   //   if (clickedLevel === 1) {
-      //   //     let isWithinCurrentH1 = false;
-      //   //     items.forEach((item) => {
-      //   //       // Start collecting items after current H1
-      //   //       if (item.id === id) {
-      //   //         isWithinCurrentH1 = true;
-      //   //         return;
-      //   //       }
+        // If clicked item is H1, expand all its nested content
+        if (clickedLevel === 1) {
+          let isWithinCurrentH1 = false;
+          items.forEach((item) => {
+            // Start collecting items after current H1
+            if (item.id === id) {
+              isWithinCurrentH1 = true;
+              return;
+            }
 
-      //   //       // Stop when we hit the next H1
-      //   //       if (item.level === 1) {
-      //   //         isWithinCurrentH1 = false;
-      //   //         return;
-      //   //       }
+            // Stop when we hit the next H1
+            if (item.level === 1) {
+              isWithinCurrentH1 = false;
+              return;
+            }
 
-      //   //       // Expand all items between current H1 and next H1
-      //   //       if (isWithinCurrentH1) {
-      //   //         newSet.delete(item.id);
-      //   //       }
-      //   //     });
-      //   //   } else {
-      //   //     // For non-H1 headings, find and expand only direct ancestors
-      //   //     let currentLevel = clickedLevel;
-      //   //     for (
-      //   //       let i = items.findIndex((item) => item.id === id) - 1;
-      //   //       i >= 0;
-      //   //       i--
-      //   //     ) {
-      //   //       const item = items[i];
-      //   //       if (item.level < currentLevel) {
-      //   //         newSet.delete(item.id);
-      //   //         currentLevel = item.level;
-      //   //         if (currentLevel === 1) break;
-      //   //       }
-      //   //     }
-      //   //   }
+            // Expand all items between current H1 and next H1
+            if (isWithinCurrentH1) {
+              setHeadingCollapsed(item.id, false, item.level);
+            }
+          });
+        } else {
+          // For non-H1 headings, find and expand only direct ancestors
+          let currentLevel = clickedLevel;
+          for (
+            let i = items.findIndex((item) => item.id === id) - 1;
+            i >= 0;
+            i--
+          ) {
+            const item = items[i];
+            if (item.level < currentLevel) {
+              setHeadingCollapsed(item.id, false, item.level);
+              currentLevel = item.level;
+              if (currentLevel === 1) break;
+            }
+          }
+        }
+      };
 
-      //   //   return newSet;
-      //   // });
-      // };
-
-      // expandHeadingAndItsAncestors();
+      expandHeadingAndItsAncestors();
 
       // Add a small delay to allow DOM updates before scrolling
       const timeout = setTimeout(() => {
