@@ -124,10 +124,6 @@ li > ol > li > ol > li:before {
   word-break: break-word;
 }
 
-.node-view-content > h1 {
-  width: fit-content !important;
-}
-
 .invalid-content {
   border: 1px solid #ea9999;
   padding: 10px;

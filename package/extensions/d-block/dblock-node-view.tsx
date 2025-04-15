@@ -46,14 +46,19 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
   const { isPreviewMode, isPresentationMode } = useEditingContext();
   const { collapsedHeadings, setCollapsedHeadings } = useEditorContext();
 
-  const { isHeading, isThisHeadingCollapsed, shouldBeHidden, toggleCollapse } =
-    useHeadingCollapse({
-      node,
-      getPos,
-      editor,
-      collapsedHeadings,
-      setCollapsedHeadings,
-    });
+  const {
+    isHeading,
+    isThisHeadingCollapsed,
+    shouldBeHidden,
+    toggleCollapse,
+    headingAlignment,
+  } = useHeadingCollapse({
+    node,
+    getPos,
+    editor,
+    collapsedHeadings,
+    setCollapsedHeadings,
+  });
 
   const copyHeadingLink = () => {
     const { content } = node.content as any;
@@ -311,6 +316,17 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
     setVisibleTemplateCount(isExpanded ? 2 : moreTemplates.length);
   };
 
+  const alignment = useMemo(() => {
+    switch (headingAlignment) {
+      case 'center':
+        return 'justify-center';
+      case 'left':
+        return 'justify-end';
+      case 'right':
+        return 'justify-start';
+    }
+  }, [headingAlignment]);
+
   if (isPresentationMode && isPreviewMode) {
     return (
       <NodeViewWrapper
@@ -520,12 +536,17 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
       </section>
 
       <NodeViewContent
-        className={cn('node-view-content w-full relative', {
-          'is-table': isTable,
-          'invalid-content': node.attrs?.isCorrupted,
-          'pointer-events-none': isPreviewMode && !isHeading,
-          'flex justify-end flex-row-reverse gap-2 items-center': isHeading,
-        })}
+        className={cn(
+          'node-view-content w-full relative',
+          {
+            'is-table': isTable,
+            'invalid-content': node.attrs?.isCorrupted,
+            'pointer-events-none': isPreviewMode && !isHeading,
+            'flex flex-row-reverse gap-2 items-center':
+              isHeading && isPreviewMode,
+          },
+          isHeading && isPreviewMode && alignment,
+        )}
       >
         {isDocEmpty &&
           !isPreviewMode &&
