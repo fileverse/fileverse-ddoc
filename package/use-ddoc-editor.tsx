@@ -204,13 +204,13 @@ export const useDdocEditor = ({
     handleCommentInteraction(view, event);
   };
 
-  const updateTocItems = useCallback((content: any) => {
-    setTocItems(content);
-  }, []);
-
   // Memoize the extensions array to avoid unnecessary re-renders
   const memoizedExtensions = useMemo(() => extensions, [extensions]);
 
+  // Create a ref to store the timeout ID
+  const tocUpdateTimeoutRef = useRef<number | null>(null);
+
+  // Don't recreate the editor when extensions change
   const editor = useEditor(
     {
       extensions: memoizedExtensions,
@@ -240,7 +240,7 @@ export const useDdocEditor = ({
     [memoizedExtensions, isPresentationMode],
   );
 
-  // Update the useEffect that configures the TableOfContents extension
+  // Use the isCreate flag and ref for timeout
   useEffect(() => {
     if (
       proExtensions?.TableOfContents &&
@@ -250,11 +250,34 @@ export const useDdocEditor = ({
         ...extensions.filter((ext) => ext.name !== 'tableOfContents'),
         proExtensions.TableOfContents.configure({
           getIndex: proExtensions.getHierarchicalIndexes,
-          onUpdate: updateTocItems, // Use the stable callback reference
+          onUpdate: (content: any, isCreate: any) => {
+            // Only update state when necessary
+            if (isCreate) {
+              // Initial TOC creation
+              setTocItems(content);
+            } else {
+              // Debounce subsequent updates using ref
+              if (tocUpdateTimeoutRef.current) {
+                clearTimeout(tocUpdateTimeoutRef.current);
+              }
+
+              tocUpdateTimeoutRef.current = window.setTimeout(() => {
+                setTocItems(content);
+                tocUpdateTimeoutRef.current = null;
+              }, 300);
+            }
+          },
         }),
       ]);
     }
-  }, [proExtensions, updateTocItems]);
+
+    // Clean up timeout on unmount
+    return () => {
+      if (tocUpdateTimeoutRef.current) {
+        clearTimeout(tocUpdateTimeoutRef.current);
+      }
+    };
+  }, [proExtensions]);
 
   useEffect(() => {
     if (zoomLevel) {
