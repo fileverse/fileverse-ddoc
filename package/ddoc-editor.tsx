@@ -493,6 +493,7 @@ const DdocEditor = forwardRef(
                           className={`${isMobile ? 'w-[200px]' : 'w-[400px]'}  h-[32px] rounded-sm`}
                         />
                       </div>,
+                      'content-transition',
                     )
                   : fadeInTransition(
                       <EditingProvider isPreviewMode={isPreviewMode}>
@@ -563,6 +564,7 @@ const DdocEditor = forwardRef(
                           className="w-full h-auto py-4 color-bg-default"
                         />
                       </EditingProvider>,
+                      'editor-transition',
                     )}
               </div>
               {showCommentButton && !isNativeMobile && (

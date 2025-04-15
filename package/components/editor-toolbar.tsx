@@ -151,6 +151,7 @@ const TiptapToolBar = ({
           {isLoading
             ? fadeInTransition(
                 <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
+                'markdown-transition',
               )
             : fadeInTransition(
                 <DynamicDropdownV2
@@ -229,6 +230,7 @@ const TiptapToolBar = ({
                     </div>
                   }
                 />,
+                'markdown-dropdown-transition',
               )}
 
           <div className="w-[1px] h-4 vertical-divider mx-1"></div>
@@ -244,6 +246,7 @@ const TiptapToolBar = ({
                           <Skeleton
                             className={`w-[36px] h-[36px] rounded-sm`}
                           />,
+                          'redo-skeleton-transition',
                         )
                       : fadeInTransition(
                           <IconButton
@@ -254,6 +257,7 @@ const TiptapToolBar = ({
                             size="md"
                             disabled={!tool.isActive}
                           />,
+                          'redo-tool-transition',
                         )}
                   </Tooltip>
                 );
@@ -273,6 +277,7 @@ const TiptapToolBar = ({
           {isLoading
             ? fadeInTransition(
                 <Skeleton className={`w-[80px] h-[36px] rounded-sm`} />,
+                'zoom-skeleton-transition',
               )
             : fadeInTransition(
                 <DynamicDropdownV2
@@ -313,6 +318,7 @@ const TiptapToolBar = ({
                     </div>
                   }
                 />,
+                'zoom-dropdown-transition',
               )}
 
           <div className="w-[1px] h-4 vertical-divider mx-1"></div>
@@ -321,6 +327,7 @@ const TiptapToolBar = ({
           {isLoading
             ? fadeInTransition(
                 <Skeleton className={`w-[96px] h-[36px] rounded-sm`} />,
+                'font-family-skeleton',
               )
             : fadeInTransition(
                 <DynamicDropdown
@@ -361,6 +368,7 @@ const TiptapToolBar = ({
                     />
                   }
                 />,
+                'font-dropdown-transiton',
               )}
           <div className="w-[1px] h-4 vertical-divider mx-1"></div>
 
@@ -368,6 +376,7 @@ const TiptapToolBar = ({
           {isLoading
             ? fadeInTransition(
                 <Skeleton className={`w-[112px] h-[36px] rounded-sm`} />,
+                'heading-skeleton',
               )
             : fadeInTransition(
                 <DynamicDropdown
@@ -397,6 +406,7 @@ const TiptapToolBar = ({
                     />
                   }
                 />,
+                'heading-dropdown',
               )}
           <div className="w-[1px] h-4 vertical-divider mx-1"></div>
 
@@ -434,9 +444,11 @@ const TiptapToolBar = ({
                         }
                         content={renderContent(tool)}
                       />,
+                      tool.title,
                     )
                   : fadeInTransition(
                       <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
+                      tool.title + 'skeleton',
                     );
               }
 
@@ -475,9 +487,11 @@ const TiptapToolBar = ({
                             </div>
                           }
                         />,
+                        tool.title,
                       )
                     : fadeInTransition(
                         <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
+                        tool.title + 'loader',
                       );
                 }
               }
@@ -492,9 +506,11 @@ const TiptapToolBar = ({
                         isActive={tool.isActive}
                       />
                     </Tooltip>,
+                    tool.title,
                   )
                 : fadeInTransition(
                     <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
+                    tool.title + 'skeleton',
                   );
             })}
             <DynamicModal
@@ -527,6 +543,7 @@ const TiptapToolBar = ({
           {isLoading
             ? fadeInTransition(
                 <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
+                'chevronUp-skeleton',
               )
             : fadeInTransition(
                 <IconButton
@@ -535,6 +552,7 @@ const TiptapToolBar = ({
                   icon={isNavbarVisible ? 'ChevronUp' : 'ChevronDown'}
                   onClick={() => setIsNavbarVisible((prev) => !prev)}
                 />,
+                'chevronUp',
               )}
         </div>
       </div>

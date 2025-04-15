@@ -162,6 +162,7 @@ const MobileToolbar = ({
                             <Skeleton
                               className={`w-[36px] h-[36px] rounded-sm`}
                             />,
+                            'mobile' + tool.title + 'skeleton',
                           )
                         : fadeInTransition(
                             <ToolbarButton
@@ -169,6 +170,7 @@ const MobileToolbar = ({
                               isActive={tool.isActive}
                               icon={tool.icon}
                             />,
+                            tool.title + 'mobile',
                           )}
                     </AnimatePresence>
                   </DrawerTrigger>
