@@ -324,6 +324,8 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
         return 'justify-end';
       case 'right':
         return 'justify-start';
+      default:
+        return 'justify-end';
     }
   }, [headingAlignment]);
 
