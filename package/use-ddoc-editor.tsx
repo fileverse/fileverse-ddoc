@@ -60,7 +60,7 @@ export const useDdocEditor = ({
   onInvalidContentError,
   ignoreCorruptedData,
   isPresentationMode,
-  // proExtensions,
+  proExtensions,
   metadataProxyUrl,
   onCopyHeadingLink,
 }: Partial<DdocProps>) => {
@@ -230,10 +230,25 @@ export const useDdocEditor = ({
       immediatelyRender: false,
       shouldRerenderOnTransaction: false,
     },
-    [isPresentationMode],
+    [extensions, isPresentationMode],
   );
 
-  console.log(editor);
+  useEffect(() => {
+    if (
+      proExtensions?.TableOfContents &&
+      !extensions.some((ext) => ext.name === 'tableOfContents')
+    ) {
+      setExtensions([
+        ...extensions.filter((ext) => ext.name !== 'tableOfContents'),
+        proExtensions.TableOfContents.configure({
+          getIndex: proExtensions.getHierarchicalIndexes,
+          onUpdate(content: any) {
+            setTocItems(content);
+          },
+        }),
+      ]);
+    }
+  }, [proExtensions]);
 
   useEffect(() => {
     if (zoomLevel) {
@@ -247,7 +262,7 @@ export const useDdocEditor = ({
     }
   }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => {});
+  const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
