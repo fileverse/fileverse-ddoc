@@ -53,7 +53,6 @@ export const useDdocEditor = ({
   setCharacterCount,
   setWordCount,
   secureImageUploadUrl,
-  scrollPosition,
   ddocId,
   enableIndexeddbSync,
   unFocused,
@@ -336,7 +335,7 @@ export const useDdocEditor = ({
   const isLoadingInitialContent = (
     initialContent: string | JSONContent | string[] | null | undefined,
   ) => {
-    return !initialContent && initialContent !== '';
+    return initialContent === null;
   };
 
   const hash = window.location.hash.startsWith('#')
@@ -494,26 +493,10 @@ export const useDdocEditor = ({
       });
 
       initialContentSetRef.current = true;
+    } else if (initialContent !== null) {
+      // if initialContent is null then we are loading it from consumer app
+      setIsContentLoading(false);
     }
-
-    const scrollTimeoutId = setTimeout(() => {
-      if (ref.current && !!scrollPosition && editor) {
-        const coords = editor.view.coordsAtPos(scrollPosition);
-        const editorContainer = ref.current;
-        editorContainer.scrollTo({
-          top: editorContainer.scrollTop + coords.top - 500,
-          behavior: 'smooth',
-        });
-      }
-      initialContentSetRef.current = false;
-      if (editor && initialContent === undefined) {
-        setIsContentLoading(false);
-      }
-    });
-
-    return () => {
-      clearTimeout(scrollTimeoutId);
-    };
   }, [initialContent, editor, ydoc]);
 
   const startCollaboration = async () => {
