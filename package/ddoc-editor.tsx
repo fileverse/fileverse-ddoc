@@ -109,6 +109,7 @@ const DdocEditor = forwardRef(
       renderThemeToggle,
       metadataProxyUrl,
       onCopyHeadingLink,
+      footerHeight,
     }: DdocProps,
     ref,
   ) => {
@@ -398,11 +399,16 @@ const DdocEditor = forwardRef(
             <div
               className={cn(
                 'color-bg-default w-full mx-auto rounded',
-                { 'mt-4 md:!mt-16 !py-20': isPreviewMode && !isNativeMobile },
-                { 'md:!mt-16': !isPreviewMode },
-                { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
-                { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
-                { 'mt-4 md:!mt-16 py-6': isPreviewMode && isNativeMobile },
+                !isPreviewMode &&
+                  (isNavbarVisible
+                    ? '-mt-[1.5rem] md:!mt-[0.8rem] pt-0 md:pt-[5rem]'
+                    : 'pt-0 md:pt-[1.5rem]'),
+                isPreviewMode && 'md:!mt-[1rem] pt-0 md:!pt-[5rem]',
+                { 'md:!mt-[0.7rem]': !isPreviewMode },
+                {
+                  '-mt-[1.5rem] md:!mt-[0.7rem]':
+                    !isNavbarVisible && !isPreviewMode,
+                },
                 {
                   'max-[1080px]:!mx-auto min-[1081px]:!ml-[18%] min-[1700px]:!mx-auto':
                     isCommentSectionOpen &&
@@ -631,59 +637,76 @@ const DdocEditor = forwardRef(
     return (
       <EditorProvider>
         <div
-          id="editor-canvas"
           className={cn(
-            'h-[100vh] w-full custom-scrollbar',
-            {
-              'overflow-x-hidden': zoomLevel !== '2',
-              'overflow-x-auto scroll-container': zoomLevel === '2',
-            },
+            'w-full',
             !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
-            editorCanvasClassNames,
           )}
+          style={{
+            height: !isPreviewMode
+              ? isNavbarVisible
+                ? `calc(100vh - 108px - ${footerHeight || '0px'})`
+                : `calc(100vh - 52px - ${footerHeight || '0px'})`
+              : `calc(100vh - 52px - ${footerHeight || '0px'})`,
+          }}
         >
-          <nav
-            id="Navbar"
+          <div
+            id="editor-canvas"
             className={cn(
-              'h-14 color-bg-default py-2 px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300',
+              'h-[100%] w-full custom-scrollbar',
+              !isPreviewMode &&
+                (isNavbarVisible ? 'mt-[6.7rem]' : 'mt-[3.3rem]'),
+              isPreviewMode && 'mt-[3.5rem]',
               {
-                'translate-y-0': isNavbarVisible,
-                'translate-y-[-100%]': !isNavbarVisible || isPresentationMode,
+                'overflow-x-hidden': zoomLevel !== '2',
+                'overflow-x-auto scroll-container': zoomLevel === '2',
               },
+              !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
+              editorCanvasClassNames,
             )}
           >
-            {editor && renderNavbar?.({ editor: editor.getJSON() })}
-          </nav>
-          {!editor ? (
-            renderComp()
-          ) : (
-            <CommentProvider
-              editor={editor}
-              username={username as string}
-              setUsername={setUsername}
-              activeCommentId={activeCommentId}
-              setActiveCommentId={setActiveCommentId}
-              focusCommentWithActiveId={focusCommentWithActiveId}
-              initialComments={initialComments}
-              setInitialComments={setInitialComments}
-              onNewComment={onNewComment}
-              onCommentReply={onCommentReply}
-              onResolveComment={onResolveComment}
-              onUnresolveComment={onUnresolveComment}
-              onDeleteComment={onDeleteComment}
-              ensResolutionUrl={ensResolutionUrl as string}
-              isConnected={isConnected}
-              connectViaWallet={connectViaWallet}
-              isLoading={isLoading}
-              connectViaUsername={connectViaUsername}
-              isDDocOwner={isDDocOwner}
-              onInlineComment={onInlineComment}
-              onComment={onComment}
-              setCommentDrawerOpen={setCommentDrawerOpen}
+            <nav
+              id="Navbar"
+              className={cn(
+                'h-14 color-bg-default py-2 px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300',
+                {
+                  'translate-y-0': isNavbarVisible,
+                  'translate-y-[-100%]': !isNavbarVisible || isPresentationMode,
+                },
+              )}
             >
-              {renderComp()}
-            </CommentProvider>
-          )}
+              {editor && renderNavbar?.({ editor: editor.getJSON() })}
+            </nav>
+            {!editor ? (
+              renderComp()
+            ) : (
+              <CommentProvider
+                editor={editor}
+                username={username as string}
+                setUsername={setUsername}
+                activeCommentId={activeCommentId}
+                setActiveCommentId={setActiveCommentId}
+                focusCommentWithActiveId={focusCommentWithActiveId}
+                initialComments={initialComments}
+                setInitialComments={setInitialComments}
+                onNewComment={onNewComment}
+                onCommentReply={onCommentReply}
+                onResolveComment={onResolveComment}
+                onUnresolveComment={onUnresolveComment}
+                onDeleteComment={onDeleteComment}
+                ensResolutionUrl={ensResolutionUrl as string}
+                isConnected={isConnected}
+                connectViaWallet={connectViaWallet}
+                isLoading={isLoading}
+                connectViaUsername={connectViaUsername}
+                isDDocOwner={isDDocOwner}
+                onInlineComment={onInlineComment}
+                onComment={onComment}
+                setCommentDrawerOpen={setCommentDrawerOpen}
+              >
+                {renderComp()}
+              </CommentProvider>
+            )}
+          </div>
         </div>
       </EditorProvider>
     );
