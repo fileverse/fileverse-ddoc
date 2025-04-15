@@ -60,7 +60,7 @@ export const useDdocEditor = ({
   onInvalidContentError,
   ignoreCorruptedData,
   isPresentationMode,
-  proExtensions,
+  // proExtensions,
   metadataProxyUrl,
   onCopyHeadingLink,
 }: Partial<DdocProps>) => {
@@ -203,18 +203,6 @@ export const useDdocEditor = ({
   ) => {
     handleCommentInteraction(view, event);
   };
-
-  const getExtensions = useCallback((proExtensions: any) => {
-    return [
-      ...extensions,
-      proExtensions.TableOfContents.configure({
-        getIndex: proExtensions.getHierarchicalIndexes,
-        onUpdate(content: any) {
-          setTocItems(content);
-        },
-      }),
-    ];
-  }, []);
 
   const editor = useEditor(
     {

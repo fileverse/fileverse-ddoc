@@ -27,9 +27,9 @@ import {
   Tooltip,
   cn,
 } from '@fileverse/ui';
-import { useEditorContext } from '../../context/editor-context';
-import { useHeadingCollapse } from './use-heading-collapse';
-import { headingToSlug } from '../../utils/heading-to-slug';
+// import { useEditorContext } from '../../context/editor-context';
+// import { useHeadingCollapse } from './use-heading-collapse';
+// import { headingToSlug } from '../../utils/heading-to-slug';
 
 export const DBlockNodeView: React.FC<NodeViewProps> = ({
   node,
@@ -39,31 +39,31 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
   ...props
 }) => {
   const secureImageUploadUrl = props.extension?.options?.secureImageUploadUrl;
-  const onCopyHeadingLink = props.extension?.options?.onCopyHeadingLink;
+  // const onCopyHeadingLink = props.extension?.options?.onCopyHeadingLink;
 
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const actions = useContentItemActions(editor as Editor, node, getPos());
   const { isPreviewMode, isPresentationMode } = useEditingContext();
-  const { collapsedHeadings, setCollapsedHeadings } = useEditorContext();
+  // const { collapsedHeadings, setCollapsedHeadings } = useEditorContext();
 
-  const { isHeading, isThisHeadingCollapsed, shouldBeHidden, toggleCollapse } =
-    useHeadingCollapse({
-      node,
-      getPos,
-      editor,
-      collapsedHeadings,
-      setCollapsedHeadings,
-    });
+  // const { isHeading, isThisHeadingCollapsed, shouldBeHidden, toggleCollapse } =
+  //   useHeadingCollapse({
+  //     node,
+  //     getPos,
+  //     editor,
+  //     collapsedHeadings,
+  //     setCollapsedHeadings,
+  //   });
 
-  const copyHeadingLink = () => {
-    const { content } = node.content as any;
-    const id = content[0].attrs.id;
-    const title = content[0].content.content[0].text;
-    const heading = headingToSlug(title);
-    const uuid = id.replace(/-/g, '').substring(0, 8);
-    const headingSlug = `heading=${heading}-${uuid}`;
-    onCopyHeadingLink?.(headingSlug);
-  };
+  // const copyHeadingLink = () => {
+  //   const { content } = node.content as any;
+  //   const id = content[0].attrs.id;
+  //   const title = content[0].content.content[0].text;
+  //   const heading = headingToSlug(title);
+  //   const uuid = id.replace(/-/g, '').substring(0, 8);
+  //   const headingSlug = `heading=${heading}-${uuid}`;
+  //   onCopyHeadingLink?.(headingSlug);
+  // };
 
   const isTable = useMemo(() => {
     const { content } = node.content as any;
@@ -345,7 +345,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
       className={cn(
         'flex px-4 md:px-8 lg:pr-[80px] lg:pl-[8px] gap-2 group w-full relative justify-center items-start',
         isTable && 'pointer-events-auto',
-        shouldBeHidden && 'hidden',
+        // shouldBeHidden && 'hidden',
       )}
     >
       <section
@@ -456,7 +456,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
                 </PopoverContent>
               </Popover>
             </FocusScope>
-            {isHeading && (
+            {/* {isHeading && (
               <Tooltip
                 position="bottom"
                 text={
@@ -481,11 +481,11 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
                   />
                 </div>
               </Tooltip>
-            )}
+            )} */}
           </>
         ) : (
           <>
-            {isHeading && (
+            {/* {isHeading && (
               <>
                 <Tooltip
                   position="bottom"
@@ -514,7 +514,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
                   </div>
                 </Tooltip>
               </>
-            )}
+            )} */}
           </>
         )}
       </section>
@@ -523,8 +523,8 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
         className={cn('node-view-content w-full relative', {
           'is-table': isTable,
           'invalid-content': node.attrs?.isCorrupted,
-          'pointer-events-none': isPreviewMode && !isHeading,
-          'flex justify-end flex-row-reverse gap-2 items-center': isHeading,
+          // 'pointer-events-none': isPreviewMode && !isHeading,
+          // 'flex justify-end flex-row-reverse gap-2 items-center': isHeading,
         })}
       >
         {isDocEmpty &&
@@ -536,7 +536,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
             toggleAllTemplates,
             isExpanded,
           )}
-        {isHeading && isPreviewMode && (
+        {/* {isHeading && isPreviewMode && (
           <section>
             <Tooltip
               position="bottom"
@@ -558,7 +558,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
               </div>
             </Tooltip>
           </section>
-        )}
+        )} */}
       </NodeViewContent>
     </NodeViewWrapper>
   );
