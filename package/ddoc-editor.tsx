@@ -642,7 +642,7 @@ const DdocEditor = forwardRef(
               'h-[100%] w-full custom-scrollbar',
               !isPreviewMode &&
                 (isNavbarVisible ? 'mt-[6.7rem]' : 'mt-[3.3rem]'),
-              isPreviewMode && 'mt-[3rem]',
+              isPreviewMode && 'mt-[3.5rem]',
               {
                 'overflow-x-hidden': zoomLevel !== '2',
                 'overflow-x-auto scroll-container': zoomLevel === '2',
