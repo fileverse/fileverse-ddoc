@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
 import { DdocProps, DdocEditorProps } from './types';
 import * as Y from 'yjs';
@@ -204,9 +204,16 @@ export const useDdocEditor = ({
     handleCommentInteraction(view, event);
   };
 
+  const updateTocItems = useCallback((content: any) => {
+    setTocItems(content);
+  }, []);
+
+  // Memoize the extensions array to avoid unnecessary re-renders
+  const memoizedExtensions = useMemo(() => extensions, [extensions]);
+
   const editor = useEditor(
     {
-      extensions: extensions,
+      extensions: memoizedExtensions,
       editorProps: {
         ...DdocEditorProps,
         handleDOMEvents: {
@@ -230,9 +237,10 @@ export const useDdocEditor = ({
       immediatelyRender: false,
       shouldRerenderOnTransaction: false,
     },
-    [extensions, isPresentationMode],
+    [memoizedExtensions, isPresentationMode],
   );
 
+  // Update the useEffect that configures the TableOfContents extension
   useEffect(() => {
     if (
       proExtensions?.TableOfContents &&
@@ -242,13 +250,11 @@ export const useDdocEditor = ({
         ...extensions.filter((ext) => ext.name !== 'tableOfContents'),
         proExtensions.TableOfContents.configure({
           getIndex: proExtensions.getHierarchicalIndexes,
-          onUpdate(content: any) {
-            setTocItems(content);
-          },
+          onUpdate: updateTocItems, // Use the stable callback reference
         }),
       ]);
     }
-  }, [proExtensions]);
+  }, [proExtensions, updateTocItems]);
 
   useEffect(() => {
     if (zoomLevel) {
@@ -262,7 +268,7 @@ export const useDdocEditor = ({
     }
   }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => { });
+  const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
