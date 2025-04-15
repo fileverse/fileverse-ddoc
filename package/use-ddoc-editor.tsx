@@ -204,9 +204,21 @@ export const useDdocEditor = ({
     handleCommentInteraction(view, event);
   };
 
+  const getExtensions = useCallback((proExtensions: any) => {
+    return [
+      ...extensions,
+      proExtensions.TableOfContents.configure({
+        getIndex: proExtensions.getHierarchicalIndexes,
+        onUpdate(content: any) {
+          setTocItems(content);
+        },
+      }),
+    ];
+  }, []);
+
   const editor = useEditor(
     {
-      extensions,
+      extensions: extensions,
       editorProps: {
         ...DdocEditorProps,
         handleDOMEvents: {
@@ -227,28 +239,13 @@ export const useDdocEditor = ({
         handleClick: handleCommentClick,
       },
       autofocus: unFocused ? false : 'start',
-      shouldRerenderOnTransaction: true,
       immediatelyRender: false,
+      shouldRerenderOnTransaction: false,
     },
-    [extensions, isPresentationMode],
+    [isPresentationMode],
   );
 
-  useEffect(() => {
-    if (
-      proExtensions?.TableOfContents &&
-      !extensions.some((ext) => ext.name === 'tableOfContents')
-    ) {
-      setExtensions([
-        ...extensions.filter((ext) => ext.name !== 'tableOfContents'),
-        proExtensions.TableOfContents.configure({
-          getIndex: proExtensions.getHierarchicalIndexes,
-          onUpdate(content: any) {
-            setTocItems(content);
-          },
-        }),
-      ]);
-    }
-  }, [proExtensions]);
+  console.log(editor);
 
   useEffect(() => {
     if (zoomLevel) {
@@ -624,12 +621,25 @@ export const useDdocEditor = ({
 
   // FOR AUTO TEXT STYLE CLEANUP WHEN DOCUMENT IS RENDERED
   const isDarkMode = useRef(localStorage.getItem('theme') !== null);
+  const initialDarkModeCleanupDone = useRef(false); // Flag to run only once
 
   useEffect(() => {
-    if (!editor || !initialContent || isContentLoading) return;
+    // Exit if not dark mode, editor not ready, content loading, or cleanup already done
+    if (
+      !editor ||
+      isContentLoading ||
+      !isDarkMode.current ||
+      initialDarkModeCleanupDone.current
+    ) {
+      return;
+    }
 
-    if (isDarkMode.current) {
+    // Only run if there's initial content to process
+    if (initialContent) {
       const timeoutId = setTimeout(() => {
+        // Double-check editor exists inside timeout
+        if (!editor) return;
+
         const { from, to } = editor.state.selection;
 
         // Get all text color marks
@@ -648,32 +658,41 @@ export const useDdocEditor = ({
           }
         });
 
-        // First, only remove color attribute from text styles
-        editor
-          .chain()
-          .selectAll()
-          .setColor('') // This removes only the color attribute
-          .run();
+        // Check if any marks need processing
+        if (marks.length > 0) {
+          // First, only remove color attribute from text styles
+          editor
+            .chain()
+            .selectAll()
+            .setColor('') // This removes only the color attribute
+            .run();
 
-        // Then, restore colors that aren't black/white shades
-        marks.forEach(({ from: markFrom, to: markTo, mark }) => {
-          const color = mark.attrs.color;
-          if (!isBlackOrWhiteShade(color)) {
-            editor
-              .chain()
-              .setTextSelection({ from: markFrom, to: markTo })
-              .setColor(color)
-              .run();
-          }
-        });
+          // Then, restore colors that aren't black/white shades
+          marks.forEach(({ from: markFrom, to: markTo, mark }) => {
+            const color = mark.attrs.color;
+            if (!isBlackOrWhiteShade(color)) {
+              editor
+                .chain()
+                .setTextSelection({ from: markFrom, to: markTo })
+                .setColor(color)
+                .run();
+            }
+          });
 
-        // Restore original selection
-        editor.commands.setTextSelection({ from, to });
+          // Restore original selection
+          editor.commands.setTextSelection({ from, to });
+        }
+
+        // Mark cleanup as done
+        initialDarkModeCleanupDone.current = true;
       }, 100);
 
       return () => clearTimeout(timeoutId);
+    } else {
+      // If there's no initial content, consider cleanup done for this load
+      initialDarkModeCleanupDone.current = true;
     }
-  }, [editor, initialContent, isContentLoading]);
+  }, [editor, initialContent, isContentLoading]); // Keep dependencies, the flag prevents re-runs
 
   return {
     editor,
