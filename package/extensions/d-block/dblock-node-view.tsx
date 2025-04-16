@@ -29,7 +29,7 @@ import {
 } from '@fileverse/ui';
 // import { useEditorContext } from '../../context/editor-context';
 // import { useHeadingCollapse } from './use-heading-collapse';
-// import { headingToSlug } from '../../utils/heading-to-slug';
+import { headingToSlug } from '../../utils/heading-to-slug';
 
 export const DBlockNodeView: React.FC<NodeViewProps> = ({
   node,
@@ -39,7 +39,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
   ...props
 }) => {
   const secureImageUploadUrl = props.extension?.options?.secureImageUploadUrl;
-  // const onCopyHeadingLink = props.extension?.options?.onCopyHeadingLink;
+  const onCopyHeadingLink = props.extension?.options?.onCopyHeadingLink;
 
   const [menuOpen, setMenuOpen] = useState<boolean>(false);
   const actions = useContentItemActions(editor as Editor, node, getPos());
@@ -55,15 +55,25 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
   //     setCollapsedHeadings,
   //   });
 
-  // const copyHeadingLink = () => {
-  //   const { content } = node.content as any;
-  //   const id = content[0].attrs.id;
-  //   const title = content[0].content.content[0].text;
-  //   const heading = headingToSlug(title);
-  //   const uuid = id.replace(/-/g, '').substring(0, 8);
-  //   const headingSlug = `heading=${heading}-${uuid}`;
-  //   onCopyHeadingLink?.(headingSlug);
-  // };
+  const copyHeadingLink = () => {
+    const { content } = node.content as any;
+    const id = content[0].attrs.id;
+    const title = content[0].content.content[0].text;
+    const heading = headingToSlug(title);
+    const uuid = id.replace(/-/g, '').substring(0, 8);
+    const headingSlug = `heading=${heading}-${uuid}`;
+    onCopyHeadingLink?.(headingSlug);
+  };
+
+  const headingAlignment = useMemo(() => {
+    const { content } = node.content as any;
+    return content?.[0]?.attrs.textAlign;
+  }, [node.content]);
+
+  const isHeading = useMemo(() => {
+    const { content } = node.content as any;
+    return content?.[0]?.type?.name === 'heading';
+  }, [node.content]);
 
   const isTable = useMemo(() => {
     const { content } = node.content as any;
@@ -311,6 +321,19 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
     setVisibleTemplateCount(isExpanded ? 2 : moreTemplates.length);
   };
 
+  const alignment = useMemo(() => {
+    switch (headingAlignment) {
+      case 'center':
+        return 'justify-center';
+      case 'left':
+        return 'justify-end';
+      case 'right':
+        return 'justify-start';
+      default:
+        return 'justify-end';
+    }
+  }, [headingAlignment]);
+
   if (isPresentationMode && isPreviewMode) {
     return (
       <NodeViewWrapper
@@ -520,12 +543,17 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
       </section>
 
       <NodeViewContent
-        className={cn('node-view-content w-full relative', {
-          'is-table': isTable,
-          'invalid-content': node.attrs?.isCorrupted,
-          // 'pointer-events-none': isPreviewMode && !isHeading,
-          // 'flex justify-end flex-row-reverse gap-2 items-center': isHeading,
-        })}
+        className={cn(
+          'node-view-content w-full relative',
+          {
+            'is-table': isTable,
+            'invalid-content': node.attrs?.isCorrupted,
+            'pointer-events-none': isPreviewMode && !isHeading,
+            'flex flex-row-reverse gap-2 items-center':
+              isHeading && isPreviewMode,
+          },
+          isHeading && isPreviewMode && alignment,
+        )}
       >
         {isDocEmpty &&
           !isPreviewMode &&
@@ -536,7 +564,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
             toggleAllTemplates,
             isExpanded,
           )}
-        {/* {isHeading && isPreviewMode && (
+        {isHeading && isPreviewMode && (
           <section>
             <Tooltip
               position="bottom"
@@ -558,7 +586,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
               </div>
             </Tooltip>
           </section>
-        )} */}
+        )}
       </NodeViewContent>
     </NodeViewWrapper>
   );
