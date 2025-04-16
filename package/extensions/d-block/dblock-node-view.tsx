@@ -46,19 +46,14 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
   const { isPreviewMode, isPresentationMode } = useEditingContext();
   const { collapsedHeadings, setCollapsedHeadings } = useEditorContext();
 
-  const {
-    isHeading,
-    isThisHeadingCollapsed,
-    shouldBeHidden,
-    toggleCollapse,
-    headingAlignment,
-  } = useHeadingCollapse({
-    node,
-    getPos,
-    editor,
-    collapsedHeadings,
-    setCollapsedHeadings,
-  });
+  const { isThisHeadingCollapsed, shouldBeHidden, toggleCollapse } =
+    useHeadingCollapse({
+      node,
+      getPos,
+      editor,
+      collapsedHeadings,
+      setCollapsedHeadings,
+    });
 
   const copyHeadingLink = () => {
     const { content } = node.content as any;
@@ -69,6 +64,16 @@ export const DBlockNodeView: React.FC<NodeViewProps> = ({
     const headingSlug = `heading=${heading}-${uuid}`;
     onCopyHeadingLink?.(headingSlug);
   };
+
+  const headingAlignment = useMemo(() => {
+    const { content } = node.content as any;
+    return content?.[0]?.attrs.textAlign;
+  }, [node.content]);
+
+  const isHeading = useMemo(() => {
+    const { content } = node.content as any;
+    return content?.[0]?.type?.name === 'heading';
+  }, [node.content]);
 
   const isTable = useMemo(() => {
     const { content } = node.content as any;
