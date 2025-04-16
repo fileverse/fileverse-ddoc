@@ -26,7 +26,7 @@ import {
 import ToolbarButton from '../common/toolbar-button';
 import { useMediaQuery } from 'usehooks-ts';
 import { AnimatePresence } from 'framer-motion';
-import { fadeInTransition } from './motion-div';
+import { fadeInTransition, slideUpTransition } from './motion-div';
 
 const TiptapToolBar = ({
   editor,
@@ -153,7 +153,7 @@ const TiptapToolBar = ({
                 <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
                 'markdown-transition',
               )
-            : fadeInTransition(
+            : slideUpTransition(
                 <DynamicDropdownV2
                   key="Markdown"
                   align="start"
@@ -248,7 +248,7 @@ const TiptapToolBar = ({
                           />,
                           'redo-skeleton-transition',
                         )
-                      : fadeInTransition(
+                      : slideUpTransition(
                           <IconButton
                             className="disabled:bg-transparent"
                             variant={'ghost'}
@@ -279,7 +279,7 @@ const TiptapToolBar = ({
                 <Skeleton className={`w-[80px] h-[36px] rounded-sm`} />,
                 'zoom-skeleton-transition',
               )
-            : fadeInTransition(
+            : slideUpTransition(
                 <DynamicDropdownV2
                   key="zoom-levels"
                   align="start"
@@ -329,7 +329,7 @@ const TiptapToolBar = ({
                 <Skeleton className={`w-[96px] h-[36px] rounded-sm`} />,
                 'font-family-skeleton',
               )
-            : fadeInTransition(
+            : slideUpTransition(
                 <DynamicDropdown
                   key={IEditorTool.FONT_FAMILY}
                   anchorTrigger={
@@ -378,7 +378,7 @@ const TiptapToolBar = ({
                 <Skeleton className={`w-[112px] h-[36px] rounded-sm`} />,
                 'heading-skeleton',
               )
-            : fadeInTransition(
+            : slideUpTransition(
                 <DynamicDropdown
                   key={IEditorTool.HEADING}
                   anchorTrigger={
@@ -429,7 +429,7 @@ const TiptapToolBar = ({
                 tool.title === 'Link'
               ) {
                 return !isLoading
-                  ? fadeInTransition(
+                  ? slideUpTransition(
                       <DynamicDropdown
                         key={tool.title}
                         align={tool.title === 'Link' ? 'end' : 'center'}
@@ -459,7 +459,7 @@ const TiptapToolBar = ({
                   if (!isFirstMoreItem) return null;
 
                   return !isLoading
-                    ? fadeInTransition(
+                    ? slideUpTransition(
                         <DynamicDropdown
                           key="more-dropdown"
                           align="end"
@@ -498,7 +498,7 @@ const TiptapToolBar = ({
 
               // Regular toolbar button
               return !isLoading
-                ? fadeInTransition(
+                ? slideUpTransition(
                     <Tooltip key={tool.title} text={tool.title}>
                       <ToolbarButton
                         icon={tool.icon}
@@ -545,7 +545,7 @@ const TiptapToolBar = ({
                 <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
                 'chevronUp-skeleton',
               )
-            : fadeInTransition(
+            : slideUpTransition(
                 <IconButton
                   size="md"
                   variant="ghost"
