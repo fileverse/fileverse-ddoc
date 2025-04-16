@@ -37,6 +37,7 @@ import { CommentBubbleCard } from './components/inline-comment/comment-bubble-ca
 import { DocumentOutline } from './components/toc/document-outline';
 import { EditorProvider } from './context/editor-context';
 import { fadeInTransition, slideUpTransition } from './components/motion-div';
+import { PreviewContentLoader } from './components/preview-content-loader';
 
 const DdocEditor = forwardRef(
   (
@@ -715,24 +716,3 @@ const DdocEditor = forwardRef(
 );
 
 export default DdocEditor;
-
-export const PreviewContentLoader = () => {
-  return (
-    <div className="flex flex-col gap-4">
-      <Skeleton className={` w-[calc(100%-130px)] h-[20px] rounded-sm`} />
-      <Skeleton className={` w-[calc(100%-100px)] h-[20px] rounded-sm`} />
-      <Skeleton className={` w-[calc(100%-300px)] h-[20px] rounded-sm`} />
-      <Skeleton className={` w-[calc(100%-100px)] h-[20px] rounded-sm`} />
-      <Skeleton className={` w-[calc(100%-50px)] h-[20px] rounded-sm`} />
-      <Skeleton className={` w-[calc(100%-130px)] h-[20px] rounded-sm`} />
-      <Skeleton className={` w-[calc(100%-300px)] h-[20px] rounded-sm`} />
-      <Skeleton className={` w-[calc(100%-130px)] h-[20px] rounded-sm`} />
-      <Skeleton className={` w-[calc(100%-100px)] h-[20px] rounded-sm`} />
-      <Skeleton className={` w-[calc(100%-300px)] h-[20px] rounded-sm`} />
-      <Skeleton className={` w-[calc(100%-130px)] h-[20px] rounded-sm`} />
-      <Skeleton className={` w-[calc(100%-50px)] h-[20px] rounded-sm`} />
-      <Skeleton className={` w-[calc(100%-100px)] h-[20px] rounded-sm`} />
-      <Skeleton className={` w-[calc(100%-300px)] h-[20px] rounded-sm`} />
-    </div>
-  );
-};
