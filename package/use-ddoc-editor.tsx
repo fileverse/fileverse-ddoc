@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
 import { DdocProps, DdocEditorProps } from './types';
 import * as Y from 'yjs';
@@ -204,9 +204,16 @@ export const useDdocEditor = ({
     handleCommentInteraction(view, event);
   };
 
+  // Memoize the extensions array to avoid unnecessary re-renders
+  const memoizedExtensions = useMemo(() => extensions, [extensions]);
+
+  // Create a ref to store the timeout ID
+  const tocUpdateTimeoutRef = useRef<number | null>(null);
+
+  // Don't recreate the editor when extensions change
   const editor = useEditor(
     {
-      extensions,
+      extensions: memoizedExtensions,
       editorProps: {
         ...DdocEditorProps,
         handleDOMEvents: {
@@ -227,12 +234,13 @@ export const useDdocEditor = ({
         handleClick: handleCommentClick,
       },
       autofocus: unFocused ? false : 'start',
-      shouldRerenderOnTransaction: true,
       immediatelyRender: false,
+      shouldRerenderOnTransaction: false,
     },
-    [extensions, isPresentationMode],
+    [memoizedExtensions, isPresentationMode],
   );
 
+  // Use the isCreate flag and ref for timeout
   useEffect(() => {
     if (
       proExtensions?.TableOfContents &&
@@ -242,12 +250,33 @@ export const useDdocEditor = ({
         ...extensions.filter((ext) => ext.name !== 'tableOfContents'),
         proExtensions.TableOfContents.configure({
           getIndex: proExtensions.getHierarchicalIndexes,
-          onUpdate(content: any) {
-            setTocItems(content);
+          onUpdate: (content: any, isCreate: any) => {
+            // Only update state when necessary
+            if (isCreate) {
+              // Initial TOC creation
+              setTocItems(content);
+            } else {
+              // Debounce subsequent updates using ref
+              if (tocUpdateTimeoutRef.current) {
+                clearTimeout(tocUpdateTimeoutRef.current);
+              }
+
+              tocUpdateTimeoutRef.current = window.setTimeout(() => {
+                setTocItems(content);
+                tocUpdateTimeoutRef.current = null;
+              }, 300);
+            }
           },
         }),
       ]);
     }
+
+    // Clean up timeout on unmount
+    return () => {
+      if (tocUpdateTimeoutRef.current) {
+        clearTimeout(tocUpdateTimeoutRef.current);
+      }
+    };
   }, [proExtensions]);
 
   useEffect(() => {
@@ -625,12 +654,25 @@ export const useDdocEditor = ({
 
   // FOR AUTO TEXT STYLE CLEANUP WHEN DOCUMENT IS RENDERED
   const isDarkMode = useRef(localStorage.getItem('theme') !== null);
+  const initialDarkModeCleanupDone = useRef(false); // Flag to run only once
 
   useEffect(() => {
-    if (!editor || !initialContent || isContentLoading) return;
+    // Exit if not dark mode, editor not ready, content loading, or cleanup already done
+    if (
+      !editor ||
+      isContentLoading ||
+      !isDarkMode.current ||
+      initialDarkModeCleanupDone.current
+    ) {
+      return;
+    }
 
-    if (isDarkMode.current) {
+    // Only run if there's initial content to process
+    if (initialContent) {
       const timeoutId = setTimeout(() => {
+        // Double-check editor exists inside timeout
+        if (!editor) return;
+
         const { from, to } = editor.state.selection;
 
         // Get all text color marks
@@ -649,32 +691,41 @@ export const useDdocEditor = ({
           }
         });
 
-        // First, only remove color attribute from text styles
-        editor
-          .chain()
-          .selectAll()
-          .setColor('') // This removes only the color attribute
-          .run();
+        // Check if any marks need processing
+        if (marks.length > 0) {
+          // First, only remove color attribute from text styles
+          editor
+            .chain()
+            .selectAll()
+            .setColor('') // This removes only the color attribute
+            .run();
 
-        // Then, restore colors that aren't black/white shades
-        marks.forEach(({ from: markFrom, to: markTo, mark }) => {
-          const color = mark.attrs.color;
-          if (!isBlackOrWhiteShade(color)) {
-            editor
-              .chain()
-              .setTextSelection({ from: markFrom, to: markTo })
-              .setColor(color)
-              .run();
-          }
-        });
+          // Then, restore colors that aren't black/white shades
+          marks.forEach(({ from: markFrom, to: markTo, mark }) => {
+            const color = mark.attrs.color;
+            if (!isBlackOrWhiteShade(color)) {
+              editor
+                .chain()
+                .setTextSelection({ from: markFrom, to: markTo })
+                .setColor(color)
+                .run();
+            }
+          });
 
-        // Restore original selection
-        editor.commands.setTextSelection({ from, to });
+          // Restore original selection
+          editor.commands.setTextSelection({ from, to });
+        }
+
+        // Mark cleanup as done
+        initialDarkModeCleanupDone.current = true;
       }, 100);
 
       return () => clearTimeout(timeoutId);
+    } else {
+      // If there's no initial content, consider cleanup done for this load
+      initialDarkModeCleanupDone.current = true;
     }
-  }, [editor, initialContent, isContentLoading]);
+  }, [editor, initialContent, isContentLoading]); // Keep dependencies, the flag prevents re-runs
 
   return {
     editor,
