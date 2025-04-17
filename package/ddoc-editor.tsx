@@ -36,7 +36,8 @@ import { CommentProvider } from './components/inline-comment/context/comment-con
 import { CommentBubbleCard } from './components/inline-comment/comment-bubble-card';
 import { DocumentOutline } from './components/toc/document-outline';
 import { EditorProvider } from './context/editor-context';
-import { fadeInTransition } from './components/motion-div';
+import { fadeInTransition, slideUpTransition } from './components/motion-div';
+import { PreviewContentLoader } from './components/preview-content-loader';
 
 const DdocEditor = forwardRef(
   (
@@ -494,14 +495,15 @@ const DdocEditor = forwardRef(
 
                 {!editor || isContentLoading
                   ? fadeInTransition(
-                      <div className={`${!isMobile ? 'ml-20' : 'ml-10 mt-10'}`}>
+                      <div className={`${!isMobile ? 'mx-20' : 'mx-10 mt-10'}`}>
                         <Skeleton
-                          className={`${isMobile ? 'w-[200px]' : 'w-[400px]'}  h-[32px] rounded-sm`}
+                          className={`${isPreviewMode ? 'w-full' : isMobile ? 'w-full' : 'w-[400px]'}  h-[32px] rounded-sm mb-4`}
                         />
+                        {isPreviewMode && <PreviewContentLoader />}
                       </div>,
                       'content-transition',
                     )
-                  : fadeInTransition(
+                  : slideUpTransition(
                       <EditingProvider isPreviewMode={isPreviewMode}>
                         {tags && tags.length > 0 && (
                           <div
