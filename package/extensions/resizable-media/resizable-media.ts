@@ -7,6 +7,7 @@ import {
   UploadFnType,
 } from './media-paste-drop-plugin';
 import UploadImagesPlugin from '../../utils/upload-images';
+import { InlineLoaderPlugin } from '../../utils/inline-loader';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -261,6 +262,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
         this.options.secureImageUploadUrl,
       ),
       UploadImagesPlugin(),
+      InlineLoaderPlugin(),
     ];
   },
 });

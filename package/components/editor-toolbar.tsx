@@ -85,6 +85,7 @@ const TiptapToolBar = ({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const handleExport = async () => {
     if (editor) {
+      setIsExportModalOpen(false);
       const generateDownloadUrl = await editor.commands.exportMarkdownFile();
       if (generateDownloadUrl) {
         const url = generateDownloadUrl;
@@ -97,7 +98,6 @@ const TiptapToolBar = ({
         URL.revokeObjectURL(url);
       }
     }
-    setIsExportModalOpen(false);
   };
 
   const renderContent = (tool: {
