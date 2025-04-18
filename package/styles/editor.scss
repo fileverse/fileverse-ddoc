@@ -220,7 +220,7 @@
   }
 
   [data-type='columns'] {
-    @apply grid grid-cols-1 md:grid-cols-[repeat(auto-fit,_minmax(100px,_1fr))] gap-2 mt-3 mb-3;
+    @apply grid grid-cols-1 md:grid-cols-[repeat(auto-fit,_minmax(100px,_1fr))] gap-0;
 
     & > [data-type='column'] > div > div {
       @apply px-2;
@@ -269,12 +269,11 @@
     }
 
     [data-type='column'] {
-      @apply overflow-hidden rounded border-2 border-dashed border-transparent p-1 min-w-full;
-      transition: border 160ms cubic-bezier(0.45, 0.05, 0.55, 0.95);
+      @apply overflow-hidden rounded border border-dashed border-transparent p-1 min-w-full transition-all duration-300 ease-out;
 
       &:hover,
       &:focus {
-        @apply border-neutral-300;
+        border-color: hsla(var(--color-border-hover));
       }
 
       & > .node-dBlock {
@@ -283,19 +282,34 @@
     }
   }
 
+  [data-type='column'] {
+    @apply space-y-2;
+
+    & > div > div > section {
+      @apply hidden;
+    }
+  }
+
   [data-type='horizontalRule'] {
-    @apply pt-2 pb-3 h-1 w-full mx-auto transition-all cursor-pointer;
+    @apply p-2 translate-y-1 h-1 w-full mx-auto transition-all cursor-pointer;
 
     &.ProseMirror-selectednode {
-      @apply bg-blue-200/50;
+      background-color: hsla(var(--color-bg-default-selected));
+      .dark & {
+        background-color: transparent;
+      }
     }
 
     &:hover:not(&.ProseMirror-selectednode) {
-      @apply bg-blue-200/20;
+      background-color: hsla(var(--color-bg-default-selected));
+      .dark & {
+        background-color: transparent;
+      }
     }
 
     hr {
-      @apply rounded border-t-[1px] border-gray-300/20 bg-gray-300/80;
+      @apply rounded border-t-[1px];
+      border-color: hsla(var(--color-border-default));
     }
   }
 }
