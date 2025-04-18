@@ -56,13 +56,15 @@ export const shouldShow = ({ editor }: { editor: Editor }) => {
     editor.state.doc.nodeAt(from)?.type.name === 'iframe';
   const isCodeBlockSelected = editor.isActive('codeBlock');
   const isPageBreak = editor.state.doc.nodeAt(from)?.type.name === 'pageBreak';
+  const isHorizontalRule = editor.isActive('horizontalRule');
 
   if (
     empty ||
     isImageSelected ||
     isCodeBlockSelected ||
     isIframeSelected ||
-    isPageBreak
+    isPageBreak ||
+    isHorizontalRule
   ) {
     return false;
   }

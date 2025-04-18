@@ -123,6 +123,20 @@ export const DBlock = Node.create<DBlockOptions>({
         // Check if inside table
         const isInsideTable = nodePaths.some((path) => path.includes('table'));
 
+        // Handle blockquote
+        if (
+          parent?.type.name === 'blockquote' &&
+          currentNode.type.name === 'paragraph'
+        ) {
+          if (currentNode.textContent === '') {
+            return editor
+              .chain()
+              .setDBlock()
+              .focus(from + 4)
+              .run();
+          }
+        }
+
         if (parent?.type.name !== 'dBlock') {
           // If inside table, do nothing
           if (isInsideTable) {
