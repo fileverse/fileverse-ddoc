@@ -50,7 +50,7 @@
   }
 
   .dark .reminder-wrapper-overdue {
-    @apply border-[#EFC703] dark:bg-transparent pr-8;
+    @apply border-[#EFC703] bg-transparent pr-8;
   }
 
   .reminder-wrapper-text {

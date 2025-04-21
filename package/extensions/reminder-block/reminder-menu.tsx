@@ -14,6 +14,7 @@ import { format } from 'date-fns';
 import { useMediaQuery } from 'usehooks-ts';
 import { ReminderMenuProps } from './types';
 import uuid from 'react-uuid';
+import { useEscapeKey } from '../../hooks/useEscapeKey';
 
 const getTomorrowMorning = () => {
   const tomorrow = new Date();
@@ -42,11 +43,11 @@ export const ReminderMenu = ({
   onClose,
   onCreateReminder,
 }: ReminderMenuProps) => {
-  const [title, setTitle] = useState('');
-  const [date, setDate] = useState<Date | undefined>(undefined);
-  const [error, setError] = useState('');
+  const [title, setTitle] = useState<string>('');
+  const [date, setDate] = useState<Date | undefined>(new Date());
+  const [error, setError] = useState<string>('');
   const isMobile = useMediaQuery('(max-width: 768px)');
-  const [use12Hours, setUse12Hours] = useState(true);
+  const [use12Hours, setUse12Hours] = useState<boolean>(true);
 
   // const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   //   const formatted = formatDate(e.target.value);
@@ -109,6 +110,10 @@ export const ReminderMenu = ({
 
     onCreateReminder(reminder);
   };
+
+  useEscapeKey(() => {
+    onClose();
+  });
 
   const content = (
     <div className="px-4 py-2 min-w-[300px] color-bg-default rounded-lg shadow-elevation-3 space-y-3 border color-border-default">
@@ -180,8 +185,14 @@ export const ReminderMenu = ({
           <DynamicDropdown
             anchorTrigger={
               <TextField
-                placeholder="HH:MM"
-                value={date ? format(date, 'p') : 'HH:MM'}
+                placeholder="HH:mm"
+                value={
+                  date
+                    ? use12Hours
+                      ? format(date, 'p')
+                      : format(date, 'HH:mm')
+                    : 'HH:mm'
+                }
                 readOnly
                 className="cursor-pointer rounded-r-none !w-24"
               />
