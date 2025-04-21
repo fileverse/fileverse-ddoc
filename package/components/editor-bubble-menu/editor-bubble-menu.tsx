@@ -89,7 +89,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Link',
       isActive: () => editor.isActive('link'),
-      command: () => {},
+      command: () => setToolVisibility(IEditorTool.LINK_POPUP),
       icon: 'Link',
     },
     {
@@ -184,7 +184,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       shouldShow={shouldShow}
       className={cn(
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border color-bg-default items-center shadow-elevation-3',
-        isCommentOpen ? '!invisible' : '!visible',
+        isCommentOpen || toolVisibility === IEditorTool.LINK_POPUP
+          ? '!invisible'
+          : '!visible',
         isNativeMobile ? '!-translate-y-[120%]' : '',
       )}
       style={{
@@ -333,6 +335,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                             icon={item.icon}
                             variant="ghost"
                             size="sm"
+                            onClick={item.command}
                           />
                         }
                         className="shadow-elevation-3"

@@ -1043,6 +1043,12 @@ export const LinkPopup = ({
         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
           setUrl(e.target.value)
         }
+        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            apply();
+          }
+        }}
         className="w-full"
         placeholder="Add link here"
         value={url}
