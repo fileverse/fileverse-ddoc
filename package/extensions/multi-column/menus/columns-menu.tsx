@@ -19,8 +19,9 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
   }, [editor]);
 
   const shouldShow = useCallback(() => {
+    const isPreviewMode = !editor.isEditable;
     const isColumns = editor.isActive('columns');
-    return isColumns;
+    return isColumns && !isPreviewMode;
   }, [editor]);
 
   const onColumnLeft = useCallback(() => {

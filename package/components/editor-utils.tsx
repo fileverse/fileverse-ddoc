@@ -920,6 +920,20 @@ export const EditorAlignment = ({
       >
         <LucideIcon name="AlignRight" />
       </button>
+      <button
+        onClick={() => {
+          editor?.chain().focus().setTextAlign('justify').run();
+          setToolVisibility(IEditorTool.NONE);
+        }}
+        className={cn(
+          'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
+          editor.isActive({ textAlign: 'justify' })
+            ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
+            : 'hover:color-bg-default-hover',
+        )}
+      >
+        <LucideIcon name="AlignJustify" />
+      </button>
     </div>
   );
 };

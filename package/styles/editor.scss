@@ -220,7 +220,7 @@
   }
 
   [data-type='columns'] {
-    @apply grid grid-cols-1 md:grid-cols-[repeat(auto-fit,_minmax(100px,_1fr))] gap-0;
+    @apply grid grid-cols-1 md:grid-cols-[repeat(auto-fit,_minmax(100px,_1fr))] gap-2;
 
     & > [data-type='column'] > div > div {
       @apply px-2;
@@ -269,11 +269,18 @@
     }
 
     [data-type='column'] {
-      @apply overflow-hidden rounded border border-dashed border-transparent p-1 min-w-full transition-all duration-300 ease-out;
+      @apply overflow-hidden rounded border border-dashed border-transparent py-1 min-w-full transition-all duration-300 ease-out;
 
       &:hover,
       &:focus {
         border-color: hsla(var(--color-border-hover));
+      }
+
+      .preview-mode & {
+        &:hover,
+        &:focus {
+          border-color: transparent;
+        }
       }
 
       & > .node-dBlock {
