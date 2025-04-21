@@ -121,8 +121,6 @@ export const DBlock = Node.create<DBlockOptions>({
         const nodePaths = headString.split('/');
         const isAtEndOfTheNode = $head.end() === from;
 
-        console.log('isAtEndOfTheNode', isAtEndOfTheNode);
-
         // Check if inside table
         const isInsideTable = nodePaths.some((path) => path.includes('table'));
 
@@ -336,7 +334,10 @@ export const DBlock = Node.create<DBlockOptions>({
                 })
                 .focus(from + 4)
                 .run();
-            } else if (currentActiveNodeType === 'columns') {
+            } else if (
+              currentActiveNodeType === 'columns' ||
+              currentActiveNodeType === 'heading'
+            ) {
               return editor
                 .chain()
                 .command(

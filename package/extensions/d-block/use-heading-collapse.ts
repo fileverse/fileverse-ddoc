@@ -276,7 +276,9 @@ export const useHeadingCollapse = ({
 
       if (!heading) return newSet;
 
-      if (newSet.has(headingId)) {
+      const wasCollapsed = prev.has(headingId);
+
+      if (wasCollapsed) {
         // Expanding
         newSet.delete(headingId);
 
@@ -336,9 +338,53 @@ export const useHeadingCollapse = ({
         }
       }
 
+      // Handle cursor position and last dBlock visibility after state update
+      requestAnimationFrame(() => {
+        const { doc } = editor.state;
+        let lastDBlockPos = -1;
+        let pos = 0;
+
+        // Find the last dBlock node
+        while (pos < doc.content.size) {
+          const nodeAtPos = doc.nodeAt(pos);
+          if (nodeAtPos?.type.name === 'dBlock') {
+            lastDBlockPos = pos;
+          }
+          pos += nodeAtPos?.nodeSize || 1;
+        }
+
+        // Handle last dBlock visibility
+        if (lastDBlockPos !== -1) {
+          const lastDBlockNode = editor.view.nodeDOM(lastDBlockPos);
+          if (lastDBlockNode instanceof HTMLElement) {
+            if (!wasCollapsed && lastDBlockPos !== getPos()) {
+              lastDBlockNode.classList.add('hidden');
+            } else {
+              lastDBlockNode.classList.remove('hidden');
+            }
+          }
+        }
+
+        // Handle cursor position
+        if (!wasCollapsed) {
+          const headingEndPos = getPos() + node.nodeSize;
+          editor
+            .chain()
+            .focus(headingEndPos - 1)
+            .run();
+        }
+      });
+
       return newSet;
     });
-  }, [headingId, setCollapsedHeadings, getDocumentCache]);
+  }, [
+    editor,
+    headingId,
+    setCollapsedHeadings,
+    getDocumentCache,
+    getPos,
+    node.nodeSize,
+  ]);
 
   // Add effect to handle auto-expansion on Enter at the end of a collapsed heading
   useEffect(() => {
@@ -495,84 +541,6 @@ export const useHeadingCollapse = ({
       editor.off('update', handleDocChange);
     };
   }, [editor, isHeading, headingId, setCollapsedHeadings, getDocumentCache]);
-
-  const handleLastBlockVisibility = useCallback(() => {
-    const { doc } = editor.state;
-    const pos = getPos();
-    const currentNode = doc.nodeAt(pos);
-
-    // Early return if not a valid node
-    if (!currentNode) return;
-
-    // Check if this is a dBlock
-    if (currentNode.type.name !== 'dBlock') return;
-
-    // Use the document cache to efficiently find the previous heading
-    const { headingMap } = getDocumentCache();
-    let prevHeadingId = null;
-
-    // Find the closest heading above using the cached heading map
-    for (const [id, data] of headingMap.entries()) {
-      if (
-        data.position < pos &&
-        (!prevHeadingId ||
-          headingMap.get(prevHeadingId)!.position < data.position)
-      ) {
-        prevHeadingId = id;
-      }
-    }
-
-    // If no previous heading or it's not collapsed, remove hidden class
-    if (!prevHeadingId || !collapsedHeadings.has(prevHeadingId)) {
-      const domNode = editor.view.nodeDOM(pos);
-      if (
-        domNode instanceof HTMLElement &&
-        domNode.classList.contains('hidden')
-      ) {
-        domNode.classList.remove('hidden');
-      }
-      return;
-    }
-
-    // Find the next heading at same or higher level
-    const prevHeading = headingMap.get(prevHeadingId);
-    if (!prevHeading) return;
-
-    let nextHeadingPos = doc.content.size;
-    for (const [, data] of headingMap.entries()) {
-      if (
-        data.position > pos &&
-        data.position < nextHeadingPos &&
-        data.level <= prevHeading.level
-      ) {
-        nextHeadingPos = data.position;
-      }
-    }
-
-    // Check if this is the last block before the next heading
-    const isLastBlock =
-      pos + currentNode.nodeSize >= nextHeadingPos ||
-      pos + currentNode.nodeSize >= doc.content.size;
-
-    if (isLastBlock) {
-      const domNode = editor.view.nodeDOM(pos);
-      if (domNode instanceof HTMLElement) {
-        domNode.classList.add('hidden');
-      }
-    } else {
-      const domNode = editor.view.nodeDOM(pos);
-      if (
-        domNode instanceof HTMLElement &&
-        domNode.classList.contains('hidden')
-      ) {
-        domNode.classList.remove('hidden');
-      }
-    }
-  }, [editor.state, editor.view, getPos, collapsedHeadings, getDocumentCache]);
-
-  useEffect(() => {
-    handleLastBlockVisibility();
-  }, [handleLastBlockVisibility]);
 
   return {
     isHeading,
