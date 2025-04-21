@@ -24,6 +24,11 @@ export const useHeadingCollapse = ({
     return content?.[0]?.type?.name === 'heading';
   }, [node.content]);
 
+  const headingAlignment = useMemo(() => {
+    const { content } = node.content as any;
+    return content?.[0]?.attrs.textAlign;
+  }, [node.content]);
+
   const headingId = useMemo(() => {
     if (!isHeading) return null;
 
@@ -361,5 +366,6 @@ export const useHeadingCollapse = ({
     isThisHeadingCollapsed,
     shouldBeHidden,
     toggleCollapse,
+    headingAlignment,
   };
 };

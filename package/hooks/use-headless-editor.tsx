@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { Editor, JSONContent } from '@tiptap/react';
 import { defaultExtensions } from '../extensions/default-extension';
 import customTextInputRules from '../extensions/customTextInputRules';
@@ -19,6 +20,7 @@ export const useHeadlessEditor = () => {
       PageBreak,
       Collaboration.configure({ document: ydoc }),
     ];
+    // @ts-ignore
     const editor = new Editor({ extensions, autofocus: false });
     return { editor, ydoc };
   };
@@ -80,14 +82,14 @@ export const useHeadlessEditor = () => {
     };
   };
 
-  const downloadContentAsMd = (
+  const downloadContentAsMd = async (
     content: string | string[] | JSONContent,
     title: string,
   ) => {
     const { editor, ydoc } = getEditor();
     setContent(content, editor, ydoc);
     if (editor) {
-      const generateDownloadUrl = editor.commands.exportMarkdownFile();
+      const generateDownloadUrl = await editor.commands.exportMarkdownFile();
       if (generateDownloadUrl) {
         const url = generateDownloadUrl;
         const link = document.createElement('a');
@@ -97,6 +99,7 @@ export const useHeadlessEditor = () => {
         link.click();
         document.body.removeChild(link);
         URL.revokeObjectURL(url);
+        editor.destroy();
       } else {
         throw new Error('Failed to generate download url');
       }

@@ -139,7 +139,7 @@ export const DBlock = Node.create<DBlockOptions>({
           // const isLastItem =
           //   $head.index($head.depth - 2) === grandParent.childCount - 1;
           const isOnlyItem = grandParent.childCount === 1;
-        // Check if inside table
+          // Check if inside table
 
           const isThatFromNestedItem = () => {
             // Get the nesting depth by counting listItem/taskItem ancestors

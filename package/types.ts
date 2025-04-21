@@ -91,7 +91,6 @@ export interface DdocProps extends CommentAccountProps {
   setWordCount?: React.Dispatch<SetStateAction<number>>;
   tags?: Array<{ name: string; color: string }>;
   className?: string;
-  scrollPosition?: number;
   unFocused?: boolean;
   isPresentationMode?: boolean;
   setIsPresentationMode?: React.Dispatch<SetStateAction<boolean>>;
@@ -108,6 +107,7 @@ export interface DdocProps extends CommentAccountProps {
   renderThemeToggle?: () => JSX.Element;
   metadataProxyUrl?: string;
   onCopyHeadingLink?: (link: string) => void;
+  footerHeight?: string;
 }
 
 export interface IEditorSelectionData {
