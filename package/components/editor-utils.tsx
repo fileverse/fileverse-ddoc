@@ -1057,6 +1057,12 @@ export const LinkPopup = ({
         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
           setUrl(e.target.value)
         }
+        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            apply();
+          }
+        }}
         className="w-full"
         placeholder="Add link here"
         value={url}
@@ -1067,7 +1073,10 @@ export const LinkPopup = ({
         </Button>
         <Button
           variant="secondary"
-          onClick={() => editor.chain().focus().unsetLink().run()}
+          onClick={() => {
+            editor.chain().focus().unsetLink().run();
+            setToolVisibility(IEditorTool.NONE);
+          }}
           className="min-w-fit h-[36px]"
         >
           Unset
