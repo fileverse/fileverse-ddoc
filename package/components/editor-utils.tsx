@@ -1059,7 +1059,10 @@ export const LinkPopup = ({
         </Button>
         <Button
           variant="secondary"
-          onClick={() => editor.chain().focus().unsetLink().run()}
+          onClick={() => {
+            editor.chain().focus().unsetLink().run();
+            setToolVisibility(IEditorTool.NONE);
+          }}
           className="min-w-fit h-[36px]"
         >
           Unset
