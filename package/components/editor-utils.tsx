@@ -48,6 +48,41 @@ interface IEditorToolElement {
 
 export const fonts = [
   {
+    title: 'Inter',
+    value: 'Inter, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Inter, sans-serif').run();
+    },
+  },
+  {
+    title: 'Roboto',
+    value: 'Roboto, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Roboto, sans-serif').run();
+    },
+  },
+  {
+    title: 'Playfair Display',
+    value: 'Playfair Display, serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Playfair Display, serif').run();
+    },
+  },
+  {
+    title: 'Calibri',
+    value: 'Calibri, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Calibri, sans-serif').run();
+    },
+  },
+  {
+    title: 'Times New Roman',
+    value: 'Times New Roman, serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Times New Roman, serif').run();
+    },
+  },
+  {
     title: 'Trebuchet MS',
     value: 'Trebuchet MS, sans-serif',
     command: (editor: Editor) => {
