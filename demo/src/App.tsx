@@ -298,7 +298,6 @@ function App() {
         setIsPresentationMode={setIsPresentationMode}
         zoomLevel={zoomLevel}
         setZoomLevel={setZoomLevel}
-        initialContent={''}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
         onComment={(): void => {}}
