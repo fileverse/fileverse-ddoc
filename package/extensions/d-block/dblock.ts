@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Node, mergeAttributes } from '@tiptap/core';
+import { Dispatch, Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import { DBlockNodeView } from './dblock-node-view';
-import { TextSelection } from '@tiptap/pm/state';
+import { TextSelection, Transaction } from '@tiptap/pm/state';
 
 export interface DBlockOptions {
   HTMLAttributes: Record<string, any>;
@@ -119,9 +119,24 @@ export const DBlock = Node.create<DBlockOptions>({
         const grandParent = $head.node($head.depth - 2);
         const headString = $head.toString();
         const nodePaths = headString.split('/');
+        const isAtEndOfTheNode = $head.end() === from;
 
         // Check if inside table
         const isInsideTable = nodePaths.some((path) => path.includes('table'));
+
+        // Handle blockquote
+        if (
+          parent?.type.name === 'blockquote' &&
+          currentNode.type.name === 'paragraph'
+        ) {
+          if (currentNode.textContent === '') {
+            return editor
+              .chain()
+              .setDBlock()
+              .focus(from + 4)
+              .run();
+          }
+        }
 
         if (parent?.type.name !== 'dBlock') {
           // If inside table, do nothing
@@ -303,7 +318,10 @@ export const DBlock = Node.create<DBlockOptions>({
               return editor.chain().newlineInCode().focus().run();
             }
 
-            if (['columns', 'heading'].includes(currentActiveNodeType)) {
+            if (
+              ['columns', 'heading'].includes(currentActiveNodeType) &&
+              isAtEndOfTheNode
+            ) {
               return editor
                 .chain()
                 .insertContent({
@@ -316,7 +334,30 @@ export const DBlock = Node.create<DBlockOptions>({
                 })
                 .focus(from + 4)
                 .run();
+            } else if (
+              currentActiveNodeType === 'columns' ||
+              currentActiveNodeType === 'heading'
+            ) {
+              return editor
+                .chain()
+                .command(
+                  ({
+                    tr,
+                    dispatch,
+                  }: {
+                    tr: Transaction;
+                    dispatch: Dispatch;
+                  }) => {
+                    if (dispatch) {
+                      tr.insertText('\n');
+                    }
+                    return true;
+                  },
+                )
+                .focus(from)
+                .run();
             }
+
             return editor
               .chain()
               .insertContentAt(

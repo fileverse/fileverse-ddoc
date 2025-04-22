@@ -112,6 +112,23 @@ export const PageBreak = Node.create<PageBreakRuleOptions>({
             }
             return false;
           },
+          handleTextInput: (view, from) => {
+            const { state } = view;
+            const node = state.doc.nodeAt(from);
+
+            // Prevent text input if it would replace a page break
+            if (node?.type.name === 'pageBreak') {
+              return true;
+            }
+
+            // Check if text input would affect a page break
+            const nodeAtPos = state.doc.nodeAt(from - 1);
+            if (nodeAtPos?.type.name === 'pageBreak') {
+              return true;
+            }
+
+            return false;
+          },
         },
       }),
     ];
