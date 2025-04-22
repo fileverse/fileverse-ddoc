@@ -3,7 +3,7 @@ import {
   // IconButton
 } from '@fileverse/ui';
 import { TextSelection } from '@tiptap/pm/state';
-import { useState, useMemo, useCallback, memo } from 'react';
+import { useState, useMemo, useCallback, memo, useRef } from 'react';
 import { ToCProps, ToCItemProps, ToCItemType } from './types';
 import { useMediaQuery } from 'usehooks-ts';
 import { useEditorContext } from '../../context/editor-context';
@@ -79,13 +79,13 @@ export const ToCEmptyState = memo(() => {
 
 ToCEmptyState.displayName = 'ToCEmptyState';
 
-// Headings map cache to avoid recalculation - but with shorter cache time for reliability
-let cachedHeadingsMap: Map<string, HTMLElement> | null = null;
-let lastCacheTime = 0;
-
 export const ToC = memo(({ items = [], editor, setItems }: ToCProps) => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const isMobile = useMediaQuery('(max-width: 1280px)');
+
+  // Add refs for the cache
+  const headingsCacheRef = useRef<Map<string, HTMLElement> | null>(null);
+  const lastCacheTimeRef = useRef<number>(0);
 
   // Use the optimized context but only what we need
   const { collapsedHeadings, setCollapsedHeadings, expandMultipleHeadings } =
@@ -99,9 +99,12 @@ export const ToC = memo(({ items = [], editor, setItems }: ToCProps) => {
     }));
   }, [items, activeId]);
 
-  // Build a fast lookup cache for headings in the DOM - but with more frequent invalidation
+  // Update getHeadingsMap to use refs
   const getHeadingsMap = useCallback(() => {
-    if (editor && (!cachedHeadingsMap || Date.now() - lastCacheTime > 500)) {
+    if (
+      editor &&
+      (!headingsCacheRef.current || Date.now() - lastCacheTimeRef.current > 500)
+    ) {
       const newMap = new Map<string, HTMLElement>();
 
       // Use a more efficient selector that queries all headings at once
@@ -113,11 +116,11 @@ export const ToC = memo(({ items = [], editor, setItems }: ToCProps) => {
         }
       });
 
-      cachedHeadingsMap = newMap;
-      lastCacheTime = Date.now();
+      headingsCacheRef.current = newMap;
+      lastCacheTimeRef.current = Date.now();
     }
 
-    return cachedHeadingsMap;
+    return headingsCacheRef.current;
   }, [editor]);
 
   // Fix for handling heading expansion
