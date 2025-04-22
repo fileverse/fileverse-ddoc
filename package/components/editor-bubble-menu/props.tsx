@@ -58,6 +58,7 @@ export const shouldShow = ({ editor }: { editor: Editor }) => {
   const isPageBreak = editor.state.doc.nodeAt(from)?.type.name === 'pageBreak';
   const isReminderBlockSelected =
     editor.state.doc.nodeAt(from)?.type.name === 'reminderBlock';
+  const isHorizontalRule = editor.isActive('horizontalRule');
 
   if (
     empty ||
@@ -65,7 +66,8 @@ export const shouldShow = ({ editor }: { editor: Editor }) => {
     isCodeBlockSelected ||
     isIframeSelected ||
     isPageBreak ||
-    isReminderBlockSelected
+    isReminderBlockSelected ||
+    isHorizontalRule
   ) {
     return false;
   }

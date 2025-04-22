@@ -37,6 +37,7 @@ import {
   convertToList,
 } from './editor-bubble-menu/node-selector';
 import { searchForSecureImageNodeAndEmbedImageContent } from '../extensions/mardown-paste-handler';
+import { inlineLoader } from '../utils/inline-loader';
 
 interface IEditorToolElement {
   icon: any;
@@ -47,6 +48,134 @@ interface IEditorToolElement {
 }
 
 export const fonts = [
+  {
+    title: 'Arial',
+    value: 'Arial, Helvetica, sans-serif',
+    command: (editor: Editor) => {
+      editor
+        .chain()
+        .focus()
+        .setFontFamily('Arial, Helvetica, sans-serif')
+        .run();
+    },
+  },
+  {
+    title: 'Calibri',
+    value: 'Calibri, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Calibri, sans-serif').run();
+    },
+  },
+  {
+    title: 'Comic Sans MS',
+    value: 'Comic Sans MS, Comic Sans',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Comic Sans MS, Comic Sans').run();
+    },
+  },
+  {
+    title: 'Cursive',
+    value: 'cursive',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('cursive').run();
+    },
+  },
+  {
+    title: 'Georgia',
+    value: 'Georgia, serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Georgia, serif').run();
+    },
+  },
+  {
+    title: 'Impact',
+    value: 'Impact, Charcoal, sans-serif',
+    command: (editor: Editor) => {
+      editor
+        .chain()
+        .focus()
+        .setFontFamily('Impact, Charcoal, sans-serif')
+        .run();
+    },
+  },
+  {
+    title: 'Inter',
+    value: 'Inter, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Inter, sans-serif').run();
+    },
+  },
+  {
+    title: 'Lato',
+    value: 'Lato, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Lato, sans-serif').run();
+    },
+  },
+  {
+    title: 'Lucida Grande',
+    value: 'Lucida Sans Unicode, Lucida Grande, sans-serif',
+    command: (editor: Editor) => {
+      editor
+        .chain()
+        .focus()
+        .setFontFamily('Lucida Sans Unicode, Lucida Grande, sans-serif')
+        .run();
+    },
+  },
+  {
+    title: 'Monospace',
+    value: 'monospace',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('monospace').run();
+    },
+  },
+  {
+    title: 'Palatino',
+    value: 'Palatino Linotype, Book Antiqua, Palatino, serif',
+    command: (editor: Editor) => {
+      editor
+        .chain()
+        .focus()
+        .setFontFamily('Palatino Linotype, Book Antiqua, Palatino, serif')
+        .run();
+    },
+  },
+  {
+    title: 'Playfair Display',
+    value: 'Playfair Display, serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Playfair Display, serif').run();
+    },
+  },
+  {
+    title: 'REM',
+    value: 'REM, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('REM, sans-serif').run();
+    },
+  },
+  {
+    title: 'Roboto',
+    value: 'Roboto, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Roboto, sans-serif').run();
+    },
+  },
+  {
+    title: 'Serif',
+    value: 'serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('serif').run();
+    },
+  },
+  {
+    title: 'Times New Roman',
+    value: 'Times New Roman, serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Times New Roman, serif').run();
+    },
+  },
   {
     title: 'Trebuchet MS',
     value: 'Trebuchet MS, sans-serif',
@@ -62,82 +191,10 @@ export const fonts = [
     },
   },
   {
-    title: 'Georgia',
-    value: 'Georgia, serif',
+    title: 'Volkhov',
+    value: 'Volkhov, serif',
     command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Georgia, serif').run();
-    },
-  },
-  {
-    title: 'Arial',
-    value: 'Arial, Helvetica, sans-serif',
-    command: (editor: Editor) => {
-      editor
-        .chain()
-        .focus()
-        .setFontFamily('Arial, Helvetica, sans-serif')
-        .run();
-    },
-  },
-  {
-    title: 'Comic Sans MS',
-    value: 'Comic Sans MS, Comic Sans',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Comic Sans MS, Comic Sans').run();
-    },
-  },
-  {
-    title: 'Impact',
-    value: 'Impact, Charcoal, sans-serif',
-    command: (editor: Editor) => {
-      editor
-        .chain()
-        .focus()
-        .setFontFamily('Impact, Charcoal, sans-serif')
-        .run();
-    },
-  },
-  {
-    title: 'Palatino',
-    value: 'Palatino Linotype, Book Antiqua, Palatino, serif',
-    command: (editor: Editor) => {
-      editor
-        .chain()
-        .focus()
-        .setFontFamily('Palatino Linotype, Book Antiqua, Palatino, serif')
-        .run();
-    },
-  },
-  {
-    title: 'Lucida Grande',
-    value: 'Lucida Sans Unicode, Lucida Grande, sans-serif',
-    command: (editor: Editor) => {
-      editor
-        .chain()
-        .focus()
-        .setFontFamily('Lucida Sans Unicode, Lucida Grande, sans-serif')
-        .run();
-    },
-  },
-  {
-    title: 'Serif',
-    value: 'serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('serif').run();
-    },
-  },
-  {
-    title: 'Monospace',
-    value: 'monospace',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('monospace').run();
-    },
-  },
-  {
-    title: 'Cursive',
-    value: 'cursive',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('cursive').run();
+      editor.chain().focus().setFontFamily('Volkhov, serif').run();
     },
   },
 ];
@@ -579,6 +636,12 @@ export const useEditorToolbar = ({
       onClick: () => {
         if (editor) {
           const closeAndPrint = async () => {
+            const { showLoader, removeLoader } = inlineLoader(
+              editor,
+              'Exporting PDF file ...',
+            );
+
+            const loader = showLoader();
             const originalDoc = editor.state.doc;
             const docWithEmbedImageContent =
               await searchForSecureImageNodeAndEmbedImageContent(originalDoc);
@@ -592,6 +655,7 @@ export const useEditorToolbar = ({
 
             const inlineHtml = temporalEditor.getHTML();
             handleContentPrint(inlineHtml);
+            removeLoader(loader);
             temporalEditor.destroy();
           };
           setFileExportsOpen(false);
@@ -838,7 +902,8 @@ export const EditorFontFamily = ({
     <div
       ref={elementRef}
       className={cn(
-        'z-50 h-auto max-h-[330px] w-48 overflow-y-auto scroll-smooth color-bg-default px-1 py-2 shadow-elevation-1 transition-all rounded',
+        'z-50 h-auto w-48 color-bg-default px-1 py-2 shadow-elevation-1 transition-all rounded',
+        'max-h-[80vh] overflow-y-auto',
       )}
     >
       {fonts.map((font) => (
@@ -919,6 +984,20 @@ export const EditorAlignment = ({
         )}
       >
         <LucideIcon name="AlignRight" />
+      </button>
+      <button
+        onClick={() => {
+          editor?.chain().focus().setTextAlign('justify').run();
+          setToolVisibility(IEditorTool.NONE);
+        }}
+        className={cn(
+          'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
+          editor.isActive({ textAlign: 'justify' })
+            ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
+            : 'hover:color-bg-default-hover',
+        )}
+      >
+        <LucideIcon name="AlignJustify" />
       </button>
     </div>
   );
