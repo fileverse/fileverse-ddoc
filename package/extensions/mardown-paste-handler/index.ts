@@ -249,8 +249,20 @@ turndownService.addRule('callout', {
   filter: (node) =>
     node.nodeName === 'ASIDE' &&
     (node as HTMLElement).getAttribute('data-type') === 'callout',
-  replacement: function (content) {
-    return `<aside data-type="callout" class="callout" >\n${content.trim()}\n</aside>\n\n`;
+  replacement: function (_content, node) {
+    const childNodes = Array.from((node as HTMLElement).childNodes);
+    const parsedContent = childNodes
+      .map((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          return turndownService.turndown((child as HTMLElement).outerHTML);
+        } else if (child.nodeType === Node.TEXT_NODE) {
+          return turndownService.turndown(child.textContent || '');
+        }
+        return '';
+      })
+      .join('\n\n');
+
+    return `<aside data-type="callout" class="callout">\n${parsedContent.trim()}\n</aside>\n\n`;
   },
 });
 

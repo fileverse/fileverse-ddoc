@@ -16,7 +16,8 @@
     h3.is-empty::before {
       content: 'Heading 3';
     }
-    aside[data-type='callout'] p.is-empty::before {
+    /* Show placeholder ONLY if the first paragraph inside callout is empty */
+    aside[data-type='callout'] p.is-empty:first-of-type::before {
       content: 'Type to make writing stand out';
     }
   }
@@ -24,8 +25,8 @@
   & p.is-empty::before {
     content: 'Type  /  to browse options';
   }
-  /* Callout block placeholder */
-  aside[data-type='callout'] p.is-empty::before {
+  /* Callout block placeholder (non-focused fallback) */
+  aside[data-type='callout'] p.is-empty:first-of-type::before {
     content: 'Type to make writing stand out';
   }
 
