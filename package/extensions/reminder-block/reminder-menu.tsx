@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { forwardRef, useState, useEffect } from 'react';
 import {
   Button,
   TextField,
@@ -38,223 +38,229 @@ const QUICK_OPTIONS = [
   { label: 'Next week 9 AM', value: getNextWeekMorning(), icon: 'Calendar' },
 ];
 
-export const ReminderMenu = ({
-  isOpen,
-  onClose,
-  onCreateReminder,
-}: ReminderMenuProps) => {
-  const [title, setTitle] = useState<string>('');
-  const [date, setDate] = useState<Date | undefined>(new Date());
-  const [error, setError] = useState<string>('');
-  const isMobile = useMediaQuery('(max-width: 768px)');
-  const [use12Hours, setUse12Hours] = useState<boolean>(true);
+export const ReminderMenu = forwardRef<HTMLDivElement, ReminderMenuProps>(
+  (
+    {
+      isOpen,
+      onClose,
+      onCreateReminder,
+      initialReminderTitle,
+      setInitialReminderTitle,
+    }: ReminderMenuProps,
+    ref,
+  ) => {
+    const [title, setTitle] = useState<string>(initialReminderTitle || '');
+    const [date, setDate] = useState<Date | undefined>(new Date());
+    const [error, setError] = useState<string>('');
+    const isMobile = useMediaQuery('(max-width: 768px)');
+    const [use12Hours, setUse12Hours] = useState<boolean>(true);
 
-  // const handleDateChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const formatted = formatDate(e.target.value);
-  //   setDate(formatted);
-  //   setError('');
-  // };
+    useEffect(() => {
+      if (initialReminderTitle) {
+        setTitle(initialReminderTitle);
+      }
+    }, [initialReminderTitle]);
 
-  // const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  //   const formatted = formatTime(e.target.value);
-  //   setTime(formatted);
-  //   setError('');
-  // };
+    const createReminder = (timeOffset: number) => {
+      if (!title) {
+        setError('Please enter a reminder title');
+        return;
+      }
 
-  const createReminder = (timeOffset: number) => {
-    if (!title) {
-      setError('Please enter a reminder title');
-      return;
-    }
+      const reminder = {
+        id: uuid(),
+        title,
+        timestamp: Date.now() + timeOffset,
+        createdAt: Date.now(),
+        status: 'pending' as const,
+      };
 
-    const reminder = {
-      id: uuid(),
-      title,
-      timestamp: Date.now() + timeOffset,
-      createdAt: Date.now(),
-      status: 'pending' as const,
+      onCreateReminder(reminder);
     };
 
-    onCreateReminder(reminder);
-  };
+    const handleCreateCustomReminder = () => {
+      if (!title) {
+        setError('Please enter a reminder title');
+        return;
+      }
 
-  const handleCreateCustomReminder = () => {
-    if (!title) {
-      setError('Please enter a reminder title');
-      return;
-    }
+      if (!date) {
+        setError('Please enter both date and time');
+        return;
+      }
 
-    if (!date) {
-      setError('Please enter both date and time');
-      return;
-    }
+      const timestamp = date.getTime();
+      if (!timestamp) {
+        setError('Invalid date or time format');
+        return;
+      }
 
-    const timestamp = date.getTime();
-    if (!timestamp) {
-      setError('Invalid date or time format');
-      return;
-    }
+      if (timestamp <= Date.now()) {
+        setError('Please select a future date and time');
+        return;
+      }
 
-    if (timestamp <= Date.now()) {
-      setError('Please select a future date and time');
-      return;
-    }
+      const reminder = {
+        id: uuid(),
+        title,
+        timestamp,
+        createdAt: Date.now(),
+        status: 'pending' as const,
+      };
 
-    const reminder = {
-      id: uuid(),
-      title,
-      timestamp,
-      createdAt: Date.now(),
-      status: 'pending' as const,
+      onCreateReminder(reminder);
     };
 
-    onCreateReminder(reminder);
-  };
+    useEscapeKey(() => {
+      onClose();
+      setInitialReminderTitle('');
+    });
 
-  useEscapeKey(() => {
-    onClose();
-  });
-
-  const content = (
-    <div className="px-4 py-2 min-w-[300px] color-bg-default rounded-lg shadow-elevation-3 space-y-3 border color-border-default">
-      <div className="flex justify-between items-center">
-        <h3 className="text-heading-xsm">Create reminder</h3>
-        <IconButton icon={'X'} variant="ghost" size="sm" onClick={onClose} />
-      </div>
-
-      <TextField
-        placeholder="Reminder title"
-        value={title}
-        onChange={(e) => setTitle(e.target.value)}
-        className=""
-        autoFocus
-      />
-
-      <div className="flex flex-col gap-2">
-        <div className="grid grid-cols-2 gap-2">
-          {QUICK_OPTIONS.slice(0, -1).map((option) => (
-            <Button
-              key={option.label}
-              variant="ghost"
-              size="md"
-              className="gap-2 w-full color-bg-secondary hover:color-bg-secondary-hover text-helper-text-sm font-normal"
-              onClick={() => createReminder(option.value)}
-            >
-              <LucideIcon name={option.icon} size="sm" />
-              <span>{option.label}</span>
-            </Button>
-          ))}
+    const content = (
+      <div className="px-4 py-2 min-w-[300px] color-bg-default rounded-lg shadow-elevation-3 space-y-3 border color-border-default">
+        <div className="flex justify-between items-center">
+          <h3 className="text-heading-xsm">Create reminder</h3>
+          <IconButton icon={'X'} variant="ghost" size="sm" onClick={onClose} />
         </div>
-        <Button
-          variant="ghost"
-          size="md"
-          className="gap-2 w-full color-bg-secondary hover:color-bg-secondary-hover text-helper-text-sm font-normal"
-          onClick={() =>
-            createReminder(QUICK_OPTIONS[QUICK_OPTIONS.length - 1].value)
-          }
-        >
-          <LucideIcon
-            name={QUICK_OPTIONS[QUICK_OPTIONS.length - 1].icon}
-            size="sm"
-          />
-          <span>{QUICK_OPTIONS[QUICK_OPTIONS.length - 1].label}</span>
-        </Button>
-      </div>
 
-      <Divider className="my-2 w-full" />
-      <h3 className="text-heading-xsm">Custom</h3>
-
-      <div className="flex gap-2">
-        <DynamicDropdown
-          anchorTrigger={
-            <TextField
-              placeholder="MM/DD/YYYY"
-              value={date ? format(date, 'P') : 'MM/DD/YYYY'}
-              readOnly
-              className="cursor-pointer"
-            />
-          }
-          content={
-            <div className="p-2 color-bg-default shadow-elevation-3 rounded-md">
-              <DatePicker mode="single" selected={date} onSelect={setDate} />
-            </div>
-          }
+        <TextField
+          placeholder="Reminder title"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+          className=""
+          autoFocus
         />
 
-        <div className="flex items-center">
+        <div className="flex flex-col gap-2">
+          <div className="grid grid-cols-2 gap-2">
+            {QUICK_OPTIONS.slice(0, -1).map((option) => (
+              <Button
+                key={option.label}
+                variant="ghost"
+                size="md"
+                className="gap-2 w-full color-bg-secondary hover:color-bg-secondary-hover text-helper-text-sm font-normal"
+                onClick={() => createReminder(option.value)}
+              >
+                <LucideIcon name={option.icon} size="sm" />
+                <span>{option.label}</span>
+              </Button>
+            ))}
+          </div>
+          <Button
+            variant="ghost"
+            size="md"
+            className="gap-2 w-full color-bg-secondary hover:color-bg-secondary-hover text-helper-text-sm font-normal"
+            onClick={() =>
+              createReminder(QUICK_OPTIONS[QUICK_OPTIONS.length - 1].value)
+            }
+          >
+            <LucideIcon
+              name={QUICK_OPTIONS[QUICK_OPTIONS.length - 1].icon}
+              size="sm"
+            />
+            <span>{QUICK_OPTIONS[QUICK_OPTIONS.length - 1].label}</span>
+          </Button>
+        </div>
+
+        <Divider className="my-2 w-full" />
+        <h3 className="text-heading-xsm">Custom</h3>
+
+        <div className="flex gap-2">
           <DynamicDropdown
             anchorTrigger={
               <TextField
-                placeholder="HH:mm"
-                value={
-                  date
-                    ? use12Hours
-                      ? format(date, 'p')
-                      : format(date, 'HH:mm')
-                    : 'HH:mm'
-                }
+                placeholder="MM/DD/YYYY"
+                value={date ? format(date, 'P') : 'MM/DD/YYYY'}
                 readOnly
-                className="cursor-pointer rounded-r-none !w-24"
+                className="cursor-pointer"
               />
             }
             content={
               <div className="p-2 color-bg-default shadow-elevation-3 rounded-md">
-                <TimePicker
-                  date={date}
-                  setDate={setDate}
-                  use12Hours={use12Hours}
-                />
+                <DatePicker mode="single" selected={date} onSelect={setDate} />
               </div>
             }
           />
-          <Button
-            variant="ghost"
-            size="md"
-            className="!min-w-fit rounded-l-none rounded-r-md color-bg-tertiary"
-            onClick={() => setUse12Hours(!use12Hours)}
-          >
-            {use12Hours ? '12h' : '24h'}
-          </Button>
+
+          <div className="flex items-center">
+            <DynamicDropdown
+              anchorTrigger={
+                <TextField
+                  placeholder="HH:mm"
+                  value={
+                    date
+                      ? use12Hours
+                        ? format(date, 'p')
+                        : format(date, 'HH:mm')
+                      : 'HH:mm'
+                  }
+                  readOnly
+                  className="cursor-pointer rounded-r-none !w-24"
+                />
+              }
+              content={
+                <div className="p-2 color-bg-default shadow-elevation-3 rounded-md">
+                  <TimePicker
+                    date={date}
+                    setDate={setDate}
+                    use12Hours={use12Hours}
+                  />
+                </div>
+              }
+            />
+            <Button
+              variant="ghost"
+              size="md"
+              className="!min-w-fit rounded-l-none rounded-r-md color-bg-tertiary"
+              onClick={() => setUse12Hours(!use12Hours)}
+            >
+              {use12Hours ? '12h' : '24h'}
+            </Button>
+          </div>
+        </div>
+
+        {error && (
+          <div className="text-helper-text-sm color-text-danger">{error}</div>
+        )}
+
+        <Button
+          variant="default"
+          size="md"
+          className="w-full"
+          onClick={handleCreateCustomReminder}
+        >
+          <span>Create</span>
+        </Button>
+
+        <Divider className="my-2 w-full" />
+
+        <div className="flex justify-between items-center pb-1">
+          <span className="text-helper-text-sm font-normal color-text-secondary">
+            To receive an reminders please allow us to send push notification in
+            your browser.
+          </span>
         </div>
       </div>
-
-      {error && (
-        <div className="text-helper-text-sm color-text-danger">{error}</div>
-      )}
-
-      <Button
-        variant="default"
-        size="md"
-        className="w-full"
-        onClick={handleCreateCustomReminder}
-      >
-        <span>Create</span>
-      </Button>
-
-      <Divider className="my-2 w-full" />
-
-      <div className="flex justify-between items-center pb-1">
-        <span className="text-helper-text-sm font-normal color-text-secondary">
-          To receive an reminders please allow us to send push notification in
-          your browser.
-        </span>
-      </div>
-    </div>
-  );
-
-  if (isMobile) {
-    return (
-      <BottomDrawer
-        key="reminder-menu"
-        open={isOpen}
-        onOpenChange={onClose}
-        className="w-full shadow-elevation-4"
-        contentClassName="w-full h-full !border-none !shadow-elevation-4 !gap-2"
-        footerClassName="hidden"
-        content={content}
-      />
     );
-  }
 
-  return <div className="-translate-y-1">{content}</div>;
-};
+    if (isMobile) {
+      return (
+        <BottomDrawer
+          key="reminder-menu"
+          open={isOpen}
+          onOpenChange={onClose}
+          className="w-full shadow-elevation-4"
+          contentClassName="w-full h-full !border-none !shadow-elevation-4 !gap-2"
+          footerClassName="hidden"
+          content={content}
+        />
+      );
+    }
+
+    return (
+      <div className="-translate-y-1" ref={ref}>
+        {content}
+      </div>
+    );
+  },
+);

@@ -154,6 +154,8 @@ const DdocEditor = forwardRef(
       setSlides,
       tocItems,
       setTocItems,
+      initialReminderTitle,
+      setInitialReminderTitle,
     } = useDdocEditor({
       enableIndexeddbSync,
       ddocId,
@@ -487,6 +489,12 @@ const DdocEditor = forwardRef(
                       onInlineComment={onInlineComment}
                       activeCommentId={activeCommentId}
                       isCollabDocumentPublished={isCollabDocumentPublished}
+                      onReminderCreate={
+                        extensions?.find((ext) => ext.name === 'reminderBlock')
+                          ?.options?.onReminderCreate
+                      }
+                      initialReminderTitle={initialReminderTitle}
+                      setInitialReminderTitle={setInitialReminderTitle}
                     />
                   )}
 

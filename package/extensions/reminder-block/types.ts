@@ -1,3 +1,4 @@
+import React from 'react';
 export interface Reminder {
   id: string;
   title: string;
@@ -18,4 +19,6 @@ export interface ReminderMenuProps {
   isOpen: boolean;
   onClose: () => void;
   onCreateReminder: (reminder: Reminder) => void;
+  initialReminderTitle?: string;
+  setInitialReminderTitle: React.Dispatch<React.SetStateAction<string>>;
 }

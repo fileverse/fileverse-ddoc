@@ -66,7 +66,7 @@ export const useDdocEditor = ({
   onCopyHeadingLink,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
-
+  const [initialReminderTitle, setInitialReminderTitle] = useState<string>('');
   // V2 - comment
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
 
@@ -747,5 +747,7 @@ export const useDdocEditor = ({
     setSlides,
     tocItems,
     setTocItems,
+    initialReminderTitle,
+    setInitialReminderTitle,
   };
 };

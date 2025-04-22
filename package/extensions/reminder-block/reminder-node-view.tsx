@@ -9,9 +9,65 @@ export const ReminderNodeView = ({
   deleteNode,
 }: NodeViewProps) => {
   const reminder = node.attrs.reminder;
-  const [isOverdue, setIsOverdue] = useState(reminder.timestamp < Date.now());
+  const [isOverdue, setIsOverdue] = useState(
+    reminder?.timestamp ? reminder.timestamp < Date.now() : false,
+  );
 
   const isPreviewMode = editor.isEditable === false;
+
+  // Get all reminders in the document and sort them by timestamp
+  const getAllReminders = useCallback(() => {
+    const reminders: { id: string; timestamp: number }[] = [];
+    editor.state.doc.descendants((node) => {
+      if (node.type.name === 'reminderBlock') {
+        reminders.push({
+          id: node.attrs.reminder.id,
+          timestamp: node.attrs.reminder.timestamp,
+        });
+      }
+    });
+    return reminders.sort((a, b) => a.timestamp - b.timestamp);
+  }, [editor]);
+
+  // Navigate to the next/previous reminder
+  const navigateToReminder = useCallback(
+    (direction: 'next' | 'prev') => {
+      const reminders = getAllReminders();
+      const currentIndex = reminders.findIndex((r) => r.id === reminder.id);
+
+      if (currentIndex === -1) return;
+
+      let targetIndex: number;
+      if (direction === 'next') {
+        targetIndex = (currentIndex + 1) % reminders.length;
+      } else {
+        targetIndex = (currentIndex - 1 + reminders.length) % reminders.length;
+      }
+
+      const targetReminder = reminders[targetIndex];
+
+      // Find the target reminder node in the document
+      editor.state.doc.descendants((node, pos) => {
+        if (
+          node.type.name === 'reminderBlock' &&
+          node.attrs.reminder.id === targetReminder.id
+        ) {
+          // Scroll the target reminder into view
+          const domNode = editor.view.nodeDOM(pos) as HTMLElement;
+          if (domNode) {
+            domNode.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Find and click the dropdown trigger to open it
+            const trigger = domNode.querySelector('[data-trigger]');
+            if (trigger instanceof HTMLElement) {
+              trigger.click();
+            }
+          }
+        }
+      });
+    },
+    [editor, reminder.id, getAllReminders],
+  );
 
   useEffect(() => {
     // Only set up the interval if the reminder is not yet overdue
@@ -62,12 +118,13 @@ export const ReminderNodeView = ({
         align="start"
         anchorTrigger={
           <div
+            data-trigger
             className={cn(
               'relative flex w-fit min-h-6 items-center gap-2 py-1 pl-2 rounded-full border border-dashed',
               isOverdue ? 'reminder-wrapper-overdue' : 'reminder-wrapper',
             )}
           >
-            <div className="flex-1 flex items-center gap-1">
+            <div className="flex-1 flex items-center gap-1 max-w-[200px] min-w-max">
               <LucideIcon
                 name="AlarmClock"
                 size="sm"
@@ -123,13 +180,15 @@ export const ReminderNodeView = ({
                   icon="ChevronUp"
                   variant="ghost"
                   size="sm"
-                  className="color-text-secondary"
+                  className="color-text-default disabled:!bg-transparent"
+                  onClick={() => navigateToReminder('prev')}
                 />
                 <IconButton
                   icon="ChevronDown"
                   variant="ghost"
                   size="sm"
-                  className="color-text-secondary"
+                  className="color-text-default disabled:!bg-transparent"
+                  onClick={() => navigateToReminder('next')}
                 />
                 <IconButton
                   icon="Trash2"

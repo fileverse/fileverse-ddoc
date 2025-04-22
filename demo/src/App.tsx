@@ -180,15 +180,16 @@ function App() {
         toast({
           title: 'Notification permission denied',
           description: 'You will not receive reminder notifications.',
-          variant: 'danger'
+          customIcon: 'BellOff',
+          variant: 'mini'
         });
       }
     } catch (error) {
       console.error('Error requesting notification permission:', error);
       toast({
-        title: 'Permission Error',
         description: 'Failed to request notification permission.',
-        variant: 'danger'
+        customIcon: 'CircleX',
+        variant: 'mini'
       });
     }
   };
@@ -211,9 +212,9 @@ function App() {
 
       // Show toast notification
       toast({
-        title: 'Reminder Scheduled',
         description: `Reminder scheduled for ${new Date(reminder.timestamp).toLocaleString()}`,
-        variant: 'success'
+        customIcon: 'AlarmClockCheck',
+        variant: 'mini'
       });
 
       // Request notification permission if it's in default state (not yet decided)
@@ -223,9 +224,9 @@ function App() {
     } catch (error) {
       console.error('Error creating reminder:', error);
       toast({
-        title: 'Error',
         description: 'Failed to create reminder',
-        variant: 'danger'
+        customIcon: 'CircleX',
+        variant: 'mini'
       });
     }
   };
@@ -244,9 +245,9 @@ function App() {
     } catch (error) {
       console.error('Error deleting reminder:', error);
       toast({
-        title: 'Error',
         description: 'Failed to delete reminder',
-        variant: 'danger'
+        customIcon: 'CircleX',
+        variant: 'mini'
       });
     }
   };
@@ -265,9 +266,9 @@ function App() {
     } catch (error) {
       console.error('Error updating reminder:', error);
       toast({
-        title: 'Error',
         description: 'Failed to update reminder',
-        variant: 'danger'
+        customIcon: 'CircleX',
+        variant: 'mini'
       });
     }
   };

@@ -63,12 +63,16 @@ export const ReminderBlock = Node.create<ReminderBlockOptions>({
     return ReactNodeViewRenderer(ReminderNodeView);
   },
 
+  // ... existing code ...
   addCommands() {
     return {
       setReminderBlock:
         (attributes) =>
-        ({ commands }) => {
-          return commands.insertContent({
+        ({ commands, state }) => {
+          const { selection } = state;
+          const { to } = selection;
+
+          return commands.insertContentAt(to, {
             type: this.name,
             attrs: attributes,
           });
