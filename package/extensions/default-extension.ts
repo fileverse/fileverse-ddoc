@@ -196,6 +196,10 @@ export const defaultExtensions = (
     addInlineMath: true,
     evaluation: false,
     delimiters: 'dollar',
+    katexOptions: {
+      throwOnError: false,
+      strict: true,
+    },
   }),
   Footnote,
   Superscript.configure({

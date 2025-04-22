@@ -49,27 +49,6 @@ interface IEditorToolElement {
 
 export const fonts = [
   {
-    title: 'Trebuchet MS',
-    value: 'Trebuchet MS, sans-serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Trebuchet MS, sans-serif').run();
-    },
-  },
-  {
-    title: 'Verdana',
-    value: 'Verdana, Geneva, sans-serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Verdana, Geneva, sans-serif').run();
-    },
-  },
-  {
-    title: 'Georgia',
-    value: 'Georgia, serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Georgia, serif').run();
-    },
-  },
-  {
     title: 'Arial',
     value: 'Arial, Helvetica, sans-serif',
     command: (editor: Editor) => {
@@ -81,10 +60,31 @@ export const fonts = [
     },
   },
   {
+    title: 'Calibri',
+    value: 'Calibri, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Calibri, sans-serif').run();
+    },
+  },
+  {
     title: 'Comic Sans MS',
     value: 'Comic Sans MS, Comic Sans',
     command: (editor: Editor) => {
       editor.chain().focus().setFontFamily('Comic Sans MS, Comic Sans').run();
+    },
+  },
+  {
+    title: 'Cursive',
+    value: 'cursive',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('cursive').run();
+    },
+  },
+  {
+    title: 'Georgia',
+    value: 'Georgia, serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Georgia, serif').run();
     },
   },
   {
@@ -99,14 +99,17 @@ export const fonts = [
     },
   },
   {
-    title: 'Palatino',
-    value: 'Palatino Linotype, Book Antiqua, Palatino, serif',
+    title: 'Inter',
+    value: 'Inter, sans-serif',
     command: (editor: Editor) => {
-      editor
-        .chain()
-        .focus()
-        .setFontFamily('Palatino Linotype, Book Antiqua, Palatino, serif')
-        .run();
+      editor.chain().focus().setFontFamily('Inter, sans-serif').run();
+    },
+  },
+  {
+    title: 'Lato',
+    value: 'Lato, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Lato, sans-serif').run();
     },
   },
   {
@@ -121,13 +124,6 @@ export const fonts = [
     },
   },
   {
-    title: 'Serif',
-    value: 'serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('serif').run();
-    },
-  },
-  {
     title: 'Monospace',
     value: 'monospace',
     command: (editor: Editor) => {
@@ -135,10 +131,70 @@ export const fonts = [
     },
   },
   {
-    title: 'Cursive',
-    value: 'cursive',
+    title: 'Palatino',
+    value: 'Palatino Linotype, Book Antiqua, Palatino, serif',
     command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('cursive').run();
+      editor
+        .chain()
+        .focus()
+        .setFontFamily('Palatino Linotype, Book Antiqua, Palatino, serif')
+        .run();
+    },
+  },
+  {
+    title: 'Playfair Display',
+    value: 'Playfair Display, serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Playfair Display, serif').run();
+    },
+  },
+  {
+    title: 'REM',
+    value: 'REM, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('REM, sans-serif').run();
+    },
+  },
+  {
+    title: 'Roboto',
+    value: 'Roboto, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Roboto, sans-serif').run();
+    },
+  },
+  {
+    title: 'Serif',
+    value: 'serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('serif').run();
+    },
+  },
+  {
+    title: 'Times New Roman',
+    value: 'Times New Roman, serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Times New Roman, serif').run();
+    },
+  },
+  {
+    title: 'Trebuchet MS',
+    value: 'Trebuchet MS, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Trebuchet MS, sans-serif').run();
+    },
+  },
+  {
+    title: 'Verdana',
+    value: 'Verdana, Geneva, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Verdana, Geneva, sans-serif').run();
+    },
+  },
+  {
+    title: 'Volkhov',
+    value: 'Volkhov, serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Volkhov, serif').run();
     },
   },
 ];
@@ -846,7 +902,8 @@ export const EditorFontFamily = ({
     <div
       ref={elementRef}
       className={cn(
-        'z-50 h-auto max-h-[330px] w-48 overflow-y-auto scroll-smooth color-bg-default px-1 py-2 shadow-elevation-1 transition-all rounded',
+        'z-50 h-auto w-48 color-bg-default px-1 py-2 shadow-elevation-1 transition-all rounded',
+        'max-h-[80vh] overflow-y-auto',
       )}
     >
       {fonts.map((font) => (
@@ -1051,6 +1108,12 @@ export const LinkPopup = ({
         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
           setUrl(e.target.value)
         }
+        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            apply();
+          }
+        }}
         className="w-full"
         placeholder="Add link here"
         value={url}
@@ -1061,7 +1124,10 @@ export const LinkPopup = ({
         </Button>
         <Button
           variant="secondary"
-          onClick={() => editor.chain().focus().unsetLink().run()}
+          onClick={() => {
+            editor.chain().focus().unsetLink().run();
+            setToolVisibility(IEditorTool.NONE);
+          }}
           className="min-w-fit h-[36px]"
         >
           Unset
