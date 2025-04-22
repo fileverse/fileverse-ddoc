@@ -250,7 +250,7 @@ turndownService.addRule('callout', {
     node.nodeName === 'ASIDE' &&
     (node as HTMLElement).getAttribute('data-type') === 'callout',
   replacement: function (content) {
-    return `<aside class="callout" >\n${content.trim()}\n</aside>\n\n`;
+    return `<aside data-type="callout" class="callout" >\n${content.trim()}\n</aside>\n\n`;
   },
 });
 

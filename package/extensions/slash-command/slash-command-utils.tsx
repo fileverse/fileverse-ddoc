@@ -108,7 +108,7 @@ export const getSuggestionItems = ({
     },
     {
       title: 'Callout',
-      description: 'Highlight text with a callout box.',
+      description: 'Make writing stand out',
       searchTerms: ['callout', 'note', 'highlight', 'box'],
       icon: <LucideIcon name="StickyNote" size={'md'} />,
       image: '',
