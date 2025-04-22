@@ -895,6 +895,7 @@ export const EditorFontFamily = ({
       ref={elementRef}
       className={cn(
         'z-50 h-auto w-48 color-bg-default px-1 py-2 shadow-elevation-1 transition-all rounded',
+        'max-h-[80vh] overflow-y-auto',
       )}
     >
       {fonts.map((font) => (
