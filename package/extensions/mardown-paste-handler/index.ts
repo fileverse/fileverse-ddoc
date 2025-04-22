@@ -18,6 +18,7 @@ import {
 } from '../../utils/security';
 import { fromByteArray, toByteArray } from 'base64-js';
 import { uploadSecureImage } from '../../utils/upload-images';
+import { inlineLoader } from '../../utils/inline-loader';
 
 // Initialize MarkdownIt for converting Markdown back to HTML with footnote support
 const markdownIt = new MarkdownIt().use(markdownItFootnote);
@@ -301,6 +302,11 @@ const MarkdownPasteHandler = (secureImageUploadUrl?: string) =>
                   file.type === 'text/markdown' ||
                   file.name.endsWith('.md')
                 ) {
+                  const { showLoader, removeLoader } = inlineLoader(
+                    this.editor,
+                    'Importing MD file ...',
+                  );
+                  const loader = showLoader();
                   const reader = new FileReader();
                   reader.onload = async (e) => {
                     const content = e.target?.result as string;
@@ -309,6 +315,7 @@ const MarkdownPasteHandler = (secureImageUploadUrl?: string) =>
                       content,
                       secureImageUploadUrl,
                     );
+                    removeLoader(loader);
                   };
                   reader.readAsText(file);
                 }
@@ -320,6 +327,13 @@ const MarkdownPasteHandler = (secureImageUploadUrl?: string) =>
         exportMarkdownFile:
           () =>
           async ({ editor }: { editor: Editor }): Promise<string> => {
+            const { showLoader, removeLoader } = inlineLoader(
+              editor,
+              'Exporting MD file ...',
+            );
+
+            const loader = showLoader();
+
             const originalDoc: any = editor.state.doc;
 
             const docWithEmbedImageContent: any =
@@ -339,6 +353,7 @@ const MarkdownPasteHandler = (secureImageUploadUrl?: string) =>
             });
             const downloadUrl = URL.createObjectURL(blob);
             temporalEditor.destroy();
+            removeLoader(loader);
             return downloadUrl;
           },
       };

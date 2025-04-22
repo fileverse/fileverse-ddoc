@@ -37,6 +37,7 @@ import {
   convertToList,
 } from './editor-bubble-menu/node-selector';
 import { searchForSecureImageNodeAndEmbedImageContent } from '../extensions/mardown-paste-handler';
+import { inlineLoader } from '../utils/inline-loader';
 
 interface IEditorToolElement {
   icon: any;
@@ -635,6 +636,12 @@ export const useEditorToolbar = ({
       onClick: () => {
         if (editor) {
           const closeAndPrint = async () => {
+            const { showLoader, removeLoader } = inlineLoader(
+              editor,
+              'Exporting PDF file ...',
+            );
+
+            const loader = showLoader();
             const originalDoc = editor.state.doc;
             const docWithEmbedImageContent =
               await searchForSecureImageNodeAndEmbedImageContent(originalDoc);
@@ -648,6 +655,7 @@ export const useEditorToolbar = ({
 
             const inlineHtml = temporalEditor.getHTML();
             handleContentPrint(inlineHtml);
+            removeLoader(loader);
             temporalEditor.destroy();
           };
           setFileExportsOpen(false);
