@@ -16,10 +16,17 @@
     h3.is-empty::before {
       content: 'Heading 3';
     }
+    aside[data-type='callout'] p.is-empty::before {
+      content: 'Type to make writing stand out';
+    }
   }
   /* Default Placeholder */
   & p.is-empty::before {
     content: 'Type  /  to browse options';
+  }
+  /* Callout block placeholder */
+  aside[data-type='callout'] p.is-empty::before {
+    content: 'Type to make writing stand out';
   }
 
   /* Blockquote Placeholder */

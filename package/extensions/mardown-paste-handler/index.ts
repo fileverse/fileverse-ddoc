@@ -244,6 +244,16 @@ turndownService.addRule('strikethrough', {
   },
 });
 
+// Custom rules for callout
+turndownService.addRule('callout', {
+  filter: (node) =>
+    node.nodeName === 'ASIDE' &&
+    (node as HTMLElement).getAttribute('data-type') === 'callout',
+  replacement: function (content) {
+    return `<aside class="callout" >\n${content.trim()}\n</aside>\n\n`;
+  },
+});
+
 // Define the command type
 declare module '@tiptap/core' {
   interface Commands {
@@ -663,6 +673,13 @@ async function handleMarkdownContent(
     pageBreakRegex,
     '<div data-type="page-break" data-page-break="true"></div>',
   );
+
+  // Replace <aside class="callout"> with <aside data-type="callout">
+  const calloutAsides = doc.querySelectorAll('aside.callout');
+  calloutAsides.forEach((el) => {
+    el.setAttribute('data-type', 'callout');
+    el.removeAttribute('class');
+  });
 
   // Sanitize the converted HTML
   convertedHtml = DOMPurify.sanitize(convertedHtml, {

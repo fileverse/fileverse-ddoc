@@ -39,6 +39,7 @@ import Subscript from '@tiptap/extension-subscript';
 import { ResizableMedia } from './resizable-media';
 import { uploadFn } from '../utils/upload-images';
 import LinkPreview from './link-preview/link-preview';
+import { Callout } from './callout/callout';
 
 export const defaultExtensions = (
   onError: (error: string) => void,
@@ -215,6 +216,7 @@ export const defaultExtensions = (
   LinkPreview.configure({
     metadataProxyUrl: metadataProxyUrl,
   }),
+  Callout,
 ];
 
 export const createInputRule = (
