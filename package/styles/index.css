@@ -1,3 +1,4 @@
+@import './fonts.css';
 @import '@fileverse/ui/styles';
 @import 'katex/dist/katex.min.css';
 @tailwind base;
