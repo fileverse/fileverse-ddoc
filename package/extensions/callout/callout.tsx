@@ -6,7 +6,7 @@ export const Callout = Node.create({
   group: 'block',
 
   // Allow formatted content
-  content: '(paragraph | bulletList | orderedList | taskList)+',
+  content: '(paragraph | bulletList | orderedList | taskList | block)+',
 
   defining: true,
   draggable: true,

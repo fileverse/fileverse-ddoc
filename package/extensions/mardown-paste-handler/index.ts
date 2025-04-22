@@ -572,6 +572,14 @@ async function handleMarkdownContent(
   const parser = new DOMParser();
   const doc = parser.parseFromString(convertedHtml, 'text/html');
 
+  // Remove only top-level empty paragraphs because markdownIt adds empty paragraph tag above and below aside tag
+  const topLevelPs = doc.querySelectorAll('body > p');
+  topLevelPs.forEach((p) => {
+    if (p.textContent?.trim() === '') {
+      p.remove();
+    }
+  });
+
   // Handle todo lists
   const lists = doc.getElementsByTagName('ul');
   for (let i = 0; i < lists.length; i++) {
