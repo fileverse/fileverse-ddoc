@@ -3,11 +3,13 @@ import { Node } from '@tiptap/pm/model';
 import { NodeSelection } from '@tiptap/pm/state';
 import { Editor } from '@tiptap/react';
 import { useCallback } from 'react';
+import { expandHeadingContent } from '../extensions/d-block/use-heading-collapse';
 
 const useContentItemActions = (
   editor: Editor,
   currentNode: Node | null,
   currentNodePos: number,
+  setCollapsedHeadings?: (updater: (prev: Set<string>) => Set<string>) => void,
 ) => {
   const resetTextFormatting = useCallback(() => {
     const chain = editor.chain();
@@ -53,13 +55,19 @@ const useContentItemActions = (
   }, [editor, currentNodePos]);
 
   const deleteNode = useCallback(() => {
+    // First, check if we're deleting a heading and expand its content if needed
+    if (setCollapsedHeadings) {
+      expandHeadingContent(editor, currentNodePos, setCollapsedHeadings);
+    }
+
+    // Then delete the node
     editor
       .chain()
       .setMeta('hideDragHandle', true)
       .setNodeSelection(currentNodePos)
       .deleteSelection()
       .run();
-  }, [editor, currentNodePos]);
+  }, [editor, currentNodePos, setCollapsedHeadings]);
 
   return {
     resetTextFormatting,
