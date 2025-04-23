@@ -262,7 +262,7 @@ turndownService.addRule('callout', {
       })
       .join('\n\n');
 
-    return `<aside data-type="callout" class="callout">\n${parsedContent.trim()}\n</aside>\n\n`;
+    return `<aside class="callout">\n${parsedContent.trim()}\n</aside>\n\n`;
   },
 });
 
@@ -592,6 +592,36 @@ async function handleMarkdownContent(
     }
   });
 
+  // Replace <aside class="callout"> with <aside data-type="callout">
+  const calloutAsides = doc.querySelectorAll('aside.callout');
+  calloutAsides.forEach((el) => {
+    el.setAttribute('data-type', 'callout');
+    el.removeAttribute('class');
+  });
+
+  // remove extra <p> tags inside <aside data-type="callout">
+  const callouts = doc.querySelectorAll('aside[data-type="callout"]');
+  callouts.forEach((aside) => {
+    const ps = aside.querySelectorAll('p');
+    ps.forEach((p) => {
+      const isEmpty = Array.from(p.childNodes).every((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          return node.nodeName === 'BR';
+        }
+        if (node.nodeType === Node.TEXT_NODE) {
+          return node.textContent?.trim() === '';
+        }
+        return false;
+      });
+
+      if (isEmpty) {
+        if (p.parentNode) {
+          p.parentNode.removeChild(p);
+        }
+      }
+    });
+  });
+
   // Handle todo lists
   const lists = doc.getElementsByTagName('ul');
   for (let i = 0; i < lists.length; i++) {
@@ -694,13 +724,6 @@ async function handleMarkdownContent(
     '<div data-type="page-break" data-page-break="true"></div>',
   );
 
-  // Replace <aside class="callout"> with <aside data-type="callout">
-  const calloutAsides = doc.querySelectorAll('aside.callout');
-  calloutAsides.forEach((el) => {
-    el.setAttribute('data-type', 'callout');
-    el.removeAttribute('class');
-  });
-
   // Sanitize the converted HTML
   convertedHtml = DOMPurify.sanitize(convertedHtml, {
     ADD_TAGS: ['div'],
@@ -715,6 +738,8 @@ async function handleMarkdownContent(
       'privateKey',
     ],
   });
+
+  console.log('Sanitized HTML:', convertedHtml);
 
   // Parse the sanitized HTML string into DOM nodes
   const domContent = parser.parseFromString(convertedHtml, 'text/html').body;

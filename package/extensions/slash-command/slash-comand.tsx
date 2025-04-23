@@ -53,12 +53,31 @@ const CommandList = ({
 }: {
   items: CommandItemProps[];
   command: any;
-  editor: any;
+  editor: Editor;
   range: any;
 }) => {
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [items, setItems] = useState<CommandItemProps[]>(initialItems);
   const isMobile = useMediaQuery('(max-width: 640px)');
+  const isCalloutBlock = editor
+    ? (() => {
+        const {
+          selection: { $head },
+        } = editor.state;
+
+        for (let depth = $head.depth; depth >= 0; depth--) {
+          const node = $head.node(depth);
+          if (node?.type?.name === 'callout') {
+            return true;
+          }
+        }
+
+        return false;
+      })()
+    : false;
+
+  const notAllowedInsideCallout = ['2 Columns', '3 Columns', 'Callout'];
+
   const selectItem = useCallback(
     (index: number) => {
       const item = items[index];
@@ -85,9 +104,16 @@ const CommandList = ({
       );
       setItems(filteredItems);
     } else {
-      setItems(initialItems);
+      if (isCalloutBlock) {
+        const filteredItems = initialItems.filter(
+          (item) => !notAllowedInsideCallout.includes(item.title),
+        );
+        setItems(filteredItems);
+      } else {
+        setItems(initialItems);
+      }
     }
-  }, [initialItems, isMobile]);
+  }, [initialItems, isMobile, isCalloutBlock]);
 
   useEffect(() => {
     const navigationKeys = ['ArrowUp', 'ArrowDown', 'Enter'];
@@ -141,7 +167,7 @@ const CommandList = ({
             key={index}
             className={cn(
               'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm hover:color-bg-default-hover border border-transparent transition-all',
-              index === selectedIndex && 'color-bg-default-hover'
+              index === selectedIndex && 'color-bg-default-hover',
             )}
             onClick={() => selectItem(index)}
           >
