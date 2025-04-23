@@ -11,16 +11,22 @@ import {
   EditorAlignment,
   TextColor,
   ScriptsPopup,
+  getCurrentFontSize,
+  FontSizePicker,
 } from '../editor-utils';
 import { IEditorTool } from '../../hooks/use-visibility';
 import ToolbarButton from '../../common/toolbar-button';
-import { DynamicDropdown, cn } from '@fileverse/ui';
+import { DynamicDropdown, cn, LucideIcon } from '@fileverse/ui';
 import { CommentDropdown } from '../inline-comment/comment-dropdown';
 import { createPortal } from 'react-dom';
 import { EditorBubbleMenuProps, BubbleMenuItem } from './types';
 import { useResponsive } from '../../utils/responsive';
 import { bubbleMenuProps, shouldShow } from './props';
 import { useComments } from '../inline-comment/context/comment-context';
+import { useEditorStates } from '../../hooks/use-editor-states';
+import { Editor } from '@tiptap/react';
+
+const MemoizedFontSizePicker = React.memo(FontSizePicker);
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const {
@@ -33,6 +39,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     isCollabDocumentPublished,
     disableInlineComment,
   } = props;
+  const editorStates = useEditorStates(editor as Editor);
+  const currentSize = editor ? editorStates.currentSize : undefined;
+  const onSetFontSize = editor ? editorStates.onSetFontSize : () => { };
   const { isNativeMobile } = useResponsive();
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
     editor: editor,
@@ -101,7 +110,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Comment',
       isActive: () => isCommentActive,
-      command: () => {},
+      command: () => { },
       icon: 'MessageSquarePlus',
     },
   ];
@@ -232,15 +241,42 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               content={
                 !isCommentActive
                   ? renderContent({
-                      name: 'Comment',
-                      initialComment: activeComment?.content || '',
-                    })
+                    name: 'Comment',
+                    initialComment: activeComment?.content || '',
+                  })
                   : null
               }
             />
           ) : (
             <React.Fragment>
               <NodeSelector editor={editor} elementRef={toolRef} />
+
+              <div className="w-[1px] h-4 vertical-divider"></div>
+
+              <DynamicDropdown
+                key={IEditorTool.FONT_SIZE}
+                sideOffset={8}
+                anchorTrigger={
+                  <button
+                    className="bg-transparent hover:!color-bg-default-hover rounded gap-2 py-2 px-1 flex items-center justify-center w-fit max-w-14 min-w-14"
+                    onClick={() => setToolVisibility(IEditorTool.FONT_SIZE)}
+                  >
+                    <span className="text-body-sm line-clamp-1">
+                      {getCurrentFontSize(editor, currentSize as string)}
+                    </span>
+                    <LucideIcon name="ChevronDown" size="sm" />
+                  </button>
+                }
+                content={
+                  <MemoizedFontSizePicker
+                    setVisibility={setToolVisibility}
+                    editor={editor as Editor}
+                    elementRef={toolRef}
+                    currentSize={currentSize}
+                    onSetFontSize={onSetFontSize}
+                  />
+                }
+              />
 
               <div className="w-[1px] h-4 vertical-divider"></div>
 
@@ -376,9 +412,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                       content={
                         !isCommentActive
                           ? renderContent({
-                              name: 'Comment',
-                              initialComment: activeComment?.content || '',
-                            })
+                            name: 'Comment',
+                            initialComment: activeComment?.content || '',
+                          })
                           : null
                       }
                     />

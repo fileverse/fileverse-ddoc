@@ -4,6 +4,7 @@ import {
   EditorFontFamily,
   fonts,
   FontSizePicker,
+  getCurrentFontSize,
   LinkPopup,
   TextColor,
   TextHeading,
@@ -150,11 +151,6 @@ const TiptapToolBar = ({
       default:
         return null;
     }
-  };
-
-  const getCurrentFontSize = (editor: Editor | null) => {
-    if (!editor) return '';
-    return currentSize ? currentSize.replace('px', '') : '';
   };
 
   return (
@@ -443,7 +439,7 @@ const TiptapToolBar = ({
                       onClick={() => setToolVisibility(IEditorTool.FONT_SIZE)}
                     >
                       <span className="text-body-sm line-clamp-1">
-                        {getCurrentFontSize(editor)}
+                        {getCurrentFontSize(editor, currentSize as string)}
                       </span>
                       <LucideIcon name="ChevronDown" size="sm" />
                     </button>

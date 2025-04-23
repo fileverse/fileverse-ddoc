@@ -215,6 +215,14 @@ export const getFontSizeOptions = (editor?: Editor) => {
   }));
 };
 
+export const getCurrentFontSize = (
+  editor: Editor | null,
+  currentSize: string,
+) => {
+  if (!editor) return '';
+  return currentSize ? currentSize.replace('px', '') : '';
+};
+
 export const ERR_MSG_MAP = {
   IMAGE_SIZE: 'Image size should be less than 10MB',
 };
