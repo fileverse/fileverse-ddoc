@@ -76,7 +76,12 @@ const CommandList = ({
       })()
     : false;
 
-  const notAllowedInsideCallout = ['2 Columns', '3 Columns', 'Callout'];
+  const notAllowedInsideCallout = [
+    '2 Columns',
+    '3 Columns',
+    'Callout',
+    'Quote',
+  ];
 
   const selectItem = useCallback(
     (index: number) => {
