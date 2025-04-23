@@ -7,4 +7,4 @@ export {
   type Reminder,
   type ReminderBlockOptions,
 } from './package/extensions/reminder-block/types';
-export { PermissionAlert } from './package/components/notifications/permission-alert';
+export { Editor } from '@tiptap/react';

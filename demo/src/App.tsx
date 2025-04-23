@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
 import DdocEditor from '../../package/ddoc-editor';
-import { PermissionAlert } from '../../package/components/notifications/permission-alert';
 import { JSONContent } from '@tiptap/react';
 import {
   Button,
@@ -19,10 +18,6 @@ import {
   TableOfContents,
   getHierarchicalIndexes,
 } from '@tiptap-pro/extension-table-of-contents';
-import { ReminderBlock } from '../../package/extensions/reminder-block/reminder-block';
-import { Reminder } from '../../package/extensions/reminder-block/types';
-import notificationService from './services/NotificationService';
-import reminderDB from './services/ReminderDB';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -116,11 +111,6 @@ function App() {
 
   const [isConnected, setIsConnected] = useState(false);
 
-  // Add state for reminders
-  const [reminders, setReminders] = useState<Reminder[]>([]);
-  const [notificationPermission, setNotificationPermission] = useState<NotificationPermission>('default');
-  const [showNotificationDialog, setShowNotificationDialog] = useState(false);
-
   useEffect(() => {
     if (collaborationId) {
       const name = prompt('Whats your username');
@@ -130,148 +120,6 @@ function App() {
     }
   }, [collaborationId]);
 
-  // Initialize notification service and load reminders
-  useEffect(() => {
-    // Get the current notification permission status
-    setNotificationPermission(Notification.permission);
-
-    // Load existing reminders from the database
-    const loadReminders = async () => {
-      try {
-        const storedReminders = await reminderDB.getAllReminders();
-        console.log('Loaded reminders from database:', storedReminders);
-        setReminders(storedReminders);
-      } catch (error) {
-        console.error('Error loading reminders:', error);
-      }
-    };
-
-    loadReminders();
-
-    // Initialize notification service if permission is granted
-    if (Notification.permission === 'granted') {
-      notificationService.initialize()
-        .then(initialized => {
-          if (initialized) {
-            console.log('Notification service initialized successfully');
-          } else {
-            console.warn('Failed to initialize notification service');
-          }
-        });
-    }
-  }, []);
-
-  // Handle requesting notification permission
-  const requestNotificationPermission = async () => {
-    // Show our custom UI first instead of the browser prompt
-    setShowNotificationDialog(true);
-  };
-
-  // Handle when user accepts our custom prompt
-  const handleAcceptNotifications = async () => {
-    setShowNotificationDialog(false);
-    try {
-      const permission = await notificationService.requestPermission();
-      setNotificationPermission(permission);
-
-      if (permission === 'granted') {
-        await notificationService.initialize();
-      } else {
-        toast({
-          title: 'Notification permission denied',
-          description: 'You will not receive reminder notifications.',
-          customIcon: 'BellOff',
-          variant: 'mini'
-        });
-      }
-    } catch (error) {
-      console.error('Error requesting notification permission:', error);
-      toast({
-        description: 'Failed to request notification permission.',
-        customIcon: 'CircleX',
-        variant: 'mini'
-      });
-    }
-  };
-
-  // Handle when user rejects our custom prompt
-  const handleRejectNotifications = () => {
-    setShowNotificationDialog(false);
-  };
-
-  // Handle creating a reminder
-  const handleReminderCreate = async (reminder: Reminder) => {
-    try {
-      console.log('Creating reminder:', reminder);
-
-      // Add reminder to state
-      setReminders(prev => [...prev, reminder]);
-
-      // Schedule notification for the reminder
-      await notificationService.scheduleReminderNotification(reminder);
-
-      // Show toast notification
-      toast({
-        description: `Reminder scheduled for ${new Date(reminder.timestamp).toLocaleString()}`,
-        customIcon: 'AlarmClockCheck',
-        variant: 'mini'
-      });
-
-      // Request notification permission if it's in default state (not yet decided)
-      if (notificationPermission === 'default') {
-        await requestNotificationPermission();
-      }
-    } catch (error) {
-      console.error('Error creating reminder:', error);
-      toast({
-        description: 'Failed to create reminder',
-        customIcon: 'CircleX',
-        variant: 'mini'
-      });
-    }
-  };
-
-  // Handle deleting a reminder
-  const handleReminderDelete = async (reminderId: string) => {
-    try {
-      console.log('Deleting reminder:', reminderId);
-
-      // Remove from state
-      setReminders(prev => prev.filter(r => r.id !== reminderId));
-
-      // Delete from database
-      await reminderDB.deleteReminder(reminderId);
-
-    } catch (error) {
-      console.error('Error deleting reminder:', error);
-      toast({
-        description: 'Failed to delete reminder',
-        customIcon: 'CircleX',
-        variant: 'mini'
-      });
-    }
-  };
-
-  // Handle updating a reminder
-  const handleReminderUpdate = async (reminder: Reminder) => {
-    try {
-      console.log('Updating reminder:', reminder);
-
-      // Update in state
-      setReminders(prev => prev.map(r => (r.id === reminder.id ? reminder : r)));
-
-      // Update in database
-      await reminderDB.updateReminder(reminder);
-
-    } catch (error) {
-      console.error('Error updating reminder:', error);
-      toast({
-        description: 'Failed to update reminder',
-        customIcon: 'CircleX',
-        variant: 'mini'
-      });
-    }
-  };
 
   const renderNavbar = ({ editor }: { editor: JSONContent }): JSX.Element => {
     const publishDoc = () => console.log(editor, title);
@@ -421,14 +269,6 @@ function App() {
 
   return (
     <div>
-      {/* Custom notification permission dialog */}
-      {showNotificationDialog && notificationPermission === 'default' && (
-        <PermissionAlert
-          handleRejectNotifications={handleRejectNotifications}
-          handleAcceptNotifications={handleAcceptNotifications}
-        />
-      )}
-
       <DdocEditor
         enableCollaboration={enableCollaboration}
         collaborationId={collaborationId}
@@ -479,14 +319,6 @@ function App() {
           TableOfContents,
           getHierarchicalIndexes,
         }}
-        extensions={[
-          ReminderBlock.configure({
-            onReminderCreate: handleReminderCreate,
-            onReminderDelete: handleReminderDelete,
-            onReminderUpdate: handleReminderUpdate,
-            reminders: reminders,
-          }),
-        ]}
         isConnected={isConnected}
         connectViaWallet={async () => { }}
         isLoading={false}

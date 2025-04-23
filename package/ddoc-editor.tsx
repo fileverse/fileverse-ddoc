@@ -38,7 +38,6 @@ import { DocumentOutline } from './components/toc/document-outline';
 import { EditorProvider } from './context/editor-context';
 import { fadeInTransition, slideUpTransition } from './components/motion-div';
 import { PreviewContentLoader } from './components/preview-content-loader';
-import { ReminderIntroBanner } from './components/notifications/reminder-intro-banner';
 
 const DdocEditor = forwardRef(
   (
@@ -118,10 +117,6 @@ const DdocEditor = forwardRef(
   ) => {
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const [showReminderIntro, setShowReminderIntro] = useState(() => {
-      const hasSeenReminder = localStorage.getItem('hasSeenReminderIntro');
-      return !hasSeenReminder;
-    });
 
     const btn_ref = useRef(null);
     const isWidth1500px = useMediaQuery('(min-width: 1500px)');
@@ -404,17 +399,6 @@ const DdocEditor = forwardRef(
                 showTOC={showTOC}
                 setShowTOC={setShowTOC}
                 isPreviewMode={isPreviewMode || !isNavbarVisible}
-              />
-            )}
-
-            {editor && showReminderIntro && !isPreviewMode && isConnected && (
-              <ReminderIntroBanner
-                editor={editor}
-                onClose={() => {
-                  setShowReminderIntro(false);
-                  // Set localStorage when user closes the banner
-                  localStorage.setItem('hasSeenReminderIntro', 'true');
-                }}
               />
             )}
 
