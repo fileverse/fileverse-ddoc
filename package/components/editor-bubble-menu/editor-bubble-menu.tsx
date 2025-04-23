@@ -37,6 +37,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     onReminderCreate,
     initialReminderTitle,
     setInitialReminderTitle,
+    isConnected,
   } = props;
   const { isNativeMobile } = useResponsive();
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
@@ -144,7 +145,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     },
     {
       name: 'Reminder',
-      isActive: () => { },
+      isActive: () => {},
       command: () => {
         const selectedText =
           editor.state.selection.content().content.firstChild?.textContent ||
@@ -158,7 +159,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Comment',
       isActive: () => isCommentActive,
-      command: () => { },
+      command: () => {},
       icon: 'MessageSquarePlus',
     },
   ];
@@ -300,9 +301,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               content={
                 !isCommentActive
                   ? renderContent({
-                    name: 'Comment',
-                    initialComment: activeComment?.content || '',
-                  })
+                      name: 'Comment',
+                      initialComment: activeComment?.content || '',
+                    })
                   : null
               }
             />
@@ -343,9 +344,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                           <ToolbarButton
                             icon="Baseline"
                             size="sm"
-                            isActive={
-                              toolVisibility === IEditorTool.TEXT_COLOR
-                            }
+                            isActive={toolVisibility === IEditorTool.TEXT_COLOR}
                           />
                         }
                         content={
@@ -363,9 +362,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                           <ToolbarButton
                             icon="Highlighter"
                             size="sm"
-                            isActive={
-                              toolVisibility === IEditorTool.HIGHLIGHT
-                            }
+                            isActive={toolVisibility === IEditorTool.HIGHLIGHT}
                           />
                         }
                         content={
@@ -432,9 +429,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                           icon="MessageSquarePlus"
                           variant="ghost"
                           size="sm"
-                          tooltip={
-                            isCommentResolved ? 'Comment resolved' : ''
-                          }
+                          tooltip={isCommentResolved ? 'Comment resolved' : ''}
                           disabled={
                             isCommentResolved ||
                             !isCollabDocumentPublished ||
@@ -448,16 +443,16 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                       content={
                         !isCommentActive
                           ? renderContent({
-                            name: 'Comment',
-                            initialComment: activeComment?.content || '',
-                          })
+                              name: 'Comment',
+                              initialComment: activeComment?.content || '',
+                            })
                           : null
                       }
                     />
                   );
                 }
 
-                if (item.name === 'Reminder') {
+                if (item.name === 'Reminder' && isConnected) {
                   return (
                     <DynamicDropdown
                       key="Reminder"

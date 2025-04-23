@@ -31,6 +31,7 @@ export type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   onReminderCreate?: (reminder: Reminder) => void;
   initialReminderTitle?: string;
   setInitialReminderTitle?: React.Dispatch<SetStateAction<string>>;
+  isConnected?: boolean;
 };
 
 export interface NodeSelectorProps {

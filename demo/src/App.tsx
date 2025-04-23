@@ -492,7 +492,6 @@ function App() {
         isLoading={false}
         connectViaUsername={handleConnectViaUsername}
         isDDocOwner={true}
-        walletAddress={username}
         onCopyHeadingLink={(link: string) => {
           navigator.clipboard.writeText(link);
         }}

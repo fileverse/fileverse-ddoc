@@ -211,14 +211,14 @@ const renderItems = () => {
 const SlashCommand = (
   onError?: (errorString: string) => void,
   secureImageUploadUrl?: string,
-  walletAddress?: string,
+  isConnected?: boolean,
 ) => {
   const items = ({ query }: { query: string }) => {
     return getSuggestionItems({
       query,
       onError,
       secureImageUploadUrl,
-      walletAddress,
+      isConnected,
     });
   };
   return Command.configure({

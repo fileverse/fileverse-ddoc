@@ -64,6 +64,7 @@ export const useDdocEditor = ({
   metadataProxyUrl,
   extensions: externalExtensions,
   onCopyHeadingLink,
+  isConnected,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
   const [initialReminderTitle, setInitialReminderTitle] = useState<string>('');
@@ -102,11 +103,7 @@ export const useDdocEditor = ({
       metadataProxyUrl,
       onCopyHeadingLink,
     ) as AnyExtension[]),
-    SlashCommand(
-      (error: string) => onError?.(error),
-      secureImageUploadUrl,
-      walletAddress as string,
-    ),
+    SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
     customTextInputRules,
     PageBreak,
     Comment.configure({
@@ -133,6 +130,19 @@ export const useDdocEditor = ({
       }),
     ]);
   }, [isPreviewMode]);
+
+  useEffect(() => {
+    if (isConnected) {
+      setExtensions((prev) => [
+        ...prev.filter((ext) => ext.name !== 'slash-command'),
+        SlashCommand(
+          (error: string) => onError?.(error),
+          secureImageUploadUrl,
+          isConnected,
+        ),
+      ]);
+    }
+  }, [isConnected]);
 
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);

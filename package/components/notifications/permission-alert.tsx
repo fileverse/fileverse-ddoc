@@ -18,12 +18,7 @@ export const PermissionAlert = ({
     <div className="fixed top-8 left-4 z-[60]">
       <DynamicAlertBanner
         open={showBanner}
-        onOpenChange={(open) => {
-          // if (!open) {
-          //   localStorage.removeItem(`impossible_migration_${walletAddress}`);
-          // }
-          setShowBanner(open);
-        }}
+        onOpenChange={(open) => setShowBanner(open)}
         icon={
           <div className="flex items-center justify-center px-[9px] py-[5px] rounded color-bg-secondary">
             <span className="text-heading-lg">🔔</span>

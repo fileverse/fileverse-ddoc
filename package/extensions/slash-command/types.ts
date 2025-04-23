@@ -6,7 +6,6 @@ export interface CommandItemProps {
   description: string;
   icon: ReactNode;
   image?: string;
-  disabled?: boolean;
 }
 export interface CommandProps {
   editor: Editor;

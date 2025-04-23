@@ -1,4 +1,4 @@
-import { EditorContent, isTextSelection } from '@tiptap/react';
+import { EditorContent, Extension, isTextSelection } from '@tiptap/react';
 import { EditorBubbleMenu } from './components/editor-bubble-menu/editor-bubble-menu';
 import { DdocProps } from './types';
 import { ColumnsMenu } from './extensions/multi-column/menus';
@@ -194,6 +194,7 @@ const DdocEditor = forwardRef(
       metadataProxyUrl,
       extensions,
       onCopyHeadingLink,
+      isConnected,
     });
 
     useImperativeHandle(
@@ -406,7 +407,19 @@ const DdocEditor = forwardRef(
               />
             )}
 
+            {editor && showReminderIntro && !isPreviewMode && isConnected && (
+              <ReminderIntroBanner
+                editor={editor}
+                onClose={() => {
+                  setShowReminderIntro(false);
+                  // Set localStorage when user closes the banner
+                  localStorage.setItem('hasSeenReminderIntro', 'true');
+                }}
+              />
+            )}
+
             <div
+              id="editor-wrapper"
               className={cn(
                 'color-bg-default w-full mx-auto rounded',
                 !isPreviewMode &&
@@ -495,11 +508,13 @@ const DdocEditor = forwardRef(
                       activeCommentId={activeCommentId}
                       isCollabDocumentPublished={isCollabDocumentPublished}
                       onReminderCreate={
-                        extensions?.find((ext) => ext.name === 'reminderBlock')
-                          ?.options?.onReminderCreate
+                        extensions?.find(
+                          (ext: Extension) => ext.name === 'reminderBlock',
+                        )?.options?.onReminderCreate
                       }
                       initialReminderTitle={initialReminderTitle}
                       setInitialReminderTitle={setInitialReminderTitle}
+                      isConnected={isConnected}
                     />
                   )}
 
@@ -507,17 +522,6 @@ const DdocEditor = forwardRef(
                     <ColumnsMenu editor={editor} appendTo={editorRef} />
                   )}
                 </div>
-
-                {editor && showReminderIntro && (
-                  <ReminderIntroBanner
-                    editor={editor}
-                    onClose={() => {
-                      setShowReminderIntro(false);
-                      // Set localStorage when user closes the banner
-                      localStorage.setItem('hasSeenReminderIntro', 'true');
-                    }}
-                  />
-                )}
 
                 {!editor || isContentLoading
                   ? fadeInTransition(

@@ -11,12 +11,12 @@ export const getSuggestionItems = ({
   query,
   onError,
   secureImageUploadUrl,
-  walletAddress,
+  isConnected,
 }: {
   query: string;
   onError?: (errorString: string) => void;
   secureImageUploadUrl?: string;
-  walletAddress?: string;
+  isConnected?: boolean;
 }) => {
   return [
     {
@@ -119,7 +119,6 @@ export const getSuggestionItems = ({
         showReminderMenu(editor, range);
         return true;
       },
-      disabled: !walletAddress,
     },
     {
       title: 'Page breaker',
@@ -276,6 +275,9 @@ export const getSuggestionItems = ({
       },
     },
   ].filter((item) => {
+    if (!isConnected && item.title === 'Reminder') {
+      return false;
+    }
     if (typeof query === 'string' && query.length > 0) {
       const search = query.toLowerCase();
       return (

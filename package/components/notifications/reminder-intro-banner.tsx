@@ -14,8 +14,9 @@ export const ReminderIntroBanner = ({
   onClose,
   editor,
 }: ReminderIntroBannerProps) => {
-  const editorElement = document.getElementById('editor');
-  if (!editorElement) return null;
+  const editorElement = document.getElementById('editor-wrapper');
+  const isDocumentEmpty = editor?.isEmpty;
+  if (!editorElement || !isDocumentEmpty) return null;
 
   // Handle Try Reminders click
   const handleTryReminders = () => {
@@ -30,7 +31,7 @@ export const ReminderIntroBanner = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: -20 }}
       transition={{ duration: 0.3 }}
-      className="absolute left-[9%] top-[70%] z-[60]"
+      className="absolute left-[9%] top-[22%] z-[60]"
     >
       <DynamicAlertBanner
         icon={<ReminderLottie />}
