@@ -242,6 +242,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
             <React.Fragment>
               <NodeSelector editor={editor} elementRef={toolRef} />
 
+              <div className="w-[1px] h-4 vertical-divider"></div>
+
               {items.map((item, index) => {
                 if (
                   item.name === 'Bold' ||

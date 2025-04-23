@@ -3,6 +3,7 @@ import {
   EditorAlignment,
   EditorFontFamily,
   fonts,
+  FontSizePicker,
   LinkPopup,
   TextColor,
   TextHeading,
@@ -11,6 +12,7 @@ import {
 } from './editor-utils';
 import { Editor } from '@tiptap/react';
 import { IEditorTool } from '../hooks/use-visibility';
+import { useEditorStates } from '../hooks/use-editor-states';
 import {
   Tooltip,
   LucideIcon,
@@ -27,6 +29,8 @@ import ToolbarButton from '../common/toolbar-button';
 import { useMediaQuery } from 'usehooks-ts';
 import { AnimatePresence } from 'framer-motion';
 import { fadeInTransition, slideUpTransition } from './motion-div';
+
+const MemoizedFontSizePicker = React.memo(FontSizePicker);
 
 const TiptapToolBar = ({
   editor,
@@ -65,13 +69,18 @@ const TiptapToolBar = ({
     fileExportsOpen,
     setFileExportsOpen,
   } = useEditorToolbar({
-    editor: editor,
+    editor,
     onError,
     secureImageUploadUrl,
     onMarkdownExport,
     onMarkdownImport,
     onPdfExport,
   });
+
+  const editorStates = useEditorStates(editor as Editor);
+  const currentSize = editor ? editorStates.currentSize : undefined;
+  const onSetFontSize = editor ? editorStates.onSetFontSize : () => {};
+
   const isBelow1480px = useMediaQuery('(max-width: 1480px)');
   const [filename, setFilename] = useState('exported_document.md');
   const zoomLevels = [
@@ -142,6 +151,12 @@ const TiptapToolBar = ({
         return null;
     }
   };
+
+  const getCurrentFontSize = (editor: Editor | null) => {
+    if (!editor) return '';
+    return currentSize ? currentSize.replace('px', '') : '';
+  };
+
   return (
     <AnimatePresence mode="wait">
       <div className="w-full bg-transparent py-2 px-4 items-center h-9 flex justify-between relative">
@@ -283,6 +298,7 @@ const TiptapToolBar = ({
                 <DynamicDropdownV2
                   key="zoom-levels"
                   align="start"
+                  sideOffset={8}
                   controlled={true}
                   isOpen={dropdownOpen}
                   onClose={() => setDropdownOpen(false)}
@@ -332,6 +348,7 @@ const TiptapToolBar = ({
             : slideUpTransition(
                 <DynamicDropdown
                   key={IEditorTool.FONT_FAMILY}
+                  sideOffset={8}
                   anchorTrigger={
                     <button
                       className="bg-transparent hover:!color-bg-default-hover rounded p-2 flex items-center justify-center gap-2 w-24"
@@ -381,6 +398,7 @@ const TiptapToolBar = ({
             : slideUpTransition(
                 <DynamicDropdown
                   key={IEditorTool.HEADING}
+                  sideOffset={8}
                   anchorTrigger={
                     <button
                       className="bg-transparent hover:!color-bg-default-hover rounded gap-2 p-2 flex items-center justify-center w-28"
@@ -409,6 +427,40 @@ const TiptapToolBar = ({
                 'heading-dropdown',
               )}
           <div className="w-[1px] h-4 vertical-divider mx-1"></div>
+          {/* Text Size Dropdown */}
+          {isLoading
+            ? fadeInTransition(
+                <Skeleton className={`w-[112px] h-[36px] rounded-sm`} />,
+                'font-size-skeleton',
+              )
+            : slideUpTransition(
+                <DynamicDropdown
+                  key={IEditorTool.FONT_SIZE}
+                  sideOffset={8}
+                  anchorTrigger={
+                    <button
+                      className="bg-transparent hover:!color-bg-default-hover rounded gap-2 py-2 px-1 flex items-center justify-center w-fit max-w-14 min-w-14"
+                      onClick={() => setToolVisibility(IEditorTool.FONT_SIZE)}
+                    >
+                      <span className="text-body-sm line-clamp-1">
+                        {getCurrentFontSize(editor)}
+                      </span>
+                      <LucideIcon name="ChevronDown" size="sm" />
+                    </button>
+                  }
+                  content={
+                    <MemoizedFontSizePicker
+                      setVisibility={setToolVisibility}
+                      editor={editor as Editor}
+                      elementRef={toolRef}
+                      currentSize={currentSize}
+                      onSetFontSize={onSetFontSize}
+                    />
+                  }
+                />,
+                'font-size-dropdown',
+              )}
+          <div className="w-[1px] h-4 vertical-divider mx-1"></div>
 
           {/* Toolbar Items */}
           <div className="flex gap-2 justify-center items-center">
@@ -433,6 +485,7 @@ const TiptapToolBar = ({
                       <DynamicDropdown
                         key={tool.title}
                         align={tool.title === 'Link' ? 'end' : 'center'}
+                        sideOffset={8}
                         anchorTrigger={
                           <Tooltip text={tool.title}>
                             <IconButton
@@ -463,6 +516,7 @@ const TiptapToolBar = ({
                         <DynamicDropdown
                           key="more-dropdown"
                           align="end"
+                          sideOffset={8}
                           anchorTrigger={
                             <Tooltip text="More">
                               <IconButton
