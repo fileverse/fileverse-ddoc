@@ -199,6 +199,30 @@ export const fonts = [
   },
 ];
 
+export const FONT_SIZES = [
+  8, 9, 10, 11, 12, 14, 16, 18, 24, 30, 32, 36, 48, 60, 72, 96,
+] as const;
+
+export const getFontSizeOptions = (editor?: Editor) => {
+  return FONT_SIZES.map((size) => ({
+    title: `${size}`,
+    value: `${size}px`,
+    label: size.toString(),
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontSize(`${size}px`).run();
+    },
+    isActive: () => editor?.isActive('fontSize', { size: `${size}px` }),
+  }));
+};
+
+export const getCurrentFontSize = (
+  editor: Editor | null,
+  currentSize: string,
+) => {
+  if (!editor) return '';
+  return currentSize ? currentSize.replace('px', '') : '';
+};
+
 export const ERR_MSG_MAP = {
   IMAGE_SIZE: 'Image size should be less than 10MB',
 };
@@ -889,6 +913,7 @@ export const TextHighlighter = ({
     </div>
   );
 };
+
 export const EditorFontFamily = ({
   elementRef,
   editor,
@@ -929,6 +954,7 @@ export const EditorFontFamily = ({
     </div>
   );
 };
+
 export const EditorAlignment = ({
   elementRef,
   editor,
@@ -1002,6 +1028,7 @@ export const EditorAlignment = ({
     </div>
   );
 };
+
 export const EditorList = ({
   elementRef,
   editor,
@@ -1062,6 +1089,7 @@ export const EditorList = ({
     </div>
   );
 };
+
 export const LinkPopup = ({
   elementRef,
   editor,
@@ -1347,6 +1375,7 @@ export const ScriptsPopup = ({
     </div>
   );
 };
+
 export const TextColor = ({
   editor,
   setVisibility,
@@ -1402,6 +1431,7 @@ export const TextColor = ({
     </div>
   );
 };
+
 export const TextHeading = ({
   editor,
   setVisibility,
@@ -1482,6 +1512,51 @@ export const TextHeading = ({
             <p className="font-medium">{heading.title}</p>
             <p className="text-xs text-stone-500"> {heading.description} </p>
           </div>
+        </button>
+      ))}
+    </div>
+  );
+};
+
+export const FontSizePicker = ({
+  editor,
+  setVisibility,
+  elementRef,
+  currentSize,
+  onSetFontSize,
+}: {
+  editor: Editor;
+  elementRef: React.RefObject<HTMLDivElement>;
+  setVisibility: Dispatch<SetStateAction<IEditorTool>>;
+  currentSize?: string;
+  onSetFontSize: (fontSize: string) => void;
+}) => {
+  const fontSizes = getFontSizeOptions(editor);
+
+  return (
+    <div
+      ref={elementRef}
+      className={cn(
+        'z-50 flex flex-col justify-center items-center overflow-hidden rounded color-bg-default p-2 gap-1 shadow-elevation-1',
+      )}
+    >
+      {fontSizes.map((fontSize) => (
+        <button
+          onClick={() => {
+            onSetFontSize(fontSize.value);
+            setVisibility(IEditorTool.NONE);
+          }}
+          key={fontSize.title}
+          className={cn(
+            'flex w-full items-center justify-center rounded px-2 py-1 text-center text-sm color-text-default transition',
+            {
+              ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+                currentSize === fontSize.value,
+              ['hover:color-bg-default-hover']: currentSize !== fontSize.value,
+            },
+          )}
+        >
+          <p className="font-medium">{fontSize.title}</p>
         </button>
       ))}
     </div>
