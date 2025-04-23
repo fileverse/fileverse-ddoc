@@ -434,7 +434,6 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
             {
               'is-table': isTable,
               'invalid-content': node.attrs?.isCorrupted,
-              'pointer-events-none': isPreviewMode && !isHeading,
               'flex flex-row-reverse gap-2 items-center':
                 isHeading && isPreviewMode,
             },
