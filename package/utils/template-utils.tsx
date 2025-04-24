@@ -21,6 +21,73 @@ type TemplateButtonProps = {
   content: JSONContent | null;
 }[];
 
+type TemplateConfig = {
+  id: string;
+  label: string;
+  icon: IconType;
+};
+
+const MORE_TEMPLATES: TemplateConfig[] = [
+  {
+    id: 'meeting-notes',
+    label: 'Meeting notes',
+    icon: 'NotepadText',
+  },
+  {
+    id: 'brainstorm',
+    label: 'Brainstorm',
+    icon: 'Lightbulb',
+  },
+  {
+    id: 'pretend-to-work',
+    label: 'Pretend to work',
+    icon: '🏄🏻‍♂️',
+  },
+  {
+    id: 'resume',
+    label: 'Resume',
+    icon: '📄',
+  },
+];
+
+const QUICK_TEMPLATES: TemplateConfig[] = [
+  {
+    id: 'todo-list',
+    label: 'To-do',
+    icon: 'ListChecks',
+  },
+  {
+    id: 'breathe',
+    label: 'Breathe!',
+    icon: '🧘‍♂️',
+  },
+];
+
+const createTemplateButton = (
+  config: TemplateConfig,
+  addTemplate: (template: JSONContent) => void,
+) => {
+  const content = getTemplateContent(config.id);
+  return {
+    label: config.label,
+    icon: config.icon,
+    onClick: () => {
+      if (content) addTemplate(content);
+    },
+    content,
+  };
+};
+
+const createMoreTemplates = (
+  addTemplate: (template: JSONContent) => void,
+): TemplateButtonProps =>
+  MORE_TEMPLATES.map((config) => createTemplateButton(config, addTemplate));
+
+const createTemplateButtons = (
+  addTemplate: (template: JSONContent) => void,
+): TemplateButtonProps =>
+  QUICK_TEMPLATES.map((config) => createTemplateButton(config, addTemplate));
+
 const renderIcon = (icon: IconType, className?: string) => {
   if (
     typeof icon === 'string' &&
@@ -37,70 +104,6 @@ const renderIcon = (icon: IconType, className?: string) => {
   }
   return null;
 };
-
-const createTemplateButtons = (
-  addTemplate: (template: JSONContent) => void,
-): TemplateButtonProps => [
-  {
-    label: 'To-do',
-    icon: 'ListChecks',
-    onClick: () => {
-      const content = getTemplateContent('todo-list');
-      if (content) addTemplate(content);
-    },
-    content: getTemplateContent('todo-list'),
-  },
-  {
-    label: 'Breathe!',
-    icon: '🧘‍♂️',
-    onClick: () => {
-      const content = getTemplateContent('breathe');
-      if (content) addTemplate(content);
-    },
-    content: getTemplateContent('breathe'),
-  },
-];
-
-const createMoreTemplates = (
-  addTemplate: (template: JSONContent) => void,
-): TemplateButtonProps => [
-  {
-    label: 'Meeting notes',
-    icon: 'NotepadText',
-    onClick: () => {
-      const content = getTemplateContent('meeting-notes');
-      if (content) addTemplate(content);
-    },
-    content: getTemplateContent('meeting-notes'),
-  },
-  {
-    label: 'Brainstorm',
-    icon: 'Lightbulb',
-    onClick: () => {
-      const content = getTemplateContent('brainstorm');
-      if (content) addTemplate(content);
-    },
-    content: getTemplateContent('brainstorm'),
-  },
-  {
-    label: 'Pretend to work',
-    icon: '🏄🏻‍♂️',
-    onClick: () => {
-      const content = getTemplateContent('pretend-to-work');
-      if (content) addTemplate(content);
-    },
-    content: getTemplateContent('pretend-to-work'),
-  },
-  {
-    label: 'Resume',
-    icon: '📄',
-    onClick: () => {
-      const content = getTemplateContent('resume');
-      if (content) addTemplate(content);
-    },
-    content: getTemplateContent('resume'),
-  },
-];
 
 const renderTemplateButtons = (
   templateButtons: TemplateButtonProps,
