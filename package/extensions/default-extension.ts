@@ -39,6 +39,7 @@ import Subscript from '@tiptap/extension-subscript';
 import { ResizableMedia } from './resizable-media';
 import { uploadFn } from '../utils/upload-images';
 import LinkPreview from './link-preview/link-preview';
+import { FontSize } from './font-size';
 
 export const defaultExtensions = (
   onError: (error: string) => void,
@@ -107,6 +108,7 @@ export const defaultExtensions = (
     bulletList: false,
     listItem: false,
   }),
+  FontSize,
   Typography,
   TextAlign.configure({
     types: ['heading', 'paragraph'],
