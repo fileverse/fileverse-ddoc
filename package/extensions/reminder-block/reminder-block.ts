@@ -63,7 +63,6 @@ export const ReminderBlock = Node.create<ReminderBlockOptions>({
     return ReactNodeViewRenderer(ReminderNodeView);
   },
 
-  // ... existing code ...
   addCommands() {
     return {
       setReminderBlock:

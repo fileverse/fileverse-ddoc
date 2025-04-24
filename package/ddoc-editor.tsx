@@ -154,8 +154,6 @@ const DdocEditor = forwardRef(
       setSlides,
       tocItems,
       setTocItems,
-      initialReminderTitle,
-      setInitialReminderTitle,
     } = useDdocEditor({
       enableIndexeddbSync,
       ddocId,
@@ -496,8 +494,6 @@ const DdocEditor = forwardRef(
                           (ext: Extension) => ext.name === 'reminderBlock',
                         )?.options?.onReminderCreate
                       }
-                      initialReminderTitle={initialReminderTitle}
-                      setInitialReminderTitle={setInitialReminderTitle}
                       isConnected={isConnected}
                     />
                   )}

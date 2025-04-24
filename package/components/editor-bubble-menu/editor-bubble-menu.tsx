@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 import { BubbleMenu } from '@tiptap/react';
-import React, { useRef } from 'react';
+import React from 'react';
 import { NodeSelector } from './node-selector';
 import {
   LinkPopup,
@@ -22,7 +22,7 @@ import { useResponsive } from '../../utils/responsive';
 import { bubbleMenuProps, shouldShow } from './props';
 import { useComments } from '../inline-comment/context/comment-context';
 import { ReminderMenu } from '../../extensions/reminder-block/reminder-menu';
-import { Reminder } from '../../extensions/reminder-block/types';
+import { useReminder } from '../../hooks/useReminder';
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const {
@@ -35,8 +35,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     isCollabDocumentPublished,
     disableInlineComment,
     onReminderCreate,
-    initialReminderTitle,
-    setInitialReminderTitle,
     isConnected,
   } = props;
   const { isNativeMobile } = useResponsive();
@@ -44,45 +42,18 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     editor: editor,
     onError,
   });
-  const reminderRef = useRef<HTMLDivElement>(null);
 
-  const handleReminderOnClose = () => {
-    // Close popup using ref
-    if (reminderRef.current?.parentElement) {
-      // Find and close the nearest popover/dropdown container
-      const popoverContent = reminderRef.current.closest('[role="dialog"]');
-      if (popoverContent) {
-        popoverContent.remove();
-      }
-    }
-    if (setInitialReminderTitle) {
-      setInitialReminderTitle('');
-    }
-  };
-
-  const handleReminderCreate = async (reminder: Reminder) => {
-    try {
-      // Add reminder to editor
-      editor
-        .chain()
-        .focus()
-        .setReminderBlock({
-          id: reminder.id,
-          reminder: reminder,
-        })
-        .run();
-
-      // Delegate to consumer app for notification handling
-      if (onReminderCreate) {
-        await onReminderCreate(reminder);
-      }
-    } catch (error) {
-      console.error('Error creating reminder:', error);
-      if (onError) {
-        onError('Failed to create reminder');
-      }
-    }
-  };
+  const {
+    reminderRef,
+    handleReminderOnClose,
+    handleReminderCreate,
+    initialReminderTitle,
+    setInitialReminderTitle,
+  } = useReminder({
+    editor,
+    onReminderCreate,
+    onError,
+  });
 
   const {
     activeComment,
