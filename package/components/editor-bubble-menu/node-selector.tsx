@@ -85,21 +85,18 @@ export const convertListToParagraphs = ({
 }: ListConversionProps) => {
   if (!dispatch) return true;
 
-  let containerPos = -1;
-  let listContent: Node | null = null as unknown as Node;
-  let isInsideCallout = false;
+  let calloutPos = -1;
   let calloutNode: Node | null = null as unknown as Node;
+  let listContent: Node | null = null as unknown as Node;
+  let listPos = -1;
+  let isInsideCallout = false;
 
-  // Traverse the doc to find the list and its container (either callout or dBlock)
+  // Traverse to find list node and its container
   state.doc.nodesBetween(from, to, (node, pos) => {
     if (node.type.name === 'callout') {
       isInsideCallout = true;
-      containerPos = pos;
+      calloutPos = pos;
       calloutNode = node;
-    }
-
-    if (!isInsideCallout && node.type.name === 'dBlock') {
-      containerPos = pos;
     }
 
     if (
@@ -108,38 +105,36 @@ export const convertListToParagraphs = ({
       node.type.name === 'taskList'
     ) {
       listContent = node;
-      return false; // stop traversal after finding list
+      listPos = pos;
+      return false; // stop further traversal
     }
   });
 
-  if (containerPos === -1 || !listContent) return false;
+  if (!listContent || listPos === -1) return false;
 
   const newContent = processListContent(listContent.toJSON(), isInsideCallout);
 
-  if (isInsideCallout && calloutNode) {
-    // Replace list *inside* callout with new paragraphs
-    const updatedCallout = state.schema.nodes.callout.create(
-      calloutNode.attrs,
-      newContent.map((json) => state.schema.nodeFromJSON(json)),
+  if (isInsideCallout && calloutNode && calloutPos !== -1) {
+    // Replace only the list node inside the callout
+    const paragraphNodes = newContent.map((json) =>
+      state.schema.nodeFromJSON(json),
     );
 
-    tr.replaceWith(
-      containerPos,
-      containerPos + calloutNode.nodeSize,
-      updatedCallout,
-    );
+    tr.replaceWith(listPos, listPos + listContent.nodeSize, paragraphNodes);
   } else {
-    // Normal dBlock replacement
+    // Replace the whole dBlock with paragraphs
+    const dBlockPos = listPos;
+    const dBlockNode = state.doc.nodeAt(dBlockPos);
+    if (!dBlockNode) return false;
+
     const fragment = state.schema.nodeFromJSON({
       type: 'doc',
       content: newContent,
     }).content;
 
-    tr.replaceWith(
-      containerPos,
-      containerPos + state.doc.nodeAt(containerPos)!.nodeSize,
-      fragment,
-    );
+    console.log({ fragment });
+
+    tr.replaceWith(dBlockPos - 1, dBlockPos + dBlockNode.nodeSize, fragment);
   }
 
   return true;
@@ -154,29 +149,29 @@ export const convertToList = ({
   listConfig,
 }: ListConversionProps) => {
   if (!dispatch) return true;
+  if (!listConfig?.type || !listConfig?.itemType) return false;
 
-  // Track the position and node of the parent container (either dBlock or callout)
-  let containerPos = -1;
-  let containerNode: Node | null = null as unknown as Node;
-
-  // Track the list node (if already present) and whether we're inside a callout
-  let listContent: Node | null = null as unknown as Node;
   let isInsideCallout = false;
+  let calloutNode: Node | null = null as unknown as Node;
+  let calloutPos = -1;
 
-  // Collect paragraphs/headings that need to be turned into list items
+  let firstDBlockPos = -1;
+  let lastDBlockPos = -1;
+  let listContent: Node | null = null as unknown as Node;
+  let listContentPos = -1;
   const paragraphs: Node[] = [];
 
-  // Traverse the selected range to identify context and relevant nodes
+  // Step 1: Gather data from selection
   state.doc.nodesBetween(from, to, (node, pos) => {
     if (node.type.name === 'callout') {
       isInsideCallout = true;
-      containerPos = pos;
-      containerNode = node;
+      calloutPos = pos;
+      calloutNode = node;
     }
 
     if (!isInsideCallout && node.type.name === 'dBlock') {
-      containerPos = pos;
-      containerNode = node;
+      if (firstDBlockPos === -1) firstDBlockPos = pos;
+      lastDBlockPos = pos + node.nodeSize;
     }
 
     if (
@@ -185,7 +180,8 @@ export const convertToList = ({
       node.type.name === 'taskList'
     ) {
       listContent = node;
-      return false;
+      listContentPos = pos;
+      return false; // stop traversal
     }
 
     if (node.type.name === 'paragraph' || node.type.name === 'heading') {
@@ -197,15 +193,10 @@ export const convertToList = ({
     }
   });
 
-  if (containerPos === -1 || !containerNode) return false;
-  if (!listConfig?.type || !listConfig?.itemType) return false;
-
   let newListContent;
 
   if (listContent) {
     const listJSON = listContent.toJSON();
-
-    // Recursively convert nested list items to the new list type
     const convertListItems = (items: any[]): any[] =>
       items.map((item) => {
         const newItem: {
@@ -224,7 +215,6 @@ export const convertToList = ({
           } else if (
             ['bulletList', 'orderedList', 'taskList'].includes(contentItem.type)
           ) {
-            // Recursively convert nested lists
             newItem.content.push({
               type: listConfig.type,
               content: convertListItems(contentItem.content),
@@ -242,7 +232,6 @@ export const convertToList = ({
       content: convertListItems(listJSON.content),
     };
   } else if (paragraphs.length > 0) {
-    // Convert plain paragraphs/headings into list items
     newListContent = {
       type: listConfig.type,
       content: paragraphs.map((para) => ({
@@ -255,38 +244,37 @@ export const convertToList = ({
     return false;
   }
 
-  // Replace the container content with new list
-  if (isInsideCallout && containerNode.type.name === 'callout') {
-    // If we are inside a callout block, replace its content with the list (no dBlock wrapping)
-    const updatedCallout = state.schema.nodes.callout.create(
-      containerNode.attrs,
-      [state.schema.nodeFromJSON(newListContent)],
-    );
+  // ✅ Case 1: INSIDE CALLOUT (partial replacement)
+  if (isInsideCallout && calloutNode && calloutPos !== -1) {
+    const calloutStart = calloutPos + 1;
+    const calloutEnd = calloutPos + calloutNode.nodeSize - 1;
 
-    tr.replaceWith(
-      containerPos,
-      containerPos + containerNode.nodeSize,
-      updatedCallout,
-    );
-  } else if (containerNode.type.name === 'dBlock') {
-    // If inside a dBlock, recreate the dBlock wrapping the new list
-    const updatedDblock = state.schema.nodes.dBlock.create(
-      containerNode.attrs,
-      [state.schema.nodeFromJSON(newListContent)],
-    );
+    // Replace full list node if found
+    if (listContent && listContentPos !== -1) {
+      tr.replaceWith(
+        listContentPos,
+        listContentPos + listContent.nodeSize,
+        state.schema.nodeFromJSON(newListContent),
+      );
+    } else {
+      const selectionFrom = Math.max(from, calloutStart);
+      const selectionTo = Math.min(to, calloutEnd);
 
-    tr.replaceWith(
-      containerPos,
-      containerPos + containerNode.nodeSize,
-      updatedDblock,
-    );
-  } else {
-    // Fallback
-    tr.replaceWith(
-      containerPos,
-      containerPos + containerNode.nodeSize,
+      tr.replaceRangeWith(
+        selectionFrom,
+        selectionTo,
+        state.schema.nodeFromJSON(newListContent),
+      );
+    }
+  }
+
+  // ✅ Case 2: NORMAL DBLOCK
+  else if (firstDBlockPos !== -1 && lastDBlockPos !== -1) {
+    const newDblock = state.schema.nodes.dBlock.create(null, [
       state.schema.nodeFromJSON(newListContent),
-    );
+    ]);
+
+    tr.replaceWith(firstDBlockPos, lastDBlockPos, newDblock);
   }
 
   return true;
