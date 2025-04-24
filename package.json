@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "2.2.3-reminders-1.2",
+  "version": "2.2.3-reminders-1.3",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
