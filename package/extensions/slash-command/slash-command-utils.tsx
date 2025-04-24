@@ -110,7 +110,7 @@ export const getSuggestionItems = ({
       title: 'Callout',
       description: 'Make writing stand out',
       searchTerms: ['callout', 'note', 'highlight', 'box'],
-      icon: <LucideIcon name="StickyNote" size={'md'} />,
+      icon: <LucideIcon name="Callout" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) => {
         editor
