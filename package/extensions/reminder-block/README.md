@@ -22,13 +22,17 @@ import { ReminderBlock } from '@fileverse/ddoc-editor/extensions/reminder-block'
 
 <DdocEditor
   extensions={[
-    ReminderBlock.configure({
+    {
+      name: 'ReminderBlock',
+      extension: ReminderBlock.configure({
         onReminderCreate: handleReminderCreate,
         onReminderDelete: handleReminderDelete,
         onReminderUpdate: handleReminderUpdate,
         reminders: reminders,
-    }),
-    ]}
+      }),
+      isPro: false
+    }
+  ]}
 />;
 ```
 

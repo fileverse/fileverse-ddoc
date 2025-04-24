@@ -99,7 +99,6 @@ const DdocEditor = forwardRef(
       onDeleteComment,
       showTOC,
       setShowTOC,
-      proExtensions,
       isConnected,
       connectViaWallet,
       isLoading,
@@ -183,7 +182,6 @@ const DdocEditor = forwardRef(
       onInvalidContentError,
       ignoreCorruptedData,
       isPresentationMode,
-      proExtensions,
       metadataProxyUrl,
       extensions,
       onCopyHeadingLink,
@@ -490,9 +488,8 @@ const DdocEditor = forwardRef(
                       activeCommentId={activeCommentId}
                       isCollabDocumentPublished={isCollabDocumentPublished}
                       onReminderCreate={
-                        extensions?.find(
-                          (ext: Extension) => ext.name === 'reminderBlock',
-                        )?.options?.onReminderCreate
+                        extensions?.find((ext) => ext.name === 'ReminderBlock')
+                          ?.extension.options?.onReminderCreate
                       }
                       isConnected={isConnected}
                     />

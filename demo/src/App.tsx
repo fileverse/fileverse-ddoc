@@ -18,6 +18,9 @@ import {
   TableOfContents,
   getHierarchicalIndexes,
 } from '@tiptap-pro/extension-table-of-contents';
+import { ReminderBlock } from '../../package/extensions/reminder-block/reminder-block';
+import { Reminder } from '../../package/extensions/reminder-block/types';
+import { EditorExtension } from '../../package/types';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -267,6 +270,18 @@ function App() {
     setIsConnected(true);
   };
 
+  const handleReminderCreate = async (reminder: Reminder) => {
+    console.log('Reminder created:', reminder);
+  };
+
+  const handleReminderDelete = async (reminderId: string) => {
+    console.log('Reminder deleted:', reminderId);
+  };
+
+  const handleReminderUpdate = async (reminder: Reminder) => {
+    console.log('Reminder updated:', reminder);
+  };
+
   return (
     <div>
       <DdocEditor
@@ -315,10 +330,28 @@ function App() {
         onDeleteComment={handleDeleteComment}
         showTOC={showTOC}
         setShowTOC={setShowTOC}
-        proExtensions={{
-          TableOfContents,
-          getHierarchicalIndexes,
-        }}
+        extensions={[
+          {
+            name: 'TableOfContents',
+            extension: TableOfContents,
+            isPro: true
+          },
+          {
+            name: 'getHierarchicalIndexes',
+            extension: getHierarchicalIndexes,
+            isPro: true
+          },
+          {
+            name: 'ReminderBlock',
+            extension: ReminderBlock.configure({
+              onReminderCreate: handleReminderCreate,
+              onReminderDelete: handleReminderDelete,
+              onReminderUpdate: handleReminderUpdate,
+              reminders: [],
+            }),
+            isPro: false
+          }
+        ] as EditorExtension[]}
         isConnected={isConnected}
         connectViaWallet={async () => { }}
         isLoading={false}

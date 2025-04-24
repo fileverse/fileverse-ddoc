@@ -24,7 +24,7 @@ import { useResponsive } from '../../utils/responsive';
 import { bubbleMenuProps, shouldShow } from './props';
 import { useComments } from '../inline-comment/context/comment-context';
 import { ReminderMenu } from '../../extensions/reminder-block/reminder-menu';
-import { useReminder } from '../../hooks/useReminder';
+import { useReminder } from '../../hooks/use-reminder';
 import { useEditorStates } from '../../hooks/use-editor-states';
 import { Editor } from '@tiptap/react';
 

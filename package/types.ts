@@ -6,6 +6,12 @@ import { Editor } from '@tiptap/react';
 import React, { SetStateAction } from 'react';
 import { IComment } from './extensions/comment';
 
+export interface EditorExtension {
+  name: string;
+  extension: Extension;
+  isPro: boolean;
+}
+
 export const DdocEditorProps: EditorProps = {
   attributes: {
     class: `prose-lg prose-headings:font-display prose prose-p:my-2 prose-h1:my-2 prose-h2:my-2 prose-h3:my-2 prose-ul:my-2 prose-ol:my-2 max-w-none focus:outline-none w-full`,
@@ -49,8 +55,7 @@ export interface DdocProps extends CommentAccountProps {
   //Comments V2 Props
   showTOC?: boolean;
   setShowTOC?: React.Dispatch<SetStateAction<boolean>>;
-  proExtensions?: Record<string, Extension | any>;
-  extensions?: Record<string, Extension | any>;
+  extensions?: EditorExtension[];
   selectedTags?: TagType[];
   setSelectedTags?: React.Dispatch<SetStateAction<TagType[]>>;
   enableCollaboration?: boolean | undefined;
