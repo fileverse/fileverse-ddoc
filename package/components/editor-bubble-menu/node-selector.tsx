@@ -25,23 +25,31 @@ type ListConversionProps = {
 };
 
 // Utility functions
-const processListContent = (node: any): any[] => {
+const processListContent = (node: any, isInsideCallout = false): any[] => {
   // Base case: if node has no content or is not a list item
   if (!node.content || !Array.isArray(node.content)) {
     return [];
   }
 
-  // Helper function to create indented paragraph
-  const createIndentedParagraph = (content: any, level: number) => ({
-    type: 'dBlock',
-    content: [
-      {
-        type: 'paragraph',
-        attrs: { indent: level }, // Add indentation level
-        content: content,
-      },
-    ],
-  });
+  // Helper function to create indented paragraph or plain paragraph if inside a callout
+  const createIndentedParagraph = (content: any, level: number) => {
+    const paragraphNode = {
+      type: 'paragraph',
+      ...(isInsideCallout ? {} : { attrs: { indent: level } }), // Add indent only if not in callout
+      content: content,
+    };
+
+    // If inside a callout, return plain paragraph
+    if (isInsideCallout) {
+      return paragraphNode;
+    }
+
+    // Otherwise, wrap paragraph in a dBlock
+    return {
+      type: 'dBlock',
+      content: [paragraphNode],
+    };
+  };
 
   // Helper function to process list items recursively
   const processListItem = (item: any, level: number = 0): any[] => {
@@ -77,37 +85,63 @@ export const convertListToParagraphs = ({
 }: ListConversionProps) => {
   if (!dispatch) return true;
 
-  let dBlockPos = -1;
-  let listContent = null;
+  let containerPos = -1;
+  let listContent: Node | null = null as unknown as Node;
+  let isInsideCallout = false;
+  let calloutNode: Node | null = null as unknown as Node;
 
+  // Traverse the doc to find the list and its container (either callout or dBlock)
   state.doc.nodesBetween(from, to, (node, pos) => {
-    if (node.type.name === 'dBlock') {
-      dBlockPos = pos;
+    if (node.type.name === 'callout') {
+      isInsideCallout = true;
+      containerPos = pos;
+      calloutNode = node;
     }
+
+    if (!isInsideCallout && node.type.name === 'dBlock') {
+      containerPos = pos;
+    }
+
     if (
       node.type.name === 'bulletList' ||
       node.type.name === 'orderedList' ||
       node.type.name === 'taskList'
     ) {
       listContent = node;
-      return false;
+      return false; // stop traversal after finding list
     }
   });
 
-  if (dBlockPos === -1 || !listContent) return false;
+  if (containerPos === -1 || !listContent) return false;
 
-  const dBlocks = processListContent((listContent as Node).toJSON());
+  const newContent = processListContent(listContent.toJSON(), isInsideCallout);
 
-  const fragment = state.schema.nodeFromJSON({
-    type: 'doc',
-    content: dBlocks,
-  }).content;
+  if (isInsideCallout && calloutNode) {
+    // Replace list *inside* callout with new paragraphs
+    const updatedCallout = state.schema.nodes.callout.create(
+      calloutNode.attrs,
+      newContent.map((json) => state.schema.nodeFromJSON(json)),
+    );
 
-  tr.replaceWith(
-    dBlockPos,
-    dBlockPos + state.doc.nodeAt(dBlockPos)!.nodeSize,
-    fragment,
-  );
+    tr.replaceWith(
+      containerPos,
+      containerPos + calloutNode.nodeSize,
+      updatedCallout,
+    );
+  } else {
+    // Normal dBlock replacement
+    const fragment = state.schema.nodeFromJSON({
+      type: 'doc',
+      content: newContent,
+    }).content;
+
+    tr.replaceWith(
+      containerPos,
+      containerPos + state.doc.nodeAt(containerPos)!.nodeSize,
+      fragment,
+    );
+  }
+
   return true;
 };
 
@@ -121,50 +155,59 @@ export const convertToList = ({
 }: ListConversionProps) => {
   if (!dispatch) return true;
 
-  let firstDBlockPos = -1;
-  let lastDBlockPos = -1;
-  let listContent = null;
-  const paragraphs: any[] = [];
+  // Track the position and node of the parent container (either dBlock or callout)
+  let containerPos = -1;
+  let containerNode: Node | null = null as unknown as Node;
 
-  state.doc.nodesBetween(from, to, (node: Node, pos: number) => {
-    if (node.type.name === 'dBlock') {
-      if (firstDBlockPos === -1) firstDBlockPos = pos;
-      lastDBlockPos = pos + node.nodeSize;
+  // Track the list node (if already present) and whether we're inside a callout
+  let listContent: Node | null = null as unknown as Node;
+  let isInsideCallout = false;
+
+  // Collect paragraphs/headings that need to be turned into list items
+  const paragraphs: Node[] = [];
+
+  // Traverse the selected range to identify context and relevant nodes
+  state.doc.nodesBetween(from, to, (node, pos) => {
+    if (node.type.name === 'callout') {
+      isInsideCallout = true;
+      containerPos = pos;
+      containerNode = node;
     }
+
+    if (!isInsideCallout && node.type.name === 'dBlock') {
+      containerPos = pos;
+      containerNode = node;
+    }
+
     if (
-      node.type.name === 'taskList' ||
       node.type.name === 'bulletList' ||
-      node.type.name === 'orderedList'
+      node.type.name === 'orderedList' ||
+      node.type.name === 'taskList'
     ) {
       listContent = node;
       return false;
     }
+
     if (node.type.name === 'paragraph' || node.type.name === 'heading') {
-      // Convert heading to paragraph if it's a heading
-      if (node.type.name === 'heading') {
-        const paragraph = state.schema.nodes.paragraph.create(
-          null,
-          node.content,
-        );
-        paragraphs.push(paragraph);
-      } else {
-        paragraphs.push(node);
-      }
+      const para =
+        node.type.name === 'heading'
+          ? state.schema.nodes.paragraph.create(null, node.content)
+          : node;
+      paragraphs.push(para);
     }
   });
 
-  if (firstDBlockPos === -1) return false;
+  if (containerPos === -1 || !containerNode) return false;
+  if (!listConfig?.type || !listConfig?.itemType) return false;
 
-  let newList;
+  let newListContent;
+
   if (listContent) {
-    // Converting from one list type to another
-    const listJSON = (listContent as Node).toJSON();
+    const listJSON = listContent.toJSON();
 
-    if (!listConfig?.type || !listConfig?.itemType) return false;
-
-    // Helper function to recursively convert list items and their nested lists
-    const convertListItems = (items: any[]): any[] => {
-      return items.map((item) => {
+    // Recursively convert nested list items to the new list type
+    const convertListItems = (items: any[]): any[] =>
+      items.map((item) => {
         const newItem: {
           type: string;
           attrs?: { checked: boolean };
@@ -175,14 +218,13 @@ export const convertToList = ({
           content: [],
         };
 
-        // Process each content item
         item.content.forEach((contentItem: any) => {
           if (contentItem.type === 'paragraph') {
             newItem.content.push(contentItem);
           } else if (
             ['bulletList', 'orderedList', 'taskList'].includes(contentItem.type)
           ) {
-            // Convert nested list
+            // Recursively convert nested lists
             newItem.content.push({
               type: listConfig.type,
               content: convertListItems(contentItem.content),
@@ -194,41 +236,59 @@ export const convertToList = ({
 
         return newItem;
       });
-    };
 
-    newList = {
-      type: 'dBlock',
-      content: [
-        {
-          type: listConfig.type,
-          content: convertListItems(listJSON.content),
-        },
-      ],
+    newListContent = {
+      type: listConfig.type,
+      content: convertListItems(listJSON.content),
     };
   } else if (paragraphs.length > 0) {
-    // Converting from paragraphs to list
-    newList = {
-      type: 'dBlock',
-      content: [
-        {
-          type: listConfig?.type,
-          content: paragraphs.map((para) => ({
-            type: listConfig?.itemType,
-            ...(listConfig?.hasAttrs ? { attrs: { checked: false } } : {}),
-            content: [para.toJSON()],
-          })),
-        },
-      ],
+    // Convert plain paragraphs/headings into list items
+    newListContent = {
+      type: listConfig.type,
+      content: paragraphs.map((para) => ({
+        type: listConfig.itemType,
+        ...(listConfig.hasAttrs ? { attrs: { checked: false } } : {}),
+        content: [para.toJSON()],
+      })),
     };
   } else {
     return false;
   }
 
-  tr.replaceWith(
-    firstDBlockPos,
-    lastDBlockPos,
-    state.schema.nodeFromJSON(newList),
-  );
+  // Replace the container content with new list
+  if (isInsideCallout && containerNode.type.name === 'callout') {
+    // If we are inside a callout block, replace its content with the list (no dBlock wrapping)
+    const updatedCallout = state.schema.nodes.callout.create(
+      containerNode.attrs,
+      [state.schema.nodeFromJSON(newListContent)],
+    );
+
+    tr.replaceWith(
+      containerPos,
+      containerPos + containerNode.nodeSize,
+      updatedCallout,
+    );
+  } else if (containerNode.type.name === 'dBlock') {
+    // If inside a dBlock, recreate the dBlock wrapping the new list
+    const updatedDblock = state.schema.nodes.dBlock.create(
+      containerNode.attrs,
+      [state.schema.nodeFromJSON(newListContent)],
+    );
+
+    tr.replaceWith(
+      containerPos,
+      containerPos + containerNode.nodeSize,
+      updatedDblock,
+    );
+  } else {
+    // Fallback
+    tr.replaceWith(
+      containerPos,
+      containerPos + containerNode.nodeSize,
+      state.schema.nodeFromJSON(newListContent),
+    );
+  }
+
   return true;
 };
 
