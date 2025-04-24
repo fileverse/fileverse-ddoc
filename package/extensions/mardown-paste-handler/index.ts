@@ -244,6 +244,28 @@ turndownService.addRule('strikethrough', {
   },
 });
 
+// Custom rules for callout
+turndownService.addRule('callout', {
+  filter: (node) =>
+    node.nodeName === 'ASIDE' &&
+    (node as HTMLElement).getAttribute('data-type') === 'callout',
+  replacement: function (_content, node) {
+    const childNodes = Array.from((node as HTMLElement).childNodes);
+    const parsedContent = childNodes
+      .map((child) => {
+        if (child.nodeType === Node.ELEMENT_NODE) {
+          return turndownService.turndown((child as HTMLElement).outerHTML);
+        } else if (child.nodeType === Node.TEXT_NODE) {
+          return turndownService.turndown(child.textContent || '');
+        }
+        return '';
+      })
+      .join('\n\n');
+
+    return `<aside class="callout">\n${parsedContent.trim()}\n</aside>\n\n`;
+  },
+});
+
 // Define the command type
 declare module '@tiptap/core' {
   interface Commands {
@@ -562,6 +584,44 @@ async function handleMarkdownContent(
   const parser = new DOMParser();
   const doc = parser.parseFromString(convertedHtml, 'text/html');
 
+  // Remove only top-level empty paragraphs because markdownIt adds empty paragraph tag above and below aside tag
+  const topLevelPs = doc.querySelectorAll('body > p');
+  topLevelPs.forEach((p) => {
+    if (p.textContent?.trim() === '') {
+      p.remove();
+    }
+  });
+
+  // Replace <aside class="callout"> with <aside data-type="callout">
+  const calloutAsides = doc.querySelectorAll('aside.callout');
+  calloutAsides.forEach((el) => {
+    el.setAttribute('data-type', 'callout');
+    el.removeAttribute('class');
+  });
+
+  // remove extra <p> tags inside <aside data-type="callout">
+  const callouts = doc.querySelectorAll('aside[data-type="callout"]');
+  callouts.forEach((aside) => {
+    const ps = aside.querySelectorAll('p');
+    ps.forEach((p) => {
+      const isEmpty = Array.from(p.childNodes).every((node) => {
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          return node.nodeName === 'BR';
+        }
+        if (node.nodeType === Node.TEXT_NODE) {
+          return node.textContent?.trim() === '';
+        }
+        return false;
+      });
+
+      if (isEmpty) {
+        if (p.parentNode) {
+          p.parentNode.removeChild(p);
+        }
+      }
+    });
+  });
+
   // Handle todo lists
   const lists = doc.getElementsByTagName('ul');
   for (let i = 0; i < lists.length; i++) {
@@ -678,6 +738,8 @@ async function handleMarkdownContent(
       'privateKey',
     ],
   });
+
+  console.log('Sanitized HTML:', convertedHtml);
 
   // Parse the sanitized HTML string into DOM nodes
   const domContent = parser.parseFromString(convertedHtml, 'text/html').body;

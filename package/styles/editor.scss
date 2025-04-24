@@ -16,10 +16,18 @@
     h3.is-empty::before {
       content: 'Heading 3';
     }
+    /* Show placeholder ONLY if the first paragraph inside callout is empty */
+    aside[data-type='callout'] p.is-empty:first-of-type::before {
+      content: 'Type to make writing stand out';
+    }
   }
   /* Default Placeholder */
   & p.is-empty::before {
     content: 'Type  /  to browse options';
+  }
+  /* Callout block placeholder (non-focused fallback) */
+  aside[data-type='callout'] p.is-empty:first-of-type::before {
+    content: 'Type to make writing stand out';
   }
 
   /* Blockquote Placeholder */
