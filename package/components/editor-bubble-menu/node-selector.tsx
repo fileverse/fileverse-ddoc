@@ -132,8 +132,6 @@ export const convertListToParagraphs = ({
       content: newContent,
     }).content;
 
-    console.log({ fragment });
-
     tr.replaceWith(dBlockPos - 1, dBlockPos + dBlockNode.nodeSize, fragment);
   }
 
