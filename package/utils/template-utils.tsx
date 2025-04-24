@@ -34,6 +34,11 @@ const MORE_TEMPLATES: TemplateConfig[] = [
     icon: 'NotepadText',
   },
   {
+    id: 'resume',
+    label: 'Resume',
+    icon: '📄',
+  },
+  {
     id: 'brainstorm',
     label: 'Brainstorm',
     icon: 'Lightbulb',
@@ -42,11 +47,6 @@ const MORE_TEMPLATES: TemplateConfig[] = [
     id: 'pretend-to-work',
     label: 'Pretend to work',
     icon: '🏄🏻‍♂️',
-  },
-  {
-    id: 'resume',
-    label: 'Resume',
-    icon: '📄',
   },
 ];
 
