@@ -121,6 +121,29 @@ export const getSuggestionItems = ({
       },
     },
     {
+      title: 'Callout',
+      description: 'Make writing stand out',
+      searchTerms: ['callout', 'note', 'highlight', 'box'],
+      icon: <LucideIcon name="Callout" size={'md'} />,
+      image: '',
+      command: ({ editor, range }: CommandProps) => {
+        editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          .insertContent({
+            type: 'callout',
+            content: [
+              {
+                type: 'paragraph',
+                content: [],
+              },
+            ],
+          })
+          .run();
+      },
+    },
+    {
       title: 'Page breaker',
       description:
         'Insert page break that will split your document into pages.',

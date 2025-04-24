@@ -16,10 +16,18 @@
     h3.is-empty::before {
       content: 'Heading 3';
     }
+    /* Show placeholder ONLY if the first paragraph inside callout is empty */
+    aside[data-type='callout'] p.is-empty:first-of-type::before {
+      content: 'Type to make writing stand out';
+    }
   }
   /* Default Placeholder */
   & p.is-empty::before {
     content: 'Type  /  to browse options';
+  }
+  /* Callout block placeholder (non-focused fallback) */
+  aside[data-type='callout'] p.is-empty:first-of-type::before {
+    content: 'Type to make writing stand out';
   }
 
   /* Blockquote Placeholder */
@@ -31,13 +39,18 @@
     @apply leading-normal my-2 first:mt-0 last:mb-0;
   }
 
-  // h3 {
-  //   @apply translate-y-0.5;
-  // }
+  
+  h1 {
+    @apply -translate-y-2;
+  }
 
-  // h1 {
-  //   @apply -translate-y-1;
-  // }
+  h2 {
+    @apply -translate-y-1;
+  }
+
+  h3 {
+    @apply translate-y-0;
+  }
 
   & > p {
     @apply my-6 first:mt-0 last:mb-0;
