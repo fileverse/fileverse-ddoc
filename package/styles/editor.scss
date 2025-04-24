@@ -39,13 +39,18 @@
     @apply leading-normal my-2 first:mt-0 last:mb-0;
   }
 
-  // h3 {
-  //   @apply translate-y-0.5;
-  // }
+  
+  h1 {
+    @apply -translate-y-2;
+  }
 
-  // h1 {
-  //   @apply -translate-y-1;
-  // }
+  h2 {
+    @apply -translate-y-1;
+  }
+
+  h3 {
+    @apply translate-y-0;
+  }
 
   & > p {
     @apply my-6 first:mt-0 last:mb-0;
