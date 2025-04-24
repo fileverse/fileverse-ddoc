@@ -1,4 +1,4 @@
-import { EditorContent, Extension, isTextSelection } from '@tiptap/react';
+import { EditorContent, isTextSelection } from '@tiptap/react';
 import { EditorBubbleMenu } from './components/editor-bubble-menu/editor-bubble-menu';
 import { DdocProps } from './types';
 import { ColumnsMenu } from './extensions/multi-column/menus';
