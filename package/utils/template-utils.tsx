@@ -91,6 +91,15 @@ const createMoreTemplates = (
     },
     content: getTemplateContent('pretend-to-work'),
   },
+  {
+    label: 'Resume',
+    icon: '📄',
+    onClick: () => {
+      const content = getTemplateContent('resume');
+      if (content) addTemplate(content);
+    },
+    content: getTemplateContent('resume'),
+  },
 ];
 
 const renderTemplateButtons = (
