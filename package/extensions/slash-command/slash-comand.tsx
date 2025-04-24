@@ -81,6 +81,7 @@ const CommandList = ({
     '3 Columns',
     'Callout',
     'Quote',
+    'Page breaker',
   ];
 
   const selectItem = useCallback(
