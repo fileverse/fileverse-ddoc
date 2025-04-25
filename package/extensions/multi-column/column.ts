@@ -7,6 +7,10 @@ export const Column = Node.create({
 
   isolating: true,
 
+  selectable: true,
+
+  defining: true,
+
   addAttributes() {
     return {
       position: {
@@ -20,7 +24,10 @@ export const Column = Node.create({
   renderHTML({ HTMLAttributes }) {
     return [
       'div',
-      mergeAttributes(HTMLAttributes, { 'data-type': 'column' }),
+      mergeAttributes(HTMLAttributes, {
+        'data-type': 'column',
+        'data-structure': 'preserve',
+      }),
       0,
     ];
   },
@@ -29,6 +36,13 @@ export const Column = Node.create({
     return [
       {
         tag: 'div[data-type="column"]',
+        getAttrs: (node) => {
+          if (!(node instanceof HTMLElement)) return false;
+          return {
+            position: node.getAttribute('data-position') || '',
+          };
+        },
+        priority: 51,
       },
     ];
   },

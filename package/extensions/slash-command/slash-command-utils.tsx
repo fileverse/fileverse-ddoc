@@ -259,12 +259,32 @@ export const getSuggestionItems = ({
       searchTerms: ['col', 'column', '2', 'layout'],
       icon: <LucideIcon name="Columns2" size={'md'} />,
       image: '',
-      command: ({ editor }: CommandProps) => {
+      command: ({ editor, range }: CommandProps) => {
         editor
           .chain()
           .focus()
-          .setColumns(2)
-          .focus(editor.state.selection.head - 1)
+          .deleteRange(range)
+          .insertContent({
+            type: 'dBlock',
+            content: [
+              {
+                type: 'columns',
+                content: Array(2).fill({
+                  type: 'column',
+                  content: [
+                    {
+                      type: 'dBlock',
+                      content: [
+                        {
+                          type: 'paragraph',
+                        },
+                      ],
+                    },
+                  ],
+                }),
+              },
+            ],
+          })
           .run();
       },
     },
@@ -274,12 +294,32 @@ export const getSuggestionItems = ({
       searchTerms: ['col', 'column', '3', 'layout'],
       icon: <LucideIcon name="Columns3" size={'md'} />,
       image: '',
-      command: ({ editor }: CommandProps) => {
+      command: ({ editor, range }: CommandProps) => {
         editor
           .chain()
           .focus()
-          .setColumns(3)
-          .focus(editor.state.selection.head - 1)
+          .deleteRange(range)
+          .insertContent({
+            type: 'dBlock',
+            content: [
+              {
+                type: 'columns',
+                content: Array(3).fill({
+                  type: 'column',
+                  content: [
+                    {
+                      type: 'dBlock',
+                      content: [
+                        {
+                          type: 'paragraph',
+                        },
+                      ],
+                    },
+                  ],
+                }),
+              },
+            ],
+          })
           .run();
       },
     },

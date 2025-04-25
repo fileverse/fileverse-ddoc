@@ -363,7 +363,10 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
         )}
       >
         <section
-          className={cn('lg:flex gap-[2px] hidden min-w-16 justify-end')}
+          className={cn(
+            'lg:flex gap-[2px] hidden min-w-16 justify-end',
+            isHeading && 'self-center',
+          )}
           aria-label="left-menu"
           contentEditable={false}
           suppressContentEditableWarning={true}

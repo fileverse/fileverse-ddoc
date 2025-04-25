@@ -13,20 +13,39 @@ export const buildParagraph = ({ content }: Partial<JSONContent>) =>
 export const buildDBlock = ({ content }: Partial<JSONContent>) =>
   buildNode({ type: 'dBlock', content });
 
-export const buildColumn = ({ content }: Partial<JSONContent>) =>
-  buildNode({ type: 'column', content });
+export const buildColumn = ({ content }: Partial<JSONContent>) => {
+  // Ensure content is wrapped in dBlock
+  const wrappedContent = Array.isArray(content)
+    ? content.map((item) => {
+        if (item.type === 'dBlock') return item;
+        return buildDBlock({ content: [item] });
+      })
+    : [buildDBlock({ content: content ? [content] : [buildParagraph({})] })];
 
-export const buildColumnBlock = ({ content }: Partial<JSONContent>) =>
-  buildNode({ type: 'columns', content });
+  return buildNode({
+    type: 'column',
+    content: wrappedContent,
+  });
+};
+
+export const buildColumnBlock = ({ content }: Partial<JSONContent>) => {
+  // Ensure each item in content is a proper column
+  const columns = Array.isArray(content)
+    ? content.map((item) => {
+        if (item.type === 'column') return item;
+        return buildColumn({ content: [item] });
+      })
+    : [buildColumn({ content })];
+
+  return buildNode({
+    type: 'columns',
+    content: columns,
+  });
+};
 
 export const buildNColumns = (n: number) => {
-  const content = [
-    buildDBlock({
-      content: [buildParagraph({})],
-    }),
-  ];
-  const fn = () => buildColumn({ content });
-  return times(n, fn);
+  const content = [buildDBlock({ content: [buildParagraph({})] })];
+  return times(n, () => buildColumn({ content }));
 };
 
 interface PredicateProps {
