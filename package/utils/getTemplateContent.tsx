@@ -1181,7 +1181,7 @@ export const getTemplateContent = (
         ],
         title: 'Pretend To Work',
       };
-    case 'resume': {
+    case 'resume':
       return {
         type: 'doc',
         content: [
@@ -1225,7 +1225,7 @@ export const getTemplateContent = (
               {
                 type: 'paragraph',
                 attrs: {
-                  class: 'select-text pointer-events-auto',
+                  class: null,
                   textAlign: 'left',
                 },
                 content: [
@@ -1370,96 +1370,176 @@ export const getTemplateContent = (
             },
             content: [
               {
-                type: 'paragraph',
+                type: 'columns',
                 attrs: {
-                  class: 'select-text pointer-events-auto',
-                  textAlign: 'left',
+                  layout: 'align-center',
                 },
                 content: [
                   {
-                    type: 'text',
-                    marks: [
+                    type: 'column',
+                    attrs: {
+                      position: '',
+                    },
+                    content: [
                       {
-                        type: 'textStyle',
+                        type: 'dBlock',
                         attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
+                          isCorrupted: false,
                         },
+                        content: [
+                          {
+                            type: 'paragraph',
+                            attrs: {
+                              class: null,
+                              textAlign: 'left',
+                            },
+                            content: [
+                              {
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'bold',
+                                  },
+                                ],
+                                text: 'Bachelor of [Field of Study]',
+                              },
+                            ],
+                          },
+                        ],
                       },
                       {
-                        type: 'bold',
+                        type: 'dBlock',
+                        attrs: {
+                          isCorrupted: false,
+                        },
+                        content: [
+                          {
+                            type: 'paragraph',
+                            attrs: {
+                              class: null,
+                              textAlign: 'left',
+                            },
+                            content: [
+                              {
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: '',
+                                      fontSize: '16px',
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'italic',
+                                  },
+                                ],
+                                text: 'University of Cityville',
+                              },
+                              {
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: '',
+                                      fontSize: '16px',
+                                      color: '',
+                                    },
+                                  },
+                                ],
+                                text: ' Relevant Coursework',
+                              },
+                            ],
+                          },
+                        ],
                       },
                     ],
-                    text: 'Bachelor of [Field of Study]                                                                                             Cambridge, MA',
                   },
                   {
-                    type: 'hardBreak',
-                  },
-                  {
-                    type: 'text',
-                    marks: [
+                    type: 'column',
+                    attrs: {
+                      position: '',
+                    },
+                    content: [
                       {
-                        type: 'textStyle',
+                        type: 'dBlock',
                         attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
+                          isCorrupted: false,
                         },
+                        content: [
+                          {
+                            type: 'paragraph',
+                            attrs: {
+                              class: null,
+                              textAlign: 'right',
+                            },
+                            content: [
+                              {
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'bold',
+                                  },
+                                ],
+                                text: 'Cambridge, MA',
+                              },
+                            ],
+                          },
+                        ],
                       },
                       {
-                        type: 'italic',
+                        type: 'dBlock',
+                        attrs: {
+                          isCorrupted: false,
+                        },
+                        content: [
+                          {
+                            type: 'paragraph',
+                            attrs: {
+                              class: null,
+                              textAlign: 'right',
+                            },
+                            content: [
+                              {
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'italic',
+                                  },
+                                ],
+                                text: 'Graduation Date',
+                              },
+                            ],
+                          },
+                        ],
                       },
                     ],
-                    text: 'University of Cityville',
-                  },
-                  {
-                    type: 'text',
-                    marks: [
-                      {
-                        type: 'textStyle',
-                        attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
-                        },
-                      },
-                    ],
-                    text: '                                                                                                   ',
-                  },
-                  {
-                    type: 'text',
-                    marks: [
-                      {
-                        type: 'textStyle',
-                        attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
-                        },
-                      },
-                      {
-                        type: 'italic',
-                      },
-                    ],
-                    text: 'Graduation Date',
-                  },
-                  {
-                    type: 'hardBreak',
-                  },
-                  {
-                    type: 'text',
-                    marks: [
-                      {
-                        type: 'textStyle',
-                        attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
-                        },
-                      },
-                    ],
-                    text: 'Relevant Coursework',
                   },
                 ],
               },
@@ -1472,79 +1552,176 @@ export const getTemplateContent = (
             },
             content: [
               {
-                type: 'paragraph',
+                type: 'columns',
                 attrs: {
-                  class: 'select-text pointer-events-auto',
-                  textAlign: 'left',
+                  layout: 'align-center',
                 },
                 content: [
                   {
-                    type: 'text',
-                    marks: [
+                    type: 'column',
+                    attrs: {
+                      position: '',
+                    },
+                    content: [
                       {
-                        type: 'textStyle',
+                        type: 'dBlock',
                         attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
+                          isCorrupted: false,
                         },
+                        content: [
+                          {
+                            type: 'paragraph',
+                            attrs: {
+                              class: null,
+                              textAlign: 'left',
+                            },
+                            content: [
+                              {
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'bold',
+                                  },
+                                ],
+                                text: 'Study Abroad',
+                              },
+                            ],
+                          },
+                        ],
                       },
                       {
-                        type: 'bold',
+                        type: 'dBlock',
+                        attrs: {
+                          isCorrupted: false,
+                        },
+                        content: [
+                          {
+                            type: 'paragraph',
+                            attrs: {
+                              class: 'select-text pointer-events-auto',
+                              textAlign: 'left',
+                            },
+                            content: [
+                              {
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                ],
+                                text: 'Relevant Coursework',
+                              },
+                              {
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'bold',
+                                  },
+                                ],
+                                text: ' ',
+                              },
+                            ],
+                          },
+                        ],
                       },
                     ],
-                    text: 'Study Abroad                                                                                                                              Tokyo, Japan',
                   },
                   {
-                    type: 'hardBreak',
-                  },
-                  {
-                    type: 'text',
-                    marks: [
+                    type: 'column',
+                    attrs: {
+                      position: '',
+                    },
+                    content: [
                       {
-                        type: 'textStyle',
+                        type: 'dBlock',
                         attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
+                          isCorrupted: false,
                         },
+                        content: [
+                          {
+                            type: 'paragraph',
+                            attrs: {
+                              class: null,
+                              textAlign: 'right',
+                            },
+                            content: [
+                              {
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'bold',
+                                  },
+                                ],
+                                text: 'Tokyo, Japan',
+                              },
+                            ],
+                          },
+                        ],
+                      },
+                      {
+                        type: 'dBlock',
+                        attrs: {
+                          isCorrupted: false,
+                        },
+                        content: [
+                          {
+                            type: 'paragraph',
+                            attrs: {
+                              class: null,
+                              textAlign: 'right',
+                            },
+                            content: [
+                              {
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'italic',
+                                  },
+                                ],
+                                text: 'month/year - month/year',
+                              },
+                            ],
+                          },
+                        ],
                       },
                     ],
-                    text: 'Relevant Coursework',
-                  },
-                  {
-                    type: 'text',
-                    marks: [
-                      {
-                        type: 'textStyle',
-                        attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
-                        },
-                      },
-                      {
-                        type: 'bold',
-                      },
-                    ],
-                    text: '                                                                                            ',
-                  },
-                  {
-                    type: 'text',
-                    marks: [
-                      {
-                        type: 'textStyle',
-                        attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
-                        },
-                      },
-                      {
-                        type: 'italic',
-                      },
-                    ],
-                    text: 'month/year - month/year',
                   },
                 ],
               },
@@ -1599,79 +1776,114 @@ export const getTemplateContent = (
             },
             content: [
               {
-                type: 'paragraph',
+                type: 'columns',
                 attrs: {
-                  class: 'select-text pointer-events-auto',
-                  textAlign: 'left',
+                  layout: 'align-center',
                 },
                 content: [
                   {
-                    type: 'text',
-                    marks: [
+                    type: 'column',
+                    attrs: {
+                      position: '',
+                    },
+                    content: [
                       {
-                        type: 'textStyle',
+                        type: 'dBlock',
                         attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
+                          isCorrupted: false,
                         },
-                      },
-                      {
-                        type: 'bold',
+                        content: [
+                          {
+                            type: 'paragraph',
+                            attrs: {
+                              class: 'select-text pointer-events-auto',
+                              textAlign: 'left',
+                            },
+                            content: [
+                              {
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'bold',
+                                  },
+                                ],
+                                text: 'Senior [Job Title]',
+                              },
+                              {
+                                type: 'hardBreak',
+                              },
+                              {
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'italic',
+                                  },
+                                ],
+                                text: 'ABC Corporation, Cityville',
+                              },
+                            ],
+                          },
+                        ],
                       },
                     ],
-                    text: 'Senior [Job Title]',
                   },
                   {
-                    type: 'text',
-                    marks: [
+                    type: 'column',
+                    attrs: {
+                      position: '',
+                    },
+                    content: [
                       {
-                        type: 'textStyle',
+                        type: 'dBlock',
                         attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
+                          isCorrupted: false,
                         },
+                        content: [
+                          {
+                            type: 'paragraph',
+                            attrs: {
+                              class: null,
+                              textAlign: 'right',
+                            },
+                            content: [
+                              {
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'italic',
+                                  },
+                                ],
+                                text: 'Jan 2021 – Present',
+                              },
+                            ],
+                          },
+                        ],
                       },
                     ],
-                    text: '                                                                                                   ',
-                  },
-                  {
-                    type: 'text',
-                    marks: [
-                      {
-                        type: 'textStyle',
-                        attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
-                        },
-                      },
-                      {
-                        type: 'italic',
-                      },
-                    ],
-                    text: 'Jan 2021 – Present',
-                  },
-                  {
-                    type: 'hardBreak',
-                  },
-                  {
-                    type: 'text',
-                    marks: [
-                      {
-                        type: 'textStyle',
-                        attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
-                        },
-                      },
-                      {
-                        type: 'italic',
-                      },
-                    ],
-                    text: 'ABC Corporation, Cityville',
                   },
                 ],
               },
@@ -1784,250 +1996,114 @@ export const getTemplateContent = (
             },
             content: [
               {
-                type: 'paragraph',
+                type: 'columns',
                 attrs: {
-                  class: 'select-text pointer-events-auto',
-                  textAlign: 'left',
+                  layout: 'align-center',
                 },
                 content: [
                   {
-                    type: 'text',
-                    marks: [
-                      {
-                        type: 'textStyle',
-                        attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
-                        },
-                      },
-                      {
-                        type: 'bold',
-                      },
-                    ],
-                    text: '[Job Title]                                                                                                                      ',
-                  },
-                  {
-                    type: 'text',
-                    marks: [
-                      {
-                        type: 'textStyle',
-                        attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
-                        },
-                      },
-                      {
-                        type: 'italic',
-                      },
-                    ],
-                    text: 'Mar 2018 – Dec 2020',
-                  },
-                  {
-                    type: 'hardBreak',
-                  },
-                  {
-                    type: 'text',
-                    marks: [
-                      {
-                        type: 'textStyle',
-                        attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
-                        },
-                      },
-                      {
-                        type: 'italic',
-                      },
-                    ],
-                    text: 'XYZ Solutions, Townsville',
-                  },
-                ],
-              },
-            ],
-          },
-          {
-            type: 'dBlock',
-            attrs: {
-              isCorrupted: false,
-            },
-            content: [
-              {
-                type: 'bulletList',
-                attrs: {
-                  tight: false,
-                },
-                content: [
-                  {
-                    type: 'listItem',
+                    type: 'column',
+                    attrs: {
+                      position: '',
+                    },
                     content: [
                       {
-                        type: 'paragraph',
+                        type: 'dBlock',
                         attrs: {
-                          class: 'select-text pointer-events-auto',
-                          textAlign: 'left',
+                          isCorrupted: false,
                         },
                         content: [
                           {
-                            type: 'text',
-                            marks: [
+                            type: 'paragraph',
+                            attrs: {
+                              class: null,
+                              textAlign: 'left',
+                            },
+                            content: [
                               {
-                                type: 'textStyle',
-                                attrs: {
-                                  fontFamily: null,
-                                  fontSize: null,
-                                  color: '',
-                                },
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'bold',
+                                  },
+                                ],
+                                text: 'Senior [Job Title]',
+                              },
+                              {
+                                type: 'hardBreak',
+                              },
+                              {
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'italic',
+                                  },
+                                ],
+                                text: 'XYZ Solutions, Townsville',
                               },
                             ],
-                            text: 'Managed [Key Responsibility], improving process accuracy by 30%.',
                           },
                         ],
                       },
                     ],
                   },
                   {
-                    type: 'listItem',
+                    type: 'column',
+                    attrs: {
+                      position: '',
+                    },
                     content: [
                       {
-                        type: 'paragraph',
+                        type: 'dBlock',
                         attrs: {
-                          class: 'select-text pointer-events-auto',
-                          textAlign: 'left',
+                          isCorrupted: false,
                         },
                         content: [
                           {
-                            type: 'text',
-                            marks: [
+                            type: 'paragraph',
+                            attrs: {
+                              class: null,
+                              textAlign: 'right',
+                            },
+                            content: [
                               {
-                                type: 'textStyle',
-                                attrs: {
-                                  fontFamily: null,
-                                  fontSize: null,
-                                  color: '',
-                                },
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'italic',
+                                  },
+                                ],
+                                text: 'Jun 2015 – Feb 2018',
                               },
                             ],
-                            text: 'Trained 15+ new hires in company protocols and software tools.',
                           },
                         ],
                       },
                     ],
-                  },
-                  {
-                    type: 'listItem',
-                    content: [
-                      {
-                        type: 'paragraph',
-                        attrs: {
-                          class: 'select-text pointer-events-auto',
-                          textAlign: 'left',
-                        },
-                        content: [
-                          {
-                            type: 'text',
-                            marks: [
-                              {
-                                type: 'textStyle',
-                                attrs: {
-                                  fontFamily: null,
-                                  fontSize: null,
-                                  color: '',
-                                },
-                              },
-                            ],
-                            text: 'Recognized as "Employee of the Quarter" twice for exceptional performance.',
-                          },
-                        ],
-                      },
-                    ],
-                  },
-                ],
-              },
-            ],
-          },
-          {
-            type: 'dBlock',
-            attrs: {
-              isCorrupted: false,
-            },
-            content: [
-              {
-                type: 'paragraph',
-                attrs: {
-                  class: 'select-text pointer-events-auto',
-                  textAlign: 'left',
-                },
-                content: [
-                  {
-                    type: 'text',
-                    marks: [
-                      {
-                        type: 'textStyle',
-                        attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
-                        },
-                      },
-                      {
-                        type: 'bold',
-                      },
-                    ],
-                    text: '[Job Title] ',
-                  },
-                  {
-                    type: 'text',
-                    marks: [
-                      {
-                        type: 'textStyle',
-                        attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
-                        },
-                      },
-                    ],
-                    text: '                                                                                                            ',
-                  },
-                  {
-                    type: 'text',
-                    marks: [
-                      {
-                        type: 'textStyle',
-                        attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
-                        },
-                      },
-                      {
-                        type: 'italic',
-                      },
-                    ],
-                    text: 'Jun 2015 – Feb 2018',
-                  },
-                  {
-                    type: 'hardBreak',
-                  },
-                  {
-                    type: 'text',
-                    marks: [
-                      {
-                        type: 'textStyle',
-                        attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
-                        },
-                      },
-                      {
-                        type: 'italic',
-                      },
-                    ],
-                    text: '123 Industries, Villagetown ',
                   },
                 ],
               },
@@ -2140,79 +2216,114 @@ export const getTemplateContent = (
             },
             content: [
               {
-                type: 'paragraph',
+                type: 'columns',
                 attrs: {
-                  class: 'select-text pointer-events-auto',
-                  textAlign: 'left',
+                  layout: 'align-center',
                 },
                 content: [
                   {
-                    type: 'text',
-                    marks: [
+                    type: 'column',
+                    attrs: {
+                      position: '',
+                    },
+                    content: [
                       {
-                        type: 'textStyle',
+                        type: 'dBlock',
                         attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
+                          isCorrupted: false,
                         },
-                      },
-                      {
-                        type: 'bold',
+                        content: [
+                          {
+                            type: 'paragraph',
+                            attrs: {
+                              class: null,
+                              textAlign: 'left',
+                            },
+                            content: [
+                              {
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'bold',
+                                  },
+                                ],
+                                text: 'Junior [Job Title] ',
+                              },
+                              {
+                                type: 'hardBreak',
+                              },
+                              {
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'italic',
+                                  },
+                                ],
+                                text: 'Starter Company, Hamlet City ',
+                              },
+                            ],
+                          },
+                        ],
                       },
                     ],
-                    text: 'Junior [Job Title]                                                                                                        ',
                   },
                   {
-                    type: 'text',
-                    marks: [
+                    type: 'column',
+                    attrs: {
+                      position: '',
+                    },
+                    content: [
                       {
-                        type: 'textStyle',
+                        type: 'dBlock',
                         attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
+                          isCorrupted: false,
                         },
-                      },
-                      {
-                        type: 'italic',
+                        content: [
+                          {
+                            type: 'paragraph',
+                            attrs: {
+                              class: null,
+                              textAlign: 'right',
+                            },
+                            content: [
+                              {
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'italic',
+                                  },
+                                ],
+                                text: 'Aug 2013 – May 2015',
+                              },
+                            ],
+                          },
+                        ],
                       },
                     ],
-                    text: 'Aug 2013 – May 2015',
-                  },
-                  {
-                    type: 'hardBreak',
-                  },
-                  {
-                    type: 'text',
-                    marks: [
-                      {
-                        type: 'textStyle',
-                        attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
-                        },
-                      },
-                      {
-                        type: 'italic',
-                      },
-                    ],
-                    text: 'Starter Company, Hamlet City     ',
-                  },
-                  {
-                    type: 'text',
-                    marks: [
-                      {
-                        type: 'textStyle',
-                        attrs: {
-                          fontFamily: null,
-                          fontSize: null,
-                          color: '',
-                        },
-                      },
-                    ],
-                    text: '                                                         ',
                   },
                 ],
               },
@@ -2354,7 +2465,7 @@ export const getTemplateContent = (
                         },
                       },
                     ],
-                    text: 'Skills ',
+                    text: 'Skills',
                   },
                 ],
               },
@@ -2470,124 +2581,180 @@ export const getTemplateContent = (
             },
             content: [
               {
-                type: 'bulletList',
+                type: 'columns',
                 attrs: {
-                  tight: false,
+                  layout: 'align-center',
                 },
                 content: [
                   {
-                    type: 'listItem',
+                    type: 'column',
+                    attrs: {
+                      position: '',
+                    },
                     content: [
                       {
-                        type: 'paragraph',
+                        type: 'dBlock',
                         attrs: {
-                          class: 'select-text pointer-events-auto',
-                          textAlign: 'left',
+                          isCorrupted: false,
                         },
                         content: [
                           {
-                            type: 'text',
-                            marks: [
+                            type: 'paragraph',
+                            attrs: {
+                              class: null,
+                              textAlign: 'left',
+                            },
+                            content: [
                               {
-                                type: 'textStyle',
-                                attrs: {
-                                  fontFamily: null,
-                                  fontSize: null,
-                                  color: '',
-                                },
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                ],
+                                text: '[Certification Name]',
                               },
                             ],
-                            text: '[Certification Name], ',
                           },
+                        ],
+                      },
+                      {
+                        type: 'dBlock',
+                        attrs: {
+                          isCorrupted: false,
+                        },
+                        content: [
                           {
-                            type: 'text',
-                            marks: [
+                            type: 'paragraph',
+                            attrs: {
+                              class: null,
+                              textAlign: 'left',
+                            },
+                            content: [
                               {
-                                type: 'textStyle',
-                                attrs: {
-                                  fontFamily: null,
-                                  fontSize: null,
-                                  color: '',
-                                },
-                              },
-                              {
-                                type: 'italic',
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                ],
+                                text: '[Certification Name]',
                               },
                             ],
-                            text: 'Issuer',
-                          },
-                          {
-                            type: 'text',
-                            marks: [
-                              {
-                                type: 'textStyle',
-                                attrs: {
-                                  fontFamily: null,
-                                  fontSize: null,
-                                  color: '',
-                                },
-                              },
-                            ],
-                            text: ' (Year)',
                           },
                         ],
                       },
                     ],
                   },
                   {
-                    type: 'listItem',
+                    type: 'column',
+                    attrs: {
+                      position: '',
+                    },
                     content: [
                       {
-                        type: 'paragraph',
+                        type: 'dBlock',
                         attrs: {
-                          class: 'select-text pointer-events-auto',
-                          textAlign: 'left',
+                          isCorrupted: false,
                         },
                         content: [
                           {
-                            type: 'text',
-                            marks: [
+                            type: 'paragraph',
+                            attrs: {
+                              class: null,
+                              textAlign: 'right',
+                            },
+                            content: [
                               {
-                                type: 'textStyle',
-                                attrs: {
-                                  fontFamily: null,
-                                  fontSize: null,
-                                  color: '',
-                                },
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'italic',
+                                  },
+                                ],
+                                text: 'Issuer',
+                              },
+                              {
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                ],
+                                text: ' (Year)',
                               },
                             ],
-                            text: '[Certification Name], ',
                           },
+                        ],
+                      },
+                      {
+                        type: 'dBlock',
+                        attrs: {
+                          isCorrupted: false,
+                        },
+                        content: [
                           {
-                            type: 'text',
-                            marks: [
+                            type: 'paragraph',
+                            attrs: {
+                              class: null,
+                              textAlign: 'right',
+                            },
+                            content: [
                               {
-                                type: 'textStyle',
-                                attrs: {
-                                  fontFamily: null,
-                                  fontSize: null,
-                                  color: '',
-                                },
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                  {
+                                    type: 'italic',
+                                  },
+                                ],
+                                text: 'Issuer',
                               },
                               {
-                                type: 'italic',
+                                type: 'text',
+                                marks: [
+                                  {
+                                    type: 'textStyle',
+                                    attrs: {
+                                      fontFamily: null,
+                                      fontSize: null,
+                                      color: '',
+                                    },
+                                  },
+                                ],
+                                text: ' (Year)',
                               },
                             ],
-                            text: 'Issuer',
-                          },
-                          {
-                            type: 'text',
-                            marks: [
-                              {
-                                type: 'textStyle',
-                                attrs: {
-                                  fontFamily: null,
-                                  fontSize: null,
-                                  color: '',
-                                },
-                              },
-                            ],
-                            text: ' (Year)',
                           },
                         ],
                       },
@@ -2613,8 +2780,8 @@ export const getTemplateContent = (
             ],
           },
         ],
+        title: 'Resume',
       };
-    }
     default:
       return null;
   }
