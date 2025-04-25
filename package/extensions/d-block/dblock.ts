@@ -112,7 +112,6 @@ export const DBlock = Node.create<DBlockOptions>({
           selection: { $head, from, to },
           doc,
         } = editor.state;
-
         const attrs = editor.getAttributes('textStyle');
 
         // Get the current node and its parent
