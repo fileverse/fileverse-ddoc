@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
-import { DdocProps, DdocEditorProps, EditorExtension } from './types';
+import { DdocProps, DdocEditorProps } from './types';
 import * as Y from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration';
 import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
@@ -60,10 +60,11 @@ export const useDdocEditor = ({
   onInvalidContentError,
   ignoreCorruptedData,
   isPresentationMode,
+  proExtensions,
   metadataProxyUrl,
+  extensions: externalExtensions,
   onCopyHeadingLink,
   isConnected,
-  extensions: editorExtensions,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
 
@@ -118,6 +119,7 @@ export const useDdocEditor = ({
     Collaboration.configure({
       document: ydoc,
     }),
+    ...(externalExtensions ? Object.values(externalExtensions) : []),
   ]);
 
   useEffect(() => {
@@ -256,55 +258,33 @@ export const useDdocEditor = ({
 
   // Use the isCreate flag and ref for timeout
   useEffect(() => {
-    const newExtensions = [...extensions];
+    if (
+      proExtensions?.TableOfContents &&
+      !extensions.some((ext) => ext.name === 'tableOfContents')
+    ) {
+      setExtensions([
+        ...extensions.filter((ext) => ext.name !== 'tableOfContents'),
+        proExtensions.TableOfContents.configure({
+          getIndex: proExtensions.getHierarchicalIndexes,
+          onUpdate: (content: any, isCreate: any) => {
+            // Only update state when necessary
+            if (isCreate) {
+              // Initial TOC creation
+              setTocItems(content);
+            } else {
+              // Debounce subsequent updates using ref
+              if (tocUpdateTimeoutRef.current) {
+                clearTimeout(tocUpdateTimeoutRef.current);
+              }
 
-    // Handle extensions from the extensions array
-    if (editorExtensions) {
-      (editorExtensions as EditorExtension[]).forEach((ext) => {
-        // Skip if extension already exists
-        if (newExtensions.some((existingExt) => existingExt.name === ext.name))
-          return;
-
-        // Handle TableOfContents extension
-        if (ext.name === 'TableOfContents' && ext.isPro) {
-          newExtensions.push(
-            ext.extension.configure({
-              getIndex: (editorExtensions as EditorExtension[]).find(
-                (e) => e.name === 'getHierarchicalIndexes',
-              )?.extension,
-              onUpdate: (content: any, isCreate: any) => {
-                // Only update state when necessary
-                if (isCreate) {
-                  // Initial TOC creation
-                  setTocItems(content);
-                } else {
-                  // Debounce subsequent updates using ref
-                  if (tocUpdateTimeoutRef.current) {
-                    clearTimeout(tocUpdateTimeoutRef.current);
-                  }
-
-                  tocUpdateTimeoutRef.current = window.setTimeout(() => {
-                    setTocItems(content);
-                    tocUpdateTimeoutRef.current = null;
-                  }, 300);
-                }
-              },
-            }),
-          );
-        }
-        // Handle ReminderBlock extension
-        else if (ext.name === 'ReminderBlock' && !ext.isPro) {
-          newExtensions.push(ext.extension);
-        }
-        // Handle other extensions
-        else {
-          newExtensions.push(ext.extension);
-        }
-      });
-    }
-
-    if (newExtensions.length !== extensions.length) {
-      setExtensions(newExtensions);
+              tocUpdateTimeoutRef.current = window.setTimeout(() => {
+                setTocItems(content);
+                tocUpdateTimeoutRef.current = null;
+              }, 300);
+            }
+          },
+        }),
+      ]);
     }
 
     // Clean up timeout on unmount
@@ -313,7 +293,7 @@ export const useDdocEditor = ({
         clearTimeout(tocUpdateTimeoutRef.current);
       }
     };
-  }, [editorExtensions]);
+  }, [proExtensions]);
 
   useEffect(() => {
     if (zoomLevel) {

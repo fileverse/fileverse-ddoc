@@ -1,4 +1,4 @@
-import { EditorContent, isTextSelection } from '@tiptap/react';
+import { EditorContent, Extension, isTextSelection } from '@tiptap/react';
 import { EditorBubbleMenu } from './components/editor-bubble-menu/editor-bubble-menu';
 import { DdocProps } from './types';
 import { ColumnsMenu } from './extensions/multi-column/menus';
@@ -109,6 +109,7 @@ const DdocEditor = forwardRef(
       renderThemeToggle,
       metadataProxyUrl,
       extensions,
+      proExtensions,
       onCopyHeadingLink,
       footerHeight,
     }: DdocProps,
@@ -184,6 +185,7 @@ const DdocEditor = forwardRef(
       isPresentationMode,
       metadataProxyUrl,
       extensions,
+      proExtensions,
       onCopyHeadingLink,
       isConnected,
     });
@@ -488,8 +490,9 @@ const DdocEditor = forwardRef(
                       activeCommentId={activeCommentId}
                       isCollabDocumentPublished={isCollabDocumentPublished}
                       onReminderCreate={
-                        extensions?.find((ext) => ext.name === 'ReminderBlock')
-                          ?.extension.options?.onReminderCreate
+                        extensions?.find(
+                          (ext: Extension) => ext.name === 'reminderBlock',
+                        )?.options?.onReminderCreate
                       }
                       isConnected={isConnected}
                     />

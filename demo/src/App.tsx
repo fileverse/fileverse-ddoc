@@ -20,7 +20,6 @@ import {
 } from '@tiptap-pro/extension-table-of-contents';
 import { ReminderBlock } from '../../package/extensions/reminder-block/reminder-block';
 import { Reminder } from '../../package/extensions/reminder-block/types';
-import { EditorExtension } from '../../package/types';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -330,33 +329,20 @@ function App() {
         onDeleteComment={handleDeleteComment}
         showTOC={showTOC}
         setShowTOC={setShowTOC}
+        proExtensions={{
+          TableOfContents: TableOfContents,
+          getHierarchicalIndexes: getHierarchicalIndexes,
+        }}
         extensions={[
-          {
-            name: 'TableOfContents',
-            extension: TableOfContents,
-            isPro: true
-          },
-          {
-            name: 'getHierarchicalIndexes',
-            extension: getHierarchicalIndexes,
-            isPro: true
-          },
-          {
-            name: 'ReminderBlock',
-            extension: ReminderBlock.configure({
-              onReminderCreate: handleReminderCreate,
-              onReminderDelete: handleReminderDelete,
-              onReminderUpdate: handleReminderUpdate,
-              reminders: [],
-            }),
-            isPro: false
-          }
-        ] as EditorExtension[]}
-        isConnected={isConnected}
-        connectViaWallet={async () => { }}
-        isLoading={false}
+          ReminderBlock.configure({
+            onReminderCreate: handleReminderCreate,
+            onReminderDelete: handleReminderDelete,
+            onReminderUpdate: handleReminderUpdate,
+            reminders: [],
+          })
+        ]}
         connectViaUsername={handleConnectViaUsername}
-        isDDocOwner={true}
+        isConnected={isConnected}
         onCopyHeadingLink={(link: string) => {
           navigator.clipboard.writeText(link);
         }}
