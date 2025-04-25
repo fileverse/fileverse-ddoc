@@ -112,6 +112,7 @@ export const DBlock = Node.create<DBlockOptions>({
           selection: { $head, from, to },
           doc,
         } = editor.state;
+        const attrs = editor.getAttributes('textStyle');
 
         // Get the current node and its parent
         const currentNode = $head.node($head.depth);
@@ -135,6 +136,7 @@ export const DBlock = Node.create<DBlockOptions>({
               .chain()
               .setDBlock()
               .focus(from + 4)
+              .setMark('textStyle', attrs)
               .run();
           }
         }
@@ -199,6 +201,7 @@ export const DBlock = Node.create<DBlockOptions>({
                 .deleteRange({ from, to })
                 .setDBlock()
                 .focus(from + 4)
+                .setMark('textStyle', attrs)
                 .run();
             }
 
@@ -262,6 +265,7 @@ export const DBlock = Node.create<DBlockOptions>({
                   return false;
                 })
                 .focus(from + 6)
+                .setMark('textStyle', attrs)
                 .run();
             }
 
@@ -316,7 +320,12 @@ export const DBlock = Node.create<DBlockOptions>({
 
           try {
             if (currentActiveNodeType === 'codeBlock') {
-              return editor.chain().newlineInCode().focus().run();
+              return editor
+                .chain()
+                .newlineInCode()
+                .setMark('textStyle', attrs)
+                .focus()
+                .run();
             }
 
             if (
@@ -334,6 +343,7 @@ export const DBlock = Node.create<DBlockOptions>({
                   ],
                 })
                 .focus(from + 4)
+                .setMark('textStyle', attrs)
                 .run();
             } else if (
               currentActiveNodeType === 'columns' ||
@@ -356,6 +366,7 @@ export const DBlock = Node.create<DBlockOptions>({
                   },
                 )
                 .focus(from)
+                .setMark('textStyle', attrs)
                 .run();
             }
 
@@ -369,6 +380,7 @@ export const DBlock = Node.create<DBlockOptions>({
                 },
               )
               .focus(from + 4)
+              .setMark('textStyle', attrs)
               .run();
           } catch (error) {
             console.error(`Error inserting content into dBlock node: ${error}`);
