@@ -42,6 +42,7 @@ export default function CodeBlockNodeView({
   node,
   updateAttributes,
   editor,
+  deleteNode,
 }: NodeViewProps) {
   // Read attributes with sensible defaults
   const language = node.attrs.language || 'plaintext';
@@ -62,7 +63,7 @@ export default function CodeBlockNodeView({
           )}
         >
           {/* Language select */}
-          <div className="min-w-fit">
+          <Tooltip text="Select language">
             <Select
               value={language}
               onValueChange={(value: string) =>
@@ -89,54 +90,60 @@ export default function CodeBlockNodeView({
                 ))}
               </SelectContent>
             </Select>
-          </div>
+          </Tooltip>
           {/* Toolbar */}
           <div className="flex flex-row gap-4 items-center">
             <Tooltip text="Copy code">
               <LucideIcon
                 name="Copy"
                 size="sm"
-                className="cursor-pointer"
                 onClick={() => navigator.clipboard.writeText(code)}
               />
             </Tooltip>
-            <Tooltip text="Toggle line numbers">
+            <Tooltip text="Line numbers">
               <LucideIcon
                 name="List"
                 size="sm"
-                className={cn('cursor-pointer')}
                 onClick={() => updateAttributes({ lineNumbers: !lineNumbers })}
               />
             </Tooltip>
-            <Tooltip text="Toggle word wrap">
+            <Tooltip text="Word wrap">
               <LucideIcon
                 name="WrapText"
                 size="sm"
-                className={cn('cursor-pointer')}
                 onClick={() => updateAttributes({ wordWrap: !wordWrap })}
               />
             </Tooltip>
-            <Select
-              value={String(tabSize)}
-              onValueChange={(value: string) =>
-                updateAttributes({ tabSize: Number(value) })
-              }
-            >
-              <SelectTrigger className="w-[80px] text-helper-text-sm h-7 px-2 py-1 color-bg-secondary border-none">
-                <span>Tab: {tabSize}</span>
-              </SelectTrigger>
-              <SelectContent className="min-w-[60px] max-h-60 overflow-y-auto ">
-                {TAB_SIZES.map((size) => (
-                  <SelectItem
-                    key={size}
-                    value={String(size)}
-                    className="text-helper-text-sm"
-                  >
-                    {size}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Tooltip text="Tab size">
+              <Select
+                value={String(tabSize)}
+                onValueChange={(value: string) =>
+                  updateAttributes({ tabSize: Number(value) })
+                }
+              >
+                <SelectTrigger className="w-[80px] text-helper-text-sm h-7 px-2 py-1 color-bg-secondary border-none">
+                  <span>Tab: {tabSize}</span>
+                </SelectTrigger>
+                <SelectContent className="min-w-[60px] max-h-60 overflow-y-auto ">
+                  {TAB_SIZES.map((size) => (
+                    <SelectItem
+                      key={size}
+                      value={String(size)}
+                      className="text-helper-text-sm"
+                    >
+                      {size}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Tooltip>
+            <Tooltip text="Delete code block">
+              <LucideIcon
+                name="Trash2"
+                size="sm"
+                onClick={() => deleteNode()}
+              />
+            </Tooltip>
           </div>
         </div>
         <div className="flex flex-row overflow-x-auto w-full p-0 font-mono font-medium select-text pointer-events-auto">
@@ -156,7 +163,13 @@ export default function CodeBlockNodeView({
               ))}
             </span>
           )}
-          <NodeViewContent as="code" className="leading-5 " />
+          <NodeViewContent
+            as="code"
+            className={cn(
+              'leading-5',
+              wordWrap ? 'min-w-fit' : 'min-w-[600px] overflow-x-auto',
+            )}
+          />
         </div>
       </pre>
     </NodeViewWrapper>

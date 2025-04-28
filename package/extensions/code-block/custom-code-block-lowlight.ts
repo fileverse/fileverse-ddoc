@@ -1,6 +1,7 @@
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import CodeBlockNodeView from './components/code-block-node-view';
+import { TextSelection } from 'prosemirror-state';
 
 export const CustomCodeBlockLowlight = CodeBlockLowlight.extend({
   addNodeView() {
@@ -86,8 +87,23 @@ export const CustomCodeBlockLowlight = CodeBlockLowlight.extend({
             charCount += lines[i].length + 1;
           }
 
-          for (let i = fromLine; i <= toLine; i++) {
-            lines[i] = ' '.repeat(tabSize) + lines[i];
+          // If cursor is at the start of a line, indent that line
+          if (start === charCount - lines[fromLine].length - 1) {
+            for (let i = fromLine; i <= toLine; i++) {
+              if (lines[i].length === 0) {
+                lines[i] = ' '.repeat(tabSize);
+              } else {
+                lines[i] = ' '.repeat(tabSize) + lines[i];
+              }
+            }
+          } else {
+            // If cursor is in the middle of a line, insert spaces at cursor position
+            const currentLine = lines[fromLine];
+            const cursorPos = start - (charCount - currentLine.length - 1);
+            lines[fromLine] =
+              currentLine.slice(0, cursorPos) +
+              ' '.repeat(tabSize) +
+              currentLine.slice(cursorPos);
           }
 
           const newText = lines.join('\n');
@@ -100,7 +116,7 @@ export const CustomCodeBlockLowlight = CodeBlockLowlight.extend({
           // Adjust cursor position
           const newFrom = $from.pos + tabSize;
           const newTo = $to.pos + tabSize;
-          tr.setSelection(state.selection.constructor.create(tr.doc, newFrom, newTo));
+          tr.setSelection(TextSelection.create(tr.doc, newFrom, newTo));
 
           return true;
         });
@@ -130,8 +146,26 @@ export const CustomCodeBlockLowlight = CodeBlockLowlight.extend({
             charCount += lines[i].length + 1;
           }
 
-          for (let i = fromLine; i <= toLine; i++) {
-            lines[i] = lines[i].replace(new RegExp(`^ {1,${tabSize}}`), '');
+          // If cursor is at the start of a line, outdent that line
+          if (start === charCount - lines[fromLine].length - 1) {
+            for (let i = fromLine; i <= toLine; i++) {
+              if (lines[i].length === 0) {
+                lines[i] = '';
+              } else {
+                lines[i] = lines[i].replace(new RegExp(`^ {1,${tabSize}}`), '');
+              }
+            }
+          } else {
+            // If cursor is in the middle of a line, remove spaces at cursor position
+            const currentLine = lines[fromLine];
+            const cursorPos = start - (charCount - currentLine.length - 1);
+            const spacesToRemove = Math.min(
+              tabSize,
+              currentLine.slice(0, cursorPos).length,
+            );
+            lines[fromLine] =
+              currentLine.slice(0, cursorPos - spacesToRemove) +
+              currentLine.slice(cursorPos);
           }
 
           const newText = lines.join('\n');
@@ -144,7 +178,7 @@ export const CustomCodeBlockLowlight = CodeBlockLowlight.extend({
           // Adjust cursor position
           const newFrom = $from.pos - tabSize;
           const newTo = $to.pos - tabSize;
-          tr.setSelection(state.selection.constructor.create(tr.doc, newFrom, newTo));
+          tr.setSelection(TextSelection.create(tr.doc, newFrom, newTo));
 
           return true;
         });
