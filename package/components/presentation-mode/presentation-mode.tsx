@@ -34,6 +34,7 @@ interface PresentationModeProps {
   slides: string[];
   setSlides: React.Dispatch<React.SetStateAction<string[]>>;
   renderThemeToggle?: () => JSX.Element;
+  isContentLoading: boolean;
 }
 
 const SlideContent = ({
@@ -99,6 +100,7 @@ export const PresentationMode = ({
   slides,
   setSlides,
   renderThemeToggle,
+  isContentLoading,
 }: PresentationModeProps) => {
   const [showLinkCopied, setShowLinkCopied] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -313,7 +315,7 @@ export const PresentationMode = ({
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isContentLoading) {
     return (
       <div className="fixed inset-0 color-bg-default flex flex-col items-center justify-center w-screen h-screen z-50">
         <div className="flex flex-col items-center gap-4">
