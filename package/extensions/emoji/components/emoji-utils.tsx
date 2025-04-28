@@ -1,8 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import emojiData from 'emojibase-data/en/data.json';
 
+function isRegionalIndicator(emoji: any) {
+  return emoji.label.includes('regional');
+}
+
 export function emojiSearch(query: string): { name: string; emoji: string }[] {
+  const filteredEmojiData = emojiData.filter(
+    (emoji) => !isRegionalIndicator(emoji),
+  );
+
   if (!query) {
-    const smilingEmojis = emojiData
+    const smilingEmojis = filteredEmojiData
       .filter((emoji) => emoji.group === 0)
       .slice(0, 10)
       .map((emoji) => ({
@@ -15,7 +24,7 @@ export function emojiSearch(query: string): { name: string; emoji: string }[] {
 
   const lowercaseQuery = query.toLowerCase();
 
-  const matches = emojiData
+  const matches = filteredEmojiData
     .filter(
       (emoji) =>
         emoji.shortcodes?.some((code) => code.startsWith(lowercaseQuery)) ||

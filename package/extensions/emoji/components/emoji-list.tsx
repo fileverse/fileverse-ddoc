@@ -70,7 +70,7 @@ export const EmojiList = forwardRef<HTMLDivElement, EmojiListProps>(
 
     return (
       <div
-        className="relative flex flex-col gap-1 overflow-auto rounded-lg border color-border-default color-bg-default p-2 shadow-elevation-3 no-scrollbar"
+        className="relative flex flex-col gap-1 overflow-y-auto max-h-64 rounded-lg border color-border-default color-bg-default p-2 shadow-elevation-3 no-scrollbar"
         ref={ref}
         id="emoji-list"
       >
@@ -83,7 +83,7 @@ export const EmojiList = forwardRef<HTMLDivElement, EmojiListProps>(
             }`}
             onClick={() => selectItem(index)}
           >
-            {item.emoji}:{item.name}:
+            {item.emoji} :{item.name}:
           </button>
         ))}
       </div>
