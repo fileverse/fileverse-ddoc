@@ -194,6 +194,14 @@
     }
   }
 
+  .code-block-bg {
+    background-color: #F8F9FA;
+
+    .dark & {
+      background-color: #1E1E1E;
+    }
+  }
+
   .custom-text-link {
     @apply hover:underline transition-colors cursor-pointer select-text pointer-events-auto;
     color: #5c0aff;
