@@ -41,23 +41,27 @@ export default function CodeBlockNodeView({
   const language = node.attrs.language || 'plaintext';
 
   return (
-    <NodeViewWrapper className="relative group">
-      <div className="absolute top-2 right-2 z-10 min-w-[160px]">
+    <NodeViewWrapper>
+      <div className="absolute top-1 right-1 z-10 min-w-fit">
         <Select
           value={language}
           onValueChange={(value: string) =>
             updateAttributes({ language: value })
           }
         >
-          <SelectTrigger className="w-[160px] text-body-sm h-7 px-2 py-1">
+          <SelectTrigger className="w-fit text-helper-text-sm h-7 px-2 py-1 rounded-none border-none rounded-tr-lg color-bg-secondary">
             <SelectValue placeholder="Select language" />
           </SelectTrigger>
-          <SelectContent className="min-w-[160px] max-h-60 overflow-y-auto text-body-sm">
+          <SelectContent className="min-w-[160px] max-h-60 overflow-y-auto text-helper-text-sm">
             {LANGUAGE_GROUPS.map((group) => (
               <SelectGroup key={group.label}>
                 <SelectLabel>{group.label}</SelectLabel>
                 {group.options.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
+                  <SelectItem
+                    key={opt.value}
+                    value={opt.value}
+                    className="text-helper-text-sm"
+                  >
                     {opt.label}
                   </SelectItem>
                 ))}
