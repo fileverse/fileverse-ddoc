@@ -716,13 +716,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
         @apply bg-transparent;
       }
     }
-
-    [data-type="columns"] {
-      width: 100%;
-      display: flex;
-      flex-direction: row;
-      justify-content: space-between;
-    }
   }
 
   &.preview-slide {
