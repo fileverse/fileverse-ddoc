@@ -103,6 +103,56 @@
       @apply h-12 w-2 top-[50%] right-1 cursor-col-resize absolute z-20 translate-y-[-50%] rounded;
     }
 
+    /* New: Corner Resize Handles */
+    .resize-handle {
+      position: absolute;
+      width: 8px;
+      height: 8px;
+      background: #5C0AFF;
+      border: 2px solid #5C0AFF;
+      z-index: 30;
+      box-shadow: 0 1px 4px rgba(162,89,255,0.15);
+      transition: background 0s, border 0s;
+    }
+    .resize-handle.handle-nw {
+      top: -4px;
+      left: -4px;
+      cursor: nwse-resize;
+    }
+    .resize-handle.handle-ne {
+      top: -4px;
+      right: -4px;
+      cursor: nesw-resize;
+    }
+    .resize-handle.handle-sw {
+      bottom: -4px;
+      left: -4px;
+      cursor: nesw-resize;
+    }
+    .resize-handle.handle-se {
+      bottom: -4px;
+      right: -4px;
+      cursor: nwse-resize;
+    }
+
+    /* New: Selection Border */
+    .resizable-selected-border {
+      outline: none;
+      transition: outline 0s;
+    }
+    .resize-handle {
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0s;
+    }
+    .group:hover .resizable-selected-border {
+      outline: 2px solid #5C0AFF;
+    }
+    .group:hover .resize-handle {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
     .btn {
       @apply inline-flex items-center px-2.5 py-1.5 border border-transparent text-xs font-medium text-gray-700 bg-gray-100 hover:bg-gray-200;
     }

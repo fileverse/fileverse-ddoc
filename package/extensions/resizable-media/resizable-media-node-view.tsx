@@ -9,6 +9,8 @@ import ToolbarButton from '../../common/toolbar-button';
 import { SecureImage } from '../../components/secure-image.tsx';
 
 let lastClientX: number;
+let activeResizeHandle: null | 'nw' | 'ne' | 'sw' | 'se' = null;
+
 interface WidthAndHeight {
   width: number;
   height: number;
@@ -89,16 +91,12 @@ export const ResizableMediaNodeView = ({
         // Aspect Ratio from its original size
         setAspectRatio(
           (resizableImgRef.current as HTMLImageElement).naturalWidth /
-            (resizableImgRef.current as HTMLImageElement).naturalHeight,
+          (resizableImgRef.current as HTMLImageElement).naturalHeight,
         );
       };
     }
 
     setTimeout(() => calculateMediaActionActiveStates(), 200);
-  };
-
-  const setLastClientX = (x: number) => {
-    lastClientX = x;
   };
 
   useEffect(() => {
@@ -107,39 +105,6 @@ export const ResizableMediaNodeView = ({
 
   const limitWidthOrHeight = ({ width, height }: WidthAndHeight) =>
     width < 200 || height < 200;
-
-  const documentHorizontalMouseMove = (e: MouseEvent | TouchEvent) => {
-    // Determine if the event is a touch event and extract clientX accordingly
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-
-    setTimeout(() => onHorizontalMouseMove(clientX));
-  };
-
-  const startHorizontalResize = (e: MouseEvent | TouchEvent) => {
-    e.stopPropagation();
-    // Check if it's a touch event and extract the clientX accordingly
-    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-    lastClientX = clientX;
-
-    setTimeout(() => {
-      // Use both mouse and touch events for move and end actions
-      document.addEventListener('mousemove', documentHorizontalMouseMove);
-      document.addEventListener('mouseup', stopHorizontalResize);
-      document.addEventListener('touchmove', documentHorizontalMouseMove);
-      document.addEventListener('touchend', stopHorizontalResize);
-    });
-
-    setIsMouseDown(true);
-  };
-
-  const stopHorizontalResize = () => {
-    lastClientX = -1;
-
-    document.removeEventListener('mousemove', documentHorizontalMouseMove);
-    document.removeEventListener('mouseup', stopHorizontalResize);
-
-    setIsMouseDown(false);
-  };
 
   const onHorizontalResize = (
     directionOfMouseMove: 'right' | 'left',
@@ -202,21 +167,6 @@ export const ResizableMediaNodeView = ({
     updateAttributes(newMediaDimensions);
   };
 
-  const onHorizontalMouseMove = (clientX: number) => {
-    if (lastClientX === -1) return;
-
-    const diff = lastClientX - clientX;
-
-    if (diff === 0) return;
-
-    const directionOfMouseMove: 'left' | 'right' = diff > 0 ? 'left' : 'right';
-
-    setTimeout(() => {
-      onHorizontalResize(directionOfMouseMove, Math.abs(diff));
-      lastClientX = clientX;
-    });
-  };
-
   const [isFloat, setIsFloat] = useState<boolean>();
 
   const [isAlign, setIsAlign] = useState<boolean>();
@@ -277,6 +227,64 @@ export const ResizableMediaNodeView = ({
     };
   }, [touchTimeout]);
 
+  // --- Resize Handle Logic ---
+  const startCornerResize =
+    (handle: 'nw' | 'ne' | 'sw' | 'se') => (e: MouseEvent | TouchEvent) => {
+      e.stopPropagation();
+      activeResizeHandle = handle;
+      // Support both mouse and touch
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      lastClientX = clientX;
+      document.addEventListener('mousemove', documentCornerMouseMove);
+      document.addEventListener('mouseup', stopCornerResize);
+      document.addEventListener('touchmove', documentCornerMouseMove);
+      document.addEventListener('touchend', stopCornerResize);
+      setIsMouseDown(true);
+    };
+
+  const stopCornerResize = () => {
+    lastClientX = -1;
+    activeResizeHandle = null;
+    document.removeEventListener('mousemove', documentCornerMouseMove);
+    document.removeEventListener('mouseup', stopCornerResize);
+    document.removeEventListener('touchmove', documentCornerMouseMove);
+    document.removeEventListener('touchend', stopCornerResize);
+    setIsMouseDown(false);
+  };
+
+  const documentCornerMouseMove = (e: MouseEvent | TouchEvent) => {
+    if (!activeResizeHandle) return;
+    const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+    // Only horizontal resize for now (width)
+    const diffX = clientX - lastClientX;
+    // For each handle, determine direction:
+    // ne, se: drag left (diffX < 0) => decrease width, drag right (diffX > 0) => increase width
+    // nw, sw: drag right (diffX > 0) => decrease width, drag left (diffX < 0) => increase width
+    let direction: 'left' | 'right';
+    let diff: number;
+    if (activeResizeHandle === 'ne' || activeResizeHandle === 'se') {
+      direction = diffX < 0 ? 'left' : 'right';
+      diff = Math.abs(diffX);
+    } else {
+      // 'nw' or 'sw'
+      direction = diffX > 0 ? 'left' : 'right';
+      diff = Math.abs(diffX);
+    }
+    onHorizontalResize(direction, diff);
+    lastClientX = clientX;
+  };
+
+  // Helper to normalize React and native events
+  const normalizeEvent =
+    (handler: (e: MouseEvent | TouchEvent) => void) =>
+      (e: React.MouseEvent | React.TouchEvent) => {
+        if ('nativeEvent' in e) {
+          handler(e.nativeEvent as MouseEvent | TouchEvent);
+        } else {
+          handler(e as unknown as MouseEvent | TouchEvent);
+        }
+      };
+
   return (
     <NodeViewWrapper
       as="article"
@@ -300,7 +308,7 @@ export const ResizableMediaNodeView = ({
       >
         <div
           className={cn(
-            'relative',
+            'relative resizable-selected-border',
             node.attrs.dataAlign === 'start' && 'self-start',
             node.attrs.dataAlign === 'center' && 'self-center',
             node.attrs.dataAlign === 'end' && 'self-end',
@@ -358,15 +366,32 @@ export const ResizableMediaNodeView = ({
           )}
 
           {!isPreviewMode && (
-            <div
-              className="horizontal-resize-handle group-hover:bg-[#2E2E2E] group-hover:border-2 group-hover:border-[#E8EBEC]"
-              title="Resize"
-              onClick={({ clientX }) => setLastClientX(clientX)}
-              onMouseDown={(e: any) => startHorizontalResize(e)}
-              onMouseUp={stopHorizontalResize}
-              onTouchStart={(e: any) => startHorizontalResize(e)}
-              onTouchEnd={stopHorizontalResize}
-            />
+            <>
+              <div
+                className="resize-handle handle-nw"
+                title="Resize top-left"
+                onMouseDown={normalizeEvent(startCornerResize('nw'))}
+                onTouchStart={normalizeEvent(startCornerResize('nw'))}
+              />
+              <div
+                className="resize-handle handle-ne"
+                title="Resize top-right"
+                onMouseDown={normalizeEvent(startCornerResize('ne'))}
+                onTouchStart={normalizeEvent(startCornerResize('ne'))}
+              />
+              <div
+                className="resize-handle handle-sw"
+                title="Resize bottom-left"
+                onMouseDown={normalizeEvent(startCornerResize('sw'))}
+                onTouchStart={normalizeEvent(startCornerResize('sw'))}
+              />
+              <div
+                className="resize-handle handle-se"
+                title="Resize bottom-right"
+                onMouseDown={normalizeEvent(startCornerResize('se'))}
+                onTouchStart={normalizeEvent(startCornerResize('se'))}
+              />
+            </>
           )}
         </div>
 
