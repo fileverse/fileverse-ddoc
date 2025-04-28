@@ -41,6 +41,7 @@ import { uploadFn } from '../utils/upload-images';
 import LinkPreview from './link-preview/link-preview';
 import { Callout } from './callout/callout';
 import { FontSize } from './font-size';
+import { Emoji } from './emoji/emoji';
 
 export const defaultExtensions = (
   onError: (error: string) => void,
@@ -219,6 +220,7 @@ export const defaultExtensions = (
     metadataProxyUrl: metadataProxyUrl,
   }),
   Callout,
+  Emoji,
 ];
 
 export const createInputRule = (
