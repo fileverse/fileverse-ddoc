@@ -383,6 +383,7 @@ const DdocEditor = forwardRef(
                 slides={slides}
                 setSlides={setSlides}
                 renderThemeToggle={renderThemeToggle}
+                isContentLoading={isContentLoading}
               />
             )}
             {editor && (
