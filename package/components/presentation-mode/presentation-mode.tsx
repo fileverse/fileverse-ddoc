@@ -120,16 +120,18 @@ export const PresentationMode = ({
     },
     [],
   );
-  const handlePresentationMode = async () => {
+  const handlePresentationMode = useCallback(async () => {
     if (!editor) return;
-    const editorElement = editor.view.dom;
-    const isEditorEmpty = editorElement.querySelector('.is-editor-empty');
+    if (!isPreviewMode) {
+      const editorElement = editor.view.dom;
+      const isEditorEmpty = editorElement.querySelector('.is-editor-empty');
 
-    if (isEditorEmpty) {
-      onClose();
-      // You'll need to pass an onError prop to show the toast
-      onError?.('Cannot enter presentation mode with empty content');
-      return;
+      if (isEditorEmpty) {
+        onClose();
+        // You'll need to pass an onError prop to show the toast
+        onError?.('Cannot enter presentation mode with empty content');
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -185,11 +187,11 @@ export const PresentationMode = ({
     setSlides(slideArray.filter((slide) => slide.trim().length > 0));
 
     setIsLoading(false);
-  };
+  }, [isPreviewMode, editor.state.doc]);
   // Add check for empty editor
   useEffect(() => {
     handlePresentationMode();
-  }, [editor]);
+  }, [editor.state.doc]);
 
   // Add this function to handle fullscreen mode
   const toggleFullscreen = useCallback(() => {
