@@ -6,7 +6,7 @@ import Suggestion from '@tiptap/suggestion';
 import tippy from 'tippy.js';
 
 import { EmojiList } from './components/emoji-list';
-import { emojiSearch } from './components/emojis';
+import { emojiSearch } from './components/emoji-utils';
 
 export const EXTENSION_PRIORITY_HIGHEST = 200;
 
