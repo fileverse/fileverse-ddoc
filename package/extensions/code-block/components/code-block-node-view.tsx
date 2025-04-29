@@ -80,10 +80,15 @@ export default function CodeBlockNodeView({
 
   return (
     <NodeViewWrapper className="w-full">
-      <pre className="rounded-lg border color-border-default w-full">
+      <pre
+        className={cn(
+          'rounded-lg border color-border-default w-full',
+          node.textContent.split('\n').length > 20 && 'max-h-[500px] overflow-y-auto no-scrollbar',
+        )}
+      >
         <div
           className={cn(
-            'flex flex-row gap-2 items-center justify-between color-bg-secondary absolute top-0 left-0 rounded-t-lg w-full border color-border-default px-2 py-1',
+            'flex flex-row gap-2 items-center justify-between color-bg-secondary absolute top-0 left-0 z-10 rounded-t-lg w-full border color-border-default px-2 py-1',
             isPreviewMode && 'hidden',
           )}
         >
@@ -151,7 +156,7 @@ export default function CodeBlockNodeView({
                   updateAttributes({ tabSize: Number(value) })
                 }
               >
-                <SelectTrigger className="w-[80px] text-helper-text-sm h-7 px-2 py-1 color-bg-secondary border-none">
+                <SelectTrigger className="w-[70px] text-helper-text-sm h-7 px-2 py-1 color-bg-secondary border-none">
                   <span>Tab: {tabSize}</span>
                 </SelectTrigger>
                 <SelectContent className="min-w-[60px] max-h-60 overflow-y-auto ">
