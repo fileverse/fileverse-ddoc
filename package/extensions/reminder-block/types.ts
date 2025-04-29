@@ -2,8 +2,8 @@ import React from 'react';
 export interface Reminder {
   id: string;
   title: string;
-  timestamp: number;
-  createdAt: number;
+  timestamp: string;
+  createdAt: string;
   status: 'pending' | 'completed' | 'cancelled';
   walletAddress?: string;
 }

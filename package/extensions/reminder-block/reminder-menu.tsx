@@ -70,8 +70,8 @@ export const ReminderMenu = forwardRef<HTMLDivElement, ReminderMenuProps>(
       const reminder = {
         id: uuid(),
         title,
-        timestamp: Date.now() + timeOffset,
-        createdAt: Date.now(),
+        timestamp: new Date(Date.now() + timeOffset).toISOString(),
+        createdAt: new Date().toISOString(),
         status: 'pending' as const,
       };
 
@@ -103,8 +103,8 @@ export const ReminderMenu = forwardRef<HTMLDivElement, ReminderMenuProps>(
       const reminder = {
         id: uuid(),
         title,
-        timestamp,
-        createdAt: Date.now(),
+        timestamp: date.toISOString(),
+        createdAt: new Date().toISOString(),
         status: 'pending' as const,
       };
 

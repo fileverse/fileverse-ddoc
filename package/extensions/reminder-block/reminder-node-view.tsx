@@ -7,14 +7,16 @@ export const ReminderNodeView = memo(
   ({ node, editor, deleteNode }: NodeViewProps) => {
     const reminder = node.attrs.reminder;
     const [isOverdue, setIsOverdue] = useState(
-      reminder?.timestamp ? reminder.timestamp < Date.now() : false,
+      reminder?.timestamp
+        ? new Date(reminder.timestamp).getTime() < Date.now()
+        : false,
     );
 
     const isPreviewMode = editor.isEditable === false;
 
     // Get all reminders in the document and sort them by timestamp
     const getAllReminders = useCallback(() => {
-      const reminders: { id: string; timestamp: number }[] = [];
+      const reminders: { id: string; timestamp: string }[] = [];
       editor.state.doc.descendants((node) => {
         if (node.type.name === 'reminderBlock') {
           reminders.push({
@@ -23,7 +25,10 @@ export const ReminderNodeView = memo(
           });
         }
       });
-      return reminders.sort((a, b) => a.timestamp - b.timestamp);
+      return reminders.sort(
+        (a, b) =>
+          new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime(),
+      );
     }, [editor]);
 
     // Navigate to the next/previous reminder
@@ -72,7 +77,7 @@ export const ReminderNodeView = memo(
       if (!isOverdue) {
         const checkOverdue = () => {
           const now = Date.now();
-          if (reminder.timestamp <= now) {
+          if (new Date(reminder.timestamp).getTime() <= now) {
             setIsOverdue(true);
           }
         };

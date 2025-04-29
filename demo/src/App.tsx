@@ -18,8 +18,6 @@ import {
   TableOfContents,
   getHierarchicalIndexes,
 } from '@tiptap-pro/extension-table-of-contents';
-import { ReminderBlock } from '../../package/extensions/reminder-block/reminder-block';
-import { Reminder } from '../../package/extensions/reminder-block/types';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -269,18 +267,6 @@ function App() {
     setIsConnected(true);
   };
 
-  const handleReminderCreate = async (reminder: Reminder) => {
-    console.log('Reminder created:', reminder);
-  };
-
-  const handleReminderDelete = async (reminderId: string) => {
-    console.log('Reminder deleted:', reminderId);
-  };
-
-  const handleReminderUpdate = async (reminder: Reminder) => {
-    console.log('Reminder updated:', reminder);
-  };
-
   return (
     <div>
       <DdocEditor
@@ -333,14 +319,6 @@ function App() {
           TableOfContents: TableOfContents,
           getHierarchicalIndexes: getHierarchicalIndexes,
         }}
-        extensions={[
-          ReminderBlock.configure({
-            onReminderCreate: handleReminderCreate,
-            onReminderDelete: handleReminderDelete,
-            onReminderUpdate: handleReminderUpdate,
-            reminders: [],
-          })
-        ]}
         connectViaUsername={handleConnectViaUsername}
         isConnected={isConnected}
         onCopyHeadingLink={(link: string) => {

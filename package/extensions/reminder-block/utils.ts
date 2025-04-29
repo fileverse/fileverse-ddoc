@@ -31,7 +31,7 @@ export const parseCustomDateTime = (
   }
 };
 
-export const formatDateForReminder = (timestamp: number) => {
+export const formatDateForReminder = (timestamp: string) => {
   const date = new Date(timestamp);
   const today = new Date();
   const tomorrow = new Date(today);
