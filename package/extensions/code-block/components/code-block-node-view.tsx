@@ -83,7 +83,8 @@ export default function CodeBlockNodeView({
       <pre
         className={cn(
           'rounded-lg border color-border-default w-full',
-          node.textContent.split('\n').length > 20 && 'max-h-[500px] overflow-y-auto no-scrollbar',
+          node.textContent.split('\n').length > 20 &&
+          'max-h-[500px] overflow-y-auto no-scrollbar',
         )}
       >
         <div
@@ -105,7 +106,10 @@ export default function CodeBlockNodeView({
                   <SelectValue placeholder="Select language" />
                   <span className="w-1"></span>
                 </SelectTrigger>
-                <SelectContent className="min-w-fit max-h-60 overflow-y-auto">
+                <SelectContent
+                  className="min-w-fit max-h-60 overflow-y-auto"
+                  showScrollButtons={false}
+                >
                   {LANGUAGE_GROUPS.map((group) => (
                     <SelectGroup key={group.label}>
                       <SelectLabel>{group.label}</SelectLabel>
@@ -159,7 +163,10 @@ export default function CodeBlockNodeView({
                 <SelectTrigger className="w-[70px] text-helper-text-sm h-7 px-2 py-1 color-bg-secondary border-none">
                   <span>Tab: {tabSize}</span>
                 </SelectTrigger>
-                <SelectContent className="min-w-[60px] max-h-60 overflow-y-auto ">
+                <SelectContent
+                  className="min-w-[60px] max-h-60 overflow-y-auto "
+                  showScrollButtons={false}
+                >
                   {TAB_SIZES.map((size) => (
                     <SelectItem
                       key={size}
