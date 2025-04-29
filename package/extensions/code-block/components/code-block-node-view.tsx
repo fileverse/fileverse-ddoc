@@ -82,14 +82,14 @@ export default function CodeBlockNodeView({
     <NodeViewWrapper className="w-full">
       <pre
         className={cn(
-          'rounded-lg border color-border-default w-full',
+          'rounded-lg border color-border-default w-full relative',
           node.textContent.split('\n').length > 20 &&
           'max-h-[500px] overflow-y-auto no-scrollbar',
         )}
       >
         <div
           className={cn(
-            'flex flex-row gap-2 items-center justify-between color-bg-secondary absolute top-0 left-0 z-10 rounded-t-lg w-full border color-border-default px-2 py-1',
+            'flex flex-row gap-2 items-center justify-between color-bg-secondary absolute top-0 left-0 z-10 rounded-t-lg w-full border-b color-border-default px-2 py-1',
             isPreviewMode && 'hidden',
           )}
         >
@@ -102,7 +102,7 @@ export default function CodeBlockNodeView({
                   updateAttributes({ language: value })
                 }
               >
-                <SelectTrigger className="w-fit text-helper-text-sm h-7 px-2 py-1 color-bg-secondary border-none">
+                <SelectTrigger className="!min-w-24 text-helper-text-sm h-7 px-2 py-1 color-bg-secondary border-none">
                   <SelectValue placeholder="Select language" />
                   <span className="w-1"></span>
                 </SelectTrigger>
@@ -188,6 +188,16 @@ export default function CodeBlockNodeView({
               className="mr-1"
               onClick={() => deleteNode()}
             />
+          </Tooltip>
+        </div>
+        <div
+          className={cn(
+            'absolute top-3 right-3 hidden z-10 color-bg-default',
+            isPreviewMode && 'flex',
+          )}
+        >
+          <Tooltip text="Copy code">
+            <LucideIcon name="Copy" size="sm" onClick={handleCopyCode} />
           </Tooltip>
         </div>
         <div
