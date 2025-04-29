@@ -181,6 +181,28 @@ export const CustomCodeBlockLowlight = CodeBlockLowlight.extend({
           return true;
         });
       },
+      Backspace: () => {
+        if (!this.editor.isActive('codeBlock')) return false;
+        return this.editor.commands.command(({ state }) => {
+          const { selection } = state;
+          const { $from } = selection;
+          const codeBlockPos = $from.before();
+          const codeBlockNode = state.doc.nodeAt(codeBlockPos);
+          if (!codeBlockNode || codeBlockNode.type.name !== 'codeBlock')
+            return false;
+
+          // Check if we're at the start of the first line
+          const isAtStartOfFirstLine = $from.pos === codeBlockPos + 1;
+          const isFirstLineEmpty = codeBlockNode.textContent.trim() === '';
+
+          // If we're at the start of the first line or the code block is empty, prevent deletion
+          if (isAtStartOfFirstLine || isFirstLineEmpty) {
+            return true;
+          }
+
+          return false;
+        });
+      },
     };
   },
 });
