@@ -88,7 +88,7 @@ export const ReminderMenu = forwardRef<HTMLDivElement, ReminderMenuProps>(
         setError('Please enter both date and time');
         return;
       }
-      date.setSeconds(0, 0);
+
       const timestamp = date.getTime();
       if (!timestamp) {
         setError('Invalid date or time format');
