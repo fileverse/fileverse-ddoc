@@ -152,20 +152,18 @@ export const CustomCodeBlockLowlight = CodeBlockLowlight.extend({
               if (lines[i].length === 0) {
                 lines[i] = '';
               } else {
-                lines[i] = lines[i].replace(new RegExp(`^ {1,${tabSize}}`), '');
+                // Remove up to tabSize spaces from the start of the line
+                const leadingSpaces = lines[i].match(/^[ ]*/)?.[0] || '';
+                const spacesToRemove = Math.min(tabSize, leadingSpaces.length);
+                lines[i] = lines[i].slice(spacesToRemove);
               }
             }
           } else {
-            // If cursor is in the middle of a line, remove spaces at cursor position
+            // If cursor is in the middle of a line, still outdent from the start
             const currentLine = lines[fromLine];
-            const cursorPos = start - (charCount - currentLine.length - 1);
-            const spacesToRemove = Math.min(
-              tabSize,
-              currentLine.slice(0, cursorPos).length,
-            );
-            lines[fromLine] =
-              currentLine.slice(0, cursorPos - spacesToRemove) +
-              currentLine.slice(cursorPos);
+            const leadingSpaces = currentLine.match(/^[ ]*/)?.[0] || '';
+            const spacesToRemove = Math.min(tabSize, leadingSpaces.length);
+            lines[fromLine] = currentLine.slice(spacesToRemove);
           }
 
           const newText = lines.join('\n');
