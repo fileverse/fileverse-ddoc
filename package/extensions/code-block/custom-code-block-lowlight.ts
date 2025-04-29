@@ -56,7 +56,7 @@ export const CustomCodeBlockLowlight = CodeBlockLowlight.extend({
       code: {
         default: '',
         parseHTML: (element) => element.textContent || '',
-        renderHTML: (attributes) => ({}),
+        renderHTML: () => ({}),
       },
     };
   },

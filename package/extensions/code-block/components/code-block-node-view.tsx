@@ -107,7 +107,7 @@ export default function CodeBlockNodeView({
                   <span className="w-1"></span>
                 </SelectTrigger>
                 <SelectContent
-                  className="min-w-fit max-h-60 overflow-y-auto"
+                  className="min-w-fit max-h-none"
                   showScrollButtons={false}
                 >
                   {LANGUAGE_GROUPS.map((group) => (
