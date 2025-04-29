@@ -233,7 +233,7 @@
   }
 
   [data-type='columns'] {
-    @apply grid grid-cols-1 md:grid-cols-[repeat(auto-fit,_minmax(100px,_1fr))] gap-2;
+    @apply grid grid-cols-2 gap-2 md:grid-cols-[repeat(auto-fit,_minmax(100px,_1fr))];
 
     & > [data-type='column'] > div > div {
       @apply px-2;

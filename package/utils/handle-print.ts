@@ -459,6 +459,14 @@ export const handleContentPrint = (content: string) => {
             padding-left: 16px;
             font-style: italic;
           }
+
+          /* Columns */
+          [data-type="columns"] {
+            width: 100%;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+          }
         }
       </style>
     </head>
