@@ -183,23 +183,32 @@ export const CustomCodeBlockLowlight = CodeBlockLowlight.extend({
       },
       Backspace: () => {
         if (!this.editor.isActive('codeBlock')) return false;
-        return this.editor.commands.command(({ state }) => {
+        return this.editor.commands.command(({ tr, state }) => {
           const { selection } = state;
-          const { $from } = selection;
+          const { $from, empty } = selection;
           const codeBlockPos = $from.before();
           const codeBlockNode = state.doc.nodeAt(codeBlockPos);
           if (!codeBlockNode || codeBlockNode.type.name !== 'codeBlock')
             return false;
 
-          // Check if we're at the start of the first line
-          const isAtStartOfFirstLine = $from.pos === codeBlockPos + 1;
-          const isFirstLineEmpty = codeBlockNode.textContent.trim() === '';
+          // If all content is selected and Backspace is pressed, ensure code block remains with a single empty line
+          const codeBlockTextLength = codeBlockNode.textContent.length;
+          const codeBlockStart = codeBlockPos + 1;
+          const codeBlockEnd = codeBlockStart + codeBlockTextLength;
 
-          // If we're at the start of the first line or the code block is empty, prevent deletion
-          if (isAtStartOfFirstLine || isFirstLineEmpty) {
+          if (
+            !empty &&
+            selection.from === codeBlockStart &&
+            selection.to === codeBlockEnd
+          ) {
+            // Replace all content with a single empty line
+            tr.replaceWith(codeBlockStart, codeBlockEnd, state.schema.text(''));
+            // Set cursor at the start
+            tr.setSelection(TextSelection.create(tr.doc, codeBlockStart));
             return true;
           }
 
+          // Allow normal Backspace behavior otherwise
           return false;
         });
       },

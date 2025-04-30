@@ -56,6 +56,7 @@ export default function CodeBlockNodeView({
   const shouldFocus = node.attrs.shouldFocus;
 
   const code = node.attrs.code || node.textContent || '';
+
   useEffect(() => {
     if (shouldFocus && codeRef.current) {
       codeRef.current.focus();
@@ -81,11 +82,7 @@ export default function CodeBlockNodeView({
   return (
     <NodeViewWrapper className="w-full">
       <pre
-        className={cn(
-          'rounded-lg border color-border-default w-full relative',
-          node.textContent.split('\n').length > 20 &&
-          'max-h-[500px] overflow-y-auto no-scrollbar',
-        )}
+        className={cn('rounded-lg border color-border-default w-full relative')}
       >
         <div
           className={cn(
@@ -202,46 +199,39 @@ export default function CodeBlockNodeView({
         </div>
         <div
           className={cn(
-            'bg-transparent flex flex-row overflow-x-auto w-full p-0 font-mono font-medium select-text pointer-events-auto',
+            'bg-transparent w-full p-0 font-mono select-text pointer-events-auto overflow-y-auto no-scrollbar',
             !isPreviewMode && 'pt-8',
+            node.textContent.split('\n').length > 20 && 'max-h-[500px]',
           )}
         >
-          {/* Line numbers */}
-          {node.textContent.length > 0 ? (
-            <span
-              aria-hidden="true"
-              className={cn(
-                'select-none font-mono pr-2 opacity-50 text-helper-text-sm color-text-secondary bg-transparent min-w-fit',
-                !lineNumbers && 'hidden',
-              )}
-            >
-              {node.textContent.split('\n').map((_: string, i: number) => (
-                <div key={i} className="leading-5 h-5">
-                  {i + 1}
-                </div>
-              ))}
-            </span>
-          ) : (
-            <span
-              aria-hidden="true"
-              className={cn(
-                'select-none font-mono pr-2 opacity-50 text-helper-text-sm color-text-secondary bg-transparent min-w-fit',
-                !lineNumbers && 'hidden',
-              )}
-            >
-              <div className="leading-5 h-5">1</div>
-            </span>
-          )}
-          <NodeViewContent
-            ref={codeRef}
-            as="code"
+          <div
             className={cn(
-              'leading-5 font-mono',
-              wordWrap ? 'min-w-fit' : 'min-w-[600px] overflow-x-auto',
-              node.textContent.length === 0 && 'min-h-[20px]',
+              'flex flex-row gap-3',
+              wordWrap ? 'min-w-fit' : 'min-w-[600px]',
             )}
-            onFocus={handleFocus}
-          />
+          >
+            {lineNumbers && (
+              <div className="flex-none text-right">
+                {node.textContent.split('\n').map((_, i) => (
+                  <div
+                    key={i}
+                    className="leading-5 h-5 text-helper-text-sm font-mono color-text-secondary opacity-50"
+                  >
+                    {i + 1}
+                  </div>
+                ))}
+              </div>
+            )}
+            <NodeViewContent
+              ref={codeRef}
+              as="code"
+              className={cn(
+                'leading-5 font-mono pl-4 flex-1',
+                node.textContent.length === 0 && 'min-h-[20px]',
+              )}
+              onFocus={handleFocus}
+            />
+          </div>
         </div>
       </pre>
     </NodeViewWrapper>
