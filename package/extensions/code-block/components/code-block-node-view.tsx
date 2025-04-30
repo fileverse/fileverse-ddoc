@@ -92,38 +92,38 @@ export default function CodeBlockNodeView({
         >
           <div className="flex flex-row gap-2 items-center">
             {/* Language select */}
-            <Tooltip text="Select language">
-              <Select
-                value={language}
-                onValueChange={(value: string) =>
-                  updateAttributes({ language: value })
-                }
-              >
-                <SelectTrigger className="!min-w-24 text-helper-text-sm h-7 px-2 py-1 color-bg-secondary border-none">
+            <Select
+              value={language}
+              onValueChange={(value: string) =>
+                updateAttributes({ language: value })
+              }
+            >
+              <SelectTrigger className="!min-w-24 text-helper-text-sm h-7 px-2 py-1 color-bg-secondary border-none">
+                <Tooltip text="Select language">
                   <SelectValue placeholder="Select language" />
                   <span className="w-1"></span>
-                </SelectTrigger>
-                <SelectContent
-                  className="min-w-fit max-h-none"
-                  showScrollButtons={false}
-                >
-                  {LANGUAGE_GROUPS.map((group) => (
-                    <SelectGroup key={group.label}>
-                      <SelectLabel>{group.label}</SelectLabel>
-                      {group.options.map((opt) => (
-                        <SelectItem
-                          key={opt.value}
-                          value={opt.value}
-                          className="text-helper-text-sm"
-                        >
-                          {opt.label}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Tooltip>
+                </Tooltip>
+              </SelectTrigger>
+              <SelectContent
+                className="min-w-fit max-h-none"
+                showScrollButtons={false}
+              >
+                {LANGUAGE_GROUPS.map((group) => (
+                  <SelectGroup key={group.label}>
+                    <SelectLabel>{group.label}</SelectLabel>
+                    {group.options.map((opt) => (
+                      <SelectItem
+                        key={opt.value}
+                        value={opt.value}
+                        className="text-helper-text-sm"
+                      >
+                        {opt.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="w-[1px] h-4 vertical-divider mx-1"></div>
 
             {/* Toolbar */}
