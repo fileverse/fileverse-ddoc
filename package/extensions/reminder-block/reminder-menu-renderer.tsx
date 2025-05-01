@@ -82,7 +82,14 @@ export function showReminderMenu(editor: Editor, range: Range) {
         {
           name: 'flip',
           options: {
-            fallbackPlacements: ['bottom', 'right'],
+            fallbackPlacements: ['bottom'],
+          },
+        },
+        {
+          name: 'preventOverflow',
+          options: {
+            altAxis: true,
+            tether: false,
           },
         },
       ],
