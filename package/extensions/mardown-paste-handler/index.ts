@@ -295,6 +295,19 @@ const MarkdownPasteHandler = (secureImageUploadUrl?: string) =>
               // Get the Markdown content from the clipboard
               const copiedData = clipboardData.getData('text/plain');
 
+              // Check if we're in a code block
+              const { state } = view;
+              const { selection } = state;
+              const { $from } = selection;
+              const isInCodeBlock = $from.parent.type.name === 'codeBlock';
+
+              // If we're in a code block, insert the raw content
+              if (isInCodeBlock) {
+                const transaction = state.tr.insertText(copiedData);
+                view.dispatch(transaction);
+                return true;
+              }
+
               // Check if the copied content is Markdown
               if (isMarkdown(copiedData)) {
                 handleMarkdownContent(view, copiedData, secureImageUploadUrl);
