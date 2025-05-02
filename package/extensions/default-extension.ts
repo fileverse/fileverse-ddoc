@@ -44,6 +44,8 @@ import { FontSize } from './font-size';
 import { CustomCodeBlockLowlight } from './code-block/custom-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
 
+import { Emoji } from './emoji/emoji';
+
 const lowlight = createLowlight(common);
 
 export const defaultExtensions = (
@@ -220,6 +222,7 @@ export const defaultExtensions = (
     metadataProxyUrl: metadataProxyUrl,
   }),
   Callout,
+  Emoji,
 ];
 
 export const createInputRule = (

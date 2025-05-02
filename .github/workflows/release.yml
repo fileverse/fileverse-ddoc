@@ -1,0 +1,62 @@
+name: Release and Publish
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-test-release-publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+          registry-url: 'https://registry.npmjs.org'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Get version from package.json
+        id: package-version
+        uses: martinbeentjes/npm-get-version-action@v1.3.1
+
+      - name: Generate changelog
+        id: changelog
+        uses: jaywcjlove/changelog-generator@v1.9.2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          filter-author: (dependabot|renovate\\[bot\\]|renovate-bot|Renovate Bot)
+          filter: '[R|r]elease[d]\s+[v|V]\d+\.\d+\.\d+'
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: v${{ steps.package-version.outputs.current-version }}
+          release_name: Release v${{ steps.package-version.outputs.current-version }}
+          body: |
+            # Release v${{ steps.package-version.outputs.current-version }}
+
+            ${{ steps.changelog.outputs.changelog }}
+          draft: false
+          prerelease: false
+
+      - name: Publish to npm
+        run: npm publish
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        # if version is already published, don't fail the build
+        if: ${{ steps.package-version.outputs.current-version }} != ${{ steps.package-version.outputs.previous-version }}
+        continue-on-error: true
