@@ -34,6 +34,7 @@ interface PresentationModeProps {
   slides: string[];
   setSlides: React.Dispatch<React.SetStateAction<string[]>>;
   renderThemeToggle?: () => JSX.Element;
+  isContentLoading: boolean;
 }
 
 const SlideContent = ({
@@ -99,6 +100,7 @@ export const PresentationMode = ({
   slides,
   setSlides,
   renderThemeToggle,
+  isContentLoading,
 }: PresentationModeProps) => {
   const [showLinkCopied, setShowLinkCopied] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -120,16 +122,18 @@ export const PresentationMode = ({
     },
     [],
   );
-  const handlePresentationMode = async () => {
+  const handlePresentationMode = useCallback(async () => {
     if (!editor) return;
-    const editorElement = editor.view.dom;
-    const isEditorEmpty = editorElement.querySelector('.is-editor-empty');
+    if (!isPreviewMode) {
+      const editorElement = editor.view.dom;
+      const isEditorEmpty = editorElement.querySelector('.is-editor-empty');
 
-    if (isEditorEmpty) {
-      onClose();
-      // You'll need to pass an onError prop to show the toast
-      onError?.('Cannot enter presentation mode with empty content');
-      return;
+      if (isEditorEmpty) {
+        onClose();
+        // You'll need to pass an onError prop to show the toast
+        onError?.('Cannot enter presentation mode with empty content');
+        return;
+      }
     }
 
     setIsLoading(true);
@@ -185,11 +189,11 @@ export const PresentationMode = ({
     setSlides(slideArray.filter((slide) => slide.trim().length > 0));
 
     setIsLoading(false);
-  };
+  }, [isPreviewMode, editor.state.doc]);
   // Add check for empty editor
   useEffect(() => {
     handlePresentationMode();
-  }, [editor]);
+  }, [editor.state.doc]);
 
   // Add this function to handle fullscreen mode
   const toggleFullscreen = useCallback(() => {
@@ -311,7 +315,7 @@ export const PresentationMode = ({
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isContentLoading) {
     return (
       <div className="fixed inset-0 color-bg-default flex flex-col items-center justify-center w-screen h-screen z-50">
         <div className="flex flex-col items-center gap-4">

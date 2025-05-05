@@ -244,6 +244,14 @@
     }
   }
 
+  .code-block-bg {
+    background-color: #F8F9FA;
+
+    .dark & {
+      background-color: #1E1E1E;
+    }
+  }
+
   .custom-text-link {
     @apply hover:underline transition-colors cursor-pointer select-text pointer-events-auto;
     color: #5c0aff;
@@ -283,7 +291,7 @@
   }
 
   [data-type='columns'] {
-    @apply grid grid-cols-1 md:grid-cols-[repeat(auto-fit,_minmax(100px,_1fr))] gap-2;
+    @apply grid grid-cols-2 gap-2 md:grid-cols-[repeat(auto-fit,_minmax(100px,_1fr))];
 
     & > [data-type='column'] > div > div {
       @apply px-2;
@@ -440,7 +448,6 @@
 .ProseMirror ol {
   margin-left: 2rem;
   text-wrap: text-wrap;
-  width: inherit;
 }
 .ProseMirror h1,
 .ProseMirror h2,
@@ -469,7 +476,7 @@
   background-color: transparent;
   color: #000;
   font-family: 'JetBrainsMono', monospace;
-  padding: 0.75rem 1rem;
+  padding: 0.75rem;
   border-radius: 0.5rem;
 
   .dark & {

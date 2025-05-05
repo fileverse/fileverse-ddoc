@@ -41,6 +41,12 @@ import { uploadFn } from '../utils/upload-images';
 import LinkPreview from './link-preview/link-preview';
 import { Callout } from './callout/callout';
 import { FontSize } from './font-size';
+import { CustomCodeBlockLowlight } from './code-block/custom-code-block-lowlight';
+import { common, createLowlight } from 'lowlight';
+
+import { Emoji } from './emoji/emoji';
+
+const lowlight = createLowlight(common);
 
 export const defaultExtensions = (
   onError: (error: string) => void,
@@ -87,13 +93,6 @@ export const defaultExtensions = (
           'pl-4 border-l-4 color-border-default italic color-text-secondary my-2',
       },
     },
-    codeBlock: {
-      HTMLAttributes: {
-        class:
-          'rounded-lg bg-transparent border color-border-default p-5 font-mono font-medium color-text-default select-text pointer-events-auto',
-      },
-      exitOnArrowDown: true,
-    },
     code: {
       HTMLAttributes: {
         class:
@@ -108,6 +107,10 @@ export const defaultExtensions = (
     horizontalRule: false,
     bulletList: false,
     listItem: false,
+  }),
+  CustomCodeBlockLowlight.configure({
+    lowlight,
+    defaultLanguage: 'plaintext',
   }),
   FontSize,
   Typography,
@@ -219,6 +222,7 @@ export const defaultExtensions = (
     metadataProxyUrl: metadataProxyUrl,
   }),
   Callout,
+  Emoji,
 ];
 
 export const createInputRule = (
