@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useMemo } from 'react';
 
 // Define the type for the context
 type EditingContextType = {
@@ -14,7 +14,13 @@ const EditingContext = createContext<EditingContextType>({
 });
 
 // Create a Hook to use this Context
-export const useEditingContext = () => useContext(EditingContext);
+export const useEditingContext = () => {
+  const context = useContext(EditingContext);
+  if (!context) {
+    throw new Error('useEditingContext must be used within an EditingProvider');
+  }
+  return context;
+};
 
 // Define the type for the provider props
 type EditingProviderProps = {
@@ -29,9 +35,11 @@ export const EditingProvider: React.FC<EditingProviderProps> = ({
   isPreviewMode,
   isPresentationMode,
 }) => {
+  const value = useMemo(
+    () => ({ isPreviewMode, isPresentationMode }),
+    [isPreviewMode, isPresentationMode],
+  );
   return (
-    <EditingContext.Provider value={{ isPreviewMode, isPresentationMode }}>
-      {children}
-    </EditingContext.Provider>
+    <EditingContext.Provider value={value}>{children}</EditingContext.Provider>
   );
 };

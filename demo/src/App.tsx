@@ -325,6 +325,9 @@ function App() {
           isLoading={false}
           connectViaUsername={handleConnectViaUsername}
           isDDocOwner={true}
+          onCopyHeadingLink={(link: string) => {
+            navigator.clipboard.writeText(link);
+          }}
         />
         <Toaster
           position={!isMobile ? 'bottom-right' : 'center-top'}

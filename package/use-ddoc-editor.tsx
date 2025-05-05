@@ -1,6 +1,6 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { WebrtcProvider } from 'y-webrtc';
 import { DdocProps, DdocEditorProps } from './types';
 import * as Y from 'yjs';
@@ -12,7 +12,7 @@ import { getCursor } from './utils/cursor';
 import { getAddressName, getTrimmedName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from './extensions/slash-command/slash-comand';
-import { EditorState } from '@tiptap/pm/state';
+import { EditorState, TextSelection } from '@tiptap/pm/state';
 import customTextInputRules from './extensions/customTextInputRules';
 import { PageBreak } from './extensions/page-break/page-break';
 import { fromUint8Array, toUint8Array } from 'js-base64';
@@ -24,6 +24,8 @@ import { CommentExtension as Comment } from './extensions/comment';
 import { handleContentPrint, handlePrint } from './utils/handle-print';
 import { Table } from './extensions/supercharged-table/extension-table';
 import { isBlackOrWhiteShade } from './utils/color-utils';
+import { useResponsive } from './utils/responsive';
+import { headingToSlug } from './utils/heading-to-slug';
 
 const usercolors = [
   '#30bced',
@@ -51,7 +53,6 @@ export const useDdocEditor = ({
   setCharacterCount,
   setWordCount,
   secureImageUploadUrl,
-  scrollPosition,
   ddocId,
   enableIndexeddbSync,
   unFocused,
@@ -61,6 +62,7 @@ export const useDdocEditor = ({
   isPresentationMode,
   proExtensions,
   metadataProxyUrl,
+  onCopyHeadingLink,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
 
@@ -97,6 +99,7 @@ export const useDdocEditor = ({
       (error: string) => onError?.(error),
       secureImageUploadUrl,
       metadataProxyUrl,
+      onCopyHeadingLink,
     ) as AnyExtension[]),
     SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
     customTextInputRules,
@@ -201,9 +204,16 @@ export const useDdocEditor = ({
     handleCommentInteraction(view, event);
   };
 
+  // Memoize the extensions array to avoid unnecessary re-renders
+  const memoizedExtensions = useMemo(() => extensions, [extensions]);
+
+  // Create a ref to store the timeout ID
+  const tocUpdateTimeoutRef = useRef<number | null>(null);
+
+  // Don't recreate the editor when extensions change
   const editor = useEditor(
     {
-      extensions,
+      extensions: memoizedExtensions,
       editorProps: {
         ...DdocEditorProps,
         handleDOMEvents: {
@@ -212,7 +222,8 @@ export const useDdocEditor = ({
             // prevent default event listeners from firing when slash command is active
             if (['ArrowUp', 'ArrowDown', 'Enter'].includes(event.key)) {
               const slashCommand = document.querySelector('#slash-command');
-              if (slashCommand) {
+              const emojiList = document.querySelector('#emoji-list');
+              if (slashCommand || emojiList) {
                 return true;
               }
             }
@@ -224,12 +235,13 @@ export const useDdocEditor = ({
         handleClick: handleCommentClick,
       },
       autofocus: unFocused ? false : 'start',
-      shouldRerenderOnTransaction: true,
       immediatelyRender: false,
+      shouldRerenderOnTransaction: false,
     },
-    [extensions, isPresentationMode],
+    [memoizedExtensions, isPresentationMode],
   );
 
+  // Use the isCreate flag and ref for timeout
   useEffect(() => {
     if (
       proExtensions?.TableOfContents &&
@@ -239,12 +251,33 @@ export const useDdocEditor = ({
         ...extensions.filter((ext) => ext.name !== 'tableOfContents'),
         proExtensions.TableOfContents.configure({
           getIndex: proExtensions.getHierarchicalIndexes,
-          onUpdate(content: any) {
-            setTocItems(content);
+          onUpdate: (content: any, isCreate: any) => {
+            // Only update state when necessary
+            if (isCreate) {
+              // Initial TOC creation
+              setTocItems(content);
+            } else {
+              // Debounce subsequent updates using ref
+              if (tocUpdateTimeoutRef.current) {
+                clearTimeout(tocUpdateTimeoutRef.current);
+              }
+
+              tocUpdateTimeoutRef.current = window.setTimeout(() => {
+                setTocItems(content);
+                tocUpdateTimeoutRef.current = null;
+              }, 300);
+            }
           },
         }),
       ]);
     }
+
+    // Clean up timeout on unmount
+    return () => {
+      if (tocUpdateTimeoutRef.current) {
+        clearTimeout(tocUpdateTimeoutRef.current);
+      }
+    };
   }, [proExtensions]);
 
   useEffect(() => {
@@ -259,7 +292,7 @@ export const useDdocEditor = ({
     }
   }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => { });
+  const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
@@ -332,8 +365,100 @@ export const useDdocEditor = ({
   const isLoadingInitialContent = (
     initialContent: string | JSONContent | string[] | null | undefined,
   ) => {
-    return !initialContent && initialContent !== '';
+    return initialContent === null;
   };
+
+  const hash = window.location.hash.startsWith('#')
+    ? window.location.hash.substring(1)
+    : window.location.hash;
+
+  const hashParams = new URLSearchParams(hash);
+  const heading = hashParams.get('heading');
+  const headingId = heading?.split('-').pop();
+  const { isNativeMobile } = useResponsive();
+
+  const scrollToHeading = useCallback(
+    (headingId: string) => {
+      if (editor) {
+        const allHeadings = editor.view.dom.querySelectorAll('[data-toc-id]');
+        const element = Array.from(allHeadings).find((el) =>
+          (el as HTMLElement).dataset.tocId?.includes(headingId),
+        );
+
+        if (!element) return;
+
+        const currentHeadingText = headingToSlug(
+          element?.textContent as string,
+        );
+        const urlHeadingText = heading?.split('-').slice(0, -1).join('-');
+        if (currentHeadingText !== urlHeadingText) {
+          hashParams.set('heading', `${currentHeadingText}-${headingId}`);
+          window.location.hash = hashParams.toString();
+        }
+
+        const pos = editor.view.posAtDOM(element as Node, 0);
+
+        // set focus
+        const tr = editor.view.state.tr;
+        tr.setSelection(new TextSelection(tr.doc.resolve(pos)));
+        editor.view.dispatch(tr);
+
+        // Find all possible scroll containers
+        const possibleContainers = [
+          document.querySelector('.ProseMirror'),
+          document.getElementById('editor-canvas'),
+          element.closest('.ProseMirror'),
+          element.closest('[class*="editor"]'),
+          editor.view.dom.parentElement,
+        ].filter(Boolean);
+
+        // Find the first scrollable container
+        const scrollContainer = possibleContainers.find(
+          (container) =>
+            container &&
+            (container.scrollHeight > container.clientHeight ||
+              window.getComputedStyle(container).overflow === 'auto' ||
+              window.getComputedStyle(container).overflowY === 'auto'),
+        );
+        if (scrollContainer) {
+          // Use requestAnimationFrame to ensure DOM updates are complete
+          requestAnimationFrame(() => {
+            const containerRect = scrollContainer.getBoundingClientRect();
+            const elementRect = (
+              element as HTMLElement
+            ).getBoundingClientRect();
+
+            // Calculate the scroll position to start the element at the top of the container
+            const scrollTop =
+              elementRect.top -
+              containerRect.top -
+              containerRect.height / (isNativeMobile ? 5 : 7) +
+              elementRect.height / (isNativeMobile ? 5 : 7);
+
+            scrollContainer.scrollBy({
+              top: scrollTop,
+              behavior: 'smooth',
+            });
+          });
+        }
+      }
+    },
+    [editor, isNativeMobile],
+  );
+
+  useEffect(() => {
+    if (!isPreviewMode || !headingId || isContentLoading) return;
+    setTimeout(() => {
+      scrollToHeading(headingId);
+    }, 100);
+  }, [
+    editor,
+    isPreviewMode,
+    isNativeMobile,
+    headingId,
+    isContentLoading,
+    scrollToHeading,
+  ]);
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -398,26 +523,10 @@ export const useDdocEditor = ({
       });
 
       initialContentSetRef.current = true;
+    } else if (initialContent !== null) {
+      // if initialContent is null then we are loading it from consumer app
+      setIsContentLoading(false);
     }
-
-    const scrollTimeoutId = setTimeout(() => {
-      if (ref.current && !!scrollPosition && editor) {
-        const coords = editor.view.coordsAtPos(scrollPosition);
-        const editorContainer = ref.current;
-        editorContainer.scrollTo({
-          top: editorContainer.scrollTop + coords.top - 500,
-          behavior: 'smooth',
-        });
-      }
-      initialContentSetRef.current = false;
-      if (editor && initialContent === undefined) {
-        setIsContentLoading(false);
-      }
-    });
-
-    return () => {
-      clearTimeout(scrollTimeoutId);
-    };
   }, [initialContent, editor, ydoc]);
 
   const startCollaboration = async () => {
@@ -546,12 +655,25 @@ export const useDdocEditor = ({
 
   // FOR AUTO TEXT STYLE CLEANUP WHEN DOCUMENT IS RENDERED
   const isDarkMode = useRef(localStorage.getItem('theme') !== null);
+  const initialDarkModeCleanupDone = useRef(false); // Flag to run only once
 
   useEffect(() => {
-    if (!editor || !initialContent || isContentLoading) return;
+    // Exit if not dark mode, editor not ready, content loading, or cleanup already done
+    if (
+      !editor ||
+      isContentLoading ||
+      !isDarkMode.current ||
+      initialDarkModeCleanupDone.current
+    ) {
+      return;
+    }
 
-    if (isDarkMode.current) {
+    // Only run if there's initial content to process
+    if (initialContent) {
       const timeoutId = setTimeout(() => {
+        // Double-check editor exists inside timeout
+        if (!editor) return;
+
         const { from, to } = editor.state.selection;
 
         // Get all text color marks
@@ -570,32 +692,41 @@ export const useDdocEditor = ({
           }
         });
 
-        // First, only remove color attribute from text styles
-        editor
-          .chain()
-          .selectAll()
-          .setColor('') // This removes only the color attribute
-          .run();
+        // Check if any marks need processing
+        if (marks.length > 0) {
+          // First, only remove color attribute from text styles
+          editor
+            .chain()
+            .selectAll()
+            .setColor('') // This removes only the color attribute
+            .run();
 
-        // Then, restore colors that aren't black/white shades
-        marks.forEach(({ from: markFrom, to: markTo, mark }) => {
-          const color = mark.attrs.color;
-          if (!isBlackOrWhiteShade(color)) {
-            editor
-              .chain()
-              .setTextSelection({ from: markFrom, to: markTo })
-              .setColor(color)
-              .run();
-          }
-        });
+          // Then, restore colors that aren't black/white shades
+          marks.forEach(({ from: markFrom, to: markTo, mark }) => {
+            const color = mark.attrs.color;
+            if (!isBlackOrWhiteShade(color)) {
+              editor
+                .chain()
+                .setTextSelection({ from: markFrom, to: markTo })
+                .setColor(color)
+                .run();
+            }
+          });
 
-        // Restore original selection
-        editor.commands.setTextSelection({ from, to });
+          // Restore original selection
+          editor.commands.setTextSelection({ from, to });
+        }
+
+        // Mark cleanup as done
+        initialDarkModeCleanupDone.current = true;
       }, 100);
 
       return () => clearTimeout(timeoutId);
+    } else {
+      // If there's no initial content, consider cleanup done for this load
+      initialDarkModeCleanupDone.current = true;
     }
-  }, [editor, initialContent, isContentLoading]);
+  }, [editor, initialContent, isContentLoading]); // Keep dependencies, the flag prevents re-runs
 
   return {
     editor,

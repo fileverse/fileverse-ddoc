@@ -1,10 +1,7 @@
 import { useState, useEffect, forwardRef } from 'react';
-import {
-  fetchImage,
-  decryptImage,
-  arrayBufferToBase64,
-} from '../utils/security.ts';
+import { fetchImage, decryptImage } from '../utils/security.ts';
 import { toByteArray } from 'base64-js';
+import { Skeleton } from '@fileverse/ui';
 
 type Props = {
   encryptedKey: string;
@@ -33,71 +30,84 @@ export const SecureImage = forwardRef<HTMLImageElement, Props>(
     },
     ref,
   ) => {
-    const [imageData, setImageData] = useState<string>('');
+    const [source, setSource] = useState<string>('');
 
     useEffect(() => {
       const imageReadyForDecryption = encryptedKey && url && iv && privateKey;
-
+      let isMounted = true;
+      let currentObjectUrl: string | null = null;
       if (imageReadyForDecryption) {
-        const handleDecryptImage = async () => {
+        const decryptAndSetImage = async () => {
           try {
             const imageBuffer = await fetchImage(url);
+            if (!imageBuffer || !isMounted) return;
 
-            if (!imageBuffer) {
-              return;
-            }
-
-            const result = await decryptImage({
+            const decryptedArrayBuffer = await decryptImage({
               encryptedKey,
               privateKey: toByteArray(privateKey),
               iv,
               imageBuffer,
             });
-            const src = `data:image/jpeg;base64,${arrayBufferToBase64(
-              result as ArrayBuffer,
-            )}`;
+            if (!isMounted || !decryptedArrayBuffer) return;
 
-            setImageData(src);
+            const blob = new Blob([decryptedArrayBuffer], {
+              type: 'image/jpeg',
+            });
+            currentObjectUrl = URL.createObjectURL(blob);
+            // add check before setting state
+            // in order to prevent react errors / warning that occurs when you set state when component is unmounting
+            if (isMounted) {
+              setSource(currentObjectUrl);
+            }
           } catch (error) {
             console.error('Error decrypting image:', error);
           }
         };
 
-        handleDecryptImage();
+        decryptAndSetImage();
       }
+
+      return () => {
+        isMounted = false;
+        if (currentObjectUrl) {
+          URL.revokeObjectURL(currentObjectUrl);
+        }
+      };
     }, [encryptedKey, url, iv, privateKey]);
 
-    return (
+    return source ? (
       <img
-        src={imageData}
+        src={source}
         alt={alt}
         className={className}
         width={width}
         height={height}
         ref={ref}
       />
-
-      // TODO: For figure caption later
-      //   <figure>
-      //   <img
-      //     src={imageData}
-      //     alt={alt}
-      //     className={className}
-      //     width={width}
-      //     height={height}
-      //     ref={ref}
-      //   />
-      //   <figcaption
-      //     contentEditable
-      //     className="text-center italic mt-2"
-      //     onInput={(e) => {
-      //       // const caption = (e.target as HTMLElement).innerText;
-      //       // updateAttributes({ caption, alt: caption });
-      //     }}
-      //     defaultValue={caption || alt || 'Add a caption'}
-      //   >
-      //   </figcaption>
-      // </figure>
+    ) : (
+      <Skeleton className={`w-[500px] h-[300px] rounded-lg`} />
     );
+
+    // TODO: For figure caption later
+    //   <figure>
+    //   <img
+    //     src={imageData}
+    //     alt={alt}
+    //     className={className}
+    //     width={width}
+    //     height={height}
+    //     ref={ref}
+    //   />
+    //   <figcaption
+    //     contentEditable
+    //     className="text-center italic mt-2"
+    //     onInput={(e) => {
+    //       // const caption = (e.target as HTMLElement).innerText;
+    //       // updateAttributes({ caption, alt: caption });
+    //     }}
+    //     defaultValue={caption || alt || 'Add a caption'}
+    //   >
+    //   </figcaption>
+    // </figure>
   },
 );

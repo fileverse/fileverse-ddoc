@@ -32,6 +32,12 @@ import { colors } from '../utils/colors';
 import { validateImageExtension } from '../utils/check-image-type';
 import { handleContentPrint } from '../utils/handle-print';
 import { useComments } from '../components/inline-comment/context/comment-context';
+import {
+  convertListToParagraphs,
+  convertToList,
+} from './editor-bubble-menu/node-selector';
+import { searchForSecureImageNodeAndEmbedImageContent } from '../extensions/mardown-paste-handler';
+import { inlineLoader } from '../utils/inline-loader';
 
 interface IEditorToolElement {
   icon: any;
@@ -42,6 +48,134 @@ interface IEditorToolElement {
 }
 
 export const fonts = [
+  {
+    title: 'Arial',
+    value: 'Arial, Helvetica, sans-serif',
+    command: (editor: Editor) => {
+      editor
+        .chain()
+        .focus()
+        .setFontFamily('Arial, Helvetica, sans-serif')
+        .run();
+    },
+  },
+  {
+    title: 'Calibri',
+    value: 'Calibri, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Calibri, sans-serif').run();
+    },
+  },
+  {
+    title: 'Comic Sans MS',
+    value: 'Comic Sans MS, Comic Sans',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Comic Sans MS, Comic Sans').run();
+    },
+  },
+  {
+    title: 'Cursive',
+    value: 'cursive',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('cursive').run();
+    },
+  },
+  {
+    title: 'Georgia',
+    value: 'Georgia, serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Georgia, serif').run();
+    },
+  },
+  {
+    title: 'Impact',
+    value: 'Impact, Charcoal, sans-serif',
+    command: (editor: Editor) => {
+      editor
+        .chain()
+        .focus()
+        .setFontFamily('Impact, Charcoal, sans-serif')
+        .run();
+    },
+  },
+  {
+    title: 'Inter',
+    value: 'Inter, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Inter, sans-serif').run();
+    },
+  },
+  {
+    title: 'Lato',
+    value: 'Lato, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Lato, sans-serif').run();
+    },
+  },
+  {
+    title: 'Lucida Grande',
+    value: 'Lucida Sans Unicode, Lucida Grande, sans-serif',
+    command: (editor: Editor) => {
+      editor
+        .chain()
+        .focus()
+        .setFontFamily('Lucida Sans Unicode, Lucida Grande, sans-serif')
+        .run();
+    },
+  },
+  {
+    title: 'Monospace',
+    value: 'monospace',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('monospace').run();
+    },
+  },
+  {
+    title: 'Palatino',
+    value: 'Palatino Linotype, Book Antiqua, Palatino, serif',
+    command: (editor: Editor) => {
+      editor
+        .chain()
+        .focus()
+        .setFontFamily('Palatino Linotype, Book Antiqua, Palatino, serif')
+        .run();
+    },
+  },
+  {
+    title: 'Playfair Display',
+    value: 'Playfair Display, serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Playfair Display, serif').run();
+    },
+  },
+  {
+    title: 'REM',
+    value: 'REM, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('REM, sans-serif').run();
+    },
+  },
+  {
+    title: 'Roboto',
+    value: 'Roboto, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Roboto, sans-serif').run();
+    },
+  },
+  {
+    title: 'Serif',
+    value: 'serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('serif').run();
+    },
+  },
+  {
+    title: 'Times New Roman',
+    value: 'Times New Roman, serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Times New Roman, serif').run();
+    },
+  },
   {
     title: 'Trebuchet MS',
     value: 'Trebuchet MS, sans-serif',
@@ -57,85 +191,37 @@ export const fonts = [
     },
   },
   {
-    title: 'Georgia',
-    value: 'Georgia, serif',
+    title: 'Volkhov',
+    value: 'Volkhov, serif',
     command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Georgia, serif').run();
-    },
-  },
-  {
-    title: 'Arial',
-    value: 'Arial, Helvetica, sans-serif',
-    command: (editor: Editor) => {
-      editor
-        .chain()
-        .focus()
-        .setFontFamily('Arial, Helvetica, sans-serif')
-        .run();
-    },
-  },
-  {
-    title: 'Comic Sans MS',
-    value: 'Comic Sans MS, Comic Sans',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Comic Sans MS, Comic Sans').run();
-    },
-  },
-  {
-    title: 'Impact',
-    value: 'Impact, Charcoal, sans-serif',
-    command: (editor: Editor) => {
-      editor
-        .chain()
-        .focus()
-        .setFontFamily('Impact, Charcoal, sans-serif')
-        .run();
-    },
-  },
-  {
-    title: 'Palatino',
-    value: 'Palatino Linotype, Book Antiqua, Palatino, serif',
-    command: (editor: Editor) => {
-      editor
-        .chain()
-        .focus()
-        .setFontFamily('Palatino Linotype, Book Antiqua, Palatino, serif')
-        .run();
-    },
-  },
-  {
-    title: 'Lucida Grande',
-    value: 'Lucida Sans Unicode, Lucida Grande, sans-serif',
-    command: (editor: Editor) => {
-      editor
-        .chain()
-        .focus()
-        .setFontFamily('Lucida Sans Unicode, Lucida Grande, sans-serif')
-        .run();
-    },
-  },
-  {
-    title: 'Serif',
-    value: 'serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('serif').run();
-    },
-  },
-  {
-    title: 'Monospace',
-    value: 'monospace',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('monospace').run();
-    },
-  },
-  {
-    title: 'Cursive',
-    value: 'cursive',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('cursive').run();
+      editor.chain().focus().setFontFamily('Volkhov, serif').run();
     },
   },
 ];
+
+export const FONT_SIZES = [
+  8, 9, 10, 11, 12, 14, 16, 18, 24, 30, 32, 36, 48, 60, 72, 96,
+] as const;
+
+export const getFontSizeOptions = (editor?: Editor) => {
+  return FONT_SIZES.map((size) => ({
+    title: `${size}`,
+    value: `${size}px`,
+    label: size.toString(),
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontSize(`${size}px`).run();
+    },
+    isActive: () => editor?.isActive('fontSize', { size: `${size}px` }),
+  }));
+};
+
+export const getCurrentFontSize = (
+  editor: Editor | null,
+  currentSize: string,
+) => {
+  if (!editor) return '';
+  return currentSize ? currentSize.replace('px', '') : '';
+};
 
 export const ERR_MSG_MAP = {
   IMAGE_SIZE: 'Image size should be less than 10MB',
@@ -160,7 +246,7 @@ export const useEditorToolbar = ({
   onMarkdownImport,
   onPdfExport,
 }: {
-  editor: Editor;
+  editor: Editor | null;
   onError?: (errorString: string) => void;
   secureImageUploadUrl?: string;
   onMarkdownExport?: () => void;
@@ -256,7 +342,7 @@ export const useEditorToolbar = ({
       onClick: () => {
         editor?.chain().undo().run();
       },
-      isActive: editor?.can().undo(),
+      isActive: editor?.can().undo() || false,
     },
     {
       icon: 'Redo',
@@ -264,7 +350,7 @@ export const useEditorToolbar = ({
       onClick: () => {
         editor?.chain().redo().run();
       },
-      isActive: editor?.can().redo(),
+      isActive: editor?.can().redo() || false,
     },
     null,
   ];
@@ -286,53 +372,180 @@ export const useEditorToolbar = ({
       icon: 'Bold',
       title: 'Bold',
       onClick: () => editor?.chain().focus().toggleBold().run(),
-      isActive: editor?.isActive('bold'),
+      isActive: editor?.isActive('bold') || false,
     },
     {
       icon: 'Italic',
       title: 'Italic',
       onClick: () => editor?.chain().focus().toggleItalic().run(),
-      isActive: editor?.isActive('italic'),
+      isActive: editor?.isActive('italic') || false,
     },
     {
       icon: 'Underline',
       title: 'Underlined',
       onClick: () => editor?.chain().focus().toggleUnderline().run(),
-      isActive: editor?.isActive('underline'),
+      isActive: editor?.isActive('underline') || false,
     },
     {
       icon: 'Strikethrough',
       title: 'Strikethrough',
       onClick: () => editor?.chain().focus().toggleStrike().run(),
-      isActive: editor?.isActive('strike'),
+      isActive: editor?.isActive('strike') || false,
     },
     null,
     {
       icon: 'List',
       title: 'List',
       onClick: () => {
-        editor?.chain().focus().toggleBulletList().run();
+        if (!editor) return;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          return;
+        }
+
+        if (editor.isActive('bulletList')) {
+          const result = editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .setTextSelection({ from, to })
+            .focus()
+            .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
+        }
+
+        const result = editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'bulletList',
+                itemType: 'listItem',
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
         setToolVisibility(IEditorTool.NONE);
+        return result;
       },
-      isActive: editor?.isActive('bulletList'),
+      isActive: editor?.isActive('bulletList') || false,
     },
     {
       icon: 'ListOrdered',
       title: 'Ordered List',
       onClick: () => {
-        editor?.chain().focus().toggleOrderedList().run();
+        if (!editor) return;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          return;
+        }
+
+        if (editor.isActive('orderedList')) {
+          const result = editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .setTextSelection({ from, to })
+            .focus()
+            .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
+        }
+
+        const result = editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'orderedList',
+                itemType: 'listItem',
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
         setToolVisibility(IEditorTool.NONE);
+        return result;
       },
-      isActive: editor?.isActive('orderedList'),
+      isActive: editor?.isActive('orderedList') || false,
     },
     {
       icon: 'ListChecks',
       title: 'To-do List',
       onClick: () => {
-        editor?.chain().focus().toggleTaskList().run();
+        if (!editor) return;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          return;
+        }
+
+        if (editor.isActive('taskList')) {
+          const result = editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .setTextSelection({ from, to })
+            .focus()
+            .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
+        }
+
+        const result = editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'taskList',
+                itemType: 'taskItem',
+                hasAttrs: true,
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
         setToolVisibility(IEditorTool.NONE);
+        return result;
       },
-      isActive: editor?.isActive('taskList'),
+      isActive: editor?.isActive('taskList') || false,
     },
     {
       icon: 'AlignLeft',
@@ -344,7 +557,7 @@ export const useEditorToolbar = ({
       icon: 'TextQuote',
       title: 'Quote',
       onClick: () => editor?.chain().focus().toggleBlockquote().run(),
-      isActive: editor?.isActive('blockquote'),
+      isActive: editor?.isActive('blockquote') || false,
     },
     null,
     {
@@ -352,26 +565,27 @@ export const useEditorToolbar = ({
       title: 'Superscript',
       onClick: () =>
         editor?.chain().focus().unsetSubscript().toggleSuperscript().run(),
-      isActive: editor?.isActive('superscript'),
+      isActive: editor?.isActive('superscript') || false,
     },
     {
       icon: 'Subscript',
       title: 'Subscript',
       onClick: () =>
         editor?.chain().focus().unsetSuperscript().toggleSubscript().run(),
-      isActive: editor?.isActive('subscript'),
+      isActive: editor?.isActive('subscript') || false,
     },
     null,
     {
       icon: 'Link',
       title: 'Link',
       onClick: () => setToolVisibility(IEditorTool.LINK),
-      isActive: editor?.isActive('link'),
+      isActive: editor?.isActive('link') || false,
     },
     {
       icon: 'ImagePlus',
       title: 'Upload Image',
       onClick: () => {
+        if (!editor) return;
         editor?.chain().focus().deleteRange(editor.state.selection).run();
         const input = document.createElement('input');
         input.type = 'file';
@@ -410,7 +624,7 @@ export const useEditorToolbar = ({
         }
         editor?.chain().focus().toggleCode().run();
       },
-      isActive: editor?.isActive('code'),
+      isActive: editor?.isActive('code') || false,
       group: 'More',
     },
     {
@@ -422,7 +636,7 @@ export const useEditorToolbar = ({
         }
         editor?.chain().focus().toggleCodeBlock().run();
       },
-      isActive: editor?.isActive('codeBlock'),
+      isActive: editor?.isActive('codeBlock') || false,
       group: 'More',
     },
     {
@@ -445,8 +659,28 @@ export const useEditorToolbar = ({
       title: 'Export PDF',
       onClick: () => {
         if (editor) {
-          const closeAndPrint = () => {
-            handleContentPrint(editor.getHTML());
+          const closeAndPrint = async () => {
+            const { showLoader, removeLoader } = inlineLoader(
+              editor,
+              'Exporting PDF file ...',
+            );
+
+            const loader = showLoader();
+            const originalDoc = editor.state.doc;
+            const docWithEmbedImageContent =
+              await searchForSecureImageNodeAndEmbedImageContent(originalDoc);
+
+            const temporalEditor = new Editor({
+              extensions: editor.extensionManager.extensions.filter(
+                (e) => e.name !== 'collaboration',
+              ),
+              content: docWithEmbedImageContent.toJSON(),
+            });
+
+            const inlineHtml = temporalEditor.getHTML();
+            handleContentPrint(inlineHtml);
+            removeLoader(loader);
+            temporalEditor.destroy();
           };
           setFileExportsOpen(false);
           setTimeout(closeAndPrint, 200);
@@ -461,8 +695,8 @@ export const useEditorToolbar = ({
     {
       icon: 'FileInput',
       title: 'Import Markdown',
-      onClick: () => {
-        editor?.commands.uploadMarkdownFile();
+      onClick: async () => {
+        await editor?.commands.uploadMarkdownFile(secureImageUploadUrl);
         onMarkdownImport?.();
       },
       isActive: false,
@@ -485,7 +719,7 @@ export const useEditorToolbar = ({
       onClick: () => {
         editor?.chain().undo().run();
       },
-      isActive: editor?.can().undo(),
+      isActive: editor?.can().undo() || false,
     },
     {
       icon: 'Redo',
@@ -493,7 +727,7 @@ export const useEditorToolbar = ({
       onClick: () => {
         editor?.chain().redo().run();
       },
-      isActive: editor?.can().redo(),
+      isActive: editor?.can().redo() || false,
     },
     null,
     {
@@ -519,8 +753,51 @@ export const useEditorToolbar = ({
       icon: 'ListChecks',
       title: 'To-do list',
       onClick: () => {
-        editor?.chain().focus().toggleTaskList().run();
+        if (!editor) return;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          return;
+        }
+
+        if (editor.isActive('taskList')) {
+          const result = editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .setTextSelection({ from, to })
+            .focus()
+            .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
+        }
+
+        const result = editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'taskList',
+                itemType: 'taskItem',
+                hasAttrs: true,
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
         setToolVisibility(IEditorTool.NONE);
+        return result;
       },
       isActive: false,
     },
@@ -529,6 +806,7 @@ export const useEditorToolbar = ({
       icon: 'ImagePlus',
       title: 'Add image',
       onClick: () => {
+        if (!editor) return;
         editor?.chain().focus().deleteRange(editor.state.selection).run();
         // upload image
         const input = document.createElement('input');
@@ -635,6 +913,7 @@ export const TextHighlighter = ({
     </div>
   );
 };
+
 export const EditorFontFamily = ({
   elementRef,
   editor,
@@ -648,7 +927,8 @@ export const EditorFontFamily = ({
     <div
       ref={elementRef}
       className={cn(
-        'z-50 h-auto max-h-[330px] w-48 overflow-y-auto scroll-smooth color-bg-default px-1 py-2 shadow-elevation-1 transition-all rounded',
+        'z-50 h-auto w-48 color-bg-default px-1 py-2 shadow-elevation-1 transition-all rounded',
+        'max-h-[80vh] overflow-y-auto',
       )}
     >
       {fonts.map((font) => (
@@ -674,6 +954,7 @@ export const EditorFontFamily = ({
     </div>
   );
 };
+
 export const EditorAlignment = ({
   elementRef,
   editor,
@@ -730,9 +1011,24 @@ export const EditorAlignment = ({
       >
         <LucideIcon name="AlignRight" />
       </button>
+      <button
+        onClick={() => {
+          editor?.chain().focus().setTextAlign('justify').run();
+          setToolVisibility(IEditorTool.NONE);
+        }}
+        className={cn(
+          'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
+          editor.isActive({ textAlign: 'justify' })
+            ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
+            : 'hover:color-bg-default-hover',
+        )}
+      >
+        <LucideIcon name="AlignJustify" />
+      </button>
     </div>
   );
 };
+
 export const EditorList = ({
   elementRef,
   editor,
@@ -755,8 +1051,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleBulletList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${editor.isActive('bulletList') ? 'color-bg-default-hover' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${
+            editor.isActive('bulletList') ? 'color-bg-default-hover' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="List" />
         </button>
@@ -768,8 +1065,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleOrderedList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${editor.isActive('orderedList') ? 'color-bg-default-hover' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${
+            editor.isActive('orderedList') ? 'color-bg-default-hover' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListOrdered" />
         </button>
@@ -781,8 +1079,9 @@ export const EditorList = ({
             editor?.chain().focus().toggleTaskList().run();
             setToolVisibility(IEditorTool.NONE);
           }}
-          className={`hover:color-bg-default-hover ${editor.isActive('taskList') ? 'color-bg-default-hover' : ''
-            } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
+          className={`hover:color-bg-default-hover ${
+            editor.isActive('taskList') ? 'color-bg-default-hover' : ''
+          } rounded-lg w-8 h-8 p-1 flex  justify-center items-center`}
         >
           <LucideIcon name="ListChecks" />
         </button>
@@ -790,6 +1089,7 @@ export const EditorList = ({
     </div>
   );
 };
+
 export const LinkPopup = ({
   elementRef,
   editor,
@@ -850,6 +1150,12 @@ export const LinkPopup = ({
         onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
           setUrl(e.target.value)
         }
+        onKeyDown={(e: React.KeyboardEvent<HTMLInputElement>) => {
+          if (e.key === 'Enter') {
+            e.preventDefault();
+            apply();
+          }
+        }}
         className="w-full"
         placeholder="Add link here"
         value={url}
@@ -860,7 +1166,10 @@ export const LinkPopup = ({
         </Button>
         <Button
           variant="secondary"
-          onClick={() => editor.chain().focus().unsetLink().run()}
+          onClick={() => {
+            editor.chain().focus().unsetLink().run();
+            setToolVisibility(IEditorTool.NONE);
+          }}
           className="min-w-fit h-[36px]"
         >
           Unset
@@ -1048,7 +1357,7 @@ export const ScriptsPopup = ({
             className={cn(
               'flex items-center justify-between w-full px-2 py-1 text-body-sm',
               option.isActive() &&
-              'color-bg-brand hover:!bg-[#B6A02E] dark:text-[#363B3F]',
+                'color-bg-brand hover:!bg-[#B6A02E] dark:text-[#363B3F]',
             )}
           >
             <div className="flex items-center gap-2">
@@ -1066,12 +1375,13 @@ export const ScriptsPopup = ({
     </div>
   );
 };
+
 export const TextColor = ({
   editor,
   setVisibility,
   elementRef,
 }: {
-  editor: Editor;
+  editor: Editor | null;
   elementRef: React.RefObject<HTMLDivElement>;
   setVisibility: Dispatch<SetStateAction<IEditorTool>>;
 }) => {
@@ -1083,6 +1393,7 @@ export const TextColor = ({
       {colors.map((color) => (
         <div
           onClick={() => {
+            if (!editor) return;
             editor.chain().focus().setColor(color.color).run();
             setVisibility(IEditorTool.NONE);
           }}
@@ -1096,9 +1407,9 @@ export const TextColor = ({
             name="Check"
             className={cn(
               'w-[14px] aspect-square',
-              editor.isActive('textStyle', {
+              editor?.isActive('textStyle', {
                 color: color.color,
-              })
+              }) || false
                 ? 'visible'
                 : 'invisible',
             )}
@@ -1108,6 +1419,7 @@ export const TextColor = ({
       <Button
         variant="ghost"
         onClick={() => {
+          if (!editor) return;
           editor.chain().focus().unsetColor().run();
           setVisibility(IEditorTool.NONE);
         }}
@@ -1119,6 +1431,7 @@ export const TextColor = ({
     </div>
   );
 };
+
 export const TextHeading = ({
   editor,
   setVisibility,
@@ -1205,13 +1518,58 @@ export const TextHeading = ({
   );
 };
 
+export const FontSizePicker = ({
+  editor,
+  setVisibility,
+  elementRef,
+  currentSize,
+  onSetFontSize,
+}: {
+  editor: Editor;
+  elementRef: React.RefObject<HTMLDivElement>;
+  setVisibility: Dispatch<SetStateAction<IEditorTool>>;
+  currentSize?: string;
+  onSetFontSize: (fontSize: string) => void;
+}) => {
+  const fontSizes = getFontSizeOptions(editor);
+
+  return (
+    <div
+      ref={elementRef}
+      className={cn(
+        'z-50 flex flex-col justify-center items-center overflow-hidden rounded color-bg-default p-2 gap-1 shadow-elevation-1',
+      )}
+    >
+      {fontSizes.map((fontSize) => (
+        <button
+          onClick={() => {
+            onSetFontSize(fontSize.value);
+            setVisibility(IEditorTool.NONE);
+          }}
+          key={fontSize.title}
+          className={cn(
+            'flex w-full items-center justify-center rounded px-2 py-1 text-center text-sm color-text-default transition',
+            {
+              ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+                currentSize === fontSize.value,
+              ['hover:color-bg-default-hover']: currentSize !== fontSize.value,
+            },
+          )}
+        >
+          <p className="font-medium">{fontSize.title}</p>
+        </button>
+      ))}
+    </div>
+  );
+};
+
 export const TextFormatingPopup = ({
   editor,
   isOpen,
   setIsOpen,
   setToolVisibility,
 }: {
-  editor: Editor;
+  editor: Editor | null;
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
@@ -1221,12 +1579,50 @@ export const TextFormatingPopup = ({
       title: 'Text',
       description: 'Normal',
       icon: 'Type',
-      command: (editor: Editor) =>
-        editor.chain().toggleNode('paragraph', 'paragraph').run(),
+      command: (editor: Editor) => {
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          return;
+        }
+
+        // If it's already a list type, convert to paragraphs
+        if (
+          editor.isActive('bulletList') ||
+          editor.isActive('orderedList') ||
+          editor.isActive('taskList')
+        ) {
+          const result = editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .setTextSelection({ from, to })
+            .focus()
+            .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
+        }
+
+        // Otherwise use the default paragraph toggle
+        const result = editor
+          .chain()
+          .focus()
+          .toggleNode('paragraph', 'paragraph')
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
+        setToolVisibility(IEditorTool.NONE);
+        return result;
+      },
       isActive: () =>
-        editor.isActive('paragraph') &&
-        !editor.isActive('bulletList') &&
-        !editor.isActive('orderedList'),
+        editor?.isActive('paragraph') &&
+        !editor?.isActive('bulletList') &&
+        !editor?.isActive('orderedList'),
     },
     {
       title: 'Heading 1',
@@ -1234,8 +1630,9 @@ export const TextFormatingPopup = ({
       icon: 'Heading1',
       command: (editor: Editor) => {
         editor.chain().toggleHeading({ level: 1 }).run();
+        setToolVisibility(IEditorTool.NONE);
       },
-      isActive: () => editor.isActive('heading', { level: 1 }),
+      isActive: () => editor?.isActive('heading', { level: 1 }),
     },
     {
       title: 'Heading 2',
@@ -1243,8 +1640,9 @@ export const TextFormatingPopup = ({
       icon: 'Heading2',
       command: (editor: Editor) => {
         editor.chain().toggleHeading({ level: 2 }).run();
+        setToolVisibility(IEditorTool.NONE);
       },
-      isActive: () => editor.isActive('heading', { level: 2 }),
+      isActive: () => editor?.isActive('heading', { level: 2 }),
     },
     {
       title: 'Heading 3',
@@ -1252,8 +1650,9 @@ export const TextFormatingPopup = ({
       icon: 'Heading3',
       command: (editor: Editor) => {
         editor.chain().toggleHeading({ level: 3 }).run();
+        setToolVisibility(IEditorTool.NONE);
       },
-      isActive: () => editor.isActive('heading', { level: 3 }),
+      isActive: () => editor?.isActive('heading', { level: 3 }),
     },
   ];
 
@@ -1262,22 +1661,31 @@ export const TextFormatingPopup = ({
       title: 'Left',
       description: 'Left',
       icon: 'AlignLeft',
-      command: (editor: Editor) => editor.chain().setTextAlign('left').run(),
-      isActive: () => editor.isActive({ textAlign: 'left' }),
+      command: (editor: Editor) => {
+        editor.chain().setTextAlign('left').focus().run();
+        setToolVisibility(IEditorTool.NONE);
+      },
+      isActive: () => editor?.isActive({ textAlign: 'left' }),
     },
     {
       title: 'Center',
       description: 'Center',
       icon: 'AlignCenter',
-      command: (editor: Editor) => editor.chain().setTextAlign('center').run(),
-      isActive: () => editor.isActive({ textAlign: 'center' }),
+      command: (editor: Editor) => {
+        editor.chain().setTextAlign('center').focus().run();
+        setToolVisibility(IEditorTool.NONE);
+      },
+      isActive: () => editor?.isActive({ textAlign: 'center' }),
     },
     {
       title: 'Right',
       description: 'Right',
       icon: 'AlignRight',
-      command: (editor: Editor) => editor.chain().setTextAlign('right').run(),
-      isActive: () => editor.isActive({ textAlign: 'right' }),
+      command: (editor: Editor) => {
+        editor.chain().setTextAlign('right').focus().run();
+        setToolVisibility(IEditorTool.NONE);
+      },
+      isActive: () => editor?.isActive({ textAlign: 'right' }),
     },
   ];
 
@@ -1287,28 +1695,28 @@ export const TextFormatingPopup = ({
       description: 'Bold text',
       icon: 'Bold',
       command: (editor: Editor) => editor.chain().toggleBold().run(),
-      isActive: () => editor.isActive('bold'),
+      isActive: () => editor?.isActive('bold'),
     },
     {
       title: 'Italic',
       description: 'Italic text',
       icon: 'Italic',
       command: (editor: Editor) => editor.chain().toggleItalic().run(),
-      isActive: () => editor.isActive('italic'),
+      isActive: () => editor?.isActive('italic'),
     },
     {
       title: 'Underline',
       description: 'Underline text',
       icon: 'Underline',
       command: (editor: Editor) => editor.chain().toggleUnderline().run(),
-      isActive: () => editor.isActive('underline'),
+      isActive: () => editor?.isActive('underline'),
     },
     {
       title: 'Strikethrough',
       description: 'Strikethrough text',
       icon: 'Strikethrough',
       command: (editor: Editor) => editor.chain().toggleStrike().run(),
-      isActive: () => editor.isActive('strike'),
+      isActive: () => editor?.isActive('strike'),
     },
     {
       title: 'Superscript',
@@ -1316,7 +1724,7 @@ export const TextFormatingPopup = ({
       icon: 'Superscript',
       command: (editor: Editor) =>
         editor.chain().unsetSubscript().toggleSuperscript().run(),
-      isActive: () => editor.isActive('superscript'),
+      isActive: () => editor?.isActive('superscript'),
     },
     {
       title: 'Subscript',
@@ -1324,7 +1732,7 @@ export const TextFormatingPopup = ({
       icon: 'Subscript',
       command: (editor: Editor) =>
         editor.chain().unsetSuperscript().toggleSubscript().run(),
-      isActive: () => editor.isActive('subscript'),
+      isActive: () => editor?.isActive('subscript'),
     },
   ];
 
@@ -1334,7 +1742,7 @@ export const TextFormatingPopup = ({
       description: 'Code',
       icon: 'Code',
       command: (editor: Editor) => editor.chain().toggleCode().run(),
-      isActive: () => editor.isActive('code'),
+      isActive: () => editor?.isActive('code'),
     },
     {
       title: 'Link',
@@ -1348,7 +1756,7 @@ export const TextFormatingPopup = ({
       description: 'Quote',
       icon: 'TextQuote',
       command: (editor: Editor) => editor.chain().toggleBlockquote().run(),
-      isActive: () => editor.isActive('blockquote'),
+      isActive: () => editor?.isActive('blockquote'),
     },
   ];
 
@@ -1357,22 +1765,110 @@ export const TextFormatingPopup = ({
       title: 'Bullet List',
       description: 'Bullet list',
       icon: 'List',
-      command: (editor: Editor) => editor.chain().toggleBulletList().run(),
-      isActive: () => editor.isActive('bulletList'),
+      command: (editor: Editor) => {
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          return;
+        }
+
+        if (editor.isActive('bulletList')) {
+          const result = editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .setTextSelection({ from, to })
+            .focus()
+            .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
+        }
+
+        const result = editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'bulletList',
+                itemType: 'listItem',
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
+        setToolVisibility(IEditorTool.NONE);
+        return result;
+      },
+      isActive: () => editor?.isActive('bulletList'),
     },
     {
       title: 'Ordered List',
       description: 'Ordered list',
       icon: 'ListOrdered',
-      command: (editor: Editor) => editor.chain().toggleOrderedList().run(),
-      isActive: () => editor.isActive('orderedList'),
+      command: (editor: Editor) => {
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          return;
+        }
+
+        if (editor.isActive('orderedList')) {
+          const result = editor
+            .chain()
+            .focus()
+            .command((props) =>
+              convertListToParagraphs({ ...props, state, from, to }),
+            )
+            .setTextSelection({ from, to })
+            .focus()
+            .run();
+
+          setToolVisibility(IEditorTool.NONE);
+          return result;
+        }
+
+        const result = editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'orderedList',
+                itemType: 'listItem',
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
+        setToolVisibility(IEditorTool.NONE);
+        return result;
+      },
+      isActive: () => editor?.isActive('orderedList'),
     },
     {
       title: 'Code Block',
       description: 'Code block',
       icon: 'Braces',
       command: (editor: Editor) => editor.chain().toggleCodeBlock().run(),
-      isActive: () => editor.isActive('codeBlock'),
+      isActive: () => editor?.isActive('codeBlock'),
     },
   ];
 
@@ -1394,7 +1890,7 @@ export const TextFormatingPopup = ({
           <div className="flex justify-start sm:justify-center items-center gap-1">
             {headings.map((heading) => (
               <button
-                onClick={() => heading.command(editor)}
+                onClick={() => editor && heading.command(editor)}
                 key={heading.title}
                 className={cn(
                   'flex w-fit items-center font-medium space-x-2 rounded p-2 text-center text-sm color-text-default transition',
@@ -1413,7 +1909,7 @@ export const TextFormatingPopup = ({
             <div className="mobile-util-btn-group rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
               {textAlignments.map((textAlignment) => (
                 <button
-                  onClick={() => textAlignment.command(editor)}
+                  onClick={() => editor && textAlignment.command(editor)}
                   key={textAlignment.title}
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
@@ -1432,7 +1928,7 @@ export const TextFormatingPopup = ({
             <div className="mobile-util-btn-group rounded flex gap-1 justify-evenly w-full sm:w-fit p-1">
               {others.map((other) => (
                 <button
-                  onClick={() => other.command(editor)}
+                  onClick={() => editor && other.command(editor)}
                   key={other.title}
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
@@ -1452,7 +1948,7 @@ export const TextFormatingPopup = ({
             <div className="mobile-util-btn-group rounded flex gap-1 justify-evenly p-1 w-full sm:w-fit ">
               {textStyles.slice(0, 4).map((textStyle) => (
                 <button
-                  onClick={() => textStyle.command(editor)}
+                  onClick={() => editor && textStyle.command(editor)}
                   key={textStyle.title}
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
@@ -1470,7 +1966,7 @@ export const TextFormatingPopup = ({
             <div className="mobile-util-btn-group rounded flex gap-1 justify-evenly p-1 w-full sm:w-fit ">
               {textStyles.slice(4).map((textStyle) => (
                 <button
-                  onClick={() => textStyle.command(editor)}
+                  onClick={() => editor && textStyle.command(editor)}
                   key={textStyle.title}
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
@@ -1489,7 +1985,7 @@ export const TextFormatingPopup = ({
           <div className="mobile-util-btn-group rounded flex gap-1 justify-center self-center w-fit p-1">
             {listStyles.map((listStyle) => (
               <button
-                onClick={() => listStyle.command(editor)}
+                onClick={() => editor && listStyle.command(editor)}
                 key={listStyle.title}
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
@@ -1527,7 +2023,7 @@ export const TextFormatingPopup = ({
                   <button
                     className="mb-1 drop-shadow flex justify-center items-center cursor-pointer transition"
                     onClick={() => {
-                      editor.chain().unsetColor().run();
+                      editor && editor.chain().unsetColor().run();
                     }}
                   >
                     <LucideIcon name="Ban" className="w-6 h-6" />
@@ -1542,7 +2038,7 @@ export const TextFormatingPopup = ({
                   >
                     <button
                       onClick={() => {
-                        editor.chain().setColor(color.color).run();
+                        editor && editor.chain().setColor(color.color).run();
                       }}
                       key={color.color}
                       className={cn(
@@ -1554,7 +2050,7 @@ export const TextFormatingPopup = ({
                         name="Check"
                         className={cn(
                           'w-[14px] aspect-square',
-                          editor.isActive('textStyle', {
+                          editor?.isActive('textStyle', {
                             color: color.color,
                           })
                             ? 'visible'
@@ -1645,4 +2141,69 @@ export const TextColorPicker = ({ editor }: { editor: Editor }) => {
       }
     />
   );
+};
+
+export const checkActiveListsAndDBlocks = (editor: Editor) => {
+  const { state } = editor;
+  const { from, to } = state.selection;
+
+  const activeListTypes = ['bulletList', 'orderedList', 'taskList'].filter(
+    (type) => editor.isActive(type),
+  );
+
+  const activeDBlocks: number[] = [];
+  const activeListDBlocks: number[] = [];
+
+  // First pass: collect all dBlocks in selection
+  state.doc.nodesBetween(from, to, (node, pos) => {
+    if (node.type.name === 'dBlock') {
+      activeDBlocks.push(pos);
+      let containsList = false;
+      node.content.forEach((child) => {
+        if (
+          ['bulletList', 'orderedList', 'taskList'].includes(child.type.name)
+        ) {
+          containsList = true;
+        }
+      });
+      if (containsList) {
+        activeListDBlocks.push(pos);
+      }
+    }
+  });
+
+  // Check if there are multiple dBlocks with different content types
+  const hasMultipleContentTypes =
+    activeDBlocks.length > 1 &&
+    activeDBlocks.some((pos) => {
+      const node = state.doc.nodeAt(pos);
+      if (!node) return false;
+
+      // Check if this dBlock has a different content type than others
+      const hasListContent = node.content.content.some((child) =>
+        ['bulletList', 'orderedList', 'taskList'].includes(child.type.name),
+      );
+      const hasNonListContent = node.content.content.some(
+        (child) =>
+          !['bulletList', 'orderedList', 'taskList'].includes(child.type.name),
+      );
+
+      return (
+        (hasListContent && hasNonListContent) || // Mixed content in same dBlock
+        (hasListContent && activeListDBlocks.length < activeDBlocks.length)
+      ); // Some dBlocks don't have lists
+    });
+
+  return {
+    activeListTypes,
+    activeListDBlocks,
+    activeDBlocks,
+    from,
+    to,
+    state,
+    hasMultipleLists:
+      activeListTypes.length > 1 ||
+      (activeListDBlocks.length > 1 && activeListTypes.length === 1) ||
+      hasMultipleContentTypes,
+  };
 };

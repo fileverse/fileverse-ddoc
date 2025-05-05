@@ -1,5 +1,8 @@
+@import './fonts.css';
 @import '@fileverse/ui/styles';
 @import 'katex/dist/katex.min.css';
+@import 'highlight.js/styles/atom-one-light.css';
+@import 'highlight.js/styles/atom-one-dark.css';
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

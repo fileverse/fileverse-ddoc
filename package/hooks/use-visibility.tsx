@@ -13,6 +13,7 @@ export enum IEditorTool {
   TEXT_COLOR_PICKER,
   LINK_POPUP,
   SCRIPTS,
+  FONT_SIZE,
 }
 export default function useComponentVisibility(initialIsVisible: boolean) {
   const [isComponentVisible, setIsComponentVisible] =

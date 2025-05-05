@@ -9,8 +9,13 @@ import {
   Tooltip,
 } from '@fileverse/ui';
 import { useRef, useState, useEffect, useCallback } from 'react';
-import { CommentCardProps, CommentReplyProps, UserDisplayProps } from './types';
-import { useComments, useEnsName } from './context/comment-context';
+import {
+  CommentCardProps,
+  CommentReplyProps,
+  EnsStatus,
+  UserDisplayProps,
+} from './types';
+import { useComments } from './context/comment-context';
 import EnsLogo from '../../assets/ens.svg';
 import verifiedMark from '../../assets/verified-mark.png';
 import {
@@ -20,7 +25,17 @@ import {
 } from '../../utils/helpers';
 import { Spinner } from '../../common/spinner';
 
-const UserDisplay = ({ ensStatus, createdAt }: UserDisplayProps) => {
+const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
+  const { getEnsStatus, ensCache } = useComments();
+  const [ensStatus, setEnsStatus] = useState<EnsStatus>({
+    name: username,
+    isEns: false,
+  });
+
+  useEffect(() => {
+    getEnsStatus(username, setEnsStatus);
+  }, [username, ensCache]);
+
   return (
     <div className="flex justify-start items-center gap-2">
       <Avatar
@@ -28,8 +43,8 @@ const UserDisplay = ({ ensStatus, createdAt }: UserDisplayProps) => {
           ensStatus.isEns
             ? EnsLogo
             : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-              ensStatus.name,
-            )}`
+                ensStatus.name,
+              )}`
         }
         size="sm"
         className="min-w-6"
@@ -55,8 +70,6 @@ const CommentReply = ({
   createdAt,
   isLast,
 }: CommentReplyProps) => {
-  const ensStatus = useEnsName(username);
-
   return (
     <div className="flex flex-col gap-2 relative pl-4 pb-3 last:pb-0">
       <div
@@ -67,11 +80,7 @@ const CommentReply = ({
       <div className="absolute left-0 top-0 w-4">
         <div className="w-[10px] h-[20px] border-l border-b rounded-bl-lg custom-border" />
       </div>
-      {ensStatus.isLoading ? (
-        <UserDisplaySkeleton />
-      ) : (
-        <UserDisplay ensStatus={ensStatus} createdAt={createdAt} />
-      )}
+      <UserDisplay username={username} createdAt={createdAt} />
       <span className="text-body-sm flex flex-col gap-2 ml-3 pl-4 border-l custom-border whitespace-pre-wrap break-words">
         {renderTextWithLinks(reply)}
       </span>
@@ -102,7 +111,15 @@ export const CommentCard = ({
   const [showAllReplies, setShowAllReplies] = useState(false);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
   const { setOpenReplyId } = useComments();
-  const ensStatus = useEnsName(username);
+  const { getEnsStatus, ensCache } = useComments();
+  const [ensStatus, setEnsStatus] = useState<EnsStatus>({
+    name: username as string,
+    isEns: false,
+  });
+
+  useEffect(() => {
+    getEnsStatus(username as string, setEnsStatus);
+  }, [username, ensCache]);
 
   useEffect(() => {
     if (isDropdown) {
@@ -185,8 +202,8 @@ export const CommentCard = ({
                     ensStatus.isEns
                       ? EnsLogo
                       : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-                        reply.username || '',
-                      )}`
+                          reply.username || '',
+                        )}`
                   }
                   size="sm"
                   className="w-4 h-4 last:z-10 bg-transparent"
@@ -245,11 +262,7 @@ export const CommentCard = ({
       )}
     >
       <div className="flex justify-between items-center">
-        {ensStatus.isLoading ? (
-          <UserDisplaySkeleton />
-        ) : (
-          <UserDisplay ensStatus={ensStatus} createdAt={createdAt} />
-        )}
+        <UserDisplay username={username as string} createdAt={createdAt} />
         {version === '2' ? (
           <Tooltip
             text={isDisabled ? 'Available in a moment' : ''}
@@ -385,7 +398,7 @@ export const CommentCard = ({
 export const UserDisplaySkeleton = () => {
   return (
     <div className="flex justify-start items-center gap-2">
-      <Skeleton className="w-6 h-6 rounded-full" />
+      <Skeleton className="w-6  h-6 rounded-full" />
       <Skeleton className="w-32 h-4 rounded" />
     </div>
   );

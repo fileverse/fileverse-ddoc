@@ -39,6 +39,7 @@ export const sanitizeContent = ({
   ignoreCorruptedData = true,
   onInvalidContentError,
 }: SanitizeContentProps): JSONContent => {
+  if (!data) return { type: 'paragraph', content: [] };
   const sanitizedContent = { ...data };
 
   sanitizedContent.content = data.content

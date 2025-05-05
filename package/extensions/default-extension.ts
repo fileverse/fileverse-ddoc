@@ -40,11 +40,20 @@ import { ResizableMedia } from './resizable-media';
 import { uploadFn } from '../utils/upload-images';
 import LinkPreview from './link-preview/link-preview';
 import { AIWriter } from './ai-writer';
+import { Callout } from './callout/callout';
+import { FontSize } from './font-size';
+import { CustomCodeBlockLowlight } from './code-block/custom-code-block-lowlight';
+import { common, createLowlight } from 'lowlight';
+
+import { Emoji } from './emoji/emoji';
+
+const lowlight = createLowlight(common);
 
 export const defaultExtensions = (
   onError: (error: string) => void,
   secureImageUploadUrl?: string,
   metadataProxyUrl?: string,
+  onCopyHeadingLink?: (link: string) => void,
 ) => [
   FontFamily,
   StarterKit.configure({
@@ -85,13 +94,6 @@ export const defaultExtensions = (
           'pl-4 border-l-4 color-border-default italic color-text-secondary my-2',
       },
     },
-    codeBlock: {
-      HTMLAttributes: {
-        class:
-          'rounded-lg bg-transparent border color-border-default p-5 font-mono font-medium color-text-default select-text pointer-events-auto',
-      },
-      exitOnArrowDown: true,
-    },
     code: {
       HTMLAttributes: {
         class:
@@ -107,6 +109,11 @@ export const defaultExtensions = (
     bulletList: false,
     listItem: false,
   }),
+  CustomCodeBlockLowlight.configure({
+    lowlight,
+    defaultLanguage: 'plaintext',
+  }),
+  FontSize,
   Typography,
   TextAlign.configure({
     types: ['heading', 'paragraph'],
@@ -155,7 +162,7 @@ export const defaultExtensions = (
   }),
   ListItem.configure({
     HTMLAttributes: {
-      class: 'leading-normal',
+      class: 'leading-normal w-full',
     },
   }),
   DropCursor.configure({
@@ -170,6 +177,7 @@ export const defaultExtensions = (
   GapCursor,
   DBlock.configure({
     secureImageUploadUrl,
+    onCopyHeadingLink,
   }),
   TrailingNode,
   Document,
@@ -179,7 +187,7 @@ export const defaultExtensions = (
   EmbeddedTweet,
   actionButton,
   ColumnExtension,
-  MarkdownPasteHandler,
+  MarkdownPasteHandler(secureImageUploadUrl),
   Markdown.configure({
     html: true, // Allow HTML input/output
     tightLists: true, // No <p> inside <li> in markdown output
@@ -195,6 +203,10 @@ export const defaultExtensions = (
     addInlineMath: true,
     evaluation: false,
     delimiters: 'dollar',
+    katexOptions: {
+      throwOnError: false,
+      strict: true,
+    },
   }),
   Footnote,
   Superscript.configure({
@@ -211,6 +223,8 @@ export const defaultExtensions = (
     metadataProxyUrl: metadataProxyUrl,
   }),
   AIWriter,
+  Callout,
+  Emoji,
 ];
 
 export const createInputRule = (

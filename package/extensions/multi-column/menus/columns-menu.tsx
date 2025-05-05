@@ -19,8 +19,9 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
   }, [editor]);
 
   const shouldShow = useCallback(() => {
+    const isPreviewMode = !editor.isEditable;
     const isColumns = editor.isActive('columns');
-    return isColumns;
+    return isColumns && !isPreviewMode;
   }, [editor]);
 
   const onColumnLeft = useCallback(() => {
@@ -46,7 +47,7 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
       shouldShow={shouldShow}
       updateDelay={0}
       tippyOptions={{
-        offset: [0, 8],
+        offset: [0, 16],
         popperOptions: {
           modifiers: [{ name: 'flip', enabled: false }],
         },
@@ -59,7 +60,7 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
         sticky: 'popper',
       }}
     >
-      <Toolbar.Wrapper>
+      <Toolbar.Wrapper className="border color-border-default shadow-elevation-3">
         <ToolbarButton
           icon="PanelLeft"
           tooltip="Align left"
@@ -67,6 +68,7 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
             layout: ColumnLayout.AlignLeft,
           })}
           onClick={onColumnLeft}
+          size="sm"
         />
         <ToolbarButton
           icon="Columns2"
@@ -75,6 +77,7 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
             layout: ColumnLayout.AlignCenter,
           })}
           onClick={onColumnCenter}
+          size="sm"
         />
         <ToolbarButton
           icon="PanelRight"
@@ -83,12 +86,14 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
             layout: ColumnLayout.AlignRight,
           })}
           onClick={onColumnRight}
+          size="sm"
         />
         <ToolbarButton
           icon="Trash2"
           tooltip="Remove column"
           onClick={onRemoveColumn}
           isActive={false}
+          size="sm"
         />
       </Toolbar.Wrapper>
     </BaseBubbleMenu>

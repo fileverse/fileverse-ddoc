@@ -1,6 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Editor } from '@tiptap/react';
+import { Node } from '@tiptap/pm/model';
+
+// Fast lookup helpers to avoid using the expensive buildDocumentCache on every operation
+type HeadingLookupMap = Map<
+  string,
+  {
+    id: string;
+    level: number;
+    position: number;
+    nextSameLevelPos?: number;
+    children: string[];
+    parent?: string;
+  }
+>;
 
 interface UseHeadingCollapseProps {
   node: any;
@@ -10,6 +24,19 @@ interface UseHeadingCollapseProps {
   setCollapsedHeadings: (updater: (prev: Set<string>) => Set<string>) => void;
 }
 
+// Cache for document structure to avoid repeated traversals
+interface DocumentCache {
+  headingMap: HeadingLookupMap;
+  // Track document version to invalidate cache when doc changes
+  docVersion: string;
+  // Track the last heading count to detect structural changes
+  headingCount: number;
+}
+
+// Global cache to share between instances
+let globalDocCache: DocumentCache | null = null;
+let globalLastModifyTime = 0;
+
 export const useHeadingCollapse = ({
   node,
   getPos,
@@ -18,10 +45,134 @@ export const useHeadingCollapse = ({
   setCollapsedHeadings,
 }: UseHeadingCollapseProps) => {
   const hasExpandedOnCreate = useRef(false);
+  // Cache for document structure
+  const docCacheRef = useRef<DocumentCache | null>(null);
+  // Keep track of the last document version we've seen
+  const lastDocVersionRef = useRef<string>('');
+
+  // This function builds a map of all headings in the document with their relationships
+  // but only rebuilds when necessary
+  const getDocumentCache = useCallback(() => {
+    const { doc } = editor.state;
+
+    // Use a combination of document size, selection position, and heading count
+    const currentHeadingCount = doc.content.content.filter(
+      (node) =>
+        node.type.name === 'dBlock' &&
+        node.content.content?.[0]?.type?.name === 'heading',
+    ).length;
+
+    const docVersion = `${doc.content.size}_${editor.state.selection.$anchor.pos}_${currentHeadingCount}`;
+
+    // Use the global cache if available and fresh
+    const now = Date.now();
+    if (
+      globalDocCache &&
+      globalDocCache.docVersion === docVersion &&
+      // Only invalidate if there's been a significant change in heading count
+      Math.abs(globalDocCache.headingCount - currentHeadingCount) <= 1 &&
+      // Reduce timeout to 500ms for faster updates
+      now - globalLastModifyTime < 500
+    ) {
+      docCacheRef.current = globalDocCache;
+      lastDocVersionRef.current = docVersion;
+      return globalDocCache;
+    }
+
+    // Return cached result if document hasn't changed
+    if (docCacheRef.current && lastDocVersionRef.current === docVersion) {
+      return docCacheRef.current;
+    }
+
+    // If we need to rebuild, do it efficiently
+    const headingMap = buildHeadingMap(editor);
+
+    // Update cache with heading count
+    const cache = {
+      headingMap,
+      docVersion,
+      headingCount: currentHeadingCount,
+    };
+    docCacheRef.current = cache;
+    lastDocVersionRef.current = docVersion;
+
+    // Update global cache
+    globalDocCache = cache;
+    globalLastModifyTime = now;
+
+    return cache;
+  }, [editor]);
+
+  // Separate the expensive heading map building logic
+  const buildHeadingMap = useCallback((editor: Editor): HeadingLookupMap => {
+    const { doc } = editor.state;
+    const headingMap = new Map();
+
+    // Stack to track parent headings at each level
+    const parentStack: Array<{ id: string; level: number }> = [];
+
+    // First pass: gather all headings - this is the most expensive operation
+    let pos = 0;
+    while (pos < doc.content.size) {
+      const nodeAtPos = doc.nodeAt(pos);
+
+      if (nodeAtPos?.type.name === 'dBlock') {
+        const dBlockContent = nodeAtPos.content.content?.[0];
+
+        if (dBlockContent?.type.name === 'heading') {
+          const level = dBlockContent.attrs.level || 1;
+          const id = dBlockContent.attrs.id || `heading-${pos}`;
+
+          // Remove parents of higher or equal level from stack
+          while (
+            parentStack.length > 0 &&
+            parentStack[parentStack.length - 1].level >= level
+          ) {
+            parentStack.pop();
+          }
+
+          // Get parent if any
+          const parent =
+            parentStack.length > 0
+              ? parentStack[parentStack.length - 1].id
+              : undefined;
+
+          // Add this heading to the map
+          headingMap.set(id, {
+            id,
+            level,
+            position: pos,
+            children: [],
+            parent,
+          });
+
+          // Add this heading as a child to its parent
+          if (parent) {
+            const parentData = headingMap.get(parent);
+            if (parentData) {
+              parentData.children.push(id);
+            }
+          }
+
+          // Push this heading onto the parent stack
+          parentStack.push({ id, level });
+        }
+      }
+
+      pos += nodeAtPos?.nodeSize || 1;
+    }
+
+    return headingMap;
+  }, []);
 
   const isHeading = useMemo(() => {
     const { content } = node.content as any;
     return content?.[0]?.type?.name === 'heading';
+  }, [node.content]);
+
+  const headingAlignment = useMemo(() => {
+    const { content } = node.content as any;
+    return content?.[0]?.attrs.textAlign;
   }, [node.content]);
 
   const headingId = useMemo(() => {
@@ -32,328 +183,364 @@ export const useHeadingCollapse = ({
     return headingNode?.attrs?.id || `heading-${getPos()}`;
   }, [isHeading, node.content, getPos]);
 
+  // Fast check for collapsed state - no need to rebuild cache for this
   const isThisHeadingCollapsed = useMemo(() => {
     return headingId ? collapsedHeadings.has(headingId) : false;
   }, [headingId, collapsedHeadings]);
 
+  // Memoize the check for whether this node should be hidden
   const shouldBeHidden = useMemo(() => {
+    // Quick early returns to avoid expensive calculations
+    if (!node || !editor) return false;
+
     const position = getPos();
-    const { doc: document } = editor.state;
 
-    // Rest of the existing empty paragraph check
-    const isEmptyParagraph =
-      node.content?.content?.[0]?.type.name === 'paragraph' &&
-      (!node.content?.content?.[0]?.content?.content?.length ||
-        (node.content?.content?.[0]?.content?.content?.length === 1 &&
-          !node.content?.content?.[0]?.content?.content?.[0]?.text));
+    // Use cached document structure if available
+    const { headingMap } = getDocumentCache();
 
-    // Find previous node
-    let prevNode = null;
-    let prevPos = position;
-    while (prevPos > 0) {
-      prevPos--;
-      const nodeAtPos = document.nodeAt(prevPos);
-      if (nodeAtPos?.type.name === 'dBlock') {
-        prevNode = nodeAtPos;
-        break;
-      }
-    }
+    // If we're a heading, check if we should be hidden
+    if (isHeading && headingId) {
+      const heading = headingMap.get(headingId);
+      if (!heading) return false;
 
-    // If this is an empty paragraph after a heading, treat it as a section break
-    const isPrevHeading =
-      prevNode?.content?.content?.[0]?.type.name === 'heading';
+      // Never hide H1
+      if (heading.level === 1) return false;
 
-    if (isEmptyParagraph && isPrevHeading) {
-      const prevHeadingContent = prevNode?.content?.content?.[0];
-      const prevHeadingId =
-        prevHeadingContent?.attrs?.id || `heading-${prevPos}`;
+      // Quick check for parent - if no parent, nothing to hide under
+      if (!heading.parent) return false;
 
-      // Check if this block was just created by checking if it has focus
-      const { selection } = editor.state;
-      const isBlockFocused =
-        selection.$anchor.pos >= position &&
-        selection.$anchor.pos <= position + node.nodeSize;
-
-      // Auto-expand only once when the block is first created
-      if (
-        isBlockFocused &&
-        !hasExpandedOnCreate.current &&
-        collapsedHeadings.has(prevHeadingId)
-      ) {
-        hasExpandedOnCreate.current = true;
-        setCollapsedHeadings(prev => {
-          const newSet = new Set(prev);
-          newSet.delete(prevHeadingId);
-          return newSet;
-        });
-      }
-      return collapsedHeadings.has(prevHeadingId);
-    }
-
-    // Find immediate parent heading (closest heading above with lower level)
-    const findImmediateParentHeading = (
-      startPos: number,
-      currentLevel: number,
-    ) => {
-      let checkPos = startPos;
-      while (checkPos > 0) {
-        checkPos--;
-        const nodeAtPos = document.nodeAt(checkPos);
-        if (nodeAtPos?.type.name === 'dBlock') {
-          const dBlockContent = nodeAtPos.content.content[0];
-          if (dBlockContent?.type.name === 'heading') {
-            const parentLevel = dBlockContent.attrs.level || 1;
-            if (parentLevel < currentLevel) {
-              return {
-                id: dBlockContent.attrs.id || `heading-${checkPos}`,
-                level: parentLevel,
-              };
-            }
-          }
+      // Check if any parent is collapsed with a fast lookup
+      let currentParentId = heading.parent;
+      while (currentParentId) {
+        if (collapsedHeadings.has(currentParentId)) {
+          return true;
         }
-      }
-      return null;
-    };
-
-    // For headings, check if their direct parent is collapsed
-    if (isHeading) {
-      const { content } = node.content as any;
-      const headingNode = content?.[0];
-      if (!headingNode || headingNode.type.name !== 'heading') return false;
-
-      const thisHeadingLevel = headingNode.attrs.level || 1;
-      if (thisHeadingLevel === 1) return false; // Never hide H1
-
-      // Find the immediate parent heading
-      const immediateParent = findImmediateParentHeading(
-        position,
-        thisHeadingLevel,
-      );
-      if (immediateParent && collapsedHeadings.has(immediateParent.id)) {
-        return true;
+        const parentHeading = headingMap.get(currentParentId);
+        if (!parentHeading || !parentHeading.parent) break;
+        currentParentId = parentHeading.parent;
       }
 
       return false;
     }
 
-    // For non-heading blocks
-    const findParentHeading = (startPos: number) => {
-      let checkPos = startPos;
-      while (checkPos > 0) {
-        checkPos--;
-        const nodeAtPos = document.nodeAt(checkPos);
-        if (nodeAtPos?.type.name === 'dBlock') {
-          const dBlockContent = nodeAtPos.content.content[0];
-          if (dBlockContent?.type.name === 'heading') {
-            return {
-              id: dBlockContent.attrs.id || `heading-${checkPos}`,
-              level: dBlockContent.attrs.level || 1,
-            };
-          }
-        }
-      }
-      return null;
-    };
+    // Fast path for non-headings - find the closest heading above
+    let prevHeadingId = null;
 
-    // Find the immediate parent heading for this block
-    const parentHeading = findParentHeading(position);
-    if (parentHeading && collapsedHeadings.has(parentHeading.id)) {
-      return true;
+    // Get the previous heading from the cache rather than scanning
+    for (const [id, data] of headingMap.entries()) {
+      if (
+        data.position < position &&
+        (!prevHeadingId ||
+          headingMap.get(prevHeadingId)!.position < data.position)
+      ) {
+        prevHeadingId = id;
+      }
+    }
+
+    // If no preceding heading found, nothing to collapse
+    if (!prevHeadingId) return false;
+
+    // If preceding heading is collapsed, hide this block
+    if (collapsedHeadings.has(prevHeadingId)) return true;
+
+    // Check all parent headings for this block's nearest heading
+    let currentId = prevHeadingId;
+    while (currentId) {
+      if (collapsedHeadings.has(currentId)) {
+        return true;
+      }
+      const parentHeading = headingMap.get(currentId);
+      if (!parentHeading || !parentHeading.parent) break;
+      currentId = parentHeading.parent;
     }
 
     return false;
-  }, [editor.state, getPos, isHeading, node.content, collapsedHeadings]);
+  }, [
+    editor,
+    getPos,
+    isHeading,
+    node,
+    headingId,
+    collapsedHeadings,
+    getDocumentCache,
+  ]);
 
+  // Optimize toggling collapse state
   const toggleCollapse = useCallback(() => {
     if (!headingId) return;
 
-    setCollapsedHeadings(prev => {
+    setCollapsedHeadings((prev) => {
       const newSet = new Set(prev);
-      const { content } = node.content as any;
-      const headingNode = content?.[0];
-      const headingLevel = headingNode?.attrs?.level || 1;
-      const pos = getPos();
-      const { doc } = editor.state;
+      const { headingMap } = getDocumentCache();
+      const heading = headingMap.get(headingId);
 
-      if (newSet.has(headingId)) {
+      if (!heading) return newSet;
+
+      const wasCollapsed = prev.has(headingId);
+
+      if (wasCollapsed) {
         // Expanding
         newSet.delete(headingId);
 
-        // For H1, expand all nested headings
-        if (headingLevel === 1) {
-          let checkPos = pos + node.nodeSize;
-          while (checkPos < doc.content.size) {
-            const nodeAtPos = doc.nodeAt(checkPos);
-
-            if (nodeAtPos?.type.name === 'dBlock') {
-              const dBlockContent = nodeAtPos.content.content[0];
-              if (dBlockContent?.type.name === 'heading') {
-                const currentLevel = dBlockContent.attrs.level || 1;
-
-                // Stop if we find another H1
-                if (currentLevel === 1) {
-                  break;
-                }
-
-                // Expand all nested headings under this H1
-                const subHeadingId =
-                  dBlockContent.attrs.id || `heading-${checkPos}`;
-                newSet.delete(subHeadingId);
-              }
-            }
-
-            checkPos += nodeAtPos?.nodeSize || 1;
-          }
+        // For H1, expand all its direct children
+        if (heading.level === 1) {
+          // Get all children and expand them
+          heading.children.forEach((childId) => {
+            newSet.delete(childId);
+          });
         } else {
-          // For other heading levels, only expand direct children under this heading
-          let checkPos = pos + node.nodeSize;
-          let foundNextSameOrHigherLevel = false;
-
-          while (checkPos < doc.content.size && !foundNextSameOrHigherLevel) {
-            const nodeAtPos = doc.nodeAt(checkPos);
-
-            if (nodeAtPos?.type.name === 'dBlock') {
-              const dBlockContent = nodeAtPos.content.content[0];
-              if (dBlockContent?.type.name === 'heading') {
-                const currentLevel = dBlockContent.attrs.level || 1;
-
-                // Stop if we find a heading of same or higher level
-                if (currentLevel <= headingLevel) {
-                  foundNextSameOrHigherLevel = true;
-                  break;
-                }
-
-                // Only expand headings that are direct children of this heading
-                if (currentLevel === headingLevel + 1) {
-                  const subHeadingId =
-                    dBlockContent.attrs.id || `heading-${checkPos}`;
-                  newSet.delete(subHeadingId);
-                }
-              }
+          // For other levels, only expand direct children
+          heading.children.forEach((childId) => {
+            const childHeading = headingMap.get(childId);
+            if (childHeading && childHeading.level === heading.level + 1) {
+              newSet.delete(childId);
             }
-
-            checkPos += nodeAtPos?.nodeSize || 1;
-          }
+          });
         }
       } else {
         // Collapsing
         newSet.add(headingId);
 
         // For H1, collapse all nested headings
-        if (headingLevel === 1) {
-          let checkPos = pos + node.nodeSize;
-          while (checkPos < doc.content.size) {
-            const nodeAtPos = doc.nodeAt(checkPos);
-
-            if (nodeAtPos?.type.name === 'dBlock') {
-              const dBlockContent = nodeAtPos.content.content[0];
-              if (dBlockContent?.type.name === 'heading') {
-                const currentLevel = dBlockContent.attrs.level || 1;
-
-                // Stop if we find another H1
-                if (currentLevel === 1) {
-                  break;
-                }
-
-                // Collapse all nested headings under this H1
-                const subHeadingId =
-                  dBlockContent.attrs.id || `heading-${checkPos}`;
-                newSet.add(subHeadingId);
-              }
+        if (heading.level === 1) {
+          // Get all descendants and collapse them
+          const getAllDescendants = (id: string) => {
+            const h = headingMap.get(id);
+            if (h) {
+              h.children.forEach((childId) => {
+                newSet.add(childId);
+                getAllDescendants(childId);
+              });
             }
+          };
 
-            checkPos += nodeAtPos?.nodeSize || 1;
-          }
+          getAllDescendants(headingId);
         } else {
-          // For other heading levels, only collapse direct children under this specific heading
-          let checkPos = pos + node.nodeSize;
-          let foundNextSameOrHigherLevel = false;
-
-          while (checkPos < doc.content.size && !foundNextSameOrHigherLevel) {
-            const nodeAtPos = doc.nodeAt(checkPos);
-
-            if (nodeAtPos?.type.name === 'dBlock') {
-              const dBlockContent = nodeAtPos.content.content[0];
-              if (dBlockContent?.type.name === 'heading') {
-                const currentLevel = dBlockContent.attrs.level || 1;
-
-                // Stop if we find a heading of same or higher level
-                if (currentLevel <= headingLevel) {
-                  foundNextSameOrHigherLevel = true;
-                  break;
+          // For other levels, only collapse direct children
+          heading.children.forEach((childId) => {
+            const childHeading = headingMap.get(childId);
+            if (childHeading && childHeading.level === heading.level + 1) {
+              newSet.add(childId);
+              // Also collapse all descendants of this direct child
+              const getAllDescendants = (id: string) => {
+                const h = headingMap.get(id);
+                if (h) {
+                  h.children.forEach((descendantId) => {
+                    newSet.add(descendantId);
+                    getAllDescendants(descendantId);
+                  });
                 }
+              };
 
-                // Only collapse direct children (H3 under H2, etc.)
-                if (currentLevel === headingLevel + 1) {
-                  const subHeadingId =
-                    dBlockContent.attrs.id || `heading-${checkPos}`;
-                  newSet.add(subHeadingId);
-                }
-              }
+              getAllDescendants(childId);
             }
-
-            checkPos += nodeAtPos?.nodeSize || 1;
-          }
+          });
         }
       }
+
+      // Handle cursor position and last dBlock visibility after state update
+      requestAnimationFrame(() => {
+        const { doc } = editor.state;
+        let lastDBlockPos = -1;
+        let pos = 0;
+
+        // Find the last dBlock node
+        while (pos < doc.content.size) {
+          const nodeAtPos = doc.nodeAt(pos);
+          if (nodeAtPos?.type.name === 'dBlock') {
+            lastDBlockPos = pos;
+          }
+          pos += nodeAtPos?.nodeSize || 1;
+        }
+
+        // Handle last dBlock visibility
+        if (lastDBlockPos !== -1) {
+          const lastDBlockNode = editor.view.nodeDOM(lastDBlockPos);
+          if (lastDBlockNode instanceof HTMLElement) {
+            if (!wasCollapsed && lastDBlockPos !== getPos()) {
+              lastDBlockNode.classList.add('hidden');
+            } else {
+              lastDBlockNode.classList.remove('hidden');
+            }
+          }
+        }
+
+        // Handle cursor position
+        if (!wasCollapsed) {
+          const headingEndPos = getPos() + node.nodeSize;
+          editor
+            .chain()
+            .focus(headingEndPos - 1)
+            .run();
+        }
+      });
 
       return newSet;
     });
   }, [
+    editor,
     headingId,
     setCollapsedHeadings,
-    node.content,
-    node.nodeSize,
+    getDocumentCache,
     getPos,
-    editor.state,
+    node.nodeSize,
   ]);
 
-  const addHiddenClassToTheLastEmptyBlock = useCallback(() => {
-    const { doc, selection } = editor.state;
-    const pos = getPos();
-    const currentNode = doc.nodeAt(pos);
-    const isLastBlock = pos + (currentNode?.nodeSize || 0) >= doc.content.size;
-    const isParagraph =
-      currentNode?.type.name === 'dBlock' &&
-      currentNode?.content.firstChild?.type.name === 'paragraph';
-    const isLastBlockFocused =
-      selection.$anchor.pos >= pos &&
-      selection.$anchor.pos <= pos + (currentNode?.nodeSize || 0);
-
-    // Find previous heading node
-    let prevNode = null;
-    let prevPos = pos;
-    while (prevPos > 0) {
-      prevPos--;
-      const nodeAtPos = doc.nodeAt(prevPos);
-      if (
-        nodeAtPos?.type.name === 'dBlock' &&
-        nodeAtPos?.content?.content?.[0]?.type?.name === 'heading'
-      ) {
-        prevNode = nodeAtPos;
-        break;
-      }
-    }
-
-    // Get previous heading's ID and check if it's collapsed
-    const prevHeadingContent = prevNode?.content?.content?.[0];
-    const prevHeadingId = prevHeadingContent?.attrs?.id || `heading-${prevPos}`;
-    const isPrevHeadingCollapsed = collapsedHeadings.has(prevHeadingId);
-
-    if (
-      isLastBlock &&
-      isParagraph &&
-      isLastBlockFocused &&
-      isPrevHeadingCollapsed
-    ) {
-      const domNode = editor.view.nodeDOM(pos) as HTMLElement;
-      domNode?.classList.add('hidden');
-    }
-  }, [editor.state, getPos, collapsedHeadings]);
-
+  // Add effect to handle auto-expansion on Enter at the end of a collapsed heading
   useEffect(() => {
-    addHiddenClassToTheLastEmptyBlock();
-  }, [addHiddenClassToTheLastEmptyBlock]);
+    if (!editor || !isHeading || !headingId) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Only handle Enter key
+      if (e.key !== 'Enter') return;
+
+      // Get current selection
+      const { selection } = editor.state;
+      const { $from, $to } = selection;
+
+      // Calculate the end position of the heading
+      const headingEndPos = getPos() + node.nodeSize;
+
+      // Check if we're at the end of the heading
+      const isAtEnd =
+        $from.pos === $to.pos &&
+        $from.pos >= headingEndPos - 2 && // Allow for some flexibility in position
+        $from.pos <= headingEndPos;
+
+      // If we're at the end of a collapsed heading and haven't expanded yet
+      if (isAtEnd && isThisHeadingCollapsed && !hasExpandedOnCreate.current) {
+        e.preventDefault(); // Prevent default Enter behavior
+
+        // Expand the heading
+        setCollapsedHeadings((prev) => {
+          const newSet = new Set(prev);
+          newSet.delete(headingId);
+          return newSet;
+        });
+
+        // Mark as expanded
+        hasExpandedOnCreate.current = true;
+
+        // Reset the flag after a short delay
+        setTimeout(() => {
+          hasExpandedOnCreate.current = false;
+        });
+
+        // Insert a new dBlock and focus on it
+        editor
+          .chain()
+          .setDBlock()
+          .focus($from.pos + 4)
+          .run();
+      }
+    };
+
+    editor.view.dom.addEventListener('keydown', handleKeyDown, true);
+    return () => {
+      editor.view.dom.removeEventListener('keydown', handleKeyDown, true);
+    };
+  }, [
+    editor,
+    isHeading,
+    headingId,
+    isThisHeadingCollapsed,
+    getPos,
+    node.nodeSize,
+    setCollapsedHeadings,
+  ]);
+
+  // Add effect to handle heading deletion and auto-expand content
+  useEffect(() => {
+    if (!editor || !isHeading || !headingId) return;
+
+    // Track heading IDs in document
+    const getHeadingIdsInDocument = () => {
+      const ids = new Set<string>();
+      editor.state.doc.descendants((node: any) => {
+        if (
+          node.type.name === 'dBlock' &&
+          node.content.content?.[0]?.type?.name === 'heading'
+        ) {
+          const id = node.content.content[0].attrs.id;
+          if (id) ids.add(id);
+        }
+        return true;
+      });
+      return ids;
+    };
+
+    // Initial set of heading IDs
+    let previousHeadingIds = getHeadingIdsInDocument();
+
+    const handleDocChange = () => {
+      // Get current heading IDs
+      const currentHeadingIds = getHeadingIdsInDocument();
+
+      // Find deleted headings
+      const deletedHeadingIds = new Set<string>();
+      previousHeadingIds.forEach((id) => {
+        if (!currentHeadingIds.has(id)) {
+          deletedHeadingIds.add(id);
+        }
+      });
+
+      // Handle deleted headings - including this one
+      if (deletedHeadingIds.size > 0) {
+        // Force update the collapsedHeadings state when any heading is deleted
+        setCollapsedHeadings((prev) => {
+          // If no collapsed headings, nothing to update
+          if (prev.size === 0) return prev;
+
+          // Create new set
+          const newSet = new Set(prev);
+          let hasChanges = false;
+
+          // For each deleted heading that was collapsed, remove it and its descendants
+          deletedHeadingIds.forEach((id) => {
+            if (newSet.has(id)) {
+              // Get document cache to find child relationships
+              const { headingMap } = getDocumentCache();
+
+              // Delete this heading from collapsed set
+              newSet.delete(id);
+              hasChanges = true;
+
+              // Find and remove all descendants too
+              const processHeading = (headingId: string) => {
+                const heading = headingMap.get(headingId);
+                if (heading?.children.length) {
+                  heading.children.forEach((childId) => {
+                    if (newSet.has(childId)) {
+                      newSet.delete(childId);
+                      hasChanges = true;
+                    }
+                    processHeading(childId);
+                  });
+                }
+              };
+
+              processHeading(id);
+            }
+          });
+
+          // Update previous state for next comparison
+          previousHeadingIds = currentHeadingIds;
+
+          return hasChanges ? newSet : prev;
+        });
+      } else {
+        // Update previous state for next comparison
+        previousHeadingIds = currentHeadingIds;
+      }
+    };
+
+    // Listen for document changes
+    editor.on('update', handleDocChange);
+
+    return () => {
+      editor.off('update', handleDocChange);
+    };
+  }, [editor, isHeading, headingId, setCollapsedHeadings, getDocumentCache]);
 
   return {
     isHeading,
@@ -361,5 +548,94 @@ export const useHeadingCollapse = ({
     isThisHeadingCollapsed,
     shouldBeHidden,
     toggleCollapse,
+    headingAlignment,
   };
+};
+
+// Helper function to expand collapsed headings
+export const expandHeadingContent = (
+  editor: Editor,
+  nodePos: number,
+  setCollapsedHeadings?: (updater: (prev: Set<string>) => Set<string>) => void,
+) => {
+  if (!setCollapsedHeadings) return;
+
+  const node = editor.state.doc.nodeAt(nodePos);
+  if (
+    node?.type.name === 'dBlock' &&
+    node.content.content?.[0]?.type?.name === 'heading'
+  ) {
+    const headingId = node.content.content[0].attrs.id;
+    if (headingId) {
+      // Get all heading IDs from the document
+      const headingIds = new Set<string>();
+      editor.state.doc.descendants((n: Node) => {
+        if (
+          n.type.name === 'dBlock' &&
+          n.content.content?.[0]?.type?.name === 'heading'
+        ) {
+          const id = n.content.content[0].attrs.id;
+          if (id) headingIds.add(id);
+        }
+        return true;
+      });
+
+      // Update collapsed headings state
+      setCollapsedHeadings((prev) => {
+        const newSet = new Set(prev);
+
+        // First check if this heading is collapsed
+        if (!newSet.has(headingId)) return newSet;
+
+        // Remove this heading from collapsed set
+        newSet.delete(headingId);
+
+        // Also find and remove any child headings
+        // This is a simple approach without the full cache structure
+        let childLevel: number | null = null;
+        let isInside = false;
+        const childIds: string[] = [];
+
+        editor.state.doc.nodesBetween(
+          nodePos,
+          editor.state.doc.content.size,
+          (n, pos) => {
+            if (pos <= nodePos) return true;
+
+            if (
+              n.type.name === 'dBlock' &&
+              n.content.content?.[0]?.type?.name === 'heading'
+            ) {
+              const id = n.content.content[0].attrs.id;
+              const level = n.content.content[0].attrs.level;
+
+              // If we haven't found a child yet, this is the first one
+              if (childLevel === null) {
+                childLevel = level;
+                isInside = true;
+                if (id) childIds.push(id);
+              }
+              // If we found a child of same or lower level, we're out of the section
+              else if (level <= childLevel) {
+                isInside = false;
+              }
+              // Otherwise, it's a nested child
+              else if (isInside && id) {
+                childIds.push(id);
+              }
+            }
+
+            return true;
+          },
+        );
+
+        // Remove all children from collapsed set
+        childIds.forEach((id) => {
+          newSet.delete(id);
+        });
+
+        return newSet;
+      });
+    }
+  }
 };

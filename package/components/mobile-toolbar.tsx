@@ -8,8 +8,11 @@ import {
   Drawer,
   DrawerTrigger,
   DynamicModal,
+  Skeleton,
 } from '@fileverse/ui';
 import ToolbarButton from '../common/toolbar-button';
+import { AnimatePresence } from 'framer-motion';
+import { fadeInTransition, slideUpTransition } from './motion-div';
 
 const MobileToolbar = ({
   editor,
@@ -18,13 +21,15 @@ const MobileToolbar = ({
   isNavbarVisible,
   setIsNavbarVisible,
   secureImageUploadUrl,
+  isLoading,
 }: {
-  editor: Editor;
+  editor: Editor | null;
   onError?: (errorString: string) => void;
   isKeyboardVisible: boolean;
   isNavbarVisible: boolean;
   setIsNavbarVisible: React.Dispatch<React.SetStateAction<boolean>>;
   secureImageUploadUrl?: string;
+  isLoading: boolean;
 }) => {
   const { toolVisibility, setToolVisibility, bottomToolbar } = useEditorToolbar(
     {
@@ -39,6 +44,7 @@ const MobileToolbar = ({
   const [isUrlValid, setIsUrlValid] = useState(true);
 
   const saveLink = () => {
+    if (!editor) return;
     if (
       (url === null || url === '') &&
       (linkText === '' || linkText === null)
@@ -96,6 +102,7 @@ const MobileToolbar = ({
   };
 
   const getSelectedLink = () => {
+    if (!editor) return { text: '', url: '' };
     const { from, to } = editor.state.selection;
     const selectedText = editor.state.doc.textBetween(from, to);
     const linkMark = editor.getAttributes('link');
@@ -149,26 +156,56 @@ const MobileToolbar = ({
               <div key={tool.title} className="flex items-center">
                 {tool.title === 'Text formating' ? (
                   <DrawerTrigger asChild>
-                    <ToolbarButton
-                      onClick={tool.onClick}
-                      isActive={tool.isActive}
-                      icon={tool.icon}
-                    />
+                    <AnimatePresence>
+                      {isLoading
+                        ? fadeInTransition(
+                            <Skeleton
+                              className={`w-[36px] h-[36px] rounded-sm`}
+                            />,
+                            'mobile' + tool.title + 'skeleton',
+                          )
+                        : slideUpTransition(
+                            <ToolbarButton
+                              onClick={tool.onClick}
+                              isActive={tool.isActive}
+                              icon={tool.icon}
+                            />,
+                            tool.title + 'mobile',
+                          )}
+                    </AnimatePresence>
                   </DrawerTrigger>
                 ) : tool.title === 'Text color' ? (
                   <DrawerTrigger asChild>
+                    {isLoading
+                      ? fadeInTransition(
+                          <Skeleton
+                            className={`w-[36px] h-[36px] rounded-sm`}
+                          />,
+                          'mobile' + tool.title,
+                        )
+                      : slideUpTransition(
+                          <ToolbarButton
+                            onClick={tool.onClick}
+                            icon={tool.icon}
+                            isActive={false}
+                          />,
+                          'text-color-button',
+                        )}
+                  </DrawerTrigger>
+                ) : isLoading ? (
+                  fadeInTransition(
+                    <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
+                    'skeleton' + tool.title,
+                  )
+                ) : (
+                  slideUpTransition(
                     <ToolbarButton
                       onClick={tool.onClick}
                       icon={tool.icon}
                       isActive={false}
-                    />
-                  </DrawerTrigger>
-                ) : (
-                  <ToolbarButton
-                    onClick={tool.onClick}
-                    icon={tool.icon}
-                    isActive={false}
-                  />
+                    />,
+                    'mobile-button' + tool.title,
+                  )
                 )}
               </div>
             );

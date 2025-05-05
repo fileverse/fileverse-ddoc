@@ -3,7 +3,6 @@ import { EditorBubbleMenu } from './components/editor-bubble-menu/editor-bubble-
 import { DdocProps } from './types';
 import { ColumnsMenu } from './extensions/multi-column/menus';
 import { EditingProvider } from './hooks/use-editing-context';
-import { Spinner } from './common/spinner';
 import EditorToolBar from './components/editor-toolbar';
 import './styles/editor.scss';
 import 'tippy.js/animations/shift-toward-subtle.css';
@@ -17,7 +16,14 @@ import {
   useState,
 } from 'react';
 import cn from 'classnames';
-import { Button, LucideIcon, Tag, TagType, TagInput } from '@fileverse/ui';
+import {
+  Button,
+  LucideIcon,
+  Tag,
+  TagType,
+  TagInput,
+  Skeleton,
+} from '@fileverse/ui';
 import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
 import { AnimatePresence, motion } from 'framer-motion';
 import * as Y from 'yjs';
@@ -30,6 +36,8 @@ import { CommentProvider } from './components/inline-comment/context/comment-con
 import { CommentBubbleCard } from './components/inline-comment/comment-bubble-card';
 import { DocumentOutline } from './components/toc/document-outline';
 import { EditorProvider } from './context/editor-context';
+import { fadeInTransition, slideUpTransition } from './components/motion-div';
+import { PreviewContentLoader } from './components/preview-content-loader';
 
 const DdocEditor = forwardRef(
   (
@@ -101,6 +109,8 @@ const DdocEditor = forwardRef(
       disableInlineComment,
       renderThemeToggle,
       metadataProxyUrl,
+      onCopyHeadingLink,
+      footerHeight,
     }: DdocProps,
     ref,
   ) => {
@@ -174,6 +184,7 @@ const DdocEditor = forwardRef(
       isPresentationMode,
       proExtensions,
       metadataProxyUrl,
+      onCopyHeadingLink,
     });
 
     useImperativeHandle(
@@ -190,9 +201,10 @@ const DdocEditor = forwardRef(
 
           return fromUint8Array(contents);
         },
-        exportContentAsMarkDown: (filename: string) => {
+        exportContentAsMarkDown: async (filename: string) => {
           if (editor) {
-            const generateDownloadUrl = editor.commands.exportMarkdownFile();
+            const generateDownloadUrl =
+              await editor.commands.exportMarkdownFile();
             if (generateDownloadUrl) {
               const url = generateDownloadUrl;
               const link = document.createElement('a');
@@ -322,64 +334,12 @@ const DdocEditor = forwardRef(
       };
     }, [editor, editorRef, isNativeMobile]);
 
-    if (!editor || isContentLoading) {
+    const isMobile = useMediaQuery('(max-width: 768px)');
+
+    const renderComp = () => {
       return (
-        <div className="w-screen h-screen flex flex-col gap-4 justify-center items-center">
-          <Spinner />
-          <p>Loading Editor...</p>
-        </div>
-      );
-    }
-    return (
-      <EditorProvider>
-        <div
-          id="editor-canvas"
-          className={cn(
-            'h-[100vh] w-full custom-scrollbar',
-            {
-              'overflow-x-hidden': zoomLevel !== '2',
-              'overflow-x-auto scroll-container': zoomLevel === '2',
-            },
-            !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
-            editorCanvasClassNames,
-          )}
-        >
-          <nav
-            id="Navbar"
-            className={cn(
-              'h-14 color-bg-default py-2 px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300',
-              {
-                'translate-y-0': isNavbarVisible,
-                'translate-y-[-100%]': !isNavbarVisible || isPresentationMode,
-              },
-            )}
-          >
-            {renderNavbar?.({ editor: editor.getJSON() })}
-          </nav>
-          <CommentProvider
-            editor={editor}
-            username={username as string}
-            setUsername={setUsername}
-            activeCommentId={activeCommentId}
-            setActiveCommentId={setActiveCommentId}
-            focusCommentWithActiveId={focusCommentWithActiveId}
-            initialComments={initialComments}
-            setInitialComments={setInitialComments}
-            onNewComment={onNewComment}
-            onCommentReply={onCommentReply}
-            onResolveComment={onResolveComment}
-            onUnresolveComment={onUnresolveComment}
-            onDeleteComment={onDeleteComment}
-            ensResolutionUrl={ensResolutionUrl as string}
-            isConnected={isConnected}
-            connectViaWallet={connectViaWallet}
-            isLoading={isLoading}
-            connectViaUsername={connectViaUsername}
-            isDDocOwner={isDDocOwner}
-            onInlineComment={onInlineComment}
-            onComment={onComment}
-            setCommentDrawerOpen={setCommentDrawerOpen}
-          >
+        <AnimatePresence>
+          <>
             {!isPreviewMode && (
               <div
                 id="toolbar"
@@ -403,11 +363,12 @@ const DdocEditor = forwardRef(
                     onMarkdownExport={onMarkdownExport}
                     onMarkdownImport={onMarkdownImport}
                     onPdfExport={onPdfExport}
+                    isLoading={!editor || isContentLoading}
                   />
                 </div>
               </div>
             )}
-            {isPresentationMode && (
+            {isPresentationMode && editor && (
               <PresentationMode
                 editor={editor}
                 onClose={handleClosePresentationMode}
@@ -422,26 +383,34 @@ const DdocEditor = forwardRef(
                 slides={slides}
                 setSlides={setSlides}
                 renderThemeToggle={renderThemeToggle}
+                isContentLoading={isContentLoading}
               />
             )}
-            <DocumentOutline
-              editor={editor}
-              hasToC={true}
-              items={tocItems}
-              setItems={setTocItems}
-              showTOC={showTOC}
-              setShowTOC={setShowTOC}
-              isPreviewMode={isPreviewMode || !isNavbarVisible}
-            />
+            {editor && (
+              <DocumentOutline
+                editor={editor}
+                hasToC={true}
+                items={tocItems}
+                setItems={setTocItems}
+                showTOC={showTOC}
+                setShowTOC={setShowTOC}
+                isPreviewMode={isPreviewMode || !isNavbarVisible}
+              />
+            )}
 
             <div
               className={cn(
                 'color-bg-default w-full mx-auto rounded',
-                { 'mt-4 md:!mt-16 !py-20': isPreviewMode && !isNativeMobile },
-                { 'md:!mt-16': !isPreviewMode },
-                { 'pt-20 md:!mt-[7.5rem]': isNavbarVisible && !isPreviewMode },
-                { 'pt-6 md:!mt-16': !isNavbarVisible && !isPreviewMode },
-                { 'mt-4 md:!mt-16 py-6': isPreviewMode && isNativeMobile },
+                !isPreviewMode &&
+                  (isNavbarVisible
+                    ? '-mt-[1.5rem] md:!mt-[0.8rem] pt-0 md:pt-[5rem]'
+                    : 'pt-0 md:pt-[1.5rem]'),
+                isPreviewMode && 'md:!mt-[1rem] pt-0 md:!pt-[5rem]',
+                { 'md:!mt-[0.7rem]': !isPreviewMode },
+                {
+                  '-mt-[1.5rem] md:!mt-[0.7rem]':
+                    !isNavbarVisible && !isPreviewMode,
+                },
                 {
                   'max-[1080px]:!mx-auto min-[1081px]:!ml-[18%] min-[1700px]:!mx-auto':
                     isCommentSectionOpen &&
@@ -502,64 +471,52 @@ const DdocEditor = forwardRef(
                 }}
               >
                 <div>
-                  <EditorBubbleMenu
-                    editor={editor}
-                    onError={onError}
-                    zoomLevel={zoomLevel}
-                    disableInlineComment={disableInlineComment || false}
-                    setIsCommentSectionOpen={setIsCommentSectionOpen}
-                    inlineCommentData={inlineCommentData}
-                    setInlineCommentData={setInlineCommentData}
-                    isPreviewMode={isPreviewMode}
-                    username={username as string}
-                    walletAddress={walletAddress as string}
-                    onInlineComment={onInlineComment}
-                    activeCommentId={activeCommentId}
-                    isCollabDocumentPublished={isCollabDocumentPublished}
-                  />
-                  <ColumnsMenu editor={editor} appendTo={editorRef} />
+                  {editor && (
+                    <EditorBubbleMenu
+                      editor={editor}
+                      onError={onError}
+                      zoomLevel={zoomLevel}
+                      disableInlineComment={disableInlineComment || false}
+                      setIsCommentSectionOpen={setIsCommentSectionOpen}
+                      inlineCommentData={inlineCommentData}
+                      setInlineCommentData={setInlineCommentData}
+                      isPreviewMode={isPreviewMode}
+                      username={username as string}
+                      walletAddress={walletAddress as string}
+                      onInlineComment={onInlineComment}
+                      activeCommentId={activeCommentId}
+                      isCollabDocumentPublished={isCollabDocumentPublished}
+                    />
+                  )}
+
+                  {editor && (
+                    <ColumnsMenu editor={editor} appendTo={editorRef} />
+                  )}
                 </div>
-                <EditingProvider isPreviewMode={isPreviewMode}>
-                  {tags && tags.length > 0 && (
-                    <div
-                      ref={tagsContainerRef}
-                      className={cn(
-                        'flex flex-wrap px-4 md:px-8 lg:px-[80px] items-center gap-1 mb-4 mt-4 lg:!mt-0',
-                        { 'pt-12': isPreviewMode },
-                      )}
-                    >
-                      {visibleTags.map((tag, index) => (
-                        <Tag
-                          key={index}
-                          style={{ backgroundColor: tag?.color }}
-                          onRemove={() => handleRemoveTag(tag?.name)}
-                          isRemovable={!isPreviewMode}
-                          className="!h-6 rounded"
-                        >
-                          {tag?.name}
-                        </Tag>
-                      ))}
-                      {hiddenTagsCount > 0 && !isHiddenTagsVisible && (
-                        <Button
-                          variant="ghost"
-                          className="!h-6 rounded min-w-fit !px-2 color-bg-secondary text-helper-text-sm"
-                          onClick={() => setIsHiddenTagsVisible(true)}
-                        >
-                          +{hiddenTagsCount}
-                        </Button>
-                      )}
-                      <AnimatePresence>
-                        {isHiddenTagsVisible && (
-                          <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            exit={{ opacity: 0, height: 0 }}
-                            transition={{ duration: 0.3 }}
-                            className="flex flex-wrap items-center gap-1"
+
+                {!editor || isContentLoading
+                  ? fadeInTransition(
+                      <div className={`${!isMobile ? 'mx-20' : 'mx-10 mt-10'}`}>
+                        <Skeleton
+                          className={`${isPreviewMode ? 'w-full' : isMobile ? 'w-full' : 'w-[400px]'}  h-[32px] rounded-sm mb-4`}
+                        />
+                        {isPreviewMode && <PreviewContentLoader />}
+                      </div>,
+                      'content-transition',
+                    )
+                  : slideUpTransition(
+                      <EditingProvider isPreviewMode={isPreviewMode}>
+                        {tags && tags.length > 0 && (
+                          <div
+                            ref={tagsContainerRef}
+                            className={cn(
+                              'flex flex-wrap px-4 md:px-8 lg:px-[80px] items-center gap-1 mb-4 mt-4 lg:!mt-0',
+                              { 'pt-12': isPreviewMode },
+                            )}
                           >
-                            {selectedTags?.slice(4).map((tag, index) => (
+                            {visibleTags.map((tag, index) => (
                               <Tag
-                                key={index + 4}
+                                key={index}
                                 style={{ backgroundColor: tag?.color }}
                                 onRemove={() => handleRemoveTag(tag?.name)}
                                 isRemovable={!isPreviewMode}
@@ -568,30 +525,65 @@ const DdocEditor = forwardRef(
                                 {tag?.name}
                               </Tag>
                             ))}
-                          </motion.div>
+                            {hiddenTagsCount > 0 && !isHiddenTagsVisible && (
+                              <Button
+                                variant="ghost"
+                                className="!h-6 rounded min-w-fit !px-2 color-bg-secondary text-helper-text-sm"
+                                onClick={() => setIsHiddenTagsVisible(true)}
+                              >
+                                +{hiddenTagsCount}
+                              </Button>
+                            )}
+
+                            {isHiddenTagsVisible && (
+                              <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                exit={{ opacity: 0, height: 0 }}
+                                transition={{ duration: 0.3 }}
+                                className="flex flex-wrap items-center gap-1"
+                              >
+                                {selectedTags?.slice(4).map((tag, index) => (
+                                  <Tag
+                                    key={index + 4}
+                                    style={{ backgroundColor: tag?.color }}
+                                    onRemove={() => handleRemoveTag(tag?.name)}
+                                    isRemovable={!isPreviewMode}
+                                    className="!h-6 rounded"
+                                  >
+                                    {tag?.name}
+                                  </Tag>
+                                ))}
+                              </motion.div>
+                            )}
+
+                            {selectedTags && selectedTags?.length < 6 ? (
+                              <TagInput
+                                tags={tags || []}
+                                selectedTags={selectedTags as TagType[]}
+                                onAddTag={handleAddTag}
+                                isPreviewMode={isPreviewMode}
+                              />
+                            ) : null}
+                          </div>
                         )}
-                      </AnimatePresence>
-                      {selectedTags && selectedTags?.length < 6 ? (
-                        <TagInput
-                          tags={tags || []}
-                          selectedTags={selectedTags as TagType[]}
-                          onAddTag={handleAddTag}
-                          isPreviewMode={isPreviewMode}
+                        <EditorContent
+                          editor={editor}
+                          id="editor"
+                          className={cn(
+                            'w-full h-auto py-4 color-bg-default',
+                            isPreviewMode && 'preview-mode',
+                          )}
                         />
-                      ) : null}
-                    </div>
-                  )}
-                  <EditorContent
-                    editor={editor}
-                    id="editor"
-                    className="w-full h-auto py-4 color-bg-default"
-                  />
-                </EditingProvider>
+                      </EditingProvider>,
+                      'editor-transition',
+                    )}
               </div>
               {showCommentButton && !isNativeMobile && (
                 <Button
                   ref={btn_ref}
                   onClick={() => {
+                    if (!editor) return;
                     handleCommentButtonClick?.(editor);
                   }}
                   variant="ghost"
@@ -606,7 +598,7 @@ const DdocEditor = forwardRef(
             {!isPreviewMode && !disableBottomToolbar && (
               <div
                 className={cn(
-                  'flex xl:hidden items-center w-full h-[52px] absolute left-0 z-10 px-4 color-bg-default transition-all duration-300 ease-in-out border-b border-color-default',
+                  'flex xl:hidden items-center w-full h-[52px] fixed left-0 z-10 px-4 color-bg-default transition-all duration-300 ease-in-out border-b border-color-default',
                   isKeyboardVisible && 'hidden',
                   { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
                 )}
@@ -618,26 +610,109 @@ const DdocEditor = forwardRef(
                   isNavbarVisible={isNavbarVisible}
                   setIsNavbarVisible={setIsNavbarVisible}
                   secureImageUploadUrl={secureImageUploadUrl}
+                  isLoading={!editor || isContentLoading}
                 />
               </div>
             )}
-            <CommentDrawer
-              isOpen={commentDrawerOpen as boolean}
-              onClose={() => setCommentDrawerOpen?.(false)}
-              isNavbarVisible={isNavbarVisible}
-              isPresentationMode={isPresentationMode as boolean}
-              activeCommentId={activeCommentId}
-              isPreviewMode={isPreviewMode}
-            />
-            <div>
-              <CommentBubbleCard
-                editor={editor}
+            {editor && (
+              <CommentDrawer
+                isOpen={commentDrawerOpen as boolean}
+                onClose={() => setCommentDrawerOpen?.(false)}
+                isNavbarVisible={isNavbarVisible}
+                isPresentationMode={isPresentationMode as boolean}
                 activeCommentId={activeCommentId}
-                commentDrawerOpen={commentDrawerOpen as boolean}
-                isCollabDocumentPublished={isCollabDocumentPublished}
+                isPreviewMode={isPreviewMode}
               />
+            )}
+
+            <div>
+              {editor && (
+                <CommentBubbleCard
+                  editor={editor}
+                  activeCommentId={activeCommentId}
+                  commentDrawerOpen={commentDrawerOpen as boolean}
+                  isCollabDocumentPublished={isCollabDocumentPublished}
+                />
+              )}
             </div>
-          </CommentProvider>
+          </>
+        </AnimatePresence>
+      );
+    };
+
+    return (
+      <EditorProvider>
+        <div
+          className={cn(
+            'w-full',
+            !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
+          )}
+          style={{
+            height: !isPreviewMode
+              ? isNavbarVisible
+                ? `calc(100vh - 108px - ${footerHeight || '0px'})`
+                : `calc(100vh - 52px - ${footerHeight || '0px'})`
+              : `calc(100vh - 52px - ${footerHeight || '0px'})`,
+          }}
+        >
+          <div
+            id="editor-canvas"
+            className={cn(
+              'h-[100%] w-full custom-scrollbar',
+              !isPreviewMode &&
+                (isNavbarVisible ? 'mt-[6.7rem]' : 'mt-[3.3rem]'),
+              isPreviewMode && 'mt-[3.5rem]',
+              {
+                'overflow-x-hidden': zoomLevel !== '2',
+                'overflow-x-auto scroll-container': zoomLevel === '2',
+              },
+              !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
+              editorCanvasClassNames,
+            )}
+          >
+            <nav
+              id="Navbar"
+              className={cn(
+                'h-14 color-bg-default py-2 px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300',
+                {
+                  'translate-y-0': isNavbarVisible,
+                  'translate-y-[-100%]': !isNavbarVisible || isPresentationMode,
+                },
+              )}
+            >
+              {editor && renderNavbar?.({ editor: editor.getJSON() })}
+            </nav>
+            {!editor ? (
+              renderComp()
+            ) : (
+              <CommentProvider
+                editor={editor}
+                username={username as string}
+                setUsername={setUsername}
+                activeCommentId={activeCommentId}
+                setActiveCommentId={setActiveCommentId}
+                focusCommentWithActiveId={focusCommentWithActiveId}
+                initialComments={initialComments}
+                setInitialComments={setInitialComments}
+                onNewComment={onNewComment}
+                onCommentReply={onCommentReply}
+                onResolveComment={onResolveComment}
+                onUnresolveComment={onUnresolveComment}
+                onDeleteComment={onDeleteComment}
+                ensResolutionUrl={ensResolutionUrl as string}
+                isConnected={isConnected}
+                connectViaWallet={connectViaWallet}
+                isLoading={isLoading}
+                connectViaUsername={connectViaUsername}
+                isDDocOwner={isDDocOwner}
+                onInlineComment={onInlineComment}
+                onComment={onComment}
+                setCommentDrawerOpen={setCommentDrawerOpen}
+              >
+                {renderComp()}
+              </CommentProvider>
+            )}
+          </div>
         </div>
       </EditorProvider>
     );
