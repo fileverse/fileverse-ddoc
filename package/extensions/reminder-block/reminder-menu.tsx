@@ -95,8 +95,16 @@ export const ReminderMenu = forwardRef<HTMLDivElement, ReminderMenuProps>(
         return;
       }
 
-      if (timestamp <= Date.now()) {
+      if (timestamp < Date.now()) {
         setError('Please select a future date and time');
+        return;
+      }
+
+      const timeUntilReminder = timestamp - Date.now();
+      if (timeUntilReminder < 5 * 60 * 1000) {
+        setError(
+          'Please select a date and time that is at least 5 minutes from now',
+        );
         return;
       }
 
