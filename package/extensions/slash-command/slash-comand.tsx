@@ -76,6 +76,23 @@ const CommandList = ({
       })()
     : false;
 
+  const isCodeBlock = editor
+    ? (() => {
+        const {
+          selection: { $head },
+        } = editor.state;
+
+        for (let depth = $head.depth; depth >= 0; depth--) {
+          const node = $head.node(depth);
+          if (node?.type?.name === 'codeBlock') {
+            return true;
+          }
+        }
+
+        return false;
+      })()
+    : false;
+
   const notAllowedInsideCallout = [
     '2 Columns',
     '3 Columns',
@@ -115,11 +132,13 @@ const CommandList = ({
           (item) => !notAllowedInsideCallout.includes(item.title),
         );
         setItems(filteredItems);
+      } else if (isCodeBlock) {
+        setItems([]); // Disable slash commands in code blocks
       } else {
         setItems(initialItems);
       }
     }
-  }, [initialItems, isMobile, isCalloutBlock]);
+  }, [initialItems, isMobile, isCalloutBlock, isCodeBlock]);
 
   useEffect(() => {
     const navigationKeys = ['ArrowUp', 'ArrowDown', 'Enter'];
