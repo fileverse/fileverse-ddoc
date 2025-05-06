@@ -203,7 +203,7 @@ export const ReminderNodeView = memo(
                   </span>
                 </div>
 
-                {!isPublishing && (
+                {reminder.status !== 'pending' && (
                   <div className="flex items-center">
                     <IconButton
                       icon="ChevronUp"
