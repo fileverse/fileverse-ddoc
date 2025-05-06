@@ -58,7 +58,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onSettingsClick }) => {
             className="flex items-center gap-2 whitespace-nowrap"
             variant="secondary"
             size="sm"
-            disabled={isLoadingDefaultModels || allModels.length === 0}
+            // disabled={isLoadingDefaultModels || allModels.length === 0}
           >
             <LucideIcon
               name={
