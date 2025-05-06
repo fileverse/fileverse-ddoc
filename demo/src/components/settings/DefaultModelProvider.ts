@@ -7,23 +7,28 @@ import { OllamaService } from './OllamaService';
 export class DefaultModelProvider {
   /**
    * Get the default Ollama models
+   * Uses the endpoint set in localStorage ('ollamaEndpoint'), defaulting to localhost if not set.
+   * This allows each user to connect to their own local Ollama instance, even on deployed links.
    * @returns Array of default Ollama models
    */
   static async getDefaultOllamaModels(): Promise<CustomModel[]> {
     try {
-      // Try to detect if Ollama is running on localhost
+      // Get Ollama endpoint from localStorage or default to localhost
+      const ollamaEndpoint = localStorage.getItem('ollamaEndpoint') || 'http://localhost:11434';
+
+      // Try to detect if Ollama is running on the configured endpoint
       const isOllamaAvailable = await OllamaService.validateEndpoint(
-        'http://localhost:11434',
+        ollamaEndpoint,
       );
 
       if (!isOllamaAvailable) {
-        console.log('Ollama is not available on localhost:11434');
+        console.log(`Ollama is not available on ${ollamaEndpoint}`);
         return [];
       }
 
       // Get available Ollama models
       const availableModels = await OllamaService.getAvailableModels(
-        'http://localhost:11434',
+        ollamaEndpoint,
       );
 
       if (availableModels.length === 0) {
@@ -37,11 +42,11 @@ export class DefaultModelProvider {
         id: `ollama-${modelName}`,
         label: `Ollama: ${modelName}`,
         modelName: modelName,
-        endpoint: 'http://localhost:11434',
+        endpoint: ollamaEndpoint,
         contextSize: 8192, // A reasonable default
         apiKey: '',
         systemPrompt:
-          'The current time and date is %datetime%. You are a helpful AI assistant. Please provide accurate and concise responses.',
+          'The current time and date is %datetime%. You are a helpful AI assistant. Please provide accurate and concise responses and not include any preambles in your responses.',
       }));
     } catch (error) {
       console.error('Error getting default Ollama models:', error);

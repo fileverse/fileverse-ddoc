@@ -27,6 +27,7 @@ interface WindowWithModelService extends Window {
   modelService?: {
     callModel: (prompt: string, tone: string) => Promise<string>;
     streamModel: (prompt: string, tone: string, onChunk: (chunk: string) => void) => Promise<void>;
+    getAvailableModels: () => Promise<{ value: string; label: string }[]>;
   };
 }
 
@@ -184,6 +185,16 @@ export const ModelProvider: React.FC<ModelProviderProps> = ({
           console.error('Error streaming from model:', error);
           onChunk("Error while generating text. Please check the model settings and try again.");
         }
+      },
+      getAvailableModels: async () => {
+        // Combine custom and default models
+        const allModels = [...models, ...defaultModels];
+
+        // Map models to the expected format
+        return allModels.map(model => ({
+          value: model.modelName,
+          label: model.label
+        }));
       }
     };
 
@@ -191,7 +202,7 @@ export const ModelProvider: React.FC<ModelProviderProps> = ({
       // Clean up on unmount
       delete win.modelService;
     };
-  }, [activeModel]);
+  }, [activeModel, models, defaultModels]);
 
   return (
     <ModelContext.Provider

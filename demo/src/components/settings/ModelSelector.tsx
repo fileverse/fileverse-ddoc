@@ -64,7 +64,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onSettingsClick }) => {
               name={
                 modelStatus === 'loading' ? 'Loader2' :
                   modelStatus === 'error' ? 'AlertTriangle' :
-                    'BrainCircuit'
+                    'Bot'
               }
               size="sm"
               className={modelStatus === 'loading' ? 'animate-spin' : ''}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   TextField,
   Button,
@@ -63,6 +63,18 @@ const ModelSettings: React.FC = () => {
   });
   const [error, setError] = useState<string | null>(null);
 
+  // Ollama endpoint state
+  const [ollamaEndpoint, setOllamaEndpoint] = useState<string>(
+    localStorage.getItem('ollamaEndpoint') || 'http://localhost:11434'
+  );
+
+  // Update localStorage and reload models when endpoint changes
+  useEffect(() => {
+    localStorage.setItem('ollamaEndpoint', ollamaEndpoint);
+    // Optionally, you could trigger a reload of default models here if needed
+    // For now, user can refresh to reload models from new endpoint
+  }, [ollamaEndpoint]);
+
   const handleAddModel = () => {
     // Validate input
     if (!newModel.label || !newModel.modelName || !newModel.endpoint) {
@@ -89,6 +101,21 @@ const ModelSettings: React.FC = () => {
 
   return (
     <div className="w-full">
+      {/* Ollama Endpoint Setting */}
+      <div className="mb-6 space-y-4">
+        <Label htmlFor="ollama-endpoint">Ollama Endpoint</Label>
+        <TextField
+          id="ollama-endpoint"
+          value={ollamaEndpoint}
+          onChange={e => setOllamaEndpoint(e.target.value)}
+          placeholder="http://localhost:11434"
+        />
+        <div className="text-helper-text-sm color-text-secondary mt-1">
+          This is the URL of your Ollama server. If you are running Ollama locally, use <code>http://localhost:11434</code>.<br />
+          <b>On deployed links, each user must set this to their own local Ollama instance.</b> After changing, refresh the page to reload available models.
+        </div>
+      </div>
+
       <div className="flex justify-between items-center mb-4 gap-2">
         <h2 className="text-heading-sm font-semibold">Custom LLM Models</h2>
         <Button

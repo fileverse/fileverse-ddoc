@@ -15,8 +15,8 @@ const ModelSidebar: React.FC<ModelSidebarProps> = ({ isOpen, onClose }) => {
       title="Model Settings"
       content={
         <div className="py-4">
-        <ModelSettings />
-      </div>
+          <ModelSettings />
+        </div>
       }
     />
   );

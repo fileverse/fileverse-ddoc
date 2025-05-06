@@ -636,7 +636,7 @@ export const DBlock = Node.create<DBlockOptions>({
       new Plugin({
         key: new PluginKey('dblock-aiwriter-space'),
         props: {
-          handleTextInput(view, from, to, text) {
+          handleTextInput(view, from, _to, text) {
             // Only interested in single space
             if (text !== ' ') return false;
             const { state, dispatch } = view;

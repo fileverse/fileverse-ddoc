@@ -22,13 +22,10 @@ const md = new MarkdownIt({
   typographer: true,
 });
 
-// Define available LLM models
-const MODEL_OPTIONS = [
-  { value: 'gpt-4o', label: 'GPT-4o' },
-  { value: 'llama-3.2', label: 'Llama 3.2' },
-  { value: 'claude-3-opus', label: 'Claude 3 Opus' },
-  { value: 'claude-3-sonnet', label: 'Claude 3 Sonnet' },
-];
+interface ModelOption {
+  value: string;
+  label: string;
+}
 
 interface ModelService {
   callModel?: (prompt: string, model: string) => Promise<string>;
@@ -37,6 +34,7 @@ interface ModelService {
     model: string,
     onChunk: (chunk: string) => void,
   ) => Promise<void>;
+  getAvailableModels?: () => Promise<ModelOption[]>;
 }
 
 export const AIWriterNodeView = memo(
@@ -46,8 +44,32 @@ export const AIWriterNodeView = memo(
     const [hasGenerated, setHasGenerated] = useState(!!node.attrs.content);
     const [streamingContent, setStreamingContent] = useState('');
     const [isRemoving, setIsRemoving] = useState(false);
-    const { prompt, content, model = 'llama-3.2' } = node.attrs;
+    const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
+    const [selectedModel, setSelectedModel] = useState<string>('');
+    const { prompt, content } = node.attrs;
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+    // Load available models and set initial selected model on mount
+    useEffect(() => {
+      const loadModels = async () => {
+        const modelService = (
+          window as Window & { modelService?: ModelService }
+        ).modelService;
+        if (modelService?.getAvailableModels) {
+          try {
+            const models = await modelService.getAvailableModels();
+            setAvailableModels(models);
+            // Set the first model as selected if available
+            if (models.length > 0 && !selectedModel) {
+              setSelectedModel(models[0].value);
+            }
+          } catch (error) {
+            console.error('Error loading available models:', error);
+          }
+        }
+      };
+      loadModels();
+    }, [selectedModel]);
 
     // Auto-focus the textarea when the component mounts
     useEffect(() => {
@@ -94,7 +116,7 @@ export const AIWriterNodeView = memo(
           let fullContent = '';
           await modelService.streamModel(
             localPrompt,
-            model,
+            selectedModel,
             (chunk: string) => {
               fullContent += chunk;
               setStreamingContent(fullContent);
@@ -102,7 +124,7 @@ export const AIWriterNodeView = memo(
           );
           updateAttributes?.({ content: fullContent, prompt: localPrompt });
         } else if (modelService?.callModel) {
-          const newContent = await modelService.callModel(localPrompt, model);
+          const newContent = await modelService.callModel(localPrompt, selectedModel);
           updateAttributes?.({ content: newContent, prompt: localPrompt });
         }
       } catch (error) {
@@ -111,7 +133,11 @@ export const AIWriterNodeView = memo(
         setIsLoading(false);
         setStreamingContent('');
       }
-    }, [localPrompt, model, updateAttributes]);
+    }, [
+      localPrompt,
+      selectedModel,
+      updateAttributes,
+    ]);
 
     const handleInsert = useCallback(() => {
       if (typeof getPos === 'function') {
@@ -176,6 +202,7 @@ export const AIWriterNodeView = memo(
 
     const handleModelChange = useCallback(
       (newModel: string) => {
+        setSelectedModel(newModel);
         updateAttributes?.({ model: newModel });
       },
       [updateAttributes],
@@ -198,7 +225,7 @@ export const AIWriterNodeView = memo(
     );
 
     return (
-      <NodeViewWrapper className="min-w-[calc(100%+1.5rem)] translate-x-[-0.75rem]">
+      <NodeViewWrapper className="min-w-[calc(100%+2rem)] translate-x-[-1rem]">
         <div
           className={cn(
             'color-bg-default overflow-hidden flex flex-col rounded-lg w-full',
@@ -210,7 +237,7 @@ export const AIWriterNodeView = memo(
           {/* Preview Section */}
           {(hasGenerated || streamingContent) && (
             <div className="flex w-full flex-row items-center justify-center">
-              <div className="animate-border inline-block rounded-lg p-[2px] w-full m-3">
+              <div className="animate-border inline-block rounded-lg p-1 w-full mx-3 mb-3 mt-2">
                 <div
                   className={`w-full text-base color-text-default whitespace-pre-line color-bg-default p-4 rounded-lg shadow-elevation-3 ${styles.previewContent}`}
                   dangerouslySetInnerHTML={{
@@ -225,7 +252,7 @@ export const AIWriterNodeView = memo(
           <div
             className={cn(
               'flex items-center flex-col md:flex-row justify-between border color-border-default rounded-lg px-3 py-2 mb-3 mx-3 flex-1 shadow-elevation-3',
-              localPrompt.length > 65 && 'md:flex-col',
+              localPrompt.length > 50 && 'md:flex-col',
               !hasGenerated && 'mb-5',
             )}
           >
@@ -250,12 +277,12 @@ export const AIWriterNodeView = memo(
             <div
               className={cn(
                 'flex justify-between md:justify-end md:items-center gap-2 w-fit',
-                localPrompt.length > 65 &&
+                localPrompt.length > 50 &&
                 'md:justify-between md:items-start w-full',
               )}
             >
-              <Select value={model} onValueChange={handleModelChange}>
-                <SelectTrigger className="w-40 bg-transparent border-none">
+              <Select value={selectedModel} onValueChange={handleModelChange}>
+                <SelectTrigger className="w-52 bg-transparent border-none">
                   <div className="flex items-center gap-1">
                     <LucideIcon name="Bot" size="sm" />
                     <SelectValue placeholder="Select model" />
@@ -263,7 +290,7 @@ export const AIWriterNodeView = memo(
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup className="custom-scrollbar">
-                    {MODEL_OPTIONS.map((modelOption) => (
+                    {availableModels.map((modelOption: ModelOption) => (
                       <SelectItem
                         key={modelOption.value}
                         value={modelOption.value}
