@@ -198,10 +198,10 @@ export const AIWriterNodeView = memo(
     );
 
     return (
-      <NodeViewWrapper>
+      <NodeViewWrapper className="min-w-[calc(100%+1.5rem)] translate-x-[-0.75rem]">
         <div
           className={cn(
-            'color-bg-default overflow-hidden flex flex-col rounded-lg gap-2',
+            'color-bg-default overflow-hidden flex flex-col rounded-lg w-full',
             isRemoving
               ? 'animate-aiwriter-scale-out'
               : 'animate-aiwriter-scale-in',
@@ -210,9 +210,9 @@ export const AIWriterNodeView = memo(
           {/* Preview Section */}
           {(hasGenerated || streamingContent) && (
             <div className="flex w-full flex-row items-center justify-center">
-              <div className="animate-border inline-block rounded-lg p-[2px] w-full m-1">
+              <div className="animate-border inline-block rounded-lg p-[2px] w-full m-3">
                 <div
-                  className={`w-full text-base color-text-default whitespace-pre-line color-bg-default p-4 rounded-md shadow-lg ${styles.previewContent}`}
+                  className={`w-full text-base color-text-default whitespace-pre-line color-bg-default p-4 rounded-lg shadow-elevation-3 ${styles.previewContent}`}
                   dangerouslySetInnerHTML={{
                     __html: md.render(streamingContent || content || ''),
                   }}
@@ -224,8 +224,9 @@ export const AIWriterNodeView = memo(
           {/* Prompt Bar */}
           <div
             className={cn(
-              'flex items-center flex-col md:flex-row justify-between border color-border-default rounded-md px-3 py-2 m-1 !mt-0 flex-1 shadow',
+              'flex items-center flex-col md:flex-row justify-between border color-border-default rounded-lg px-3 py-2 mb-3 mx-3 flex-1 shadow-elevation-3',
               localPrompt.length > 65 && 'md:flex-col',
+              !hasGenerated && 'mb-5',
             )}
           >
             <div className="flex items-start gap-2 w-full">
@@ -240,7 +241,7 @@ export const AIWriterNodeView = memo(
                   onBlur={handlePromptBlur}
                   onKeyDown={handlePromptKeyDown}
                   placeholder="Ask wizard anything..."
-                  className="flex-1 pt-1 bg-transparent outline-none text-body-sm color-text-default px-1 resize-none placeholder:text-[var(--text-helper-text-sm)]"
+                  className="flex-1 pt-1 bg-transparent outline-none text-body-sm color-text-default px-1 resize-none"
                   disabled={isLoading}
                   autoFocus
                 />
@@ -285,25 +286,25 @@ export const AIWriterNodeView = memo(
 
           {/* Action Bar */}
           {hasGenerated && (
-            <div className="flex gap-2">
+            <div className="flex gap-2 mx-3 mb-4">
               <Button
                 variant="ghost"
                 onClick={handleInsert}
-                className="min-w-fit gap-1 px-2 py-1 color-text-success"
+                className="min-w-fit gap-1 px-2 py-1 color-text-success shadow-elevation-3"
               >
                 <LucideIcon name="Check" size="sm" /> Accept
               </Button>
               <Button
                 variant="ghost"
                 onClick={handleDiscard}
-                className="min-w-fit gap-1 px-2 py-1 color-text-danger"
+                className="min-w-fit gap-1 px-2 py-1 color-text-danger shadow-elevation-3"
               >
                 <LucideIcon name="X" size="sm" /> Discard
               </Button>
               <Button
                 variant="ghost"
                 onClick={handleTryAgain}
-                className="min-w-fit gap-1 px-2 py-1"
+                className="min-w-fit gap-1 px-2 py-1 shadow-elevation-3"
                 disabled={isLoading}
               >
                 <LucideIcon name="RefreshCw" size="sm" /> Try again
