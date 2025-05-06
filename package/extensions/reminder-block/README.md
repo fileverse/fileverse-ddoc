@@ -28,7 +28,7 @@ import { ReminderBlock } from '@fileverse/ddoc-editor/extensions/reminder-block'
       onReminderUpdate: handleReminderUpdate,
       reminders: reminders,
     })
-  ]
+  ]}
 />;
 ```
 

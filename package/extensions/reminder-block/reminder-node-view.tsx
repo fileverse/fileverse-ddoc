@@ -1,5 +1,11 @@
 import { NodeViewProps, NodeViewWrapper } from '@tiptap/react';
-import { LucideIcon, IconButton, cn, DynamicDropdown } from '@fileverse/ui';
+import {
+  LucideIcon,
+  IconButton,
+  cn,
+  DynamicDropdown,
+  Tooltip,
+} from '@fileverse/ui';
 import { memo, useCallback, useEffect, useState } from 'react';
 import { formatDateForReminder } from './utils';
 
@@ -128,15 +134,34 @@ export const ReminderNodeView = memo(
               )}
             >
               <div className="flex-1 flex items-center gap-1 max-w-[200px] min-w-max">
-                <LucideIcon
-                  name="AlarmClock"
-                  size="sm"
-                  className={cn(
-                    isOverdue
-                      ? 'reminder-wrapper-text-overdue'
-                      : 'reminder-wrapper-text',
-                  )}
-                />
+                {reminder.status === 'pending' ? (
+                  <Tooltip
+                    text={
+                      <div className="flex flex-col items-center gap-1">
+                        <p className="text-body-sm">Uploading on-chain</p>
+                        <span className="text-helper-text-sm color-text-secondary">
+                          This may take a few minutes
+                        </span>
+                      </div>
+                    }
+                  >
+                    <LucideIcon
+                      name="LoaderCircle"
+                      size="sm"
+                      className="animate-spin reminder-wrapper-text"
+                    />
+                  </Tooltip>
+                ) : (
+                  <LucideIcon
+                    name="AlarmClock"
+                    size="sm"
+                    className={cn(
+                      isOverdue
+                        ? 'reminder-wrapper-text-overdue'
+                        : 'reminder-wrapper-text',
+                    )}
+                  />
+                )}
                 <span
                   className={cn(
                     'text-xs',
@@ -178,29 +203,31 @@ export const ReminderNodeView = memo(
                   </span>
                 </div>
 
-                <div className="flex items-center">
-                  <IconButton
-                    icon="ChevronUp"
-                    variant="ghost"
-                    size="sm"
-                    className="color-text-default disabled:!bg-transparent"
-                    onClick={() => navigateToReminder('prev')}
-                  />
-                  <IconButton
-                    icon="ChevronDown"
-                    variant="ghost"
-                    size="sm"
-                    className="color-text-default disabled:!bg-transparent"
-                    onClick={() => navigateToReminder('next')}
-                  />
-                  <IconButton
-                    icon="Trash2"
-                    variant="ghost"
-                    size="sm"
-                    className="color-text-default"
-                    onClick={handleDelete}
-                  />
-                </div>
+                {!isPublishing && (
+                  <div className="flex items-center">
+                    <IconButton
+                      icon="ChevronUp"
+                      variant="ghost"
+                      size="sm"
+                      className="color-text-default disabled:!bg-transparent"
+                      onClick={() => navigateToReminder('prev')}
+                    />
+                    <IconButton
+                      icon="ChevronDown"
+                      variant="ghost"
+                      size="sm"
+                      className="color-text-default disabled:!bg-transparent"
+                      onClick={() => navigateToReminder('next')}
+                    />
+                    <IconButton
+                      icon="Trash2"
+                      variant="ghost"
+                      size="sm"
+                      className="color-text-default"
+                      onClick={handleDelete}
+                    />
+                  </div>
+                )}
               </div>
             </div>
           }
