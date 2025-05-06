@@ -26,12 +26,14 @@ export const LLMSettings: React.FC<LLMSettingsProps> = ({ children }) => {
   return (
     <ModelProvider>
       {/* Main content */}
-      <div className="relative">
+      <div>
         {children}
 
-        {/* Model selector will typically appear in the UI */}
-        <div className="absolute bottom-4 right-4">
-          <ModelSelector onSettingsClick={handleOpenSidebar} />
+        <div className="relative w-full">
+          {/* Model selector will typically appear in the UI */}
+          <div className="absolute bottom-4 right-4">
+            <ModelSelector onSettingsClick={handleOpenSidebar} />
+          </div>
         </div>
       </div>
 

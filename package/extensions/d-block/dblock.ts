@@ -3,6 +3,7 @@ import { Dispatch, Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import { DBlockNodeView } from './dblock-node-view';
 import { TextSelection, Transaction } from '@tiptap/pm/state';
+import { Plugin, PluginKey } from 'prosemirror-state';
 
 export interface DBlockOptions {
   HTMLAttributes: Record<string, any>;
@@ -628,5 +629,50 @@ export const DBlock = Node.create<DBlockOptions>({
 
   addNodeView() {
     return ReactNodeViewRenderer(DBlockNodeView as any);
+  },
+
+  addProseMirrorPlugins() {
+    return [
+      new Plugin({
+        key: new PluginKey('dblock-aiwriter-space'),
+        props: {
+          handleTextInput(view, from, to, text) {
+            // Only interested in single space
+            if (text !== ' ') return false;
+            const { state, dispatch } = view;
+            const { $from } = state.selection;
+            const parent = $from.node($from.depth - 1);
+            const node = $from.node($from.depth);
+            // Only trigger in dBlock > paragraph, and only if paragraph is empty
+            if (
+              parent?.type?.name === 'dBlock' &&
+              node?.type?.name === 'paragraph' &&
+              node.textContent === ''
+            ) {
+              // Check if previous char is also a space (double space)
+              const prevChar = state.doc.textBetween(from - 1, from, '\0');
+              if (prevChar === ' ') {
+                // Allow double space as normal
+                return false;
+              }
+              // Replace the empty paragraph with aiWriter node
+              const aiWriterNode = state.schema.nodes.aiWriter.create({
+                prompt: '',
+                content: '',
+                tone: 'Conversational',
+              });
+              const tr = state.tr.replaceRangeWith(
+                $from.before(),
+                $from.after(),
+                aiWriterNode,
+              );
+              dispatch(tr);
+              return true;
+            }
+            return false;
+          },
+        },
+      }),
+    ];
   },
 });

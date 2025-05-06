@@ -1,274 +1,317 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { NodeViewProps, NodeViewWrapper } from '@tiptap/react';
+import wizardLogo from '../../assets/wizard.svg';
+import MarkdownIt from 'markdown-it';
 import {
   Button,
   LucideIcon,
-  Skeleton,
-  TextAreaField,
   Select,
   SelectItem,
   SelectContent,
   SelectGroup,
   SelectTrigger,
   SelectValue,
+  cn,
 } from '@fileverse/ui';
-import { TONE_OPTIONS } from './types';
+import styles from './ai-writer-node-view.module.scss';
 
-export const AIWriterNodeView: React.FC<NodeViewProps> = ({
-  node,
-  editor,
-  getPos,
-  updateAttributes,
-}) => {
-  const [isLoading, setIsLoading] = useState(false);
-  const [localPrompt, setLocalPrompt] = useState(node.attrs.prompt);
-  const [hasGenerated, setHasGenerated] = useState(!!node.attrs.content);
-  const [streamingContent, setStreamingContent] = useState('');
-  const { prompt, content, tone } = node.attrs;
+// Initialize markdown-it
+const md = new MarkdownIt({
+  html: true,
+  linkify: true,
+  typographer: true,
+});
 
-  // Define the type for modelService
-  interface ModelService {
-    callModel?: (prompt: string, tone: string) => Promise<string>;
-    streamModel?: (
-      prompt: string,
-      tone: string,
-      onChunk: (chunk: string) => void,
-    ) => Promise<void>;
-  }
+// Define available LLM models
+const MODEL_OPTIONS = [
+  { value: 'gpt-4o', label: 'GPT-4o' },
+  { value: 'llama-3.2', label: 'Llama 3.2' },
+  { value: 'claude-3-opus', label: 'Claude 3 Opus' },
+  { value: 'claude-3-sonnet', label: 'Claude 3 Sonnet' },
+];
 
-  // Update local prompt when node attributes change
-  useEffect(() => {
-    setLocalPrompt(prompt);
-  }, [prompt]);
+interface ModelService {
+  callModel?: (prompt: string, model: string) => Promise<string>;
+  streamModel?: (
+    prompt: string,
+    model: string,
+    onChunk: (chunk: string) => void,
+  ) => Promise<void>;
+}
 
-  // Update hasGenerated when content changes
-  useEffect(() => {
-    setHasGenerated(!!content);
-  }, [content]);
+export const AIWriterNodeView = memo(
+  ({ node, editor, getPos, updateAttributes }: NodeViewProps) => {
+    const [isLoading, setIsLoading] = useState(false);
+    const [localPrompt, setLocalPrompt] = useState(node.attrs.prompt);
+    const [hasGenerated, setHasGenerated] = useState(!!node.attrs.content);
+    const [streamingContent, setStreamingContent] = useState('');
+    const [isRemoving, setIsRemoving] = useState(false);
+    const { prompt, content, model = 'llama-3.2' } = node.attrs;
+    const textareaRef = useRef<HTMLTextAreaElement>(null);
 
-  // Function to generate/regenerate the content
-  const handleGenerate = async () => {
-    if (!localPrompt.trim()) {
-      return;
-    }
-
-    try {
-      setIsLoading(true);
-      setStreamingContent(''); // Clear streaming content
-
-      // Use the window.modelService to generate new content
-      const modelService = (window as Window & { modelService?: ModelService })
-        .modelService;
-
-      if (modelService?.streamModel) {
-        // Use streaming API for real-time updates
-        let fullContent = '';
-
-        await modelService.streamModel(localPrompt, tone, (chunk: string) => {
-          // Update the streaming content as chunks arrive
-          fullContent += chunk;
-          setStreamingContent(fullContent);
-        });
-
-        // Update the node attributes with the complete content
-        if (updateAttributes) {
-          updateAttributes({
-            content: fullContent,
-            prompt: localPrompt,
-          });
-        }
-      } else if (modelService?.callModel) {
-        // Fallback to non-streaming API
-        const newContent = await modelService.callModel(localPrompt, tone);
-
-        // Update the node attributes with the new content
-        if (updateAttributes) {
-          updateAttributes({
-            content: newContent,
-            prompt: localPrompt,
-          });
-        }
+    // Auto-focus the textarea when the component mounts
+    useEffect(() => {
+      if (textareaRef.current) {
+        const timeout = setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+            textareaRef.current.selectionStart =
+              textareaRef.current.value.length; // Optional: move cursor to end
+            textareaRef.current.style.height = '0px';
+            textareaRef.current.style.height =
+              textareaRef.current.scrollHeight + 'px';
+          }
+        }, 0);
+        return () => clearTimeout(timeout);
       }
-    } catch (error) {
-      console.error('Error generating text:', error);
-    } finally {
-      setIsLoading(false);
-      setStreamingContent(''); // Clear streaming content once done
-    }
-  };
+    }, []);
 
-  // Function to insert the content into the document
-  const handleInsert = () => {
-    if (typeof getPos === 'function') {
-      // Delete the prompt card node
-      editor.commands.command(({ tr }) => {
-        tr.delete(getPos(), getPos() + node.nodeSize);
-        return true;
-      });
+    // Update textarea height when content changes
+    useEffect(() => {
+      if (textareaRef.current) {
+        textareaRef.current.style.height = '0px';
+        textareaRef.current.style.height =
+          textareaRef.current.scrollHeight + 'px';
+      }
+    }, [localPrompt]);
 
-      // Insert the content at the current position
-      editor.commands.insertContent(content);
-    }
-  };
+    // Combine effects for updating localPrompt and hasGenerated
+    useEffect(() => {
+      setLocalPrompt(prompt);
+      setHasGenerated(!!content);
+    }, [prompt, content]);
 
-  // Function to discard the prompt card
-  const handleDiscard = () => {
-    if (typeof getPos === 'function') {
-      editor.commands.command(({ tr }) => {
-        tr.delete(getPos(), getPos() + node.nodeSize);
-        return true;
-      });
-    }
-  };
+    // Handlers
+    const handleGenerate = useCallback(async () => {
+      if (!localPrompt.trim()) return;
+      try {
+        setIsLoading(true);
+        setStreamingContent('');
+        const modelService = (
+          window as Window & { modelService?: ModelService }
+        ).modelService;
+        if (modelService?.streamModel) {
+          let fullContent = '';
+          await modelService.streamModel(
+            localPrompt,
+            model,
+            (chunk: string) => {
+              fullContent += chunk;
+              setStreamingContent(fullContent);
+            },
+          );
+          updateAttributes?.({ content: fullContent, prompt: localPrompt });
+        } else if (modelService?.callModel) {
+          const newContent = await modelService.callModel(localPrompt, model);
+          updateAttributes?.({ content: newContent, prompt: localPrompt });
+        }
+      } catch (error) {
+        console.error('Error generating text:', error);
+      } finally {
+        setIsLoading(false);
+        setStreamingContent('');
+      }
+    }, [localPrompt, model, updateAttributes]);
 
-  // Handle prompt change
-  const handlePromptChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setLocalPrompt(e.target.value);
-  };
+    const handleInsert = useCallback(() => {
+      if (typeof getPos === 'function') {
+        setIsRemoving(true);
+        const timeout = setTimeout(() => {
+          editor.commands.command(({ tr }) => {
+            tr.delete(getPos(), getPos() + node.nodeSize);
+            return true;
+          });
+          editor.commands.insertContent(content);
+        }, 150); // Match animation duration
+        return () => clearTimeout(timeout);
+      }
+    }, [getPos, editor, node.nodeSize, content]);
 
-  // Update prompt when user finishes editing
-  const handlePromptBlur = () => {
-    if (updateAttributes && localPrompt !== prompt) {
-      updateAttributes({
-        prompt: localPrompt,
-      });
-    }
-  };
+    const handleDiscard = useCallback(() => {
+      if (typeof getPos === 'function') {
+        setIsRemoving(true);
+        const timeout = setTimeout(() => {
+          editor.commands.command(({ tr }) => {
+            tr.delete(getPos(), getPos() + node.nodeSize);
+            return true;
+          });
+          const focusTimeout = setTimeout(() => {
+            editor.commands.insertContent(' ');
+            editor.commands.focus();
+          }, 0);
+          return () => clearTimeout(focusTimeout);
+        }, 150); // Match animation duration
+        return () => clearTimeout(timeout);
+      }
+    }, [getPos, editor, node.nodeSize]);
 
-  // Handle tone selection
-  const handleToneChange = (newTone: string) => {
-    if (updateAttributes) {
-      updateAttributes({
-        tone: newTone,
-      });
-    }
-  };
+    const handlePromptChange = useCallback(
+      (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        setLocalPrompt(e.target.value);
+      },
+      [],
+    );
 
-  // Auto-generate content if prompt is entered and content is empty
-  const handlePromptKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && e.ctrlKey && localPrompt.trim()) {
-      e.preventDefault();
-      handleGenerate();
-    }
-  };
+    const handlePromptBlur = useCallback(() => {
+      if (updateAttributes && localPrompt !== prompt) {
+        updateAttributes({ prompt: localPrompt });
+      }
+    }, [updateAttributes, localPrompt, prompt]);
 
-  // Render loading skeleton for preview
-  const renderLoadingSkeleton = () => (
-    <div className="animate-pulse space-y-4">
-      <Skeleton className="h-4 rounded w-3/4" />
-      <Skeleton className="h-4 rounded w-1/2" />
-      <Skeleton className="h-4 rounded w-5/6" />
-      <Skeleton className="h-4 rounded w-2/3" />
-      <Skeleton className="h-4 rounded w-3/4" />
-    </div>
-  );
+    const handlePromptKeyDown = useCallback(
+      (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && localPrompt.trim()) {
+          e.preventDefault();
+          handleGenerate();
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          handleDiscard();
+        } else if (e.key === ' ' && !localPrompt.trim()) {
+          e.preventDefault();
+          handleDiscard();
+        }
+      },
+      [localPrompt, handleGenerate, handleDiscard],
+    );
 
-  return (
-    <NodeViewWrapper>
-      <div className="color-bg-default rounded-lg border color-border-default overflow-hidden">
-        {/* Preview section - only shown when content exists or loading */}
-        {(hasGenerated || isLoading || streamingContent) && (
-          <>
-            <div className="p-3 border-b color-border-default">
-              <div className="text-sm color-text-secondary">Preview</div>
+    const handleModelChange = useCallback(
+      (newModel: string) => {
+        updateAttributes?.({ model: newModel });
+      },
+      [updateAttributes],
+    );
+
+    const handleTryAgain = useCallback(() => {
+      updateAttributes?.({ content: '' });
+      setHasGenerated(false);
+      setStreamingContent('');
+    }, [updateAttributes]);
+
+    // Render loading skeleton for preview
+    const renderLoading = useCallback(
+      () => (
+        <span className="text-body-sm color-text-secondary pt-1">
+          Thinking <span className="animate-loading-dots">...</span>
+        </span>
+      ),
+      [],
+    );
+
+    return (
+      <NodeViewWrapper>
+        <div
+          className={cn(
+            'color-bg-default overflow-hidden flex flex-col rounded-lg gap-2',
+            isRemoving
+              ? 'animate-aiwriter-scale-out'
+              : 'animate-aiwriter-scale-in',
+          )}
+        >
+          {/* Preview Section */}
+          {(hasGenerated || streamingContent) && (
+            <div className="flex w-full flex-row items-center justify-center">
+              <div className="animate-border inline-block rounded-lg p-[2px] w-full m-1">
+                <div
+                  className={`w-full text-base color-text-default whitespace-pre-line color-bg-default p-4 rounded-md shadow-lg ${styles.previewContent}`}
+                  dangerouslySetInnerHTML={{
+                    __html: md.render(streamingContent || content || ''),
+                  }}
+                />
+              </div>
             </div>
+          )}
 
-            <div className="p-4 border-b color-border-default h-[200px] overflow-y-auto">
+          {/* Prompt Bar */}
+          <div
+            className={cn(
+              'flex items-center flex-col md:flex-row justify-between border color-border-default rounded-md px-3 py-2 m-1 !mt-0 flex-1 shadow',
+              localPrompt.length > 65 && 'md:flex-col',
+            )}
+          >
+            <div className="flex items-start gap-2 w-full">
+              <img src={wizardLogo} alt="AI Writer" className="w-5 h-5" />
               {isLoading && !streamingContent ? (
-                renderLoadingSkeleton()
-              ) : streamingContent ? (
-                streamingContent
-              ) : content ? (
-                content
+                renderLoading()
               ) : (
-                <div className="color-text-secondary italic">
-                  Enter your prompt below and press Generate to create content
-                </div>
+                <textarea
+                  ref={textareaRef}
+                  value={localPrompt}
+                  onChange={handlePromptChange}
+                  onBlur={handlePromptBlur}
+                  onKeyDown={handlePromptKeyDown}
+                  placeholder="Ask wizard anything..."
+                  className="flex-1 pt-1 bg-transparent outline-none text-body-sm color-text-default px-1 resize-none placeholder:text-[var(--text-helper-text-sm)]"
+                  disabled={isLoading}
+                  autoFocus
+                />
               )}
             </div>
-          </>
-        )}
-
-        {/* Prompt input */}
-        <div className="p-3 border-b color-border-default">
-          <div className="text-sm color-text-secondary mb-1">Prompt</div>
-          <TextAreaField
-            value={localPrompt}
-            onChange={handlePromptChange}
-            onBlur={handlePromptBlur}
-            onKeyDown={handlePromptKeyDown}
-            placeholder="Enter your prompt here..."
-            className="w-full p-2 min-h-[60px] border color-border-default rounded-md focus:outline-none resize-none color-bg-default"
-            disabled={isLoading}
-          />
-          <div className="text-xs color-text-secondary mt-2">
-            Press Ctrl+Enter to generate
-          </div>
-        </div>
-
-        {/* Action buttons */}
-        <div className="p-3 flex items-center justify-between">
-          <div>
-            <Select value={tone} onValueChange={handleToneChange}>
-              <SelectTrigger className="w-48">
-                <div className="flex items-center gap-1">
-                  <LucideIcon name="Mic" size="sm" />
-                  <SelectValue placeholder="Select tone" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectGroup className="custom-scrollbar">
-                  {TONE_OPTIONS.map((toneOption) => (
-                    <SelectItem key={toneOption.value} value={toneOption.value}>
-                      {toneOption.label}
-                    </SelectItem>
-                  ))}
-                </SelectGroup>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            {/* Only show Discard and Insert buttons if content has been generated */}
-            {hasGenerated && (
-              <>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleDiscard}
-                  className="flex items-center gap-1"
-                >
-                  <LucideIcon name="Trash2" size="sm" />
-                  Discard
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleInsert}
-                  disabled={!content}
-                  className="flex items-center gap-1"
-                >
-                  <LucideIcon name="Check" size="sm" />
-                  Insert
-                </Button>
-              </>
-            )}
-            <Button
-              variant="default"
-              size="sm"
-              onClick={handleGenerate}
-              isLoading={isLoading}
-              disabled={!localPrompt.trim() || isLoading}
-              className="flex items-center gap-1"
+            <div
+              className={cn(
+                'flex justify-between md:justify-end md:items-center gap-2 w-fit',
+                localPrompt.length > 65 &&
+                'md:justify-between md:items-start w-full',
+              )}
             >
-              <LucideIcon
-                name={hasGenerated ? 'RefreshCw' : 'Sparkles'}
-                size="sm"
-              />
-              {hasGenerated ? 'Regenerate' : 'Generate'}
-            </Button>
+              <Select value={model} onValueChange={handleModelChange}>
+                <SelectTrigger className="w-40 bg-transparent border-none">
+                  <div className="flex items-center gap-1">
+                    <LucideIcon name="Bot" size="sm" />
+                    <SelectValue placeholder="Select model" />
+                  </div>
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectGroup className="custom-scrollbar">
+                    {MODEL_OPTIONS.map((modelOption) => (
+                      <SelectItem
+                        key={modelOption.value}
+                        value={modelOption.value}
+                      >
+                        {modelOption.label}
+                      </SelectItem>
+                    ))}
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+              <Button
+                onClick={handleGenerate}
+                disabled={!localPrompt.trim() || isLoading || hasGenerated}
+                className="p-2 min-w-0 rounded-full w-8 h-8"
+              >
+                <LucideIcon name="ArrowUp" size="sm" />
+              </Button>
+            </div>
           </div>
+
+          {/* Action Bar */}
+          {hasGenerated && (
+            <div className="flex gap-2">
+              <Button
+                variant="ghost"
+                onClick={handleInsert}
+                className="min-w-fit gap-1 px-2 py-1 color-text-success"
+              >
+                <LucideIcon name="Check" size="sm" /> Accept
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={handleDiscard}
+                className="min-w-fit gap-1 px-2 py-1 color-text-danger"
+              >
+                <LucideIcon name="X" size="sm" /> Discard
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={handleTryAgain}
+                className="min-w-fit gap-1 px-2 py-1"
+                disabled={isLoading}
+              >
+                <LucideIcon name="RefreshCw" size="sm" /> Try again
+              </Button>
+            </div>
+          )}
         </div>
-      </div>
-    </NodeViewWrapper>
-  );
-};
+      </NodeViewWrapper>
+    );
+  },
+);

@@ -1,0 +1,128 @@
+.previewContent {
+  font-family: var(--font-sans, 'Inter', 'Segoe UI', Arial, sans-serif);
+  color: var(--color-text-default);
+  background: transparent;
+  font-size: 16px;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5em;
+
+  p {
+    line-height: normal;
+    margin: 0.25em 0;
+    &:first-child { margin-top: 0; }
+    &:last-child { margin-bottom: 0; }
+  }
+
+  h1, h2, h3 {
+    font-weight: 600;
+    margin-top: 0.75em;
+    margin-bottom: 0.25em;
+  }
+  h1 { font-size: 32px; }
+  h2 { font-size: 24px; }
+  h3 { font-size: 18px; }
+
+  ul, ol {
+    margin-left: 2rem;
+    padding-left: 0;
+    margin-top: 0.25em;
+    margin-bottom: 0.25em;
+    text-wrap: wrap;
+    &:first-child { margin-top: 0; }
+    &:last-child { margin-bottom: 0; }
+    display: flex;
+    flex-direction: column;
+    gap: 0.25em;
+  }
+  li {
+    margin: 0.1em 0;
+    padding: 0;
+  }
+
+  code {
+    background-color: rgba(97, 97, 97, 0.1);
+    color: #616161;
+    border-radius: 4px;
+    font-family: 'JetBrainsMono', monospace;
+    font-size: 0.95em;
+    padding: 2px 6px;
+  }
+  pre {
+    background-color: transparent;
+    color: #000;
+    font-family: 'JetBrainsMono', monospace;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    margin: 0.5em 0;
+    overflow-x: auto;
+    code {
+      background: none;
+      color: inherit;
+      padding: 0;
+      font-size: 0.8rem;
+    }
+  }
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 0.5rem;
+    margin: 0.5em 0;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 0.25em 0;
+    th, td {
+      min-width: 10rem;
+      max-width: 10rem;
+      border: 1px solid #e8ebec;
+      padding: 3px 5px;
+      vertical-align: top;
+    }
+    th {
+      font-weight: bold;
+      background-color: #f8f9fa;
+    }
+  }
+  blockquote {
+    border-left: 4px solid #e5e7eb;
+    margin: 0.5em 0;
+    padding: 0.5em 1em;
+    color: #6b7280;
+    background: none;
+  }
+  a {
+    color: #2563eb;
+    text-decoration: underline;
+    &:hover {
+      color: #1d4ed8;
+    }
+  }
+  hr {
+    border: none;
+    border-top: 1px solid #e5e7eb;
+    margin: 1em 0;
+  }
+  .task-list-item {
+    list-style-type: none;
+    margin: 0.25em 0;
+    input[type='checkbox'] {
+      margin-right: 0.5em;
+      width: 20px;
+      height: 20px;
+      border: 2px solid #363b3f;
+      border-radius: 4px;
+      appearance: none;
+      position: relative;
+      top: 3px;
+      display: inline-block;
+      vertical-align: middle;
+    }
+    input[type='checkbox']:checked {
+      background-color: #363b3f;
+      border-color: #363b3f;
+    }
+  }
+} 
