@@ -19,6 +19,10 @@
     @apply color-border-default;
   }
 
+  .ProseMirror:focus {
+    outline: none;
+  }
+
   .ProseMirror .is-empty::before {
     @apply color-text-default opacity-40;
   }

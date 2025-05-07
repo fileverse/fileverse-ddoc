@@ -204,7 +204,7 @@ export const defaultExtensions = (
     delimiters: 'dollar',
     katexOptions: {
       throwOnError: false,
-      strict: true,
+      strict: false,
     },
   }),
   Footnote,
