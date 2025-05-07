@@ -47,14 +47,32 @@ export const TrailingNode = Extension.create<TrailingNodeOptions>({
           const { doc, tr, schema } = state;
 
           const shouldInsertNodeAtEnd = plugin.getState(state);
-
-          const endPosition = doc.content.size;
-
-          const type = schema.nodes[this.options.node];
-
           if (!shouldInsertNodeAtEnd) return;
 
-          return tr.insert(endPosition, type.create());
+          const endPosition = doc.content.size;
+          const type = schema.nodes[this.options.node];
+
+          // Add node attributes
+          const nodeAttrs = {
+            class: 'trailing-node',
+          };
+
+          // Create text with marks if textStyle is available
+          let textContent = schema.text(' ');
+          const attrs = this.editor.getAttributes('textStyle');
+
+          if (schema.marks.textStyle) {
+            const mark = schema.marks.textStyle.create({
+              ...attrs,
+            });
+            textContent = schema.text(' ', [mark]);
+          }
+
+          // Create a single paragraph node with styled text content and node attributes
+          const styledNode = type.create(nodeAttrs, textContent);
+
+          // Insert only this one node
+          return tr.insert(endPosition, styledNode);
         },
         state: {
           init: (_, state) => {
