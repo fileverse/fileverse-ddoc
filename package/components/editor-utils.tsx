@@ -88,6 +88,13 @@ export const fonts = [
     },
   },
   {
+    title: 'IBM Plex Mono',
+    value: 'IBM Plex Mono, monospace',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('IBM Plex Mono, monospace').run();
+    },
+  },
+  {
     title: 'Impact',
     value: 'Impact, Charcoal, sans-serif',
     command: (editor: Editor) => {
@@ -103,6 +110,13 @@ export const fonts = [
     value: 'Inter, sans-serif',
     command: (editor: Editor) => {
       editor.chain().focus().setFontFamily('Inter, sans-serif').run();
+    },
+  },
+  {
+    title: 'JetBrains Mono',
+    value: 'JetBrains Mono, monospace',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('JetBrains Mono, monospace').run();
     },
   },
   {
