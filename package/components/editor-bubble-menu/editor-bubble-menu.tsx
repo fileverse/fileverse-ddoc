@@ -251,6 +251,42 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           )}
         >
           {mobileCommentButton}
+          {isConnected && (
+            <DynamicDropdown
+              key="Reminder"
+              side="bottom"
+              sideOffset={15}
+              anchorTrigger={
+                <ToolbarButton
+                  icon={'AlarmClock'}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    const selectedText =
+                      editor.state.selection.content().content.firstChild
+                        ?.textContent || '';
+                    if (setInitialReminderTitle) {
+                      setInitialReminderTitle(selectedText);
+                    }
+                  }}
+                />
+              }
+              className="!max-w-[300px] border-none shadow-none"
+              content={renderContent({
+                name: 'Reminder',
+                isActive: () => {},
+                command: () => {
+                  const selectedText =
+                    editor.state.selection.content().content.firstChild
+                      ?.textContent || '';
+                  if (setInitialReminderTitle) {
+                    setInitialReminderTitle(selectedText);
+                  }
+                },
+                icon: 'AlarmClock',
+              })}
+            />
+          )}
         </div>
       ) : (
         <React.Fragment>

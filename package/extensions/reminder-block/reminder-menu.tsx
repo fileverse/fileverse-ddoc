@@ -108,6 +108,8 @@ export const ReminderMenu = forwardRef<HTMLDivElement, ReminderMenuProps>(
         return;
       }
 
+      date.setSeconds(0, 0);
+
       const reminder = {
         id: uuid(),
         title,

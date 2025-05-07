@@ -79,23 +79,23 @@ export const ReminderNodeView = memo(
     );
 
     useEffect(() => {
-      // Only set up the interval if the reminder is not yet overdue
       if (!isOverdue) {
-        const checkOverdue = () => {
-          const now = Date.now();
-          if (new Date(reminder.timestamp).getTime() <= now) {
-            setIsOverdue(true);
-          }
-        };
+        const now = Date.now();
+        const target = new Date(reminder.timestamp).getTime();
+        const delay = target - now;
 
-        // Check immediately
-        checkOverdue();
+        // If already overdue or due now
+        if (delay <= 0) {
+          setIsOverdue(true);
+          return;
+        }
 
-        // Set up interval to check every minute
-        const intervalId = setInterval(checkOverdue, 60000);
+        const timeoutId = setTimeout(() => {
+          setIsOverdue(true);
+        }, delay);
 
-        // Clean up interval on unmount
-        return () => clearInterval(intervalId);
+        // Clean up timeout on unmount or if dependencies change
+        return () => clearTimeout(timeoutId);
       }
     }, [isOverdue, reminder.timestamp]);
 
