@@ -55,7 +55,6 @@ export const ReminderBlock = Node.create<ReminderBlockOptions>({
     return [
       'span',
       mergeAttributes(HTMLAttributes, { 'data-type': 'reminder-block' }),
-      0,
     ];
   },
 
