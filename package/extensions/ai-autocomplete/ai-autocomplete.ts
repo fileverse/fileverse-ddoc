@@ -229,7 +229,6 @@ export const AiAutocomplete = Extension.create({
               const { state, dispatch } = view;
               const { from, to } = state.selection;
               const tr = state.tr.insertText(currentSuggestion, from, to);
-              tr.setMeta('addToHistory', false);
               tr.setMeta(pluginKey, { decorations: DecorationSet.empty });
               dispatch(tr);
               currentSuggestion = null;
