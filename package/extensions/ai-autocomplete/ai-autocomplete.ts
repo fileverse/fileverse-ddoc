@@ -2,7 +2,7 @@
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
-import { Ollama } from 'ollama';
+import { Ollama } from 'ollama/browser';
 import { debounce } from '../../utils/debounce';
 
 export const AiAutocomplete = Extension.create({
