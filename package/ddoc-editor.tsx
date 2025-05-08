@@ -112,6 +112,7 @@ const DdocEditor = forwardRef(
       onCopyHeadingLink,
       footerHeight,
       hasAvailableModels,
+      activeModel,
     }: DdocProps,
     ref,
   ) => {
@@ -187,6 +188,7 @@ const DdocEditor = forwardRef(
       metadataProxyUrl,
       onCopyHeadingLink,
       hasAvailableModels,
+      activeModel,
     });
 
     useImperativeHandle(

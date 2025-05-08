@@ -18,7 +18,7 @@ import {
   TableOfContents,
   getHierarchicalIndexes,
 } from '@tiptap-pro/extension-table-of-contents';
-import { LLMSettings } from './components/settings';
+import { useModelContext } from './components/settings';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -56,6 +56,9 @@ function App() {
   //To handle comments from consumer side
   const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
   const [initialComments, setInitialComment] = useState<IComment[]>([]);
+
+  const { activeModel } = useModelContext();
+
   const handleReplyOnComment = (id: string, reply: IComment) => {
     setInitialComment((prev) =>
       prev.map((comment) => {
@@ -200,7 +203,7 @@ function App() {
                   </Button>
                   <Button
                     variant={'ghost'}
-                    onClick={() => { }}
+                    onClick={() => {}}
                     className="flex justify-start gap-2"
                   >
                     <LucideIcon name="Share2" size="sm" />
@@ -268,74 +271,73 @@ function App() {
   };
 
   return (
-    <LLMSettings>
-      <div>
-        <DdocEditor
-          enableCollaboration={enableCollaboration}
-          collaborationId={collaborationId}
-          username={username}
-          setUsername={setUsername}
-          isPreviewMode={isPreviewMode}
-          onError={(error) => {
-            toast({
-              title: 'Error',
-              description: error,
-              variant: 'danger',
-              hasIcon: true,
-            });
-          }}
-          renderNavbar={renderNavbar}
-          ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}
-          secureImageUploadUrl={import.meta.env.VITE_SECURE_IMAGE_UPLOAD_URL}
-          tags={sampleTags}
-          selectedTags={selectedTags}
-          setSelectedTags={setSelectedTags}
-          isCommentSectionOpen={isCommentSectionOpen}
-          setIsCommentSectionOpen={setIsCommentSectionOpen}
-          setInlineCommentData={setInlineCommentData}
-          inlineCommentData={inlineCommentData}
-          commentDrawerOpen={commentDrawerOpen}
-          setCommentDrawerOpen={setCommentDrawerOpen}
-          isPresentationMode={isPresentationMode}
-          setIsPresentationMode={setIsPresentationMode}
-          zoomLevel={zoomLevel}
-          setZoomLevel={setZoomLevel}
-          isNavbarVisible={isNavbarVisible}
-          setIsNavbarVisible={setIsNavbarVisible}
-          onComment={(): void => { }}
-          onInlineComment={(): void => { }}
-          onMarkdownImport={(): void => { }}
-          onMarkdownExport={(): void => { }}
-          onPdfExport={(): void => { }}
-          initialComments={initialComments}
-          onCommentReply={handleReplyOnComment}
-          onNewComment={handleNewComment}
-          setInitialComments={setInitialComment}
-          onResolveComment={handleResolveComment}
-          onUnresolveComment={handleUnresolveComment}
-          onDeleteComment={handleDeleteComment}
-          showTOC={showTOC}
-          setShowTOC={setShowTOC}
-          proExtensions={{
-            TableOfContents,
-            getHierarchicalIndexes,
-          }}
-          isConnected={isConnected}
-          connectViaWallet={async () => { }}
-          isLoading={false}
-          connectViaUsername={handleConnectViaUsername}
-          isDDocOwner={true}
-          onCopyHeadingLink={(link: string) => {
-            navigator.clipboard.writeText(link);
-          }}
-          hasAvailableModels={true}
-        />
-        <Toaster
-          position={!isMobile ? 'bottom-right' : 'center-top'}
-          duration={3000}
-        />
-      </div>
-    </LLMSettings>
+    <div>
+      <DdocEditor
+        enableCollaboration={enableCollaboration}
+        collaborationId={collaborationId}
+        username={username}
+        setUsername={setUsername}
+        isPreviewMode={isPreviewMode}
+        onError={(error) => {
+          toast({
+            title: 'Error',
+            description: error,
+            variant: 'danger',
+            hasIcon: true,
+          });
+        }}
+        renderNavbar={renderNavbar}
+        ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}
+        secureImageUploadUrl={import.meta.env.VITE_SECURE_IMAGE_UPLOAD_URL}
+        tags={sampleTags}
+        selectedTags={selectedTags}
+        setSelectedTags={setSelectedTags}
+        isCommentSectionOpen={isCommentSectionOpen}
+        setIsCommentSectionOpen={setIsCommentSectionOpen}
+        setInlineCommentData={setInlineCommentData}
+        inlineCommentData={inlineCommentData}
+        commentDrawerOpen={commentDrawerOpen}
+        setCommentDrawerOpen={setCommentDrawerOpen}
+        isPresentationMode={isPresentationMode}
+        setIsPresentationMode={setIsPresentationMode}
+        zoomLevel={zoomLevel}
+        setZoomLevel={setZoomLevel}
+        isNavbarVisible={isNavbarVisible}
+        setIsNavbarVisible={setIsNavbarVisible}
+        onComment={(): void => {}}
+        onInlineComment={(): void => {}}
+        onMarkdownImport={(): void => {}}
+        onMarkdownExport={(): void => {}}
+        onPdfExport={(): void => {}}
+        initialComments={initialComments}
+        onCommentReply={handleReplyOnComment}
+        onNewComment={handleNewComment}
+        setInitialComments={setInitialComment}
+        onResolveComment={handleResolveComment}
+        onUnresolveComment={handleUnresolveComment}
+        onDeleteComment={handleDeleteComment}
+        showTOC={showTOC}
+        setShowTOC={setShowTOC}
+        proExtensions={{
+          TableOfContents,
+          getHierarchicalIndexes,
+        }}
+        isConnected={isConnected}
+        connectViaWallet={async () => {}}
+        isLoading={false}
+        connectViaUsername={handleConnectViaUsername}
+        isDDocOwner={true}
+        onCopyHeadingLink={(link: string) => {
+          navigator.clipboard.writeText(link);
+        }}
+        hasAvailableModels={true}
+        activeModel={activeModel}
+      />
+      <Toaster
+        position={!isMobile ? 'bottom-right' : 'center-top'}
+        duration={3000}
+      />
+    </div>
   );
 }
 

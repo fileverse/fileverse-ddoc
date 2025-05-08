@@ -34,7 +34,10 @@ export const AiAutocomplete = Extension.create({
     const pluginKey = new PluginKey('ai-autocomplete');
     let currentSuggestion: string | null = null;
     let lastContext = '';
-    const ollama = new Ollama();
+
+    const ollama = new Ollama({
+      host: this.options?.endpoint || 'http://localhost:11434',
+    });
     const options = this.options; // Capture options for use in plugin view/props
     const extension = this;
 

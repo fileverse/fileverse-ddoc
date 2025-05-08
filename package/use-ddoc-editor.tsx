@@ -65,7 +65,8 @@ export const useDdocEditor = ({
   proExtensions,
   metadataProxyUrl,
   onCopyHeadingLink,
-  hasAvailableModels
+  hasAvailableModels,
+  activeModel,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
 
@@ -285,13 +286,13 @@ export const useDdocEditor = ({
   }, [proExtensions]);
 
   useEffect(() => {
-    if (hasAvailableModels) {
+    if (hasAvailableModels && activeModel) {
       setExtensions([
         ...extensions.filter(
           (ext) => ext.name !== 'aiAutocomplete' && ext.name !== 'aiWriter',
         ),
         AiAutocomplete.configure({
-          model: 'llama3.2:latest',
+          model: activeModel,
           maxTokens: 8,
           temperature: 0.2,
           debounceTime: 100,
@@ -300,7 +301,7 @@ export const useDdocEditor = ({
         AIWriter,
       ]);
     }
-  }, [hasAvailableModels]);
+  }, [hasAvailableModels, activeModel]);
 
   useEffect(() => {
     if (zoomLevel) {
@@ -314,7 +315,7 @@ export const useDdocEditor = ({
     }
   }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => { });
+  const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {

@@ -31,6 +31,7 @@ export function useCustomModels(): UseCustomModelsReturnType {
     ollamaError,
     getModelById,
   } = useModelContext();
+
   const [selectedModelId, setSelectedModelId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

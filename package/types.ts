@@ -32,6 +32,16 @@ export interface CommentAccountProps {
   connectViaUsername?: (username: string) => Promise<void>;
   isDDocOwner?: boolean;
 }
+
+export interface CustomModel {
+  id?: string;
+  label: string;
+  modelName: string;
+  endpoint: string;
+  contextSize: number;
+  apiKey: string;
+  systemPrompt: string;
+}
 export interface DdocProps extends CommentAccountProps {
   isCollabDocumentPublished?: boolean;
   disableInlineComment?: boolean;
@@ -108,6 +118,7 @@ export interface DdocProps extends CommentAccountProps {
   onCopyHeadingLink?: (link: string) => void;
   footerHeight?: string;
   hasAvailableModels?: boolean;
+  activeModel?: CustomModel;
 }
 
 export interface IEditorSelectionData {

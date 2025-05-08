@@ -26,32 +26,36 @@ interface ModelProviderProps {
 interface WindowWithModelService extends Window {
   modelService?: {
     callModel: (prompt: string, tone: string) => Promise<string>;
-    streamModel: (prompt: string, tone: string, onChunk: (chunk: string) => void) => Promise<void>;
+    streamModel: (
+      prompt: string,
+      tone: string,
+      onChunk: (chunk: string) => void,
+    ) => Promise<void>;
     getAvailableModels: () => Promise<{ value: string; label: string }[]>;
   };
 }
 
 export const ModelContext = createContext<ModelContextType>({
   models: [],
-  addModel: () => { },
-  deleteModel: () => { },
+  addModel: () => {},
+  deleteModel: () => {},
   getModelById: () => undefined,
   getModelByName: () => undefined,
   defaultModels: [],
   isLoadingDefaultModels: true,
   ollamaError: null,
   activeModel: undefined,
-  setActiveModel: () => { },
+  setActiveModel: () => {},
 });
 
-export const ModelProvider = ({
-  children,
-}: ModelProviderProps) => {
+export const ModelProvider = ({ children }: ModelProviderProps) => {
   const [models, setModels] = useState<CustomModel[]>([]);
   const [defaultModels, setDefaultModels] = useState<CustomModel[]>([]);
   const [isLoadingDefaultModels, setIsLoadingDefaultModels] = useState(true);
   const [ollamaError, setOllamaError] = useState<string | null>(null);
-  const [activeModel, setActiveModel] = useState<CustomModel | undefined>(undefined);
+  const [activeModel, setActiveModel] = useState<CustomModel | undefined>(
+    undefined,
+  );
 
   // Load Ollama default models
   useEffect(() => {
@@ -61,7 +65,8 @@ export const ModelProvider = ({
         setIsLoadingDefaultModels(true);
         setOllamaError(null);
 
-        const ollamaModels = await DefaultModelProvider.getDefaultOllamaModels();
+        const ollamaModels =
+          await DefaultModelProvider.getDefaultOllamaModels();
         setDefaultModels(ollamaModels);
 
         if (ollamaModels.length > 0 && !activeModel) {
@@ -71,7 +76,7 @@ export const ModelProvider = ({
 
         if (ollamaModels.length === 0) {
           setOllamaError(
-            'No Ollama models found. Make sure Ollama is running and accessible from the browser.'
+            'No Ollama models found. Make sure Ollama is running and accessible from the browser.',
           );
         }
       } catch (error) {
@@ -79,7 +84,7 @@ export const ModelProvider = ({
         setOllamaError(
           error instanceof Error
             ? error.message
-            : 'Failed to connect to Ollama'
+            : 'Failed to connect to Ollama',
         );
       } finally {
         setIsLoadingDefaultModels(false);
@@ -147,7 +152,7 @@ export const ModelProvider = ({
     win.modelService = {
       callModel: async (prompt: string, tone: string) => {
         if (!activeModel) {
-          return "No AI model selected. Please select a model in settings.";
+          return 'No AI model selected. Please select a model in settings.';
         }
 
         // Format the prompt with the tone
@@ -158,12 +163,16 @@ export const ModelProvider = ({
           return await ModelService.callModel(activeModel, promptWithTone);
         } catch (error) {
           console.error('Error calling model:', error);
-          return "Error while generating text. Please check the model settings and try again.";
+          return 'Error while generating text. Please check the model settings and try again.';
         }
       },
-      streamModel: async (prompt: string, tone: string, onChunk: (chunk: string) => void) => {
+      streamModel: async (
+        prompt: string,
+        tone: string,
+        onChunk: (chunk: string) => void,
+      ) => {
         if (!activeModel) {
-          onChunk("No AI model selected. Please select a model in settings.");
+          onChunk('No AI model selected. Please select a model in settings.');
           return;
         }
 
@@ -173,17 +182,25 @@ export const ModelProvider = ({
         try {
           if (ModelService.isOllamaModel(activeModel)) {
             // If it's an Ollama model, use streaming
-            for await (const chunk of OllamaService.streamModel(activeModel, promptWithTone)) {
+            for await (const chunk of OllamaService.streamModel(
+              activeModel,
+              promptWithTone,
+            )) {
               onChunk(chunk);
             }
           } else {
             // For non-Ollama models, fall back to regular model call
-            const result = await ModelService.callModel(activeModel, promptWithTone);
+            const result = await ModelService.callModel(
+              activeModel,
+              promptWithTone,
+            );
             onChunk(result);
           }
         } catch (error) {
           console.error('Error streaming from model:', error);
-          onChunk("Error while generating text. Please check the model settings and try again.");
+          onChunk(
+            'Error while generating text. Please check the model settings and try again.',
+          );
         }
       },
       getAvailableModels: async () => {
@@ -191,11 +208,11 @@ export const ModelProvider = ({
         const allModels = [...models, ...defaultModels];
 
         // Map models to the expected format
-        return allModels.map(model => ({
+        return allModels.map((model) => ({
           value: model.modelName,
-          label: model.label
+          label: model.label,
         }));
-      }
+      },
     };
 
     return () => {
