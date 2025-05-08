@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-this-alias */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
@@ -16,6 +17,16 @@ export const AiAutocomplete = Extension.create({
       maxTokens: 8,
       temperature: 0.2,
       applySuggestionKey: 'Tab',
+      isEnabled: (() => {
+        const stored = localStorage.getItem('autocomplete-enabled');
+        return stored === null ? true : stored === 'true';
+      })(),
+    };
+  },
+
+  addStorage() {
+    return {
+      isEnabled: this.options.isEnabled,
     };
   },
 
@@ -25,6 +36,12 @@ export const AiAutocomplete = Extension.create({
     let lastContext = '';
     const ollama = new Ollama();
     const options = this.options; // Capture options for use in plugin view/props
+    const extension = this;
+
+    // Listen for toggle events from UI
+    window.addEventListener('autocomplete-toggle', ((event: CustomEvent) => {
+      extension.storage.isEnabled = event.detail.enabled;
+    }) as EventListener);
 
     // Debounced suggestion fetcher
     const getSuggestion = debounce(
@@ -90,6 +107,18 @@ export const AiAutocomplete = Extension.create({
         view() {
           return {
             update(view, prevState) {
+              // Don't show suggestions if autocomplete is disabled
+              if (!extension.storage.isEnabled) {
+                if (currentSuggestion) {
+                  currentSuggestion = null;
+                  const tr = view.state.tr;
+                  tr.setMeta('addToHistory', false);
+                  tr.setMeta(pluginKey, { decorations: DecorationSet.empty });
+                  view.dispatch(tr);
+                }
+                return;
+              }
+
               const { state } = view;
               const { from } = state.selection;
               const $pos = state.doc.resolve(from);

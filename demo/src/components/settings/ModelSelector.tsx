@@ -30,7 +30,8 @@ const ModelSelector = ({ onSettingsClick }: ModelSelectorProps) => {
 
   const [modelStatus, setModelStatus] = useState<'idle' | 'loading' | 'error'>('idle');
   const [isAutocompleteEnabled, setIsAutocompleteEnabled] = useState(() => {
-    return localStorage.getItem('autocomplete-enabled') === 'true';
+    const stored = localStorage.getItem('autocomplete-enabled');
+    return stored === null ? true : stored === 'true';
   });
   const [selectedTone, setSelectedTone] = useState(() => {
     return localStorage.getItem('autocomplete-tone') || 'neutral';
