@@ -12,6 +12,7 @@ export const AiAutocomplete = Extension.create({
     return {
       debounce: 100,
       model: '',
+      tone: 'neutral',
       maxTokens: 8,
       temperature: 0.2,
       applySuggestionKey: 'Tab',
@@ -96,6 +97,20 @@ export const AiAutocomplete = Extension.create({
               const nodeStart = $pos.start();
               const context = node.textBetween(0, from - nodeStart, ' ');
 
+              // Check if cursor is right after punctuation without a space
+              const lastChar = context[context.length - 1];
+              const isAfterPunctuation = lastChar && /[.,!?;:]/.test(lastChar);
+              if (isAfterPunctuation) {
+                if (currentSuggestion) {
+                  currentSuggestion = null;
+                  const tr = state.tr;
+                  tr.setMeta('addToHistory', false);
+                  tr.setMeta(pluginKey, { decorations: DecorationSet.empty });
+                  view.dispatch(tr);
+                }
+                return;
+              }
+
               // Only suggest if user has typed something (not just placeholder)
               if (!context.trim()) {
                 if (currentSuggestion) {
@@ -134,7 +149,7 @@ export const AiAutocomplete = Extension.create({
               }, 0);
 
               // Fetch new suggestion
-              const prompt = `Continue writing the following text, word by word, as if you are the user. Do not answer, do not change the topic, just continue the sentence naturally. Do not add any punctuation or spaces to the end of the suggestion:\n${context}`;
+              const prompt = `Continue writing the following text, word by word, as if you are the user. Write in ${options.tone} tone. Do not answer, do not change the topic, just continue the sentence naturally. Do not add any punctuation or spaces to the end of the suggestion:\n${context}`;
 
               getSuggestion(prompt, (suggestion) => {
                 currentSuggestion = suggestion;

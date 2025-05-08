@@ -295,6 +295,7 @@ export const useDdocEditor = ({
           maxTokens: 8,
           temperature: 0.2,
           debounceTime: 100,
+          tone: 'conversational',
         }),
         AIWriter,
       ]);
