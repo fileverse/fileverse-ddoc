@@ -107,6 +107,7 @@ export interface DdocProps extends CommentAccountProps {
   metadataProxyUrl?: string;
   onCopyHeadingLink?: (link: string) => void;
   footerHeight?: string;
+  hasAvailableModels?: boolean;
 }
 
 export interface IEditorSelectionData {

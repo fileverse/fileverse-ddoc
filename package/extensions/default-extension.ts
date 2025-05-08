@@ -53,6 +53,7 @@ export const defaultExtensions = (
   secureImageUploadUrl?: string,
   metadataProxyUrl?: string,
   onCopyHeadingLink?: (link: string) => void,
+  hasAvailableModels?: boolean,
 ) => [
   FontFamily,
   StarterKit.configure({
@@ -78,7 +79,7 @@ export const defaultExtensions = (
     },
     paragraph: {
       HTMLAttributes: {
-        class: 'select-text pointer-events-auto',
+        class: 'select-text pointer-events-auto transition-all',
       },
     },
     orderedList: {
@@ -177,6 +178,7 @@ export const defaultExtensions = (
   DBlock.configure({
     secureImageUploadUrl,
     onCopyHeadingLink,
+    hasAvailableModels,
   }),
   TrailingNode,
   Document,
