@@ -174,7 +174,7 @@ export const ReminderMenu = forwardRef<HTMLDivElement, ReminderMenuProps>(
           </Button>
         </div>
 
-        <Divider className="my-2 w-full" />
+        <hr className="my-2 h-1 w-full" />
         <h3 className="text-heading-xsm">Custom</h3>
 
         <div className="flex gap-2">

@@ -54,7 +54,11 @@ export const ReminderBlock = Node.create<ReminderBlockOptions>({
   renderHTML({ HTMLAttributes }) {
     return [
       'span',
-      mergeAttributes(HTMLAttributes, { 'data-type': 'reminder-block' }),
+      mergeAttributes(HTMLAttributes, {
+        'data-type': 'reminder-block',
+        contenteditable: 'false',
+        style: 'user-select: none;',
+      }),
     ];
   },
 

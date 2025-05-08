@@ -12,8 +12,21 @@ export function showReminderMenu(editor: Editor, range: Range) {
   editor.chain().focus().deleteRange(range).run();
 
   const getReferenceClientRect = () => {
-    const node = editor.view.domAtPos(range.from).node as HTMLElement;
-    return node.getBoundingClientRect();
+    const domAtPos = editor.view.domAtPos(range.from);
+    let node = domAtPos.node as HTMLElement;
+
+    if (node.nodeType === Node.TEXT_NODE) {
+      node = node.parentElement as HTMLElement;
+    }
+
+    if (node?.getBoundingClientRect) {
+      return node.getBoundingClientRect();
+    }
+
+    const domRange = document.createRange();
+    domRange.setStart(domAtPos.node, domAtPos.offset);
+    domRange.setEnd(domAtPos.node, domAtPos.offset);
+    return domRange.getBoundingClientRect();
   };
 
   const destroyPopup = () => {
