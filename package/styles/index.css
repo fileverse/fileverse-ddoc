@@ -193,3 +193,28 @@ div[data-type='page-break']:hover .remove-page-break-icon {
 .dark .vertical-divider {
   background-color: #404040;
 }
+
+.grammarly-wrapper {
+  position: relative;
+  overflow: hidden;
+  height: 100%; /* match container */
+  max-height: 100%; /* safe fallback */
+  padding: 0;
+}
+
+#editor {
+  position: relative;
+  z-index: 1; /* make sure editor text stays above Grammarly background stuff */
+}
+
+/* Suppress Grammarly's injected overlays if they're breaking layout */
+.grammarly-wrapper [class*='grammarly'],
+.grammarly-wrapper [class*='gr_'],
+.grammarly-wrapper [data-grammarly-part] {
+  max-height: 100% !important;
+  overflow: hidden !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  display: inline !important;
+  line-height: inherit !important;
+}

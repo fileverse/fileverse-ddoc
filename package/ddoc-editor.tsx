@@ -567,34 +567,36 @@ const DdocEditor = forwardRef(
                             ) : null}
                           </div>
                         )}
-                        <EditorContent
-                          editor={editor}
-                          id="editor"
-                          className={cn(
-                            'w-full h-auto py-4 color-bg-default',
-                            isPreviewMode && 'preview-mode',
-                          )}
-                        />
+                        <div className="grammarly-wrapper">
+                          <EditorContent
+                            editor={editor}
+                            id="editor"
+                            className={cn(
+                              'w-full h-auto py-4 color-bg-default',
+                              isPreviewMode && 'preview-mode',
+                            )}
+                          />
+                        </div>
                       </EditingProvider>,
                       'editor-transition',
                     )}
               </div>
-              {showCommentButton && !isNativeMobile && (
-                <Button
-                  ref={btn_ref}
-                  onClick={() => {
-                    if (!editor) return;
-                    handleCommentButtonClick?.(editor);
-                  }}
-                  variant="ghost"
-                  className={cn(
-                    'absolute w-12 h-12 color-bg-default rounded-full shadow-xl top-[70px] right-[-23px]',
-                  )}
-                >
-                  <LucideIcon name="MessageSquareText" size="sm" />
-                </Button>
-              )}
             </div>
+            {showCommentButton && !isNativeMobile && (
+              <Button
+                ref={btn_ref}
+                onClick={() => {
+                  if (!editor) return;
+                  handleCommentButtonClick?.(editor);
+                }}
+                variant="ghost"
+                className={cn(
+                  'absolute w-12 h-12 color-bg-default rounded-full shadow-xl top-[70px] right-[-23px]',
+                )}
+              >
+                <LucideIcon name="MessageSquareText" size="sm" />
+              </Button>
+            )}
             {!isPreviewMode && !disableBottomToolbar && (
               <div
                 className={cn(
