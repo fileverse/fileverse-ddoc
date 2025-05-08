@@ -192,7 +192,9 @@ const CommandList = ({
             key={index}
             className={cn(
               'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm hover:color-bg-default-hover border border-transparent transition-all',
-              index === selectedIndex && 'color-bg-default-hover',
+              index === selectedIndex &&
+                item.isDisabled &&
+                'color-bg-default-hover',
             )}
             onClick={() => selectItem(index)}
           >
@@ -200,8 +202,24 @@ const CommandList = ({
               {item.icon}
             </div>
             <div className="flex-1 min-w-0">
-              <p className="font-medium">{item.title}</p>
-              <p className="text-xs text-neutral-500">{item.description}</p>
+              <p
+                className={cn(
+                  item.isDisabled
+                    ? 'color-text-disabled font-medium'
+                    : 'font-medium',
+                )}
+              >
+                {item.title}
+              </p>
+              <p
+                className={cn(
+                  item.isDisabled
+                    ? 'color-text-disabled text-xs'
+                    : 'text-xs text-neutral-500',
+                )}
+              >
+                {item.description}
+              </p>
             </div>
           </button>
         );

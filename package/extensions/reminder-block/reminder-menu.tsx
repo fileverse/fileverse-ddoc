@@ -50,7 +50,9 @@ export const ReminderMenu = forwardRef<HTMLDivElement, ReminderMenuProps>(
     ref,
   ) => {
     const [title, setTitle] = useState<string>(initialReminderTitle || '');
-    const [date, setDate] = useState<Date | undefined>(new Date());
+    const [date, setDate] = useState<Date | undefined>(
+      new Date(Date.now() + 6 * 60 * 1000),
+    );
     const [error, setError] = useState<string>('');
     const isMobile = useMediaQuery('(max-width: 768px)');
     const [use12Hours, setUse12Hours] = useState<boolean>(true);

@@ -111,11 +111,23 @@ export const getSuggestionItems = ({
     },
     {
       title: 'Reminder',
-      description: `We'll send you a push notification, so you don't forget about important.`,
+      description: isConnected
+        ? `We'll send you a push notification, so you don't forget about something important.`
+        : 'You need to be logged-in to create reminders',
       searchTerms: ['reminder', 'alert', 'notification'],
-      icon: <LucideIcon name="AlarmClock" size={'md'} />,
+      icon: (
+        <LucideIcon
+          name="AlarmClock"
+          size={'md'}
+          stroke={(!isConnected && '#a1aab1') || undefined}
+        />
+      ),
       image: '',
+      isDisabled: !isConnected,
       command: ({ editor, range }: CommandProps) => {
+        if (!isConnected) {
+          return;
+        }
         showReminderMenu(editor, range);
         return true;
       },
@@ -306,9 +318,6 @@ export const getSuggestionItems = ({
       },
     },
   ].filter((item) => {
-    if (!isConnected && item.title === 'Reminder') {
-      return false;
-    }
     if (typeof query === 'string' && query.length > 0) {
       const search = query.toLowerCase();
       return (

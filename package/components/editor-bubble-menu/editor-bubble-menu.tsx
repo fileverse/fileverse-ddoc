@@ -497,7 +497,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                   );
                 }
 
-                if (item.name === 'Reminder' && isConnected) {
+                if (item.name === 'Reminder') {
                   return (
                     <DynamicDropdown
                       key="Reminder"
@@ -507,6 +507,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                         <ToolbarButton
                           icon={item.icon}
                           variant="ghost"
+                          disabled={!isConnected}
                           size="sm"
                           onClick={item.command}
                         />
