@@ -12,7 +12,7 @@ interface LLMSettingsProps {
  * Use this component to wrap areas of your application that need
  * access to custom LLM models
  */
-export const LLMSettings: React.FC<LLMSettingsProps> = ({ children }) => {
+export const LLMSettings = ({ children }: LLMSettingsProps) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   const handleOpenSidebar = () => {

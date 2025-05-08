@@ -1199,3 +1199,51 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
 .placeholder-disabled::placeholder {
   color: rgba(var(--color-text-disabled));
 }
+
+.autocomplete-suggestion {
+  pointer-events: none;
+  user-select: none;
+  display: inline;
+  white-space: pre-line;
+  font-family: inherit !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+  letter-spacing: inherit !important;
+  font-style: italic !important;
+  color: var(--color-text-secondary);
+  opacity: 0.6;
+  background: none;
+  border: none;
+  margin: 0;
+  padding: 0;
+  vertical-align: baseline;
+}
+
+.autocomplete-suggestion-container {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.autocomplete-tab-button {
+  font-size: 10px;
+  padding: 2px 6px;
+  border: 1px solid #E8EBEC;
+  border-radius: 4px;
+  background-color: #E8EBEC;
+  color: #77818A;
+  opacity: 0.8;
+  pointer-events: none;
+  user-select: none;
+  font-style: normal !important;
+  font-weight: 500;
+  line-height: 1;
+  margin-left: 4px;
+
+  .dark & {
+    background-color: #404040;
+    border-color: #404040;
+    color: #888888;
+  }
+}

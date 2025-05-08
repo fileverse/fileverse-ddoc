@@ -328,6 +328,7 @@ function App() {
           onCopyHeadingLink={(link: string) => {
             navigator.clipboard.writeText(link);
           }}
+          hasAvailableModels={true}
         />
         <Toaster
           position={!isMobile ? 'bottom-right' : 'center-top'}

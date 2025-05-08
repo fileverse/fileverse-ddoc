@@ -39,7 +39,7 @@ export class OllamaService {
           },
         ],
         options: {
-          temperature: 0.3, // Default value
+          temperature: 0.2, // Default value
         },
       });
 
@@ -88,7 +88,7 @@ export class OllamaService {
         ],
         stream: true,
         options: {
-          temperature: 0.3,
+          temperature: 0.2,
         },
       });
 

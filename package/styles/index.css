@@ -258,7 +258,7 @@ div[data-type='page-break']:hover .remove-page-break-icon {
   background-size: 400% 400%;
   animation: background-gradient 3s ease infinite;
   box-shadow:
-    0px 0px 8px 1px rgba(59, 130, 246, 0.1),
-    0px 0px 8px 1px rgba(192, 132, 252, 0.1),
-    0px 0px 8px 1px rgba(253, 224, 71, 0.1);
+    0px 0px 4px 1px rgba(59, 130, 246, 0.1),
+    0px 0px 4px 1px rgba(192, 132, 252, 0.1),
+    0px 0px 4px 1px rgba(253, 224, 71, 0.1);
 }

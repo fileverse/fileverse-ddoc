@@ -44,9 +44,9 @@ export const ModelContext = createContext<ModelContextType>({
   setActiveModel: () => { },
 });
 
-export const ModelProvider: React.FC<ModelProviderProps> = ({
+export const ModelProvider = ({
   children,
-}) => {
+}: ModelProviderProps) => {
   const [models, setModels] = useState<CustomModel[]>([]);
   const [defaultModels, setDefaultModels] = useState<CustomModel[]>([]);
   const [isLoadingDefaultModels, setIsLoadingDefaultModels] = useState(true);

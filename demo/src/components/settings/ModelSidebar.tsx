@@ -1,4 +1,3 @@
-import React from 'react';
 import ModelSettings from './ModelSettings';
 import { DynamicDrawer } from '@fileverse/ui';
 
@@ -7,7 +6,7 @@ interface ModelSidebarProps {
   onClose: () => void;
 }
 
-const ModelSidebar: React.FC<ModelSidebarProps> = ({ isOpen, onClose }) => {
+const ModelSidebar = ({ isOpen, onClose }: ModelSidebarProps) => {
   return (
     <DynamicDrawer
       open={isOpen}

@@ -124,7 +124,10 @@ export const AIWriterNodeView = memo(
           );
           updateAttributes?.({ content: fullContent, prompt: localPrompt });
         } else if (modelService?.callModel) {
-          const newContent = await modelService.callModel(localPrompt, selectedModel);
+          const newContent = await modelService.callModel(
+            localPrompt,
+            selectedModel,
+          );
           updateAttributes?.({ content: newContent, prompt: localPrompt });
         }
       } catch (error) {
@@ -133,11 +136,7 @@ export const AIWriterNodeView = memo(
         setIsLoading(false);
         setStreamingContent('');
       }
-    }, [
-      localPrompt,
-      selectedModel,
-      updateAttributes,
-    ]);
+    }, [localPrompt, selectedModel, updateAttributes]);
 
     const handleInsert = useCallback(() => {
       if (typeof getPos === 'function') {
@@ -225,7 +224,7 @@ export const AIWriterNodeView = memo(
     );
 
     return (
-      <NodeViewWrapper className="min-w-[calc(100%+2rem)] translate-x-[-1rem]">
+      <NodeViewWrapper className="min-w-[calc(100%+1rem)] translate-x-[-0.5rem]">
         <div
           className={cn(
             'color-bg-default overflow-hidden flex flex-col rounded-lg w-full',
@@ -237,7 +236,7 @@ export const AIWriterNodeView = memo(
           {/* Preview Section */}
           {(hasGenerated || streamingContent) && (
             <div className="flex w-full flex-row items-center justify-center">
-              <div className="animate-border inline-block rounded-lg p-1 w-full mx-3 mb-3 mt-2">
+              <div className="animate-border inline-block rounded-lg p-1 w-full mx-1 mb-3 mt-2">
                 <div
                   className={`w-full text-base color-text-default whitespace-pre-line color-bg-default p-4 rounded-lg shadow-elevation-3 ${styles.previewContent}`}
                   dangerouslySetInnerHTML={{
@@ -278,13 +277,17 @@ export const AIWriterNodeView = memo(
               className={cn(
                 'flex justify-between md:justify-end md:items-center gap-2 w-fit',
                 localPrompt.length > 50 &&
-                'md:justify-between md:items-start w-full',
+                  'md:justify-between md:items-start w-full',
               )}
             >
               <Select value={selectedModel} onValueChange={handleModelChange}>
                 <SelectTrigger className="w-52 bg-transparent border-none">
-                  <div className="flex items-center gap-1">
-                    <LucideIcon name="Bot" size="sm" />
+                  <div className="flex items-center gap-1 truncate">
+                    <LucideIcon
+                      name="Bot"
+                      size="sm"
+                      className="min-w-4 min-h-4"
+                    />
                     <SelectValue placeholder="Select model" />
                   </div>
                 </SelectTrigger>
@@ -334,7 +337,7 @@ export const AIWriterNodeView = memo(
                 className="min-w-fit gap-1 px-2 py-1 shadow-elevation-3"
                 disabled={isLoading}
               >
-                <LucideIcon name="RefreshCw" size="sm" /> Try again
+                <LucideIcon name="Undo2" size="sm" /> Try again
               </Button>
             </div>
           )}

@@ -26,6 +26,8 @@ import { Table } from './extensions/supercharged-table/extension-table';
 import { isBlackOrWhiteShade } from './utils/color-utils';
 import { useResponsive } from './utils/responsive';
 import { headingToSlug } from './utils/heading-to-slug';
+import { AiAutocomplete } from './extensions/ai-autocomplete/ai-autocomplete';
+import { AIWriter } from './extensions/ai-writer';
 
 const usercolors = [
   '#30bced',
@@ -63,6 +65,7 @@ export const useDdocEditor = ({
   proExtensions,
   metadataProxyUrl,
   onCopyHeadingLink,
+  hasAvailableModels
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
 
@@ -100,6 +103,7 @@ export const useDdocEditor = ({
       secureImageUploadUrl,
       metadataProxyUrl,
       onCopyHeadingLink,
+      hasAvailableModels,
     ) as AnyExtension[]),
     SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
     customTextInputRules,
@@ -281,6 +285,23 @@ export const useDdocEditor = ({
   }, [proExtensions]);
 
   useEffect(() => {
+    if (hasAvailableModels) {
+      setExtensions([
+        ...extensions.filter(
+          (ext) => ext.name !== 'aiAutocomplete' && ext.name !== 'aiWriter',
+        ),
+        AiAutocomplete.configure({
+          model: 'llama3.2:latest',
+          maxTokens: 8,
+          temperature: 0.2,
+          debounceTime: 100,
+        }),
+        AIWriter,
+      ]);
+    }
+  }, [hasAvailableModels]);
+
+  useEffect(() => {
     if (zoomLevel) {
       zoomService.setZoom(zoomLevel);
 
@@ -292,7 +313,7 @@ export const useDdocEditor = ({
     }
   }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => {});
+  const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {

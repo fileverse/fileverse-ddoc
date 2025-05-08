@@ -9,6 +9,7 @@ export interface DBlockOptions {
   HTMLAttributes: Record<string, any>;
   secureImageUploadUrl?: string;
   onCopyHeadingLink?: (link: string) => void;
+  hasAvailableModels?: boolean;
 }
 
 declare module '@tiptap/core' {
@@ -55,6 +56,7 @@ export const DBlock = Node.create<DBlockOptions>({
       HTMLAttributes: {},
       secureImageUploadUrl: '',
       onCopyHeadingLink: undefined,
+      hasAvailableModels: false,
     };
   },
 
@@ -632,6 +634,9 @@ export const DBlock = Node.create<DBlockOptions>({
   },
 
   addProseMirrorPlugins() {
+    if (!this.options.hasAvailableModels) {
+      return [];
+    }
     return [
       new Plugin({
         key: new PluginKey('dblock-aiwriter-space'),

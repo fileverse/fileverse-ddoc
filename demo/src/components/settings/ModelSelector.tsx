@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Button, DynamicDropdown, LucideIcon } from '@fileverse/ui';
 import { useModelContext } from './ModelContext';
 import { CustomModel } from './ModelSettings';
@@ -10,7 +10,7 @@ interface ModelSelectorProps {
 /**
  * A dropdown component that allows users to select from available custom models
  */
-const ModelSelector: React.FC<ModelSelectorProps> = ({ onSettingsClick }) => {
+const ModelSelector = ({ onSettingsClick }: ModelSelectorProps) => {
   const {
     defaultModels,
     models,
@@ -23,7 +23,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onSettingsClick }) => {
   const [modelStatus, setModelStatus] = useState<'idle' | 'loading' | 'error'>('idle');
 
   // Combine custom and default models for the dropdown
-  const allModels = [...models, ...defaultModels];
+  const allModels = useMemo(() => [...models, ...defaultModels], [models, defaultModels]);
 
   // Handle model selection
   const handleSelectModel = (model: CustomModel) => {
@@ -58,7 +58,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({ onSettingsClick }) => {
             className="flex items-center gap-2 whitespace-nowrap"
             variant="secondary"
             size="sm"
-            // disabled={isLoadingDefaultModels || allModels.length === 0}
+          // disabled={isLoadingDefaultModels || allModels.length === 0}
           >
             <LucideIcon
               name={

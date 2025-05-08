@@ -39,7 +39,6 @@ import Subscript from '@tiptap/extension-subscript';
 import { ResizableMedia } from './resizable-media';
 import { uploadFn } from '../utils/upload-images';
 import LinkPreview from './link-preview/link-preview';
-import { AIWriter } from './ai-writer';
 import { Callout } from './callout/callout';
 import { FontSize } from './font-size';
 import { CustomCodeBlockLowlight } from './code-block/custom-code-block-lowlight';
@@ -54,6 +53,7 @@ export const defaultExtensions = (
   secureImageUploadUrl?: string,
   metadataProxyUrl?: string,
   onCopyHeadingLink?: (link: string) => void,
+  hasAvailableModels?: boolean,
 ) => [
   FontFamily,
   StarterKit.configure({
@@ -79,7 +79,7 @@ export const defaultExtensions = (
     },
     paragraph: {
       HTMLAttributes: {
-        class: 'select-text pointer-events-auto',
+        class: 'select-text pointer-events-auto transition-all',
       },
     },
     orderedList: {
@@ -178,6 +178,7 @@ export const defaultExtensions = (
   DBlock.configure({
     secureImageUploadUrl,
     onCopyHeadingLink,
+    hasAvailableModels,
   }),
   TrailingNode,
   Document,
@@ -222,7 +223,6 @@ export const defaultExtensions = (
   LinkPreview.configure({
     metadataProxyUrl: metadataProxyUrl,
   }),
-  AIWriter,
   Callout,
   Emoji,
 ];

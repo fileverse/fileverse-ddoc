@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import {
   TextField,
   Button,
@@ -21,14 +21,16 @@ export interface CustomModel {
   systemPrompt: string;
 }
 
-// Custom NumberField component since it doesn't exist in the UI library
-const NumberField: React.FC<{
+interface NumberFieldProps {
   label: string;
   value: number;
   onChange: (value: number) => void;
   min?: number;
   max?: number;
-}> = ({ label, value, onChange, min, max }) => {
+}
+
+// Custom NumberField component since it doesn't exist in the UI library
+const NumberField = ({ label, value, onChange, min, max }: NumberFieldProps) => {
   return (
     <div className="flex flex-col gap-1">
       <Label className="text-body-sm">{label}</Label>
@@ -45,11 +47,11 @@ const NumberField: React.FC<{
 };
 
 // Helper component to display helper text with form fields
-const HelperText: React.FC<{ text: string }> = ({ text }) => (
+const HelperText = ({ text }: { text: string }) => (
   <div className="text-xs color-text-secondary mt-1">{text}</div>
 );
 
-const ModelSettings: React.FC = () => {
+const ModelSettings = () => {
   const { models, addModel, deleteModel } = useModelContext();
   const [showAddModal, setShowAddModal] = useState(false);
   const [newModel, setNewModel] = useState<CustomModel>({
