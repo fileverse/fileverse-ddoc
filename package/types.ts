@@ -119,6 +119,7 @@ export interface DdocProps extends CommentAccountProps {
   footerHeight?: string;
   hasAvailableModels?: boolean;
   activeModel?: CustomModel;
+  maxTokens?: number;
 }
 
 export interface IEditorSelectionData {

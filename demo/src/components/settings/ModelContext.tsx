@@ -16,6 +16,8 @@ interface ModelContextType {
   ollamaError: string | null;
   activeModel?: CustomModel; // Add activeModel to context
   setActiveModel: (model: CustomModel | undefined) => void; // Add setter for activeModel
+  maxTokens: number;
+  setMaxTokens: (maxTokens: number) => void;
 }
 
 interface ModelProviderProps {
@@ -46,6 +48,8 @@ export const ModelContext = createContext<ModelContextType>({
   ollamaError: null,
   activeModel: undefined,
   setActiveModel: () => {},
+  maxTokens: 2,
+  setMaxTokens: () => {},
 });
 
 export const ModelProvider = ({ children }: ModelProviderProps) => {
@@ -56,7 +60,7 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
   const [activeModel, setActiveModel] = useState<CustomModel | undefined>(
     undefined,
   );
-
+  const [maxTokens, setMaxTokens] = useState<number>(3);
   // Load Ollama default models
   useEffect(() => {
     const loadDefaultModels = async () => {
@@ -234,6 +238,8 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
         ollamaError,
         activeModel,
         setActiveModel,
+        maxTokens,
+        setMaxTokens,
       }}
     >
       {children}

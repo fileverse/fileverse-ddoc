@@ -57,7 +57,7 @@ function App() {
   const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
   const [initialComments, setInitialComment] = useState<IComment[]>([]);
 
-  const { activeModel } = useModelContext();
+  const { activeModel, maxTokens } = useModelContext();
 
   const handleReplyOnComment = (id: string, reply: IComment) => {
     setInitialComment((prev) =>
@@ -203,7 +203,7 @@ function App() {
                   </Button>
                   <Button
                     variant={'ghost'}
-                    onClick={() => {}}
+                    onClick={() => { }}
                     className="flex justify-start gap-2"
                   >
                     <LucideIcon name="Share2" size="sm" />
@@ -304,11 +304,11 @@ function App() {
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
-        onComment={(): void => {}}
-        onInlineComment={(): void => {}}
-        onMarkdownImport={(): void => {}}
-        onMarkdownExport={(): void => {}}
-        onPdfExport={(): void => {}}
+        onComment={(): void => { }}
+        onInlineComment={(): void => { }}
+        onMarkdownImport={(): void => { }}
+        onMarkdownExport={(): void => { }}
+        onPdfExport={(): void => { }}
         initialComments={initialComments}
         onCommentReply={handleReplyOnComment}
         onNewComment={handleNewComment}
@@ -323,7 +323,7 @@ function App() {
           getHierarchicalIndexes,
         }}
         isConnected={isConnected}
-        connectViaWallet={async () => {}}
+        connectViaWallet={async () => { }}
         isLoading={false}
         connectViaUsername={handleConnectViaUsername}
         isDDocOwner={true}
@@ -332,6 +332,7 @@ function App() {
         }}
         hasAvailableModels={true}
         activeModel={activeModel}
+        maxTokens={maxTokens}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

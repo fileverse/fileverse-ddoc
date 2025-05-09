@@ -113,6 +113,7 @@ const DdocEditor = forwardRef(
       footerHeight,
       hasAvailableModels,
       activeModel,
+      maxTokens,
     }: DdocProps,
     ref,
   ) => {
@@ -189,6 +190,7 @@ const DdocEditor = forwardRef(
       onCopyHeadingLink,
       hasAvailableModels,
       activeModel,
+      maxTokens,
     });
 
     useImperativeHandle(

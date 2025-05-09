@@ -2,18 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button, DynamicDropdown, LucideIcon, Select, SelectItem, Toggle, SelectTrigger, SelectValue, SelectContent, SelectGroup } from '@fileverse/ui';
 import { useModelContext } from './ModelContext';
 import { CustomModel } from './ModelSettings';
+import { MAX_TOKENS_OPTIONS, TONES } from './constants';
 
 interface ModelSelectorProps {
   onSettingsClick: () => void;
 }
-
-const TONES = [
-  { value: 'neutral', label: 'Neutral' },
-  { value: 'professional', label: 'Professional' },
-  { value: 'casual', label: 'Casual' },
-  { value: 'friendly', label: 'Friendly' },
-  { value: 'funny', label: 'Funny' },
-];
 
 /**
  * A dropdown component that allows users to select from available custom models
@@ -25,7 +18,9 @@ const ModelSelector = ({ onSettingsClick }: ModelSelectorProps) => {
     isLoadingDefaultModels,
     ollamaError,
     activeModel,
-    setActiveModel
+    setActiveModel,
+    maxTokens,
+    setMaxTokens,
   } = useModelContext();
 
   const [modelStatus, setModelStatus] = useState<'idle' | 'loading' | 'error'>('idle');
@@ -61,6 +56,14 @@ const ModelSelector = ({ onSettingsClick }: ModelSelectorProps) => {
     window.dispatchEvent(new CustomEvent('autocomplete-tone-change', { detail: { tone } }));
   };
 
+  // Handle maxTokens change
+  const handleMaxTokensChange = (value: number) => {
+    setMaxTokens(value);
+    localStorage.setItem('autocomplete-maxTokens', String(value));
+    // Dispatch custom event for the extension to listen to
+    window.dispatchEvent(new CustomEvent('autocomplete-maxTokens-change', { detail: { maxTokens: value } }));
+  };
+
   // Update status based on loading state and errors
   useEffect(() => {
     if (isLoadingDefaultModels) {
@@ -89,7 +92,6 @@ const ModelSelector = ({ onSettingsClick }: ModelSelectorProps) => {
             className="flex items-center gap-2 whitespace-nowrap"
             variant="secondary"
             size="sm"
-          // disabled={isLoadingDefaultModels || allModels.length === 0}
           >
             <LucideIcon
               name={
@@ -121,14 +123,17 @@ const ModelSelector = ({ onSettingsClick }: ModelSelectorProps) => {
               allModels.map((model) => (
                 <Button
                   key={model.id}
-                  variant={activeModel?.id === model.id ? 'secondary' : 'ghost'}
-                  className="w-full justify-start text-sm"
+                  className="w-full justify-start text-helper-text-sm gap-2"
                   onClick={() => handleSelectModel(model)}
                   size="sm"
+                  variant="ghost"
                 >
                   <div className="truncate">
                     {model.label}
                   </div>
+                  {activeModel?.id === model.id && (
+                    <LucideIcon name="Check" size="sm" />
+                  )}
                 </Button>
               ))
             )}
@@ -153,6 +158,24 @@ const ModelSelector = ({ onSettingsClick }: ModelSelectorProps) => {
                       {TONES.map((tone) => (
                         <SelectItem key={tone.value} value={tone.value}>
                           {tone.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="px-1" style={{ marginTop: 16 }}>
+                <div className="text-xs mb-1">Autocomplete Suggestion Length</div>
+                <Select value={String(maxTokens)} onValueChange={val => handleMaxTokensChange(Number(val))}>
+                  <SelectTrigger className="w-full text-helper-text-sm px-2 py-1 rounded border bg-transparent">
+                    <SelectValue placeholder="Select length" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      {MAX_TOKENS_OPTIONS.map(option => (
+                        <SelectItem key={option} value={String(option)}>
+                          {option} word{option > 1 ? 's' : ''}
                         </SelectItem>
                       ))}
                     </SelectGroup>

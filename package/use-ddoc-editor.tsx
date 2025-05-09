@@ -67,6 +67,7 @@ export const useDdocEditor = ({
   onCopyHeadingLink,
   hasAvailableModels,
   activeModel,
+  maxTokens,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
 
@@ -293,7 +294,7 @@ export const useDdocEditor = ({
         ),
         AiAutocomplete.configure({
           model: activeModel,
-          maxTokens: 8,
+          maxTokens: maxTokens,
           temperature: 0.2,
           debounceTime: 100,
           tone: 'conversational',
@@ -301,7 +302,7 @@ export const useDdocEditor = ({
         AIWriter,
       ]);
     }
-  }, [hasAvailableModels, activeModel]);
+  }, [hasAvailableModels, activeModel, maxTokens]);
 
   useEffect(() => {
     if (zoomLevel) {
@@ -315,7 +316,7 @@ export const useDdocEditor = ({
     }
   }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => {});
+  const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {

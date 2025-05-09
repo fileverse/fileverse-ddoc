@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
-import { NodeViewProps, NodeViewWrapper } from '@tiptap/react';
+import { JSONContent, NodeViewProps, NodeViewWrapper } from '@tiptap/react';
 import wizardLogo from '../../assets/wizard.svg';
 import MarkdownIt from 'markdown-it';
 import {
@@ -12,6 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
   cn,
+  Checkbox,
 } from '@fileverse/ui';
 import styles from './ai-writer-node-view.module.scss';
 
@@ -46,6 +47,7 @@ export const AIWriterNodeView = memo(
     const [isRemoving, setIsRemoving] = useState(false);
     const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
     const [selectedModel, setSelectedModel] = useState<string>('');
+    const [includeContext, setIncludeContext] = useState<boolean>(false);
     const { prompt, content } = node.attrs;
     const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -103,6 +105,72 @@ export const AIWriterNodeView = memo(
       setHasGenerated(!!content);
     }, [prompt, content]);
 
+    // Get document context
+    const getDocumentContext = useCallback(() => {
+      if (!includeContext) return '';
+
+      const doc = editor.getJSON();
+      const currentPos = getPos();
+      if (typeof currentPos !== 'number') return '';
+
+      const contextWindow = 2000; // Characters to include before and after
+
+      // Get text content from the document
+      let context = '';
+
+      // Helper to get text from a node
+      const getNodeText = (node: {
+        text?: string;
+        content?: Array<{ text?: string; content?: JSONContent[] }>;
+      }): string => {
+        if (!node) return '';
+        if (node.text) return node.text;
+        if (node.content) {
+          return node.content.map((content) => getNodeText(content)).join(' ');
+        }
+        return '';
+      };
+
+      // Get nodes before current position
+      let beforeContext = '';
+      let beforeLength = 0;
+      const beforeNodes = doc.content?.slice(0, -1) || [];
+      for (let i = beforeNodes.length - 1; i >= 0; i--) {
+        const nodeText = getNodeText(beforeNodes[i]);
+        if (beforeLength + nodeText.length > contextWindow) {
+          beforeContext =
+            nodeText.slice(-(contextWindow - beforeLength)) + beforeContext;
+          break;
+        }
+        beforeContext = nodeText + '\n' + beforeContext;
+        beforeLength += nodeText.length;
+      }
+
+      // Get nodes after current position
+      let afterContext = '';
+      let afterLength = 0;
+      const afterNodes = doc.content?.slice(-1) || [];
+      for (const node of afterNodes) {
+        const nodeText = getNodeText(node);
+        if (afterLength + nodeText.length > contextWindow) {
+          afterContext += nodeText.slice(0, contextWindow - afterLength);
+          break;
+        }
+        afterContext += nodeText + '\n';
+        afterLength += nodeText.length;
+      }
+
+      // Combine contexts
+      context = (beforeContext + afterContext).trim();
+
+      // Add metadata about context
+      if (context) {
+        context = `Document context (${beforeLength} chars before, ${afterLength} chars after):\n${context}`;
+      }
+
+      return context;
+    }, [editor, getPos, includeContext]);
+
     // Handlers
     const handleGenerate = useCallback(async () => {
       if (!localPrompt.trim()) return;
@@ -112,10 +180,16 @@ export const AIWriterNodeView = memo(
         const modelService = (
           window as Window & { modelService?: ModelService }
         ).modelService;
+
+        const context = getDocumentContext();
+        const fullPrompt = includeContext
+          ? `Context from document:\n${context}\n\nUser prompt: ${localPrompt}`
+          : localPrompt;
+
         if (modelService?.streamModel) {
           let fullContent = '';
           await modelService.streamModel(
-            localPrompt,
+            fullPrompt,
             selectedModel,
             (chunk: string) => {
               fullContent += chunk;
@@ -125,7 +199,7 @@ export const AIWriterNodeView = memo(
           updateAttributes?.({ content: fullContent, prompt: localPrompt });
         } else if (modelService?.callModel) {
           const newContent = await modelService.callModel(
-            localPrompt,
+            fullPrompt,
             selectedModel,
           );
           updateAttributes?.({ content: newContent, prompt: localPrompt });
@@ -136,7 +210,13 @@ export const AIWriterNodeView = memo(
         setIsLoading(false);
         setStreamingContent('');
       }
-    }, [localPrompt, selectedModel, updateAttributes]);
+    }, [
+      localPrompt,
+      selectedModel,
+      updateAttributes,
+      includeContext,
+      getDocumentContext,
+    ]);
 
     const handleInsert = useCallback(() => {
       if (typeof getPos === 'function') {
@@ -260,17 +340,33 @@ export const AIWriterNodeView = memo(
               {isLoading && !streamingContent ? (
                 renderLoading()
               ) : (
-                <textarea
-                  ref={textareaRef}
-                  value={localPrompt}
-                  onChange={handlePromptChange}
-                  onBlur={handlePromptBlur}
-                  onKeyDown={handlePromptKeyDown}
-                  placeholder="Ask wizard anything..."
-                  className="flex-1 pt-1 bg-transparent outline-none text-body-sm color-text-default px-1 resize-none"
-                  disabled={isLoading}
-                  autoFocus
-                />
+                <div className="flex flex-col w-full">
+                  <textarea
+                    ref={textareaRef}
+                    value={localPrompt}
+                    onChange={handlePromptChange}
+                    onBlur={handlePromptBlur}
+                    onKeyDown={handlePromptKeyDown}
+                    placeholder="Ask wizard anything..."
+                    className="flex-1 pt-1 bg-transparent outline-none text-body-sm color-text-default px-1 resize-none"
+                    disabled={isLoading}
+                    autoFocus
+                  />
+                  <div className="flex items-center gap-2 mt-2">
+                    <Checkbox
+                      key="include-context"
+                      checked={includeContext}
+                      onCheckedChange={() => setIncludeContext(!includeContext)}
+                      className="border-2 text-body-sm"
+                    />
+                    <label
+                      htmlFor="include-context"
+                      className="text-body-sm color-text-secondary cursor-pointer"
+                    >
+                      Include document context
+                    </label>
+                  </div>
+                </div>
               )}
             </div>
             <div
