@@ -43,6 +43,7 @@ export const ToCItem = memo(
           paddingLeft: `${(item.level - 1) * 8}px`,
         }}
         className={className}
+        data-testid="toc-item"
       >
         <a
           href={`#${item.id}`}
@@ -316,7 +317,10 @@ export const ToC = memo(({ items = [], editor, setItems }: ToCProps) => {
   }
 
   return (
-    <div className="flex flex-col max-[1280px]:gap-2 gap-4 overflow-auto no-scrollbar max-[1280px]:max-h-[168px] max-h-[calc(80vh-40px)] mb-3">
+    <div
+      className="flex flex-col max-[1280px]:gap-2 gap-4 overflow-auto no-scrollbar max-[1280px]:max-h-[168px] max-h-[calc(80vh-40px)] mb-3"
+      data-testid="toc-container"
+    >
       {processedItems.map((item, i) => (
         <ToCItem
           onItemClick={onItemClick}

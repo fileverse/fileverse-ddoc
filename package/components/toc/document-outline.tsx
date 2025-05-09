@@ -40,6 +40,7 @@ export const DocumentOutline = ({
             size="lg"
             onClick={() => setShowTOC?.((prev) => !prev)}
             className="color-text-default min-w-9 h-9"
+            data-testid="desktop-toc-btn"
           />
         </Tooltip>
         <div

@@ -19,12 +19,14 @@ type TemplateButtonProps = {
   icon: IconType;
   onClick: () => void;
   content: JSONContent | null;
+  dataTestId: string;
 }[];
 
 type TemplateConfig = {
   id: string;
   label: string;
   icon: IconType;
+  dataTestId: string;
 };
 
 const MORE_TEMPLATES: TemplateConfig[] = [
@@ -32,21 +34,25 @@ const MORE_TEMPLATES: TemplateConfig[] = [
     id: 'meeting-notes',
     label: 'Meeting notes',
     icon: 'NotepadText',
+    dataTestId: 'meeting-notes-template-btn',
   },
   {
     id: 'resume',
     label: 'Resume',
     icon: '📄',
+    dataTestId: 'resume-template-btn',
   },
   {
     id: 'brainstorm',
     label: 'Brainstorm',
     icon: 'Lightbulb',
+    dataTestId: 'brainstorm-template-btn',
   },
   {
     id: 'pretend-to-work',
     label: 'Pretend to work',
     icon: '🏄🏻‍♂️',
+    dataTestId: 'pretend-to-work-template-btn',
   },
 ];
 
@@ -55,11 +61,13 @@ const QUICK_TEMPLATES: TemplateConfig[] = [
     id: 'todo-list',
     label: 'To-do',
     icon: 'ListChecks',
+    dataTestId: 'todo-list-template-btn',
   },
   {
     id: 'breathe',
     label: 'Breathe!',
     icon: '🧘‍♂️',
+    dataTestId: 'breathe-template-btn',
   },
 ];
 
@@ -75,6 +83,7 @@ const createTemplateButton = (
       if (content) addTemplate(content);
     },
     content,
+    dataTestId: config.dataTestId,
   };
 };
 
@@ -120,6 +129,7 @@ const renderTemplateButtons = (
           onClick={button.onClick}
           variant={'ghost'}
           className="gap-2 color-bg-default-hover text-body-sm color-text-default rounded-lg hover:brightness-95 transition-all min-w-fit"
+          data-testid={button.dataTestId}
         >
           {renderIcon(button.icon)}
           <span>{button.label}</span>

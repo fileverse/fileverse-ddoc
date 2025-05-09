@@ -38,6 +38,7 @@ export const PreviewPanel = ({
           : 'w-[251px] h-full overflow-y-auto overflow-x-hidden flex-col py-16 border-r',
         isNativeMobile && 'min-h-[20rem]',
       )}
+      data-testid="slides-preview-panel"
     >
       {isMobile && (
         <div className="w-full text-helper-text-sm color-text-secondary absolute top-0 left-0 my-2.5 mx-5 z-20">

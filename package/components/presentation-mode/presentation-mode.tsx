@@ -82,6 +82,7 @@ const SlideContent = ({
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
+      data-testid="slide-content"
     />
   );
 };
@@ -336,6 +337,7 @@ export const PresentationMode = ({
         isNativeMobile ? 'flex-col' : 'flex-col xl:flex-row',
         'items-center justify-center w-screen h-screen',
       )}
+      data-testid="slides-canvas"
     >
       {!isFullscreen && (
         <PreviewPanel
@@ -354,7 +356,10 @@ export const PresentationMode = ({
         )}
       >
         {!isFullscreen && (
-          <div className="absolute top-0 px-4 py-2 border-b color-border-default right-0 flex gap-2 color-bg-default w-full justify-between z-50">
+          <div
+            data-testid="slides-navbar"
+            className="absolute top-0 px-4 py-2 border-b color-border-default right-0 flex gap-2 color-bg-default w-full justify-between z-50"
+          >
             {isPreviewMode ? (
               <div className="flex items-center">
                 <p className="max-w-[300px] truncate md:max-w-full w-full">
@@ -408,6 +413,7 @@ export const PresentationMode = ({
                     className="disabled:!bg-transparent disabled:pointer-events-none"
                     size="md"
                     onClick={handleCopyLink}
+                    data-testid="slides-copy-link-btn"
                   />
                   {showLinkCopied && (
                     <DynamicDropdownV2
@@ -432,6 +438,7 @@ export const PresentationMode = ({
                   onClick={toggleFullscreen}
                   icon={isFullscreen ? 'Minimize2' : 'Play'}
                   size="md"
+                  data-testid="slides-fullscreen-btn"
                 />
               </Tooltip>
             </div>
