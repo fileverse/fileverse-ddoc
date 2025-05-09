@@ -54,7 +54,7 @@ export const AiAutocomplete = Extension.create({
           lastContext = prompt;
 
           const response = await ollama.generate({
-            model: options.model,
+            model: options.model?.modelName || 'llama3.2',
             prompt,
             options: {
               num_predict: options.maxTokens,
