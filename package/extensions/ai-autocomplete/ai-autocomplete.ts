@@ -7,7 +7,7 @@ import { Ollama } from 'ollama/browser';
 import { debounce } from '../../utils/debounce';
 
 export const AiAutocomplete = Extension.create({
-  name: 'ai-autocomplete',
+  name: 'aiAutocomplete',
 
   addOptions() {
     return {
@@ -36,7 +36,7 @@ export const AiAutocomplete = Extension.create({
     let lastContext = '';
 
     const ollama = new Ollama({
-      host: this.options?.endpoint || 'http://localhost:11434',
+      host: this.options?.endpoint,
     });
     const options = this.options; // Capture options for use in plugin view/props
     const extension = this;
