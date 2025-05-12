@@ -4,6 +4,10 @@ import App from './App.tsx';
 import { ThemeProvider } from '@fileverse/ui';
 import LLMSettings from './components/settings/LLMSettings.tsx';
 
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/ollama-worker.js');
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <ThemeProvider>
