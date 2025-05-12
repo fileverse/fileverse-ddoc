@@ -1,7 +1,7 @@
 import { Node, mergeAttributes } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { EditorView } from '@tiptap/pm/view';
-import { Slice, Fragment } from 'prosemirror-model';
+import { Slice, Fragment, Node as ProseMirrorNode } from 'prosemirror-model';
 
 export const Callout = Node.create({
   name: 'callout',
@@ -36,8 +36,8 @@ export const Callout = Node.create({
             const { selection } = state;
             const $from = selection.$from;
 
+            // Check if current selection is inside a callout
             let isInsideCallout = false;
-
             for (let depth = $from.depth; depth >= 0; depth--) {
               const node = $from.node(depth);
               if (node.type.name === 'callout') {
@@ -45,22 +45,28 @@ export const Callout = Node.create({
                 break;
               }
             }
+
             if (!isInsideCallout) return slice;
 
-            // Flatten and filter out dBlock and callout nodes
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const contentNodes: any[] = [];
+            const flattenNodes = (fragment: Fragment): ProseMirrorNode[] => {
+              const nodes: ProseMirrorNode[] = [];
 
-            slice.content.forEach((node) => {
-              if (node.type.name === 'callout' || node.type.name === 'dBlock') {
-                node.content.forEach((child) => contentNodes.push(child));
-              } else {
-                contentNodes.push(node);
-              }
-            });
+              fragment.forEach((node) => {
+                if (
+                  node.type.name === 'callout' ||
+                  node.type.name === 'dBlock'
+                ) {
+                  nodes.push(...flattenNodes(node.content));
+                } else {
+                  nodes.push(node);
+                }
+              });
 
-            const fragment = Fragment.fromArray(contentNodes);
-            return new Slice(fragment, 0, 0);
+              return nodes;
+            };
+
+            const flattened = flattenNodes(slice.content);
+            return new Slice(Fragment.fromArray(flattened), 0, 0);
           },
         },
       }),
