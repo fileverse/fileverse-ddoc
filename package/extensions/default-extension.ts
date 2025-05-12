@@ -207,6 +207,7 @@ export const defaultExtensions = (
       throwOnError: false,
       strict: false,
     },
+    renderTextMode: 'raw-latex',
   }),
   Footnote,
   Superscript.configure({
