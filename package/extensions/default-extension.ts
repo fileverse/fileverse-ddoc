@@ -107,6 +107,7 @@ export const defaultExtensions = (
     horizontalRule: false,
     bulletList: false,
     listItem: false,
+    codeBlock: false,
   }),
   CustomCodeBlockLowlight.configure({
     lowlight,
