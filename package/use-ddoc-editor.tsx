@@ -62,7 +62,9 @@ export const useDdocEditor = ({
   isPresentationMode,
   proExtensions,
   metadataProxyUrl,
+  extensions: externalExtensions,
   onCopyHeadingLink,
+  isConnected,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
 
@@ -94,7 +96,7 @@ export const useDdocEditor = ({
   // V2 - comment
   const [tocItems, setTocItems] = useState<any[]>([]);
 
-  const [extensions, setExtensions] = useState([
+  const [extensions, setExtensions] = useState<AnyExtension[]>([
     ...(defaultExtensions(
       (error: string) => onError?.(error),
       secureImageUploadUrl,
@@ -117,6 +119,7 @@ export const useDdocEditor = ({
     Collaboration.configure({
       document: ydoc,
     }),
+    ...(externalExtensions ? Object.values(externalExtensions) : []),
   ]);
 
   useEffect(() => {
@@ -127,6 +130,19 @@ export const useDdocEditor = ({
       }),
     ]);
   }, [isPreviewMode]);
+
+  useEffect(() => {
+    if (isConnected) {
+      setExtensions((prev) => [
+        ...prev.filter((ext) => ext.name !== 'slash-command'),
+        SlashCommand(
+          (error: string) => onError?.(error),
+          secureImageUploadUrl,
+          isConnected,
+        ),
+      ]);
+    }
+  }, [isConnected]);
 
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);

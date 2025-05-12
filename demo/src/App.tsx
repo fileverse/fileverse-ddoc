@@ -18,7 +18,6 @@ import {
   TableOfContents,
   getHierarchicalIndexes,
 } from '@tiptap-pro/extension-table-of-contents';
-
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
   { name: 'Discussions', isActive: true, color: '#FFD6D7' },
@@ -120,6 +119,7 @@ function App() {
     }
   }, [collaborationId]);
 
+
   const renderNavbar = ({ editor }: { editor: JSONContent }): JSX.Element => {
     const publishDoc = () => console.log(editor, title);
     return (
@@ -199,7 +199,7 @@ function App() {
                   </Button>
                   <Button
                     variant={'ghost'}
-                    onClick={() => {}}
+                    onClick={() => { }}
                     className="flex justify-start gap-2"
                   >
                     <LucideIcon name="Share2" size="sm" />
@@ -300,11 +300,11 @@ function App() {
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
-        onComment={(): void => {}}
-        onInlineComment={(): void => {}}
-        onMarkdownImport={(): void => {}}
-        onMarkdownExport={(): void => {}}
-        onPdfExport={(): void => {}}
+        onComment={(): void => { }}
+        onInlineComment={(): void => { }}
+        onMarkdownImport={(): void => { }}
+        onMarkdownExport={(): void => { }}
+        onPdfExport={(): void => { }}
         initialComments={initialComments}
         onCommentReply={handleReplyOnComment}
         onNewComment={handleNewComment}
@@ -315,14 +315,11 @@ function App() {
         showTOC={showTOC}
         setShowTOC={setShowTOC}
         proExtensions={{
-          TableOfContents,
-          getHierarchicalIndexes,
+          TableOfContents: TableOfContents,
+          getHierarchicalIndexes: getHierarchicalIndexes,
         }}
-        isConnected={isConnected}
-        connectViaWallet={async () => {}}
-        isLoading={false}
         connectViaUsername={handleConnectViaUsername}
-        isDDocOwner={true}
+        isConnected={isConnected}
         onCopyHeadingLink={(link: string) => {
           navigator.clipboard.writeText(link);
         }}
