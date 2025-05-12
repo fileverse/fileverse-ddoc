@@ -67,7 +67,7 @@ export interface DdocProps extends CommentAccountProps {
   collaborationId?: string;
   isPreviewMode: boolean;
   ensResolutionUrl?: string;
-  secureImageUploadUrl?: string;
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   enableIndexeddbSync?: boolean;
   ddocId?: string;
   initialContent?: JSONContent | string | string[] | null;
@@ -126,3 +126,8 @@ export interface IUser {
 }
 
 export { type IComment };
+export interface IpfsImageUploadResponse {
+  encryptionKey: string;
+  nonce: string;
+  ipfsUrl: string;
+}

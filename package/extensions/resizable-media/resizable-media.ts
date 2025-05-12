@@ -8,6 +8,7 @@ import {
 } from './media-paste-drop-plugin';
 import UploadImagesPlugin from '../../utils/upload-images';
 import { InlineLoaderPlugin } from '../../utils/inline-loader';
+import { IpfsImageUploadResponse } from '../../types';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -33,7 +34,7 @@ export interface MediaOptions {
   HTMLAttributes: Record<string, any>;
   uploadFn: UploadFnType;
   onError: (error: string) => void;
-  secureImageUploadUrl?: string;
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
 }
 
 export const IMAGE_INPUT_REGEX =
@@ -56,7 +57,6 @@ export const ResizableMedia = Node.create<MediaOptions>({
       onError: () => {
         console.error('Error uploading media');
       },
-      secureImageUploadUrl: '',
     };
   },
 
@@ -259,7 +259,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
       getMediaPasteDropPlugin(
         this.options.uploadFn,
         this.options.onError,
-        this.options.secureImageUploadUrl,
+        this.options.ipfsImageUploadFn,
       ),
       UploadImagesPlugin(),
       InlineLoaderPlugin(),

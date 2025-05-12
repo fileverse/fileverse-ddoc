@@ -52,7 +52,7 @@ export const useDdocEditor = ({
   onError,
   setCharacterCount,
   setWordCount,
-  secureImageUploadUrl,
+  ipfsImageUploadFn,
   ddocId,
   enableIndexeddbSync,
   unFocused,
@@ -97,11 +97,11 @@ export const useDdocEditor = ({
   const [extensions, setExtensions] = useState([
     ...(defaultExtensions(
       (error: string) => onError?.(error),
-      secureImageUploadUrl,
+      ipfsImageUploadFn,
       metadataProxyUrl,
       onCopyHeadingLink,
     ) as AnyExtension[]),
-    SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
+    SlashCommand((error: string) => onError?.(error), ipfsImageUploadFn),
     customTextInputRules,
     PageBreak,
     Comment.configure({

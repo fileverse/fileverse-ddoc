@@ -15,6 +15,7 @@ import { getSuggestionItems, updateScrollView } from './slash-command-utils';
 import { CommandItemProps } from './types';
 import Suggestion from '@tiptap/suggestion';
 import { cn } from '@fileverse/ui';
+import { IpfsImageUploadResponse } from '../../types';
 
 export const Command = Extension.create({
   name: 'slash-command',
@@ -259,10 +260,10 @@ const renderItems = () => {
 
 const SlashCommand = (
   onError?: (errorString: string) => void,
-  secureImageUploadUrl?: string,
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
 ) => {
   const items = ({ query }: { query: string }) => {
-    return getSuggestionItems({ query, onError, secureImageUploadUrl });
+    return getSuggestionItems({ query, onError, ipfsImageUploadFn });
   };
   return Command.configure({
     suggestion: {

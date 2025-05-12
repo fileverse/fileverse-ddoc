@@ -8,12 +8,17 @@ import * as Y from 'yjs';
 import { isJSONString } from '../utils/isJsonString';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { sanitizeContent } from '../utils/sanitize-content';
+import { IpfsImageUploadResponse } from '../types';
 
-export const useHeadlessEditor = () => {
+export const useHeadlessEditor = ({
+  ipfsImageUploadFn,
+}: {
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
+}) => {
   const getEditor = () => {
     const ydoc = new Y.Doc();
     const extensions = [
-      ...defaultExtensions(() => null, '', '').filter(
+      ...defaultExtensions(() => null, ipfsImageUploadFn, '').filter(
         (extension) => extension.name !== 'characterCount',
       ),
       customTextInputRules,

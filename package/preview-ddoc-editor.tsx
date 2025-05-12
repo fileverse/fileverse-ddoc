@@ -31,7 +31,7 @@ const PreviewDdocEditor = forwardRef(
       onTextSelection,
       onCommentInteraction,
       ensResolutionUrl,
-      secureImageUploadUrl,
+      ipfsImageUploadFn,
       onError,
       setCharacterCount,
       setWordCount,
@@ -81,7 +81,7 @@ const PreviewDdocEditor = forwardRef(
       onError,
       setCharacterCount,
       setWordCount,
-      secureImageUploadUrl,
+      ipfsImageUploadFn,
       unFocused,
     });
 
