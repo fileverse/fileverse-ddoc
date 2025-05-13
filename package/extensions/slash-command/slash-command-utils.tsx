@@ -10,10 +10,12 @@ export const getSuggestionItems = ({
   query,
   onError,
   secureImageUploadUrl,
+  hasAvailableModels,
 }: {
   query: string;
   onError?: (errorString: string) => void;
   secureImageUploadUrl?: string;
+  hasAvailableModels?: boolean;
 }) => {
   const items = [
     {
@@ -29,7 +31,7 @@ export const getSuggestionItems = ({
           editor.commands.insertAIWriter({
             prompt: '',
             content: '',
-            tone: 'Conversational',
+            tone: 'conversational',
           });
         } else {
           console.warn('AIWriter extension is not available');
@@ -40,6 +42,7 @@ export const getSuggestionItems = ({
           }
         }
       },
+      isDisabled: !hasAvailableModels,
     },
     {
       title: 'Text',

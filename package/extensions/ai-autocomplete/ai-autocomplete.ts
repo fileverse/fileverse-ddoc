@@ -18,8 +18,9 @@ export const AiAutocomplete = Extension.create({
       temperature: 0.2,
       applySuggestionKey: 'Tab',
       isEnabled: (() => {
-        const stored = localStorage.getItem('autocomplete-enabled');
-        return stored === null ? true : stored === 'true';
+        if (typeof window === 'undefined') return true;
+        const e = localStorage.getItem('autocomplete-enabled');
+        return e === null ? true : e === 'true';
       })(),
     };
   },
@@ -187,36 +188,61 @@ export const AiAutocomplete = Extension.create({
                 currentSuggestion = suggestion;
                 if (!suggestion) return;
 
-                const suggestionDecoration = Decoration.widget(
-                  from,
-                  () => {
-                    const container = document.createElement('span');
-                    container.className = 'autocomplete-suggestion-container';
+                // Safety check: ensure the position is still valid
+                try {
+                  const pos = view.state.selection.from;
+                  if (pos > view.state.doc.content.size) {
+                    return;
+                  }
 
-                    const suggestionSpan = document.createElement('span');
-                    suggestionSpan.className = 'autocomplete-suggestion';
-                    suggestionSpan.innerHTML = suggestion.replace(
-                      /\n/g,
-                      '<br>',
-                    );
+                  const suggestionDecoration = Decoration.widget(
+                    pos,
+                    () => {
+                      const container = document.createElement('span');
+                      container.className = 'autocomplete-suggestion-container';
 
-                    const tabButton = document.createElement('span');
-                    tabButton.className = 'autocomplete-tab-button';
-                    tabButton.textContent = 'Tab';
+                      const suggestionSpan = document.createElement('span');
+                      suggestionSpan.className = 'autocomplete-suggestion';
+                      suggestionSpan.innerHTML = suggestion.replace(
+                        /\n/g,
+                        '<br>',
+                      );
 
-                    container.appendChild(suggestionSpan);
-                    container.appendChild(tabButton);
-                    return container;
-                  },
-                  { side: 1 },
-                );
-                const decorations = DecorationSet.create(state.doc, [
-                  suggestionDecoration,
-                ]);
-                const tr = state.tr;
-                tr.setMeta('addToHistory', false);
-                tr.setMeta(pluginKey, { decorations });
-                view.dispatch(tr);
+                      const tabButton = document.createElement('span');
+                      tabButton.className = 'autocomplete-tab-button';
+                      tabButton.textContent = 'Tab';
+
+                      container.appendChild(suggestionSpan);
+                      container.appendChild(tabButton);
+                      return container;
+                    },
+                    { side: 1 },
+                  );
+
+                  const decorations = DecorationSet.create(view.state.doc, [
+                    suggestionDecoration,
+                  ]);
+
+                  // Only dispatch if the view is still mounted and the position is valid
+                  if (view.isDestroyed || pos > view.state.doc.content.size) {
+                    return;
+                  }
+
+                  const tr = view.state.tr;
+                  tr.setMeta('addToHistory', false);
+                  tr.setMeta(pluginKey, { decorations });
+                  view.dispatch(tr);
+                } catch (error) {
+                  console.warn(
+                    'Error applying autocomplete suggestion:',
+                    error,
+                  );
+                  // Clear any existing decorations on error
+                  const tr = view.state.tr;
+                  tr.setMeta('addToHistory', false);
+                  tr.setMeta(pluginKey, { decorations: DecorationSet.empty });
+                  view.dispatch(tr);
+                }
               });
             },
           };

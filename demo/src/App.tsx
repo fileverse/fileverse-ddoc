@@ -331,7 +331,6 @@ function App() {
         onCopyHeadingLink={(link: string) => {
           navigator.clipboard.writeText(link);
         }}
-        hasAvailableModels={true}
         activeModel={activeModel}
         maxTokens={maxTokens}
       />

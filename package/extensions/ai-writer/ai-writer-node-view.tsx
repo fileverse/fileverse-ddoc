@@ -40,7 +40,13 @@ interface ModelService {
 }
 
 export const AIWriterNodeView = memo(
-  ({ node, editor, getPos, updateAttributes }: NodeViewProps) => {
+  ({
+    node,
+    editor,
+    getPos,
+    updateAttributes,
+    onPromptUsage,
+  }: NodeViewProps & { onPromptUsage: () => void }) => {
     const [isLoading, setIsLoading] = useState(false);
     const [localPrompt, setLocalPrompt] = useState(node.attrs.prompt);
     const [hasGenerated, setHasGenerated] = useState(!!node.attrs.content);
@@ -49,13 +55,18 @@ export const AIWriterNodeView = memo(
     const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
     const [selectedModel, setSelectedModel] = useState<string>('');
     const [includeContext, setIncludeContext] = useState<boolean>(false);
-    const { prompt, content, onPromptUsage } = node.attrs;
+    const { prompt, content } = node.attrs;
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
+    const selectContentRef = useRef<HTMLDivElement>(null);
     const isPreviewMode = !editor.isEditable;
 
-    useOnClickOutside(containerRef, () => {
-      if (!isLoading && !hasGenerated) {
+    useOnClickOutside(containerRef, (event) => {
+      // Check if the click is on a Select dropdown
+      const isSelectDropdown = selectContentRef.current?.contains(
+        event.target as Node,
+      );
+      if (!isLoading && !hasGenerated && !isSelectDropdown) {
         handleDiscard();
       }
     });
@@ -376,7 +387,7 @@ export const AIWriterNodeView = memo(
                       <SelectValue placeholder="Select model" />
                     </div>
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent ref={selectContentRef}>
                     <SelectGroup className="custom-scrollbar">
                       {availableModels.map((modelOption: ModelOption) => (
                         <SelectItem

@@ -6,11 +6,6 @@ import { ModelService } from './ModelService';
 import { OllamaService } from './OllamaService';
 
 interface ModelContextType {
-  models: CustomModel[];
-  addModel: (model: CustomModel) => void;
-  deleteModel: (id: string) => void;
-  getModelById: (id: string) => CustomModel | undefined;
-  getModelByName: (name: string) => CustomModel | undefined;
   defaultModels: CustomModel[];
   isLoadingDefaultModels: boolean;
   ollamaError: string | null;
@@ -22,6 +17,8 @@ interface ModelContextType {
   setTone: (tone: string) => void;
   systemPrompt: string;
   setSystemPrompt: (prompt: string) => void;
+  selectedLLM: string | null;
+  setSelectedLLM: (llm: string | null) => void;
 }
 
 interface ModelProviderProps {
@@ -42,11 +39,6 @@ interface WindowWithModelService extends Window {
 }
 
 export const ModelContext = createContext<ModelContextType>({
-  models: [],
-  addModel: () => { },
-  deleteModel: () => { },
-  getModelById: () => undefined,
-  getModelByName: () => undefined,
   defaultModels: [],
   isLoadingDefaultModels: true,
   ollamaError: null,
@@ -58,10 +50,11 @@ export const ModelContext = createContext<ModelContextType>({
   setTone: () => { },
   systemPrompt: '',
   setSystemPrompt: () => { },
+  selectedLLM: null,
+  setSelectedLLM: () => { },
 });
 
 export const ModelProvider = ({ children }: ModelProviderProps) => {
-  const [models, setModels] = useState<CustomModel[]>([]);
   const [defaultModels, setDefaultModels] = useState<CustomModel[]>([]);
   const [isLoadingDefaultModels, setIsLoadingDefaultModels] = useState(true);
   const [ollamaError, setOllamaError] = useState<string | null>(null);
@@ -75,6 +68,7 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
   const [systemPrompt, setSystemPrompt] = useState<string>(() => {
     return localStorage.getItem('system-prompt') || 'You are a helpful AI assistant. Please provide accurate and concise responses.';
   });
+  const [selectedLLM, setSelectedLLM] = useState<string | null>(null);
 
   // Load Ollama default models
   useEffect(() => {
@@ -113,66 +107,14 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
     loadDefaultModels();
   }, [activeModel]);
 
-  // Load custom models from localStorage on initial load
-  useEffect(() => {
-    const savedModels = localStorage.getItem('customLLMModels');
-    if (savedModels) {
-      try {
-        setModels(JSON.parse(savedModels));
-      } catch (error) {
-        console.error('Failed to parse saved models:', error);
-      }
-    }
-  }, []);
 
-  // Save models to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem('customLLMModels', JSON.stringify(models));
-  }, [models]);
-
-  // Save tone to localStorage when it changes
   useEffect(() => {
     localStorage.setItem('autocomplete-tone', tone);
   }, [tone]);
 
-  // Save system prompt to localStorage when it changes
   useEffect(() => {
     localStorage.setItem('system-prompt', systemPrompt);
   }, [systemPrompt]);
-
-  // Add a new model to the list
-  const addModel = (model: CustomModel) => {
-    // Create ID if not provided
-    if (!model.id) {
-      model.id = `model-${Date.now()}`;
-    }
-    setModels([...models, model]);
-  };
-
-  // Remove a model from the list
-  const deleteModel = (id: string) => {
-    setModels(models.filter((model) => model.id !== id));
-  };
-
-  // Get a model by its ID
-  const getModelById = (id: string) => {
-    // Check custom models first
-    const customModel = models.find((model) => model.id === id);
-    if (customModel) return customModel;
-
-    // Then check default models
-    return defaultModels.find((model) => model.id === id);
-  };
-
-  // Get a model by its name
-  const getModelByName = (name: string) => {
-    // Check custom models first
-    const customModel = models.find((model) => model.modelName === name);
-    if (customModel) return customModel;
-
-    // Then check default models
-    return defaultModels.find((model) => model.modelName === name);
-  };
 
   // Expose model service to window for AIWriter extension
   useEffect(() => {
@@ -188,8 +130,8 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
         const promptWithTone = `Generate text in a ${tone} tone: ${prompt}`;
 
         try {
-          // Use the static method from ModelService
-          return await ModelService.callModel(activeModel, promptWithTone);
+          // Pass the current systemPrompt from context!
+          return await ModelService.callModel(activeModel, promptWithTone, systemPrompt);
         } catch (error) {
           console.error('Error calling model:', error);
           return 'Error while generating text. Please check the model settings and try again.';
@@ -214,6 +156,7 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
             for await (const chunk of OllamaService.streamModel(
               activeModel,
               promptWithTone,
+              systemPrompt
             )) {
               onChunk(chunk);
             }
@@ -222,6 +165,7 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
             const result = await ModelService.callModel(
               activeModel,
               promptWithTone,
+              systemPrompt
             );
             onChunk(result);
           }
@@ -234,7 +178,10 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
       },
       getAvailableModels: async () => {
         // Combine custom and default models
-        const allModels = [...models, ...defaultModels];
+        const allModels = [
+          // ...models,
+          ...defaultModels,
+        ];
 
         // Map models to the expected format
         return allModels.map((model) => ({
@@ -248,16 +195,16 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
       // Clean up on unmount
       delete win.modelService;
     };
-  }, [activeModel, models, defaultModels]);
+  }, [
+    activeModel,
+    // models,
+    defaultModels,
+    systemPrompt,
+  ]);
 
   return (
     <ModelContext.Provider
       value={{
-        models,
-        addModel,
-        deleteModel,
-        getModelById,
-        getModelByName,
         defaultModels,
         isLoadingDefaultModels,
         ollamaError,
@@ -269,6 +216,8 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
         setTone,
         systemPrompt,
         setSystemPrompt,
+        selectedLLM,
+        setSelectedLLM,
       }}
     >
       {children}

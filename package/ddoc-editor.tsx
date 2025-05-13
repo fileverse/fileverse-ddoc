@@ -111,7 +111,6 @@ const DdocEditor = forwardRef(
       metadataProxyUrl,
       onCopyHeadingLink,
       footerHeight,
-      hasAvailableModels,
       activeModel,
       maxTokens,
       onPromptUsage,
@@ -189,7 +188,6 @@ const DdocEditor = forwardRef(
       proExtensions,
       metadataProxyUrl,
       onCopyHeadingLink,
-      hasAvailableModels,
       activeModel,
       maxTokens,
       onPromptUsage,
@@ -582,6 +580,8 @@ const DdocEditor = forwardRef(
                             className={cn(
                               'w-full h-auto py-4 color-bg-default',
                               isPreviewMode && 'preview-mode',
+                              activeModel !== undefined &&
+                                'has-available-models',
                             )}
                           />
                         </div>

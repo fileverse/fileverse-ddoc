@@ -33,7 +33,7 @@ const ModelSelector = ({ onSettingsClick }: ModelSelectorProps) => {
   });
 
   // Combine custom and default models for the dropdown
-  const allModels = useMemo(() => [...models, ...defaultModels], [models, defaultModels]);
+  const allModels = useMemo(() => [ ...defaultModels], [defaultModels]);
 
   // Handle model selection
   const handleSelectModel = (model: CustomModel) => {

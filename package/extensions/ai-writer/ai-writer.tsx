@@ -74,7 +74,12 @@ export const AIWriter = Node.create<AIWriterOptions>({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(AIWriterNodeView);
+    return ReactNodeViewRenderer((props) => (
+      <AIWriterNodeView
+        {...props}
+        onPromptUsage={() => this.options.onPromptUsage?.()}
+      />
+    ));
   },
 
   addCommands() {
@@ -88,7 +93,6 @@ export const AIWriter = Node.create<AIWriterOptions>({
               prompt: options.prompt,
               content: options.content,
               tone: options.tone,
-              onPromptUsage: this.options.onPromptUsage,
             },
           });
         },
