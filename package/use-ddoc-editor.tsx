@@ -68,6 +68,7 @@ export const useDdocEditor = ({
   hasAvailableModels,
   activeModel,
   maxTokens,
+  onPromptUsage,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
 
@@ -296,13 +297,15 @@ export const useDdocEditor = ({
           model: activeModel,
           maxTokens: maxTokens,
           temperature: 0.2,
-          debounceTime: 100,
+          debounceTime: 300,
           tone: 'conversational',
         }),
-        AIWriter,
+        AIWriter.configure({
+          onPromptUsage,
+        }),
       ]);
     }
-  }, [hasAvailableModels, activeModel, maxTokens]);
+  }, [hasAvailableModels, activeModel, maxTokens, onPromptUsage]);
 
   useEffect(() => {
     if (zoomLevel) {

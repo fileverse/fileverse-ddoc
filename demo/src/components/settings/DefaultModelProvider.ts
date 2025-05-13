@@ -40,13 +40,13 @@ export class DefaultModelProvider {
       // Create custom model entries for each available Ollama model
       return availableModels.map(modelName => ({
         id: `ollama-${modelName}`,
-        label: `Ollama: ${modelName}`,
+        label: modelName,
         modelName: modelName,
         endpoint: ollamaEndpoint,
         contextSize: 8192, // A reasonable default
         apiKey: '',
         systemPrompt:
-          'The current time and date is %datetime%. You are a helpful AI assistant. Please provide accurate and concise responses and not include any preambles in your responses.',
+          'You are a helpful AI assistant. Please provide accurate and concise responses and not include any preambles in your responses.',
       }));
     } catch (error) {
       console.error('Error getting default Ollama models:', error);

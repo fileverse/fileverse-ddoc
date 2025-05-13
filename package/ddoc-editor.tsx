@@ -114,6 +114,7 @@ const DdocEditor = forwardRef(
       hasAvailableModels,
       activeModel,
       maxTokens,
+      onPromptUsage,
     }: DdocProps,
     ref,
   ) => {
@@ -191,6 +192,7 @@ const DdocEditor = forwardRef(
       hasAvailableModels,
       activeModel,
       maxTokens,
+      onPromptUsage,
     });
 
     useImperativeHandle(

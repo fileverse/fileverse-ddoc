@@ -4,6 +4,7 @@ import { AIWriterNodeView } from './ai-writer-node-view';
 
 export interface AIWriterOptions {
   HTMLAttributes: Record<string, any>;
+  onPromptUsage?: () => void;
 }
 
 declare module '@tiptap/core' {
@@ -35,6 +36,7 @@ export const AIWriter = Node.create<AIWriterOptions>({
       HTMLAttributes: {
         class: 'ai-writer',
       },
+      onPromptUsage: () => {},
     };
   },
 
@@ -68,7 +70,6 @@ export const AIWriter = Node.create<AIWriterOptions>({
         { 'data-type': 'ai-writer' },
         HTMLAttributes,
       ),
-      0,
     ];
   },
 
@@ -87,6 +88,7 @@ export const AIWriter = Node.create<AIWriterOptions>({
               prompt: options.prompt,
               content: options.content,
               tone: options.tone,
+              onPromptUsage: this.options.onPromptUsage,
             },
           });
         },

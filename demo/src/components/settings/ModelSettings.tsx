@@ -61,7 +61,7 @@ const ModelSettings = () => {
     contextSize: 4000,
     apiKey: '',
     systemPrompt:
-      'The current time and date is %datetime%. You are **Leo**, a helpful AI assistant by Brave. Assist Brave browser users with clear, concise, and polite responses.',
+      'You are a helpful AI assistant. Please provide accurate and concise responses and not include any preambles in your responses.',
   });
   const [error, setError] = useState<string | null>(null);
 
@@ -95,7 +95,7 @@ const ModelSettings = () => {
       contextSize: 4000,
       apiKey: '',
       systemPrompt:
-        'The current time and date is %datetime%. You are **Leo**, a helpful AI assistant by Brave. Assist Brave browser users with clear, concise, and polite responses.',
+        'You are a helpful AI assistant. Please provide accurate and concise responses and not include any preambles in your responses.',
     });
     setShowAddModal(false);
     setError(null);

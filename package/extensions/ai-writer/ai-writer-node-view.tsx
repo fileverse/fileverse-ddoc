@@ -15,6 +15,7 @@ import {
   Checkbox,
 } from '@fileverse/ui';
 import styles from './ai-writer-node-view.module.scss';
+import { useOnClickOutside } from 'usehooks-ts';
 
 // Initialize markdown-it
 const md = new MarkdownIt({
@@ -48,8 +49,16 @@ export const AIWriterNodeView = memo(
     const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
     const [selectedModel, setSelectedModel] = useState<string>('');
     const [includeContext, setIncludeContext] = useState<boolean>(false);
-    const { prompt, content } = node.attrs;
+    const { prompt, content, onPromptUsage } = node.attrs;
     const textareaRef = useRef<HTMLTextAreaElement>(null);
+    const containerRef = useRef<HTMLDivElement>(null);
+    const isPreviewMode = !editor.isEditable;
+
+    useOnClickOutside(containerRef, () => {
+      if (!isLoading && !hasGenerated) {
+        handleDiscard();
+      }
+    });
 
     // Load available models and set initial selected model on mount
     useEffect(() => {
@@ -209,13 +218,15 @@ export const AIWriterNodeView = memo(
       } finally {
         setIsLoading(false);
         setStreamingContent('');
+        onPromptUsage?.();
       }
     }, [
       localPrompt,
+      getDocumentContext,
+      includeContext,
       selectedModel,
       updateAttributes,
-      includeContext,
-      getDocumentContext,
+      onPromptUsage,
     ]);
 
     const handleInsert = useCallback(() => {
@@ -303,9 +314,12 @@ export const AIWriterNodeView = memo(
       [],
     );
 
+    if (isPreviewMode) return null;
+
     return (
       <NodeViewWrapper className="min-w-[calc(100%+1rem)] translate-x-[-0.5rem]">
         <div
+          ref={containerRef}
           className={cn(
             'color-bg-default overflow-hidden flex flex-col rounded-lg w-full',
             isRemoving
@@ -330,8 +344,7 @@ export const AIWriterNodeView = memo(
           {/* Prompt Bar */}
           <div
             className={cn(
-              'flex items-center flex-col md:flex-row justify-between border color-border-default rounded-lg px-3 py-2 mb-3 mx-3 flex-1 shadow-elevation-3',
-              localPrompt.length > 50 && 'md:flex-col',
+              'flex items-center flex-col justify-between border color-border-default rounded-lg px-3 py-2 mb-3 mx-3 flex-1 shadow-elevation-3',
               !hasGenerated && 'mb-5',
             )}
           >
@@ -352,54 +365,45 @@ export const AIWriterNodeView = memo(
                     disabled={isLoading}
                     autoFocus
                   />
-                  <div className="flex items-center gap-2 mt-2">
-                    <Checkbox
-                      key="include-context"
-                      checked={includeContext}
-                      onCheckedChange={() => setIncludeContext(!includeContext)}
-                      className="border-2 text-body-sm"
-                    />
-                    <label
-                      htmlFor="include-context"
-                      className="text-body-sm color-text-secondary cursor-pointer"
-                    >
-                      Include document context
-                    </label>
-                  </div>
                 </div>
               )}
             </div>
-            <div
-              className={cn(
-                'flex justify-between md:justify-end md:items-center gap-2 w-fit',
-                localPrompt.length > 50 &&
-                  'md:justify-between md:items-start w-full',
-              )}
-            >
-              <Select value={selectedModel} onValueChange={handleModelChange}>
-                <SelectTrigger className="w-52 bg-transparent border-none">
-                  <div className="flex items-center gap-1 truncate">
-                    <LucideIcon
-                      name="Bot"
-                      size="sm"
-                      className="min-w-4 min-h-4"
-                    />
-                    <SelectValue placeholder="Select model" />
-                  </div>
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectGroup className="custom-scrollbar">
-                    {availableModels.map((modelOption: ModelOption) => (
-                      <SelectItem
-                        key={modelOption.value}
-                        value={modelOption.value}
-                      >
-                        {modelOption.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
+            <div className={cn('flex justify-between gap-2 w-full')}>
+              <div className="flex items-center gap-2">
+                <Select value={selectedModel} onValueChange={handleModelChange}>
+                  <SelectTrigger className="w-40 bg-transparent border-none">
+                    <div className="flex items-center gap-1 truncate">
+                      <SelectValue placeholder="Select model" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup className="custom-scrollbar">
+                      {availableModels.map((modelOption: ModelOption) => (
+                        <SelectItem
+                          key={modelOption.value}
+                          value={modelOption.value}
+                        >
+                          {modelOption.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
+                <div className="flex items-center gap-2">
+                  <Checkbox
+                    key="include-context"
+                    checked={includeContext}
+                    onCheckedChange={() => setIncludeContext(!includeContext)}
+                    className="border text-body-sm scale-[.8]"
+                  />
+                  <label
+                    htmlFor="include-context"
+                    className="text-body-sm color-text-default cursor-pointer"
+                  >
+                    Include document context
+                  </label>
+                </div>
+              </div>
               <Button
                 onClick={handleGenerate}
                 disabled={!localPrompt.trim() || isLoading || hasGenerated}

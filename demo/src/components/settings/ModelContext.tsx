@@ -14,10 +14,14 @@ interface ModelContextType {
   defaultModels: CustomModel[];
   isLoadingDefaultModels: boolean;
   ollamaError: string | null;
-  activeModel?: CustomModel; // Add activeModel to context
-  setActiveModel: (model: CustomModel | undefined) => void; // Add setter for activeModel
+  activeModel?: CustomModel;
+  setActiveModel: (model: CustomModel | undefined) => void;
   maxTokens: number;
   setMaxTokens: (maxTokens: number) => void;
+  tone: string;
+  setTone: (tone: string) => void;
+  systemPrompt: string;
+  setSystemPrompt: (prompt: string) => void;
 }
 
 interface ModelProviderProps {
@@ -39,17 +43,21 @@ interface WindowWithModelService extends Window {
 
 export const ModelContext = createContext<ModelContextType>({
   models: [],
-  addModel: () => {},
-  deleteModel: () => {},
+  addModel: () => { },
+  deleteModel: () => { },
   getModelById: () => undefined,
   getModelByName: () => undefined,
   defaultModels: [],
   isLoadingDefaultModels: true,
   ollamaError: null,
   activeModel: undefined,
-  setActiveModel: () => {},
+  setActiveModel: () => { },
   maxTokens: 2,
-  setMaxTokens: () => {},
+  setMaxTokens: () => { },
+  tone: 'neutral',
+  setTone: () => { },
+  systemPrompt: '',
+  setSystemPrompt: () => { },
 });
 
 export const ModelProvider = ({ children }: ModelProviderProps) => {
@@ -61,6 +69,13 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
     undefined,
   );
   const [maxTokens, setMaxTokens] = useState<number>(3);
+  const [tone, setTone] = useState<string>(() => {
+    return localStorage.getItem('autocomplete-tone') || 'neutral';
+  });
+  const [systemPrompt, setSystemPrompt] = useState<string>(() => {
+    return localStorage.getItem('system-prompt') || 'You are a helpful AI assistant. Please provide accurate and concise responses.';
+  });
+
   // Load Ollama default models
   useEffect(() => {
     const loadDefaultModels = async () => {
@@ -114,6 +129,16 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
   useEffect(() => {
     localStorage.setItem('customLLMModels', JSON.stringify(models));
   }, [models]);
+
+  // Save tone to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('autocomplete-tone', tone);
+  }, [tone]);
+
+  // Save system prompt to localStorage when it changes
+  useEffect(() => {
+    localStorage.setItem('system-prompt', systemPrompt);
+  }, [systemPrompt]);
 
   // Add a new model to the list
   const addModel = (model: CustomModel) => {
@@ -240,6 +265,10 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
         setActiveModel,
         maxTokens,
         setMaxTokens,
+        tone,
+        setTone,
+        systemPrompt,
+        setSystemPrompt,
       }}
     >
       {children}
