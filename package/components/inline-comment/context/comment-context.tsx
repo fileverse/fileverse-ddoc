@@ -145,7 +145,7 @@ export const CommentProvider = ({
 
   useOnClickOutside([portalRef, buttonRef, dropdownRef], () => {
     if (isCommentOpen) {
-      editor.chain().unsetHighlight().run();
+      // editor.chain().unsetHighlight().run();
       setIsCommentOpen(false);
     }
   });
@@ -166,13 +166,13 @@ export const CommentProvider = ({
     setIsCommentOpen(true);
     onInlineComment?.();
 
-    const isDarkTheme = localStorage.getItem('theme') === 'dark';
-    editor
-      .chain()
-      .setHighlight({
-        color: isDarkTheme ? '#15521d' : '#DDFBDF',
-      })
-      .run();
+    // const isDarkTheme = localStorage.getItem('theme') === 'dark';
+    // editor
+    //   .chain()
+    //   .setHighlight({
+    //     color: isDarkTheme ? '#15521d' : '#DDFBDF',
+    //   })
+    //   .run();
   }, [editor, isCommentActive, activeComment, onInlineComment]);
 
   const getNewComment = useCallback(
@@ -359,7 +359,7 @@ export const CommentProvider = ({
   ); // setComment is stable
 
   const handleCommentSubmit = useCallback(() => {
-    editor.chain().unsetHighlight().run();
+    // editor.chain().unsetHighlight().run();
     if (!comment.trim() || !username) return;
 
     const newComment = {
