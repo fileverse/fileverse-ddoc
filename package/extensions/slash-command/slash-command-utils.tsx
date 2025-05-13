@@ -138,6 +138,9 @@ export const getSuggestionItems = ({
       icon: <LucideIcon name="Callout" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) => {
+        const attrs = editor.getAttributes('textStyle');
+
+        // First insert callout without styles
         editor
           .chain()
           .focus()
@@ -152,6 +155,11 @@ export const getSuggestionItems = ({
             ],
           })
           .run();
+
+        // Then apply textStyle marks to content inside callout
+        if (attrs) {
+          editor.chain().focus().setMark('textStyle', attrs).run();
+        }
       },
     },
     {

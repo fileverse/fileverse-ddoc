@@ -240,6 +240,9 @@ export const useDdocEditor = ({
           },
         },
         handleClick: handleCommentClick,
+        attributes: {
+          spellCheck: 'true',
+        },
       },
       autofocus: unFocused ? false : 'start',
       immediatelyRender: false,

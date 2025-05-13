@@ -108,6 +108,7 @@ export const defaultExtensions = (
     horizontalRule: false,
     bulletList: false,
     listItem: false,
+    codeBlock: false,
   }),
   CustomCodeBlockLowlight.configure({
     lowlight,
@@ -206,8 +207,9 @@ export const defaultExtensions = (
     delimiters: 'dollar',
     katexOptions: {
       throwOnError: false,
-      strict: true,
+      strict: false,
     },
+    renderTextMode: 'raw-latex',
   }),
   Footnote,
   Superscript.configure({
