@@ -1,9 +1,9 @@
-import { Node, mergeAttributes } from '@tiptap/core';
-import { Plugin, PluginKey } from '@tiptap/pm/state';
+import { Node as TiptapNode, mergeAttributes } from '@tiptap/core';
+import { Plugin, PluginKey, TextSelection } from '@tiptap/pm/state';
 import { EditorView } from '@tiptap/pm/view';
-import { Slice, Fragment } from 'prosemirror-model';
+import { Slice, Fragment, Node as ProseMirrorNode } from 'prosemirror-model';
 
-export const Callout = Node.create({
+export const Callout = TiptapNode.create({
   name: 'callout',
 
   group: 'block',
@@ -32,12 +32,10 @@ export const Callout = Node.create({
         key: pluginKey,
         props: {
           transformPasted(this: Plugin, slice: Slice, view: EditorView): Slice {
-            const state = view.state;
-            const { selection } = state;
+            const { selection } = view.state;
             const $from = selection.$from;
 
             let isInsideCallout = false;
-
             for (let depth = $from.depth; depth >= 0; depth--) {
               const node = $from.node(depth);
               if (node.type.name === 'callout') {
@@ -45,23 +43,66 @@ export const Callout = Node.create({
                 break;
               }
             }
+
             if (!isInsideCallout) return slice;
 
-            // Flatten and filter out dBlock and callout nodes
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            const contentNodes: any[] = [];
+            const flattenContent = (fragment: Fragment): ProseMirrorNode[] => {
+              const result: ProseMirrorNode[] = [];
+              fragment.forEach((node) => {
+                if (
+                  node.type.name === 'callout' ||
+                  node.type.name === 'dBlock'
+                ) {
+                  result.push(...flattenContent(node.content));
+                } else {
+                  result.push(node);
+                }
+              });
+              return result;
+            };
 
-            slice.content.forEach((node) => {
-              if (node.type.name === 'callout' || node.type.name === 'dBlock') {
-                node.content.forEach((child) => contentNodes.push(child));
-              } else {
-                contentNodes.push(node);
-              }
-            });
+            const flattenedNodes = flattenContent(slice.content);
+            const fragment = Fragment.fromArray(flattenedNodes);
 
-            const fragment = Fragment.fromArray(contentNodes);
             return new Slice(fragment, 0, 0);
           },
+        },
+
+        appendTransaction(transactions, _oldState, newState) {
+          const lastTransaction = transactions[transactions.length - 1];
+          if (!lastTransaction.docChanged) return;
+
+          const { $from } = newState.selection;
+          let isInsideCallout = false;
+
+          for (let depth = $from.depth; depth >= 0; depth--) {
+            const node = $from.node(depth);
+            if (node.type.name === 'callout') {
+              isInsideCallout = true;
+              break;
+            }
+          }
+
+          if (!isInsideCallout) {
+            // Move selection to end of last callout block
+            let lastCalloutPos: number | null = null;
+            newState.doc.descendants((node, pos) => {
+              if (node.type.name === 'callout') {
+                lastCalloutPos = pos + node.content.size - 1;
+              }
+              return true;
+            });
+
+            if (lastCalloutPos != null) {
+              const selection = TextSelection.create(
+                newState.doc,
+                lastCalloutPos,
+              );
+              return newState.tr.setSelection(selection).scrollIntoView();
+            }
+          }
+
+          return null;
         },
       }),
     ];
