@@ -4,19 +4,16 @@ import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { Ollama } from 'ollama/browser';
-import { debounce } from '../../utils/debounce';
 
 export const AiAutocomplete = Extension.create({
   name: 'aiAutocomplete',
 
   addOptions() {
     return {
-      debounce: 100,
       model: '',
       tone: 'neutral',
       maxTokens: 8,
       temperature: 0.2,
-      applySuggestionKey: 'Tab',
       isEnabled: (() => {
         if (typeof window === 'undefined') return true;
         const e = localStorage.getItem('autocomplete-enabled');
@@ -34,12 +31,12 @@ export const AiAutocomplete = Extension.create({
   addProseMirrorPlugins() {
     const pluginKey = new PluginKey('ai-autocomplete');
     let currentSuggestion: string | null = null;
-    let lastContext = '';
+    let isFetching = false;
 
     const ollama = new Ollama({
       host: this.options?.endpoint,
     });
-    const options = this.options; // Capture options for use in plugin view/props
+    const options = this.options;
     const extension = this;
 
     // Listen for toggle events from UI
@@ -47,51 +44,42 @@ export const AiAutocomplete = Extension.create({
       extension.storage.isEnabled = event.detail.enabled;
     }) as EventListener);
 
-    // Debounced suggestion fetcher
-    const getSuggestion = debounce(
-      async (prompt: string, cb: (suggestion: string | null) => void) => {
-        try {
-          if (prompt === lastContext) return;
-          lastContext = prompt;
+    const getSuggestion = async (prompt: string): Promise<string | null> => {
+      try {
+        const response = await ollama.generate({
+          model: options.model?.modelName,
+          prompt,
+          options: {
+            num_predict: options.maxTokens,
+            temperature: options.temperature,
+          },
+        });
 
-          const response = await ollama.generate({
-            model: options.model?.modelName,
-            prompt,
-            options: {
-              num_predict: options.maxTokens,
-              temperature: options.temperature,
-            },
-          });
+        let suggestion = response.response?.trimStart() || '';
 
-          let suggestion = response.response?.trimStart() || '';
+        // Truncate at first sentence-ending punctuation
+        const match = suggestion.match(/^[^.!?]*[.!?]?/);
+        if (match) suggestion = match[0];
 
-          // Truncate at first sentence-ending punctuation
-          const match = suggestion.match(/^[^.!?]*[.!?]?/);
-          if (match) suggestion = match[0];
-
-          // Capitalize first letter if context ends with a dot
-          const trimmedPrompt = prompt.trim();
-          if (
-            suggestion &&
-            trimmedPrompt.length > 0 &&
-            /[.]$/.test(trimmedPrompt)
-          ) {
-            suggestion =
-              suggestion.charAt(0).toUpperCase() + suggestion.slice(1);
-          }
-
-          // Only show if it's not empty and not a repeat of the last word
-          if (suggestion && !prompt.endsWith(suggestion)) {
-            cb(suggestion);
-          } else {
-            cb(null);
-          }
-        } catch (e) {
-          cb(null);
+        // Capitalize first letter if context ends with a dot
+        const trimmedPrompt = prompt.trim();
+        if (
+          suggestion &&
+          trimmedPrompt.length > 0 &&
+          /[.]$/.test(trimmedPrompt)
+        ) {
+          suggestion = suggestion.charAt(0).toUpperCase() + suggestion.slice(1);
         }
-      },
-      options.debounce,
-    );
+
+        // Only return if it's not empty and not a repeat of the last word
+        if (suggestion && !prompt.endsWith(suggestion)) {
+          return suggestion;
+        }
+        return null;
+      } catch (e) {
+        return null;
+      }
+    };
 
     return [
       new Plugin({
@@ -108,92 +96,65 @@ export const AiAutocomplete = Extension.create({
             return tr.docChanged ? oldValue.map(tr.mapping, tr.doc) : oldValue;
           },
         },
-        view() {
-          return {
-            update(view, prevState) {
-              // Don't show suggestions if autocomplete is disabled
-              if (!extension.storage.isEnabled) {
-                if (currentSuggestion) {
-                  currentSuggestion = null;
-                  const tr = view.state.tr;
-                  tr.setMeta('addToHistory', false);
-                  tr.setMeta(pluginKey, { decorations: DecorationSet.empty });
-                  view.dispatch(tr);
-                }
-                return;
-              }
+        props: {
+          decorations(editorState) {
+            return pluginKey.getState(editorState);
+          },
+          handleKeyDown(view, event) {
+            if (!extension.storage.isEnabled) return false;
 
-              const { state } = view;
-              const { from } = state.selection;
-              const $pos = state.doc.resolve(from);
-              const node = $pos.parent;
-              const nodeStart = $pos.start();
-              const context = node.textBetween(0, from - nodeStart, ' ');
+            const { state } = view;
+            const { from, to } = state.selection;
+            if (from !== to) return false; // Only allow collapsed selection
+            const $pos = state.doc.resolve(from);
+            const node = $pos.parent;
+            const nodeStart = $pos.start();
+            const context = node.textBetween(0, from - nodeStart, ' ');
 
-              // Check if cursor is right after punctuation without a space
-              const lastChar = context[context.length - 1];
-              const isAfterPunctuation = lastChar && /[.,!?;:]/.test(lastChar);
-              if (isAfterPunctuation) {
-                if (currentSuggestion) {
-                  currentSuggestion = null;
-                  const tr = state.tr;
-                  tr.setMeta('addToHistory', false);
-                  tr.setMeta(pluginKey, { decorations: DecorationSet.empty });
-                  view.dispatch(tr);
-                }
-                return;
-              }
+            // Only proceed if there is context
+            if (!context.trim()) return false;
 
-              // Only suggest if user has typed something (not just placeholder)
-              if (!context.trim()) {
-                if (currentSuggestion) {
-                  currentSuggestion = null;
-                  const tr = state.tr;
-                  tr.setMeta('addToHistory', false);
-                  tr.setMeta(pluginKey, { decorations: DecorationSet.empty });
-                  view.dispatch(tr);
-                }
-                return;
-              }
+            // Check if cursor is right after punctuation without a space
+            const lastChar = context[context.length - 1];
+            const isAfterPunctuation = lastChar && /[.,!?;:]/.test(lastChar);
+            if (isAfterPunctuation) return false;
 
-              // Only show suggestion if at end of block
-              if (from !== $pos.end()) {
-                if (currentSuggestion) {
-                  currentSuggestion = null;
-                  const tr = state.tr;
-                  tr.setMeta('addToHistory', false);
-                  tr.setMeta(pluginKey, { decorations: DecorationSet.empty });
-                  view.dispatch(tr);
-                }
-                return;
-              }
+            // If a suggestion is shown and the user presses any key except Tab, remove the suggestion
+            if (currentSuggestion && event.key !== 'Tab') {
+              const tr = state.tr;
+              tr.setMeta(pluginKey, { decorations: DecorationSet.empty });
+              view.dispatch(tr);
+              currentSuggestion = null;
+              return false;
+            }
 
-              // Only fetch if document changed
-              if (prevState && prevState.doc.eq(state.doc)) return;
+            if (event.key === 'Tab') {
+              event.preventDefault();
 
-              // (No restriction: always allow suggestions, even mid-word)
-
-              // Clear previous suggestion
-              setTimeout(() => {
-                const tr = state.tr;
-                tr.setMeta('addToHistory', false);
+              // If we already have a suggestion, accept it
+              if (currentSuggestion) {
+                const tr = state.tr.insertText(currentSuggestion, from, from);
                 tr.setMeta(pluginKey, { decorations: DecorationSet.empty });
                 view.dispatch(tr);
-              }, 0);
+                currentSuggestion = null;
+                return true;
+              }
+
+              // If we're already fetching, don't start another request
+              if (isFetching) return true;
 
               // Fetch new suggestion
+              isFetching = true;
               const prompt = `Continue writing the following text, word by word, as if you are the user. Write in ${options.tone} tone. Do not answer, do not change the topic, just continue the sentence naturally. Do not add any punctuation or spaces to the end of the suggestion:\n${context}`;
 
-              getSuggestion(prompt, (suggestion) => {
+              getSuggestion(prompt).then((suggestion) => {
+                isFetching = false;
                 currentSuggestion = suggestion;
                 if (!suggestion) return;
 
-                // Safety check: ensure the position is still valid
                 try {
                   const pos = view.state.selection.from;
-                  if (pos > view.state.doc.content.size) {
-                    return;
-                  }
+                  if (pos > view.state.doc.content.size) return;
 
                   const suggestionDecoration = Decoration.widget(
                     pos,
@@ -208,12 +169,7 @@ export const AiAutocomplete = Extension.create({
                         '<br>',
                       );
 
-                      const tabButton = document.createElement('span');
-                      tabButton.className = 'autocomplete-tab-button';
-                      tabButton.textContent = 'Tab';
-
                       container.appendChild(suggestionSpan);
-                      container.appendChild(tabButton);
                       return container;
                     },
                     { side: 1 },
@@ -223,10 +179,7 @@ export const AiAutocomplete = Extension.create({
                     suggestionDecoration,
                   ]);
 
-                  // Only dispatch if the view is still mounted and the position is valid
-                  if (view.isDestroyed || pos > view.state.doc.content.size) {
-                    return;
-                  }
+                  if (view.isDestroyed || pos > view.state.doc.content.size) return;
 
                   const tr = view.state.tr;
                   tr.setMeta('addToHistory', false);
@@ -237,30 +190,13 @@ export const AiAutocomplete = Extension.create({
                     'Error applying autocomplete suggestion:',
                     error,
                   );
-                  // Clear any existing decorations on error
                   const tr = view.state.tr;
                   tr.setMeta('addToHistory', false);
                   tr.setMeta(pluginKey, { decorations: DecorationSet.empty });
                   view.dispatch(tr);
                 }
               });
-            },
-          };
-        },
-        props: {
-          decorations(editorState) {
-            return pluginKey.getState(editorState);
-          },
-          handleKeyDown(view, event) {
-            // Accept suggestion on Tab
-            if (event.key === options.applySuggestionKey && currentSuggestion) {
-              event.preventDefault();
-              const { state, dispatch } = view;
-              const { from, to } = state.selection;
-              const tr = state.tr.insertText(currentSuggestion, from, to);
-              tr.setMeta(pluginKey, { decorations: DecorationSet.empty });
-              dispatch(tr);
-              currentSuggestion = null;
+
               return true;
             }
             return false;

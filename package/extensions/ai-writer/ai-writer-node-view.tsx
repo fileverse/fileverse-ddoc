@@ -285,22 +285,6 @@ export const AIWriterNodeView = memo(
       }
     }, [updateAttributes, localPrompt, prompt]);
 
-    const handlePromptKeyDown = useCallback(
-      (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && localPrompt.trim()) {
-          e.preventDefault();
-          handleGenerate();
-        } else if (e.key === 'Escape') {
-          e.preventDefault();
-          handleDiscard();
-        } else if (e.key === ' ' && !localPrompt.trim()) {
-          e.preventDefault();
-          handleDiscard();
-        }
-      },
-      [localPrompt, handleGenerate, handleDiscard],
-    );
-
     const handleModelChange = useCallback(
       (newModel: string) => {
         setSelectedModel(newModel);
@@ -314,6 +298,67 @@ export const AIWriterNodeView = memo(
       setHasGenerated(false);
       setStreamingContent('');
     }, [updateAttributes]);
+
+    const handlePromptKeyDown = useCallback(
+      (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          if (hasGenerated) {
+            handleInsert();
+          } else if (localPrompt.trim()) {
+            handleGenerate();
+          }
+        } else if (e.key === 'Escape') {
+          e.preventDefault();
+          if (hasGenerated) {
+            handleDiscard();
+          } else {
+            handleDiscard();
+          }
+        } else if (e.key === ' ' && !localPrompt.trim()) {
+          e.preventDefault();
+          handleDiscard();
+        } else if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          handleTryAgain();
+        }
+      },
+      [
+        localPrompt,
+        hasGenerated,
+        handleInsert,
+        handleGenerate,
+        handleDiscard,
+        handleTryAgain,
+      ],
+    );
+
+    // Add global keyboard shortcuts
+    useEffect(() => {
+      const handleGlobalKeyDown = (e: KeyboardEvent) => {
+        // Only handle shortcuts when content has been generated
+        if (!hasGenerated) return;
+
+        // Enter to insert
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          handleInsert();
+        }
+        // Escape to discard
+        else if (e.key === 'Escape') {
+          e.preventDefault();
+          handleDiscard();
+        }
+        // Option + Command + R to retry (Mac)
+        else if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          handleTryAgain();
+        }
+      };
+
+      window.addEventListener('keydown', handleGlobalKeyDown);
+      return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+    }, [hasGenerated, handleInsert, handleDiscard, handleTryAgain]);
 
     // Render loading skeleton for preview
     const renderLoading = useCallback(
@@ -343,7 +388,7 @@ export const AIWriterNodeView = memo(
             <div className="flex w-full flex-row items-center justify-center">
               <div className="animate-border inline-block rounded-lg p-1 w-full mx-1 mb-3 mt-2">
                 <div
-                  className={`w-full text-base color-text-default whitespace-pre-line color-bg-default p-4 rounded-lg shadow-elevation-3 ${styles.previewContent}`}
+                  className={`w-full text-base color-text-default whitespace-pre-line color-bg-default p-4 rounded-lg shadow-elevation-3 overflow-auto ${styles.previewContent}`}
                   dangerouslySetInnerHTML={{
                     __html: md.render(streamingContent || content || ''),
                   }}

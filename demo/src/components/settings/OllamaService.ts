@@ -16,9 +16,7 @@ export class OllamaService {
   ): Promise<string> {
     try {
       // Format the system prompt with dynamic variables
-      const formattedSystemPrompt = (
-        systemPrompt || model.systemPrompt
-      ).replace('%datetime%', new Date().toLocaleString());
+      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}\n\nReturn in full Markdown format`;
 
       // Create a client with the specified host
       const client = new Ollama({
@@ -64,9 +62,7 @@ export class OllamaService {
   ) {
     try {
       // Format the system prompt with dynamic variables
-      const formattedSystemPrompt = (
-        systemPrompt || model.systemPrompt
-      ).replace('%datetime%', new Date().toLocaleString());
+      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}\n\nReturn in full Markdown format`;
 
       // Create a client with the specified host
       const client = new Ollama({

@@ -61,7 +61,7 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
   const [activeModel, setActiveModel] = useState<CustomModel | undefined>(
     undefined,
   );
-  const [maxTokens, setMaxTokens] = useState<number>(3);
+  const [maxTokens, setMaxTokens] = useState<number>(1);
   const [tone, setTone] = useState<string>(() => {
     return localStorage.getItem('autocomplete-tone') || 'neutral';
   });
