@@ -1222,7 +1222,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
 }
 
 .autocomplete-suggestion-container {
-  @apply inline-flex items-center gap-1;
+  @apply space-x-2;
 }
 
 .autocomplete-tab-button {

@@ -38,6 +38,11 @@ interface WindowWithModelService extends Window {
   };
 }
 
+// Define interface for window with model context
+interface WindowWithModelContext extends Window {
+  __MODEL_CONTEXT__?: ModelContextType;
+}
+
 export const ModelContext = createContext<ModelContextType>({
   defaultModels: [],
   isLoadingDefaultModels: true,
@@ -115,6 +120,40 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
   useEffect(() => {
     localStorage.setItem('system-prompt', systemPrompt);
   }, [systemPrompt]);
+
+  // Expose model context to window for AIWriter extension
+  useEffect(() => {
+    const context = {
+      defaultModels,
+      isLoadingDefaultModels,
+      ollamaError,
+      activeModel,
+      setActiveModel,
+      maxTokens,
+      setMaxTokens,
+      tone,
+      setTone,
+      systemPrompt,
+      setSystemPrompt,
+      selectedLLM,
+      setSelectedLLM,
+    };
+
+    (window as WindowWithModelContext).__MODEL_CONTEXT__ = context;
+
+    return () => {
+      delete (window as WindowWithModelContext).__MODEL_CONTEXT__;
+    };
+  }, [
+    defaultModels,
+    isLoadingDefaultModels,
+    ollamaError,
+    activeModel,
+    maxTokens,
+    tone,
+    systemPrompt,
+    selectedLLM,
+  ]);
 
   // Expose model service to window for AIWriter extension
   useEffect(() => {

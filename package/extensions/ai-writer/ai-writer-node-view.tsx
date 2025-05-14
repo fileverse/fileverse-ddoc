@@ -29,6 +29,27 @@ interface ModelOption {
   label: string;
 }
 
+interface CustomModel {
+  modelName: string;
+  label: string;
+}
+
+interface ModelContextType {
+  defaultModels: CustomModel[];
+  isLoadingDefaultModels: boolean;
+  ollamaError: string | null;
+  activeModel?: CustomModel;
+  setActiveModel: (model: CustomModel | undefined) => void;
+  maxTokens: number;
+  setMaxTokens: (maxTokens: number) => void;
+  tone: string;
+  setTone: (tone: string) => void;
+  systemPrompt: string;
+  setSystemPrompt: (prompt: string) => void;
+  selectedLLM: string | null;
+  setSelectedLLM: (llm: string | null) => void;
+}
+
 interface ModelService {
   callModel?: (prompt: string, model: string) => Promise<string>;
   streamModel?: (
@@ -37,6 +58,11 @@ interface ModelService {
     onChunk: (chunk: string) => void,
   ) => Promise<void>;
   getAvailableModels?: () => Promise<ModelOption[]>;
+}
+
+// Define interface for window with model context
+interface WindowWithModelContext extends Window {
+  __MODEL_CONTEXT__?: ModelContextType;
 }
 
 export const AIWriterNodeView = memo(
@@ -53,13 +79,15 @@ export const AIWriterNodeView = memo(
     const [streamingContent, setStreamingContent] = useState('');
     const [isRemoving, setIsRemoving] = useState(false);
     const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
-    const [selectedModel, setSelectedModel] = useState<string>('');
     const [includeContext, setIncludeContext] = useState<boolean>(false);
     const { prompt, content } = node.attrs;
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const selectContentRef = useRef<HTMLDivElement>(null);
     const isPreviewMode = !editor.isEditable;
+
+    // Get the model context from window
+    const modelContext = (window as WindowWithModelContext).__MODEL_CONTEXT__;
 
     useOnClickOutside(containerRef, (event) => {
       // Check if the click is on a Select dropdown
@@ -74,24 +102,20 @@ export const AIWriterNodeView = memo(
     // Load available models and set initial selected model on mount
     useEffect(() => {
       const loadModels = async () => {
-        const modelService = (
-          window as Window & { modelService?: ModelService }
-        ).modelService;
-        if (modelService?.getAvailableModels) {
+        if (modelContext?.defaultModels) {
           try {
-            const models = await modelService.getAvailableModels();
+            const models = modelContext.defaultModels.map((model) => ({
+              value: model.modelName,
+              label: model.label,
+            }));
             setAvailableModels(models);
-            // Set the first model as selected if available
-            if (models.length > 0 && !selectedModel) {
-              setSelectedModel(models[0].value);
-            }
           } catch (error) {
             console.error('Error loading available models:', error);
           }
         }
       };
       loadModels();
-    }, [selectedModel]);
+    }, [modelContext?.defaultModels]);
 
     // Auto-focus the textarea when the component mounts
     useEffect(() => {
@@ -191,38 +215,43 @@ export const AIWriterNodeView = memo(
       return context;
     }, [editor, getPos, includeContext]);
 
-    // Handlers
+    // Update handleGenerate to use modelContext
     const handleGenerate = useCallback(async () => {
       if (!localPrompt.trim()) return;
       try {
         setIsLoading(true);
         setStreamingContent('');
-        const modelService = (
-          window as Window & { modelService?: ModelService }
-        ).modelService;
 
         const context = getDocumentContext();
         const fullPrompt = includeContext
           ? `Context from document:\n${context}\n\nUser prompt: ${localPrompt}`
           : localPrompt;
 
-        if (modelService?.streamModel) {
-          let fullContent = '';
-          await modelService.streamModel(
-            fullPrompt,
-            selectedModel,
-            (chunk: string) => {
-              fullContent += chunk;
-              setStreamingContent(fullContent);
-            },
-          );
-          updateAttributes?.({ content: fullContent, prompt: localPrompt });
-        } else if (modelService?.callModel) {
-          const newContent = await modelService.callModel(
-            fullPrompt,
-            selectedModel,
-          );
-          updateAttributes?.({ content: newContent, prompt: localPrompt });
+        if (modelContext?.activeModel) {
+          const modelService = (
+            window as Window & { modelService?: ModelService }
+          ).modelService;
+
+          if (modelService?.streamModel) {
+            let fullContent = '';
+            await modelService.streamModel(
+              fullPrompt,
+              modelContext.activeModel.modelName,
+              (chunk: string) => {
+                fullContent += chunk;
+                setStreamingContent(fullContent);
+              },
+            );
+            updateAttributes?.({ content: fullContent, prompt: localPrompt });
+          } else if (modelService?.callModel) {
+            const newContent = await modelService.callModel(
+              fullPrompt,
+              modelContext.activeModel.modelName,
+            );
+            updateAttributes?.({ content: newContent, prompt: localPrompt });
+          }
+        } else {
+          console.error('No active model selected');
         }
       } catch (error) {
         console.error('Error generating text:', error);
@@ -235,7 +264,7 @@ export const AIWriterNodeView = memo(
       localPrompt,
       getDocumentContext,
       includeContext,
-      selectedModel,
+      modelContext?.activeModel,
       updateAttributes,
       onPromptUsage,
     ]);
@@ -287,10 +316,17 @@ export const AIWriterNodeView = memo(
 
     const handleModelChange = useCallback(
       (newModel: string) => {
-        setSelectedModel(newModel);
         updateAttributes?.({ model: newModel });
+        // Find the corresponding CustomModel from defaultModels
+        const selectedCustomModel = modelContext?.defaultModels.find(
+          (model) => model.modelName === newModel,
+        );
+        // Update the active model in ModelContext
+        if (selectedCustomModel && modelContext?.setActiveModel) {
+          modelContext.setActiveModel(selectedCustomModel);
+        }
       },
-      [updateAttributes],
+      [updateAttributes, modelContext],
     );
 
     const handleTryAgain = useCallback(() => {
@@ -426,7 +462,10 @@ export const AIWriterNodeView = memo(
             </div>
             <div className={cn('flex justify-between gap-2 w-full')}>
               <div className="flex items-center gap-2">
-                <Select value={selectedModel} onValueChange={handleModelChange}>
+                <Select
+                  value={modelContext?.activeModel?.modelName ?? ''}
+                  onValueChange={handleModelChange}
+                >
                   <SelectTrigger className="w-40 bg-transparent border-none">
                     <div className="flex items-center gap-1 truncate">
                       <SelectValue placeholder="Select model" />
