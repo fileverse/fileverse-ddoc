@@ -1222,7 +1222,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
 }
 
 .autocomplete-suggestion-container {
-  @apply space-x-2;
+  @apply inline-flex items-center gap-1;
 }
 
 .autocomplete-tab-button {
@@ -1238,7 +1238,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   font-style: normal !important;
   font-weight: 500;
   line-height: 1;
-  margin-left: 4px;
 
   .dark & {
     background-color: #404040;

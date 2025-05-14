@@ -169,7 +169,13 @@ export const AiAutocomplete = Extension.create({
                         '<br>',
                       );
 
+                      const tabButton = document.createElement('span');
+                      tabButton.className = 'autocomplete-tab-button';
+                      tabButton.textContent = 'Tab';
+
                       container.appendChild(suggestionSpan);
+                      container.appendChild(tabButton);
+
                       return container;
                     },
                     { side: 1 },
