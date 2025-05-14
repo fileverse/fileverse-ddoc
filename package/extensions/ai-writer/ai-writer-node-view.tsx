@@ -436,11 +436,16 @@ export const AIWriterNodeView = memo(
           {/* Prompt Bar */}
           <div
             className={cn(
-              'flex items-center flex-col justify-between border color-border-default rounded-lg px-3 py-2 mb-3 mx-3 flex-1 shadow-elevation-3',
-              !hasGenerated && 'mb-5',
+              'flex items-center flex-col justify-between border color-border-default rounded-lg mb-4 mx-3 flex-1 shadow-elevation-3 ',
+              !hasGenerated && 'px-3 py-2',
             )}
           >
-            <div className="flex items-start gap-2 w-full">
+            <div
+              className={cn(
+                'flex items-start gap-2 w-full',
+                hasGenerated && 'px-3 py-2',
+              )}
+            >
               <img src={wizardLogo} alt="AI Writer" className="w-5 h-5" />
               {isLoading && !streamingContent ? (
                 renderLoading()
@@ -460,7 +465,12 @@ export const AIWriterNodeView = memo(
                 </div>
               )}
             </div>
-            <div className={cn('flex justify-between gap-2 w-full')}>
+            <div
+              className={cn(
+                'flex justify-between gap-2 w-full',
+                hasGenerated && 'px-3 pb-2',
+              )}
+            >
               <div className="flex items-center gap-2">
                 <Select
                   value={modelContext?.activeModel?.modelName ?? ''}
@@ -507,35 +517,45 @@ export const AIWriterNodeView = memo(
                 <LucideIcon name="ArrowUp" size="sm" />
               </Button>
             </div>
+            {/* Action Bar */}
+            {hasGenerated && (
+              <div className="flex gap-2 w-full border-t color-border-default py-2 justify-between">
+                <Button
+                  variant="ghost"
+                  onClick={handleDiscard}
+                  className="min-w-fit gap-2 !bg-transparent color-text-secondary text-body-sm"
+                >
+                  <span className="text-helper-text-sm border color-border-default rounded-lg px-1.5 py-1">
+                    Esc
+                  </span>
+                  Discard
+                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    onClick={handleInsert}
+                    className="min-w-fit gap-2 !bg-transparent color-text-secondary text-body-sm"
+                  >
+                    <span className="text-helper-text-sm border color-border-default rounded-lg px-1.5 py-1">
+                      ↵ Enter
+                    </span>
+                    Accept
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={handleTryAgain}
+                    className="min-w-fit gap-2 !bg-transparent color-text-secondary text-body-sm"
+                    disabled={isLoading}
+                  >
+                    <span className="text-helper-text-sm border color-border-default rounded-lg px-1.5 py-1">
+                      ⌘ + R
+                    </span>
+                    Try again
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
-
-          {/* Action Bar */}
-          {hasGenerated && (
-            <div className="flex gap-2 mx-3 mb-4">
-              <Button
-                variant="ghost"
-                onClick={handleInsert}
-                className="min-w-fit gap-1 px-2 py-1 color-text-success shadow-elevation-3"
-              >
-                <LucideIcon name="Check" size="sm" /> Accept
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={handleDiscard}
-                className="min-w-fit gap-1 px-2 py-1 color-text-danger shadow-elevation-3"
-              >
-                <LucideIcon name="X" size="sm" /> Discard
-              </Button>
-              <Button
-                variant="ghost"
-                onClick={handleTryAgain}
-                className="min-w-fit gap-1 px-2 py-1 shadow-elevation-3"
-                disabled={isLoading}
-              >
-                <LucideIcon name="Undo2" size="sm" /> Try again
-              </Button>
-            </div>
-          )}
         </div>
       </NodeViewWrapper>
     );
