@@ -5,7 +5,7 @@
 
   &.ProseMirror-focused {
     p.is-empty::before {
-      content: 'Write, press "space" for AI, "/" for options';
+      content: 'Type  /  to browse options';
     }
     h1.is-empty::before {
       content: 'Heading 1';
@@ -23,8 +23,9 @@
   }
   /* Default Placeholder */
   & p.is-empty::before {
-    content: 'Write, press "space" for AI, "/" for options';
+    content: 'Type  /  to browse options';
   }
+
   /* Callout block placeholder (non-focused fallback) */
   aside[data-type='callout'] p.is-empty:first-of-type::before {
     content: 'Type to make writing stand out';
@@ -1244,4 +1245,8 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
     border-color: #404040;
     color: #888888;
   }
+}
+
+.has-available-models p.is-empty::before {
+  content: 'Write, press "space" for AI, "/" for options' !important;
 }
