@@ -664,7 +664,7 @@ export const DBlock = Node.create<DBlockOptions>({
               const aiWriterNode = state.schema.nodes.aiWriter.create({
                 prompt: '',
                 content: '',
-                tone: 'conversational',
+                tone: 'neutral',
               });
               const tr = state.tr.replaceRangeWith(
                 $from.before(),

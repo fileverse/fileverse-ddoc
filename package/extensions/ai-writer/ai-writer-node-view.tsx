@@ -403,7 +403,7 @@ export const AIWriterNodeView = memo(
     const renderLoading = useCallback(
       () => (
         <span className="text-body-sm color-text-secondary pt-1">
-          Thinking <span className="animate-loading-dots">...</span>
+          Reflecting <span className="animate-loading-dots">...</span>
         </span>
       ),
       [],
@@ -508,7 +508,7 @@ export const AIWriterNodeView = memo(
                     htmlFor="include-context"
                     className="text-body-sm color-text-default cursor-pointer"
                   >
-                    Include document context
+                    Include context from this dDocs
                   </label>
                 </div>
               </div>

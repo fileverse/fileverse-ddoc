@@ -31,7 +31,7 @@ export const getSuggestionItems = ({
           editor.commands.insertAIWriter({
             prompt: '',
             content: '',
-            tone: 'conversational',
+            tone: 'neutral',
           });
         } else {
           console.warn('AIWriter extension is not available');

@@ -304,8 +304,8 @@ export const useDdocEditor = ({
           model: activeModel,
           maxTokens: maxTokens,
           temperature: 0.2,
-          debounceTime: 300,
-          tone: 'conversational',
+          debounceTime: 0,
+          tone: 'neutral',
         }),
         AIWriter,
         DBlock.configure({

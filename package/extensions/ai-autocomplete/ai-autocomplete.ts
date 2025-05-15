@@ -4,6 +4,7 @@ import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { Ollama } from 'ollama/browser';
+import { debounce } from '../../utils/debounce';
 
 export const AiAutocomplete = Extension.create({
   name: 'aiAutocomplete',
@@ -14,6 +15,7 @@ export const AiAutocomplete = Extension.create({
       tone: 'neutral',
       maxTokens: 8,
       temperature: 0.2,
+      debounceTime: 100,
       isEnabled: (() => {
         if (typeof window === 'undefined') return true;
         const e = localStorage.getItem('autocomplete-enabled');
@@ -25,6 +27,7 @@ export const AiAutocomplete = Extension.create({
   addStorage() {
     return {
       isEnabled: this.options.isEnabled,
+      isFirstCall: true,
     };
   },
 
@@ -32,6 +35,7 @@ export const AiAutocomplete = Extension.create({
     const pluginKey = new PluginKey('ai-autocomplete');
     let currentSuggestion: string | null = null;
     let isFetching = false;
+    let lastPrompt = '';
 
     const ollama = new Ollama({
       host: this.options?.endpoint,
@@ -46,6 +50,12 @@ export const AiAutocomplete = Extension.create({
 
     const getSuggestion = async (prompt: string): Promise<string | null> => {
       try {
+        // If it's the same prompt as last time, return null to avoid duplicate suggestions
+        if (prompt === lastPrompt) {
+          return null;
+        }
+        lastPrompt = prompt;
+
         const response = await ollama.generate({
           model: options.model?.modelName,
           prompt,
@@ -80,6 +90,63 @@ export const AiAutocomplete = Extension.create({
         return null;
       }
     };
+
+    // Create a debounced version of getSuggestion
+    const debouncedGetSuggestion = debounce(
+      async (prompt: string, view: any) => {
+        isFetching = true;
+        const suggestion = await getSuggestion(prompt);
+        isFetching = false;
+        currentSuggestion = suggestion;
+
+        if (!suggestion) return;
+
+        try {
+          const pos = view.state.selection.from;
+          if (pos > view.state.doc.content.size) return;
+
+          const suggestionDecoration = Decoration.widget(
+            pos,
+            () => {
+              const container = document.createElement('span');
+              container.className = 'autocomplete-suggestion-container';
+
+              const suggestionSpan = document.createElement('span');
+              suggestionSpan.className = 'autocomplete-suggestion';
+              suggestionSpan.innerHTML = suggestion.replace(/\n/g, '<br>');
+
+              const tabButton = document.createElement('span');
+              tabButton.className = 'autocomplete-tab-button';
+              tabButton.textContent = 'Tab';
+
+              container.appendChild(suggestionSpan);
+              container.appendChild(tabButton);
+
+              return container;
+            },
+            { side: 1 },
+          );
+
+          const decorations = DecorationSet.create(view.state.doc, [
+            suggestionDecoration,
+          ]);
+
+          if (view.isDestroyed || pos > view.state.doc.content.size) return;
+
+          const tr = view.state.tr;
+          tr.setMeta('addToHistory', false);
+          tr.setMeta(pluginKey, { decorations });
+          view.dispatch(tr);
+        } catch (error) {
+          console.warn('Error applying autocomplete suggestion:', error);
+          const tr = view.state.tr;
+          tr.setMeta('addToHistory', false);
+          tr.setMeta(pluginKey, { decorations: DecorationSet.empty });
+          view.dispatch(tr);
+        }
+      },
+      extension.storage.isFirstCall ? 0 : options.debounceTime,
+    );
 
     return [
       new Plugin({
@@ -144,64 +211,14 @@ export const AiAutocomplete = Extension.create({
               if (isFetching) return true;
 
               // Fetch new suggestion
-              isFetching = true;
               const prompt = `Continue writing the following text, word by word, as if you are the user. Write in ${options.tone} tone. Do not answer, do not change the topic, just continue the sentence naturally. Do not add any punctuation or spaces to the end of the suggestion:\n${context}`;
 
-              getSuggestion(prompt).then((suggestion) => {
-                isFetching = false;
-                currentSuggestion = suggestion;
-                if (!suggestion) return;
+              debouncedGetSuggestion(prompt, view);
 
-                try {
-                  const pos = view.state.selection.from;
-                  if (pos > view.state.doc.content.size) return;
-
-                  const suggestionDecoration = Decoration.widget(
-                    pos,
-                    () => {
-                      const container = document.createElement('span');
-                      container.className = 'autocomplete-suggestion-container';
-
-                      const suggestionSpan = document.createElement('span');
-                      suggestionSpan.className = 'autocomplete-suggestion';
-                      suggestionSpan.innerHTML = suggestion.replace(
-                        /\n/g,
-                        '<br>',
-                      );
-
-                      const tabButton = document.createElement('span');
-                      tabButton.className = 'autocomplete-tab-button';
-                      tabButton.textContent = 'Tab';
-
-                      container.appendChild(suggestionSpan);
-                      container.appendChild(tabButton);
-
-                      return container;
-                    },
-                    { side: 1 },
-                  );
-
-                  const decorations = DecorationSet.create(view.state.doc, [
-                    suggestionDecoration,
-                  ]);
-
-                  if (view.isDestroyed || pos > view.state.doc.content.size) return;
-
-                  const tr = view.state.tr;
-                  tr.setMeta('addToHistory', false);
-                  tr.setMeta(pluginKey, { decorations });
-                  view.dispatch(tr);
-                } catch (error) {
-                  console.warn(
-                    'Error applying autocomplete suggestion:',
-                    error,
-                  );
-                  const tr = view.state.tr;
-                  tr.setMeta('addToHistory', false);
-                  tr.setMeta(pluginKey, { decorations: DecorationSet.empty });
-                  view.dispatch(tr);
-                }
-              });
+              // After the first call, update the debounce time
+              if (extension.storage.isFirstCall) {
+                extension.storage.isFirstCall = false;
+              }
 
               return true;
             }
