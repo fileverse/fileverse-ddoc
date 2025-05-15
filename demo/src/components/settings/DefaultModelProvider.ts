@@ -1,14 +1,25 @@
 import { CustomModel } from './ModelSettings';
 import { OllamaService } from './OllamaService';
+import { WebLLMService } from './WebLLMService';
 
 /**
- * This class provides default Ollama models
+ * This class provides default models for both Ollama and WebLLM
  */
 export class DefaultModelProvider {
   /**
-   * Get the default Ollama models
+   * Get the default models (both Ollama and WebLLM)
    * Uses the endpoint set in localStorage ('ollamaEndpoint'), defaulting to localhost if not set.
    * This allows each user to connect to their own local Ollama instance, even on deployed links.
+   * @returns Array of default models
+   */
+  static async getDefaultModels(): Promise<CustomModel[]> {
+    const ollamaModels = await this.getDefaultOllamaModels();
+    const webllmModels = await this.getDefaultWebLLMModels();
+    return [...ollamaModels, ...webllmModels];
+  }
+
+  /**
+   * Get the default Ollama models
    * @returns Array of default Ollama models
    */
   static async getDefaultOllamaModels(): Promise<CustomModel[]> {
@@ -64,14 +75,45 @@ export class DefaultModelProvider {
   }
 
   /**
-   * Get a specific default Ollama model by name
-   * @param modelName The name of the Ollama model
+   * Get the default WebLLM models
+   * @returns Array of default WebLLM models
+   */
+  static async getDefaultWebLLMModels(): Promise<CustomModel[]> {
+    try {
+      const availableModels = await WebLLMService.getAvailableModels();
+
+      if (availableModels.length === 0) {
+        console.log('No WebLLM models found');
+      } else {
+        console.log(`Found ${availableModels.length} WebLLM models`);
+      }
+
+      // Create custom model entries for each available WebLLM model
+      return availableModels.map(modelName => ({
+        id: `webllm-${modelName}`,
+        label: modelName,
+        modelName: modelName,
+        endpoint: '', // WebLLM doesn't need an endpoint
+        contextSize: 4096, // Default context size for WebLLM models
+        apiKey: '',
+        systemPrompt:
+          'You are a helpful AI assistant. Please provide accurate and concise responses and not include any preambles in your responses.',
+      }));
+    } catch (error) {
+      console.error('Error getting default WebLLM models:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Get a specific default model by name
+   * @param modelName The name of the model
    * @returns The model configuration or undefined if not found
    */
-  static async getDefaultOllamaModel(
+  static async getDefaultModel(
     modelName: string,
   ): Promise<CustomModel | undefined> {
-    const defaultModels = await this.getDefaultOllamaModels();
+    const defaultModels = await this.getDefaultModels();
     return defaultModels.find(model => model.modelName === modelName);
   }
 }

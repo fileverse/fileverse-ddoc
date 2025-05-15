@@ -3,12 +3,13 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { CustomModel } from './ModelSettings';
 import { DefaultModelProvider } from './DefaultModelProvider';
 import { ModelService } from './ModelService';
-import { OllamaService } from './OllamaService';
+import { CreateWebWorkerMLCEngine, MLCEngineInterface } from '@mlc-ai/web-llm';
 
 interface ModelContextType {
   defaultModels: CustomModel[];
   isLoadingDefaultModels: boolean;
   ollamaError: string | null;
+  webllmError: string | null;
   activeModel?: CustomModel;
   setActiveModel: (model: CustomModel | undefined) => void;
   maxTokens: number;
@@ -19,6 +20,7 @@ interface ModelContextType {
   setSystemPrompt: (prompt: string) => void;
   selectedLLM: string | null;
   setSelectedLLM: (llm: string | null) => void;
+  getWebLLMEngine: (modelName: string) => Promise<MLCEngineInterface>;
 }
 
 interface ModelProviderProps {
@@ -43,10 +45,28 @@ interface WindowWithModelContext extends Window {
   __MODEL_CONTEXT__?: ModelContextType;
 }
 
+// Singleton WebLLM engine management
+let webllmEngine: MLCEngineInterface | null = null;
+let webllmModelName: string | null = null;
+
+async function getWebLLMEngine(modelName: string): Promise<MLCEngineInterface> {
+  if (webllmEngine && webllmModelName === modelName) {
+    return webllmEngine;
+  }
+  const worker = new Worker(
+    new URL('../../workers/webllm.worker.ts', import.meta.url),
+    { type: 'module' }
+  );
+  webllmEngine = await CreateWebWorkerMLCEngine(worker, modelName);
+  webllmModelName = modelName;
+  return webllmEngine;
+}
+
 export const ModelContext = createContext<ModelContextType>({
   defaultModels: [],
   isLoadingDefaultModels: true,
   ollamaError: null,
+  webllmError: null,
   activeModel: undefined,
   setActiveModel: () => { },
   maxTokens: 2,
@@ -57,12 +77,14 @@ export const ModelContext = createContext<ModelContextType>({
   setSystemPrompt: () => { },
   selectedLLM: null,
   setSelectedLLM: () => { },
+  getWebLLMEngine,
 });
 
 export const ModelProvider = ({ children }: ModelProviderProps) => {
   const [defaultModels, setDefaultModels] = useState<CustomModel[]>([]);
   const [isLoadingDefaultModels, setIsLoadingDefaultModels] = useState(true);
   const [ollamaError, setOllamaError] = useState<string | null>(null);
+  const [webllmError, setWebllmError] = useState<string | null>(null);
   const [activeModel, setActiveModel] = useState<CustomModel | undefined>(
     undefined,
   );
@@ -75,34 +97,34 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
   });
   const [selectedLLM, setSelectedLLM] = useState<string | null>(null);
 
-  // Load Ollama default models
+  // Load default models
   useEffect(() => {
     const loadDefaultModels = async () => {
       try {
-        console.log('Attempting to load default Ollama models...');
+        console.log('Attempting to load default models...');
         setIsLoadingDefaultModels(true);
         setOllamaError(null);
+        setWebllmError(null);
 
-        const ollamaModels =
-          await DefaultModelProvider.getDefaultOllamaModels();
-        setDefaultModels(ollamaModels);
+        const models = await DefaultModelProvider.getDefaultModels();
+        setDefaultModels(models);
 
-        if (ollamaModels.length > 0 && !activeModel) {
+        if (models.length > 0 && !activeModel) {
           // Set the first model as active if there is no active model
-          setActiveModel(ollamaModels[0]);
+          setActiveModel(models[0]);
         }
 
-        if (ollamaModels.length === 0) {
+        if (models.length === 0) {
           setOllamaError(
-            'No Ollama models found. Make sure Ollama is running and accessible from the browser.',
+            'No models found. Make sure Ollama is running and accessible from the browser, or try using WebLLM models.',
           );
         }
       } catch (error) {
-        console.error('Error loading default Ollama models:', error);
+        console.error('Error loading default models:', error);
         setOllamaError(
           error instanceof Error
             ? error.message
-            : 'Failed to connect to Ollama',
+            : 'Failed to connect to models',
         );
       } finally {
         setIsLoadingDefaultModels(false);
@@ -111,7 +133,6 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
 
     loadDefaultModels();
   }, [activeModel]);
-
 
   useEffect(() => {
     localStorage.setItem('autocomplete-tone', tone);
@@ -127,6 +148,7 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
       defaultModels,
       isLoadingDefaultModels,
       ollamaError,
+      webllmError,
       activeModel,
       setActiveModel,
       maxTokens,
@@ -137,6 +159,7 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
       setSystemPrompt,
       selectedLLM,
       setSelectedLLM,
+      getWebLLMEngine,
     };
 
     (window as WindowWithModelContext).__MODEL_CONTEXT__ = context;
@@ -144,16 +167,7 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
     return () => {
       delete (window as WindowWithModelContext).__MODEL_CONTEXT__;
     };
-  }, [
-    defaultModels,
-    isLoadingDefaultModels,
-    ollamaError,
-    activeModel,
-    maxTokens,
-    tone,
-    systemPrompt,
-    selectedLLM,
-  ]);
+  }, [defaultModels, isLoadingDefaultModels, ollamaError, webllmError, activeModel, maxTokens, tone, systemPrompt, selectedLLM]);
 
   // Expose model service to window for AIWriter extension
   useEffect(() => {
@@ -169,7 +183,6 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
         const promptWithTone = `Generate text in a ${tone} tone: ${prompt}`;
 
         try {
-          // Pass the current systemPrompt from context!
           return await ModelService.callModel(activeModel, promptWithTone, systemPrompt);
         } catch (error) {
           console.error('Error calling model:', error);
@@ -190,23 +203,12 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
         const promptWithTone = `Generate text in a ${tone} tone: ${prompt}`;
 
         try {
-          if (ModelService.isOllamaModel(activeModel)) {
-            // If it's an Ollama model, use streaming
-            for await (const chunk of OllamaService.streamModel(
-              activeModel,
-              promptWithTone,
-              systemPrompt
-            )) {
-              onChunk(chunk);
-            }
-          } else {
-            // For non-Ollama models, fall back to regular model call
-            const result = await ModelService.callModel(
-              activeModel,
-              promptWithTone,
-              systemPrompt
-            );
-            onChunk(result);
+          for await (const chunk of ModelService.streamModel(
+            activeModel,
+            promptWithTone,
+            systemPrompt
+          )) {
+            onChunk(chunk);
           }
         } catch (error) {
           console.error('Error streaming from model:', error);
@@ -247,6 +249,7 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
         defaultModels,
         isLoadingDefaultModels,
         ollamaError,
+        webllmError,
         activeModel,
         setActiveModel,
         maxTokens,
@@ -257,6 +260,7 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
         setSystemPrompt,
         selectedLLM,
         setSelectedLLM,
+        getWebLLMEngine,
       }}
     >
       {children}

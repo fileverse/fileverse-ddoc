@@ -3,6 +3,25 @@ import { CustomModel } from './ModelSettings';
 
 export class OllamaService {
   /**
+   * Check if a model is an Ollama model
+   * @param model The model configuration
+   * @returns True if the model is an Ollama model
+   */
+  static isOllamaModel(model: CustomModel): boolean {
+    // Check if the model ID starts with 'ollama-'
+    if (model.id?.startsWith('ollama-')) {
+      return true;
+    }
+
+    // Check if the endpoint contains 'ollama'
+    if (model.endpoint?.includes('ollama')) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
    * Call an Ollama model with the provided parameters
    * @param model The custom model configuration
    * @param prompt The user prompt to send

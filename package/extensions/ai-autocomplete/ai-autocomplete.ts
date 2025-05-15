@@ -6,6 +6,11 @@ import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { Ollama } from 'ollama/browser';
 import { debounce } from '../../utils/debounce';
 
+// Singleton WebLLM engine
+const isWebLLMModel = (model: any): boolean => {
+  return model?.id?.startsWith('webllm-');
+};
+
 export const AiAutocomplete = Extension.create({
   name: 'aiAutocomplete',
 
@@ -35,7 +40,6 @@ export const AiAutocomplete = Extension.create({
     const pluginKey = new PluginKey('ai-autocomplete');
     let currentSuggestion: string | null = null;
     let isFetching = false;
-    let lastPrompt = '';
 
     const ollama = new Ollama({
       host: this.options?.endpoint,
@@ -50,12 +54,47 @@ export const AiAutocomplete = Extension.create({
 
     const getSuggestion = async (prompt: string): Promise<string | null> => {
       try {
-        // If it's the same prompt as last time, return null to avoid duplicate suggestions
-        if (prompt === lastPrompt) {
+        const modelContext = (window as any).__MODEL_CONTEXT__;
+        if (
+          modelContext &&
+          modelContext.getWebLLMEngine &&
+          isWebLLMModel(options.model)
+        ) {
+          const engine = await modelContext.getWebLLMEngine(
+            options.model.modelName,
+          );
+          const response = await engine.chat.completions.create({
+            messages: [
+              {
+                role: 'user',
+                content: prompt,
+              },
+            ],
+            max_tokens: options.maxTokens,
+            temperature: options.temperature,
+          });
+          let suggestion =
+            response.choices[0]?.message?.content?.trimStart() || '';
+          const match = suggestion.match(/^[^.!?]*[.!?]?/);
+          if (match) {
+            suggestion = match[0];
+          }
+          const trimmedPrompt = prompt.trim();
+          if (
+            suggestion &&
+            trimmedPrompt.length > 0 &&
+            /[.]$/.test(trimmedPrompt)
+          ) {
+            suggestion =
+              suggestion.charAt(0).toUpperCase() + suggestion.slice(1);
+          }
+          if (suggestion && !prompt.endsWith(suggestion)) {
+            return suggestion;
+          }
           return null;
         }
-        lastPrompt = prompt;
 
+        // Fallback to Ollama
         const response = await ollama.generate({
           model: options.model?.modelName,
           prompt,
@@ -64,13 +103,12 @@ export const AiAutocomplete = Extension.create({
             temperature: options.temperature,
           },
         });
-
         let suggestion = response.response?.trimStart() || '';
-
         // Truncate at first sentence-ending punctuation
         const match = suggestion.match(/^[^.!?]*[.!?]?/);
-        if (match) suggestion = match[0];
-
+        if (match) {
+          suggestion = match[0];
+        }
         // Capitalize first letter if context ends with a dot
         const trimmedPrompt = prompt.trim();
         if (
@@ -80,8 +118,6 @@ export const AiAutocomplete = Extension.create({
         ) {
           suggestion = suggestion.charAt(0).toUpperCase() + suggestion.slice(1);
         }
-
-        // Only return if it's not empty and not a repeat of the last word
         if (suggestion && !prompt.endsWith(suggestion)) {
           return suggestion;
         }
