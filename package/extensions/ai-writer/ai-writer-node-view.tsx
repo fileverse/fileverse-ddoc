@@ -336,6 +336,7 @@ export const AIWriterNodeView = memo(
       updateAttributes?.({ content: '' });
       setHasGenerated(false);
       setStreamingContent('');
+      textareaRef.current?.focus();
     }, [updateAttributes]);
 
     const handlePromptKeyDown = useCallback(
