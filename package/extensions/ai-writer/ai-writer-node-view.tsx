@@ -336,7 +336,11 @@ export const AIWriterNodeView = memo(
       updateAttributes?.({ content: '' });
       setHasGenerated(false);
       setStreamingContent('');
+      if (!textareaRef.current) return;
       textareaRef.current?.focus();
+      const len = textareaRef.current.value.length;
+      textareaRef.current?.setSelectionRange(len, len);
+      textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
     }, [updateAttributes]);
 
     const handlePromptKeyDown = useCallback(
