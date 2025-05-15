@@ -80,7 +80,10 @@ export const AIWriterNodeView = memo(
     const [streamingContent, setStreamingContent] = useState('');
     const [isRemoving, setIsRemoving] = useState(false);
     const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
-    const [includeContext, setIncludeContext] = useState<boolean>(false);
+    const INCLUDE_DDOC_CONTEXT_TAG = 'include-ddoc-context';
+    const [includeContext, setIncludeContext] = useState<boolean>(
+      !!localStorage.getItem(INCLUDE_DDOC_CONTEXT_TAG),
+    );
     const { prompt, content } = node.attrs;
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -506,7 +509,21 @@ export const AIWriterNodeView = memo(
                   <Checkbox
                     key="include-context"
                     checked={includeContext}
-                    onCheckedChange={() => setIncludeContext(!includeContext)}
+                    onCheckedChange={() =>
+                      setIncludeContext((prev) => {
+                        const value = !prev;
+
+                        if (value) {
+                          localStorage.setItem(
+                            INCLUDE_DDOC_CONTEXT_TAG,
+                            'true',
+                          );
+                        } else {
+                          localStorage.removeItem(INCLUDE_DDOC_CONTEXT_TAG);
+                        }
+                        return value;
+                      })
+                    }
                     className="border text-body-sm scale-[.8]"
                   />
                   <label
