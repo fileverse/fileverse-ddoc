@@ -1,11 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   TextField,
   Button,
   TextAreaField,
   Card,
-  IconButton,
-  Tooltip,
   DynamicModal,
   Label,
 } from '@fileverse/ui';
@@ -52,7 +50,7 @@ const HelperText = ({ text }: { text: string }) => (
 );
 
 const ModelSettings = () => {
-  const { models, addModel, deleteModel } = useModelContext();
+  const { defaultModels } = useModelContext();
   const [showAddModal, setShowAddModal] = useState(false);
   const [newModel, setNewModel] = useState<CustomModel>({
     label: '',
@@ -65,18 +63,6 @@ const ModelSettings = () => {
   });
   const [error, setError] = useState<string | null>(null);
 
-  // Ollama endpoint state
-  const [ollamaEndpoint, setOllamaEndpoint] = useState<string>(
-    localStorage.getItem('ollamaEndpoint') || 'http://localhost:11434'
-  );
-
-  // Update localStorage and reload models when endpoint changes
-  useEffect(() => {
-    localStorage.setItem('ollamaEndpoint', ollamaEndpoint);
-    // Optionally, you could trigger a reload of default models here if needed
-    // For now, user can refresh to reload models from new endpoint
-  }, [ollamaEndpoint]);
-
   const handleAddModel = () => {
     // Validate input
     if (!newModel.label || !newModel.modelName || !newModel.endpoint) {
@@ -85,7 +71,7 @@ const ModelSettings = () => {
     }
 
     // Add model to the list with a generated ID
-    addModel(newModel);
+    // addModel(newModel);
 
     // Reset form and close modal
     setNewModel({
@@ -103,21 +89,6 @@ const ModelSettings = () => {
 
   return (
     <div className="w-full">
-      {/* Ollama Endpoint Setting */}
-      <div className="mb-6 space-y-4">
-        <Label htmlFor="ollama-endpoint">Ollama Endpoint</Label>
-        <TextField
-          id="ollama-endpoint"
-          value={ollamaEndpoint}
-          onChange={e => setOllamaEndpoint(e.target.value)}
-          placeholder="http://localhost:11434"
-        />
-        <div className="text-helper-text-sm color-text-secondary mt-1">
-          This is the URL of your Ollama server. If you are running Ollama locally, use <code>http://localhost:11434</code>.<br />
-          <b>On deployed links, each user must set this to their own local Ollama instance.</b> After changing, refresh the page to reload available models.
-        </div>
-      </div>
-
       <div className="flex justify-between items-center mb-4 gap-2">
         <h2 className="text-heading-sm font-semibold">Custom LLM Models</h2>
         <Button
@@ -131,12 +102,12 @@ const ModelSettings = () => {
 
       {/* List of added models */}
       <div className="space-y-4">
-        {models.length === 0 ? (
+        {defaultModels.length === 0 ? (
           <div className="text-center p-2 border rounded-md color-border-default">
             <p className="text-body-sm color-text-secondary">No custom models added yet</p>
           </div>
         ) : (
-          models.map((model) => (
+          defaultModels.map((model) => (
             <Card key={model.id} className="p-4 color-bg-muted">
               <div className="flex justify-between items-start">
                 <div>
@@ -148,14 +119,14 @@ const ModelSettings = () => {
                     {model.endpoint}
                   </p>
                 </div>
-                <Tooltip text="Delete model">
+                {/* <Tooltip text="Delete model">
                   <IconButton
                     icon="Trash2"
                     variant="ghost"
                     size="sm"
-                    onClick={() => deleteModel(model.id || '')}
+                    // onClick={() => deleteModel(model.id || '')}
                   />
-                </Tooltip>
+                </Tooltip> */}
               </div>
             </Card>
           ))
