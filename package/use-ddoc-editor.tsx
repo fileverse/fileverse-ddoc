@@ -225,6 +225,39 @@ export const useDdocEditor = ({
 
   // Create a ref to store the timeout ID
   const tocUpdateTimeoutRef = useRef<number | null>(null);
+  const preventDeletionIfItIsReminderNode = (
+    view: EditorView,
+    event: KeyboardEvent,
+  ) => {
+    const { state } = view;
+    const { selection } = state;
+    const { from, to, empty } = selection;
+
+    if (event.key === 'Backspace' || event.key === 'Delete') {
+      let deletingReminder = false;
+
+      // 1) If there's a range select, check for reminderBlock nodes
+      if (!empty) {
+        state.doc.nodesBetween(from, to, (node) => {
+          if (node.type.name === 'reminderBlock') deletingReminder = true;
+        });
+      }
+      // 2) If it's just a cursor, use selection.$from
+      else {
+        const $from = selection.$from;
+        const adjacent =
+          event.key === 'Backspace' ? $from.nodeBefore : $from.nodeAfter;
+        if (adjacent?.type.name === 'reminderBlock') {
+          deletingReminder = true;
+        }
+      }
+
+      if (deletingReminder) {
+        event.preventDefault();
+        return true;
+      }
+    }
+  };
 
   // Don't recreate the editor when extensions change
   const editor = useEditor(
@@ -235,6 +268,7 @@ export const useDdocEditor = ({
         handleDOMEvents: {
           mouseover: handleCommentInteraction,
           keydown: (_view, event) => {
+            preventDeletionIfItIsReminderNode(_view, event);
             // prevent default event listeners from firing when slash command is active
             if (['ArrowUp', 'ArrowDown', 'Enter'].includes(event.key)) {
               const slashCommand = document.querySelector('#slash-command');
