@@ -16,6 +16,7 @@ import {
 } from '@fileverse/ui';
 import styles from './ai-writer-node-view.module.scss';
 import { useOnClickOutside } from 'usehooks-ts';
+import { useResponsive } from '../../utils/responsive';
 
 // Initialize markdown-it
 const md = new MarkdownIt({
@@ -85,7 +86,9 @@ export const AIWriterNodeView = memo(
     const containerRef = useRef<HTMLDivElement>(null);
     const selectContentRef = useRef<HTMLDivElement>(null);
     const isPreviewMode = !editor.isEditable;
-
+    // Add platform detection
+    const { isWindows } = useResponsive();
+    const shortcutKey = isWindows ? 'Ctrl' : 'Cmd';
     // Get the model context from window
     const modelContext = (window as WindowWithModelContext).__MODEL_CONTEXT__;
 
@@ -422,7 +425,7 @@ export const AIWriterNodeView = memo(
           {/* Preview Section */}
           {(hasGenerated || streamingContent) && (
             <div className="flex w-full flex-row items-center justify-center">
-              <div className="animate-border inline-block rounded-lg p-1 w-full mx-1 mb-3 mt-2">
+              <div className="animate-border inline-block rounded-lg p-0.5 w-full mx-1 mb-3 mt-2">
                 <div
                   className={`w-full text-base color-text-default whitespace-pre-line color-bg-default p-4 rounded-lg shadow-elevation-3 overflow-auto ${styles.previewContent}`}
                   dangerouslySetInnerHTML={{
@@ -548,7 +551,7 @@ export const AIWriterNodeView = memo(
                     disabled={isLoading}
                   >
                     <span className="text-helper-text-sm border color-border-default rounded-lg px-1.5 py-1">
-                      ⌘ + R
+                      {shortcutKey} + R
                     </span>
                     Try again
                   </Button>
