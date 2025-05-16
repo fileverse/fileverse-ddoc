@@ -19,6 +19,8 @@ interface ModelContextType {
   setSystemPrompt: (prompt: string) => void;
   selectedLLM: string | null;
   setSelectedLLM: (llm: string | null) => void;
+  isAIAgentEnabled: boolean;
+  setIsAIAgentEnabled: (enabled: boolean) => void;
 }
 
 interface ModelProviderProps {
@@ -58,6 +60,8 @@ export const ModelContext = createContext<ModelContextType>({
   setSystemPrompt: () => { },
   selectedLLM: null,
   setSelectedLLM: () => { },
+  isAIAgentEnabled: true,
+  setIsAIAgentEnabled: () => { },
 });
 
 export const ModelProvider = ({ children }: ModelProviderProps) => {
@@ -68,6 +72,10 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
     undefined,
   );
   const [maxTokens, setMaxTokens] = useState<number>(2);
+  const [isAIAgentEnabled, setIsAIAgentEnabled] = useState(() => {
+    const stored = localStorage.getItem('ai-agent-enabled');
+    return stored === null ? true : stored === 'true';
+  });
   const [tone, setTone] = useState<string>(() => {
     return localStorage.getItem('autocomplete-tone') || 'neutral';
   });
@@ -138,6 +146,8 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
       setSystemPrompt,
       selectedLLM,
       setSelectedLLM,
+      isAIAgentEnabled,
+      setIsAIAgentEnabled,
     };
 
     (window as WindowWithModelContext).__MODEL_CONTEXT__ = context;
@@ -154,6 +164,8 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
     tone,
     systemPrompt,
     selectedLLM,
+    isAIAgentEnabled,
+    setIsAIAgentEnabled,
   ]);
 
   // Expose model service to window for AIWriter extension
@@ -269,6 +281,8 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
         setSystemPrompt,
         selectedLLM,
         setSelectedLLM,
+        isAIAgentEnabled,
+        setIsAIAgentEnabled,
       }}
     >
       {children}

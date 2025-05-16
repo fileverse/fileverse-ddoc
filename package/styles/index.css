@@ -252,6 +252,10 @@ div[data-type='page-break']:hover .remove-page-break-icon {
   animation: aiwriter-scale-out 150ms ease-out;
 }
 
+.animate-fade-in-out {
+  animation: fade-in-out 2s ease-in-out infinite;
+}
+
 .animate-border {
   background: linear-gradient(
     90deg,

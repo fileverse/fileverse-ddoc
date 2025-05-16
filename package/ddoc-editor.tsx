@@ -114,6 +114,7 @@ const DdocEditor = forwardRef(
       activeModel,
       maxTokens,
       onPromptUsage,
+      isAIAgentEnabled,
     }: DdocProps,
     ref,
   ) => {
@@ -191,6 +192,7 @@ const DdocEditor = forwardRef(
       activeModel,
       maxTokens,
       onPromptUsage,
+      isAIAgentEnabled,
     });
 
     useImperativeHandle(
@@ -580,7 +582,7 @@ const DdocEditor = forwardRef(
                             className={cn(
                               'w-full h-auto py-4 color-bg-default',
                               isPreviewMode && 'preview-mode',
-                              activeModel !== undefined &&
+                              activeModel !== undefined && isAIAgentEnabled &&
                                 'has-available-models',
                             )}
                           />
