@@ -129,11 +129,7 @@ export class WebLLMService {
   static async getAvailableModels(): Promise<string[]> {
     // WebLLM comes with a predefined set of models
     return [
-      'Llama-3.1-8B-Instruct-q4f32_1-MLC',
-      'TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC',
-      'TinyLlama-1.1B-Chat-v1.0-q4f32_1-MLC',
       'TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC-1k',
-      'TinyLlama-1.1B-Chat-v1.0-q4f32_1-MLC-1k',
     ];
   }
 

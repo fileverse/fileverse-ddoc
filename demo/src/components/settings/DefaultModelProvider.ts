@@ -94,10 +94,10 @@ export class DefaultModelProvider {
         label: modelName,
         modelName: modelName,
         endpoint: '', // WebLLM doesn't need an endpoint
-        contextSize: 4096, // Default context size for WebLLM models
+        contextSize: 1024, // Default context size for WebLLM models
         apiKey: '',
         systemPrompt:
-          'You are a helpful AI assistant. Please provide accurate and concise responses and not include any preambles in your responses.',
+          'You are a helpful assistant. Keep responses short and focused—3–5 sentences max. Share only essential info, avoid repetition, and summarize unless asked to elaborate. Do not include any preambles in your responses.',
       }));
     } catch (error) {
       console.error('Error getting default WebLLM models:', error);
