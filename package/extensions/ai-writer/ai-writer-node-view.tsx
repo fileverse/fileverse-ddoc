@@ -418,6 +418,7 @@ export const AIWriterNodeView = memo(
         const htmlContent = editEditor.getHTML();
         setIsEditing(false);
         updateAttributes?.({ content: htmlContent });
+        setStreamingContent(htmlContent);
       }
     }, [editEditor, updateAttributes]);
 
