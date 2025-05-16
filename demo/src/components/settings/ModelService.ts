@@ -59,7 +59,7 @@ export class ModelService {
             content: prompt,
           },
         ],
-        temperature: 0.2, // Default value, could be configurable
+        temperature: 0.1, // Default value, could be configurable
         max_tokens: model.contextSize,
       };
 

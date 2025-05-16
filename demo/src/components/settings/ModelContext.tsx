@@ -33,6 +33,7 @@ interface WindowWithModelService extends Window {
       prompt: string,
       tone: string,
       onChunk: (chunk: string) => void,
+      signal?: AbortSignal,
     ) => Promise<void>;
     getAvailableModels: () => Promise<{ value: string; label: string }[]>;
   };
@@ -66,7 +67,7 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
   const [activeModel, setActiveModel] = useState<CustomModel | undefined>(
     undefined,
   );
-  const [maxTokens, setMaxTokens] = useState<number>(1);
+  const [maxTokens, setMaxTokens] = useState<number>(2);
   const [tone, setTone] = useState<string>(() => {
     return localStorage.getItem('autocomplete-tone') || 'neutral';
   });
@@ -162,24 +163,30 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
     win.modelService = {
       callModel: async (prompt: string, tone: string) => {
         if (!activeModel) {
-          return 'No AI model selected. Please select a model in settings.';
+          throw new Error('No AI model selected. Please select a model in settings.');
         }
 
         // Format the prompt with the tone
         const promptWithTone = `Generate text in a ${tone} tone: ${prompt}`;
 
         try {
-          // Pass the current systemPrompt from context!
-          return await ModelService.callModel(activeModel, promptWithTone, systemPrompt);
+          return await ModelService.callModel(
+            activeModel,
+            promptWithTone,
+            systemPrompt
+          );
         } catch (error) {
           console.error('Error calling model:', error);
-          return 'Error while generating text. Please check the model settings and try again.';
+          throw new Error(
+            'Error while generating text. Please check the model settings and try again.',
+          );
         }
       },
       streamModel: async (
         prompt: string,
         tone: string,
         onChunk: (chunk: string) => void,
+        signal?: AbortSignal,
       ) => {
         if (!activeModel) {
           onChunk('No AI model selected. Please select a model in settings.');
@@ -192,11 +199,17 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
         try {
           if (ModelService.isOllamaModel(activeModel)) {
             // If it's an Ollama model, use streaming
-            for await (const chunk of OllamaService.streamModel(
+            const stream = OllamaService.streamModel(
               activeModel,
               promptWithTone,
               systemPrompt
-            )) {
+            );
+
+            // Check for abort signal before processing each chunk
+            for await (const chunk of stream) {
+              if (signal?.aborted) {
+                throw new Error('AbortError');
+              }
               onChunk(chunk);
             }
           } else {
@@ -209,6 +222,9 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
             onChunk(result);
           }
         } catch (error) {
+          if (error instanceof Error && error.message === 'AbortError') {
+            throw error;
+          }
           console.error('Error streaming from model:', error);
           onChunk(
             'Error while generating text. Please check the model settings and try again.',
@@ -217,10 +233,7 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
       },
       getAvailableModels: async () => {
         // Combine custom and default models
-        const allModels = [
-          // ...models,
-          ...defaultModels,
-        ];
+        const allModels = [...defaultModels];
 
         // Map models to the expected format
         return allModels.map((model) => ({
@@ -236,7 +249,6 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
     };
   }, [
     activeModel,
-    // models,
     defaultModels,
     systemPrompt,
   ]);

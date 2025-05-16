@@ -303,8 +303,7 @@ export const useDdocEditor = ({
         AiAutocomplete.configure({
           model: activeModel,
           maxTokens: maxTokens,
-          temperature: 0.2,
-          debounceTime: 0,
+          temperature: 0.1,
           tone: 'neutral',
         }),
         AIWriter,
@@ -332,7 +331,7 @@ export const useDdocEditor = ({
     }
   }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => {});
+  const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
