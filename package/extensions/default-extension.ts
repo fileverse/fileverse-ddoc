@@ -78,7 +78,7 @@ export const defaultExtensions = (
     },
     paragraph: {
       HTMLAttributes: {
-        class: 'select-text pointer-events-auto',
+        class: 'select-text pointer-events-auto transition-all',
       },
     },
     orderedList: {

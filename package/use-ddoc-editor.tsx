@@ -26,6 +26,9 @@ import { Table } from './extensions/supercharged-table/extension-table';
 import { isBlackOrWhiteShade } from './utils/color-utils';
 import { useResponsive } from './utils/responsive';
 import { headingToSlug } from './utils/heading-to-slug';
+import { AiAutocomplete } from './extensions/ai-autocomplete/ai-autocomplete';
+import { AIWriter } from './extensions/ai-writer';
+import { DBlock } from './extensions/d-block/dblock';
 
 const usercolors = [
   '#30bced',
@@ -63,6 +66,9 @@ export const useDdocEditor = ({
   proExtensions,
   metadataProxyUrl,
   onCopyHeadingLink,
+  activeModel,
+  maxTokens,
+  isAIAgentEnabled,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
 
@@ -284,6 +290,36 @@ export const useDdocEditor = ({
   }, [proExtensions]);
 
   useEffect(() => {
+    const hasAvailableModels = activeModel !== undefined && isAIAgentEnabled;
+    if (activeModel) {
+      setExtensions([
+        ...extensions.filter(
+          (ext) =>
+            ext.name !== 'aiAutocomplete' &&
+            ext.name !== 'aiWriter' &&
+            ext.name !== 'dBlock' &&
+            ext.name !== 'slash-command',
+        ),
+        AiAutocomplete.configure({
+          model: activeModel,
+          maxTokens: maxTokens,
+          temperature: 0.1,
+          tone: 'neutral',
+        }),
+        AIWriter,
+        DBlock.configure({
+          hasAvailableModels,
+        }),
+        SlashCommand(
+          (error: string) => onError?.(error),
+          secureImageUploadUrl,
+          hasAvailableModels,
+        ),
+      ]);
+    }
+  }, [activeModel, maxTokens, isAIAgentEnabled]);
+
+  useEffect(() => {
     if (zoomLevel) {
       zoomService.setZoom(zoomLevel);
 
@@ -295,7 +331,7 @@ export const useDdocEditor = ({
     }
   }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => {});
+  const collaborationCleanupRef = useRef<() => void>(() => { });
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {

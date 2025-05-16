@@ -10,12 +10,40 @@ export const getSuggestionItems = ({
   query,
   onError,
   secureImageUploadUrl,
+  hasAvailableModels,
 }: {
   query: string;
   onError?: (errorString: string) => void;
   secureImageUploadUrl?: string;
+  hasAvailableModels?: boolean;
 }) => {
-  return [
+  const items = [
+    {
+      title: 'AI Writer',
+      description: 'Generate text with AI assistance.',
+      searchTerms: ['ai', 'generate', 'writer', 'assistant', 'text'],
+      icon: <LucideIcon name="Sparkles" size={'md'} />,
+      image: '',
+      command: ({ editor, range }: CommandProps) => {
+        editor.chain().focus().deleteRange(range).run();
+
+        if (editor.commands.insertAIWriter) {
+          editor.commands.insertAIWriter({
+            prompt: '',
+            content: '',
+            tone: 'neutral',
+          });
+        } else {
+          console.warn('AIWriter extension is not available');
+          if (onError) {
+            onError(
+              'AIWriter is not available. Make sure the extension is properly configured.',
+            );
+          }
+        }
+      },
+      isDisabled: !hasAvailableModels,
+    },
     {
       title: 'Text',
       description: 'Just start typing with plain text.',
@@ -291,7 +319,9 @@ export const getSuggestionItems = ({
           .run();
       },
     },
-  ].filter((item) => {
+  ];
+
+  return items.filter((item) => {
     if (typeof query === 'string' && query.length > 0) {
       const search = query.toLowerCase();
       return (
