@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
 import { JSONContent, NodeViewProps, NodeViewWrapper } from '@tiptap/react';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
 import wizardLogo from '../../assets/wizard.svg';
 import MarkdownIt from 'markdown-it';
 import {
@@ -15,8 +17,10 @@ import {
   Checkbox,
 } from '@fileverse/ui';
 import styles from './ai-writer-node-view.module.scss';
-import { useOnClickOutside } from 'usehooks-ts';
+// import { useOnClickOutside } from 'usehooks-ts';
 import { useResponsive } from '../../utils/responsive';
+import { TextSelection } from 'prosemirror-state';
+import { SuperchargedTableExtensions } from '../supercharged-table/supercharged-table-kit';
 
 // Initialize markdown-it
 const md = new MarkdownIt({
@@ -69,7 +73,7 @@ interface WindowWithModelContext extends Window {
 export const AIWriterNodeView = memo(
   ({
     node,
-    editor,
+    editor: parentEditor,
     getPos,
     updateAttributes,
     onPromptUsage,
@@ -79,6 +83,7 @@ export const AIWriterNodeView = memo(
     const [hasGenerated, setHasGenerated] = useState(!!node.attrs.content);
     const [streamingContent, setStreamingContent] = useState('');
     const [isRemoving, setIsRemoving] = useState(false);
+    const [isEditing, setIsEditing] = useState(false);
     const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
     const INCLUDE_DDOC_CONTEXT_TAG = 'include-ddoc-context';
     const [includeContext, setIncludeContext] = useState<boolean>(
@@ -88,22 +93,29 @@ export const AIWriterNodeView = memo(
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const selectContentRef = useRef<HTMLDivElement>(null);
-    const isPreviewMode = !editor.isEditable;
+    const isPreviewMode = !parentEditor.isEditable;
     // Add platform detection
     const { isWindows } = useResponsive();
     const shortcutKey = isWindows ? 'Ctrl' : 'Cmd';
     // Get the model context from window
     const modelContext = (window as WindowWithModelContext).__MODEL_CONTEXT__;
 
-    useOnClickOutside(containerRef, (event) => {
-      // Check if the click is on a Select dropdown
-      const isSelectDropdown = selectContentRef.current?.contains(
-        event.target as Node,
-      );
-      if (!isLoading && !hasGenerated && !isSelectDropdown) {
-        handleDiscard();
-      }
+    // Create a new editor instance for editing
+    const editEditor = useEditor({
+      extensions: [StarterKit, ...SuperchargedTableExtensions],
+      content: '',
+      editable: true,
     });
+
+    // useOnClickOutside(containerRef, (event) => {
+    //   // Check if the click is on a Select dropdown
+    //   const isSelectDropdown = selectContentRef.current?.contains(
+    //     event.target as Node,
+    //   );
+    //   if (!isLoading && !hasGenerated && !isSelectDropdown) {
+    //     handleDiscard();
+    //   }
+    // });
 
     // Load available models and set initial selected model on mount
     useEffect(() => {
@@ -159,7 +171,7 @@ export const AIWriterNodeView = memo(
     const getDocumentContext = useCallback(() => {
       if (!includeContext) return '';
 
-      const doc = editor.getJSON();
+      const doc = parentEditor.getJSON();
       const currentPos = getPos();
       if (typeof currentPos !== 'number') return '';
 
@@ -219,7 +231,7 @@ export const AIWriterNodeView = memo(
       }
 
       return context;
-    }, [editor, getPos, includeContext]);
+    }, [parentEditor, getPos, includeContext]);
 
     // Update handleGenerate to use modelContext
     const handleGenerate = useCallback(async () => {
@@ -279,33 +291,42 @@ export const AIWriterNodeView = memo(
       if (typeof getPos === 'function') {
         setIsRemoving(true);
         const timeout = setTimeout(() => {
-          editor.commands.command(({ tr }) => {
-            tr.delete(getPos(), getPos() + node.nodeSize);
+          parentEditor.commands.command(({ tr, dispatch }) => {
+            if (dispatch) {
+              const pos = getPos();
+              tr.delete(pos, pos + node.nodeSize);
+              // Set selection to the position where content will be inserted
+              const resolvedPos = tr.doc.resolve(pos);
+              tr.setSelection(TextSelection.near(resolvedPos));
+            }
             return true;
           });
-          editor.commands.insertContent(content);
-        }, 150); // Match animation duration
+          parentEditor.commands.focus();
+          parentEditor.commands.insertContent(content);
+        }, 150);
         return () => clearTimeout(timeout);
       }
-    }, [getPos, editor, node.nodeSize, content]);
+    }, [getPos, parentEditor, node.nodeSize, content]);
 
     const handleDiscard = useCallback(() => {
       if (typeof getPos === 'function') {
         setIsRemoving(true);
         const timeout = setTimeout(() => {
-          editor.commands.command(({ tr }) => {
-            tr.delete(getPos(), getPos() + node.nodeSize);
+          parentEditor.commands.command(({ tr, dispatch }) => {
+            if (dispatch) {
+              const pos = getPos();
+              tr.delete(pos, pos + node.nodeSize);
+              // Set selection to the position where the node was
+              const resolvedPos = tr.doc.resolve(pos);
+              tr.setSelection(TextSelection.near(resolvedPos));
+            }
             return true;
           });
-          const focusTimeout = setTimeout(() => {
-            editor.commands.insertContent(' ');
-            editor.commands.focus();
-          }, 0);
-          return () => clearTimeout(focusTimeout);
-        }, 150); // Match animation duration
+          parentEditor.commands.focus();
+        }, 150);
         return () => clearTimeout(timeout);
       }
-    }, [getPos, editor, node.nodeSize]);
+    }, [getPos, parentEditor, node.nodeSize]);
 
     const handlePromptChange = useCallback(
       (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -346,14 +367,40 @@ export const AIWriterNodeView = memo(
       textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
     }, [updateAttributes]);
 
+    const handleEdit = useCallback(() => {
+      setIsEditing(true);
+    }, []);
+
+    const handleSaveEdit = useCallback(() => {
+      if (editEditor) {
+        const htmlContent = editEditor.getHTML();
+        setIsEditing(false);
+        updateAttributes?.({ content: htmlContent });
+      }
+    }, [editEditor, updateAttributes]);
+
+    const handleCancelEdit = useCallback(() => {
+      setIsEditing(false);
+      if (editEditor) {
+        editEditor.commands.setContent(streamingContent || content || '');
+      }
+    }, [editEditor, streamingContent, content]);
+
     const handlePromptKeyDown = useCallback(
       (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key === 'Enter' && !e.shiftKey && !isEditing) {
+          e.preventDefault();
+          if (localPrompt.trim()) {
+            handleGenerate();
+          }
+        } else if (
+          e.key === 'Enter' &&
+          (e.ctrlKey || e.metaKey) &&
+          !e.shiftKey
+        ) {
           e.preventDefault();
           if (hasGenerated) {
             handleInsert();
-          } else if (localPrompt.trim()) {
-            handleGenerate();
           }
         } else if (e.key === 'Escape') {
           e.preventDefault();
@@ -368,17 +415,30 @@ export const AIWriterNodeView = memo(
         } else if (e.key === 'r' && (e.ctrlKey || e.metaKey)) {
           e.preventDefault();
           handleTryAgain();
+        } else if (e.key === 'e' && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          handleEdit();
         }
       },
       [
+        isEditing,
         localPrompt,
+        handleGenerate,
         hasGenerated,
         handleInsert,
-        handleGenerate,
         handleDiscard,
         handleTryAgain,
+        handleEdit,
       ],
     );
+
+    const handleIncludeContextChange = useCallback((checked: boolean) => {
+      if (checked) {
+        localStorage.setItem(INCLUDE_DDOC_CONTEXT_TAG, 'true');
+      } else {
+        localStorage.removeItem(INCLUDE_DDOC_CONTEXT_TAG);
+      }
+    }, []);
 
     // Add global keyboard shortcuts
     useEffect(() => {
@@ -387,7 +447,7 @@ export const AIWriterNodeView = memo(
         if (!hasGenerated) return;
 
         // Enter to insert
-        if (e.key === 'Enter' && !e.shiftKey) {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
           e.preventDefault();
           handleInsert();
         }
@@ -401,11 +461,32 @@ export const AIWriterNodeView = memo(
           e.preventDefault();
           handleTryAgain();
         }
+        // Option + Command + E to edit (Mac)
+        else if (e.key === 'e' && (e.ctrlKey || e.metaKey)) {
+          e.preventDefault();
+          handleEdit();
+        }
       };
 
       window.addEventListener('keydown', handleGlobalKeyDown);
       return () => window.removeEventListener('keydown', handleGlobalKeyDown);
-    }, [hasGenerated, handleInsert, handleDiscard, handleTryAgain]);
+    }, [
+      hasGenerated,
+      handleInsert,
+      handleDiscard,
+      handleTryAgain,
+      parentEditor,
+      handleEdit,
+    ]);
+
+    // Update editor content when entering edit mode
+    useEffect(() => {
+      if (isEditing && editEditor) {
+        const markdown = streamingContent || content || '';
+        const html = md.render(markdown);
+        editEditor.commands.setContent(html);
+      }
+    }, [isEditing, editEditor, streamingContent, content]);
 
     // Render loading skeleton for preview
     const renderLoading = useCallback(
@@ -434,12 +515,39 @@ export const AIWriterNodeView = memo(
           {(hasGenerated || streamingContent) && (
             <div className="flex w-full flex-row items-center justify-center">
               <div className="animate-border inline-block rounded-lg p-0.5 w-full mx-1 mb-3 mt-2">
-                <div
-                  className={`w-full text-base color-text-default whitespace-pre-line color-bg-default p-4 rounded-lg shadow-elevation-3 overflow-auto ${styles.previewContent}`}
-                  dangerouslySetInnerHTML={{
-                    __html: md.render(streamingContent || content || ''),
-                  }}
-                />
+                {isEditing ? (
+                  <div className="w-full color-bg-default p-4 rounded-lg shadow-elevation-3">
+                    <div className="ai-preview-editor">
+                      <EditorContent
+                        editor={editEditor}
+                        className="prose prose-sm max-w-none min-h-[200px] color-text-default"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2 mt-2">
+                      <Button
+                        variant="ghost"
+                        onClick={handleCancelEdit}
+                        className="text-body-sm"
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        variant="default"
+                        onClick={handleSaveEdit}
+                        className="text-body-sm"
+                      >
+                        Save Changes
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div
+                    className={`w-full text-base color-text-default whitespace-pre-line color-bg-default p-4 rounded-lg shadow-elevation-3 overflow-auto select-text ${styles.previewContent}`}
+                    dangerouslySetInnerHTML={{
+                      __html: md.render(streamingContent || content || ''),
+                    }}
+                  />
+                )}
               </div>
             </div>
           )}
@@ -486,6 +594,7 @@ export const AIWriterNodeView = memo(
                 <Select
                   value={modelContext?.activeModel?.modelName ?? ''}
                   onValueChange={handleModelChange}
+                  disabled={isLoading}
                 >
                   <SelectTrigger className="w-40 bg-transparent border-none">
                     <div className="flex items-center gap-1 truncate">
@@ -509,18 +618,11 @@ export const AIWriterNodeView = memo(
                   <Checkbox
                     key="include-context"
                     checked={includeContext}
+                    disabled={isLoading}
                     onCheckedChange={() =>
                       setIncludeContext((prev) => {
                         const value = !prev;
-
-                        if (value) {
-                          localStorage.setItem(
-                            INCLUDE_DDOC_CONTEXT_TAG,
-                            'true',
-                          );
-                        } else {
-                          localStorage.removeItem(INCLUDE_DDOC_CONTEXT_TAG);
-                        }
+                        handleIncludeContextChange(value);
                         return value;
                       })
                     }
@@ -528,7 +630,10 @@ export const AIWriterNodeView = memo(
                   />
                   <label
                     htmlFor="include-context"
-                    className="text-body-sm color-text-default cursor-pointer"
+                    className={cn(
+                      'text-xs md:text-sm color-text-default',
+                      isLoading && 'color-text-disabled',
+                    )}
                   >
                     Include context from this dDocs
                   </label>
@@ -544,25 +649,38 @@ export const AIWriterNodeView = memo(
             </div>
             {/* Action Bar */}
             {hasGenerated && (
-              <div className="flex gap-2 w-full border-t color-border-default py-2 justify-between">
+              <div className="flex flex-row gap-2 w-full border-t color-border-default py-2 justify-between">
                 <Button
                   variant="ghost"
                   onClick={handleDiscard}
                   className="min-w-fit gap-2 !bg-transparent color-text-secondary text-body-sm"
                 >
-                  <span className="text-helper-text-sm border color-border-default rounded-lg px-1.5 py-1">
+                  <span className="text-helper-text-sm border color-border-default rounded-lg px-1.5 py-1 hidden sm:block">
                     Esc
                   </span>
                   Discard
                 </Button>
-                <div className="flex gap-2">
+                <div className="flex gap-0">
+                  {!isEditing && (
+                    <Button
+                      variant="ghost"
+                      onClick={handleEdit}
+                      className="min-w-fit gap-2 !bg-transparent color-text-secondary text-body-sm"
+                    >
+                      <span className="text-helper-text-sm border color-border-default rounded-lg px-1.5 py-1 hidden sm:block">
+                        {shortcutKey} + E
+                      </span>
+                      Edit
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
                     onClick={handleInsert}
                     className="min-w-fit gap-2 !bg-transparent color-text-secondary text-body-sm"
+                    disabled={isEditing}
                   >
-                    <span className="text-helper-text-sm border color-border-default rounded-lg px-1.5 py-1">
-                      ↵ Enter
+                    <span className="text-helper-text-sm border color-border-default rounded-lg px-1.5 py-1 hidden sm:block">
+                      {shortcutKey} + Enter
                     </span>
                     Accept
                   </Button>
@@ -570,9 +688,9 @@ export const AIWriterNodeView = memo(
                     variant="ghost"
                     onClick={handleTryAgain}
                     className="min-w-fit gap-2 !bg-transparent color-text-secondary text-body-sm"
-                    disabled={isLoading}
+                    disabled={isLoading || isEditing}
                   >
-                    <span className="text-helper-text-sm border color-border-default rounded-lg px-1.5 py-1">
+                    <span className="text-helper-text-sm border color-border-default rounded-lg px-1.5 py-1 hidden sm:block">
                       {shortcutKey} + R
                     </span>
                     Try again
