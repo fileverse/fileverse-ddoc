@@ -1249,3 +1249,21 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
 .has-available-models p.is-empty::before {
   content: 'Write, press "space" for AI, "/" for options' !important;
 }
+
+.ai-preview-editor .ProseMirror {
+  & >h1 {
+    font-size: 32px;
+    font-weight: 500;
+  }
+  & > h2 {
+    font-size: 24px;
+    font-weight: 500;
+  }
+  & >h3 {
+    font-size: 18px;
+    font-weight: 500;
+  }
+  & > p {
+    @apply my-0;
+  }
+}
