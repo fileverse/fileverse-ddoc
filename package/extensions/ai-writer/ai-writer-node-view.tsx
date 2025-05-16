@@ -389,19 +389,15 @@ export const AIWriterNodeView = memo(
 
     const handlePromptKeyDown = useCallback(
       (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey && !isEditing) {
-          e.preventDefault();
-          if (localPrompt.trim()) {
-            handleGenerate();
-          }
-        } else if (
-          e.key === 'Enter' &&
-          (e.ctrlKey || e.metaKey) &&
-          !e.shiftKey
-        ) {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
           e.preventDefault();
           if (hasGenerated) {
             handleInsert();
+          }
+        } else if (e.key === 'Enter' && !e.shiftKey && !isEditing) {
+          e.preventDefault();
+          if (localPrompt.trim()) {
+            handleGenerate();
           }
         } else if (e.key === 'Escape') {
           e.preventDefault();
@@ -518,17 +514,21 @@ export const AIWriterNodeView = memo(
       () => (
         <span className="text-body-sm color-text-secondary pt-1 flex items-center gap-1">
           <AnimatePresence mode="wait">
-            <motion.span
+            <span
+              className="flex items-center gap-1"
               key={currentLoadingMessage}
-              initial={{ opacity: 0, y: 4 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{ duration: 0.3, ease: 'easeInOut' }}
-              className="inline-block"
             >
-              {currentLoadingMessage}
-            </motion.span>
-            <span className="animate-loading-dots">...</span>
+              <motion.span
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className="inline-block"
+              >
+                {currentLoadingMessage}
+              </motion.span>
+              <span className="animate-loading-dots">...</span>
+            </span>
           </AnimatePresence>
         </span>
       ),
@@ -614,7 +614,7 @@ export const AIWriterNodeView = memo(
                     onBlur={handlePromptBlur}
                     onKeyDown={handlePromptKeyDown}
                     placeholder="Ask your Wizard anything..."
-                    className="flex-1 pt-1 bg-transparent outline-none text-body-sm color-text-default px-1 resize-none"
+                    className="w-full pt-1 bg-transparent outline-none text-body-sm color-text-default px-1 resize-none min-h-[24px]"
                     disabled={isLoading}
                     autoFocus
                   />
