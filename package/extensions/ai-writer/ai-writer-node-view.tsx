@@ -25,13 +25,7 @@ import { ModelOption, WindowWithModelContext, ModelService } from './types';
 import { getLoadingMessageInOrder, md } from './utils';
 
 export const AIWriterNodeView = memo(
-  ({
-    node,
-    editor: parentEditor,
-    getPos,
-    updateAttributes,
-    onPromptUsage,
-  }: NodeViewProps & { onPromptUsage: () => void }) => {
+  ({ node, editor: parentEditor, getPos, updateAttributes }: NodeViewProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isStreaming, setIsStreaming] = useState(false);
     const [localPrompt, setLocalPrompt] = useState(node.attrs.prompt);
@@ -200,6 +194,7 @@ export const AIWriterNodeView = memo(
         setIsStreaming(true);
         setStreamingContent('');
         setHasGenerated(false);
+        modelContext?.onPromptUsage?.();
 
         const context = getDocumentContext();
         const fullPrompt = includeContext
@@ -264,15 +259,13 @@ export const AIWriterNodeView = memo(
         setIsLoading(false);
         setIsStreaming(false);
         abortControllerRef.current = null;
-        onPromptUsage?.();
       }
     }, [
       localPrompt,
+      modelContext,
       getDocumentContext,
       includeContext,
-      modelContext?.activeModel,
       updateAttributes,
-      onPromptUsage,
     ]);
 
     // Add stop streaming handler

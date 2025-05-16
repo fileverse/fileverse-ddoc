@@ -68,7 +68,6 @@ export const useDdocEditor = ({
   onCopyHeadingLink,
   activeModel,
   maxTokens,
-  // onPromptUsage,
   isAIAgentEnabled,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());

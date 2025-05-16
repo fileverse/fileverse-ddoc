@@ -56,6 +56,7 @@ export interface ModelContextType {
   setSystemPrompt: (prompt: string) => void;
   selectedLLM: string | null;
   setSelectedLLM: (llm: string | null) => void;
+  onPromptUsage?: () => void;
 }
 
 export interface ModelService {

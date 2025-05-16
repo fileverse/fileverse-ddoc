@@ -113,7 +113,6 @@ const DdocEditor = forwardRef(
       footerHeight,
       activeModel,
       maxTokens,
-      onPromptUsage,
       isAIAgentEnabled,
     }: DdocProps,
     ref,
@@ -191,7 +190,6 @@ const DdocEditor = forwardRef(
       onCopyHeadingLink,
       activeModel,
       maxTokens,
-      onPromptUsage,
       isAIAgentEnabled,
     });
 

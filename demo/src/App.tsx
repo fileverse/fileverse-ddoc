@@ -309,7 +309,6 @@ function App() {
         onMarkdownImport={(): void => { }}
         onMarkdownExport={(): void => { }}
         onPdfExport={(): void => { }}
-        onPromptUsage={(): void => { }}
         initialComments={initialComments}
         onCommentReply={handleReplyOnComment}
         onNewComment={handleNewComment}
