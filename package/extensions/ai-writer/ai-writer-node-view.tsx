@@ -576,7 +576,7 @@ export const AIWriterNodeView = memo(
                     onChange={handlePromptChange}
                     onBlur={handlePromptBlur}
                     onKeyDown={handlePromptKeyDown}
-                    placeholder="Ask wizard anything..."
+                    placeholder="Ask your Wizard anything..."
                     className="flex-1 pt-1 bg-transparent outline-none text-body-sm color-text-default px-1 resize-none"
                     disabled={isLoading}
                     autoFocus
