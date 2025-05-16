@@ -61,6 +61,7 @@ interface ModelService {
     prompt: string,
     model: string,
     onChunk: (chunk: string) => void,
+    signal?: AbortSignal,
   ) => Promise<void>;
   getAvailableModels?: () => Promise<ModelOption[]>;
 }
@@ -79,6 +80,7 @@ export const AIWriterNodeView = memo(
     onPromptUsage,
   }: NodeViewProps & { onPromptUsage: () => void }) => {
     const [isLoading, setIsLoading] = useState(false);
+    const [isStreaming, setIsStreaming] = useState(false);
     const [localPrompt, setLocalPrompt] = useState(node.attrs.prompt);
     const [hasGenerated, setHasGenerated] = useState(!!node.attrs.content);
     const [streamingContent, setStreamingContent] = useState('');
@@ -99,6 +101,8 @@ export const AIWriterNodeView = memo(
     const shortcutKey = isWindows ? 'Ctrl' : 'Cmd';
     // Get the model context from window
     const modelContext = (window as WindowWithModelContext).__MODEL_CONTEXT__;
+    // Add ref for abort controller
+    const abortControllerRef = useRef<AbortController | null>(null);
 
     // Create a new editor instance for editing
     const editEditor = useEditor({
@@ -233,12 +237,14 @@ export const AIWriterNodeView = memo(
       return context;
     }, [parentEditor, getPos, includeContext]);
 
-    // Update handleGenerate to use modelContext
+    // Update handleGenerate to use modelContext and handle streaming
     const handleGenerate = useCallback(async () => {
       if (!localPrompt.trim()) return;
       try {
         setIsLoading(true);
+        setIsStreaming(true);
         setStreamingContent('');
+        setHasGenerated(false);
 
         const context = getDocumentContext();
         const fullPrompt = includeContext
@@ -250,23 +256,49 @@ export const AIWriterNodeView = memo(
             window as Window & { modelService?: ModelService }
           ).modelService;
 
+          // Create new AbortController for this request
+          abortControllerRef.current = new AbortController();
+
           if (modelService?.streamModel) {
             let fullContent = '';
-            await modelService.streamModel(
-              fullPrompt,
-              modelContext.activeModel.modelName,
-              (chunk: string) => {
-                fullContent += chunk;
-                setStreamingContent(fullContent);
-              },
-            );
-            updateAttributes?.({ content: fullContent, prompt: localPrompt });
+            try {
+              await modelService.streamModel(
+                fullPrompt,
+                modelContext.activeModel.modelName,
+                (chunk: string) => {
+                  fullContent += chunk;
+                  setStreamingContent(fullContent);
+                },
+                abortControllerRef.current.signal,
+              );
+              // Only update attributes if streaming completed successfully
+              updateAttributes?.({
+                content: fullContent,
+                prompt: localPrompt,
+              });
+              setHasGenerated(true);
+            } catch (error: unknown) {
+              if (error instanceof Error && error.name === 'AbortError') {
+                // If aborted, keep the partial content
+                updateAttributes?.({
+                  content: fullContent,
+                  prompt: localPrompt,
+                });
+                setHasGenerated(true);
+              } else {
+                throw error;
+              }
+            }
           } else if (modelService?.callModel) {
             const newContent = await modelService.callModel(
               fullPrompt,
               modelContext.activeModel.modelName,
             );
-            updateAttributes?.({ content: newContent, prompt: localPrompt });
+            updateAttributes?.({
+              content: newContent,
+              prompt: localPrompt,
+            });
+            setHasGenerated(true);
           }
         } else {
           console.error('No active model selected');
@@ -275,7 +307,8 @@ export const AIWriterNodeView = memo(
         console.error('Error generating text:', error);
       } finally {
         setIsLoading(false);
-        setStreamingContent('');
+        setIsStreaming(false);
+        abortControllerRef.current = null;
         onPromptUsage?.();
       }
     }, [
@@ -286,6 +319,15 @@ export const AIWriterNodeView = memo(
       updateAttributes,
       onPromptUsage,
     ]);
+
+    // Add stop streaming handler
+    const handleStopStreaming = useCallback(() => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+        setIsStreaming(false);
+        setIsLoading(false);
+      }
+    }, []);
 
     const handleInsert = useCallback(() => {
       if (typeof getPos === 'function') {
@@ -376,6 +418,7 @@ export const AIWriterNodeView = memo(
         const htmlContent = editEditor.getHTML();
         setIsEditing(false);
         updateAttributes?.({ content: htmlContent });
+        setStreamingContent(htmlContent);
       }
     }, [editEditor, updateAttributes]);
 
@@ -514,7 +557,7 @@ export const AIWriterNodeView = memo(
           {/* Preview Section */}
           {(hasGenerated || streamingContent) && (
             <div className="flex w-full flex-row items-center justify-center">
-              <div className="animate-border inline-block rounded-lg p-0.5 w-full mx-1 mb-3 mt-2">
+              <div className="animate-border inline-block rounded-lg p-0.5 w-full mx-1 mb-3 mt-2 transition-all">
                 {isEditing ? (
                   <div className="w-full color-bg-default p-4 rounded-lg shadow-elevation-3">
                     <div className="ai-preview-editor">
@@ -640,11 +683,18 @@ export const AIWriterNodeView = memo(
                 </div>
               </div>
               <Button
-                onClick={handleGenerate}
-                disabled={!localPrompt.trim() || isLoading || hasGenerated}
-                className="p-2 min-w-0 rounded-full w-8 h-8"
+                onClick={isStreaming ? handleStopStreaming : handleGenerate}
+                disabled={!localPrompt.trim() || (isLoading && !isStreaming)}
+                className={cn(
+                  'p-2 min-w-0 rounded-full w-8 h-8',
+                  isStreaming && 'bg-red-500 hover:bg-red-600',
+                )}
               >
-                <LucideIcon name="ArrowUp" size="sm" />
+                {isStreaming ? (
+                  <LucideIcon name="Square" size="sm" />
+                ) : (
+                  <LucideIcon name="ArrowUp" size="sm" />
+                )}
               </Button>
             </div>
             {/* Action Bar */}

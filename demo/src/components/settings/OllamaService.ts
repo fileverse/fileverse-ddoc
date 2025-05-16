@@ -56,7 +56,7 @@ export class OllamaService {
           },
         ],
         options: {
-          temperature: 0.2, // Default value
+          temperature: 0.1, // Default value
         },
       });
 
@@ -103,12 +103,14 @@ export class OllamaService {
         ],
         stream: true,
         options: {
-          temperature: 0.2,
+          temperature: 0.1,
         },
       });
 
       for await (const part of stream) {
-        yield part.message.content;
+        if (part.message?.content) {
+          yield part.message.content;
+        }
       }
     } catch (error) {
       this.handleOllamaError('Error streaming from Ollama model', error);

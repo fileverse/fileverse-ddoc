@@ -4,7 +4,6 @@ import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { Ollama } from 'ollama/browser';
-import { debounce } from '../../utils/debounce';
 
 // Singleton WebLLM engine
 const isWebLLMModel = (model: any): boolean => {
@@ -19,8 +18,9 @@ export const AiAutocomplete = Extension.create({
       model: '',
       tone: 'neutral',
       maxTokens: 8,
-      temperature: 0.2,
+      temperature: 0.1,
       debounceTime: 100,
+      typingDebounceTime: 500, // Time to wait after typing stops before showing suggestion
       isEnabled: (() => {
         if (typeof window === 'undefined') return true;
         const e = localStorage.getItem('autocomplete-enabled');
@@ -33,6 +33,7 @@ export const AiAutocomplete = Extension.create({
     return {
       isEnabled: this.options.isEnabled,
       isFirstCall: true,
+      isTyping: false,
     };
   },
 
@@ -40,6 +41,8 @@ export const AiAutocomplete = Extension.create({
     const pluginKey = new PluginKey('ai-autocomplete');
     let currentSuggestion: string | null = null;
     let isFetching = false;
+    let lastPrompt = '';
+    let typingTimeout: ReturnType<typeof setTimeout> | null = null;
 
     const ollama = new Ollama({
       host: this.options?.endpoint,
@@ -54,6 +57,12 @@ export const AiAutocomplete = Extension.create({
 
     const getSuggestion = async (prompt: string): Promise<string | null> => {
       try {
+        // If it's the same prompt as last time, return null to avoid duplicate suggestions
+        if (prompt === lastPrompt) {
+          return null;
+        }
+        lastPrompt = prompt;
+
         const modelContext = (window as any).__MODEL_CONTEXT__;
         if (
           modelContext &&
@@ -127,62 +136,101 @@ export const AiAutocomplete = Extension.create({
       }
     };
 
-    // Create a debounced version of getSuggestion
-    const debouncedGetSuggestion = debounce(
-      async (prompt: string, view: any) => {
-        isFetching = true;
-        const suggestion = await getSuggestion(prompt);
-        isFetching = false;
-        currentSuggestion = suggestion;
+    const showSuggestion = async (view: any) => {
+      if (!extension.storage.isEnabled || extension.storage.isTyping) return;
 
-        if (!suggestion) return;
+      const { state } = view;
+      const { from } = state.selection;
+      const $pos = state.doc.resolve(from);
+      const node = $pos.parent;
+      const nodeStart = $pos.start();
+      const context = node.textBetween(0, from - nodeStart, ' ');
 
-        try {
-          const pos = view.state.selection.from;
-          if (pos > view.state.doc.content.size) return;
+      // Only proceed if there is context and the node has content
+      if (!context.trim() || node.content.size === 0) return;
 
-          const suggestionDecoration = Decoration.widget(
-            pos,
-            () => {
-              const container = document.createElement('span');
-              container.className = 'autocomplete-suggestion-container';
+      // Check if cursor is right after punctuation without a space
+      const lastChar = context[context.length - 1];
+      const isAfterPunctuation = lastChar && /[.,!?;:]/.test(lastChar);
+      if (isAfterPunctuation) return;
 
-              const suggestionSpan = document.createElement('span');
-              suggestionSpan.className = 'autocomplete-suggestion';
-              suggestionSpan.innerHTML = suggestion.replace(/\n/g, '<br>');
+      // If we're already fetching, don't start another request
+      if (isFetching) return;
 
-              const tabButton = document.createElement('span');
-              tabButton.className = 'autocomplete-tab-button';
-              tabButton.textContent = 'Tab';
+      isFetching = true;
+      const prompt = `Continue writing the following text, word by word, as if you are the user. Write in ${options.tone} tone. Do not answer, do not change the topic, just continue the sentence naturally. Do not add any punctuation or spaces to the end of the suggestion:\n${context}`;
 
-              container.appendChild(suggestionSpan);
-              container.appendChild(tabButton);
+      const suggestion = await getSuggestion(prompt);
+      isFetching = false;
+      currentSuggestion = suggestion;
 
-              return container;
-            },
-            { side: 1 },
-          );
+      if (!suggestion) return;
 
-          const decorations = DecorationSet.create(view.state.doc, [
-            suggestionDecoration,
-          ]);
+      try {
+        const pos = view.state.selection.from;
+        if (pos > view.state.doc.content.size) return;
 
-          if (view.isDestroyed || pos > view.state.doc.content.size) return;
+        const suggestionDecoration = Decoration.widget(
+          pos,
+          () => {
+            const container = document.createElement('span');
+            container.className = 'autocomplete-suggestion-container';
 
-          const tr = view.state.tr;
-          tr.setMeta('addToHistory', false);
-          tr.setMeta(pluginKey, { decorations });
-          view.dispatch(tr);
-        } catch (error) {
-          console.warn('Error applying autocomplete suggestion:', error);
-          const tr = view.state.tr;
-          tr.setMeta('addToHistory', false);
-          tr.setMeta(pluginKey, { decorations: DecorationSet.empty });
-          view.dispatch(tr);
-        }
-      },
-      extension.storage.isFirstCall ? 0 : options.debounceTime,
-    );
+            const suggestionSpan = document.createElement('span');
+            suggestionSpan.className = 'autocomplete-suggestion';
+            suggestionSpan.innerHTML = suggestion.replace(/\n/g, '<br>');
+
+            const tabButton = document.createElement('span');
+            tabButton.className = 'autocomplete-tab-button';
+            tabButton.textContent = 'Tab';
+
+            container.appendChild(suggestionSpan);
+            container.appendChild(tabButton);
+
+            return container;
+          },
+          { side: 1 },
+        );
+
+        const decorations = DecorationSet.create(view.state.doc, [
+          suggestionDecoration,
+        ]);
+
+        if (view.isDestroyed || pos > view.state.doc.content.size) return;
+
+        const tr = view.state.tr;
+        tr.setMeta('addToHistory', false);
+        tr.setMeta(pluginKey, { decorations });
+        view.dispatch(tr);
+      } catch (error) {
+        console.warn('Error applying autocomplete suggestion:', error);
+        const tr = view.state.tr;
+        tr.setMeta('addToHistory', false);
+        tr.setMeta(pluginKey, { decorations: DecorationSet.empty });
+        view.dispatch(tr);
+      }
+    };
+
+    const clearSuggestion = (view: any) => {
+      const tr = view.state.tr;
+      tr.setMeta(pluginKey, { decorations: DecorationSet.empty });
+      view.dispatch(tr);
+      currentSuggestion = null;
+    };
+
+    const handleTyping = (view: any) => {
+      extension.storage.isTyping = true;
+      clearSuggestion(view);
+
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
+
+      typingTimeout = setTimeout(() => {
+        extension.storage.isTyping = false;
+        showSuggestion(view);
+      }, options.typingDebounceTime);
+    };
 
     return [
       new Plugin({
@@ -209,28 +257,14 @@ export const AiAutocomplete = Extension.create({
             const { state } = view;
             const { from, to } = state.selection;
             if (from !== to) return false; // Only allow collapsed selection
-            const $pos = state.doc.resolve(from);
-            const node = $pos.parent;
-            const nodeStart = $pos.start();
-            const context = node.textBetween(0, from - nodeStart, ' ');
 
-            // Only proceed if there is context
-            if (!context.trim()) return false;
-
-            // Check if cursor is right after punctuation without a space
-            const lastChar = context[context.length - 1];
-            const isAfterPunctuation = lastChar && /[.,!?;:]/.test(lastChar);
-            if (isAfterPunctuation) return false;
-
-            // If a suggestion is shown and the user presses any key except Tab, remove the suggestion
-            if (currentSuggestion && event.key !== 'Tab') {
-              const tr = state.tr;
-              tr.setMeta(pluginKey, { decorations: DecorationSet.empty });
-              view.dispatch(tr);
-              currentSuggestion = null;
+            // Handle typing activity
+            if (event.key !== 'Tab') {
+              handleTyping(view);
               return false;
             }
 
+            // Handle Tab key
             if (event.key === 'Tab') {
               event.preventDefault();
 
@@ -243,21 +277,11 @@ export const AiAutocomplete = Extension.create({
                 return true;
               }
 
-              // If we're already fetching, don't start another request
-              if (isFetching) return true;
-
-              // Fetch new suggestion
-              const prompt = `Continue writing the following text, word by word, as if you are the user. Write in ${options.tone} tone. Do not answer, do not change the topic, just continue the sentence naturally. Do not add any punctuation or spaces to the end of the suggestion:\n${context}`;
-
-              debouncedGetSuggestion(prompt, view);
-
-              // After the first call, update the debounce time
-              if (extension.storage.isFirstCall) {
-                extension.storage.isFirstCall = false;
-              }
-
+              // If no suggestion is shown, trigger one
+              showSuggestion(view);
               return true;
             }
+
             return false;
           },
         },

@@ -6,19 +6,19 @@
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  gap: 0.5em;
+  // gap: 0.5em;
 
   p {
     line-height: 1.5;
-    margin: 0.25em 0;
+    margin: 0.5rem 0;
     &:first-child { margin-top: 0; }
     &:last-child { margin-bottom: 0; }
   }
 
   h1, h2, h3 {
-    font-weight: 600;
-    margin-top: 0.75em;
-    margin-bottom: 0.25em;
+    font-weight: 500;
+    line-height: 1.2;
+    margin: 0.5em 0;
   }
   h1 { font-size: 32px; }
   h2 { font-size: 24px; }
@@ -42,16 +42,16 @@
   }
 
   code {
-    background-color: rgba(97, 97, 97, 0.1);
-    color: #616161;
+    background-color: hsla(var(--color-bg-secondary));
+    color: hsla(var(--color-text-default));
     border-radius: 4px;
     font-family: 'JetBrainsMono', monospace;
     font-size: 0.95em;
     padding: 2px 6px;
   }
   pre {
-    background-color: transparent;
-    color: #000;
+    background-color: hsla(var(--color-bg-secondary));
+    color: hsla(var(--color-text-default));
     font-family: 'JetBrainsMono', monospace;
     border-radius: 0.5rem;
     overflow-x: auto;
@@ -75,32 +75,32 @@
     th, td {
       min-width: 10rem;
       max-width: 10rem;
-      border: 1px solid #e8ebec;
+      border: 1px solid hsla(var(--color-border-default));
       padding: 3px 5px;
       vertical-align: top;
     }
     th {
       font-weight: bold;
-      background-color: #f8f9fa;
+      background-color: hsla(var(--color-bg-secondary));
     }
   }
   blockquote {
-    border-left: 4px solid #e5e7eb;
+    border-left: 4px solid hsla(var(--color-border-default));
     margin: 0.5em 0;
     padding: 0.5em 1em;
-    color: #6b7280;
+    color: hsla(var(--color-text-secondary));
     background: none;
   }
   a {
-    color: #2563eb;
-    text-decoration: underline;
+    color: hsla(var(--color-text-link));
+    text-decoration: none;
     &:hover {
-      color: #1d4ed8;
+      color: hsla(var(--color-text-link-hover));
     }
   }
   hr {
     border: none;
-    border-top: 1px solid #e5e7eb;
+    border-top: 1px solid hsla(var(--color-border-default));
     margin: 1em 0;
   }
   .task-list-item {
