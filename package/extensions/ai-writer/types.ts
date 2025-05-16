@@ -28,7 +28,7 @@ export const TONE_OPTIONS: ToneOption[] = [
 
 export const loadingMessages = [
   'Reflecting',
-  'Your wizard is never late, nor is he early.',
+  'Your wizard is never late, nor is he early',
   'Your wizard arrives precisely when it is meant',
 ];
 
