@@ -22,6 +22,8 @@ interface ModelContextType {
   selectedLLM: string | null;
   setSelectedLLM: (llm: string | null) => void;
   getWebLLMEngine: (modelName: string) => Promise<MLCEngineInterface>;
+  isAIAgentEnabled: boolean;
+  setIsAIAgentEnabled: (enabled: boolean) => void;
 }
 
 interface ModelProviderProps {
@@ -79,7 +81,9 @@ export const ModelContext = createContext<ModelContextType>({
   setSystemPrompt: () => { },
   selectedLLM: null,
   setSelectedLLM: () => { },
-  getWebLLMEngine,
+  getWebLLMEngine: () => Promise.resolve(null as unknown as MLCEngineInterface),
+  isAIAgentEnabled: true,
+  setIsAIAgentEnabled: () => { },
 });
 
 export const ModelProvider = ({ children }: ModelProviderProps) => {
@@ -98,7 +102,10 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
     return localStorage.getItem('system-prompt') || 'You are a helpful AI assistant. Please provide accurate and concise responses.';
   });
   const [selectedLLM, setSelectedLLM] = useState<string | null>(null);
-
+  const [isAIAgentEnabled, setIsAIAgentEnabled] = useState(() => {
+    const stored = localStorage.getItem('ai-agent-enabled');
+    return stored === null ? true : stored === 'true';
+  });
   // Load default models
   useEffect(() => {
     const loadDefaultModels = async () => {
@@ -162,6 +169,8 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
       selectedLLM,
       setSelectedLLM,
       getWebLLMEngine,
+      isAIAgentEnabled,
+      setIsAIAgentEnabled,
     };
 
     (window as WindowWithModelContext).__MODEL_CONTEXT__ = context;
@@ -169,7 +178,19 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
     return () => {
       delete (window as WindowWithModelContext).__MODEL_CONTEXT__;
     };
-  }, [defaultModels, isLoadingDefaultModels, ollamaError, webllmError, activeModel, maxTokens, tone, systemPrompt, selectedLLM]);
+  }, [
+    defaultModels,
+    isLoadingDefaultModels,
+    ollamaError,
+    webllmError,
+    activeModel,
+    maxTokens,
+    tone,
+    systemPrompt,
+    selectedLLM,
+    isAIAgentEnabled,
+    setIsAIAgentEnabled,
+  ]);
 
   // Expose model service to window for AIWriter extension
   useEffect(() => {
@@ -282,6 +303,8 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
         selectedLLM,
         setSelectedLLM,
         getWebLLMEngine,
+        isAIAgentEnabled,
+        setIsAIAgentEnabled,
       }}
     >
       {children}

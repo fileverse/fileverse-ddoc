@@ -68,7 +68,7 @@ export const useDdocEditor = ({
   onCopyHeadingLink,
   activeModel,
   maxTokens,
-  // onPromptUsage,
+  isAIAgentEnabled,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
 
@@ -290,8 +290,8 @@ export const useDdocEditor = ({
   }, [proExtensions]);
 
   useEffect(() => {
+    const hasAvailableModels = activeModel !== undefined && isAIAgentEnabled;
     if (activeModel) {
-      const hasAvailableModels = activeModel !== undefined;
       setExtensions([
         ...extensions.filter(
           (ext) =>
@@ -317,7 +317,7 @@ export const useDdocEditor = ({
         ),
       ]);
     }
-  }, [activeModel, maxTokens]);
+  }, [activeModel, maxTokens, isAIAgentEnabled]);
 
   useEffect(() => {
     if (zoomLevel) {

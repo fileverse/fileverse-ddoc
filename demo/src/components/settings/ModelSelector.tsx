@@ -14,13 +14,14 @@ interface ModelSelectorProps {
 const ModelSelector = ({ onSettingsClick }: ModelSelectorProps) => {
   const {
     defaultModels,
-    models,
     isLoadingDefaultModels,
     ollamaError,
     activeModel,
     setActiveModel,
     maxTokens,
     setMaxTokens,
+    isAIAgentEnabled,
+    setIsAIAgentEnabled,
   } = useModelContext();
 
   const [modelStatus, setModelStatus] = useState<'idle' | 'loading' | 'error'>('idle');
@@ -31,6 +32,13 @@ const ModelSelector = ({ onSettingsClick }: ModelSelectorProps) => {
   const [selectedTone, setSelectedTone] = useState(() => {
     return localStorage.getItem('autocomplete-tone') || 'neutral';
   });
+
+  const handleAIAgentToggle = (enabled: boolean) => {
+    setIsAIAgentEnabled(enabled);
+    localStorage.setItem('ai-agent-enabled', String(enabled));
+    // Dispatch custom event for the extension to listen to
+    window.dispatchEvent(new CustomEvent('ai-agent-toggle', { detail: { enabled } }));
+  };
 
   // Combine custom and default models for the dropdown
   const allModels = useMemo(() => [ ...defaultModels], [defaultModels]);
@@ -109,6 +117,14 @@ const ModelSelector = ({ onSettingsClick }: ModelSelectorProps) => {
           <div className="w-64 p-2 space-y-1">
             <div className="mb-2 border-b pb-1 text-xs font-medium">
               Available Models
+            </div>
+
+            <div className="flex items-center justify-between px-1">
+              <span className="text-xs">Enable AI Agent</span>
+              <Toggle
+                checked={isAIAgentEnabled}
+                onCheckedChange={handleAIAgentToggle}
+              />
             </div>
 
             {allModels.length === 0 ? (

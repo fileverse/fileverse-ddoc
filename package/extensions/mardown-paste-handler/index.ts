@@ -599,11 +599,13 @@ async function handleMarkdownContent(
   const parser = new DOMParser();
   const doc = parser.parseFromString(convertedHtml, 'text/html');
 
-  // Remove only top-level empty paragraphs because markdownIt adds empty paragraph tag above and below aside tag
+  // Remove <p> if it's empty
   const topLevelPs = doc.querySelectorAll('body > p');
   topLevelPs.forEach((p) => {
-    if (p.textContent?.trim() === '') {
-      p.remove();
+    if (p.childNodes.length === 0) {
+      if (p.textContent === '') {
+        p.remove();
+      }
     }
   });
 

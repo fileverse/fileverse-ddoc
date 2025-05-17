@@ -4,7 +4,6 @@ import { AIWriterNodeView } from './ai-writer-node-view';
 
 export interface AIWriterOptions {
   HTMLAttributes: Record<string, any>;
-  onPromptUsage?: () => void;
 }
 
 declare module '@tiptap/core' {
@@ -36,7 +35,6 @@ export const AIWriter = Node.create<AIWriterOptions>({
       HTMLAttributes: {
         class: 'ai-writer',
       },
-      onPromptUsage: () => {},
     };
   },
 
@@ -74,12 +72,7 @@ export const AIWriter = Node.create<AIWriterOptions>({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer((props) => (
-      <AIWriterNodeView
-        {...props}
-        onPromptUsage={() => this.options.onPromptUsage?.()}
-      />
-    ));
+    return ReactNodeViewRenderer(AIWriterNodeView);
   },
 
   addCommands() {

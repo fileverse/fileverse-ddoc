@@ -3,7 +3,7 @@ import { JSONContent, NodeViewProps, NodeViewWrapper } from '@tiptap/react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import wizardLogo from '../../assets/wizard.svg';
-import MarkdownIt from 'markdown-it';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Button,
   LucideIcon,
@@ -21,64 +21,11 @@ import styles from './ai-writer-node-view.module.scss';
 import { useResponsive } from '../../utils/responsive';
 import { TextSelection } from 'prosemirror-state';
 import { SuperchargedTableExtensions } from '../supercharged-table/supercharged-table-kit';
-
-// Initialize markdown-it
-const md = new MarkdownIt({
-  html: true,
-  linkify: true,
-  typographer: true,
-});
-
-interface ModelOption {
-  value: string;
-  label: string;
-}
-
-interface CustomModel {
-  modelName: string;
-  label: string;
-}
-
-interface ModelContextType {
-  defaultModels: CustomModel[];
-  isLoadingDefaultModels: boolean;
-  ollamaError: string | null;
-  activeModel?: CustomModel;
-  setActiveModel: (model: CustomModel | undefined) => void;
-  maxTokens: number;
-  setMaxTokens: (maxTokens: number) => void;
-  tone: string;
-  setTone: (tone: string) => void;
-  systemPrompt: string;
-  setSystemPrompt: (prompt: string) => void;
-  selectedLLM: string | null;
-  setSelectedLLM: (llm: string | null) => void;
-}
-
-interface ModelService {
-  callModel?: (prompt: string, model: string) => Promise<string>;
-  streamModel?: (
-    prompt: string,
-    model: string,
-    onChunk: (chunk: string) => void,
-    signal?: AbortSignal,
-  ) => Promise<void>;
-  getAvailableModels?: () => Promise<ModelOption[]>;
-}
-
-// Define interface for window with model context
-interface WindowWithModelContext extends Window {
-  __MODEL_CONTEXT__?: ModelContextType;
-}
+import { ModelOption, WindowWithModelContext, ModelService } from './types';
+import { getLoadingMessageInOrder, md } from './utils';
 
 export const AIWriterNodeView = memo(
-  ({
-    node,
-    editor: parentEditor,
-    getPos,
-    updateAttributes,
-    onPromptUsage,
-  }: NodeViewProps & { onPromptUsage: () => void }) => {
+  ({ node, editor: parentEditor, getPos, updateAttributes }: NodeViewProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isStreaming, setIsStreaming] = useState(false);
     const [localPrompt, setLocalPrompt] = useState(node.attrs.prompt);
@@ -87,9 +34,8 @@ export const AIWriterNodeView = memo(
     const [isRemoving, setIsRemoving] = useState(false);
     const [isEditing, setIsEditing] = useState(false);
     const [availableModels, setAvailableModels] = useState<ModelOption[]>([]);
-    const INCLUDE_DDOC_CONTEXT_TAG = 'include-ddoc-context';
     const [includeContext, setIncludeContext] = useState<boolean>(
-      !!localStorage.getItem(INCLUDE_DDOC_CONTEXT_TAG),
+      !!localStorage.getItem('include-ddoc-context'),
     );
     const { prompt, content } = node.attrs;
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -103,6 +49,9 @@ export const AIWriterNodeView = memo(
     const modelContext = (window as WindowWithModelContext).__MODEL_CONTEXT__;
     // Add ref for abort controller
     const abortControllerRef = useRef<AbortController | null>(null);
+    const [currentLoadingMessage, setCurrentLoadingMessage] = useState(
+      getLoadingMessageInOrder(),
+    );
 
     // Create a new editor instance for editing
     const editEditor = useEditor({
@@ -245,6 +194,7 @@ export const AIWriterNodeView = memo(
         setIsStreaming(true);
         setStreamingContent('');
         setHasGenerated(false);
+        modelContext?.onPromptUsage?.();
 
         const context = getDocumentContext();
         const fullPrompt = includeContext
@@ -309,15 +259,13 @@ export const AIWriterNodeView = memo(
         setIsLoading(false);
         setIsStreaming(false);
         abortControllerRef.current = null;
-        onPromptUsage?.();
       }
     }, [
       localPrompt,
+      modelContext,
       getDocumentContext,
       includeContext,
-      modelContext?.activeModel,
       updateAttributes,
-      onPromptUsage,
     ]);
 
     // Add stop streaming handler
@@ -326,6 +274,16 @@ export const AIWriterNodeView = memo(
         abortControllerRef.current.abort();
         setIsStreaming(false);
         setIsLoading(false);
+        // Use setTimeout to ensure focus happens after state updates
+        const timeout = setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+            const len = textareaRef.current.value.length;
+            textareaRef.current.setSelectionRange(len, len);
+            textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+          }
+        }, 0);
+        return () => clearTimeout(timeout);
       }
     }, []);
 
@@ -431,23 +389,21 @@ export const AIWriterNodeView = memo(
 
     const handlePromptKeyDown = useCallback(
       (e: React.KeyboardEvent) => {
-        if (e.key === 'Enter' && !e.shiftKey && !isEditing) {
-          e.preventDefault();
-          if (localPrompt.trim()) {
-            handleGenerate();
-          }
-        } else if (
-          e.key === 'Enter' &&
-          (e.ctrlKey || e.metaKey) &&
-          !e.shiftKey
-        ) {
+        if (e.key === 'Enter' && (e.ctrlKey || e.metaKey) && !e.shiftKey) {
           e.preventDefault();
           if (hasGenerated) {
             handleInsert();
           }
+        } else if (e.key === 'Enter' && !e.shiftKey && !isEditing) {
+          e.preventDefault();
+          if (localPrompt.trim()) {
+            handleGenerate();
+          }
         } else if (e.key === 'Escape') {
           e.preventDefault();
-          if (hasGenerated) {
+          if (isStreaming) {
+            handleStopStreaming();
+          } else if (hasGenerated) {
             handleDiscard();
           } else {
             handleDiscard();
@@ -472,21 +428,30 @@ export const AIWriterNodeView = memo(
         handleDiscard,
         handleTryAgain,
         handleEdit,
+        isStreaming,
+        handleStopStreaming,
       ],
     );
 
     const handleIncludeContextChange = useCallback((checked: boolean) => {
       if (checked) {
-        localStorage.setItem(INCLUDE_DDOC_CONTEXT_TAG, 'true');
+        localStorage.setItem('include-ddoc-context', 'true');
       } else {
-        localStorage.removeItem(INCLUDE_DDOC_CONTEXT_TAG);
+        localStorage.removeItem('include-ddoc-context');
       }
     }, []);
 
     // Add global keyboard shortcuts
     useEffect(() => {
       const handleGlobalKeyDown = (e: KeyboardEvent) => {
-        // Only handle shortcuts when content has been generated
+        // Handle Esc key for stopping streaming
+        if (e.key === 'Escape' && isStreaming) {
+          e.preventDefault();
+          handleStopStreaming();
+          return;
+        }
+
+        // Only handle other shortcuts when content has been generated
         if (!hasGenerated) return;
 
         // Enter to insert
@@ -520,6 +485,8 @@ export const AIWriterNodeView = memo(
       handleTryAgain,
       parentEditor,
       handleEdit,
+      isStreaming,
+      handleStopStreaming,
     ]);
 
     // Update editor content when entering edit mode
@@ -531,14 +498,41 @@ export const AIWriterNodeView = memo(
       }
     }, [isEditing, editEditor, streamingContent, content]);
 
-    // Render loading skeleton for preview
+    // Add effect to change loading message
+    useEffect(() => {
+      if (isLoading) {
+        const interval = setInterval(() => {
+          setCurrentLoadingMessage(getLoadingMessageInOrder());
+        }, 2000); // Change message every 2 seconds
+
+        return () => clearInterval(interval);
+      }
+    }, [isLoading]);
+
+    // Update renderLoading function
     const renderLoading = useCallback(
       () => (
-        <span className="text-body-sm color-text-secondary pt-1">
-          Reflecting <span className="animate-loading-dots">...</span>
+        <span className="text-body-sm color-text-secondary pt-1 flex items-center gap-1">
+          <AnimatePresence mode="wait">
+            <span
+              className="flex items-center gap-1"
+              key={currentLoadingMessage}
+            >
+              <motion.span
+                initial={{ opacity: 0, y: 4 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -4 }}
+                transition={{ duration: 0.3, ease: 'easeInOut' }}
+                className="inline-block"
+              >
+                {currentLoadingMessage}
+              </motion.span>
+              <span className="animate-loading-dots">...</span>
+            </span>
+          </AnimatePresence>
         </span>
       ),
-      [],
+      [currentLoadingMessage],
     );
 
     if (isPreviewMode) return null;
@@ -620,7 +614,7 @@ export const AIWriterNodeView = memo(
                     onBlur={handlePromptBlur}
                     onKeyDown={handlePromptKeyDown}
                     placeholder="Ask your Wizard anything..."
-                    className="flex-1 pt-1 bg-transparent outline-none text-body-sm color-text-default px-1 resize-none"
+                    className="w-full pt-1 bg-transparent outline-none text-body-sm color-text-default px-1 resize-none min-h-[24px]"
                     disabled={isLoading}
                     autoFocus
                   />
@@ -639,7 +633,7 @@ export const AIWriterNodeView = memo(
                   onValueChange={handleModelChange}
                   disabled={isLoading}
                 >
-                  <SelectTrigger className="w-40 bg-transparent border-none">
+                  <SelectTrigger className="max-w-32 bg-transparent border-none">
                     <div className="flex items-center gap-1 truncate">
                       <SelectValue placeholder="Select model" />
                     </div>
@@ -685,10 +679,7 @@ export const AIWriterNodeView = memo(
               <Button
                 onClick={isStreaming ? handleStopStreaming : handleGenerate}
                 disabled={!localPrompt.trim() || (isLoading && !isStreaming)}
-                className={cn(
-                  'p-2 min-w-0 rounded-full w-8 h-8',
-                  isStreaming && 'bg-red-500 hover:bg-red-600',
-                )}
+                className={cn('p-2 min-w-0 rounded-full w-8 h-8')}
               >
                 {isStreaming ? (
                   <LucideIcon name="Square" size="sm" />
@@ -703,7 +694,7 @@ export const AIWriterNodeView = memo(
                 <Button
                   variant="ghost"
                   onClick={handleDiscard}
-                  className="min-w-fit gap-2 !bg-transparent color-text-secondary text-body-sm"
+                  className="min-w-fit gap-2 !bg-transparent color-text-secondary text-body-sm !px-3"
                 >
                   <span className="text-helper-text-sm border color-border-default rounded-lg px-1.5 py-1 hidden sm:block">
                     Esc
@@ -715,7 +706,7 @@ export const AIWriterNodeView = memo(
                     <Button
                       variant="ghost"
                       onClick={handleEdit}
-                      className="min-w-fit gap-2 !bg-transparent color-text-secondary text-body-sm"
+                      className="min-w-fit gap-2 !bg-transparent color-text-secondary text-body-sm !px-3"
                     >
                       <span className="text-helper-text-sm border color-border-default rounded-lg px-1.5 py-1 hidden sm:block">
                         {shortcutKey} + E
@@ -726,7 +717,7 @@ export const AIWriterNodeView = memo(
                   <Button
                     variant="ghost"
                     onClick={handleInsert}
-                    className="min-w-fit gap-2 !bg-transparent color-text-secondary text-body-sm"
+                    className="min-w-fit gap-2 !bg-transparent color-text-secondary text-body-sm !px-3"
                     disabled={isEditing}
                   >
                     <span className="text-helper-text-sm border color-border-default rounded-lg px-1.5 py-1 hidden sm:block">
@@ -737,7 +728,7 @@ export const AIWriterNodeView = memo(
                   <Button
                     variant="ghost"
                     onClick={handleTryAgain}
-                    className="min-w-fit gap-2 !bg-transparent color-text-secondary text-body-sm"
+                    className="min-w-fit gap-2 !bg-transparent color-text-secondary text-body-sm !px-3"
                     disabled={isLoading || isEditing}
                   >
                     <span className="text-helper-text-sm border color-border-default rounded-lg px-1.5 py-1 hidden sm:block">

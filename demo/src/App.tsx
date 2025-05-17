@@ -57,7 +57,7 @@ function App() {
   const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
   const [initialComments, setInitialComment] = useState<IComment[]>([]);
 
-  const { activeModel, maxTokens } = useModelContext();
+  const { activeModel, maxTokens, isAIAgentEnabled } = useModelContext();
 
   const handleReplyOnComment = (id: string, reply: IComment) => {
     setInitialComment((prev) =>
@@ -309,7 +309,6 @@ function App() {
         onMarkdownImport={(): void => { }}
         onMarkdownExport={(): void => { }}
         onPdfExport={(): void => { }}
-        onPromptUsage={(): void => { }}
         initialComments={initialComments}
         onCommentReply={handleReplyOnComment}
         onNewComment={handleNewComment}
@@ -333,6 +332,7 @@ function App() {
         }}
         activeModel={activeModel}
         maxTokens={maxTokens}
+        isAIAgentEnabled={isAIAgentEnabled}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}
