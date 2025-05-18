@@ -38,6 +38,7 @@ export class WebLLMService {
   static async callModel(
     model: CustomModel,
     prompt: string,
+    tone: string,
     systemPrompt?: string,
   ): Promise<string> {
     try {
@@ -49,7 +50,8 @@ export class WebLLMService {
         throw new Error('WebLLM engine not initialized');
       }
 
-      const formattedSystemPrompt = systemPrompt || model.systemPrompt;
+      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}.\n\nReturn in full Markdown format /no_think. Write in ${tone} tone.`;
+
       const response = await this.engine.chat.completions.create({
         messages: [
           {
@@ -85,6 +87,7 @@ export class WebLLMService {
   static async *streamModel(
     model: CustomModel,
     prompt: string,
+    tone: string,
     systemPrompt?: string,
   ) {
     try {
@@ -96,7 +99,8 @@ export class WebLLMService {
         throw new Error('WebLLM engine not initialized');
       }
 
-      const formattedSystemPrompt = systemPrompt || model.systemPrompt;
+      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}.\n\nReturn in full Markdown format /no_think. Write in ${tone} tone.`;
+      
       const stream = await this.engine.chat.completions.create({
         messages: [
           {
@@ -129,7 +133,7 @@ export class WebLLMService {
   static async getAvailableModels(): Promise<string[]> {
     // WebLLM comes with a predefined set of models
     return [
-      'TinyLlama-1.1B-Chat-v1.0-q4f16_1-MLC-1k',
+      'stablelm-2-zephyr-1_6b-q4f16_1-MLC-1k',
     ];
   }
 

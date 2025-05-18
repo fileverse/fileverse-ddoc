@@ -54,10 +54,10 @@ export class DefaultModelProvider {
         label: modelName,
         modelName: modelName,
         endpoint: ollamaEndpoint,
-        contextSize: 8192, // A reasonable default
+        contextSize: 1024, // A reasonable default
         apiKey: '',
         systemPrompt:
-          'You are a helpful AI assistant. Please provide accurate and concise responses and not include any preambles in your responses.',
+          'You are a helpful AI assistant. Please provide accurate and concise responses and not include any preambles in your responses. You are good at text generation and can generate text in a variety of styles and tones. You are also good at predicting the next word in a sentence and can autocomplete words. /no_think.',
       }));
     } catch (error) {
       console.error('Error getting default Ollama models:', error);
@@ -97,7 +97,7 @@ export class DefaultModelProvider {
         contextSize: 1024, // Default context size for WebLLM models
         apiKey: '',
         systemPrompt:
-          'You are a helpful assistant. Keep responses short and focused—3–5 sentences max. Share only essential info, avoid repetition, and summarize unless asked to elaborate. Do not include any preambles in your responses.',
+        'You are a helpful AI assistant. Please provide accurate and concise responses and not include any preambles in your responses. You are good at text generation and can generate text in a variety of styles and tones. You are also good at predicting the next word in a sentence and can autocomplete words. /no_think.',
       }));
     } catch (error) {
       console.error('Error getting default WebLLM models:', error);

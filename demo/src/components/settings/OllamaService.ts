@@ -31,11 +31,12 @@ export class OllamaService {
   static async callModel(
     model: CustomModel,
     prompt: string,
+    tone: string,
     systemPrompt?: string,
   ): Promise<string> {
     try {
       // Format the system prompt with dynamic variables
-      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}\n\nReturn in full Markdown format`;
+      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}.\n\nReturn in full Markdown format /no_think. Write in ${tone} tone.`;
 
       // Create a client with the specified host
       const client = new Ollama({
@@ -77,11 +78,12 @@ export class OllamaService {
   static async *streamModel(
     model: CustomModel,
     prompt: string,
+    tone: string,
     systemPrompt?: string,
   ) {
     try {
       // Format the system prompt with dynamic variables
-      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}\n\nReturn in full Markdown format`;
+      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}.\n\nReturn in full Markdown format /no_think. Write in ${tone} tone.`;
 
       // Create a client with the specified host
       const client = new Ollama({

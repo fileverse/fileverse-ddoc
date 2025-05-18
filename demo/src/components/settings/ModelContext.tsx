@@ -202,11 +202,8 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
           throw new Error('No AI model selected. Please select a model in settings.');
         }
 
-        // Format the prompt with the tone
-        const promptWithTone = `Generate text in a ${tone} tone: ${prompt}`;
-
         try {
-          return await ModelService.callModel(activeModel, promptWithTone, systemPrompt);
+          return await ModelService.callModel(activeModel, prompt, tone, systemPrompt);
         } catch (error) {
           console.error('Error calling model:', error);
           throw new Error(
@@ -225,15 +222,13 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
           return;
         }
 
-        // Format the prompt with the tone
-        const promptWithTone = `Generate text in a ${tone} tone: ${prompt}`;
-
         try {
           if (ModelService.isOllamaModel(activeModel)) {
             // If it's an Ollama model, use streaming
             const stream = OllamaService.streamModel(
               activeModel,
-              promptWithTone,
+              prompt,
+              tone,
               systemPrompt
             );
 
@@ -246,12 +241,18 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
             }
           } else {
             // For non-Ollama models, fall back to regular model call
-            const result = await ModelService.callModel(
+            const result = ModelService.streamModel(
               activeModel,
-              promptWithTone,
+              prompt,
+              tone,
               systemPrompt
             );
-            onChunk(result);
+            for await (const chunk of result) {
+              if (signal?.aborted) {
+                throw new Error('AbortError');
+              }
+              onChunk(chunk);
+            }
           }
         } catch (error) {
           if (error instanceof Error && error.message === 'AbortError') {

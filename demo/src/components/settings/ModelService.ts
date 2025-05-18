@@ -31,17 +31,18 @@ export class ModelService {
   static async callModel(
     model: CustomModel,
     prompt: string,
+    tone: string,
     systemPrompt?: string,
   ): Promise<string> {
     try {
       // Check if it's an Ollama model
       if (OllamaService.isOllamaModel(model)) {
-        return await OllamaService.callModel(model, prompt, systemPrompt);
+        return await OllamaService.callModel(model, prompt, tone, systemPrompt);
       }
 
       // Check if it's a WebLLM model
       if (WebLLMService.isWebLLMModel(model)) {
-        return await WebLLMService.callModel(model, prompt, systemPrompt);
+        return await WebLLMService.callModel(model, prompt, tone, systemPrompt);
       }
 
       // For other API models, use the standard API implementation:
@@ -115,23 +116,24 @@ export class ModelService {
   static async *streamModel(
     model: CustomModel,
     prompt: string,
+    tone: string,
     systemPrompt?: string,
   ) {
     try {
       // Check if it's an Ollama model
       if (OllamaService.isOllamaModel(model)) {
-        yield* OllamaService.streamModel(model, prompt, systemPrompt);
+        yield* OllamaService.streamModel(model, prompt, tone, systemPrompt);
         return;
       }
 
       // Check if it's a WebLLM model
       if (WebLLMService.isWebLLMModel(model)) {
-        yield* WebLLMService.streamModel(model, prompt, systemPrompt);
+        yield* WebLLMService.streamModel(model, prompt, tone, systemPrompt);
         return;
       }
 
       // For other models, fall back to regular model call
-      const result = await this.callModel(model, prompt, systemPrompt);
+      const result = await this.callModel(model, prompt, tone, systemPrompt);
       yield result;
     } catch (error) {
       console.error('Error streaming from model:', error);
