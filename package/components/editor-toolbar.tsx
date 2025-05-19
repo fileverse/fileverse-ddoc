@@ -30,7 +30,7 @@ import ToolbarButton from '../common/toolbar-button';
 import { useMediaQuery } from 'usehooks-ts';
 import { AnimatePresence } from 'framer-motion';
 import { fadeInTransition, slideUpTransition } from './motion-div';
-import { IpfsImageUploadResponse } from '../types';
+import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 
 const MemoizedFontSizePicker = React.memo(FontSizePicker);
 
@@ -46,6 +46,7 @@ const TiptapToolBar = ({
   onMarkdownImport,
   onPdfExport,
   isLoading,
+  ipfsImageFetchFn,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -58,6 +59,9 @@ const TiptapToolBar = ({
   onMarkdownImport?: () => void;
   onPdfExport?: () => void;
   isLoading: boolean;
+  ipfsImageFetchFn?: (
+    _data: IpfsImageFetchPayload,
+  ) => Promise<{ url: string; file: File }>;
 }) => {
   const {
     toolRef,
@@ -77,6 +81,7 @@ const TiptapToolBar = ({
     onMarkdownExport,
     onMarkdownImport,
     onPdfExport,
+    ipfsImageFetchFn,
   });
 
   const editorStates = useEditorStates(editor as Editor);

@@ -15,7 +15,6 @@ export type UploadFnType = (image: File) => Promise<string>;
  * The function returns a new instance of the Plugin.
  */
 export const getMediaPasteDropPlugin = (
-  upload: UploadFnType,
   onError: (error: string) => void,
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
 ) => {
@@ -112,7 +111,7 @@ export const getMediaPasteDropPlugin = (
             return;
           }
 
-          if (typeof upload === 'function') {
+          if (typeof ipfsImageUploadFn === 'function') {
             try {
               startImageUpload(
                 imageOrVideo,

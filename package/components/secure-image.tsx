@@ -31,7 +31,6 @@ export const SecureImage = forwardRef<HTMLImageElement, Props>(
     ref,
   ) => {
     const [source, setSource] = useState<string>('');
-
     useEffect(() => {
       const imageReadyForDecryption = encryptedKey && url && iv && privateKey;
       let isMounted = true;

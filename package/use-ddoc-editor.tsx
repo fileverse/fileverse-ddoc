@@ -63,6 +63,7 @@ export const useDdocEditor = ({
   proExtensions,
   metadataProxyUrl,
   onCopyHeadingLink,
+  ipfsImageFetchFn,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
 
@@ -95,12 +96,13 @@ export const useDdocEditor = ({
   const [tocItems, setTocItems] = useState<any[]>([]);
 
   const [extensions, setExtensions] = useState([
-    ...(defaultExtensions(
-      (error: string) => onError?.(error),
+    ...(defaultExtensions({
+      onError: (error: string) => onError?.(error),
       ipfsImageUploadFn,
       metadataProxyUrl,
       onCopyHeadingLink,
-    ) as AnyExtension[]),
+      ipfsImageFetchFn,
+    }) as AnyExtension[]),
     SlashCommand((error: string) => onError?.(error), ipfsImageUploadFn),
     customTextInputRules,
     PageBreak,

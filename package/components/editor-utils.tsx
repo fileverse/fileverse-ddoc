@@ -38,7 +38,7 @@ import {
 } from './editor-bubble-menu/node-selector';
 import { searchForSecureImageNodeAndEmbedImageContent } from '../extensions/mardown-paste-handler';
 import { inlineLoader } from '../utils/inline-loader';
-import { IpfsImageUploadResponse } from '../types';
+import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 
 interface IEditorToolElement {
   icon: any;
@@ -260,6 +260,7 @@ export const useEditorToolbar = ({
   onMarkdownExport,
   onMarkdownImport,
   onPdfExport,
+  ipfsImageFetchFn,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -267,6 +268,9 @@ export const useEditorToolbar = ({
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
   onPdfExport?: () => void;
+  ipfsImageFetchFn?: (
+    _data: IpfsImageFetchPayload,
+  ) => Promise<{ url: string; file: File }>;
 }) => {
   const {
     ref: toolRef,
@@ -683,7 +687,10 @@ export const useEditorToolbar = ({
             const loader = showLoader();
             const originalDoc = editor.state.doc;
             const docWithEmbedImageContent =
-              await searchForSecureImageNodeAndEmbedImageContent(originalDoc);
+              await searchForSecureImageNodeAndEmbedImageContent(
+                originalDoc,
+                ipfsImageFetchFn,
+              );
 
             const temporalEditor = new Editor({
               extensions: editor.extensionManager.extensions.filter(

@@ -95,13 +95,16 @@ export async function startImageUpload(
     if (!placeholder) return;
 
     if (ipfsImageUploadFn) {
-      const { ipfsUrl, encryptionKey, nonce } = await ipfsImageUploadFn(file);
+      const { ipfsUrl, encryptionKey, nonce, ipfsHash } =
+        await ipfsImageUploadFn(file);
 
       const node = schema.nodes.resizableMedia.create({
         encryptionKey,
         ipfsUrl,
         nonce,
+        mimeType: file.type,
         version: '2',
+        ipfsHash,
         'media-type': 'secure-img',
         width: '100%',
         height: 'auto',

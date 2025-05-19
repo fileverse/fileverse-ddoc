@@ -111,6 +111,7 @@ const DdocEditor = forwardRef(
       metadataProxyUrl,
       onCopyHeadingLink,
       footerHeight,
+      ipfsImageFetchFn,
     }: DdocProps,
     ref,
   ) => {
@@ -154,6 +155,7 @@ const DdocEditor = forwardRef(
       tocItems,
       setTocItems,
     } = useDdocEditor({
+      ipfsImageFetchFn,
       enableIndexeddbSync,
       ddocId,
       isPreviewMode,
@@ -364,6 +366,7 @@ const DdocEditor = forwardRef(
                     onMarkdownImport={onMarkdownImport}
                     onPdfExport={onPdfExport}
                     isLoading={!editor || isContentLoading}
+                    ipfsImageFetchFn={ipfsImageFetchFn}
                   />
                 </div>
               </div>
@@ -384,6 +387,7 @@ const DdocEditor = forwardRef(
                 setSlides={setSlides}
                 renderThemeToggle={renderThemeToggle}
                 isContentLoading={isContentLoading}
+                ipfsImageFetchFn={ipfsImageFetchFn}
               />
             )}
             {editor && (
@@ -486,6 +490,8 @@ const DdocEditor = forwardRef(
                       onInlineComment={onInlineComment}
                       activeCommentId={activeCommentId}
                       isCollabDocumentPublished={isCollabDocumentPublished}
+                      ipfsImageFetchFn={ipfsImageFetchFn}
+                      ipfsImageUploadFn={ipfsImageUploadFn}
                     />
                   )}
 
@@ -613,6 +619,7 @@ const DdocEditor = forwardRef(
                   setIsNavbarVisible={setIsNavbarVisible}
                   ipfsImageUploadFn={ipfsImageUploadFn}
                   isLoading={!editor || isContentLoading}
+                  ipfsImageFetchFn={ipfsImageFetchFn}
                 />
               </div>
             )}

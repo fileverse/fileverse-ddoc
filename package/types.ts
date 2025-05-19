@@ -34,6 +34,9 @@ export interface CommentAccountProps {
 }
 export interface DdocProps extends CommentAccountProps {
   isCollabDocumentPublished?: boolean;
+  ipfsImageFetchFn?: (
+    _data: IpfsImageFetchPayload,
+  ) => Promise<{ url: string; file: File }>;
   disableInlineComment?: boolean;
   //Comments V2 Props
   commentDrawerOpen?: boolean;
@@ -130,4 +133,12 @@ export interface IpfsImageUploadResponse {
   encryptionKey: string;
   nonce: string;
   ipfsUrl: string;
+  ipfsHash: string;
+}
+export interface IpfsImageFetchPayload {
+  encryptionKey: string;
+  nonce: string;
+  ipfsUrl: string;
+  ipfsHash: string;
+  mimeType: string;
 }

@@ -17,7 +17,7 @@ import {
 } from '../../utils/security';
 import { toByteArray } from 'base64-js';
 import { inlineLoader } from '../../utils/inline-loader';
-import { IpfsImageUploadResponse } from '../../types';
+import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../../types';
 
 // Initialize MarkdownIt for converting Markdown back to HTML with footnote support
 const markdownIt = new MarkdownIt().use(markdownItFootnote);
@@ -281,6 +281,9 @@ declare module '@tiptap/core' {
 
 const MarkdownPasteHandler = (
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
+  ipfsImageFetchFn?: (
+    _data: IpfsImageFetchPayload,
+  ) => Promise<{ url: string; file: File }>,
 ) =>
   Extension.create({
     name: 'markdownPasteHandler',
@@ -379,7 +382,10 @@ const MarkdownPasteHandler = (
             const originalDoc: any = editor.state.doc;
 
             const docWithEmbedImageContent: any =
-              await searchForSecureImageNodeAndEmbedImageContent(originalDoc);
+              await searchForSecureImageNodeAndEmbedImageContent(
+                originalDoc,
+                ipfsImageFetchFn,
+              );
 
             const temporalEditor = new Editor({
               extensions: editor.extensionManager.extensions.filter(
@@ -811,33 +817,51 @@ async function handleMarkdownContent(
 
 export default MarkdownPasteHandler;
 
-async function recreateNodeWithImageContent(node: PMNode): Promise<PMNode> {
-  const { url, encryptedKey, iv, privateKey } = node.attrs;
-  if (!url || !encryptedKey || !iv || !privateKey) return node;
+async function recreateNodeWithImageContent(
+  node: PMNode,
+  ipfsImageFetchFn?: (
+    _data: IpfsImageFetchPayload,
+  ) => Promise<{ url: string; file: File }>,
+): Promise<PMNode> {
+  const { version, mimeType, ipfsHash, ...attrs } = node.attrs;
+  let buffer: ArrayBuffer;
 
   try {
-    const imageBuffer = await fetchImage(url);
+    if (version === '2' && ipfsImageFetchFn) {
+      const { encryptionKey, url: ipfsUrl, nonce } = attrs as any;
+      const result = await ipfsImageFetchFn({
+        encryptionKey,
+        ipfsUrl,
+        nonce,
+        ipfsHash,
+        mimeType,
+      });
+      buffer = await result.file.arrayBuffer();
+    } else {
+      const { url, encryptedKey, iv, privateKey } = attrs;
+      if (!url || !encryptedKey || !iv || !privateKey) return node;
 
-    if (!imageBuffer) return node;
-    const decryptedArrayBuffer = await decryptImage({
-      encryptedKey,
-      privateKey: toByteArray(privateKey),
-      iv,
-      imageBuffer,
-    });
-    if (!decryptedArrayBuffer) return node;
-    const base64 = arrayBufferToBase64(decryptedArrayBuffer);
-    const dataUrl = `data:image/jpeg;base64,${base64}`;
+      const imageBuffer = await fetchImage(url);
+      if (!imageBuffer) return node;
 
-    // Return a NEW node, same type & marks, updated attrs
-    const newAttrs = {
-      ...node.attrs,
-      src: dataUrl,
-    };
+      const decrypted = await decryptImage({
+        encryptedKey,
+        iv,
+        privateKey: toByteArray(privateKey),
+        imageBuffer,
+      });
+      if (!decrypted) return node;
+
+      buffer = decrypted;
+    }
+    const base64 = arrayBufferToBase64(buffer);
+    const dataUrl = `data:${mimeType || 'image/jpeg'};base64,${base64}`;
+    const newAttrs = { ...node.attrs, src: dataUrl };
+
     return node.type.createChecked(newAttrs, node.content, node.marks);
-  } catch (error) {
-    console.error('Error decrypting image node:', error);
-    return node; // fallback: return original
+  } catch (err) {
+    console.error('Error processing image node:', err);
+    return node;
   }
 }
 
@@ -851,6 +875,9 @@ type StackItem = {
 
 export async function searchForSecureImageNodeAndEmbedImageContent(
   originalDoc: PMNode,
+  ipfsImageFetchFn?: (
+    _data: IpfsImageFetchPayload,
+  ) => Promise<{ url: string; file: File }>,
 ): Promise<PMNode> {
   // We'll do a post-order traversal using a stack
   // so that we can handle children first, then build the parent node.
@@ -892,6 +919,7 @@ export async function searchForSecureImageNodeAndEmbedImageContent(
       if (current.node.attrs['media-type'] === 'secure-img') {
         current.newNode = (await recreateNodeWithImageContent(
           current.node,
+          ipfsImageFetchFn,
         )) as any;
       } else {
         // Not a secure image => just copy node with new children
