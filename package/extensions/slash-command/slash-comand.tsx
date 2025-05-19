@@ -16,6 +16,33 @@ import { CommandItemProps } from './types';
 import Suggestion from '@tiptap/suggestion';
 import { cn } from '@fileverse/ui';
 
+const notAllowedInsideCallout = [
+  '2 Columns',
+  '3 Columns',
+  'Callout',
+  'Quote',
+  'Page breaker',
+];
+
+const notAllowedAIWriter = ['AI Writer'];
+
+const isNodeType = (editor: Editor | null, type: string): boolean => {
+  if (!editor) return false;
+
+  const {
+    selection: { $head },
+  } = editor.state;
+
+  for (let depth = $head.depth; depth >= 0; depth--) {
+    const node = $head.node(depth);
+    if (node?.type?.name === type) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 export const Command = Extension.create({
   name: 'slash-command',
   addOptions() {
@@ -59,47 +86,11 @@ const CommandList = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [items, setItems] = useState<CommandItemProps[]>(initialItems);
   const isMobile = useMediaQuery('(max-width: 640px)');
-  const isCalloutBlock = editor
-    ? (() => {
-        const {
-          selection: { $head },
-        } = editor.state;
 
-        for (let depth = $head.depth; depth >= 0; depth--) {
-          const node = $head.node(depth);
-          if (node?.type?.name === 'callout') {
-            return true;
-          }
-        }
-
-        return false;
-      })()
-    : false;
-
-  const isCodeBlock = editor
-    ? (() => {
-        const {
-          selection: { $head },
-        } = editor.state;
-
-        for (let depth = $head.depth; depth >= 0; depth--) {
-          const node = $head.node(depth);
-          if (node?.type?.name === 'codeBlock') {
-            return true;
-          }
-        }
-
-        return false;
-      })()
-    : false;
-
-  const notAllowedInsideCallout = [
-    '2 Columns',
-    '3 Columns',
-    'Callout',
-    'Quote',
-    'Page breaker',
-  ];
+  const isCalloutBlock = isNodeType(editor, 'callout');
+  const isCodeBlock = isNodeType(editor, 'codeBlock');
+  const isInColumn = isNodeType(editor, 'column');
+  const isInTable = isNodeType(editor, 'table');
 
   const selectItem = useCallback(
     (index: number) => {
@@ -134,6 +125,12 @@ const CommandList = ({
         setItems(filteredItems);
       } else if (isCodeBlock) {
         setItems([]); // Disable slash commands in code blocks
+      } else if (isInColumn || isInTable) {
+        setItems(
+          initialItems.filter(
+            (item) => !notAllowedAIWriter.includes(item.title),
+          ),
+        );
       } else {
         setItems(initialItems);
       }
