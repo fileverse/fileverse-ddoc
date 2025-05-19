@@ -223,6 +223,11 @@ const renderItems = () => {
         editor: props.editor,
       });
 
+      // Signal that slash command is active
+      window.dispatchEvent(
+        new CustomEvent('slash-command-state', { detail: { isActive: true } }),
+      );
+
       // @ts-ignore
       popup = tippy('body', {
         getReferenceClientRect: props.clientRect,
@@ -253,6 +258,11 @@ const renderItems = () => {
       return component?.ref?.onKeyDown(props);
     },
     onExit: () => {
+      // Signal that slash command is inactive
+      window.dispatchEvent(
+        new CustomEvent('slash-command-state', { detail: { isActive: false } }),
+      );
+
       popup?.[0].destroy();
       component?.destroy();
     },
