@@ -29,6 +29,7 @@ export const AiAutocomplete = Extension.create({
       isEnabled: this.options.isEnabled,
       isFirstCall: true,
       isTyping: false,
+      isSlashCommandActive: false,
     };
   },
 
@@ -48,6 +49,15 @@ export const AiAutocomplete = Extension.create({
     // Listen for toggle events from UI
     window.addEventListener('autocomplete-toggle', ((event: CustomEvent) => {
       extension.storage.isEnabled = event.detail.enabled;
+    }) as EventListener);
+
+    // Listen for slash command state
+    window.addEventListener('slash-command-state', ((event: CustomEvent) => {
+      extension.storage.isSlashCommandActive = event.detail.isActive;
+      // Clear any existing suggestions when slash command becomes active
+      if (event.detail.isActive && this.editor?.view) {
+        clearSuggestion(this.editor.view);
+      }
     }) as EventListener);
 
     const getSuggestion = async (prompt: string): Promise<string | null> => {
@@ -94,7 +104,11 @@ export const AiAutocomplete = Extension.create({
     };
 
     const showSuggestion = async (view: any) => {
-      if (!extension.storage.isEnabled || extension.storage.isTyping) return;
+      if (
+        !extension.storage.isEnabled ||
+        extension.storage.isTyping ||
+        extension.storage.isSlashCommandActive
+      ) return;
 
       const { state } = view;
       const { from } = state.selection;
