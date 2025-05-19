@@ -17,7 +17,6 @@ import {
   Checkbox,
 } from '@fileverse/ui';
 import styles from './ai-writer-node-view.module.scss';
-// import { useOnClickOutside } from 'usehooks-ts';
 import { useResponsive } from '../../utils/responsive';
 import { TextSelection } from 'prosemirror-state';
 import { SuperchargedTableExtensions } from '../supercharged-table/supercharged-table-kit';
@@ -60,16 +59,6 @@ export const AIWriterNodeView = memo(
       content: '',
       editable: true,
     });
-
-    // useOnClickOutside(containerRef, (event) => {
-    //   // Check if the click is on a Select dropdown
-    //   const isSelectDropdown = selectContentRef.current?.contains(
-    //     event.target as Node,
-    //   );
-    //   if (!isLoading && !hasGenerated && !isSelectDropdown) {
-    //     handleDiscard();
-    //   }
-    // });
 
     // Load available models and set initial selected model on mount
     useEffect(() => {
@@ -504,7 +493,7 @@ export const AIWriterNodeView = memo(
       if (isLoading) {
         const interval = setInterval(() => {
           setCurrentLoadingMessage(getLoadingMessageInOrder());
-        }, 2000); // Change message every 2 seconds
+        }, 3000); // Change message every 2 seconds
 
         return () => clearInterval(interval);
       }
