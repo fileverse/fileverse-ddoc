@@ -635,7 +635,7 @@ export const AIWriterNodeView = memo(
                 hasGenerated && 'px-3 pb-2',
               )}
             >
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2">
                 <Select
                   value={modelContext?.activeModel?.modelName ?? ''}
                   onValueChange={handleModelChange}
@@ -724,17 +724,6 @@ export const AIWriterNodeView = memo(
                   )}
                   <Button
                     variant="ghost"
-                    onClick={handleInsert}
-                    className="min-w-fit gap-2 !bg-transparent color-text-secondary text-body-sm !px-3"
-                    disabled={isEditing}
-                  >
-                    <span className="text-helper-text-sm border color-border-default rounded-lg px-1.5 py-1 hidden sm:block">
-                      {shortcutKey} + Enter
-                    </span>
-                    Accept
-                  </Button>
-                  <Button
-                    variant="ghost"
                     onClick={handleTryAgain}
                     className="min-w-fit gap-2 !bg-transparent color-text-secondary text-body-sm !px-3"
                     disabled={isLoading || isEditing}
@@ -743,6 +732,17 @@ export const AIWriterNodeView = memo(
                       {shortcutKey} + R
                     </span>
                     Try again
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={handleInsert}
+                    className="min-w-fit gap-2 !bg-transparent color-text-secondary text-body-sm !px-3"
+                    disabled={isEditing}
+                  >
+                    <span className="text-helper-text-sm border color-border-default rounded-lg px-1.5 py-1 hidden sm:block">
+                      {shortcutKey} + Enter
+                    </span>
+                    Accept
                   </Button>
                 </div>
               </div>
