@@ -4,12 +4,16 @@ import { ReactNodeViewRenderer } from '@tiptap/react';
 import { DBlockNodeView } from './dblock-node-view';
 import { TextSelection, Transaction } from '@tiptap/pm/state';
 import { Plugin, PluginKey } from 'prosemirror-state';
+import {
+  getActiveAIWriterCount,
+  incrementActiveAIWriterCount,
+} from '../ai-writer/state';
 
 export interface DBlockOptions {
   HTMLAttributes: Record<string, any>;
   secureImageUploadUrl?: string;
   onCopyHeadingLink?: (link: string) => void;
-  hasAvailableModels?: boolean;
+  hasAvailableModels: boolean;
 }
 
 declare module '@tiptap/core' {
@@ -644,6 +648,12 @@ export const DBlock = Node.create<DBlockOptions>({
           handleTextInput(view, from, _to, text) {
             // Only interested in single space
             if (text !== ' ') return false;
+
+            // Check if there's already an active AI Writer
+            if (getActiveAIWriterCount() > 0) {
+              return false;
+            }
+
             const { state, dispatch } = view;
             const { $from } = state.selection;
             const parent = $from.node($from.depth - 1);
@@ -672,6 +682,8 @@ export const DBlock = Node.create<DBlockOptions>({
                 aiWriterNode,
               );
               dispatch(tr);
+              // Increment the active count
+              incrementActiveAIWriterCount();
               return true;
             }
             return false;
