@@ -23,6 +23,7 @@ import { TextSelection } from 'prosemirror-state';
 import { SuperchargedTableExtensions } from '../supercharged-table/supercharged-table-kit';
 import { ModelOption, WindowWithModelContext, ModelService } from './types';
 import { getLoadingMessageInOrder, md } from './utils';
+import { decrementActiveAIWriterCount } from './state';
 
 export const AIWriterNodeView = memo(
   ({ node, editor: parentEditor, getPos, updateAttributes }: NodeViewProps) => {
@@ -198,8 +199,8 @@ export const AIWriterNodeView = memo(
 
         const context = getDocumentContext();
         const fullPrompt = includeContext
-          ? `Context from document:\n${context}\n\nUser prompt: ${localPrompt}`
-          : localPrompt;
+          ? `Context from document:\n${context}\n\nUser prompt: ${localPrompt} /no_think`
+          : `${localPrompt} /no_think`;
 
         if (modelContext?.activeModel) {
           const modelService = (
@@ -535,6 +536,13 @@ export const AIWriterNodeView = memo(
       [currentLoadingMessage],
     );
 
+    // Add cleanup effect
+    useEffect(() => {
+      return () => {
+        decrementActiveAIWriterCount();
+      };
+    }, []);
+
     if (isPreviewMode) return null;
 
     return (
@@ -651,7 +659,7 @@ export const AIWriterNodeView = memo(
                     </SelectGroup>
                   </SelectContent>
                 </Select>
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 min-w-fit">
                   <Checkbox
                     key="include-context"
                     checked={includeContext}

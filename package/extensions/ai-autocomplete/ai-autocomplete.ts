@@ -103,6 +103,16 @@ export const AiAutocomplete = Extension.create({
       const nodeStart = $pos.start();
       const context = node.textBetween(0, from - nodeStart, ' ');
 
+      // Check if we're at the beginning of a dBlock node with empty content
+      const parentNode = $pos.node($pos.depth - 1);
+      const isAtStartOfDBlock =
+        parentNode?.type.name === 'dBlock' && from === nodeStart + 1;
+      const isDBlockEmpty =
+        parentNode?.content.size === 1 &&
+        parentNode?.content.firstChild?.content.size === 0;
+
+      if (isAtStartOfDBlock && isDBlockEmpty) return;
+
       // Only proceed if there is context and the node has content
       if (!context.trim() || node.content.size === 0) return;
 
@@ -215,6 +225,19 @@ export const AiAutocomplete = Extension.create({
             const { from, to } = state.selection;
             if (from !== to) return false; // Only allow collapsed selection
 
+            // Check if we're in an empty dBlock
+            const $pos = state.doc.resolve(from);
+            const parentNode = $pos.node($pos.depth - 1);
+            const isInDBlock = parentNode?.type.name === 'dBlock';
+            const isDBlockEmpty =
+              isInDBlock &&
+              parentNode?.content.size === 1 &&
+              parentNode?.content.firstChild?.content.size === 0;
+
+            // Check if current node has content
+            const currentNode = $pos.parent;
+            const hasContent = currentNode.content.size > 0;
+
             // Handle typing activity
             if (event.key !== 'Tab') {
               handleTyping(view);
@@ -224,6 +247,9 @@ export const AiAutocomplete = Extension.create({
             // Handle Tab key
             if (event.key === 'Tab') {
               event.preventDefault();
+
+              // Don't accept suggestions in empty dBlock or if current node has no content
+              if (isDBlockEmpty || !hasContent) return false;
 
               // If we already have a suggestion, accept it
               if (currentSuggestion) {
@@ -241,6 +267,23 @@ export const AiAutocomplete = Extension.create({
 
             return false;
           },
+        },
+        view: () => {
+          let lastPos = -1;
+
+          return {
+            update: (view) => {
+              const { state } = view;
+              const { from } = state.selection;
+
+              // Clear suggestion if cursor position changed
+              if (from !== lastPos) {
+                lastPos = from;
+                clearSuggestion(view);
+                currentSuggestion = null;
+              }
+            },
+          };
         },
       }),
     ];
