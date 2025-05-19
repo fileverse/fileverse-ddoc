@@ -9,4 +9,4 @@ export const incrementActiveAIWriterCount = () => {
 
 export const decrementActiveAIWriterCount = () => {
   activeAIWriterCount = Math.max(0, activeAIWriterCount - 1);
-}; 
+};

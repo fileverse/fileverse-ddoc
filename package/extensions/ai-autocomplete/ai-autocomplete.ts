@@ -108,8 +108,7 @@ export const AiAutocomplete = Extension.create({
 
         const response = await ollama.generate({
           model: options.model?.modelName,
-          prompt: `${prompt} /no_think`,
-          system: `${prompt} /no_think`,
+          prompt,
           options: {
             num_predict: options.maxTokens,
             temperature: options.temperature,
@@ -281,9 +280,9 @@ export const AiAutocomplete = Extension.create({
             const $pos = state.doc.resolve(from);
             const parentNode = $pos.node($pos.depth - 1);
             const isInDBlock = parentNode?.type.name === 'dBlock';
-            const isDBlockEmpty = 
-              isInDBlock && 
-              parentNode?.content.size === 1 && 
+            const isDBlockEmpty =
+              isInDBlock &&
+              parentNode?.content.size === 1 &&
               parentNode?.content.firstChild?.content.size === 0;
 
             // Check if current node has content
@@ -319,6 +318,23 @@ export const AiAutocomplete = Extension.create({
 
             return false;
           },
+        },
+        view: () => {
+          let lastPos = -1;
+
+          return {
+            update: (view) => {
+              const { state } = view;
+              const { from } = state.selection;
+
+              // Clear suggestion if cursor position changed
+              if (from !== lastPos) {
+                lastPos = from;
+                clearSuggestion(view);
+                currentSuggestion = null;
+              }
+            },
+          };
         },
       }),
     ];

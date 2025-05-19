@@ -36,7 +36,7 @@ export class OllamaService {
   ): Promise<string> {
     try {
       // Format the system prompt with dynamic variables
-      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}.\n\nReturn in full Markdown format /no_think. Write in ${tone} tone.`;
+      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}.\n\nReturn in full Markdown format. Write in ${tone} tone.`;
 
       // Create a client with the specified host
       const client = new Ollama({
@@ -83,7 +83,7 @@ export class OllamaService {
   ) {
     try {
       // Format the system prompt with dynamic variables
-      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}.\n\nReturn in full Markdown format /no_think. Write in ${tone} tone.`;
+      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}.\n\nReturn in full Markdown format. Write in ${tone} tone.`;
 
       // Create a client with the specified host
       const client = new Ollama({

@@ -54,10 +54,10 @@ export class DefaultModelProvider {
         label: modelName,
         modelName: modelName,
         endpoint: ollamaEndpoint,
-        contextSize: 1024, // A reasonable default
+        contextSize: 4096, // A reasonable default
         apiKey: '',
         systemPrompt:
-          'You are a helpful AI assistant. Please provide accurate and concise responses and not include any preambles in your responses. You are good at text generation and can generate text in a variety of styles and tones. You are also good at predicting the next word in a sentence and can autocomplete words. /no_think.',
+          'You are a helpful AI assistant. Please provide accurate and concise responses and not include any preambles, and model names in your responses. You are good at text generation and can generate text in a variety of styles and tones. You are also good at predicting the next word in a sentence and can autocomplete words.',
       }));
     } catch (error) {
       console.error('Error getting default Ollama models:', error);
@@ -94,10 +94,10 @@ export class DefaultModelProvider {
         label: modelName,
         modelName: modelName,
         endpoint: '', // WebLLM doesn't need an endpoint
-        contextSize: 1024, // Default context size for WebLLM models
+        contextSize: 2048, // Default context size for WebLLM models
         apiKey: '',
         systemPrompt:
-        'You are a helpful AI assistant. Please provide accurate and concise responses and not include any preambles in your responses. You are good at text generation and can generate text in a variety of styles and tones. You are also good at predicting the next word in a sentence and can autocomplete words. /no_think.',
+        'You are a helpful AI assistant. Please provide accurate and concise responses and not include any preambles, and model names in your responses. You are good at text generation and can generate text in a variety of styles and tones. You are also good at predicting the next word in a sentence and can autocomplete words.',
       }));
     } catch (error) {
       console.error('Error getting default WebLLM models:', error);

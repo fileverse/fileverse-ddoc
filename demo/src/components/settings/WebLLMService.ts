@@ -50,7 +50,7 @@ export class WebLLMService {
         throw new Error('WebLLM engine not initialized');
       }
 
-      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}.\n\nReturn in full Markdown format /no_think. Write in ${tone} tone.`;
+      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}.\n\nReturn in full Markdown format. Write in ${tone} tone.`;
 
       const response = await this.engine.chat.completions.create({
         messages: [
@@ -99,7 +99,7 @@ export class WebLLMService {
         throw new Error('WebLLM engine not initialized');
       }
 
-      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}.\n\nReturn in full Markdown format /no_think. Write in ${tone} tone.`;
+      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}.\n\nReturn in full Markdown format. Write in ${tone} tone.`;
       
       const stream = await this.engine.chat.completions.create({
         messages: [
