@@ -128,7 +128,7 @@ export const getSuggestionItems = ({
         if (!isConnected) {
           return;
         }
-        showReminderMenu(editor, range);
+        showReminderMenu(editor, range, 'slash');
         return true;
       },
     },

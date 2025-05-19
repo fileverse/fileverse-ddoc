@@ -181,6 +181,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         return (
           <ReminderMenu
             ref={reminderRef}
+            type={'inline'}
             isOpen={true}
             onClose={handleReminderOnClose}
             onCreateReminder={handleReminderCreate}

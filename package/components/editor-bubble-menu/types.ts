@@ -28,7 +28,7 @@ export type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   commentDrawerOpen?: boolean;
   setCommentDrawerOpen?: React.Dispatch<SetStateAction<boolean>>;
   isCollabDocumentPublished?: boolean | undefined;
-  onReminderCreate?: (reminder: Reminder) => void;
+  onReminderCreate?: (reminder: Reminder, type: string) => void;
   isConnected?: boolean;
 };
 

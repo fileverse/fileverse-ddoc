@@ -46,6 +46,7 @@ export const ReminderMenu = forwardRef<HTMLDivElement, ReminderMenuProps>(
       onCreateReminder,
       initialReminderTitle,
       setInitialReminderTitle,
+      type,
     }: ReminderMenuProps,
     ref,
   ) => {
@@ -77,7 +78,7 @@ export const ReminderMenu = forwardRef<HTMLDivElement, ReminderMenuProps>(
         status: 'pending' as const,
       };
 
-      onCreateReminder(reminder);
+      onCreateReminder(reminder, type);
     };
 
     const handleCreateCustomReminder = () => {
@@ -120,7 +121,7 @@ export const ReminderMenu = forwardRef<HTMLDivElement, ReminderMenuProps>(
         status: 'pending' as const,
       };
 
-      onCreateReminder(reminder);
+      onCreateReminder(reminder, type);
     };
 
     useEscapeKey(() => {

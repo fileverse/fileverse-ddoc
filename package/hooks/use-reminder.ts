@@ -4,7 +4,7 @@ import { Reminder } from '../extensions/reminder-block/types';
 
 interface UseReminderProps {
   editor: Editor;
-  onReminderCreate?: (reminder: Reminder) => Promise<void>;
+  onReminderCreate?: (reminder: Reminder, type: string) => Promise<void>;
   onError?: (errorString: string) => void;
 }
 
@@ -30,7 +30,7 @@ export const useReminder = ({
     }
   };
 
-  const handleReminderCreate = async (reminder: Reminder) => {
+  const handleReminderCreate = async (reminder: Reminder, type: string) => {
     try {
       // Add reminder to editor
       editor
@@ -44,7 +44,7 @@ export const useReminder = ({
 
       // Delegate to consumer app for notification handling
       if (onReminderCreate) {
-        await onReminderCreate(reminder);
+        await onReminderCreate(reminder, type);
       }
     } catch (error) {
       console.error('Error creating reminder:', error);

@@ -2,9 +2,13 @@ import { Editor, Range } from '@tiptap/core';
 import { ReactRenderer } from '@tiptap/react';
 import tippy, { Instance as TippyInstance } from 'tippy.js';
 import { ReminderMenu } from './reminder-menu';
-import { Reminder, ReminderBlockOptions } from './types';
+import { Reminder, ReminderBlockOptions, ReminderMenuProps } from './types';
 
-export function showReminderMenu(editor: Editor, range: Range) {
+export function showReminderMenu(
+  editor: Editor,
+  range: Range,
+  type: ReminderMenuProps['type'],
+) {
   let popup: TippyInstance[] = [];
   let timeout: ReturnType<typeof setTimeout>;
 
@@ -56,11 +60,12 @@ export function showReminderMenu(editor: Editor, range: Range) {
         )?.options as ReminderBlockOptions;
 
         if (extensionOptions?.onReminderCreate) {
-          extensionOptions.onReminderCreate(reminder);
+          extensionOptions.onReminderCreate(reminder, type);
         }
 
         destroyPopup();
       },
+      type,
     },
     editor,
   });
