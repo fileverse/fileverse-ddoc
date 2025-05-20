@@ -124,6 +124,14 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `setShowTOC`    | `React.Dispatch<SetStateAction<boolean>>`      | Function to toggle TOC                |
 | `proExtensions` | `{ TableOfContents: any, [key: string]: any }` | Pro feature extensions                |
 
+## AI Writer Props
+
+| Property           | Type      | Description                                    |
+| ------------------ | --------- | ---------------------------------------------- |
+| `activeModel`      | `CustomModel` | Currently selected AI model for text generation |
+| `maxTokens`        | `number`   | Maximum token limit for AI-generated content    |
+| `isAIAgentEnabled` | `boolean`  | Toggle for AI agent functionality               |
+
 ### Steps to run this example locally
 
 - `npm i`
