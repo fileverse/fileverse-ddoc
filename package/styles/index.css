@@ -229,6 +229,83 @@ div[data-type='page-break']:hover .remove-page-break-icon {
   background-color: #404040;
 }
 
+@keyframes aiwriter-scale-in {
+  0% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes aiwriter-scale-out {
+  0% {
+    opacity: 1;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
+@keyframes background-gradient {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes loading-dots {
+  0% {
+    opacity: 0.2;
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0.2;
+  }
+}
+
+.animate-loading-dots {
+  animation: loading-dots 1.4s infinite;
+}
+
+.animate-aiwriter-scale-in {
+  animation: aiwriter-scale-in 150ms ease-out;
+}
+
+.animate-aiwriter-scale-out {
+  animation: aiwriter-scale-out 150ms ease-out;
+}
+
+.animate-fade-in-out {
+  animation: fade-in-out 2s ease-in-out infinite;
+}
+
+.animate-border {
+  background: linear-gradient(
+    90deg,
+    rgba(59, 130, 246, 0.4),
+    rgba(192, 132, 252, 0.4),
+    rgba(253, 224, 71, 0.4)
+  );
+  background-size: 500% 500%;
+  animation: background-gradient 3s ease-in-out infinite;
+  box-shadow:
+    0px 0px 4px 1px rgba(59, 130, 246, 0.1),
+    0px 0px 4px 1px rgba(192, 132, 252, 0.1),
+    0px 0px 4px 1px rgba(253, 224, 71, 0.1);
+}
+
 .grammarly-wrapper {
   position: relative;
   overflow: hidden;

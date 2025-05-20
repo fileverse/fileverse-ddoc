@@ -12,13 +12,61 @@ export const getSuggestionItems = ({
   onError,
   secureImageUploadUrl,
   isConnected,
+  hasAvailableModels,
+  editor,
 }: {
   query: string;
   onError?: (errorString: string) => void;
   secureImageUploadUrl?: string;
   isConnected?: boolean;
+  hasAvailableModels?: boolean;
+  editor?: any;
 }) => {
-  return [
+  // Check for active AI Writer node
+  let hasActiveAIWriter = false;
+  if (editor && editor.state && editor.state.doc) {
+    editor.state.doc.descendants((node: any) => {
+      if (node.type.name === 'aiWriter') {
+        hasActiveAIWriter = true;
+        return false;
+      }
+      return true;
+    });
+  }
+  const canCreateAIWriter = !hasActiveAIWriter;
+
+  const item = [
+    {
+      title: 'AI Writer',
+      description: 'Generate text with AI assistance.',
+      searchTerms: ['ai', 'generate', 'writer', 'assistant', 'text'],
+      icon: <LucideIcon name="Sparkles" size={'md'} />,
+      image: '',
+      command: ({ editor, range }: CommandProps) => {
+        if (!canCreateAIWriter) {
+          if (onError) {
+            onError('Only one AI Writer can be active at a time.');
+          }
+          return;
+        }
+        editor.chain().focus().deleteRange(range).run();
+        if (editor.commands.insertAIWriter) {
+          editor.commands.insertAIWriter({
+            prompt: '',
+            content: '',
+            tone: 'neutral',
+          });
+        } else {
+          console.warn('AIWriter extension is not available');
+          if (onError) {
+            onError(
+              'AIWriter is not available. Make sure the extension is properly configured.',
+            );
+          }
+        }
+      },
+      isDisabled: !hasAvailableModels || !canCreateAIWriter,
+    },
     {
       title: 'Text',
       description: 'Just start typing with plain text.',
@@ -317,7 +365,9 @@ export const getSuggestionItems = ({
           .run();
       },
     },
-  ].filter((item) => {
+  ];
+
+  return item.filter((item) => {
     if (typeof query === 'string' && query.length > 0) {
       const search = query.toLowerCase();
       return (

@@ -113,6 +113,9 @@ const DdocEditor = forwardRef(
       proExtensions,
       onCopyHeadingLink,
       footerHeight,
+      activeModel,
+      maxTokens,
+      isAIAgentEnabled,
     }: DdocProps,
     ref,
   ) => {
@@ -189,6 +192,9 @@ const DdocEditor = forwardRef(
       proExtensions,
       onCopyHeadingLink,
       isConnected,
+      activeModel,
+      maxTokens,
+      isAIAgentEnabled,
     });
 
     useImperativeHandle(
@@ -627,6 +633,9 @@ const DdocEditor = forwardRef(
                             className={cn(
                               'w-full h-auto py-4 color-bg-default',
                               isPreviewMode && 'preview-mode',
+                              activeModel !== undefined &&
+                                isAIAgentEnabled &&
+                                'has-available-models',
                             )}
                           />
                         </div>

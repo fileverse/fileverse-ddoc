@@ -78,7 +78,7 @@ export const defaultExtensions = (
     },
     paragraph: {
       HTMLAttributes: {
-        class: 'select-text pointer-events-auto',
+        class: 'select-text pointer-events-auto transition-all',
       },
     },
     orderedList: {
@@ -107,6 +107,7 @@ export const defaultExtensions = (
     horizontalRule: false,
     bulletList: false,
     listItem: false,
+    codeBlock: false,
   }),
   CustomCodeBlockLowlight.configure({
     lowlight,
@@ -206,6 +207,7 @@ export const defaultExtensions = (
       throwOnError: false,
       strict: false,
     },
+    renderTextMode: 'raw-latex',
   }),
   Footnote,
   Superscript.configure({

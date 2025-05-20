@@ -18,6 +18,8 @@ import {
   TableOfContents,
   getHierarchicalIndexes,
 } from '@tiptap-pro/extension-table-of-contents';
+import { useModelContext } from './components/settings';
+
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
   { name: 'Discussions', isActive: true, color: '#FFD6D7' },
@@ -54,6 +56,9 @@ function App() {
   //To handle comments from consumer side
   const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
   const [initialComments, setInitialComment] = useState<IComment[]>([]);
+
+  const { activeModel, maxTokens, isAIAgentEnabled } = useModelContext();
+
   const handleReplyOnComment = (id: string, reply: IComment) => {
     setInitialComment((prev) =>
       prev.map((comment) => {
@@ -318,11 +323,17 @@ function App() {
           TableOfContents: TableOfContents,
           getHierarchicalIndexes: getHierarchicalIndexes,
         }}
+        isConnected={isConnected}
+        connectViaWallet={async () => { }}
+        isLoading={false}
         connectViaUsername={handleConnectViaUsername}
         isConnected={isConnected}
         onCopyHeadingLink={(link: string) => {
           navigator.clipboard.writeText(link);
         }}
+        activeModel={activeModel}
+        maxTokens={maxTokens}
+        isAIAgentEnabled={isAIAgentEnabled}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

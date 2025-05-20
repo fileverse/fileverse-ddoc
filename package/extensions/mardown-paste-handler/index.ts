@@ -19,6 +19,7 @@ import {
 import { fromByteArray, toByteArray } from 'base64-js';
 import { uploadSecureImage } from '../../utils/upload-images';
 import { inlineLoader } from '../../utils/inline-loader';
+import { isLikelyLatex } from '../../utils/is-likely-latex';
 
 // Initialize MarkdownIt for converting Markdown back to HTML with footnote support
 const markdownIt = new MarkdownIt().use(markdownItFootnote);
@@ -516,7 +517,8 @@ function isMarkdown(content: string): boolean {
   // Ignore LaTeX math blocks before checking other Markdown elements
   if (
     content.match(/\$\$[^$]*\$\$/g) !== null ||
-    content.match(/\$[^$\n]*\$/g) !== null
+    content.match(/\$[^$\n]*\$/g) !== null ||
+    isLikelyLatex(content) // need to add when copy pasting formula within editor without wrapping around $..$ and it identifies other formula characters with markdown charactes such as ^
   ) {
     return false; // Treat as LaTeX, not Markdown
   }
@@ -597,11 +599,13 @@ async function handleMarkdownContent(
   const parser = new DOMParser();
   const doc = parser.parseFromString(convertedHtml, 'text/html');
 
-  // Remove only top-level empty paragraphs because markdownIt adds empty paragraph tag above and below aside tag
+  // Remove <p> if it's empty
   const topLevelPs = doc.querySelectorAll('body > p');
   topLevelPs.forEach((p) => {
-    if (p.textContent?.trim() === '') {
-      p.remove();
+    if (p.childNodes.length === 0) {
+      if (p.textContent === '') {
+        p.remove();
+      }
     }
   });
 
