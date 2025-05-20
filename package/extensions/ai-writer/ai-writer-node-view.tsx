@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback, memo } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useCallback,
+  memo,
+  useLayoutEffect,
+} from 'react';
 import { JSONContent, NodeViewProps, NodeViewWrapper } from '@tiptap/react';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -22,7 +29,6 @@ import { TextSelection } from 'prosemirror-state';
 import { SuperchargedTableExtensions } from '../supercharged-table/supercharged-table-kit';
 import { ModelOption, WindowWithModelContext, ModelService } from './types';
 import { getLoadingMessageInOrder, md } from './utils';
-import { decrementActiveAIWriterCount } from './state';
 
 export const AIWriterNodeView = memo(
   ({ node, editor: parentEditor, getPos, updateAttributes }: NodeViewProps) => {
@@ -37,6 +43,7 @@ export const AIWriterNodeView = memo(
     const [includeContext, setIncludeContext] = useState<boolean>(
       !!localStorage.getItem('include-ddoc-context'),
     );
+    const [isInitialRender, setIsInitialRender] = useState(true);
     const { prompt, content } = node.attrs;
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
@@ -60,6 +67,42 @@ export const AIWriterNodeView = memo(
       editable: true,
     });
 
+    // Handle initial render animation
+    useEffect(() => {
+      if (isInitialRender) {
+        const timer = setTimeout(() => {
+          setIsInitialRender(false);
+        }, 50);
+        return () => clearTimeout(timer);
+      }
+    }, [isInitialRender]);
+
+    // Immediate focus attempt using useLayoutEffect
+    useLayoutEffect(() => {
+      if (!isPreviewMode && textareaRef.current) {
+        textareaRef.current.focus();
+        const len = textareaRef.current.value.length;
+        textareaRef.current.setSelectionRange(len, len);
+        textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+      }
+    }, [isPreviewMode]);
+
+    // Delayed focus attempts using useEffect
+    useEffect(() => {
+      if (!isPreviewMode && textareaRef.current) {
+        const focusTimeout = setTimeout(() => {
+          if (textareaRef.current) {
+            textareaRef.current.focus();
+            const len = textareaRef.current.value.length;
+            textareaRef.current.setSelectionRange(len, len);
+            textareaRef.current.scrollTop = textareaRef.current.scrollHeight;
+          }
+        }, 100);
+
+        return () => clearTimeout(focusTimeout);
+      }
+    }, [isPreviewMode]);
+
     // Load available models and set initial selected model on mount
     useEffect(() => {
       const loadModels = async () => {
@@ -77,23 +120,6 @@ export const AIWriterNodeView = memo(
       };
       loadModels();
     }, [modelContext?.defaultModels]);
-
-    // Auto-focus the textarea when the component mounts
-    useEffect(() => {
-      if (textareaRef.current) {
-        const timeout = setTimeout(() => {
-          if (textareaRef.current) {
-            textareaRef.current.focus();
-            textareaRef.current.selectionStart =
-              textareaRef.current.value.length; // Optional: move cursor to end
-            textareaRef.current.style.height = '0px';
-            textareaRef.current.style.height =
-              textareaRef.current.scrollHeight + 'px';
-          }
-        }, 0);
-        return () => clearTimeout(timeout);
-      }
-    }, []);
 
     // Update textarea height when content changes
     useEffect(() => {
@@ -525,13 +551,6 @@ export const AIWriterNodeView = memo(
       [currentLoadingMessage],
     );
 
-    // Add cleanup effect
-    useEffect(() => {
-      return () => {
-        decrementActiveAIWriterCount();
-      };
-    }, []);
-
     if (isPreviewMode) return null;
 
     return (
@@ -540,9 +559,11 @@ export const AIWriterNodeView = memo(
           ref={containerRef}
           className={cn(
             'color-bg-default overflow-hidden flex flex-col rounded-lg w-full',
-            isRemoving
-              ? 'animate-aiwriter-scale-out'
-              : 'animate-aiwriter-scale-in',
+            isInitialRender
+              ? 'opacity-0'
+              : isRemoving
+                ? 'animate-aiwriter-scale-out'
+                : 'animate-aiwriter-scale-in',
           )}
         >
           {/* Preview Section */}
