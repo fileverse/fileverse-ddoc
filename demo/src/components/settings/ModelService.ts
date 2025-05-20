@@ -1,5 +1,6 @@
 import { CustomModel } from './ModelSettings';
 import { OllamaService } from './OllamaService';
+import { WebLLMService } from './WebLLMService';
 
 interface ModelRequestPayload {
   model: string;
@@ -15,9 +16,7 @@ interface ModelResponsePayload {
   choices: {
     message: {
       content: string;
-      role: string;
     };
-    index: number;
   }[];
 }
 
@@ -32,12 +31,18 @@ export class ModelService {
   static async callModel(
     model: CustomModel,
     prompt: string,
+    tone: string,
     systemPrompt?: string,
   ): Promise<string> {
     try {
       // Check if it's an Ollama model
-      if (this.isOllamaModel(model)) {
-        return await OllamaService.callModel(model, prompt, systemPrompt);
+      if (OllamaService.isOllamaModel(model)) {
+        return await OllamaService.callModel(model, prompt, tone, systemPrompt);
+      }
+
+      // Check if it's a WebLLM model
+      if (WebLLMService.isWebLLMModel(model)) {
+        return await WebLLMService.callModel(model, prompt, tone, systemPrompt);
       }
 
       // For other API models, use the standard API implementation:
@@ -102,59 +107,55 @@ export class ModelService {
   }
 
   /**
-   * Check if a model endpoint is valid and accessible
-   * @param endpoint The endpoint URL to test
-   * @param apiKey Optional API key to include
-   * @returns True if valid, false otherwise
+   * Stream responses from a model
+   * @param model The custom model configuration
+   * @param prompt The user prompt to send
+   * @param systemPrompt Optional override for the system prompt
+   * @returns Async generator that yields message chunks
    */
-  static async validateEndpoint(
-    endpoint: string,
-    apiKey?: string,
-  ): Promise<boolean> {
+  static async *streamModel(
+    model: CustomModel,
+    prompt: string,
+    tone: string,
+    systemPrompt?: string,
+  ) {
     try {
-      // Check if it's an Ollama endpoint
-      if (endpoint.includes('ollama')) {
-        return await OllamaService.validateEndpoint(endpoint);
+      // Check if it's an Ollama model
+      if (OllamaService.isOllamaModel(model)) {
+        yield* OllamaService.streamModel(model, prompt, tone, systemPrompt);
+        return;
       }
 
-      // For standard API endpoints
-      const headers: HeadersInit = {
-        'Content-Type': 'application/json',
-      };
-
-      if (apiKey) {
-        headers['Authorization'] = `Bearer ${apiKey}`;
+      // Check if it's a WebLLM model
+      if (WebLLMService.isWebLLMModel(model)) {
+        yield* WebLLMService.streamModel(model, prompt, tone, systemPrompt);
+        return;
       }
 
-      // Make a simple HEAD request to check if the endpoint exists
-      const response = await fetch(endpoint, {
-        method: 'HEAD',
-        headers,
-      });
-
-      return response.ok;
+      // For other models, fall back to regular model call
+      const result = await this.callModel(model, prompt, tone, systemPrompt);
+      yield result;
     } catch (error) {
-      console.error('Error validating endpoint:', error);
-      return false;
+      console.error('Error streaming from model:', error);
+      throw error;
     }
   }
 
   /**
-   * Check if a model is an Ollama model based on its properties
-   * @param model The model to check
-   * @returns True if it's an Ollama model, false otherwise
+   * Check if a model is an Ollama model
+   * @param model The model configuration
+   * @returns True if the model is an Ollama model
    */
   static isOllamaModel(model: CustomModel): boolean {
-    // Check if the model ID starts with 'ollama-'
-    if (model.id?.startsWith('ollama-')) {
-      return true;
-    }
+    return OllamaService.isOllamaModel(model);
+  }
 
-    // Check if the endpoint contains 'ollama'
-    if (model.endpoint?.includes('ollama')) {
-      return true;
-    }
-
-    return false;
+  /**
+   * Check if a model is a WebLLM model
+   * @param model The model configuration
+   * @returns True if the model is a WebLLM model
+   */
+  static isWebLLMModel(model: CustomModel): boolean {
+    return WebLLMService.isWebLLMModel(model);
   }
 }

@@ -3,6 +3,25 @@ import { CustomModel } from './ModelSettings';
 
 export class OllamaService {
   /**
+   * Check if a model is an Ollama model
+   * @param model The model configuration
+   * @returns True if the model is an Ollama model
+   */
+  static isOllamaModel(model: CustomModel): boolean {
+    // Check if the model ID starts with 'ollama-'
+    if (model.id?.startsWith('ollama-')) {
+      return true;
+    }
+
+    // Check if the endpoint contains 'ollama'
+    if (model.endpoint?.includes('ollama')) {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
    * Call an Ollama model with the provided parameters
    * @param model The custom model configuration
    * @param prompt The user prompt to send
@@ -12,11 +31,12 @@ export class OllamaService {
   static async callModel(
     model: CustomModel,
     prompt: string,
+    tone: string,
     systemPrompt?: string,
   ): Promise<string> {
     try {
       // Format the system prompt with dynamic variables
-      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}\n\nReturn in full Markdown format`;
+      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}.\n\nReturn in full Markdown format. Write in ${tone} tone.`;
 
       // Create a client with the specified host
       const client = new Ollama({
@@ -58,11 +78,12 @@ export class OllamaService {
   static async *streamModel(
     model: CustomModel,
     prompt: string,
+    tone: string,
     systemPrompt?: string,
   ) {
     try {
       // Format the system prompt with dynamic variables
-      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}\n\nReturn in full Markdown format`;
+      const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}.\n\nReturn in full Markdown format. Write in ${tone} tone.`;
 
       // Create a client with the specified host
       const client = new Ollama({

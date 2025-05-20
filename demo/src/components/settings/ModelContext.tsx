@@ -3,12 +3,14 @@ import React, { createContext, useState, useContext, useEffect } from 'react';
 import { CustomModel } from './ModelSettings';
 import { DefaultModelProvider } from './DefaultModelProvider';
 import { ModelService } from './ModelService';
+import { CreateWebWorkerMLCEngine, MLCEngineInterface } from '@mlc-ai/web-llm';
 import { OllamaService } from './OllamaService';
 
 interface ModelContextType {
   defaultModels: CustomModel[];
   isLoadingDefaultModels: boolean;
   ollamaError: string | null;
+  webllmError: string | null;
   activeModel?: CustomModel;
   setActiveModel: (model: CustomModel | undefined) => void;
   maxTokens: number;
@@ -19,6 +21,7 @@ interface ModelContextType {
   setSystemPrompt: (prompt: string) => void;
   selectedLLM: string | null;
   setSelectedLLM: (llm: string | null) => void;
+  getWebLLMEngine: (modelName: string) => Promise<MLCEngineInterface>;
   isAIAgentEnabled: boolean;
   setIsAIAgentEnabled: (enabled: boolean) => void;
 }
@@ -46,10 +49,28 @@ interface WindowWithModelContext extends Window {
   __MODEL_CONTEXT__?: ModelContextType;
 }
 
+// Singleton WebLLM engine management
+let webllmEngine: MLCEngineInterface | null = null;
+let webllmModelName: string | null = null;
+
+async function getWebLLMEngine(modelName: string): Promise<MLCEngineInterface> {
+  if (webllmEngine && webllmModelName === modelName) {
+    return webllmEngine;
+  }
+  const worker = new Worker(
+    new URL('../../workers/webllm.worker.ts', import.meta.url),
+    { type: 'module' }
+  );
+  webllmEngine = await CreateWebWorkerMLCEngine(worker, modelName);
+  webllmModelName = modelName;
+  return webllmEngine;
+}
+
 export const ModelContext = createContext<ModelContextType>({
   defaultModels: [],
   isLoadingDefaultModels: true,
   ollamaError: null,
+  webllmError: null,
   activeModel: undefined,
   setActiveModel: () => { },
   maxTokens: 2,
@@ -60,6 +81,7 @@ export const ModelContext = createContext<ModelContextType>({
   setSystemPrompt: () => { },
   selectedLLM: null,
   setSelectedLLM: () => { },
+  getWebLLMEngine: () => Promise.resolve(null as unknown as MLCEngineInterface),
   isAIAgentEnabled: true,
   setIsAIAgentEnabled: () => { },
 });
@@ -68,14 +90,11 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
   const [defaultModels, setDefaultModels] = useState<CustomModel[]>([]);
   const [isLoadingDefaultModels, setIsLoadingDefaultModels] = useState(true);
   const [ollamaError, setOllamaError] = useState<string | null>(null);
+  const [webllmError, setWebllmError] = useState<string | null>(null);
   const [activeModel, setActiveModel] = useState<CustomModel | undefined>(
     undefined,
   );
   const [maxTokens, setMaxTokens] = useState<number>(2);
-  const [isAIAgentEnabled, setIsAIAgentEnabled] = useState(() => {
-    const stored = localStorage.getItem('ai-agent-enabled');
-    return stored === null ? true : stored === 'true';
-  });
   const [tone, setTone] = useState<string>(() => {
     return localStorage.getItem('autocomplete-tone') || 'neutral';
   });
@@ -83,35 +102,38 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
     return localStorage.getItem('system-prompt') || 'You are a helpful AI assistant. Please provide accurate and concise responses.';
   });
   const [selectedLLM, setSelectedLLM] = useState<string | null>(null);
-
-  // Load Ollama default models
+  const [isAIAgentEnabled, setIsAIAgentEnabled] = useState(() => {
+    const stored = localStorage.getItem('ai-agent-enabled');
+    return stored === null ? true : stored === 'true';
+  });
+  // Load default models
   useEffect(() => {
     const loadDefaultModels = async () => {
       try {
-        console.log('Attempting to load default Ollama models...');
+        console.log('Attempting to load default models...');
         setIsLoadingDefaultModels(true);
         setOllamaError(null);
+        setWebllmError(null);
 
-        const ollamaModels =
-          await DefaultModelProvider.getDefaultOllamaModels();
-        setDefaultModels(ollamaModels);
+        const models = await DefaultModelProvider.getDefaultModels();
+        setDefaultModels(models);
 
-        if (ollamaModels.length > 0 && !activeModel) {
+        if (models.length > 0 && !activeModel) {
           // Set the first model as active if there is no active model
-          setActiveModel(ollamaModels[0]);
+          setActiveModel(models[0]);
         }
 
-        if (ollamaModels.length === 0) {
+        if (models.length === 0) {
           setOllamaError(
-            'No Ollama models found. Make sure Ollama is running and accessible from the browser.',
+            'No models found. Make sure Ollama is running and accessible from the browser, or try using WebLLM models.',
           );
         }
       } catch (error) {
-        console.error('Error loading default Ollama models:', error);
+        console.error('Error loading default models:', error);
         setOllamaError(
           error instanceof Error
             ? error.message
-            : 'Failed to connect to Ollama',
+            : 'Failed to connect to models',
         );
       } finally {
         setIsLoadingDefaultModels(false);
@@ -120,7 +142,6 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
 
     loadDefaultModels();
   }, [activeModel]);
-
 
   useEffect(() => {
     localStorage.setItem('autocomplete-tone', tone);
@@ -136,6 +157,7 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
       defaultModels,
       isLoadingDefaultModels,
       ollamaError,
+      webllmError,
       activeModel,
       setActiveModel,
       maxTokens,
@@ -146,6 +168,7 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
       setSystemPrompt,
       selectedLLM,
       setSelectedLLM,
+      getWebLLMEngine,
       isAIAgentEnabled,
       setIsAIAgentEnabled,
     };
@@ -159,6 +182,7 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
     defaultModels,
     isLoadingDefaultModels,
     ollamaError,
+    webllmError,
     activeModel,
     maxTokens,
     tone,
@@ -178,15 +202,8 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
           throw new Error('No AI model selected. Please select a model in settings.');
         }
 
-        // Format the prompt with the tone
-        const promptWithTone = `Generate text in a ${tone} tone: ${prompt}`;
-
         try {
-          return await ModelService.callModel(
-            activeModel,
-            promptWithTone,
-            systemPrompt
-          );
+          return await ModelService.callModel(activeModel, prompt, tone, systemPrompt);
         } catch (error) {
           console.error('Error calling model:', error);
           throw new Error(
@@ -205,15 +222,13 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
           return;
         }
 
-        // Format the prompt with the tone
-        const promptWithTone = `Generate text in a ${tone} tone: ${prompt}`;
-
         try {
           if (ModelService.isOllamaModel(activeModel)) {
             // If it's an Ollama model, use streaming
             const stream = OllamaService.streamModel(
               activeModel,
-              promptWithTone,
+              prompt,
+              tone,
               systemPrompt
             );
 
@@ -226,12 +241,18 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
             }
           } else {
             // For non-Ollama models, fall back to regular model call
-            const result = await ModelService.callModel(
+            const result = ModelService.streamModel(
               activeModel,
-              promptWithTone,
+              prompt,
+              tone,
               systemPrompt
             );
-            onChunk(result);
+            for await (const chunk of result) {
+              if (signal?.aborted) {
+                throw new Error('AbortError');
+              }
+              onChunk(chunk);
+            }
           }
         } catch (error) {
           if (error instanceof Error && error.message === 'AbortError') {
@@ -271,6 +292,7 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
         defaultModels,
         isLoadingDefaultModels,
         ollamaError,
+        webllmError,
         activeModel,
         setActiveModel,
         maxTokens,
@@ -281,6 +303,7 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
         setSystemPrompt,
         selectedLLM,
         setSelectedLLM,
+        getWebLLMEngine,
         isAIAgentEnabled,
         setIsAIAgentEnabled,
       }}

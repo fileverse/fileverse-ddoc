@@ -56,7 +56,7 @@ const ModelSettings = () => {
     label: '',
     modelName: '',
     endpoint: '',
-    contextSize: 4000,
+    contextSize: 4096,
     apiKey: '',
     systemPrompt:
       'You are a helpful AI assistant. Please provide accurate and concise responses and not include any preambles in your responses.',
@@ -78,7 +78,7 @@ const ModelSettings = () => {
       label: '',
       modelName: '',
       endpoint: '',
-      contextSize: 4000,
+      contextSize: 4096,
       apiKey: '',
       systemPrompt:
         'You are a helpful AI assistant. Please provide accurate and concise responses and not include any preambles in your responses.',
