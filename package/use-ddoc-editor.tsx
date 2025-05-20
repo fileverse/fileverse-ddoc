@@ -260,13 +260,37 @@ export const useDdocEditor = ({
         ...extensions.filter((ext) => ext.name !== 'tableOfContents'),
         proExtensions.TableOfContents.configure({
           getIndex: proExtensions.getHierarchicalIndexes,
-          onUpdate: (content: any) => {
-            setTocItems(content);
+          onUpdate: (content: any, isCreate: any) => {
+            // Only update state when necessary
+            if (isCreate) {
+              // Initial TOC creation
+              setTocItems(content);
+            } else {
+              // Debounce subsequent updates using ref
+              if (tocUpdateTimeoutRef.current) {
+                clearTimeout(tocUpdateTimeoutRef.current);
+              }
+
+              // Use requestAnimationFrame for smoother updates
+              requestAnimationFrame(() => {
+                tocUpdateTimeoutRef.current = window.setTimeout(() => {
+                  setTocItems(content);
+                  tocUpdateTimeoutRef.current = null;
+                }, 100); // Reduced debounce time
+              });
+            }
           },
         }),
       ]);
     }
-  }, [proExtensions]);
+
+    // Clean up timeout on unmount
+    return () => {
+      if (tocUpdateTimeoutRef.current) {
+        clearTimeout(tocUpdateTimeoutRef.current);
+      }
+    };
+  }, [proExtensions, extensions]);
 
   useEffect(() => {
     const hasAvailableModels = activeModel !== undefined && isAIAgentEnabled;
