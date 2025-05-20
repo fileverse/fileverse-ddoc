@@ -4,10 +4,6 @@ import { ReactNodeViewRenderer } from '@tiptap/react';
 import { DBlockNodeView } from './dblock-node-view';
 import { TextSelection, Transaction } from '@tiptap/pm/state';
 import { Plugin, PluginKey } from 'prosemirror-state';
-import {
-  getActiveAIWriterCount,
-  incrementActiveAIWriterCount,
-} from '../ai-writer/state';
 
 export interface DBlockOptions {
   HTMLAttributes: Record<string, any>;
@@ -645,12 +641,21 @@ export const DBlock = Node.create<DBlockOptions>({
       new Plugin({
         key: new PluginKey('dblock-aiwriter-space'),
         props: {
-          handleTextInput(view, from, _to, text) {
+          handleTextInput: (view, from, _to, text) => {
             // Only interested in single space
             if (text !== ' ') return false;
 
             // Check if there's already an active AI Writer
-            if (getActiveAIWriterCount() > 0) {
+            let hasActiveAIWriter = false;
+            view.state.doc.descendants((node) => {
+              if (node.type.name === 'aiWriter') {
+                hasActiveAIWriter = true;
+                return false;
+              }
+              return true;
+            });
+
+            if (hasActiveAIWriter) {
               return false;
             }
 
@@ -682,8 +687,6 @@ export const DBlock = Node.create<DBlockOptions>({
                 aiWriterNode,
               );
               dispatch(tr);
-              // Increment the active count
-              incrementActiveAIWriterCount();
               return true;
             }
             return false;

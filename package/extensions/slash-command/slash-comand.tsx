@@ -271,12 +271,13 @@ const SlashCommand = (
   secureImageUploadUrl?: string,
   hasAvailableModels?: boolean,
 ) => {
-  const items = ({ query }: { query: string }) => {
+  const items = ({ query, editor }: { query: string; editor: Editor }) => {
     return getSuggestionItems({
       query,
       onError,
       secureImageUploadUrl,
       hasAvailableModels,
+      editor,
     });
   };
   return Command.configure({

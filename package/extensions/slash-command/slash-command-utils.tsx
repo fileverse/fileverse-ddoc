@@ -11,12 +11,27 @@ export const getSuggestionItems = ({
   onError,
   secureImageUploadUrl,
   hasAvailableModels,
+  editor,
 }: {
   query: string;
   onError?: (errorString: string) => void;
   secureImageUploadUrl?: string;
   hasAvailableModels?: boolean;
+  editor?: any;
 }) => {
+  // Check for active AI Writer node
+  let hasActiveAIWriter = false;
+  if (editor && editor.state && editor.state.doc) {
+    editor.state.doc.descendants((node: any) => {
+      if (node.type.name === 'aiWriter') {
+        hasActiveAIWriter = true;
+        return false;
+      }
+      return true;
+    });
+  }
+  const canCreateAIWriter = !hasActiveAIWriter;
+
   const items = [
     {
       title: 'AI Writer',
@@ -25,8 +40,13 @@ export const getSuggestionItems = ({
       icon: <LucideIcon name="Sparkles" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) => {
+        if (!canCreateAIWriter) {
+          if (onError) {
+            onError('Only one AI Writer can be active at a time.');
+          }
+          return;
+        }
         editor.chain().focus().deleteRange(range).run();
-
         if (editor.commands.insertAIWriter) {
           editor.commands.insertAIWriter({
             prompt: '',
@@ -42,7 +62,7 @@ export const getSuggestionItems = ({
           }
         }
       },
-      isDisabled: !hasAvailableModels,
+      isDisabled: !hasAvailableModels || !canCreateAIWriter,
     },
     {
       title: 'Text',
