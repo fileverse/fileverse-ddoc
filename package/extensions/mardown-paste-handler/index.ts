@@ -18,6 +18,7 @@ import {
 import { toByteArray } from 'base64-js';
 import { inlineLoader } from '../../utils/inline-loader';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../../types';
+import { isLikelyLatex } from '../../utils/is-likely-latex';
 
 // Initialize MarkdownIt for converting Markdown back to HTML with footnote support
 const markdownIt = new MarkdownIt().use(markdownItFootnote);
@@ -529,7 +530,8 @@ function isMarkdown(content: string): boolean {
   // Ignore LaTeX math blocks before checking other Markdown elements
   if (
     content.match(/\$\$[^$]*\$\$/g) !== null ||
-    content.match(/\$[^$\n]*\$/g) !== null
+    content.match(/\$[^$\n]*\$/g) !== null ||
+    isLikelyLatex(content) // need to add when copy pasting formula within editor without wrapping around $..$ and it identifies other formula characters with markdown charactes such as ^
   ) {
     return false; // Treat as LaTeX, not Markdown
   }

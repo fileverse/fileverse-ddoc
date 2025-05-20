@@ -24,14 +24,15 @@ class ZoomService {
   }
 
   private updateElementPosition(element: HTMLElement, zoom: string) {
-    type ZoomLevel = '0.5' | '0.75' | '1' | '1.4' | '1.5' | '2';
+    // type ZoomLevel = '0.5' | '0.75' | '1' | '1.4' | '1.5' | '2';
+    type ZoomLevel = '2';
 
     const tailwindPositions: Record<ZoomLevel, string> = {
-      '0.5': '-translate-x-0',
-      '0.75': '-translate-x-[45%]',
-      '1': '-translate-x-[60%]',
-      '1.4': '-translate-x-[120%]',
-      '1.5': '-translate-x-[140%]',
+      // '0.5': '-translate-x-0',
+      // '0.75': '-translate-x-[45%]',
+      // '1': '-translate-x-[60%]',
+      // '1.4': '-translate-x-[120%]',
+      // '1.5': '-translate-x-[140%]',
       '2': '-translate-x-[300%]',
     };
 

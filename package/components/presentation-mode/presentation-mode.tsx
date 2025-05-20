@@ -121,7 +121,7 @@ export const PresentationMode = ({
   const presentationEditor = useEditor(
     {
       extensions: editor.extensionManager.extensions.filter(
-        (b) => b.name !== 'collaboration',
+        (b) => b.name !== 'collaboration' && b.name !== 'aiAutocomplete',
       ),
       editable: false,
     },

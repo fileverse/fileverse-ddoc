@@ -17,6 +17,33 @@ import Suggestion from '@tiptap/suggestion';
 import { cn } from '@fileverse/ui';
 import { IpfsImageUploadResponse } from '../../types';
 
+const notAllowedInsideCallout = [
+  '2 Columns',
+  '3 Columns',
+  'Callout',
+  'Quote',
+  'Page breaker',
+];
+
+const notAllowedAIWriter = ['AI Writer'];
+
+const isNodeType = (editor: Editor | null, type: string): boolean => {
+  if (!editor) return false;
+
+  const {
+    selection: { $head },
+  } = editor.state;
+
+  for (let depth = $head.depth; depth >= 0; depth--) {
+    const node = $head.node(depth);
+    if (node?.type?.name === type) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
 export const Command = Extension.create({
   name: 'slash-command',
   addOptions() {
@@ -60,47 +87,11 @@ const CommandList = ({
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [items, setItems] = useState<CommandItemProps[]>(initialItems);
   const isMobile = useMediaQuery('(max-width: 640px)');
-  const isCalloutBlock = editor
-    ? (() => {
-        const {
-          selection: { $head },
-        } = editor.state;
 
-        for (let depth = $head.depth; depth >= 0; depth--) {
-          const node = $head.node(depth);
-          if (node?.type?.name === 'callout') {
-            return true;
-          }
-        }
-
-        return false;
-      })()
-    : false;
-
-  const isCodeBlock = editor
-    ? (() => {
-        const {
-          selection: { $head },
-        } = editor.state;
-
-        for (let depth = $head.depth; depth >= 0; depth--) {
-          const node = $head.node(depth);
-          if (node?.type?.name === 'codeBlock') {
-            return true;
-          }
-        }
-
-        return false;
-      })()
-    : false;
-
-  const notAllowedInsideCallout = [
-    '2 Columns',
-    '3 Columns',
-    'Callout',
-    'Quote',
-    'Page breaker',
-  ];
+  const isCalloutBlock = isNodeType(editor, 'callout');
+  const isCodeBlock = isNodeType(editor, 'codeBlock');
+  const isInColumn = isNodeType(editor, 'column');
+  const isInTable = isNodeType(editor, 'table');
 
   const selectItem = useCallback(
     (index: number) => {
@@ -135,6 +126,12 @@ const CommandList = ({
         setItems(filteredItems);
       } else if (isCodeBlock) {
         setItems([]); // Disable slash commands in code blocks
+      } else if (isInColumn || isInTable) {
+        setItems(
+          initialItems.filter(
+            (item) => !notAllowedAIWriter.includes(item.title),
+          ),
+        );
       } else {
         setItems(initialItems);
       }
@@ -187,26 +184,28 @@ const CommandList = ({
       ref={commandListContainer}
       className="z-50 h-auto max-h-[330px] w-72 overflow-y-auto scroll-smooth rounded-lg border color-border-default color-bg-default p-2 shadow-elevation-3 transition-all"
     >
-      {items.map((item: CommandItemProps, index: number) => {
-        return (
-          <button
-            key={index}
-            className={cn(
-              'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm hover:color-bg-default-hover border border-transparent transition-all',
-              index === selectedIndex && 'color-bg-default-hover',
-            )}
-            onClick={() => selectItem(index)}
-          >
-            <div className="flex h-10 w-10 items-center justify-center rounded-md border color-border-default color-bg-default">
-              {item.icon}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="font-medium">{item.title}</p>
-              <p className="text-xs text-neutral-500">{item.description}</p>
-            </div>
-          </button>
-        );
-      })}
+      {items
+        .filter((item) => !item.isDisabled)
+        .map((item: CommandItemProps, index: number) => {
+          return (
+            <button
+              key={index}
+              className={cn(
+                'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm hover:color-bg-default-hover border border-transparent transition-all',
+                index === selectedIndex && 'color-bg-default-hover',
+              )}
+              onClick={() => selectItem(index)}
+            >
+              <div className="flex h-10 w-10 items-center justify-center rounded-md border color-border-default color-bg-default">
+                {item.icon}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-medium">{item.title}</p>
+                <p className="text-xs text-neutral-500">{item.description}</p>
+              </div>
+            </button>
+          );
+        })}
     </div>
   ) : null;
 };
@@ -221,6 +220,11 @@ const renderItems = () => {
         props,
         editor: props.editor,
       });
+
+      // Signal that slash command is active
+      window.dispatchEvent(
+        new CustomEvent('slash-command-state', { detail: { isActive: true } }),
+      );
 
       // @ts-ignore
       popup = tippy('body', {
@@ -252,6 +256,11 @@ const renderItems = () => {
       return component?.ref?.onKeyDown(props);
     },
     onExit: () => {
+      // Signal that slash command is inactive
+      window.dispatchEvent(
+        new CustomEvent('slash-command-state', { detail: { isActive: false } }),
+      );
+
       popup?.[0].destroy();
       component?.destroy();
     },
@@ -261,9 +270,16 @@ const renderItems = () => {
 const SlashCommand = (
   onError?: (errorString: string) => void,
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
+  hasAvailableModels?: boolean,
 ) => {
-  const items = ({ query }: { query: string }) => {
-    return getSuggestionItems({ query, onError, ipfsImageUploadFn });
+  const items = ({ query, editor }: { query: string; editor: Editor }) => {
+    return getSuggestionItems({
+      query,
+      onError,
+      ipfsImageUploadFn,
+      hasAvailableModels,
+      editor,
+    });
   };
   return Command.configure({
     suggestion: {

@@ -4,11 +4,13 @@ import { ReactNodeViewRenderer } from '@tiptap/react';
 import { DBlockNodeView } from './dblock-node-view';
 import { TextSelection, Transaction } from '@tiptap/pm/state';
 import { IpfsImageUploadResponse } from '../../types';
+import { Plugin, PluginKey } from 'prosemirror-state';
 
 export interface DBlockOptions {
   HTMLAttributes: Record<string, any>;
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   onCopyHeadingLink?: (link: string) => void;
+  hasAvailableModels: boolean;
 }
 
 declare module '@tiptap/core' {
@@ -54,6 +56,7 @@ export const DBlock = Node.create<DBlockOptions>({
     return {
       HTMLAttributes: {},
       onCopyHeadingLink: undefined,
+      hasAvailableModels: false,
     };
   },
 
@@ -628,5 +631,68 @@ export const DBlock = Node.create<DBlockOptions>({
 
   addNodeView() {
     return ReactNodeViewRenderer(DBlockNodeView as any);
+  },
+
+  addProseMirrorPlugins() {
+    if (!this.options.hasAvailableModels) {
+      return [];
+    }
+    return [
+      new Plugin({
+        key: new PluginKey('dblock-aiwriter-space'),
+        props: {
+          handleTextInput: (view, from, _to, text) => {
+            // Only interested in single space
+            if (text !== ' ') return false;
+
+            // Check if there's already an active AI Writer
+            let hasActiveAIWriter = false;
+            view.state.doc.descendants((node) => {
+              if (node.type.name === 'aiWriter') {
+                hasActiveAIWriter = true;
+                return false;
+              }
+              return true;
+            });
+
+            if (hasActiveAIWriter) {
+              return false;
+            }
+
+            const { state, dispatch } = view;
+            const { $from } = state.selection;
+            const parent = $from.node($from.depth - 1);
+            const node = $from.node($from.depth);
+            // Only trigger in dBlock > paragraph, and only if paragraph is empty
+            if (
+              parent?.type?.name === 'dBlock' &&
+              node?.type?.name === 'paragraph' &&
+              node.textContent === ''
+            ) {
+              // Check if previous char is also a space (double space)
+              const prevChar = state.doc.textBetween(from - 1, from, '\0');
+              if (prevChar === ' ') {
+                // Allow double space as normal
+                return false;
+              }
+              // Replace the empty paragraph with aiWriter node
+              const aiWriterNode = state.schema.nodes.aiWriter.create({
+                prompt: '',
+                content: '',
+                tone: 'neutral',
+              });
+              const tr = state.tr.replaceRangeWith(
+                $from.before(),
+                $from.after(),
+                aiWriterNode,
+              );
+              dispatch(tr);
+              return true;
+            }
+            return false;
+          },
+        },
+      }),
+    ];
   },
 });

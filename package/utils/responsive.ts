@@ -9,6 +9,7 @@ export const useResponsive = () => {
   const isMobileScreen = useMediaQuery('(max-width: 768px)');
   const isMobile = useMediaQuery('(max-width: 480px)');
   const isIOS = checkOs() === 'iOS';
+  const isWindows = checkOs() === 'Windows';
 
   const isNativeMobile =
     checkOs() === 'iOS' ||
@@ -23,5 +24,6 @@ export const useResponsive = () => {
     isNativeMobile,
     isIOS,
     isMobile,
+    isWindows,
   };
 };

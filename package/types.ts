@@ -32,6 +32,16 @@ export interface CommentAccountProps {
   connectViaUsername?: (username: string) => Promise<void>;
   isDDocOwner?: boolean;
 }
+
+export interface CustomModel {
+  id?: string;
+  label: string;
+  modelName: string;
+  endpoint: string;
+  contextSize: number;
+  apiKey: string;
+  systemPrompt: string;
+}
 export interface DdocProps extends CommentAccountProps {
   isCollabDocumentPublished?: boolean;
   ipfsImageFetchFn?: (
@@ -110,6 +120,9 @@ export interface DdocProps extends CommentAccountProps {
   metadataProxyUrl?: string;
   onCopyHeadingLink?: (link: string) => void;
   footerHeight?: string;
+  activeModel?: CustomModel;
+  maxTokens?: number;
+  isAIAgentEnabled?: boolean;
 }
 
 export interface IEditorSelectionData {
