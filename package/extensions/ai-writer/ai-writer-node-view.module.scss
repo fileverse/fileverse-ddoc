@@ -9,6 +9,10 @@
   // gap: 0.5em;
 
   think {
+    display: contents;
+  }
+
+  think > :not(p) {
     display: none;
   }
 

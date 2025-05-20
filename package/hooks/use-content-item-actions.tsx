@@ -4,6 +4,7 @@ import { NodeSelection } from '@tiptap/pm/state';
 import { Editor } from '@tiptap/react';
 import { useCallback } from 'react';
 import { expandHeadingContent } from '../extensions/d-block/use-heading-collapse';
+import { useAIWriterActiveState } from './use-ai-writer-active-state';
 
 const useContentItemActions = (
   editor: Editor,
@@ -11,6 +12,7 @@ const useContentItemActions = (
   currentNodePos: number,
   setCollapsedHeadings?: (updater: (prev: Set<string>) => Set<string>) => void,
 ) => {
+  const hasActiveAIWriter = useAIWriterActiveState(editor);
   const resetTextFormatting = useCallback(() => {
     const chain = editor.chain();
 
@@ -24,6 +26,9 @@ const useContentItemActions = (
   }, [editor, currentNodePos, currentNode?.type.name]);
 
   const duplicateNode = useCallback(() => {
+    if (hasActiveAIWriter) {
+      return;
+    }
     editor.commands.setNodeSelection(currentNodePos);
 
     const { $anchor } = editor.state.selection;

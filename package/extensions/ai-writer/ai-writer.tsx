@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Node, mergeAttributes, ReactNodeViewRenderer } from '@tiptap/react';
 import { AIWriterNodeView } from './ai-writer-node-view';
-import { getActiveAIWriterCount, incrementActiveAIWriterCount } from './state';
 
 export interface AIWriterOptions {
   HTMLAttributes: Record<string, any>;
@@ -81,14 +80,6 @@ export const AIWriter = Node.create<AIWriterOptions>({
       insertAIWriter:
         (options) =>
         ({ commands }) => {
-          // Check if there's already an active AI Writer
-          if (getActiveAIWriterCount() > 0) {
-            return false;
-          }
-
-          // Increment the active count
-          incrementActiveAIWriterCount();
-
           return commands.insertContent({
             type: this.name,
             attrs: {
