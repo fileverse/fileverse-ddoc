@@ -840,7 +840,7 @@ async function recreateNodeWithImageContent(
   let buffer: ArrayBuffer;
 
   try {
-    if (version === '2' && ipfsImageFetchFn) {
+    if (version == '2' && ipfsImageFetchFn) {
       const { encryptionKey, url: ipfsUrl, nonce } = attrs as any;
       const result = await ipfsImageFetchFn({
         encryptionKey,
