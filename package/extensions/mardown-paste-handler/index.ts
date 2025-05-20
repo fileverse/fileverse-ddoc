@@ -577,13 +577,15 @@ async function uploadBase64ImageContent(
   const base64Data = base64Image.slice(prefixMatch[1].length);
 
   const file = base64ToFile(base64Data, contentType);
-  const { encryptionKey, nonce, ipfsUrl } = await ipfsImageUploadFn(file);
+  const { encryptionKey, nonce, ipfsUrl, ipfsHash } =
+    await ipfsImageUploadFn(file);
 
   return {
     ipfsUrl,
     encryptionKey,
     nonce,
     downloadUrl: URL.createObjectURL(file),
+    ipfsHash,
   };
 }
 
@@ -604,11 +606,13 @@ async function handleMarkdownContent(
   const parser = new DOMParser();
   const doc = parser.parseFromString(convertedHtml, 'text/html');
 
-  // Remove only top-level empty paragraphs because markdownIt adds empty paragraph tag above and below aside tag
+  // Remove <p> if it's empty
   const topLevelPs = doc.querySelectorAll('body > p');
   topLevelPs.forEach((p) => {
-    if (p.textContent?.trim() === '') {
-      p.remove();
+    if (p.childNodes.length === 0) {
+      if (p.textContent === '') {
+        p.remove();
+      }
     }
   });
 
@@ -689,7 +693,6 @@ async function handleMarkdownContent(
       p.parentNode?.replaceChild(pageBreakDiv, p);
     }
   }
-
   const images = Array.from(doc.getElementsByTagName('img'));
 
   if (ipfsImageUploadFn) {
@@ -707,6 +710,8 @@ async function handleMarkdownContent(
           imgElement.setAttribute('encryptionKey', uploadResult.encryptionKey);
           imgElement.setAttribute('nonce', uploadResult.nonce);
           imgElement.setAttribute('version', '2');
+          imgElement.setAttribute('ipfsHash', uploadResult.ipfsHash);
+          imgElement.setAttribute('mimeType', 'image/jpeg');
         } catch (error) {
           console.error('Error uploading secure image to IPFS:', error);
         }
@@ -756,6 +761,12 @@ async function handleMarkdownContent(
       'encryptedKey',
       'iv',
       'privateKey',
+      'encryptionKey',
+      'nonce',
+      'ipfsUrl',
+      'ipfsHash',
+      'mimeType',
+      'version',
     ],
   });
 

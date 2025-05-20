@@ -326,22 +326,23 @@ export const getResizableMediaNodeView =
               />
             )}
 
-            {mediaType === 'secure-img' && node.attrs.version !== '2' && (
-              <SecureImage
-                encryptedKey={node.attrs.encryptedKey}
-                url={node.attrs.url}
-                iv={node.attrs.iv}
-                privateKey={node.attrs.privateKey}
-                alt={node.attrs.alt}
-                // caption={node.attrs.caption}
-                className="rounded-lg"
-                width={node.attrs.width}
-                height={node.attrs.height}
-                ref={resizableImgRef as LegacyRef<HTMLImageElement>}
-              />
-            )}
+            {mediaType === 'secure-img' &&
+              !['2', 2].includes(node.attrs.version) && (
+                <SecureImage
+                  encryptedKey={node.attrs.encryptedKey}
+                  url={node.attrs.url}
+                  iv={node.attrs.iv}
+                  privateKey={node.attrs.privateKey}
+                  alt={node.attrs.alt}
+                  // caption={node.attrs.caption}
+                  className="rounded-lg"
+                  width={node.attrs.width}
+                  height={node.attrs.height}
+                  ref={resizableImgRef as LegacyRef<HTMLImageElement>}
+                />
+              )}
 
-            {mediaType === 'secure-img' && node.attrs.version === '2' && (
+            {mediaType === 'secure-img' && node.attrs.version == '2' && (
               <SecureImageV2
                 encryptionKey={node.attrs.encryptionKey}
                 url={node.attrs.ipfsUrl}

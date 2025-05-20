@@ -34,7 +34,6 @@ export const SecureImageV2 = forwardRef<HTMLImageElement, Props>(
     },
     ref,
   ) => {
-    console.log({ encryptionKey, url, nonce });
     const [source, setSource] = useState<string>('');
 
     useEffect(() => {
