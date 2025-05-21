@@ -285,7 +285,6 @@ function App() {
         }}
         renderNavbar={renderNavbar}
         ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}
-        ipfsImageUploadFn={async () => ({encryptionKey: '', nonce: '', ipfsUrl: ''})}
         tags={sampleTags}
         selectedTags={selectedTags}
         setSelectedTags={setSelectedTags}

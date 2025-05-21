@@ -35,7 +35,6 @@ import { DBlockMenu } from './components/menu';
 
 export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
   ({ node, getPos, editor, deleteNode, ...props }) => {
-    const ipfsImageUploadFn = props.extension?.options?.ipfsImageUploadFn;
     const onCopyHeadingLink = props.extension?.options?.onCopyHeadingLink;
 
     const [menuOpen, setMenuOpen] = useState<boolean>(false);
@@ -164,10 +163,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
           .deleteRange({ from: pos === 0 ? pos : pos + 1, to })
           .setMedia({ src, 'media-type': 'img' })
           .run();
-      } else if (type === 'secure-img') {
-        // Convert base64 to File object
-        console.log('ipfsImageUploadFn', ipfsImageUploadFn);
-      } else {
+      } else if (type !== 'secure-img') {
         editor
           ?.chain()
           .focus(pos)
