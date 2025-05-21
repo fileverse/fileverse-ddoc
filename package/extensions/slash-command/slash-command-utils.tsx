@@ -35,7 +35,7 @@ export const getSuggestionItems = ({
   }
   const canCreateAIWriter = !hasActiveAIWriter;
 
-  const item = [
+  const items = [
     {
       title: 'AI Writer',
       description: 'Generate text with AI assistance.',
@@ -367,7 +367,10 @@ export const getSuggestionItems = ({
     },
   ];
 
-  return item.filter((item) => {
+  return items.filter((item) => {
+    if (item.title === 'AI Writer' && item.isDisabled) {
+      return false;
+    }
     if (typeof query === 'string' && query.length > 0) {
       const search = query.toLowerCase();
       return (
