@@ -3,11 +3,12 @@ import { Dispatch, Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import { DBlockNodeView } from './dblock-node-view';
 import { TextSelection, Transaction } from '@tiptap/pm/state';
+import { IpfsImageUploadResponse } from '../../types';
 import { Plugin, PluginKey } from 'prosemirror-state';
 
 export interface DBlockOptions {
   HTMLAttributes: Record<string, any>;
-  secureImageUploadUrl?: string;
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   onCopyHeadingLink?: (link: string) => void;
   hasAvailableModels: boolean;
 }
@@ -54,7 +55,6 @@ export const DBlock = Node.create<DBlockOptions>({
   addOptions() {
     return {
       HTMLAttributes: {},
-      secureImageUploadUrl: '',
       onCopyHeadingLink: undefined,
       hasAvailableModels: false,
     };

@@ -44,6 +44,9 @@ export interface CustomModel {
 }
 export interface DdocProps extends CommentAccountProps {
   isCollabDocumentPublished?: boolean;
+  ipfsImageFetchFn?: (
+    _data: IpfsImageFetchPayload,
+  ) => Promise<{ url: string; file: File }>;
   disableInlineComment?: boolean;
   //Comments V2 Props
   commentDrawerOpen?: boolean;
@@ -77,7 +80,7 @@ export interface DdocProps extends CommentAccountProps {
   collaborationId?: string;
   isPreviewMode: boolean;
   ensResolutionUrl?: string;
-  secureImageUploadUrl?: string;
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   enableIndexeddbSync?: boolean;
   ddocId?: string;
   initialContent?: JSONContent | string | string[] | null;
@@ -139,3 +142,16 @@ export interface IUser {
 }
 
 export { type IComment };
+export interface IpfsImageUploadResponse {
+  encryptionKey: string;
+  nonce: string;
+  ipfsUrl: string;
+  ipfsHash: string;
+}
+export interface IpfsImageFetchPayload {
+  encryptionKey: string;
+  nonce: string;
+  ipfsUrl: string;
+  ipfsHash: string;
+  mimeType: string;
+}

@@ -1,7 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { BubbleMenuProps, Editor } from '@tiptap/react';
 import { SetStateAction } from 'react';
-import { InlineCommentData } from '../../types';
+import {
+  InlineCommentData,
+  IpfsImageFetchPayload,
+  IpfsImageUploadResponse,
+} from '../../types';
 
 export interface BubbleMenuItem {
   name: string;
@@ -27,6 +31,10 @@ export type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   commentDrawerOpen?: boolean;
   setCommentDrawerOpen?: React.Dispatch<SetStateAction<boolean>>;
   isCollabDocumentPublished?: boolean | undefined;
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
+  ipfsImageFetchFn?: (
+    _data: IpfsImageFetchPayload,
+  ) => Promise<{ url: string; file: File }>;
 };
 
 export interface NodeSelectorProps {

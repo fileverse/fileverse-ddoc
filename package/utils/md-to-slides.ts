@@ -5,6 +5,7 @@ import {
   turndownService,
 } from '../extensions/mardown-paste-handler';
 import TurndownService from 'turndown';
+import { IpfsImageFetchPayload } from '../types';
 
 interface SlideContent {
   type: 'h1' | 'h2' | 'content' | 'image' | 'table';
@@ -160,10 +161,18 @@ turndownService.addRule('taskListItem', {
   },
 });
 
-export const convertToMarkdown = async (editor: Editor) => {
+export const convertToMarkdown = async (
+  editor: Editor,
+  ipfsImageFetchFn?: (
+    _data: IpfsImageFetchPayload,
+  ) => Promise<{ url: string; file: File }>,
+) => {
   const originalDoc = editor.state.doc;
   const docWithEmbedImageContent =
-    await searchForSecureImageNodeAndEmbedImageContent(originalDoc);
+    await searchForSecureImageNodeAndEmbedImageContent(
+      originalDoc,
+      ipfsImageFetchFn,
+    );
 
   const temporalEditor = new Editor({
     extensions: editor.extensionManager.extensions.filter(

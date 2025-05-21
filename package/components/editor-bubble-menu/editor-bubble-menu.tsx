@@ -38,14 +38,18 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     activeCommentId,
     isCollabDocumentPublished,
     disableInlineComment,
+    ipfsImageUploadFn,
+    ipfsImageFetchFn,
   } = props;
   const editorStates = useEditorStates(editor as Editor);
   const currentSize = editor ? editorStates.currentSize : undefined;
-  const onSetFontSize = editor ? editorStates.onSetFontSize : () => { };
+  const onSetFontSize = editor ? editorStates.onSetFontSize : () => {};
   const { isNativeMobile } = useResponsive();
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
     editor: editor,
     onError,
+    ipfsImageUploadFn,
+    ipfsImageFetchFn,
   });
 
   const {
@@ -110,7 +114,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     {
       name: 'Comment',
       isActive: () => isCommentActive,
-      command: () => { },
+      command: () => {},
       icon: 'MessageSquarePlus',
     },
   ];
@@ -241,9 +245,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               content={
                 !isCommentActive
                   ? renderContent({
-                    name: 'Comment',
-                    initialComment: activeComment?.content || '',
-                  })
+                      name: 'Comment',
+                      initialComment: activeComment?.content || '',
+                    })
                   : null
               }
             />
@@ -412,9 +416,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                       content={
                         !isCommentActive
                           ? renderContent({
-                            name: 'Comment',
-                            initialComment: activeComment?.content || '',
-                          })
+                              name: 'Comment',
+                              initialComment: activeComment?.content || '',
+                            })
                           : null
                       }
                     />

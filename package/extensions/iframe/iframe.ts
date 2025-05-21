@@ -1,7 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
-import { ResizableMediaNodeView } from '../resizable-media/resizable-media-node-view';
+import { getResizableMediaNodeView } from '../resizable-media/resizable-media-node-view';
+import { IpfsImageFetchPayload } from '../../types';
 
 export interface IframeOptions {
   allowFullscreen: boolean;
@@ -10,6 +11,9 @@ export interface IframeOptions {
   };
   width?: number;
   height?: number;
+  ipfsImageFetchFn: (
+    _data: IpfsImageFetchPayload,
+  ) => Promise<{ url: string; file: File }>;
 }
 
 declare module '@tiptap/core' {
@@ -44,6 +48,7 @@ export const Iframe = Node.create<IframeOptions>({
       HTMLAttributes: {
         class: 'iframe-wrapper',
       },
+      ipfsImageFetchFn: async () => ({ url: '', file: new File([], '') }),
     };
   },
 
@@ -84,7 +89,9 @@ export const Iframe = Node.create<IframeOptions>({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(ResizableMediaNodeView);
+    return ReactNodeViewRenderer(
+      getResizableMediaNodeView(this.options.ipfsImageFetchFn),
+    );
   },
 
   parseHTML() {

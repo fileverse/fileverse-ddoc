@@ -57,7 +57,7 @@ const DdocEditor = forwardRef(
       handleCommentButtonClick,
       showCommentButton,
       ensResolutionUrl,
-      secureImageUploadUrl,
+      ipfsImageUploadFn,
       disableBottomToolbar,
       onError,
       setCharacterCount,
@@ -111,6 +111,7 @@ const DdocEditor = forwardRef(
       metadataProxyUrl,
       onCopyHeadingLink,
       footerHeight,
+      ipfsImageFetchFn,
       activeModel,
       maxTokens,
       isAIAgentEnabled,
@@ -157,6 +158,7 @@ const DdocEditor = forwardRef(
       tocItems,
       setTocItems,
     } = useDdocEditor({
+      ipfsImageFetchFn,
       enableIndexeddbSync,
       ddocId,
       isPreviewMode,
@@ -173,7 +175,7 @@ const DdocEditor = forwardRef(
       onError,
       setCharacterCount,
       setWordCount,
-      secureImageUploadUrl,
+      ipfsImageUploadFn,
       isCommentSectionOpen,
       setIsCommentSectionOpen,
       setInlineCommentData,
@@ -365,11 +367,12 @@ const DdocEditor = forwardRef(
                     setZoomLevel={setZoomLevel}
                     isNavbarVisible={isNavbarVisible}
                     setIsNavbarVisible={setIsNavbarVisible}
-                    secureImageUploadUrl={secureImageUploadUrl}
+                    ipfsImageUploadFn={ipfsImageUploadFn}
                     onMarkdownExport={onMarkdownExport}
                     onMarkdownImport={onMarkdownImport}
                     onPdfExport={onPdfExport}
                     isLoading={!editor || isContentLoading}
+                    ipfsImageFetchFn={ipfsImageFetchFn}
                   />
                 </div>
               </div>
@@ -390,6 +393,7 @@ const DdocEditor = forwardRef(
                 setSlides={setSlides}
                 renderThemeToggle={renderThemeToggle}
                 isContentLoading={isContentLoading}
+                ipfsImageFetchFn={ipfsImageFetchFn}
               />
             )}
             {editor && (
@@ -492,6 +496,8 @@ const DdocEditor = forwardRef(
                       onInlineComment={onInlineComment}
                       activeCommentId={activeCommentId}
                       isCollabDocumentPublished={isCollabDocumentPublished}
+                      ipfsImageFetchFn={ipfsImageFetchFn}
+                      ipfsImageUploadFn={ipfsImageUploadFn}
                     />
                   )}
 
@@ -580,7 +586,8 @@ const DdocEditor = forwardRef(
                             className={cn(
                               'w-full h-auto py-4 color-bg-default',
                               isPreviewMode && 'preview-mode',
-                              activeModel !== undefined && isAIAgentEnabled &&
+                              activeModel !== undefined &&
+                                isAIAgentEnabled &&
                                 'has-available-models',
                             )}
                           />
@@ -619,8 +626,9 @@ const DdocEditor = forwardRef(
                   isKeyboardVisible={isKeyboardVisible}
                   isNavbarVisible={isNavbarVisible}
                   setIsNavbarVisible={setIsNavbarVisible}
-                  secureImageUploadUrl={secureImageUploadUrl}
+                  ipfsImageUploadFn={ipfsImageUploadFn}
                   isLoading={!editor || isContentLoading}
+                  ipfsImageFetchFn={ipfsImageFetchFn}
                 />
               </div>
             )}

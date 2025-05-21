@@ -55,7 +55,7 @@ export const useDdocEditor = ({
   onError,
   setCharacterCount,
   setWordCount,
-  secureImageUploadUrl,
+  ipfsImageUploadFn,
   ddocId,
   enableIndexeddbSync,
   unFocused,
@@ -66,6 +66,7 @@ export const useDdocEditor = ({
   proExtensions,
   metadataProxyUrl,
   onCopyHeadingLink,
+  ipfsImageFetchFn,
   activeModel,
   maxTokens,
   isAIAgentEnabled,
@@ -101,13 +102,14 @@ export const useDdocEditor = ({
   const [tocItems, setTocItems] = useState<any[]>([]);
 
   const [extensions, setExtensions] = useState([
-    ...(defaultExtensions(
-      (error: string) => onError?.(error),
-      secureImageUploadUrl,
+    ...(defaultExtensions({
+      onError: (error: string) => onError?.(error),
+      ipfsImageUploadFn,
       metadataProxyUrl,
       onCopyHeadingLink,
-    ) as AnyExtension[]),
-    SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
+      ipfsImageFetchFn,
+    }) as AnyExtension[]),
+    SlashCommand((error: string) => onError?.(error), ipfsImageUploadFn),
     customTextInputRules,
     PageBreak,
     Comment.configure({
@@ -312,7 +314,7 @@ export const useDdocEditor = ({
         }),
         SlashCommand(
           (error: string) => onError?.(error),
-          secureImageUploadUrl,
+          ipfsImageUploadFn,
           hasAvailableModels,
         ),
       ]);
@@ -331,7 +333,7 @@ export const useDdocEditor = ({
     }
   }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => { });
+  const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {

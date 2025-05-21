@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import copy from 'copy-to-clipboard';
 import { convertMarkdownToHTML } from '../../utils/md-to-html';
 import { useResponsive } from '../../utils/responsive';
+import { IpfsImageFetchPayload } from '../../types';
 
 interface PresentationModeProps {
   editor: Editor;
@@ -35,6 +36,9 @@ interface PresentationModeProps {
   setSlides: React.Dispatch<React.SetStateAction<string[]>>;
   renderThemeToggle?: () => JSX.Element;
   isContentLoading: boolean;
+  ipfsImageFetchFn?: (
+    _data: IpfsImageFetchPayload,
+  ) => Promise<{ url: string; file: File }>;
 }
 
 const SlideContent = ({
@@ -101,6 +105,7 @@ export const PresentationMode = ({
   setSlides,
   renderThemeToggle,
   isContentLoading,
+  ipfsImageFetchFn,
 }: PresentationModeProps) => {
   const [showLinkCopied, setShowLinkCopied] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -137,7 +142,7 @@ export const PresentationMode = ({
     }
 
     setIsLoading(true);
-    const markdown = await convertToMarkdown(editor);
+    const markdown = await convertToMarkdown(editor, ipfsImageFetchFn);
 
     // First convert markdown to HTML with proper page breaks
     const html = convertMarkdownToHTML(markdown, {
