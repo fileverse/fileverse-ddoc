@@ -125,7 +125,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     },
     {
       name: 'Reminder',
-      isActive: () => {},
+      isActive: () => false,
       command: () => {
         const selectedText =
           editor.state.selection.content().content.firstChild?.textContent ||

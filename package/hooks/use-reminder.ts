@@ -25,9 +25,7 @@ export const useReminder = ({
         popoverContent.remove();
       }
     }
-    if (setInitialReminderTitle) {
-      setInitialReminderTitle('');
-    }
+    setInitialReminderTitle('');
   };
 
   const handleReminderCreate = async (reminder: Reminder, type: string) => {

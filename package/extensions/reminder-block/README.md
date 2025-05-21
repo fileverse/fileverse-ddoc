@@ -37,7 +37,7 @@ import { ReminderBlock } from '@fileverse/ddoc-editor/extensions/reminder-block'
 The ReminderBlock extension accepts the following configuration options:
 
 ### `onReminderCreate`
-- Type: `(reminder: Reminder) => Promise<void>`
+- Type: `(reminder: Reminder,  type: "inline" | "slash") => Promise<void>`
 - Description: Callback function called when a new reminder is created
 
 ### `onReminderDelete`
