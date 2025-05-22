@@ -123,19 +123,19 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       command: () => setToolVisibility(IEditorTool.SCRIPTS),
       icon: 'Superscript',
     },
-    {
-      name: 'Reminder',
-      isActive: () => false,
-      command: () => {
-        const selectedText =
-          editor.state.selection.content().content.firstChild?.textContent ||
-          '';
-        if (setInitialReminderTitle) {
-          setInitialReminderTitle(selectedText);
-        }
-      },
-      icon: 'AlarmClock',
-    },
+    // {
+    //   name: 'Reminder',
+    //   isActive: () => false,
+    //   command: () => {
+    //     const selectedText =
+    //       editor.state.selection.content().content.firstChild?.textContent ||
+    //       '';
+    //     if (setInitialReminderTitle) {
+    //       setInitialReminderTitle(selectedText);
+    //     }
+    //   },
+    //   icon: 'AlarmClock',
+    // },
     {
       name: 'Comment',
       isActive: () => isCommentActive,
