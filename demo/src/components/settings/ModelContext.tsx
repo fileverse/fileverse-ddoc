@@ -1,5 +1,5 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { createContext, useState, useContext, useEffect } from 'react';
+import React, { createContext, useState, useContext, useEffect, useCallback } from 'react';
 import { CustomModel } from './ModelSettings';
 import { DefaultModelProvider } from './DefaultModelProvider';
 import { ModelService } from './ModelService';
@@ -24,6 +24,9 @@ interface ModelContextType {
   getWebLLMEngine: (modelName: string) => Promise<MLCEngineInterface>;
   isAIAgentEnabled: boolean;
   setIsAIAgentEnabled: (enabled: boolean) => void;
+  isAutocompleteEnabled: boolean;
+  setIsAutocompleteEnabled: (enabled: boolean) => void;
+  handleAutocompleteToggle: (enabled: boolean) => void;
 }
 
 interface ModelProviderProps {
@@ -84,6 +87,9 @@ export const ModelContext = createContext<ModelContextType>({
   getWebLLMEngine: () => Promise.resolve(null as unknown as MLCEngineInterface),
   isAIAgentEnabled: true,
   setIsAIAgentEnabled: () => { },
+  isAutocompleteEnabled: true,
+  setIsAutocompleteEnabled: () => { },
+  handleAutocompleteToggle: () => { },
 });
 
 export const ModelProvider = ({ children }: ModelProviderProps) => {
@@ -104,6 +110,10 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
   const [selectedLLM, setSelectedLLM] = useState<string | null>(null);
   const [isAIAgentEnabled, setIsAIAgentEnabled] = useState(() => {
     const stored = localStorage.getItem('ai-agent-enabled');
+    return stored === null ? true : stored === 'true';
+  });
+  const [isAutocompleteEnabled, setIsAutocompleteEnabled] = useState(() => {
+    const stored = localStorage.getItem('autocomplete-enabled');
     return stored === null ? true : stored === 'true';
   });
   // Load default models
@@ -151,6 +161,24 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
     localStorage.setItem('system-prompt', systemPrompt);
   }, [systemPrompt]);
 
+  // Handle autocomplete toggle
+  const handleAutocompleteToggle = useCallback((enabled: boolean) => {
+    setIsAutocompleteEnabled(enabled);
+    localStorage.setItem('autocomplete-enabled', String(enabled));
+    // Dispatch custom event for the extension to listen to
+    window.dispatchEvent(new CustomEvent('autocomplete-toggle', { detail: { enabled } }));
+  }, [setIsAutocompleteEnabled]);
+
+  useEffect(() => {
+    if (!isAIAgentEnabled) {
+      setIsAutocompleteEnabled(false);
+      handleAutocompleteToggle(false);
+    } else {
+      setIsAutocompleteEnabled(true);
+      handleAutocompleteToggle(true);
+    }
+  }, [handleAutocompleteToggle, isAIAgentEnabled, setIsAutocompleteEnabled]);
+
   // Expose model context to window for AIWriter extension
   useEffect(() => {
     const context = {
@@ -171,6 +199,9 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
       getWebLLMEngine,
       isAIAgentEnabled,
       setIsAIAgentEnabled,
+      isAutocompleteEnabled,
+      setIsAutocompleteEnabled,
+      handleAutocompleteToggle,
     };
 
     (window as WindowWithModelContext).__MODEL_CONTEXT__ = context;
@@ -190,6 +221,9 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
     selectedLLM,
     isAIAgentEnabled,
     setIsAIAgentEnabled,
+    isAutocompleteEnabled,
+    setIsAutocompleteEnabled,
+    handleAutocompleteToggle,
   ]);
 
   // Expose model service to window for AIWriter extension
@@ -306,6 +340,9 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
         getWebLLMEngine,
         isAIAgentEnabled,
         setIsAIAgentEnabled,
+        isAutocompleteEnabled,
+        setIsAutocompleteEnabled,
+        handleAutocompleteToggle,
       }}
     >
       {children}

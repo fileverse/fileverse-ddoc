@@ -22,38 +22,31 @@ const ModelSelector = ({ onSettingsClick }: ModelSelectorProps) => {
     setMaxTokens,
     isAIAgentEnabled,
     setIsAIAgentEnabled,
+    isAutocompleteEnabled,
+    setIsAutocompleteEnabled,
+    handleAutocompleteToggle,
   } = useModelContext();
 
   const [modelStatus, setModelStatus] = useState<'idle' | 'loading' | 'error'>('idle');
-  const [isAutocompleteEnabled, setIsAutocompleteEnabled] = useState(() => {
-    const stored = localStorage.getItem('autocomplete-enabled');
-    return stored === null ? true : stored === 'true';
-  });
+
   const [selectedTone, setSelectedTone] = useState(() => {
     return localStorage.getItem('autocomplete-tone') || 'neutral';
   });
 
   const handleAIAgentToggle = (enabled: boolean) => {
     setIsAIAgentEnabled(enabled);
+    setIsAutocompleteEnabled(enabled);
     localStorage.setItem('ai-agent-enabled', String(enabled));
     // Dispatch custom event for the extension to listen to
     window.dispatchEvent(new CustomEvent('ai-agent-toggle', { detail: { enabled } }));
   };
 
   // Combine custom and default models for the dropdown
-  const allModels = useMemo(() => [ ...defaultModels], [defaultModels]);
+  const allModels = useMemo(() => [...defaultModels], [defaultModels]);
 
   // Handle model selection
   const handleSelectModel = (model: CustomModel) => {
     setActiveModel(model);
-  };
-
-  // Handle autocomplete toggle
-  const handleAutocompleteToggle = (enabled: boolean) => {
-    setIsAutocompleteEnabled(enabled);
-    localStorage.setItem('autocomplete-enabled', String(enabled));
-    // Dispatch custom event for the extension to listen to
-    window.dispatchEvent(new CustomEvent('autocomplete-toggle', { detail: { enabled } }));
   };
 
   // Handle tone change
@@ -89,6 +82,14 @@ const ModelSelector = ({ onSettingsClick }: ModelSelectorProps) => {
       setActiveModel(allModels[0]);
     }
   }, [activeModel, allModels, setActiveModel]);
+
+  // Update autocomplete state when AI agent is disabled
+  useEffect(() => {
+    if (!isAIAgentEnabled) {
+      setIsAutocompleteEnabled(false);
+      handleAutocompleteToggle(false);
+    }
+  }, [handleAutocompleteToggle, isAIAgentEnabled, setIsAutocompleteEnabled]);
 
   return (
     <div className="flex items-center gap-2">
@@ -160,12 +161,13 @@ const ModelSelector = ({ onSettingsClick }: ModelSelectorProps) => {
                 <Toggle
                   checked={isAutocompleteEnabled}
                   onCheckedChange={handleAutocompleteToggle}
+                  disabled={!isAIAgentEnabled}
                 />
               </div>
 
               <div className="px-1">
                 <div className="text-xs mb-1">Tone</div>
-                <Select value={selectedTone} onValueChange={handleToneChange}>
+                <Select value={selectedTone} onValueChange={handleToneChange} disabled={!isAutocompleteEnabled}>
                   <SelectTrigger className="w-full text-helper-text-sm px-2 py-1 rounded border bg-transparent">
                     <SelectValue placeholder="Select tone" />
                   </SelectTrigger>
@@ -183,7 +185,7 @@ const ModelSelector = ({ onSettingsClick }: ModelSelectorProps) => {
 
               <div className="px-1" style={{ marginTop: 16 }}>
                 <div className="text-xs mb-1">Autocomplete Suggestion Length</div>
-                <Select value={String(maxTokens)} onValueChange={val => handleMaxTokensChange(Number(val))}>
+                <Select value={String(maxTokens)} onValueChange={val => handleMaxTokensChange(Number(val))} disabled={!isAutocompleteEnabled}>
                   <SelectTrigger className="w-full text-helper-text-sm px-2 py-1 rounded border bg-transparent">
                     <SelectValue placeholder="Select length" />
                   </SelectTrigger>
