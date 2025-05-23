@@ -342,6 +342,9 @@ export const getSuggestionItems = ({
   ];
 
   return items.filter((item) => {
+    if (item.title === 'AI Writer' && item.isDisabled) {
+      return false;
+    }
     if (typeof query === 'string' && query.length > 0) {
       const search = query.toLowerCase();
       return (
