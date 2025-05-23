@@ -271,10 +271,13 @@ export const useDdocEditor = ({
                 clearTimeout(tocUpdateTimeoutRef.current);
               }
 
-              tocUpdateTimeoutRef.current = window.setTimeout(() => {
-                setTocItems(content);
-                tocUpdateTimeoutRef.current = null;
-              }, 300);
+              // Use requestAnimationFrame for smoother updates
+              requestAnimationFrame(() => {
+                tocUpdateTimeoutRef.current = window.setTimeout(() => {
+                  setTocItems(content);
+                  tocUpdateTimeoutRef.current = null;
+                }, 100); // Reduced debounce time
+              });
             }
           },
         }),
@@ -287,7 +290,7 @@ export const useDdocEditor = ({
         clearTimeout(tocUpdateTimeoutRef.current);
       }
     };
-  }, [proExtensions]);
+  }, [proExtensions, extensions]);
 
   useEffect(() => {
     const hasAvailableModels = activeModel !== undefined && isAIAgentEnabled;
