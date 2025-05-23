@@ -289,6 +289,9 @@ export const handleContentPrint = (content: string) => {
   <html>
     <head>
       <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
+      <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
+      <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
       <title>Print Preview</title>
       <style>
         @media print {
@@ -467,6 +470,21 @@ export const handleContentPrint = (content: string) => {
             flex-direction: row;
             justify-content: space-between;
           }
+
+          /* KaTeX styles */
+          .katex {
+            font-size: 1.1em;
+          }
+          .katex-display {
+            margin: 1em 0;
+            overflow-x: auto;
+            overflow-y: hidden;
+            text-align: center;
+          }
+          .katex-display > .katex {
+            display: inline-block;
+            text-align: initial;
+          }
         }
       </style>
     </head>
@@ -474,10 +492,22 @@ export const handleContentPrint = (content: string) => {
       ${pagesHTML}
       <script>
         window.onload = () => {
-          window.print();
-          window.onafterprint = () => {
-            window.close();
-          };
+          // Render math equations
+          renderMathInElement(document.body, {
+            delimiters: [
+              {left: '$$', right: '$$', display: true},
+              {left: '$', right: '$', display: false}
+            ],
+            throwOnError: false
+          });
+          
+          // Print after math is rendered
+          setTimeout(() => {
+            window.print();
+            window.onafterprint = () => {
+              window.close();
+            };
+          }, 100);
         }
       </script>
     </body>
