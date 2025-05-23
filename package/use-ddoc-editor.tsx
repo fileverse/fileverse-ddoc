@@ -65,7 +65,9 @@ export const useDdocEditor = ({
   isPresentationMode,
   proExtensions,
   metadataProxyUrl,
+  extensions: externalExtensions,
   onCopyHeadingLink,
+  isConnected,
   activeModel,
   maxTokens,
   isAIAgentEnabled,
@@ -100,7 +102,7 @@ export const useDdocEditor = ({
   // V2 - comment
   const [tocItems, setTocItems] = useState<any[]>([]);
 
-  const [extensions, setExtensions] = useState([
+  const [extensions, setExtensions] = useState<AnyExtension[]>([
     ...(defaultExtensions(
       (error: string) => onError?.(error),
       secureImageUploadUrl,
@@ -123,6 +125,7 @@ export const useDdocEditor = ({
     Collaboration.configure({
       document: ydoc,
     }),
+    ...(externalExtensions ? Object.values(externalExtensions) : []),
   ]);
 
   useEffect(() => {
@@ -133,6 +136,19 @@ export const useDdocEditor = ({
       }),
     ]);
   }, [isPreviewMode]);
+
+  useEffect(() => {
+    if (isConnected) {
+      setExtensions((prev) => [
+        ...prev.filter((ext) => ext.name !== 'slash-command'),
+        SlashCommand(
+          (error: string) => onError?.(error),
+          secureImageUploadUrl,
+          isConnected,
+        ),
+      ]);
+    }
+  }, [isConnected]);
 
   const initialContentSetRef = useRef(false);
   const [isContentLoading, setIsContentLoading] = useState(true);
@@ -215,6 +231,39 @@ export const useDdocEditor = ({
 
   // Create a ref to store the timeout ID
   const tocUpdateTimeoutRef = useRef<number | null>(null);
+  const preventDeletionIfItIsReminderNode = (
+    view: EditorView,
+    event: KeyboardEvent,
+  ) => {
+    const { state } = view;
+    const { selection } = state;
+    const { from, to, empty } = selection;
+
+    if (event.key === 'Backspace' || event.key === 'Delete') {
+      let deletingReminder = false;
+
+      // 1) If there's a range select, check for reminderBlock nodes
+      if (!empty) {
+        state.doc.nodesBetween(from, to, (node) => {
+          if (node.type.name === 'reminderBlock') deletingReminder = true;
+        });
+      }
+      // 2) If it's just a cursor, use selection.$from
+      else {
+        const $from = selection.$from;
+        const adjacent =
+          event.key === 'Backspace' ? $from.nodeBefore : $from.nodeAfter;
+        if (adjacent?.type.name === 'reminderBlock') {
+          deletingReminder = true;
+        }
+      }
+
+      if (deletingReminder) {
+        event.preventDefault();
+        return true;
+      }
+    }
+  };
 
   // Don't recreate the editor when extensions change
   const editor = useEditor(
@@ -225,6 +274,7 @@ export const useDdocEditor = ({
         handleDOMEvents: {
           mouseover: handleCommentInteraction,
           keydown: (_view, event) => {
+            preventDeletionIfItIsReminderNode(_view, event);
             // prevent default event listeners from firing when slash command is active
             if (['ArrowUp', 'ArrowDown', 'Enter'].includes(event.key)) {
               const slashCommand = document.querySelector('#slash-command');
@@ -334,7 +384,7 @@ export const useDdocEditor = ({
     }
   }, [zoomLevel, isContentLoading, initialContent, editor?.isEmpty]);
 
-  const collaborationCleanupRef = useRef<() => void>(() => { });
+  const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
     if (!enableCollaboration || !collaborationId) {
