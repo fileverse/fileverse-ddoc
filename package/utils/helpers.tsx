@@ -11,7 +11,7 @@ export const nameFormatter = (username: string) => {
   return username;
 };
 
-const EXTENSIONS_WITH_DUPLICATE_WARNINGS = [
+export const EXTENSIONS_WITH_DUPLICATE_WARNINGS = [
   'paragraph',
   'editable',
   'clipboardTextSerializer',
