@@ -20,6 +20,7 @@ import { fromByteArray, toByteArray } from 'base64-js';
 import { uploadSecureImage } from '../../utils/upload-images';
 import { inlineLoader } from '../../utils/inline-loader';
 import { isLikelyLatex } from '../../utils/is-likely-latex';
+import { getTemporaryEditor } from '../../utils/helpers';
 
 // Initialize MarkdownIt for converting Markdown back to HTML with footnote support
 const markdownIt = new MarkdownIt().use(markdownItFootnote);
@@ -375,12 +376,10 @@ const MarkdownPasteHandler = (secureImageUploadUrl?: string) =>
             const docWithEmbedImageContent: any =
               await searchForSecureImageNodeAndEmbedImageContent(originalDoc);
 
-            const temporalEditor = new Editor({
-              extensions: editor.extensionManager.extensions.filter(
-                (e) => e.name !== 'collaboration',
-              ),
-              content: docWithEmbedImageContent.toJSON(),
-            });
+            const temporalEditor = getTemporaryEditor(
+              editor,
+              docWithEmbedImageContent.toJSON(),
+            );
 
             const inlineHtml = temporalEditor.getHTML();
             const markdown = turndownService.turndown(inlineHtml);
