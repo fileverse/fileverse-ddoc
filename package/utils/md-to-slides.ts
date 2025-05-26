@@ -6,6 +6,7 @@ import {
 } from '../extensions/mardown-paste-handler';
 import TurndownService from 'turndown';
 import { IpfsImageFetchPayload } from '../types';
+import { getTemporaryEditor } from './helpers';
 
 interface SlideContent {
   type: 'h1' | 'h2' | 'content' | 'image' | 'table';
@@ -174,12 +175,10 @@ export const convertToMarkdown = async (
       ipfsImageFetchFn,
     );
 
-  const temporalEditor = new Editor({
-    extensions: editor.extensionManager.extensions.filter(
-      (e) => e.name !== 'collaboration',
-    ),
-    content: docWithEmbedImageContent.toJSON(),
-  });
+  const temporalEditor = getTemporaryEditor(
+    editor,
+    docWithEmbedImageContent.toJSON(),
+  );
 
   const inlineHtml = temporalEditor.getHTML();
 

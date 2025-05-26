@@ -6,6 +6,7 @@ import {
   IpfsImageFetchPayload,
   IpfsImageUploadResponse,
 } from '../../types';
+import { Reminder } from '../../extensions/reminder-block/types';
 
 export interface BubbleMenuItem {
   name: string;
@@ -35,6 +36,8 @@ export type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
+  onReminderCreate?: (reminder: Reminder, type: string) => void;
+  isConnected?: boolean;
 };
 
 export interface NodeSelectorProps {

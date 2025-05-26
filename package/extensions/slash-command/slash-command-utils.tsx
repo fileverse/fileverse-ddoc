@@ -6,17 +6,20 @@ import { IMG_UPLOAD_SETTINGS } from '../../components/editor-utils';
 import { validateImageExtension } from '../../utils/check-image-type';
 import { CommandProps } from './types';
 import { IpfsImageUploadResponse } from '../../types';
+// import { showReminderMenu } from '../reminder-block/reminder-menu-renderer';
 
 export const getSuggestionItems = ({
   query,
   onError,
   ipfsImageUploadFn,
+  // isConnected,
   hasAvailableModels,
   editor,
 }: {
   query: string;
   onError?: (errorString: string) => void;
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
+  isConnected?: boolean;
   hasAvailableModels?: boolean;
   editor?: any;
 }) => {
@@ -153,6 +156,29 @@ export const getSuggestionItems = ({
         editor.chain().focus().deleteRange(range).toggleOrderedList().run();
       },
     },
+    // {
+    //   title: 'Reminder',
+    //   description: isConnected
+    //     ? `We'll send you a push notification, so you don't forget about something important.`
+    //     : 'You need to be logged-in to create reminders',
+    //   searchTerms: ['reminder', 'alert', 'notification'],
+    //   icon: (
+    //     <LucideIcon
+    //       name="AlarmClock"
+    //       size={'md'}
+    //       stroke={(!isConnected && '#a1aab1') || undefined}
+    //     />
+    //   ),
+    //   image: '',
+    //   isDisabled: !isConnected,
+    //   command: ({ editor, range }: CommandProps) => {
+    //     if (!isConnected) {
+    //       return;
+    //     }
+    //     showReminderMenu(editor, range, 'slash');
+    //     return true;
+    //   },
+    // },
     {
       title: 'Callout',
       description: 'Make writing stand out',

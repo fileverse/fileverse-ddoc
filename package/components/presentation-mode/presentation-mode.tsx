@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { useEffect, useState, useCallback } from 'react';
-import { Editor, EditorContent, useEditor } from '@tiptap/react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
+import { Editor, EditorContent } from '@tiptap/react';
 import {
   AnimatedLoader,
   DynamicDropdownV2,
@@ -18,6 +18,7 @@ import copy from 'copy-to-clipboard';
 import { convertMarkdownToHTML } from '../../utils/md-to-html';
 import { useResponsive } from '../../utils/responsive';
 import { IpfsImageFetchPayload } from '../../types';
+import { EXTENSIONS_WITH_DUPLICATE_WARNINGS } from '../../utils/helpers';
 
 interface PresentationModeProps {
   editor: Editor;
@@ -118,15 +119,18 @@ export const PresentationMode = ({
     'forward',
   );
 
-  const presentationEditor = useEditor(
-    {
+  const presentationEditor = useMemo(() => {
+    return new Editor({
       extensions: editor.extensionManager.extensions.filter(
-        (b) => b.name !== 'collaboration' && b.name !== 'aiAutocomplete',
+        (b) =>
+          ![
+            'collaboration',
+            'aiAutocomplete',
+            ...EXTENSIONS_WITH_DUPLICATE_WARNINGS,
+          ].includes(b.name),
       ),
-      editable: false,
-    },
-    [],
-  );
+    });
+  }, []);
   const handlePresentationMode = useCallback(async () => {
     if (!editor) return;
     if (!isPreviewMode) {

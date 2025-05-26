@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { TagType } from '@fileverse/ui';
 import { Extension, JSONContent } from '@tiptap/core';
 import { EditorProps } from '@tiptap/pm/view';
@@ -61,8 +62,8 @@ export interface DdocProps extends CommentAccountProps {
   //Comments V2 Props
   showTOC?: boolean;
   setShowTOC?: React.Dispatch<SetStateAction<boolean>>;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   proExtensions?: Record<string, Extension | any>;
+  extensions?: Record<string, Extension | any>;
   selectedTags?: TagType[];
   setSelectedTags?: React.Dispatch<SetStateAction<TagType[]>>;
   enableCollaboration?: boolean | undefined;

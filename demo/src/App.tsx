@@ -121,6 +121,7 @@ function App() {
     }
   }, [collaborationId]);
 
+
   const renderNavbar = ({ editor }: { editor: JSONContent }): JSX.Element => {
     const publishDoc = () => console.log(editor, title);
     return (
@@ -315,14 +316,14 @@ function App() {
         showTOC={showTOC}
         setShowTOC={setShowTOC}
         proExtensions={{
-          TableOfContents,
-          getHierarchicalIndexes,
+          TableOfContents: TableOfContents,
+          getHierarchicalIndexes: getHierarchicalIndexes,
         }}
         isConnected={isConnected}
         connectViaWallet={async () => { }}
         isLoading={false}
         connectViaUsername={handleConnectViaUsername}
-        isDDocOwner={true}
+        isConnected={isConnected}
         onCopyHeadingLink={(link: string) => {
           navigator.clipboard.writeText(link);
         }}

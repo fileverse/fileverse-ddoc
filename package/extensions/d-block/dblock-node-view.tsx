@@ -306,19 +306,31 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
     const isDocEmpty = useMemo(() => {
       const { doc, selection } = editor.state;
       const pos = getPos();
-      const isFirstDBlock = doc.nodeAt(pos) === doc.firstChild;
-      const isParagraph =
-        doc.nodeAt(pos)?.type.name === 'dBlock' &&
-        doc.nodeAt(pos)?.content.firstChild?.type.name === 'paragraph';
+      const nodeAtPos = doc.nodeAt(pos);
+
+      if (!nodeAtPos || nodeAtPos.type.name !== 'dBlock') return false;
+
+      const isFirstDBlock = nodeAtPos === doc.firstChild;
+      const paragraphNode = nodeAtPos.content.firstChild;
+      const isParagraph = paragraphNode?.type.name === 'paragraph';
+
+      if (!isParagraph) return false;
+
       const isFirstDBlockFocused =
         selection.$anchor.pos >= pos &&
-        selection.$anchor.pos <= pos + (doc.nodeAt(pos)?.nodeSize || 0);
-      return (
-        doc.textContent === '' &&
-        isFirstDBlock &&
-        isParagraph &&
-        isFirstDBlockFocused
-      );
+        selection.$anchor.pos <= pos + nodeAtPos.nodeSize;
+
+      if (!isFirstDBlock || !isFirstDBlockFocused) return false;
+
+      let hasContent = false;
+
+      paragraphNode.content.forEach((child) => {
+        if ((child.isText && child.text?.trim()) || !child.isText) {
+          hasContent = true;
+        }
+      });
+
+      return !hasContent;
     }, [getPos, editor.state]);
 
     if (isPresentationMode && isPreviewMode) {

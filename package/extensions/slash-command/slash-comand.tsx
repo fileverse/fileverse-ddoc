@@ -270,6 +270,7 @@ const renderItems = () => {
 const SlashCommand = (
   onError?: (errorString: string) => void,
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
+  isConnected?: boolean,
   hasAvailableModels?: boolean,
 ) => {
   const items = ({ query, editor }: { query: string; editor: Editor }) => {
@@ -277,6 +278,7 @@ const SlashCommand = (
       query,
       onError,
       ipfsImageUploadFn,
+      isConnected,
       hasAvailableModels,
       editor,
     });
