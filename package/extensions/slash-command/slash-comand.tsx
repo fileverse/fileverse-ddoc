@@ -269,6 +269,7 @@ const renderItems = () => {
 const SlashCommand = (
   onError?: (errorString: string) => void,
   secureImageUploadUrl?: string,
+  isConnected?: boolean,
   hasAvailableModels?: boolean,
 ) => {
   const items = ({ query, editor }: { query: string; editor: Editor }) => {
@@ -276,6 +277,7 @@ const SlashCommand = (
       query,
       onError,
       secureImageUploadUrl,
+      isConnected,
       hasAvailableModels,
       editor,
     });

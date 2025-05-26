@@ -5,6 +5,7 @@ import {
   turndownService,
 } from '../extensions/mardown-paste-handler';
 import TurndownService from 'turndown';
+import { getTemporaryEditor } from './helpers';
 
 interface SlideContent {
   type: 'h1' | 'h2' | 'content' | 'image' | 'table';
@@ -165,12 +166,10 @@ export const convertToMarkdown = async (editor: Editor) => {
   const docWithEmbedImageContent =
     await searchForSecureImageNodeAndEmbedImageContent(originalDoc);
 
-  const temporalEditor = new Editor({
-    extensions: editor.extensionManager.extensions.filter(
-      (e) => e.name !== 'collaboration',
-    ),
-    content: docWithEmbedImageContent.toJSON(),
-  });
+  const temporalEditor = getTemporaryEditor(
+    editor,
+    docWithEmbedImageContent.toJSON(),
+  );
 
   const inlineHtml = temporalEditor.getHTML();
 

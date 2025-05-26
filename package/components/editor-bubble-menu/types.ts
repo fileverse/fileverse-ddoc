@@ -2,6 +2,7 @@
 import { BubbleMenuProps, Editor } from '@tiptap/react';
 import { SetStateAction } from 'react';
 import { InlineCommentData } from '../../types';
+import { Reminder } from '../../extensions/reminder-block/types';
 
 export interface BubbleMenuItem {
   name: string;
@@ -27,6 +28,8 @@ export type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   commentDrawerOpen?: boolean;
   setCommentDrawerOpen?: React.Dispatch<SetStateAction<boolean>>;
   isCollabDocumentPublished?: boolean | undefined;
+  onReminderCreate?: (reminder: Reminder, type: string) => void;
+  isConnected?: boolean;
 };
 
 export interface NodeSelectorProps {

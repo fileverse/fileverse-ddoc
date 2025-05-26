@@ -3,7 +3,7 @@ import {
   // IconButton
 } from '@fileverse/ui';
 import { TextSelection } from '@tiptap/pm/state';
-import { useState, useMemo, useCallback, memo, useRef } from 'react';
+import { useState, useMemo, useCallback, memo, useRef, useEffect } from 'react';
 import { ToCProps, ToCItemProps, ToCItemType } from './types';
 import { useMediaQuery } from 'usehooks-ts';
 import { useEditorContext } from '../../context/editor-context';
@@ -86,6 +86,7 @@ export const ToC = memo(({ items = [], editor, setItems }: ToCProps) => {
   // Add refs for the cache
   const headingsCacheRef = useRef<Map<string, HTMLElement> | null>(null);
   const lastCacheTimeRef = useRef<number>(0);
+  const updateTimeoutRef = useRef<number | null>(null);
 
   // Use the optimized context but only what we need
   const { collapsedHeadings, setCollapsedHeadings, expandMultipleHeadings } =
@@ -99,11 +100,11 @@ export const ToC = memo(({ items = [], editor, setItems }: ToCProps) => {
     }));
   }, [items, activeId]);
 
-  // Update getHeadingsMap to use refs
+  // Update getHeadingsMap to use refs and be more efficient
   const getHeadingsMap = useCallback(() => {
     if (
       editor &&
-      (!headingsCacheRef.current || Date.now() - lastCacheTimeRef.current > 500)
+      (!headingsCacheRef.current || Date.now() - lastCacheTimeRef.current > 250)
     ) {
       const newMap = new Map<string, HTMLElement>();
 
@@ -122,6 +123,34 @@ export const ToC = memo(({ items = [], editor, setItems }: ToCProps) => {
 
     return headingsCacheRef.current;
   }, [editor]);
+
+  // Add effect to handle editor updates
+  useEffect(() => {
+    if (!editor) return;
+
+    const handleUpdate = () => {
+      if (updateTimeoutRef.current) {
+        cancelAnimationFrame(updateTimeoutRef.current);
+      }
+
+      updateTimeoutRef.current = requestAnimationFrame(() => {
+        // Force cache refresh on editor update
+        headingsCacheRef.current = null;
+        getHeadingsMap();
+      });
+    };
+
+    editor.on('update', handleUpdate);
+    editor.on('selectionUpdate', handleUpdate);
+
+    return () => {
+      editor.off('update', handleUpdate);
+      editor.off('selectionUpdate', handleUpdate);
+      if (updateTimeoutRef.current) {
+        cancelAnimationFrame(updateTimeoutRef.current);
+      }
+    };
+  }, [editor, getHeadingsMap]);
 
   // Fix for handling heading expansion
   const expandHeadingAndItsAncestors = useCallback(
