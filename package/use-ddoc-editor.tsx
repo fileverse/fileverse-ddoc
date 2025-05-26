@@ -102,7 +102,7 @@ export const useDdocEditor = ({
   }, [activeCommentId]);
   // V2 - comment
   const [tocItems, setTocItems] = useState<any[]>([]);
-
+  const hasAvailableModels = activeModel !== undefined && isAIAgentEnabled;
   const [extensions, setExtensions] = useState<AnyExtension[]>([
     ...(defaultExtensions({
       onError: (error: string) => onError?.(error),
@@ -111,7 +111,12 @@ export const useDdocEditor = ({
       onCopyHeadingLink,
       ipfsImageFetchFn,
     }) as AnyExtension[]),
-    SlashCommand((error: string) => onError?.(error), ipfsImageUploadFn),
+    SlashCommand(
+      (error: string) => onError?.(error),
+      ipfsImageUploadFn,
+      isConnected,
+      hasAvailableModels,
+    ),
     customTextInputRules,
     PageBreak,
     Comment.configure({
@@ -147,6 +152,7 @@ export const useDdocEditor = ({
           (error: string) => onError?.(error),
           ipfsImageUploadFn,
           isConnected,
+          hasAvailableModels,
         ),
       ]);
     }
@@ -345,7 +351,6 @@ export const useDdocEditor = ({
   }, [proExtensions, extensions]);
 
   useEffect(() => {
-    const hasAvailableModels = activeModel !== undefined && isAIAgentEnabled;
     if (activeModel) {
       setExtensions([
         ...extensions.filter(
@@ -368,6 +373,7 @@ export const useDdocEditor = ({
         SlashCommand(
           (error: string) => onError?.(error),
           ipfsImageUploadFn,
+          isConnected,
           hasAvailableModels,
         ),
       ]);
