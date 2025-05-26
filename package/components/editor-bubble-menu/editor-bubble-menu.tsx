@@ -40,6 +40,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     activeCommentId,
     isCollabDocumentPublished,
     disableInlineComment,
+    ipfsImageUploadFn,
+    ipfsImageFetchFn,
     onReminderCreate,
     isConnected,
   } = props;
@@ -50,6 +52,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
     editor: editor,
     onError,
+    ipfsImageUploadFn,
+    ipfsImageFetchFn,
   });
 
   const {

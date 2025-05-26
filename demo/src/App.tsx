@@ -286,7 +286,6 @@ function App() {
         }}
         renderNavbar={renderNavbar}
         ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}
-        secureImageUploadUrl={import.meta.env.VITE_SECURE_IMAGE_UPLOAD_URL}
         tags={sampleTags}
         selectedTags={selectedTags}
         setSelectedTags={setSelectedTags}

@@ -13,7 +13,7 @@ export const useHeadlessEditor = () => {
   const getEditor = () => {
     const ydoc = new Y.Doc();
     const extensions = [
-      ...defaultExtensions(() => null, '', '').filter(
+      ...defaultExtensions({ onError: () => null }).filter(
         (extension) => extension.name !== 'characterCount',
       ),
       customTextInputRules,

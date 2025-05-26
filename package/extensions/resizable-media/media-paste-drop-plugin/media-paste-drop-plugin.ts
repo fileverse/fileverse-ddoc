@@ -2,6 +2,7 @@ import { Plugin, PluginKey } from 'prosemirror-state';
 import { IMG_UPLOAD_SETTINGS } from '../../../components/editor-utils';
 import { startImageUpload } from '../../../utils/upload-images.tsx';
 import { validateImageExtension } from '../../../utils/check-image-type.ts';
+import { IpfsImageUploadResponse } from '../../../types.ts';
 
 export type UploadFnType = (image: File) => Promise<string>;
 
@@ -14,9 +15,8 @@ export type UploadFnType = (image: File) => Promise<string>;
  * The function returns a new instance of the Plugin.
  */
 export const getMediaPasteDropPlugin = (
-  upload: UploadFnType,
   onError: (error: string) => void,
-  secureImageUploadUrl?: string,
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
 ) => {
   return new Plugin({
     key: new PluginKey('media-paste-drop'),
@@ -29,14 +29,14 @@ export const getMediaPasteDropPlugin = (
         if (!position) {
           return false;
         }
-        const imgConfig = secureImageUploadUrl
+        const imgConfig = ipfsImageUploadFn
           ? IMG_UPLOAD_SETTINGS.Extended
           : IMG_UPLOAD_SETTINGS.Base;
         const filesContainImage = Object.values(files ?? {}).some(
           (file) => file?.type.indexOf('image') === 0,
         );
 
-        if (filesContainImage && secureImageUploadUrl) {
+        if (filesContainImage && ipfsImageUploadFn) {
           Object.values(files ?? {}).forEach((file) => {
             const isImage = file?.type.indexOf('image') === 0;
             if (isImage) {
@@ -47,7 +47,7 @@ export const getMediaPasteDropPlugin = (
                 onError(imgConfig.errorMsg);
                 throw new Error(imgConfig.errorMsg);
               }
-              startImageUpload(file, _view, position, secureImageUploadUrl);
+              startImageUpload(file, _view, position, ipfsImageUploadFn);
             }
           });
 
@@ -111,13 +111,13 @@ export const getMediaPasteDropPlugin = (
             return;
           }
 
-          if (typeof upload === 'function') {
+          if (typeof ipfsImageUploadFn === 'function') {
             try {
               startImageUpload(
                 imageOrVideo,
                 view,
                 coordinates.pos,
-                secureImageUploadUrl,
+                ipfsImageUploadFn,
               );
             } catch (error) {
               onError((error as Error).message || 'Error uploading media');
