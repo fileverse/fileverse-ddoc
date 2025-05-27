@@ -1,8 +1,7 @@
 import { CustomModel } from './ModelSettings';
-import { CreateWebWorkerMLCEngine, MLCEngineInterface } from '@mlc-ai/web-llm';
+import { WebLLMWorkerManager } from './WebLLMWorkerManager';
 
 export class WebLLMService {
-  private static engine: MLCEngineInterface | null = null;
   private static isInitialized = false;
 
   /**
@@ -10,17 +9,12 @@ export class WebLLMService {
    * @param model The model configuration
    */
   static async initialize(model: CustomModel): Promise<void> {
-    if (this.isInitialized && this.engine) {
+    if (this.isInitialized) {
       return;
     }
 
     try {
-      // Create a new worker and engine
-      const worker = new Worker(new URL('../../workers/webllm.worker.ts', import.meta.url), {
-        type: 'module',
-      });
-      
-      this.engine = await CreateWebWorkerMLCEngine(worker, model.modelName);
+      await WebLLMWorkerManager.getWorker(model);
       this.isInitialized = true;
     } catch (error) {
       console.error('Error initializing WebLLM:', error);
@@ -42,17 +36,10 @@ export class WebLLMService {
     systemPrompt?: string,
   ): Promise<string> {
     try {
-      if (!this.engine || !this.isInitialized) {
-        await this.initialize(model);
-      }
-
-      if (!this.engine) {
-        throw new Error('WebLLM engine not initialized');
-      }
-
+      const engine = await WebLLMWorkerManager.getWorker(model);
       const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}.\n\nReturn in full Markdown format. Write in ${tone} tone.`;
 
-      const response = await this.engine.chat.completions.create({
+      const response = await engine.chat.completions.create({
         messages: [
           {
             role: 'system',
@@ -91,17 +78,10 @@ export class WebLLMService {
     systemPrompt?: string,
   ) {
     try {
-      if (!this.engine || !this.isInitialized) {
-        await this.initialize(model);
-      }
-
-      if (!this.engine) {
-        throw new Error('WebLLM engine not initialized');
-      }
-
+      const engine = await WebLLMWorkerManager.getWorker(model);
       const formattedSystemPrompt = `${systemPrompt || model.systemPrompt}.\n\nReturn in full Markdown format. Write in ${tone} tone.`;
       
-      const stream = await this.engine.chat.completions.create({
+      const stream = await engine.chat.completions.create({
         messages: [
           {
             role: 'system',
@@ -144,5 +124,14 @@ export class WebLLMService {
    */
   static isWebLLMModel(model: CustomModel): boolean {
     return model.id?.startsWith('webllm-') || false;
+  }
+
+  /**
+   * Get the current state of a WebLLM worker
+   * @param modelName The name of the model
+   * @returns The current state of the worker, or null if not found
+   */
+  static getWorkerState(modelName: string) {
+    return WebLLMWorkerManager.getWorkerState(modelName);
   }
 } 

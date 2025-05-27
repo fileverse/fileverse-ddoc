@@ -5,6 +5,10 @@ import { DefaultModelProvider } from './DefaultModelProvider';
 import { ModelService } from './ModelService';
 import { CreateWebWorkerMLCEngine, MLCEngineInterface } from '@mlc-ai/web-llm';
 import { OllamaService } from './OllamaService';
+import { WebLLMService } from './WebLLMService';
+import { cn } from '@fileverse/ui';
+import { useLocalStorage } from 'usehooks-ts';
+import { WebLLMWorkerManager } from './WebLLMWorkerManager';
 
 interface ModelContextType {
   defaultModels: CustomModel[];
@@ -92,6 +96,118 @@ export const ModelContext = createContext<ModelContextType>({
   handleAutocompleteToggle: () => { },
 });
 
+// WebLLM Preloader: Preload model as soon as AI is enabled and a WebLLM model is selected
+const WebLLMPreloader = ({ activeModel, isAIAgentEnabled }: { activeModel?: CustomModel; isAIAgentEnabled: boolean }) => {
+  const [progress, setProgress] = useState(0);
+  const [show, setShow] = useState(false);
+  const [isDone, setIsDone] = useState(false);
+  const [preloadedModels, setPreloadedModels] = useLocalStorage<Record<string, boolean>>('webllm-preloaded-models', {});
+
+  // Check for expired models and clear them from localStorage
+  useEffect(() => {
+    if (activeModel && WebLLMService.isWebLLMModel(activeModel)) {
+      const expiredModels = WebLLMWorkerManager.getExpiredModelNames();
+      if (expiredModels.length > 0) {
+        setPreloadedModels(prev => {
+          const updated = { ...prev };
+          expiredModels.forEach(modelName => {
+            delete updated[modelName];
+          });
+          return updated;
+        });
+      }
+    }
+  }, [activeModel, setPreloadedModels]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    async function preload() {
+      if (!isAIAgentEnabled || !activeModel || !WebLLMService.isWebLLMModel(activeModel)) {
+        return;
+      }
+
+      // Check if model is already preloaded and not expired
+      if (preloadedModels[activeModel.modelName]) {
+        // Double check if the model is actually expired in the worker cache
+        const expiredModels = WebLLMWorkerManager.getExpiredModelNames();
+        if (expiredModels.includes(activeModel.modelName)) {
+          // If expired, remove from preloaded models and continue with download
+          setPreloadedModels(prev => {
+            const updated = { ...prev };
+            delete updated[activeModel.modelName];
+            return updated;
+          });
+        } else {
+          return;
+        }
+      }
+
+      setShow(true);
+      setProgress(0);
+      setIsDone(false);
+
+      // Fake progress: increment every 300ms up to 99%
+      interval = setInterval(() => {
+        setProgress((prev) => {
+          if (prev < 99) return prev + 1;
+          return prev;
+        });
+      }, 300);
+
+      try {
+        await WebLLMService.initialize(activeModel);
+        if (!cancelled) {
+          setProgress(100);
+          setIsDone(true);
+
+          // Store preload status using useLocalStorage
+          setPreloadedModels(prev => ({
+            ...prev,
+            [activeModel.modelName]: true
+          }));
+
+          setTimeout(() => setShow(false), 2000);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setShow(false);
+        }
+        console.error('Error preloading WebLLM model:', err);
+      } finally {
+        if (interval) clearInterval(interval);
+      }
+    }
+    preload();
+    return () => {
+      cancelled = true;
+      if (interval) clearInterval(interval);
+    };
+  }, [isAIAgentEnabled, activeModel, preloadedModels, setPreloadedModels]);
+
+  if (!show) return null;
+
+  return (
+    <div className="fixed bottom-4 right-4 z-50 w-72 color-bg-default border color-border-default rounded shadow-elevation-3 p-4 flex flex-col items-center transition-all">
+      <div className="mb-2 text-body-heading-xsm font-medium color-text-default">
+        {isDone ? '✅ Downloaded' : <>Downloading LLM model <span className="animate-loading-dots">...</span></>}
+      </div>
+      <div className="w-full h-1 color-bg-tertiary rounded-full overflow-hidden animate-pulse">
+        <div
+          className={cn("h-full transition-all duration-200", {
+            "color-bg-default-inverse": !isDone,
+            "bg-[#177E23]": isDone,
+          })}
+          style={{
+            width: `${progress}%`,
+          }}
+        />
+      </div>
+    </div>
+  );
+};
+
 export const ModelProvider = ({ children }: ModelProviderProps) => {
   const [defaultModels, setDefaultModels] = useState<CustomModel[]>([]);
   const [isLoadingDefaultModels, setIsLoadingDefaultModels] = useState(true);
@@ -110,7 +226,7 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
   const [selectedLLM, setSelectedLLM] = useState<string | null>(null);
   const [isAIAgentEnabled, setIsAIAgentEnabled] = useState(() => {
     const stored = localStorage.getItem('ai-agent-enabled');
-    return stored === null ? true : stored === 'true';
+    return stored === null ? false : stored === 'true';
   });
   const [isAutocompleteEnabled, setIsAutocompleteEnabled] = useState(() => {
     const stored = localStorage.getItem('autocomplete-enabled');
@@ -345,6 +461,8 @@ export const ModelProvider = ({ children }: ModelProviderProps) => {
         handleAutocompleteToggle,
       }}
     >
+      {/* Preload WebLLM model in the background if needed */}
+      <WebLLMPreloader activeModel={activeModel} isAIAgentEnabled={isAIAgentEnabled} />
       {children}
     </ModelContext.Provider>
   );
