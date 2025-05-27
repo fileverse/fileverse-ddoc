@@ -5,6 +5,13 @@ import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { Ollama } from 'ollama/browser';
 
+// Singleton WebLLM engine
+const isWebLLMModel = (model: any): boolean => {
+  return (
+    model?.id?.startsWith('webllm-') || model?.modelName?.startsWith('webllm-')
+  );
+};
+
 export const AiAutocomplete = Extension.create({
   name: 'aiAutocomplete',
 
@@ -68,6 +75,47 @@ export const AiAutocomplete = Extension.create({
         }
         lastPrompt = prompt;
 
+        const modelContext = (window as any).__MODEL_CONTEXT__;
+        if (
+          modelContext &&
+          modelContext.getWebLLMEngine &&
+          isWebLLMModel(options.model)
+        ) {
+          const engine = await modelContext.getWebLLMEngine(
+            options.model.modelName || options.model.id?.replace('webllm-', ''),
+          );
+          const response = await engine.chat.completions.create({
+            messages: [
+              {
+                role: 'user',
+                content: prompt,
+              },
+            ],
+            max_tokens: options.maxTokens,
+            temperature: options.temperature,
+            stream: false,
+          });
+          let suggestion =
+            response.choices[0]?.message?.content?.trimStart() || '';
+          const match = suggestion.match(/^[^.!?]*[.!?]?/);
+          if (match) {
+            suggestion = match[0];
+          }
+          const trimmedPrompt = prompt.trim();
+          if (
+            suggestion &&
+            trimmedPrompt.length > 0 &&
+            /[.]$/.test(trimmedPrompt)
+          ) {
+            suggestion =
+              suggestion.charAt(0).toUpperCase() + suggestion.slice(1);
+          }
+          if (suggestion && !prompt.endsWith(suggestion)) {
+            return suggestion;
+          }
+          return null;
+        }
+
         const response = await ollama.generate({
           model: options.model?.modelName,
           prompt,
@@ -78,6 +126,9 @@ export const AiAutocomplete = Extension.create({
         });
 
         let suggestion = response.response?.trimStart() || '';
+
+        // Remove any think tags from the response
+        suggestion = suggestion.replace(/<think>.*?<\/think>/gs, '').trim();
 
         // Truncate at first sentence-ending punctuation
         const match = suggestion.match(/^[^.!?]*[.!?]?/);
