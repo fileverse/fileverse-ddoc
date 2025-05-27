@@ -214,8 +214,8 @@ export const AIWriterNodeView = memo(
 
         const context = getDocumentContext();
         const fullPrompt = includeContext
-          ? `Context from document:\n${context}\n\nUser prompt: ${localPrompt} /no_think`
-          : `${localPrompt} /no_think`;
+          ? `Context from document:\n${context}\n\nUser prompt: ${localPrompt}`
+          : `${localPrompt}`;
 
         if (modelContext?.activeModel) {
           const modelService = (
@@ -601,6 +601,7 @@ export const AIWriterNodeView = memo(
                     dangerouslySetInnerHTML={{
                       __html: md.render(streamingContent || content || ''),
                     }}
+                    onDoubleClick={handleEdit}
                   />
                 )}
               </div>
