@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { mergeAttributes, Node } from '@tiptap/core';
-import { NodeSelection } from 'prosemirror-state';
+import { NodeSelection } from '@tiptap/pm/state';
 
 export interface TableRowOptions {
   HTMLAttributes: Record<string, any>;
