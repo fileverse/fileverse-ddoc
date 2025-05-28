@@ -85,7 +85,7 @@ const cellButtonsConfig: CellButton[] = [
     name: 'Remove table',
     action: (editor) => editor.chain().focus().deleteTable().run(),
     icon: <LucideIcon name="Trash2" size={'md'} />,
-    group: 'table',
+    group: 'other',
   },
 ];
 
@@ -218,7 +218,7 @@ export const TableCellNodeView: FC<NodeViewProps> = ({ editor, selected }) => {
           >
             <LucideIcon
               name="Ellipsis"
-              className="color-text-default"
+              className="color-icon-secondary"
               size={'sm'}
             />
           </label>
