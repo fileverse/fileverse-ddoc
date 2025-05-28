@@ -29,10 +29,11 @@ import {
 } from '@tiptap/core';
 import { TextSelection } from '@tiptap/pm/state';
 import { EditorView, NodeView } from '@tiptap/pm/view';
-import { Node as ProseMirrorNode } from '@tiptap/pm/model';
+import { DOMOutputSpec, Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { TableView } from './table-view';
 import { createTable } from './utilities/create-table';
 import { deleteTableWhenAllCellsSelected } from './utilities/delete-table-when-all-cells-selected';
+import { createColGroup } from './utilities/create-col-group';
 
 export interface TableOptions {
   /**
@@ -166,49 +167,23 @@ export const Table = Node.create<TableOptions>({
   },
 
   renderHTML({ node, HTMLAttributes }) {
-    let totalWidth = 0;
-    let fixedWidth = true;
+    const { colgroup, tableWidth, tableMinWidth } = createColGroup(
+      node,
+      this.options.cellMinWidth,
+    );
 
-    try {
-      // use first row to determine width of table;
-      const tr = node.content.firstChild;
-      tr!.content.forEach((td) => {
-        if (td.attrs.colwidth) {
-          td.attrs.colwidth.forEach((col: number) => {
-            if (!col) {
-              fixedWidth = false;
-              totalWidth += this.options.cellMinWidth;
-            } else {
-              totalWidth += col;
-            }
-          });
-        } else {
-          fixedWidth = false;
-          const colspan = td.attrs.colspan ? td.attrs.colspan : 1;
-          totalWidth += this.options.cellMinWidth * colspan;
-        }
-      });
-    } catch (error) {
-      fixedWidth = false;
-    }
-
-    if (fixedWidth && totalWidth > 0) {
-      HTMLAttributes.style = `width: ${totalWidth}px;`;
-    } else if (totalWidth && totalWidth > 0) {
-      HTMLAttributes.style = `min-width: ${totalWidth}px`;
-    } else {
-      HTMLAttributes.style = null;
-    }
-
-    return [
-      'div',
-      { class: 'table-wrapper' },
-      [
-        'table',
-        mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
-        ['tbody', 0],
-      ],
+    const table: DOMOutputSpec = [
+      'table',
+      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
+        style: tableWidth
+          ? `width: ${tableWidth}`
+          : `min-width: ${tableMinWidth}`,
+      }),
+      colgroup,
+      ['tbody', 0],
     ];
+
+    return table;
   },
 
   addCommands() {
