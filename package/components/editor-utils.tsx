@@ -38,6 +38,7 @@ import {
 } from './editor-bubble-menu/node-selector';
 import { searchForSecureImageNodeAndEmbedImageContent } from '../extensions/mardown-paste-handler';
 import { inlineLoader } from '../utils/inline-loader';
+import { getTemporaryEditor } from '../utils/helpers';
 
 interface IEditorToolElement {
   icon: any;
@@ -684,12 +685,10 @@ export const useEditorToolbar = ({
             const docWithEmbedImageContent =
               await searchForSecureImageNodeAndEmbedImageContent(originalDoc);
 
-            const temporalEditor = new Editor({
-              extensions: editor.extensionManager.extensions.filter(
-                (e) => e.name !== 'collaboration',
-              ),
-              content: docWithEmbedImageContent.toJSON(),
-            });
+            const temporalEditor = getTemporaryEditor(
+              editor,
+              docWithEmbedImageContent.toJSON(),
+            );
 
             const inlineHtml = temporalEditor.getHTML();
             handleContentPrint(inlineHtml);

@@ -1,3 +1,4 @@
+import { Editor, JSONContent } from '@tiptap/core';
 import { formatDistanceToNow, isAfter, subDays } from 'date-fns';
 
 export const nameFormatter = (username: string) => {
@@ -8,6 +9,47 @@ export const nameFormatter = (username: string) => {
   }
 
   return username;
+};
+
+export const EXTENSIONS_WITH_DUPLICATE_WARNINGS = [
+  'paragraph',
+  'editable',
+  'clipboardTextSerializer',
+  'commands',
+  'focusEvents',
+  'keymap',
+  'tabindex',
+  'drop',
+  'paste',
+  'bold',
+  'blockquote',
+  'code',
+  'hardBreak',
+  'heading',
+  'italic',
+  'orderedList',
+  'strike',
+  'text',
+  'column',
+  'columns',
+  'inlineMath',
+  'markdownTightLists',
+  'markdownClipboard',
+];
+
+export const getTemporaryEditor = (editor: Editor, content: JSONContent) => {
+  const temporalEditor = new Editor({
+    extensions: editor.extensionManager.extensions.filter(
+      (e) =>
+        ![
+          'collaboration',
+          'collaborationCursor',
+          ...EXTENSIONS_WITH_DUPLICATE_WARNINGS,
+        ].includes(e.name),
+    ),
+    content,
+  });
+  return temporalEditor;
 };
 
 export const dateFormatter = (date: Date) => {

@@ -1,4 +1,4 @@
-import { EditorContent, isTextSelection } from '@tiptap/react';
+import { EditorContent, Extension, isTextSelection } from '@tiptap/react';
 import { EditorBubbleMenu } from './components/editor-bubble-menu/editor-bubble-menu';
 import { DdocProps } from './types';
 import { ColumnsMenu } from './extensions/multi-column/menus';
@@ -38,6 +38,7 @@ import { DocumentOutline } from './components/toc/document-outline';
 import { EditorProvider } from './context/editor-context';
 import { fadeInTransition, slideUpTransition } from './components/motion-div';
 import { PreviewContentLoader } from './components/preview-content-loader';
+import { Reminder } from './extensions/reminder-block/types';
 
 const DdocEditor = forwardRef(
   (
@@ -99,7 +100,6 @@ const DdocEditor = forwardRef(
       onDeleteComment,
       showTOC,
       setShowTOC,
-      proExtensions,
       isConnected,
       connectViaWallet,
       isLoading,
@@ -109,6 +109,8 @@ const DdocEditor = forwardRef(
       disableInlineComment,
       renderThemeToggle,
       metadataProxyUrl,
+      extensions,
+      proExtensions,
       onCopyHeadingLink,
       footerHeight,
       activeModel,
@@ -185,9 +187,11 @@ const DdocEditor = forwardRef(
       onInvalidContentError,
       ignoreCorruptedData,
       isPresentationMode,
-      proExtensions,
       metadataProxyUrl,
+      extensions,
+      proExtensions,
       onCopyHeadingLink,
+      isConnected,
       activeModel,
       maxTokens,
       isAIAgentEnabled,
@@ -222,6 +226,48 @@ const DdocEditor = forwardRef(
               URL.revokeObjectURL(url);
             }
           }
+        },
+        updateReminderNode: ({
+          id,
+          status,
+        }: {
+          id: string;
+          status: Reminder['status'];
+        }) => {
+          if (!editor) throw new Error('cannot update node without editor');
+
+          editor.commands.command(({ tr, state, dispatch }) => {
+            const { doc } = state;
+            let updated = false;
+
+            doc.descendants((node, pos) => {
+              if (
+                node.type.name === 'reminderBlock' &&
+                node.attrs.reminder.id === id
+              ) {
+                if (status === 'cancelled') {
+                  tr.delete(pos, pos + node.nodeSize);
+                } else {
+                  tr.setNodeMarkup(pos, undefined, {
+                    ...node.attrs,
+                    reminder: {
+                      ...node.attrs.reminder,
+                      status,
+                    },
+                  });
+                }
+                updated = true;
+                return false; // stop traversal
+              }
+            });
+
+            if (updated && dispatch) {
+              dispatch(tr);
+              return true;
+            }
+
+            return false;
+          });
         },
       }),
       [editor, ydoc],
@@ -405,6 +451,7 @@ const DdocEditor = forwardRef(
             )}
 
             <div
+              id="editor-wrapper"
               className={cn(
                 'color-bg-default w-full mx-auto rounded',
                 !isPreviewMode &&
@@ -492,6 +539,12 @@ const DdocEditor = forwardRef(
                       onInlineComment={onInlineComment}
                       activeCommentId={activeCommentId}
                       isCollabDocumentPublished={isCollabDocumentPublished}
+                      onReminderCreate={
+                        extensions?.find(
+                          (ext: Extension) => ext.name === 'reminderBlock',
+                        )?.options?.onReminderCreate
+                      }
+                      isConnected={isConnected}
                     />
                   )}
 
@@ -580,7 +633,8 @@ const DdocEditor = forwardRef(
                             className={cn(
                               'w-full h-auto py-4 color-bg-default',
                               isPreviewMode && 'preview-mode',
-                              activeModel !== undefined && isAIAgentEnabled &&
+                              activeModel !== undefined &&
+                                isAIAgentEnabled &&
                                 'has-available-models',
                             )}
                           />

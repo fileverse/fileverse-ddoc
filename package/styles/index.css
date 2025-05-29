@@ -30,6 +30,9 @@
   .ProseMirror .node-pageBreak {
     @apply color-bg-secondary;
   }
+  .ProseMirror .node-reminderBlock {
+    @apply mx-1;
+  }
 
   .ProseMirror .presentation-mode .table-wrapper,
   .is-table div {
@@ -42,6 +45,38 @@
 
   .dark .custom-ens-button {
     @apply color-button-default hover:!bg-[#5C5C5C];
+  }
+
+  .reminder-wrapper {
+    @apply border-[#5C0AFF] bg-[#F2F0FF] !px-2;
+  }
+
+  .dark .reminder-wrapper {
+    @apply border-[#D4CDFF] bg-transparent !px-2;
+  }
+
+  .reminder-wrapper-overdue {
+    @apply border-[#9F6B04] color-bg-danger-light !pl-2 !pr-8;
+  }
+
+  .dark .reminder-wrapper-overdue {
+    @apply border-[#EFC703] bg-transparent !pl-2 !pr-8;
+  }
+
+  .reminder-wrapper-text {
+    @apply text-[#5C0AFF];
+  }
+
+  .dark .reminder-wrapper-text {
+    @apply text-[#D4CDFF];
+  }
+
+  .reminder-wrapper-text-overdue {
+    @apply text-[#9F6B04];
+  }
+
+  .dark .reminder-wrapper-text-overdue {
+    @apply text-[#EFC703];
   }
 }
 
