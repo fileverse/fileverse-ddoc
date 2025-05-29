@@ -537,7 +537,21 @@ const printHelper = (content: string) => {
 
   const printDocument =
     iframe.contentDocument || iframe.contentWindow?.document;
-  if (!printDocument) return;
+  if (!printDocument) {
+    // Cleanup if iframe creation fails
+    document.body.removeChild(overlay);
+    return;
+  }
+
+  // Add cleanup timeout as a fallback
+  const cleanupTimeout = setTimeout(() => {
+    if (document.body.contains(overlay)) {
+      document.body.removeChild(overlay);
+    }
+    if (document.body.contains(iframe)) {
+      document.body.removeChild(iframe);
+    }
+  }, 30000); // 30 second timeout
 
   printDocument.open();
   printDocument.write(content);
@@ -546,8 +560,24 @@ const printHelper = (content: string) => {
   const iframeWindow = iframe.contentWindow;
   if (iframeWindow) {
     iframeWindow.onafterprint = () => {
-      document.body.removeChild(iframe);
-      document.body.removeChild(overlay);
+      clearTimeout(cleanupTimeout);
+      if (document.body.contains(overlay)) {
+        document.body.removeChild(overlay);
+      }
+      if (document.body.contains(iframe)) {
+        document.body.removeChild(iframe);
+      }
+    };
+
+    // Add error handling for print
+    iframeWindow.onerror = () => {
+      clearTimeout(cleanupTimeout);
+      if (document.body.contains(overlay)) {
+        document.body.removeChild(overlay);
+      }
+      if (document.body.contains(iframe)) {
+        document.body.removeChild(iframe);
+      }
     };
   }
 };
