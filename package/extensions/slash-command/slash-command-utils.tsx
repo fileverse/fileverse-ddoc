@@ -65,7 +65,6 @@ export const getSuggestionItems = ({
           }
         }
       },
-      isDisabled: !hasAvailableModels || !canCreateAIWriter,
     },
     {
       title: 'Text',
@@ -368,7 +367,11 @@ export const getSuggestionItems = ({
   ];
 
   return items.filter((item) => {
-    if (item.title === 'AI Writer' && item.isDisabled) {
+    if (
+      item.title === 'AI Writer' &&
+      !canCreateAIWriter &&
+      !hasAvailableModels
+    ) {
       return false;
     }
     if (typeof query === 'string' && query.length > 0) {
