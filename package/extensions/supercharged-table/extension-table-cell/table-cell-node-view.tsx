@@ -51,18 +51,18 @@ const cellButtonsConfig: CellButton[] = [
     icon: <LucideIcon name="Trash2" size={'md'} />,
     group: 'column',
   },
-  {
-    name: 'Merge cells',
-    action: (editor) => editor.chain().focus().mergeCells().run(),
-    icon: <LucideIcon name="TableCellsMerge" size={'md'} />,
-    group: 'table',
-  },
-  {
-    name: 'Split cells',
-    action: (editor) => editor.chain().focus().splitCell().run(),
-    icon: <LucideIcon name="TableCellsSplit" size={'md'} />,
-    group: 'table',
-  },
+  // {
+  //   name: 'Merge cells',
+  //   action: (editor) => editor.chain().focus().mergeCells().run(),
+  //   icon: <LucideIcon name="TableCellsMerge" size={'md'} />,
+  //   group: 'table',
+  // },
+  // {
+  //   name: 'Split cells',
+  //   action: (editor) => editor.chain().focus().splitCell().run(),
+  //   icon: <LucideIcon name="TableCellsSplit" size={'md'} />,
+  //   group: 'table',
+  // },
   {
     name: 'Toggle header row',
     action: (editor) => editor.chain().focus().toggleHeaderRow().run(),
