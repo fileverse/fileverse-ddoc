@@ -12,16 +12,17 @@ export const getSuggestionItems = ({
   onError,
   secureImageUploadUrl,
   // isConnected,
-  hasAvailableModels,
   editor,
 }: {
   query: string;
   onError?: (errorString: string) => void;
   secureImageUploadUrl?: string;
   isConnected?: boolean;
-  hasAvailableModels?: boolean;
   editor?: any;
 }) => {
+  const modelContext = (window as any).__MODEL_CONTEXT__;
+  const isAIAgentEnabled = modelContext?.isAIAgentEnabled;
+
   // Check for active AI Writer node
   let hasActiveAIWriter = false;
   if (editor && editor.state && editor.state.doc) {
@@ -33,7 +34,7 @@ export const getSuggestionItems = ({
       return true;
     });
   }
-  const canCreateAIWriter = !hasActiveAIWriter;
+  const canCreateAIWriter = !hasActiveAIWriter && isAIAgentEnabled;
 
   const items = [
     {
@@ -65,6 +66,7 @@ export const getSuggestionItems = ({
           }
         }
       },
+      isDisabled: !canCreateAIWriter,
     },
     {
       title: 'Text',
@@ -367,11 +369,7 @@ export const getSuggestionItems = ({
   ];
 
   return items.filter((item) => {
-    if (
-      item.title === 'AI Writer' &&
-      !canCreateAIWriter &&
-      !hasAvailableModels
-    ) {
+    if (item.title === 'AI Writer' && item.isDisabled) {
       return false;
     }
     if (typeof query === 'string' && query.length > 0) {

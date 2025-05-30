@@ -363,11 +363,7 @@ export const useDdocEditor = ({
         DBlock.configure({
           hasAvailableModels,
         }),
-        SlashCommand(
-          (error: string) => onError?.(error),
-          secureImageUploadUrl,
-          hasAvailableModels,
-        ),
+        SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
       ]);
     }
   }, [activeModel, maxTokens, isAIAgentEnabled]);
