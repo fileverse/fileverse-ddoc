@@ -135,7 +135,14 @@ const CommandList = ({
         setItems(initialItems);
       }
     }
-  }, [initialItems, isMobile, isCalloutBlock, isCodeBlock]);
+  }, [
+    initialItems,
+    isMobile,
+    isCalloutBlock,
+    isCodeBlock,
+    isInColumn,
+    isInTable,
+  ]);
 
   useEffect(() => {
     const navigationKeys = ['ArrowUp', 'ArrowDown', 'Enter'];
@@ -270,7 +277,6 @@ const SlashCommand = (
   onError?: (errorString: string) => void,
   secureImageUploadUrl?: string,
   isConnected?: boolean,
-  hasAvailableModels?: boolean,
 ) => {
   const items = ({ query, editor }: { query: string; editor: Editor }) => {
     return getSuggestionItems({
@@ -278,7 +284,6 @@ const SlashCommand = (
       onError,
       secureImageUploadUrl,
       isConnected,
-      hasAvailableModels,
       editor,
     });
   };

@@ -108,7 +108,8 @@ export const AiAutocomplete = Extension.create({
         !extension.storage.isEnabled ||
         extension.storage.isTyping ||
         extension.storage.isSlashCommandActive
-      ) return;
+      )
+        return;
 
       const { state } = view;
       const { from } = state.selection;
