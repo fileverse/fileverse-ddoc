@@ -89,7 +89,7 @@ const cellButtonsConfig: CellButton[] = [
   },
 ];
 
-export const TableCellNodeView: FC<NodeViewProps> = ({ editor, selected }) => {
+export const TableCellNodeView: FC<NodeViewProps> = ({ editor, selected, getPos }) => {
   const [isHovered, setIsHovered] = useState(false);
   const { isPreviewMode } = useEditingContext();
   const tableCellOptionsButtonRef = useRef<HTMLLabelElement>(null);
@@ -106,6 +106,16 @@ export const TableCellNodeView: FC<NodeViewProps> = ({ editor, selected }) => {
     hoverTimeoutRef.current = setTimeout(() => {
       setIsHovered(false);
     }, 100);
+  };
+
+  const handleTriggerClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // Focus the cell when clicking the trigger button
+    if (typeof getPos === 'function') {
+      editor.commands.setTextSelection(getPos());
+    }
   };
 
   useEffect(() => {
@@ -204,13 +214,11 @@ export const TableCellNodeView: FC<NodeViewProps> = ({ editor, selected }) => {
           }
         >
           <label
+            ref={tableCellOptionsButtonRef}
             tabIndex={0}
             className={cn('trigger-button', { hidden: isPreviewMode })}
             contentEditable={false}
-            onClick={(e) => {
-              e.preventDefault();
-              e.stopPropagation();
-            }}
+            onClick={handleTriggerClick}
             onMouseDown={(e) => {
               e.preventDefault();
               e.stopPropagation();
