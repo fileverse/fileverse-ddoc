@@ -444,7 +444,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
           className={cn(
             'node-view-content w-full relative self-center',
             {
-              'is-table': isTable,
+              'is-table max-w-full lg:max-w-[90%]': isTable,
               'invalid-content': node.attrs?.isCorrupted,
               'flex flex-row-reverse gap-2 items-center':
                 isHeading && isPreviewMode,

@@ -1,4 +1,4 @@
-import { Fragment, Node as ProsemirrorNode, Schema } from 'prosemirror-model';
+import { Fragment, Node as ProsemirrorNode, Schema } from '@tiptap/pm/model';
 
 import { createCell } from './create-cell';
 import { getTableNodeTypes } from './get-table-node-types';
@@ -11,8 +11,8 @@ export function createTable(
   cellContent?: Fragment | ProsemirrorNode | Array<ProsemirrorNode>,
 ): ProsemirrorNode {
   const types = getTableNodeTypes(schema);
-  const headerCells = [];
-  const cells = [];
+  const headerCells: ProsemirrorNode[] = [];
+  const cells: ProsemirrorNode[] = [];
 
   for (let index = 0; index < colsCount; index += 1) {
     const cell = createCell(types.cell, cellContent);
@@ -30,7 +30,7 @@ export function createTable(
     }
   }
 
-  const rows = [];
+  const rows: ProsemirrorNode[] = [];
 
   for (let index = 0; index < rowsCount; index += 1) {
     rows.push(
