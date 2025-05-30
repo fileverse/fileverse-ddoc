@@ -21,7 +21,8 @@ export const getSuggestionItems = ({
   editor?: any;
 }) => {
   const modelContext = (window as any).__MODEL_CONTEXT__;
-  const isAIAgentEnabled = modelContext?.isAIAgentEnabled;
+  const isAIAgentEnabled =
+    modelContext?.isAIAgentEnabled && modelContext?.activeModel;
 
   // Check for active AI Writer node
   let hasActiveAIWriter = false;
