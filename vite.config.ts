@@ -19,16 +19,18 @@ export default defineConfig({
     },
     rollupOptions: {
       external: ['react', 'react-dom'],
+      preserveEntrySignatures: 'strict',
       output: {
         globals: {
           react: 'React',
           'react-dom': 'ReactDOM',
         },
+        sourcemap: true,
       },
     },
     //Generates sourcemaps for the built files,
     //aiding in debugging.
-    sourcemap: false,
+    sourcemap: true,
     //Clears the output directory before building.
     emptyOutDir: true,
   },
