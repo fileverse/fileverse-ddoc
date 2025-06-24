@@ -421,6 +421,7 @@ export const ResizableMediaNodeView = ({
                   'text-right': node.attrs.dataAlign === 'end',
                 },
               )}
+              disabled={isPreviewMode}
             />
           </div>
         )}
