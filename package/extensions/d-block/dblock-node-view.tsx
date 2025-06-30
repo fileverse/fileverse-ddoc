@@ -138,7 +138,6 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
 
           if (normalizedText === normalizedUrl) {
             const youtubeUrl = `https://www.youtube.com/embed/${youtubeMatch[1]}`;
-            console.log('Embedding YouTube URL:', youtubeUrl);
             setMedia('iframe', youtubeUrl);
             return;
           } else {
@@ -214,7 +213,6 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
         const pos = getPos();
         const to = pos + node.nodeSize;
 
-        console.log('Embedding Twitter tweet:', filteredTweetId);
         editor
           ?.chain()
           .focus(pos)
