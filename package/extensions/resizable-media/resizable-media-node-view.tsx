@@ -137,6 +137,8 @@ export const ResizableMediaNodeView = ({
 
     document.removeEventListener('mousemove', documentHorizontalMouseMove);
     document.removeEventListener('mouseup', stopHorizontalResize);
+    document.removeEventListener('touchmove', documentHorizontalMouseMove);
+    document.removeEventListener('touchend', stopHorizontalResize);
 
     setIsMouseDown(false);
   };
@@ -256,7 +258,6 @@ export const ResizableMediaNodeView = ({
       return;
     }
 
-    e.preventDefault();
     e.stopPropagation();
   };
 
