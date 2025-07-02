@@ -129,6 +129,46 @@ export const DBlock = Node.create<DBlockOptions>({
         // Check if inside table
         const isInsideTable = nodePaths.some((path) => path.includes('table'));
 
+        // Early return: Delete last empty list item before inserting dBlock
+        if (
+          parent?.type.name === 'listItem' ||
+          parent?.type.name === 'taskItem'
+        ) {
+          const isCurrentItemEmpty = currentNode.textContent === '';
+          const grandParent = $head.node($head.depth - 2);
+          const currentIndex = $head.index($head.depth - 2);
+          const isLastItem = currentIndex === grandParent.childCount - 1;
+
+          // 🛡️ Check nesting depth: only allow this on top-level lists
+          let listDepth = 0;
+          for (let d = $head.depth - 1; d >= 0; d--) {
+            const node = $head.node(d);
+            if (
+              node?.type.name === 'listItem' ||
+              node?.type.name === 'taskItem'
+            ) {
+              listDepth++;
+            }
+          }
+
+          const isTopLevelList = listDepth === 1;
+
+          if (isCurrentItemEmpty && isLastItem && isTopLevelList) {
+            const listNode = $head.node($head.depth - 2);
+            const currentItem = listNode.child(currentIndex);
+            const currentItemStart = $head.before($head.depth - 1);
+            const currentItemEnd = currentItemStart + currentItem.nodeSize;
+
+            return editor
+              .chain()
+              .deleteRange({ from: currentItemStart, to: currentItemEnd })
+              .setDBlock()
+              .focus(currentItemStart + 4)
+              .setMark('textStyle', attrs)
+              .run();
+          }
+        }
+
         // Handle blockquote
         if (
           parent?.type.name === 'blockquote' &&
