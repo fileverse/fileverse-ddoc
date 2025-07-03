@@ -84,26 +84,26 @@ export const DBlock = Node.create<DBlockOptions>({
     return {
       setDBlock:
         (position) =>
-        ({ state, chain }) => {
-          const {
-            selection: { from },
-          } = state;
+          ({ state, chain }) => {
+            const {
+              selection: { from },
+            } = state;
 
-          const pos =
-            position !== undefined || position !== null ? from : position;
+            const pos =
+              position !== undefined || position !== null ? from : position;
 
-          return chain()
-            .insertContentAt(pos, {
-              type: this.name,
-              content: [
-                {
-                  type: 'paragraph',
-                },
-              ],
-            })
-            .focus(pos + 2)
-            .run();
-        },
+            return chain()
+              .insertContentAt(pos, {
+                type: this.name,
+                content: [
+                  {
+                    type: 'paragraph',
+                  },
+                ],
+              })
+              .focus(pos + 2)
+              .run();
+          },
     };
   },
 
@@ -120,7 +120,6 @@ export const DBlock = Node.create<DBlockOptions>({
         // Get the current node and its parent
         const currentNode = $head.node($head.depth);
         const parent = $head.node($head.depth - 1);
-        const grandParent = $head.node($head.depth - 2);
         const headString = $head.toString();
         const nodePaths = headString.split('/');
         const isAtEndOfTheNode = $head.end() === from;
@@ -129,7 +128,7 @@ export const DBlock = Node.create<DBlockOptions>({
         // Check if inside table
         const isInsideTable = nodePaths.some((path) => path.includes('table'));
 
-        // Early return: Delete last empty list item before inserting dBlock
+        // Handle lists press enter action
         if (
           parent?.type.name === 'listItem' ||
           parent?.type.name === 'taskItem'
@@ -153,6 +152,7 @@ export const DBlock = Node.create<DBlockOptions>({
 
           const isTopLevelList = listDepth === 1;
 
+          // Handle deleting the last item of the first list if it's empty
           if (isCurrentItemEmpty && isLastItem && isTopLevelList) {
             const listNode = $head.node($head.depth - 2);
             const currentItem = listNode.child(currentIndex);
@@ -167,6 +167,70 @@ export const DBlock = Node.create<DBlockOptions>({
               .setMark('textStyle', attrs)
               .run();
           }
+          //Handle splitting the list in the middle
+          if (
+            isCurrentItemEmpty &&
+            isTopLevelList &&
+            grandParent.childCount > 1 &&
+            !isLastItem
+          ) {
+            const listNode = $head.node($head.depth - 2);
+            const listPos = $head.before($head.depth - 2);
+            const listEnd = listPos + listNode.nodeSize;
+
+            const remainingItems = listNode.content
+              .toJSON()
+              .slice(currentIndex + 1);
+
+            const remainingContent: DBlockContent[] = [];
+
+            // Insert empty dBlock
+            remainingContent.push({
+              type: 'dBlock',
+              content: [
+                {
+                  type: 'paragraph',
+                },
+              ],
+            });
+
+            if (remainingItems.length > 0) {
+              remainingContent.push({
+                type: 'dBlock',
+                content: [
+                  {
+                    type: grandParent.type.name,
+                    content: remainingItems,
+                  },
+                ],
+              });
+            }
+
+            return editor
+              .chain()
+              .command(({ tr, dispatch }) => {
+                if (dispatch) {
+                  // Replace everything from current item to end of list
+                  const currentItemStart = $head.before($head.depth - 1);
+                  tr.replaceWith(
+                    currentItemStart,
+                    listEnd,
+                    editor.schema.nodeFromJSON({
+                      type: 'doc',
+                      content: remainingContent,
+                    }),
+                  );
+
+                  const paragraphPos = currentItemStart + 4;
+                  tr.setSelection(TextSelection.create(tr.doc, paragraphPos));
+                }
+                return false;
+              })
+              .focus()
+              .setMark('textStyle', attrs)
+              .run();
+          }
+          //nested lists are handled by tiptap's default list behavior
         }
 
         // Handle blockquote
@@ -189,154 +253,6 @@ export const DBlock = Node.create<DBlockOptions>({
           if (isInsideTable) {
             return false;
           }
-        }
-        // Handle lists first
-        if (
-          parent?.type.name === 'listItem' ||
-          parent?.type.name === 'taskItem'
-        ) {
-          // const isTaskList = grandParent?.type.name === 'taskList';
-          const isCurrentItemEmpty = currentNode.textContent === '';
-          // const isLastItem =
-          //   $head.index($head.depth - 2) === grandParent.childCount - 1;
-          const isOnlyItem = grandParent.childCount === 1;
-          // Check if inside table
-
-          const isThatFromNestedItem = () => {
-            // Get the nesting depth by counting listItem/taskItem ancestors
-            let depth = 0;
-            let currentDepth = $head.depth;
-
-            while (currentDepth > 0) {
-              const node = $head.node(currentDepth - 1);
-              if (
-                node?.type.name === 'listItem' ||
-                node?.type.name === 'taskItem'
-              ) {
-                depth++;
-              }
-              currentDepth--;
-            }
-
-            return (
-              currentNode.type.name === 'paragraph' &&
-              parent?.type.name === 'listItem' &&
-              currentNode.textContent === '' &&
-              depth >= 2 // Only apply for nested items level 2 and deeper
-            );
-          };
-
-          // Handle empty list items
-          if (isCurrentItemEmpty) {
-            if (isThatFromNestedItem()) {
-              return false;
-            }
-
-            // Get the list node and its content
-            const listNode = $head.node($head.depth - 2);
-            const listPos = $head.before($head.depth - 2);
-            const listEnd = listPos + listNode.nodeSize;
-
-            // If it's the only item in the list
-            if (isOnlyItem) {
-              return editor
-                .chain()
-                .deleteRange({ from, to })
-                .setDBlock()
-                .focus(from + 4)
-                .setMark('textStyle', attrs)
-                .run();
-            }
-
-            // For last or middle items, we need to restructure the content
-            const remainingContent: DBlockContent[] = [];
-
-            // Add new dBlock for the current position
-            remainingContent.push({
-              type: 'dBlock',
-              content: [
-                {
-                  type: 'paragraph',
-                },
-              ],
-            });
-
-            // Process remaining list items if they exist
-            if (listNode.content.size > 1) {
-              // Get the current item index
-              const currentIndex = $head.index($head.depth - 2);
-
-              // Get remaining items after current position
-              const remainingItems = listNode.content
-                .toJSON()
-                .slice(currentIndex + 1);
-
-              if (remainingItems.length > 0) {
-                // Create new dBlock with remaining list items
-                remainingContent.push({
-                  type: 'dBlock',
-                  content: [
-                    {
-                      type: grandParent.type.name,
-                      content: remainingItems,
-                    },
-                  ],
-                });
-              }
-            }
-
-            // Replace the content and move cursor to new dBlock
-            if (currentNode.type.name === 'paragraph') {
-              return editor
-                .chain()
-                .command(({ tr, dispatch }) => {
-                  if (dispatch) {
-                    // Replace from current list item to end of list
-                    tr.replaceWith(
-                      from,
-                      listEnd,
-                      editor.schema.nodeFromJSON({
-                        type: 'doc',
-                        content: remainingContent,
-                      }),
-                    );
-
-                    // Move cursor to end of first paragraph
-                    const paragraphPos = listPos + 4;
-                    tr.setSelection(TextSelection.create(tr.doc, paragraphPos));
-                  }
-                  return false;
-                })
-                .focus(from + 6)
-                .setMark('textStyle', attrs)
-                .run();
-            }
-
-            return editor
-              .chain()
-              .command(({ tr, dispatch }) => {
-                if (dispatch) {
-                  // Replace from current list item to end of list
-                  tr.replaceWith(
-                    from,
-                    listEnd,
-                    editor.schema.nodeFromJSON({
-                      type: 'doc',
-                      content: remainingContent,
-                    }),
-                  );
-
-                  // Move cursor to end of first paragraph
-                  const paragraphPos = listPos + 4;
-                  tr.setSelection(TextSelection.create(tr.doc, paragraphPos));
-                }
-                return false;
-              })
-              .focus(from + 6)
-              .run();
-          }
-          // For non-empty items, let Tiptap handle the list behavior
-          return false;
         }
 
         // Handle dBlock content
@@ -533,10 +449,10 @@ export const DBlock = Node.create<DBlockOptions>({
                       nonListContent.length > 0
                         ? nonListContent
                         : [
-                            {
-                              type: 'paragraph',
-                            },
-                          ],
+                          {
+                            type: 'paragraph',
+                          },
+                        ],
                   });
 
                   const nestedLists = firstItemContent.filter(
