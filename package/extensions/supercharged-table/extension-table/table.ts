@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 
 import {
@@ -18,7 +19,7 @@ import {
   tableEditing,
   toggleHeader,
   toggleHeaderCell,
-} from '@_ueberdosis/prosemirror-tables';
+} from '@tiptap/pm/tables';
 import {
   callOrReturn,
   getExtensionField,
@@ -26,20 +27,67 @@ import {
   Node,
   ParentConfig,
 } from '@tiptap/core';
-import { TextSelection } from 'prosemirror-state';
-import { NodeView } from 'prosemirror-view';
-
+import { TextSelection } from '@tiptap/pm/state';
+import { EditorView, NodeView } from '@tiptap/pm/view';
+import { DOMOutputSpec, Node as ProseMirrorNode } from '@tiptap/pm/model';
 import { TableView } from './table-view';
 import { createTable } from './utilities/create-table';
 import { deleteTableWhenAllCellsSelected } from './utilities/delete-table-when-all-cells-selected';
+import { createColGroup } from './utilities/create-col-group';
 
 export interface TableOptions {
-  HTMLAttributes: Record<string, never>;
+  /**
+   * HTML attributes for the table element.
+   * @default {}
+   * @example { class: 'foo' }
+   */
+  HTMLAttributes: Record<string, any>;
+
+  /**
+   * Enables the resizing of tables.
+   * @default false
+   * @example true
+   */
   resizable: boolean;
+
+  /**
+   * The width of the resize handle.
+   * @default 5
+   * @example 10
+   */
   handleWidth: number;
+
+  /**
+   * The minimum width of a cell.
+   * @default 25
+   * @example 50
+   */
   cellMinWidth: number;
-  View: NodeView;
+
+  /**
+   * The node view to render the table.
+   * @default TableView
+   */
+  View:
+    | (new (
+        node: ProseMirrorNode,
+        cellMinWidth: number,
+        view: EditorView,
+      ) => NodeView)
+    | null;
+
+  /**
+   * Enables the resizing of the last column.
+   * @default true
+   * @example false
+   */
   lastColumnResizable: boolean;
+
+  /**
+   * Allow table node selection.
+   * @default false
+   * @example true
+   */
   allowTableNodeSelection: boolean;
 }
 
@@ -100,7 +148,6 @@ export const Table = Node.create<TableOptions>({
       resizable: false,
       handleWidth: 5,
       cellMinWidth: 25,
-      // TODO: fix
       View: TableView,
       lastColumnResizable: true,
       allowTableNodeSelection: false,
@@ -120,49 +167,23 @@ export const Table = Node.create<TableOptions>({
   },
 
   renderHTML({ node, HTMLAttributes }) {
-    let totalWidth = 0;
-    let fixedWidth = true;
+    const { colgroup, tableWidth, tableMinWidth } = createColGroup(
+      node,
+      this.options.cellMinWidth,
+    );
 
-    try {
-      // use first row to determine width of table;
-      const tr = node.content.firstChild;
-      tr!.content.forEach((td) => {
-        if (td.attrs.colwidth) {
-          td.attrs.colwidth.forEach((col: number) => {
-            if (!col) {
-              fixedWidth = false;
-              totalWidth += this.options.cellMinWidth;
-            } else {
-              totalWidth += col;
-            }
-          });
-        } else {
-          fixedWidth = false;
-          const colspan = td.attrs.colspan ? td.attrs.colspan : 1;
-          totalWidth += this.options.cellMinWidth * colspan;
-        }
-      });
-    } catch (error) {
-      fixedWidth = false;
-    }
-
-    if (fixedWidth && totalWidth > 0) {
-      HTMLAttributes.style = `width: ${totalWidth}px;`;
-    } else if (totalWidth && totalWidth > 0) {
-      HTMLAttributes.style = `min-width: ${totalWidth}px`;
-    } else {
-      HTMLAttributes.style = null;
-    }
-
-    return [
-      'div',
-      { class: 'table-wrapper' },
-      [
-        'table',
-        mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
-        ['tbody', 0],
-      ],
+    const table: DOMOutputSpec = [
+      'table',
+      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
+        style: tableWidth
+          ? `width: ${tableWidth}`
+          : `min-width: ${tableMinWidth}`,
+      }),
+      colgroup,
+      ['tbody', 0],
     ];
+
+    return table;
   },
 
   addCommands() {
@@ -286,7 +307,6 @@ export const Table = Node.create<TableOptions>({
               position.headCell,
             );
 
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             tr.setSelection(selection as any);
           }
 
@@ -326,8 +346,6 @@ export const Table = Node.create<TableOptions>({
               handleWidth: this.options.handleWidth,
               cellMinWidth: this.options.cellMinWidth,
               View: this.options.View,
-              // TODO: PR for @types/prosemirror-tables
-              // @ts-ignore (incorrect type)
               lastColumnResizable: this.options.lastColumnResizable,
             }),
           ]

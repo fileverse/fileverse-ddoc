@@ -115,7 +115,6 @@ export const useDdocEditor = ({
       (error: string) => onError?.(error),
       ipfsImageUploadFn,
       isConnected,
-      hasAvailableModels,
     ),
     customTextInputRules,
     PageBreak,
@@ -152,7 +151,6 @@ export const useDdocEditor = ({
           (error: string) => onError?.(error),
           ipfsImageUploadFn,
           isConnected,
-          hasAvailableModels,
         ),
       ]);
     }
@@ -374,7 +372,6 @@ export const useDdocEditor = ({
           (error: string) => onError?.(error),
           ipfsImageUploadFn,
           isConnected,
-          hasAvailableModels,
         ),
       ]);
     }

@@ -13,16 +13,19 @@ export const getSuggestionItems = ({
   onError,
   ipfsImageUploadFn,
   // isConnected,
-  hasAvailableModels,
   editor,
 }: {
   query: string;
   onError?: (errorString: string) => void;
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   isConnected?: boolean;
-  hasAvailableModels?: boolean;
   editor?: any;
 }) => {
+  const modelContext = (window as any).__MODEL_CONTEXT__;
+  const isAIAgentEnabled =
+    modelContext?.isAIAgentEnabled && modelContext?.activeModel;
+
+  // Check for active AI Writer node
   let hasActiveAIWriter = false;
   if (editor && editor.state && editor.state.doc) {
     editor.state.doc.descendants((node: any) => {
@@ -33,8 +36,9 @@ export const getSuggestionItems = ({
       return true;
     });
   }
-  const canCreateAIWriter = !hasActiveAIWriter;
-  const item = [
+  const canCreateAIWriter = !hasActiveAIWriter && isAIAgentEnabled;
+
+  const items = [
     {
       title: 'AI Writer',
       description: 'Generate text with AI assistance.',
@@ -64,7 +68,7 @@ export const getSuggestionItems = ({
           }
         }
       },
-      isDisabled: !hasAvailableModels || !canCreateAIWriter,
+      isDisabled: !canCreateAIWriter,
     },
     {
       title: 'Text',
@@ -365,7 +369,7 @@ export const getSuggestionItems = ({
       },
     },
   ];
-  return item.filter((item) => {
+  return items.filter((item) => {
     if (item.title === 'AI Writer' && item.isDisabled) {
       return false;
     }

@@ -118,7 +118,8 @@ export const CommentSection = ({
   return (
     <div
       className={cn(
-        'flex flex-col h-[calc(100vh-120px)] sm:!h-[calc(100vh-40px)] xl:!h-[calc(100vh-210px)] !color-bg-default !rounded-b-lg',
+        'flex flex-col h-[100dvh] sm:h-[calc(100vh-40px)] xl:h-[calc(100vh-210px)] !color-bg-default !rounded-b-lg',
+        'pb-[3rem] sm:pb-0',
         !isNavbarVisible && 'xl:!h-[calc(100vh-150px)]',
         isPresentationMode && 'xl:!h-[86vh]',
       )}

@@ -121,7 +121,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
           return;
         }
 
-        // Handle YouTube
+        // Handle YouTube - Only embed if text content is exactly the same as the URL
         const youtubeMatch =
           nodeContentText.match(
             /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/,
@@ -130,9 +130,19 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
             /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/,
           );
         if (youtubeMatch) {
-          const youtubeUrl = `https://www.youtube.com/embed/${youtubeMatch[1]}`;
-          setMedia('iframe', youtubeUrl);
-          return;
+          // Check if the text content is exactly the same as the URL
+          // This prevents embedding when the URL is just part of a larger text block
+          const normalizedText = nodeContentText.trim();
+          const normalizedUrl = urlSrc.trim();
+
+          if (normalizedText === normalizedUrl) {
+            const youtubeUrl = `https://www.youtube.com/embed/${youtubeMatch[1]}`;
+            setMedia('iframe', youtubeUrl);
+            return;
+          } else {
+            // Text and URL are different, don't embed
+            return;
+          }
         }
 
         // Handle Vimeo
@@ -440,7 +450,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
           className={cn(
             'node-view-content w-full relative self-center',
             {
-              'is-table': isTable,
+              'is-table max-w-full lg:max-w-[90%]': isTable,
               'invalid-content': node.attrs?.isCorrupted,
               'flex flex-row-reverse gap-2 items-center':
                 isHeading && isPreviewMode,

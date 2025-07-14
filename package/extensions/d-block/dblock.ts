@@ -411,12 +411,6 @@ export const DBlock = Node.create<DBlockOptions>({
         const node = $head.node($head.depth);
         const nodeStartPos = $head.start();
         const isAtStartOfNode = nodeStartPos === from;
-        const isAtTheStartOfDocument = from === 2;
-
-        // Handle start of document
-        if (isAtTheStartOfDocument && from === to) {
-          return editor.chain().deleteNode(this.name).focus().run();
-        }
 
         const isListOrTaskList =
           parent?.type.name === 'listItem' || parent?.type.name === 'taskItem';
