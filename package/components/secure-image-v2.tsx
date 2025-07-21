@@ -16,6 +16,7 @@ type Props = {
   ) => Promise<{ url: string; file: File }>;
   ipfsHash: string;
   mimeType: string;
+  authTag: string;
 };
 
 export const SecureImageV2 = forwardRef<HTMLImageElement, Props>(
@@ -31,13 +32,14 @@ export const SecureImageV2 = forwardRef<HTMLImageElement, Props>(
       ipfsImageFetchFn,
       ipfsHash,
       mimeType,
+      authTag,
     },
     ref,
   ) => {
     const [source, setSource] = useState<string>('');
 
     useEffect(() => {
-      const imageReadyForDecryption = encryptionKey && url && nonce;
+      const imageReadyForDecryption = encryptionKey && url && nonce && authTag;
       let isMounted = true;
       let currentObjectUrl: string | null = null;
       if (imageReadyForDecryption) {
@@ -49,6 +51,7 @@ export const SecureImageV2 = forwardRef<HTMLImageElement, Props>(
               nonce,
               ipfsHash,
               mimeType,
+              authTag,
             });
             currentObjectUrl = result.url;
             // add check before setting state
@@ -70,7 +73,7 @@ export const SecureImageV2 = forwardRef<HTMLImageElement, Props>(
           URL.revokeObjectURL(currentObjectUrl);
         }
       };
-    }, [encryptionKey, url, nonce]);
+    }, [encryptionKey, url, nonce, authTag]);
 
     return source ? (
       <img

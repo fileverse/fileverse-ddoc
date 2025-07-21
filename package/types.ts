@@ -148,6 +148,7 @@ export interface IpfsImageUploadResponse {
   nonce: string;
   ipfsUrl: string;
   ipfsHash: string;
+  authTag: string;
 }
 export interface IpfsImageFetchPayload {
   encryptionKey: string;
@@ -155,4 +156,5 @@ export interface IpfsImageFetchPayload {
   ipfsUrl: string;
   ipfsHash: string;
   mimeType: string;
+  authTag: string;
 }

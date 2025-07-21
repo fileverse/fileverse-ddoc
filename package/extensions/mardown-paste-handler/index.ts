@@ -578,7 +578,7 @@ async function uploadBase64ImageContent(
   const base64Data = base64Image.slice(prefixMatch[1].length);
 
   const file = base64ToFile(base64Data, contentType);
-  const { encryptionKey, nonce, ipfsUrl, ipfsHash } =
+  const { encryptionKey, nonce, ipfsUrl, ipfsHash, authTag } =
     await ipfsImageUploadFn(file);
 
   return {
@@ -587,6 +587,7 @@ async function uploadBase64ImageContent(
     nonce,
     downloadUrl: URL.createObjectURL(file),
     ipfsHash,
+    authTag,
   };
 }
 
@@ -713,6 +714,7 @@ async function handleMarkdownContent(
           imgElement.setAttribute('version', '2');
           imgElement.setAttribute('ipfsHash', uploadResult.ipfsHash);
           imgElement.setAttribute('mimeType', 'image/jpeg');
+          imgElement.setAttribute('authTag', uploadResult.authTag);
         } catch (error) {
           console.error('Error uploading secure image to IPFS:', error);
         }
@@ -768,10 +770,9 @@ async function handleMarkdownContent(
       'ipfsHash',
       'mimeType',
       'version',
+      'authTag',
     ],
   });
-
-  console.log('Sanitized HTML:', convertedHtml);
 
   // Parse the sanitized HTML string into DOM nodes
   const domContent = parser.parseFromString(convertedHtml, 'text/html').body;
@@ -840,13 +841,14 @@ async function recreateNodeWithImageContent(
 
   try {
     if (version == '2' && ipfsImageFetchFn) {
-      const { encryptionKey, url: ipfsUrl, nonce } = attrs as any;
+      const { encryptionKey, url: ipfsUrl, nonce, authTag } = attrs as any;
       const result = await ipfsImageFetchFn({
         encryptionKey,
         ipfsUrl,
         nonce,
         ipfsHash,
         mimeType,
+        authTag,
       });
       buffer = await result.file.arrayBuffer();
     } else {

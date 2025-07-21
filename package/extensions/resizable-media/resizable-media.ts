@@ -51,7 +51,13 @@ export const ResizableMedia = Node.create<MediaOptions>({
         class: 'rounded-lg border color-border-default',
       },
       ipfsImageUploadFn: async () => {
-        return { encryptionKey: '', nonce: '', ipfsUrl: '', ipfsHash: '' };
+        return {
+          encryptionKey: '',
+          nonce: '',
+          ipfsUrl: '',
+          ipfsHash: '',
+          authTag: '',
+        };
       },
       ipfsImageFetchFn: async () => {
         return { url: '', file: new File([], '') };
@@ -104,6 +110,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
       url: { default: null },
       iv: { default: null },
       privateKey: { default: null },
+      authTag: { default: null },
       caption: { default: null },
       showCaptionInput: { default: false },
       // TODO: For figure caption later
