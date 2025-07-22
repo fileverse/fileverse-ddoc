@@ -178,7 +178,7 @@ export const getSuggestionItems = ({
         if (!isConnected) {
           return;
         }
-        showReminderMenu(editor, range, 'slash');
+        showReminderMenu(editor, range, 'slash', onError);
         return true;
       },
     },

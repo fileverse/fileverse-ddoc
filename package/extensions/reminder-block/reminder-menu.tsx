@@ -57,6 +57,12 @@ export const ReminderMenu = forwardRef<HTMLDivElement, ReminderMenuProps>(
     const [error, setError] = useState<string>('');
     const isMobile = useMediaQuery('(max-width: 768px)');
     const [use12Hours, setUse12Hours] = useState<boolean>(true);
+    const [showBottomDrawer, setShowBottomDrawer] = useState<boolean>(isOpen);
+
+    const handleClose = () => {
+      setShowBottomDrawer(false);
+      onClose();
+    };
 
     useEffect(() => {
       if (initialReminderTitle) {
@@ -133,7 +139,12 @@ export const ReminderMenu = forwardRef<HTMLDivElement, ReminderMenuProps>(
       <div className="px-4 py-2 min-w-[300px] color-bg-default rounded-lg shadow-elevation-3 space-y-3 border color-border-default">
         <div className="flex justify-between items-center">
           <h3 className="text-heading-xsm">Create reminder</h3>
-          <IconButton icon={'X'} variant="ghost" size="sm" onClick={onClose} />
+          <IconButton
+            icon={'X'}
+            variant="ghost"
+            size="sm"
+            onClick={handleClose}
+          />
         </div>
 
         <TextField
@@ -260,8 +271,8 @@ export const ReminderMenu = forwardRef<HTMLDivElement, ReminderMenuProps>(
       return (
         <BottomDrawer
           key="reminder-menu"
-          open={isOpen}
-          onOpenChange={onClose}
+          open={showBottomDrawer}
+          onOpenChange={handleClose}
           className="w-full shadow-elevation-4"
           contentClassName="w-full h-full !border-none !shadow-elevation-4 !gap-2"
           footerClassName="hidden"
