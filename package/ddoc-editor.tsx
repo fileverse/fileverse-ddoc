@@ -58,7 +58,7 @@ const DdocEditor = forwardRef(
       handleCommentButtonClick,
       showCommentButton,
       ensResolutionUrl,
-      secureImageUploadUrl,
+      ipfsImageUploadFn,
       disableBottomToolbar,
       onError,
       setCharacterCount,
@@ -113,6 +113,7 @@ const DdocEditor = forwardRef(
       proExtensions,
       onCopyHeadingLink,
       footerHeight,
+      ipfsImageFetchFn,
       activeModel,
       maxTokens,
       isAIAgentEnabled,
@@ -159,6 +160,7 @@ const DdocEditor = forwardRef(
       tocItems,
       setTocItems,
     } = useDdocEditor({
+      ipfsImageFetchFn,
       enableIndexeddbSync,
       ddocId,
       isPreviewMode,
@@ -175,7 +177,7 @@ const DdocEditor = forwardRef(
       onError,
       setCharacterCount,
       setWordCount,
-      secureImageUploadUrl,
+      ipfsImageUploadFn,
       isCommentSectionOpen,
       setIsCommentSectionOpen,
       setInlineCommentData,
@@ -411,11 +413,12 @@ const DdocEditor = forwardRef(
                     setZoomLevel={setZoomLevel}
                     isNavbarVisible={isNavbarVisible}
                     setIsNavbarVisible={setIsNavbarVisible}
-                    secureImageUploadUrl={secureImageUploadUrl}
+                    ipfsImageUploadFn={ipfsImageUploadFn}
                     onMarkdownExport={onMarkdownExport}
                     onMarkdownImport={onMarkdownImport}
                     onPdfExport={onPdfExport}
                     isLoading={!editor || isContentLoading}
+                    ipfsImageFetchFn={ipfsImageFetchFn}
                   />
                 </div>
               </div>
@@ -436,6 +439,7 @@ const DdocEditor = forwardRef(
                 setSlides={setSlides}
                 renderThemeToggle={renderThemeToggle}
                 isContentLoading={isContentLoading}
+                ipfsImageFetchFn={ipfsImageFetchFn}
               />
             )}
             {editor && (
@@ -539,6 +543,8 @@ const DdocEditor = forwardRef(
                       onInlineComment={onInlineComment}
                       activeCommentId={activeCommentId}
                       isCollabDocumentPublished={isCollabDocumentPublished}
+                      ipfsImageFetchFn={ipfsImageFetchFn}
+                      ipfsImageUploadFn={ipfsImageUploadFn}
                       onReminderCreate={
                         extensions?.find(
                           (ext: Extension) => ext.name === 'reminderBlock',
@@ -673,8 +679,9 @@ const DdocEditor = forwardRef(
                   isKeyboardVisible={isKeyboardVisible}
                   isNavbarVisible={isNavbarVisible}
                   setIsNavbarVisible={setIsNavbarVisible}
-                  secureImageUploadUrl={secureImageUploadUrl}
+                  ipfsImageUploadFn={ipfsImageUploadFn}
                   isLoading={!editor || isContentLoading}
+                  ipfsImageFetchFn={ipfsImageFetchFn}
                 />
               </div>
             )}

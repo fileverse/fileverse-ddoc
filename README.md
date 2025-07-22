@@ -107,7 +107,8 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `setCharacterCount`    | `React.Dispatch<SetStateAction<number>>` | Updates character count      |
 | `setWordCount`         | `React.Dispatch<SetStateAction<number>>` | Updates word count           |
 | `ensResolutionUrl`     | `string`                                 | URL for ENS name resolution  |
-| `secureImageUploadUrl` | `string`                                 | URL for secure image uploads |
+| `ipfsImageUploadFn` | ` (file: File) => Promise<IpfsImageUploadResponse>`                                 | function for secure image uploads |
+| `ipfsImageFetchFn` | ` (_data: IpfsImageFetchPayload) => Promise<{ url: string;file: File;}>`                                 | function for fetch secure image from IPFS |
 | `onError`              | `(error: string) => void`                | General error handler        |
 | `onInlineComment`      | `() => void`                             | Callback for inline comments |
 | `onMarkdownExport`     | `() => void`                             | Callback for markdown export |

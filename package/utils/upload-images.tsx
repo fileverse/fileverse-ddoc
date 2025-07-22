@@ -5,13 +5,9 @@
 import { EditorState, Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet, EditorView } from '@tiptap/pm/view';
 import { IMG_UPLOAD_SETTINGS } from '../components/editor-utils';
-import {
-  arrayBufferToBase64,
-  decryptImage,
-  fetchImage,
-  generateRSAKeyPair,
-} from './security';
-import { fromByteArray, toByteArray } from 'base64-js';
+import { arrayBufferToBase64, decryptImage, fetchImage } from './security';
+import { toByteArray } from 'base64-js';
+import { IpfsImageUploadResponse } from '../types';
 
 const uploadKey = new PluginKey('upload-image');
 
@@ -69,7 +65,7 @@ export async function startImageUpload(
   file: File,
   view: EditorView,
   pos: number,
-  secureImageUploadUrl?: string,
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
 ) {
   try {
     // check if the file is an image
@@ -98,19 +94,18 @@ export async function startImageUpload(
     const placeholder = findPlaceholder(view.state, id);
     if (!placeholder) return;
 
-    if (secureImageUploadUrl) {
-      const { publicKey, privateKey } = await generateRSAKeyPair();
-      const { key, url, iv } = await uploadSecureImage(
-        secureImageUploadUrl,
-        file,
-        publicKey,
-      );
+    if (ipfsImageUploadFn) {
+      const { ipfsUrl, encryptionKey, nonce, ipfsHash, authTag } =
+        await ipfsImageUploadFn(file);
 
       const node = schema.nodes.resizableMedia.create({
-        encryptedKey: key,
-        url,
-        iv,
-        privateKey: fromByteArray(privateKey),
+        encryptionKey,
+        ipfsUrl,
+        nonce,
+        mimeType: file.type,
+        version: '2',
+        ipfsHash,
+        authTag,
         'media-type': 'secure-img',
         width: '100%',
         height: 'auto',

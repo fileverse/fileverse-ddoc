@@ -1,13 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { mergeAttributes, Node, nodeInputRule } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
-import { ResizableMediaNodeView } from './resizable-media-node-view';
-import {
-  getMediaPasteDropPlugin,
-  UploadFnType,
-} from './media-paste-drop-plugin';
+import { getResizableMediaNodeView } from './resizable-media-node-view';
+import { getMediaPasteDropPlugin } from './media-paste-drop-plugin';
 import UploadImagesPlugin from '../../utils/upload-images';
 import { InlineLoaderPlugin } from '../../utils/inline-loader';
+import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../../types';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -31,9 +29,11 @@ export interface MediaOptions {
   // inline: boolean, // we have floating support, so block is good enough
   // allowBase64: boolean, // we're not going to allow this
   HTMLAttributes: Record<string, any>;
-  uploadFn: UploadFnType;
   onError: (error: string) => void;
-  secureImageUploadUrl?: string;
+  ipfsImageUploadFn: (file: File) => Promise<IpfsImageUploadResponse>;
+  ipfsImageFetchFn: (
+    _data: IpfsImageFetchPayload,
+  ) => Promise<{ url: string; file: File }>;
 }
 
 export const IMAGE_INPUT_REGEX =
@@ -50,13 +50,21 @@ export const ResizableMedia = Node.create<MediaOptions>({
       HTMLAttributes: {
         class: 'rounded-lg border color-border-default',
       },
-      uploadFn: async () => {
-        return '';
+      ipfsImageUploadFn: async () => {
+        return {
+          encryptionKey: '',
+          nonce: '',
+          ipfsUrl: '',
+          ipfsHash: '',
+          authTag: '',
+        };
+      },
+      ipfsImageFetchFn: async () => {
+        return { url: '', file: new File([], '') };
       },
       onError: () => {
         console.error('Error uploading media');
       },
-      secureImageUploadUrl: '',
     };
   },
 
@@ -92,10 +100,17 @@ export const ResizableMedia = Node.create<MediaOptions>({
       dataFloat: {
         default: null, // 'left' | 'right'
       },
+      ipfsHash: { default: null },
+      mimeType: { default: null },
+      encryptionKey: { default: null },
+      ipfsUrl: { default: null },
+      nonce: { default: null },
+      version: { default: null },
       encryptedKey: { default: null },
       url: { default: null },
       iv: { default: null },
       privateKey: { default: null },
+      authTag: { default: null },
       caption: { default: null },
       showCaptionInput: { default: false },
       // TODO: For figure caption later
@@ -197,7 +212,9 @@ export const ResizableMedia = Node.create<MediaOptions>({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(ResizableMediaNodeView);
+    return ReactNodeViewRenderer(
+      getResizableMediaNodeView(this.options.ipfsImageFetchFn),
+    );
   },
 
   addKeyboardShortcuts() {
@@ -257,9 +274,8 @@ export const ResizableMedia = Node.create<MediaOptions>({
   addProseMirrorPlugins() {
     return [
       getMediaPasteDropPlugin(
-        this.options.uploadFn,
         this.options.onError,
-        this.options.secureImageUploadUrl,
+        this.options.ipfsImageUploadFn,
       ),
       UploadImagesPlugin(),
       InlineLoaderPlugin(),

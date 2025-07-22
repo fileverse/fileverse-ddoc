@@ -14,11 +14,10 @@ import {
   arrayBufferToBase64,
   decryptImage,
   fetchImage,
-  generateRSAKeyPair,
 } from '../../utils/security';
-import { fromByteArray, toByteArray } from 'base64-js';
-import { uploadSecureImage } from '../../utils/upload-images';
+import { toByteArray } from 'base64-js';
 import { inlineLoader } from '../../utils/inline-loader';
+import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../../types';
 import { isLikelyLatex } from '../../utils/is-likely-latex';
 import { getTemporaryEditor } from '../../utils/helpers';
 
@@ -272,7 +271,9 @@ turndownService.addRule('callout', {
 declare module '@tiptap/core' {
   interface Commands {
     uploadMarkdownFile: {
-      uploadMarkdownFile: (secureImageUploadUrl?: string) => any;
+      uploadMarkdownFile: (
+        ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
+      ) => any;
     };
     exportMarkdownFile: {
       exportMarkdownFile: () => any;
@@ -280,7 +281,12 @@ declare module '@tiptap/core' {
   }
 }
 
-const MarkdownPasteHandler = (secureImageUploadUrl?: string) =>
+const MarkdownPasteHandler = (
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
+  ipfsImageFetchFn?: (
+    _data: IpfsImageFetchPayload,
+  ) => Promise<{ url: string; file: File }>,
+) =>
   Extension.create({
     name: 'markdownPasteHandler',
 
@@ -312,7 +318,7 @@ const MarkdownPasteHandler = (secureImageUploadUrl?: string) =>
 
               // Check if the copied content is Markdown
               if (isMarkdown(copiedData)) {
-                handleMarkdownContent(view, copiedData, secureImageUploadUrl);
+                handleMarkdownContent(view, copiedData, ipfsImageUploadFn);
                 return true;
               }
 
@@ -326,7 +332,11 @@ const MarkdownPasteHandler = (secureImageUploadUrl?: string) =>
     addCommands() {
       return {
         uploadMarkdownFile:
-          (secureImageUploadUrl?: string) =>
+          (
+            ipfsImageUploadFn?: (
+              file: File,
+            ) => Promise<IpfsImageUploadResponse>,
+          ) =>
           async ({ view }: any) => {
             const input = document.createElement('input');
             input.type = 'file';
@@ -350,7 +360,7 @@ const MarkdownPasteHandler = (secureImageUploadUrl?: string) =>
                     await handleMarkdownContent(
                       view,
                       content,
-                      secureImageUploadUrl,
+                      ipfsImageUploadFn,
                     );
                     removeLoader(loader);
                   };
@@ -374,7 +384,10 @@ const MarkdownPasteHandler = (secureImageUploadUrl?: string) =>
             const originalDoc: any = editor.state.doc;
 
             const docWithEmbedImageContent: any =
-              await searchForSecureImageNodeAndEmbedImageContent(originalDoc);
+              await searchForSecureImageNodeAndEmbedImageContent(
+                originalDoc,
+                ipfsImageFetchFn,
+              );
 
             const temporalEditor = getTemporaryEditor(
               editor,
@@ -554,7 +567,7 @@ function base64ToFile(base64Data: string, contentType: string): File {
 
 async function uploadBase64ImageContent(
   base64Image: string,
-  secureImageUploadUrl: string,
+  ipfsImageUploadFn: (file: File) => Promise<IpfsImageUploadResponse>,
 ) {
   // Remove the data URL prefix. e.g., "data:image/jpeg;base64,"
   const prefixMatch = base64Image.match(/^(data:(image\/[a-zA-Z]+);base64,)/);
@@ -565,26 +578,23 @@ async function uploadBase64ImageContent(
   const base64Data = base64Image.slice(prefixMatch[1].length);
 
   const file = base64ToFile(base64Data, contentType);
-  const { publicKey, privateKey } = await generateRSAKeyPair();
-  const { key, url, iv } = await uploadSecureImage(
-    secureImageUploadUrl,
-    file,
-    publicKey,
-  );
+  const { encryptionKey, nonce, ipfsUrl, ipfsHash, authTag } =
+    await ipfsImageUploadFn(file);
 
   return {
-    url,
-    encryptedKey: key,
-    iv,
-    privateKey: fromByteArray(privateKey),
+    ipfsUrl,
+    encryptionKey,
+    nonce,
     downloadUrl: URL.createObjectURL(file),
+    ipfsHash,
+    authTag,
   };
 }
 
 async function handleMarkdownContent(
   view: any,
   content: string,
-  secureImageUploadUrl?: string,
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
 ) {
   // Convert Markdown to HTML
   let convertedHtml = markdownIt.render(content);
@@ -685,24 +695,26 @@ async function handleMarkdownContent(
       p.parentNode?.replaceChild(pageBreakDiv, p);
     }
   }
-
   const images = Array.from(doc.getElementsByTagName('img'));
 
-  if (secureImageUploadUrl) {
+  if (ipfsImageUploadFn) {
     for (const imgElement of images) {
       const src = imgElement.getAttribute('src') || '';
       if (src.startsWith('data:image')) {
         try {
           const uploadResult = await uploadBase64ImageContent(
             src,
-            secureImageUploadUrl,
+            ipfsImageUploadFn,
           );
-          imgElement.setAttribute('url', uploadResult.url);
+          imgElement.setAttribute('ipfsUrl', uploadResult.ipfsUrl);
           imgElement.setAttribute('src', uploadResult.downloadUrl);
           imgElement.setAttribute('media-type', 'secure-img');
-          imgElement.setAttribute('encryptedKey', uploadResult.encryptedKey);
-          imgElement.setAttribute('iv', uploadResult.iv);
-          imgElement.setAttribute('privateKey', uploadResult.privateKey);
+          imgElement.setAttribute('encryptionKey', uploadResult.encryptionKey);
+          imgElement.setAttribute('nonce', uploadResult.nonce);
+          imgElement.setAttribute('version', '2');
+          imgElement.setAttribute('ipfsHash', uploadResult.ipfsHash);
+          imgElement.setAttribute('mimeType', 'image/jpeg');
+          imgElement.setAttribute('authTag', uploadResult.authTag);
         } catch (error) {
           console.error('Error uploading secure image to IPFS:', error);
         }
@@ -752,10 +764,15 @@ async function handleMarkdownContent(
       'encryptedKey',
       'iv',
       'privateKey',
+      'encryptionKey',
+      'nonce',
+      'ipfsUrl',
+      'ipfsHash',
+      'mimeType',
+      'version',
+      'authTag',
     ],
   });
-
-  console.log('Sanitized HTML:', convertedHtml);
 
   // Parse the sanitized HTML string into DOM nodes
   const domContent = parser.parseFromString(convertedHtml, 'text/html').body;
@@ -813,33 +830,52 @@ async function handleMarkdownContent(
 
 export default MarkdownPasteHandler;
 
-async function recreateNodeWithImageContent(node: PMNode): Promise<PMNode> {
-  const { url, encryptedKey, iv, privateKey } = node.attrs;
-  if (!url || !encryptedKey || !iv || !privateKey) return node;
+async function recreateNodeWithImageContent(
+  node: PMNode,
+  ipfsImageFetchFn?: (
+    _data: IpfsImageFetchPayload,
+  ) => Promise<{ url: string; file: File }>,
+): Promise<PMNode> {
+  const { version, mimeType, ipfsHash, ...attrs } = node.attrs;
+  let buffer: ArrayBuffer;
 
   try {
-    const imageBuffer = await fetchImage(url);
+    if (version == '2' && ipfsImageFetchFn) {
+      const { encryptionKey, url: ipfsUrl, nonce, authTag } = attrs as any;
+      const result = await ipfsImageFetchFn({
+        encryptionKey,
+        ipfsUrl,
+        nonce,
+        ipfsHash,
+        mimeType,
+        authTag,
+      });
+      buffer = await result.file.arrayBuffer();
+    } else {
+      const { url, encryptedKey, iv, privateKey } = attrs;
+      if (!url || !encryptedKey || !iv || !privateKey) return node;
 
-    if (!imageBuffer) return node;
-    const decryptedArrayBuffer = await decryptImage({
-      encryptedKey,
-      privateKey: toByteArray(privateKey),
-      iv,
-      imageBuffer,
-    });
-    if (!decryptedArrayBuffer) return node;
-    const base64 = arrayBufferToBase64(decryptedArrayBuffer);
-    const dataUrl = `data:image/jpeg;base64,${base64}`;
+      const imageBuffer = await fetchImage(url);
+      if (!imageBuffer) return node;
 
-    // Return a NEW node, same type & marks, updated attrs
-    const newAttrs = {
-      ...node.attrs,
-      src: dataUrl,
-    };
+      const decrypted = await decryptImage({
+        encryptedKey,
+        iv,
+        privateKey: toByteArray(privateKey),
+        imageBuffer,
+      });
+      if (!decrypted) return node;
+
+      buffer = decrypted;
+    }
+    const base64 = arrayBufferToBase64(buffer);
+    const dataUrl = `data:${mimeType || 'image/jpeg'};base64,${base64}`;
+    const newAttrs = { ...node.attrs, src: dataUrl };
+
     return node.type.createChecked(newAttrs, node.content, node.marks);
-  } catch (error) {
-    console.error('Error decrypting image node:', error);
-    return node; // fallback: return original
+  } catch (err) {
+    console.error('Error processing image node:', err);
+    return node;
   }
 }
 
@@ -853,6 +889,9 @@ type StackItem = {
 
 export async function searchForSecureImageNodeAndEmbedImageContent(
   originalDoc: PMNode,
+  ipfsImageFetchFn?: (
+    _data: IpfsImageFetchPayload,
+  ) => Promise<{ url: string; file: File }>,
 ): Promise<PMNode> {
   // We'll do a post-order traversal using a stack
   // so that we can handle children first, then build the parent node.
@@ -894,6 +933,7 @@ export async function searchForSecureImageNodeAndEmbedImageContent(
       if (current.node.attrs['media-type'] === 'secure-img') {
         current.newNode = (await recreateNodeWithImageContent(
           current.node,
+          ipfsImageFetchFn,
         )) as any;
       } else {
         // Not a secure image => just copy node with new children

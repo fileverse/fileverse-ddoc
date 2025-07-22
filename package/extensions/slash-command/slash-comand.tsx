@@ -15,6 +15,7 @@ import { getSuggestionItems, updateScrollView } from './slash-command-utils';
 import { CommandItemProps } from './types';
 import Suggestion from '@tiptap/suggestion';
 import { cn } from '@fileverse/ui';
+import { IpfsImageUploadResponse } from '../../types';
 
 const notAllowedInsideCallout = [
   '2 Columns',
@@ -275,14 +276,14 @@ const renderItems = () => {
 
 const SlashCommand = (
   onError?: (errorString: string) => void,
-  secureImageUploadUrl?: string,
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
   isConnected?: boolean,
 ) => {
   const items = ({ query, editor }: { query: string; editor: Editor }) => {
     return getSuggestionItems({
       query,
       onError,
-      secureImageUploadUrl,
+      ipfsImageUploadFn,
       isConnected,
       editor,
     });
