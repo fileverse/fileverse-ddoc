@@ -109,7 +109,11 @@ export const useDdocEditor = ({
       metadataProxyUrl,
       onCopyHeadingLink,
     ) as AnyExtension[]),
-    SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
+    SlashCommand(
+      (error: string) => onError?.(error),
+      secureImageUploadUrl,
+      isConnected,
+    ),
     customTextInputRules,
     PageBreak,
     Comment.configure({
@@ -363,10 +367,14 @@ export const useDdocEditor = ({
         DBlock.configure({
           hasAvailableModels,
         }),
-        SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
+        SlashCommand(
+          (error: string) => onError?.(error),
+          secureImageUploadUrl,
+          isConnected,
+        ),
       ]);
     }
-  }, [activeModel, maxTokens, isAIAgentEnabled]);
+  }, [activeModel, maxTokens, isAIAgentEnabled, isConnected]);
 
   useEffect(() => {
     if (zoomLevel) {
