@@ -58,7 +58,7 @@ const DdocEditor = forwardRef(
       handleCommentButtonClick,
       showCommentButton,
       ensResolutionUrl,
-      secureImageUploadUrl,
+      ipfsImageUploadFn,
       disableBottomToolbar,
       onError,
       setCharacterCount,
@@ -175,7 +175,7 @@ const DdocEditor = forwardRef(
       onError,
       setCharacterCount,
       setWordCount,
-      secureImageUploadUrl,
+      ipfsImageUploadFn,
       isCommentSectionOpen,
       setIsCommentSectionOpen,
       setInlineCommentData,
@@ -411,7 +411,7 @@ const DdocEditor = forwardRef(
                     setZoomLevel={setZoomLevel}
                     isNavbarVisible={isNavbarVisible}
                     setIsNavbarVisible={setIsNavbarVisible}
-                    secureImageUploadUrl={secureImageUploadUrl}
+                    ipfsImageUploadFn={ipfsImageUploadFn}
                     onMarkdownExport={onMarkdownExport}
                     onMarkdownImport={onMarkdownImport}
                     onPdfExport={onPdfExport}
@@ -673,7 +673,7 @@ const DdocEditor = forwardRef(
                   isKeyboardVisible={isKeyboardVisible}
                   isNavbarVisible={isNavbarVisible}
                   setIsNavbarVisible={setIsNavbarVisible}
-                  secureImageUploadUrl={secureImageUploadUrl}
+                  ipfsImageUploadFn={ipfsImageUploadFn}
                   isLoading={!editor || isContentLoading}
                 />
               </div>

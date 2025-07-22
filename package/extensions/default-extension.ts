@@ -47,10 +47,11 @@ import { common, createLowlight } from 'lowlight';
 import { Emoji } from './emoji/emoji';
 
 const lowlight = createLowlight(common);
+import { IpfsImageUploadResponse } from '../types';
 
 export const defaultExtensions = (
   onError: (error: string) => void,
-  secureImageUploadUrl?: string,
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
   metadataProxyUrl?: string,
   onCopyHeadingLink?: (link: string) => void,
 ) => [
@@ -172,11 +173,11 @@ export const defaultExtensions = (
   ResizableMedia.configure({
     uploadFn: uploadFn,
     onError: onError,
-    secureImageUploadUrl,
+    ipfsImageUploadFn,
   }),
   GapCursor,
   DBlock.configure({
-    secureImageUploadUrl,
+    ipfsImageUploadFn,
     onCopyHeadingLink,
   }),
   TrailingNode,
@@ -187,7 +188,7 @@ export const defaultExtensions = (
   EmbeddedTweet,
   actionButton,
   ColumnExtension,
-  MarkdownPasteHandler(secureImageUploadUrl),
+  MarkdownPasteHandler(ipfsImageUploadFn),
   Markdown.configure({
     html: true, // Allow HTML input/output
     tightLists: true, // No <p> inside <li> in markdown output

@@ -13,6 +13,7 @@ import {
 import ToolbarButton from '../common/toolbar-button';
 import { AnimatePresence } from 'framer-motion';
 import { fadeInTransition, slideUpTransition } from './motion-div';
+import { IpfsImageUploadResponse } from '../types';
 
 const MobileToolbar = ({
   editor,
@@ -20,7 +21,7 @@ const MobileToolbar = ({
   isKeyboardVisible,
   isNavbarVisible,
   setIsNavbarVisible,
-  secureImageUploadUrl,
+  ipfsImageUploadFn,
   isLoading,
 }: {
   editor: Editor | null;
@@ -28,14 +29,14 @@ const MobileToolbar = ({
   isKeyboardVisible: boolean;
   isNavbarVisible: boolean;
   setIsNavbarVisible: React.Dispatch<React.SetStateAction<boolean>>;
-  secureImageUploadUrl?: string;
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   isLoading: boolean;
 }) => {
   const { toolVisibility, setToolVisibility, bottomToolbar } = useEditorToolbar(
     {
       editor: editor,
       onError,
-      secureImageUploadUrl,
+      ipfsImageUploadFn,
     },
   );
   const [url, setUrl] = useState('');

@@ -39,6 +39,7 @@ import {
 import { searchForSecureImageNodeAndEmbedImageContent } from '../extensions/mardown-paste-handler';
 import { inlineLoader } from '../utils/inline-loader';
 import { getTemporaryEditor } from '../utils/helpers';
+import { IpfsImageUploadResponse } from '../types';
 
 interface IEditorToolElement {
   icon: any;
@@ -256,14 +257,14 @@ export const IMG_UPLOAD_SETTINGS = {
 export const useEditorToolbar = ({
   editor,
   onError,
-  secureImageUploadUrl,
+  ipfsImageUploadFn,
   onMarkdownExport,
   onMarkdownImport,
   onPdfExport,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
-  secureImageUploadUrl?: string;
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
   onPdfExport?: () => void;
@@ -612,7 +613,7 @@ export const useEditorToolbar = ({
               return;
             }
             const size = file.size;
-            const imgConfig = secureImageUploadUrl
+            const imgConfig = ipfsImageUploadFn
               ? IMG_UPLOAD_SETTINGS.Extended
               : IMG_UPLOAD_SETTINGS.Base;
             if (size > imgConfig.maxSize) {
@@ -622,7 +623,7 @@ export const useEditorToolbar = ({
               return;
             }
             const pos = editor.view.state.selection.from;
-            startImageUpload(file, editor.view, pos, secureImageUploadUrl);
+            startImageUpload(file, editor.view, pos, ipfsImageUploadFn);
           }
         };
         input.click();
@@ -709,7 +710,7 @@ export const useEditorToolbar = ({
       icon: 'FileInput',
       title: 'Import Markdown',
       onClick: async () => {
-        await editor?.commands.uploadMarkdownFile(secureImageUploadUrl);
+        await editor?.commands.uploadMarkdownFile(ipfsImageUploadFn);
         onMarkdownImport?.();
       },
       isActive: false,
@@ -833,7 +834,7 @@ export const useEditorToolbar = ({
             }
             const size = file.size;
 
-            const imgConfig = secureImageUploadUrl
+            const imgConfig = ipfsImageUploadFn
               ? IMG_UPLOAD_SETTINGS.Extended
               : IMG_UPLOAD_SETTINGS.Base;
 
@@ -844,7 +845,7 @@ export const useEditorToolbar = ({
               return;
             }
             const pos = editor.view.state.selection.from;
-            startImageUpload(file, editor.view, pos, secureImageUploadUrl);
+            startImageUpload(file, editor.view, pos, ipfsImageUploadFn);
           }
         };
         input.click();

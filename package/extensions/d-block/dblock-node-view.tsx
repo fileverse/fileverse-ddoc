@@ -35,7 +35,7 @@ import { DBlockMenu } from './components/menu';
 
 export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
   ({ node, getPos, editor, deleteNode, ...props }) => {
-    const secureImageUploadUrl = props.extension?.options?.secureImageUploadUrl;
+    const ipfsImageUploadFn = props.extension?.options?.ipfsImageUploadFn;
     const onCopyHeadingLink = props.extension?.options?.onCopyHeadingLink;
 
     const [menuOpen, setMenuOpen] = useState<boolean>(false);
@@ -176,7 +176,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
           .run();
       } else if (type === 'secure-img') {
         // Convert base64 to File object
-        console.log('secureImageUploadUrl', secureImageUploadUrl);
+        console.log('ipfsImageUploadFn', ipfsImageUploadFn);
       } else {
         editor
           ?.chain()

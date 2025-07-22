@@ -14,13 +14,12 @@ import {
   arrayBufferToBase64,
   decryptImage,
   fetchImage,
-  generateRSAKeyPair,
 } from '../../utils/security';
-import { fromByteArray, toByteArray } from 'base64-js';
-import { uploadSecureImage } from '../../utils/upload-images';
+import { toByteArray } from 'base64-js';
 import { inlineLoader } from '../../utils/inline-loader';
 import { isLikelyLatex } from '../../utils/is-likely-latex';
 import { getTemporaryEditor } from '../../utils/helpers';
+import { IpfsImageUploadResponse } from '../../types';
 
 // Initialize MarkdownIt for converting Markdown back to HTML with footnote support
 const markdownIt = new MarkdownIt().use(markdownItFootnote);
@@ -272,7 +271,9 @@ turndownService.addRule('callout', {
 declare module '@tiptap/core' {
   interface Commands {
     uploadMarkdownFile: {
-      uploadMarkdownFile: (secureImageUploadUrl?: string) => any;
+      uploadMarkdownFile: (
+        ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
+      ) => any;
     };
     exportMarkdownFile: {
       exportMarkdownFile: () => any;
@@ -280,7 +281,9 @@ declare module '@tiptap/core' {
   }
 }
 
-const MarkdownPasteHandler = (secureImageUploadUrl?: string) =>
+const MarkdownPasteHandler = (
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
+) =>
   Extension.create({
     name: 'markdownPasteHandler',
 
@@ -312,7 +315,7 @@ const MarkdownPasteHandler = (secureImageUploadUrl?: string) =>
 
               // Check if the copied content is Markdown
               if (isMarkdown(copiedData)) {
-                handleMarkdownContent(view, copiedData, secureImageUploadUrl);
+                handleMarkdownContent(view, copiedData, ipfsImageUploadFn);
                 return true;
               }
 
@@ -326,7 +329,11 @@ const MarkdownPasteHandler = (secureImageUploadUrl?: string) =>
     addCommands() {
       return {
         uploadMarkdownFile:
-          (secureImageUploadUrl?: string) =>
+          (
+            ipfsImageUploadFn?: (
+              file: File,
+            ) => Promise<IpfsImageUploadResponse>,
+          ) =>
           async ({ view }: any) => {
             const input = document.createElement('input');
             input.type = 'file';
@@ -350,7 +357,7 @@ const MarkdownPasteHandler = (secureImageUploadUrl?: string) =>
                     await handleMarkdownContent(
                       view,
                       content,
-                      secureImageUploadUrl,
+                      ipfsImageUploadFn,
                     );
                     removeLoader(loader);
                   };
@@ -554,7 +561,7 @@ function base64ToFile(base64Data: string, contentType: string): File {
 
 async function uploadBase64ImageContent(
   base64Image: string,
-  secureImageUploadUrl: string,
+  ipfsImageUploadFn: (file: File) => Promise<IpfsImageUploadResponse>,
 ) {
   // Remove the data URL prefix. e.g., "data:image/jpeg;base64,"
   const prefixMatch = base64Image.match(/^(data:(image\/[a-zA-Z]+);base64,)/);
@@ -565,18 +572,12 @@ async function uploadBase64ImageContent(
   const base64Data = base64Image.slice(prefixMatch[1].length);
 
   const file = base64ToFile(base64Data, contentType);
-  const { publicKey, privateKey } = await generateRSAKeyPair();
-  const { key, url, iv } = await uploadSecureImage(
-    secureImageUploadUrl,
-    file,
-    publicKey,
-  );
+  const { encryptionKey, nonce, ipfsUrl } = await ipfsImageUploadFn(file);
 
   return {
-    url,
-    encryptedKey: key,
-    iv,
-    privateKey: fromByteArray(privateKey),
+    ipfsUrl,
+    encryptionKey,
+    nonce,
     downloadUrl: URL.createObjectURL(file),
   };
 }
@@ -584,7 +585,7 @@ async function uploadBase64ImageContent(
 async function handleMarkdownContent(
   view: any,
   content: string,
-  secureImageUploadUrl?: string,
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
 ) {
   // Convert Markdown to HTML
   let convertedHtml = markdownIt.render(content);
@@ -688,21 +689,21 @@ async function handleMarkdownContent(
 
   const images = Array.from(doc.getElementsByTagName('img'));
 
-  if (secureImageUploadUrl) {
+  if (ipfsImageUploadFn) {
     for (const imgElement of images) {
       const src = imgElement.getAttribute('src') || '';
       if (src.startsWith('data:image')) {
         try {
           const uploadResult = await uploadBase64ImageContent(
             src,
-            secureImageUploadUrl,
+            ipfsImageUploadFn,
           );
-          imgElement.setAttribute('url', uploadResult.url);
+          imgElement.setAttribute('ipfsUrl', uploadResult.ipfsUrl);
           imgElement.setAttribute('src', uploadResult.downloadUrl);
           imgElement.setAttribute('media-type', 'secure-img');
-          imgElement.setAttribute('encryptedKey', uploadResult.encryptedKey);
-          imgElement.setAttribute('iv', uploadResult.iv);
-          imgElement.setAttribute('privateKey', uploadResult.privateKey);
+          imgElement.setAttribute('encryptionKey', uploadResult.encryptionKey);
+          imgElement.setAttribute('nonce', uploadResult.nonce);
+          imgElement.setAttribute('version', '2');
         } catch (error) {
           console.error('Error uploading secure image to IPFS:', error);
         }
