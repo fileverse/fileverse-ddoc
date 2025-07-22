@@ -109,7 +109,11 @@ export const useDdocEditor = ({
       metadataProxyUrl,
       onCopyHeadingLink,
     ) as AnyExtension[]),
-    SlashCommand((error: string) => onError?.(error), ipfsImageUploadFn),
+    SlashCommand(
+      (error: string) => onError?.(error),
+      isConnected,
+      ipfsImageUploadFn,
+    ),
     customTextInputRules,
     PageBreak,
     Comment.configure({
@@ -143,8 +147,8 @@ export const useDdocEditor = ({
         ...prev.filter((ext) => ext.name !== 'slash-command'),
         SlashCommand(
           (error: string) => onError?.(error),
-          secureImageUploadUrl,
           isConnected,
+          ipfsImageUploadFn,
         ),
       ]);
     }
@@ -363,10 +367,14 @@ export const useDdocEditor = ({
         DBlock.configure({
           hasAvailableModels,
         }),
-        SlashCommand((error: string) => onError?.(error), secureImageUploadUrl),
+        SlashCommand(
+          (error: string) => onError?.(error),
+          isConnected,
+          ipfsImageUploadFn,
+        ),
       ]);
     }
-  }, [activeModel, maxTokens, isAIAgentEnabled]);
+  }, [activeModel, maxTokens, isAIAgentEnabled, isConnected]);
 
   useEffect(() => {
     if (zoomLevel) {
