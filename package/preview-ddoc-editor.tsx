@@ -31,7 +31,7 @@ const PreviewDdocEditor = forwardRef(
       onTextSelection,
       onCommentInteraction,
       ensResolutionUrl,
-      secureImageUploadUrl,
+      ipfsImageUploadFn,
       onError,
       setCharacterCount,
       setWordCount,
@@ -40,6 +40,7 @@ const PreviewDdocEditor = forwardRef(
       setSelectedTags,
       className,
       unFocused,
+      ipfsImageFetchFn,
     }: DdocProps,
     ref,
   ) => {
@@ -67,6 +68,7 @@ const PreviewDdocEditor = forwardRef(
       isContentLoading,
       ydoc,
     } = useDdocEditor({
+      ipfsImageFetchFn,
       isPreviewMode,
       initialContent,
       enableCollaboration,
@@ -81,7 +83,7 @@ const PreviewDdocEditor = forwardRef(
       onError,
       setCharacterCount,
       setWordCount,
-      secureImageUploadUrl,
+      ipfsImageUploadFn,
       unFocused,
     });
 

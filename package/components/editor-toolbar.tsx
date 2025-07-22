@@ -30,6 +30,7 @@ import ToolbarButton from '../common/toolbar-button';
 import { useMediaQuery } from 'usehooks-ts';
 import { AnimatePresence } from 'framer-motion';
 import { fadeInTransition, slideUpTransition } from './motion-div';
+import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 
 const MemoizedFontSizePicker = React.memo(FontSizePicker);
 
@@ -40,11 +41,12 @@ const TiptapToolBar = ({
   setZoomLevel,
   isNavbarVisible,
   setIsNavbarVisible,
-  secureImageUploadUrl,
+  ipfsImageUploadFn,
   onMarkdownExport,
   onMarkdownImport,
   onPdfExport,
   isLoading,
+  ipfsImageFetchFn,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -52,11 +54,14 @@ const TiptapToolBar = ({
   setZoomLevel: (zoom: string) => void;
   isNavbarVisible: boolean;
   setIsNavbarVisible: React.Dispatch<React.SetStateAction<boolean>>;
-  secureImageUploadUrl?: string;
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
   onPdfExport?: () => void;
   isLoading: boolean;
+  ipfsImageFetchFn?: (
+    _data: IpfsImageFetchPayload,
+  ) => Promise<{ url: string; file: File }>;
 }) => {
   const {
     toolRef,
@@ -72,10 +77,11 @@ const TiptapToolBar = ({
   } = useEditorToolbar({
     editor,
     onError,
-    secureImageUploadUrl,
+    ipfsImageUploadFn,
     onMarkdownExport,
     onMarkdownImport,
     onPdfExport,
+    ipfsImageFetchFn,
   });
 
   const editorStates = useEditorStates(editor as Editor);

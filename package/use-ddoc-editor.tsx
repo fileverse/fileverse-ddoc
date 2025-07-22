@@ -55,7 +55,7 @@ export const useDdocEditor = ({
   onError,
   setCharacterCount,
   setWordCount,
-  secureImageUploadUrl,
+  ipfsImageUploadFn,
   ddocId,
   enableIndexeddbSync,
   unFocused,
@@ -67,6 +67,7 @@ export const useDdocEditor = ({
   metadataProxyUrl,
   extensions: externalExtensions,
   onCopyHeadingLink,
+  ipfsImageFetchFn,
   isConnected,
   activeModel,
   maxTokens,
@@ -101,17 +102,18 @@ export const useDdocEditor = ({
   }, [activeCommentId]);
   // V2 - comment
   const [tocItems, setTocItems] = useState<any[]>([]);
-
+  const hasAvailableModels = activeModel !== undefined && isAIAgentEnabled;
   const [extensions, setExtensions] = useState<AnyExtension[]>([
-    ...(defaultExtensions(
-      (error: string) => onError?.(error),
-      secureImageUploadUrl,
+    ...(defaultExtensions({
+      onError: (error: string) => onError?.(error),
+      ipfsImageUploadFn,
       metadataProxyUrl,
       onCopyHeadingLink,
-    ) as AnyExtension[]),
+      ipfsImageFetchFn,
+    }) as AnyExtension[]),
     SlashCommand(
       (error: string) => onError?.(error),
-      secureImageUploadUrl,
+      ipfsImageUploadFn,
       isConnected,
     ),
     customTextInputRules,
@@ -147,7 +149,7 @@ export const useDdocEditor = ({
         ...prev.filter((ext) => ext.name !== 'slash-command'),
         SlashCommand(
           (error: string) => onError?.(error),
-          secureImageUploadUrl,
+          ipfsImageUploadFn,
           isConnected,
         ),
       ]);
@@ -347,7 +349,6 @@ export const useDdocEditor = ({
   }, [proExtensions, extensions]);
 
   useEffect(() => {
-    const hasAvailableModels = activeModel !== undefined && isAIAgentEnabled;
     if (activeModel) {
       setExtensions([
         ...extensions.filter(
@@ -369,7 +370,7 @@ export const useDdocEditor = ({
         }),
         SlashCommand(
           (error: string) => onError?.(error),
-          secureImageUploadUrl,
+          ipfsImageUploadFn,
           isConnected,
         ),
       ]);

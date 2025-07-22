@@ -42,6 +42,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     disableInlineComment,
     onReminderCreate,
     isConnected,
+    ipfsImageUploadFn,
+    ipfsImageFetchFn,
   } = props;
   const editorStates = useEditorStates(editor as Editor);
   const currentSize = editor ? editorStates.currentSize : undefined;
@@ -50,6 +52,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
     editor: editor,
     onError,
+    ipfsImageUploadFn,
+    ipfsImageFetchFn,
   });
 
   const {

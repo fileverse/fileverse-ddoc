@@ -37,7 +37,6 @@ import { Footnote } from './footnote/footnote';
 import Superscript from '@tiptap/extension-superscript';
 import Subscript from '@tiptap/extension-subscript';
 import { ResizableMedia } from './resizable-media';
-import { uploadFn } from '../utils/upload-images';
 import LinkPreview from './link-preview/link-preview';
 import { Callout } from './callout/callout';
 import { FontSize } from './font-size';
@@ -47,13 +46,23 @@ import { common, createLowlight } from 'lowlight';
 import { Emoji } from './emoji/emoji';
 
 const lowlight = createLowlight(common);
+import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 
-export const defaultExtensions = (
-  onError: (error: string) => void,
-  secureImageUploadUrl?: string,
-  metadataProxyUrl?: string,
-  onCopyHeadingLink?: (link: string) => void,
-) => [
+export const defaultExtensions = ({
+  ipfsImageFetchFn,
+  onError,
+  metadataProxyUrl,
+  onCopyHeadingLink,
+  ipfsImageUploadFn,
+}: {
+  ipfsImageFetchFn?: (
+    _data: IpfsImageFetchPayload,
+  ) => Promise<{ url: string; file: File }>;
+  onError: (error: string) => void;
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
+  metadataProxyUrl?: string;
+  onCopyHeadingLink?: (link: string) => void;
+}) => [
   FontFamily,
   StarterKit.configure({
     strike: {
@@ -170,24 +179,24 @@ export const defaultExtensions = (
     color: '#d1d5db',
   }),
   ResizableMedia.configure({
-    uploadFn: uploadFn,
     onError: onError,
-    secureImageUploadUrl,
+    ipfsImageUploadFn,
+    ipfsImageFetchFn,
   }),
   GapCursor,
   DBlock.configure({
-    secureImageUploadUrl,
+    ipfsImageUploadFn,
     onCopyHeadingLink,
   }),
   TrailingNode,
   Document,
   ...SuperchargedTableExtensions,
   CustomKeymap,
-  Iframe,
+  Iframe.configure({ ipfsImageFetchFn }),
   EmbeddedTweet,
   actionButton,
   ColumnExtension,
-  MarkdownPasteHandler(secureImageUploadUrl),
+  MarkdownPasteHandler(ipfsImageUploadFn, ipfsImageFetchFn),
   Markdown.configure({
     html: true, // Allow HTML input/output
     tightLists: true, // No <p> inside <li> in markdown output

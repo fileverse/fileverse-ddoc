@@ -6,17 +6,18 @@ import { IMG_UPLOAD_SETTINGS } from '../../components/editor-utils';
 import { validateImageExtension } from '../../utils/check-image-type';
 import { CommandProps } from './types';
 import { showReminderMenu } from '../reminder-block/reminder-menu-renderer';
+import { IpfsImageUploadResponse } from '../../types';
 
 export const getSuggestionItems = ({
   query,
   onError,
-  secureImageUploadUrl,
   isConnected,
+  ipfsImageUploadFn,
   editor,
 }: {
   query: string;
   onError?: (errorString: string) => void;
-  secureImageUploadUrl?: string;
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   isConnected?: boolean;
   editor?: any;
 }) => {
@@ -291,7 +292,7 @@ export const getSuggestionItems = ({
               return;
             }
             const size = file.size;
-            const imgConfig = secureImageUploadUrl
+            const imgConfig = ipfsImageUploadFn
               ? IMG_UPLOAD_SETTINGS.Extended
               : IMG_UPLOAD_SETTINGS.Base;
             if (size > imgConfig.maxSize) {
@@ -301,7 +302,7 @@ export const getSuggestionItems = ({
               return;
             }
             const pos = editor.view.state.selection.from;
-            startImageUpload(file, editor.view, pos, secureImageUploadUrl);
+            startImageUpload(file, editor.view, pos, ipfsImageUploadFn);
           }
         };
         input.click();
@@ -368,7 +369,6 @@ export const getSuggestionItems = ({
       },
     },
   ];
-
   return items.filter((item) => {
     if (item.title === 'AI Writer' && item.isDisabled) {
       return false;
