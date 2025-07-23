@@ -163,8 +163,8 @@ export const getSuggestionItems = ({
     {
       title: 'Reminder',
       description: isConnected
-        ? `We'll send you a push notification, so you don't forget about something important.`
-        : 'You need to be logged-in to create reminders',
+        ? `Set a reminder and we'll notify you right on time.`
+        : 'Log-in to start creating reminders.',
       searchTerms: ['reminder', 'alert', 'notification'],
       icon: (
         <LucideIcon

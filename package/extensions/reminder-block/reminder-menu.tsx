@@ -138,7 +138,7 @@ export const ReminderMenu = forwardRef<HTMLDivElement, ReminderMenuProps>(
     const content = (
       <div className="px-4 py-2 min-w-[300px] color-bg-default rounded-lg shadow-elevation-3 space-y-3 border color-border-default">
         <div className="flex justify-between items-center">
-          <h3 className="text-heading-xsm">Create reminder</h3>
+          <h3 className="text-heading-xsm">Create a reminder</h3>
           <IconButton
             icon={'X'}
             variant="ghost"
@@ -187,7 +187,7 @@ export const ReminderMenu = forwardRef<HTMLDivElement, ReminderMenuProps>(
         </div>
 
         <hr className="my-2 h-1 w-full" />
-        <h3 className="text-heading-xsm">Custom</h3>
+        <h3 className="text-heading-xsm">Custom date & time</h3>
 
         <div className="flex gap-2">
           <DynamicDropdown
@@ -260,8 +260,8 @@ export const ReminderMenu = forwardRef<HTMLDivElement, ReminderMenuProps>(
 
         <div className="flex justify-between items-center pb-1">
           <span className="text-helper-text-sm font-normal color-text-secondary">
-            To receive an reminders please allow us to send push notification in
-            your browser.
+            Allow push notifications. We’ll send you reminders through browser
+            notifications — no spam, just what you asked for.
           </span>
         </div>
       </div>
