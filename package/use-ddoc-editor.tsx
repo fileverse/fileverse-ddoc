@@ -375,7 +375,7 @@ export const useDdocEditor = ({
         ),
       ]);
     }
-  }, [activeModel, maxTokens, isAIAgentEnabled]);
+  }, [activeModel, maxTokens, isAIAgentEnabled, isConnected]);
 
   useEffect(() => {
     if (zoomLevel) {

@@ -8,6 +8,7 @@ export function showReminderMenu(
   editor: Editor,
   range: Range,
   type: ReminderMenuProps['type'],
+  onError?: (error: string) => void,
 ) {
   let popup: TippyInstance[] = [];
   let timeout: ReturnType<typeof setTimeout>;
@@ -46,24 +47,31 @@ export function showReminderMenu(
       isOpen: true,
       onClose: destroyPopup,
       onCreateReminder: (reminder: Reminder) => {
-        editor
-          .chain()
-          .focus()
-          .setReminderBlock({
-            id: reminder.id,
-            reminder: reminder,
-          })
-          .run();
+        try {
+          editor
+            .chain()
+            .focus()
+            .setReminderBlock({
+              id: reminder.id,
+              reminder: reminder,
+            })
+            .run();
 
-        const extensionOptions = editor.extensionManager.extensions.find(
-          (ext) => ext.name === 'reminderBlock',
-        )?.options as ReminderBlockOptions;
+          const extensionOptions = editor.extensionManager.extensions.find(
+            (ext) => ext.name === 'reminderBlock',
+          )?.options as ReminderBlockOptions;
 
-        if (extensionOptions?.onReminderCreate) {
-          extensionOptions.onReminderCreate(reminder, type);
+          if (extensionOptions?.onReminderCreate) {
+            extensionOptions.onReminderCreate(reminder, type);
+          }
+        } catch (error) {
+          console.error('Error creating reminder:', error);
+          if (onError) {
+            onError('Failed to create reminder');
+          }
+        } finally {
+          destroyPopup();
         }
-
-        destroyPopup();
       },
       type,
     },

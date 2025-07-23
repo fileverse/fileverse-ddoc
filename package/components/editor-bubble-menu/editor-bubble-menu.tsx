@@ -25,6 +25,8 @@ import { bubbleMenuProps, shouldShow } from './props';
 import { useComments } from '../inline-comment/context/comment-context';
 import { useEditorStates } from '../../hooks/use-editor-states';
 import { Editor } from '@tiptap/react';
+import { ReminderMenu } from '../../extensions/reminder-block/reminder-menu';
+import { useReminder } from '../../hooks/use-reminder';
 
 const MemoizedFontSizePicker = React.memo(FontSizePicker);
 
@@ -38,10 +40,10 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     activeCommentId,
     isCollabDocumentPublished,
     disableInlineComment,
+    onReminderCreate,
+    isConnected,
     ipfsImageUploadFn,
     ipfsImageFetchFn,
-    // onReminderCreate,
-    // isConnected,
   } = props;
   const editorStates = useEditorStates(editor as Editor);
   const currentSize = editor ? editorStates.currentSize : undefined;
@@ -54,17 +56,17 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     ipfsImageFetchFn,
   });
 
-  // const {
-  //   reminderRef,
-  //   handleReminderOnClose,
-  //   handleReminderCreate,
-  //   initialReminderTitle,
-  //   setInitialReminderTitle,
-  // } = useReminder({
-  //   editor,
-  //   onReminderCreate,
-  //   onError,
-  // });
+  const {
+    reminderRef,
+    handleReminderOnClose,
+    handleReminderCreate,
+    initialReminderTitle,
+    setInitialReminderTitle,
+  } = useReminder({
+    editor,
+    onReminderCreate,
+    onError,
+  });
 
   const {
     activeComment,
@@ -125,19 +127,19 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       command: () => setToolVisibility(IEditorTool.SCRIPTS),
       icon: 'Superscript',
     },
-    // {
-    //   name: 'Reminder',
-    //   isActive: () => false,
-    //   command: () => {
-    //     const selectedText =
-    //       editor.state.selection.content().content.firstChild?.textContent ||
-    //       '';
-    //     if (setInitialReminderTitle) {
-    //       setInitialReminderTitle(selectedText);
-    //     }
-    //   },
-    //   icon: 'AlarmClock',
-    // },
+    {
+      name: 'Reminder',
+      isActive: () => false,
+      command: () => {
+        const selectedText =
+          editor.state.selection.content().content.firstChild?.textContent ||
+          '';
+        if (setInitialReminderTitle) {
+          setInitialReminderTitle(selectedText);
+        }
+      },
+      icon: 'AlarmClock',
+    },
     {
       name: 'Comment',
       isActive: () => isCommentActive,
@@ -179,18 +181,18 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         );
       case 'Scripts':
         return <ScriptsPopup editor={editor} elementRef={toolRef} />;
-      // case 'Reminder':
-      //   return (
-      //     <ReminderMenu
-      //       ref={reminderRef}
-      //       type={'inline'}
-      //       isOpen={true}
-      //       onClose={handleReminderOnClose}
-      //       onCreateReminder={handleReminderCreate}
-      //       initialReminderTitle={initialReminderTitle}
-      //       setInitialReminderTitle={setInitialReminderTitle}
-      //     />
-      //   );
+      case 'Reminder':
+        return (
+          <ReminderMenu
+            ref={reminderRef}
+            type={'inline'}
+            isOpen={true}
+            onClose={handleReminderOnClose}
+            onCreateReminder={handleReminderCreate}
+            initialReminderTitle={initialReminderTitle}
+            setInitialReminderTitle={setInitialReminderTitle}
+          />
+        );
       default:
         return null;
     }
@@ -254,7 +256,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           )}
         >
           {mobileCommentButton}
-          {/* {isConnected && (
+          {isConnected && (
             <DynamicDropdown
               key="Reminder"
               side="bottom"
@@ -272,24 +274,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                       setInitialReminderTitle(selectedText);
                     }
                   }}
+                  disabled={!isConnected}
                 />
               }
               className="!max-w-[300px] border-none shadow-none"
-              content={renderContent({
-                name: 'Reminder',
-                isActive: () => {},
-                command: () => {
-                  const selectedText =
-                    editor.state.selection.content().content.firstChild
-                      ?.textContent || '';
-                  if (setInitialReminderTitle) {
-                    setInitialReminderTitle(selectedText);
-                  }
-                },
-                icon: 'AlarmClock',
-              })}
+              content={renderContent({ name: 'Reminder' })}
             />
-          )} */}
+          )}
         </div>
       ) : (
         <React.Fragment>
@@ -500,26 +491,28 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                   );
                 }
 
-                // if (item.name === 'Reminder') {
-                //   return (
-                //     <DynamicDropdown
-                //       key="Reminder"
-                //       side="bottom"
-                //       sideOffset={15}
-                //       anchorTrigger={
-                //         <ToolbarButton
-                //           icon={item.icon}
-                //           variant="ghost"
-                //           disabled={!isConnected}
-                //           size="sm"
-                //           onClick={item.command}
-                //         />
-                //       }
-                //       className="!max-w-[300px] border-none shadow-none"
-                //       content={renderContent(item)}
-                //     />
-                //   );
-                // }
+                if (item.name === 'Reminder') {
+                  return (
+                    isConnected && (
+                      <DynamicDropdown
+                        key="Reminder"
+                        side="bottom"
+                        sideOffset={15}
+                        anchorTrigger={
+                          <ToolbarButton
+                            icon={item.icon}
+                            variant="ghost"
+                            disabled={!isConnected}
+                            size="sm"
+                            onClick={item.command}
+                          />
+                        }
+                        className="!max-w-[300px] border-none shadow-none"
+                        content={renderContent(item)}
+                      />
+                    )
+                  );
+                }
 
                 return null;
               })}
