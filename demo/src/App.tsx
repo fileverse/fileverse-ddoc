@@ -318,7 +318,7 @@ function App() {
           TableOfContents: TableOfContents,
           getHierarchicalIndexes: getHierarchicalIndexes,
         }}
-        isConnected={true}
+        isConnected={isConnected}
         connectViaWallet={async () => {}}
         isLoading={false}
         connectViaUsername={handleConnectViaUsername}
