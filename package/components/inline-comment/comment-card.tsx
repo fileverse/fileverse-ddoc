@@ -245,7 +245,7 @@ export const CommentCard = ({
         <div className="flex flex-col gap-2 ml-3 pl-4 border-l custom-border">
           <div className="flex items-center gap-2 color-text-secondary">
             <Spinner size="sm" />
-            <p className="text-helper-text-sm">Syncing onchain comments</p>
+            <p className="text-helper-text-sm">Loading encrypted comments</p>
           </div>
         </div>
       </div>
