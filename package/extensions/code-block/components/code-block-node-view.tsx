@@ -36,6 +36,10 @@ const LANGUAGE_GROUPS = [
     ],
   },
   {
+    label: 'Blockchain',
+    options: [{ label: 'Solidity', value: 'solidity' }],
+  },
+  {
     label: 'Other',
     options: [
       { label: 'Plain Text', value: 'plaintext' },
@@ -211,7 +215,7 @@ export default function CodeBlockNodeView({
                 className={cn(
                   'min-w-fit p-2',
                   lineNumbers &&
-                  'color-bg-brand color-text-on-brand hover:bg-[hsla(var(--color-bg-brand-hover))]',
+                    'color-bg-brand color-text-on-brand hover:bg-[hsla(var(--color-bg-brand-hover))]',
                 )}
               >
                 <LucideIcon name="List" size="sm" />
@@ -227,7 +231,7 @@ export default function CodeBlockNodeView({
                 className={cn(
                   'min-w-fit p-2',
                   wordWrap &&
-                  'color-bg-brand color-text-on-brand hover:bg-[hsla(var(--color-bg-brand-hover))]',
+                    'color-bg-brand color-text-on-brand hover:bg-[hsla(var(--color-bg-brand-hover))]',
                 )}
               >
                 <LucideIcon name="WrapText" size="sm" />
