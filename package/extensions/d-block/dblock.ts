@@ -133,6 +133,11 @@ export const DBlock = Node.create<DBlockOptions>({
           parent?.type.name === 'listItem' ||
           parent?.type.name === 'taskItem'
         ) {
+          // 🛡️ Check if inside table - if so, don't handle lists specially
+          if (isInsideTable) {
+            return false;
+          }
+
           const isCurrentItemEmpty = currentNode.textContent === '';
           const grandParent = $head.node($head.depth - 2);
           const currentIndex = $head.index($head.depth - 2);
