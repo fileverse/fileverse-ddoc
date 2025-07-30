@@ -117,11 +117,31 @@ const DdocEditor = forwardRef(
       activeModel,
       maxTokens,
       isAIAgentEnabled,
+      // Document styling object
+      documentStyling,
     }: DdocProps,
     ref,
   ) => {
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+
+    // Organize all styling props
+    const editorStyles = {
+      background: {
+        ...(documentStyling?.background && {
+          backgroundColor: documentStyling.background,
+        }),
+      },
+      canvas: {
+        ...(documentStyling?.canvasBackground && {
+          backgroundColor: documentStyling.canvasBackground,
+        }),
+        ...(documentStyling?.textColor && { color: documentStyling.textColor }),
+        ...(documentStyling?.fontFamily && {
+          fontFamily: documentStyling.fontFamily,
+        }),
+      },
+    };
 
     const btn_ref = useRef(null);
     const isWidth1500px = useMediaQuery('(min-width: 1500px)');
@@ -457,7 +477,8 @@ const DdocEditor = forwardRef(
             <div
               id="editor-wrapper"
               className={cn(
-                'color-bg-default w-full mx-auto rounded',
+                'w-full mx-auto rounded',
+                !documentStyling?.canvasBackground && 'color-bg-default',
                 !isPreviewMode &&
                   (isNavbarVisible
                     ? '-mt-[1.5rem] md:!mt-[0.8rem] pt-0 md:pt-[5rem]'
@@ -513,6 +534,7 @@ const DdocEditor = forwardRef(
                     ? 'left center'
                     : 'top center',
                 transform: `scaleX(${zoomLevel})`,
+                ...editorStyles.canvas,
               }}
             >
               <div
@@ -570,82 +592,90 @@ const DdocEditor = forwardRef(
                       'content-transition',
                     )
                   : slideUpTransition(
-                      <EditingProvider isPreviewMode={isPreviewMode}>
-                        {tags && tags.length > 0 && (
-                          <div
-                            ref={tagsContainerRef}
-                            className={cn(
-                              'flex flex-wrap px-4 md:px-8 lg:px-[80px] items-center gap-1 mb-4 mt-4 lg:!mt-0',
-                              { 'pt-12': isPreviewMode },
-                            )}
-                          >
-                            {visibleTags.map((tag, index) => (
-                              <Tag
-                                key={index}
-                                style={{ backgroundColor: tag?.color }}
-                                onRemove={() => handleRemoveTag(tag?.name)}
-                                isRemovable={!isPreviewMode}
-                                className="!h-6 rounded"
-                              >
-                                {tag?.name}
-                              </Tag>
-                            ))}
-                            {hiddenTagsCount > 0 && !isHiddenTagsVisible && (
-                              <Button
-                                variant="ghost"
-                                className="!h-6 rounded min-w-fit !px-2 color-bg-secondary text-helper-text-sm"
-                                onClick={() => setIsHiddenTagsVisible(true)}
-                              >
-                                +{hiddenTagsCount}
-                              </Button>
-                            )}
+                      <div>
+                        <EditingProvider isPreviewMode={isPreviewMode}>
+                          {tags && tags.length > 0 && (
+                            <div
+                              ref={tagsContainerRef}
+                              className={cn(
+                                'flex flex-wrap px-4 md:px-8 lg:px-[80px] items-center gap-1 mt-4 lg:!mt-0',
+                                { 'pt-12': isPreviewMode },
+                              )}
+                              style={editorStyles.canvas}
+                            >
+                              {visibleTags.map((tag, index) => (
+                                <Tag
+                                  key={index}
+                                  style={{ backgroundColor: tag?.color }}
+                                  onRemove={() => handleRemoveTag(tag?.name)}
+                                  isRemovable={!isPreviewMode}
+                                  className="!h-6 rounded"
+                                >
+                                  {tag?.name}
+                                </Tag>
+                              ))}
+                              {hiddenTagsCount > 0 && !isHiddenTagsVisible && (
+                                <Button
+                                  variant="ghost"
+                                  className="!h-6 rounded min-w-fit !px-2 color-bg-secondary text-helper-text-sm"
+                                  onClick={() => setIsHiddenTagsVisible(true)}
+                                >
+                                  +{hiddenTagsCount}
+                                </Button>
+                              )}
 
-                            {isHiddenTagsVisible && (
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.3 }}
-                                className="flex flex-wrap items-center gap-1"
-                              >
-                                {selectedTags?.slice(4).map((tag, index) => (
-                                  <Tag
-                                    key={index + 4}
-                                    style={{ backgroundColor: tag?.color }}
-                                    onRemove={() => handleRemoveTag(tag?.name)}
-                                    isRemovable={!isPreviewMode}
-                                    className="!h-6 rounded"
-                                  >
-                                    {tag?.name}
-                                  </Tag>
-                                ))}
-                              </motion.div>
-                            )}
+                              {isHiddenTagsVisible && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  transition={{ duration: 0.3 }}
+                                  className="flex flex-wrap items-center gap-1"
+                                >
+                                  {selectedTags?.slice(4).map((tag, index) => (
+                                    <Tag
+                                      key={index + 4}
+                                      style={{ backgroundColor: tag?.color }}
+                                      onRemove={() =>
+                                        handleRemoveTag(tag?.name)
+                                      }
+                                      isRemovable={!isPreviewMode}
+                                      className="!h-6 rounded"
+                                    >
+                                      {tag?.name}
+                                    </Tag>
+                                  ))}
+                                </motion.div>
+                              )}
 
-                            {selectedTags && selectedTags?.length < 6 ? (
-                              <TagInput
-                                tags={tags || []}
-                                selectedTags={selectedTags as TagType[]}
-                                onAddTag={handleAddTag}
-                                isPreviewMode={isPreviewMode}
-                              />
-                            ) : null}
+                              {selectedTags && selectedTags?.length < 6 ? (
+                                <TagInput
+                                  tags={tags || []}
+                                  selectedTags={selectedTags as TagType[]}
+                                  onAddTag={handleAddTag}
+                                  isPreviewMode={isPreviewMode}
+                                />
+                              ) : null}
+                            </div>
+                          )}
+                          <div className="grammarly-wrapper">
+                            <EditorContent
+                              editor={editor}
+                              id="editor"
+                              className={cn(
+                                'w-full h-auto py-4',
+                                !documentStyling?.canvasBackground &&
+                                  'color-bg-default',
+                                isPreviewMode && 'preview-mode',
+                                activeModel !== undefined &&
+                                  isAIAgentEnabled &&
+                                  'has-available-models',
+                              )}
+                              style={editorStyles.canvas}
+                            />
                           </div>
-                        )}
-                        <div className="grammarly-wrapper">
-                          <EditorContent
-                            editor={editor}
-                            id="editor"
-                            className={cn(
-                              'w-full h-auto py-4 color-bg-default',
-                              isPreviewMode && 'preview-mode',
-                              activeModel !== undefined &&
-                                isAIAgentEnabled &&
-                                'has-available-models',
-                            )}
-                          />
-                        </div>
-                      </EditingProvider>,
+                        </EditingProvider>
+                      </div>,
                       'editor-transition',
                     )}
               </div>
@@ -740,6 +770,7 @@ const DdocEditor = forwardRef(
               !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
               editorCanvasClassNames,
             )}
+            style={editorStyles.background}
           >
             <nav
               id="Navbar"

@@ -124,6 +124,13 @@ export interface DdocProps extends CommentAccountProps {
   activeModel?: CustomModel;
   maxTokens?: number;
   isAIAgentEnabled?: boolean;
+  // Document styling object
+  documentStyling?: {
+    background?: string; // Outer page/document background
+    canvasBackground?: string; // Editor content area background
+    textColor?: string; // Text color
+    fontFamily?: string; // Font family
+  };
 }
 
 export interface IEditorSelectionData {

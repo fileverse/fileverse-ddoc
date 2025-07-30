@@ -40,6 +40,15 @@ function App() {
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showTOC, setShowTOC] = useState<boolean>(false);
 
+  // Document styling state
+  const [documentStyling, setDocumentStyling] = useState({
+    background: '#f8f9fa', // Outer page/document background
+    canvasBackground: '#ffffff', // Editor content area background
+    textColor: '#000000', // Text color
+    fontFamily: 'Inter', // Font family
+  });
+  const [showStylingControls, setShowStylingControls] = useState(false);
+
   const [inlineCommentData, setInlineCommentData] = useState({
     inlineCommentText: '',
     highlightedTextContent: '',
@@ -206,6 +215,14 @@ function App() {
                     <LucideIcon name="Share2" size="sm" />
                     Share
                   </Button>
+                  <Button
+                    variant={'ghost'}
+                    onClick={() => setShowStylingControls(!showStylingControls)}
+                    className="flex justify-start gap-2"
+                  >
+                    <LucideIcon name="Palette" size="sm" />
+                    Styling
+                  </Button>
                 </div>
               }
             />
@@ -231,6 +248,12 @@ function App() {
                 icon="Share2"
                 className="flex xl:hidden"
                 size="md"
+              />
+              <IconButton
+                variant={'ghost'}
+                icon="Palette"
+                size="md"
+                onClick={() => setShowStylingControls(!showStylingControls)}
               />
             </>
           )}
@@ -269,6 +292,62 @@ function App() {
 
   return (
     <div>
+      {showStylingControls && (
+        <div className="fixed top-[108px] left-4 z-50 bg-white dark:bg-gray-800 border rounded-lg p-4 shadow-lg">
+          <h3 className="text-sm font-semibold mb-3">Document Styling</h3>
+          <div className="space-y-3">
+            <div>
+              <label className="text-xs font-medium mb-1 block">Page Background</label>
+              <input
+                type="color"
+                value={documentStyling.background}
+                onChange={(e) => setDocumentStyling(prev => ({ ...prev, background: e.target.value }))}
+                className="w-full h-8 rounded border"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium mb-1 block">Canvas Background</label>
+              <input
+                type="color"
+                value={documentStyling.canvasBackground}
+                onChange={(e) => setDocumentStyling(prev => ({ ...prev, canvasBackground: e.target.value }))}
+                className="w-full h-8 rounded border"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium mb-1 block">Text Color</label>
+              <input
+                type="color"
+                value={documentStyling.textColor}
+                onChange={(e) => setDocumentStyling(prev => ({ ...prev, textColor: e.target.value }))}
+                className="w-full h-8 rounded border"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium mb-1 block">Font Family</label>
+              <select
+                value={documentStyling.fontFamily}
+                onChange={(e) => setDocumentStyling(prev => ({ ...prev, fontFamily: e.target.value }))}
+                className="w-full p-1 text-xs border rounded"
+              >
+                <option value="Inter">Inter</option>
+                <option value="Arial">Arial</option>
+                <option value="Georgia">Georgia</option>
+                <option value="Times New Roman">Times New Roman</option>
+                <option value="Helvetica">Helvetica</option>
+                <option value="Courier New">Courier New</option>
+              </select>
+            </div>
+            <Button
+              onClick={() => setShowStylingControls(false)}
+              variant="ghost"
+              className="w-full text-xs"
+            >
+              Close
+            </Button>
+          </div>
+        </div>
+      )}
       <DdocEditor
         enableCollaboration={enableCollaboration}
         collaborationId={collaborationId}
@@ -325,6 +404,7 @@ function App() {
         onCopyHeadingLink={(link: string) => {
           navigator.clipboard.writeText(link);
         }}
+        documentStyling={documentStyling}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}
