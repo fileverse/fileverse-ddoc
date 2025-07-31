@@ -460,6 +460,7 @@ const DdocEditor = forwardRef(
                 renderThemeToggle={renderThemeToggle}
                 isContentLoading={isContentLoading}
                 ipfsImageFetchFn={ipfsImageFetchFn}
+                documentStyling={documentStyling}
               />
             )}
             {editor && (
