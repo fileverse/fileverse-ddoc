@@ -125,16 +125,21 @@ const DdocEditor = forwardRef(
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
 
-    // Organize all styling props
+    /**
+     * Document styling system
+     * Creates styled objects for different editor areas:
+     * - background: Outer page background (supports gradients)
+     * - canvas: Editor content area styling (solid colors for readability)
+     */
     const editorStyles = {
       background: {
         ...(documentStyling?.background && {
-          background: documentStyling.background, // Supports gradients
+          background: documentStyling.background,
         }),
       },
       canvas: {
         ...(documentStyling?.canvasBackground && {
-          backgroundColor: documentStyling.canvasBackground, // Solid colors only
+          backgroundColor: documentStyling.canvasBackground,
         }),
         ...(documentStyling?.textColor && { color: documentStyling.textColor }),
         ...(documentStyling?.fontFamily && {

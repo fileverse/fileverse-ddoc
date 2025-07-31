@@ -18,6 +18,8 @@ import {
   TableOfContents,
   getHierarchicalIndexes,
 } from '@tiptap-pro/extension-table-of-contents';
+import { DocumentStylingPanel } from './DocumentStylingPanel';
+import { DocumentStyling } from '../../package/types';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -41,11 +43,11 @@ function App() {
   const [showTOC, setShowTOC] = useState<boolean>(false);
 
   // Document styling state
-  const [documentStyling, setDocumentStyling] = useState({
-    background: '#f8f9fa', // Outer page/document background
-    canvasBackground: '#ffffff', // Editor content area background
-    textColor: '#000000', // Text color
-    fontFamily: 'Inter', // Font family
+  const [documentStyling, setDocumentStyling] = useState<DocumentStyling>({
+    background: '#f8f9fa',
+    canvasBackground: '#ffffff',
+    textColor: '#000000',
+    fontFamily: 'Inter',
   });
   const [showStylingControls, setShowStylingControls] = useState(false);
 
@@ -292,80 +294,12 @@ function App() {
 
   return (
     <div>
-      {showStylingControls && (
-        <div className="fixed top-[108px] left-4 z-50 bg-white dark:bg-gray-800 border rounded-lg p-4 shadow-lg">
-          <h3 className="text-sm font-semibold mb-3">Document Styling</h3>
-          <div className="space-y-3">
-            <div>
-              <label className="text-xs font-medium mb-1 block">Page Background</label>
-              <input
-                type="color"
-                value={documentStyling.background?.includes('#') ? documentStyling.background : '#f8f9fa'}
-                onChange={(e) => setDocumentStyling(prev => ({ ...prev, background: e.target.value }))}
-                className="w-full h-8 rounded border mb-2"
-              />
-              <div className="text-xs mb-1">Gradients:</div>
-              <div className="flex gap-1 flex-wrap">
-                <button
-                  onClick={() => setDocumentStyling(prev => ({ ...prev, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }))}
-                  className="w-6 h-6 rounded border"
-                  style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
-                />
-                <button
-                  onClick={() => setDocumentStyling(prev => ({ ...prev, background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }))}
-                  className="w-6 h-6 rounded border"
-                  style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}
-                />
-                <button
-                  onClick={() => setDocumentStyling(prev => ({ ...prev, background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }))}
-                  className="w-6 h-6 rounded border"
-                  style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}
-                />
-              </div>
-            </div>
-            <div>
-              <label className="text-xs font-medium mb-1 block">Canvas Background</label>
-              <input
-                type="color"
-                value={documentStyling.canvasBackground}
-                onChange={(e) => setDocumentStyling(prev => ({ ...prev, canvasBackground: e.target.value }))}
-                className="w-full h-8 rounded border"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium mb-1 block">Text Color</label>
-              <input
-                type="color"
-                value={documentStyling.textColor}
-                onChange={(e) => setDocumentStyling(prev => ({ ...prev, textColor: e.target.value }))}
-                className="w-full h-8 rounded border"
-              />
-            </div>
-            <div>
-              <label className="text-xs font-medium mb-1 block">Font Family</label>
-              <select
-                value={documentStyling.fontFamily}
-                onChange={(e) => setDocumentStyling(prev => ({ ...prev, fontFamily: e.target.value }))}
-                className="w-full p-1 text-xs border rounded"
-              >
-                <option value="Inter">Inter</option>
-                <option value="Arial">Arial</option>
-                <option value="Georgia">Georgia</option>
-                <option value="Times New Roman">Times New Roman</option>
-                <option value="Helvetica">Helvetica</option>
-                <option value="Courier New">Courier New</option>
-              </select>
-            </div>
-            <Button
-              onClick={() => setShowStylingControls(false)}
-              variant="ghost"
-              className="w-full text-xs"
-            >
-              Close
-            </Button>
-          </div>
-        </div>
-      )}
+      <DocumentStylingPanel
+        isOpen={showStylingControls}
+        onClose={() => setShowStylingControls(false)}
+        documentStyling={documentStyling}
+        onStylingChange={setDocumentStyling}
+      />
       <DdocEditor
         enableCollaboration={enableCollaboration}
         collaborationId={collaborationId}
