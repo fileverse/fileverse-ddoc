@@ -300,10 +300,28 @@ function App() {
               <label className="text-xs font-medium mb-1 block">Page Background</label>
               <input
                 type="color"
-                value={documentStyling.background}
+                value={documentStyling.background?.includes('#') ? documentStyling.background : '#f8f9fa'}
                 onChange={(e) => setDocumentStyling(prev => ({ ...prev, background: e.target.value }))}
-                className="w-full h-8 rounded border"
+                className="w-full h-8 rounded border mb-2"
               />
+              <div className="text-xs mb-1">Gradients:</div>
+              <div className="flex gap-1 flex-wrap">
+                <button
+                  onClick={() => setDocumentStyling(prev => ({ ...prev, background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }))}
+                  className="w-6 h-6 rounded border"
+                  style={{ background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)' }}
+                />
+                <button
+                  onClick={() => setDocumentStyling(prev => ({ ...prev, background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }))}
+                  className="w-6 h-6 rounded border"
+                  style={{ background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)' }}
+                />
+                <button
+                  onClick={() => setDocumentStyling(prev => ({ ...prev, background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }))}
+                  className="w-6 h-6 rounded border"
+                  style={{ background: 'linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)' }}
+                />
+              </div>
             </div>
             <div>
               <label className="text-xs font-medium mb-1 block">Canvas Background</label>

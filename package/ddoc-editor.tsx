@@ -129,12 +129,12 @@ const DdocEditor = forwardRef(
     const editorStyles = {
       background: {
         ...(documentStyling?.background && {
-          backgroundColor: documentStyling.background,
+          background: documentStyling.background, // Supports gradients
         }),
       },
       canvas: {
         ...(documentStyling?.canvasBackground && {
-          backgroundColor: documentStyling.canvasBackground,
+          backgroundColor: documentStyling.canvasBackground, // Solid colors only
         }),
         ...(documentStyling?.textColor && { color: documentStyling.textColor }),
         ...(documentStyling?.fontFamily && {
