@@ -17,7 +17,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import copy from 'copy-to-clipboard';
 import { convertMarkdownToHTML } from '../../utils/md-to-html';
 import { useResponsive } from '../../utils/responsive';
-import { IpfsImageFetchPayload } from '../../types';
+import { IpfsImageFetchPayload, DdocProps } from '../../types';
 import { EXTENSIONS_WITH_DUPLICATE_WARNINGS } from '../../utils/helpers';
 
 interface PresentationModeProps {
@@ -40,6 +40,7 @@ interface PresentationModeProps {
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
+  documentStyling?: DdocProps['documentStyling'];
 }
 
 const SlideContent = ({
@@ -49,6 +50,7 @@ const SlideContent = ({
   onTouchMove,
   onTouchEnd,
   isFullscreen,
+  documentStyling,
 }: {
   content: string;
   editor: Editor;
@@ -56,6 +58,7 @@ const SlideContent = ({
   onTouchMove: (e: React.TouchEvent) => void;
   onTouchEnd: () => void;
   isFullscreen: boolean;
+  documentStyling?: DdocProps['documentStyling'];
 }) => {
   const isSoloImage = (html: string): boolean => {
     const parser = new DOMParser();
@@ -78,12 +81,24 @@ const SlideContent = ({
     });
   }, [content]);
 
+  // Create canvas styles for presentation mode (no background)
+  const editorStyles = {
+    ...(documentStyling?.canvasBackground && {
+      backgroundColor: documentStyling.canvasBackground,
+    }),
+    ...(documentStyling?.textColor && { color: documentStyling.textColor }),
+    ...(documentStyling?.fontFamily && {
+      fontFamily: documentStyling.fontFamily,
+    }),
+  };
+
   return (
     <EditorContent
       editor={editor}
       className={cn('presentation-mode', {
         fullscreen: isFullscreen,
       })}
+      style={editorStyles}
       onTouchStart={onTouchStart}
       onTouchMove={onTouchMove}
       onTouchEnd={onTouchEnd}
@@ -107,6 +122,7 @@ export const PresentationMode = ({
   renderThemeToggle,
   isContentLoading,
   ipfsImageFetchFn,
+  documentStyling,
 }: PresentationModeProps) => {
   const [showLinkCopied, setShowLinkCopied] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -351,6 +367,7 @@ export const PresentationMode = ({
           slides={slides}
           currentSlide={currentSlide}
           setCurrentSlide={setCurrentSlide}
+          documentStyling={documentStyling}
         />
       )}
       {/* Main Content */}
@@ -455,13 +472,17 @@ export const PresentationMode = ({
         >
           <div
             className={cn(
-              'w-full color-bg-default rounded-lg overflow-hidden relative',
+              'w-full rounded-lg overflow-hidden relative',
+              !documentStyling?.canvasBackground && 'color-bg-default',
               isFullscreen
                 ? 'h-full max-w-none flex items-start justify-center'
                 : 'px-8 md:px-0 scale-[0.35] md:scale-[0.75] xl:scale-100 min-w-[1080px] max-w-[1080px] aspect-video py-[48px]',
             )}
             style={{
               transformOrigin: 'center',
+              ...(documentStyling?.canvasBackground && {
+                backgroundColor: documentStyling.canvasBackground,
+              }),
             }}
           >
             <EditingProvider isPreviewMode={true} isPresentationMode={true}>
@@ -499,6 +520,7 @@ export const PresentationMode = ({
                   onTouchMove={onTouchMove}
                   onTouchEnd={onTouchEnd}
                   isFullscreen={isFullscreen}
+                  documentStyling={documentStyling}
                 />
               )}
             </EditingProvider>

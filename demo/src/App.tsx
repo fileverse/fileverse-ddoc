@@ -18,6 +18,8 @@ import {
   TableOfContents,
   getHierarchicalIndexes,
 } from '@tiptap-pro/extension-table-of-contents';
+import { DocumentStylingPanel } from './DocumentStylingPanel';
+import { DocumentStyling } from '../../package/types';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -39,6 +41,15 @@ function App() {
   const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(false);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showTOC, setShowTOC] = useState<boolean>(false);
+
+  // Document styling state
+  const [documentStyling, setDocumentStyling] = useState<DocumentStyling>({
+    background: '#f8f9fa',
+    canvasBackground: '#ffffff',
+    textColor: '#000000',
+    fontFamily: 'Inter',
+  });
+  const [showStylingControls, setShowStylingControls] = useState(false);
 
   const [inlineCommentData, setInlineCommentData] = useState({
     inlineCommentText: '',
@@ -206,6 +217,14 @@ function App() {
                     <LucideIcon name="Share2" size="sm" />
                     Share
                   </Button>
+                  <Button
+                    variant={'ghost'}
+                    onClick={() => setShowStylingControls(!showStylingControls)}
+                    className="flex justify-start gap-2"
+                  >
+                    <LucideIcon name="Palette" size="sm" />
+                    Styling
+                  </Button>
                 </div>
               }
             />
@@ -231,6 +250,12 @@ function App() {
                 icon="Share2"
                 className="flex xl:hidden"
                 size="md"
+              />
+              <IconButton
+                variant={'ghost'}
+                icon="Palette"
+                size="md"
+                onClick={() => setShowStylingControls(!showStylingControls)}
               />
             </>
           )}
@@ -269,6 +294,12 @@ function App() {
 
   return (
     <div>
+      <DocumentStylingPanel
+        isOpen={showStylingControls}
+        onClose={() => setShowStylingControls(false)}
+        documentStyling={documentStyling}
+        onStylingChange={setDocumentStyling}
+      />
       <DdocEditor
         enableCollaboration={enableCollaboration}
         collaborationId={collaborationId}
@@ -325,6 +356,7 @@ function App() {
         onCopyHeadingLink={(link: string) => {
           navigator.clipboard.writeText(link);
         }}
+        documentStyling={documentStyling}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

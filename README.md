@@ -74,6 +74,57 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `isPresentationMode`    | `boolean`                                 | Controls presentation mode           |
 | `setIsPresentationMode` | `React.Dispatch<SetStateAction<boolean>>` | Function to toggle presentation mode |
 | `sharedSlidesLink`      | `string`                                  | Link for shared presentation slides  |
+| `documentStyling`       | `DocumentStyling`                         | Custom styling for document appearance |
+
+## Document Styling
+
+The `documentStyling` prop allows you to customize the visual appearance of your document with three distinct styling areas:
+
+```typescript
+interface DocumentStyling {
+  /** 
+   * Background styling for the outer document area.
+   * Supports CSS background values including gradients.
+   * Example: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+   */
+  background?: string;
+  
+  /** 
+   * Background color for the editor canvas/content area.
+   * Should be a solid color value.
+   * Example: "#ffffff" or "rgb(255, 255, 255)"
+   */
+  canvasBackground?: string;
+  
+  /** 
+   * Text color for the editor content.
+   * Example: "#333333" or "rgb(51, 51, 51)"
+   */
+  textColor?: string;
+  
+  /** 
+   * Font family for the editor content.
+   * Example: "Inter, sans-serif" or "'Times New Roman', serif"
+   */
+  fontFamily?: string;
+}
+```
+
+### Usage Example
+
+```tsx
+<DdocEditor
+  documentStyling={{
+    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+    canvasBackground: "#ffffff",
+    textColor: "#333333",
+    fontFamily: "Inter, sans-serif"
+  }}
+  // ... other props
+/>
+```
+
+**Note:** Document styling works in both regular editor mode and presentation mode. In presentation mode, only `canvasBackground`, `textColor`, and `fontFamily` are applied to maintain clean slide appearance.
 
 ## Comments & Collaboration Props
 

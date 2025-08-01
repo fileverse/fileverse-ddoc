@@ -2,17 +2,20 @@ import { cn } from '@fileverse/ui';
 import { useRef, useEffect } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
 import { useResponsive } from '../../utils/responsive';
+import { DdocProps } from '../../types';
 
 interface PreviewPanelProps {
   slides: string[];
   currentSlide: number;
   setCurrentSlide: (index: number) => void;
+  documentStyling?: DdocProps['documentStyling'];
 }
 
 export const PreviewPanel = ({
   slides,
   currentSlide,
   setCurrentSlide,
+  documentStyling,
 }: PreviewPanelProps) => {
   const slideRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const previewPanelRef = useRef<HTMLDivElement>(null);
@@ -27,6 +30,17 @@ export const PreviewPanel = ({
       });
     }
   }, [currentSlide, isMobile]);
+
+  // Create canvas styles for preview slides
+  const canvasStyles = {
+    ...(documentStyling?.canvasBackground && {
+      backgroundColor: documentStyling.canvasBackground,
+    }),
+    ...(documentStyling?.textColor && { color: documentStyling.textColor }),
+    ...(documentStyling?.fontFamily && {
+      fontFamily: documentStyling.fontFamily,
+    }),
+  };
 
   return (
     <div
@@ -75,7 +89,11 @@ export const PreviewPanel = ({
             )}
           >
             <div
-              className="presentation-mode preview-slide color-bg-default w-[400%] h-[400%]"
+              className={cn(
+                "presentation-mode preview-slide w-[400%] h-[400%]",
+                !documentStyling?.canvasBackground && "color-bg-default"
+              )}
+              style={canvasStyles}
               dangerouslySetInnerHTML={{ __html: slideContent }}
             />
           </div>
