@@ -42,13 +42,8 @@ function App() {
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showTOC, setShowTOC] = useState<boolean>(false);
 
-  // Document styling state
-  const [documentStyling, setDocumentStyling] = useState<DocumentStyling>({
-    background: '#f8f9fa',
-    canvasBackground: '#ffffff',
-    textColor: '#000000',
-    fontFamily: 'Inter',
-  });
+  // Document styling state - starts undefined to allow dark mode to work
+  const [documentStyling, setDocumentStyling] = useState<DocumentStyling | undefined>(undefined);
   const [showStylingControls, setShowStylingControls] = useState(false);
 
   const [inlineCommentData, setInlineCommentData] = useState({

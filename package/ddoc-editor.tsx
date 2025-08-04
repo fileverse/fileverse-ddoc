@@ -126,27 +126,46 @@ const DdocEditor = forwardRef(
     const [isFullscreen, setIsFullscreen] = useState(false);
 
     /**
-     * Document styling system
-     * Creates styled objects for different editor areas:
-     * - background: Outer page background (supports gradients)
-     * - canvas: Editor content area styling (solid colors for readability)
+     * Document styling system with dark mode support
+     * When no document styling exists, CSS classes handle theming (including dark mode)
+     * When document styling exists, it applies custom styles
      */
-    const editorStyles = {
-      background: {
-        ...(documentStyling?.background && {
-          background: documentStyling.background,
-        }),
-      },
-      canvas: {
-        ...(documentStyling?.canvasBackground && {
-          backgroundColor: documentStyling.canvasBackground,
-        }),
-        ...(documentStyling?.textColor && { color: documentStyling.textColor }),
-        ...(documentStyling?.fontFamily && {
-          fontFamily: documentStyling.fontFamily,
-        }),
-      },
+
+    // Helper to merge document styling with dark mode requirements
+    const getMergedStyles = () => {
+      // If no document styling is provided, return undefined to let CSS classes handle everything
+      if (!documentStyling) {
+        return { canvas: undefined, background: undefined };
+      }
+
+      const canvas: React.CSSProperties = {};
+      const background: React.CSSProperties = {};
+
+      // Apply custom document styling
+      if (documentStyling.canvasBackground) {
+        canvas.backgroundColor = documentStyling.canvasBackground;
+      }
+      if (documentStyling.textColor) {
+        canvas.color = documentStyling.textColor;
+      }
+      if (documentStyling.fontFamily) {
+        canvas.fontFamily = documentStyling.fontFamily;
+      }
+      if (documentStyling.background) {
+        background.background = documentStyling.background;
+      }
+
+      return {
+        canvas: Object.keys(canvas).length > 0 ? canvas : undefined,
+        background: Object.keys(background).length > 0 ? background : undefined,
+      };
     };
+
+    const mergedStyles = getMergedStyles();
+
+    // Helper functions that return styles only when they should override CSS classes
+    const getCanvasStyle = () => mergedStyles.canvas;
+    const getBackgroundStyle = () => mergedStyles.background;
 
     const btn_ref = useRef(null);
     const isWidth1500px = useMediaQuery('(min-width: 1500px)');
@@ -540,7 +559,7 @@ const DdocEditor = forwardRef(
                     ? 'left center'
                     : 'top center',
                 transform: `scaleX(${zoomLevel})`,
-                ...editorStyles.canvas,
+                ...(getCanvasStyle() || {}),
               }}
             >
               <div
@@ -611,7 +630,9 @@ const DdocEditor = forwardRef(
                                 'flex flex-wrap px-4 md:px-8 lg:px-[80px] items-center gap-1 mt-4 lg:!mt-0',
                                 { 'pt-12': isPreviewMode },
                               )}
-                              style={editorStyles.canvas}
+                              {...(getCanvasStyle() && {
+                                style: getCanvasStyle(),
+                              })}
                             >
                               {visibleTags.map((tag, index) => (
                                 <Tag
@@ -681,7 +702,9 @@ const DdocEditor = forwardRef(
                                   isAIAgentEnabled &&
                                   'has-available-models',
                               )}
-                              style={editorStyles.canvas}
+                              {...(getCanvasStyle() && {
+                                style: getCanvasStyle(),
+                              })}
                             />
                           </div>
                         </EditingProvider>
@@ -780,7 +803,7 @@ const DdocEditor = forwardRef(
               !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
               editorCanvasClassNames,
             )}
-            style={editorStyles.background}
+            style={getBackgroundStyle()}
           >
             <nav
               id="Navbar"

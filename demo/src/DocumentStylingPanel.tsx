@@ -4,8 +4,8 @@ import { DocumentStyling } from '../../package/types';
 interface DocumentStylingPanelProps {
   isOpen: boolean;
   onClose: () => void;
-  documentStyling: DocumentStyling;
-  onStylingChange: (styling: DocumentStyling) => void;
+  documentStyling: DocumentStyling | undefined;
+  onStylingChange: (styling: DocumentStyling | undefined) => void;
 }
 
 const GRADIENT_PRESETS = [
@@ -72,8 +72,15 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
 }) => {
   if (!isOpen) return null;
 
+  const currentStyling = documentStyling || {
+    background: '#f8f9fa',
+    canvasBackground: '#ffffff', 
+    textColor: '#000000',
+    fontFamily: 'Inter',
+  };
+
   const handleStylingUpdate = (updates: Partial<DocumentStyling>) => {
-    onStylingChange({ ...documentStyling, ...updates });
+    onStylingChange({ ...currentStyling, ...updates });
   };
 
   return (
@@ -102,8 +109,8 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
             <input
               type="color"
               value={
-                documentStyling.background?.includes('#')
-                  ? documentStyling.background
+                currentStyling.background?.includes('#')
+                  ? currentStyling.background
                   : '#f8f9fa'
               }
               onChange={(e) => handleStylingUpdate({ background: e.target.value })}
@@ -136,7 +143,7 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
           <div className="space-y-2">
             <input
               type="color"
-              value={documentStyling.canvasBackground || '#ffffff'}
+              value={currentStyling.canvasBackground || '#ffffff'}
               onChange={(e) =>
                 handleStylingUpdate({ canvasBackground: e.target.value })
               }
@@ -169,7 +176,7 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
           <div className="space-y-2">
             <input
               type="color"
-              value={documentStyling.textColor || '#000000'}
+              value={currentStyling.textColor || '#000000'}
               onChange={(e) => handleStylingUpdate({ textColor: e.target.value })}
               className="w-full h-10 rounded-lg border-2 border-slate-200 dark:border-slate-600 cursor-pointer"
             />
@@ -198,7 +205,7 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
           </label>
           
           <select
-            value={documentStyling.fontFamily || 'Inter, sans-serif'}
+            value={currentStyling.fontFamily || 'Inter, sans-serif'}
             onChange={(e) => handleStylingUpdate({ fontFamily: e.target.value })}
             className="w-full p-3 text-sm border-2 border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 focus:border-blue-500 focus:outline-none transition-colors"
           >
