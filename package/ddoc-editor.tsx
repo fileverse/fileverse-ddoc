@@ -748,7 +748,7 @@ const DdocEditor = forwardRef(
     };
 
     return (
-      <EditorProvider>
+      <EditorProvider documentStyling={documentStyling}>
         <div
           className={cn(
             'w-full',
