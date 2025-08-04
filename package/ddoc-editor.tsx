@@ -548,7 +548,11 @@ const DdocEditor = forwardRef(
                 className={cn(
                   'w-full h-full pt-8 md:pt-0',
                   { 'custom-ios-padding': isIOS },
-                  { 'color-bg-default': zoomLevel === '1.4' || '1.5' },
+                  {
+                    'color-bg-default':
+                      !documentStyling?.canvasBackground &&
+                      (zoomLevel === '1.4' || zoomLevel === '1.5'),
+                  },
                 )}
                 style={{
                   transformOrigin: 'top center',
