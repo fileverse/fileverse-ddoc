@@ -54,9 +54,11 @@ function App() {
     null,
   );
 
-  const collaborationId = window.location.pathname.split('/')[2]; // example url - /doc/1234, that why's used second element of array
+  const searchParams = new URLSearchParams(window.location.search);
+
+  const collaborationId = searchParams.get('collaborationId');
   // get from search params
-  const key = new URLSearchParams(window.location.search).get('key');
+  const key = searchParams.get('key');
   //To handle comments from consumer side
   const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
   const [initialComments, setInitialComment] = useState<IComment[]>([]);
