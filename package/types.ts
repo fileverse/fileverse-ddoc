@@ -124,6 +124,7 @@ export interface DdocProps extends CommentAccountProps {
   activeModel?: CustomModel;
   maxTokens?: number;
   isAIAgentEnabled?: boolean;
+  collaborationKey?: CryptoKey | null;
 }
 
 export interface IEditorSelectionData {

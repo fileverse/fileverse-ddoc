@@ -117,6 +117,7 @@ const DdocEditor = forwardRef(
       activeModel,
       maxTokens,
       isAIAgentEnabled,
+      collaborationKey,
     }: DdocProps,
     ref,
   ) => {
@@ -197,6 +198,7 @@ const DdocEditor = forwardRef(
       activeModel,
       maxTokens,
       isAIAgentEnabled,
+      collaborationKey,
     });
 
     useImperativeHandle(
@@ -209,7 +211,7 @@ const DdocEditor = forwardRef(
           const contents = Y.mergeUpdates(
             _contents.map((content) => toUint8Array(content)),
           );
-          Y.applyUpdate(ydoc, contents, 'self');
+          Y.applyUpdate(ydoc as unknown as Y.Doc, contents, 'self');
 
           return fromUint8Array(contents);
         },

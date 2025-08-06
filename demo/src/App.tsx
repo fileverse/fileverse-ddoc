@@ -18,6 +18,7 @@ import {
   TableOfContents,
   getHierarchicalIndexes,
 } from '@tiptap-pro/extension-table-of-contents';
+import { toUint8Array } from 'js-base64';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -49,9 +50,13 @@ function App() {
   const [zoomLevel, setZoomLevel] = useState<string>('1');
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [collaborationKey, setCollaborationKey] = useState<CryptoKey | null>(
+    null,
+  );
 
   const collaborationId = window.location.pathname.split('/')[2]; // example url - /doc/1234, that why's used second element of array
-
+  // get from search params
+  const key = new URLSearchParams(window.location.search).get('key');
   //To handle comments from consumer side
   const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
   const [initialComments, setInitialComment] = useState<IComment[]>([]);
@@ -113,13 +118,28 @@ function App() {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    if (collaborationId) {
-      const name = prompt('Whats your username');
-      if (!name) return;
-      setUsername(name);
-      setEnableCollaboration(true);
-    }
-  }, [collaborationId]);
+    const setupCollaboration = async () => {
+      if (collaborationId) {
+        const name = prompt('Whats your username');
+        if (!name || !key) return;
+        const keyBytes = toUint8Array(key);
+        // console.log(keyBytes);
+        const collaborationKey = await window.crypto.subtle.importKey(
+          'raw',
+          keyBytes as BufferSource,
+          {
+            name: 'AES-GCM',
+          },
+          true,
+          ['encrypt', 'decrypt'],
+        );
+        setCollaborationKey(collaborationKey);
+        setUsername(name);
+        setEnableCollaboration(true);
+      }
+    };
+    setupCollaboration();
+  }, [collaborationId, key]);
 
   const renderNavbar = ({ editor }: { editor: JSONContent }): JSX.Element => {
     const publishDoc = () => console.log(editor, title);
@@ -325,6 +345,7 @@ function App() {
         onCopyHeadingLink={(link: string) => {
           navigator.clipboard.writeText(link);
         }}
+        collaborationKey={collaborationKey}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

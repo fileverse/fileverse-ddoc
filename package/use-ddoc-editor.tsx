@@ -1,15 +1,15 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { WebrtcProvider } from 'y-webrtc';
+// import { WebrtcProvider } from 'y-webrtc';
 import { DdocProps, DdocEditorProps } from './types';
 import * as Y from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration';
-import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
+// import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import { defaultExtensions } from './extensions/default-extension';
 import { AnyExtension, JSONContent, useEditor } from '@tiptap/react';
-import { getCursor } from './utils/cursor';
-import { getAddressName, getTrimmedName } from './utils/getAddressName';
+// import { getCursor } from './utils/cursor';
+import { getAddressName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from './extensions/slash-command/slash-comand';
 import { EditorState, TextSelection } from '@tiptap/pm/state';
@@ -29,17 +29,19 @@ import { headingToSlug } from './utils/heading-to-slug';
 import { AiAutocomplete } from './extensions/ai-autocomplete/ai-autocomplete';
 import { AIWriter } from './extensions/ai-writer';
 import { DBlock } from './extensions/d-block/dblock';
+import useSyncMachine from './sync-local/useSyncMachine';
+// import { SyncCursor } from './extensions/sync-cursor';
 
-const usercolors = [
-  '#30bced',
-  '#6eeb83',
-  '#fa69d1',
-  '#ecd444',
-  '#ee6352',
-  '#db3041',
-  '#0ad7f2',
-  '#1bff39',
-];
+// const usercolors = [
+//   '#30bced',
+//   '#6eeb83',
+//   '#fa69d1',
+//   '#ecd444',
+//   '#ee6352',
+//   '#db3041',
+//   '#0ad7f2',
+//   '#1bff39',
+// ];
 
 export const useDdocEditor = ({
   isPreviewMode,
@@ -72,9 +74,25 @@ export const useDdocEditor = ({
   activeModel,
   maxTokens,
   isAIAgentEnabled,
+  collaborationKey,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
 
+  const {
+    machine,
+    connect: onConnect,
+    // disconnect,
+    // ydoc,
+    isReady,
+    error,
+  } = useSyncMachine({
+    roomId: collaborationId,
+    onError,
+    wsProvider: 'ws://dev-collaboration-server-ff60826701cd.herokuapp.com/',
+    ydoc,
+  });
+
+  console.log(isReady, error);
   // V2 - comment
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
 
@@ -392,34 +410,36 @@ export const useDdocEditor = ({
   const collaborationCleanupRef = useRef<() => void>(() => {});
 
   const connect = (username: string | null | undefined, isEns = false) => {
-    if (!enableCollaboration || !collaborationId) {
+    if (!enableCollaboration || !collaborationId || !collaborationKey) {
       throw new Error('docId or username is not provided');
     }
+    console.log(isEns);
+    // const provider = new WebrtcProvider(collaborationId, ydoc, {
+    //   signaling: [
+    //     'wss://fileverse-signaling-server-0529292ff51c.herokuapp.com/',
+    //   ],
+    // });
 
-    const provider = new WebrtcProvider(collaborationId, ydoc, {
-      signaling: [
-        'wss://fileverse-signaling-server-0529292ff51c.herokuapp.com/',
-      ],
-    });
+    onConnect(collaborationId, collaborationKey);
 
     setExtensions([
       ...extensions.filter((extension) => extension.name !== 'history'),
-      CollaborationCursor.configure({
-        provider: provider,
-        user: {
-          name:
-            username && username.length > 20
-              ? getTrimmedName(username, 7, 15)
-              : username,
-          color: usercolors[Math.floor(Math.random() * usercolors.length)],
-          isEns: isEns,
-        },
-        render: getCursor,
-      }),
+      // SyncCursor.configure({
+      //   provider: machine[0],
+      //   user: {
+      //     name:
+      //       username && username.length > 20
+      //         ? getTrimmedName(username, 7, 15)
+      //         : username,
+      //     color: usercolors[Math.floor(Math.random() * usercolors.length)],
+      //     isEns: isEns,
+      //   },
+      //   // render: getCursor,
+      // }),
     ]);
 
     collaborationCleanupRef.current = () => {
-      provider.destroy();
+      // machine[0]?.destroy();
       ydoc.destroy();
     };
 
@@ -643,14 +663,14 @@ export const useDdocEditor = ({
       throw new Error('Cannot start collaboration without a username');
     connect(_username, _isEns);
   };
-
+  console.log(machine[0]);
   useEffect(() => {
     if (enableCollaboration) {
       startCollaboration();
     } else {
       collaborationCleanupRef.current();
     }
-  }, [enableCollaboration]);
+  }, [enableCollaboration, isReady]);
 
   useEffect(() => {
     onCollaboratorChange?.(editor?.storage?.collaborationCursor?.users);
