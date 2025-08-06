@@ -88,7 +88,7 @@ export const useDdocEditor = ({
   } = useSyncMachine({
     roomId: collaborationId,
     onError,
-    wsProvider: 'ws://dev-collaboration-server-ff60826701cd.herokuapp.com/',
+    wsProvider: 'https://dev-collaboration-server-ff60826701cd.herokuapp.com/',
     ydoc,
   });
 
