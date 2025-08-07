@@ -1,4 +1,9 @@
 .ProseMirror {
+  // Inherit styles from parent EditorContent for customization
+  background-color: inherit;
+  color: inherit;
+  font-family: inherit;
+
   .is-empty::before {
     @apply float-left h-0 pointer-events-none w-full;
   }

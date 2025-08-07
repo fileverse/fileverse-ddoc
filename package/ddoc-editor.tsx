@@ -117,11 +117,55 @@ const DdocEditor = forwardRef(
       activeModel,
       maxTokens,
       isAIAgentEnabled,
+      // Document styling object
+      documentStyling,
     }: DdocProps,
     ref,
   ) => {
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+
+    /**
+     * Document styling system with dark mode support
+     * When no document styling exists, CSS classes handle theming (including dark mode)
+     * When document styling exists, it applies custom styles
+     */
+
+    // Helper to merge document styling with dark mode requirements
+    const getMergedStyles = () => {
+      // If no document styling is provided, return undefined to let CSS classes handle everything
+      if (!documentStyling) {
+        return { canvas: undefined, background: undefined };
+      }
+
+      const canvas: React.CSSProperties = {};
+      const background: React.CSSProperties = {};
+
+      // Apply custom document styling
+      if (documentStyling.canvasBackground) {
+        canvas.backgroundColor = documentStyling.canvasBackground;
+      }
+      if (documentStyling.textColor) {
+        canvas.color = documentStyling.textColor;
+      }
+      if (documentStyling.fontFamily) {
+        canvas.fontFamily = documentStyling.fontFamily;
+      }
+      if (documentStyling.background) {
+        background.background = documentStyling.background;
+      }
+
+      return {
+        canvas: Object.keys(canvas).length > 0 ? canvas : undefined,
+        background: Object.keys(background).length > 0 ? background : undefined,
+      };
+    };
+
+    const mergedStyles = getMergedStyles();
+
+    // Helper functions that return styles only when they should override CSS classes
+    const getCanvasStyle = () => mergedStyles.canvas;
+    const getBackgroundStyle = () => mergedStyles.background;
 
     const btn_ref = useRef(null);
     const isWidth1500px = useMediaQuery('(min-width: 1500px)');
@@ -440,6 +484,7 @@ const DdocEditor = forwardRef(
                 renderThemeToggle={renderThemeToggle}
                 isContentLoading={isContentLoading}
                 ipfsImageFetchFn={ipfsImageFetchFn}
+                documentStyling={documentStyling}
               />
             )}
             {editor && (
@@ -457,7 +502,8 @@ const DdocEditor = forwardRef(
             <div
               id="editor-wrapper"
               className={cn(
-                'color-bg-default w-full mx-auto rounded',
+                'w-full mx-auto rounded',
+                !documentStyling?.canvasBackground && 'color-bg-default',
                 !isPreviewMode &&
                   (isNavbarVisible
                     ? '-mt-[1.5rem] md:!mt-[0.8rem] pt-0 md:pt-[5rem]'
@@ -513,6 +559,7 @@ const DdocEditor = forwardRef(
                     ? 'left center'
                     : 'top center',
                 transform: `scaleX(${zoomLevel})`,
+                ...(getCanvasStyle() || {}),
               }}
             >
               <div
@@ -520,7 +567,11 @@ const DdocEditor = forwardRef(
                 className={cn(
                   'w-full h-full pt-8 md:pt-0',
                   { 'custom-ios-padding': isIOS },
-                  { 'color-bg-default': zoomLevel === '1.4' || '1.5' },
+                  {
+                    'color-bg-default':
+                      !documentStyling?.canvasBackground &&
+                      (zoomLevel === '1.4' || zoomLevel === '1.5'),
+                  },
                 )}
                 style={{
                   transformOrigin: 'top center',
@@ -570,82 +621,94 @@ const DdocEditor = forwardRef(
                       'content-transition',
                     )
                   : slideUpTransition(
-                      <EditingProvider isPreviewMode={isPreviewMode}>
-                        {tags && tags.length > 0 && (
-                          <div
-                            ref={tagsContainerRef}
-                            className={cn(
-                              'flex flex-wrap px-4 md:px-8 lg:px-[80px] items-center gap-1 mb-4 mt-4 lg:!mt-0',
-                              { 'pt-12': isPreviewMode },
-                            )}
-                          >
-                            {visibleTags.map((tag, index) => (
-                              <Tag
-                                key={index}
-                                style={{ backgroundColor: tag?.color }}
-                                onRemove={() => handleRemoveTag(tag?.name)}
-                                isRemovable={!isPreviewMode}
-                                className="!h-6 rounded"
-                              >
-                                {tag?.name}
-                              </Tag>
-                            ))}
-                            {hiddenTagsCount > 0 && !isHiddenTagsVisible && (
-                              <Button
-                                variant="ghost"
-                                className="!h-6 rounded min-w-fit !px-2 color-bg-secondary text-helper-text-sm"
-                                onClick={() => setIsHiddenTagsVisible(true)}
-                              >
-                                +{hiddenTagsCount}
-                              </Button>
-                            )}
+                      <div>
+                        <EditingProvider isPreviewMode={isPreviewMode}>
+                          {tags && tags.length > 0 && (
+                            <div
+                              ref={tagsContainerRef}
+                              className={cn(
+                                'flex flex-wrap px-4 md:px-8 lg:px-[80px] items-center gap-1 mt-4 lg:!mt-0',
+                                { 'pt-12': isPreviewMode },
+                              )}
+                              {...(getCanvasStyle() && {
+                                style: getCanvasStyle(),
+                              })}
+                            >
+                              {visibleTags.map((tag, index) => (
+                                <Tag
+                                  key={index}
+                                  style={{ backgroundColor: tag?.color }}
+                                  onRemove={() => handleRemoveTag(tag?.name)}
+                                  isRemovable={!isPreviewMode}
+                                  className="!h-6 rounded"
+                                >
+                                  {tag?.name}
+                                </Tag>
+                              ))}
+                              {hiddenTagsCount > 0 && !isHiddenTagsVisible && (
+                                <Button
+                                  variant="ghost"
+                                  className="!h-6 rounded min-w-fit !px-2 color-bg-secondary text-helper-text-sm"
+                                  onClick={() => setIsHiddenTagsVisible(true)}
+                                >
+                                  +{hiddenTagsCount}
+                                </Button>
+                              )}
 
-                            {isHiddenTagsVisible && (
-                              <motion.div
-                                initial={{ opacity: 0, height: 0 }}
-                                animate={{ opacity: 1, height: 'auto' }}
-                                exit={{ opacity: 0, height: 0 }}
-                                transition={{ duration: 0.3 }}
-                                className="flex flex-wrap items-center gap-1"
-                              >
-                                {selectedTags?.slice(4).map((tag, index) => (
-                                  <Tag
-                                    key={index + 4}
-                                    style={{ backgroundColor: tag?.color }}
-                                    onRemove={() => handleRemoveTag(tag?.name)}
-                                    isRemovable={!isPreviewMode}
-                                    className="!h-6 rounded"
-                                  >
-                                    {tag?.name}
-                                  </Tag>
-                                ))}
-                              </motion.div>
-                            )}
+                              {isHiddenTagsVisible && (
+                                <motion.div
+                                  initial={{ opacity: 0, height: 0 }}
+                                  animate={{ opacity: 1, height: 'auto' }}
+                                  exit={{ opacity: 0, height: 0 }}
+                                  transition={{ duration: 0.3 }}
+                                  className="flex flex-wrap items-center gap-1"
+                                >
+                                  {selectedTags?.slice(4).map((tag, index) => (
+                                    <Tag
+                                      key={index + 4}
+                                      style={{ backgroundColor: tag?.color }}
+                                      onRemove={() =>
+                                        handleRemoveTag(tag?.name)
+                                      }
+                                      isRemovable={!isPreviewMode}
+                                      className="!h-6 rounded"
+                                    >
+                                      {tag?.name}
+                                    </Tag>
+                                  ))}
+                                </motion.div>
+                              )}
 
-                            {selectedTags && selectedTags?.length < 6 ? (
-                              <TagInput
-                                tags={tags || []}
-                                selectedTags={selectedTags as TagType[]}
-                                onAddTag={handleAddTag}
-                                isPreviewMode={isPreviewMode}
-                              />
-                            ) : null}
+                              {selectedTags && selectedTags?.length < 6 ? (
+                                <TagInput
+                                  tags={tags || []}
+                                  selectedTags={selectedTags as TagType[]}
+                                  onAddTag={handleAddTag}
+                                  isPreviewMode={isPreviewMode}
+                                />
+                              ) : null}
+                            </div>
+                          )}
+                          <div className="grammarly-wrapper">
+                            <EditorContent
+                              editor={editor}
+                              id="editor"
+                              className={cn(
+                                'w-full h-auto py-4',
+                                !documentStyling?.canvasBackground &&
+                                  'color-bg-default',
+                                isPreviewMode && 'preview-mode',
+                                activeModel !== undefined &&
+                                  isAIAgentEnabled &&
+                                  'has-available-models',
+                              )}
+                              {...(getCanvasStyle() && {
+                                style: getCanvasStyle(),
+                              })}
+                            />
                           </div>
-                        )}
-                        <div className="grammarly-wrapper">
-                          <EditorContent
-                            editor={editor}
-                            id="editor"
-                            className={cn(
-                              'w-full h-auto py-4 color-bg-default',
-                              isPreviewMode && 'preview-mode',
-                              activeModel !== undefined &&
-                                isAIAgentEnabled &&
-                                'has-available-models',
-                            )}
-                          />
-                        </div>
-                      </EditingProvider>,
+                        </EditingProvider>
+                      </div>,
                       'editor-transition',
                     )}
               </div>
@@ -712,7 +775,7 @@ const DdocEditor = forwardRef(
     };
 
     return (
-      <EditorProvider>
+      <EditorProvider documentStyling={documentStyling}>
         <div
           className={cn(
             'w-full',
@@ -740,6 +803,7 @@ const DdocEditor = forwardRef(
               !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
               editorCanvasClassNames,
             )}
+            style={getBackgroundStyle()}
           >
             <nav
               id="Navbar"

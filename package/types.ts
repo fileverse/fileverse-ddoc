@@ -43,6 +43,40 @@ export interface CustomModel {
   apiKey: string;
   systemPrompt: string;
 }
+
+/**
+ * Document styling configuration interface
+ * @description Defines the styling options available for customizing the document editor appearance
+ */
+export interface DocumentStyling {
+  /**
+   * Outer page/document background
+   * @description Controls the background of the entire editor area. Supports solid colors and CSS gradients.
+   * @example "#f8f9fa" | "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+   */
+  background?: string;
+  
+  /**
+   * Editor content area background
+   * @description Controls the background color of the actual editor content where text is written. Should be solid colors for readability.
+   * @example "#ffffff" | "#f5f5f5"
+   */
+  canvasBackground?: string;
+  
+  /**
+   * Text color
+   * @description Controls the color of the text content in the editor.
+   * @example "#000000" | "#1a1a1a"
+   */
+  textColor?: string;
+  
+  /**
+   * Font family
+   * @description Controls the font family used for the editor content.
+   * @example "Inter" | "Arial" | "Georgia"
+   */
+  fontFamily?: string;
+}
 export interface DdocProps extends CommentAccountProps {
   isCollabDocumentPublished?: boolean;
   ipfsImageFetchFn?: (
@@ -124,6 +158,11 @@ export interface DdocProps extends CommentAccountProps {
   activeModel?: CustomModel;
   maxTokens?: number;
   isAIAgentEnabled?: boolean;
+  /**
+   * Document styling configuration
+   * @description Customize the appearance of the document editor
+   */
+  documentStyling?: DocumentStyling;
 }
 
 export interface IEditorSelectionData {

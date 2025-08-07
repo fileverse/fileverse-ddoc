@@ -7,12 +7,14 @@ import React, {
   useState,
   useCallback,
 } from 'react';
+import { DocumentStyling } from '../types';
 
 interface EditorContextType {
   collapsedHeadings: Set<string>;
   setCollapsedHeadings: (updater: (prev: Set<string>) => Set<string>) => void;
   isHeadingCollapsed: (id: string) => boolean;
   expandMultipleHeadings: (ids: string[]) => void;
+  documentStyling?: DocumentStyling;
 }
 
 export const EditorContext = createContext<EditorContextType | null>(null);
@@ -25,9 +27,10 @@ export const useEditorContext = () => {
   return context;
 };
 
-export const EditorProvider: React.FC<{ children: ReactNode }> = ({
-  children,
-}) => {
+export const EditorProvider: React.FC<{
+  children: ReactNode;
+  documentStyling?: DocumentStyling;
+}> = ({ children, documentStyling }) => {
   const [collapsedHeadings, setCollapsedHeadings] = useState<Set<string>>(
     new Set(),
   );
@@ -53,8 +56,14 @@ export const EditorProvider: React.FC<{ children: ReactNode }> = ({
       setCollapsedHeadings,
       isHeadingCollapsed,
       expandMultipleHeadings,
+      documentStyling,
     }),
-    [collapsedHeadings, isHeadingCollapsed, expandMultipleHeadings],
+    [
+      collapsedHeadings,
+      isHeadingCollapsed,
+      expandMultipleHeadings,
+      documentStyling,
+    ],
   );
 
   return (
