@@ -90,7 +90,7 @@ export const useDdocEditor = ({
   } = useSyncMachine({
     roomId: collabConf?.collaborationId,
     onError,
-    wsUrl: 'http://localhost:5001/',
+    wsUrl: 'https://dev-collaboration-server-ff60826701cd.herokuapp.com/',
     ydoc,
     cryptoUtils,
   });
