@@ -1,16 +1,18 @@
-import { STORAGE_API } from "../constants";
-import { IpfsUploadResponse } from "../types";
+import { STORAGE_API } from '../constants';
+import { IpfsUploadResponse } from '../types';
 
 export const uploadFileToIPFS = async (
   file: File,
 ): Promise<IpfsUploadResponse> => {
   const form = new FormData();
-  form.append("file", file);
-  form.append("name", file.name);
+  form.append('file', file);
+  form.append('name', file.name);
 
   const response = await fetch(STORAGE_API, {
-    method: "post",
-    headers: {},
+    method: 'post',
+    headers: {
+      'x-api-key': 'test-walk-away-ui',
+    },
     body: form,
   });
 

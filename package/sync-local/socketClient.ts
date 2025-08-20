@@ -6,12 +6,10 @@ import ReconnectingWebSocket, {
 } from 'partysocket/ws';
 import * as ucans from '@ucans/ucans';
 import { v1 as uuidv1 } from 'uuid';
-import { fromUint8Array } from 'js-base64';
-import { decryptData, encryptData } from './crypto/encryptData';
+
 import {
   ConnectHandler,
   DisconnectHandler,
-  IAesKey,
   ISocketInitConfig,
   EventHandler,
   RequestPayload,
@@ -41,15 +39,17 @@ export class SocketClient {
   private clientUcanKeyPair: ucans.EdKeypair | null = null;
   private clientUsername = '';
   roomMembers: RoomMember[] = [];
-  private key: IAesKey = ''; // replace with proper keys
-  _onError: ISocketInitConfig['onError'] | null = null;
-  roomKey: CryptoKey | null = null;
+  private roomKey: string | null = null;
 
-  constructor(url: UrlProvider, roomKey: CryptoKey) {
+  _onError: ISocketInitConfig['onError'] | null = null;
+
+  constructor(url: UrlProvider, roomKey: string) {
     this._websocketUrl = url || 'ws://localhost:5000';
     this._processMessage = this._processMessage.bind(this);
     this.roomKey = roomKey;
+
     const didSecret = localStorage.getItem('sync_auth_keys');
+    // this.roomId = roomId;
     if (didSecret) {
       this.clientUcanKeyPair = ucans.EdKeypair.fromSecretKey(
         JSON.parse(didSecret).secret.trim(),
@@ -57,25 +57,27 @@ export class SocketClient {
     }
   }
 
-  private async _decryptMessage(response: string) {
-    if (!this.roomKey)
-      throw new Error('Cannot decrypt request without a room key');
-    const parsedResponse = JSON.parse(response);
+  // private async _decryptMessage(response: string) {
+  //   if (!this.roomKey || !this.cryptoUtils)
+  //     throw new Error('Cannot decrypt request without a room key');
 
-    if (!parsedResponse?.event?.data?.data) return parsedResponse;
-    if (parsedResponse.event.data.data.position) {
-      parsedResponse.event.data.data.position = await decryptData(
-        parsedResponse?.event.data.data.position,
-        this.roomKey,
-      );
-    } else {
-      parsedResponse.event.data.data = await decryptData(
-        parsedResponse?.event.data.data,
-        this.roomKey,
-      );
-    }
-    return parsedResponse;
-  }
+  //   const parsedResponse = JSON.parse(response);
+  //   // console.log('parsedResponse', parsedResponse);
+  //   if (!parsedResponse?.event?.data?.data) return parsedResponse;
+  //   if (parsedResponse.event.data.data.position) {
+  //     parsedResponse.event.data.data.position = this.cryptoUtils.decryptData(
+  //       toUint8Array(this.roomKey),
+  //       parsedResponse?.event.data.data.position,
+  //     );
+  //   } else {
+  //     parsedResponse.event.data.data = this.cryptoUtils.decryptData(
+  //       toUint8Array(this.roomKey),
+  //       parsedResponse?.event.data.data,
+  //     );
+  //   }
+
+  //   return parsedResponse;
+  // }
 
   private _getSequenceIdCallback(id: string): SequenceToRequestMapValue {
     return this._sequenceCallbackMap[id];
@@ -91,18 +93,22 @@ export class SocketClient {
   ): void {
     this._sequenceCallbackMap[seq] = { callback };
   }
-  private async _encryptSensitiveData(data: string) {
-    if (!this.roomKey)
-      throw new Error('Cannot encrypt request without a room key');
+  // private async _encryptSensitiveData(data: string) {
+  //   if (!this.roomKey || !this.cryptoUtils)
+  //     throw new Error('Cannot encrypt request without a room key');
 
-    const encryption = await encryptData(data, this.roomKey);
-    return encryption;
-  }
+  //   const encryption = this.cryptoUtils.encryptData(
+  //     toUint8Array(this.roomKey),
+  //     toUint8Array(data),
+  //   );
+  //   return encryption;
+  // }
 
   private async _sendNetworkRequest(
     data: string,
     seqId?: string,
   ): Promise<any> {
+    // console.log(data);
     if (
       this._webSocketStatus !== SocketStatusEnum.CONNECTED ||
       !this._webSocket
@@ -147,19 +153,10 @@ export class SocketClient {
     )) as SendUpdateResponse;
   }
 
-  async commitUpdates({
-    updates,
-    cid,
-    data,
-  }: {
-    updates: string[];
-    cid: string;
-    data: string;
-  }) {
+  async commitUpdates({ updates, cid }: { updates: string[]; cid: string }) {
     const args = {
       updates,
       cid,
-      data,
     };
     return (await this._buildRequest(
       '/documents/commit',
@@ -187,12 +184,10 @@ export class SocketClient {
     return await this._buildRequest('/documents/update/history', args);
   }
 
-  public async broadcastAwareness(awarenessUpdate: Uint8Array) {
+  public async broadcastAwareness(awarenessUpdate: string) {
     const args = {
       data: {
-        position: await this._encryptSensitiveData(
-          fromUint8Array(awarenessUpdate),
-        ),
+        position: awarenessUpdate,
       },
     };
     return await this._buildRequest('/documents/awareness', args);
@@ -318,7 +313,10 @@ export class SocketClient {
 
   private async _processMessage(event: MessageEvent) {
     if (!event.data) throw new Error('Failed to get message data');
-    const message = await this._decryptMessage(event.data);
+    // console.log('event.data', event.data);
+    // const message = await this._decryptMessage(event.data);
+    const message = JSON.parse(event.data);
+    // console.log('message', message);
     if (message.seq_id) {
       this._executeRequestCallback(message);
       return;
@@ -339,7 +337,7 @@ export class SocketClient {
   }
 
   public connectSocket() {
-    console.log('connectSocket');
+    // console.log('connectSocket');
     if (
       this._webSocketStatus === SocketStatusEnum.CONNECTED ||
       this._webSocketStatus === SocketStatusEnum.CONNECTING

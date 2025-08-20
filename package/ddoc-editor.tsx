@@ -118,6 +118,9 @@ const DdocEditor = forwardRef(
       maxTokens,
       isAIAgentEnabled,
       collaborationKey,
+      collaborationKeyPair,
+      cryptoUtils,
+      collabConf,
     }: DdocProps,
     ref,
   ) => {
@@ -199,6 +202,9 @@ const DdocEditor = forwardRef(
       maxTokens,
       isAIAgentEnabled,
       collaborationKey,
+      collaborationKeyPair,
+      cryptoUtils,
+      collabConf,
     });
 
     useImperativeHandle(

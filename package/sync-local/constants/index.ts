@@ -1,18 +1,18 @@
-import { SyncMachineContext } from "../types";
-import * as Y from "yjs";
+import { SyncMachineContext } from '../types';
+import * as Y from 'yjs';
 
 export const initialContext: SyncMachineContext = {
   socketClient: null,
-  roomId: "",
-  username: "",
+  roomId: '',
+  username: '',
   ydoc: new Y.Doc(),
   roomMembers: [],
   isConnected: false,
   awareness: null,
   _awarenessUpdateHandler: null,
   onError: null,
-  roomKey: null,
-  wsProvider: "",
+  roomKey: '',
+  wsUrl: '',
   uncommittedUpdatesIdList: [],
   updateQueue: [],
   isOwner: false,
@@ -22,12 +22,20 @@ export const initialContext: SyncMachineContext = {
   initialUpdate: null,
   errorCount: 0,
   errorMaxRetryCount: 3,
-  errorMessage: "",
+  errorMessage: '',
+  cryptoUtils: {
+    generateKeyPair: () => ({
+      publicKey: new Uint8Array(),
+      privateKey: new Uint8Array(),
+    }),
+    encryptData: () => '',
+    decryptData: () => new Uint8Array(),
+    generateRandomBytes: () => new Uint8Array(),
+  },
 };
 export const STORAGE_API =
-  "https://dev-fileverse-storage.herokuapp.com/upload/public";
+  'https://dev-fileverse-storage.herokuapp.com/upload/public';
 export const IPFS_GATEWAYS = [
-  "https://dweb.link",
-  "https://ipfs.io",
-  "https://w3s.link",
+  'https://dev-ipfs.fileverse.io',
+  'https://gateway.pinata.cloud',
 ];

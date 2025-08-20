@@ -1,21 +1,21 @@
-import { fromByteArray, toByteArray } from "base64-js";
+import { toUint8Array, fromUint8Array } from 'js-base64';
 
 export const importAESKey = async (keyString: string): Promise<CryptoKey> => {
-  const keyData = { kty: "oct", k: keyString, alg: "A128GCM", ext: true };
+  const keyData = { kty: 'oct', k: keyString, alg: 'A128GCM', ext: true };
   return await window.crypto.subtle.importKey(
-    "jwk",
+    'jwk',
     keyData,
     {
-      name: "AES-GCM",
+      name: 'AES-GCM',
     },
     false,
-    ["encrypt", "decrypt"],
+    ['encrypt', 'decrypt'],
   );
 };
 
 export const arrayBufferToBase64 = (buffer: ArrayBuffer): string => {
   const bytes = new Uint8Array(buffer);
-  let binary = "";
+  let binary = '';
   for (let i = 0; i < bytes.byteLength; i++) {
     binary += String.fromCharCode(bytes[i]);
   }
@@ -32,33 +32,33 @@ export const encryptData = async (message: string, aesKey: CryptoKey) => {
   const nonce = generateRandomNonce();
   const encrypted = await window.crypto.subtle.encrypt(
     {
-      name: "AES-GCM",
+      name: 'AES-GCM',
       iv: nonce,
     },
     aesKey,
-    toByteArray(message),
+    toUint8Array(message) as BufferSource,
   );
 
   const fullMessage = new Uint8Array(nonce.length + encrypted.byteLength);
   fullMessage.set(nonce);
   fullMessage.set(new Uint8Array(encrypted), nonce.length);
 
-  return fromByteArray(fullMessage);
+  return fromUint8Array(fullMessage);
 };
 
 export const decryptData = async (encryptedMessage: string, key: CryptoKey) => {
-  const messageBytes = toByteArray(encryptedMessage);
+  const messageBytes = toUint8Array(encryptedMessage);
   const nonce = messageBytes.slice(0, NONCE_LENGTH);
   const encrypted = messageBytes.slice(NONCE_LENGTH, messageBytes.length);
 
   const decrypted = await window.crypto.subtle.decrypt(
     {
-      name: "AES-GCM",
+      name: 'AES-GCM',
       iv: nonce,
     },
     key,
     encrypted,
   );
 
-  return fromByteArray(new Uint8Array(decrypted));
+  return fromUint8Array(new Uint8Array(decrypted));
 };

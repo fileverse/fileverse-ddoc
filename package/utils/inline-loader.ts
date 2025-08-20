@@ -58,7 +58,7 @@ export const showInlineLoadingUI = (
   const sel = editor.view.state.selection;
 
   let floatingDiv: null | HTMLDivElement = null;
-  console.log({ pos });
+
   // check if editor is unfocused
   if (!pos || (sel.empty && pos === 2)) {
     floatingDiv = document.createElement('div');

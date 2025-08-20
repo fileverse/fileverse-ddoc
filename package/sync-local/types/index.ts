@@ -1,10 +1,11 @@
-import { SocketClient } from "../socketClient";
-import * as Y from "yjs";
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { SocketClient } from '../socketClient';
+import * as Y from 'yjs';
 
 export interface IRoomMember {
   user_id: string;
   username: string;
-  role: "owner" | "editor";
+  role: 'owner' | 'editor';
 }
 
 export interface SendUpdateResponse {
@@ -45,10 +46,20 @@ export interface SyncMachineContext {
   roomMembers: IRoomMember[];
   isConnected: boolean;
   awareness: any;
-  _awarenessUpdateHandler: (({ added, updated, removed }: any) => void) | null;
+  _awarenessUpdateHandler:
+    | (({
+        added,
+        updated,
+        removed,
+      }: {
+        added: number[];
+        updated: number[];
+        removed: number[];
+      }) => void)
+    | null;
   onError: ((e: string) => void) | null;
-  roomKey: CryptoKey | null;
-  wsProvider: string;
+  roomKey: string;
+  wsUrl: string;
   uncommittedUpdatesIdList: string[];
   isOwner: boolean;
   updateQueue: Uint8Array[];
@@ -59,6 +70,12 @@ export interface SyncMachineContext {
   errorCount: number;
   errorMaxRetryCount: number;
   errorMessage: string;
+  cryptoUtils: {
+    generateKeyPair: () => { publicKey: Uint8Array; privateKey: Uint8Array };
+    encryptData: (key: Uint8Array, message: Uint8Array) => string;
+    decryptData: (key: Uint8Array, message: string) => Uint8Array;
+    generateRandomBytes: () => Uint8Array;
+  };
 }
 export interface ErrorResponseMessage {
   status: boolean;
@@ -121,17 +138,17 @@ export interface ISocketInitConfig {
 }
 
 export enum SocketStatusEnum {
-  CLOSED = "CLOSED",
-  CONNECTED = "CONNECTED",
-  CONNECTING = "CONNECTING",
-  DISCONNECTING = "DISCONNECTING",
-  DISCONNECTED = "DISCONNECTED",
+  CLOSED = 'CLOSED',
+  CONNECTED = 'CONNECTED',
+  CONNECTING = 'CONNECTING',
+  DISCONNECTING = 'DISCONNECTING',
+  DISCONNECTED = 'DISCONNECTED',
 }
 
 export interface RoomMember {
   username: string;
   user_id: string;
-  role: "owner" | "editor";
+  role: 'owner' | 'editor';
 }
 
 export type IAesKey = string;

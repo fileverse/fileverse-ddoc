@@ -1,4 +1,4 @@
-import { SyncMachineContext } from "../types";
+import { SyncMachineContext } from '../types';
 
 export const syncMachineGuards = {
   isUserConnected: (context: SyncMachineContext) => context.isConnected,

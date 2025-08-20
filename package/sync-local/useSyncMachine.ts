@@ -2,38 +2,40 @@
 import { useCallback, useEffect, useMemo } from 'react';
 import syncMachine from './syncMachine';
 import * as Y from 'yjs';
-import { useMachine } from '@xstate/react';
+
+import { useMachine, useSelector } from '@xstate/react';
 import { SyncMachineContext } from '.';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 
-const useSyncMachine = (props: Partial<SyncMachineContext>) => {
-  // const [ydoc] = useState(props.ydoc);
-  const [state, send] = useMachine(syncMachine, {
+const contextSelector = (state: any) => state.context;
+
+const useSyncMachine = (config: Partial<SyncMachineContext>) => {
+  // const yAwarenessRef = useRef<Awareness>(new Awareness(ydoc!));
+
+  const [state, send, actorRef] = useMachine(syncMachine, {
     context: {
-      ...props,
-      // ydoc,
+      ...config,
     },
   });
+
+  const context = useSelector(actorRef, contextSelector);
 
   const { awareness, isConnected } = state.context;
 
   const connect = useCallback(
-    (username: string, roomKey: CryptoKey) => {
-      console.log(
-        'Calling connect function',
-        fromUint8Array(Y.encodeStateAsUpdate(props.ydoc!)),
-        '<<<<< initial update',
-      );
+    (username: string, roomKey: string, roomId: string, isOwner: boolean) => {
       send({
         type: 'CONNECT',
         data: {
           username,
-          initialUpdate: fromUint8Array(Y.encodeStateAsUpdate(props.ydoc!)),
+          initialUpdate: fromUint8Array(Y.encodeStateAsUpdate(config.ydoc!)),
           roomKey,
+          roomId,
+          isOwner,
         },
       });
     },
-    [send, state],
+    [send, state, config.ydoc],
   );
 
   const disconnect = useCallback(() => {
@@ -45,23 +47,23 @@ const useSyncMachine = (props: Partial<SyncMachineContext>) => {
 
   const machine = useMemo(() => [state, send], [state, send]);
 
-  console.log(state.context, 'state.context');
+  // console.log(context);
 
   const isReady = useMemo(() => {
     return !!(state.context.isReady && state.context.awareness);
   }, [state.context.isReady, state.context.awareness]);
 
   useEffect(() => {
-    if (props.ydoc && !awareness && state.context.isConnected) {
+    if (config.ydoc && !awareness && isConnected) {
       send({
         type: 'INIT_AWARENESS',
         data: null,
       });
     }
-  }, [props.ydoc, awareness, isConnected, send]);
+  }, [config.ydoc, awareness, isConnected, send]);
 
   useEffect(() => {
-    if (!isReady || !props.ydoc) return;
+    if (!isReady || !config.ydoc) return;
     const updateHandler = (update: any, origin: any) => {
       if (origin === 'self') return;
       send({
@@ -72,22 +74,22 @@ const useSyncMachine = (props: Partial<SyncMachineContext>) => {
       });
     };
 
-    props.ydoc?.on('update', updateHandler);
+    config.ydoc?.on('update', updateHandler);
     return () => {
-      props.ydoc?.off('update', updateHandler);
+      config.ydoc?.off('update', updateHandler);
     };
-  }, [props.ydoc, isReady, send]);
+  }, [config.ydoc, isReady, send]);
 
   const getYjsEncodedState = useCallback(() => {
-    return fromUint8Array(Y.encodeStateAsUpdate(props.ydoc!));
-  }, [props.ydoc]);
+    return fromUint8Array(Y.encodeStateAsUpdate(config.ydoc!));
+  }, [config.ydoc]);
 
   const applyYjsEncodedState = useCallback(
     (update: string) => {
       if (!update) return;
-      Y.applyUpdate(props.ydoc!, toUint8Array(update));
+      Y.applyUpdate(config.ydoc!, toUint8Array(update));
     },
-    [props.ydoc],
+    [config.ydoc],
   );
 
   const error = useMemo(() => {
@@ -109,6 +111,7 @@ const useSyncMachine = (props: Partial<SyncMachineContext>) => {
     getYjsEncodedState,
     applyYjsEncodedState,
     error,
+    context,
   };
 };
 

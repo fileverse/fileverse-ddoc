@@ -1,10 +1,13 @@
-export const objectToFile = (data: Record<string, any>, fileName: string) => {
+export const objectToFile = (
+  data: Record<string, unknown>,
+  fileName: string,
+) => {
   const blob = new Blob([JSON.stringify(data)], {
-    type: "application/json",
+    type: 'application/json',
   });
 
   const file = new File([blob], fileName, {
-    type: "application/json",
+    type: 'application/json',
   });
 
   return file;

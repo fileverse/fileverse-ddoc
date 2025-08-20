@@ -1,4 +1,4 @@
-import { assign } from "xstate";
+import { assign } from 'xstate';
 import {
   awarenessUpdateHandler,
   // broadcastStateHandler,
@@ -30,8 +30,9 @@ import {
   setInitialUpdateErrorMessageHandler,
   disconnectedStateHandler,
   handleDisconnectionDueToError,
-} from ".";
+} from '.';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const syncMachineActions: Record<any, any> = {
   resetState: assign(stateResetHandler),
   initializeAwareness: assign(initAwarenessHandler),

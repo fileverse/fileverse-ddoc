@@ -1,21 +1,29 @@
-import * as encoding from "lib0/encoding";
-import { SocketClient } from "../socketClient";
-import * as awarenessProtocol from "y-protocols/awareness";
+import { encodeAwarenessUpdate, type Awareness } from 'y-protocols/awareness';
+import { SyncMachineContext } from '../types';
+import { toUint8Array } from 'js-base64';
 
 export const createAwarenessUpdateHandler = (
-  awareness: any,
-  socketClient: SocketClient | null,
-  isConnected: boolean,
+  awareness: Awareness,
+  context: SyncMachineContext,
 ) => {
-  return ({ added, updated, removed }: any) => {
+  return ({
+    added,
+    updated,
+    removed,
+  }: {
+    added: number[];
+    updated: number[];
+    removed: number[];
+  }) => {
     const changedClients = added.concat(updated).concat(removed);
-    const encoder = encoding.createEncoder();
-    encoding.writeVarUint8Array(
-      encoder,
-      awarenessProtocol.encodeAwarenessUpdate(awareness, changedClients),
-    );
-    if (isConnected && socketClient) {
-      socketClient.broadcastAwareness(encoding.toUint8Array(encoder));
+    const update = encodeAwarenessUpdate(awareness, changedClients);
+
+    if (context.isConnected && context.socketClient) {
+      const encryptedUpdate = context.cryptoUtils.encryptData(
+        toUint8Array(context.roomKey),
+        update,
+      );
+      context.socketClient.broadcastAwareness(encryptedUpdate);
     }
   };
 };

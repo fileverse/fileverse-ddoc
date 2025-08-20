@@ -18,7 +18,8 @@ import {
   TableOfContents,
   getHierarchicalIndexes,
 } from '@tiptap-pro/extension-table-of-contents';
-import { toUint8Array } from 'js-base64';
+import { fromUint8Array } from 'js-base64';
+import { crypto as cryptoUtils } from './crypto';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -40,6 +41,7 @@ function App() {
   const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(false);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showTOC, setShowTOC] = useState<boolean>(false);
+  const [collaborationId, setCollaborationId] = useState<string>('');
 
   const [inlineCommentData, setInlineCommentData] = useState({
     inlineCommentText: '',
@@ -50,17 +52,38 @@ function App() {
   const [zoomLevel, setZoomLevel] = useState<string>('1');
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
-  const [collaborationKey, setCollaborationKey] = useState<CryptoKey | null>(
-    null,
-  );
 
   const searchParams = new URLSearchParams(window.location.search);
-  const collaborationId =
-    window.location.pathname.split('/')[2] ||
-    (searchParams.get('collaborationId') as string); // example url - /doc/1234, that why's used second element of array
-  // get from search params
-  const key = searchParams.get('key');
+  const paramCollaborationId = searchParams.get('collaborationId');
+  const paramKey = searchParams.get('key');
+  const [collabConf, setCollabConf] = useState<
+    | {
+        roomKey: string;
+        collaborationId: string;
+        username: string;
+        isOwner: boolean;
+      }
+    | undefined
+  >(undefined);
+
+  useEffect(() => {
+    const setupCollaboration = async () => {
+      if (paramCollaborationId && paramKey) {
+        const name = prompt('Whats your username');
+        if (!name) return;
+        setCollabConf({
+          roomKey: paramKey,
+          collaborationId: paramCollaborationId,
+          username: name,
+          isOwner: false,
+        });
+        setEnableCollaboration(true);
+      }
+    };
+    setupCollaboration();
+  }, [paramCollaborationId, paramKey]);
   //To handle comments from consumer side
+
   const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
   const [initialComments, setInitialComment] = useState<IComment[]>([]);
 
@@ -120,32 +143,42 @@ function App() {
 
   const [isConnected, setIsConnected] = useState(false);
 
-  useEffect(() => {
-    const setupCollaboration = async () => {
-      if (collaborationId) {
-        const name = prompt('Whats your username');
-        if (!name || !key) return;
-        const keyBytes = toUint8Array(key);
-        // console.log(keyBytes);
-        const collaborationKey = await window.crypto.subtle.importKey(
-          'raw',
-          keyBytes as BufferSource,
-          {
-            name: 'AES-GCM',
-          },
-          true,
-          ['encrypt', 'decrypt'],
-        );
-        setCollaborationKey(collaborationKey);
-        setUsername(name);
-        setEnableCollaboration(true);
-      }
-    };
-    setupCollaboration();
-  }, [collaborationId, key]);
+  const onToggleCollaboration = async () => {
+    const name = prompt('Whats your username');
+    if (!name) return;
+    const { privateKey } = cryptoUtils.generateKeyPair();
+
+    const collaborationId = crypto.randomUUID();
+    const privateKeyBase64 = fromUint8Array(privateKey, true);
+    setCollabConf({
+      roomKey: privateKeyBase64,
+      collaborationId,
+      username: name,
+      isOwner: true,
+    });
+
+    setCollaborationId(collaborationId);
+    setUsername(name);
+    setEnableCollaboration(true);
+    console.log(
+      `${window.location.origin}?collaborationId=${collaborationId}&key=${privateKeyBase64}`,
+    );
+
+    // copy to clipboard
+    await navigator.clipboard.writeText(
+      `${window.location.origin}?collaborationId=${collaborationId}&key=${privateKeyBase64}`,
+    );
+
+    toast({
+      title: 'Collaboration link copied to clipboard',
+      variant: 'success',
+      hasIcon: true,
+    });
+  };
 
   const renderNavbar = ({ editor }: { editor: JSONContent }): JSX.Element => {
     const publishDoc = () => console.log(editor, title);
+
     return (
       <>
         <div className="flex items-center gap-[12px]">
@@ -263,6 +296,12 @@ function App() {
             size="md"
             onClick={() => setCommentDrawerOpen((prev) => !prev)}
           />
+          <IconButton
+            variant={'ghost'}
+            icon="Share"
+            size="md"
+            onClick={onToggleCollaboration}
+          />
 
           <Button
             onClick={publishDoc}
@@ -348,7 +387,8 @@ function App() {
         onCopyHeadingLink={(link: string) => {
           navigator.clipboard.writeText(link);
         }}
-        collaborationKey={collaborationKey}
+        collabConf={collabConf}
+        cryptoUtils={cryptoUtils}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

@@ -125,6 +125,22 @@ export interface DdocProps extends CommentAccountProps {
   maxTokens?: number;
   isAIAgentEnabled?: boolean;
   collaborationKey?: CryptoKey | null;
+  collaborationKeyPair?: {
+    publicKey: string;
+    privateKey: string;
+  };
+  collabConf?: {
+    roomKey: string;
+    collaborationId: string;
+    username: string;
+    isOwner: boolean;
+  };
+  cryptoUtils?: {
+    generateKeyPair: () => { publicKey: Uint8Array; privateKey: Uint8Array };
+    encryptData: (key: Uint8Array, message: Uint8Array) => string;
+    decryptData: (key: Uint8Array, message: string) => Uint8Array;
+    generateRandomBytes: () => Uint8Array;
+  };
 }
 
 export interface IEditorSelectionData {

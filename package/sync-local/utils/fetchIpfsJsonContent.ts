@@ -1,4 +1,4 @@
-import { IPFS_GATEWAYS } from "../constants";
+import { IPFS_GATEWAYS } from '../constants';
 
 export async function fetchIpfsJsonContent(cid: string) {
   const fetchPromises = IPFS_GATEWAYS.map((gateway) => {
@@ -21,10 +21,10 @@ export async function fetchIpfsJsonContent(cid: string) {
       });
   });
   try {
-    //@ts-ignore
+    // @ts-expect-error - Promise.any is not supported in the current version of TypeScript
     const result = await Promise.any(fetchPromises);
     return result;
   } catch (error) {
-    throw new Error("All fetch attempts failed");
+    throw new Error('All fetch attempts failed');
   }
 }
