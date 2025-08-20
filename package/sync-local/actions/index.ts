@@ -68,7 +68,13 @@ export const websocketInitializer = (
   }
 
   return {
-    socketClient: new SocketClient(context.wsUrl, event.data.roomKey),
+    socketClient: new SocketClient({
+      wsUrl: context.wsUrl,
+      roomKey: event.data.roomKey,
+      ownerEdSecret: event.data.ownerEdSecret,
+      contractAddress: event.data.contractAddress,
+      ownerAddress: event.data.ownerAddress,
+    }),
     username: event.data.username,
     initialUpdate: event.data.initialUpdate,
     roomKey: event.data.roomKey,

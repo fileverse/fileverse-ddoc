@@ -45,6 +45,7 @@
     "@noble/curves": "^1.9.7",
     "@radix-ui/react-focus-scope": "^1.1.0",
     "@radix-ui/react-popover": "^1.0.7",
+    "@stablelib/ed25519": "^2.0.2",
     "@tippyjs/react": "^4.2.6",
     "@tiptap/core": "2.9",
     "@tiptap/extension-bullet-list": "2.9",

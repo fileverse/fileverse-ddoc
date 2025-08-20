@@ -1,6 +1,6 @@
-import useSyncMachine from './useSyncMachine';
 import syncMachine from './syncMachine';
 import { SyncMachineContext } from './types';
+export { useSyncMachine } from './useSyncMachine';
 
-export { useSyncMachine, syncMachine };
+export { syncMachine };
 export type { SyncMachineContext };

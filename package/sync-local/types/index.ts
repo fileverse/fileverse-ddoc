@@ -3,7 +3,7 @@ import { SocketClient } from '../socketClient';
 import * as Y from 'yjs';
 
 export interface IRoomMember {
-  user_id: string;
+  userId: string;
   username: string;
   role: 'owner' | 'editor';
 }
@@ -11,17 +11,17 @@ export interface IRoomMember {
 export interface SendUpdateResponse {
   data: {
     agent_id: string;
-    commit_cid: string | null;
+    commitCid: string | null;
     created_at: number;
     data: string;
-    document_id: string;
+    documentId: string;
     id: string;
     update_snapshot_ref: string | null;
-    update_type: string;
+    updateType: string;
   };
   is_handshake_response: boolean;
   status: boolean;
-  status_code: number;
+  statusCode: number;
 }
 
 export interface CommitResponse {
@@ -30,12 +30,12 @@ export interface CommitResponse {
     cid: string;
     created_at: number;
     data: any | null;
-    document_id: string;
+    documentId: string;
     updates: string[];
   };
   is_handshake_response: boolean;
   status: boolean;
-  status_code: number;
+  statusCode: number;
 }
 
 export interface SyncMachineContext {
@@ -79,8 +79,8 @@ export interface SyncMachineContext {
 }
 export interface ErrorResponseMessage {
   status: boolean;
-  status_code: number;
-  seq_id: string | null;
+  statusCode: number;
+  seqId: string | null;
   is_handshake_response: boolean;
   err: string;
   err_detail: { [key: string]: any } | null;
@@ -88,8 +88,8 @@ export interface ErrorResponseMessage {
 
 export interface SuccessResponseMessage {
   status: boolean;
-  status_code: number;
-  seq_id: string | null;
+  statusCode: number;
+  seqId: string | null;
   is_handshake_response: boolean;
   data: { [key: string]: any };
 }
@@ -113,7 +113,7 @@ export interface PartialRequest {
 }
 
 export interface RequestPayload extends PartialRequest {
-  seq_id: string;
+  seqId: string;
 }
 
 export type SequenceResponseCB = (data: RequestResponse) => void;
@@ -147,7 +147,7 @@ export enum SocketStatusEnum {
 
 export interface RoomMember {
   username: string;
-  user_id: string;
+  userId: string;
   role: 'owner' | 'editor';
 }
 
@@ -164,4 +164,14 @@ export interface IpfsUploadResponse {
   cachedUrl: string;
   fileSize: number;
   mimetype: string;
+}
+
+export interface IAuthArgs {
+  username: string;
+  collaborationToken: string;
+  documentId: string;
+  ownerToken?: string;
+  ownerAddress?: string;
+  contractAddress?: string;
+  collaborationDid?: string;
 }

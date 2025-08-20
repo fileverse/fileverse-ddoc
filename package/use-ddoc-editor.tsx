@@ -29,7 +29,7 @@ import { headingToSlug } from './utils/heading-to-slug';
 import { AiAutocomplete } from './extensions/ai-autocomplete/ai-autocomplete';
 import { AIWriter } from './extensions/ai-writer';
 import { DBlock } from './extensions/d-block/dblock';
-import useSyncMachine from './sync-local/useSyncMachine';
+import { useSyncMachine } from './sync-local/useSyncMachine';
 // import { SyncCursor } from './extensions/sync-cursor';
 
 const usercolors = [
@@ -80,7 +80,7 @@ export const useDdocEditor = ({
   const [ydoc] = useState(new Y.Doc());
 
   const {
-    // machine,
+    // mach/ine,
     connect: onConnect,
     // disconnect,
     // ydoc,
@@ -90,7 +90,7 @@ export const useDdocEditor = ({
   } = useSyncMachine({
     roomId: collabConf?.collaborationId,
     onError,
-    wsUrl: 'https://dev-collaboration-server-ff60826701cd.herokuapp.com/',
+    wsUrl: 'http://localhost:5001/',
     ydoc,
     cryptoUtils,
   });
@@ -700,12 +700,16 @@ export const useDdocEditor = ({
       // }
       if (!collabConf?.username)
         throw new Error('Cannot start collaboration without a username');
-      onConnect(
-        collabConf?.username,
+      console.log(collabConf, 'collabConf');
+      onConnect({
+        username: collabConf?.username,
         roomKey,
-        collaborationId,
-        collabConf?.isOwner,
-      );
+        roomId: collaborationId,
+        isOwner: collabConf?.isOwner,
+        ownerEdSecret: collabConf?.ownerEdSecret,
+        contractAddress: collabConf?.contractAddress,
+        ownerAddress: collabConf?.ownerAddress,
+      });
       // connect(_username, _isEns);
     },
     [collabConf?.username],

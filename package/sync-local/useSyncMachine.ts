@@ -6,10 +6,19 @@ import * as Y from 'yjs';
 import { useMachine, useSelector } from '@xstate/react';
 import { SyncMachineContext } from '.';
 import { fromUint8Array, toUint8Array } from 'js-base64';
+interface IConnectConf {
+  username: string;
+  roomKey: string;
+  roomId: string;
+  isOwner: boolean;
+  ownerEdSecret?: string;
+  contractAddress?: string;
+  ownerAddress?: string;
+}
 
 const contextSelector = (state: any) => state.context;
 
-const useSyncMachine = (config: Partial<SyncMachineContext>) => {
+export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
   // const yAwarenessRef = useRef<Awareness>(new Awareness(ydoc!));
 
   const [state, send, actorRef] = useMachine(syncMachine, {
@@ -23,15 +32,12 @@ const useSyncMachine = (config: Partial<SyncMachineContext>) => {
   const { awareness, isConnected } = state.context;
 
   const connect = useCallback(
-    (username: string, roomKey: string, roomId: string, isOwner: boolean) => {
+    (connectConfig: IConnectConf) => {
       send({
         type: 'CONNECT',
         data: {
-          username,
           initialUpdate: fromUint8Array(Y.encodeStateAsUpdate(config.ydoc!)),
-          roomKey,
-          roomId,
-          isOwner,
+          ...connectConfig,
         },
       });
     },
@@ -114,5 +120,3 @@ const useSyncMachine = (config: Partial<SyncMachineContext>) => {
     context,
   };
 };
-
-export default useSyncMachine;

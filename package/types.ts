@@ -134,6 +134,9 @@ export interface DdocProps extends CommentAccountProps {
     collaborationId: string;
     username: string;
     isOwner: boolean;
+    ownerEdSecret?: string;
+    contractAddress?: string;
+    ownerAddress?: string;
   };
   cryptoUtils?: {
     generateKeyPair: () => { publicKey: Uint8Array; privateKey: Uint8Array };

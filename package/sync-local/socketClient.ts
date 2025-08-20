@@ -21,9 +21,19 @@ import {
   // Update,
   SendUpdateResponse,
   CommitResponse,
+  IAuthArgs,
 } from './types';
 import { WEBSOCKET_CONFIG } from './constants/config';
+import { generateKeyPairFromSeed } from '@stablelib/ed25519';
+import { fromUint8Array, toUint8Array } from 'js-base64';
 
+interface ISocketClientConfig {
+  wsUrl: UrlProvider;
+  roomKey: string;
+  ownerEdSecret?: string;
+  contractAddress?: string;
+  ownerAddress?: string;
+}
 export class SocketClient {
   private _websocketUrl: UrlProvider;
   private _machineEventHandler: EventHandler | null = null;
@@ -36,48 +46,33 @@ export class SocketClient {
   private _websocketServiceDid = '';
   private isAuthenticated = false;
   private roomId = '';
-  private clientUcanKeyPair: ucans.EdKeypair | null = null;
   private clientUsername = '';
   roomMembers: RoomMember[] = [];
-  private roomKey: string | null = null;
+  private collaborationKeyPair: ucans.EdKeypair | null = null;
+  private ownerKeyPair?: ucans.EdKeypair;
+  private contractAddress?: string;
+  private ownerUcan?: ucans.Ucan;
+  private ownerAddress?: string;
 
   _onError: ISocketInitConfig['onError'] | null = null;
 
-  constructor(url: UrlProvider, roomKey: string) {
-    this._websocketUrl = url || 'ws://localhost:5000';
+  constructor(config: ISocketClientConfig) {
+    this._websocketUrl = config.wsUrl || 'ws://localhost:5000';
     this._processMessage = this._processMessage.bind(this);
-    this.roomKey = roomKey;
+    const { secretKey: ucanSecret } = generateKeyPairFromSeed(
+      toUint8Array(config.roomKey),
+    );
 
-    const didSecret = localStorage.getItem('sync_auth_keys');
-    // this.roomId = roomId;
-    if (didSecret) {
-      this.clientUcanKeyPair = ucans.EdKeypair.fromSecretKey(
-        JSON.parse(didSecret).secret.trim(),
-      );
-    }
+    this.collaborationKeyPair = ucans.EdKeypair.fromSecretKey(
+      fromUint8Array(ucanSecret),
+    );
+
+    if (config.ownerEdSecret)
+      this.ownerKeyPair = ucans.EdKeypair.fromSecretKey(config.ownerEdSecret);
+
+    if (config.contractAddress) this.contractAddress = config.contractAddress;
+    if (config.ownerAddress) this.ownerAddress = config.ownerAddress;
   }
-
-  // private async _decryptMessage(response: string) {
-  //   if (!this.roomKey || !this.cryptoUtils)
-  //     throw new Error('Cannot decrypt request without a room key');
-
-  //   const parsedResponse = JSON.parse(response);
-  //   // console.log('parsedResponse', parsedResponse);
-  //   if (!parsedResponse?.event?.data?.data) return parsedResponse;
-  //   if (parsedResponse.event.data.data.position) {
-  //     parsedResponse.event.data.data.position = this.cryptoUtils.decryptData(
-  //       toUint8Array(this.roomKey),
-  //       parsedResponse?.event.data.data.position,
-  //     );
-  //   } else {
-  //     parsedResponse.event.data.data = this.cryptoUtils.decryptData(
-  //       toUint8Array(this.roomKey),
-  //       parsedResponse?.event.data.data,
-  //     );
-  //   }
-
-  //   return parsedResponse;
-  // }
 
   private _getSequenceIdCallback(id: string): SequenceToRequestMapValue {
     return this._sequenceCallbackMap[id];
@@ -93,22 +88,11 @@ export class SocketClient {
   ): void {
     this._sequenceCallbackMap[seq] = { callback };
   }
-  // private async _encryptSensitiveData(data: string) {
-  //   if (!this.roomKey || !this.cryptoUtils)
-  //     throw new Error('Cannot encrypt request without a room key');
-
-  //   const encryption = this.cryptoUtils.encryptData(
-  //     toUint8Array(this.roomKey),
-  //     toUint8Array(data),
-  //   );
-  //   return encryption;
-  // }
 
   private async _sendNetworkRequest(
     data: string,
     seqId?: string,
   ): Promise<any> {
-    // console.log(data);
     if (
       this._webSocketStatus !== SocketStatusEnum.CONNECTED ||
       !this._webSocket
@@ -145,6 +129,7 @@ export class SocketClient {
     const args = {
       data: update,
       update_snapshot_ref: null,
+      collaborationToken: await this.buildToken(),
     };
 
     return (await this._buildRequest(
@@ -157,6 +142,9 @@ export class SocketClient {
     const args = {
       updates,
       cid,
+      ownerToken: await this.getOwnerToken(),
+      contractAddress: this.contractAddress,
+      ownerAddress: this.ownerAddress,
     };
     return (await this._buildRequest(
       '/documents/commit',
@@ -211,51 +199,71 @@ export class SocketClient {
     const req: RequestPayload = {
       cmd,
       args: {
-        document_id: this.roomId,
+        documentId: this.roomId,
         ...args,
       },
-      seq_id: seqId,
+      seqId: seqId,
     };
     return await this._sendNetworkRequest(JSON.stringify(req), seqId);
   }
 
-  private async getOrCreateKeyPair() {
-    if (this.clientUcanKeyPair) {
-      return this.clientUcanKeyPair;
-    }
+  private getCollaborationKeyPair() {
+    if (!this.collaborationKeyPair)
+      throw new Error('No collaboration key pair');
+    return this.collaborationKeyPair;
+  }
 
-    const pair = await ucans.EdKeypair.create({ exportable: true });
-    const secret = await pair.export();
-    const did = pair.did();
-    localStorage.setItem('sync_auth_keys', JSON.stringify({ secret, did }));
-    this.clientUcanKeyPair = pair;
-    return pair;
+  private async getOwnerToken() {
+    if (!this.ownerKeyPair || !this.contractAddress) return undefined;
+
+    if (this.ownerUcan && !ucans.isExpired(this.ownerUcan))
+      return ucans.encode(this.ownerUcan);
+
+    this.ownerUcan = await ucans.build({
+      audience: this._websocketServiceDid,
+      issuer: this.ownerKeyPair,
+      lifetimeInSeconds: 7 * 86400,
+      capabilities: [
+        {
+          with: {
+            scheme: 'storage',
+            hierPart: this.contractAddress.toLowerCase(),
+          },
+          can: { namespace: 'collaboration', segments: ['CREATE'] },
+        },
+      ],
+    });
+
+    return ucans.encode(this.ownerUcan);
   }
 
   private buildToken = async () => {
     if (!this._websocketServiceDid) {
       throw new Error('Server did not response with the server DID');
     }
-    const keyPair = await this.getOrCreateKeyPair();
-    const token_ucan = await ucans.build({
+    const keyPair = this.getCollaborationKeyPair();
+
+    const ucan = await ucans.build({
       audience: this._websocketServiceDid,
       issuer: keyPair,
+      lifetimeInSeconds: 7 * 86400,
       capabilities: [
         {
           with: {
-            scheme: 'fileverse',
-            hierPart: `//solo.fileverse.io/doc/${this.roomId}`,
+            scheme: 'storage',
+            hierPart: 'collaboration',
           },
-          can: { namespace: 'crud', segments: ['EDIT'] },
+          can: { namespace: 'collaboration', segments: ['COLLABORATE'] },
         },
       ],
     });
-    const token = ucans.encode(token_ucan);
+    const token = ucans.encode(ucan);
     return token;
   };
 
   private _handleHandShake = async (message: any) => {
     this._websocketServiceDid = message.data.server_did;
+
     if (this._webSocketStatus !== SocketStatusEnum.CONNECTED || !this.roomId) {
       throw new Error(
         'Cannot establish handshake. WebSocket not connected or roomId not defined',
@@ -266,14 +274,20 @@ export class SocketClient {
     }
     const token = await this.buildToken();
     const seqId = uuidv1();
+    const args: IAuthArgs = {
+      username: this.clientUsername,
+      collaborationToken: token,
+      collaborationDid: this.collaborationKeyPair?.did(),
+      documentId: this.roomId,
+    };
+
+    if (this.ownerKeyPair) args.ownerToken = await this.getOwnerToken();
+    if (this.ownerAddress) args.ownerAddress = this.ownerAddress;
+    if (this.contractAddress) args.contractAddress = this.contractAddress;
     const req: RequestPayload = {
       cmd: '/auth',
-      args: {
-        username: this.clientUsername,
-        token: token,
-        document_id: this.roomId,
-      },
-      seq_id: seqId,
+      args,
+      seqId: seqId,
     };
     const response: any = await this._sendNetworkRequest(
       JSON.stringify(req),
@@ -288,11 +302,11 @@ export class SocketClient {
   };
 
   private _executeRequestCallback = (data: any) => {
-    const callbackMap = this._getSequenceIdCallback(data.seq_id);
+    const callbackMap = this._getSequenceIdCallback(data.seqId);
 
     if (callbackMap && typeof callbackMap.callback === 'function') {
-      this._removeSequenceIdFromMap(data.seq_id);
-      delete data.seq_id;
+      this._removeSequenceIdFromMap(data.seqId);
+      delete data.seqId;
       callbackMap.callback(data);
       return;
     }
@@ -317,7 +331,7 @@ export class SocketClient {
     // const message = await this._decryptMessage(event.data);
     const message = JSON.parse(event.data);
     // console.log('message', message);
-    if (message.seq_id) {
+    if (message.seqId) {
       this._executeRequestCallback(message);
       return;
     }

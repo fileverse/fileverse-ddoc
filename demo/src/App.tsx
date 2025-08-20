@@ -31,6 +31,11 @@ const sampleTags = [
   { name: 'Specific Event', isActive: true, color: '#AAF5E4' },
 ];
 
+const ownerEdSecret =
+  '1+xXnNdjsL2G6cu0PWP7r3/l1cS8AyXKykXjJzdWQHW83cMcFZ5lXPDy5hqVeMhN9zST3ACOTX1Qu/PH6pYBgA==';
+const contractAddress = '0x381c333ad2d39C31B4595A41b91634143019D6D7';
+const ownerAddress = '0x29b66d2910ac92530c0C5A3B6fA12c18aAb7f996';
+
 function App() {
   const [enableCollaboration, setEnableCollaboration] = useState(false);
   const [username, setUsername] = useState('username');
@@ -62,6 +67,9 @@ function App() {
         collaborationId: string;
         username: string;
         isOwner: boolean;
+        ownerEdSecret?: string;
+        contractAddress?: string;
+        ownerAddress?: string;
       }
     | undefined
   >(undefined);
@@ -71,6 +79,7 @@ function App() {
       if (paramCollaborationId && paramKey) {
         const name = prompt('Whats your username');
         if (!name) return;
+
         setCollabConf({
           roomKey: paramKey,
           collaborationId: paramCollaborationId,
@@ -150,11 +159,15 @@ function App() {
 
     const collaborationId = crypto.randomUUID();
     const privateKeyBase64 = fromUint8Array(privateKey, true);
+
     setCollabConf({
       roomKey: privateKeyBase64,
       collaborationId,
       username: name,
       isOwner: true,
+      ownerEdSecret,
+      contractAddress,
+      ownerAddress,
     });
 
     setCollaborationId(collaborationId);

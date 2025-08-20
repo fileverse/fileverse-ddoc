@@ -158,26 +158,21 @@ export const syncMachineServices = {
       if (encryptedUpdates.length > 0) {
         console.log('you have uncommitted chnages', encryptedUpdates.length);
 
-        const decryptedUpdates = await Promise.all(
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          encryptedUpdates.map(async (encryptedUpdate: any) => {
-            const data = context.cryptoUtils.decryptData(
-              toUint8Array(context.roomKey),
-              encryptedUpdate.data,
-            );
-            uncommittedChangesId.push(encryptedUpdate.id);
-            return data;
-          }),
-        );
-        const mergedUpdate = Y.mergeUpdates(decryptedUpdates);
-        updates.push(mergedUpdate);
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        encryptedUpdates.forEach((encryptedUpdate: any) => {
+          const data = context.cryptoUtils.decryptData(
+            toUint8Array(context.roomKey),
+            encryptedUpdate.data,
+          );
+          uncommittedChangesId.push(encryptedUpdate.id);
+          updates.push(data);
+        });
       }
 
       if (updates.length) {
         const mergedState = Y.mergeUpdates(updates);
         Y.applyUpdate(context.ydoc, mergedState, 'self');
         console.log('merged all >>>>>', updates.length);
-        // localStorage.setItem(context.roomId, "[]");
       }
       return {
         ids: uncommittedChangesId,
