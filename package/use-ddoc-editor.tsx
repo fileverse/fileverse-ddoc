@@ -80,7 +80,7 @@ export const useDdocEditor = ({
   const [ydoc] = useState(new Y.Doc());
 
   const {
-    machine,
+    // machine,
     connect: onConnect,
     // disconnect,
     // ydoc,
@@ -90,7 +90,7 @@ export const useDdocEditor = ({
   } = useSyncMachine({
     roomId: collabConf?.collaborationId,
     onError,
-    wsUrl: 'http://localhost:5001/',
+    wsUrl: 'https://dev-collaboration-server-ff60826701cd.herokuapp.com/',
     ydoc,
     cryptoUtils,
   });
