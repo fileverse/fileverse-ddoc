@@ -300,6 +300,7 @@ function App() {
             variant={'ghost'}
             icon="Share"
             size="md"
+            disabled={enableCollaboration}
             onClick={onToggleCollaboration}
           />
 
