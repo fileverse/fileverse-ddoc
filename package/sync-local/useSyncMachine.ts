@@ -14,13 +14,12 @@ interface IConnectConf {
   ownerEdSecret?: string;
   contractAddress?: string;
   ownerAddress?: string;
+  isEns?: boolean;
 }
 
 const contextSelector = (state: any) => state.context;
 
 export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
-  // const yAwarenessRef = useRef<Awareness>(new Awareness(ydoc!));
-
   const [state, send, actorRef] = useMachine(syncMachine, {
     context: {
       ...config,
@@ -51,9 +50,14 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
     });
   }, [send]);
 
-  const machine = useMemo(() => [state, send], [state, send]);
+  const terminateSession = useCallback(() => {
+    send({
+      type: 'TERMINATE_SESSION',
+      data: {},
+    });
+  }, [send]);
 
-  // console.log(context);
+  const machine = useMemo(() => [state, send], [state, send]);
 
   const isReady = useMemo(() => {
     return !!(state.context.isReady && state.context.awareness);
@@ -70,6 +74,7 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
 
   useEffect(() => {
     if (!isReady || !config.ydoc) return;
+
     const updateHandler = (update: any, origin: any) => {
       if (origin === 'self') return;
       send({
@@ -112,11 +117,11 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
     connect,
     disconnect,
     isConnected,
-    // ydoc,
     isReady,
     getYjsEncodedState,
     applyYjsEncodedState,
     error,
     context,
+    terminateSession,
   };
 };

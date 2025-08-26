@@ -9,6 +9,7 @@ import { toUint8Array } from 'js-base64';
 import * as Y from 'yjs';
 import { createAwarenessUpdateHandler } from '../utils/createAwarenessUpdateHandler';
 import { SocketClient } from '../socketClient';
+import { crypto as cryptoUtils } from '../crypto';
 export const awarenessUpdateHandler = (
   context: SyncMachineContext,
   event: SyncMachinEvent,
@@ -17,7 +18,7 @@ export const awarenessUpdateHandler = (
     const key = context.roomKey;
     const encryptedPosition = event.data.event.data.position as string;
     if (key) {
-      const decrypted = context.cryptoUtils.decryptData(
+      const decrypted = cryptoUtils.decryptData(
         toUint8Array(key),
         encryptedPosition,
       );
@@ -30,7 +31,6 @@ export const awarenessUpdateHandler = (
         decoding.readVarUint(decoder); // clientId
         decoding.readVarUint(decoder); // clock
       }
-
       awarenessProtocol.applyAwarenessUpdate(
         context.awareness,
         decryptedPosition,
@@ -61,10 +61,10 @@ export const websocketInitializer = (
   event: SyncMachinEvent,
 ) => {
   if (!event.data.username) {
-    throw new Error('room key is not provided');
+    throw new Error('sync-machine: username is not provided');
   }
   if (!event.data.roomKey) {
-    throw new Error('cannot initialise socket, room key is not provided');
+    throw new Error('sync-machine: room key is not provided');
   }
 
   return {
@@ -80,6 +80,7 @@ export const websocketInitializer = (
     roomKey: event.data.roomKey,
     roomId: event.data.roomId,
     isOwner: event.data.isOwner,
+    isEns: event.data.isEns,
   };
 };
 
@@ -102,7 +103,7 @@ export const yjsUpdateHandler = (
 
   if (!encryptedUpdate) return {};
 
-  const update = context.cryptoUtils.decryptData(
+  const update = cryptoUtils.decryptData(
     toUint8Array(context.roomKey),
     encryptedUpdate,
   );
@@ -360,4 +361,20 @@ export const handleDisconnectionDueToError = (
     };
   }
   return {};
+};
+
+export const terminateSessionHandler = (context: SyncMachineContext) => {
+  console.log('terminating session');
+  if (context.isOwner) {
+    context.socketClient?.terminateSession();
+  }
+  return {
+    socketClient: null,
+    roomMembers: [],
+    isConnected: false,
+    awareness: null,
+    _awarenessUpdateHandler: null,
+    uncommittedUpdatesIdList: [],
+    updateQueue: [],
+  };
 };

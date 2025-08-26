@@ -30,6 +30,7 @@ import {
   setInitialUpdateErrorMessageHandler,
   disconnectedStateHandler,
   handleDisconnectionDueToError,
+  terminateSessionHandler,
 } from '.';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -62,4 +63,5 @@ export const syncMachineActions: Record<any, any> = {
   setInitialUpdateErrorMessage: assign(setInitialUpdateErrorMessageHandler),
   handleDisconnectedState: assign(disconnectedStateHandler),
   handleDisconnectionDueToError: assign(handleDisconnectionDueToError),
+  terminateSession: assign(terminateSessionHandler),
 };

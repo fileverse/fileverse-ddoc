@@ -74,26 +74,26 @@ export const useDdocEditor = ({
   activeModel,
   maxTokens,
   isAIAgentEnabled,
-  cryptoUtils,
-  collabConf,
+
+  collabConfig,
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
 
   const {
-    // mach/ine,
     connect: onConnect,
-    // disconnect,
-    // ydoc,
     isReady,
     context,
-    // error,
+    terminateSession,
   } = useSyncMachine({
-    roomId: collabConf?.collaborationId,
+    roomId: collabConfig?.collaborationId,
     onError,
     wsUrl: 'https://dev-collaboration-server-ff60826701cd.herokuapp.com/',
     ydoc,
-    cryptoUtils,
   });
+
+  const isCollaborationEnabled = useMemo(() => {
+    return enableCollaboration && collabConfig;
+  }, [enableCollaboration, collabConfig]);
 
   // V2 - comment
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
@@ -144,7 +144,6 @@ export const useDdocEditor = ({
       },
       onCommentActivated: (commentId) => {
         setActiveCommentId(commentId);
-
         if (commentId) setTimeout(() => focusCommentWithActiveId(commentId));
       },
     }),
@@ -411,10 +410,9 @@ export const useDdocEditor = ({
 
   const collaborationCleanupRef = useRef<() => void>(() => {});
 
-  // console.log(machine[0].value, 'machine[0].context');
   useEffect(() => {
-    if (!isReady || !enableCollaboration || !context || !collabConf) return;
-    // const
+    if (!isReady || !enableCollaboration || !context || !collabConfig) return;
+
     const setupExtensions = async () => {
       setExtensions([
         ...extensions.filter((extension) => extension.name !== 'history'),
@@ -422,11 +420,11 @@ export const useDdocEditor = ({
           provider: context,
           user: {
             name:
-              collabConf?.username && collabConf?.username.length > 20
-                ? getTrimmedName(collabConf?.username, 7, 15)
-                : collabConf?.username,
+              collabConfig?.username && collabConfig?.username.length > 20
+                ? getTrimmedName(collabConfig?.username, 7, 15)
+                : collabConfig?.username,
             color: usercolors[Math.floor(Math.random() * usercolors.length)],
-            isEns: false,
+            isEns: context.isEns,
           },
           render: getCursor,
         }),
@@ -434,61 +432,20 @@ export const useDdocEditor = ({
     };
     setupExtensions();
     collaborationCleanupRef.current = () => {
-      // machine[0]?.destroy();
       ydoc.destroy();
     };
 
     return () => {
       collaborationCleanupRef.current();
     };
-  }, [
-    isReady,
-    enableCollaboration,
-    // collaborationId,
-    collabConf,
-    // context,
-  ]);
-
-  // const connect = (username: string | null | undefined, isEns = false) => {
-  //   if (!enableCollaboration || !collaborationId || !collaborationKey) {
-  //     throw new Error('docId or username is not provided');
-  //   }
-  //   console.log(isEns);
-  //   // const provider = new WebrtcProvider(collaborationId, ydoc, {
-  //   //   signaling: [
-  //   //     'wss://fileverse-signaling-server-0529292ff51c.herokuapp.com/',
-  //   //   ],
-  //   // });
-
-  //   setExtensions([
-  //     ...extensions.filter((extension) => extension.name !== 'history'),
-  //     CollaborationCursor.configure({
-  //       provider: machine[0],
-  //       user: {
-  //         name:
-  //           username && username.length > 20
-  //             ? getTrimmedName(username, 7, 15)
-  //             : username,
-  //         color: usercolors[Math.floor(Math.random() * usercolors.length)],
-  //         isEns: isEns,
-  //       },
-  //       render: getCursor,
-  //     }),
-  //   ]);
-
-  //   collaborationCleanupRef.current = () => {
-  //     // machine[0]?.destroy();
-  //     ydoc.destroy();
-  //   };
-
-  //   return collaborationCleanupRef.current;
-  // };
+  }, [isReady, enableCollaboration, collabConfig?.collaborationId]);
 
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    editor?.setEditable(!isPreviewMode);
-  }, [isPreviewMode, editor]);
+    const readyState = isCollaborationEnabled ? isReady : !isPreviewMode;
+    editor?.setEditable(readyState);
+  }, [isPreviewMode, editor, isCollaborationEnabled, isReady]);
 
   const yjsIndexeddbProviderRef = useRef<IndexeddbPersistence | null>(null);
 
@@ -686,55 +643,50 @@ export const useDdocEditor = ({
 
   const startCollaboration = useCallback(
     async (collaborationId: string, roomKey: string) => {
-      // let _username = username;
-      // let _isEns = false;
-
-      // if (walletAddress && ensResolutionUrl) {
-      //   const { name, isEns } = await getAddressName(
-      //     walletAddress,
-      //     ensResolutionUrl,
-      //   );
-
-      //   _username = name;
-      //   _isEns = isEns;
-      // }
-      if (!collabConf?.username)
+      if (!collabConfig?.username)
         throw new Error('Cannot start collaboration without a username');
-      console.log(collabConf, 'collabConf');
+      let _username = collabConfig?.username;
+      let _isEns = false;
+
+      if (walletAddress && ensResolutionUrl) {
+        const { name, isEns } = await getAddressName(
+          walletAddress,
+          ensResolutionUrl,
+        );
+
+        _username = name;
+        _isEns = isEns;
+      }
       onConnect({
-        username: collabConf?.username,
+        username: _username,
         roomKey,
         roomId: collaborationId,
-        isOwner: collabConf?.isOwner,
-        ownerEdSecret: collabConf?.ownerEdSecret,
-        contractAddress: collabConf?.contractAddress,
-        ownerAddress: collabConf?.ownerAddress,
+        isOwner: collabConfig?.isOwner,
+        ownerEdSecret: collabConfig?.ownerEdSecret,
+        contractAddress: collabConfig?.contractAddress,
+        ownerAddress: collabConfig?.ownerAddress,
+        isEns: _isEns,
       });
-      // connect(_username, _isEns);
     },
-    [collabConf?.username],
+    [collabConfig?.collaborationId],
   );
-  // console.log(machine[0].context);
-  // useEffect(() => {
-  //   if (enableCollaboration) {
-  //     startCollaboration();
-  //   } else {
-  //     collaborationCleanupRef.current();
-  //   }
-  // }, [enableCollaboration]);
 
   useEffect(() => {
     if (
       enableCollaboration &&
-      collabConf?.collaborationId &&
-      collabConf?.roomKey
+      collabConfig?.collaborationId &&
+      collabConfig?.roomKey
     ) {
-      startCollaboration(collabConf?.collaborationId, collabConf?.roomKey);
+      startCollaboration(collabConfig?.collaborationId, collabConfig?.roomKey);
     }
     return () => {
       collaborationCleanupRef.current();
     };
-  }, [enableCollaboration, collabConf?.collaborationId, collabConf?.roomKey]);
+  }, [
+    enableCollaboration,
+    collabConfig?.collaborationId,
+    collabConfig?.roomKey,
+  ]);
 
   useEffect(() => {
     onCollaboratorChange?.(editor?.storage?.collaborationCursor?.users);
@@ -923,5 +875,6 @@ export const useDdocEditor = ({
     setSlides,
     tocItems,
     setTocItems,
+    terminateSession,
   };
 };

@@ -120,11 +120,11 @@ export const SyncCursor = Extension.create<
             this.options?.provider?.context?.awareness?.states,
           );
 
-          //   this.options?.provider?.context?.awareness?.on('update', () => {
-          //     this.storage.users = awarenessStatesToArray(
-          //       this.options?.provider?.context?.awareness?.states,
-          //     );
-          //   });
+          this.options?.provider?.context?.awareness?.on('update', () => {
+            this.storage.users = awarenessStatesToArray(
+              this.options?.provider?.context?.awareness?.states,
+            );
+          });
 
           return this.options?.provider?.context?.awareness;
         })(),

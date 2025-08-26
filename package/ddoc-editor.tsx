@@ -119,8 +119,8 @@ const DdocEditor = forwardRef(
       isAIAgentEnabled,
       collaborationKey,
       collaborationKeyPair,
-      cryptoUtils,
-      collabConf,
+
+      collabConfig,
     }: DdocProps,
     ref,
   ) => {
@@ -163,6 +163,7 @@ const DdocEditor = forwardRef(
       setSlides,
       tocItems,
       setTocItems,
+      terminateSession,
     } = useDdocEditor({
       ipfsImageFetchFn,
       enableIndexeddbSync,
@@ -203,8 +204,8 @@ const DdocEditor = forwardRef(
       isAIAgentEnabled,
       collaborationKey,
       collaborationKeyPair,
-      cryptoUtils,
-      collabConf,
+
+      collabConfig,
     });
 
     useImperativeHandle(
@@ -279,8 +280,29 @@ const DdocEditor = forwardRef(
             return false;
           });
         },
+        updateCollaboratorName: (name: string) => {
+          if (!editor) throw new Error('cannot update collaborator name');
+          const existingUser = editor.storage.collaborationCursor.users.find(
+            (user: Record<string, unknown>) => {
+              return user?.clientId === ydoc.clientID;
+            },
+          ) as Record<string, unknown>;
+
+          const newUser = {
+            name,
+          } as Record<string, unknown>;
+
+          if (existingUser) {
+            // newUser.clientId = existingUser.clientId;
+            newUser.color = existingUser.color;
+            newUser.isEns = existingUser.isEns;
+          }
+
+          editor.commands.updateUser(newUser);
+        },
+        terminateSession,
       }),
-      [editor, ydoc],
+      [editor, ydoc, terminateSession],
     );
 
     const handleAddTag = (tag: TagType) => {

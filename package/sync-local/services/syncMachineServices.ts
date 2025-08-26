@@ -9,6 +9,7 @@ import { fromUint8Array, toUint8Array } from 'js-base64';
 import { objectToFile } from '../utils/objectToFile';
 import { uploadFileToIPFS } from '../utils/uploadFileToIPFS';
 import { fetchIpfsJsonContent } from '../utils/fetchIpfsJsonContent';
+import { crypto as cryptoUtils } from '../crypto';
 
 export const syncMachineServices = {
   connectSocket: (context: SyncMachineContext) => {
@@ -55,7 +56,7 @@ export const syncMachineServices = {
       if (context.updateQueue.length > 0 && context.roomKey) {
         const queueOffset = context.updateQueue.length;
         const nextUpdate = Y.mergeUpdates(context.updateQueue);
-        const { socketClient, cryptoUtils } = context;
+        const { socketClient } = context;
         const updateToSend = cryptoUtils.encryptData(
           toUint8Array(context.roomKey),
           nextUpdate,
@@ -80,7 +81,7 @@ export const syncMachineServices = {
         const updates = context.uncommittedUpdatesIdList;
 
         const commitContent = {
-          data: context.cryptoUtils.encryptData(
+          data: cryptoUtils.encryptData(
             toUint8Array(context.roomKey),
             Y.encodeStateAsUpdate(context.ydoc),
           ),
@@ -107,7 +108,7 @@ export const syncMachineServices = {
       let decryptedCommit;
       if (history?.data) {
         const content = history.data;
-        decryptedCommit = context.cryptoUtils.decryptData(
+        decryptedCommit = cryptoUtils.decryptData(
           toUint8Array(context.roomKey),
           content,
         );
@@ -117,7 +118,7 @@ export const syncMachineServices = {
       if (history?.cid) {
         const content = await fetchIpfsJsonContent(history?.cid);
         if (content?.data) {
-          const decryptedContent = context.cryptoUtils.decryptData(
+          const decryptedContent = cryptoUtils.decryptData(
             toUint8Array(context.roomKey),
             content.data,
           );
@@ -130,10 +131,8 @@ export const syncMachineServices = {
       const encryptedUpdates = uncommittedChanges?.data.history;
       const uncommittedChangesId: string[] = [];
       let unbroadcastedUpdate = null;
-      // const lsContents =
-      //  localStorage.getItem(context.roomId);
+
       const localUpdates: string[] = [];
-      // lsContents ? JSON.parse(lsContents) : [];
       const machineInitialUpdate = context.initialUpdate;
       console.log('machine initial update', machineInitialUpdate);
       if (localUpdates.length > 0) {
@@ -160,7 +159,7 @@ export const syncMachineServices = {
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         encryptedUpdates.forEach((encryptedUpdate: any) => {
-          const data = context.cryptoUtils.decryptData(
+          const data = cryptoUtils.decryptData(
             toUint8Array(context.roomKey),
             encryptedUpdate.data,
           );
@@ -188,7 +187,7 @@ export const syncMachineServices = {
       if (event.data.unbroadcastedUpdate) {
         const update = event.data.unbroadcastedUpdate;
 
-        const updateToSend = context.cryptoUtils.encryptData(
+        const updateToSend = cryptoUtils.encryptData(
           toUint8Array(context.roomKey),
           toUint8Array(update),
         );
@@ -210,7 +209,7 @@ export const syncMachineServices = {
       console.log('trying to commit', { isNewDoc: context.isNewDoc });
       if (context.isNewDoc) return;
       console.log('committing ', context.uncommittedUpdatesIdList.length);
-      const localContent = context.cryptoUtils.encryptData(
+      const localContent = cryptoUtils.encryptData(
         toUint8Array(context.roomKey),
         Y.encodeStateAsUpdate(context.ydoc),
       );
@@ -236,7 +235,7 @@ export const syncMachineServices = {
       // console.log('should now broadcast user local comments');
       if (event.data.unbroadcastedUpdate) {
         console.log('broadcasting local updates');
-        const encryptedUpdate = context.cryptoUtils.encryptData(
+        const encryptedUpdate = cryptoUtils.encryptData(
           toUint8Array(context.roomKey),
           toUint8Array(event.data.unbroadcastedUpdate),
         );

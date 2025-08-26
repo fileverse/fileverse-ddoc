@@ -54,6 +54,9 @@ const syncMachine = createMachine(
       INIT_AWARENESS: {
         actions: 'initializeAwareness',
       },
+      TERMINATE_SESSION: {
+        actions: 'terminateSession',
+      },
     },
     states: {
       processing: {

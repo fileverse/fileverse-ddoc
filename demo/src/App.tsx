@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import DdocEditor from '../../package/ddoc-editor';
 import { JSONContent } from '@tiptap/react';
 import {
@@ -20,6 +20,7 @@ import {
 } from '@tiptap-pro/extension-table-of-contents';
 import { fromUint8Array } from 'js-base64';
 import { crypto as cryptoUtils } from './crypto';
+import { CollabConfig, collabStore } from './storage/collab-store';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -61,18 +62,12 @@ function App() {
   const searchParams = new URLSearchParams(window.location.search);
   const paramCollaborationId = searchParams.get('collaborationId');
   const paramKey = searchParams.get('key');
-  const [collabConf, setCollabConf] = useState<
-    | {
-        roomKey: string;
-        collaborationId: string;
-        username: string;
-        isOwner: boolean;
-        ownerEdSecret?: string;
-        contractAddress?: string;
-        ownerAddress?: string;
-      }
-    | undefined
-  >(undefined);
+  const [collabConfig, setCollabConf] = useState<CollabConfig | undefined>(
+    undefined,
+  );
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const editorRef = useRef<any>(null);
 
   useEffect(() => {
     const setupCollaboration = async () => {
@@ -152,6 +147,16 @@ function App() {
 
   const [isConnected, setIsConnected] = useState(false);
 
+  useEffect(() => {
+    const collabConfig = collabStore.getCollabConf();
+    if (collabConfig) {
+      setCollabConf(collabConfig);
+      setCollaborationId(collabConfig.collaborationId);
+      setUsername(collabConfig.username);
+      setEnableCollaboration(true);
+    }
+  }, []);
+
   const onToggleCollaboration = async () => {
     const name = prompt('Whats your username');
     if (!name) return;
@@ -160,7 +165,7 @@ function App() {
     const collaborationId = crypto.randomUUID();
     const privateKeyBase64 = fromUint8Array(privateKey, true);
 
-    setCollabConf({
+    const collabConfig = {
       roomKey: privateKeyBase64,
       collaborationId,
       username: name,
@@ -168,7 +173,10 @@ function App() {
       ownerEdSecret,
       contractAddress,
       ownerAddress,
-    });
+    };
+    setCollabConf(collabConfig);
+
+    collabStore.setCollabConf(collabConfig);
 
     setCollaborationId(collaborationId);
     setUsername(name);
@@ -309,13 +317,53 @@ function App() {
             size="md"
             onClick={() => setCommentDrawerOpen((prev) => !prev)}
           />
-          <IconButton
-            variant={'ghost'}
-            icon="Share"
-            size="md"
-            disabled={enableCollaboration}
-            onClick={onToggleCollaboration}
-          />
+          {!enableCollaboration ? (
+            <IconButton
+              variant={'ghost'}
+              icon="Users"
+              size="md"
+              onClick={onToggleCollaboration}
+            />
+          ) : (
+            <DynamicDropdown
+              key="navbar-more-actions"
+              align="center"
+              sideOffset={10}
+              anchorTrigger={
+                <IconButton icon={'Users'} variant="ghost" size="md" />
+              }
+              content={
+                <div className="flex flex-col gap-1 p-2 w-fit shadow-elevation-3 ">
+                  {collabConfig?.isOwner ? (
+                    <Button
+                      variant={'ghost'}
+                      onClick={() => {
+                        editorRef.current?.terminateSession();
+                        setEnableCollaboration(false);
+                        setCollabConf(undefined);
+                        setCollaborationId('');
+                        setUsername('');
+                        collabStore.clearCollabConf();
+                      }}
+                    >
+                      Stop Collaboration
+                    </Button>
+                  ) : null}
+                  <Button
+                    onClick={() => {
+                      const base_name = 'sussy_baka';
+                      const random_number = Math.floor(Math.random() * 1000000);
+                      const new_name = `${base_name}_${random_number}`;
+                      editorRef.current?.updateCollaboratorName(new_name);
+                    }}
+                    variant={'ghost'}
+                  >
+                    Update Collaborator Name
+                  </Button>
+                </div>
+              }
+            />
+          )}
 
           <Button
             onClick={publishDoc}
@@ -346,6 +394,7 @@ function App() {
   return (
     <div>
       <DdocEditor
+        ref={editorRef}
         enableCollaboration={enableCollaboration}
         collaborationId={collaborationId}
         username={username}
@@ -401,8 +450,10 @@ function App() {
         onCopyHeadingLink={(link: string) => {
           navigator.clipboard.writeText(link);
         }}
-        collabConf={collabConf}
-        cryptoUtils={cryptoUtils}
+        collabConfig={collabConfig}
+        onCollaboratorChange={(collaborators) => {
+          console.log('onCollaboratorChange', collaborators);
+        }}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

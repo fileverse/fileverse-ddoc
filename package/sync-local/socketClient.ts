@@ -190,6 +190,17 @@ export class SocketClient {
     this._webSocketStatus = SocketStatusEnum.DISCONNECTED;
   };
 
+  public terminateSession = async () => {
+    const ownerToken = await this.getOwnerToken();
+    const args = {
+      ownerToken,
+      ownerAddress: this.ownerAddress,
+      contractAddress: this.contractAddress,
+    };
+    await this._buildRequest('/documents/terminate', args);
+    this.disconnect();
+  };
+
   private async _buildRequest(cmd: string, args: any) {
     if (!this.roomId) {
       throw new Error(`Cannot perform action without room id: ${this.roomId}`);

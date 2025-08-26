@@ -129,7 +129,7 @@ export interface DdocProps extends CommentAccountProps {
     publicKey: string;
     privateKey: string;
   };
-  collabConf?: {
+  collabConfig?: {
     roomKey: string;
     collaborationId: string;
     username: string;
@@ -137,12 +137,6 @@ export interface DdocProps extends CommentAccountProps {
     ownerEdSecret?: string;
     contractAddress?: string;
     ownerAddress?: string;
-  };
-  cryptoUtils?: {
-    generateKeyPair: () => { publicKey: Uint8Array; privateKey: Uint8Array };
-    encryptData: (key: Uint8Array, message: Uint8Array) => string;
-    decryptData: (key: Uint8Array, message: string) => Uint8Array;
-    generateRandomBytes: () => Uint8Array;
   };
 }
 
