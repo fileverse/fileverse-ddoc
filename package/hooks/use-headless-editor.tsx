@@ -8,6 +8,8 @@ import * as Y from 'yjs';
 import { isJSONString } from '../utils/isJsonString';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { sanitizeContent } from '../utils/sanitize-content';
+import { handleMarkdownContent } from '../extensions/mardown-paste-handler';
+import { IpfsImageUploadResponse } from '../types';
 
 export const useHeadlessEditor = () => {
   const getEditor = () => {
@@ -107,6 +109,32 @@ export const useHeadlessEditor = () => {
       throw new Error('Editor is not available');
     }
   };
+  async function getYjsContentFromMarkdown(
+    file: File,
+    ipfsImageUploadFn: (file: File) => Promise<IpfsImageUploadResponse>,
+  ): Promise<string | null> {
+    if (file.type === 'text/markdown' || file.name.endsWith('.md')) {
+      const content = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target?.result as string);
+        reader.onerror = (err) => reject(err);
+        reader.readAsText(file);
+      });
+
+      const { editor, ydoc } = getEditor();
+
+      await handleMarkdownContent(editor.view, content, ipfsImageUploadFn);
+
+      const yjsContent = Y.encodeStateAsUpdate(ydoc);
+      const result = fromUint8Array(yjsContent);
+
+      editor.destroy();
+      !ydoc.isDestroyed && ydoc.destroy();
+      return result;
+    }
+
+    return null;
+  }
 
   return {
     setContent,
@@ -114,5 +142,7 @@ export const useHeadlessEditor = () => {
     getYjsConvertor,
     downloadContentAsMd,
     mergeYjsUpdates,
+    handleMarkdownContent,
+    getYjsContentFromMarkdown,
   };
 };

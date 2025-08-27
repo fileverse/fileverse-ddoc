@@ -591,7 +591,7 @@ async function uploadBase64ImageContent(
   };
 }
 
-async function handleMarkdownContent(
+export async function handleMarkdownContent(
   view: any,
   content: string,
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
