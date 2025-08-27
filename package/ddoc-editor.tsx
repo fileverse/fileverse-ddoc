@@ -442,7 +442,7 @@ const DdocEditor = forwardRef(
               <div
                 id="toolbar"
                 className={cn(
-                  'z-50 hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 color-bg-default border-b color-border-default transition-transform duration-300 top-[3.5rem]',
+                  'z-[45] hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 color-bg-default border-b color-border-default transition-transform duration-300 top-[3.5rem]',
                   {
                     'translate-y-0': isNavbarVisible,
                     'translate-y-[-108%]': !isNavbarVisible,
@@ -808,7 +808,7 @@ const DdocEditor = forwardRef(
             <nav
               id="Navbar"
               className={cn(
-                'h-14 color-bg-default py-2 px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-50 transition-transform duration-300',
+                'h-14 color-bg-default py-2 px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-[45] transition-transform duration-300',
                 {
                   'translate-y-0': isNavbarVisible,
                   'translate-y-[-100%]': !isNavbarVisible || isPresentationMode,
