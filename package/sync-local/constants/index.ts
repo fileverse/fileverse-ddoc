@@ -28,7 +28,7 @@ export const initialContext: SyncMachineContext = {
       publicKey: new Uint8Array(),
       privateKey: new Uint8Array(),
     }),
-    encryptData: () => '',
+    encryptData: () => new Uint8Array(),
     decryptData: () => new Uint8Array(),
     generateRandomBytes: () => new Uint8Array(),
   },

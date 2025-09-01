@@ -70,6 +70,15 @@ export interface SyncMachineContext {
   errorCount: number;
   errorMaxRetryCount: number;
   errorMessage: string;
+  cryptoUtils: {
+    generateKeyPair: () => {
+      publicKey: Uint8Array;
+      privateKey: Uint8Array;
+    };
+    encryptData: (data: Uint8Array, key: Uint8Array) => Uint8Array;
+    decryptData: (data: Uint8Array, key: Uint8Array) => Uint8Array;
+    generateRandomBytes: (length: number) => Uint8Array;
+  };
 }
 export interface ErrorResponseMessage {
   status: boolean;

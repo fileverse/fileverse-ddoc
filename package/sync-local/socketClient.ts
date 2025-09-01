@@ -42,9 +42,7 @@ export class SocketClient {
   private _sequenceCallbackMap: SequenceToRequestMap = {};
   _webSocketStatus: SocketStatusEnum = SocketStatusEnum.CLOSED;
   private _webSocket: ReconnectingWebSocket | null = null;
-  private isWebSocketReady = false;
   private _websocketServiceDid = '';
-  private isAuthenticated = false;
   private roomId = '';
   private clientUsername = '';
   roomMembers: RoomMember[] = [];
@@ -308,7 +306,6 @@ export class SocketClient {
       this.disconnect();
       return;
     }
-    this.isAuthenticated = true;
     this._onConnect?.();
   };
 
@@ -329,8 +326,8 @@ export class SocketClient {
         if (message.event_type === 'ROOM_MEMBERSHIP_CHANGE') {
           await this._fetchRoomMembers();
         }
+        break;
       }
-      // eslint-disable-next-line no-fallthrough
       default:
         break;
     }
@@ -380,20 +377,17 @@ export class SocketClient {
       );
       this._webSocket.addEventListener('message', this._processMessage);
       this._webSocket.onopen = () => {
-        this.isWebSocketReady = false;
         this._webSocketStatus = SocketStatusEnum.CONNECTED;
         this._clearSequenceCallbackMap();
         resolve();
       };
       this._webSocket.onclose = (e: CloseEvent) => {
         this._webSocketStatus = SocketStatusEnum.CLOSED;
-        this.isWebSocketReady = false;
         this._onDisconnection?.(e);
       };
       this._webSocket.onerror = (e) => {
         console.error('SocketAPI: socket error', e);
         this._webSocketStatus = SocketStatusEnum.CLOSED;
-        this.isWebSocketReady = false;
         this._onError?.('Failed to connect to Socket');
       };
     });
