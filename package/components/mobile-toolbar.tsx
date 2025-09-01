@@ -262,9 +262,16 @@ const MobileToolbar = ({
               placeholder="Paste URL"
               className="w-full text-base"
               defaultValue={getSelectedLink().url}
+              autoFocus
               onChange={(e) => {
                 e.preventDefault();
                 setUrl(e.target.value);
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault();
+                  saveLink();
+                }
               }}
               isValid={isUrlValid}
               message={isUrlValid ? '' : 'Invalid URL'}

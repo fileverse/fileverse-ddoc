@@ -3,22 +3,30 @@ import { NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 import cn from 'classnames';
 import { LucideIcon, Tooltip } from '@fileverse/ui';
 import { useEditingContext } from '../../hooks/use-editing-context';
+import { useEditorContext } from '../../context/editor-context';
 
 export const PageBreakNodeView: React.FC<NodeViewProps> = ({
   editor,
   deleteNode,
 }) => {
   const { isPreviewMode } = useEditingContext();
+  const { documentStyling } = useEditorContext();
   const handleDeleteNode = () => {
     editor.commands.unsetPageBreak();
     deleteNode();
   };
 
+  // Apply document background styling to the page break gap
+  const pageBreakStyle = {
+    ...(documentStyling?.background && {
+      background: documentStyling.background,
+    }),
+  };
+
   return (
     <NodeViewWrapper
-      className={cn(
-        'flex relative opacity-0 hover:opacity-100 transition-opacity duration-200 w-full h-full justify-center items-center',
-      )}
+      className={cn('flex relative w-full h-full justify-center items-center')}
+      style={pageBreakStyle}
     >
       <br
         data-type="page-break"
@@ -26,7 +34,7 @@ export const PageBreakNodeView: React.FC<NodeViewProps> = ({
         style={{ pageBreakAfter: 'always' }}
       />
       {!isPreviewMode && (
-        <>
+        <div className="opacity-0 hover:opacity-100 transition-opacity duration-200">
           <div className="absolute top-[-15px] left-0 right-0 h-4">
             <div
               className="absolute inset-0 border-b-1 border-transparent"
@@ -53,7 +61,7 @@ export const PageBreakNodeView: React.FC<NodeViewProps> = ({
               }}
             ></div>
           </div>
-        </>
+        </div>
       )}
     </NodeViewWrapper>
   );

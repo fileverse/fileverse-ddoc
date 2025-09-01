@@ -21,6 +21,8 @@ import {
 import { fromUint8Array } from 'js-base64';
 import { crypto as cryptoUtils } from './crypto';
 import { CollabConfig, collabStore } from './storage/collab-store';
+import { DocumentStylingPanel } from './DocumentStylingPanel';
+import { DocumentStyling } from '../../package/types';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -48,6 +50,12 @@ function App() {
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showTOC, setShowTOC] = useState<boolean>(false);
   const [collaborationId, setCollaborationId] = useState<string>('');
+
+  // Document styling state - starts undefined to allow dark mode to work
+  const [documentStyling, setDocumentStyling] = useState<
+    DocumentStyling | undefined
+  >(undefined);
+  const [showStylingControls, setShowStylingControls] = useState(false);
 
   const [inlineCommentData, setInlineCommentData] = useState({
     inlineCommentText: '',
@@ -283,6 +291,14 @@ function App() {
                     <LucideIcon name="Share2" size="sm" />
                     Share
                   </Button>
+                  <Button
+                    variant={'ghost'}
+                    onClick={() => setShowStylingControls(!showStylingControls)}
+                    className="flex justify-start gap-2"
+                  >
+                    <LucideIcon name="Palette" size="sm" />
+                    Styling
+                  </Button>
                 </div>
               }
             />
@@ -308,6 +324,12 @@ function App() {
                 icon="Share2"
                 className="flex xl:hidden"
                 size="md"
+              />
+              <IconButton
+                variant={'ghost'}
+                icon="Palette"
+                size="md"
+                onClick={() => setShowStylingControls(!showStylingControls)}
               />
             </>
           )}
@@ -393,6 +415,12 @@ function App() {
 
   return (
     <div>
+      <DocumentStylingPanel
+        isOpen={showStylingControls}
+        onClose={() => setShowStylingControls(false)}
+        documentStyling={documentStyling}
+        onStylingChange={setDocumentStyling}
+      />
       <DdocEditor
         ref={editorRef}
         enableCollaboration={enableCollaboration}
@@ -454,6 +482,7 @@ function App() {
         onCollaboratorChange={(collaborators) => {
           console.log('onCollaboratorChange', collaborators);
         }}
+        documentStyling={documentStyling}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}
