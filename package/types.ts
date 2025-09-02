@@ -15,6 +15,7 @@ export const DdocEditorProps: EditorProps = {
 };
 
 export interface IDocCollabUsers {
+  clientId: number;
   name: string;
   isEns: string;
   color: string;
@@ -55,21 +56,21 @@ export interface DocumentStyling {
    * @example "#f8f9fa" | "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
    */
   background?: string;
-  
+
   /**
    * Editor content area background
    * @description Controls the background color of the actual editor content where text is written. Should be solid colors for readability.
    * @example "#ffffff" | "#f5f5f5"
    */
   canvasBackground?: string;
-  
+
   /**
    * Text color
    * @description Controls the color of the text content in the editor.
    * @example "#000000" | "#1a1a1a"
    */
   textColor?: string;
-  
+
   /**
    * Font family
    * @description Controls the font family used for the editor content.
@@ -158,6 +159,20 @@ export interface DdocProps extends CommentAccountProps {
   activeModel?: CustomModel;
   maxTokens?: number;
   isAIAgentEnabled?: boolean;
+  collaborationKey?: CryptoKey | null;
+  collaborationKeyPair?: {
+    publicKey: string;
+    privateKey: string;
+  };
+  collabConfig?: {
+    roomKey: string;
+    collaborationId: string;
+    username: string;
+    isOwner: boolean;
+    ownerEdSecret?: string;
+    contractAddress?: string;
+    ownerAddress?: string;
+  };
   /**
    * Document styling configuration
    * @description Customize the appearance of the document editor

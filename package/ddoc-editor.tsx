@@ -117,6 +117,10 @@ const DdocEditor = forwardRef(
       activeModel,
       maxTokens,
       isAIAgentEnabled,
+      collaborationKey,
+      collaborationKeyPair,
+
+      collabConfig,
       // Document styling object
       documentStyling,
     }: DdocProps,
@@ -203,6 +207,7 @@ const DdocEditor = forwardRef(
       setSlides,
       tocItems,
       setTocItems,
+      terminateSession,
     } = useDdocEditor({
       ipfsImageFetchFn,
       enableIndexeddbSync,
@@ -241,6 +246,10 @@ const DdocEditor = forwardRef(
       activeModel,
       maxTokens,
       isAIAgentEnabled,
+      collaborationKey,
+      collaborationKeyPair,
+
+      collabConfig,
     });
 
     useImperativeHandle(
@@ -253,7 +262,7 @@ const DdocEditor = forwardRef(
           const contents = Y.mergeUpdates(
             _contents.map((content) => toUint8Array(content)),
           );
-          Y.applyUpdate(ydoc, contents, 'self');
+          Y.applyUpdate(ydoc as unknown as Y.Doc, contents, 'self');
 
           return fromUint8Array(contents);
         },
@@ -315,8 +324,29 @@ const DdocEditor = forwardRef(
             return false;
           });
         },
+        updateCollaboratorName: (name: string) => {
+          if (!editor) throw new Error('cannot update collaborator name');
+          const existingUser = editor.storage.collaborationCursor.users.find(
+            (user: Record<string, unknown>) => {
+              return user?.clientId === ydoc.clientID;
+            },
+          ) as Record<string, unknown>;
+
+          const newUser = {
+            name,
+          } as Record<string, unknown>;
+
+          if (existingUser) {
+            // newUser.clientId = existingUser.clientId;
+            newUser.color = existingUser.color;
+            newUser.isEns = existingUser.isEns;
+          }
+
+          editor.commands.updateUser(newUser);
+        },
+        terminateSession,
       }),
-      [editor, ydoc],
+      [editor, ydoc, terminateSession],
     );
 
     const handleAddTag = (tag: TagType) => {
