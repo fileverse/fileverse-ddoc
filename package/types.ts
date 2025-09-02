@@ -15,6 +15,7 @@ export const DdocEditorProps: EditorProps = {
 };
 
 export interface IDocCollabUsers {
+  clientId: number;
   name: string;
   isEns: string;
   color: string;
