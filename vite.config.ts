@@ -2,7 +2,7 @@ import path from 'path';
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import dts from 'vite-plugin-dts';
-
+console.log('__dirname', __dirname);
 export default defineConfig({
   mode: process.env.NODE_ENV,
   build: {

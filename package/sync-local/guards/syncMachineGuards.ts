@@ -9,7 +9,7 @@ export const syncMachineGuards = {
     context.errorCount <= context.errorMaxRetryCount,
   shouldRetryConnection: (context: SyncMachineContext) => {
     return !!(
-      context.username &&
+      context.roomId &&
       context.socketClient &&
       context.errorCount <= context.errorMaxRetryCount
     );

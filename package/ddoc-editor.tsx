@@ -325,7 +325,10 @@ const DdocEditor = forwardRef(
           });
         },
         updateCollaboratorName: (name: string) => {
-          if (!editor) throw new Error('cannot update collaborator name');
+          if (!editor) {
+            console.debug('collab: cannot find editor');
+            return;
+          }
           const existingUser = editor.storage.collaborationCursor.users.find(
             (user: Record<string, unknown>) => {
               return user?.clientId === ydoc.clientID;
@@ -346,7 +349,8 @@ const DdocEditor = forwardRef(
         },
         terminateSession,
       }),
-      [editor, ydoc, terminateSession],
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [editor, ydoc],
     );
 
     const handleAddTag = (tag: TagType) => {

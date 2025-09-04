@@ -57,11 +57,11 @@ export const updateConnectionStateHandler = (context: SyncMachineContext) => {
 };
 
 export const websocketInitializer = (
-  context: SyncMachineContext,
+  _context: SyncMachineContext,
   event: SyncMachinEvent,
 ) => {
-  if (!event.data.username) {
-    throw new Error('sync-machine: username is not provided');
+  if (!event.data.wsUrl) {
+    throw new Error('sync-machine: wss url is not provided');
   }
   if (!event.data.roomKey) {
     throw new Error('sync-machine: room key is not provided');
@@ -69,18 +69,19 @@ export const websocketInitializer = (
 
   return {
     socketClient: new SocketClient({
-      wsUrl: context.wsUrl,
+      wsUrl: event.data.wsUrl,
       roomKey: event.data.roomKey,
       ownerEdSecret: event.data.ownerEdSecret,
       contractAddress: event.data.contractAddress,
       ownerAddress: event.data.ownerAddress,
     }),
-    username: event.data.username,
+
     initialUpdate: event.data.initialUpdate,
     roomKey: event.data.roomKey,
     roomId: event.data.roomId,
     isOwner: event.data.isOwner,
     isEns: event.data.isEns,
+    wsUrl: event.data.wsUrl,
   };
 };
 
@@ -370,11 +371,22 @@ export const terminateSessionHandler = (context: SyncMachineContext) => {
   }
   return {
     socketClient: null,
+    roomId: '',
+
     roomMembers: [],
     isConnected: false,
     awareness: null,
     _awarenessUpdateHandler: null,
+    roomKey: '',
+    wsUrl: '',
     uncommittedUpdatesIdList: [],
     updateQueue: [],
+    isOwner: false,
+    isReady: false,
+    isNewDoc: false,
+    contentTobeAppliedQueue: [],
+    initialUpdate: null,
+    errorCount: 0,
+    errorMessage: '',
   };
 };

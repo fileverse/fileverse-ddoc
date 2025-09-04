@@ -44,7 +44,7 @@ export class SocketClient {
   private _webSocket: ReconnectingWebSocket | null = null;
   private _websocketServiceDid = '';
   private roomId = '';
-  private clientUsername = '';
+
   roomMembers: RoomMember[] = [];
   private collaborationKeyPair: ucans.EdKeypair | null = null;
   private ownerKeyPair?: ucans.EdKeypair;
@@ -278,13 +278,10 @@ export class SocketClient {
         'Cannot establish handshake. WebSocket not connected or roomId not defined',
       );
     }
-    if (!this.clientUsername) {
-      throw new Error('User name is required to establish handshake');
-    }
+
     const token = await this.buildToken();
     const seqId = uuidv1();
     const args: IAuthArgs = {
-      username: this.clientUsername,
       collaborationToken: token,
       collaborationDid: this.collaborationKeyPair?.did(),
       documentId: this.roomId,
@@ -399,7 +396,7 @@ export class SocketClient {
     this._machineEventHandler = config.onWsEvent;
     this._onError = config.onError;
     this.roomId = config.roomId;
-    this.clientUsername = config.username;
+
     await this.connectSocket();
   }
 }

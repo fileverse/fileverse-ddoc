@@ -85,15 +85,13 @@ export const useDdocEditor = ({
     context,
     terminateSession,
   } = useSyncMachine({
-    roomId: collabConfig?.collaborationId,
     onError,
-    wsUrl: 'https://dev-collaboration-server-ff60826701cd.herokuapp.com/',
     ydoc,
   });
 
   const isCollaborationEnabled = useMemo(() => {
-    return enableCollaboration && collabConfig;
-  }, [enableCollaboration, collabConfig]);
+    return enableCollaboration;
+  }, [enableCollaboration]);
 
   // V2 - comment
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
@@ -430,9 +428,12 @@ export const useDdocEditor = ({
         }),
       ]);
     };
+
     setupExtensions();
+
     collaborationCleanupRef.current = () => {
       ydoc.destroy();
+      setExtensions([...extensions]);
     };
 
     return () => {
@@ -643,8 +644,8 @@ export const useDdocEditor = ({
 
   const startCollaboration = useCallback(
     async (collaborationId: string, roomKey: string) => {
-      if (!collabConfig?.username)
-        throw new Error('Cannot start collaboration without a username');
+      if (!collabConfig?.wsUrl)
+        throw new Error('Cannot start collaboration without a wss url');
       let _username = collabConfig?.username;
       let _isEns = false;
 
@@ -666,6 +667,7 @@ export const useDdocEditor = ({
         contractAddress: collabConfig?.contractAddress,
         ownerAddress: collabConfig?.ownerAddress,
         isEns: _isEns,
+        wsUrl: collabConfig.wsUrl,
       });
     },
     [collabConfig?.collaborationId],

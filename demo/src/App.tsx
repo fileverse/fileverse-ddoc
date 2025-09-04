@@ -88,7 +88,9 @@ function App() {
           collaborationId: paramCollaborationId,
           username: name,
           isOwner: false,
+          wsUrl: 'http://localhost:5001',
         });
+
         setEnableCollaboration(true);
       }
     };
@@ -181,6 +183,7 @@ function App() {
       ownerEdSecret,
       contractAddress,
       ownerAddress,
+      wsUrl: 'http://localhost:5001',
     };
     setCollabConf(collabConfig);
 

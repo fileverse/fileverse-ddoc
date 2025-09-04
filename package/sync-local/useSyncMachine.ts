@@ -7,7 +7,7 @@ import { useMachine, useSelector } from '@xstate/react';
 import { SyncMachineContext } from '.';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 interface IConnectConf {
-  username: string;
+  username?: string;
   roomKey: string;
   roomId: string;
   isOwner: boolean;
@@ -15,6 +15,7 @@ interface IConnectConf {
   contractAddress?: string;
   ownerAddress?: string;
   isEns?: boolean;
+  wsUrl: string;
 }
 
 const contextSelector = (state: any) => state.context;
@@ -40,7 +41,8 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
         },
       });
     },
-    [send, state, config.ydoc],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [send, config.ydoc !== undefined],
   );
 
   const disconnect = useCallback(() => {

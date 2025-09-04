@@ -137,7 +137,6 @@ export interface ISocketInitConfig {
   onError: (err: string) => void;
   onWsEvent: EventHandler;
   roomId: string;
-  username: string;
 }
 
 export enum SocketStatusEnum {
@@ -170,7 +169,6 @@ export interface IpfsUploadResponse {
 }
 
 export interface IAuthArgs {
-  username: string;
   collaborationToken: string;
   documentId: string;
   ownerToken?: string;

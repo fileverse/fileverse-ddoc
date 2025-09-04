@@ -172,6 +172,7 @@ export interface DdocProps extends CommentAccountProps {
     ownerEdSecret?: string;
     contractAddress?: string;
     ownerAddress?: string;
+    wsUrl: string;
   };
   /**
    * Document styling configuration

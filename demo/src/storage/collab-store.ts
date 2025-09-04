@@ -6,11 +6,14 @@ export interface CollabConfig {
   ownerEdSecret?: string;
   contractAddress?: string;
   ownerAddress?: string;
+  wsUrl: string;
 }
 export const collabStore = {
   getCollabConf: () => {
     const collabConfig = localStorage.getItem('collabConfig');
-    return collabConfig ? JSON.parse(collabConfig) : null;
+    const config = collabConfig ? JSON.parse(collabConfig) : null;
+
+    return config;
   },
   setCollabConf: (collabConfig: CollabConfig) => {
     localStorage.setItem('collabConfig', JSON.stringify(collabConfig));

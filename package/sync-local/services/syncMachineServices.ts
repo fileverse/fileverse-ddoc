@@ -14,7 +14,7 @@ import { crypto as cryptoUtils } from '../crypto';
 export const syncMachineServices = {
   connectSocket: (context: SyncMachineContext) => {
     return async (send: Sender<SyncMachinEvent>) => {
-      const { socketClient, roomId, username, onError } = context;
+      const { socketClient, roomId, onError } = context;
 
       if (!socketClient) {
         throw new Error('WebSocket has not been initialized');
@@ -22,7 +22,6 @@ export const syncMachineServices = {
 
       await socketClient.init({
         roomId,
-        username,
         onConnect: () => send({ type: 'SYNC_LATEST_COMMIT', data: null }),
         onDisconnect: () => send({ type: 'DISCONNECTED', data: null }),
         onWsEvent: (message) => {
