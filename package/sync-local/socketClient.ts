@@ -26,6 +26,7 @@ import {
 import { WEBSOCKET_CONFIG } from './constants/config';
 import { generateKeyPairFromSeed } from '@stablelib/ed25519';
 import { fromUint8Array, toUint8Array } from 'js-base64';
+import { crypto } from './crypto';
 
 interface ISocketClientConfig {
   wsUrl: UrlProvider;
@@ -33,6 +34,12 @@ interface ISocketClientConfig {
   ownerEdSecret?: string;
   contractAddress?: string;
   ownerAddress?: string;
+  onCollaborationConnectCallback: (response: any) => void;
+  extraInfo?: {
+    documentTitle: string;
+    portalAddress: string;
+    commentKey: string;
+  };
 }
 export class SocketClient {
   private _websocketUrl: UrlProvider;
@@ -51,15 +58,25 @@ export class SocketClient {
   private contractAddress?: string;
   private ownerUcan?: ucans.Ucan;
   private ownerAddress?: string;
+  private roomKey: string;
+  private roomInfo?: {
+    documentTitle: string;
+    portalAddress: string;
+    commentKey: string;
+  };
 
   _onError: ISocketInitConfig['onError'] | null = null;
-
+  _onCollaborationConnectCallback:
+    | ISocketClientConfig['onCollaborationConnectCallback']
+    | null = null;
   constructor(config: ISocketClientConfig) {
     this._websocketUrl = config.wsUrl || 'ws://localhost:5000';
     this._processMessage = this._processMessage.bind(this);
     const { secretKey: ucanSecret } = generateKeyPairFromSeed(
       toUint8Array(config.roomKey),
     );
+
+    this.roomKey = config.roomKey;
 
     this.collaborationKeyPair = ucans.EdKeypair.fromSecretKey(
       fromUint8Array(ucanSecret),
@@ -70,6 +87,10 @@ export class SocketClient {
 
     if (config.contractAddress) this.contractAddress = config.contractAddress;
     if (config.ownerAddress) this.ownerAddress = config.ownerAddress;
+    if (config.onCollaborationConnectCallback)
+      this._onCollaborationConnectCallback =
+        config.onCollaborationConnectCallback;
+    if (config.extraInfo) this.roomInfo = config.extraInfo;
   }
 
   private _getSequenceIdCallback(id: string): SequenceToRequestMapValue {
@@ -287,9 +308,16 @@ export class SocketClient {
       documentId: this.roomId,
     };
 
+    if (this.roomInfo)
+      args.roomInfo = crypto.encryptData(
+        toUint8Array(this.roomKey),
+        new TextEncoder().encode(JSON.stringify(this.roomInfo)),
+      );
+
     if (this.ownerKeyPair) args.ownerToken = await this.getOwnerToken();
     if (this.ownerAddress) args.ownerAddress = this.ownerAddress;
     if (this.contractAddress) args.contractAddress = this.contractAddress;
+
     const req: RequestPayload = {
       cmd: '/auth',
       args,
@@ -299,6 +327,10 @@ export class SocketClient {
       JSON.stringify(req),
       seqId,
     );
+    this._onCollaborationConnectCallback?.({
+      data: response,
+      roomKey: this.roomKey,
+    });
     if (!response.is_handshake_response) {
       this.disconnect();
       return;

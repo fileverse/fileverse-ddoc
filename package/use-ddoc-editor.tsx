@@ -74,8 +74,8 @@ export const useDdocEditor = ({
   activeModel,
   maxTokens,
   isAIAgentEnabled,
-
   collabConfig,
+  ...rest
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
 
@@ -87,6 +87,7 @@ export const useDdocEditor = ({
   } = useSyncMachine({
     onError,
     ydoc,
+    onCollaborationConnectCallback: rest.onCollaborationConnectCallback,
   });
 
   const isCollaborationEnabled = useMemo(() => {
@@ -444,9 +445,14 @@ export const useDdocEditor = ({
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const readyState = isCollaborationEnabled ? isReady : !isPreviewMode;
+    const readyState = !isPreviewMode;
     editor?.setEditable(readyState);
-  }, [isPreviewMode, editor, isCollaborationEnabled, isReady]);
+  }, [isPreviewMode, editor]);
+
+  useEffect(() => {
+    if (!isCollaborationEnabled) return;
+    setIsContentLoading(isReady);
+  }, [isCollaborationEnabled, isReady]);
 
   const yjsIndexeddbProviderRef = useRef<IndexeddbPersistence | null>(null);
 
@@ -668,6 +674,7 @@ export const useDdocEditor = ({
         ownerAddress: collabConfig?.ownerAddress,
         isEns: _isEns,
         wsUrl: collabConfig.wsUrl,
+        extraInfo: collabConfig.extraInfo,
       });
     },
     [collabConfig?.collaborationId],
@@ -867,7 +874,6 @@ export const useDdocEditor = ({
     editor,
     isContentLoading,
     ref,
-    // connect,
     ydoc,
     refreshYjsIndexedDbProvider: initialiseYjsIndexedDbProvider,
     activeCommentId,

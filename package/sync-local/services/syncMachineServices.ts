@@ -22,7 +22,9 @@ export const syncMachineServices = {
 
       await socketClient.init({
         roomId,
-        onConnect: () => send({ type: 'SYNC_LATEST_COMMIT', data: null }),
+        onConnect: () => {
+          send({ type: 'SYNC_LATEST_COMMIT', data: null });
+        },
         onDisconnect: () => send({ type: 'DISCONNECTED', data: null }),
         onWsEvent: (message) => {
           if (!message?.event_type) {

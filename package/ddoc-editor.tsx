@@ -123,6 +123,7 @@ const DdocEditor = forwardRef(
       collabConfig,
       // Document styling object
       documentStyling,
+      ...rest
     }: DdocProps,
     ref,
   ) => {
@@ -250,6 +251,7 @@ const DdocEditor = forwardRef(
       collaborationKeyPair,
 
       collabConfig,
+      ...rest,
     });
 
     useImperativeHandle(
@@ -349,6 +351,7 @@ const DdocEditor = forwardRef(
         },
         terminateSession,
       }),
+
       // eslint-disable-next-line react-hooks/exhaustive-deps
       [editor, ydoc],
     );

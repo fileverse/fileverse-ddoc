@@ -23,15 +23,7 @@ export const initialContext: SyncMachineContext = {
   errorCount: 0,
   errorMaxRetryCount: 3,
   errorMessage: '',
-  cryptoUtils: {
-    generateKeyPair: () => ({
-      publicKey: new Uint8Array(),
-      privateKey: new Uint8Array(),
-    }),
-    encryptData: () => new Uint8Array(),
-    decryptData: () => new Uint8Array(),
-    generateRandomBytes: () => new Uint8Array(),
-  },
+  onCollaborationConnectCallback: () => {},
 };
 export const STORAGE_API =
   'https://dev-fileverse-storage.herokuapp.com/upload/public';

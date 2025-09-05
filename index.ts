@@ -8,3 +8,4 @@ export {
   type ReminderBlockOptions,
 } from './package/extensions/reminder-block/types';
 export { Editor } from '@tiptap/react';
+export type { ICollaborationConfig } from './package/types';

@@ -70,15 +70,7 @@ export interface SyncMachineContext {
   errorCount: number;
   errorMaxRetryCount: number;
   errorMessage: string;
-  cryptoUtils: {
-    generateKeyPair: () => {
-      publicKey: Uint8Array;
-      privateKey: Uint8Array;
-    };
-    encryptData: (data: Uint8Array, key: Uint8Array) => Uint8Array;
-    decryptData: (data: Uint8Array, key: Uint8Array) => Uint8Array;
-    generateRandomBytes: (length: number) => Uint8Array;
-  };
+  onCollaborationConnectCallback: (response: any) => void;
 }
 export interface ErrorResponseMessage {
   status: boolean;
@@ -175,4 +167,5 @@ export interface IAuthArgs {
   ownerAddress?: string;
   contractAddress?: string;
   collaborationDid?: string;
+  roomInfo?: string;
 }

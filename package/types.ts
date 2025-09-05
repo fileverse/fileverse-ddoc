@@ -164,21 +164,13 @@ export interface DdocProps extends CommentAccountProps {
     publicKey: string;
     privateKey: string;
   };
-  collabConfig?: {
-    roomKey: string;
-    collaborationId: string;
-    username: string;
-    isOwner: boolean;
-    ownerEdSecret?: string;
-    contractAddress?: string;
-    ownerAddress?: string;
-    wsUrl: string;
-  };
+  collabConfig?: ICollaborationConfig;
   /**
    * Document styling configuration
    * @description Customize the appearance of the document editor
    */
   documentStyling?: DocumentStyling;
+  onCollaborationConnectCallback?: (response: any) => void;
 }
 
 export interface IEditorSelectionData {
@@ -212,4 +204,20 @@ export interface IpfsImageFetchPayload {
   ipfsHash: string;
   mimeType: string;
   authTag: string;
+}
+
+export interface ICollaborationConfig {
+  roomKey: string;
+  collaborationId: string;
+  username: string;
+  isOwner: boolean;
+  ownerEdSecret?: string;
+  contractAddress?: string;
+  ownerAddress?: string;
+  wsUrl: string;
+  extraInfo?: {
+    documentTitle: string;
+    portalAddress: string;
+    commentKey: string;
+  };
 }

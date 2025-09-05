@@ -16,6 +16,11 @@ interface IConnectConf {
   ownerAddress?: string;
   isEns?: boolean;
   wsUrl: string;
+  extraInfo?: {
+    documentTitle: string;
+    portalAddress: string;
+    commentKey: string;
+  };
 }
 
 const contextSelector = (state: any) => state.context;
