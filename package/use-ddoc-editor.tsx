@@ -78,16 +78,17 @@ export const useDdocEditor = ({
   ...rest
 }: Partial<DdocProps>) => {
   const [ydoc] = useState(new Y.Doc());
-
   const {
     connect: onConnect,
     isReady,
-    context,
     terminateSession,
+    awareness,
   } = useSyncMachine({
     onError,
     ydoc,
     onCollaborationConnectCallback: rest.onCollaborationConnectCallback,
+    onCollaborationCommit: rest.onCollaborationCommit,
+    onFetchCommitContent: rest.onFetchCommitContent,
   });
 
   const isCollaborationEnabled = useMemo(() => {
@@ -410,20 +411,20 @@ export const useDdocEditor = ({
   const collaborationCleanupRef = useRef<() => void>(() => {});
 
   useEffect(() => {
-    if (!isReady || !enableCollaboration || !context || !collabConfig) return;
+    if (!isReady || !enableCollaboration || !collabConfig) return;
 
     const setupExtensions = async () => {
       setExtensions([
         ...extensions.filter((extension) => extension.name !== 'history'),
         CollaborationCursor.configure({
-          provider: context,
+          provider: { ydoc, awareness },
           user: {
             name:
               collabConfig?.username && collabConfig?.username.length > 20
                 ? getTrimmedName(collabConfig?.username, 7, 15)
                 : collabConfig?.username,
             color: usercolors[Math.floor(Math.random() * usercolors.length)],
-            isEns: context.isEns,
+            isEns: collabConfig?.isEns,
           },
           render: getCursor,
         }),
@@ -674,7 +675,7 @@ export const useDdocEditor = ({
         ownerAddress: collabConfig?.ownerAddress,
         isEns: _isEns,
         wsUrl: collabConfig.wsUrl,
-        extraInfo: collabConfig.extraInfo,
+        roomInfo: collabConfig.roomInfo,
       });
     },
     [collabConfig?.collaborationId],

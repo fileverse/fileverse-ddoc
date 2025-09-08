@@ -7,8 +7,7 @@ import {
 import * as Y from 'yjs';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { objectToFile } from '../utils/objectToFile';
-import { uploadFileToIPFS } from '../utils/uploadFileToIPFS';
-import { fetchIpfsJsonContent } from '../utils/fetchIpfsJsonContent';
+
 import { crypto as cryptoUtils } from '../crypto';
 
 export const syncMachineServices = {
@@ -73,11 +72,19 @@ export const syncMachineServices = {
 
   processCommit: (context: SyncMachineContext) => {
     return async (send: Sender<SyncMachinEvent>) => {
-      console.log(context);
+      if (
+        !context.onCollaborationCommit ||
+        typeof context.onCollaborationCommit !== 'function'
+      ) {
+        console.debug(
+          'syncmachine: no commit function provided, skipping commit',
+        );
+        return;
+      }
       if (context.uncommittedUpdatesIdList.length >= 10) {
-        console.log(
-          'commit is happening now >>>>',
-          context.uncommittedUpdatesIdList,
+        console.debug(
+          'syncmachine: committing updates',
+          context.uncommittedUpdatesIdList.length,
         );
         const updates = context.uncommittedUpdatesIdList;
 
@@ -88,8 +95,7 @@ export const syncMachineServices = {
           ),
         };
         const file = objectToFile(commitContent, 'commit');
-        const { ipfsHash } = await uploadFileToIPFS(file);
-        console.log(ipfsHash, 'ipfsHash');
+        const ipfsHash = await context.onCollaborationCommit(file);
         const response = await context?.socketClient?.commitUpdates({
           updates,
           cid: ipfsHash,
@@ -117,7 +123,7 @@ export const syncMachineServices = {
       const updates: Uint8Array[] = [];
 
       if (history?.cid) {
-        const content = await fetchIpfsJsonContent(history?.cid);
+        const content = await context.onFetchCommitContent(history?.cid);
         if (content?.data) {
           const decryptedContent = cryptoUtils.decryptData(
             toUint8Array(context.roomKey),
@@ -224,7 +230,7 @@ export const syncMachineServices = {
           data: localContent,
         };
         const file = objectToFile(commitContent, 'commit');
-        const { ipfsHash } = await uploadFileToIPFS(file);
+        const ipfsHash = await context.onCollaborationCommit(file);
         const updates = context.uncommittedUpdatesIdList;
         await context?.socketClient?.commitUpdates({
           updates,

@@ -24,6 +24,8 @@ export const initialContext: SyncMachineContext = {
   errorMaxRetryCount: 3,
   errorMessage: '',
   onCollaborationConnectCallback: () => {},
+  onCollaborationCommit: () => Promise.resolve(''),
+  onFetchCommitContent: () => Promise.resolve({}),
 };
 export const STORAGE_API =
   'https://dev-fileverse-storage.herokuapp.com/upload/public';

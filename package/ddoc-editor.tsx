@@ -331,11 +331,16 @@ const DdocEditor = forwardRef(
             console.debug('collab: cannot find editor');
             return;
           }
-          const existingUser = editor.storage.collaborationCursor.users.find(
+
+          console.log(
+            editor.storage.collaborationCursor,
+            'editor.storage.collaborationCursor',
+          );
+          const existingUser = editor.storage.collaborationCursor?.users?.find(
             (user: Record<string, unknown>) => {
               return user?.clientId === ydoc.clientID;
             },
-          ) as Record<string, unknown>;
+          ) as Record<string, unknown> | undefined;
 
           const newUser = {
             name,

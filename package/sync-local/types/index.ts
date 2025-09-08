@@ -71,6 +71,8 @@ export interface SyncMachineContext {
   errorMaxRetryCount: number;
   errorMessage: string;
   onCollaborationConnectCallback: (response: any) => void;
+  onCollaborationCommit: (file: File) => Promise<string>;
+  onFetchCommitContent: (cid: string) => Promise<any>;
 }
 export interface ErrorResponseMessage {
   status: boolean;

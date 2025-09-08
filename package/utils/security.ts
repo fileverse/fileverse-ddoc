@@ -61,7 +61,7 @@ export const decryptAESKey = async (
       name: 'RSA-OAEP',
     },
     privateKey,
-    encryptedKeyBuffer,
+    encryptedKeyBuffer as BufferSource,
   );
 };
 
@@ -84,7 +84,7 @@ export const decryptImageData = async (
   return await crypto.subtle.decrypt(
     {
       name: 'AES-CBC',
-      iv: ivBuffer,
+      iv: ivBuffer as BufferSource,
     },
     aesKey,
     encryptedImageData,

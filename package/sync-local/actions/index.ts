@@ -66,7 +66,7 @@ export const websocketInitializer = (
   if (!event.data.roomKey) {
     throw new Error('sync-machine: room key is not provided');
   }
-  console.log(event.data, 'event.data');
+
   return {
     socketClient: new SocketClient({
       wsUrl: event.data.wsUrl,
@@ -75,7 +75,7 @@ export const websocketInitializer = (
       contractAddress: event.data.contractAddress,
       ownerAddress: event.data.ownerAddress,
       onCollaborationConnectCallback: context.onCollaborationConnectCallback,
-      extraInfo: event.data.extraInfo,
+      roomInfo: event.data.roomInfo,
     }),
 
     initialUpdate: event.data.initialUpdate,
@@ -84,6 +84,8 @@ export const websocketInitializer = (
     isOwner: event.data.isOwner,
     isEns: event.data.isEns,
     wsUrl: event.data.wsUrl,
+    onCollaborationCommit: context.onCollaborationCommit,
+    onFetchCommitContent: context.onFetchCommitContent,
   };
 };
 

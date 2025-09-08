@@ -35,7 +35,7 @@ interface ISocketClientConfig {
   contractAddress?: string;
   ownerAddress?: string;
   onCollaborationConnectCallback: (response: any) => void;
-  extraInfo?: {
+  roomInfo?: {
     documentTitle: string;
     portalAddress: string;
     commentKey: string;
@@ -90,7 +90,7 @@ export class SocketClient {
     if (config.onCollaborationConnectCallback)
       this._onCollaborationConnectCallback =
         config.onCollaborationConnectCallback;
-    if (config.extraInfo) this.roomInfo = config.extraInfo;
+    if (config.roomInfo) this.roomInfo = config.roomInfo;
   }
 
   private _getSequenceIdCallback(id: string): SequenceToRequestMapValue {

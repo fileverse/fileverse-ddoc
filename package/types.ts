@@ -171,6 +171,8 @@ export interface DdocProps extends CommentAccountProps {
    */
   documentStyling?: DocumentStyling;
   onCollaborationConnectCallback?: (response: any) => void;
+  onCollaborationCommit?: (file: File) => Promise<string>;
+  onFetchCommitContent?: (cid: string) => Promise<any>;
 }
 
 export interface IEditorSelectionData {
@@ -215,7 +217,8 @@ export interface ICollaborationConfig {
   contractAddress?: string;
   ownerAddress?: string;
   wsUrl: string;
-  extraInfo?: {
+  isEns?: boolean;
+  roomInfo?: {
     documentTitle: string;
     portalAddress: string;
     commentKey: string;

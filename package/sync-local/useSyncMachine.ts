@@ -16,7 +16,7 @@ interface IConnectConf {
   ownerAddress?: string;
   isEns?: boolean;
   wsUrl: string;
-  extraInfo?: {
+  roomInfo?: {
     documentTitle: string;
     portalAddress: string;
     commentKey: string;
@@ -130,5 +130,6 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
     error,
     context,
     terminateSession,
+    awareness,
   };
 };
