@@ -168,6 +168,6 @@ export interface IAuthArgs {
   ownerToken?: string;
   ownerAddress?: string;
   contractAddress?: string;
-  collaborationDid?: string;
+  sessionDid?: string;
   roomInfo?: string;
 }

@@ -304,7 +304,7 @@ export class SocketClient {
     const seqId = uuidv1();
     const args: IAuthArgs = {
       collaborationToken: token,
-      collaborationDid: this.collaborationKeyPair?.did(),
+      sessionDid: this.collaborationKeyPair?.did(),
       documentId: this.roomId,
     };
 
