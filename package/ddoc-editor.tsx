@@ -644,6 +644,10 @@ const DdocEditor = forwardRef(
                         )?.options?.onReminderCreate
                       }
                       isConnected={isConnected}
+                      isCollabDocOwner={
+                        collabConfig?.roomKey ? collabConfig?.isOwner : true
+                      }
+                      enableCollaboration={enableCollaboration}
                     />
                   )}
 

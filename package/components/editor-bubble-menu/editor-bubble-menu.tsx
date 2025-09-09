@@ -44,6 +44,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     isConnected,
     ipfsImageUploadFn,
     ipfsImageFetchFn,
+    isCollabDocOwner,
+    enableCollaboration,
   } = props;
   const editorStates = useEditorStates(editor as Editor);
   const currentSize = editor ? editorStates.currentSize : undefined;
@@ -215,6 +217,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         classNames="disabled:!bg-transparent"
       />
       {isCommentOpen &&
+        isCollabDocOwner &&
         createPortal(
           <div
             ref={portalRef}
@@ -256,7 +259,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           )}
         >
           {mobileCommentButton}
-          {isConnected && (
+          {isConnected && isCollabDocOwner && (
             <DynamicDropdown
               key="Reminder"
               side="bottom"
@@ -468,11 +471,18 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                           icon="MessageSquarePlus"
                           variant="ghost"
                           size="sm"
-                          tooltip={isCommentResolved ? 'Comment resolved' : ''}
+                          tooltip={
+                            enableCollaboration
+                              ? 'Comments are not available during real-time  collaboration'
+                              : isCommentResolved
+                                ? 'Comment resolved'
+                                : ''
+                          }
                           disabled={
                             isCommentResolved ||
                             !isCollabDocumentPublished ||
-                            disableInlineComment
+                            disableInlineComment ||
+                            enableCollaboration
                           }
                           isActive={isCommentActive}
                           onClick={handleInlineComment}
@@ -493,7 +503,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
 
                 if (item.name === 'Reminder') {
                   return (
-                    isConnected && (
+                    isConnected &&
+                    isCollabDocOwner && (
                       <DynamicDropdown
                         key="Reminder"
                         side="bottom"
