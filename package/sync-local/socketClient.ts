@@ -23,6 +23,9 @@ import { WEBSOCKET_CONFIG } from './constants/config';
 import { generateKeyPairFromSeed } from '@stablelib/ed25519';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { crypto } from './crypto';
+import { Awareness, applyAwarenessUpdate } from 'y-protocols/awareness.js';
+
+import * as decoding from 'lib0/decoding';
 
 interface ISocketClientConfig {
   wsUrl: UrlProvider;
@@ -60,6 +63,7 @@ export class SocketClient {
     portalAddress: string;
     commentKey: string;
   };
+  private awareness: Awareness | null = null;
 
   _onError: ISocketInitConfig['onError'] | null = null;
   _onCollaborationConnectCallback:
@@ -95,6 +99,10 @@ export class SocketClient {
 
   private _removeSequenceIdFromMap(id: string) {
     delete this._sequenceCallbackMap[id];
+  }
+
+  registerAwareness(awareness: Awareness) {
+    this.awareness = awareness;
   }
 
   private _registerSequenceCallback(
@@ -370,16 +378,40 @@ export class SocketClient {
 
   private async _processMessage(event: MessageEvent) {
     if (!event.data) throw new Error('Failed to get message data');
-    // console.log('event.data', event.data);
-    // const message = await this._decryptMessage(event.data);
+
     const message = JSON.parse(event.data);
-    console.log('message', message);
+
     if (message.seqId) {
       this._executeRequestCallback(message);
       return;
     }
     if (message.is_handshake_response) {
       this._handleHandShake(message);
+      return;
+    }
+
+    if (message.event_type === 'AWARENESS_UPDATE') {
+      await this._dispatchEventHandler(message);
+      if (this.awareness) {
+        const key = this.roomKey;
+        const encryptedPosition = message.event.data.position as string;
+        if (key) {
+          const decrypted = crypto.decryptData(
+            toUint8Array(key),
+            encryptedPosition,
+          );
+
+          const decryptedPosition = new Uint8Array(decrypted);
+          const decoder = decoding.createDecoder(decryptedPosition);
+          const len = decoding.readVarUint(decoder);
+
+          for (let i = 0; i < len; i++) {
+            decoding.readVarUint(decoder); // clientId
+            decoding.readVarUint(decoder); // clock
+          }
+          applyAwarenessUpdate(this.awareness, decryptedPosition, null);
+        }
+      }
       return;
     }
 
@@ -394,7 +426,6 @@ export class SocketClient {
   }
 
   public connectSocket() {
-    // console.log('connectSocket');
     if (
       this._webSocketStatus === SocketStatusEnum.CONNECTED ||
       this._webSocketStatus === SocketStatusEnum.CONNECTING

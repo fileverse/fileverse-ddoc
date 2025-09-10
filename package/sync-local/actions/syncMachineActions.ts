@@ -1,6 +1,5 @@
 import { assign } from 'xstate';
 import {
-  awarenessUpdateHandler,
   // broadcastStateHandler,
   clearUncommitedUpdatesHandler,
   initAwarenessHandler,
@@ -37,7 +36,6 @@ import {
 export const syncMachineActions: Record<any, any> = {
   resetState: assign(stateResetHandler),
   initializeAwareness: assign(initAwarenessHandler),
-  updateAwarenessState: assign(awarenessUpdateHandler),
   updateConnectionState: assign(updateConnectionStateHandler),
   initializeSync: assign(websocketInitializer),
   applyRemoteYjsUpdate: assign(yjsUpdateHandler),

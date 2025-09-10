@@ -34,7 +34,7 @@ export const awarenessUpdateHandler = (
       awarenessProtocol.applyAwarenessUpdate(
         context.awareness,
         decryptedPosition,
-        context.socketClient,
+        null,
       );
     }
   }
@@ -45,6 +45,7 @@ export const initAwarenessHandler = (context: SyncMachineContext) => {
   const awareness = new awarenessProtocol.Awareness(context.ydoc);
   const handler = createAwarenessUpdateHandler(awareness, context);
   awareness.on('update', handler);
+  context.socketClient?.registerAwareness(awareness);
   return { awareness, _awarenessUpdateHandler: handler };
 };
 
@@ -87,6 +88,7 @@ export const websocketInitializer = (
     onCollaborationCommit: context.onCollaborationCommit,
     onFetchCommitContent: context.onFetchCommitContent,
     onSessionTerminated: context.onSessionTerminated,
+    onUnMergedUpdates: context.onUnMergedUpdates,
   };
 };
 
@@ -97,7 +99,7 @@ export const yjsUpdateHandler = (
   if (!context.ydoc) {
     throw new Error('Ydoc is not available');
   }
-  // console.log(event.data.event.data.data, 'event.data.event.data.data');
+
   console.log('applying remote update');
   let encryptedUpdate: string | undefined;
   if (event.data.event_type === 'CONTENT_UPDATE')
@@ -125,7 +127,9 @@ export const yjsUpdateHandler = (
       uncommittedUpdatesIdList: list,
     };
   } else {
-    return {};
+    return {
+      uncommittedUpdatesIdList: [],
+    };
   }
 };
 
@@ -177,14 +181,7 @@ export const removeLastProcessedUpdate = (
   };
 };
 
-export const clearUncommitedUpdatesHandler = (
-  _context: SyncMachineContext,
-  event: SyncMachinEvent,
-) => {
-  console.log(event, 'event');
-  // console.log(
-  //   'a commit has been made, uncommittedUpdatesIdList will be empty ',
-  // );
+export const clearUncommitedUpdatesHandler = () => {
   return {
     uncommittedUpdatesIdList: [],
   };
@@ -259,7 +256,7 @@ export const addRemoteContentToQueueHandler = (
 
 export const applyContentsFromRemote = (context: SyncMachineContext) => {
   if (context.contentTobeAppliedQueue.length <= 0) return {};
-  console.log('merging and applying pending contents from remote');
+
   const contents = context.contentTobeAppliedQueue.map((content) => {
     return toUint8Array(content);
   });

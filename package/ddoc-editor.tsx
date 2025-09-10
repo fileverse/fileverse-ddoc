@@ -332,10 +332,6 @@ const DdocEditor = forwardRef(
             return;
           }
 
-          console.log(
-            editor.storage.collaborationCursor,
-            'editor.storage.collaborationCursor',
-          );
           const existingUser = editor.storage.collaborationCursor?.users?.find(
             (user: Record<string, unknown>) => {
               return user?.clientId === ydoc.clientID;
@@ -360,7 +356,7 @@ const DdocEditor = forwardRef(
       }),
 
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [editor, ydoc],
+      [editor],
     );
 
     const handleAddTag = (tag: TagType) => {

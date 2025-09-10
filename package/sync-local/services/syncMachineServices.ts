@@ -7,8 +7,43 @@ import {
 import * as Y from 'yjs';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { objectToFile } from '../utils/objectToFile';
+// import * as awarenessProtocol from 'y-protocols/awareness';
+// import * as decoding from 'lib0/decoding';
 
 import { crypto as cryptoUtils } from '../crypto';
+
+// // Direct awareness handler that bypasses state machine
+// const onAwarenessUpdateWSEvent = (
+//   context: SyncMachineContext,
+//   message: { event: { data: { position: string } } },
+// ) => {
+//   console.log(context.awareness, 'context');
+//   console.log(message, 'message');
+//   if (context.awareness) {
+//     const key = context.roomKey;
+//     const encryptedPosition = message.event.data.position as string;
+//     if (key) {
+//       const decrypted = cryptoUtils.decryptData(
+//         toUint8Array(key),
+//         encryptedPosition,
+//       );
+
+//       const decryptedPosition = new Uint8Array(decrypted);
+//       const decoder = decoding.createDecoder(decryptedPosition);
+//       const len = decoding.readVarUint(decoder);
+
+//       for (let i = 0; i < len; i++) {
+//         decoding.readVarUint(decoder); // clientId
+//         decoding.readVarUint(decoder); // clock
+//       }
+//       awarenessProtocol.applyAwarenessUpdate(
+//         context.awareness,
+//         decryptedPosition,
+//         null,
+//       );
+//     }
+//   }
+// };
 
 export const syncMachineServices = {
   connectSocket: (context: SyncMachineContext) => {
@@ -29,6 +64,12 @@ export const syncMachineServices = {
           if (!message?.event_type) {
             throw new Error('Message is not an event');
           }
+          // Handle awareness updates directly without state machine
+          // if (message.event_type === 'AWARENESS_UPDATE') {
+          //   onAwarenessUpdateWSEvent(context, message);
+          //   return;
+          // }
+
           send({ type: message.event_type, data: message });
         },
         onError: (e) => {
@@ -141,13 +182,11 @@ export const syncMachineServices = {
 
       const localUpdates: string[] = [];
       const machineInitialUpdate = context.initialUpdate;
-      console.log('machine initial update', machineInitialUpdate);
+
       if (localUpdates.length > 0) {
-        console.log('their are contents in local storage');
         const t = localUpdates.map((u: string) => toUint8Array(u));
         let merged: Uint8Array;
         if (machineInitialUpdate) {
-          console.log('merging machine local state before connecting');
           merged = Y.mergeUpdates([...t, toUint8Array(machineInitialUpdate)]);
         } else {
           merged = Y.mergeUpdates(t);
@@ -156,14 +195,17 @@ export const syncMachineServices = {
         updates.push(merged);
         unbroadcastedUpdate = fromUint8Array(merged);
       } else if (machineInitialUpdate) {
-        console.log('we have machine machine initail update');
         updates.push(toUint8Array(machineInitialUpdate));
         unbroadcastedUpdate = machineInitialUpdate;
       }
       if (decryptedCommit) updates.push(decryptedCommit);
       if (encryptedUpdates.length > 0) {
-        console.log('you have uncommitted chnages', encryptedUpdates.length);
-
+        if (
+          context.isOwner &&
+          typeof context.onUnMergedUpdates === 'function'
+        ) {
+          context.onUnMergedUpdates(true);
+        }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         encryptedUpdates.forEach((encryptedUpdate: any) => {
           const data = cryptoUtils.decryptData(
@@ -178,7 +220,9 @@ export const syncMachineServices = {
       if (updates.length) {
         const mergedState = Y.mergeUpdates(updates);
         Y.applyUpdate(context.ydoc, mergedState, 'self');
-        console.log('merged all >>>>>', updates.length);
+      }
+      if (context.isOwner && typeof context.onUnMergedUpdates === 'function') {
+        context.onUnMergedUpdates(false);
       }
       return {
         ids: uncommittedChangesId,
@@ -213,9 +257,8 @@ export const syncMachineServices = {
     event: SyncMachinEvent,
   ) => {
     return async (send: Sender<SyncMachinEvent>) => {
-      console.log('trying to commit', { isNewDoc: context.isNewDoc });
       if (context.isNewDoc) return;
-      console.log('committing ', context.uncommittedUpdatesIdList.length);
+
       const localContent = cryptoUtils.encryptData(
         toUint8Array(context.roomKey),
         Y.encodeStateAsUpdate(context.ydoc),
@@ -241,7 +284,6 @@ export const syncMachineServices = {
       }
       // console.log('should now broadcast user local comments');
       if (event.data.unbroadcastedUpdate) {
-        console.log('broadcasting local updates');
         const encryptedUpdate = cryptoUtils.encryptData(
           toUint8Array(context.roomKey),
           toUint8Array(event.data.unbroadcastedUpdate),

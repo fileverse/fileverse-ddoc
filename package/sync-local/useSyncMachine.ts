@@ -43,6 +43,8 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
     },
   });
 
+  // console.log(config, 'config');
+
   const awareness = useSelector(actorRef, awarenessSelector);
   const isReady = useSelector(actorRef, isReadySelector);
   const isConnected = useSelector(actorRef, isConnectedSelector);
@@ -59,7 +61,7 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [send, config.ydoc !== undefined],
+    [config.ydoc !== undefined],
   );
 
   const disconnect = useCallback(() => {
@@ -67,14 +69,14 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
       type: 'DISCONNECT',
       data: {},
     });
-  }, [send]);
+  }, []);
 
   const terminateSession = useCallback(() => {
     send({
       type: 'TERMINATE_SESSION',
       data: {},
     });
-  }, [send]);
+  }, []);
 
   useEffect(() => {
     if (config.ydoc && !awareness && isConnected) {
@@ -83,7 +85,8 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
         data: null,
       });
     }
-  }, [config.ydoc, awareness, isConnected, send]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.ydoc !== undefined, awareness !== undefined, isConnected]);
 
   useEffect(() => {
     if (!isReady || !config.ydoc) return;
@@ -102,22 +105,26 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
     return () => {
       config.ydoc?.off('update', updateHandler);
     };
-  }, [config.ydoc, isReady, send]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.ydoc !== undefined, isReady]);
 
   const getYjsEncodedState = useCallback(() => {
     return fromUint8Array(Y.encodeStateAsUpdate(config.ydoc!));
-  }, [config.ydoc]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [config.ydoc !== undefined]);
 
   const applyYjsEncodedState = useCallback(
     (update: string) => {
       if (!update) return;
       Y.applyUpdate(config.ydoc!, toUint8Array(update));
     },
-    [config.ydoc],
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [config.ydoc !== undefined],
   );
 
   useEffect(() => {
     if (!awareness) return;
+
     if (
       typeof window !== 'undefined' &&
       typeof window.addEventListener === 'function'

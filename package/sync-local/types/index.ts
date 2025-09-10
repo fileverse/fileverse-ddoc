@@ -74,6 +74,7 @@ export interface SyncMachineContext {
   onCollaborationCommit: (file: File) => Promise<string>;
   onFetchCommitContent: (cid: string) => Promise<any>;
   onSessionTerminated: () => void;
+  onUnMergedUpdates: (state: boolean) => void;
 }
 export interface ErrorResponseMessage {
   status: boolean;

@@ -513,10 +513,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                           <ToolbarButton
                             icon={item.icon}
                             variant="ghost"
-                            disabled={!isConnected}
+                            disabled={!isConnected || enableCollaboration}
                             size="sm"
                             onClick={item.command}
-                            disabled={enableCollaboration}
                             classNames="disabled:!bg-transparent"
                             tooltip={
                               enableCollaboration

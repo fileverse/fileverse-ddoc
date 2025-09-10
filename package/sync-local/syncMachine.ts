@@ -47,9 +47,6 @@ const syncMachine = createMachine(
         actions: 'handleDisconnectionDueToError',
         target: 'disconnecting',
       },
-      AWARENESS_UPDATE: {
-        actions: 'updateAwarenessState',
-      },
       INIT_AWARENESS: {
         actions: 'initializeAwareness',
       },

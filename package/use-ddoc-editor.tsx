@@ -9,7 +9,7 @@ import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import { defaultExtensions } from './extensions/default-extension';
 import { AnyExtension, JSONContent, useEditor } from '@tiptap/react';
 import { getCursor } from './utils/cursor';
-import { getAddressName } from './utils/getAddressName';
+// import { getAddressName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from './extensions/slash-command/slash-comand';
 import { EditorState, TextSelection } from '@tiptap/pm/state';
@@ -48,12 +48,12 @@ export const useDdocEditor = ({
   initialContent,
   enableCollaboration,
   // collaborationId,
-  walletAddress,
+  // walletAddress,
   // username,
   onChange,
   onCollaboratorChange,
   onCommentInteraction,
-  ensResolutionUrl,
+  // ensResolutionUrl,
   onError,
   setCharacterCount,
   setWordCount,
@@ -92,6 +92,7 @@ export const useDdocEditor = ({
     onCollaborationCommit: rest.onCollaborationCommit,
     onFetchCommitContent: rest.onFetchCommitContent,
     onSessionTerminated: rest.onCollabSessionTermination,
+    onUnMergedUpdates: rest.onUnMergedUpdates,
   });
 
   const isCollaborationEnabled = useMemo(() => {
@@ -434,14 +435,21 @@ export const useDdocEditor = ({
     }
   }, [isReady, enableCollaboration, collabConfig?.isEns]);
 
+  // console.log('awareness', awareness);
+
+  const awarenessProvider = useMemo(() => {
+    if (!isReady || !awareness || !ydoc) return null;
+    return { ydoc, awareness };
+  }, [isReady]);
+
   useEffect(() => {
-    if (!isReady || !enableCollaboration || !collabConfig) return;
+    if (!isReady) return;
 
     const setupExtensions = async () => {
       setExtensions([
         ...extensions.filter((extension) => extension.name !== 'history'),
         CollaborationCursor.configure({
-          provider: { ydoc, awareness },
+          provider: awarenessProvider,
           user: {
             name: collabConfig?.username || '',
             color: usercolors[Math.floor(Math.random() * usercolors.length)],
@@ -462,7 +470,7 @@ export const useDdocEditor = ({
     return () => {
       collaborationCleanupRef.current();
     };
-  }, [isReady, enableCollaboration, collabConfig?.collaborationId]);
+  }, [isReady]);
 
   const ref = useRef<HTMLDivElement>(null);
 
@@ -674,37 +682,37 @@ export const useDdocEditor = ({
     }
   }, [initialContent, editor, ydoc]);
 
-  const startCollaboration = useCallback(
-    async (collaborationId: string, roomKey: string) => {
-      if (!collabConfig?.wsUrl)
-        throw new Error('Cannot start collaboration without a wss url');
-      let _username = collabConfig?.username;
-      let _isEns = false;
+  // const startCollaboration = useCallback(
+  //   async (collaborationId: string, roomKey: string) => {
+  //     if (!collabConfig?.wsUrl)
+  //       throw new Error('Cannot start collaboration without a wss url');
+  //     let _username = collabConfig?.username;
+  //     let _isEns = false;
 
-      if (walletAddress && ensResolutionUrl) {
-        const { name, isEns } = await getAddressName(
-          walletAddress,
-          ensResolutionUrl,
-        );
+  //     if (walletAddress && ensResolutionUrl) {
+  //       const { name, isEns } = await getAddressName(
+  //         walletAddress,
+  //         ensResolutionUrl,
+  //       );
 
-        _username = name;
-        _isEns = isEns;
-      }
-      onConnect({
-        username: _username,
-        roomKey,
-        roomId: collaborationId,
-        isOwner: collabConfig?.isOwner,
-        ownerEdSecret: collabConfig?.ownerEdSecret,
-        contractAddress: collabConfig?.contractAddress,
-        ownerAddress: collabConfig?.ownerAddress,
-        isEns: _isEns,
-        wsUrl: collabConfig.wsUrl,
-        roomInfo: collabConfig.roomInfo,
-      });
-    },
-    [collabConfig?.collaborationId],
-  );
+  //       _username = name;
+  //       _isEns = isEns;
+  //     }
+  //     onConnect({
+  //       username: _username,
+  //       roomKey,
+  //       roomId: collaborationId,
+  //       isOwner: collabConfig?.isOwner,
+  //       ownerEdSecret: collabConfig?.ownerEdSecret,
+  //       contractAddress: collabConfig?.contractAddress,
+  //       ownerAddress: collabConfig?.ownerAddress,
+  //       isEns: _isEns,
+  //       wsUrl: collabConfig.wsUrl,
+  //       roomInfo: collabConfig.roomInfo,
+  //     });
+  //   },
+  //   [collabConfig?.collaborationId],
+  // );
 
   useEffect(() => {
     if (
@@ -712,16 +720,23 @@ export const useDdocEditor = ({
       collabConfig?.collaborationId &&
       collabConfig?.roomKey
     ) {
-      startCollaboration(collabConfig?.collaborationId, collabConfig?.roomKey);
+      onConnect({
+        username: collabConfig?.username,
+        roomKey: collabConfig?.roomKey,
+        roomId: collabConfig?.collaborationId,
+        isOwner: collabConfig?.isOwner,
+        ownerEdSecret: collabConfig?.ownerEdSecret,
+        contractAddress: collabConfig?.contractAddress,
+        ownerAddress: collabConfig?.ownerAddress,
+        isEns: collabConfig?.isEns,
+        wsUrl: collabConfig.wsUrl,
+        roomInfo: collabConfig.roomInfo,
+      });
     }
     return () => {
       collaborationCleanupRef.current();
     };
-  }, [
-    enableCollaboration,
-    collabConfig?.collaborationId,
-    collabConfig?.roomKey,
-  ]);
+  }, [enableCollaboration, Boolean(collabConfig)]);
 
   useEffect(() => {
     onCollaboratorChange?.(editor?.storage?.collaborationCursor?.users);
