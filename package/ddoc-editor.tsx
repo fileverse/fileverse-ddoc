@@ -351,8 +351,9 @@ const DdocEditor = forwardRef(
             newUser.color = existingUser.color;
             newUser.isEns = existingUser.isEns;
           }
-
-          editor.commands.updateUser(newUser);
+          if (typeof editor.commands.updateUser === 'function') {
+            editor.commands.updateUser(newUser);
+          }
         },
         terminateSession,
       }),
