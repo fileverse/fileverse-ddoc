@@ -9,7 +9,7 @@ import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import { defaultExtensions } from './extensions/default-extension';
 import { AnyExtension, JSONContent, useEditor } from '@tiptap/react';
 import { getCursor } from './utils/cursor';
-import { getAddressName, getTrimmedName } from './utils/getAddressName';
+import { getAddressName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from './extensions/slash-command/slash-comand';
 import { EditorState, TextSelection } from '@tiptap/pm/state';
@@ -434,10 +434,7 @@ export const useDdocEditor = ({
         CollaborationCursor.configure({
           provider: { ydoc, awareness },
           user: {
-            name:
-              collabConfig?.username && collabConfig?.username.length > 20
-                ? getTrimmedName(collabConfig?.username, 7, 15)
-                : collabConfig?.username,
+            name: collabConfig?.username || '',
             color: usercolors[Math.floor(Math.random() * usercolors.length)],
             isEns: collabConfig?.isEns,
           },

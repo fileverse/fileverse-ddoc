@@ -1,5 +1,5 @@
-import ensLogo from '../assets/ens-logo.png';
-import verifiedMark from '../assets/verified-mark.png';
+import ensLogo from '../assets/ens.svg';
+import verifiedMark from '../assets/ens-check.svg';
 import { IUser } from '../types';
 
 export const getRegularUserCursor = (user: IUser) => {
