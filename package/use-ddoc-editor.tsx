@@ -412,6 +412,17 @@ export const useDdocEditor = ({
 
   useEffect(() => {
     if (!isReady || !enableCollaboration || !collabConfig) return;
+    if (collabConfig.isEns) {
+      editor?.commands.updateUser({
+        name: collabConfig.username,
+        color: usercolors[Math.floor(Math.random() * usercolors.length)],
+        isEns: collabConfig.isEns,
+      });
+    }
+  }, [isReady, enableCollaboration, collabConfig?.isEns]);
+
+  useEffect(() => {
+    if (!isReady || !enableCollaboration || !collabConfig) return;
 
     const setupExtensions = async () => {
       setExtensions([
