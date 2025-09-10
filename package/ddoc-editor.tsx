@@ -353,6 +353,7 @@ const DdocEditor = forwardRef(
           }
           if (typeof editor.commands.updateUser === 'function') {
             editor.commands.updateUser(newUser);
+            editor.setEditable(true);
           }
         },
         terminateSession,

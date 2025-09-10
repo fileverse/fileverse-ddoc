@@ -461,9 +461,10 @@ export const useDdocEditor = ({
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const readyState = !isPreviewMode;
+    const readyState =
+      isCollaborationEnabled && collabConfig?.isOwner ? !isPreviewMode : false;
     editor?.setEditable(readyState);
-  }, [isPreviewMode, editor]);
+  }, [isPreviewMode, editor, isCollaborationEnabled, collabConfig?.isOwner]);
 
   useEffect(() => {
     if (!isCollaborationEnabled) return;
