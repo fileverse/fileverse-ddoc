@@ -180,7 +180,7 @@ export const getSuggestionItems = ({
       image: '',
       isDisabled: !isConnected || enableCollaboration,
       command: ({ editor, range }: CommandProps) => {
-        if (!isConnected) {
+        if (!isConnected || enableCollaboration) {
           return;
         }
         showReminderMenu(editor, range, 'slash', onError);
