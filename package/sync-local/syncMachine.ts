@@ -57,6 +57,10 @@ const syncMachine = createMachine(
         actions: 'terminateSession',
         target: 'disconnected',
       },
+      SESSION_TERMINATED: {
+        actions: 'terminateSession',
+        target: 'disconnected',
+      },
     },
     states: {
       processing: {

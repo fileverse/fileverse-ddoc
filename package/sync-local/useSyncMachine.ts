@@ -1,11 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect } from 'react';
 import syncMachine from './syncMachine';
 import * as Y from 'yjs';
 
 import { useMachine, useSelector } from '@xstate/react';
 import { SyncMachineContext } from '.';
 import { fromUint8Array, toUint8Array } from 'js-base64';
+import { removeAwarenessStates } from 'y-protocols/awareness.js';
+// import { Awareness } from 'y-protocols/awareness.js';
+// import uuid from 'react-uuid';
 interface IConnectConf {
   username?: string;
   roomKey: string;
@@ -23,18 +26,27 @@ interface IConnectConf {
   };
 }
 
-const contextSelector = (state: any) => state.context;
+// const contextSelector = (state: any) => state.context;
+
+const awarenessSelector = (state: any) => state.context.awareness;
+const isReadySelector = (state: any) =>
+  state.context.isReady && state.context.awareness;
+
+const isConnectedSelector = (state: any) => state.context.isConnected;
+
+const errorMessageSelector = (state: any) => state.context.errorMessage;
 
 export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
-  const [state, send, actorRef] = useMachine(syncMachine, {
+  const [, send, actorRef] = useMachine(syncMachine, {
     context: {
       ...config,
     },
   });
 
-  const context = useSelector(actorRef, contextSelector);
-
-  const { awareness, isConnected } = state.context;
+  const awareness = useSelector(actorRef, awarenessSelector);
+  const isReady = useSelector(actorRef, isReadySelector);
+  const isConnected = useSelector(actorRef, isConnectedSelector);
+  const error = useSelector(actorRef, errorMessageSelector);
 
   const connect = useCallback(
     (connectConfig: IConnectConf) => {
@@ -63,12 +75,6 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
       data: {},
     });
   }, [send]);
-
-  const machine = useMemo(() => [state, send], [state, send]);
-
-  const isReady = useMemo(() => {
-    return !!(state.context.isReady && state.context.awareness);
-  }, [state.context.isReady, state.context.awareness]);
 
   useEffect(() => {
     if (config.ydoc && !awareness && isConnected) {
@@ -110,17 +116,30 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
     [config.ydoc],
   );
 
-  const error = useMemo(() => {
-    if (state.context.errorCount > 0) {
-      return {
-        message: state.context.errorMessage,
-      };
+  useEffect(() => {
+    if (!awareness) return;
+    if (
+      typeof window !== 'undefined' &&
+      typeof window.addEventListener === 'function'
+    ) {
+      window.addEventListener('beforeunload', () => {
+        removeAwarenessStates(
+          awareness,
+          [config.ydoc!.clientID],
+          'window unload',
+        );
+      });
     }
-    return null;
-  }, [state.context.errorCount, state.context.errorMessage]);
+
+    return () => {
+      removeAwarenessStates(awareness, [config.ydoc!.clientID], 'hook unmount');
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [awareness]);
+
+  console.log(error, 'error');
 
   return {
-    machine,
     connect,
     disconnect,
     isConnected,
@@ -128,7 +147,6 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
     getYjsEncodedState,
     applyYjsEncodedState,
     error,
-    context,
     terminateSession,
     awareness,
   };

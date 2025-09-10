@@ -86,6 +86,7 @@ export const websocketInitializer = (
     wsUrl: event.data.wsUrl,
     onCollaborationCommit: context.onCollaborationCommit,
     onFetchCommitContent: context.onFetchCommitContent,
+    onSessionTerminated: context.onSessionTerminated,
   };
 };
 
@@ -343,7 +344,7 @@ export const setInitialUpdateErrorMessageHandler = (
   };
 };
 export const disconnectedStateHandler = () => {
-  // console.log('handling disconnection by resetting state');
+  console.log('handling disconnection by resetting state');
   return {
     socketClient: null,
     roomMembers: [],
@@ -369,14 +370,15 @@ export const handleDisconnectionDueToError = (
 };
 
 export const terminateSessionHandler = (context: SyncMachineContext) => {
-  console.log('terminating session');
   if (context.isOwner) {
     context.socketClient?.terminateSession();
+  } else {
+    console.log('terminating session as non-owner');
+    context.onSessionTerminated?.();
   }
   return {
     socketClient: null,
     roomId: '',
-
     roomMembers: [],
     isConnected: false,
     awareness: null,

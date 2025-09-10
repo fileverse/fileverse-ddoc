@@ -73,6 +73,7 @@ export interface SyncMachineContext {
   onCollaborationConnectCallback: (response: any) => void;
   onCollaborationCommit: (file: File) => Promise<string>;
   onFetchCommitContent: (cid: string) => Promise<any>;
+  onSessionTerminated: () => void;
 }
 export interface ErrorResponseMessage {
   status: boolean;

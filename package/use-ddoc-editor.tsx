@@ -77,6 +77,8 @@ export const useDdocEditor = ({
   collabConfig,
   ...rest
 }: Partial<DdocProps>) => {
+  const [isContentLoading, setIsContentLoading] = useState(true);
+  const [isCollabContentLoading, setIsCollabContentLoading] = useState(true);
   const [ydoc] = useState(new Y.Doc());
   const {
     connect: onConnect,
@@ -89,6 +91,7 @@ export const useDdocEditor = ({
     onCollaborationConnectCallback: rest.onCollaborationConnectCallback,
     onCollaborationCommit: rest.onCollaborationCommit,
     onFetchCommitContent: rest.onFetchCommitContent,
+    onSessionTerminated: rest.onCollabSessionTermination,
   });
 
   const isCollaborationEnabled = useMemo(() => {
@@ -176,7 +179,6 @@ export const useDdocEditor = ({
   }, [isConnected]);
 
   const initialContentSetRef = useRef(false);
-  const [isContentLoading, setIsContentLoading] = useState(true);
   const [slides, setSlides] = useState<string[]>([]);
 
   const isHighlightedYellow = (
@@ -463,7 +465,7 @@ export const useDdocEditor = ({
 
   useEffect(() => {
     if (!isCollaborationEnabled) return;
-    setIsContentLoading(isReady);
+    setIsCollabContentLoading(!isReady);
   }, [isCollaborationEnabled, isReady]);
 
   const yjsIndexeddbProviderRef = useRef<IndexeddbPersistence | null>(null);
@@ -884,7 +886,10 @@ export const useDdocEditor = ({
 
   return {
     editor,
-    isContentLoading,
+    isContentLoading:
+      isCollaborationEnabled && !collabConfig?.isOwner
+        ? isCollabContentLoading || isContentLoading
+        : isContentLoading,
     ref,
     ydoc,
     refreshYjsIndexedDbProvider: initialiseYjsIndexedDbProvider,

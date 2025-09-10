@@ -26,6 +26,7 @@ export const initialContext: SyncMachineContext = {
   onCollaborationConnectCallback: () => {},
   onCollaborationCommit: () => Promise.resolve(''),
   onFetchCommitContent: () => Promise.resolve({}),
+  onSessionTerminated: () => {},
 };
 export const STORAGE_API =
   'https://dev-fileverse-storage.herokuapp.com/upload/public';

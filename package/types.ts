@@ -173,6 +173,7 @@ export interface DdocProps extends CommentAccountProps {
   onCollaborationConnectCallback?: (response: any) => void;
   onCollaborationCommit?: (file: File) => Promise<string>;
   onFetchCommitContent?: (cid: string) => Promise<any>;
+  onCollabSessionTermination?: () => void;
 }
 
 export interface IEditorSelectionData {

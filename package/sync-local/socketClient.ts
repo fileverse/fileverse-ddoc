@@ -1,9 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import ReconnectingWebSocket, {
-  UrlProvider,
-  CloseEvent,
-  // ErrorEvent,
-} from 'partysocket/ws';
+import ReconnectingWebSocket, { UrlProvider, CloseEvent } from 'partysocket/ws';
 import * as ucans from '@ucans/ucans';
 import { v1 as uuidv1 } from 'uuid';
 
@@ -215,6 +211,7 @@ export class SocketClient {
       ownerToken,
       ownerAddress: this.ownerAddress,
       contractAddress: this.contractAddress,
+      sessionDid: this.collaborationKeyPair?.did(),
     };
     await this._buildRequest('/documents/terminate', args);
     this.disconnect();
@@ -357,9 +354,18 @@ export class SocketClient {
         }
         break;
       }
+      case 'SESSION_TERMINATION': {
+        this._onSessionTerminated();
+        break;
+      }
       default:
         break;
     }
+  };
+
+  private _onSessionTerminated = () => {
+    this.disconnect();
+    this.resetSocketClient();
   };
 
   private async _processMessage(event: MessageEvent) {
@@ -367,7 +373,7 @@ export class SocketClient {
     // console.log('event.data', event.data);
     // const message = await this._decryptMessage(event.data);
     const message = JSON.parse(event.data);
-    // console.log('message', message);
+    console.log('message', message);
     if (message.seqId) {
       this._executeRequestCallback(message);
       return;
@@ -431,4 +437,12 @@ export class SocketClient {
 
     await this.connectSocket();
   }
+
+  private resetSocketClient = () => {
+    this._webSocketStatus = SocketStatusEnum.CLOSED;
+    this._webSocket = null;
+    this._websocketServiceDid = '';
+    this.roomId = '';
+    this.roomMembers = [];
+  };
 }
