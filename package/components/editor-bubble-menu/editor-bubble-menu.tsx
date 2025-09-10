@@ -259,7 +259,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           )}
         >
           {mobileCommentButton}
-          {isConnected && isCollabDocOwner && (
+          {isConnected && !enableCollaboration && (
             <DynamicDropdown
               key="Reminder"
               side="bottom"
@@ -516,6 +516,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                             disabled={!isConnected}
                             size="sm"
                             onClick={item.command}
+                            disabled={enableCollaboration}
+                            classNames="disabled:!bg-transparent"
+                            tooltip={
+                              enableCollaboration
+                                ? 'Reminders are not available during real-time collaboration'
+                                : ''
+                            }
                           />
                         }
                         className="!max-w-[300px] border-none shadow-none"

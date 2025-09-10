@@ -138,6 +138,7 @@ export const useDdocEditor = ({
       (error: string) => onError?.(error),
       ipfsImageUploadFn,
       isConnected,
+      enableCollaboration,
     ),
     customTextInputRules,
     PageBreak,
@@ -173,10 +174,11 @@ export const useDdocEditor = ({
           (error: string) => onError?.(error),
           ipfsImageUploadFn,
           isConnected,
+          enableCollaboration,
         ),
       ]);
     }
-  }, [isConnected]);
+  }, [isConnected, enableCollaboration]);
 
   const initialContentSetRef = useRef(false);
   const [slides, setSlides] = useState<string[]>([]);
@@ -393,10 +395,17 @@ export const useDdocEditor = ({
           (error: string) => onError?.(error),
           ipfsImageUploadFn,
           isConnected,
+          enableCollaboration,
         ),
       ]);
     }
-  }, [activeModel, maxTokens, isAIAgentEnabled, isConnected]);
+  }, [
+    activeModel,
+    maxTokens,
+    isAIAgentEnabled,
+    isConnected,
+    enableCollaboration,
+  ]);
 
   useEffect(() => {
     if (zoomLevel) {
@@ -458,8 +467,11 @@ export const useDdocEditor = ({
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const readyState =
-      isCollaborationEnabled && collabConfig?.isOwner ? !isPreviewMode : false;
+    const readyState = isCollaborationEnabled
+      ? !!collabConfig?.isOwner
+      : isPreviewMode
+        ? false
+        : true;
     editor?.setEditable(readyState);
   }, [isPreviewMode, editor, isCollaborationEnabled, collabConfig?.isOwner]);
 
