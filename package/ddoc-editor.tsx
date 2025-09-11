@@ -474,6 +474,11 @@ const DdocEditor = forwardRef(
 
     const isMobile = useMediaQuery('(max-width: 768px)');
 
+    console.log(
+      { collabConfig },
+      !!collabConfig?.roomKey && !collabConfig?.isOwner,
+    );
+
     const renderComp = () => {
       return (
         <AnimatePresence>
@@ -666,7 +671,12 @@ const DdocEditor = forwardRef(
                     )
                   : slideUpTransition(
                       <div>
-                        <EditingProvider isPreviewMode={isPreviewMode}>
+                        <EditingProvider
+                          isPreviewMode={isPreviewMode}
+                          isCollaboratorsDoc={
+                            !!collabConfig?.roomKey && !collabConfig?.isOwner
+                          }
+                        >
                           {tags && tags.length > 0 && (
                             <div
                               ref={tagsContainerRef}
@@ -738,7 +748,7 @@ const DdocEditor = forwardRef(
                               editor={editor}
                               id="editor"
                               className={cn(
-                                'w-full h-auto py-4',
+                                'w-full h-auto py-6',
                                 !documentStyling?.canvasBackground &&
                                   'color-bg-default',
                                 isPreviewMode && 'preview-mode',
