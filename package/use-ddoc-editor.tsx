@@ -86,7 +86,7 @@ export const useDdocEditor = ({
     terminateSession,
     awareness,
   } = useSyncMachine({
-    onError,
+    onError: rest.onCollabError,
     ydoc,
     onCollaborationConnectCallback: rest.onCollaborationConnectCallback,
     onCollaborationCommit: rest.onCollaborationCommit,

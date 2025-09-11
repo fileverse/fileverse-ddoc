@@ -7,43 +7,8 @@ import {
 import * as Y from 'yjs';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { objectToFile } from '../utils/objectToFile';
-// import * as awarenessProtocol from 'y-protocols/awareness';
-// import * as decoding from 'lib0/decoding';
 
 import { crypto as cryptoUtils } from '../crypto';
-
-// // Direct awareness handler that bypasses state machine
-// const onAwarenessUpdateWSEvent = (
-//   context: SyncMachineContext,
-//   message: { event: { data: { position: string } } },
-// ) => {
-//   console.log(context.awareness, 'context');
-//   console.log(message, 'message');
-//   if (context.awareness) {
-//     const key = context.roomKey;
-//     const encryptedPosition = message.event.data.position as string;
-//     if (key) {
-//       const decrypted = cryptoUtils.decryptData(
-//         toUint8Array(key),
-//         encryptedPosition,
-//       );
-
-//       const decryptedPosition = new Uint8Array(decrypted);
-//       const decoder = decoding.createDecoder(decryptedPosition);
-//       const len = decoding.readVarUint(decoder);
-
-//       for (let i = 0; i < len; i++) {
-//         decoding.readVarUint(decoder); // clientId
-//         decoding.readVarUint(decoder); // clock
-//       }
-//       awarenessProtocol.applyAwarenessUpdate(
-//         context.awareness,
-//         decryptedPosition,
-//         null,
-//       );
-//     }
-//   }
-// };
 
 export const syncMachineServices = {
   connectSocket: (context: SyncMachineContext) => {
@@ -64,11 +29,6 @@ export const syncMachineServices = {
           if (!message?.event_type) {
             throw new Error('Message is not an event');
           }
-          // Handle awareness updates directly without state machine
-          // if (message.event_type === 'AWARENESS_UPDATE') {
-          //   onAwarenessUpdateWSEvent(context, message);
-          //   return;
-          // }
 
           send({ type: message.event_type, data: message });
         },

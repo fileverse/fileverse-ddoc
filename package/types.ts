@@ -175,6 +175,7 @@ export interface DdocProps extends CommentAccountProps {
   onFetchCommitContent?: (cid: string) => Promise<any>;
   onCollabSessionTermination?: () => void;
   onUnMergedUpdates?: (state: boolean) => void;
+  onCollabError?: (error: any) => void;
 }
 
 export interface IEditorSelectionData {
