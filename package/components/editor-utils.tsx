@@ -108,6 +108,13 @@ export const fonts = [
     },
   },
   {
+    title: 'Inclusive Sans',
+    value: 'Inclusive Sans, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Inclusive Sans, sans-serif').run();
+    },
+  },
+  {
     title: 'Inter',
     value: 'Inter, sans-serif',
     command: (editor: Editor) => {
@@ -147,6 +154,13 @@ export const fonts = [
     },
   },
   {
+    title: 'Oswald',
+    value: 'Oswald, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Oswald, sans-serif').run();
+    },
+  },
+  {
     title: 'Palatino',
     value: 'Palatino Linotype, Book Antiqua, Palatino, serif',
     command: (editor: Editor) => {
@@ -162,6 +176,20 @@ export const fonts = [
     value: 'Playfair Display, serif',
     command: (editor: Editor) => {
       editor.chain().focus().setFontFamily('Playfair Display, serif').run();
+    },
+  },
+  {
+    title: 'Poppins',
+    value: 'Poppins, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('Poppins, sans-serif').run();
+    },
+  },
+  {
+    title: 'PT Sans Narrow',
+    value: 'PT Sans Narrow, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('PT Sans Narrow, sans-serif').run();
     },
   },
   {
