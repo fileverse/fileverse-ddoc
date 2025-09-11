@@ -550,20 +550,21 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   pointer-events: none;
   position: relative;
   word-break: normal;
+  border-radius: 9999px;
 }
 
 /* Render the username above the caret */
 .collaboration-cursor__label {
-  border-radius: 3px 3px 3px 0;
-  color: #0d0d0d;
+  border-radius: 9999px 9999px 9999px 0;
+  color: #ffffff;
   font-size: 12px;
   font-style: normal;
   font-weight: 600;
   left: -1px;
   line-height: normal;
-  padding: 0.1rem 0.3rem;
+  padding: 4px 8px;
   position: absolute;
-  top: -1.4em;
+  top: -2em;
   user-select: none;
   white-space: nowrap;
 }
@@ -577,6 +578,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   pointer-events: none;
   position: relative;
   word-break: normal;
+  border-radius: 9999px;
 }
 
 /* Style for the icon */
@@ -599,22 +601,23 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   display: flex;
   align-items: center;
   position: absolute;
-  top: -1.4em;
+  top: -2em;
   left: -1px;
   background-color: rgba(255, 255, 255, 0.8);
-  border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  padding: 0.1rem 0.3rem;
+  padding: 4px 8px;
   width: max-content;
   white-space: nowrap;
+  border-radius: 9999px 9999px 9999px 0;
+  color: #ffffff;
 }
 
 .custom-cursor__label {
   display: flex;
   align-items: center;
-  color: #0d0d0d;
+  color: #ffffff;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
   line-height: normal;
   user-select: none;
   white-space: nowrap;
