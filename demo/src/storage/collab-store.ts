@@ -1,13 +1,5 @@
-export interface CollabConfig {
-  roomKey: string;
-  collaborationId: string;
-  username: string;
-  isOwner: boolean;
-  ownerEdSecret?: string;
-  contractAddress?: string;
-  ownerAddress?: string;
-  wsUrl: string;
-}
+import { ICollaborationConfig } from '../../../package/types';
+
 export const collabStore = {
   getCollabConf: () => {
     const collabConfig = localStorage.getItem('collabConfig');
@@ -15,7 +7,7 @@ export const collabStore = {
 
     return config;
   },
-  setCollabConf: (collabConfig: CollabConfig) => {
+  setCollabConf: (collabConfig: ICollaborationConfig) => {
     localStorage.setItem('collabConfig', JSON.stringify(collabConfig));
   },
   clearCollabConf: () => {

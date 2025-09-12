@@ -35,6 +35,8 @@ const isReadySelector = (state: any) =>
 const isConnectedSelector = (state: any) => state.context.isConnected;
 
 const errorMessageSelector = (state: any) => state.context.errorMessage;
+const hasContentInitialisedSelector = (state: any) =>
+  state.context.initalDocumentDecryptionState === 'done';
 
 export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
   const [, send, actorRef] = useMachine(syncMachine, {
@@ -47,6 +49,11 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
   const isReady = useSelector(actorRef, isReadySelector);
   const isConnected = useSelector(actorRef, isConnectedSelector);
   const error = useSelector(actorRef, errorMessageSelector);
+
+  const hasCollabContentInitialised = useSelector(
+    actorRef,
+    hasContentInitialisedSelector,
+  );
 
   const connect = useCallback(
     (connectConfig: IConnectConf) => {
@@ -67,14 +74,14 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
       type: 'DISCONNECT',
       data: {},
     });
-  }, []);
+  }, [send]);
 
   const terminateSession = useCallback(() => {
     send({
       type: 'TERMINATE_SESSION',
       data: {},
     });
-  }, []);
+  }, [send]);
 
   useEffect(() => {
     if (config.ydoc && !awareness && isConnected) {
@@ -152,5 +159,6 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
     error,
     terminateSession,
     awareness,
+    hasCollabContentInitialised,
   };
 };

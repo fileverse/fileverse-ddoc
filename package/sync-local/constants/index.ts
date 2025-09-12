@@ -28,6 +28,7 @@ export const initialContext: SyncMachineContext = {
   onFetchCommitContent: () => Promise.resolve({}),
   onSessionTerminated: () => {},
   onUnMergedUpdates: () => {},
+  initalDocumentDecryptionState: 'pending',
 };
 export const STORAGE_API =
   'https://dev-fileverse-storage.herokuapp.com/upload/public';

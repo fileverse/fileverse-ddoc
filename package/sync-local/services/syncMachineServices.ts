@@ -96,6 +96,12 @@ export const syncMachineServices = {
           ),
         };
         const file = objectToFile(commitContent, 'commit');
+        if (typeof context.onCollaborationCommit !== 'function') {
+          console.log(
+            'syncmachine: no commit function provided, skipping commit',
+          );
+          return;
+        }
         const ipfsHash = await context.onCollaborationCommit(file);
         const response = await context?.socketClient?.commitUpdates({
           updates,
@@ -109,7 +115,7 @@ export const syncMachineServices = {
     };
   },
   syncLatestCommitFromIpfs: (context: SyncMachineContext) => {
-    return async () => {
+    return async (send: Sender<SyncMachinEvent>) => {
       const latestCommit = await context.socketClient?.fetchLatestCommit();
 
       const history = latestCommit?.data.history[0];
@@ -184,6 +190,7 @@ export const syncMachineServices = {
       if (context.isOwner && typeof context.onUnMergedUpdates === 'function') {
         context.onUnMergedUpdates(false);
       }
+      send({ type: 'SET_DOCUMENT_DECRYPTION_STATE', data: 'done' });
       return {
         ids: uncommittedChangesId,
         unbroadcastedUpdate,
@@ -229,6 +236,12 @@ export const syncMachineServices = {
           data: localContent,
         };
         const file = objectToFile(commitContent, 'commit');
+        if (typeof context.onCollaborationCommit !== 'function') {
+          console.log(
+            'syncmachine: no commit function provided, skipping commit',
+          );
+          return;
+        }
         const ipfsHash = await context.onCollaborationCommit(file);
         const updates = context.uncommittedUpdatesIdList;
         await context?.socketClient?.commitUpdates({

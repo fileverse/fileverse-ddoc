@@ -176,6 +176,7 @@ export interface DdocProps extends CommentAccountProps {
   onCollabSessionTermination?: () => void;
   onUnMergedUpdates?: (state: boolean) => void;
   onCollabError?: (error: any) => void;
+  isExistingCollabSession?: boolean;
 }
 
 export interface IEditorSelectionData {

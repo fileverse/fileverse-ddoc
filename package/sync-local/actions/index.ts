@@ -151,7 +151,7 @@ export const registerUpdateHandler = (
   context: SyncMachineContext,
   event: SyncMachinEvent,
 ) => {
-  const id = event.data.updateId;
+  const id = event?.data?.updateId;
   if (!id) return {};
   const list = [...context.uncommittedUpdatesIdList, id];
   return {
@@ -373,5 +373,14 @@ export const terminateSessionHandler = (context: SyncMachineContext) => {
     initialUpdate: null,
     errorCount: 0,
     errorMessage: '',
+  };
+};
+
+export const setDocumentDecryptionStateHandler = (
+  _: SyncMachineContext,
+  event: SyncMachinEvent,
+) => {
+  return {
+    initalDocumentDecryptionState: event.data,
   };
 };

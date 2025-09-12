@@ -85,6 +85,7 @@ export const useDdocEditor = ({
     isReady,
     terminateSession,
     awareness,
+    hasCollabContentInitialised,
   } = useSyncMachine({
     onError: rest.onCollabError,
     ydoc,
@@ -472,14 +473,21 @@ export const useDdocEditor = ({
 
   const ref = useRef<HTMLDivElement>(null);
 
+  const readyState = useMemo(() => {
+    if (isCollaborationEnabled) {
+      return hasCollabContentInitialised && isReady;
+    }
+    return isPreviewMode ? false : true;
+  }, [
+    isCollaborationEnabled,
+    hasCollabContentInitialised,
+    isPreviewMode,
+    isReady,
+  ]);
+
   useEffect(() => {
-    const readyState = isCollaborationEnabled
-      ? !!collabConfig?.isOwner
-      : isPreviewMode
-        ? false
-        : true;
     editor?.setEditable(readyState);
-  }, [isPreviewMode, editor, isCollaborationEnabled, collabConfig?.isOwner]);
+  }, [editor, readyState]);
 
   useEffect(() => {
     if (!isCollaborationEnabled) return;

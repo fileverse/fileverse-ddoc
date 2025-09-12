@@ -70,6 +70,7 @@ export interface SyncMachineContext {
   errorCount: number;
   errorMaxRetryCount: number;
   errorMessage: string;
+  initalDocumentDecryptionState: 'done' | 'pending';
   onCollaborationConnectCallback: (response: any) => void;
   onCollaborationCommit: (file: File) => Promise<string>;
   onFetchCommitContent: (cid: string) => Promise<any>;

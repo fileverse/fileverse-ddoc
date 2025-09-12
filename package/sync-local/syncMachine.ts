@@ -58,6 +58,9 @@ const syncMachine = createMachine(
         actions: 'terminateSession',
         target: 'disconnected',
       },
+      SET_DOCUMENT_DECRYPTION_STATE: {
+        actions: 'setDocumentDecryptionState',
+      },
     },
     states: {
       processing: {

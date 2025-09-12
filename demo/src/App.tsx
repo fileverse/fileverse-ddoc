@@ -20,9 +20,9 @@ import {
 } from '@tiptap-pro/extension-table-of-contents';
 import { fromUint8Array } from 'js-base64';
 import { crypto as cryptoUtils } from './crypto';
-import { CollabConfig, collabStore } from './storage/collab-store';
+import { collabStore } from './storage/collab-store';
 import { DocumentStylingPanel } from './DocumentStylingPanel';
-import { DocumentStyling } from '../../package/types';
+import { DocumentStyling, ICollaborationConfig } from '../../package/types';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -70,9 +70,9 @@ function App() {
   const searchParams = new URLSearchParams(window.location.search);
   const paramCollaborationId = searchParams.get('collaborationId');
   const paramKey = searchParams.get('key');
-  const [collabConfig, setCollabConf] = useState<CollabConfig | undefined>(
-    undefined,
-  );
+  const [collabConfig, setCollabConf] = useState<
+    ICollaborationConfig | undefined
+  >(undefined);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const editorRef = useRef<any>(null);
@@ -183,6 +183,7 @@ function App() {
       ownerEdSecret,
       contractAddress,
       ownerAddress,
+      isEns: true,
       wsUrl: 'http://localhost:5001',
     };
     setCollabConf(collabConfig);
@@ -416,6 +417,10 @@ function App() {
     setIsConnected(true);
   };
 
+  const onCollaboratorChange = (collaborators: unknown[] | undefined) => {
+    console.log('onCollaboratorChange', collaborators);
+  };
+
   return (
     <div>
       <DocumentStylingPanel
@@ -482,9 +487,7 @@ function App() {
           navigator.clipboard.writeText(link);
         }}
         collabConfig={collabConfig}
-        onCollaboratorChange={(collaborators) => {
-          console.log('onCollaboratorChange', collaborators);
-        }}
+        onCollaboratorChange={onCollaboratorChange}
         documentStyling={documentStyling}
       />
       <Toaster
