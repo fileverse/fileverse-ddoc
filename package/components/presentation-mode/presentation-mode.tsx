@@ -145,8 +145,9 @@ export const PresentationMode = ({
             ...EXTENSIONS_WITH_DUPLICATE_WARNINGS,
           ].includes(b.name),
       ),
+      editable: !isPreviewMode,
     });
-  }, []);
+  }, [isPreviewMode]);
   const handlePresentationMode = useCallback(async () => {
     if (!editor) return;
     if (!isPreviewMode) {

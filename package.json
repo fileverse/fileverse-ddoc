@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "2.3.0-rtc-patch-26",
+  "version": "2.3.0-rtc-patch-27",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
