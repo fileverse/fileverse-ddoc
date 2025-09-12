@@ -748,7 +748,7 @@ const DdocEditor = forwardRef(
                               editor={editor}
                               id="editor"
                               className={cn(
-                                'w-full h-auto py-6',
+                                'w-full h-auto py-8',
                                 !documentStyling?.canvasBackground &&
                                   'color-bg-default',
                                 isPreviewMode && 'preview-mode',
