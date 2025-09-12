@@ -474,11 +474,6 @@ const DdocEditor = forwardRef(
 
     const isMobile = useMediaQuery('(max-width: 768px)');
 
-    console.log(
-      { collabConfig },
-      !!collabConfig?.roomKey && !collabConfig?.isOwner,
-    );
-
     const renderComp = () => {
       return (
         <AnimatePresence>

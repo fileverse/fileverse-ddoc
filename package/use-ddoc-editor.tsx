@@ -435,8 +435,6 @@ export const useDdocEditor = ({
     }
   }, [isReady, enableCollaboration, collabConfig?.isEns]);
 
-  // console.log('awareness', awareness);
-
   const awarenessProvider = useMemo(() => {
     if (!isReady || !awareness || !ydoc) return null;
     return { ydoc, awareness };

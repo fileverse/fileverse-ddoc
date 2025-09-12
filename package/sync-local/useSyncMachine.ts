@@ -43,8 +43,6 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
     },
   });
 
-  // console.log(config, 'config');
-
   const awareness = useSelector(actorRef, awarenessSelector);
   const isReady = useSelector(actorRef, isReadySelector);
   const isConnected = useSelector(actorRef, isConnectedSelector);
@@ -143,8 +141,6 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [awareness]);
-
-  console.log(error, 'error');
 
   return {
     connect,

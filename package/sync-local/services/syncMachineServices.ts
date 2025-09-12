@@ -225,10 +225,6 @@ export const syncMachineServices = {
       );
 
       if (context.uncommittedUpdatesIdList.length >= 10) {
-        // console.log(
-        //   'commit changes after syning from IPFS. uncommittedChanges',
-        //   context.uncommittedUpdatesIdList.length,
-        // );
         const commitContent = {
           data: localContent,
         };
@@ -239,10 +235,8 @@ export const syncMachineServices = {
           updates,
           cid: ipfsHash,
         });
-        // console.log('it should clear the UPDATES from commitLocalContents');
         send({ type: 'CLEAR_UNCOMMITED_UPDATES', data: null });
       }
-      // console.log('should now broadcast user local comments');
       if (event.data.unbroadcastedUpdate) {
         const encryptedUpdate = cryptoUtils.encryptData(
           toUint8Array(context.roomKey),

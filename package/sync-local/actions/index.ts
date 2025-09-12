@@ -100,13 +100,9 @@ export const yjsUpdateHandler = (
     throw new Error('Ydoc is not available');
   }
 
-  console.log('applying remote update');
   let encryptedUpdate: string | undefined;
-  if (event.data.event_type === 'CONTENT_UPDATE')
+  if (event.data.event_type === 'CONTENT_UPDATE') {
     encryptedUpdate = event.data.event.data.data;
-  else {
-    console.log('not a content update');
-    console.log(event);
   }
 
   if (!encryptedUpdate) return {};
@@ -158,8 +154,6 @@ export const registerUpdateHandler = (
   const id = event.data.updateId;
   if (!id) return {};
   const list = [...context.uncommittedUpdatesIdList, id];
-  // console.log('registered saved update id:', id);
-  // console.log('new list length of uncommited updates ids >>>', list.length);
   return {
     uncommittedUpdatesIdList: list,
   };
@@ -171,11 +165,6 @@ export const removeLastProcessedUpdate = (
 ) => {
   const offset = event.data.queueOffset;
   const newUpdateQueue = context.updateQueue.splice(offset);
-  // console.log(
-  //   'CLeared last processed updates, pending updates to processed are',
-  //   newUpdateQueue.length,
-  // );
-  // localStorage.setItem(context.roomId, JSON.stringify(newUpdateQueue));
   return {
     updateQueue: newUpdateQueue,
   };
@@ -192,8 +181,6 @@ export const addUpdateToQueueHandler = (
   event: SyncMachinEvent,
 ) => {
   const list = [...context.updateQueue, event.data.update];
-  // console.log('adding update to unprocessed queue. LENGTH ==>', list.length);
-  // localStorage.setItem(context.roomId, JSON.stringify(list));
   return {
     updateQueue: list,
   };
@@ -245,7 +232,6 @@ export const addRemoteContentToQueueHandler = (
   context: SyncMachineContext,
   event: SyncMachinEvent,
 ) => {
-  // console.log('adding remote contents to queue');
   const remoteContent = event.data.event.data.data;
   const newList = [...context.contentTobeAppliedQueue, remoteContent];
 
@@ -269,7 +255,6 @@ export const applyContentsFromRemote = (context: SyncMachineContext) => {
 };
 
 export const clearErrorCountHandler = () => {
-  // console.log('clearing error count');
   return {
     errorCount: 0,
     errorMessage: '',
@@ -341,7 +326,6 @@ export const setInitialUpdateErrorMessageHandler = (
   };
 };
 export const disconnectedStateHandler = () => {
-  console.log('handling disconnection by resetting state');
   return {
     socketClient: null,
     roomMembers: [],
@@ -357,7 +341,6 @@ export const handleDisconnectionDueToError = (
   event: SyncMachinEvent,
 ) => {
   if (event.data.error) {
-    // console.log('handleing disconnection due to error');
     return {
       errorCount: context.errorCount + 1,
       errorMessage: event.data.error,
@@ -370,7 +353,6 @@ export const terminateSessionHandler = (context: SyncMachineContext) => {
   if (context.isOwner) {
     context.socketClient?.terminateSession();
   } else {
-    console.log('terminating session as non-owner');
     context.onSessionTerminated?.();
   }
   return {
