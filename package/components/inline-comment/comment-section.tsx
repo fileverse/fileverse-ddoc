@@ -11,7 +11,7 @@ import {
 import { CommentCard } from './comment-card';
 import { useComments } from './context/comment-context';
 import EnsLogo from '../../assets/ens.svg';
-import verifiedMark from '../../assets/verified-mark.png';
+import verifiedMark from '../../assets/ens-check.svg';
 import { nameFormatter } from '../../utils/helpers';
 import { CommentSectionProps } from './types';
 import { CommentUsername } from './comment-username';

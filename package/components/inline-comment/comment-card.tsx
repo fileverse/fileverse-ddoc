@@ -17,7 +17,7 @@ import {
 } from './types';
 import { useComments } from './context/comment-context';
 import EnsLogo from '../../assets/ens.svg';
-import verifiedMark from '../../assets/verified-mark.png';
+import verifiedMark from '../../assets/ens-check.svg';
 import {
   dateFormatter,
   nameFormatter,

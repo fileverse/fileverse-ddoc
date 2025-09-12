@@ -117,8 +117,13 @@ const DdocEditor = forwardRef(
       activeModel,
       maxTokens,
       isAIAgentEnabled,
+      collaborationKey,
+      collaborationKeyPair,
+
+      collabConfig,
       // Document styling object
       documentStyling,
+      ...rest
     }: DdocProps,
     ref,
   ) => {
@@ -203,6 +208,7 @@ const DdocEditor = forwardRef(
       setSlides,
       tocItems,
       setTocItems,
+      terminateSession,
     } = useDdocEditor({
       ipfsImageFetchFn,
       enableIndexeddbSync,
@@ -241,6 +247,11 @@ const DdocEditor = forwardRef(
       activeModel,
       maxTokens,
       isAIAgentEnabled,
+      collaborationKey,
+      collaborationKeyPair,
+
+      collabConfig,
+      ...rest,
     });
 
     useImperativeHandle(
@@ -253,7 +264,7 @@ const DdocEditor = forwardRef(
           const contents = Y.mergeUpdates(
             _contents.map((content) => toUint8Array(content)),
           );
-          Y.applyUpdate(ydoc, contents, 'self');
+          Y.applyUpdate(ydoc as unknown as Y.Doc, contents, 'self');
 
           return fromUint8Array(contents);
         },
@@ -315,8 +326,37 @@ const DdocEditor = forwardRef(
             return false;
           });
         },
+        updateCollaboratorName: (name: string) => {
+          if (!editor) {
+            console.debug('collab: cannot find editor');
+            return;
+          }
+
+          const existingUser = editor.storage.collaborationCursor?.users?.find(
+            (user: Record<string, unknown>) => {
+              return user?.clientId === ydoc.clientID;
+            },
+          ) as Record<string, unknown> | undefined;
+
+          const newUser = {
+            name,
+          } as Record<string, unknown>;
+
+          if (existingUser) {
+            // newUser.clientId = existingUser.clientId;
+            newUser.color = existingUser.color;
+            newUser.isEns = existingUser.isEns;
+          }
+          if (typeof editor.commands.updateUser === 'function') {
+            editor.commands.updateUser(newUser);
+            editor.setEditable(true);
+          }
+        },
+        terminateSession,
       }),
-      [editor, ydoc],
+
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      [editor],
     );
 
     const handleAddTag = (tag: TagType) => {
@@ -602,6 +642,10 @@ const DdocEditor = forwardRef(
                         )?.options?.onReminderCreate
                       }
                       isConnected={isConnected}
+                      isCollabDocOwner={
+                        collabConfig?.roomKey ? collabConfig?.isOwner : true
+                      }
+                      enableCollaboration={enableCollaboration}
                     />
                   )}
 
@@ -622,7 +666,12 @@ const DdocEditor = forwardRef(
                     )
                   : slideUpTransition(
                       <div>
-                        <EditingProvider isPreviewMode={isPreviewMode}>
+                        <EditingProvider
+                          isPreviewMode={isPreviewMode}
+                          isCollaboratorsDoc={
+                            !!collabConfig?.roomKey && !collabConfig?.isOwner
+                          }
+                        >
                           {tags && tags.length > 0 && (
                             <div
                               ref={tagsContainerRef}
@@ -694,7 +743,7 @@ const DdocEditor = forwardRef(
                               editor={editor}
                               id="editor"
                               className={cn(
-                                'w-full h-auto py-4',
+                                'w-full h-auto py-8',
                                 !documentStyling?.canvasBackground &&
                                   'color-bg-default',
                                 isPreviewMode && 'preview-mode',

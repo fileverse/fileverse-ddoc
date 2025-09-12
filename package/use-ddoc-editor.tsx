@@ -1,7 +1,7 @@
 /* eslint-disable react-hooks/exhaustive-deps */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
-import { WebrtcProvider } from 'y-webrtc';
+// import { WebrtcProvider } from 'y-webrtc';
 import { DdocProps, DdocEditorProps } from './types';
 import * as Y from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration';
@@ -9,7 +9,7 @@ import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
 import { defaultExtensions } from './extensions/default-extension';
 import { AnyExtension, JSONContent, useEditor } from '@tiptap/react';
 import { getCursor } from './utils/cursor';
-import { getAddressName, getTrimmedName } from './utils/getAddressName';
+// import { getAddressName } from './utils/getAddressName';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from './extensions/slash-command/slash-comand';
 import { EditorState, TextSelection } from '@tiptap/pm/state';
@@ -29,6 +29,8 @@ import { headingToSlug } from './utils/heading-to-slug';
 import { AiAutocomplete } from './extensions/ai-autocomplete/ai-autocomplete';
 import { AIWriter } from './extensions/ai-writer';
 import { DBlock } from './extensions/d-block/dblock';
+import { useSyncMachine } from './sync-local/useSyncMachine';
+// import { SyncCursor } from './extensions/sync-cursor';
 
 const usercolors = [
   '#30bced',
@@ -45,13 +47,13 @@ export const useDdocEditor = ({
   isPreviewMode,
   initialContent,
   enableCollaboration,
-  collaborationId,
-  walletAddress,
-  username,
+  // collaborationId,
+  // walletAddress,
+  // username,
   onChange,
   onCollaboratorChange,
   onCommentInteraction,
-  ensResolutionUrl,
+  // ensResolutionUrl,
   onError,
   setCharacterCount,
   setWordCount,
@@ -72,8 +74,31 @@ export const useDdocEditor = ({
   activeModel,
   maxTokens,
   isAIAgentEnabled,
+  collabConfig,
+  ...rest
 }: Partial<DdocProps>) => {
+  const [isContentLoading, setIsContentLoading] = useState(true);
+  const [isCollabContentLoading, setIsCollabContentLoading] = useState(true);
   const [ydoc] = useState(new Y.Doc());
+  const {
+    connect: onConnect,
+    isReady,
+    terminateSession,
+    awareness,
+    hasCollabContentInitialised,
+  } = useSyncMachine({
+    onError: rest.onCollabError,
+    ydoc,
+    onCollaborationConnectCallback: rest.onCollaborationConnectCallback,
+    onCollaborationCommit: rest.onCollaborationCommit,
+    onFetchCommitContent: rest.onFetchCommitContent,
+    onSessionTerminated: rest.onCollabSessionTermination,
+    onUnMergedUpdates: rest.onUnMergedUpdates,
+  });
+
+  const isCollaborationEnabled = useMemo(() => {
+    return enableCollaboration;
+  }, [enableCollaboration]);
 
   // V2 - comment
   const [activeCommentId, setActiveCommentId] = useState<string | null>(null);
@@ -115,6 +140,7 @@ export const useDdocEditor = ({
       (error: string) => onError?.(error),
       ipfsImageUploadFn,
       isConnected,
+      enableCollaboration,
     ),
     customTextInputRules,
     PageBreak,
@@ -124,7 +150,6 @@ export const useDdocEditor = ({
       },
       onCommentActivated: (commentId) => {
         setActiveCommentId(commentId);
-
         if (commentId) setTimeout(() => focusCommentWithActiveId(commentId));
       },
     }),
@@ -151,13 +176,13 @@ export const useDdocEditor = ({
           (error: string) => onError?.(error),
           ipfsImageUploadFn,
           isConnected,
+          enableCollaboration,
         ),
       ]);
     }
-  }, [isConnected]);
+  }, [isConnected, enableCollaboration]);
 
   const initialContentSetRef = useRef(false);
-  const [isContentLoading, setIsContentLoading] = useState(true);
   const [slides, setSlides] = useState<string[]>([]);
 
   const isHighlightedYellow = (
@@ -372,10 +397,17 @@ export const useDdocEditor = ({
           (error: string) => onError?.(error),
           ipfsImageUploadFn,
           isConnected,
+          enableCollaboration,
         ),
       ]);
     }
-  }, [activeModel, maxTokens, isAIAgentEnabled, isConnected]);
+  }, [
+    activeModel,
+    maxTokens,
+    isAIAgentEnabled,
+    isConnected,
+    enableCollaboration,
+  ]);
 
   useEffect(() => {
     if (zoomLevel) {
@@ -391,46 +423,76 @@ export const useDdocEditor = ({
 
   const collaborationCleanupRef = useRef<() => void>(() => {});
 
-  const connect = (username: string | null | undefined, isEns = false) => {
-    if (!enableCollaboration || !collaborationId) {
-      throw new Error('docId or username is not provided');
-    }
-
-    const provider = new WebrtcProvider(collaborationId, ydoc, {
-      signaling: [
-        'wss://fileverse-signaling-server-0529292ff51c.herokuapp.com/',
-      ],
-    });
-
-    setExtensions([
-      ...extensions.filter((extension) => extension.name !== 'history'),
-      CollaborationCursor.configure({
-        provider: provider,
-        user: {
-          name:
-            username && username.length > 20
-              ? getTrimmedName(username, 7, 15)
-              : username,
+  useEffect(() => {
+    if (!isReady || !enableCollaboration || !collabConfig) return;
+    if (collabConfig.isEns) {
+      if (typeof editor?.commands?.updateUser === 'function') {
+        editor.commands.updateUser({
+          name: collabConfig.username,
           color: usercolors[Math.floor(Math.random() * usercolors.length)],
-          isEns: isEns,
-        },
-        render: getCursor,
-      }),
-    ]);
+          isEns: collabConfig.isEns,
+        });
+      }
+    }
+  }, [isReady, enableCollaboration, collabConfig?.isEns]);
 
-    collaborationCleanupRef.current = () => {
-      provider.destroy();
-      ydoc.destroy();
+  const awarenessProvider = useMemo(() => {
+    if (!isReady || !awareness || !ydoc) return null;
+    return { ydoc, awareness };
+  }, [isReady]);
+
+  useEffect(() => {
+    if (!isReady) return;
+
+    const setupExtensions = async () => {
+      setExtensions([
+        ...extensions.filter((extension) => extension.name !== 'history'),
+        CollaborationCursor.configure({
+          provider: awarenessProvider,
+          user: {
+            name: collabConfig?.username || '',
+            color: usercolors[Math.floor(Math.random() * usercolors.length)],
+            isEns: collabConfig?.isEns,
+          },
+          render: getCursor,
+        }),
+      ]);
     };
 
-    return collaborationCleanupRef.current;
-  };
+    setupExtensions();
+
+    collaborationCleanupRef.current = () => {
+      ydoc.destroy();
+      setExtensions([...extensions]);
+    };
+
+    return () => {
+      collaborationCleanupRef.current();
+    };
+  }, [isReady]);
 
   const ref = useRef<HTMLDivElement>(null);
 
+  const readyState = useMemo(() => {
+    if (isCollaborationEnabled) {
+      return hasCollabContentInitialised && isReady;
+    }
+    return isPreviewMode ? false : true;
+  }, [
+    isCollaborationEnabled,
+    hasCollabContentInitialised,
+    isPreviewMode,
+    isReady,
+  ]);
+
   useEffect(() => {
-    editor?.setEditable(!isPreviewMode);
-  }, [isPreviewMode, editor]);
+    editor?.setEditable(readyState);
+  }, [editor, readyState]);
+
+  useEffect(() => {
+    if (!isCollaborationEnabled) return;
+    setIsCollabContentLoading(!isReady);
+  }, [isCollaborationEnabled, isReady]);
 
   const yjsIndexeddbProviderRef = useRef<IndexeddbPersistence | null>(null);
 
@@ -626,31 +688,61 @@ export const useDdocEditor = ({
     }
   }, [initialContent, editor, ydoc]);
 
-  const startCollaboration = async () => {
-    let _username = username;
-    let _isEns = false;
+  // const startCollaboration = useCallback(
+  //   async (collaborationId: string, roomKey: string) => {
+  //     if (!collabConfig?.wsUrl)
+  //       throw new Error('Cannot start collaboration without a wss url');
+  //     let _username = collabConfig?.username;
+  //     let _isEns = false;
 
-    if (walletAddress && ensResolutionUrl) {
-      const { name, isEns } = await getAddressName(
-        walletAddress,
-        ensResolutionUrl,
-      );
+  //     if (walletAddress && ensResolutionUrl) {
+  //       const { name, isEns } = await getAddressName(
+  //         walletAddress,
+  //         ensResolutionUrl,
+  //       );
 
-      _username = name;
-      _isEns = isEns;
-    }
-    if (!_username)
-      throw new Error('Cannot start collaboration without a username');
-    connect(_username, _isEns);
-  };
+  //       _username = name;
+  //       _isEns = isEns;
+  //     }
+  //     onConnect({
+  //       username: _username,
+  //       roomKey,
+  //       roomId: collaborationId,
+  //       isOwner: collabConfig?.isOwner,
+  //       ownerEdSecret: collabConfig?.ownerEdSecret,
+  //       contractAddress: collabConfig?.contractAddress,
+  //       ownerAddress: collabConfig?.ownerAddress,
+  //       isEns: _isEns,
+  //       wsUrl: collabConfig.wsUrl,
+  //       roomInfo: collabConfig.roomInfo,
+  //     });
+  //   },
+  //   [collabConfig?.collaborationId],
+  // );
 
   useEffect(() => {
-    if (enableCollaboration) {
-      startCollaboration();
-    } else {
-      collaborationCleanupRef.current();
+    if (
+      enableCollaboration &&
+      collabConfig?.collaborationId &&
+      collabConfig?.roomKey
+    ) {
+      onConnect({
+        username: collabConfig?.username,
+        roomKey: collabConfig?.roomKey,
+        roomId: collabConfig?.collaborationId,
+        isOwner: collabConfig?.isOwner,
+        ownerEdSecret: collabConfig?.ownerEdSecret,
+        contractAddress: collabConfig?.contractAddress,
+        ownerAddress: collabConfig?.ownerAddress,
+        isEns: collabConfig?.isEns,
+        wsUrl: collabConfig.wsUrl,
+        roomInfo: collabConfig.roomInfo,
+      });
     }
-  }, [enableCollaboration]);
+    return () => {
+      collaborationCleanupRef.current();
+    };
+  }, [enableCollaboration, Boolean(collabConfig)]);
 
   useEffect(() => {
     onCollaboratorChange?.(editor?.storage?.collaborationCursor?.users);
@@ -827,9 +919,11 @@ export const useDdocEditor = ({
 
   return {
     editor,
-    isContentLoading,
+    isContentLoading:
+      isCollaborationEnabled && !collabConfig?.isOwner
+        ? isCollabContentLoading || isContentLoading
+        : isContentLoading,
     ref,
-    connect,
     ydoc,
     refreshYjsIndexedDbProvider: initialiseYjsIndexedDbProvider,
     activeCommentId,
@@ -839,5 +933,6 @@ export const useDdocEditor = ({
     setSlides,
     tocItems,
     setTocItems,
+    terminateSession,
   };
 };

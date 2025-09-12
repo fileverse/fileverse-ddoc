@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import DdocEditor from '../../package/ddoc-editor';
 import { JSONContent } from '@tiptap/react';
 import {
@@ -18,8 +18,11 @@ import {
   TableOfContents,
   getHierarchicalIndexes,
 } from '@tiptap-pro/extension-table-of-contents';
+import { fromUint8Array } from 'js-base64';
+import { crypto as cryptoUtils } from './crypto';
+import { collabStore } from './storage/collab-store';
 import { DocumentStylingPanel } from './DocumentStylingPanel';
-import { DocumentStyling } from '../../package/types';
+import { DocumentStyling, ICollaborationConfig } from '../../package/types';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -31,6 +34,11 @@ const sampleTags = [
   { name: 'Specific Event', isActive: true, color: '#AAF5E4' },
 ];
 
+const ownerEdSecret =
+  '1+xXnNdjsL2G6cu0PWP7r3/l1cS8AyXKykXjJzdWQHW83cMcFZ5lXPDy5hqVeMhN9zST3ACOTX1Qu/PH6pYBgA==';
+const contractAddress = '0x381c333ad2d39C31B4595A41b91634143019D6D7';
+const ownerAddress = '0x29b66d2910ac92530c0C5A3B6fA12c18aAb7f996';
+
 function App() {
   const [enableCollaboration, setEnableCollaboration] = useState(false);
   const [username, setUsername] = useState('username');
@@ -41,9 +49,12 @@ function App() {
   const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(false);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showTOC, setShowTOC] = useState<boolean>(false);
+  const [collaborationId, setCollaborationId] = useState<string>('');
 
   // Document styling state - starts undefined to allow dark mode to work
-  const [documentStyling, setDocumentStyling] = useState<DocumentStyling | undefined>(undefined);
+  const [documentStyling, setDocumentStyling] = useState<
+    DocumentStyling | undefined
+  >(undefined);
   const [showStylingControls, setShowStylingControls] = useState(false);
 
   const [inlineCommentData, setInlineCommentData] = useState({
@@ -56,9 +67,37 @@ function App() {
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
 
-  const collaborationId = window.location.pathname.split('/')[2]; // example url - /doc/1234, that why's used second element of array
+  const searchParams = new URLSearchParams(window.location.search);
+  const paramCollaborationId = searchParams.get('collaborationId');
+  const paramKey = searchParams.get('key');
+  const [collabConfig, setCollabConf] = useState<
+    ICollaborationConfig | undefined
+  >(undefined);
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const editorRef = useRef<any>(null);
+
+  useEffect(() => {
+    const setupCollaboration = async () => {
+      if (paramCollaborationId && paramKey) {
+        const name = prompt('Whats your username');
+        if (!name) return;
+
+        setCollabConf({
+          roomKey: paramKey,
+          collaborationId: paramCollaborationId,
+          username: name,
+          isOwner: false,
+          wsUrl: 'http://localhost:5001',
+        });
+
+        setEnableCollaboration(true);
+      }
+    };
+    setupCollaboration();
+  }, [paramCollaborationId, paramKey]);
   //To handle comments from consumer side
+
   const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
   const [initialComments, setInitialComment] = useState<IComment[]>([]);
 
@@ -119,16 +158,60 @@ function App() {
   const [isConnected, setIsConnected] = useState(false);
 
   useEffect(() => {
-    if (collaborationId) {
-      const name = prompt('Whats your username');
-      if (!name) return;
-      setUsername(name);
+    const collabConfig = collabStore.getCollabConf();
+    if (collabConfig) {
+      setCollabConf(collabConfig);
+      setCollaborationId(collabConfig.collaborationId);
+      setUsername(collabConfig.username);
       setEnableCollaboration(true);
     }
-  }, [collaborationId]);
+  }, []);
+
+  const onToggleCollaboration = async () => {
+    const name = prompt('Whats your username');
+    if (!name) return;
+    const { privateKey } = cryptoUtils.generateKeyPair();
+
+    const collaborationId = crypto.randomUUID();
+    const privateKeyBase64 = fromUint8Array(privateKey, true);
+
+    const collabConfig = {
+      roomKey: privateKeyBase64,
+      collaborationId,
+      username: name,
+      isOwner: true,
+      ownerEdSecret,
+      contractAddress,
+      ownerAddress,
+      isEns: true,
+      wsUrl: 'http://localhost:5001',
+    };
+    setCollabConf(collabConfig);
+
+    collabStore.setCollabConf(collabConfig);
+
+    setCollaborationId(collaborationId);
+    setUsername(name);
+    setEnableCollaboration(true);
+    console.log(
+      `${window.location.origin}?collaborationId=${collaborationId}&key=${privateKeyBase64}`,
+    );
+
+    // copy to clipboard
+    await navigator.clipboard.writeText(
+      `${window.location.origin}?collaborationId=${collaborationId}&key=${privateKeyBase64}`,
+    );
+
+    toast({
+      title: 'Collaboration link copied to clipboard',
+      variant: 'success',
+      hasIcon: true,
+    });
+  };
 
   const renderNavbar = ({ editor }: { editor: JSONContent }): JSX.Element => {
     const publishDoc = () => console.log(editor, title);
+
     return (
       <>
         <div className="flex items-center gap-[12px]">
@@ -260,6 +343,53 @@ function App() {
             size="md"
             onClick={() => setCommentDrawerOpen((prev) => !prev)}
           />
+          {!enableCollaboration ? (
+            <IconButton
+              variant={'ghost'}
+              icon="Users"
+              size="md"
+              onClick={onToggleCollaboration}
+            />
+          ) : (
+            <DynamicDropdown
+              key="navbar-more-actions"
+              align="center"
+              sideOffset={10}
+              anchorTrigger={
+                <IconButton icon={'Users'} variant="ghost" size="md" />
+              }
+              content={
+                <div className="flex flex-col gap-1 p-2 w-fit shadow-elevation-3 ">
+                  {collabConfig?.isOwner ? (
+                    <Button
+                      variant={'ghost'}
+                      onClick={() => {
+                        editorRef.current?.terminateSession();
+                        setEnableCollaboration(false);
+                        setCollabConf(undefined);
+                        setCollaborationId('');
+                        setUsername('');
+                        collabStore.clearCollabConf();
+                      }}
+                    >
+                      Stop Collaboration
+                    </Button>
+                  ) : null}
+                  <Button
+                    onClick={() => {
+                      const base_name = 'sussy_baka';
+                      const random_number = Math.floor(Math.random() * 1000000);
+                      const new_name = `${base_name}_${random_number}`;
+                      editorRef.current?.updateCollaboratorName(new_name);
+                    }}
+                    variant={'ghost'}
+                  >
+                    Update Collaborator Name
+                  </Button>
+                </div>
+              }
+            />
+          )}
 
           <Button
             onClick={publishDoc}
@@ -287,6 +417,10 @@ function App() {
     setIsConnected(true);
   };
 
+  const onCollaboratorChange = (collaborators: unknown[] | undefined) => {
+    console.log('onCollaboratorChange', collaborators);
+  };
+
   return (
     <div>
       <DocumentStylingPanel
@@ -296,6 +430,7 @@ function App() {
         onStylingChange={setDocumentStyling}
       />
       <DdocEditor
+        ref={editorRef}
         enableCollaboration={enableCollaboration}
         collaborationId={collaborationId}
         username={username}
@@ -351,6 +486,8 @@ function App() {
         onCopyHeadingLink={(link: string) => {
           navigator.clipboard.writeText(link);
         }}
+        collabConfig={collabConfig}
+        onCollaboratorChange={onCollaboratorChange}
         documentStyling={documentStyling}
       />
       <Toaster

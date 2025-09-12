@@ -38,6 +38,8 @@ export type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   ) => Promise<{ url: string; file: File }>;
   onReminderCreate?: (reminder: Reminder, type: string) => void;
   isConnected?: boolean;
+  isCollabDocOwner?: boolean;
+  enableCollaboration?: boolean;
 };
 
 export interface NodeSelectorProps {

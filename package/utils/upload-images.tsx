@@ -200,7 +200,7 @@ export const handleDecryptImage = async (
 
     const result = await decryptImage({
       encryptedKey,
-      privateKey: toByteArray(privateKey),
+      privateKey: toByteArray(privateKey) as BufferSource,
       iv,
       imageBuffer,
     });

@@ -14,12 +14,14 @@ export const getSuggestionItems = ({
   isConnected,
   ipfsImageUploadFn,
   editor,
+  enableCollaboration,
 }: {
   query: string;
   onError?: (errorString: string) => void;
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   isConnected?: boolean;
   editor?: any;
+  enableCollaboration?: boolean;
 }) => {
   const modelContext = (window as any).__MODEL_CONTEXT__;
   const isAIAgentEnabled =
@@ -162,9 +164,11 @@ export const getSuggestionItems = ({
     },
     {
       title: 'Reminder',
-      description: isConnected
-        ? `Set a reminder and we'll notify you right on time.`
-        : 'Log-in to start creating reminders.',
+      description: !isConnected
+        ? 'Log-in to start creating reminders.'
+        : enableCollaboration
+          ? 'Reminders are not available during real-time collaboration.'
+          : 'Set a reminder and we will notify you right on time.',
       searchTerms: ['reminder', 'alert', 'notification'],
       icon: (
         <LucideIcon
@@ -174,9 +178,9 @@ export const getSuggestionItems = ({
         />
       ),
       image: '',
-      isDisabled: !isConnected,
+      isDisabled: !isConnected || enableCollaboration,
       command: ({ editor, range }: CommandProps) => {
-        if (!isConnected) {
+        if (!isConnected || enableCollaboration) {
           return;
         }
         showReminderMenu(editor, range, 'slash', onError);

@@ -550,33 +550,36 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   pointer-events: none;
   position: relative;
   word-break: normal;
+  border-radius: 9999px;
 }
 
 /* Render the username above the caret */
 .collaboration-cursor__label {
-  border-radius: 3px 3px 3px 0;
-  color: #0d0d0d;
+  border-radius: 9999px 9999px 9999px 0;
+  color: #ffffff;
   font-size: 12px;
   font-style: normal;
   font-weight: 600;
   left: -1px;
   line-height: normal;
-  padding: 0.1rem 0.3rem;
+  padding: 4px 8px;
   position: absolute;
-  top: -1.4em;
+  top: -2em;
   user-select: none;
   white-space: nowrap;
 }
 
 /* Give a remote user a caret */
 .custom-cursor__caret {
-  border-left: 1px solid transparent;
-  border-right: 1px solid transparent;
+  border-color: #4a99e9;
+  border-left: 1px solid #4a99e9;
+  border-right: 1px solid #4a99e9;
   margin-left: -1px;
   margin-right: -1px;
   pointer-events: none;
   position: relative;
   word-break: normal;
+  border-radius: 9999px;
 }
 
 /* Style for the icon */
@@ -599,22 +602,24 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   display: flex;
   align-items: center;
   position: absolute;
-  top: -1.4em;
+  top: -2em;
   left: -1px;
-  background-color: rgba(255, 255, 255, 0.8);
-  border-radius: 8px;
+  background-color: rgb(255, 255, 255);
+  border-color: #4a99e9;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-  padding: 0.1rem 0.3rem;
+  padding: 4px 8px;
   width: max-content;
   white-space: nowrap;
+  border-radius: 9999px 9999px 9999px 0;
+  color: #363b3f;
 }
 
 .custom-cursor__label {
   display: flex;
   align-items: center;
-  color: #0d0d0d;
+  color: #363b3f;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 400;
   line-height: normal;
   user-select: none;
   white-space: nowrap;

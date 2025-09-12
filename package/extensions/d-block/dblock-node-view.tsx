@@ -41,7 +41,8 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
     const [isExpanded, setIsExpanded] = useState(false);
     const [visibleTemplateCount, setVisibleTemplateCount] = useState(2);
     const actions = useContentItemActions(editor as Editor, node, getPos());
-    const { isPreviewMode, isPresentationMode } = useEditingContext();
+    const { isPreviewMode, isPresentationMode, isCollaboratorsDoc } =
+      useEditingContext();
     const { collapsedHeadings, setCollapsedHeadings } = useEditorContext();
 
     const {
@@ -359,13 +360,14 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
             })}
           >
             {isDocEmpty &&
-              !isPreviewMode &&
               renderTemplateButtons(
                 templateButtons,
                 moreTemplates,
                 visibleTemplateCount,
                 toggleAllTemplates,
                 isExpanded,
+                !!isCollaboratorsDoc,
+                isPreviewMode,
               )}
           </NodeViewContent>
         </NodeViewWrapper>
@@ -459,13 +461,14 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
           )}
         >
           {isDocEmpty &&
-            !isPreviewMode &&
             renderTemplateButtons(
               templateButtons,
               moreTemplates,
               visibleTemplateCount,
               toggleAllTemplates,
               isExpanded,
+              !!isCollaboratorsDoc,
+              isPreviewMode,
             )}
           {isHeading && isPreviewMode && (
             <section>
