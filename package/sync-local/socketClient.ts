@@ -120,7 +120,7 @@ export class SocketClient {
       this._webSocketStatus !== SocketStatusEnum.CONNECTED ||
       !this._webSocket
     ) {
-      console.error('cannot make network request, websocket is not connected');
+      this._onError?.('Lost connection to websocket server');
       return;
     }
 
