@@ -45,6 +45,7 @@ const TiptapToolBar = ({
   onMarkdownExport,
   onMarkdownImport,
   onPdfExport,
+  onHtmlExport,
   isLoading,
   ipfsImageFetchFn,
 }: {
@@ -58,6 +59,7 @@ const TiptapToolBar = ({
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
   onPdfExport?: () => void;
+  onHtmlExport?: () => void;
   isLoading: boolean;
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
@@ -83,6 +85,7 @@ const TiptapToolBar = ({
     onMarkdownExport,
     onMarkdownImport,
     onPdfExport,
+    onHtmlExport,
     ipfsImageFetchFn,
   });
 

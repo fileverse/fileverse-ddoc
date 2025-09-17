@@ -109,6 +109,34 @@ export const useHeadlessEditor = () => {
       throw new Error('Editor is not available');
     }
   };
+
+  const downloadContentAsHtml = async (
+    content: string | string[] | JSONContent,
+    title: string,
+  ) => {
+    const { editor, ydoc } = getEditor();
+    setContent(content, editor, ydoc);
+    if (editor) {
+      const generateDownloadUrl = await editor.commands.exportHtmlFile({
+        title,
+      });
+      if (generateDownloadUrl) {
+        const url = generateDownloadUrl;
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = title + '.html';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+        editor.destroy();
+      } else {
+        throw new Error('Failed to generate download url');
+      }
+    } else {
+      throw new Error('Editor is not available');
+    }
+  };
   async function getYjsContentFromMarkdown(
     file: File,
     ipfsImageUploadFn: (file: File) => Promise<IpfsImageUploadResponse>,
@@ -141,6 +169,7 @@ export const useHeadlessEditor = () => {
     getEditor,
     getYjsConvertor,
     downloadContentAsMd,
+    downloadContentAsHtml,
     mergeYjsUpdates,
     handleMarkdownContent,
     getYjsContentFromMarkdown,

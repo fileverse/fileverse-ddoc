@@ -83,6 +83,7 @@ const DdocEditor = forwardRef(
       onMarkdownExport,
       onMarkdownImport,
       onPdfExport,
+      onHtmlExport,
       editorCanvasClassNames,
       sharedSlidesLink,
       documentName,
@@ -501,6 +502,7 @@ const DdocEditor = forwardRef(
                     onMarkdownExport={onMarkdownExport}
                     onMarkdownImport={onMarkdownImport}
                     onPdfExport={onPdfExport}
+                    onHtmlExport={onHtmlExport}
                     isLoading={!editor || isContentLoading}
                     ipfsImageFetchFn={ipfsImageFetchFn}
                   />

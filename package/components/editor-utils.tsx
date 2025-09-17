@@ -290,6 +290,7 @@ export const useEditorToolbar = ({
   onMarkdownExport,
   onMarkdownImport,
   onPdfExport,
+  onHtmlExport,
   ipfsImageFetchFn,
 }: {
   editor: Editor | null;
@@ -298,6 +299,7 @@ export const useEditorToolbar = ({
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
   onPdfExport?: () => void;
+  onHtmlExport?: () => void;
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
@@ -763,6 +765,33 @@ export const useEditorToolbar = ({
         setSuggestedFilename(title as string);
         setIsExportModalOpen(true);
         onMarkdownExport?.();
+      },
+      isActive: false,
+    },
+    {
+      icon: 'FileText',
+      title: 'Export HTML',
+      onClick: async () => {
+        if (editor) {
+          const editorContent = editor.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const generateDownloadUrl = await editor.commands.exportHtmlFile({
+            title: title as string,
+          });
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${title as string}.html`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onHtmlExport?.();
       },
       isActive: false,
     },

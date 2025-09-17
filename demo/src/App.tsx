@@ -466,6 +466,7 @@ function App() {
         onMarkdownImport={(): void => {}}
         onMarkdownExport={(): void => {}}
         onPdfExport={(): void => {}}
+        onHtmlExport={(): void => {}}
         initialComments={initialComments}
         onCommentReply={handleReplyOnComment}
         onNewComment={handleNewComment}
