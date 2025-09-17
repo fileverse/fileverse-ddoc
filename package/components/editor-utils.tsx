@@ -291,6 +291,7 @@ export const useEditorToolbar = ({
   onMarkdownImport,
   onPdfExport,
   onHtmlExport,
+  onTxtExport,
   ipfsImageFetchFn,
 }: {
   editor: Editor | null;
@@ -300,6 +301,7 @@ export const useEditorToolbar = ({
   onMarkdownImport?: () => void;
   onPdfExport?: () => void;
   onHtmlExport?: () => void;
+  onTxtExport?: () => void;
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
@@ -792,6 +794,31 @@ export const useEditorToolbar = ({
           }
         }
         onHtmlExport?.();
+      },
+      isActive: false,
+    },
+    {
+      icon: 'FileText',
+      title: 'Export TXT',
+      onClick: async () => {
+        if (editor) {
+          const editorContent = editor.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const generateDownloadUrl = await editor.commands.exportTxtFile();
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${title as string}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onTxtExport?.();
       },
       isActive: false,
     },
