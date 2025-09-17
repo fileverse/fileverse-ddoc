@@ -313,7 +313,6 @@ export const useEditorToolbar = ({
   } = useEditorToolVisiibility(IEditorTool.NONE);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [fileExportsOpen, setFileExportsOpen] = useState(false);
-  const [suggestedFilename, setSuggestedFilename] = useState('');
 
   const { buttonRef } = useComments();
 
@@ -759,13 +758,26 @@ export const useEditorToolbar = ({
     {
       icon: 'FileOutput',
       title: 'Export Markdown',
-      onClick: () => {
-        const editorContent = editor?.getJSON();
-        const title = extractTitleFromContent(
-          editorContent as unknown as { content: JSONContent },
-        );
-        setSuggestedFilename(title as string);
-        setIsExportModalOpen(true);
+      onClick: async () => {
+        if (editor) {
+          const editorContent = editor?.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const generateDownloadUrl = await editor.commands.exportMarkdownFile({
+            title: title as string,
+          });
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = title as string;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
         onMarkdownExport?.();
       },
       isActive: false,
@@ -964,8 +976,6 @@ export const useEditorToolbar = ({
     setIsExportModalOpen,
     fileExportsOpen,
     setFileExportsOpen,
-    suggestedFilename,
-    setSuggestedFilename,
   };
 };
 

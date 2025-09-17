@@ -20,8 +20,6 @@ import {
   IconButton,
   DynamicDropdown,
   LucideIconProps,
-  DynamicModal,
-  TextField,
   DynamicDropdownV2,
   cn,
   Skeleton,
@@ -74,12 +72,8 @@ const TiptapToolBar = ({
     undoRedoTools,
     markdownOptions,
     pdfExportOption,
-    isExportModalOpen,
-    setIsExportModalOpen,
     fileExportsOpen,
     setFileExportsOpen,
-    suggestedFilename,
-    setSuggestedFilename,
   } = useEditorToolbar({
     editor,
     onError,
@@ -107,24 +101,6 @@ const TiptapToolBar = ({
     { title: '200%', value: '2' },
   ];
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const handleExport = async () => {
-    if (editor) {
-      setIsExportModalOpen(false);
-      const generateDownloadUrl = await editor.commands.exportMarkdownFile({
-        title: suggestedFilename,
-      });
-      if (generateDownloadUrl) {
-        const url = generateDownloadUrl;
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = suggestedFilename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }
-    }
-  };
 
   const renderContent = (tool: {
     title: string;
@@ -579,29 +555,6 @@ const TiptapToolBar = ({
                     tool.title + 'skeleton',
                   );
             })}
-            <DynamicModal
-              open={isExportModalOpen}
-              onOpenChange={setIsExportModalOpen}
-              title="Export Markdown"
-              content={
-                <TextField
-                  label="Filename"
-                  value={suggestedFilename}
-                  onChange={(e) => setSuggestedFilename(e.target.value)}
-                  placeholder="Enter filename"
-                />
-              }
-              primaryAction={{
-                label: 'Export',
-                onClick: handleExport,
-                className: 'w-full md:w-auto',
-              }}
-              secondaryAction={{
-                label: 'Cancel',
-                onClick: () => setIsExportModalOpen(false),
-                className: 'w-full md:w-auto',
-              }}
-            />
           </div>
         </div>
         <div className="flex items-center gap-1">
