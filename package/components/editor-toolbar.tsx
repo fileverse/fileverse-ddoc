@@ -23,6 +23,9 @@ import {
   DynamicDropdownV2,
   cn,
   Skeleton,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
 } from '@fileverse/ui';
 import ToolbarButton from '../common/toolbar-button';
 import { useMediaQuery } from 'usehooks-ts';
@@ -70,8 +73,8 @@ const TiptapToolBar = ({
     setToolVisibility,
     toolbar,
     undoRedoTools,
-    markdownOptions,
-    pdfExportOption,
+    importOptions,
+    exportOptions,
     fileExportsOpen,
     setFileExportsOpen,
   } = useEditorToolbar({
@@ -166,7 +169,7 @@ const TiptapToolBar = ({
                   anchorTrigger={
                     <Tooltip text="Export/Import">
                       <IconButton
-                        icon="FileExport"
+                        icon="File"
                         variant="ghost"
                         size="md"
                         isActive={fileExportsOpen}
@@ -182,54 +185,66 @@ const TiptapToolBar = ({
                     </Tooltip>
                   }
                   content={
-                    <div className="p-2 flex flex-col gap-1 text-body-sm scroll-smooth color-bg-default shadow-elevation-3 transition-all rounded color-text-default">
-                      <div>
-                        <span className="text-[12px] px-2 font-normal color-text-secondary py-1">
-                          PDF
-                        </span>
-                        {pdfExportOption.length > 0 && (
-                          <button
-                            key={`pdf-0`}
-                            onClick={() => {
-                              pdfExportOption[0]?.onClick();
-                              setFileExportsOpen(false);
-                            }}
-                            className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
-                          >
-                            <LucideIcon
-                              name={
-                                pdfExportOption[0]
-                                  ?.icon as LucideIconProps['name']
-                              }
-                              className="w-5 h-5"
-                            />
-                            <span className="text-sm">
-                              {pdfExportOption[0]?.title}
-                            </span>
-                          </button>
-                        )}
-                      </div>
-                      <div>
-                        <span className="text-[12px] px-2 font-normal color-text-secondary py-1">
-                          Markdown
-                        </span>
-                        {markdownOptions.map((option, index) => (
-                          <button
-                            key={index}
-                            onClick={() => {
-                              setFileExportsOpen(false);
-                              option?.onClick();
-                            }}
-                            className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
-                          >
-                            <LucideIcon
-                              name={option?.icon as LucideIconProps['name']}
-                              className="w-5 h-5"
-                            />
-                            <span className="text-sm">{option?.title}</span>
-                          </button>
-                        ))}
-                      </div>
+                    <div className="w-[210px] rounded-lg p-2 flex flex-col gap-1 text-body-sm scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default">
+                      <Popover>
+                        <PopoverTrigger className="appearance-none bg-transparent bg-none hover:color-bg-default-hover data-[state=open]:!bg-[#F2F4F5] h-8 rounded p-2 w-full text-left flex items-center justify-between transition">
+                          <div className="flex items-center justify-start space-x-2">
+                            <LucideIcon name="FileExport" className="w-5 h-5" />
+                            <span className="text-sm">Export</span>
+                          </div>
+                          <LucideIcon name="ChevronRight" className="w-5 h-5" />
+                        </PopoverTrigger>
+
+                        <PopoverContent
+                          side="right"
+                          align="start"
+                          sideOffset={10}
+                        >
+                          <div className="w-[210px] rounded-lg p-2 flex flex-col gap-1 text-body-sm scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default">
+                            {exportOptions.map((option, index) => (
+                              <button
+                                key={index}
+                                onClick={() => {
+                                  setFileExportsOpen(false);
+                                  option?.onClick();
+                                }}
+                                className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
+                              >
+                                <span className="text-sm">{option?.title}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
+                      <Popover>
+                        <PopoverTrigger className="appearance-none bg-transparent bg-none hover:color-bg-default-hover data-[state=open]:!bg-[#F2F4F5] h-8 rounded p-2 w-full text-left flex items-center justify-between transition">
+                          <div className="flex items-center justify-start space-x-2">
+                            <LucideIcon name="FileExport" className="w-5 h-5" />
+                            <span className="text-sm">Export</span>
+                          </div>
+                          <LucideIcon name="ChevronRight" className="w-5 h-5" />
+                        </PopoverTrigger>
+                        <PopoverContent
+                          side="right"
+                          align="start"
+                          sideOffset={10}
+                        >
+                          <div className="w-[210px] rounded-lg p-2 flex flex-col gap-1 text-body-sm scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default">
+                            {importOptions.map((option, index) => (
+                              <button
+                                key={index}
+                                onClick={() => {
+                                  setFileExportsOpen(false);
+                                  option?.onClick();
+                                }}
+                                className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
+                              >
+                                <span className="text-sm">{option?.title}</span>
+                              </button>
+                            ))}
+                          </div>
+                        </PopoverContent>
+                      </Popover>
                     </div>
                   }
                 />,

@@ -409,7 +409,6 @@ const MarkdownPasteHandler = (
             const inlineHtml = temporalEditor.getHTML();
             const markdown = turndownService.turndown(inlineHtml);
 
-            // ✅ Build metadata dynamically from props
             const metadata = {
               title: props?.title || 'Untitled',
               date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
@@ -625,13 +624,22 @@ async function uploadBase64ImageContent(
   };
 }
 
+export const stripFrontmatter = (markdown: string): string => {
+  const fmRegex = /^---\n[\s\S]*?\n---\n*/;
+  // Remove frontmatter and *all* leading blank lines after it
+  return markdown.replace(fmRegex, '').replace(/^\s*\n/, '');
+};
+
 export async function handleMarkdownContent(
   view: any,
   content: string,
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
 ) {
+  // Remove YAML frontmatter before parsing
+  const cleanMarkdown = stripFrontmatter(content);
+
   // Convert Markdown to HTML
-  let convertedHtml = markdownIt.render(content);
+  let convertedHtml = markdownIt.render(cleanMarkdown);
 
   // Decode HTML entities
   const textarea = document.createElement('textarea');

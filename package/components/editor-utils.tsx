@@ -706,10 +706,22 @@ export const useEditorToolbar = ({
     },
   ];
 
-  const pdfExportOption: Array<IEditorToolElement | null> = [
+  const importOptions: Array<IEditorToolElement | null> = [
+    {
+      icon: 'FileInput',
+      title: 'Markdown (.md)',
+      onClick: async () => {
+        await editor?.commands.uploadMarkdownFile(ipfsImageUploadFn);
+        onMarkdownImport?.();
+      },
+      isActive: false,
+    },
+  ];
+
+  const exportOptions: Array<IEditorToolElement | null> = [
     {
       icon: 'FileExport',
-      title: 'Export PDF',
+      title: 'PDF (.pdf)',
       onClick: () => {
         if (editor) {
           const closeAndPrint = async () => {
@@ -743,48 +755,9 @@ export const useEditorToolbar = ({
       },
       isActive: false,
     },
-  ];
-
-  const markdownOptions: Array<IEditorToolElement | null> = [
-    {
-      icon: 'FileInput',
-      title: 'Import Markdown',
-      onClick: async () => {
-        await editor?.commands.uploadMarkdownFile(ipfsImageUploadFn);
-        onMarkdownImport?.();
-      },
-      isActive: false,
-    },
-    {
-      icon: 'FileOutput',
-      title: 'Export Markdown',
-      onClick: async () => {
-        if (editor) {
-          const editorContent = editor?.getJSON();
-          const title = extractTitleFromContent(
-            editorContent as unknown as { content: JSONContent },
-          );
-          const generateDownloadUrl = await editor.commands.exportMarkdownFile({
-            title: title as string,
-          });
-          if (generateDownloadUrl) {
-            const url = generateDownloadUrl;
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = title as string;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-          }
-        }
-        onMarkdownExport?.();
-      },
-      isActive: false,
-    },
     {
       icon: 'FileText',
-      title: 'Export HTML',
+      title: 'Web page (.html)',
       onClick: async () => {
         if (editor) {
           const editorContent = editor.getJSON();
@@ -811,7 +784,7 @@ export const useEditorToolbar = ({
     },
     {
       icon: 'FileText',
-      title: 'Export TXT',
+      title: 'Plain Text (.txt)',
       onClick: async () => {
         if (editor) {
           const editorContent = editor.getJSON();
@@ -831,6 +804,33 @@ export const useEditorToolbar = ({
           }
         }
         onTxtExport?.();
+      },
+      isActive: false,
+    },
+    {
+      icon: 'FileOutput',
+      title: 'Markdown (.md)',
+      onClick: async () => {
+        if (editor) {
+          const editorContent = editor?.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const generateDownloadUrl = await editor.commands.exportMarkdownFile({
+            title: title as string,
+          });
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = title as string;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onMarkdownExport?.();
       },
       isActive: false,
     },
@@ -966,8 +966,8 @@ export const useEditorToolbar = ({
   return {
     undoRedoTools,
     toolbar,
-    markdownOptions,
-    pdfExportOption,
+    exportOptions,
+    importOptions,
     bottomToolbar,
     toolRef,
     toolVisibility,
