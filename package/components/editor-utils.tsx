@@ -9,7 +9,7 @@ import React, {
   useState,
 } from 'react';
 import { IEditorTool, useEditorToolVisiibility } from '../hooks/use-visibility';
-import { Editor } from '@tiptap/react';
+import { Editor, JSONContent } from '@tiptap/react';
 import { startImageUpload } from '../utils/upload-images';
 import cn from 'classnames';
 import UtilsModal from './utils-modal';
@@ -40,6 +40,7 @@ import { searchForSecureImageNodeAndEmbedImageContent } from '../extensions/mard
 import { inlineLoader } from '../utils/inline-loader';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { getTemporaryEditor } from '../utils/helpers';
+import { extractTitleFromContent } from '../utils/extract-title-from-content';
 
 interface IEditorToolElement {
   icon: any;
@@ -308,6 +309,7 @@ export const useEditorToolbar = ({
   } = useEditorToolVisiibility(IEditorTool.NONE);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [fileExportsOpen, setFileExportsOpen] = useState(false);
+  const [suggestedFilename, setSuggestedFilename] = useState('');
 
   const { buttonRef } = useComments();
 
@@ -754,6 +756,11 @@ export const useEditorToolbar = ({
       icon: 'FileOutput',
       title: 'Export Markdown',
       onClick: () => {
+        const editorContent = editor?.getJSON();
+        const title = extractTitleFromContent(
+          editorContent as unknown as { content: JSONContent },
+        );
+        setSuggestedFilename(title as string);
         setIsExportModalOpen(true);
         onMarkdownExport?.();
       },
@@ -901,6 +908,8 @@ export const useEditorToolbar = ({
     setIsExportModalOpen,
     fileExportsOpen,
     setFileExportsOpen,
+    suggestedFilename,
+    setSuggestedFilename,
   };
 };
 

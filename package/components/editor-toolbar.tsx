@@ -74,6 +74,8 @@ const TiptapToolBar = ({
     setIsExportModalOpen,
     fileExportsOpen,
     setFileExportsOpen,
+    suggestedFilename,
+    setSuggestedFilename,
   } = useEditorToolbar({
     editor,
     onError,
@@ -89,7 +91,7 @@ const TiptapToolBar = ({
   const onSetFontSize = editor ? editorStates.onSetFontSize : () => {};
 
   const isBelow1480px = useMediaQuery('(max-width: 1480px)');
-  const [filename, setFilename] = useState('exported_document.md');
+
   const zoomLevels = [
     { title: 'Fit', value: '1.4' },
     { title: '50%', value: '0.5' },
@@ -102,12 +104,14 @@ const TiptapToolBar = ({
   const handleExport = async () => {
     if (editor) {
       setIsExportModalOpen(false);
-      const generateDownloadUrl = await editor.commands.exportMarkdownFile();
+      const generateDownloadUrl = await editor.commands.exportMarkdownFile({
+        title: suggestedFilename,
+      });
       if (generateDownloadUrl) {
         const url = generateDownloadUrl;
         const link = document.createElement('a');
         link.href = url;
-        link.download = filename;
+        link.download = suggestedFilename;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
@@ -576,8 +580,8 @@ const TiptapToolBar = ({
               content={
                 <TextField
                   label="Filename"
-                  value={filename}
-                  onChange={(e) => setFilename(e.target.value)}
+                  value={suggestedFilename}
+                  onChange={(e) => setSuggestedFilename(e.target.value)}
                   placeholder="Enter filename"
                 />
               }

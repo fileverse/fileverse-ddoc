@@ -267,6 +267,18 @@ turndownService.addRule('callout', {
   },
 });
 
+turndownService.addRule('linkDefinition', {
+  filter: (node) => {
+    const text = (node.textContent || '').trim();
+    return node.nodeName === 'P' && /^\[[^\]]+\]:\s+\S+/.test(text);
+  },
+  replacement: (_content, node) => {
+    // Use the raw DOM text, not Turndown's escaped content
+    const text = (node.textContent || '').trim();
+    return text + '\n\n';
+  },
+});
+
 // Define the command type
 declare module '@tiptap/core' {
   interface Commands {
@@ -276,7 +288,7 @@ declare module '@tiptap/core' {
       ) => any;
     };
     exportMarkdownFile: {
-      exportMarkdownFile: () => any;
+      exportMarkdownFile: (props?: { title?: string }) => any;
     };
   }
 }
@@ -372,7 +384,7 @@ const MarkdownPasteHandler = (
             return true;
           },
         exportMarkdownFile:
-          () =>
+          (props?: { title?: string }) =>
           async ({ editor }: { editor: Editor }): Promise<string> => {
             const { showLoader, removeLoader } = inlineLoader(
               editor,
@@ -396,10 +408,32 @@ const MarkdownPasteHandler = (
 
             const inlineHtml = temporalEditor.getHTML();
             const markdown = turndownService.turndown(inlineHtml);
-            const blob = new Blob([markdown], {
+
+            // ✅ Build metadata dynamically from props
+            const metadata = {
+              title: props?.title || 'Untitled',
+              date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+            };
+
+            const frontmatter =
+              '---\n' +
+              Object.entries(metadata)
+                .map(([key, value]) => {
+                  if (Array.isArray(value)) {
+                    return `${key}:\n${value.map((v) => `  - ${v}`).join('\n')}`;
+                  }
+                  return `${key}: ${value}`;
+                })
+                .join('\n') +
+              '\n---\n\n';
+
+            const markdownWithMeta = frontmatter + markdown;
+
+            const blob = new Blob([markdownWithMeta], {
               type: 'text/markdown;charset=utf-8',
             });
             const downloadUrl = URL.createObjectURL(blob);
+
             temporalEditor.destroy();
             removeLoader(loader);
             return downloadUrl;
