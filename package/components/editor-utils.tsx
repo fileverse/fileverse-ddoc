@@ -41,6 +41,9 @@ import { inlineLoader } from '../utils/inline-loader';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { getTemporaryEditor } from '../utils/helpers';
 import { extractTitleFromContent } from '../utils/extract-title-from-content';
+import { convertMarkdownToHTML } from '../utils/md-to-html';
+import { prettifyHtml } from '../utils/prettify-html';
+import DOMPurify from 'dompurify';
 
 export interface IEditorToolElement {
   icon: any;
@@ -824,6 +827,90 @@ export const useEditorToolbar = ({
             const link = document.createElement('a');
             link.href = url;
             link.download = `${title || 'Untitled'}.md`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onMarkdownExport?.();
+      },
+      isActive: false,
+    },
+    {
+      icon: 'FileOutput',
+      title: 'NEW HTML (.html)',
+      onClick: async () => {
+        if (editor) {
+          const editorContent = editor?.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const markdownFile = await editor.commands.exportMarkdownFile({
+            title: title || 'Untitled',
+            returnMDFile: true,
+          });
+          const html = convertMarkdownToHTML(markdownFile, {
+            maxCharsPerSlide: Number.MAX_SAFE_INTEGER,
+            maxWordsPerSlide: Number.MAX_SAFE_INTEGER,
+            maxLinesPerSlide: Number.MAX_SAFE_INTEGER,
+            preserveNewlines: true,
+            sanitize: false,
+          });
+          const cleanHtml = DOMPurify.sanitize(html, {
+            ALLOWED_TAGS: [
+              'p',
+              'h1',
+              'h2',
+              'h3',
+              'ul',
+              'ol',
+              'li',
+              'blockquote',
+              'pre',
+              'code',
+              'strong',
+              'em',
+              'u',
+              's',
+              'mark',
+              'span',
+              'br',
+              'hr',
+              'a',
+            ],
+            ALLOWED_ATTR: ['href'],
+            FORBID_ATTR: ['data-toc-id', 'data-page-break'],
+          });
+
+          // Build metadata dynamically from props
+          const metadata = {
+            title: title || 'Untitled',
+            date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+          };
+
+          // Create a clean HTML document without any classes, IDs, or styles
+          const htmlContent = `
+  <html>
+    <head>
+      <title>${metadata.title}</title>
+    </head>
+    <body>
+      ${cleanHtml}
+    </body>
+  </html>
+`;
+
+          const formattedHtml = await prettifyHtml(htmlContent);
+          const blob = new Blob([formattedHtml], {
+            type: 'text/html;charset=utf-8',
+          });
+          const downloadUrl = URL.createObjectURL(blob);
+          if (downloadUrl) {
+            const url = downloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${title || 'Untitled'}.html`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);

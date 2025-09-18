@@ -5,18 +5,7 @@ import { IpfsImageFetchPayload } from '../../types';
 import { getTemporaryEditor } from '../../utils/helpers';
 import { searchForSecureImageNodeAndEmbedImageContent } from '../mardown-paste-handler';
 import DOMPurify from 'dompurify';
-
-import prettier from 'prettier/standalone';
-import parserHtml from 'prettier/plugins/html';
-
-const prettifyHtml = async (html: string) => {
-  return await prettier.format(html, {
-    parser: 'html',
-    plugins: [parserHtml],
-    tabWidth: 2,
-    useTabs: false,
-  });
-};
+import { prettifyHtml } from '../../utils/prettify-html';
 
 // Define the command type
 declare module '@tiptap/core' {
@@ -94,9 +83,10 @@ const HtmlExportExtension = (
                 'span',
                 'br',
                 'hr',
+                'a',
               ],
-              ALLOWED_ATTR: [],
-              FORBID_ATTR: ['data-toc-id'],
+              ALLOWED_ATTR: ['href'],
+              FORBID_ATTR: ['data-toc-id', 'data-tight'],
             });
 
             // Build metadata dynamically from props

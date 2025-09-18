@@ -288,7 +288,10 @@ declare module '@tiptap/core' {
       ) => any;
     };
     exportMarkdownFile: {
-      exportMarkdownFile: (props?: { title?: string }) => any;
+      exportMarkdownFile: (props?: {
+        title?: string;
+        returnMDFile?: boolean;
+      }) => any;
     };
   }
 }
@@ -384,7 +387,7 @@ const MarkdownPasteHandler = (
             return true;
           },
         exportMarkdownFile:
-          (props?: { title?: string }) =>
+          (props?: { title?: string; returnMDFile?: boolean }) =>
           async ({ editor }: { editor: Editor }): Promise<string> => {
             const { showLoader, removeLoader } = inlineLoader(
               editor,
@@ -427,6 +430,12 @@ const MarkdownPasteHandler = (
               '\n---\n\n';
 
             const markdownWithMeta = frontmatter + markdown;
+
+            if (props?.returnMDFile) {
+              temporalEditor.destroy();
+              removeLoader(loader);
+              return markdownWithMeta;
+            }
 
             const blob = new Blob([markdownWithMeta], {
               type: 'text/markdown;charset=utf-8',
