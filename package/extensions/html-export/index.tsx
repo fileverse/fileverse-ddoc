@@ -10,7 +10,6 @@ import prettier from 'prettier/standalone';
 import parserHtml from 'prettier/plugins/html';
 
 const prettifyHtml = async (html: string) => {
-  console.log('html', html);
   return await prettier.format(html, {
     parser: 'html',
     plugins: [parserHtml],

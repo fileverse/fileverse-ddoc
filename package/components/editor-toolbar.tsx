@@ -21,17 +21,14 @@ import {
   DynamicDropdown,
   LucideIconProps,
   DynamicDropdownV2,
-  cn,
   Skeleton,
-  Popover,
-  PopoverTrigger,
-  PopoverContent,
 } from '@fileverse/ui';
 import ToolbarButton from '../common/toolbar-button';
 import { useMediaQuery } from 'usehooks-ts';
 import { AnimatePresence } from 'framer-motion';
 import { fadeInTransition, slideUpTransition } from './motion-div';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
+import { ImportExportButton } from './import-export-button';
 
 const MemoizedFontSizePicker = React.memo(FontSizePicker);
 
@@ -160,97 +157,12 @@ const TiptapToolBar = ({
                 'markdown-transition',
               )
             : slideUpTransition(
-                <DynamicDropdownV2
-                  key="Markdown"
-                  align="start"
-                  controlled={true}
-                  isOpen={fileExportsOpen}
-                  onClose={() => setFileExportsOpen(false)}
-                  anchorTrigger={
-                    <Tooltip text="Export/Import">
-                      <IconButton
-                        icon="File"
-                        variant="ghost"
-                        size="md"
-                        isActive={fileExportsOpen}
-                        className={cn(
-                          'color-text-default',
-                          fileExportsOpen && 'dark:text-[#363B3F]',
-                        )}
-                        onClick={() => {
-                          setFileExportsOpen((prev) => !prev);
-                          setDropdownOpen(false);
-                        }}
-                      />
-                    </Tooltip>
-                  }
-                  content={
-                    <div className="w-[210px] rounded-lg p-2 flex flex-col gap-1 scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default">
-                      <Popover>
-                        <PopoverTrigger className="appearance-none bg-transparent bg-none hover:color-bg-default-hover data-[state=open]:!bg-[#F2F4F5] h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm">
-                          <div className="flex items-center justify-start space-x-2">
-                            <LucideIcon name="FileExport" className="w-5 h-5" />
-                            <span className="text-body-sm">Export</span>
-                          </div>
-                          <LucideIcon name="ChevronRight" className="w-5 h-5" />
-                        </PopoverTrigger>
-
-                        <PopoverContent
-                          side="right"
-                          align="start"
-                          sideOffset={10}
-                        >
-                          <div className="w-[210px] rounded-lg p-2 flex flex-col gap-1 scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default">
-                            {exportOptions.map((option, index) => (
-                              <button
-                                key={index}
-                                onClick={() => {
-                                  setFileExportsOpen(false);
-                                  option?.onClick();
-                                }}
-                                className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition text-body-sm"
-                              >
-                                <span className="text-body-sm">
-                                  {option?.title}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                      <Popover>
-                        <PopoverTrigger className="appearance-none bg-transparent bg-none hover:color-bg-default-hover data-[state=open]:!bg-[#F2F4F5] h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm">
-                          <div className="flex items-center justify-start space-x-2">
-                            <LucideIcon name="FileImport" className="w-5 h-5" />
-                            <span className="text-body-sm">Import</span>
-                          </div>
-                          <LucideIcon name="ChevronRight" className="w-5 h-5" />
-                        </PopoverTrigger>
-                        <PopoverContent
-                          side="right"
-                          align="start"
-                          sideOffset={10}
-                        >
-                          <div className="w-[210px] rounded-lg p-2 flex flex-col gap-1 scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default">
-                            {importOptions.map((option, index) => (
-                              <button
-                                key={index}
-                                onClick={() => {
-                                  setFileExportsOpen(false);
-                                  option?.onClick();
-                                }}
-                                className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition text-body-sm"
-                              >
-                                <span className="text-body-sm">
-                                  {option?.title}
-                                </span>
-                              </button>
-                            ))}
-                          </div>
-                        </PopoverContent>
-                      </Popover>
-                    </div>
-                  }
+                <ImportExportButton
+                  fileExportsOpen={fileExportsOpen}
+                  setFileExportsOpen={setFileExportsOpen}
+                  exportOptions={exportOptions}
+                  importOptions={importOptions}
+                  setDropdownOpen={setDropdownOpen}
                 />,
                 'markdown-dropdown-transition',
               )}

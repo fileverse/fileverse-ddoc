@@ -42,7 +42,7 @@ import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { getTemporaryEditor } from '../utils/helpers';
 import { extractTitleFromContent } from '../utils/extract-title-from-content';
 
-interface IEditorToolElement {
+export interface IEditorToolElement {
   icon: any;
   title: string;
   onClick: () => void;
@@ -765,13 +765,13 @@ export const useEditorToolbar = ({
             editorContent as unknown as { content: JSONContent },
           );
           const generateDownloadUrl = await editor.commands.exportHtmlFile({
-            title: title as string,
+            title: title || 'Untitled',
           });
           if (generateDownloadUrl) {
             const url = generateDownloadUrl;
             const link = document.createElement('a');
             link.href = url;
-            link.download = `${title as string}.html`;
+            link.download = `${title || 'Untitled'}.html`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -796,7 +796,7 @@ export const useEditorToolbar = ({
             const url = generateDownloadUrl;
             const link = document.createElement('a');
             link.href = url;
-            link.download = `${title as string}.txt`;
+            link.download = `${title || 'Untitled'}.txt`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -817,13 +817,13 @@ export const useEditorToolbar = ({
             editorContent as unknown as { content: JSONContent },
           );
           const generateDownloadUrl = await editor.commands.exportMarkdownFile({
-            title: title as string,
+            title: title || 'Untitled',
           });
           if (generateDownloadUrl) {
             const url = generateDownloadUrl;
             const link = document.createElement('a');
             link.href = url;
-            link.download = `${title as string}.md`;
+            link.download = `${title || 'Untitled'}.md`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
