@@ -33,7 +33,11 @@ const ImportExportButton = ({
       align="start"
       controlled={true}
       isOpen={fileExportsOpen}
-      onClose={() => setFileExportsOpen(false)}
+      onClose={() => {
+        setFileExportsOpen(false);
+        setOpenExport(false);
+        setOpenImport(false);
+      }}
       anchorTrigger={
         <Tooltip text="Export/Import">
           <IconButton
