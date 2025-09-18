@@ -70,6 +70,7 @@ function App() {
   const searchParams = new URLSearchParams(window.location.search);
   const paramCollaborationId = searchParams.get('collaborationId');
   const paramKey = searchParams.get('key');
+  const paramCode = searchParams.get('code');
   const [collabConfig, setCollabConf] = useState<
     ICollaborationConfig | undefined
   >(undefined);
@@ -96,6 +97,21 @@ function App() {
     };
     setupCollaboration();
   }, [paramCollaborationId, paramKey]);
+
+  // Handle custom styling for code parameter
+  useEffect(() => {
+    if (paramCode === 'oxford') {
+      setDocumentStyling({
+        background: 'linear-gradient(135deg, #002147 0%, #003d82 50%, #1a4d7a 100%)',
+        canvasBackground: '#faf8f3',
+        textColor: '#1a1611',
+        fontFamily: 'Georgia, "Times New Roman", serif'
+      });
+      
+      // Set Oxford-themed title
+      setTitle('Oxford University Document');
+    }
+  }, [paramCode]);
   //To handle comments from consumer side
 
   const [commentDrawerOpen, setCommentDrawerOpen] = useState(false);
