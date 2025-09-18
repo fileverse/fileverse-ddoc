@@ -100,9 +100,14 @@ const ImportExportButton = ({
                     setFileExportsOpen(false);
                     option?.onClick();
                   }}
-                  className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center space-x-2 transition text-body-sm"
+                  className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
                 >
                   <span className="text-body-sm">{option?.title}</span>
+                  {option?.isNew && (
+                    <p className="max-h-[16px] flex items-center text-[8px] color-bg-brand text-black rounded p-1 font-semibold">
+                      NEW
+                    </p>
+                  )}
                 </button>
               ))}
             </PopoverContent>
@@ -148,9 +153,14 @@ const ImportExportButton = ({
                     setFileExportsOpen(false);
                     option?.onClick();
                   }}
-                  className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition text-body-sm"
+                  className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
                 >
                   <span className="text-body-sm">{option?.title}</span>
+                  {option?.isNew && (
+                    <p className="max-h-[16px] flex items-center text-[8px] color-bg-brand text-black rounded p-1 font-semibold">
+                      NEW
+                    </p>
+                  )}
                 </button>
               ))}
             </PopoverContent>

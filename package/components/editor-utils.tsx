@@ -48,6 +48,7 @@ export interface IEditorToolElement {
   onClick: () => void;
   isActive: boolean;
   group?: string;
+  isNew?: boolean;
 }
 
 export const fonts = [
@@ -808,6 +809,7 @@ export const useEditorToolbar = ({
         onHtmlExport?.();
       },
       isActive: false,
+      isNew: true,
     },
     {
       icon: 'FileText',
@@ -833,6 +835,7 @@ export const useEditorToolbar = ({
         onTxtExport?.();
       },
       isActive: false,
+      isNew: true,
     },
   ];
 
