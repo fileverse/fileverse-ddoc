@@ -823,7 +823,7 @@ export const useEditorToolbar = ({
             const url = generateDownloadUrl;
             const link = document.createElement('a');
             link.href = url;
-            link.download = title as string;
+            link.download = `${title as string}.md`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);

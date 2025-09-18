@@ -4,7 +4,20 @@ import { inlineLoader } from '../../utils/inline-loader';
 import { IpfsImageFetchPayload } from '../../types';
 import { getTemporaryEditor } from '../../utils/helpers';
 import { searchForSecureImageNodeAndEmbedImageContent } from '../mardown-paste-handler';
-import { sanitizeHtml, formatHtml } from '../../utils/sanitize-html';
+import DOMPurify from 'dompurify';
+
+import prettier from 'prettier/standalone';
+import parserHtml from 'prettier/plugins/html';
+
+const prettifyHtml = async (html: string) => {
+  console.log('html', html);
+  return await prettier.format(html, {
+    parser: 'html',
+    plugins: [parserHtml],
+    tabWidth: 2,
+    useTabs: false,
+  });
+};
 
 // Define the command type
 declare module '@tiptap/core' {
@@ -50,9 +63,42 @@ const HtmlExportExtension = (
 
             const inlineHtml = temporalEditor.getHTML();
 
+            DOMPurify.addHook('afterSanitizeElements', (node: any) => {
+              if (
+                node.nodeType === 1 &&
+                node.tagName !== 'BR' &&
+                !node.textContent.trim() &&
+                !node.children.length
+              ) {
+                node.parentNode?.removeChild(node);
+              }
+            });
+
             // Sanitize HTML content using the utility function
-            const cleanHtml = sanitizeHtml(inlineHtml);
-            const formattedHtml = formatHtml(cleanHtml);
+            const cleanHtml = DOMPurify.sanitize(inlineHtml, {
+              ALLOWED_TAGS: [
+                'p',
+                'h1',
+                'h2',
+                'h3',
+                'ul',
+                'ol',
+                'li',
+                'blockquote',
+                'pre',
+                'code',
+                'strong',
+                'em',
+                'u',
+                's',
+                'mark',
+                'span',
+                'br',
+                'hr',
+              ],
+              ALLOWED_ATTR: [],
+              FORBID_ATTR: ['data-toc-id'],
+            });
 
             // Build metadata dynamically from props
             const metadata = {
@@ -61,19 +107,19 @@ const HtmlExportExtension = (
             };
 
             // Create a clean HTML document without any classes, IDs, or styles
-            const htmlContent = `<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>${metadata.title}</title>
-</head>
-<body>
-    ${formattedHtml}
-</body>
-</html>`;
+            const htmlContent = `
+  <html>
+    <head>
+      <title>${metadata.title}</title>
+    </head>
+    <body>
+      ${cleanHtml}
+    </body>
+  </html>
+`;
 
-            const blob = new Blob([htmlContent], {
+            const formattedHtml = await prettifyHtml(htmlContent);
+            const blob = new Blob([formattedHtml], {
               type: 'text/html;charset=utf-8',
             });
             const downloadUrl = URL.createObjectURL(blob);
