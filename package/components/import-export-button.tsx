@@ -26,6 +26,8 @@ const ImportExportButton = ({
 }) => {
   const [openImport, setOpenImport] = useState<boolean>(false);
   const [openExport, setOpenExport] = useState<boolean>(false);
+  let exportTimeout: ReturnType<typeof setTimeout>;
+  let importTimeout: ReturnType<typeof setTimeout>;
 
   return (
     <DynamicDropdownV2
@@ -62,8 +64,13 @@ const ImportExportButton = ({
           <Popover open={openExport} onOpenChange={setOpenExport}>
             <PopoverTrigger asChild>
               <button
-                onMouseEnter={() => setOpenExport(true)}
-                onMouseLeave={() => setOpenExport(false)}
+                onPointerEnter={() => {
+                  clearTimeout(exportTimeout);
+                  setOpenExport(true);
+                }}
+                onPointerLeave={() => {
+                  exportTimeout = setTimeout(() => setOpenExport(false), 300);
+                }}
                 className="appearance-none bg-transparent hover:color-bg-default-hover data-[state=open]:!bg-[#F2F4F5] h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
               >
                 <div className="flex items-center space-x-2">
@@ -77,8 +84,13 @@ const ImportExportButton = ({
               side="right"
               align="start"
               sideOffset={10}
-              onMouseEnter={() => setOpenExport(true)}
-              onMouseLeave={() => setOpenExport(false)}
+              onPointerEnter={() => {
+                clearTimeout(exportTimeout);
+                setOpenExport(true);
+              }}
+              onPointerLeave={() => {
+                exportTimeout = setTimeout(() => setOpenExport(false), 300);
+              }}
               className="w-[210px] rounded-lg p-2 flex flex-col gap-1 scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default"
             >
               {exportOptions.map((option, index) => (
@@ -100,8 +112,13 @@ const ImportExportButton = ({
           <Popover open={openImport} onOpenChange={setOpenImport}>
             <PopoverTrigger asChild>
               <button
-                onMouseEnter={() => setOpenImport(true)}
-                onMouseLeave={() => setOpenImport(false)}
+                onPointerEnter={() => {
+                  clearTimeout(importTimeout);
+                  setOpenImport(true);
+                }}
+                onPointerLeave={() => {
+                  importTimeout = setTimeout(() => setOpenImport(false), 300);
+                }}
                 className="appearance-none bg-transparent hover:color-bg-default-hover data-[state=open]:!bg-[#F2F4F5] h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
               >
                 <div className="flex items-center space-x-2">
@@ -115,8 +132,13 @@ const ImportExportButton = ({
               side="right"
               align="start"
               sideOffset={10}
-              onMouseEnter={() => setOpenImport(true)}
-              onMouseLeave={() => setOpenImport(false)}
+              onPointerEnter={() => {
+                clearTimeout(importTimeout);
+                setOpenImport(true);
+              }}
+              onPointerLeave={() => {
+                importTimeout = setTimeout(() => setOpenImport(false), 300);
+              }}
               className="w-[210px] rounded-lg p-2 flex flex-col gap-1 scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default"
             >
               {importOptions.map((option, index) => (
