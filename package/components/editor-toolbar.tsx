@@ -20,10 +20,7 @@ import {
   IconButton,
   DynamicDropdown,
   LucideIconProps,
-  DynamicModal,
-  TextField,
   DynamicDropdownV2,
-  cn,
   Skeleton,
 } from '@fileverse/ui';
 import ToolbarButton from '../common/toolbar-button';
@@ -31,6 +28,7 @@ import { useMediaQuery } from 'usehooks-ts';
 import { AnimatePresence } from 'framer-motion';
 import { fadeInTransition, slideUpTransition } from './motion-div';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
+import { ImportExportButton } from './import-export-button';
 
 const MemoizedFontSizePicker = React.memo(FontSizePicker);
 
@@ -45,6 +43,8 @@ const TiptapToolBar = ({
   onMarkdownExport,
   onMarkdownImport,
   onPdfExport,
+  onHtmlExport,
+  onTxtExport,
   isLoading,
   ipfsImageFetchFn,
 }: {
@@ -58,6 +58,8 @@ const TiptapToolBar = ({
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
   onPdfExport?: () => void;
+  onHtmlExport?: () => void;
+  onTxtExport?: () => void;
   isLoading: boolean;
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
@@ -68,10 +70,8 @@ const TiptapToolBar = ({
     setToolVisibility,
     toolbar,
     undoRedoTools,
-    markdownOptions,
-    pdfExportOption,
-    isExportModalOpen,
-    setIsExportModalOpen,
+    importOptions,
+    exportOptions,
     fileExportsOpen,
     setFileExportsOpen,
   } = useEditorToolbar({
@@ -81,6 +81,8 @@ const TiptapToolBar = ({
     onMarkdownExport,
     onMarkdownImport,
     onPdfExport,
+    onHtmlExport,
+    onTxtExport,
     ipfsImageFetchFn,
   });
 
@@ -89,7 +91,7 @@ const TiptapToolBar = ({
   const onSetFontSize = editor ? editorStates.onSetFontSize : () => {};
 
   const isBelow1480px = useMediaQuery('(max-width: 1480px)');
-  const [filename, setFilename] = useState('exported_document.md');
+
   const zoomLevels = [
     { title: 'Fit', value: '1.4' },
     { title: '50%', value: '0.5' },
@@ -99,22 +101,6 @@ const TiptapToolBar = ({
     { title: '200%', value: '2' },
   ];
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const handleExport = async () => {
-    if (editor) {
-      setIsExportModalOpen(false);
-      const generateDownloadUrl = await editor.commands.exportMarkdownFile();
-      if (generateDownloadUrl) {
-        const url = generateDownloadUrl;
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }
-    }
-  };
 
   const renderContent = (tool: {
     title: string;
@@ -171,81 +157,12 @@ const TiptapToolBar = ({
                 'markdown-transition',
               )
             : slideUpTransition(
-                <DynamicDropdownV2
-                  key="Markdown"
-                  align="start"
-                  controlled={true}
-                  isOpen={fileExportsOpen}
-                  onClose={() => setFileExportsOpen(false)}
-                  anchorTrigger={
-                    <Tooltip text="Export/Import">
-                      <IconButton
-                        icon="FileExport"
-                        variant="ghost"
-                        size="md"
-                        isActive={fileExportsOpen}
-                        className={cn(
-                          'color-text-default',
-                          fileExportsOpen && 'dark:text-[#363B3F]',
-                        )}
-                        onClick={() => {
-                          setFileExportsOpen((prev) => !prev);
-                          setDropdownOpen(false);
-                        }}
-                      />
-                    </Tooltip>
-                  }
-                  content={
-                    <div className="p-2 flex flex-col gap-1 text-body-sm scroll-smooth color-bg-default shadow-elevation-3 transition-all rounded color-text-default">
-                      <div>
-                        <span className="text-[12px] px-2 font-normal color-text-secondary py-1">
-                          PDF
-                        </span>
-                        {pdfExportOption.length > 0 && (
-                          <button
-                            key={`pdf-0`}
-                            onClick={() => {
-                              pdfExportOption[0]?.onClick();
-                              setFileExportsOpen(false);
-                            }}
-                            className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
-                          >
-                            <LucideIcon
-                              name={
-                                pdfExportOption[0]
-                                  ?.icon as LucideIconProps['name']
-                              }
-                              className="w-5 h-5"
-                            />
-                            <span className="text-sm">
-                              {pdfExportOption[0]?.title}
-                            </span>
-                          </button>
-                        )}
-                      </div>
-                      <div>
-                        <span className="text-[12px] px-2 font-normal color-text-secondary py-1">
-                          Markdown
-                        </span>
-                        {markdownOptions.map((option, index) => (
-                          <button
-                            key={index}
-                            onClick={() => {
-                              setFileExportsOpen(false);
-                              option?.onClick();
-                            }}
-                            className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-start space-x-2 transition"
-                          >
-                            <LucideIcon
-                              name={option?.icon as LucideIconProps['name']}
-                              className="w-5 h-5"
-                            />
-                            <span className="text-sm">{option?.title}</span>
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  }
+                <ImportExportButton
+                  fileExportsOpen={fileExportsOpen}
+                  setFileExportsOpen={setFileExportsOpen}
+                  exportOptions={exportOptions}
+                  importOptions={importOptions}
+                  setDropdownOpen={setDropdownOpen}
                 />,
                 'markdown-dropdown-transition',
               )}
@@ -569,29 +486,6 @@ const TiptapToolBar = ({
                     tool.title + 'skeleton',
                   );
             })}
-            <DynamicModal
-              open={isExportModalOpen}
-              onOpenChange={setIsExportModalOpen}
-              title="Export Markdown"
-              content={
-                <TextField
-                  label="Filename"
-                  value={filename}
-                  onChange={(e) => setFilename(e.target.value)}
-                  placeholder="Enter filename"
-                />
-              }
-              primaryAction={{
-                label: 'Export',
-                onClick: handleExport,
-                className: 'w-full md:w-auto',
-              }}
-              secondaryAction={{
-                label: 'Cancel',
-                onClick: () => setIsExportModalOpen(false),
-                className: 'w-full md:w-auto',
-              }}
-            />
           </div>
         </div>
         <div className="flex items-center gap-1">

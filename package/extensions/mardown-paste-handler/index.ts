@@ -267,6 +267,18 @@ turndownService.addRule('callout', {
   },
 });
 
+turndownService.addRule('linkDefinition', {
+  filter: (node) => {
+    const text = (node.textContent || '').trim();
+    return node.nodeName === 'P' && /^\[[^\]]+\]:\s+\S+/.test(text);
+  },
+  replacement: (_content, node) => {
+    // Use the raw DOM text, not Turndown's escaped content
+    const text = (node.textContent || '').trim();
+    return text + '\n\n';
+  },
+});
+
 // Define the command type
 declare module '@tiptap/core' {
   interface Commands {
@@ -276,7 +288,10 @@ declare module '@tiptap/core' {
       ) => any;
     };
     exportMarkdownFile: {
-      exportMarkdownFile: () => any;
+      exportMarkdownFile: (props?: {
+        title?: string;
+        returnMDFile?: boolean;
+      }) => any;
     };
   }
 }
@@ -372,7 +387,7 @@ const MarkdownPasteHandler = (
             return true;
           },
         exportMarkdownFile:
-          () =>
+          (props?: { title?: string; returnMDFile?: boolean }) =>
           async ({ editor }: { editor: Editor }): Promise<string> => {
             const { showLoader, removeLoader } = inlineLoader(
               editor,
@@ -396,10 +411,37 @@ const MarkdownPasteHandler = (
 
             const inlineHtml = temporalEditor.getHTML();
             const markdown = turndownService.turndown(inlineHtml);
-            const blob = new Blob([markdown], {
+
+            const metadata = {
+              title: props?.title || 'Untitled',
+              date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+            };
+
+            const frontmatter =
+              '---\n' +
+              Object.entries(metadata)
+                .map(([key, value]) => {
+                  if (Array.isArray(value)) {
+                    return `${key}:\n${value.map((v) => `  - ${v}`).join('\n')}`;
+                  }
+                  return `${key}: ${value}`;
+                })
+                .join('\n') +
+              '\n---\n\n';
+
+            const markdownWithMeta = frontmatter + markdown;
+
+            if (props?.returnMDFile) {
+              temporalEditor.destroy();
+              removeLoader(loader);
+              return markdownWithMeta;
+            }
+
+            const blob = new Blob([markdownWithMeta], {
               type: 'text/markdown;charset=utf-8',
             });
             const downloadUrl = URL.createObjectURL(blob);
+
             temporalEditor.destroy();
             removeLoader(loader);
             return downloadUrl;
@@ -591,13 +633,22 @@ async function uploadBase64ImageContent(
   };
 }
 
+export const stripFrontmatter = (markdown: string): string => {
+  const fmRegex = /^---\n[\s\S]*?\n---\n*/;
+  // Remove frontmatter and *all* leading blank lines after it
+  return markdown.replace(fmRegex, '').replace(/^\s*\n/, '');
+};
+
 export async function handleMarkdownContent(
   view: any,
   content: string,
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
 ) {
+  // Remove YAML frontmatter before parsing
+  const cleanMarkdown = stripFrontmatter(content);
+
   // Convert Markdown to HTML
-  let convertedHtml = markdownIt.render(content);
+  let convertedHtml = markdownIt.render(cleanMarkdown);
 
   // Decode HTML entities
   const textarea = document.createElement('textarea');

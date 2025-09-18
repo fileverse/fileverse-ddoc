@@ -31,6 +31,8 @@ import { Markdown } from 'tiptap-markdown';
 import ListItem from '@tiptap/extension-list-item';
 import Typography from '@tiptap/extension-typography';
 import MarkdownPasteHandler from './mardown-paste-handler';
+import HtmlExportExtension from './html-export';
+import TextExportExtension from './text-export';
 import CharacterCount from '@tiptap/extension-character-count';
 import { MathExtension } from '@aarkue/tiptap-math-extension';
 import { Footnote } from './footnote/footnote';
@@ -197,6 +199,8 @@ export const defaultExtensions = ({
   actionButton,
   ColumnExtension,
   MarkdownPasteHandler(ipfsImageUploadFn, ipfsImageFetchFn),
+  HtmlExportExtension(ipfsImageFetchFn),
+  TextExportExtension(),
   Markdown.configure({
     html: true, // Allow HTML input/output
     tightLists: true, // No <p> inside <li> in markdown output

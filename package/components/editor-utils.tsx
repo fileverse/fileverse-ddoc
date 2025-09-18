@@ -9,7 +9,7 @@ import React, {
   useState,
 } from 'react';
 import { IEditorTool, useEditorToolVisiibility } from '../hooks/use-visibility';
-import { Editor } from '@tiptap/react';
+import { Editor, JSONContent } from '@tiptap/react';
 import { startImageUpload } from '../utils/upload-images';
 import cn from 'classnames';
 import UtilsModal from './utils-modal';
@@ -40,8 +40,9 @@ import { searchForSecureImageNodeAndEmbedImageContent } from '../extensions/mard
 import { inlineLoader } from '../utils/inline-loader';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { getTemporaryEditor } from '../utils/helpers';
+import { extractTitleFromContent } from '../utils/extract-title-from-content';
 
-interface IEditorToolElement {
+export interface IEditorToolElement {
   icon: any;
   title: string;
   onClick: () => void;
@@ -289,6 +290,8 @@ export const useEditorToolbar = ({
   onMarkdownExport,
   onMarkdownImport,
   onPdfExport,
+  onHtmlExport,
+  onTxtExport,
   ipfsImageFetchFn,
 }: {
   editor: Editor | null;
@@ -297,6 +300,8 @@ export const useEditorToolbar = ({
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
   onPdfExport?: () => void;
+  onHtmlExport?: () => void;
+  onTxtExport?: () => void;
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
@@ -701,10 +706,22 @@ export const useEditorToolbar = ({
     },
   ];
 
-  const pdfExportOption: Array<IEditorToolElement | null> = [
+  const importOptions: Array<IEditorToolElement | null> = [
+    {
+      icon: 'FileInput',
+      title: 'Markdown (.md)',
+      onClick: async () => {
+        await editor?.commands.uploadMarkdownFile(ipfsImageUploadFn);
+        onMarkdownImport?.();
+      },
+      isActive: false,
+    },
+  ];
+
+  const exportOptions: Array<IEditorToolElement | null> = [
     {
       icon: 'FileExport',
-      title: 'Export PDF',
+      title: 'PDF document (.pdf)',
       onClick: () => {
         if (editor) {
           const closeAndPrint = async () => {
@@ -738,24 +755,82 @@ export const useEditorToolbar = ({
       },
       isActive: false,
     },
-  ];
-
-  const markdownOptions: Array<IEditorToolElement | null> = [
     {
-      icon: 'FileInput',
-      title: 'Import Markdown',
+      icon: 'FileOutput',
+      title: 'Markdown (.md)',
       onClick: async () => {
-        await editor?.commands.uploadMarkdownFile(ipfsImageUploadFn);
-        onMarkdownImport?.();
+        if (editor) {
+          const editorContent = editor?.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const generateDownloadUrl = await editor.commands.exportMarkdownFile({
+            title: title || 'Untitled',
+          });
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${title || 'Untitled'}.md`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onMarkdownExport?.();
       },
       isActive: false,
     },
     {
-      icon: 'FileOutput',
-      title: 'Export Markdown',
-      onClick: () => {
-        setIsExportModalOpen(true);
-        onMarkdownExport?.();
+      icon: 'FileText',
+      title: 'Web page (.html)',
+      onClick: async () => {
+        if (editor) {
+          const editorContent = editor.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const generateDownloadUrl = await editor.commands.exportHtmlFile({
+            title: title || 'Untitled',
+          });
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${title || 'Untitled'}.html`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onHtmlExport?.();
+      },
+      isActive: false,
+    },
+    {
+      icon: 'FileText',
+      title: 'Plain Text (.txt)',
+      onClick: async () => {
+        if (editor) {
+          const editorContent = editor.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const generateDownloadUrl = await editor.commands.exportTxtFile();
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${title || 'Untitled'}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onTxtExport?.();
       },
       isActive: false,
     },
@@ -891,8 +966,8 @@ export const useEditorToolbar = ({
   return {
     undoRedoTools,
     toolbar,
-    markdownOptions,
-    pdfExportOption,
+    exportOptions,
+    importOptions,
     bottomToolbar,
     toolRef,
     toolVisibility,
