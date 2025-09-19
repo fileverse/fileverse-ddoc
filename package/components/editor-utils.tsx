@@ -717,6 +717,14 @@ export const useEditorToolbar = ({
       },
       isActive: false,
     },
+    {
+      icon: 'FileInput',
+      title: 'DOCX (.docx)',
+      onClick: async () => {
+        await editor?.commands.uploadDocxFile(ipfsImageUploadFn);
+      },
+      isActive: false,
+    },
   ];
 
   const exportOptions: Array<IEditorToolElement | null> = [

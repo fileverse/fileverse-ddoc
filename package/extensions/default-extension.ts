@@ -33,6 +33,7 @@ import Typography from '@tiptap/extension-typography';
 import MarkdownPasteHandler from './mardown-paste-handler';
 import HtmlExportExtension from './html-export';
 import TextExportExtension from './text-export';
+import { DocxFileHandler } from './docx/docx';
 import CharacterCount from '@tiptap/extension-character-count';
 import { MathExtension } from '@aarkue/tiptap-math-extension';
 import { Footnote } from './footnote/footnote';
@@ -198,6 +199,9 @@ export const defaultExtensions = ({
   EmbeddedTweet,
   actionButton,
   ColumnExtension,
+  DocxFileHandler.configure({
+    ipfsImageUploadFn,
+  }),
   MarkdownPasteHandler(ipfsImageUploadFn, ipfsImageFetchFn),
   HtmlExportExtension(ipfsImageFetchFn),
   TextExportExtension(),

@@ -91,6 +91,7 @@
     "katex": "^0.16.11",
     "lib0": "^0.2.95",
     "lowlight": "^3.3.0",
+    "mammoth": "^1.10.0",
     "markdown-it-footnote": "^4.0.0",
     "ollama": "^0.5.14",
     "partysocket": "^1.0.2",
