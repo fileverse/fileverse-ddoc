@@ -294,6 +294,7 @@ export const useEditorToolbar = ({
   onHtmlExport,
   onTxtExport,
   ipfsImageFetchFn,
+  onDocxImport,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -306,6 +307,7 @@ export const useEditorToolbar = ({
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
+  onDocxImport?: () => void;
 }) => {
   const {
     ref: toolRef,
@@ -712,10 +714,23 @@ export const useEditorToolbar = ({
       icon: 'FileInput',
       title: 'Markdown (.md)',
       onClick: async () => {
-        await editor?.commands.uploadMarkdownFile(ipfsImageUploadFn);
+        await editor?.commands.uploadMarkdownFile(ipfsImageUploadFn, onError);
         onMarkdownImport?.();
       },
       isActive: false,
+    },
+    {
+      icon: 'FileInput',
+      title: 'Microsoft Word (.docx)',
+      onClick: async () => {
+        await editor?.commands.uploadDocxFile(
+          ipfsImageUploadFn,
+          onError,
+          onDocxImport,
+        );
+      },
+      isActive: false,
+      isNew: true,
     },
   ];
 

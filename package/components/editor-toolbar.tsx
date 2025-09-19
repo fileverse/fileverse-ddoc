@@ -45,6 +45,7 @@ const TiptapToolBar = ({
   onPdfExport,
   onHtmlExport,
   onTxtExport,
+  onDocxImport,
   isLoading,
   ipfsImageFetchFn,
 }: {
@@ -60,6 +61,7 @@ const TiptapToolBar = ({
   onPdfExport?: () => void;
   onHtmlExport?: () => void;
   onTxtExport?: () => void;
+  onDocxImport?: () => void;
   isLoading: boolean;
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
@@ -84,6 +86,7 @@ const TiptapToolBar = ({
     onHtmlExport,
     onTxtExport,
     ipfsImageFetchFn,
+    onDocxImport,
   });
 
   const editorStates = useEditorStates(editor as Editor);

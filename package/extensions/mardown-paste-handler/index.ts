@@ -285,6 +285,7 @@ declare module '@tiptap/core' {
     uploadMarkdownFile: {
       uploadMarkdownFile: (
         ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
+        onError?: (error: string) => void,
       ) => any;
     };
     exportMarkdownFile: {
@@ -351,6 +352,7 @@ const MarkdownPasteHandler = (
             ipfsImageUploadFn?: (
               file: File,
             ) => Promise<IpfsImageUploadResponse>,
+            onError?: (error: string) => void,
           ) =>
           async ({ view }: any) => {
             const input = document.createElement('input');
@@ -380,6 +382,10 @@ const MarkdownPasteHandler = (
                     removeLoader(loader);
                   };
                   reader.readAsText(file);
+                } else {
+                  onError?.(
+                    'Oops! That file type isn’t supported. Give it another go with a .md file.',
+                  );
                 }
               }
             };

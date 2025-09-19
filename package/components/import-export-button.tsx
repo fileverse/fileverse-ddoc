@@ -59,7 +59,7 @@ const ImportExportButton = ({
         </Tooltip>
       }
       content={
-        <div className="w-[210px] rounded-lg p-2 flex flex-col gap-1 scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default">
+        <div className="w-[220px] rounded-lg p-2 flex flex-col gap-1 scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default">
           {/* Export */}
           <Popover open={openExport} onOpenChange={setOpenExport}>
             <PopoverTrigger asChild>
@@ -91,7 +91,7 @@ const ImportExportButton = ({
               onPointerLeave={() => {
                 exportTimeout = setTimeout(() => setOpenExport(false), 300);
               }}
-              className="w-[210px] rounded-lg p-2 flex flex-col gap-1 scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default"
+              className="w-[220px] rounded-lg p-2 flex flex-col gap-1 scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default"
             >
               {exportOptions.map((option, index) => (
                 <button
@@ -144,7 +144,7 @@ const ImportExportButton = ({
               onPointerLeave={() => {
                 importTimeout = setTimeout(() => setOpenImport(false), 300);
               }}
-              className="w-[210px] rounded-lg p-2 flex flex-col gap-1 scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default"
+              className="w-[220px] rounded-lg p-2 flex flex-col gap-1 scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default"
             >
               {importOptions.map((option, index) => (
                 <button
