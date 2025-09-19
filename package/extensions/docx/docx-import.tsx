@@ -27,6 +27,7 @@ export const DocxFileHandler = Extension.create({
       uploadDocxFile:
         (
           ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
+          onError?: (error: string) => void,
         ) =>
         async ({ view }: { view: any }) => {
           const input = document.createElement('input');
@@ -80,6 +81,10 @@ export const DocxFileHandler = Extension.create({
               } finally {
                 removeLoader(loader);
               }
+            } else {
+              onError?.(
+                'Oops! That file type isn’t supported. Give it another go with a .docx file.',
+              );
             }
           };
 

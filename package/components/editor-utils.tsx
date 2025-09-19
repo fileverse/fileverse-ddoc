@@ -712,18 +712,19 @@ export const useEditorToolbar = ({
       icon: 'FileInput',
       title: 'Markdown (.md)',
       onClick: async () => {
-        await editor?.commands.uploadMarkdownFile(ipfsImageUploadFn);
+        await editor?.commands.uploadMarkdownFile(ipfsImageUploadFn, onError);
         onMarkdownImport?.();
       },
       isActive: false,
     },
     {
       icon: 'FileInput',
-      title: 'DOCX (.docx)',
+      title: 'Microsoft Word (.docx)',
       onClick: async () => {
-        await editor?.commands.uploadDocxFile(ipfsImageUploadFn);
+        await editor?.commands.uploadDocxFile(ipfsImageUploadFn, onError);
       },
       isActive: false,
+      isNew: true,
     },
   ];
 
