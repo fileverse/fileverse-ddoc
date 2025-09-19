@@ -14,6 +14,8 @@ declare module '@tiptap/core' {
        */
       uploadDocxFile: (
         ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
+        onError?: (error: string) => void,
+        onDocxImport?: () => void,
       ) => any;
     };
   }
@@ -28,6 +30,7 @@ export const DocxFileHandler = Extension.create({
         (
           ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
           onError?: (error: string) => void,
+          onDocxImport?: () => void,
         ) =>
         async ({ view }: { view: any }) => {
           const input = document.createElement('input');
@@ -76,6 +79,7 @@ export const DocxFileHandler = Extension.create({
                   extractedHtml,
                   ipfsImageUploadFn,
                 );
+                onDocxImport?.();
               } catch (err) {
                 console.error('Error importing DOCX file:', err);
               } finally {

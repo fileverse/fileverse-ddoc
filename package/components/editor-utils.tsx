@@ -294,6 +294,7 @@ export const useEditorToolbar = ({
   onHtmlExport,
   onTxtExport,
   ipfsImageFetchFn,
+  onDocxImport,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -306,6 +307,7 @@ export const useEditorToolbar = ({
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
+  onDocxImport?: () => void;
 }) => {
   const {
     ref: toolRef,
@@ -721,7 +723,11 @@ export const useEditorToolbar = ({
       icon: 'FileInput',
       title: 'Microsoft Word (.docx)',
       onClick: async () => {
-        await editor?.commands.uploadDocxFile(ipfsImageUploadFn, onError);
+        await editor?.commands.uploadDocxFile(
+          ipfsImageUploadFn,
+          onError,
+          onDocxImport,
+        );
       },
       isActive: false,
       isNew: true,
