@@ -10,6 +10,7 @@ import { fromUint8Array, toUint8Array } from 'js-base64';
 import { sanitizeContent } from '../utils/sanitize-content';
 import { handleMarkdownContent } from '../extensions/mardown-paste-handler';
 import { IpfsImageUploadResponse } from '../types';
+import mammoth from 'mammoth';
 
 export const useHeadlessEditor = () => {
   const getEditor = () => {
@@ -192,6 +193,60 @@ export const useHeadlessEditor = () => {
     return null;
   }
 
+  async function getYjsContentFromDocx(
+    file: File,
+    ipfsImageUploadFn: (file: File) => Promise<IpfsImageUploadResponse>,
+  ): Promise<string | null> {
+    if (
+      file.type ===
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
+      file.name.endsWith('.docx')
+    ) {
+      try {
+        const arrayBuffer = await file.arrayBuffer();
+
+        // Use Mammoth with image conversion → embed as <img src="data:...">
+        const { value: extractedHtml } = await mammoth.convertToHtml(
+          { arrayBuffer },
+          {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            convertImage: (mammoth as any).images.inline(
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              async (element: any) => {
+                const buffer = await element.read('base64');
+                const contentType = element.contentType; // e.g., "image/png"
+                return {
+                  src: `data:${contentType};base64,${buffer}`,
+                };
+              },
+            ),
+          },
+        );
+
+        const { editor, ydoc } = getEditor();
+
+        // Feed extracted HTML into your existing import pipeline
+        await handleMarkdownContent(
+          editor.view,
+          extractedHtml,
+          ipfsImageUploadFn,
+        );
+
+        const yjsContent = Y.encodeStateAsUpdate(ydoc);
+        const result = fromUint8Array(yjsContent);
+
+        editor.destroy();
+        !ydoc.isDestroyed && ydoc.destroy();
+        return result;
+      } catch (err) {
+        console.error('Error processing DOCX file:', err);
+        return null;
+      }
+    }
+
+    return null;
+  }
+
   return {
     setContent,
     getEditor,
@@ -202,5 +257,6 @@ export const useHeadlessEditor = () => {
     mergeYjsUpdates,
     handleMarkdownContent,
     getYjsContentFromMarkdown,
+    getYjsContentFromDocx,
   };
 };
