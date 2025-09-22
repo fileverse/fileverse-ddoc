@@ -333,8 +333,10 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
 
       if (!isFirstDBlock || !isFirstDBlockFocused) return false;
 
-      let hasContent = false;
+      // 🔑 New check: if doc has more than one child, don’t show templates
+      if (doc.childCount > 1) return false;
 
+      let hasContent = false;
       paragraphNode.content.forEach((child) => {
         if ((child.isText && child.text?.trim()) || !child.isText) {
           hasContent = true;
