@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { Data } from '../../types';
 import { SocketClient } from '../socketClient';
 import * as Y from 'yjs';
 
@@ -76,6 +77,10 @@ export interface SyncMachineContext {
   onFetchCommitContent: (cid: string) => Promise<any>;
   onSessionTerminated: () => void;
   onUnMergedUpdates: (state: boolean) => void;
+  onLocalUpdate?: (
+    updatedDocContent: Data['editorJSONData'],
+    updateChunk: string,
+  ) => void;
 }
 export interface ErrorResponseMessage {
   status: boolean;

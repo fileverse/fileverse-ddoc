@@ -5,7 +5,7 @@ import {
 } from '../types';
 import * as awarenessProtocol from 'y-protocols/awareness';
 import * as decoding from 'lib0/decoding';
-import { toUint8Array } from 'js-base64';
+import { fromUint8Array, toUint8Array } from 'js-base64';
 import * as Y from 'yjs';
 import { createAwarenessUpdateHandler } from '../utils/createAwarenessUpdateHandler';
 import { SocketClient } from '../socketClient';
@@ -89,6 +89,7 @@ export const websocketInitializer = (
     onFetchCommitContent: context.onFetchCommitContent,
     onSessionTerminated: context.onSessionTerminated,
     onUnMergedUpdates: context.onUnMergedUpdates,
+    onLocalUpdate: context.onLocalUpdate,
   };
 };
 
@@ -112,6 +113,12 @@ export const yjsUpdateHandler = (
     encryptedUpdate,
   );
   Y.applyUpdate(context.ydoc, update, 'self');
+  if (context.onLocalUpdate && typeof context.onLocalUpdate === 'function') {
+    context.onLocalUpdate(
+      fromUint8Array(Y.encodeStateAsUpdate(context.ydoc)),
+      fromUint8Array(update),
+    );
+  }
 
   if (context.isOwner) {
     const list = [
