@@ -33,7 +33,7 @@ export const syncMachineServices = {
           send({ type: message.event_type, data: message });
         },
         onError: (e) => {
-          console.log('error triggered by socket onError');
+          console.log('error triggered by socket onError', e);
           send({ type: 'DISCONNECT', data: { error: 'Network error' } });
           onError?.(e);
         },

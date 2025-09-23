@@ -94,6 +94,7 @@ export const useDdocEditor = ({
     onFetchCommitContent: rest.onFetchCommitContent,
     onSessionTerminated: rest.onCollabSessionTermination,
     onUnMergedUpdates: rest.onUnMergedUpdates,
+    onLocalUpdate: onChange,
   });
 
   const isCollaborationEnabled = useMemo(() => {
@@ -462,7 +463,7 @@ export const useDdocEditor = ({
     setupExtensions();
 
     collaborationCleanupRef.current = () => {
-      ydoc.destroy();
+      // ydoc.destroy();
       setExtensions([...extensions]);
     };
 
