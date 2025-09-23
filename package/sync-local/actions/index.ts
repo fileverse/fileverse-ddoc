@@ -6,7 +6,7 @@ import {
 import * as awarenessProtocol from 'y-protocols/awareness';
 import * as decoding from 'lib0/decoding';
 import { fromUint8Array, toUint8Array } from 'js-base64';
-import * as Y from 'yjs';
+import { applyUpdate, encodeStateAsUpdate, mergeUpdates } from 'yjs';
 import { createAwarenessUpdateHandler } from '../utils/createAwarenessUpdateHandler';
 import { SocketClient } from '../socketClient';
 import { crypto as cryptoUtils } from '../crypto';
@@ -112,10 +112,10 @@ export const yjsUpdateHandler = (
     toUint8Array(context.roomKey),
     encryptedUpdate,
   );
-  Y.applyUpdate(context.ydoc, update, 'self');
+  applyUpdate(context.ydoc, update, 'self');
   if (context.onLocalUpdate && typeof context.onLocalUpdate === 'function') {
     context.onLocalUpdate(
-      fromUint8Array(Y.encodeStateAsUpdate(context.ydoc)),
+      fromUint8Array(encodeStateAsUpdate(context.ydoc)),
       fromUint8Array(update),
     );
   }
@@ -137,13 +137,8 @@ export const yjsUpdateHandler = (
 };
 
 export const roomMemberUpdateHandler = (context: SyncMachineContext) => {
-  // const userInfo = context.socketClient?.roomMembers.find(
-  //   (m) => m.username === context.username,
-  // );
-  // const isOwner = userInfo?.role === 'owner';
   return {
     roomMembers: context.socketClient?.roomMembers ?? [],
-    // isOwner,
   };
 };
 
@@ -253,9 +248,15 @@ export const applyContentsFromRemote = (context: SyncMachineContext) => {
   const contents = context.contentTobeAppliedQueue.map((content) => {
     return toUint8Array(content);
   });
-  const mergedContents = Y.mergeUpdates(contents);
+  const mergedContents = mergeUpdates(contents);
 
-  Y.applyUpdate(context.ydoc, mergedContents);
+  applyUpdate(context.ydoc, mergedContents);
+  if (context.onLocalUpdate && typeof context.onLocalUpdate === 'function') {
+    context.onLocalUpdate(
+      fromUint8Array(encodeStateAsUpdate(context.ydoc)),
+      fromUint8Array(mergedContents),
+    );
+  }
   return {
     contentTobeAppliedQueue: [],
   };
@@ -357,11 +358,17 @@ export const handleDisconnectionDueToError = (
 };
 
 export const terminateSessionHandler = (context: SyncMachineContext) => {
+  awarenessProtocol.removeAwarenessStates(
+    context.awareness!,
+    [context.ydoc!.clientID],
+    'session terminated',
+  );
   if (context.isOwner) {
     context.socketClient?.terminateSession();
   } else {
     context.onSessionTerminated?.();
   }
+
   return {
     socketClient: null,
     roomId: '',
