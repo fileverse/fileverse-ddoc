@@ -98,6 +98,12 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
 
     const updateHandler = (update: any, origin: any) => {
       if (origin === 'self') return;
+      if (config.onLocalUpdate && typeof config.onLocalUpdate === 'function') {
+        config.onLocalUpdate(
+          fromUint8Array(Y.encodeStateAsUpdate(config.ydoc!)),
+          fromUint8Array(update),
+        );
+      }
       send({
         type: 'SEND_UPDATE',
         data: {
