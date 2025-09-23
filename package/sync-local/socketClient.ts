@@ -196,6 +196,7 @@ export class SocketClient {
   }
 
   public async broadcastAwareness(awarenessUpdate: string) {
+    if (this._webSocketStatus !== SocketStatusEnum.CONNECTED) return;
     const args = {
       data: {
         position: awarenessUpdate,
@@ -205,12 +206,12 @@ export class SocketClient {
   }
 
   public disconnect = () => {
-    this._webSocketStatus = SocketStatusEnum.DISCONNECTING;
+    this._webSocketStatus = SocketStatusEnum.CLOSED;
     if (!this._webSocket) return;
     this._webSocket.onopen = null;
     this._webSocket.removeEventListener('message', this._processMessage);
     this._webSocket.close(1000, 'auth failed');
-    this._webSocketStatus = SocketStatusEnum.DISCONNECTED;
+    this._webSocketStatus = SocketStatusEnum.CLOSED;
   };
 
   public terminateSession = async () => {

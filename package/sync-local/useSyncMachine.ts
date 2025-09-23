@@ -5,10 +5,9 @@ import * as Y from 'yjs';
 
 import { useMachine, useSelector } from '@xstate/react';
 import { SyncMachineContext } from '.';
-import { fromUint8Array, toUint8Array } from 'js-base64';
+import { fromUint8Array } from 'js-base64';
 import { removeAwarenessStates } from 'y-protocols/awareness.js';
-// import { Awareness } from 'y-protocols/awareness.js';
-// import uuid from 'react-uuid';
+
 interface IConnectConf {
   username?: string;
   roomKey: string;
@@ -26,11 +25,9 @@ interface IConnectConf {
   };
 }
 
-// const contextSelector = (state: any) => state.context;
-
 const awarenessSelector = (state: any) => state.context.awareness;
 const isReadySelector = (state: any) =>
-  state.context.isReady && state.context.awareness;
+  Boolean(state.context.isReady && state.context.awareness);
 
 const isConnectedSelector = (state: any) => state.context.isConnected;
 
@@ -66,7 +63,7 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
       });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [config.ydoc !== undefined],
+    [config.ydoc],
   );
 
   const disconnect = useCallback(() => {
@@ -91,13 +88,13 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config.ydoc !== undefined, awareness !== undefined, isConnected]);
+  }, [config.ydoc, awareness, isConnected]);
 
   useEffect(() => {
     if (!isReady || !config.ydoc) return;
 
     const updateHandler = (update: any, origin: any) => {
-      if (origin === 'self') return;
+      if (origin === 'self' || !isReady) return;
       if (config.onLocalUpdate && typeof config.onLocalUpdate === 'function') {
         config.onLocalUpdate(
           fromUint8Array(Y.encodeStateAsUpdate(config.ydoc!)),
@@ -117,21 +114,7 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
       config.ydoc?.off('update', updateHandler);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config.ydoc !== undefined, isReady]);
-
-  const getYjsEncodedState = useCallback(() => {
-    return fromUint8Array(Y.encodeStateAsUpdate(config.ydoc!));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config.ydoc !== undefined]);
-
-  const applyYjsEncodedState = useCallback(
-    (update: string) => {
-      if (!update) return;
-      Y.applyUpdate(config.ydoc!, toUint8Array(update));
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [config.ydoc !== undefined],
-  );
+  }, [config.ydoc, isReady]);
 
   useEffect(() => {
     if (!awareness) return;
@@ -151,17 +134,16 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
 
     return () => {
       removeAwarenessStates(awareness, [config.ydoc!.clientID], 'hook unmount');
+      awareness?.off('update');
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [awareness]);
+  }, [awareness !== undefined]);
 
   return {
     connect,
     disconnect,
     isConnected,
     isReady,
-    getYjsEncodedState,
-    applyYjsEncodedState,
     error,
     terminateSession,
     awareness,
