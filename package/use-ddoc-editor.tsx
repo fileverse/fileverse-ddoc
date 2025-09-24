@@ -70,6 +70,7 @@ export const useDdocEditor = ({
   extensions: externalExtensions,
   onCopyHeadingLink,
   ipfsImageFetchFn,
+  fetchV1ImageFn,
   isConnected,
   activeModel,
   maxTokens,
@@ -136,6 +137,7 @@ export const useDdocEditor = ({
       metadataProxyUrl,
       onCopyHeadingLink,
       ipfsImageFetchFn,
+      fetchV1ImageFn,
     }) as AnyExtension[]),
     SlashCommand(
       (error: string) => onError?.(error),

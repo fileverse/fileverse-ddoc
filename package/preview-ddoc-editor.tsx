@@ -41,6 +41,7 @@ const PreviewDdocEditor = forwardRef(
       className,
       unFocused,
       ipfsImageFetchFn,
+      fetchV1ImageFn,
     }: DdocProps,
     ref,
   ) => {
@@ -69,6 +70,7 @@ const PreviewDdocEditor = forwardRef(
       ydoc,
     } = useDdocEditor({
       ipfsImageFetchFn,
+      fetchV1ImageFn,
       isPreviewMode,
       initialContent,
       enableCollaboration,

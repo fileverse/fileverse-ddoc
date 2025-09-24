@@ -117,6 +117,7 @@ const DdocEditor = forwardRef(
       onCopyHeadingLink,
       footerHeight,
       ipfsImageFetchFn,
+      fetchV1ImageFn,
       activeModel,
       maxTokens,
       isAIAgentEnabled,
@@ -214,6 +215,7 @@ const DdocEditor = forwardRef(
       terminateSession,
     } = useDdocEditor({
       ipfsImageFetchFn,
+      fetchV1ImageFn,
       enableIndexeddbSync,
       ddocId,
       isPreviewMode,
@@ -510,6 +512,7 @@ const DdocEditor = forwardRef(
                     onDocxImport={onDocxImport}
                     isLoading={!editor || isContentLoading}
                     ipfsImageFetchFn={ipfsImageFetchFn}
+                    fetchV1ImageFn={fetchV1ImageFn}
                   />
                 </div>
               </div>
@@ -532,6 +535,7 @@ const DdocEditor = forwardRef(
                 isContentLoading={isContentLoading}
                 ipfsImageFetchFn={ipfsImageFetchFn}
                 documentStyling={documentStyling}
+                fetchV1ImageFn={fetchV1ImageFn}
               />
             )}
             {editor && (
@@ -642,6 +646,7 @@ const DdocEditor = forwardRef(
                       activeCommentId={activeCommentId}
                       isCollabDocumentPublished={isCollabDocumentPublished}
                       ipfsImageFetchFn={ipfsImageFetchFn}
+                      fetchV1ImageFn={fetchV1ImageFn}
                       ipfsImageUploadFn={ipfsImageUploadFn}
                       onReminderCreate={
                         extensions?.find(
@@ -801,6 +806,7 @@ const DdocEditor = forwardRef(
                   ipfsImageUploadFn={ipfsImageUploadFn}
                   isLoading={!editor || isContentLoading}
                   ipfsImageFetchFn={ipfsImageFetchFn}
+                  fetchV1ImageFn={fetchV1ImageFn}
                 />
               </div>
             )}

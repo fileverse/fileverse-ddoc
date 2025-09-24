@@ -83,6 +83,7 @@ export interface DdocProps extends CommentAccountProps {
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
+  fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
   disableInlineComment?: boolean;
   //Comments V2 Props
   commentDrawerOpen?: boolean;

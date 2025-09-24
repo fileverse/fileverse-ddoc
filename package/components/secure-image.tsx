@@ -1,5 +1,5 @@
 import { useState, useEffect, forwardRef } from 'react';
-import { fetchImage, decryptImage } from '../utils/security.ts';
+import { decryptImage } from '../utils/security.ts';
 import { toByteArray } from 'base64-js';
 import { Skeleton } from '@fileverse/ui';
 
@@ -13,6 +13,7 @@ type Props = {
   height?: string;
   className?: string;
   caption?: string;
+  fetchV1ImageFn: (url: string) => Promise<ArrayBuffer | undefined>;
 };
 
 export const SecureImage = forwardRef<HTMLImageElement, Props>(
@@ -27,6 +28,7 @@ export const SecureImage = forwardRef<HTMLImageElement, Props>(
       className,
       width,
       height,
+      fetchV1ImageFn,
     },
     ref,
   ) => {
@@ -38,7 +40,13 @@ export const SecureImage = forwardRef<HTMLImageElement, Props>(
       if (imageReadyForDecryption) {
         const decryptAndSetImage = async () => {
           try {
-            const imageBuffer = await fetchImage(url);
+            const ipfsHash = url.split('ipfs/')[1];
+            if (!ipfsHash) {
+              console.error('Invalid IPFS URL');
+              return;
+            }
+            const imageBuffer = await fetchV1ImageFn(url);
+
             if (!imageBuffer || !isMounted) return;
 
             const decryptedArrayBuffer = await decryptImage({
