@@ -40,11 +40,6 @@ export const SecureImage = forwardRef<HTMLImageElement, Props>(
       if (imageReadyForDecryption) {
         const decryptAndSetImage = async () => {
           try {
-            const ipfsHash = url.split('ipfs/')[1];
-            if (!ipfsHash) {
-              console.error('Invalid IPFS URL');
-              return;
-            }
             const imageBuffer = await fetchV1ImageFn(url);
 
             if (!imageBuffer || !isMounted) return;
