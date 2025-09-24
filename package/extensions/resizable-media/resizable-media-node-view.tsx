@@ -21,6 +21,7 @@ export const getResizableMediaNodeView =
     ipfsImageFetchFn: (
       _data: IpfsImageFetchPayload,
     ) => Promise<{ url: string; file: File }>,
+    fetchV1ImageFn: (url: string) => Promise<ArrayBuffer | undefined>,
   ) =>
   ({ node, updateAttributes, deleteNode }: NodeViewProps) => {
     const { isPreviewMode } = useEditingContext();
@@ -332,6 +333,7 @@ export const getResizableMediaNodeView =
                   url={node.attrs.url}
                   iv={node.attrs.iv}
                   privateKey={node.attrs.privateKey}
+                  fetchV1ImageFn={fetchV1ImageFn}
                   alt={node.attrs.alt}
                   // caption={node.attrs.caption}
                   className="rounded-lg"

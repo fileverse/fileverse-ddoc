@@ -46,6 +46,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     ipfsImageFetchFn,
     isCollabDocOwner,
     enableCollaboration,
+    fetchV1ImageFn,
   } = props;
   const editorStates = useEditorStates(editor as Editor);
   const currentSize = editor ? editorStates.currentSize : undefined;
@@ -56,6 +57,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     onError,
     ipfsImageUploadFn,
     ipfsImageFetchFn,
+    fetchV1ImageFn,
   });
 
   const {

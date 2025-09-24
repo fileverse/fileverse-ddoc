@@ -10,11 +10,7 @@ import {
 } from 'prosemirror-model';
 import markdownItFootnote from 'markdown-it-footnote';
 import TurndownService from 'turndown';
-import {
-  arrayBufferToBase64,
-  decryptImage,
-  fetchImage,
-} from '../../utils/security';
+import { arrayBufferToBase64, decryptImage } from '../../utils/security';
 import { toByteArray } from 'base64-js';
 import { inlineLoader } from '../../utils/inline-loader';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../../types';
@@ -302,6 +298,7 @@ const MarkdownPasteHandler = (
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>,
+  fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>,
 ) =>
   Extension.create({
     name: 'markdownPasteHandler',
@@ -408,6 +405,7 @@ const MarkdownPasteHandler = (
               await searchForSecureImageNodeAndEmbedImageContent(
                 originalDoc,
                 ipfsImageFetchFn,
+                fetchV1ImageFn,
               );
 
             const temporalEditor = getTemporaryEditor(
@@ -892,6 +890,7 @@ async function recreateNodeWithImageContent(
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>,
+  fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>,
 ): Promise<PMNode> {
   const { version, mimeType, ipfsHash, ...attrs } = node.attrs;
   let buffer: ArrayBuffer;
@@ -912,7 +911,7 @@ async function recreateNodeWithImageContent(
       const { url, encryptedKey, iv, privateKey } = attrs;
       if (!url || !encryptedKey || !iv || !privateKey) return node;
 
-      const imageBuffer = await fetchImage(url);
+      const imageBuffer = await fetchV1ImageFn?.(url);
       if (!imageBuffer) return node;
 
       const decrypted = await decryptImage({
@@ -949,6 +948,7 @@ export async function searchForSecureImageNodeAndEmbedImageContent(
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>,
+  fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>,
 ): Promise<PMNode> {
   // We'll do a post-order traversal using a stack
   // so that we can handle children first, then build the parent node.
@@ -991,6 +991,7 @@ export async function searchForSecureImageNodeAndEmbedImageContent(
         current.newNode = (await recreateNodeWithImageContent(
           current.node,
           ipfsImageFetchFn,
+          fetchV1ImageFn,
         )) as any;
       } else {
         // Not a secure image => just copy node with new children

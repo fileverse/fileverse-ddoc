@@ -34,6 +34,7 @@ export interface MediaOptions {
   ipfsImageFetchFn: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
+  fetchV1ImageFn: (url: string) => Promise<ArrayBuffer | undefined>;
 }
 
 export const IMAGE_INPUT_REGEX =
@@ -62,6 +63,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
       ipfsImageFetchFn: async () => {
         return { url: '', file: new File([], '') };
       },
+      fetchV1ImageFn: async () => undefined,
       onError: () => {
         console.error('Error uploading media');
       },
@@ -213,7 +215,10 @@ export const ResizableMedia = Node.create<MediaOptions>({
 
   addNodeView() {
     return ReactNodeViewRenderer(
-      getResizableMediaNodeView(this.options.ipfsImageFetchFn),
+      getResizableMediaNodeView(
+        this.options.ipfsImageFetchFn,
+        this.options.fetchV1ImageFn,
+      ),
     );
   },
 

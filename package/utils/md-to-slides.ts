@@ -167,12 +167,14 @@ export const convertToMarkdown = async (
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>,
+  fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>,
 ) => {
   const originalDoc = editor.state.doc;
   const docWithEmbedImageContent =
     await searchForSecureImageNodeAndEmbedImageContent(
       originalDoc,
       ipfsImageFetchFn,
+      fetchV1ImageFn,
     );
 
   const temporalEditor = getTemporaryEditor(

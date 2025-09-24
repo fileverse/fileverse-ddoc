@@ -57,6 +57,7 @@ export const defaultExtensions = ({
   metadataProxyUrl,
   onCopyHeadingLink,
   ipfsImageUploadFn,
+  fetchV1ImageFn,
 }: {
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
@@ -65,6 +66,7 @@ export const defaultExtensions = ({
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   metadataProxyUrl?: string;
   onCopyHeadingLink?: (link: string) => void;
+  fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
 }) => [
   FontFamily,
   StarterKit.configure({
@@ -185,6 +187,7 @@ export const defaultExtensions = ({
     onError: onError,
     ipfsImageUploadFn,
     ipfsImageFetchFn,
+    fetchV1ImageFn,
   }),
   GapCursor,
   DBlock.configure({
@@ -195,7 +198,7 @@ export const defaultExtensions = ({
   Document,
   ...SuperchargedTableExtensions,
   CustomKeymap,
-  Iframe.configure({ ipfsImageFetchFn }),
+  Iframe.configure({ ipfsImageFetchFn, fetchV1ImageFn }),
   EmbeddedTweet,
   actionButton,
   ColumnExtension,
@@ -204,7 +207,7 @@ export const defaultExtensions = ({
     onError,
   }),
   MarkdownPasteHandler(ipfsImageUploadFn, ipfsImageFetchFn),
-  HtmlExportExtension(ipfsImageFetchFn),
+  HtmlExportExtension(ipfsImageFetchFn, fetchV1ImageFn),
   TextExportExtension(),
   Markdown.configure({
     html: true, // Allow HTML input/output

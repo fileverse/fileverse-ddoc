@@ -48,6 +48,7 @@ const TiptapToolBar = ({
   onDocxImport,
   isLoading,
   ipfsImageFetchFn,
+  fetchV1ImageFn,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -63,6 +64,7 @@ const TiptapToolBar = ({
   onTxtExport?: () => void;
   onDocxImport?: () => void;
   isLoading: boolean;
+  fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
@@ -87,6 +89,7 @@ const TiptapToolBar = ({
     onTxtExport,
     ipfsImageFetchFn,
     onDocxImport,
+    fetchV1ImageFn,
   });
 
   const editorStates = useEditorStates(editor as Editor);
