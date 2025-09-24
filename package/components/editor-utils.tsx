@@ -294,6 +294,7 @@ export const useEditorToolbar = ({
   onHtmlExport,
   onTxtExport,
   ipfsImageFetchFn,
+  fetchV1ImageFn,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -306,6 +307,7 @@ export const useEditorToolbar = ({
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
+  fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
 }) => {
   const {
     ref: toolRef,
@@ -737,6 +739,7 @@ export const useEditorToolbar = ({
               await searchForSecureImageNodeAndEmbedImageContent(
                 originalDoc,
                 ipfsImageFetchFn,
+                fetchV1ImageFn,
               );
 
             const temporalEditor = getTemporaryEditor(

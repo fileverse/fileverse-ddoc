@@ -24,6 +24,7 @@ const MobileToolbar = ({
   ipfsImageUploadFn,
   isLoading,
   ipfsImageFetchFn,
+  fetchV1ImageFn,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -35,6 +36,7 @@ const MobileToolbar = ({
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
+  fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
 }) => {
   const { toolVisibility, setToolVisibility, bottomToolbar } = useEditorToolbar(
     {
@@ -42,6 +44,7 @@ const MobileToolbar = ({
       onError,
       ipfsImageUploadFn,
       ipfsImageFetchFn,
+      fetchV1ImageFn,
     },
   );
   const [url, setUrl] = useState('');

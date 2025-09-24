@@ -14,6 +14,7 @@ export interface IframeOptions {
   ipfsImageFetchFn: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
+  fetchV1ImageFn: (hash: string) => Promise<ArrayBuffer | undefined>;
 }
 
 declare module '@tiptap/core' {
@@ -49,6 +50,7 @@ export const Iframe = Node.create<IframeOptions>({
         class: 'iframe-wrapper',
       },
       ipfsImageFetchFn: async () => ({ url: '', file: new File([], '') }),
+      fetchV1ImageFn: async () => undefined,
     };
   },
 
@@ -90,7 +92,10 @@ export const Iframe = Node.create<IframeOptions>({
 
   addNodeView() {
     return ReactNodeViewRenderer(
-      getResizableMediaNodeView(this.options.ipfsImageFetchFn),
+      getResizableMediaNodeView(
+        this.options.ipfsImageFetchFn,
+        this.options.fetchV1ImageFn,
+      ),
     );
   },
 

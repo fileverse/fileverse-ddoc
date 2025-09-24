@@ -41,6 +41,7 @@ interface PresentationModeProps {
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
   documentStyling?: DdocProps['documentStyling'];
+  fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
 }
 
 const SlideContent = ({
@@ -123,6 +124,7 @@ export const PresentationMode = ({
   isContentLoading,
   ipfsImageFetchFn,
   documentStyling,
+  fetchV1ImageFn,
 }: PresentationModeProps) => {
   const [showLinkCopied, setShowLinkCopied] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -163,7 +165,11 @@ export const PresentationMode = ({
     }
 
     setIsLoading(true);
-    const markdown = await convertToMarkdown(editor, ipfsImageFetchFn);
+    const markdown = await convertToMarkdown(
+      editor,
+      ipfsImageFetchFn,
+      fetchV1ImageFn,
+    );
 
     // First convert markdown to HTML with proper page breaks
     const html = convertMarkdownToHTML(markdown, {
