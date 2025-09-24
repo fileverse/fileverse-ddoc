@@ -20,6 +20,7 @@ const HtmlExportExtension = (
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>,
+  fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>,
 ) => {
   return Extension.create({
     name: 'htmlExport',
@@ -42,6 +43,7 @@ const HtmlExportExtension = (
               await searchForSecureImageNodeAndEmbedImageContent(
                 originalDoc,
                 ipfsImageFetchFn,
+                fetchV1ImageFn,
               );
 
             const temporalEditor = getTemporaryEditor(

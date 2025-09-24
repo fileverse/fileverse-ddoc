@@ -88,6 +88,7 @@ const TiptapToolBar = ({
     onHtmlExport,
     onTxtExport,
     ipfsImageFetchFn,
+    fetchV1ImageFn,
     onDocxImport,
   });
 

@@ -207,7 +207,7 @@ export const defaultExtensions = ({
     onError,
   }),
   MarkdownPasteHandler(ipfsImageUploadFn, ipfsImageFetchFn),
-  HtmlExportExtension(ipfsImageFetchFn),
+  HtmlExportExtension(ipfsImageFetchFn, fetchV1ImageFn),
   TextExportExtension(),
   Markdown.configure({
     html: true, // Allow HTML input/output
