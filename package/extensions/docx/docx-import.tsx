@@ -43,52 +43,55 @@ export const DocxFileHandler = Extension.create({
             if (!files || files.length === 0) return;
 
             const file = files[0];
-            if (
+
+            // Validate extension
+            const isDocx =
               file.type ===
                 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' ||
-              file.name.endsWith('.docx')
-            ) {
-              const { showLoader, removeLoader } = inlineLoader(
-                this.editor,
-                'Importing DOCX file ...',
+              file.name.endsWith('.docx');
+
+            if (!isDocx) {
+              const errMsg =
+                'Oops! That file type isn’t supported. Please upload a .docx file.';
+              onError?.(errMsg);
+              throw new Error(errMsg);
+            }
+
+            const { showLoader, removeLoader } = inlineLoader(
+              this.editor,
+              'Importing DOCX file ...',
+            );
+            const loader = showLoader();
+
+            try {
+              const arrayBuffer = await file.arrayBuffer();
+
+              const { value: extractedHtml } = await mammoth.convertToHtml(
+                { arrayBuffer },
+                {
+                  convertImage: (mammoth as any).images.inline(
+                    async (element: any) => {
+                      const buffer = await element.read('base64');
+                      const contentType = element.contentType;
+                      return {
+                        src: `data:${contentType};base64,${buffer}`,
+                      };
+                    },
+                  ),
+                },
               );
-              const loader = showLoader();
 
-              try {
-                const arrayBuffer = await file.arrayBuffer();
-
-                // Use Mammoth with image conversion → embed as <img src="data:...">
-                const { value: extractedHtml } = await mammoth.convertToHtml(
-                  { arrayBuffer },
-                  {
-                    convertImage: (mammoth as any).images.inline(
-                      async (element: any) => {
-                        const buffer = await element.read('base64');
-                        const contentType = element.contentType; // e.g., "image/png"
-                        return {
-                          src: `data:${contentType};base64,${buffer}`,
-                        };
-                      },
-                    ),
-                  },
-                );
-
-                // Feed extracted HTML into your existing import pipeline
-                await handleMarkdownContent(
-                  view,
-                  extractedHtml,
-                  ipfsImageUploadFn,
-                );
-                onDocxImport?.();
-              } catch (err) {
-                console.error('Error importing DOCX file:', err);
-              } finally {
-                removeLoader(loader);
-              }
-            } else {
-              onError?.(
-                'Oops! That file type isn’t supported. Give it another go with a .docx file.',
+              await handleMarkdownContent(
+                view,
+                extractedHtml,
+                ipfsImageUploadFn,
               );
+              onDocxImport?.();
+            } catch (err: any) {
+              console.error(err);
+              onError?.('Error importing DOCX file');
+            } finally {
+              removeLoader(loader);
             }
           };
 
