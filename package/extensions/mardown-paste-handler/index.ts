@@ -483,7 +483,7 @@ const MarkdownPasteHandler = (
         }),
         new InputRule({
           // eslint-disable-next-line no-useless-escape
-          find: /(\S*)\^((?:[^\^]|\\\^)+)\^/,
+          find: /(\S*)\^([^\s^]+)\^/,
           handler: ({ state, range, match }) => {
             const { tr } = state;
             const start = range.from + match[1].length;
@@ -588,7 +588,7 @@ function isMarkdown(content: string): boolean {
     content.match(/`{1,3}[^`]+`{1,3}/g) !== null ||
     content.match(/<sup>(.*?)<\/sup>/g) !== null ||
     content.match(/<sub>(.*?)<\/sub>/g) !== null ||
-    content.match(/\^(.*?)\^/g) !== null || // New superscript syntax
+    content.match(/\^[^\s^]+\^/g) !== null || // New superscript syntax
     content.match(/~(.*?)~/g) !== null || // New subscript syntax
     content.match(/^===\s*$/m) !== null // Page break
   );
@@ -775,7 +775,7 @@ export async function handleMarkdownContent(
   convertedHtml = doc.body.innerHTML;
 
   const subsupRegex = /<(sup|sub)>(.*?)<\/\1>/g;
-  const superscriptRegex = /\^(.*?)\^/g;
+  const superscriptRegex = /\^([^\s^]+)\^/g;
   const subscriptRegex = /~(.*?)~/g;
   const pageBreakRegex = /===\s*$/gm;
 
