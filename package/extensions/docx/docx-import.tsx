@@ -63,6 +63,21 @@ export const DocxFileHandler = Extension.create({
             );
             const loader = showLoader();
 
+            // Show warning loader only for files larger than 10MB
+            let warningLoader: HTMLDivElement | null = null;
+            let removeWarningLoader: ((div?: HTMLDivElement) => void) | null =
+              null;
+
+            if (file.size > 10 * 1024 * 1024) {
+              // 10MB in bytes
+              const warningLoaderData = inlineLoader(
+                this.editor,
+                'Importing large file… this may take a while',
+              );
+              warningLoader = warningLoaderData.showLoader() as HTMLDivElement;
+              removeWarningLoader = warningLoaderData.removeLoader;
+            }
+
             try {
               const arrayBuffer = await file.arrayBuffer();
 
@@ -92,6 +107,9 @@ export const DocxFileHandler = Extension.create({
               onError?.('Error importing DOCX file');
             } finally {
               removeLoader(loader);
+              if (warningLoader && removeWarningLoader) {
+                removeWarningLoader(warningLoader);
+              }
             }
           };
 
