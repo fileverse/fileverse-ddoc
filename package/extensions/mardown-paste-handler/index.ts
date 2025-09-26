@@ -381,7 +381,7 @@ const MarkdownPasteHandler = (
                   reader.readAsText(file);
                 } else {
                   onError?.(
-                    'Oops! That file type isn’t supported. Give it another go with a .md file.',
+                    `Oops! That file type isn't supported. Give it another go with a .md file.`,
                   );
                 }
               }

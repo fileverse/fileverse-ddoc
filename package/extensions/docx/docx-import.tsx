@@ -51,8 +51,7 @@ export const DocxFileHandler = Extension.create({
               file.name.endsWith('.docx');
 
             if (!isDocx) {
-              const errMsg =
-                'Oops! That file type isn’t supported. Please upload a .docx file.';
+              const errMsg = `Oops! That file type isn't supported. Give it another go with a .docx file.`;
               onError?.(errMsg);
               throw new Error(errMsg);
             }

@@ -72,7 +72,7 @@ export const showInlineLoadingUI = (
     const offsetY = queueIndex * 60; // 60px spacing between loaders
 
     floatingDiv.className =
-      'py-2 px-4 animate-pulse bg-black text-white text-sm font-medium rounded text-center w-fit mx-auto z-[999] left-0 right-0 absolute transition-all duration-300';
+      'py-2 px-4 animate-pulse bg-black text-white text-sm font-medium rounded text-center w-fit mx-auto z-[999] left-0 right-0 absolute transition-all';
 
     // Position the loader with offset
     floatingDiv.style.bottom = `${30 + offsetY}px`;
