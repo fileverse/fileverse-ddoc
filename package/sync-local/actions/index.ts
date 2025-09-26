@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   SocketStatusEnum,
   SyncMachineContext,
@@ -345,16 +346,28 @@ export const disconnectedStateHandler = () => {
   };
 };
 export const handleDisconnectionDueToError = (
-  context: SyncMachineContext,
-  event: SyncMachinEvent,
+  _context: SyncMachineContext,
+  _event: SyncMachinEvent,
 ) => {
-  if (event.data.error) {
-    return {
-      errorCount: context.errorCount + 1,
-      errorMessage: event.data.error,
-    };
-  }
-  return {};
+  return {
+    socketClient: null,
+    roomId: '',
+    roomMembers: [],
+    isConnected: false,
+    awareness: null,
+    _awarenessUpdateHandler: null,
+    roomKey: '',
+    wsUrl: '',
+    uncommittedUpdatesIdList: [],
+    updateQueue: [],
+    isOwner: false,
+    isReady: false,
+    isNewDoc: false,
+    contentTobeAppliedQueue: [],
+    initialUpdate: null,
+    errorCount: 0,
+    errorMessage: '',
+  };
 };
 
 export const terminateSessionHandler = (context: SyncMachineContext) => {

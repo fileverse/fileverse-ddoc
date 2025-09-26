@@ -25,6 +25,10 @@ export const syncMachineServices = {
           send({ type: 'SYNC_LATEST_COMMIT', data: null });
         },
         onDisconnect: () => send({ type: 'DISCONNECTED', data: null }),
+        onHandShakeError: (e) => {
+          send({ type: 'DISCONNECT', data: { error: 'Network error' } });
+          onError?.(e);
+        },
         onWsEvent: (message) => {
           if (!message?.event_type) {
             throw new Error('Message is not an event');

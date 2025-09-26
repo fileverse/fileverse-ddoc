@@ -45,6 +45,7 @@ export class SocketClient {
   private _machineEventHandler: EventHandler | null = null;
   private _onConnect: ConnectHandler | null = null;
   private _onDisconnection: DisconnectHandler | null = null;
+  private _onHandShakeError: ((err: string) => void) | null = null;
   private _sequenceCallbackMap: SequenceToRequestMap = {};
   _webSocketStatus: SocketStatusEnum = SocketStatusEnum.CLOSED;
   private _webSocket: ReconnectingWebSocket | null = null;
@@ -337,6 +338,10 @@ export class SocketClient {
       data: response,
       roomKey: this.roomKey,
     });
+    if (response.statusCode !== 200) {
+      this._onHandShakeError?.(response.error);
+      return;
+    }
     if (!response.is_handshake_response) {
       this.disconnect();
       return;
@@ -465,6 +470,7 @@ export class SocketClient {
     this._onDisconnection = config.onDisconnect;
     this._machineEventHandler = config.onWsEvent;
     this._onError = config.onError;
+    this._onHandShakeError = config.onHandShakeError;
     this.roomId = config.roomId;
 
     await this.connectSocket();

@@ -138,6 +138,7 @@ export interface ISocketInitConfig {
   onDisconnect: DisconnectHandler;
   onError: (err: string) => void;
   onWsEvent: EventHandler;
+  onHandShakeError: (err: string) => void;
   roomId: string;
 }
 
