@@ -1,6 +1,8 @@
 # Ddoc Editor
 
-[ddocs.new](http://ddocs.new/) is your onchain, privacy-first alternative to G\**gle D*cs: peer-to-peer, end-to-end encrypted, and decentralized. It enables secure, real-time, and async collaboration without compromising user privacy.
+[ddocs.new](http://ddocs.new/) is your onchain, privacy-first alternative to Google Docs. A self-sovereign note-taking and collaboration app that is peer-to-peer, end-to-end encrypted, and decentralized :yellow_heart:
+
+dDocs enables secure, real-time and asynchronous collaboration without compromising user privacy. It also comes with powerful features like Markdown and LaTeX support, dark mode, offline editing, and mobile browser optimization.
 
 <img width="4410" alt="github_banner_final@3x" src="https://github.com/user-attachments/assets/c6ee706d-979d-41b6-9f73-d29fbabb5152" />
 
