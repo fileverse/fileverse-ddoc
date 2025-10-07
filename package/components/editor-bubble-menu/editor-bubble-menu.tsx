@@ -261,7 +261,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           )}
         >
           {mobileCommentButton}
-          {isConnected && !enableCollaboration && (
+          {isConnected && !enableCollaboration && !isPreviewMode && (
             <DynamicDropdown
               key="Reminder"
               side="bottom"
