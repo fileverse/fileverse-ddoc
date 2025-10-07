@@ -1191,6 +1191,15 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
   }
 }
 
+// Hide inline comments visually when disabled
+.hide-inline-comments .inline-comment {
+  background-color: transparent !important;
+  color: inherit !important;
+  border: none !important;
+  cursor: default !important;
+  pointer-events: none !important;
+}
+
 .custom-scrollbar {
   overflow-y: scroll;
   scrollbar-width: thin; /* Firefox */

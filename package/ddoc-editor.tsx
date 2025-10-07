@@ -762,6 +762,7 @@ const DdocEditor = forwardRef(
                                 activeModel !== undefined &&
                                   isAIAgentEnabled &&
                                   'has-available-models',
+                                disableInlineComment && 'hide-inline-comments',
                               )}
                               {...(getCanvasStyle() && {
                                 style: getCanvasStyle(),
@@ -822,7 +823,7 @@ const DdocEditor = forwardRef(
             )}
 
             <div>
-              {editor && (
+              {editor && !disableInlineComment && (
                 <CommentBubbleCard
                   editor={editor}
                   activeCommentId={activeCommentId}

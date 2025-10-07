@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "2.4.13",
+  "version": "2.4.14",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
