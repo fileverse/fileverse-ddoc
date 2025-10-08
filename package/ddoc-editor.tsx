@@ -823,12 +823,13 @@ const DdocEditor = forwardRef(
             )}
 
             <div>
-              {editor && !disableInlineComment && (
+              {editor && (
                 <CommentBubbleCard
                   editor={editor}
                   activeCommentId={activeCommentId}
                   commentDrawerOpen={commentDrawerOpen as boolean}
                   isCollabDocumentPublished={isCollabDocumentPublished}
+                  disableInlineComment={disableInlineComment}
                 />
               )}
             </div>
