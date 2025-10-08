@@ -66,6 +66,7 @@ function App() {
   const [zoomLevel, setZoomLevel] = useState<string>('1');
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  const [disableInlineComment, setDisableInlineComment] = useState(false);
 
   const searchParams = new URLSearchParams(window.location.search);
   const paramCollaborationId = searchParams.get('collaborationId');
@@ -244,6 +245,12 @@ function App() {
           </div>
         </div>
         <div className="flex gap-2">
+          <IconButton
+            variant={'ghost'}
+            icon={disableInlineComment ? 'EyeOff' : 'Eye'}
+            size="md"
+            onClick={() => setDisableInlineComment(!disableInlineComment)}
+          />
           <ThemeToggle />
 
           {isMediaMax1280px ? (
@@ -436,6 +443,7 @@ function App() {
         username={username}
         setUsername={setUsername}
         isPreviewMode={isPreviewMode}
+        disableInlineComment={disableInlineComment}
         onError={(error) => {
           toast({
             title: 'Error',

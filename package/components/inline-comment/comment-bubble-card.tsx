@@ -6,32 +6,43 @@ import { Editor } from '@tiptap/core';
 import { useComments } from './context/comment-context';
 import { CommentDropdown } from './comment-dropdown';
 import { useResponsive } from '../../utils/responsive';
+import { useRef, useEffect, useMemo } from 'react';
 
 export const CommentBubbleCard = ({
   editor,
   activeCommentId,
   commentDrawerOpen,
   isCollabDocumentPublished,
+  disableInlineComment,
 }: {
   editor: Editor;
   activeCommentId: string | null;
   commentDrawerOpen: boolean;
   isCollabDocumentPublished: boolean | undefined;
+  disableInlineComment?: boolean;
 }) => {
   const { comments, username } = useComments();
   const { isNativeMobile } = useResponsive();
+  const disableInlineCommentRef = useRef(disableInlineComment || false);
+
+  useEffect(() => {
+    disableInlineCommentRef.current = disableInlineComment || false;
+  }, [disableInlineComment]);
 
   const currentComment = comments?.find(
     (comment) => comment.id === activeCommentId,
   );
 
-  const bubbleMenuProps = {
+  const bubbleMenuProps = useMemo(() => ({
     shouldShow: ({ editor }: { editor: Editor }) => {
       const isCommentResolved = editor.getAttributes('comment')?.resolved;
+      const disabled = disableInlineCommentRef.current;
+
       const shouldShow =
         editor.isActive('comment') &&
         !isCommentResolved &&
-        isCollabDocumentPublished;
+        isCollabDocumentPublished &&
+        !disabled;
 
       if (shouldShow) {
         const commentId = editor.getAttributes('comment')?.commentId;
@@ -80,7 +91,7 @@ export const CommentBubbleCard = ({
         ],
       },
     },
-  };
+  }), [isNativeMobile, isCollabDocumentPublished]);
 
   return (
     <BubbleMenu
