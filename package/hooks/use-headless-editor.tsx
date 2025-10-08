@@ -11,10 +11,26 @@ import { sanitizeContent } from '../utils/sanitize-content';
 import { handleMarkdownContent } from '../extensions/mardown-paste-handler';
 import { IpfsImageUploadResponse } from '../types';
 import mammoth from 'mammoth';
+import { CommentExtension as Comment } from '../extensions/comment';
 
-export const useHeadlessEditor = () => {
+export const useHeadlessEditor = (props?: {
+  optionalExtensions?: string[];
+}) => {
   const getEditor = () => {
     const ydoc = new Y.Doc();
+
+    const getOptionalExtensions = () => {
+      const optionalExtensions = [];
+      if (props?.optionalExtensions?.includes('comment')) {
+        const commentExtensions = Comment.configure({
+          HTMLAttributes: {
+            class: 'inline-comment',
+          },
+        });
+        optionalExtensions.push(commentExtensions);
+      }
+      return optionalExtensions;
+    };
     const extensions = [
       ...defaultExtensions({ onError: () => null }).filter(
         (extension) => extension.name !== 'characterCount',
@@ -22,6 +38,7 @@ export const useHeadlessEditor = () => {
       customTextInputRules,
       PageBreak,
       Collaboration.configure({ document: ydoc }),
+      ...getOptionalExtensions(),
     ];
     // @ts-ignore
     const editor = new Editor({ extensions, autofocus: false });
