@@ -57,6 +57,7 @@ export class SocketClient {
   private ownerKeyPair?: ucans.EdKeypair;
   private contractAddress?: string;
   private ownerUcan?: ucans.Ucan;
+  private collaborationUcan?: ucans.Ucan;
   private ownerAddress?: string;
   private roomKey: string;
   private roomInfo?: {
@@ -259,7 +260,8 @@ export class SocketClient {
     this.ownerUcan = await ucans.build({
       audience: this._websocketServiceDid,
       issuer: this.ownerKeyPair,
-      lifetimeInSeconds: 7 * 86400,
+      lifetimeInSeconds: 3600, // 1 Hour
+      notBefore: Math.floor(Date.now() / 1000),
       capabilities: [
         {
           with: {
@@ -278,24 +280,27 @@ export class SocketClient {
     if (!this._websocketServiceDid) {
       throw new Error('Server did not response with the server DID');
     }
+    if (this.collaborationUcan && !ucans.isExpired(this.collaborationUcan))
+      return ucans.encode(this.collaborationUcan);
     const keyPair = this.getCollaborationKeyPair();
 
-    const ucan = await ucans.build({
+    this.collaborationUcan = await ucans.build({
       audience: this._websocketServiceDid,
       issuer: keyPair,
-      lifetimeInSeconds: 7 * 86400,
+      lifetimeInSeconds: 3600, // 1 Hour
+      notBefore: Math.floor(Date.now() / 1000),
       capabilities: [
         {
           with: {
             scheme: 'storage',
-            hierPart: 'collaboration',
+            hierPart: this.roomId,
           },
           can: { namespace: 'collaboration', segments: ['COLLABORATE'] },
         },
       ],
     });
-    const token = ucans.encode(ucan);
-    return token;
+
+    return ucans.encode(this.collaborationUcan);
   };
 
   private _handleHandShake = async (message: any) => {

@@ -23,6 +23,7 @@ import { crypto as cryptoUtils } from './crypto';
 import { collabStore } from './storage/collab-store';
 import { DocumentStylingPanel } from './DocumentStylingPanel';
 import { DocumentStyling, ICollaborationConfig } from '../../package/types';
+import { getKeyFromURLParams } from './utils';
 
 const sampleTags = [
   { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
@@ -33,11 +34,6 @@ const sampleTags = [
   { name: 'Devcon Main Event', isActive: true, color: '#B7F1BA' },
   { name: 'Specific Event', isActive: true, color: '#AAF5E4' },
 ];
-
-const ownerEdSecret =
-  '1+xXnNdjsL2G6cu0PWP7r3/l1cS8AyXKykXjJzdWQHW83cMcFZ5lXPDy5hqVeMhN9zST3ACOTX1Qu/PH6pYBgA==';
-const contractAddress = '0x381c333ad2d39C31B4595A41b91634143019D6D7';
-const ownerAddress = '0x29b66d2910ac92530c0C5A3B6fA12c18aAb7f996';
 
 function App() {
   const [enableCollaboration, setEnableCollaboration] = useState(false);
@@ -70,7 +66,7 @@ function App() {
 
   const searchParams = new URLSearchParams(window.location.search);
   const paramCollaborationId = searchParams.get('collaborationId');
-  const paramKey = searchParams.get('key');
+  const paramKey = getKeyFromURLParams(searchParams);
   const [collabConfig, setCollabConf] = useState<
     ICollaborationConfig | undefined
   >(undefined);
@@ -89,7 +85,7 @@ function App() {
           collaborationId: paramCollaborationId,
           username: name,
           isOwner: false,
-          wsUrl: 'http://localhost:5001',
+          wsUrl: import.meta.env.VITE_COLLAB_WS_URL,
         });
 
         setEnableCollaboration(true);
@@ -181,11 +177,11 @@ function App() {
       collaborationId,
       username: name,
       isOwner: true,
-      ownerEdSecret,
-      contractAddress,
-      ownerAddress,
+      ownerEdSecret: import.meta.env.VITE_OWNER_ED_SECRET,
+      contractAddress: import.meta.env.VITE_COLLAB_CONTRACT_ADDRESS,
+      ownerAddress: import.meta.env.VITE_COLLAB_OWNER_ADDRESS,
       isEns: true,
-      wsUrl: 'http://localhost:5001',
+      wsUrl: import.meta.env.VITE_COLLAB_WS_URL,
     };
     setCollabConf(collabConfig);
 
@@ -195,12 +191,12 @@ function App() {
     setUsername(name);
     setEnableCollaboration(true);
     console.log(
-      `${window.location.origin}?collaborationId=${collaborationId}&key=${privateKeyBase64}`,
+      `${window.location.origin}?collaborationId=${collaborationId}#key=${privateKeyBase64}`,
     );
 
     // copy to clipboard
     await navigator.clipboard.writeText(
-      `${window.location.origin}?collaborationId=${collaborationId}&key=${privateKeyBase64}`,
+      `${window.location.origin}?collaborationId=${collaborationId}#key=${privateKeyBase64}`,
     );
 
     toast({
