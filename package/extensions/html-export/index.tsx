@@ -11,7 +11,10 @@ import { prettifyHtml } from '../../utils/prettify-html';
 declare module '@tiptap/core' {
   interface Commands {
     exportHtmlFile: {
-      exportHtmlFile: (props?: { title?: string }) => any;
+      exportHtmlFile: (props?: {
+        title?: string;
+        returnHtmlFile?: boolean;
+      }) => any;
     };
   }
 }
@@ -28,7 +31,7 @@ const HtmlExportExtension = (
     addCommands() {
       return {
         exportHtmlFile:
-          (props?: { title?: string }) =>
+          (props?: { title?: string; returnHtmlFile?: boolean }) =>
           async ({ editor }: { editor: Editor }): Promise<string> => {
             const { showLoader, removeLoader } = inlineLoader(
               editor,
@@ -118,6 +121,11 @@ const HtmlExportExtension = (
 `;
 
             const formattedHtml = await prettifyHtml(htmlContent);
+            if (props?.returnHtmlFile) {
+              temporalEditor.destroy();
+              removeLoader(loader);
+              return formattedHtml;
+            }
             const blob = new Blob([formattedHtml], {
               type: 'text/html;charset=utf-8',
             });

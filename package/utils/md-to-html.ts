@@ -729,3 +729,34 @@ export function convertMarkdownToHTML(
 
   return finalHtml;
 }
+
+export function convertMarkdownToHTMLSimple(
+  markdown: string,
+  options: { preserveNewlines?: boolean } = {},
+): string {
+  const { preserveNewlines = true } = options;
+  // Process the entire markdown content
+  let html = markdownIt.render(markdown);
+
+  if (preserveNewlines) {
+    html = html.replace(/\n+/g, '\n').replace(/>\n+</g, '>\n<');
+  }
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  DOMPurify.addHook('afterSanitizeElements', (node: any) => {
+    if (
+      node.nodeType === 1 &&
+      node.tagName !== 'BR' &&
+      !node.textContent.trim() &&
+      !node.children.length
+    ) {
+      node.parentNode?.removeChild(node);
+    }
+  });
+  const cleanHtml = DOMPurify.sanitize(html, {
+    ALLOWED_ATTR: ['href'],
+    FORBID_ATTR: ['data-toc-id', 'data-tight'],
+  });
+
+  return cleanHtml;
+}
