@@ -240,7 +240,7 @@ turndownService.addRule('mathExpression', {
     }
     return false;
   },
-  replacement: function (content, node) {
+  replacement: function (_, node) {
     // Get the raw text content without escaping
     const textContent = (node as HTMLElement).textContent || '';
     return textContent;
@@ -265,7 +265,8 @@ function looksLikeFormula(text: string): boolean {
 
 // Override escape function to handle formula-like content
 turndownService.escape = (function (originalEscape) {
-  return function (text: string) {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return function (this: any, text: string) {
     if (looksLikeFormula(text)) {
       return text;
     }
