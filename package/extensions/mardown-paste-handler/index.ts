@@ -661,6 +661,19 @@ function isMarkdown(content: string): boolean {
     return false; // Treat as LaTeX, not Markdown
   }
 
+  // Check if content looks like a mathematical formula with brackets and operators
+  // Pattern: contains brackets [] or () AND contains numbers AND contains operators like * or /
+  // This prevents formulas like [[15, -19]*[18,20], (4*6)] from being treated as markdown
+  const trimmed = content.trim();
+  // eslint-disable-next-line no-useless-escape
+  const hasBrackets = /[\[\]()]/.test(trimmed);
+  const hasNumbers = /\d/.test(trimmed);
+  const hasMultiplyOrDivide = /[*/]/.test(trimmed);
+
+  if (hasBrackets && hasNumbers && hasMultiplyOrDivide) {
+    return false; // Treat as formula, not Markdown
+  }
+
   return (
     content.match(/^#{1,6}\s/) !== null || // Headings
     content.startsWith('*') ||
@@ -729,7 +742,24 @@ export async function handleMarkdownContent(
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
 ) {
   // Remove YAML frontmatter before parsing
-  const cleanMarkdown = stripFrontmatter(content);
+  let cleanMarkdown = stripFrontmatter(content);
+
+  // Protect formulas from being interpreted as markdown by escaping asterisks
+  // Find lines that look like formulas and escape their asterisks
+  cleanMarkdown = cleanMarkdown.replace(/^.*$/gm, (line) => {
+    const trimmed = line.trim();
+    // eslint-disable-next-line no-useless-escape
+    const hasBrackets = /[\[\]()]/.test(trimmed);
+    const hasNumbers = /\d/.test(trimmed);
+    const hasMultiplyOrDivide = /[*/]/.test(trimmed);
+
+    if (hasBrackets && hasNumbers && hasMultiplyOrDivide) {
+      // This line looks like a formula
+      // Escape asterisks with backslash so MarkdownIt treats them as literal
+      return line.replace(/\*/g, '\\*');
+    }
+    return line;
+  });
 
   // Convert Markdown to HTML
   let convertedHtml = markdownIt.render(cleanMarkdown);
