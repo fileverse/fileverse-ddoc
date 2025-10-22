@@ -223,6 +223,85 @@ turndownService.addRule('subscript', {
   },
 });
 
+// Custom rule for math expressions - preserve content without escaping
+turndownService.addRule('mathExpression', {
+  filter: function (node) {
+    // Check if the node or its parents have katex-related classes
+    if (node.nodeType === Node.ELEMENT_NODE) {
+      const element = node as HTMLElement;
+      const className = element.className || '';
+      if (
+        className.includes('katex') ||
+        className.includes('math-inline') ||
+        className.includes('math-display')
+      ) {
+        return true;
+      }
+    }
+    return false;
+  },
+  replacement: function (content, node) {
+    // Get the raw text content without escaping
+    const textContent = (node as HTMLElement).textContent || '';
+    return textContent;
+  },
+});
+
+// Helper function to check if text looks like a mathematical formula
+function looksLikeFormula(text: string): boolean {
+  // Check for patterns that indicate mathematical notation
+  // Must have: brackets/parens AND (numbers OR operators)
+  // eslint-disable-next-line no-useless-escape
+  const hasBrackets = /[\[\]()]/.test(text);
+  const hasNumbers = /\d/.test(text);
+  const hasOperators = /[+\-*/,]/.test(text);
+
+  // Exclude markdown links/images
+  const isMarkdownLink =
+    /!\[.*\]\(.*\)/.test(text) || /\[.*\]\(.*\)/.test(text);
+
+  return hasBrackets && (hasNumbers || hasOperators) && !isMarkdownLink;
+}
+
+// Override escape function to handle formula-like content
+turndownService.escape = (function (originalEscape) {
+  return function (text: string) {
+    if (looksLikeFormula(text)) {
+      return text;
+    }
+    return originalEscape.call(this, text);
+  };
+})(turndownService.escape);
+
+// Custom rule for emphasis/italic tags within formula context
+// This handles the case where * was interpreted as italic during input
+turndownService.addRule('formulaEmphasis', {
+  filter: function (node) {
+    // Check if this is an <em> or <i> tag
+    if (node.nodeName !== 'EM' && node.nodeName !== 'I') {
+      return false;
+    }
+
+    // Get the parent paragraph text to check context
+    let parent = node.parentElement;
+    while (parent && parent.nodeName !== 'P') {
+      parent = parent.parentElement;
+    }
+
+    if (!parent) return false;
+
+    const fullText = parent.textContent || '';
+
+    // If the full paragraph looks like a formula, treat this <em> as part of it
+    return looksLikeFormula(fullText);
+  },
+  replacement: function (content) {
+    // Return content wrapped with * but don't escape the content itself
+    // This reconstructs the original *...* that was misinterpreted
+    return '*' + content + '*';
+  },
+});
+
 // Custom rules for image
 turndownService.addRule('img', {
   filter: ['img'],
