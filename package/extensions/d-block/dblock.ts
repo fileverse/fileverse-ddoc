@@ -110,6 +110,102 @@ export const DBlock = Node.create<DBlockOptions>({
   addKeyboardShortcuts() {
     return {
       'Mod-Alt-0': () => this.editor.commands.setDBlock(),
+      // Tab: Indent list item (sink)
+      // DBlock has priority 1000, so we need to explicitly handle Tab for lists
+      Tab: ({ editor }) => {
+        const { selection } = editor.state;
+        const { $from } = selection;
+
+        // Check if we're in a list item or task item
+        for (let d = $from.depth; d > 0; d--) {
+          const node = $from.node(d);
+
+          if (node.type.name === 'listItem') {
+            const itemIndex = $from.index(d - 1);
+
+            // Try to sink the list item normally
+            const result = editor.commands.sinkListItem('listItem');
+
+            // If sinkListItem failed (returns false) and this is the first item,
+            // we need special handling to allow indenting the first item
+            if (!result && itemIndex === 0) {
+              const currentItemPos = $from.before(d);
+
+              // Create an empty list item before the current one
+              const emptyItem = editor.schema.nodes.listItem.create(
+                null,
+                editor.schema.nodes.paragraph.create()
+              );
+
+              // Insert the empty item at the start of the list
+              const tr = editor.state.tr.insert(currentItemPos, emptyItem);
+              editor.view.dispatch(tr);
+
+              // Now sink the item (which is now at index 1)
+              setTimeout(() => {
+                editor.commands.sinkListItem('listItem');
+              }, 10);
+            }
+
+            // Always return true to prevent browser Tab behavior
+            return true;
+          }
+
+          if (node.type.name === 'taskItem') {
+            const itemIndex = $from.index(d - 1);
+
+            // Try to sink the task item normally
+            const result = editor.commands.sinkListItem('taskItem');
+
+            // If sinkListItem failed (returns false) and this is the first item,
+            // we need special handling to allow indenting the first item
+            if (!result && itemIndex === 0) {
+              const currentItemPos = $from.before(d);
+
+              // Create an empty task item before the current one
+              const emptyItem = editor.schema.nodes.taskItem.create(
+                { checked: false },
+                editor.schema.nodes.paragraph.create()
+              );
+
+              // Insert the empty item at the start of the list
+              const tr = editor.state.tr.insert(currentItemPos, emptyItem);
+              editor.view.dispatch(tr);
+
+              // Now sink the item (which is now at index 1)
+              setTimeout(() => {
+                editor.commands.sinkListItem('taskItem');
+              }, 10);
+            }
+
+            // Always return true to prevent browser Tab behavior
+            return true;
+          }
+        }
+
+        // Not in a list, let browser handle it
+        return false;
+      },
+      // Shift+Tab: Unindent list item (lift)
+      'Shift-Tab': ({ editor }) => {
+        const { selection } = editor.state;
+        const { $from } = selection;
+
+        // Check if we're in a list item or task item
+        for (let d = $from.depth; d > 0; d--) {
+          const node = $from.node(d);
+
+          if (node.type.name === 'listItem') {
+            return editor.commands.liftListItem('listItem');
+          }
+          if (node.type.name === 'taskItem') {
+            return editor.commands.liftListItem('taskItem');
+          }
+        }
+
+        // Not in a list, let browser handle it
+        return false;
+      },
       Enter: ({ editor }) => {
         const {
           selection: { $head, from, to },
