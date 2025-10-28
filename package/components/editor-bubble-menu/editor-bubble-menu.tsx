@@ -334,6 +334,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                 anchorTrigger={
                   <button
                     className="bg-transparent hover:!color-bg-default-hover rounded gap-2 py-2 px-1 flex items-center justify-center w-fit max-w-14 min-w-14"
+                    onMouseDown={(e) => e.preventDefault()}
                     onClick={() => setToolVisibility(IEditorTool.FONT_SIZE)}
                   >
                     <span className="text-body-sm line-clamp-1">

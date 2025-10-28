@@ -14,6 +14,10 @@ const ToolbarButton = forwardRef<
     size?: 'sm' | 'md' | 'lg';
   }
 >(({ icon, isActive, onClick, tooltip, classNames, disabled, size }, ref) => {
+  const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.preventDefault();
+  };
+
   if (tooltip)
     return (
       <Tooltip text={tooltip}>
@@ -24,6 +28,7 @@ const ToolbarButton = forwardRef<
           size={size || 'md'}
           icon={icon}
           onClick={onClick}
+          onMouseDown={handleMouseDown}
           isActive={isActive}
           className={classNames}
           disabled={disabled}
@@ -39,6 +44,7 @@ const ToolbarButton = forwardRef<
       size={size || 'md'}
       icon={icon}
       onClick={onClick}
+      onMouseDown={handleMouseDown}
       isActive={isActive}
       className={classNames}
       disabled={disabled}

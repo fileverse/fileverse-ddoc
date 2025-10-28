@@ -1016,6 +1016,7 @@ export const TextHighlighter = ({
     >
       {colors.map((color) => (
         <div
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => {
             editor
               .chain()
@@ -1046,6 +1047,7 @@ export const TextHighlighter = ({
 
       <Button
         variant="ghost"
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => {
           editor.chain().focus().unsetHighlight().run();
           setVisibility(IEditorTool.NONE);
@@ -1078,6 +1080,7 @@ export const EditorFontFamily = ({
     >
       {fonts.map((font) => (
         <button
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => {
             font.command(editor);
             setToolVisibility(IEditorTool.NONE);
@@ -1115,6 +1118,7 @@ export const EditorAlignment = ({
       className="z-50 h-auto left-[47rem] flex flex-wrap gap-1 max-h-[330px] overflow-y-auto scroll-smooth rounded color-bg-default px-1 py-2 shadow-elevation-3 transition-all"
     >
       <button
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => {
           editor?.chain().focus().setTextAlign('left').run();
           setToolVisibility(IEditorTool.NONE);
@@ -1129,6 +1133,7 @@ export const EditorAlignment = ({
         <LucideIcon name="AlignLeft" />
       </button>
       <button
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => {
           editor?.chain().focus().setTextAlign('center').run();
           setToolVisibility(IEditorTool.NONE);
@@ -1143,6 +1148,7 @@ export const EditorAlignment = ({
         <LucideIcon name="AlignCenter" />
       </button>
       <button
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => {
           editor?.chain().focus().setTextAlign('right').run();
           setToolVisibility(IEditorTool.NONE);
@@ -1157,6 +1163,7 @@ export const EditorAlignment = ({
         <LucideIcon name="AlignRight" />
       </button>
       <button
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => {
           editor?.chain().focus().setTextAlign('justify').run();
           setToolVisibility(IEditorTool.NONE);
@@ -1496,6 +1503,7 @@ export const ScriptsPopup = ({
           <Button
             key={option.title}
             variant="ghost"
+            onMouseDown={(e) => e.preventDefault()}
             onClick={() => {
               option.command();
             }}
@@ -1537,6 +1545,7 @@ export const TextColor = ({
     >
       {colors.map((color) => (
         <div
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => {
             if (!editor) return;
             editor.chain().focus().setColor(color.color).run();
@@ -1563,6 +1572,7 @@ export const TextColor = ({
       ))}
       <Button
         variant="ghost"
+        onMouseDown={(e) => e.preventDefault()}
         onClick={() => {
           if (!editor) return;
           editor.chain().focus().unsetColor().run();
@@ -1636,6 +1646,7 @@ export const TextHeading = ({
     >
       {headings.map((heading) => (
         <button
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => {
             heading.command(editor);
             setVisibility(IEditorTool.NONE);
@@ -1687,6 +1698,7 @@ export const FontSizePicker = ({
     >
       {fontSizes.map((fontSize) => (
         <button
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => {
             onSetFontSize(fontSize.value);
             setVisibility(IEditorTool.NONE);
