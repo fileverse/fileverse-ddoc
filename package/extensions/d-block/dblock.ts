@@ -263,9 +263,12 @@ export const DBlock = Node.create<DBlockOptions>({
             return editor
               .chain()
               .deleteRange({ from: currentItemStart, to: currentItemEnd })
-              .setDBlock()
-              .focus(currentItemStart + 4)
-              .setMark('textStyle', attrs)
+              .insertContentAt(currentItemStart, {
+                type: 'dBlock',
+                content: [{ type: 'paragraph' }],
+              })
+              .focus(currentItemStart + 2)
+              .unsetAllMarks()
               .run();
           }
           //Handle splitting the list in the middle
