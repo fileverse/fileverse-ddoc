@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 import { useEffect, useState, useCallback, useMemo } from 'react';
 import { Editor, EditorContent } from '@tiptap/react';
 import {

@@ -33,65 +33,68 @@ export const CommentBubbleCard = ({
     (comment) => comment.id === activeCommentId,
   );
 
-  const bubbleMenuProps = useMemo(() => ({
-    shouldShow: ({ editor }: { editor: Editor }) => {
-      const isCommentResolved = editor.getAttributes('comment')?.resolved;
-      const disabled = disableInlineCommentRef.current;
+  const bubbleMenuProps = useMemo(
+    () => ({
+      shouldShow: ({ editor }: { editor: Editor }) => {
+        const isCommentResolved = editor.getAttributes('comment')?.resolved;
+        const disabled = disableInlineCommentRef.current;
 
-      const shouldShow =
-        editor.isActive('comment') &&
-        !isCommentResolved &&
-        isCollabDocumentPublished &&
-        !disabled;
+        const shouldShow =
+          editor.isActive('comment') &&
+          !isCommentResolved &&
+          isCollabDocumentPublished &&
+          !disabled;
 
-      if (shouldShow) {
-        const commentId = editor.getAttributes('comment')?.commentId;
-        editor.commands.setCommentActive(commentId);
-      } else {
-        // Unset active state when bubble menu should hide
-        editor.commands.unsetCommentActive();
-      }
+        if (shouldShow) {
+          const commentId = editor.getAttributes('comment')?.commentId;
+          editor.commands.setCommentActive(commentId);
+        } else {
+          // Unset active state when bubble menu should hide
+          editor.commands.unsetCommentActive();
+        }
 
-      return shouldShow;
-    },
-    onHide: ({ editor }: { editor: Editor }) => {
-      // Additional safety to ensure active state is removed when menu hides
-      editor.commands.unsetCommentActive();
-    },
-    tippyOptions: {
-      moveTransition: isNativeMobile ? 'transform 0.2s ease-in' : 'none',
-      duration: 200,
-      animation: 'shift-toward-subtle',
-      zIndex: 40,
-      offset: [0, 20],
-      placement: 'bottom',
-      appendTo: () => document.getElementById('editor-canvas'),
-      followCursor: 'vertical',
-      interactive: true,
-      inertia: true,
-      trigger: 'manual',
-      hideOnClick: true,
-      inlinePositioning: true,
-      popperOptions: {
-        strategy: 'fixed',
-        modifiers: [
-          {
-            name: 'flip',
-            options: {
-              fallbackPlacements: ['top'],
-            },
-          },
-          {
-            name: 'preventOverflow',
-            options: {
-              altAxis: true,
-              tether: false,
-            },
-          },
-        ],
+        return shouldShow;
       },
-    },
-  }), [isNativeMobile, isCollabDocumentPublished]);
+      onHide: ({ editor }: { editor: Editor }) => {
+        // Additional safety to ensure active state is removed when menu hides
+        editor.commands.unsetCommentActive();
+      },
+      tippyOptions: {
+        moveTransition: isNativeMobile ? 'transform 0.2s ease-in' : 'none',
+        duration: 200,
+        animation: 'shift-toward-subtle',
+        zIndex: 40,
+        offset: [0, 20],
+        placement: 'bottom',
+        appendTo: () => document.getElementById('editor-canvas'),
+        followCursor: 'vertical',
+        interactive: true,
+        inertia: true,
+        trigger: 'manual',
+        hideOnClick: true,
+        inlinePositioning: true,
+        popperOptions: {
+          strategy: 'fixed',
+          modifiers: [
+            {
+              name: 'flip',
+              options: {
+                fallbackPlacements: ['top'],
+              },
+            },
+            {
+              name: 'preventOverflow',
+              options: {
+                altAxis: true,
+                tether: false,
+              },
+            },
+          ],
+        },
+      },
+    }),
+    [isNativeMobile, isCollabDocumentPublished],
+  );
 
   return (
     <BubbleMenu

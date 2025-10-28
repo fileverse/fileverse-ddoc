@@ -271,17 +271,6 @@ export const DBlock = Node.create<DBlockOptions>({
               .unsetAllMarks()
               .run();
           }
-          //Handle splitting the list in the middle
-          // TODO: Bug 3 - Fix list split behavior
-          if (
-            isCurrentItemEmpty &&
-            isTopLevelList &&
-            grandParent.childCount > 1 &&
-            !isLastItem
-          ) {
-            // Temporarily disabled - needs fix
-            // return false;
-          }
           //nested lists are handled by tiptap's default list behavior
         }
 
@@ -407,7 +396,6 @@ export const DBlock = Node.create<DBlockOptions>({
           doc,
         } = editor.state;
 
-
         // Handle selection deletion first
         if (from !== to) {
           if (from <= 2) {
@@ -424,7 +412,6 @@ export const DBlock = Node.create<DBlockOptions>({
         const isListOrTaskList =
           parent?.type.name === 'listItem' || parent?.type.name === 'taskItem';
         const isNodeEmpty = node?.textContent === '';
-
 
         // If not in a dBlock, handle special cases
         if (parent?.type.name !== 'dBlock') {
@@ -624,7 +611,10 @@ export const DBlock = Node.create<DBlockOptions>({
               let isNestedItem = false;
               for (let d = $head.depth - 3; d >= 0; d--) {
                 const ancestorNode = $head.node(d);
-                if (ancestorNode.type.name === 'listItem' || ancestorNode.type.name === 'taskItem') {
+                if (
+                  ancestorNode.type.name === 'listItem' ||
+                  ancestorNode.type.name === 'taskItem'
+                ) {
                   isNestedItem = true;
                   break;
                 }
@@ -632,13 +622,99 @@ export const DBlock = Node.create<DBlockOptions>({
 
               // If nested and empty, unindent it first (like Shift+Tab)
               if (isNestedItem) {
-                const itemType = parent?.type.name === 'taskItem' ? 'taskItem' : 'listItem';
+                const itemType =
+                  parent?.type.name === 'taskItem' ? 'taskItem' : 'listItem';
                 return editor.commands.liftListItem(itemType);
               }
 
-              // For empty non-first, non-nested items: use default behavior for now
-              // TODO: Fix Bug 3 later
-              return false;
+              // For empty non-first, non-nested items: split the list
+              // Remove empty bullet and create text block between the two list portions
+              const listNode = $head.node($head.depth - 2);
+              const currentIndex = $head.index($head.depth - 2);
+
+              // Get items before and after the current empty item
+              const itemsBeforeCurrent = listNode.content
+                .toJSON()
+                .slice(0, currentIndex);
+              const itemsAfterCurrent = listNode.content
+                .toJSON()
+                .slice(currentIndex + 1);
+
+              const newContent: DBlockContent[] = [];
+
+              // Add items before current as a list
+              if (itemsBeforeCurrent.length > 0) {
+                newContent.push({
+                  type: 'dBlock',
+                  content: [
+                    {
+                      type: grandParent.type.name,
+                      content: itemsBeforeCurrent,
+                    },
+                  ],
+                });
+              }
+
+              // Add empty text block (where cursor will be)
+              newContent.push({
+                type: 'dBlock',
+                content: [{ type: 'paragraph' }],
+              });
+
+              // Add items after current as a list
+              if (itemsAfterCurrent.length > 0) {
+                newContent.push({
+                  type: 'dBlock',
+                  content: [
+                    {
+                      type: grandParent.type.name,
+                      content: itemsAfterCurrent,
+                    },
+                  ],
+                });
+              }
+
+              // Use view.dispatch directly for better control
+              const view = editor.view;
+              const tr = view.state.tr;
+
+              // We need to replace the DBlock that contains the list, not just the list
+              const dBlockDepth = $head.depth - 3;
+              const dBlockPos = $head.before(dBlockDepth);
+              const dBlockNode = $head.node(dBlockDepth);
+              const dBlockEnd = dBlockPos + dBlockNode.nodeSize;
+
+              // Replace the entire DBlock with new structure
+              tr.replaceWith(
+                dBlockPos,
+                dBlockEnd,
+                editor.schema.nodeFromJSON({
+                  type: 'doc',
+                  content: newContent,
+                }),
+              );
+
+              // Calculate cursor position in the empty text block
+              let cursorPos = dBlockPos + 2; // Default: start of first DBlock's paragraph
+
+              if (itemsBeforeCurrent.length > 0) {
+                // If there are items before, cursor is in the second DBlock
+                const firstDBlockNode = editor.schema.nodeFromJSON({
+                  type: 'dBlock',
+                  content: [
+                    {
+                      type: grandParent.type.name,
+                      content: itemsBeforeCurrent,
+                    },
+                  ],
+                });
+                cursorPos = dBlockPos + firstDBlockNode.nodeSize + 2;
+              }
+
+              tr.setSelection(TextSelection.create(tr.doc, cursorPos));
+
+              view.dispatch(tr);
+              return true;
             }
 
             // CASE 4: At start of non-empty item
@@ -648,7 +724,10 @@ export const DBlock = Node.create<DBlockOptions>({
               let isNestedItem = false;
               for (let d = $head.depth - 3; d >= 0; d--) {
                 const ancestorNode = $head.node(d);
-                if (ancestorNode.type.name === 'listItem' || ancestorNode.type.name === 'taskItem') {
+                if (
+                  ancestorNode.type.name === 'listItem' ||
+                  ancestorNode.type.name === 'taskItem'
+                ) {
                   isNestedItem = true;
                   break;
                 }
@@ -656,7 +735,8 @@ export const DBlock = Node.create<DBlockOptions>({
 
               // If this is a nested item, unindent it (lift) instead of restructuring
               if (isNestedItem) {
-                const itemType = parent?.type.name === 'taskItem' ? 'taskItem' : 'listItem';
+                const itemType =
+                  parent?.type.name === 'taskItem' ? 'taskItem' : 'listItem';
                 return editor.commands.liftListItem(itemType);
               }
 

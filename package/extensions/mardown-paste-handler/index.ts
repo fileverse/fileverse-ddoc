@@ -265,7 +265,6 @@ function looksLikeFormula(text: string): boolean {
 
 // Override escape function to handle formula-like content
 turndownService.escape = (function (originalEscape) {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   return function (this: any, text: string) {
     if (looksLikeFormula(text)) {
       return text;
@@ -568,7 +567,6 @@ const MarkdownPasteHandler = (
           },
         }),
         new InputRule({
-          // eslint-disable-next-line no-useless-escape
           find: /(\S*)\^([^\s^]+)\^/,
           handler: ({ state, range, match }) => {
             const { tr } = state;
