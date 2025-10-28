@@ -215,13 +215,23 @@ export const CommentDropdown = ({
             onKeyDown={(e) => {
               if (e.key === 'Enter' && username) {
                 connectViaUsername?.(username);
+                setInlineCommentData((prev) => ({
+                  ...prev,
+                  handleClick: true,
+                }));
               }
             }}
             className="font-normal"
             placeholder="Enter a name"
           />
           <Button
-            onClick={() => connectViaUsername?.(username!)}
+            onClick={() => {
+              connectViaUsername?.(username!);
+              setInlineCommentData((prev) => ({
+                ...prev,
+                handleClick: true,
+              }));
+            }}
             disabled={!username || isLoading}
             isLoading={isLoading}
             className="w-full"
@@ -440,9 +450,5 @@ export const CommentDropdown = ({
     return isCommentActive ? renderDropdownWrapper(renderReplyView()) : null;
   }
 
-  if (!isConnected && !inlineCommentData.handleClick) {
-    return renderDropdownWrapper(renderAuthView());
-  } else {
-    return !isCommentActive ? renderDropdownWrapper(renderInitialView()) : null;
-  }
+  return !isCommentActive ? renderDropdownWrapper(renderInitialView()) : null;
 };
