@@ -89,7 +89,11 @@ const cellButtonsConfig: CellButton[] = [
   },
 ];
 
-export const TableCellNodeView: FC<NodeViewProps> = ({ editor, selected, getPos }) => {
+export const TableCellNodeView: FC<NodeViewProps> = ({
+  editor,
+  selected,
+  getPos,
+}) => {
   const [isHovered, setIsHovered] = useState(false);
   const { isPreviewMode } = useEditingContext();
   const tableCellOptionsButtonRef = useRef<HTMLLabelElement>(null);

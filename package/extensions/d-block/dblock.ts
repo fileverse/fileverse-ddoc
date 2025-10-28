@@ -84,26 +84,26 @@ export const DBlock = Node.create<DBlockOptions>({
     return {
       setDBlock:
         (position) =>
-          ({ state, chain }) => {
-            const {
-              selection: { from },
-            } = state;
+        ({ state, chain }) => {
+          const {
+            selection: { from },
+          } = state;
 
-            const pos =
-              position !== undefined || position !== null ? from : position;
+          const pos =
+            position !== undefined || position !== null ? from : position;
 
-            return chain()
-              .insertContentAt(pos, {
-                type: this.name,
-                content: [
-                  {
-                    type: 'paragraph',
-                  },
-                ],
-              })
-              .focus(pos + 2)
-              .run();
-          },
+          return chain()
+            .insertContentAt(pos, {
+              type: this.name,
+              content: [
+                {
+                  type: 'paragraph',
+                },
+              ],
+            })
+            .focus(pos + 2)
+            .run();
+        },
     };
   },
 
@@ -454,10 +454,10 @@ export const DBlock = Node.create<DBlockOptions>({
                       nonListContent.length > 0
                         ? nonListContent
                         : [
-                          {
-                            type: 'paragraph',
-                          },
-                        ],
+                            {
+                              type: 'paragraph',
+                            },
+                          ],
                   });
 
                   const nestedLists = firstItemContent.filter(

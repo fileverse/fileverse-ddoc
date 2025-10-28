@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/ban-ts-comment */
+
 import { LucideIcon } from '@fileverse/ui';
 import { startImageUpload } from '../../utils/upload-images';
 import { IMG_UPLOAD_SETTINGS } from '../../components/editor-utils';
