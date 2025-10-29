@@ -53,6 +53,13 @@ export interface IEditorToolElement {
 
 export const fonts = [
   {
+    title: 'Default',
+    value: 'default',
+    command: (editor: Editor) => {
+      editor.commands.unsetFontFamily();
+    },
+  },
+  {
     title: 'Arial',
     value: 'Arial, Helvetica, sans-serif',
     command: (editor: Editor) => {
