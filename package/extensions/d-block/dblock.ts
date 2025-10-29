@@ -209,22 +209,31 @@ export const DBlock = Node.create<DBlockOptions>({
 
           const isTopLevelList = listDepth === 1;
 
-          // Handle deleting the last item of the first list if it's empty
-          if (isCurrentItemEmpty && isLastItem && isTopLevelList) {
+          // Handle empty items at top level (both last and non-last)
+          if (isCurrentItemEmpty && isTopLevelList) {
             const listNode = $head.node($head.depth - 2);
             const currentItem = listNode.child(currentIndex);
             const currentItemStart = $head.before($head.depth - 1);
             const currentItemEnd = currentItemStart + currentItem.nodeSize;
 
+            // If it's the last item, exit the list and create a text block
+            if (isLastItem) {
+              return editor
+                .chain()
+                .deleteRange({ from: currentItemStart, to: currentItemEnd })
+                .insertContentAt(currentItemStart, {
+                  type: 'dBlock',
+                  content: [{ type: 'paragraph' }],
+                })
+                .focus(currentItemStart + 2)
+                .unsetAllMarks()
+                .run();
+            }
+
+            // If it's not the last item, just delete it and move cursor to next item
             return editor
               .chain()
               .deleteRange({ from: currentItemStart, to: currentItemEnd })
-              .insertContentAt(currentItemStart, {
-                type: 'dBlock',
-                content: [{ type: 'paragraph' }],
-              })
-              .focus(currentItemStart + 2)
-              .unsetAllMarks()
               .run();
           }
           //nested lists are handled by tiptap's default list behavior
