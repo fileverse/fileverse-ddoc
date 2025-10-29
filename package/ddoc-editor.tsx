@@ -872,7 +872,7 @@ const DdocEditor = forwardRef(
             <nav
               id="Navbar"
               className={cn(
-                'h-14 color-bg-default py-2 px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-[45] transition-transform duration-300',
+                'h-14 color-bg-default py-2 px-0 md:px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-[45] transition-transform duration-300',
                 {
                   'translate-y-0': isNavbarVisible,
                   'translate-y-[-100%]': !isNavbarVisible || isPresentationMode,
