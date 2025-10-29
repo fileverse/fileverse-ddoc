@@ -293,7 +293,7 @@ const TiptapToolBar = ({
                           editor?.isActive('textStyle', {
                             fontFamily: font.value,
                           }),
-                        )?.title || 'Font'}
+                        )?.title || 'Default'}
                       </span>
                       <LucideIcon
                         name="ChevronDown"
