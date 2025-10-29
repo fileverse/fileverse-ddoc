@@ -121,62 +121,18 @@ export const DBlock = Node.create<DBlockOptions>({
           const node = $from.node(d);
 
           if (node.type.name === 'listItem') {
-            const itemIndex = $from.index(d - 1);
-
-            // Try to sink the list item normally
-            const result = editor.commands.sinkListItem('listItem');
-
-            // If sinkListItem failed (returns false) and this is the first item,
-            // we need special handling to allow indenting the first item
-            if (!result && itemIndex === 0) {
-              const currentItemPos = $from.before(d);
-
-              // Create an empty list item before the current one
-              const emptyItem = editor.schema.nodes.listItem.create(
-                null,
-                editor.schema.nodes.paragraph.create(),
-              );
-
-              // Insert the empty item at the start of the list
-              const tr = editor.state.tr.insert(currentItemPos, emptyItem);
-              editor.view.dispatch(tr);
-
-              // Now sink the item (which is now at index 1)
-              setTimeout(() => {
-                editor.commands.sinkListItem('listItem');
-              }, 10);
-            }
+            // Try to sink the list item
+            // If it's the first item, sinkListItem will return false and nothing happens
+            editor.commands.sinkListItem('listItem');
 
             // Always return true to prevent browser Tab behavior
             return true;
           }
 
           if (node.type.name === 'taskItem') {
-            const itemIndex = $from.index(d - 1);
-
-            // Try to sink the task item normally
-            const result = editor.commands.sinkListItem('taskItem');
-
-            // If sinkListItem failed (returns false) and this is the first item,
-            // we need special handling to allow indenting the first item
-            if (!result && itemIndex === 0) {
-              const currentItemPos = $from.before(d);
-
-              // Create an empty task item before the current one
-              const emptyItem = editor.schema.nodes.taskItem.create(
-                { checked: false },
-                editor.schema.nodes.paragraph.create(),
-              );
-
-              // Insert the empty item at the start of the list
-              const tr = editor.state.tr.insert(currentItemPos, emptyItem);
-              editor.view.dispatch(tr);
-
-              // Now sink the item (which is now at index 1)
-              setTimeout(() => {
-                editor.commands.sinkListItem('taskItem');
-              }, 10);
-            }
+            // Try to sink the task item
+            // If it's the first item, sinkListItem will return false and nothing happens
+            editor.commands.sinkListItem('taskItem');
 
             // Always return true to prevent browser Tab behavior
             return true;
