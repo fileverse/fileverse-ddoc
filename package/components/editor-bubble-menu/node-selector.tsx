@@ -503,7 +503,10 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
       key="NodeSelector"
       sideOffset={15}
       anchorTrigger={
-        <button className="bg-transparent hover:!color-bg-default-hover color-text-default rounded p-1 flex items-center justify-between gap-2 w-fit max-w-36">
+        <button
+          className="bg-transparent hover:!color-bg-default-hover color-text-default rounded p-1 flex items-center justify-between gap-2 w-fit max-w-36"
+          onMouseDown={(e) => e.preventDefault()}
+        >
           <span className="text-body-sm truncate">{activeItem.name}</span>
           <LucideIcon name="ChevronDown" size="sm" className="mt-1" />
         </button>
@@ -517,6 +520,7 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
           {items.map((item, index) => (
             <button
               key={index}
+              onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
                 item.command();
               }}
