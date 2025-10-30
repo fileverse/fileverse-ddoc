@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
   EditorAlignment,
   EditorFontFamily,
@@ -29,7 +29,7 @@ import { AnimatePresence } from 'framer-motion';
 import { fadeInTransition, slideUpTransition } from './motion-div';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { ImportExportButton } from './import-export-button';
-
+import { getCurrentFontFamily } from '../utils/get-current-font-family';
 const MemoizedFontSizePicker = React.memo(FontSizePicker);
 
 const TiptapToolBar = ({
@@ -107,6 +107,23 @@ const TiptapToolBar = ({
     { title: '200%', value: '2' },
   ];
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [currentFont, setCurrentFont] = useState('Default');
+  const activeFont = fonts.find((f) => f.value === currentFont);
+
+  useEffect(() => {
+    if (!editor) return;
+
+    const update = () => setCurrentFont(getCurrentFontFamily(editor));
+
+    editor.on('selectionUpdate', update);
+    editor.on('transaction', update);
+    update();
+
+    return () => {
+      editor.off('selectionUpdate', update);
+      editor.off('transaction', update);
+    };
+  }, [editor]);
 
   const renderContent = (tool: {
     title: string;
@@ -282,18 +299,10 @@ const TiptapToolBar = ({
                       <span
                         className="text-body-sm line-clamp-1"
                         style={{
-                          fontFamily: fonts.find((font) =>
-                            editor?.isActive('textStyle', {
-                              fontFamily: font.value,
-                            }),
-                          )?.value,
+                          fontFamily: activeFont?.value,
                         }}
                       >
-                        {fonts.find((font) =>
-                          editor?.isActive('textStyle', {
-                            fontFamily: font.value,
-                          }),
-                        )?.title || 'Default'}
+                        {activeFont?.title || 'Default'}
                       </span>
                       <LucideIcon
                         name="ChevronDown"
