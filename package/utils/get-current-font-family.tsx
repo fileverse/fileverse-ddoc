@@ -6,14 +6,20 @@ export const getCurrentFontFamily = (editor: Editor | null) => {
   const { state } = editor;
   const { from, empty } = state.selection;
 
-  // If a range is selected, Tiptap merges attrs across it:
-  if (!empty) {
-    return editor.getAttributes('textStyle')?.fontFamily;
+  // 1) If caret & there are stored marks, show the "pending" font
+  if (empty && state.storedMarks?.length) {
+    const m = state.storedMarks.find((m) => m.type.name === 'textStyle');
+    if (m?.attrs?.fontFamily) return m.attrs.fontFamily;
   }
 
-  // Caret: inspect marks at the position (ignore storedMarks)
-  const $pos = state.doc.resolve(from);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const mark = $pos.marks().find((m: any) => m.type.name === 'textStyle');
-  return mark?.attrs?.fontFamily || 'Default';
+  // 2) If caret, inspect marks at the actual cursor position
+  if (empty) {
+    const $pos = state.doc.resolve(from);
+    const m = $pos.marks().find((m) => m.type.name === 'textStyle');
+    if (m?.attrs?.fontFamily) return m.attrs.fontFamily;
+    return 'Default';
+  }
+
+  // 3) If range, use merged attributes across selection
+  return editor.getAttributes('textStyle')?.fontFamily;
 };

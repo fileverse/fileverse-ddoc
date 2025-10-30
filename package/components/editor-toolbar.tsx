@@ -116,12 +116,22 @@ const TiptapToolBar = ({
     const update = () => setCurrentFont(getCurrentFontFamily(editor));
 
     editor.on('selectionUpdate', update);
-    editor.on('transaction', update);
+    editor.on('transaction', ({ transaction }) => {
+      // Only refresh when selection or stored marks/doc changed
+      if (
+        transaction.selectionSet ||
+        transaction.storedMarksSet ||
+        transaction.docChanged
+      ) {
+        update();
+      }
+    });
+
     update();
 
     return () => {
       editor.off('selectionUpdate', update);
-      editor.off('transaction', update);
+      editor.off('transaction');
     };
   }, [editor]);
 
