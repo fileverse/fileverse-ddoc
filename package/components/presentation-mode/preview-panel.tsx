@@ -90,8 +90,8 @@ export const PreviewPanel = ({
           >
             <div
               className={cn(
-                "presentation-mode preview-slide w-[400%] h-[400%]",
-                !documentStyling?.canvasBackground && "color-bg-default"
+                'presentation-mode preview-slide w-[400%] h-[400%]',
+                !documentStyling?.canvasBackground && 'color-bg-default',
               )}
               style={canvasStyles}
               dangerouslySetInnerHTML={{ __html: slideContent }}

@@ -84,7 +84,11 @@ const TagInput = ({
             variant="ghost"
             className="min-w-fit !h-8 px-2"
           >
-            <LucideIcon name="Plus" size="sm" className="mr-1 color-text-secondary" />
+            <LucideIcon
+              name="Plus"
+              size="sm"
+              className="mr-1 color-text-secondary"
+            />
             <span className="color-text-secondary">Add Tag</span>
           </Button>
         </div>

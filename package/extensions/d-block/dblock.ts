@@ -84,32 +84,84 @@ export const DBlock = Node.create<DBlockOptions>({
     return {
       setDBlock:
         (position) =>
-          ({ state, chain }) => {
-            const {
-              selection: { from },
-            } = state;
+        ({ state, chain }) => {
+          const {
+            selection: { from },
+          } = state;
 
-            const pos =
-              position !== undefined || position !== null ? from : position;
+          const pos =
+            position !== undefined || position !== null ? from : position;
 
-            return chain()
-              .insertContentAt(pos, {
-                type: this.name,
-                content: [
-                  {
-                    type: 'paragraph',
-                  },
-                ],
-              })
-              .focus(pos + 2)
-              .run();
-          },
+          return chain()
+            .insertContentAt(pos, {
+              type: this.name,
+              content: [
+                {
+                  type: 'paragraph',
+                },
+              ],
+            })
+            .focus(pos + 2)
+            .run();
+        },
     };
   },
 
   addKeyboardShortcuts() {
     return {
       'Mod-Alt-0': () => this.editor.commands.setDBlock(),
+      // Tab: Indent list item (sink)
+      // DBlock has priority 1000, so we need to explicitly handle Tab for lists
+      Tab: ({ editor }) => {
+        const { selection } = editor.state;
+        const { $from } = selection;
+
+        // Check if we're in a list item or task item
+        for (let d = $from.depth; d > 0; d--) {
+          const node = $from.node(d);
+
+          if (node.type.name === 'listItem') {
+            // Try to sink the list item
+            // If it's the first item, sinkListItem will return false and nothing happens
+            editor.commands.sinkListItem('listItem');
+
+            // Always return true to prevent browser Tab behavior
+            return true;
+          }
+
+          if (node.type.name === 'taskItem') {
+            // Try to sink the task item
+            // If it's the first item, sinkListItem will return false and nothing happens
+            editor.commands.sinkListItem('taskItem');
+
+            // Always return true to prevent browser Tab behavior
+            return true;
+          }
+        }
+
+        // Not in a list, let browser handle it
+        return false;
+      },
+      // Shift+Tab: Unindent list item (lift)
+      'Shift-Tab': ({ editor }) => {
+        const { selection } = editor.state;
+        const { $from } = selection;
+
+        // Check if we're in a list item or task item
+        for (let d = $from.depth; d > 0; d--) {
+          const node = $from.node(d);
+
+          if (node.type.name === 'listItem') {
+            return editor.commands.liftListItem('listItem');
+          }
+          if (node.type.name === 'taskItem') {
+            return editor.commands.liftListItem('taskItem');
+          }
+        }
+
+        // Not in a list, let browser handle it
+        return false;
+      },
       Enter: ({ editor }) => {
         const {
           selection: { $head, from, to },
@@ -157,82 +209,31 @@ export const DBlock = Node.create<DBlockOptions>({
 
           const isTopLevelList = listDepth === 1;
 
-          // Handle deleting the last item of the first list if it's empty
-          if (isCurrentItemEmpty && isLastItem && isTopLevelList) {
+          // Handle empty items at top level (both last and non-last)
+          if (isCurrentItemEmpty && isTopLevelList) {
             const listNode = $head.node($head.depth - 2);
             const currentItem = listNode.child(currentIndex);
             const currentItemStart = $head.before($head.depth - 1);
             const currentItemEnd = currentItemStart + currentItem.nodeSize;
 
+            // If it's the last item, exit the list and create a text block
+            if (isLastItem) {
+              return editor
+                .chain()
+                .deleteRange({ from: currentItemStart, to: currentItemEnd })
+                .insertContentAt(currentItemStart, {
+                  type: 'dBlock',
+                  content: [{ type: 'paragraph' }],
+                })
+                .focus(currentItemStart + 2)
+                .unsetAllMarks()
+                .run();
+            }
+
+            // If it's not the last item, just delete it and move cursor to next item
             return editor
               .chain()
               .deleteRange({ from: currentItemStart, to: currentItemEnd })
-              .setDBlock()
-              .focus(currentItemStart + 4)
-              .setMark('textStyle', attrs)
-              .run();
-          }
-          //Handle splitting the list in the middle
-          if (
-            isCurrentItemEmpty &&
-            isTopLevelList &&
-            grandParent.childCount > 1 &&
-            !isLastItem
-          ) {
-            const listNode = $head.node($head.depth - 2);
-            const listPos = $head.before($head.depth - 2);
-            const listEnd = listPos + listNode.nodeSize;
-
-            const remainingItems = listNode.content
-              .toJSON()
-              .slice(currentIndex + 1);
-
-            const remainingContent: DBlockContent[] = [];
-
-            // Insert empty dBlock
-            remainingContent.push({
-              type: 'dBlock',
-              content: [
-                {
-                  type: 'paragraph',
-                },
-              ],
-            });
-
-            if (remainingItems.length > 0) {
-              remainingContent.push({
-                type: 'dBlock',
-                content: [
-                  {
-                    type: grandParent.type.name,
-                    content: remainingItems,
-                  },
-                ],
-              });
-            }
-
-            return editor
-              .chain()
-              .command(({ tr, dispatch }) => {
-                if (dispatch) {
-                  // Replace everything from current item to end of list
-                  const currentItemStart = $head.before($head.depth - 1);
-                  tr.replaceWith(
-                    currentItemStart,
-                    listEnd,
-                    editor.schema.nodeFromJSON({
-                      type: 'doc',
-                      content: remainingContent,
-                    }),
-                  );
-
-                  const paragraphPos = currentItemStart + 4;
-                  tr.setSelection(TextSelection.create(tr.doc, paragraphPos));
-                }
-                return false;
-              })
-              .focus()
-              .setMark('textStyle', attrs)
               .run();
           }
           //nested lists are handled by tiptap's default list behavior
@@ -454,10 +455,10 @@ export const DBlock = Node.create<DBlockOptions>({
                       nonListContent.length > 0
                         ? nonListContent
                         : [
-                          {
-                            type: 'paragraph',
-                          },
-                        ],
+                            {
+                              type: 'paragraph',
+                            },
+                          ],
                   });
 
                   const nestedLists = firstItemContent.filter(
@@ -547,7 +548,22 @@ export const DBlock = Node.create<DBlockOptions>({
                 return false;
               }
 
-              return false;
+              // If not the only item, delete the empty first item by removing it from the list
+              // This preserves the list structure and remaining items
+              const listItemPos = $head.before($head.depth - 1); // Position of the listItem
+              const listItemNode = $head.node($head.depth - 1); // The listItem node
+              const listItemEnd = listItemPos + listItemNode.nodeSize;
+
+              return editor
+                .chain()
+                .command(({ tr, dispatch }) => {
+                  if (dispatch) {
+                    // Delete the empty list item
+                    tr.delete(listItemPos, listItemEnd);
+                  }
+                  return true;
+                })
+                .run();
             }
 
             // CASE 3: Empty non-first item
@@ -556,12 +572,140 @@ export const DBlock = Node.create<DBlockOptions>({
                 return restructureWithNestedContent();
               }
 
-              // Just join text backward for empty non-first items
-              return false;
+              // Check if this is a nested list item
+              let isNestedItem = false;
+              for (let d = $head.depth - 3; d >= 0; d--) {
+                const ancestorNode = $head.node(d);
+                if (
+                  ancestorNode.type.name === 'listItem' ||
+                  ancestorNode.type.name === 'taskItem'
+                ) {
+                  isNestedItem = true;
+                  break;
+                }
+              }
+
+              // If nested and empty, unindent it first (like Shift+Tab)
+              if (isNestedItem) {
+                const itemType =
+                  parent?.type.name === 'taskItem' ? 'taskItem' : 'listItem';
+                return editor.commands.liftListItem(itemType);
+              }
+
+              // For empty non-first, non-nested items: split the list
+              // Remove empty bullet and create text block between the two list portions
+              const listNode = $head.node($head.depth - 2);
+              const currentIndex = $head.index($head.depth - 2);
+
+              // Get items before and after the current empty item
+              const itemsBeforeCurrent = listNode.content
+                .toJSON()
+                .slice(0, currentIndex);
+              const itemsAfterCurrent = listNode.content
+                .toJSON()
+                .slice(currentIndex + 1);
+
+              const newContent: DBlockContent[] = [];
+
+              // Add items before current as a list
+              if (itemsBeforeCurrent.length > 0) {
+                newContent.push({
+                  type: 'dBlock',
+                  content: [
+                    {
+                      type: grandParent.type.name,
+                      content: itemsBeforeCurrent,
+                    },
+                  ],
+                });
+              }
+
+              // Add empty text block (where cursor will be)
+              newContent.push({
+                type: 'dBlock',
+                content: [{ type: 'paragraph' }],
+              });
+
+              // Add items after current as a list
+              if (itemsAfterCurrent.length > 0) {
+                newContent.push({
+                  type: 'dBlock',
+                  content: [
+                    {
+                      type: grandParent.type.name,
+                      content: itemsAfterCurrent,
+                    },
+                  ],
+                });
+              }
+
+              // Use view.dispatch directly for better control
+              const view = editor.view;
+              const tr = view.state.tr;
+
+              // We need to replace the DBlock that contains the list, not just the list
+              const dBlockDepth = $head.depth - 3;
+              const dBlockPos = $head.before(dBlockDepth);
+              const dBlockNode = $head.node(dBlockDepth);
+              const dBlockEnd = dBlockPos + dBlockNode.nodeSize;
+
+              // Replace the entire DBlock with new structure
+              tr.replaceWith(
+                dBlockPos,
+                dBlockEnd,
+                editor.schema.nodeFromJSON({
+                  type: 'doc',
+                  content: newContent,
+                }),
+              );
+
+              // Calculate cursor position in the empty text block
+              let cursorPos = dBlockPos + 2; // Default: start of first DBlock's paragraph
+
+              if (itemsBeforeCurrent.length > 0) {
+                // If there are items before, cursor is in the second DBlock
+                const firstDBlockNode = editor.schema.nodeFromJSON({
+                  type: 'dBlock',
+                  content: [
+                    {
+                      type: grandParent.type.name,
+                      content: itemsBeforeCurrent,
+                    },
+                  ],
+                });
+                cursorPos = dBlockPos + firstDBlockNode.nodeSize + 2;
+              }
+
+              tr.setSelection(TextSelection.create(tr.doc, cursorPos));
+
+              view.dispatch(tr);
+              return true;
             }
 
             // CASE 4: At start of non-empty item
             if (isAtStartOfNode) {
+              // Check if this is a nested list item (has parent list items above it)
+              // by checking if the grandparent's parent is also a listItem
+              let isNestedItem = false;
+              for (let d = $head.depth - 3; d >= 0; d--) {
+                const ancestorNode = $head.node(d);
+                if (
+                  ancestorNode.type.name === 'listItem' ||
+                  ancestorNode.type.name === 'taskItem'
+                ) {
+                  isNestedItem = true;
+                  break;
+                }
+              }
+
+              // If this is a nested item, unindent it (lift) instead of restructuring
+              if (isNestedItem) {
+                const itemType =
+                  parent?.type.name === 'taskItem' ? 'taskItem' : 'listItem';
+                return editor.commands.liftListItem(itemType);
+              }
+
+              // If first item in a top-level list near a dBlock, restructure
               if (isFirstItem) {
                 if (isNearestDBlock) {
                   return restructureWithNestedContent();

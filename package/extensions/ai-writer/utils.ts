@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import MarkdownIt from 'markdown-it';
 import { loadingMessages } from './types';
 

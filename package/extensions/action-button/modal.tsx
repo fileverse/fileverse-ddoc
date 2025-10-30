@@ -34,14 +34,14 @@ export const Modal = ({
         case /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/.test(
           inputValue,
         ): {
-            const matches = inputValue.match(
-              /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/,
-            );
-            if (matches && matches.length > 0) {
-              formattedUrl = `https://www.youtube.com/embed/${matches[1]}`;
-            }
-            break;
+          const matches = inputValue.match(
+            /youtu\.?be(?:\.com)?\/(?:.*v(?:\/|=)|(?:.*\/)?)([a-zA-Z0-9-_]+)/,
+          );
+          if (matches && matches.length > 0) {
+            formattedUrl = `https://www.youtube.com/embed/${matches[1]}`;
           }
+          break;
+        }
         case /vimeo\.com\/([a-zA-Z0-9-_]+)/.test(inputValue): {
           const matches = inputValue.match(/vimeo\.com\/([a-zA-Z0-9-_]+)/);
           if (matches && matches.length > 0) {

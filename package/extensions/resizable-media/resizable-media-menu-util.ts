@@ -56,7 +56,7 @@ export const resizableMediaActions: ResizableMediaAction[] = [
     action: (updateAttributes) => updateAttributes({ showCaptionInput: true }),
     isActive: (attrs) => attrs.showCaptionInput === true,
   },
-  { 
+  {
     tooltip: 'Delete',
     icon: 'Trash2',
     delete: (deleteNode) => deleteNode(),
