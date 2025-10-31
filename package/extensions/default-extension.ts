@@ -45,6 +45,7 @@ import { Callout } from './callout/callout';
 import { FontSize } from './font-size';
 import { CustomCodeBlockLowlight } from './code-block/custom-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
+import { LineHeight } from './line-height';
 
 import { Emoji } from './emoji/emoji';
 
@@ -128,6 +129,7 @@ export const defaultExtensions = ({
     defaultLanguage: 'plaintext',
   }),
   FontSize,
+  LineHeight,
   Typography,
   TextAlign.configure({
     types: ['heading', 'paragraph'],

@@ -5,6 +5,7 @@ import {
   fonts,
   FontSizePicker,
   getCurrentFontSize,
+  LineHeightPicker,
   LinkPopup,
   TextColor,
   TextHeading,
@@ -31,6 +32,7 @@ import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { ImportExportButton } from './import-export-button';
 import { getCurrentFontFamily } from '../utils/get-current-font-family';
 const MemoizedFontSizePicker = React.memo(FontSizePicker);
+const MemoizedLineHeightPicker = React.memo(LineHeightPicker);
 
 const TiptapToolBar = ({
   editor,
@@ -95,6 +97,8 @@ const TiptapToolBar = ({
   const editorStates = useEditorStates(editor as Editor);
   const currentSize = editor ? editorStates.currentSize : undefined;
   const onSetFontSize = editor ? editorStates.onSetFontSize : () => {};
+  const currentLineHeight = editor ? editorStates.currentLineHeight : undefined;
+  const onSetLineHeight = editor ? editorStates.onSetLineHeight : () => {};
 
   const isBelow1480px = useMediaQuery('(max-width: 1480px)');
 
@@ -171,6 +175,16 @@ const TiptapToolBar = ({
             editor={editor as Editor}
             elementRef={toolRef}
             onError={onError}
+          />
+        );
+      case 'Line Height':
+        return (
+          <MemoizedLineHeightPicker
+            setVisibility={setToolVisibility}
+            editor={editor as Editor}
+            elementRef={toolRef}
+            currentLineHeight={currentLineHeight}
+            onSetLineHeight={onSetLineHeight}
           />
         );
       default:
@@ -422,7 +436,8 @@ const TiptapToolBar = ({
                 tool.title === 'Highlight' ||
                 tool.title === 'Text Color' ||
                 tool.title === 'Alignment' ||
-                tool.title === 'Link'
+                tool.title === 'Link' ||
+                tool.title === 'Line Height'
               ) {
                 return !isLoading
                   ? slideUpTransition(
