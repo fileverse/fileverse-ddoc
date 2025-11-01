@@ -20,8 +20,8 @@ export const LineHeight = Extension.create({
 
   addOptions() {
     return {
-      types: ['textStyle'],
-      defaultLineHeight: '1.15',
+      types: ['paragraph', 'heading', 'listItem'],
+      defaultLineHeight: '1.5',
     };
   },
 
@@ -31,15 +31,15 @@ export const LineHeight = Extension.create({
         types: this.options.types,
         attributes: {
           lineHeight: {
-            default: null,
+            default: this.options.defaultLineHeight,
             parseHTML: (element) =>
-              element.style.lineHeight?.replace(/['"]+/g, '') || null,
+              element.style.lineHeight?.replace(/['"]+/g, '') ||
+              this.options.defaultLineHeight,
             renderHTML: (attributes) => {
-              if (!attributes.lineHeight) {
-                return {};
-              }
+              const lineHeight =
+                attributes.lineHeight || this.options.defaultLineHeight;
               return {
-                style: `line-height: ${attributes.lineHeight}`,
+                style: `line-height: ${lineHeight}`,
               };
             },
           },
@@ -52,39 +52,69 @@ export const LineHeight = Extension.create({
     return {
       setLineHeight:
         (lineHeight: string) =>
-        ({ commands, state, chain }) => {
+        ({ tr, state, dispatch }) => {
           const { selection } = state;
           const { from, to } = selection;
 
-          // If there's no selection (cursor only), select all content
-          if (from === to) {
-            return chain()
-              .selectAll()
-              .setMark('textStyle', { lineHeight })
-              .setTextSelection({ from, to })
-              .run();
+          // Check if there's a selection
+          const hasSelection = from !== to;
+
+          if (hasSelection) {
+            // Apply to selected nodes only
+            state.doc.nodesBetween(from, to, (node, pos) => {
+              if (this.options.types.includes(node.type.name)) {
+                tr.setNodeMarkup(pos, undefined, {
+                  ...node.attrs,
+                  lineHeight,
+                });
+              }
+            });
+          } else {
+            // No selection - apply to all nodes in the document
+            state.doc.descendants((node, pos) => {
+              if (this.options.types.includes(node.type.name)) {
+                tr.setNodeMarkup(pos, undefined, {
+                  ...node.attrs,
+                  lineHeight,
+                });
+              }
+            });
           }
 
-          // If there's a selection, just apply to the selection
-          return chain().setMark('textStyle', { lineHeight }).run();
+          if (dispatch) dispatch(tr);
+          return true;
         },
       unsetLineHeight:
         () =>
-        ({ commands, state, chain }) => {
+        ({ tr, state, dispatch }) => {
           const { selection } = state;
           const { from, to } = selection;
 
-          // If there's no selection (cursor only), select all content
-          if (from === to) {
-            return chain()
-              .selectAll()
-              .setMark('textStyle', { lineHeight: null })
-              .setTextSelection({ from, to })
-              .run();
+          // Check if there's a selection
+          const hasSelection = from !== to;
+
+          if (hasSelection) {
+            // Remove from selected nodes only
+            state.doc.nodesBetween(from, to, (node, pos) => {
+              if (this.options.types.includes(node.type.name)) {
+                const newAttrs = { ...node.attrs };
+                delete newAttrs.lineHeight;
+                tr.setNodeMarkup(pos, undefined, newAttrs);
+              }
+            });
+          } else {
+            // No selection - remove from all nodes in the document
+            state.doc.descendants((node, pos) => {
+              if (this.options.types.includes(node.type.name)) {
+                const newAttrs = { ...node.attrs };
+                delete newAttrs.lineHeight;
+                tr.setNodeMarkup(pos, undefined, newAttrs);
+              }
+            });
           }
 
-          // If there's a selection, just apply to the selection
-          return chain().setMark('textStyle', { lineHeight: null }).run();
+          if (dispatch) dispatch(tr);
+          return true;
         },
     };
   },

@@ -278,8 +278,8 @@ export const getCurrentFontSize = (
 
 export const LINE_HEIGHT_OPTIONS = [
   { value: '1', label: '1', description: '' },
-  { value: '1.15', label: '1.15', description: '(Default)' },
-  { value: '1.5', label: '1.5', description: '' },
+  { value: '1.15', label: '1.15', description: '' },
+  { value: '1.5', label: '1.5', description: '(Default)' },
   { value: '2', label: '2', description: '' },
   { value: '2.5', label: '2.5', description: '' },
   { value: '3', label: '3', description: '' },
@@ -291,8 +291,8 @@ export const getCurrentLineHeight = (
   editor: Editor | null,
   currentLineHeight?: string,
 ) => {
-  if (!editor) return '1.15';
-  return currentLineHeight || '1.15';
+  if (!editor) return '1.5';
+  return currentLineHeight || '1.5';
 };
 
 export const ERR_MSG_MAP = {
@@ -409,8 +409,18 @@ export const useEditorToolbar = ({
           if (event.altKey && event.shiftKey && event.key === 'ArrowUp') {
             event.preventDefault();
             const lineHeights = ['1', '1.15', '1.5', '2', '2.5', '3'];
-            const currentLineHeight =
-              editor.getAttributes('textStyle')?.lineHeight || '1.15';
+
+            // Get line height from current block node
+            let currentLineHeight =
+              editor.getAttributes('paragraph')?.lineHeight;
+            if (!currentLineHeight && editor.isActive('heading')) {
+              currentLineHeight = editor.getAttributes('heading')?.lineHeight;
+            }
+            if (!currentLineHeight && editor.isActive('listItem')) {
+              currentLineHeight = editor.getAttributes('listItem')?.lineHeight;
+            }
+            currentLineHeight = currentLineHeight || '1.5';
+
             const currentIndex = lineHeights.indexOf(currentLineHeight);
             const nextIndex = Math.min(
               currentIndex + 1,
@@ -424,8 +434,18 @@ export const useEditorToolbar = ({
           if (event.altKey && event.shiftKey && event.key === 'ArrowDown') {
             event.preventDefault();
             const lineHeights = ['1', '1.15', '1.5', '2', '2.5', '3'];
-            const currentLineHeight =
-              editor.getAttributes('textStyle')?.lineHeight || '1.15';
+
+            // Get line height from current block node
+            let currentLineHeight =
+              editor.getAttributes('paragraph')?.lineHeight;
+            if (!currentLineHeight && editor.isActive('heading')) {
+              currentLineHeight = editor.getAttributes('heading')?.lineHeight;
+            }
+            if (!currentLineHeight && editor.isActive('listItem')) {
+              currentLineHeight = editor.getAttributes('listItem')?.lineHeight;
+            }
+            currentLineHeight = currentLineHeight || '1.5';
+
             const currentIndex = lineHeights.indexOf(currentLineHeight);
             const prevIndex = Math.max(currentIndex - 1, 0);
             editor.chain().focus().setLineHeight(lineHeights[prevIndex]).run();
@@ -665,7 +685,7 @@ export const useEditorToolbar = ({
       isActive: toolVisibility === IEditorTool.ALIGNMENT,
     },
     {
-      icon: 'ArrowUpDown',
+      icon: 'LineHeight',
       title: 'Line Height',
       onClick: () => setToolVisibility(IEditorTool.LINE_HEIGHT),
       isActive: toolVisibility === IEditorTool.LINE_HEIGHT,
@@ -1780,7 +1800,6 @@ export const FontSizePicker = ({
 };
 
 export const LineHeightPicker = ({
-  editor,
   setVisibility,
   elementRef,
   currentLineHeight,
@@ -1803,6 +1822,7 @@ export const LineHeightPicker = ({
     >
       {lineHeightOptions.map((lineHeight) => (
         <button
+          onMouseDown={(e) => e.preventDefault()}
           onClick={() => {
             onSetLineHeight(lineHeight.value);
             setVisibility(IEditorTool.NONE);

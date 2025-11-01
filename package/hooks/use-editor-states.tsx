@@ -31,14 +31,21 @@ export const useEditorStates = (editor: Editor | null) => {
 
       // First check if there's a custom font size set
       const customFontSize = state.editor.getAttributes('textStyle')?.fontSize;
-      // Get custom line height
-      const customLineHeight =
-        state.editor.getAttributes('textStyle')?.lineHeight;
+
+      // Get line height from paragraph, heading, or listItem
+      let customLineHeight =
+        state.editor.getAttributes('paragraph')?.lineHeight;
+      if (!customLineHeight && state.editor.isActive('heading')) {
+        customLineHeight = state.editor.getAttributes('heading')?.lineHeight;
+      }
+      if (!customLineHeight && state.editor.isActive('listItem')) {
+        customLineHeight = state.editor.getAttributes('listItem')?.lineHeight;
+      }
 
       if (customFontSize) {
         return {
           currentSize: customFontSize,
-          currentLineHeight: customLineHeight || '1.15',
+          currentLineHeight: customLineHeight || '1.5',
         };
       }
 
@@ -49,17 +56,17 @@ export const useEditorStates = (editor: Editor | null) => {
           case 1:
             return {
               currentSize: '32px',
-              currentLineHeight: customLineHeight || '1.15',
+              currentLineHeight: customLineHeight || '1.5',
             };
           case 2:
             return {
               currentSize: '24px',
-              currentLineHeight: customLineHeight || '1.15',
+              currentLineHeight: customLineHeight || '1.5',
             };
           case 3:
             return {
               currentSize: '18px',
-              currentLineHeight: customLineHeight || '1.15',
+              currentLineHeight: customLineHeight || '1.5',
             };
         }
       }
@@ -67,7 +74,7 @@ export const useEditorStates = (editor: Editor | null) => {
       // Default size for regular text
       return {
         currentSize: '16px',
-        currentLineHeight: customLineHeight || '1.15',
+        currentLineHeight: customLineHeight || '1.5',
       };
     },
   }) as EditorStateResult;
