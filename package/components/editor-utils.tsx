@@ -276,13 +276,27 @@ export const getCurrentFontSize = (
   return currentSize ? currentSize.replace('px', '') : '';
 };
 
+// Line height conversion helpers: UI shows numbers (1, 1.15, 1.5, etc.) but stores as percentages (120%, 138%, 180%, etc.)
+// Formula: percentage = uiValue * 120
+const LINE_HEIGHT_BASE = 120; // 1 in UI = 120% in storage
+
+export const uiValueToPercentage = (uiValue: string): string => {
+  const num = parseFloat(uiValue);
+  return `${Math.round(num * LINE_HEIGHT_BASE)}%`;
+};
+
+export const percentageToUiValue = (percentage: string): string => {
+  const num = parseFloat(percentage.replace('%', ''));
+  return (num / LINE_HEIGHT_BASE).toString();
+};
+
 export const LINE_HEIGHT_OPTIONS = [
-  { value: '1', label: '1', description: '' },
-  { value: '1.15', label: '1.15', description: '' },
-  { value: '1.5', label: '1.5', description: '(Default)' },
-  { value: '2', label: '2', description: '' },
-  { value: '2.5', label: '2.5', description: '' },
-  { value: '3', label: '3', description: '' },
+  { value: '120%', label: '1', uiValue: '1', description: '' },
+  { value: '138%', label: '1.15', uiValue: '1.15', description: '(Default)' },
+  { value: '180%', label: '1.5', uiValue: '1.5', description: '' },
+  { value: '240%', label: '2', uiValue: '2', description: '' },
+  { value: '300%', label: '2.5', uiValue: '2.5', description: '' },
+  { value: '360%', label: '3', uiValue: '3', description: '' },
 ];
 
 export const getLineHeightOptions = () => LINE_HEIGHT_OPTIONS;
@@ -291,8 +305,12 @@ export const getCurrentLineHeight = (
   editor: Editor | null,
   currentLineHeight?: string,
 ) => {
-  if (!editor) return '1.5';
-  return currentLineHeight || '1.5';
+  if (!editor) return '1.15';
+  // currentLineHeight is stored as percentage, convert to UI value
+  if (currentLineHeight && currentLineHeight.includes('%')) {
+    return percentageToUiValue(currentLineHeight);
+  }
+  return currentLineHeight || '1.15';
 };
 
 export const ERR_MSG_MAP = {
@@ -408,7 +426,14 @@ export const useEditorToolbar = ({
           // Line height increase shortcut (Alt + Shift + ↑)
           if (event.altKey && event.shiftKey && event.key === 'ArrowUp') {
             event.preventDefault();
-            const lineHeights = ['1', '1.15', '1.5', '2', '2.5', '3'];
+            const lineHeights = [
+              '120%',
+              '138%',
+              '180%',
+              '240%',
+              '300%',
+              '360%',
+            ];
 
             // Get line height from current block node
             let currentLineHeight =
@@ -419,21 +444,28 @@ export const useEditorToolbar = ({
             if (!currentLineHeight && editor.isActive('listItem')) {
               currentLineHeight = editor.getAttributes('listItem')?.lineHeight;
             }
-            currentLineHeight = currentLineHeight || '1.5';
+            currentLineHeight = currentLineHeight || '138%';
 
             const currentIndex = lineHeights.indexOf(currentLineHeight);
             const nextIndex = Math.min(
               currentIndex + 1,
               lineHeights.length - 1,
             );
-            editor.chain().focus().setLineHeight(lineHeights[nextIndex]).run();
+            editor.chain().setLineHeight(lineHeights[nextIndex]).run();
             return true;
           }
 
           // Line height decrease shortcut (Alt + Shift + ↓)
           if (event.altKey && event.shiftKey && event.key === 'ArrowDown') {
             event.preventDefault();
-            const lineHeights = ['1', '1.15', '1.5', '2', '2.5', '3'];
+            const lineHeights = [
+              '120%',
+              '138%',
+              '180%',
+              '240%',
+              '300%',
+              '360%',
+            ];
 
             // Get line height from current block node
             let currentLineHeight =
@@ -444,11 +476,11 @@ export const useEditorToolbar = ({
             if (!currentLineHeight && editor.isActive('listItem')) {
               currentLineHeight = editor.getAttributes('listItem')?.lineHeight;
             }
-            currentLineHeight = currentLineHeight || '1.5';
+            currentLineHeight = currentLineHeight || '138%';
 
             const currentIndex = lineHeights.indexOf(currentLineHeight);
             const prevIndex = Math.max(currentIndex - 1, 0);
-            editor.chain().focus().setLineHeight(lineHeights[prevIndex]).run();
+            editor.chain().setLineHeight(lineHeights[prevIndex]).run();
             return true;
           }
           return false;

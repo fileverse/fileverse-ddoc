@@ -1,4 +1,5 @@
 import { Extension } from '@tiptap/core';
+import { Plugin, PluginKey } from '@tiptap/pm/state';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -21,7 +22,7 @@ export const LineHeight = Extension.create({
   addOptions() {
     return {
       types: ['paragraph', 'heading', 'listItem'],
-      defaultLineHeight: '1.5',
+      defaultLineHeight: '138%', // 1.15 in UI = 138%
     };
   },
 
@@ -117,5 +118,63 @@ export const LineHeight = Extension.create({
           return true;
         },
     };
+  },
+
+  addProseMirrorPlugins() {
+    const pluginKey = new PluginKey('lineHeightInheritance');
+
+    return [
+      new Plugin({
+        key: pluginKey,
+        appendTransaction: (transactions, oldState, newState) => {
+          const tr = newState.tr;
+          let modified = false;
+
+          transactions.forEach((transaction) => {
+            if (!transaction.docChanged) return;
+
+            transaction.steps.forEach((step) => {
+              const stepMap = step.getMap();
+              stepMap.forEach((oldStart, oldEnd, newStart, newEnd) => {
+                // Check if new content was inserted
+                if (newEnd > newStart) {
+                  newState.doc.nodesBetween(newStart, newEnd, (node, pos) => {
+                    // Only process our target node types
+                    if (!this.options.types.includes(node.type.name)) return;
+
+                    // If node already has lineHeight, skip
+                    if (node.attrs.lineHeight) return;
+
+                    // Try to find previous sibling with lineHeight
+                    const $pos = newState.doc.resolve(pos);
+                    const indexBefore = $pos.index($pos.depth);
+
+                    if (indexBefore > 0) {
+                      const prevNode = $pos
+                        .node($pos.depth)
+                        .child(indexBefore - 1);
+                      if (
+                        prevNode &&
+                        this.options.types.includes(prevNode.type.name) &&
+                        prevNode.attrs.lineHeight
+                      ) {
+                        // Copy lineHeight from previous node
+                        tr.setNodeMarkup(pos, undefined, {
+                          ...node.attrs,
+                          lineHeight: prevNode.attrs.lineHeight,
+                        });
+                        modified = true;
+                      }
+                    }
+                  });
+                }
+              });
+            });
+          });
+
+          return modified ? tr : null;
+        },
+      }),
+    ];
   },
 });

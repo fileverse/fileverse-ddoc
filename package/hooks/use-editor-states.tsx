@@ -18,7 +18,8 @@ export const useEditorStates = (editor: Editor | null) => {
   const onSetLineHeight = useCallback(
     (lineHeight: string) => {
       if (!editor) return;
-      editor.chain().focus().setLineHeight(lineHeight).run();
+      // Remove .focus() to prevent canvas scrolling when line height changes
+      editor.chain().setLineHeight(lineHeight).run();
     },
     [editor],
   );
@@ -45,7 +46,7 @@ export const useEditorStates = (editor: Editor | null) => {
       if (customFontSize) {
         return {
           currentSize: customFontSize,
-          currentLineHeight: customLineHeight || '1.5',
+          currentLineHeight: customLineHeight || '138%',
         };
       }
 
@@ -56,17 +57,17 @@ export const useEditorStates = (editor: Editor | null) => {
           case 1:
             return {
               currentSize: '32px',
-              currentLineHeight: customLineHeight || '1.5',
+              currentLineHeight: customLineHeight || '138%',
             };
           case 2:
             return {
               currentSize: '24px',
-              currentLineHeight: customLineHeight || '1.5',
+              currentLineHeight: customLineHeight || '138%',
             };
           case 3:
             return {
               currentSize: '18px',
-              currentLineHeight: customLineHeight || '1.5',
+              currentLineHeight: customLineHeight || '138%',
             };
         }
       }
@@ -74,7 +75,7 @@ export const useEditorStates = (editor: Editor | null) => {
       // Default size for regular text
       return {
         currentSize: '16px',
-        currentLineHeight: customLineHeight || '1.5',
+        currentLineHeight: customLineHeight || '138%',
       };
     },
   }) as EditorStateResult;
