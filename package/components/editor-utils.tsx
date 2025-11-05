@@ -306,9 +306,12 @@ export const getCurrentLineHeight = (
   currentLineHeight?: string,
 ) => {
   if (!editor) return '1.15';
-  // currentLineHeight is stored as percentage, convert to UI value
+  // currentLineHeight is stored as percentage, find matching label
   if (currentLineHeight && currentLineHeight.includes('%')) {
-    return percentageToUiValue(currentLineHeight);
+    const option = LINE_HEIGHT_OPTIONS.find(
+      (opt) => opt.value === currentLineHeight,
+    );
+    return option ? option.label : percentageToUiValue(currentLineHeight);
   }
   return currentLineHeight || '1.15';
 };
