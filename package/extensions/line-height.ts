@@ -126,7 +126,7 @@ export const LineHeight = Extension.create({
     return [
       new Plugin({
         key: pluginKey,
-        appendTransaction: (transactions, oldState, newState) => {
+        appendTransaction: (transactions, _oldState, newState) => {
           const tr = newState.tr;
           let modified = false;
 
@@ -135,7 +135,7 @@ export const LineHeight = Extension.create({
 
             transaction.steps.forEach((step) => {
               const stepMap = step.getMap();
-              stepMap.forEach((oldStart, oldEnd, newStart, newEnd) => {
+              stepMap.forEach((_oldStart, _oldEnd, newStart, newEnd) => {
                 // Check if new content was inserted
                 if (newEnd > newStart) {
                   newState.doc.nodesBetween(newStart, newEnd, (node, pos) => {

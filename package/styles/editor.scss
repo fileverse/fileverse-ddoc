@@ -484,13 +484,15 @@ ul[data-type='taskList'] li > label input[type='checkbox'] {
   width: 20px;
   height: 20px;
   position: relative;
-  top: 3px;
+  top: 0;
   border: 2px solid #363b3f;
   border-radius: 4px;
   margin-right: 0.3rem;
-  display: grid;
+  display: inline-grid;
   place-content: center;
   transition: all 0.2s ease;
+  flex-shrink: 0;
+  vertical-align: middle;
 
   &:hover {
     background-color: hsla(var(--color-bg-default-hover));
@@ -1347,4 +1349,14 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
     margin: 0.1em 0 !important;
     padding: 0;
   }
+}
+
+// Force task items to have consistent line-height regardless of document settings
+ul[data-type='taskList'] li,
+ul[data-type='taskList'] li > div,
+ul[data-type='taskList'] li > div > p,
+ul[data-type='taskList'] li[data-type='taskItem'],
+ul[data-type='taskList'] li[data-type='taskItem'] > div,
+ul[data-type='taskList'] li[data-type='taskItem'] > div > p {
+  line-height: 1.5 !important;
 }
