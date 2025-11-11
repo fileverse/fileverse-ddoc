@@ -484,13 +484,15 @@ ul[data-type='taskList'] li > label input[type='checkbox'] {
   width: 20px;
   height: 20px;
   position: relative;
-  top: 3px;
+  top: 0;
   border: 2px solid #363b3f;
   border-radius: 4px;
   margin-right: 0.3rem;
-  display: grid;
+  display: inline-grid;
   place-content: center;
   transition: all 0.2s ease;
+  flex-shrink: 0;
+  vertical-align: middle;
 
   &:hover {
     background-color: hsla(var(--color-bg-default-hover));

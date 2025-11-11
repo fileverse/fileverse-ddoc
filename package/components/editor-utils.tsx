@@ -276,6 +276,46 @@ export const getCurrentFontSize = (
   return currentSize ? currentSize.replace('px', '') : '';
 };
 
+// Line height conversion helpers: UI shows numbers (1, 1.15, 1.5, etc.) but stores as percentages (120%, 138%, 180%, etc.)
+// Formula: percentage = uiValue * 120
+const LINE_HEIGHT_BASE = 120; // 1 in UI = 120% in storage
+
+export const uiValueToPercentage = (uiValue: string): string => {
+  const num = parseFloat(uiValue);
+  return `${Math.round(num * LINE_HEIGHT_BASE)}%`;
+};
+
+export const percentageToUiValue = (percentage: string): string => {
+  const num = parseFloat(percentage.replace('%', ''));
+  return (num / LINE_HEIGHT_BASE).toString();
+};
+
+export const LINE_HEIGHT_OPTIONS = [
+  { value: '120%', label: '1', uiValue: '1', description: '' },
+  { value: '138%', label: '1.15', uiValue: '1.15', description: '(Default)' },
+  { value: '180%', label: '1.5', uiValue: '1.5', description: '' },
+  { value: '240%', label: '2', uiValue: '2', description: '' },
+  { value: '300%', label: '2.5', uiValue: '2.5', description: '' },
+  { value: '360%', label: '3', uiValue: '3', description: '' },
+];
+
+export const getLineHeightOptions = () => LINE_HEIGHT_OPTIONS;
+
+export const getCurrentLineHeight = (
+  editor: Editor | null,
+  currentLineHeight?: string,
+) => {
+  if (!editor) return '1.15';
+  // currentLineHeight is stored as percentage, find matching label
+  if (currentLineHeight && currentLineHeight.includes('%')) {
+    const option = LINE_HEIGHT_OPTIONS.find(
+      (opt) => opt.value === currentLineHeight,
+    );
+    return option ? option.label : percentageToUiValue(currentLineHeight);
+  }
+  return currentLineHeight || '1.15';
+};
+
 export const ERR_MSG_MAP = {
   IMAGE_SIZE: 'Image size should be less than 10MB',
 };
@@ -383,6 +423,67 @@ export const useEditorToolbar = ({
                 buttonRef.current.click();
               }
             }
+            return true;
+          }
+
+          // Line height increase shortcut (Alt + Shift + ↑)
+          if (event.altKey && event.shiftKey && event.key === 'ArrowUp') {
+            event.preventDefault();
+            const lineHeights = [
+              '120%',
+              '138%',
+              '180%',
+              '240%',
+              '300%',
+              '360%',
+            ];
+
+            // Get line height from current block node
+            let currentLineHeight =
+              editor.getAttributes('paragraph')?.lineHeight;
+            if (!currentLineHeight && editor.isActive('heading')) {
+              currentLineHeight = editor.getAttributes('heading')?.lineHeight;
+            }
+            if (!currentLineHeight && editor.isActive('listItem')) {
+              currentLineHeight = editor.getAttributes('listItem')?.lineHeight;
+            }
+            currentLineHeight = currentLineHeight || '138%';
+
+            const currentIndex = lineHeights.indexOf(currentLineHeight);
+            const nextIndex = Math.min(
+              currentIndex + 1,
+              lineHeights.length - 1,
+            );
+            editor.chain().setLineHeight(lineHeights[nextIndex]).run();
+            return true;
+          }
+
+          // Line height decrease shortcut (Alt + Shift + ↓)
+          if (event.altKey && event.shiftKey && event.key === 'ArrowDown') {
+            event.preventDefault();
+            const lineHeights = [
+              '120%',
+              '138%',
+              '180%',
+              '240%',
+              '300%',
+              '360%',
+            ];
+
+            // Get line height from current block node
+            let currentLineHeight =
+              editor.getAttributes('paragraph')?.lineHeight;
+            if (!currentLineHeight && editor.isActive('heading')) {
+              currentLineHeight = editor.getAttributes('heading')?.lineHeight;
+            }
+            if (!currentLineHeight && editor.isActive('listItem')) {
+              currentLineHeight = editor.getAttributes('listItem')?.lineHeight;
+            }
+            currentLineHeight = currentLineHeight || '138%';
+
+            const currentIndex = lineHeights.indexOf(currentLineHeight);
+            const prevIndex = Math.max(currentIndex - 1, 0);
+            editor.chain().setLineHeight(lineHeights[prevIndex]).run();
             return true;
           }
           return false;
@@ -617,6 +718,12 @@ export const useEditorToolbar = ({
       title: 'Alignment',
       onClick: () => setToolVisibility(IEditorTool.ALIGNMENT),
       isActive: toolVisibility === IEditorTool.ALIGNMENT,
+    },
+    {
+      icon: 'LineHeight',
+      title: 'Line Height',
+      onClick: () => setToolVisibility(IEditorTool.LINE_HEIGHT),
+      isActive: toolVisibility === IEditorTool.LINE_HEIGHT,
     },
     {
       icon: 'TextQuote',
@@ -1721,6 +1828,60 @@ export const FontSizePicker = ({
           )}
         >
           <p className="font-medium">{fontSize.title}</p>
+        </button>
+      ))}
+    </div>
+  );
+};
+
+export const LineHeightPicker = ({
+  setVisibility,
+  elementRef,
+  currentLineHeight,
+  onSetLineHeight,
+}: {
+  editor: Editor;
+  elementRef: React.RefObject<HTMLDivElement>;
+  setVisibility: Dispatch<SetStateAction<IEditorTool>>;
+  currentLineHeight?: string;
+  onSetLineHeight: (lineHeight: string) => void;
+}) => {
+  const lineHeightOptions = getLineHeightOptions();
+
+  return (
+    <div
+      ref={elementRef}
+      className={cn(
+        'z-50 flex flex-col justify-center items-center overflow-hidden rounded color-bg-default p-2 gap-1 shadow-elevation-1',
+      )}
+    >
+      {lineHeightOptions.map((lineHeight) => (
+        <button
+          onMouseDown={(e) => e.preventDefault()}
+          onClick={() => {
+            onSetLineHeight(lineHeight.value);
+            setVisibility(IEditorTool.NONE);
+          }}
+          key={lineHeight.value}
+          className={cn(
+            'flex w-full items-center gap-2 rounded px-2 py-1 text-sm color-text-default transition min-w-[120px]',
+            {
+              ['color-bg-default-hover']:
+                currentLineHeight === lineHeight.value,
+              ['hover:color-bg-default-hover']:
+                currentLineHeight !== lineHeight.value,
+            },
+          )}
+        >
+          {currentLineHeight === lineHeight.value ? (
+            <LucideIcon name="Check" size="sm" />
+          ) : (
+            <div className="w-4" />
+          )}
+          <span className="font-medium">{lineHeight.label}</span>
+          <span className="text-xs color-text-secondary">
+            {lineHeight.description}
+          </span>
         </button>
       ))}
     </div>
