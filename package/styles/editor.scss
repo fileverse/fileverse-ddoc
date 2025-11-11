@@ -1350,13 +1350,3 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p {
     padding: 0;
   }
 }
-
-// Force task items to have consistent line-height regardless of document settings
-ul[data-type='taskList'] li,
-ul[data-type='taskList'] li > div,
-ul[data-type='taskList'] li > div > p,
-ul[data-type='taskList'] li[data-type='taskItem'],
-ul[data-type='taskList'] li[data-type='taskItem'] > div,
-ul[data-type='taskList'] li[data-type='taskItem'] > div > p {
-  line-height: 1.5 !important;
-}
