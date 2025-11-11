@@ -18,8 +18,16 @@ export const useEditorStates = (editor: Editor | null) => {
   const onSetLineHeight = useCallback(
     (lineHeight: string) => {
       if (!editor) return;
-      // Remove .focus() to prevent canvas scrolling when line height changes
-      editor.chain().setLineHeight(lineHeight).run();
+      const { from, to } = editor.state.selection;
+      const hasSelection = from !== to;
+
+      if (hasSelection) {
+        // If there's a selection, keep focus to maintain the selection highlight
+        editor.chain().focus().setLineHeight(lineHeight).run();
+      } else {
+        // If no selection (global change), don't focus to prevent canvas jump
+        editor.chain().setLineHeight(lineHeight).run();
+      }
     },
     [editor],
   );
