@@ -435,7 +435,9 @@ const TiptapToolBar = ({
                         icon="LineHeight"
                         variant="ghost"
                         size="md"
-                        onClick={() => setToolVisibility(IEditorTool.LINE_HEIGHT)}
+                        onClick={() =>
+                          setToolVisibility(IEditorTool.LINE_HEIGHT)
+                        }
                       />
                     </Tooltip>
                   }

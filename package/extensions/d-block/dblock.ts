@@ -216,6 +216,23 @@ export const DBlock = Node.create<DBlockOptions>({
             const currentItemStart = $head.before($head.depth - 1);
             const currentItemEnd = currentItemStart + currentItem.nodeSize;
 
+            // Check if the current item has nested content (bulletList or orderedList)
+            let hasNestedContent = false;
+            currentItem.forEach((node) => {
+              if (
+                node.type.name === 'bulletList' ||
+                node.type.name === 'orderedList'
+              ) {
+                hasNestedContent = true;
+              }
+            });
+
+            // If the current item has nested content, don't delete it!
+            // This prevents deleting parent items with nested children
+            if (hasNestedContent) {
+              return false; // Let default behavior handle it
+            }
+
             // If it's the last item, exit the list and create a text block
             if (isLastItem) {
               return editor
@@ -554,6 +571,21 @@ export const DBlock = Node.create<DBlockOptions>({
               const listItemNode = $head.node($head.depth - 1); // The listItem node
               const listItemEnd = listItemPos + listItemNode.nodeSize;
 
+              // Check if this item has nested content before deleting
+              let hasNestedContentCase2 = false;
+              listItemNode.forEach((node) => {
+                if (
+                  node.type.name === 'bulletList' ||
+                  node.type.name === 'orderedList'
+                ) {
+                  hasNestedContentCase2 = true;
+                }
+              });
+
+              if (hasNestedContentCase2) {
+                return false;
+              }
+
               return editor
                 .chain()
                 .command(({ tr, dispatch }) => {
@@ -596,6 +628,23 @@ export const DBlock = Node.create<DBlockOptions>({
               // Remove empty bullet and create text block between the two list portions
               const listNode = $head.node($head.depth - 2);
               const currentIndex = $head.index($head.depth - 2);
+              const currentItem = listNode.child(currentIndex);
+
+              // Check if the current item has nested content (bulletList or orderedList)
+              // This prevents deleting parent items with nested children
+              let hasNestedContentBackspace = false;
+              currentItem.forEach((node) => {
+                if (
+                  node.type.name === 'bulletList' ||
+                  node.type.name === 'orderedList'
+                ) {
+                  hasNestedContentBackspace = true;
+                }
+              });
+
+              if (hasNestedContentBackspace) {
+                return false; // Let default behavior handle it
+              }
 
               // Get items before and after the current empty item
               const itemsBeforeCurrent = listNode.content
