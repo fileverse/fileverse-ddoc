@@ -761,6 +761,81 @@ export const DBlock = Node.create<DBlockOptions>({
                 }
               }
 
+              // If at start of non-first top-level item, split the list
+              // This allows users to break lists by pressing Backspace at the start
+              if (!isNestedItem && !isFirstItem) {
+                const listNode = $head.node($head.depth - 2);
+                const currentIndex = $head.index($head.depth - 2);
+
+                // Split the list: [items before current] + [current item onward]
+                // Nested content will be preserved as part of the item's JSON structure
+                const itemsBeforeCurrent = listNode.content
+                  .toJSON()
+                  .slice(0, currentIndex);
+
+                if (itemsBeforeCurrent.length > 0) {
+                  // Use view.dispatch directly for better control
+                  const view = editor.view;
+                  const tr = view.state.tr;
+
+                  const dBlockDepth = $head.depth - 3;
+                  const dBlockPos = $head.before(dBlockDepth);
+                  const dBlockNode = $head.node(dBlockDepth);
+                  const dBlockEnd = dBlockPos + dBlockNode.nodeSize;
+
+                  const remainingItems = listNode.content
+                    .toJSON()
+                    .slice(currentIndex);
+
+                  const newContent: DBlockContent[] = [
+                    {
+                      type: 'dBlock',
+                      content: [
+                        {
+                          type: grandParent.type.name,
+                          content: itemsBeforeCurrent,
+                        },
+                      ],
+                    },
+                    {
+                      type: 'dBlock',
+                      content: [
+                        {
+                          type: grandParent.type.name,
+                          content: remainingItems,
+                        },
+                      ],
+                    },
+                  ];
+
+                  tr.replaceWith(
+                    dBlockPos,
+                    dBlockEnd,
+                    editor.schema.nodeFromJSON({
+                      type: 'doc',
+                      content: newContent,
+                    }),
+                  );
+
+                  // Calculate cursor position at start of second list
+                  const firstDBlockNode = editor.schema.nodeFromJSON({
+                    type: 'dBlock',
+                    content: [
+                      {
+                        type: grandParent.type.name,
+                        content: itemsBeforeCurrent,
+                      },
+                    ],
+                  });
+                  const cursorPos = dBlockPos + firstDBlockNode.nodeSize + 3;
+
+                  tr.setSelection(TextSelection.create(tr.doc, cursorPos));
+
+                  view.dispatch(tr);
+                  return true;
+                }
+              }
+
               // Default handling for other cases
               return false;
             }
