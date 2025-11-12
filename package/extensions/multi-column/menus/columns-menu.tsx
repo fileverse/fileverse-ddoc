@@ -1,6 +1,5 @@
-import { BubbleMenu as BaseBubbleMenu } from '@tiptap/react';
+import { BubbleMenu as BaseBubbleMenu } from '@tiptap/react/menus';
 import { useCallback } from 'react';
-import { sticky } from 'tippy.js';
 import uuid from 'react-uuid';
 import { ColumnLayout } from '../columns';
 import getRenderContainer from '../../../utils/get-render-container';
@@ -11,11 +10,7 @@ import ToolbarButton from '../../../common/toolbar-button';
 export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
   const getReferenceClientRect = useCallback(() => {
     const renderContainer = getRenderContainer(editor, 'columns');
-    const rect =
-      renderContainer?.getBoundingClientRect() ||
-      new DOMRect(-1000, -1000, 0, 0);
-
-    return rect;
+    return renderContainer;
   }, [editor]);
 
   const shouldShow = useCallback(() => {
@@ -46,19 +41,23 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
       pluginKey={`columnsMenu-${uuid()}`}
       shouldShow={shouldShow}
       updateDelay={0}
-      tippyOptions={{
-        offset: [0, 16],
-        popperOptions: {
-          modifiers: [{ name: 'flip', enabled: false }],
+      options={{
+        offset: {
+          mainAxis: 16,
+          crossAxis: 0,
         },
-        getReferenceClientRect,
-        moveTransition: 'transform 0.15s ease-out',
-        duration: 200,
-        animation: 'shift-toward-subtle',
-        appendTo: () => appendTo?.current,
-        plugins: [sticky],
-        sticky: 'popper',
+        flip: true,
+        // popperOptions: {
+        //   modifiers: [{ name: 'flip', enabled: false }],
+        // },
+        // moveTransition: 'transform 0.15s ease-out',
+        // duration: 200,
+        // animation: 'shift-toward-subtle',
+        // plugins: [sticky],
+        // sticky: 'popper',
       }}
+      appendTo={() => appendTo?.current}
+      getReferencedVirtualElement={() => getReferenceClientRect()}
     >
       <Toolbar.Wrapper className="border color-border-default shadow-elevation-3">
         <ToolbarButton

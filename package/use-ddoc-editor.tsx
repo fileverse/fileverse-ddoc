@@ -5,7 +5,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { DdocProps, DdocEditorProps } from './types';
 import * as Y from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration';
-import CollaborationCursor from '@tiptap/extension-collaboration-cursor';
+import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import { defaultExtensions } from './extensions/default-extension';
 import { AnyExtension, JSONContent, useEditor } from '@tiptap/react';
 import { getCursor } from './utils/cursor';
@@ -450,7 +450,7 @@ export const useDdocEditor = ({
     const setupExtensions = async () => {
       setExtensions([
         ...extensions.filter((extension) => extension.name !== 'history'),
-        CollaborationCursor.configure({
+        CollaborationCaret.configure({
           provider: awarenessProvider,
           user: {
             name: collabConfig?.username || '',
@@ -748,13 +748,13 @@ export const useDdocEditor = ({
   }, [enableCollaboration, Boolean(collabConfig)]);
 
   useEffect(() => {
-    onCollaboratorChange?.(editor?.storage?.collaborationCursor?.users);
-  }, [editor?.storage?.collaborationCursor?.users]);
+    onCollaboratorChange?.(editor?.storage?.collaborationCaret?.users);
+  }, [editor?.storage?.collaborationCaret?.users]);
 
   useEffect(() => {
     setCharacterCount &&
-      setCharacterCount(editor?.storage.characterCount.characters());
-    setWordCount && setWordCount(editor?.storage.characterCount.words());
+      setCharacterCount(editor?.storage.characterCount.characters() ?? 0);
+    setWordCount && setWordCount(editor?.storage.characterCount.words() ?? 0);
   }, [
     editor?.storage.characterCount.characters(),
     editor?.storage.characterCount.words(),

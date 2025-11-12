@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 import { cn } from '@fileverse/ui';
-import { BubbleMenu } from '@tiptap/react';
+import { BubbleMenu } from '@tiptap/react/menus';
 import { Editor } from '@tiptap/core';
 import { useComments } from './context/comment-context';
 import { CommentDropdown } from './comment-dropdown';
@@ -59,6 +59,7 @@ export const CommentBubbleCard = ({
         // Additional safety to ensure active state is removed when menu hides
         editor.commands.unsetCommentActive();
       },
+      appendTo: () => document.getElementById('editor-canvas'),
       tippyOptions: {
         moveTransition: isNativeMobile ? 'transform 0.2s ease-in' : 'none',
         duration: 200,
@@ -66,7 +67,6 @@ export const CommentBubbleCard = ({
         zIndex: 40,
         offset: [0, 20],
         placement: 'bottom',
-        appendTo: () => document.getElementById('editor-canvas'),
         followCursor: 'vertical',
         interactive: true,
         inertia: true,
@@ -99,6 +99,11 @@ export const CommentBubbleCard = ({
   return (
     <BubbleMenu
       {...bubbleMenuProps}
+      // options={{
+      //   offset: {
+      //     mainAxis:
+      //   }
+      // }}
       editor={editor}
       className={cn(
         'shadow-elevation-4 rounded-lg color-bg-default border color-border-default',
@@ -106,7 +111,7 @@ export const CommentBubbleCard = ({
       )}
     >
       <CommentDropdown
-        activeCommentId={activeCommentId}
+        activeCommentId={activeCommentId ?? undefined}
         isBubbleMenu={true}
         initialComment={currentComment?.content}
         selectedContent={currentComment?.selectedContent}
