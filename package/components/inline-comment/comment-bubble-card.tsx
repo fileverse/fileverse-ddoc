@@ -55,43 +55,39 @@ export const CommentBubbleCard = ({
 
         return shouldShow;
       },
-      onHide: ({ editor }: { editor: Editor }) => {
-        // Additional safety to ensure active state is removed when menu hides
-        editor.commands.unsetCommentActive();
-      },
       appendTo: () => document.getElementById('editor-canvas'),
-      tippyOptions: {
-        moveTransition: isNativeMobile ? 'transform 0.2s ease-in' : 'none',
-        duration: 200,
-        animation: 'shift-toward-subtle',
-        zIndex: 40,
-        offset: [0, 20],
-        placement: 'bottom',
-        followCursor: 'vertical',
-        interactive: true,
-        inertia: true,
-        trigger: 'manual',
-        hideOnClick: true,
-        inlinePositioning: true,
-        popperOptions: {
-          strategy: 'fixed',
-          modifiers: [
-            {
-              name: 'flip',
-              options: {
-                fallbackPlacements: ['top'],
-              },
-            },
-            {
-              name: 'preventOverflow',
-              options: {
-                altAxis: true,
-                tether: false,
-              },
-            },
-          ],
-        },
-      },
+      // tippyOptions: {
+      //   moveTransition: isNativeMobile ? 'transform 0.2s ease-in' : 'none',
+      //   duration: 200,
+      //   animation: 'shift-toward-subtle',
+      //   zIndex: 40,
+      //   offset: [0, 20],
+      //   placement: 'bottom',
+      //   followCursor: 'vertical',
+      //   interactive: true,
+      //   inertia: true,
+      //   trigger: 'manual',
+      //   hideOnClick: true,
+      //   inlinePositioning: true,
+      //   popperOptions: {
+      //     strategy: 'fixed',
+      //     modifiers: [
+      //       {
+      //         name: 'flip',
+      //         options: {
+      //           fallbackPlacements: ['top'],
+      //         },
+      //       },
+      //       {
+      //         name: 'preventOverflow',
+      //         options: {
+      //           altAxis: true,
+      //           tether: false,
+      //         },
+      //       },
+      //     ],
+      //   },
+      // },
     }),
     [isNativeMobile, isCollabDocumentPublished],
   );
@@ -99,11 +95,24 @@ export const CommentBubbleCard = ({
   return (
     <BubbleMenu
       {...bubbleMenuProps}
-      // options={{
-      //   offset: {
-      //     mainAxis:
-      //   }
-      // }}
+      options={{
+        offset: {
+          mainAxis: 0,
+          crossAxis: 20,
+        },
+        placement: 'bottom',
+        strategy: 'fixed',
+        flip: {
+          fallbackPlacements: ['top'],
+        },
+        shift: {
+          crossAxis: true,
+        },
+        onHide: ({ editor }: { editor: Editor }) => {
+          // Additional safety to ensure active state is removed when menu hides
+          editor.commands.unsetCommentActive();
+        },
+      }}
       editor={editor}
       className={cn(
         'shadow-elevation-4 rounded-lg color-bg-default border color-border-default',
