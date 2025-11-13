@@ -3,10 +3,12 @@ import { useCallback, useEffect } from 'react';
 import syncMachine from './syncMachine';
 import * as Y from 'yjs';
 
-import { useMachine, useSelector } from '@xstate/react';
+import { useSelector } from '@xstate/react';
 import { SyncMachineContext } from '.';
 import { fromUint8Array } from 'js-base64';
 import { removeAwarenessStates } from 'y-protocols/awareness.js';
+
+import { useMachine } from '@xstate-ninja/react';
 
 interface IConnectConf {
   username?: string;
@@ -40,6 +42,7 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
     context: {
       ...config,
     },
+    devTools: true,
   });
 
   const awareness = useSelector(actorRef, awarenessSelector);
@@ -81,14 +84,19 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
   }, [send]);
 
   useEffect(() => {
-    if (config.ydoc && !awareness && isConnected) {
+    if (
+      config.ydoc &&
+      !awareness &&
+      isConnected &&
+      hasCollabContentInitialised
+    ) {
       send({
         type: 'INIT_AWARENESS',
         data: null,
       });
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config.ydoc, awareness, isConnected]);
+  }, [config.ydoc, awareness, isConnected, hasCollabContentInitialised]);
 
   useEffect(() => {
     if (!isReady || !config.ydoc) return;
