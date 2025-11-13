@@ -6,8 +6,8 @@ const ToolbarButton = forwardRef<
   HTMLButtonElement,
   {
     icon: string;
-    isActive: boolean;
-    onClick: () => void;
+    isActive?: boolean;
+    onClick?: () => void;
     tooltip?: string;
     classNames?: string;
     disabled?: boolean;

@@ -748,7 +748,15 @@ export const useDdocEditor = ({
   }, [enableCollaboration, Boolean(collabConfig)]);
 
   useEffect(() => {
-    onCollaboratorChange?.(editor?.storage?.collaborationCaret?.users);
+    const collaborators = editor?.storage?.collaborationCaret?.users?.map(
+      (user) => ({
+        clientId: user.clientId,
+        name: user.name,
+        isEns: user.isEns,
+        color: user.color,
+      }),
+    );
+    onCollaboratorChange?.(collaborators);
   }, [editor?.storage?.collaborationCaret?.users]);
 
   useEffect(() => {

@@ -317,6 +317,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
     const isDocEmpty = useMemo(() => {
       const { doc, selection } = editor.state;
       const pos = getPos();
+      if (pos === undefined) return false;
       const nodeAtPos = doc.nodeAt(pos);
 
       if (!nodeAtPos || nodeAtPos.type.name !== 'dBlock') return false;

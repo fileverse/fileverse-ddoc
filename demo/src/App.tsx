@@ -17,7 +17,7 @@ import { IComment } from '../../package/extensions/comment';
 import {
   TableOfContents,
   getHierarchicalIndexes,
-} from '@tiptap-pro/extension-table-of-contents';
+} from '@tiptap/extension-table-of-contents';
 import { fromUint8Array } from 'js-base64';
 import { crypto as cryptoUtils } from './crypto';
 import { collabStore } from './storage/collab-store';

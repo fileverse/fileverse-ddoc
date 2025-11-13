@@ -338,7 +338,7 @@ const DdocEditor = forwardRef(
             return;
           }
 
-          const existingUser = editor.storage.collaborationCursor?.users?.find(
+          const existingUser = editor.storage.collaborationCaret?.users?.find(
             (user: Record<string, unknown>) => {
               return user?.clientId === ydoc.clientID;
             },

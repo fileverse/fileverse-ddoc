@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
-import { BubbleMenu } from '@tiptap/react';
+
+import { BubbleMenu } from '@tiptap/react/menus';
 import React from 'react';
 import { NodeSelector } from './node-selector';
 import {
@@ -52,7 +52,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const onSetFontSize = editor ? editorStates.onSetFontSize : () => {};
   const { isNativeMobile } = useResponsive();
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
-    editor: editor,
+    editor: editor ?? null,
     onError,
     ipfsImageUploadFn,
     ipfsImageFetchFn,
@@ -135,7 +135,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       isActive: () => false,
       command: () => {
         const selectedText =
-          editor.state.selection.content().content.firstChild?.textContent ||
+          editor?.state.selection.content().content.firstChild?.textContent ||
           '';
         if (setInitialReminderTitle) {
           setInitialReminderTitle(selectedText);
@@ -174,7 +174,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       case 'Comment':
         return (
           <CommentDropdown
-            activeCommentId={activeCommentId}
+            activeCommentId={activeCommentId ?? undefined}
             setCommentDrawerOpen={setCommentDrawerOpen}
             initialComment={item.initialComment}
             isDisabled={
@@ -206,7 +206,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       <ToolbarButton
         ref={buttonRef}
         icon="MessageSquarePlus"
-        variant="ghost"
         size="sm"
         disabled={
           isCommentResolved ||
@@ -236,9 +235,23 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     </React.Fragment>
   );
 
+  if (!editor) {
+    return null;
+  }
+
   return (
     <BubbleMenu
       {...bubbleMenuProps(props)}
+      appendTo={() => document.getElementById('editor-canvas')!}
+      options={{
+        strategy: 'fixed',
+        flip: {
+          fallbackPlacements: ['top'],
+        },
+        shift: {
+          crossAxis: true,
+        },
+      }}
       shouldShow={shouldShow}
       className={cn(
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border color-bg-default items-center shadow-elevation-3',
@@ -268,11 +281,11 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               anchorTrigger={
                 <ToolbarButton
                   icon={'AlarmClock'}
-                  variant="ghost"
+                  // variant="ghost"
                   size="sm"
                   onClick={() => {
                     const selectedText =
-                      editor.state.selection.content().content.firstChild
+                      editor?.state.selection.content().content.firstChild
                         ?.textContent || '';
                     if (setInitialReminderTitle) {
                       setInitialReminderTitle(selectedText);
@@ -299,7 +312,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               anchorTrigger={
                 <ToolbarButton
                   icon="MessageSquarePlus"
-                  variant="ghost"
+                  // variant="ghost"
                   size="sm"
                   tooltip={isCommentResolved ? 'Comment resolved' : ''}
                   disabled={
@@ -337,7 +350,10 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                     onClick={() => setToolVisibility(IEditorTool.FONT_SIZE)}
                   >
                     <span className="text-body-sm line-clamp-1">
-                      {getCurrentFontSize(editor, currentSize as string)}
+                      {getCurrentFontSize(
+                        editor ?? null,
+                        currentSize as string,
+                      )}
                     </span>
                     <LucideIcon name="ChevronDown" size="sm" />
                   </button>
@@ -424,7 +440,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                         anchorTrigger={
                           <ToolbarButton
                             icon={item.icon}
-                            variant="ghost"
+                            // variant="ghost"
                             size="sm"
                             onClick={() =>
                               setToolVisibility(IEditorTool.ALIGNMENT)
@@ -446,7 +462,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                         anchorTrigger={
                           <ToolbarButton
                             icon={item.icon}
-                            variant="ghost"
+                            // variant="ghost"
                             size="sm"
                             onClick={item.command}
                           />
@@ -471,7 +487,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                         <ToolbarButton
                           ref={buttonRef}
                           icon="MessageSquarePlus"
-                          variant="ghost"
+                          // variant="ghost"
                           size="sm"
                           tooltip={
                             enableCollaboration
@@ -514,7 +530,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                         anchorTrigger={
                           <ToolbarButton
                             icon={item.icon}
-                            variant="ghost"
+                            // variant="ghost"
                             disabled={!isConnected || enableCollaboration}
                             size="sm"
                             onClick={item.command}

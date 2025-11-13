@@ -4,31 +4,17 @@ import { EditorBubbleMenuProps } from './types';
 export const bubbleMenuProps = (props: EditorBubbleMenuProps) => {
   return {
     ...props,
-    tippyOptions: {
-      moveTransition: 'transform 0.2s ease-in',
-      duration: 200,
-      animation: 'shift-toward-subtle',
-      zIndex: 50,
-      appendTo: () => document.getElementById('editor-canvas'),
-      popperOptions: {
-        strategy: 'fixed',
-        modifiers: [
-          {
-            name: 'flip',
-            options: {
-              fallbackPlacements: ['top'],
-            },
-          },
-          {
-            name: 'preventOverflow',
-            options: {
-              altAxis: true,
-              tether: false,
-            },
-          },
-        ],
-      },
-    },
+    // appendTo: () => document.getElementById('editor-canvas')!,
+    // zIndex: 50,
+    // strategy: 'fixed',
+    // options: {
+    //   flip: {
+    //     fallbackPlacements: ['top'],
+    //   },
+    //   shift: {
+    //     crossAxis: true,
+    //   },
+    // },
   };
 };
 
