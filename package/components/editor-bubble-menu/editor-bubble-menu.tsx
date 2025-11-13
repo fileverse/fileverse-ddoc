@@ -12,6 +12,7 @@ import {
   ScriptsPopup,
   getCurrentFontSize,
   FontSizePicker,
+  LineHeightPicker,
 } from '../editor-utils';
 import { IEditorTool } from '../../hooks/use-visibility';
 import ToolbarButton from '../../common/toolbar-button';
@@ -28,6 +29,7 @@ import { ReminderMenu } from '../../extensions/reminder-block/reminder-menu';
 import { useReminder } from '../../hooks/use-reminder';
 
 const MemoizedFontSizePicker = React.memo(FontSizePicker);
+const MemoizedLineHeightPicker = React.memo(LineHeightPicker);
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const {
@@ -49,7 +51,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   } = props;
   const editorStates = useEditorStates(editor as Editor);
   const currentSize = editor ? editorStates.currentSize : undefined;
+  const currentLineHeight = editor ? editorStates.currentLineHeight : undefined;
   const onSetFontSize = editor ? editorStates.onSetFontSize : () => {};
+  const onSetLineHeight = editor ? editorStates.onSetLineHeight : () => {};
   const { isNativeMobile } = useResponsive();
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
     editor: editor,
@@ -349,6 +353,27 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                     elementRef={toolRef}
                     currentSize={currentSize}
                     onSetFontSize={onSetFontSize}
+                  />
+                }
+              />
+
+              <DynamicDropdown
+                key={IEditorTool.LINE_HEIGHT}
+                sideOffset={15}
+                anchorTrigger={
+                  <ToolbarButton
+                    icon="LineHeight"
+                    size="sm"
+                    isActive={toolVisibility === IEditorTool.LINE_HEIGHT}
+                  />
+                }
+                content={
+                  <MemoizedLineHeightPicker
+                    setVisibility={setToolVisibility}
+                    editor={editor as Editor}
+                    elementRef={toolRef}
+                    currentLineHeight={currentLineHeight}
+                    onSetLineHeight={onSetLineHeight}
                   />
                 }
               />
