@@ -2,12 +2,10 @@
 import { useCallback, useEffect } from 'react';
 import syncMachine from './syncMachine';
 import * as Y from 'yjs';
-
 import { useSelector } from '@xstate/react';
 import { SyncMachineContext } from '.';
 import { fromUint8Array } from 'js-base64';
 import { removeAwarenessStates } from 'y-protocols/awareness.js';
-
 import { useMachine } from '@xstate-ninja/react';
 
 interface IConnectConf {
