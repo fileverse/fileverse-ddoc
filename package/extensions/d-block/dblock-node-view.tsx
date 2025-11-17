@@ -381,7 +381,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
     return (
       <NodeViewWrapper
         className={cn(
-          'flex px-4 md:px-8 lg:pr-[80px] lg:pl-[8px] gap-2 group w-full relative justify-center items-start',
+          'flex px-4 md:px-8 lg:pr-[80px] lg:pl-[8px] gap-2 group w-full relative justify-center items-center',
           isTable && 'pointer-events-auto',
           shouldBeHidden && 'hidden',
         )}

@@ -5,6 +5,7 @@ import {
   fonts,
   FontSizePicker,
   getCurrentFontSize,
+  LineHeightPicker,
   LinkPopup,
   TextColor,
   TextHeading,
@@ -31,6 +32,7 @@ import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { ImportExportButton } from './import-export-button';
 import { getCurrentFontFamily } from '../utils/get-current-font-family';
 const MemoizedFontSizePicker = React.memo(FontSizePicker);
+const MemoizedLineHeightPicker = React.memo(LineHeightPicker);
 
 const TiptapToolBar = ({
   editor,
@@ -95,6 +97,8 @@ const TiptapToolBar = ({
   const editorStates = useEditorStates(editor as Editor);
   const currentSize = editor ? editorStates.currentSize : undefined;
   const onSetFontSize = editor ? editorStates.onSetFontSize : () => {};
+  const currentLineHeight = editor ? editorStates.currentLineHeight : undefined;
+  const onSetLineHeight = editor ? editorStates.onSetLineHeight : () => {};
 
   const isBelow1480px = useMediaQuery('(max-width: 1480px)');
 
@@ -171,6 +175,16 @@ const TiptapToolBar = ({
             editor={editor as Editor}
             elementRef={toolRef}
             onError={onError}
+          />
+        );
+      case 'Line Height':
+        return (
+          <MemoizedLineHeightPicker
+            setVisibility={setToolVisibility}
+            editor={editor as Editor}
+            elementRef={toolRef}
+            currentLineHeight={currentLineHeight}
+            onSetLineHeight={onSetLineHeight}
           />
         );
       default:
@@ -405,6 +419,39 @@ const TiptapToolBar = ({
                 'font-size-dropdown',
               )}
           <div className="w-[1px] h-4 vertical-divider mx-1"></div>
+          {/* Line Height Dropdown */}
+          {isLoading
+            ? fadeInTransition(
+                <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
+                'line-height-skeleton',
+              )
+            : slideUpTransition(
+                <DynamicDropdown
+                  key={IEditorTool.LINE_HEIGHT}
+                  sideOffset={8}
+                  anchorTrigger={
+                    <Tooltip text="Line Height">
+                      <IconButton
+                        icon="LineHeight"
+                        variant="ghost"
+                        size="md"
+                        onClick={() => setToolVisibility(IEditorTool.LINE_HEIGHT)}
+                      />
+                    </Tooltip>
+                  }
+                  content={
+                    <MemoizedLineHeightPicker
+                      setVisibility={setToolVisibility}
+                      editor={editor as Editor}
+                      elementRef={toolRef}
+                      currentLineHeight={currentLineHeight}
+                      onSetLineHeight={onSetLineHeight}
+                    />
+                  }
+                />,
+                'line-height-dropdown',
+              )}
+          <div className="w-[1px] h-4 vertical-divider mx-1"></div>
 
           {/* Toolbar Items */}
           <div className="flex gap-2 justify-center items-center">
@@ -422,7 +469,8 @@ const TiptapToolBar = ({
                 tool.title === 'Highlight' ||
                 tool.title === 'Text Color' ||
                 tool.title === 'Alignment' ||
-                tool.title === 'Link'
+                tool.title === 'Link' ||
+                tool.title === 'Line Height'
               ) {
                 return !isLoading
                   ? slideUpTransition(

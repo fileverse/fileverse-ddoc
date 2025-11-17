@@ -14,6 +14,7 @@ export enum IEditorTool {
   LINK_POPUP,
   SCRIPTS,
   FONT_SIZE,
+  LINE_HEIGHT,
 }
 export default function useComponentVisibility(initialIsVisible: boolean) {
   const [isComponentVisible, setIsComponentVisible] =
