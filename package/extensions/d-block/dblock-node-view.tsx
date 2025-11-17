@@ -355,7 +355,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
             isTable && 'pointer-events-auto',
           )}
         >
-          <NodeViewContent
+          <div
             className={cn('node-view-content w-full relative', {
               'is-table': isTable,
               'invalid-content': node.attrs?.isCorrupted,
@@ -372,7 +372,8 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
                 !!isCollaboratorsDoc,
                 isPreviewMode,
               )}
-          </NodeViewContent>
+            <NodeViewContent />
+          </div>
         </NodeViewWrapper>
       );
     }
@@ -451,7 +452,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
           )}
         </section>
 
-        <NodeViewContent
+        <div
           className={cn(
             'node-view-content w-full relative self-center',
             {
@@ -473,6 +474,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
               !!isCollaboratorsDoc,
               isPreviewMode,
             )}
+
           {isHeading && isPreviewMode && (
             <section>
               <CopyLinkTooltip>
@@ -486,7 +488,9 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
               </CopyLinkTooltip>
             </section>
           )}
-        </NodeViewContent>
+
+          <NodeViewContent />
+        </div>
       </NodeViewWrapper>
     );
   },
