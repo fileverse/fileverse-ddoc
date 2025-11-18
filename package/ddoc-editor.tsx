@@ -633,6 +633,7 @@ const DdocEditor = forwardRef(
                   {editor && (
                     <EditorBubbleMenu
                       editor={editor}
+                      //@ts-expect-error error mismatch here
                       onError={onError}
                       zoomLevel={zoomLevel}
                       disableInlineComment={disableInlineComment || false}

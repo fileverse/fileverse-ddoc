@@ -47,7 +47,7 @@ export interface CommentContextType extends CommentAccountProps {
   isCommentOpen: boolean;
   handleInlineComment: () => void;
   portalRef: React.RefObject<HTMLDivElement>;
-  buttonRef: React.RefObject<HTMLButtonElement>;
+  buttonRef: React.RefObject<HTMLDivElement>;
   dropdownRef: React.RefObject<HTMLDivElement>;
   activeComments: IComment[];
   handleInput: (
