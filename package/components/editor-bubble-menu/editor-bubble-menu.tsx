@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
-import { BubbleMenu } from '@tiptap/react';
+import { BubbleMenu } from '@tiptap/react/menus';
 import React from 'react';
 import { NodeSelector } from './node-selector';
 import {
@@ -21,7 +21,7 @@ import { CommentDropdown } from '../inline-comment/comment-dropdown';
 import { createPortal } from 'react-dom';
 import { EditorBubbleMenuProps, BubbleMenuItem } from './types';
 import { useResponsive } from '../../utils/responsive';
-import { bubbleMenuProps, shouldShow } from './props';
+import { shouldShow } from './props';
 import { useComments } from '../inline-comment/context/comment-context';
 import { useEditorStates } from '../../hooks/use-editor-states';
 import { Editor } from '@tiptap/react';
@@ -56,7 +56,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const onSetLineHeight = editor ? editorStates.onSetLineHeight : () => {};
   const { isNativeMobile } = useResponsive();
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
-    editor: editor,
+    editor: editor ?? null,
     onError,
     ipfsImageUploadFn,
     ipfsImageFetchFn,
@@ -88,26 +88,26 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const items: BubbleMenuItem[] = [
     {
       name: 'Bold',
-      isActive: () => editor.isActive('bold'),
-      command: () => editor.chain().focus().toggleBold().run(),
+      isActive: () => editor?.isActive('bold') ?? false,
+      command: () => editor?.chain().focus().toggleBold().run(),
       icon: 'Bold',
     },
     {
       name: 'Italic',
-      isActive: () => editor.isActive('italic'),
-      command: () => editor.chain().focus().toggleItalic().run(),
+      isActive: () => editor?.isActive('italic') ?? false,
+      command: () => editor?.chain().focus().toggleItalic().run(),
       icon: 'Italic',
     },
     {
       name: 'Underline',
-      isActive: () => editor.isActive('underline'),
-      command: () => editor.chain().focus().toggleUnderline().run(),
+      isActive: () => editor?.isActive('underline') ?? false,
+      command: () => editor?.chain().focus().toggleUnderline().run(),
       icon: 'Underline',
     },
     {
       name: 'Strikethrough',
-      isActive: () => editor.isActive('strike'),
-      command: () => editor.chain().focus().toggleStrike().run(),
+      isActive: () => editor?.isActive('strike') ?? false,
+      command: () => editor?.chain().focus().toggleStrike().run(),
       icon: 'Strikethrough',
     },
     {
@@ -118,13 +118,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     },
     {
       name: 'Code',
-      isActive: () => editor.isActive('code'),
-      command: () => editor.chain().focus().toggleCode().run(),
+      isActive: () => editor?.isActive('code') ?? false,
+      command: () => editor?.chain().focus().toggleCode().run(),
       icon: 'Code',
     },
     {
       name: 'Link',
-      isActive: () => editor.isActive('link'),
+      isActive: () => editor?.isActive('link') ?? false,
       command: () => setToolVisibility(IEditorTool.LINK_POPUP),
       icon: 'Link',
     },
@@ -139,7 +139,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       isActive: () => false,
       command: () => {
         const selectedText =
-          editor.state.selection.content().content.firstChild?.textContent ||
+          editor?.state.selection.content().content.firstChild?.textContent ||
           '';
         if (setInitialReminderTitle) {
           setInitialReminderTitle(selectedText);
@@ -161,7 +161,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         return (
           <EditorAlignment
             setToolVisibility={setToolVisibility}
-            editor={editor}
+            editor={editor as Editor}
             elementRef={toolRef}
           />
         );
@@ -169,7 +169,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         return (
           <LinkPopup
             setToolVisibility={setToolVisibility}
-            editor={editor}
+            editor={editor as Editor}
             elementRef={toolRef}
             bubbleMenu={true}
             onError={onError}
@@ -178,7 +178,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       case 'Comment':
         return (
           <CommentDropdown
-            activeCommentId={activeCommentId}
+            activeCommentId={activeCommentId ?? undefined}
             setCommentDrawerOpen={setCommentDrawerOpen}
             initialComment={item.initialComment}
             isDisabled={
@@ -187,7 +187,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           />
         );
       case 'Scripts':
-        return <ScriptsPopup editor={editor} elementRef={toolRef} />;
+        return <ScriptsPopup editor={editor as Editor} elementRef={toolRef} />;
       case 'Reminder':
         return (
           <ReminderMenu
@@ -210,7 +210,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       <ToolbarButton
         ref={buttonRef}
         icon="MessageSquarePlus"
-        variant="ghost"
         size="sm"
         disabled={
           isCommentResolved ||
@@ -240,9 +239,23 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     </React.Fragment>
   );
 
+  if (!editor) {
+    return null;
+  }
+
   return (
     <BubbleMenu
-      {...bubbleMenuProps(props)}
+      editor={editor as Editor}
+      appendTo={() => document.getElementById('editor-canvas')!}
+      options={{
+        strategy: 'fixed',
+        flip: {
+          fallbackPlacements: ['top'],
+        },
+        shift: {
+          crossAxis: true,
+        },
+      }}
       shouldShow={shouldShow}
       className={cn(
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border color-bg-default items-center shadow-elevation-3',
@@ -272,11 +285,11 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               anchorTrigger={
                 <ToolbarButton
                   icon={'AlarmClock'}
-                  variant="ghost"
+                  // variant="ghost"
                   size="sm"
                   onClick={() => {
                     const selectedText =
-                      editor.state.selection.content().content.firstChild
+                      editor?.state.selection.content().content.firstChild
                         ?.textContent || '';
                     if (setInitialReminderTitle) {
                       setInitialReminderTitle(selectedText);
@@ -303,7 +316,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               anchorTrigger={
                 <ToolbarButton
                   icon="MessageSquarePlus"
-                  variant="ghost"
+                  // variant="ghost"
                   size="sm"
                   tooltip={isCommentResolved ? 'Comment resolved' : ''}
                   disabled={
@@ -341,7 +354,10 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                     onClick={() => setToolVisibility(IEditorTool.FONT_SIZE)}
                   >
                     <span className="text-body-sm line-clamp-1">
-                      {getCurrentFontSize(editor, currentSize as string)}
+                      {getCurrentFontSize(
+                        editor ?? null,
+                        currentSize as string,
+                      )}
                     </span>
                     <LucideIcon name="ChevronDown" size="sm" />
                   </button>
@@ -449,7 +465,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                         anchorTrigger={
                           <ToolbarButton
                             icon={item.icon}
-                            variant="ghost"
+                            // variant="ghost"
                             size="sm"
                             onClick={() =>
                               setToolVisibility(IEditorTool.ALIGNMENT)
@@ -471,7 +487,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                         anchorTrigger={
                           <ToolbarButton
                             icon={item.icon}
-                            variant="ghost"
+                            // variant="ghost"
                             size="sm"
                             onClick={item.command}
                           />
@@ -496,7 +512,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                         <ToolbarButton
                           ref={buttonRef}
                           icon="MessageSquarePlus"
-                          variant="ghost"
+                          // variant="ghost"
                           size="sm"
                           tooltip={
                             enableCollaboration
@@ -539,7 +555,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                         anchorTrigger={
                           <ToolbarButton
                             icon={item.icon}
-                            variant="ghost"
+                            // variant="ghost"
                             disabled={!isConnected || enableCollaboration}
                             size="sm"
                             onClick={item.command}

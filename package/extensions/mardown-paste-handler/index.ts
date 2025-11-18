@@ -1022,10 +1022,16 @@ async function recreateNodeWithImageContent(
       const imageBuffer = await fetchV1ImageFn?.(url);
       if (!imageBuffer) return node;
 
+      // Ensure privateKey is passed as a proper ArrayBuffer (BufferSource).
+      // toByteArray may return a Uint8Array backed by ArrayBufferLike (e.g. SharedArrayBuffer),
+      // so create a copy into a new Uint8Array which has a standard ArrayBuffer to satisfy TS/WebCrypto.
+      const pkBytes = toByteArray(privateKey);
+      const pkCopy = new Uint8Array(pkBytes); // copies into a new ArrayBuffer
+
       const decrypted = await decryptImage({
         encryptedKey,
         iv,
-        privateKey: toByteArray(privateKey),
+        privateKey: pkCopy.buffer,
         imageBuffer,
       });
       if (!decrypted) return node;

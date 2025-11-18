@@ -115,10 +115,11 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
   const handleTriggerClick = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
-
     // Focus the cell when clicking the trigger button
     if (typeof getPos === 'function') {
-      editor.commands.setTextSelection(getPos());
+      const pos = getPos();
+      if (pos === undefined) return;
+      editor.commands.setTextSelection(pos);
     }
   };
 
@@ -148,7 +149,7 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
     >
-      <NodeViewContent as="span" />
+      <NodeViewContent as="div" />
 
       {(isHovered || selected) && (
         <Tippy

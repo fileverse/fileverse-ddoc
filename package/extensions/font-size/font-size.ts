@@ -3,7 +3,7 @@ import { FONT_SIZES } from '../../components/editor-utils';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
-    fontSize: {
+    customFontSize: {
       setFontSize: (size: string) => ReturnType;
       unsetFontSize: () => ReturnType;
       increaseFontSize: () => ReturnType;

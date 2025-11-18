@@ -55,7 +55,7 @@ export default function CodeBlockNodeView({
   editor,
   deleteNode,
 }: NodeViewProps) {
-  const codeRef = useRef<HTMLElement>(null);
+  const codeRef = useRef<HTMLDivElement>(null);
   const [copyIcon, setCopyIcon] = useState<'Copy' | 'Check'>('Copy');
   // Read attributes with sensible defaults
   const language = node.attrs.language || 'plaintext';
@@ -341,7 +341,7 @@ export default function CodeBlockNodeView({
             )}
             <NodeViewContent
               ref={codeRef}
-              as="code"
+              as="div"
               className={cn(
                 'leading-5 font-mono pl-4 flex-1',
                 node.textContent.length === 0 && 'min-h-[20px]',
