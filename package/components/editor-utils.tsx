@@ -375,14 +375,10 @@ export const useEditorToolbar = ({
     editor.setOptions({
       editorProps: {
         handleKeyDown: (_, event) => {
-          // Strikethrough shortcut (Shift + Ctrl + S for Mac, Alt + Shift + 5 for Windows/Linux)
+          // Strikethrough shortcut (Ctrl + Shift + X for Windows/Linux | Cmd + Shift + X for Mac)
           if (
-            (event.shiftKey &&
-              event.ctrlKey &&
-              event.key.toLowerCase() === 's') ||
-            (event.altKey &&
-              event.shiftKey &&
-              (event.key === '5' || event.key === '%'))
+            (event.ctrlKey && event.shiftKey && event.code === 'KeyX') ||
+            (event.metaKey && event.shiftKey && event.code === 'KeyX')
           ) {
             event.preventDefault();
             editor.chain().focus().toggleStrike().run();
