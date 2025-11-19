@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@fileverse/crypto": "^0.0.11",
-    "@tiptap-pro/extension-table-of-contents": "^2.19.2",
+    "@tiptap-pro/extension-table-of-contents": "^2.21.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },
