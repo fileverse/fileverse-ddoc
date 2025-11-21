@@ -170,13 +170,6 @@ interface DocumentStyling {
 | `onSlidesShare`        | `() => void`                             | Callback for slides sharing  |
 | `onComment`            | `() => void`                             | General comment callback     |
 
-## Pro Features
-
-| Property        | Type                                           | Description                           |
-| --------------- | ---------------------------------------------- | ------------------------------------- |
-| `showTOC`       | `boolean`                                      | Controls table of contents visibility |
-| `setShowTOC`    | `React.Dispatch<SetStateAction<boolean>>`      | Function to toggle TOC                |
-| `proExtensions` | `{ TableOfContents: any, [key: string]: any }` | Pro feature extensions                |
 
 ## AI Writer Props
 
@@ -194,17 +187,3 @@ interface DocumentStyling {
 It will open up a vite server, that will have the Ddoc Editor.
 
 ⚠️ This repository is currently undergoing rapid development, with frequent updates and changes. We recommend not to use in production yet.
-
-## Pro Extensions Setup
-
-1. Configure your `.npmrc` with the appropriate registry and authentication token:
-
-2. Install the corresponding extension packages:
-
-3. Use the extension in your DdocEditor component:
-
-```tsx
-proExtensions={{
-  TableOfContents
-}}
-```
