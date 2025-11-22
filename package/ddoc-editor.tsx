@@ -113,7 +113,6 @@ const DdocEditor = forwardRef(
       renderThemeToggle,
       metadataProxyUrl,
       extensions,
-      proExtensions,
       onCopyHeadingLink,
       footerHeight,
       ipfsImageFetchFn,
@@ -247,7 +246,6 @@ const DdocEditor = forwardRef(
       isPresentationMode,
       metadataProxyUrl,
       extensions,
-      proExtensions,
       onCopyHeadingLink,
       isConnected,
       activeModel,
@@ -400,7 +398,6 @@ const DdocEditor = forwardRef(
         prevTags.filter((tag) => tag.name !== tagName),
       );
     };
-
     const handleClosePresentationMode = () => {
       setIsPresentationMode?.(false);
 

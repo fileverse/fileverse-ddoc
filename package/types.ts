@@ -98,7 +98,6 @@ export interface DdocProps extends CommentAccountProps {
   //Comments V2 Props
   showTOC?: boolean;
   setShowTOC?: React.Dispatch<SetStateAction<boolean>>;
-  proExtensions?: Record<string, Extension | any>;
   extensions?: Record<string, Extension | any>;
   selectedTags?: TagType[];
   setSelectedTags?: React.Dispatch<SetStateAction<TagType[]>>;

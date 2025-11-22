@@ -30,6 +30,8 @@ import { AiAutocomplete } from './extensions/ai-autocomplete/ai-autocomplete';
 import { AIWriter } from './extensions/ai-writer';
 import { DBlock } from './extensions/d-block/dblock';
 import { useSyncMachine } from './sync-local/useSyncMachine';
+// import { type TableOfContentDataItem } from '@tiptap/extension-table-of-contents';
+import { ToCItemType } from './components/toc/types';
 // import { SyncCursor } from './extensions/sync-cursor';
 
 const usercolors = [
@@ -65,7 +67,7 @@ export const useDdocEditor = ({
   onInvalidContentError,
   ignoreCorruptedData,
   isPresentationMode,
-  proExtensions,
+  // proExtensions,
   metadataProxyUrl,
   extensions: externalExtensions,
   onCopyHeadingLink,
@@ -128,7 +130,7 @@ export const useDdocEditor = ({
     focusCommentWithActiveId(activeCommentId);
   }, [activeCommentId]);
   // V2 - comment
-  const [tocItems, setTocItems] = useState<any[]>([]);
+  const [tocItems, setTocItems] = useState<ToCItemType[]>([]);
   const hasAvailableModels = activeModel !== undefined && isAIAgentEnabled;
   const [extensions, setExtensions] = useState<AnyExtension[]>([
     ...(defaultExtensions({
@@ -138,6 +140,26 @@ export const useDdocEditor = ({
       onCopyHeadingLink,
       ipfsImageFetchFn,
       fetchV1ImageFn,
+      onTocUpdate(data, isCreate) {
+        // Only update state when necessary
+        if (isCreate) {
+          // Initial TOC creation
+          setTocItems(data);
+        } else {
+          // Debounce subsequent updates using ref
+          if (tocUpdateTimeoutRef.current) {
+            clearTimeout(tocUpdateTimeoutRef.current);
+          }
+
+          // Use requestAnimationFrame for smoother updates
+          requestAnimationFrame(() => {
+            tocUpdateTimeoutRef.current = window.setTimeout(() => {
+              setTocItems(data);
+              tocUpdateTimeoutRef.current = null;
+            }, 100); // Reduced debounce time
+          });
+        }
+      },
     }) as AnyExtension[]),
     SlashCommand(
       (error: string) => onError?.(error),
@@ -333,48 +355,6 @@ export const useDdocEditor = ({
     },
     [memoizedExtensions, isPresentationMode],
   );
-
-  // Use the isCreate flag and ref for timeout
-  useEffect(() => {
-    if (
-      proExtensions?.TableOfContents &&
-      !extensions.some((ext) => ext.name === 'tableOfContents')
-    ) {
-      setExtensions([
-        ...extensions.filter((ext) => ext.name !== 'tableOfContents'),
-        proExtensions.TableOfContents.configure({
-          getIndex: proExtensions.getHierarchicalIndexes,
-          onUpdate: (content: any, isCreate: any) => {
-            // Only update state when necessary
-            if (isCreate) {
-              // Initial TOC creation
-              setTocItems(content);
-            } else {
-              // Debounce subsequent updates using ref
-              if (tocUpdateTimeoutRef.current) {
-                clearTimeout(tocUpdateTimeoutRef.current);
-              }
-
-              // Use requestAnimationFrame for smoother updates
-              requestAnimationFrame(() => {
-                tocUpdateTimeoutRef.current = window.setTimeout(() => {
-                  setTocItems(content);
-                  tocUpdateTimeoutRef.current = null;
-                }, 100); // Reduced debounce time
-              });
-            }
-          },
-        }),
-      ]);
-    }
-
-    // Clean up timeout on unmount
-    return () => {
-      if (tocUpdateTimeoutRef.current) {
-        clearTimeout(tocUpdateTimeoutRef.current);
-      }
-    };
-  }, [proExtensions, extensions]);
 
   useEffect(() => {
     if (activeModel) {
