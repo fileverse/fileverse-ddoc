@@ -356,6 +356,23 @@ export const useDdocEditor = ({
     [memoizedExtensions, isPresentationMode],
   );
 
+  // Fix for TableOfContents not updating in Tiptap v3
+  useEffect(() => {
+    if (!editor) return;
+
+    const handleUpdate = () => {
+      if (editor && !editor.isDestroyed) {
+        editor.commands.updateTableOfContents();
+      }
+    };
+
+    editor.on('update', handleUpdate);
+
+    return () => {
+      editor.off('update', handleUpdate);
+    };
+  }, [editor]);
+
   useEffect(() => {
     if (activeModel) {
       setExtensions([
