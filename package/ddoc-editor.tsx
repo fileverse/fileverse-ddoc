@@ -184,14 +184,16 @@ const DdocEditor = forwardRef(
      * Returns inline styles for width and minHeight
      *
      * Behavior:
-     * - Mobile: Responsive width (100%) for all zoom levels
+     * - Mobile: Responsive width (100%) and full viewport height
      * - Desktop fixed widths: Applied from CANVAS_DIMENSIONS (mimics real paper)
      * - Desktop zoom 1.4 (fit): Reduced percentages to account for 1.4x transform scaling
      */
     const getDimensionStyles = (): React.CSSProperties => {
-      // On mobile, don't apply fixed widths - let it be responsive
+      // On mobile, use full viewport height for immersive editing experience
       if (isNativeMobile) {
-        return {};
+        return {
+          minHeight: '100vh',
+        };
       }
 
       const orientation =
