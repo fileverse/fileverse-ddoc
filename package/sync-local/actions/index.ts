@@ -5,42 +5,16 @@ import {
   SyncMachinEvent,
 } from '../types';
 import * as awarenessProtocol from 'y-protocols/awareness';
-import * as decoding from 'lib0/decoding';
-import { fromUint8Array, toUint8Array } from 'js-base64';
+
+import {
+  fromUint8Array,
+  toUint8Array,
+  isValid as isValidBase64,
+} from 'js-base64';
 import { applyUpdate, encodeStateAsUpdate, mergeUpdates } from 'yjs';
 import { createAwarenessUpdateHandler } from '../utils/createAwarenessUpdateHandler';
 import { SocketClient } from '../socketClient';
 import { crypto as cryptoUtils } from '../crypto';
-export const awarenessUpdateHandler = (
-  context: SyncMachineContext,
-  event: SyncMachinEvent,
-) => {
-  if (context.awareness) {
-    const key = context.roomKey;
-    const encryptedPosition = event.data.event.data.position as string;
-    if (key) {
-      const decrypted = cryptoUtils.decryptData(
-        toUint8Array(key),
-        encryptedPosition,
-      );
-
-      const decryptedPosition = new Uint8Array(decrypted);
-      const decoder = decoding.createDecoder(decryptedPosition);
-      const len = decoding.readVarUint(decoder);
-
-      for (let i = 0; i < len; i++) {
-        decoding.readVarUint(decoder); // clientId
-        decoding.readVarUint(decoder); // clock
-      }
-      awarenessProtocol.applyAwarenessUpdate(
-        context.awareness,
-        decryptedPosition,
-        null,
-      );
-    }
-  }
-  return {};
-};
 
 export const initAwarenessHandler = (context: SyncMachineContext) => {
   const awareness = new awarenessProtocol.Awareness(context.ydoc);
@@ -246,9 +220,12 @@ export const addRemoteContentToQueueHandler = (
 export const applyContentsFromRemote = (context: SyncMachineContext) => {
   if (context.contentTobeAppliedQueue.length <= 0) return {};
 
-  const contents = context.contentTobeAppliedQueue.map((content) => {
-    return toUint8Array(content);
-  });
+  const contents = context.contentTobeAppliedQueue
+    .map((content) => {
+      if (!isValidBase64(content)) return undefined;
+      return toUint8Array(content);
+    })
+    .filter((content) => content !== undefined);
   const mergedContents = mergeUpdates(contents);
 
   applyUpdate(context.ydoc, mergedContents);

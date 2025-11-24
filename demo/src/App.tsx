@@ -14,10 +14,6 @@ import {
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 import { IComment } from '../../package/extensions/comment';
-import {
-  TableOfContents,
-  getHierarchicalIndexes,
-} from '@tiptap/extension-table-of-contents';
 import { fromUint8Array } from 'js-base64';
 import { crypto as cryptoUtils } from './crypto';
 import { collabStore } from './storage/collab-store';
@@ -482,10 +478,6 @@ function App() {
         onDeleteComment={handleDeleteComment}
         showTOC={showTOC}
         setShowTOC={setShowTOC}
-        proExtensions={{
-          TableOfContents: TableOfContents,
-          getHierarchicalIndexes: getHierarchicalIndexes,
-        }}
         isConnected={isConnected}
         connectViaWallet={async () => {}}
         isLoading={false}

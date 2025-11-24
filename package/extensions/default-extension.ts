@@ -4,6 +4,12 @@
 import StarterKit from '@tiptap/starter-kit';
 import FontFamily from '@tiptap/extension-font-family';
 import TextAlign from '@tiptap/extension-text-align';
+import Link from '@tiptap/extension-link';
+import Placeholder from '@tiptap/extension-placeholder';
+import {
+  getHierarchicalIndexes,
+  TableOfContents,
+} from '@tiptap/extension-table-of-contents';
 import Highlight from '@tiptap/extension-highlight';
 import { TextStyle } from '@tiptap/extension-text-style';
 import HorizontalRule from './horizontal-rule';
@@ -53,6 +59,7 @@ import { Emoji } from './emoji/emoji';
 
 const lowlight = createLowlight(common);
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
+import { type ToCItemType } from '../components/toc/types';
 
 export const defaultExtensions = ({
   ipfsImageFetchFn,
@@ -61,6 +68,7 @@ export const defaultExtensions = ({
   onCopyHeadingLink,
   ipfsImageUploadFn,
   fetchV1ImageFn,
+  onTocUpdate,
 }: {
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
@@ -70,6 +78,7 @@ export const defaultExtensions = ({
   metadataProxyUrl?: string;
   onCopyHeadingLink?: (link: string) => void;
   fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
+  onTocUpdate?: (data: ToCItemType[], isCreate?: boolean) => void;
 }) => [
   FontFamily,
   StarterKit.configure({
@@ -139,6 +148,21 @@ export const defaultExtensions = ({
     bulletList: false,
     listItem: false,
     codeBlock: false,
+  }),
+  TableOfContents.configure({
+    getIndex: getHierarchicalIndexes,
+    onUpdate: (data, isCreate) => {
+      const newData = data.map((item) => {
+        return {
+          id: item.id,
+          level: item.level,
+          textContent: item.textContent,
+          itemIndex: item.itemIndex,
+          isActive: item.isActive,
+        };
+      });
+      onTocUpdate?.(newData, isCreate);
+    },
   }),
   CustomCodeBlockLowlight.configure({
     lowlight,
