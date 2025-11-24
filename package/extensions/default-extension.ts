@@ -4,8 +4,6 @@
 import StarterKit from '@tiptap/starter-kit';
 import FontFamily from '@tiptap/extension-font-family';
 import TextAlign from '@tiptap/extension-text-align';
-import Link from '@tiptap/extension-link';
-import Placeholder from '@tiptap/extension-placeholder';
 import {
   getHierarchicalIndexes,
   TableOfContents,
