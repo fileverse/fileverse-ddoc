@@ -1,5 +1,6 @@
 import React from 'react';
 import { DocumentStyling } from '../../package/types';
+import cn from 'classnames';
 
 interface DocumentStylingPanelProps {
   isOpen: boolean;
@@ -203,7 +204,7 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
           <label className="text-sm font-medium mb-2 block text-slate-700 dark:text-slate-200">
             Font Family
           </label>
-          
+
           <select
             value={currentStyling.fontFamily || 'Inter, sans-serif'}
             onChange={(e) => handleStylingUpdate({ fontFamily: e.target.value })}
@@ -215,6 +216,49 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
               </option>
             ))}
           </select>
+        </div>
+
+        {/* Canvas Orientation */}
+        <div className="space-y-3">
+          <label className="text-sm font-medium mb-2 block text-slate-700 dark:text-slate-200">
+            Canvas Orientation
+          </label>
+
+          <div className="grid grid-cols-2 gap-3">
+            {/* Portrait Option */}
+            <button
+              onClick={() => handleStylingUpdate({ orientation: 'portrait' })}
+              className={cn(
+                'flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all duration-200',
+                currentStyling.orientation === 'portrait' || !currentStyling.orientation
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-sm'
+                  : 'border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+              )}
+              title="Portrait orientation"
+            >
+              <div className="w-8 h-11 border-2 border-slate-400 dark:border-slate-500 rounded" />
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                Portrait
+              </span>
+            </button>
+
+            {/* Landscape Option */}
+            <button
+              onClick={() => handleStylingUpdate({ orientation: 'landscape' })}
+              className={cn(
+                'flex flex-col items-center gap-2 p-4 rounded-lg border-2 transition-all duration-200',
+                currentStyling.orientation === 'landscape'
+                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 shadow-sm'
+                  : 'border-slate-200 dark:border-slate-600 hover:border-slate-300 dark:hover:border-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700/50'
+              )}
+              title="Landscape orientation"
+            >
+              <div className="w-11 h-8 border-2 border-slate-400 dark:border-slate-500 rounded" />
+              <span className="text-xs font-medium text-slate-700 dark:text-slate-200">
+                Landscape
+              </span>
+            </button>
+          </div>
         </div>
 
         {/* Reset Button */}

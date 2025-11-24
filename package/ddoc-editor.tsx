@@ -39,6 +39,10 @@ import { EditorProvider } from './context/editor-context';
 import { fadeInTransition, slideUpTransition } from './components/motion-div';
 import { PreviewContentLoader } from './components/preview-content-loader';
 import { Reminder } from './extensions/reminder-block/types';
+import {
+  CANVAS_DIMENSIONS,
+  ORIENTATION_CONSTRAINTS,
+} from './constants/canvas-dimensions';
 
 const DdocEditor = forwardRef(
   (
@@ -174,6 +178,47 @@ const DdocEditor = forwardRef(
     // Helper functions that return styles only when they should override CSS classes
     const getCanvasStyle = () => mergedStyles.canvas;
     const getBackgroundStyle = () => mergedStyles.background;
+
+    /**
+     * Get dimension styles based on current orientation and zoom level
+     * Returns inline styles for width and minHeight
+     *
+     * Behavior:
+     * - Fixed widths: Applied directly from CANVAS_DIMENSIONS (mimics real paper)
+     * - Zoom 1.4 (fit): Reduced percentages to account for 1.4x transform scaling
+     */
+    const getDimensionStyles = (): React.CSSProperties => {
+      const orientation =
+        documentStyling?.orientation === 'landscape' ? 'landscape' : 'portrait';
+      const dimensions =
+        CANVAS_DIMENSIONS[orientation][
+          zoomLevel as keyof typeof CANVAS_DIMENSIONS.portrait
+        ];
+
+      if (!dimensions) return {};
+
+      const styles: React.CSSProperties = {};
+      const constraints = ORIENTATION_CONSTRAINTS[orientation];
+
+      // Apply width based on dimension type
+      if (typeof dimensions.width === 'number') {
+        // Fixed pixel widths - canvas behaves like real paper with consistent size
+        styles.width = `${dimensions.width}px`;
+        styles.maxWidth = `${dimensions.width}px`;
+      } else {
+        // Percentage widths (zoom 1.4 only) - account for transform: scaleX(1.4) scaling
+        // Use reduced percentages to prevent overflow after scaling
+        styles.width = constraints.zoomFitWidth;
+        styles.maxWidth = `${constraints.zoomFitMaxWidth}px`;
+      }
+
+      // Apply minHeight constraint
+      if (dimensions.minHeight) {
+        styles.minHeight = dimensions.minHeight;
+      }
+
+      return styles;
+    };
 
     const btn_ref = useRef(null);
     const isWidth1500px = useMediaQuery('(min-width: 1500px)');
@@ -583,23 +628,6 @@ const DdocEditor = forwardRef(
                 {
                   '!ml-0': zoomLevel === '2' && isWidth1500px && !isWidth3000px,
                 },
-                {
-                  'w-[700px] md:max-w-[700px] min-h-[150%]':
-                    zoomLevel === '0.5',
-                },
-                {
-                  'w-[800px] md:max-w-[800px] min-h-[200%]':
-                    zoomLevel === '0.75',
-                },
-                {
-                  'w-[850px] md:max-w-[850px] min-h-[100%]': zoomLevel === '1',
-                },
-                { 'w-[70%] md:max-w-[70%] min-h-[200%]': zoomLevel === '1.4' },
-                {
-                  'w-[1062.5px] md:max-w-[1062.5px] min-h-[100%]':
-                    zoomLevel === '1.5',
-                },
-                { 'w-[1548px] md:max-w-[1548px]': zoomLevel === '2' },
               )}
               style={{
                 transformOrigin:
@@ -608,6 +636,7 @@ const DdocEditor = forwardRef(
                     : 'top center',
                 transform: `scaleX(${zoomLevel})`,
                 ...(getCanvasStyle() || {}),
+                ...getDimensionStyles(), // Apply dynamic width/height based on orientation
               }}
             >
               <div
