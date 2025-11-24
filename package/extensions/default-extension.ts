@@ -29,7 +29,7 @@ import MarkdownPasteHandler from './mardown-paste-handler';
 import HtmlExportExtension from './html-export';
 import TextExportExtension from './text-export';
 import { DocxFileHandler } from './docx/docx-import';
-import Mathematics from '@tiptap/extension-mathematics';
+import { MathExtension } from '@aarkue/tiptap-math-extension';
 import { Footnote } from './footnote/footnote';
 import Superscript from '@tiptap/extension-superscript';
 import Subscript from '@tiptap/extension-subscript';
@@ -249,7 +249,16 @@ export const defaultExtensions = ({
     // transformCopiedText: true, // Copied text is transformed to markdown
   }),
   CharacterCount,
-  Mathematics,
+  MathExtension.configure({
+    addInlineMath: true,
+    evaluation: false,
+    delimiters: 'dollar',
+    katexOptions: {
+      throwOnError: false,
+      strict: false,
+    },
+    renderTextMode: 'raw-latex',
+  }),
   Footnote,
   Superscript.configure({
     HTMLAttributes: {
