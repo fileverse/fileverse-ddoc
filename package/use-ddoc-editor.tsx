@@ -22,7 +22,7 @@ import { zoomService } from './zoom-service';
 import { sanitizeContent } from './utils/sanitize-content';
 import { CommentExtension as Comment } from './extensions/comment';
 import { handleContentPrint, handlePrint } from './utils/handle-print';
-import { Table } from './extensions/supercharged-table/extension-table';
+// import { Table } from './extensions/supercharged-table/extension-table';
 import { isBlackOrWhiteShade } from './utils/color-utils';
 import { useResponsive } from './utils/responsive';
 import { headingToSlug } from './utils/heading-to-slug';
@@ -184,14 +184,14 @@ export const useDdocEditor = ({
     ...(externalExtensions ? Object.values(externalExtensions) : []),
   ]);
 
-  useEffect(() => {
-    setExtensions((prev) => [
-      ...prev.filter((ext) => ext.name !== 'table'),
-      Table.configure({
-        resizable: !isPreviewMode,
-      }),
-    ]);
-  }, [isPreviewMode]);
+  // useEffect(() => {
+  //   setExtensions((prev) => [
+  //     ...prev.filter((ext) => ext.name !== 'table'),
+  //     Table.configure({
+  //       resizable: !isPreviewMode,
+  //     }),
+  //   ]);
+  // }, [isPreviewMode]);
 
   useEffect(() => {
     if (isConnected) {
