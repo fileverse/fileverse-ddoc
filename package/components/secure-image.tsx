@@ -46,6 +46,7 @@ export const SecureImage = forwardRef<HTMLImageElement, Props>(
 
             const decryptedArrayBuffer = await decryptImage({
               encryptedKey,
+              // @ts-expect-error Bhavesh to fix
               privateKey: toByteArray(privateKey),
               iv,
               imageBuffer,
