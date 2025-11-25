@@ -156,12 +156,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   ];
 
   const renderContent = (item: { name: string; initialComment?: string }) => {
+    if (!editor) return null;
     switch (item.name) {
       case 'Alignment':
         return (
           <EditorAlignment
             setToolVisibility={setToolVisibility}
-            editor={editor as Editor}
+            editor={editor}
             elementRef={toolRef}
           />
         );
@@ -169,7 +170,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         return (
           <LinkPopup
             setToolVisibility={setToolVisibility}
-            editor={editor as Editor}
+            editor={editor}
             elementRef={toolRef}
             bubbleMenu={true}
             onError={onError}
@@ -187,7 +188,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           />
         );
       case 'Scripts':
-        return <ScriptsPopup editor={editor as Editor} elementRef={toolRef} />;
+        return <ScriptsPopup editor={editor} elementRef={toolRef} />;
       case 'Reminder':
         return (
           <ReminderMenu
@@ -245,7 +246,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
 
   return (
     <BubbleMenu
-      editor={editor as Editor}
+      editor={editor}
       appendTo={() => document.getElementById('editor-canvas')!}
       options={{
         strategy: 'fixed',
@@ -285,7 +286,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               anchorTrigger={
                 <ToolbarButton
                   icon={'AlarmClock'}
-                  // variant="ghost"
+                  variant="ghost"
                   size="sm"
                   onClick={() => {
                     const selectedText =
@@ -316,7 +317,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
               anchorTrigger={
                 <ToolbarButton
                   icon="MessageSquarePlus"
-                  // variant="ghost"
+                  variant="ghost"
                   size="sm"
                   tooltip={isCommentResolved ? 'Comment resolved' : ''}
                   disabled={
@@ -465,7 +466,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                         anchorTrigger={
                           <ToolbarButton
                             icon={item.icon}
-                            // variant="ghost"
+                            variant="ghost"
                             size="sm"
                             onClick={() =>
                               setToolVisibility(IEditorTool.ALIGNMENT)
@@ -487,7 +488,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                         anchorTrigger={
                           <ToolbarButton
                             icon={item.icon}
-                            // variant="ghost"
+                            variant="ghost"
                             size="sm"
                             onClick={item.command}
                           />
@@ -512,7 +513,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                         <ToolbarButton
                           ref={buttonRef}
                           icon="MessageSquarePlus"
-                          // variant="ghost"
+                          variant="ghost"
                           size="sm"
                           tooltip={
                             enableCollaboration
@@ -555,7 +556,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                         anchorTrigger={
                           <ToolbarButton
                             icon={item.icon}
-                            // variant="ghost"
+                            variant="ghost"
                             disabled={!isConnected || enableCollaboration}
                             size="sm"
                             onClick={item.command}

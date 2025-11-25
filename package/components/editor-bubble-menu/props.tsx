@@ -1,22 +1,4 @@
 import { Editor } from '@tiptap/core';
-import { EditorBubbleMenuProps } from './types';
-
-export const bubbleMenuProps = (props: EditorBubbleMenuProps) => {
-  return {
-    ...props,
-    // appendTo: () => document.getElementById('editor-canvas')!,
-    // zIndex: 50,
-    // strategy: 'fixed',
-    // options: {
-    //   flip: {
-    //     fallbackPlacements: ['top'],
-    //   },
-    //   shift: {
-    //     crossAxis: true,
-    //   },
-    // },
-  };
-};
 
 export const shouldShow = ({ editor }: { editor: Editor }) => {
   // Check if selection is within editor canvas and not in comment drawer

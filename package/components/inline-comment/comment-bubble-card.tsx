@@ -5,7 +5,6 @@ import { BubbleMenu } from '@tiptap/react/menus';
 import { Editor } from '@tiptap/core';
 import { useComments } from './context/comment-context';
 import { CommentDropdown } from './comment-dropdown';
-import { useResponsive } from '../../utils/responsive';
 import { useRef, useEffect, useMemo } from 'react';
 
 export const CommentBubbleCard = ({
@@ -22,7 +21,6 @@ export const CommentBubbleCard = ({
   disableInlineComment?: boolean;
 }) => {
   const { comments, username } = useComments();
-  const { isNativeMobile } = useResponsive();
   const disableInlineCommentRef = useRef(disableInlineComment || false);
 
   useEffect(() => {
@@ -56,40 +54,8 @@ export const CommentBubbleCard = ({
         return shouldShow;
       },
       appendTo: () => document.getElementById('editor-canvas'),
-      // tippyOptions: {
-      //   moveTransition: isNativeMobile ? 'transform 0.2s ease-in' : 'none',
-      //   duration: 200,
-      //   animation: 'shift-toward-subtle',
-      //   zIndex: 40,
-      //   offset: [0, 20],
-      //   placement: 'bottom',
-      //   followCursor: 'vertical',
-      //   interactive: true,
-      //   inertia: true,
-      //   trigger: 'manual',
-      //   hideOnClick: true,
-      //   inlinePositioning: true,
-      //   popperOptions: {
-      //     strategy: 'fixed',
-      //     modifiers: [
-      //       {
-      //         name: 'flip',
-      //         options: {
-      //           fallbackPlacements: ['top'],
-      //         },
-      //       },
-      //       {
-      //         name: 'preventOverflow',
-      //         options: {
-      //           altAxis: true,
-      //           tether: false,
-      //         },
-      //       },
-      //     ],
-      //   },
-      // },
     }),
-    [isNativeMobile, isCollabDocumentPublished],
+    [isCollabDocumentPublished],
   );
 
   return (

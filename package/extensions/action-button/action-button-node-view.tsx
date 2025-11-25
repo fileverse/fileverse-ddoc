@@ -128,7 +128,7 @@ export const ActionButtonNodeView = ({
       return;
     }
 
-    const pos = getPos() ?? 0;
+    const pos = getPos();
     if (pos !== undefined) {
       const to = pos + node.nodeSize;
       filteredTweetId &&

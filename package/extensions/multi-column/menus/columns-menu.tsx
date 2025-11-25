@@ -47,14 +47,6 @@ export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
           crossAxis: 0,
         },
         flip: true,
-        // popperOptions: {
-        //   modifiers: [{ name: 'flip', enabled: false }],
-        // },
-        // moveTransition: 'transform 0.15s ease-out',
-        // duration: 200,
-        // animation: 'shift-toward-subtle',
-        // plugins: [sticky],
-        // sticky: 'popper',
       }}
       appendTo={() => appendTo?.current}
       getReferencedVirtualElement={() => getReferenceClientRect()}

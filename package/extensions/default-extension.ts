@@ -249,7 +249,7 @@ export const defaultExtensions = ({
   CharacterCount,
   MathExtension.configure({
     addInlineMath: true,
-    evaluation: false,
+    evaluation: true,
     delimiters: 'dollar',
     katexOptions: {
       throwOnError: false,
