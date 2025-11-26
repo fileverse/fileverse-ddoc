@@ -232,6 +232,7 @@ const DdocEditor = forwardRef(
     const isWidth1500px = useMediaQuery('(min-width: 1500px)');
     const isWidth3000px = useMediaQuery('(min-width: 3000px)');
     const isWidth1600px = useMediaQuery('(min-width: 1600px)');
+    const isWidth1360px = useMediaQuery('(min-width: 1360px)');
     const { isNativeMobile, isIOS } = useResponsive();
 
     const [isHiddenTagsVisible, setIsHiddenTagsVisible] = useState(false);
@@ -635,7 +636,8 @@ const DdocEditor = forwardRef(
                         !isNativeMobile &&
                         zoomLevel === '1' &&
                         documentStyling?.orientation === 'landscape' &&
-                        !isWidth1600px // Exclude centering only when shifting is needed (< 1600px)
+                        isWidth1360px && // Shift applies from 1360px
+                        !isWidth1600px // Up to 1600px
                       )) ||
                     zoomLevel === '0.5' ||
                     zoomLevel === '0.75' ||
@@ -645,9 +647,10 @@ const DdocEditor = forwardRef(
                 {
                   '!ml-0': zoomLevel === '2' && isWidth1500px && !isWidth3000px,
                 },
-                // TOC shift for landscape mode on 1440-1599px - push canvas to the right extreme
+                // TOC shift for landscape mode on 1360-1599px - push canvas to the right extreme
+                // Allows TOC to remain visible and usable down to ~1360px screens
                 {
-                  'min-[1440px]:!ml-auto min-[1440px]:!mr-0':
+                  'min-[1360px]:!ml-auto min-[1360px]:!mr-0':
                     showTOC &&
                     !isNativeMobile &&
                     zoomLevel === '1' &&
