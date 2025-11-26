@@ -637,7 +637,7 @@ const DdocEditor = forwardRef(
                         zoomLevel === '1' &&
                         documentStyling?.orientation === 'landscape' &&
                         isWidth1360px && // Shift applies from 1360px
-                        !isWidth1600px // Up to 1600px
+                        !isWidth1600px // Up to 1600px, then canvas stays centered
                       )) ||
                     zoomLevel === '0.5' ||
                     zoomLevel === '0.75' ||
@@ -647,10 +647,10 @@ const DdocEditor = forwardRef(
                 {
                   '!ml-0': zoomLevel === '2' && isWidth1500px && !isWidth3000px,
                 },
-                // TOC shift for landscape mode on 1360-1599px - push canvas to the right extreme
-                // Allows TOC to remain visible and usable down to ~1360px screens
+                // TOC shift for landscape mode on 1360-1599px - shift canvas right by TOC width + padding
+                // Provides just enough clearance (200px) without excessive gap
                 {
-                  'min-[1360px]:!ml-auto min-[1360px]:!mr-0':
+                  'min-[1360px]:!ml-[200px] min-[1360px]:!mr-auto':
                     showTOC &&
                     !isNativeMobile &&
                     zoomLevel === '1' &&

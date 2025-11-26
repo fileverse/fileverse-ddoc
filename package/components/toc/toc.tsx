@@ -39,11 +39,11 @@ export const ToCItem = memo(
       //   - 1600px+: 320px TOC (safe: (1600-850)/2 = 375px > 360px)
       //
       // Landscape (1190px canvas):
-      //   - 1280-1599px: 160px TOC (safe with canvas shift)
-      //   - 1600px+: 240px TOC (safe: (1600-1190)/2 = 205px > 200px)
+      //   - 1280-1749px: 160px TOC (safe with canvas shift on 1360-1599px)
+      //   - 1750px+: 240px TOC (safe centered: (1750-1190)/2 = 280px > 240px)
       const widthClasses =
         orientation === 'landscape'
-          ? 'xl:!max-w-[160px] min-[1600px]:!max-w-[240px]'
+          ? 'xl:!max-w-[160px] min-[1750px]:!max-w-[240px]'
           : 'xl:!max-w-[160px] min-[1410px]:!max-w-[240px] min-[1600px]:!max-w-[320px]';
 
       return cn(
