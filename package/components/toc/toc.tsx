@@ -29,16 +29,22 @@ export const ToCItem = memo(
 
     // Memoize the className calculation with orientation-based widths
     const className = useMemo(() => {
-      // Portrait mode: wider TOC - more space since canvas is narrow (850px)
-      //   - 1280-1599px: 240px
-      //   - 1600px+: 320px (max)
-      // Landscape mode: responsive TOC based on available space
-      //   - 1280-1599px: 160px (tight fit)
-      //   - 1600px+: 240px (more space available)
+      // Calculate breakpoints to prevent overlap:
+      // Canvas Left Margin = (Screen Width - Canvas Width) / 2
+      // No overlap when: (Screen Width - Canvas Width) / 2 > TOC Width + 40px padding
+      //
+      // Portrait (850px canvas):
+      //   - 1280-1409px: 160px TOC (safe: (1280-850)/2 = 215px > 200px)
+      //   - 1410-1599px: 240px TOC (safe: (1410-850)/2 = 280px > 280px)
+      //   - 1600px+: 320px TOC (safe: (1600-850)/2 = 375px > 360px)
+      //
+      // Landscape (1190px canvas):
+      //   - 1280-1599px: 160px TOC (safe with canvas shift)
+      //   - 1600px+: 240px TOC (safe: (1600-1190)/2 = 205px > 200px)
       const widthClasses =
         orientation === 'landscape'
           ? 'xl:!max-w-[160px] min-[1600px]:!max-w-[240px]'
-          : 'xl:!max-w-[240px] min-[1600px]:!max-w-[320px]';
+          : 'xl:!max-w-[160px] min-[1410px]:!max-w-[240px] min-[1600px]:!max-w-[320px]';
 
       return cn(
         `flex items-center transition-all text-body-sm-bold max-[1280px]:h-[32px] max-[1280px]:px-2 max-[1280px]:py-1 h-5 max-[1280px]:max-w-full ${widthClasses} xl:border-l-2`,
