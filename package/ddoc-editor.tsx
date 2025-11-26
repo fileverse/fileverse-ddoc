@@ -598,6 +598,7 @@ const DdocEditor = forwardRef(
                 showTOC={showTOC}
                 setShowTOC={setShowTOC}
                 isPreviewMode={isPreviewMode || !isNavbarVisible}
+                orientation={documentStyling?.orientation}
               />
             )}
 
