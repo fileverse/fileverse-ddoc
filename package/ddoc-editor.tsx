@@ -231,6 +231,7 @@ const DdocEditor = forwardRef(
     const btn_ref = useRef(null);
     const isWidth1500px = useMediaQuery('(min-width: 1500px)');
     const isWidth3000px = useMediaQuery('(min-width: 3000px)');
+    const isWidth1600px = useMediaQuery('(min-width: 1600px)');
     const { isNativeMobile, isIOS } = useResponsive();
 
     const [isHiddenTagsVisible, setIsHiddenTagsVisible] = useState(false);
@@ -603,7 +604,7 @@ const DdocEditor = forwardRef(
             <div
               id="editor-wrapper"
               className={cn(
-                'w-full mx-auto rounded',
+                'w-full mx-auto rounded transition-all duration-300 ease-in-out',
                 !documentStyling?.canvasBackground && 'color-bg-default',
                 !isPreviewMode &&
                   (isNavbarVisible
@@ -627,7 +628,14 @@ const DdocEditor = forwardRef(
                 },
                 {
                   '!mx-auto':
-                    !isCommentSectionOpen ||
+                    (!isCommentSectionOpen &&
+                      !(
+                        showTOC &&
+                        !isNativeMobile &&
+                        zoomLevel === '1' &&
+                        documentStyling?.orientation === 'landscape' &&
+                        !isWidth1600px // Exclude centering only when shifting is needed (< 1600px)
+                      )) ||
                     zoomLevel === '0.5' ||
                     zoomLevel === '0.75' ||
                     zoomLevel === '1.4' ||
@@ -635,6 +643,15 @@ const DdocEditor = forwardRef(
                 },
                 {
                   '!ml-0': zoomLevel === '2' && isWidth1500px && !isWidth3000px,
+                },
+                // TOC shift for landscape mode on 1440-1599px - push canvas to the right extreme
+                {
+                  'min-[1440px]:!ml-auto min-[1440px]:!mr-0':
+                    showTOC &&
+                    !isNativeMobile &&
+                    zoomLevel === '1' &&
+                    documentStyling?.orientation === 'landscape' &&
+                    !isWidth1600px, // Only shift on screens < 1600px
                 },
               )}
               style={{
