@@ -247,15 +247,11 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   return (
     <BubbleMenu
       editor={editor}
-      appendTo={() => document.getElementById('editor-canvas')!}
+      // appendTo={() => document.getElementById('editor-canvas')!}
       options={{
-        strategy: 'fixed',
-        flip: {
-          fallbackPlacements: ['top'],
-        },
-        shift: {
-          crossAxis: true,
-        },
+        placement: 'top',
+        flip: true,
+        shift: true,
       }}
       shouldShow={shouldShow}
       className={cn(
