@@ -488,6 +488,7 @@ function App() {
         collabConfig={collabConfig}
         onCollaboratorChange={onCollaboratorChange}
         documentStyling={documentStyling}
+        disableOnlineFeatures={false}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

@@ -15,6 +15,7 @@ export const getSuggestionItems = ({
   ipfsImageUploadFn,
   editor,
   enableCollaboration,
+  disableOnlineFeatures,
 }: {
   query: string;
   onError?: (errorString: string) => void;
@@ -22,6 +23,7 @@ export const getSuggestionItems = ({
   isConnected?: boolean;
   editor?: any;
   enableCollaboration?: boolean;
+  disableOnlineFeatures?: boolean;
 }) => {
   const modelContext = (window as any).__MODEL_CONTEXT__;
   const isAIAgentEnabled =
@@ -39,7 +41,7 @@ export const getSuggestionItems = ({
     });
   }
   const canCreateAIWriter = !hasActiveAIWriter && isAIAgentEnabled;
-
+  console.log('disableOnlineFeatures', disableOnlineFeatures);
   const items = [
     {
       title: 'AI Writer',
@@ -296,9 +298,10 @@ export const getSuggestionItems = ({
               return;
             }
             const size = file.size;
-            const imgConfig = ipfsImageUploadFn
-              ? IMG_UPLOAD_SETTINGS.Extended
-              : IMG_UPLOAD_SETTINGS.Base;
+            const imgConfig =
+              ipfsImageUploadFn && !disableOnlineFeatures
+                ? IMG_UPLOAD_SETTINGS.Extended
+                : IMG_UPLOAD_SETTINGS.Base;
             if (size > imgConfig.maxSize) {
               if (onError && typeof onError === 'function') {
                 onError(imgConfig.errorMsg);
@@ -306,7 +309,13 @@ export const getSuggestionItems = ({
               return;
             }
             const pos = editor.view.state.selection.from;
-            startImageUpload(file, editor.view, pos, ipfsImageUploadFn);
+            startImageUpload(
+              file,
+              editor.view,
+              pos,
+              ipfsImageUploadFn,
+              disableOnlineFeatures,
+            );
           }
         };
         input.click();
@@ -318,6 +327,7 @@ export const getSuggestionItems = ({
       searchTerms: ['iframe', 'embed', 'video', 'youtube'],
       icon: <LucideIcon name="Youtube" size={'md'} />,
       image: '',
+      isDisabled: disableOnlineFeatures,
       command: ({ editor, range }: CommandProps) => {
         editor
           .chain()
@@ -333,6 +343,7 @@ export const getSuggestionItems = ({
       searchTerms: ['embed', 'twitter', 'tweet'],
       icon: <LucideIcon name="XSocial" size={'md'} />,
       image: '',
+      isDisabled: disableOnlineFeatures,
       command: ({ editor, range }: CommandProps) => {
         editor
           .chain()

@@ -350,6 +350,7 @@ const DdocEditor = forwardRef(
           id: string;
           status: Reminder['status'];
         }) => {
+          if (rest.disableOnlineFeatures) return;
           if (!editor) throw new Error('cannot update node without editor');
 
           editor.commands.command(({ tr, state, dispatch }) => {
@@ -874,6 +875,7 @@ const DdocEditor = forwardRef(
                 isPresentationMode={isPresentationMode as boolean}
                 activeCommentId={activeCommentId}
                 isPreviewMode={isPreviewMode}
+                disableOnlineFeatures={rest.disableOnlineFeatures}
               />
             )}
 

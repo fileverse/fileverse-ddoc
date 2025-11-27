@@ -405,7 +405,8 @@ export const CommentDropdown = ({
           isResolved={activeComment?.resolved}
           isDropdown
           isDisabled={
-            activeComment && !Object.hasOwn(activeComment, 'commentIndex')
+            (activeComment && !Object.hasOwn(activeComment, 'commentIndex')) ||
+            disableOnlineFeatures
           }
           version={activeComment?.version}
           emptyComment={emptyComment}

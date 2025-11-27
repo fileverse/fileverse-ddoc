@@ -160,12 +160,14 @@ export const useDdocEditor = ({
           });
         }
       },
+      disableOnlineFeatures: rest.disableOnlineFeatures,
     }) as AnyExtension[]),
     SlashCommand(
       (error: string) => onError?.(error),
       ipfsImageUploadFn,
       isConnected,
       enableCollaboration,
+      rest.disableOnlineFeatures,
     ),
     customTextInputRules,
     PageBreak,
@@ -202,6 +204,7 @@ export const useDdocEditor = ({
           ipfsImageUploadFn,
           isConnected,
           enableCollaboration,
+          rest.disableOnlineFeatures,
         ),
       ]);
     }
@@ -381,6 +384,7 @@ export const useDdocEditor = ({
           ipfsImageUploadFn,
           isConnected,
           enableCollaboration,
+          rest.disableOnlineFeatures,
         ),
       ]);
     }
@@ -670,38 +674,6 @@ export const useDdocEditor = ({
       setIsContentLoading(false);
     }
   }, [initialContent, editor, ydoc]);
-
-  // const startCollaboration = useCallback(
-  //   async (collaborationId: string, roomKey: string) => {
-  //     if (!collabConfig?.wsUrl)
-  //       throw new Error('Cannot start collaboration without a wss url');
-  //     let _username = collabConfig?.username;
-  //     let _isEns = false;
-
-  //     if (walletAddress && ensResolutionUrl) {
-  //       const { name, isEns } = await getAddressName(
-  //         walletAddress,
-  //         ensResolutionUrl,
-  //       );
-
-  //       _username = name;
-  //       _isEns = isEns;
-  //     }
-  //     onConnect({
-  //       username: _username,
-  //       roomKey,
-  //       roomId: collaborationId,
-  //       isOwner: collabConfig?.isOwner,
-  //       ownerEdSecret: collabConfig?.ownerEdSecret,
-  //       contractAddress: collabConfig?.contractAddress,
-  //       ownerAddress: collabConfig?.ownerAddress,
-  //       isEns: _isEns,
-  //       wsUrl: collabConfig.wsUrl,
-  //       roomInfo: collabConfig.roomInfo,
-  //     });
-  //   },
-  //   [collabConfig?.collaborationId],
-  // );
 
   useEffect(() => {
     if (

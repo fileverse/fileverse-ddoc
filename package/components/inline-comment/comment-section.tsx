@@ -23,6 +23,7 @@ export const CommentSection = ({
   activeCommentId,
   isNavbarVisible,
   isPresentationMode,
+  disableOnlineFeatures,
 }: CommentSectionProps) => {
   const {
     comments,
@@ -111,6 +112,7 @@ export const CommentSection = ({
         isNavbarVisible={isNavbarVisible as boolean}
         connectViaUsername={connectViaUsername}
         isLoading={isLoading}
+        disableOnlineFeatures={disableOnlineFeatures}
       />
     );
   }
@@ -160,6 +162,7 @@ export const CommentSection = ({
                 emptyComment={
                   !comment.content && !comment.username && !comment.createdAt
                 }
+                disableOnlineFeatures={disableOnlineFeatures}
               />
 
               <div
@@ -220,7 +223,7 @@ export const CommentSection = ({
                         </Button>
                         <Button
                           className="px-4 py-2 w-20 min-w-20 h-9"
-                          disabled={!reply.trim()}
+                          disabled={!reply.trim() || disableOnlineFeatures}
                           onClick={handleReplySubmit}
                         >
                           Reply
@@ -269,7 +272,7 @@ export const CommentSection = ({
           <Button
             onClick={handleCommentSubmit}
             className="px-4 py-2 w-20 min-w-20 h-9"
-            disabled={!comment.trim() || !username}
+            disabled={!comment.trim() || !username || disableOnlineFeatures}
           >
             Send
           </Button>

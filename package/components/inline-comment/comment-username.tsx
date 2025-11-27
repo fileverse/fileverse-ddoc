@@ -10,6 +10,7 @@ const CommentUsername = ({
   connectViaUsername,
   connectViaWallet,
   isLoading,
+  disableOnlineFeatures,
 }: CommentUsernameProps) => {
   return (
     <div
@@ -46,7 +47,7 @@ const CommentUsername = ({
               />
               <Button
                 onClick={() => connectViaUsername?.(username!)}
-                disabled={!username || isLoading}
+                disabled={!username || isLoading || disableOnlineFeatures}
                 isLoading={isLoading}
                 className="min-w-[80px]"
               >
@@ -72,7 +73,7 @@ const CommentUsername = ({
             <div className="text-center">
               <Button
                 onClick={isConnected ? () => null : connectViaWallet}
-                disabled={isLoading}
+                disabled={isLoading || disableOnlineFeatures}
                 className="custom-ens-button"
               >
                 <img alt="ens-logo" src={EnsLogo} />{' '}
