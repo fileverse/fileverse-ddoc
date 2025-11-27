@@ -288,6 +288,7 @@ const SlashCommand = (
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
   isConnected?: boolean,
   enableCollaboration?: boolean,
+  disableOnlineFeatures?: boolean,
 ) => {
   const items = ({ query, editor }: { query: string; editor: Editor }) => {
     return getSuggestionItems({
@@ -297,6 +298,7 @@ const SlashCommand = (
       isConnected,
       editor,
       enableCollaboration,
+      disableOnlineFeatures,
     });
   };
   return Command.configure({

@@ -33,6 +33,7 @@ export interface CommentDrawerProps {
   isPresentationMode: boolean;
   activeCommentId: string | null;
   isPreviewMode: boolean;
+  disableOnlineFeatures?: boolean;
 }
 
 export interface CommentCardProps extends IComment {
@@ -47,6 +48,7 @@ export interface CommentCardProps extends IComment {
   isCommentOwner?: boolean;
   version?: string;
   emptyComment?: boolean;
+  disableOnlineFeatures?: boolean;
 }
 
 export type CommentBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
@@ -69,6 +71,7 @@ export interface CommentSectionProps {
   activeCommentId: string | null;
   isNavbarVisible?: boolean;
   isPresentationMode?: boolean;
+  disableOnlineFeatures?: boolean;
 }
 
 export interface UserDisplayProps {

@@ -66,6 +66,7 @@ export async function startImageUpload(
   view: EditorView,
   pos: number,
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
+  disableOnlineFeatures?: boolean,
 ) {
   try {
     // check if the file is an image
@@ -94,7 +95,7 @@ export async function startImageUpload(
     const placeholder = findPlaceholder(view.state, id);
     if (!placeholder) return;
 
-    if (ipfsImageUploadFn) {
+    if (ipfsImageUploadFn && !disableOnlineFeatures) {
       const { ipfsUrl, encryptionKey, nonce, ipfsHash, authTag } =
         await ipfsImageUploadFn(file);
 

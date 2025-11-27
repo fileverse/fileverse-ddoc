@@ -65,6 +65,7 @@ export const defaultExtensions = ({
   ipfsImageUploadFn,
   fetchV1ImageFn,
   onTocUpdate,
+  disableOnlineFeatures,
 }: {
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
@@ -75,6 +76,7 @@ export const defaultExtensions = ({
   onCopyHeadingLink?: (link: string) => void;
   fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
   onTocUpdate?: (data: ToCItemType[], isCreate?: boolean) => void;
+  disableOnlineFeatures?: boolean;
 }) => [
   FontFamily,
   StarterKit.configure({
@@ -267,6 +269,7 @@ export const defaultExtensions = ({
   }),
   LinkPreview.configure({
     metadataProxyUrl: metadataProxyUrl,
+    disableOnlineFeatures: disableOnlineFeatures,
   }),
   Callout,
   Emoji,

@@ -180,6 +180,7 @@ export interface DdocProps extends CommentAccountProps {
   onUnMergedUpdates?: (state: boolean) => void;
   onCollabError?: (error: any) => void;
   isExistingCollabSession?: boolean;
+  disableOnlineFeatures?: boolean;
 }
 
 export interface IEditorSelectionData {

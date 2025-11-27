@@ -6,13 +6,15 @@ import { LinkPreviewCard } from '../../components/link-preview-card';
 
 export interface LinkPreviewOptions {
   metadataProxyUrl: string;
+  disableOnlineFeatures?: boolean;
 }
 
 const LinkPreview = Extension.create<LinkPreviewOptions>({
   name: 'linkPreview',
 
   addProseMirrorPlugins() {
-    if (!this.options.metadataProxyUrl) return [];
+    if (!this.options.metadataProxyUrl || this.options.disableOnlineFeatures)
+      return [];
 
     const pluginKey = new PluginKey('link-preview');
     let hoverDiv: HTMLElement | null = null;

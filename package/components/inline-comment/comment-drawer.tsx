@@ -19,6 +19,7 @@ export const CommentDrawer = ({
   isPresentationMode,
   activeCommentId,
   isPreviewMode,
+  disableOnlineFeatures,
 }: CommentDrawerProps) => {
   const { toggleResolved, showResolved, isConnected } = useComments();
   const { isBelow1280px } = useResponsive();
@@ -59,7 +60,10 @@ export const CommentDrawer = ({
                   </Tooltip>
                 </div>
               </div>
-              <CommentSection activeCommentId={activeCommentId} />
+              <CommentSection
+                activeCommentId={activeCommentId}
+                disableOnlineFeatures={disableOnlineFeatures}
+              />
             </React.Fragment>
           }
         />
