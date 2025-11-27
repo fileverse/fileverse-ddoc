@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 import { cn } from '@fileverse/ui';
 import { BubbleMenu } from '@tiptap/react/menus';
 import { Editor } from '@tiptap/core';
@@ -38,10 +37,11 @@ export const CommentBubbleCard = ({
         const disabled = disableInlineCommentRef.current;
 
         const shouldShow =
-          editor.isActive('comment') &&
-          !isCommentResolved &&
-          isCollabDocumentPublished &&
-          !disabled;
+          (editor.isActive('comment') &&
+            !isCommentResolved &&
+            isCollabDocumentPublished &&
+            !disabled) ??
+          false;
 
         if (shouldShow) {
           const commentId = editor.getAttributes('comment')?.commentId;
@@ -53,7 +53,8 @@ export const CommentBubbleCard = ({
 
         return shouldShow;
       },
-      appendTo: () => document.getElementById('editor-canvas'),
+      appendTo: () =>
+        document.getElementById('editor-canvas') as HTMLDivElement,
     }),
     [isCollabDocumentPublished],
   );
@@ -74,7 +75,7 @@ export const CommentBubbleCard = ({
         shift: {
           crossAxis: true,
         },
-        onHide: ({ editor }: { editor: Editor }) => {
+        onHide: () => {
           // Additional safety to ensure active state is removed when menu hides
           editor.commands.unsetCommentActive();
         },
@@ -85,12 +86,15 @@ export const CommentBubbleCard = ({
         commentDrawerOpen && 'hidden',
       )}
     >
+      {/* @ts-expect-error ts */}
       <CommentDropdown
+        editor={editor}
         activeCommentId={activeCommentId ?? undefined}
         isBubbleMenu={true}
         initialComment={currentComment?.content}
         selectedContent={currentComment?.selectedContent}
         isDisabled={
+          /* @ts-expect-error ts */
           currentComment && !Object.hasOwn(currentComment, 'commentIndex')
         }
         isCommentOwner={currentComment?.username === username}
