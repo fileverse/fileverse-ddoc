@@ -77,6 +77,14 @@ export interface DocumentStyling {
    * @example "Inter" | "Arial" | "Georgia"
    */
   fontFamily?: string;
+
+  /**
+   * Canvas orientation
+   * @description Controls the orientation and dimensions of the editor canvas. Portrait is the default orientation with standard document width. Landscape provides a wider canvas for horizontal content layouts.
+   * @default "portrait"
+   * @example "portrait" | "landscape"
+   */
+  orientation?: 'portrait' | 'landscape';
 }
 export interface DdocProps extends CommentAccountProps {
   isCollabDocumentPublished?: boolean;
