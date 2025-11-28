@@ -1,11 +1,9 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-// @ts-nocheck
 import { cn } from '@fileverse/ui';
-import { BubbleMenu } from '@tiptap/react';
+import { BubbleMenu } from '@tiptap/react/menus';
 import { Editor } from '@tiptap/core';
 import { useComments } from './context/comment-context';
 import { CommentDropdown } from './comment-dropdown';
-import { useResponsive } from '../../utils/responsive';
 import { useRef, useEffect, useMemo } from 'react';
 
 export const CommentBubbleCard = ({
@@ -22,7 +20,6 @@ export const CommentBubbleCard = ({
   disableInlineComment?: boolean;
 }) => {
   const { comments, username } = useComments();
-  const { isNativeMobile } = useResponsive();
   const disableInlineCommentRef = useRef(disableInlineComment || false);
 
   useEffect(() => {
@@ -40,10 +37,11 @@ export const CommentBubbleCard = ({
         const disabled = disableInlineCommentRef.current;
 
         const shouldShow =
-          editor.isActive('comment') &&
-          !isCommentResolved &&
-          isCollabDocumentPublished &&
-          !disabled;
+          (editor.isActive('comment') &&
+            !isCommentResolved &&
+            isCollabDocumentPublished &&
+            !disabled) ??
+          false;
 
         if (shouldShow) {
           const commentId = editor.getAttributes('comment')?.commentId;
@@ -55,62 +53,48 @@ export const CommentBubbleCard = ({
 
         return shouldShow;
       },
-      onHide: ({ editor }: { editor: Editor }) => {
-        // Additional safety to ensure active state is removed when menu hides
-        editor.commands.unsetCommentActive();
-      },
-      tippyOptions: {
-        moveTransition: isNativeMobile ? 'transform 0.2s ease-in' : 'none',
-        duration: 200,
-        animation: 'shift-toward-subtle',
-        zIndex: 40,
-        offset: [0, 20],
-        placement: 'bottom',
-        appendTo: () => document.getElementById('editor-canvas'),
-        followCursor: 'vertical',
-        interactive: true,
-        inertia: true,
-        trigger: 'manual',
-        hideOnClick: true,
-        inlinePositioning: true,
-        popperOptions: {
-          strategy: 'fixed',
-          modifiers: [
-            {
-              name: 'flip',
-              options: {
-                fallbackPlacements: ['top'],
-              },
-            },
-            {
-              name: 'preventOverflow',
-              options: {
-                altAxis: true,
-                tether: false,
-              },
-            },
-          ],
-        },
-      },
+      appendTo: () =>
+        document.getElementById('editor-canvas') as HTMLDivElement,
     }),
-    [isNativeMobile, isCollabDocumentPublished],
+    [isCollabDocumentPublished],
   );
 
   return (
     <BubbleMenu
       {...bubbleMenuProps}
+      options={{
+        offset: {
+          mainAxis: 0,
+          crossAxis: 20,
+        },
+        placement: 'bottom',
+        strategy: 'fixed',
+        flip: {
+          fallbackPlacements: ['top'],
+        },
+        shift: {
+          crossAxis: true,
+        },
+        onHide: () => {
+          // Additional safety to ensure active state is removed when menu hides
+          editor.commands.unsetCommentActive();
+        },
+      }}
       editor={editor}
       className={cn(
         'shadow-elevation-4 rounded-lg color-bg-default border color-border-default',
         commentDrawerOpen && 'hidden',
       )}
     >
+      {/* @ts-expect-error ts */}
       <CommentDropdown
-        activeCommentId={activeCommentId}
+        editor={editor}
+        activeCommentId={activeCommentId ?? undefined}
         isBubbleMenu={true}
         initialComment={currentComment?.content}
         selectedContent={currentComment?.selectedContent}
         isDisabled={
+          /* @ts-expect-error ts */
           currentComment && !Object.hasOwn(currentComment, 'commentIndex')
         }
         isCommentOwner={currentComment?.username === username}

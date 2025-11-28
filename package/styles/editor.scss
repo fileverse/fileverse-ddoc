@@ -349,6 +349,29 @@
       border-color: hsla(var(--color-border-default));
     }
   }
+
+  .task-item {
+    grid-template-columns: auto 1fr;
+    grid-template-rows: auto 1fr;
+    align-items: center;
+    &:has(> div:has(ul)) {
+      row-gap: 0.5rem;
+    }
+    > label {
+      grid-area: 1/1/2/2;
+    }
+    > div {
+      p {
+        margin-bottom: 0;
+      }
+    }
+    > div:has(ul) {
+      display: grid;
+      grid-template-rows: subgrid;
+      grid-row: span 2;
+    }
+  }
+  
 }
 
 .table-wrapper,

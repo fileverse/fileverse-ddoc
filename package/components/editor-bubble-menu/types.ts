@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { BubbleMenuProps, Editor } from '@tiptap/react';
+import { Editor } from '@tiptap/react';
+import { BubbleMenuProps } from '@tiptap/react/menus';
 import { SetStateAction } from 'react';
 import {
   InlineCommentData,

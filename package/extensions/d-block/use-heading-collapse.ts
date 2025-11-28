@@ -389,6 +389,7 @@ export const useHeadingCollapse = ({
   // Add effect to handle auto-expansion on Enter at the end of a collapsed heading
   useEffect(() => {
     if (!editor || !isHeading || !headingId) return;
+    if (!editor.view?.dom) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Only handle Enter key
@@ -435,9 +436,10 @@ export const useHeadingCollapse = ({
       }
     };
 
-    editor.view.dom.addEventListener('keydown', handleKeyDown, true);
+    const editorDom = editor.view.dom;
+    editorDom.addEventListener('keydown', handleKeyDown, true);
     return () => {
-      editor.view.dom.removeEventListener('keydown', handleKeyDown, true);
+      editorDom.removeEventListener('keydown', handleKeyDown, true);
     };
   }, [
     editor,

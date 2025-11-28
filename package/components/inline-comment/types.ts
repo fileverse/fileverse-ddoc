@@ -1,4 +1,5 @@
-import { BubbleMenuProps, Editor } from '@tiptap/react';
+import { BubbleMenuProps } from '@tiptap/react/menus';
+import { Editor } from '@tiptap/react';
 import { IComment } from '../../extensions/comment';
 import { SetStateAction } from 'react';
 
