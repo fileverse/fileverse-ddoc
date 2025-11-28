@@ -100,7 +100,8 @@ const TiptapToolBar = ({
   const currentLineHeight = editor ? editorStates.currentLineHeight : undefined;
   const onSetLineHeight = editor ? editorStates.onSetLineHeight : () => {};
 
-  const isBelow1480px = useMediaQuery('(max-width: 1480px)');
+  const isBelow1560px = useMediaQuery('(max-width: 1560px)');
+  const isBelow1370px = useMediaQuery('(max-width: 1370px)');
 
   const zoomLevels = [
     { title: 'Fit', value: '1.4' },
@@ -424,7 +425,26 @@ const TiptapToolBar = ({
           {/* Toolbar Items */}
           <div className="flex gap-2 justify-center items-center">
             {toolbar.map((tool, index) => {
+              let breakpoint: number; //it is important to state the breakpoint in the ascending order.
+              switch (true) {
+                case isBelow1370px:
+                  breakpoint = 1370;
+                  break;
+                case isBelow1560px:
+                  breakpoint = 1560;
+                  break;
+                default:
+                  breakpoint = 3120;
+                  break;
+              }
+
               if (!tool) {
+                if (
+                  isBelow1560px &&
+                  (toolbar[index - 1]?.notVisible ?? 0) >= breakpoint
+                ) {
+                  return null;
+                }
                 return (
                   <div
                     key={index}
@@ -437,14 +457,12 @@ const TiptapToolBar = ({
                 tool.title === 'Highlight' ||
                 tool.title === 'Text Color' ||
                 tool.title === 'Alignment' ||
-                tool.title === 'Link' ||
                 tool.title === 'Line Height'
               ) {
                 return !isLoading
                   ? slideUpTransition(
                       <DynamicDropdown
                         key={tool.title}
-                        align={tool.title === 'Link' ? 'end' : 'center'}
                         sideOffset={8}
                         anchorTrigger={
                           <Tooltip text={tool.title}>
@@ -465,49 +483,58 @@ const TiptapToolBar = ({
                     );
               }
 
-              if (tool.group === 'More') {
-                if (isBelow1480px) {
-                  const isFirstMoreItem =
-                    toolbar.findIndex((t) => t?.group === 'More') === index;
-                  if (!isFirstMoreItem) return null;
+              if (
+                tool.group === 'More' &&
+                (tool.notVisible ?? 0) >= breakpoint
+              ) {
+                const firstCollapsedItem =
+                  toolbar.findIndex(
+                    (t) =>
+                      t?.group === 'More' && (t?.notVisible ?? 0) >= breakpoint,
+                  ) === index;
+                if (!firstCollapsedItem) return null;
 
-                  return !isLoading
-                    ? slideUpTransition(
-                        <DynamicDropdown
-                          key="more-dropdown"
-                          align="end"
-                          sideOffset={8}
-                          anchorTrigger={
-                            <Tooltip text="More">
-                              <IconButton
-                                icon="Ellipsis"
-                                variant="ghost"
-                                size="md"
-                              />
-                            </Tooltip>
-                          }
-                          content={
-                            <div className="flex p-1 gap-1">
-                              {toolbar
-                                .filter((t) => t?.group === 'More')
-                                .map((moreTool) => (
-                                  <ToolbarButton
-                                    key={moreTool?.title}
-                                    icon={moreTool?.icon}
-                                    onClick={moreTool?.onClick || (() => {})}
-                                    isActive={moreTool?.isActive || false}
-                                  />
-                                ))}
-                            </div>
-                          }
-                        />,
-                        tool.title,
-                      )
-                    : fadeInTransition(
-                        <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
-                        tool.title + 'loader',
-                      );
-                }
+                return !isLoading
+                  ? slideUpTransition(
+                      <DynamicDropdown
+                        key="more-dropdown"
+                        align="end"
+                        sideOffset={8}
+                        anchorTrigger={
+                          <Tooltip text="More">
+                            <IconButton
+                              id="more-dropdown"
+                              icon="Ellipsis"
+                              variant="ghost"
+                              size="md"
+                            />
+                          </Tooltip>
+                        }
+                        content={
+                          <div className="flex p-1 gap-1">
+                            {toolbar
+                              .filter(
+                                (t) =>
+                                  t?.group === 'More' &&
+                                  (t?.notVisible ?? 0) >= breakpoint,
+                              )
+                              .map((moreTool) => (
+                                <ToolbarButton
+                                  key={moreTool?.title}
+                                  icon={moreTool?.icon}
+                                  onClick={moreTool?.onClick || (() => {})}
+                                  isActive={moreTool?.isActive || false}
+                                />
+                              ))}
+                          </div>
+                        }
+                      />,
+                      tool.title,
+                    )
+                  : fadeInTransition(
+                      <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
+                      tool.title + 'loader',
+                    );
               }
 
               // Regular toolbar button

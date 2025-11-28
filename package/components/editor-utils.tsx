@@ -49,6 +49,7 @@ export interface IEditorToolElement {
   isActive: boolean;
   group?: string;
   isNew?: boolean;
+  notVisible?: number;
 }
 
 export const fonts = [
@@ -734,6 +735,8 @@ export const useEditorToolbar = ({
       onClick: () =>
         editor?.chain().focus().unsetSubscript().toggleSuperscript().run(),
       isActive: editor?.isActive('superscript') || false,
+      group: 'More',
+      notVisible: 1370,
     },
     {
       icon: 'Subscript',
@@ -741,6 +744,8 @@ export const useEditorToolbar = ({
       onClick: () =>
         editor?.chain().focus().unsetSuperscript().toggleSubscript().run(),
       isActive: editor?.isActive('subscript') || false,
+      group: 'More',
+      notVisible: 1370,
     },
     null,
     {
@@ -748,6 +753,8 @@ export const useEditorToolbar = ({
       title: 'Link',
       onClick: () => setToolVisibility(IEditorTool.LINK),
       isActive: editor?.isActive('link') || false,
+      group: 'More',
+      notVisible: 1560,
     },
     {
       icon: 'ImagePlus',
@@ -782,6 +789,7 @@ export const useEditorToolbar = ({
       },
       isActive: false,
       group: 'More',
+      notVisible: 1560,
     },
     {
       icon: 'Code',
@@ -794,6 +802,7 @@ export const useEditorToolbar = ({
       },
       isActive: editor?.isActive('code') || false,
       group: 'More',
+      notVisible: 1560,
     },
     {
       icon: 'Braces',
@@ -806,6 +815,7 @@ export const useEditorToolbar = ({
       },
       isActive: editor?.isActive('codeBlock') || false,
       group: 'More',
+      notVisible: 1560,
     },
     {
       icon: 'Table',
@@ -818,6 +828,7 @@ export const useEditorToolbar = ({
           .run(),
       isActive: false,
       group: 'More',
+      notVisible: 1560,
     },
   ];
 
