@@ -15,6 +15,7 @@ export const DocumentOutline = ({
   showTOC,
   setShowTOC,
   isPreviewMode,
+  orientation,
 }: DocumentOutlineProps) => {
   const isMediaMax1280px = useMediaQuery('(max-width:1280px)');
 
@@ -47,7 +48,12 @@ export const DocumentOutline = ({
             showTOC ? 'block' : 'hidden',
           )}
         >
-          <MemorizedToC editor={editor} items={items} setItems={setItems} />
+          <MemorizedToC
+            editor={editor}
+            items={items}
+            setItems={setItems}
+            orientation={orientation}
+          />
         </div>
       </div>
     );
@@ -70,7 +76,12 @@ export const DocumentOutline = ({
               <h2 className="text-heading-sm-bold">Document outline</h2>
             </div>
             <div className={cn('table-of-contents px-4')}>
-              <MemorizedToC editor={editor} items={items} setItems={setItems} />
+              <MemorizedToC
+                editor={editor}
+                items={items}
+                setItems={setItems}
+                orientation={orientation}
+              />
             </div>
           </React.Fragment>
         }
