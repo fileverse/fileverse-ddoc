@@ -192,7 +192,7 @@ export const defaultExtensions = ({
   }),
   TaskItem.configure({
     HTMLAttributes: {
-      class: 'flex items-center',
+      class: 'grid task-item',
     },
     nested: true,
   }),

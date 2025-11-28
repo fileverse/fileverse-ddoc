@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "2.5.0-tiptap-3",
+  "version": "2.5.0-tiptap-4",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
