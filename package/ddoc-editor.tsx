@@ -743,7 +743,7 @@ const DdocEditor = forwardRef(
                             <div
                               ref={tagsContainerRef}
                               className={cn(
-                                'flex flex-wrap px-4 md:px-8 lg:px-[80px] items-center gap-1 mt-4 lg:!mt-0',
+                                'flex flex-wrap px-4 md:px-8 lg:px-[80px] mb-8 items-center gap-1 mt-4 lg:!mt-0',
                                 { 'pt-12': isPreviewMode },
                               )}
                               {...(getCanvasStyle() && {
@@ -810,7 +810,7 @@ const DdocEditor = forwardRef(
                               editor={editor}
                               id="editor"
                               className={cn(
-                                'w-full h-auto py-8',
+                                'w-full h-auto',
                                 !documentStyling?.canvasBackground &&
                                   'color-bg-default',
                                 isPreviewMode && 'preview-mode',
