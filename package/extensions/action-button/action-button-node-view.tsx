@@ -87,15 +87,20 @@ export const ActionButtonNodeView = ({
     const height = 360;
 
     const pos = getPos();
-    const to = pos + node.nodeSize;
 
-    formattedUrl &&
-      editor
-        ?.chain()
-        .focus(pos)
-        .deleteRange({ from: pos, to })
-        .setIframe({ src: formattedUrl, width, height })
-        .run();
+    if (pos !== undefined) {
+      const to = pos + node.nodeSize;
+
+      formattedUrl &&
+        editor
+          ?.chain()
+          .focus(pos)
+          .deleteRange({ from: pos, to })
+          .setIframe({ src: formattedUrl, width, height })
+          .run();
+    } else {
+      deleteNode();
+    }
   };
 
   const twitterRender = () => {
@@ -124,15 +129,18 @@ export const ActionButtonNodeView = ({
     }
 
     const pos = getPos();
-    const to = pos + node.nodeSize;
-
-    filteredTweetId &&
-      editor
-        ?.chain()
-        .focus(pos)
-        .deleteRange({ from: pos, to })
-        .setTweetEmbed({ tweetId: filteredTweetId })
-        .run();
+    if (pos !== undefined) {
+      const to = pos + node.nodeSize;
+      filteredTweetId &&
+        editor
+          ?.chain()
+          .focus(pos)
+          .deleteRange({ from: pos, to })
+          .setTweetEmbed({ tweetId: filteredTweetId })
+          .run();
+    } else {
+      deleteNode();
+    }
   };
 
   const multiRender = () => {
@@ -198,18 +206,19 @@ export const ActionButtonNodeView = ({
     const height = 360;
 
     const pos = getPos();
-    const to = pos + node.nodeSize;
-
-    if (formattedUrl) {
-      const chain = editor?.chain().focus(pos).deleteRange({ from: pos, to });
-
-      if (mediaType === 'twitter') {
-        chain?.setTweetEmbed({ tweetId: formattedUrl });
-      } else {
-        chain?.setIframe({ src: formattedUrl, width, height });
+    if (pos !== undefined) {
+      const to = pos + node.nodeSize;
+      if (formattedUrl) {
+        const chain = editor?.chain().focus(pos).deleteRange({ from: pos, to });
+        if (mediaType === 'twitter') {
+          chain?.setTweetEmbed({ tweetId: formattedUrl });
+        } else {
+          chain?.setIframe({ src: formattedUrl, width, height });
+        }
+        chain?.run();
       }
-
-      chain?.run();
+    } else {
+      deleteNode();
     }
   };
 
