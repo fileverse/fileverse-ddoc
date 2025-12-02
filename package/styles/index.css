@@ -313,6 +313,11 @@ div[data-type='page-break']:hover .remove-page-break-icon {
   padding: 0;
 }
 
+.is-active {
+  transition: transform 0.2s ease-in;
+  animation: shift-toward-subtle 200ms forwards;
+}
+
 #editor {
   position: relative;
   z-index: 1; /* make sure editor text stays above Grammarly background stuff */
