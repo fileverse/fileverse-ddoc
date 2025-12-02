@@ -506,7 +506,8 @@ const TiptapToolBar = ({
                                   moreTool.title === 'Highlight' ||
                                   moreTool.title === 'Text Color' ||
                                   moreTool.title === 'Alignment' ||
-                                  moreTool.title === 'Line Height'
+                                  moreTool.title === 'Line Height' ||
+                                  moreTool.title === 'Link'
                                 ) {
                                   return !isLoading ? (
                                     <DynamicDropdown
@@ -556,7 +557,8 @@ const TiptapToolBar = ({
                 tool.title === 'Highlight' ||
                 tool.title === 'Text Color' ||
                 tool.title === 'Alignment' ||
-                tool.title === 'Line Height'
+                tool.title === 'Line Height' ||
+                tool.title === 'Link'
               ) {
                 return !isLoading
                   ? slideUpTransition(

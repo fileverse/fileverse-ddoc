@@ -753,8 +753,9 @@ export const useEditorToolbar = ({
     {
       icon: 'Subscript',
       title: 'Subscript',
-      onClick: () =>
-        editor?.chain().focus().unsetSuperscript().toggleSubscript().run(),
+      onClick: () => {
+        editor?.chain().focus().unsetSuperscript().toggleSubscript().run();
+      },
       isActive: editor?.isActive('subscript') || false,
       group: 'More',
       notVisible: 1370,
@@ -763,7 +764,9 @@ export const useEditorToolbar = ({
     {
       icon: 'Link',
       title: 'Link',
-      onClick: () => setToolVisibility(IEditorTool.LINK),
+      onClick: () => {
+        setToolVisibility(IEditorTool.LINK_POPUP);
+      },
       isActive: editor?.isActive('link') || false,
       group: 'More',
       notVisible: 1560,
