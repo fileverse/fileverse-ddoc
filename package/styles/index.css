@@ -308,7 +308,6 @@ div[data-type='page-break']:hover .remove-page-break-icon {
 
 .grammarly-wrapper {
   position: relative;
-  overflow: hidden;
   height: 100%; /* match container */
   max-height: 100%; /* safe fallback */
   padding: 0;

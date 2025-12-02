@@ -21,16 +21,6 @@ import { DocumentStylingPanel } from './DocumentStylingPanel';
 import { DocumentStyling, ICollaborationConfig } from '../../package/types';
 import { getKeyFromURLParams } from './utils';
 
-const sampleTags = [
-  { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
-  { name: 'Discussions', isActive: true, color: '#FFD6D7' },
-  { name: 'Meet-up', isActive: false, color: '#FFD887' },
-  { name: 'Workshop', isActive: false, color: '#FFF292' },
-  { name: 'Hackathon', isActive: false, color: '#D7F893' },
-  { name: 'Devcon Main Event', isActive: true, color: '#B7F1BA' },
-  { name: 'Specific Event', isActive: true, color: '#AAF5E4' },
-];
-
 function App() {
   const [enableCollaboration, setEnableCollaboration] = useState(false);
   const [username, setUsername] = useState('username');
@@ -446,7 +436,6 @@ function App() {
         }}
         renderNavbar={renderNavbar}
         ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}
-        tags={sampleTags}
         selectedTags={selectedTags}
         setSelectedTags={setSelectedTags}
         isCommentSectionOpen={isCommentSectionOpen}
