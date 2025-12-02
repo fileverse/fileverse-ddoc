@@ -606,6 +606,8 @@ export const useEditorToolbar = ({
         return result;
       },
       isActive: editor?.isActive('bulletList') || false,
+      group: 'More',
+      notVisible: 1030,
     },
     {
       icon: 'ListOrdered',
@@ -657,6 +659,8 @@ export const useEditorToolbar = ({
         return result;
       },
       isActive: editor?.isActive('orderedList') || false,
+      group: 'More',
+      notVisible: 1030,
     },
     {
       icon: 'ListChecks',
@@ -709,24 +713,32 @@ export const useEditorToolbar = ({
         return result;
       },
       isActive: editor?.isActive('taskList') || false,
+      group: 'More',
+      notVisible: 1160,
     },
     {
       icon: 'AlignLeft',
       title: 'Alignment',
       onClick: () => setToolVisibility(IEditorTool.ALIGNMENT),
       isActive: toolVisibility === IEditorTool.ALIGNMENT,
+      group: 'More',
+      notVisible: 1160,
     },
     {
       icon: 'LineHeight',
       title: 'Line Height',
       onClick: () => setToolVisibility(IEditorTool.LINE_HEIGHT),
       isActive: toolVisibility === IEditorTool.LINE_HEIGHT,
+      group: 'More',
+      notVisible: 1270,
     },
     {
       icon: 'TextQuote',
       title: 'Quote',
       onClick: () => editor?.chain().focus().toggleBlockquote().run(),
       isActive: editor?.isActive('blockquote') || false,
+      group: 'More',
+      notVisible: 1270,
     },
     null,
     {
