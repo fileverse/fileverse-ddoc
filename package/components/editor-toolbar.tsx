@@ -31,6 +31,7 @@ import { fadeInTransition, slideUpTransition } from './motion-div';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { ImportExportButton } from './import-export-button';
 import { getCurrentFontFamily } from '../utils/get-current-font-family';
+import EditorToolbarDropdown from './editor-toolbar-dropdown';
 const MemoizedFontSizePicker = React.memo(FontSizePicker);
 const MemoizedLineHeightPicker = React.memo(LineHeightPicker);
 
@@ -509,28 +510,13 @@ const TiptapToolBar = ({
                                   moreTool.title === 'Line Height' ||
                                   moreTool.title === 'Link'
                                 ) {
-                                  return !isLoading ? (
-                                    <DynamicDropdown
+                                  return (
+                                    <EditorToolbarDropdown
+                                      isLoading={isLoading}
+                                      renderContent={renderContent}
+                                      tool={moreTool}
                                       key={moreTool.title}
-                                      sideOffset={8}
-                                      anchorTrigger={
-                                        <Tooltip text={moreTool.title}>
-                                          <IconButton
-                                            icon={moreTool.icon}
-                                            variant="ghost"
-                                            size="md"
-                                          />
-                                        </Tooltip>
-                                      }
-                                      content={renderContent(moreTool)}
                                     />
-                                  ) : (
-                                    fadeInTransition(
-                                      <Skeleton
-                                        className={`w-[36px] h-[36px] rounded-sm`}
-                                      />,
-                                      moreTool.title + 'skeleton',
-                                    )
                                   );
                                 }
                                 return (
@@ -560,28 +546,14 @@ const TiptapToolBar = ({
                 tool.title === 'Line Height' ||
                 tool.title === 'Link'
               ) {
-                return !isLoading
-                  ? slideUpTransition(
-                      <DynamicDropdown
-                        key={tool.title}
-                        sideOffset={8}
-                        anchorTrigger={
-                          <Tooltip text={tool.title}>
-                            <IconButton
-                              icon={tool.icon}
-                              variant="ghost"
-                              size="md"
-                            />
-                          </Tooltip>
-                        }
-                        content={renderContent(tool)}
-                      />,
-                      tool.title,
-                    )
-                  : fadeInTransition(
-                      <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
-                      tool.title + 'skeleton',
-                    );
+                return (
+                  <EditorToolbarDropdown
+                    isLoading={isLoading}
+                    renderContent={renderContent}
+                    tool={tool}
+                    key={tool.title}
+                  />
+                );
               }
 
               // Regular toolbar button
