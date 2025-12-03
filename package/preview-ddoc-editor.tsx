@@ -163,7 +163,10 @@ const PreviewDdocEditor = forwardRef(
       : slideUpTransition(
           <EditorProvider>
             <div ref={editorRef} className={cn('overflow-x-hidden', className)}>
-              <EditingProvider isPreviewMode={isPreviewMode}>
+              <EditingProvider
+                isPreviewMode={isPreviewMode}
+                isPreviewEditor={true}
+              >
                 {tags && tags.length > 0 && (
                   <div
                     ref={tagsContainerRef}
