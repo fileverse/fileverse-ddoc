@@ -43,8 +43,12 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
     const [isExpanded, setIsExpanded] = useState(false);
     const [visibleTemplateCount, setVisibleTemplateCount] = useState(2);
     const actions = useContentItemActions(editor as Editor, node, getPos());
-    const { isPreviewMode, isPresentationMode, isCollaboratorsDoc } =
-      useEditingContext();
+    const {
+      isPreviewMode,
+      isPresentationMode,
+      isCollaboratorsDoc,
+      isPreviewEditor,
+    } = useEditingContext();
     const { collapsedHeadings, setCollapsedHeadings } = useEditorContext();
 
     const {
@@ -477,7 +481,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
               isPreviewMode,
             )}
 
-          {isHeading && isPreviewMode && (
+          {isHeading && isPreviewMode && !isPreviewEditor && (
             <section>
               <CopyLinkTooltip>
                 <CopyLinkButton
