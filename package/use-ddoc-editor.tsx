@@ -326,6 +326,9 @@ export const useDdocEditor = ({
     {
       extensions: memoizedExtensions,
       editorProps: {
+        clipboardTextSerializer(content) {
+          return content.content.textBetween(0, content.content.size, '\n\n');
+        },
         ...DdocEditorProps,
         handleDOMEvents: {
           mouseover: handleCommentInteraction,
