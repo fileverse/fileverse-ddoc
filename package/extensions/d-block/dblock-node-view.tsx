@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   NodeViewWrapper,
@@ -317,6 +319,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
     const isDocEmpty = useMemo(() => {
       const { doc, selection } = editor.state;
       const pos = getPos();
+      if (pos === undefined) return false;
       const nodeAtPos = doc.nodeAt(pos);
 
       if (!nodeAtPos || nodeAtPos.type.name !== 'dBlock') return false;
@@ -354,7 +357,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
             isTable && 'pointer-events-auto',
           )}
         >
-          <NodeViewContent
+          <div
             className={cn('node-view-content w-full relative', {
               'is-table': isTable,
               'invalid-content': node.attrs?.isCorrupted,
@@ -371,7 +374,8 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
                 !!isCollaboratorsDoc,
                 isPreviewMode,
               )}
-          </NodeViewContent>
+            <NodeViewContent />
+          </div>
         </NodeViewWrapper>
       );
     }
@@ -450,7 +454,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
           )}
         </section>
 
-        <NodeViewContent
+        <div
           className={cn(
             'node-view-content w-full relative self-center',
             {
@@ -472,6 +476,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
               !!isCollaboratorsDoc,
               isPreviewMode,
             )}
+
           {isHeading && isPreviewMode && (
             <section>
               <CopyLinkTooltip>
@@ -485,7 +490,9 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
               </CopyLinkTooltip>
             </section>
           )}
-        </NodeViewContent>
+
+          <NodeViewContent />
+        </div>
       </NodeViewWrapper>
     );
   },

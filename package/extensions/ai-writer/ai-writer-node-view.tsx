@@ -31,7 +31,13 @@ import { ModelOption, WindowWithModelContext, ModelService } from './types';
 import { getLoadingMessageInOrder, md } from './utils';
 
 export const AIWriterNodeView = memo(
-  ({ node, editor: parentEditor, getPos, updateAttributes }: NodeViewProps) => {
+  ({
+    node,
+    editor: parentEditor,
+    getPos,
+    updateAttributes,
+    deleteNode,
+  }: NodeViewProps) => {
     const [isLoading, setIsLoading] = useState(false);
     const [isStreaming, setIsStreaming] = useState(false);
     const [localPrompt, setLocalPrompt] = useState(node.attrs.prompt);
@@ -310,10 +316,14 @@ export const AIWriterNodeView = memo(
           parentEditor.commands.command(({ tr, dispatch }) => {
             if (dispatch) {
               const pos = getPos();
-              tr.delete(pos, pos + node.nodeSize);
-              // Set selection to the position where content will be inserted
-              const resolvedPos = tr.doc.resolve(pos);
-              tr.setSelection(TextSelection.near(resolvedPos));
+              if (pos !== undefined) {
+                tr.delete(pos, pos + node.nodeSize);
+                // Set selection to the position where content will be inserted
+                const resolvedPos = tr.doc.resolve(pos);
+                tr.setSelection(TextSelection.near(resolvedPos));
+              } else {
+                deleteNode();
+              }
             }
             return true;
           });
@@ -322,7 +332,7 @@ export const AIWriterNodeView = memo(
         }, 150);
         return () => clearTimeout(timeout);
       }
-    }, [getPos, parentEditor, node.nodeSize, content]);
+    }, [getPos, parentEditor, node.nodeSize, content, deleteNode]);
 
     const handleDiscard = useCallback(() => {
       if (typeof getPos === 'function') {
@@ -331,10 +341,14 @@ export const AIWriterNodeView = memo(
           parentEditor.commands.command(({ tr, dispatch }) => {
             if (dispatch) {
               const pos = getPos();
-              tr.delete(pos, pos + node.nodeSize);
-              // Set selection to the position where the node was
-              const resolvedPos = tr.doc.resolve(pos);
-              tr.setSelection(TextSelection.near(resolvedPos));
+              if (pos !== undefined) {
+                tr.delete(pos, pos + node.nodeSize);
+                // Set selection to the position where the node was
+                const resolvedPos = tr.doc.resolve(pos);
+                tr.setSelection(TextSelection.near(resolvedPos));
+              } else {
+                deleteNode();
+              }
             }
             return true;
           });
@@ -342,7 +356,7 @@ export const AIWriterNodeView = memo(
         }, 150);
         return () => clearTimeout(timeout);
       }
-    }, [getPos, parentEditor, node.nodeSize]);
+    }, [getPos, parentEditor, node.nodeSize, deleteNode]);
 
     const handlePromptChange = useCallback(
       (e: React.ChangeEvent<HTMLTextAreaElement>) => {

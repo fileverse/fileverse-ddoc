@@ -4,20 +4,13 @@
 import StarterKit from '@tiptap/starter-kit';
 import FontFamily from '@tiptap/extension-font-family';
 import TextAlign from '@tiptap/extension-text-align';
-import Link from '@tiptap/extension-link';
-import Placeholder from '@tiptap/extension-placeholder';
 import {
   getHierarchicalIndexes,
   TableOfContents,
 } from '@tiptap/extension-table-of-contents';
 import Highlight from '@tiptap/extension-highlight';
-import TaskList from '@tiptap/extension-task-list';
-import TaskItem from '@tiptap/extension-task-item';
-import TextStyle from '@tiptap/extension-text-style';
-import DropCursor from '@tiptap/extension-dropcursor';
-import TiptapUnderline from '@tiptap/extension-underline';
+import { TextStyle } from '@tiptap/extension-text-style';
 import HorizontalRule from './horizontal-rule';
-import GapCursor from '@tiptap/extension-gapcursor';
 import ColumnExtension from './multi-column';
 import CustomKeymap from './custom-keymap';
 import { Color } from '@tiptap/extension-color';
@@ -30,19 +23,28 @@ import { TrailingNode } from './trailing-node';
 import { NodeType } from '@tiptap/pm/model';
 import { InputRule } from '@tiptap/core';
 import { actionButton } from './action-button';
-import BulletList from '@tiptap/extension-bullet-list';
 import { Markdown } from 'tiptap-markdown';
-import ListItem from '@tiptap/extension-list-item';
 import Typography from '@tiptap/extension-typography';
 import MarkdownPasteHandler from './mardown-paste-handler';
 import HtmlExportExtension from './html-export';
 import TextExportExtension from './text-export';
 import { DocxFileHandler } from './docx/docx-import';
-import CharacterCount from '@tiptap/extension-character-count';
 import { MathExtension } from '@aarkue/tiptap-math-extension';
 import { Footnote } from './footnote/footnote';
 import Superscript from '@tiptap/extension-superscript';
 import Subscript from '@tiptap/extension-subscript';
+import {
+  BulletList,
+  TaskList,
+  TaskItem,
+  ListItem,
+} from '@tiptap/extension-list';
+import {
+  Dropcursor,
+  Gapcursor,
+  Placeholder,
+  CharacterCount,
+} from '@tiptap/extensions';
 import { ResizableMedia } from './resizable-media';
 import LinkPreview from './link-preview/link-preview';
 import { Callout } from './callout/callout';
@@ -93,6 +95,20 @@ export const defaultExtensions = ({
         class: 'select-text pointer-events-auto',
       },
     },
+    underline: {
+      HTMLAttributes: {
+        class: 'select-text pointer-events-auto',
+      },
+    },
+    link: {
+      shouldAutoLink: (url) => /^https?:\/\//.test(url),
+      autolink: true,
+      openOnClick: true,
+      HTMLAttributes: {
+        class: 'custom-text-link',
+        rel: 'noopener noreferrer',
+      },
+    },
     heading: {
       HTMLAttributes: {
         class: 'select-text pointer-events-auto',
@@ -122,7 +138,7 @@ export const defaultExtensions = ({
         spellcheck: 'false',
       },
     },
-    history: false,
+    undoRedo: false,
     gapcursor: false,
     dropcursor: false,
     document: false,
@@ -157,29 +173,16 @@ export const defaultExtensions = ({
     types: ['heading', 'paragraph'],
   }),
   HorizontalRule,
-  Link.extend({
-    exitable: true,
-    inclusive: false,
-  }).configure({
-    HTMLAttributes: {
-      class: 'custom-text-link',
-      rel: 'noopener noreferrer',
-    },
-    validate: (href) => /^https?:\/\//.test(href),
-    openOnClick: true,
-    autolink: true,
-  }),
+  // Link.extend({
+  //   exitable: true,
+  //   inclusive: false,
+  // }),
   Placeholder.configure({
     placeholder: () => '',
     includeChildren: true,
     showOnlyCurrent: true,
   }),
   Highlight.configure({ multicolor: true }),
-  TiptapUnderline.configure({
-    HTMLAttributes: {
-      class: 'select-text pointer-events-auto',
-    },
-  }),
   TextStyle,
   Color,
   TaskList.configure({
@@ -189,7 +192,7 @@ export const defaultExtensions = ({
   }),
   TaskItem.configure({
     HTMLAttributes: {
-      class: 'flex items-center',
+      class: 'grid task-item',
     },
     nested: true,
   }),
@@ -203,7 +206,7 @@ export const defaultExtensions = ({
       class: 'leading-normal w-full',
     },
   }),
-  DropCursor.configure({
+  Dropcursor.configure({
     width: 3,
     color: '#d1d5db',
   }),
@@ -213,7 +216,7 @@ export const defaultExtensions = ({
     ipfsImageFetchFn,
     fetchV1ImageFn,
   }),
-  GapCursor,
+  Gapcursor,
   DBlock.configure({
     ipfsImageUploadFn,
     onCopyHeadingLink,
@@ -234,19 +237,19 @@ export const defaultExtensions = ({
   HtmlExportExtension(ipfsImageFetchFn, fetchV1ImageFn),
   TextExportExtension(),
   Markdown.configure({
-    html: true, // Allow HTML input/output
-    tightLists: true, // No <p> inside <li> in markdown output
-    tightListClass: 'tight', // Add class to <ul> allowing you to remove <p> margins when tight
-    bulletListMarker: '-', // <li> prefix in markdown output
-    linkify: true, // Create links from "https://..." text
-    breaks: true, // New lines (\n) in markdown input are converted to <br>
-    transformPastedText: true, // Allow to paste markdown text in the editor
-    // transformCopiedText: true, // Copied text is transformed to markdown
+    tightListClass: 'tight',
+    bulletListMarker: '-',
+    linkify: true,
+    breaks: true,
+    transformPastedText: true,
+    tightLists: true,
+    html: true,
+    transformCopiedText: true,
   }),
   CharacterCount,
   MathExtension.configure({
     addInlineMath: true,
-    evaluation: false,
+    evaluation: true,
     delimiters: 'dollar',
     katexOptions: {
       throwOnError: false,
