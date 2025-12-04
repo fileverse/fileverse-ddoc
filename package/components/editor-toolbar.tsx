@@ -31,6 +31,7 @@ import { fadeInTransition, slideUpTransition } from './motion-div';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { ImportExportButton } from './import-export-button';
 import { getCurrentFontFamily } from '../utils/get-current-font-family';
+import EditorToolbarDropdown from './editor-toolbar-dropdown';
 const MemoizedFontSizePicker = React.memo(FontSizePicker);
 const MemoizedLineHeightPicker = React.memo(LineHeightPicker);
 
@@ -100,7 +101,11 @@ const TiptapToolBar = ({
   const currentLineHeight = editor ? editorStates.currentLineHeight : undefined;
   const onSetLineHeight = editor ? editorStates.onSetLineHeight : () => {};
 
-  const isBelow1480px = useMediaQuery('(max-width: 1480px)');
+  const isBelow1560px = useMediaQuery('(max-width: 1560px)');
+  const isBelow1370px = useMediaQuery('(max-width: 1370px)');
+  const isBelow1270px = useMediaQuery('(max-width: 1270px)');
+  const isBelow1160px = useMediaQuery('(max-width: 1160px)');
+  const isBelow1030px = useMediaQuery('(max-width: 1030px)');
 
   const zoomLevels = [
     { title: 'Fit', value: '1.4' },
@@ -270,7 +275,7 @@ const TiptapToolBar = ({
                   onClose={() => setDropdownOpen(false)}
                   anchorTrigger={
                     <button
-                      className="bg-transparent hover:!color-bg-default-hover rounded p-2 flex items-center justify-center gap-2 w-20"
+                      className="bg-transparent hover:!color-bg-default-hover rounded p-2 flex items-center justify-center gap-2 w-[78px]"
                       onClick={() => {
                         setDropdownOpen((prev) => !prev);
                         setFileExportsOpen(false);
@@ -317,7 +322,7 @@ const TiptapToolBar = ({
                   sideOffset={8}
                   anchorTrigger={
                     <button
-                      className="bg-transparent hover:!color-bg-default-hover rounded p-2 flex items-center justify-center gap-2 w-24"
+                      className="bg-transparent hover:!color-bg-default-hover rounded p-2 flex items-center justify-center gap-2 w-[85px]"
                       onClick={() => setToolVisibility(IEditorTool.FONT_FAMILY)}
                     >
                       <span
@@ -359,7 +364,7 @@ const TiptapToolBar = ({
                   sideOffset={8}
                   anchorTrigger={
                     <button
-                      className="bg-transparent hover:!color-bg-default-hover rounded gap-2 p-2 flex items-center justify-center w-28"
+                      className="bg-transparent hover:!color-bg-default-hover rounded gap-2 p-2 flex items-center justify-center w-[83px]"
                       onClick={() => setToolVisibility(IEditorTool.HEADING)}
                     >
                       <span className="text-body-sm line-clamp-1">
@@ -397,7 +402,7 @@ const TiptapToolBar = ({
                   sideOffset={8}
                   anchorTrigger={
                     <button
-                      className="bg-transparent hover:!color-bg-default-hover rounded gap-2 py-2 px-1 flex items-center justify-center w-fit max-w-14 min-w-14"
+                      className="bg-transparent hover:!color-bg-default-hover rounded gap-2 py-2 px-1 flex items-center justify-center w-[52px]"
                       onClick={() => setToolVisibility(IEditorTool.FONT_SIZE)}
                     >
                       <span className="text-body-sm line-clamp-1">
@@ -424,7 +429,35 @@ const TiptapToolBar = ({
           {/* Toolbar Items */}
           <div className="flex gap-2 justify-center items-center">
             {toolbar.map((tool, index) => {
+              let breakpoint: number; //it is important to state the breakpoint in the ascending order.
+              switch (true) {
+                case isBelow1030px:
+                  breakpoint = 1030;
+                  break;
+                case isBelow1160px:
+                  breakpoint = 1160;
+                  break;
+                case isBelow1270px:
+                  breakpoint = 1270;
+                  break;
+                case isBelow1370px:
+                  breakpoint = 1370;
+                  break;
+                case isBelow1560px:
+                  breakpoint = 1560;
+                  break;
+                default:
+                  breakpoint = 3120;
+                  break;
+              }
+
               if (!tool) {
+                if (
+                  isBelow1560px &&
+                  (toolbar[index - 1]?.notVisible ?? 0) >= breakpoint
+                ) {
+                  return null;
+                }
                 return (
                   <div
                     key={index}
@@ -434,80 +467,93 @@ const TiptapToolBar = ({
               }
 
               if (
-                tool.title === 'Highlight' ||
-                tool.title === 'Text Color' ||
-                tool.title === 'Alignment' ||
-                tool.title === 'Link' ||
-                tool.title === 'Line Height'
+                tool.group === 'More' &&
+                (tool.notVisible ?? 0) >= breakpoint
               ) {
+                const firstCollapsedItem =
+                  toolbar.findIndex(
+                    (t) =>
+                      t?.group === 'More' && (t?.notVisible ?? 0) >= breakpoint,
+                  ) === index;
+                if (!firstCollapsedItem) return null;
+
                 return !isLoading
                   ? slideUpTransition(
                       <DynamicDropdown
-                        key={tool.title}
-                        align={tool.title === 'Link' ? 'end' : 'center'}
+                        key="more-dropdown"
+                        align="end"
                         sideOffset={8}
                         anchorTrigger={
-                          <Tooltip text={tool.title}>
+                          <Tooltip text="More">
                             <IconButton
-                              icon={tool.icon}
+                              id="more-dropdown"
+                              icon="Ellipsis"
                               variant="ghost"
                               size="md"
                             />
                           </Tooltip>
                         }
-                        content={renderContent(tool)}
+                        content={
+                          <div className="flex p-1 gap-1">
+                            {toolbar
+                              .filter(
+                                (t) =>
+                                  t?.group === 'More' &&
+                                  (t?.notVisible ?? 0) >= breakpoint,
+                              )
+                              .map((moreTool) => {
+                                if (moreTool === null) return;
+                                if (
+                                  moreTool.title === 'Highlight' ||
+                                  moreTool.title === 'Text Color' ||
+                                  moreTool.title === 'Alignment' ||
+                                  moreTool.title === 'Line Height' ||
+                                  moreTool.title === 'Link'
+                                ) {
+                                  return (
+                                    <EditorToolbarDropdown
+                                      isLoading={isLoading}
+                                      renderContent={renderContent}
+                                      tool={moreTool}
+                                      key={moreTool.title}
+                                    />
+                                  );
+                                }
+                                return (
+                                  <ToolbarButton
+                                    key={moreTool.title}
+                                    icon={moreTool.icon}
+                                    onClick={moreTool.onClick || (() => {})}
+                                    isActive={moreTool.isActive || false}
+                                  />
+                                );
+                              })}
+                          </div>
+                        }
                       />,
                       tool.title,
                     )
                   : fadeInTransition(
                       <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
-                      tool.title + 'skeleton',
+                      tool.title + 'loader',
                     );
               }
 
-              if (tool.group === 'More') {
-                if (isBelow1480px) {
-                  const isFirstMoreItem =
-                    toolbar.findIndex((t) => t?.group === 'More') === index;
-                  if (!isFirstMoreItem) return null;
-
-                  return !isLoading
-                    ? slideUpTransition(
-                        <DynamicDropdown
-                          key="more-dropdown"
-                          align="end"
-                          sideOffset={8}
-                          anchorTrigger={
-                            <Tooltip text="More">
-                              <IconButton
-                                icon="Ellipsis"
-                                variant="ghost"
-                                size="md"
-                              />
-                            </Tooltip>
-                          }
-                          content={
-                            <div className="flex p-1 gap-1">
-                              {toolbar
-                                .filter((t) => t?.group === 'More')
-                                .map((moreTool) => (
-                                  <ToolbarButton
-                                    key={moreTool?.title}
-                                    icon={moreTool?.icon}
-                                    onClick={moreTool?.onClick || (() => {})}
-                                    isActive={moreTool?.isActive || false}
-                                  />
-                                ))}
-                            </div>
-                          }
-                        />,
-                        tool.title,
-                      )
-                    : fadeInTransition(
-                        <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
-                        tool.title + 'loader',
-                      );
-                }
+              if (
+                tool.title === 'Highlight' ||
+                tool.title === 'Text Color' ||
+                tool.title === 'Alignment' ||
+                tool.title === 'Line Height' ||
+                tool.title === 'Link'
+              ) {
+                return (
+                  <EditorToolbarDropdown
+                    isLoading={isLoading}
+                    renderContent={renderContent}
+                    tool={tool}
+                    key={tool.title}
+                  />
+                );
               }
 
               // Regular toolbar button

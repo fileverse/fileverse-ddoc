@@ -49,6 +49,7 @@ export interface IEditorToolElement {
   isActive: boolean;
   group?: string;
   isNew?: boolean;
+  notVisible?: number;
 }
 
 export const fonts = [
@@ -605,6 +606,8 @@ export const useEditorToolbar = ({
         return result;
       },
       isActive: editor?.isActive('bulletList') || false,
+      group: 'More',
+      notVisible: 1030,
     },
     {
       icon: 'ListOrdered',
@@ -656,6 +659,8 @@ export const useEditorToolbar = ({
         return result;
       },
       isActive: editor?.isActive('orderedList') || false,
+      group: 'More',
+      notVisible: 1030,
     },
     {
       icon: 'ListChecks',
@@ -708,24 +713,32 @@ export const useEditorToolbar = ({
         return result;
       },
       isActive: editor?.isActive('taskList') || false,
+      group: 'More',
+      notVisible: 1160,
     },
     {
       icon: 'AlignLeft',
       title: 'Alignment',
       onClick: () => setToolVisibility(IEditorTool.ALIGNMENT),
       isActive: toolVisibility === IEditorTool.ALIGNMENT,
+      group: 'More',
+      notVisible: 1160,
     },
     {
       icon: 'LineHeight',
       title: 'Line Height',
       onClick: () => setToolVisibility(IEditorTool.LINE_HEIGHT),
       isActive: toolVisibility === IEditorTool.LINE_HEIGHT,
+      group: 'More',
+      notVisible: 1270,
     },
     {
       icon: 'TextQuote',
       title: 'Quote',
       onClick: () => editor?.chain().focus().toggleBlockquote().run(),
       isActive: editor?.isActive('blockquote') || false,
+      group: 'More',
+      notVisible: 1270,
     },
     null,
     {
@@ -734,20 +747,29 @@ export const useEditorToolbar = ({
       onClick: () =>
         editor?.chain().focus().unsetSubscript().toggleSuperscript().run(),
       isActive: editor?.isActive('superscript') || false,
+      group: 'More',
+      notVisible: 1370,
     },
     {
       icon: 'Subscript',
       title: 'Subscript',
-      onClick: () =>
-        editor?.chain().focus().unsetSuperscript().toggleSubscript().run(),
+      onClick: () => {
+        editor?.chain().focus().unsetSuperscript().toggleSubscript().run();
+      },
       isActive: editor?.isActive('subscript') || false,
+      group: 'More',
+      notVisible: 1370,
     },
     null,
     {
       icon: 'Link',
       title: 'Link',
-      onClick: () => setToolVisibility(IEditorTool.LINK),
+      onClick: () => {
+        setToolVisibility(IEditorTool.LINK_POPUP);
+      },
       isActive: editor?.isActive('link') || false,
+      group: 'More',
+      notVisible: 1560,
     },
     {
       icon: 'ImagePlus',
@@ -782,6 +804,7 @@ export const useEditorToolbar = ({
       },
       isActive: false,
       group: 'More',
+      notVisible: 1560,
     },
     {
       icon: 'Code',
@@ -794,6 +817,7 @@ export const useEditorToolbar = ({
       },
       isActive: editor?.isActive('code') || false,
       group: 'More',
+      notVisible: 1560,
     },
     {
       icon: 'Braces',
@@ -806,6 +830,7 @@ export const useEditorToolbar = ({
       },
       isActive: editor?.isActive('codeBlock') || false,
       group: 'More',
+      notVisible: 1560,
     },
     {
       icon: 'Table',
@@ -818,6 +843,7 @@ export const useEditorToolbar = ({
           .run(),
       isActive: false,
       group: 'More',
+      notVisible: 1560,
     },
   ];
 
