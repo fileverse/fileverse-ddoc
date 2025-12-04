@@ -812,8 +812,6 @@ const DdocEditor = forwardRef(
                               id="editor"
                               className={cn(
                                 'w-full h-auto',
-                                !documentStyling?.canvasBackground &&
-                                  'color-bg-default',
                                 isPreviewMode && 'preview-mode',
                                 activeModel !== undefined &&
                                   isAIAgentEnabled &&
