@@ -6,8 +6,10 @@ import React, {
   useMemo,
   useState,
   useCallback,
+  useEffect,
 } from 'react';
 import { DocumentStyling } from '../types';
+import { Editor } from '@tiptap/core';
 
 interface EditorContextType {
   collapsedHeadings: Set<string>;
@@ -28,12 +30,30 @@ export const useEditorContext = () => {
 };
 
 export const EditorProvider: React.FC<{
+  editor?: Editor;
   children: ReactNode;
   documentStyling?: DocumentStyling;
-}> = ({ children, documentStyling }) => {
+}> = ({ editor, children, documentStyling }) => {
   const [collapsedHeadings, setCollapsedHeadings] = useState<Set<string>>(
     new Set(),
   );
+
+  useEffect(() => {
+    if (!editor) return;
+    const { doc } = editor.state;
+    const headings = doc.content.content.filter(
+      (node) =>
+        node.type.name === 'dBlock' &&
+        node.content.content?.[0]?.type?.name === 'heading',
+    );
+    const tempSet = new Set<string>();
+    for (const heading of headings) {
+      heading.attrs.collapsed === 'true'
+        ? tempSet.add(heading.attrs.id as string)
+        : null;
+    }
+    setCollapsedHeadings(tempSet);
+  }, [editor]);
 
   const isHeadingCollapsed = useCallback(
     (id: string) => {

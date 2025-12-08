@@ -386,6 +386,42 @@ export const useHeadingCollapse = ({
     node.nodeSize,
   ]);
 
+  useEffect(() => {
+    if (!editor) return;
+
+    const { tr } = editor.state;
+    let hasChanges = false;
+
+    editor.state.doc.descendants((dBlockNode, dBlockPos) => {
+      if (dBlockNode.type.name === 'dBlock') {
+        const innerHeadingNode = dBlockNode.content.content?.[0];
+
+        if (innerHeadingNode?.type?.name === 'heading') {
+          const id = innerHeadingNode.attrs.id as string;
+          const currentCollapsedState =
+            innerHeadingNode.attrs.collapsed || false;
+          const targetCollapsedState = collapsedHeadings.has(id);
+
+          if (currentCollapsedState !== targetCollapsedState) {
+            const newAttrs = {
+              ...innerHeadingNode.attrs,
+              collapsed: targetCollapsedState,
+            };
+            // The heading node is typically at position 'dBlockPos + 1' inside its dBlock parent.
+            tr.setNodeMarkup(dBlockPos + 1, undefined, newAttrs);
+            hasChanges = true;
+          }
+        }
+      }
+      return true;
+    });
+
+    if (hasChanges) {
+      tr.setMeta('addToHistory', false); // Optional: prevent these attribute changes from being undoable
+      editor.view.dispatch(tr);
+    }
+  }, [collapsedHeadings, editor]);
+
   // Add effect to handle auto-expansion on Enter at the end of a collapsed heading
   useEffect(() => {
     if (!editor || !isHeading || !headingId) return;
