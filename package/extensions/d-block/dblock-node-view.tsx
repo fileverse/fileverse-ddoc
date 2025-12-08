@@ -49,8 +49,6 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
       isCollaboratorsDoc,
       isPreviewEditor,
     } = useEditingContext();
-    const { collapsedHeadings, setCollapsedHeadings } = useEditorContext();
-
     const {
       isHeading,
       isThisHeadingCollapsed,
@@ -61,8 +59,6 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
       node,
       getPos,
       editor,
-      collapsedHeadings,
-      setCollapsedHeadings,
     });
 
     const copyHeadingLink = useCallback(() => {
@@ -389,7 +385,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
         className={cn(
           'flex px-4 md:px-8 lg:pr-[80px] lg:pl-[8px] gap-2 group w-full relative justify-center items-center',
           isTable && 'pointer-events-auto',
-          shouldBeHidden && 'hidden',
+          shouldBeHidden && '!hidden',
         )}
       >
         <section

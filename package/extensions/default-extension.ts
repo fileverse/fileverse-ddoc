@@ -134,6 +134,7 @@ export const defaultExtensions = ({
         spellcheck: 'false',
       },
     },
+    heading: false,
     undoRedo: false,
     gapcursor: false,
     dropcursor: false,

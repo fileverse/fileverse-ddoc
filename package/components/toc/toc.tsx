@@ -6,7 +6,6 @@ import { TextSelection } from '@tiptap/pm/state';
 import { useState, useMemo, useCallback, memo, useRef, useEffect } from 'react';
 import { ToCProps, ToCItemProps, ToCItemType } from './types';
 import { useMediaQuery } from 'usehooks-ts';
-import { useEditorContext } from '../../context/editor-context';
 
 // Memoize the ToC item to prevent unnecessary re-renders
 export const ToCItem = memo(
@@ -107,9 +106,7 @@ export const ToC = memo(
     const lastCacheTimeRef = useRef<number>(0);
     const updateTimeoutRef = useRef<number | null>(null);
 
-    // Use the optimized context but only what we need
-    const { collapsedHeadings, setCollapsedHeadings, expandMultipleHeadings } =
-      useEditorContext();
+    // No longer using context for collapsed headings - they're stored in document
 
     // Memoize the filtered and processed items for faster rendering
     const processedItems = useMemo(() => {
@@ -172,17 +169,46 @@ export const ToC = memo(
       };
     }, [editor, getHeadingsMap]);
 
+    // Helper to expand heading by updating document attributes
+    const expandHeading = useCallback(
+      (headingId: string) => {
+        if (!editor) return;
+
+        // Find the heading in the document
+        const { doc } = editor.state;
+        let headingPos = -1;
+
+        doc.descendants((node, pos) => {
+          if (node.type.name === 'dBlock') {
+            const headingNode = node.content.content?.[0];
+            if (
+              headingNode?.type.name === 'heading' &&
+              headingNode.attrs.id === headingId
+            ) {
+              headingPos = pos;
+              return false; // Stop searching
+            }
+          }
+        });
+
+        if (headingPos !== -1) {
+          editor
+            .chain()
+            .setNodeSelection(headingPos)
+            .updateAttributes('heading', { isCollapsed: false })
+            .run();
+        }
+      },
+      [editor],
+    );
+
     // Fix for handling heading expansion
     const expandHeadingAndItsAncestors = useCallback(
       (id: string) => {
-        // Ensure direct expansion of clicked heading
-        if (collapsedHeadings.has(id)) {
-          setCollapsedHeadings((prev) => {
-            const newSet = new Set(prev);
-            newSet.delete(id);
-            return newSet;
-          });
-        }
+        if (!editor) return;
+
+        // Expand the clicked heading
+        expandHeading(id);
 
         // Find the clicked item
         const clickedItem = items.find((item) => item.id === id);
@@ -193,7 +219,6 @@ export const ToC = memo(
         // If clicked item is H1, expand all its nested content
         if (clickedLevel === 1) {
           let isWithinCurrentH1 = false;
-          const headingsToExpand: string[] = [];
 
           items.forEach((item) => {
             // Start collecting items after current H1
@@ -209,18 +234,12 @@ export const ToC = memo(
             }
 
             // Expand all items between current H1 and next H1
-            if (isWithinCurrentH1 && collapsedHeadings.has(item.id)) {
-              headingsToExpand.push(item.id);
+            if (isWithinCurrentH1) {
+              expandHeading(item.id);
             }
           });
-
-          if (headingsToExpand.length > 0) {
-            expandMultipleHeadings(headingsToExpand);
-          }
         } else {
           // For non-H1 headings, find and expand all ancestors
-          const headingsToExpand: string[] = [];
-
           // Simple iteration up the levels to find ancestors
           for (
             let i = items.findIndex((item) => item.id === id) - 1;
@@ -228,18 +247,14 @@ export const ToC = memo(
             i--
           ) {
             const item = items[i];
-            if (item.level < clickedLevel && collapsedHeadings.has(item.id)) {
-              headingsToExpand.push(item.id);
+            if (item.level < clickedLevel) {
+              expandHeading(item.id);
               if (item.level === 1) break; // Stop at H1
             }
           }
-
-          if (headingsToExpand.length > 0) {
-            expandMultipleHeadings(headingsToExpand);
-          }
         }
       },
-      [items, collapsedHeadings, expandMultipleHeadings, setCollapsedHeadings],
+      [items, editor, expandHeading],
     );
 
     // Optimize clicking on a heading by using the cached heading structure
