@@ -30,7 +30,7 @@ export const Emoji = Node.create({
       ...this.parent?.(),
       HTMLAttributes: {},
       suggestion: {
-        char: ':',
+        char: '::',
         pluginKey: EmojiPluginKey,
         command: ({ editor, range, props }: any) => {
           editor
