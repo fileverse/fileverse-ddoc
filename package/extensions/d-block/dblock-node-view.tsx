@@ -470,7 +470,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
                 <CopyLinkButton
                   onClick={copyHeadingLink}
                   className={cn(
-                    'd-block-button opacity-0 color-text-default hover:color-bg-default-hover aspect-square w-6 h-6',
+                    'd-block-button lg:opacity-0 color-text-default color-bg-default-hover aspect-square w-6 h-6',
                     'group-hover:opacity-100',
                   )}
                 />
