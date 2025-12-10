@@ -33,11 +33,12 @@ import {
   CopyLinkTooltip,
 } from './components/tooltips';
 import { DBlockMenu } from './components/menu';
+import { useMediaQuery } from 'usehooks-ts';
 
 export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
   ({ node, getPos, editor, deleteNode, ...props }) => {
     const onCopyHeadingLink = props.extension?.options?.onCopyHeadingLink;
-
+    const isBelowLargeScreen = useMediaQuery('(max-width: 1024px)');
     const [menuOpen, setMenuOpen] = useState<boolean>(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [visibleTemplateCount, setVisibleTemplateCount] = useState(2);
@@ -382,18 +383,18 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
     return (
       <NodeViewWrapper
         className={cn(
-          'flex px-4 md:px-8 lg:pr-[80px] lg:pl-[8px] gap-2 group w-full relative justify-center items-center',
+          'flex px-4 pl-2 md:pr-8 lg:pr-[80px] lg:pl-[8px] gap-2 group w-full relative justify-center items-center',
           isTable && 'pointer-events-auto',
           shouldBeHidden && '!hidden',
         )}
       >
         <section
-          className={cn('lg:flex gap-[2px] hidden min-w-16 justify-end')}
+          className={cn('flex gap-[2px] min-w-5 lg:min-w-16 justify-end')}
           aria-label="left-menu"
           contentEditable={false}
           suppressContentEditableWarning={true}
         >
-          {!isPreviewMode ? (
+          {!isPreviewMode && !isBelowLargeScreen ? (
             <>
               <AddBlockTooltip>
                 <PlusButton
@@ -421,35 +422,22 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
                 }
                 actions={actions}
               />
-
-              {isHeading && (
-                <CollapseTooltip isCollapsed={isThisHeadingCollapsed}>
-                  <CollapseButton
-                    isCollapsed={isThisHeadingCollapsed}
-                    onToggle={toggleCollapse}
-                    className={cn(
-                      'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
-                      'group-hover:opacity-100',
-                      isThisHeadingCollapsed ? 'opacity-100' : 'opacity-0',
-                    )}
-                  />
-                </CollapseTooltip>
-              )}
             </>
-          ) : (
-            isHeading && (
-              <CollapseTooltip isCollapsed={isThisHeadingCollapsed}>
-                <CollapseButton
-                  isCollapsed={isThisHeadingCollapsed}
-                  onToggle={toggleCollapse}
-                  className={cn(
-                    'd-block-button opacity-0 color-text-default hover:color-bg-default-hover aspect-square min-w-5',
-                    'group-hover:opacity-100',
-                    isThisHeadingCollapsed ? 'opacity-100' : 'opacity-0',
-                  )}
-                />
-              </CollapseTooltip>
-            )
+          ) : null}
+          {isHeading && (
+            <CollapseTooltip isCollapsed={isThisHeadingCollapsed}>
+              <CollapseButton
+                isCollapsed={isThisHeadingCollapsed}
+                onToggle={toggleCollapse}
+                className={cn(
+                  'd-block-button opacity-0 color-text-default hover:color-bg-default-hover aspect-square min-w-5',
+                  'group-hover:opacity-100',
+                  isThisHeadingCollapsed || isBelowLargeScreen
+                    ? 'opacity-100'
+                    : 'opacity-0',
+                )}
+              />
+            </CollapseTooltip>
           )}
         </section>
 
