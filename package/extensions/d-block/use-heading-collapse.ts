@@ -253,7 +253,8 @@ export const useHeadingCollapse = ({
     for (const [id, data] of headingMap.entries()) {
       if (
         data.position < position &&
-        (!prevHeadingId || headingMap.get(prevHeadingId)!.position < data.position)
+        (!prevHeadingId ||
+          headingMap.get(prevHeadingId)!.position < data.position)
       ) {
         prevHeadingId = id;
       }
@@ -280,7 +281,16 @@ export const useHeadingCollapse = ({
     }
 
     return false;
-  }, [editor, getPos, isHeading, node, headingId, getDocumentCache, node.content, renderCount]);
+  }, [
+    editor,
+    getPos,
+    isHeading,
+    node,
+    headingId,
+    getDocumentCache,
+    node.content,
+    renderCount,
+  ]);
 
   // Optimize toggling collapse state
   const toggleCollapse = useCallback(() => {
@@ -360,7 +370,10 @@ export const useHeadingCollapse = ({
       // When collapsing, move cursor to end of heading
       requestAnimationFrame(() => {
         const headingEndPos = getPos() + node.nodeSize;
-        editor.chain().focus(headingEndPos - 1).run();
+        editor
+          .chain()
+          .focus(headingEndPos - 1)
+          .run();
       });
     }
   }, [editor, headingId, getDocumentCache, getPos, node]);
@@ -441,10 +454,7 @@ export const useHeadingCollapse = ({
 };
 
 // Helper function to expand collapsed headings
-export const expandHeadingContent = (
-  editor: Editor,
-  nodePos: number,
-) => {
+export const expandHeadingContent = (editor: Editor, nodePos: number) => {
   const node = editor.state.doc.nodeAt(nodePos);
   if (
     node?.type.name === 'dBlock' &&

@@ -13,7 +13,6 @@ import { useEditingContext } from '../../hooks/use-editing-context';
 import { debounce } from '../../utils/debounce';
 import useContentItemActions from '../../hooks/use-content-item-actions';
 import { cn } from '@fileverse/ui';
-import { useEditorContext } from '../../context/editor-context';
 import { useHeadingCollapse } from './use-heading-collapse';
 import { headingToSlug } from '../../utils/heading-to-slug';
 import {
