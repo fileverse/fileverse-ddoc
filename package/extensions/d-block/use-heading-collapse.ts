@@ -365,17 +365,14 @@ export const useHeadingCollapse = ({
       });
     }
 
-    // Handle cursor positioning - minimal DOM manipulation
-    if (!wasCollapsed) {
-      // When collapsing, move cursor to end of heading
-      requestAnimationFrame(() => {
-        const headingEndPos = getPos() + node.nodeSize;
-        editor
-          .chain()
-          .focus(headingEndPos - 1)
-          .run();
-      });
-    }
+    // When collapsing, move cursor to end of heading
+    requestAnimationFrame(() => {
+      const headingEndPos = getPos() + node.nodeSize;
+      editor
+        .chain()
+        .focus(headingEndPos - 1)
+        .run();
+    });
   }, [editor, headingId, getDocumentCache, getPos, node]);
 
   // Add effect to handle auto-expansion on Enter at the end of a collapsed heading
