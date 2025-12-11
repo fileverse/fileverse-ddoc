@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "3.0.5",
+  "version": "3.0.6",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
@@ -58,6 +58,7 @@
     "@tiptap/extension-color": "^3.11.0",
     "@tiptap/extension-document": "^3.11.0",
     "@tiptap/extension-font-family": "^3.11.0",
+    "@tiptap/extension-heading": "^3.11.0",
     "@tiptap/extension-highlight": "^3.11.0",
     "@tiptap/extension-horizontal-rule": "^3.11.0",
     "@tiptap/extension-list": "^3.11.0",

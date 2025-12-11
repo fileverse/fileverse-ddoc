@@ -13,6 +13,7 @@ import { TextStyle } from '@tiptap/extension-text-style';
 import HorizontalRule from './horizontal-rule';
 import ColumnExtension from './multi-column';
 import CustomKeymap from './custom-keymap';
+import { CollapsibleHeading } from './collapsible-heading';
 import { Color } from '@tiptap/extension-color';
 import { Iframe } from './iframe';
 import { EmbeddedTweet } from './twitter-embed';
@@ -109,11 +110,6 @@ export const defaultExtensions = ({
         rel: 'noopener noreferrer',
       },
     },
-    heading: {
-      HTMLAttributes: {
-        class: 'select-text pointer-events-auto',
-      },
-    },
     paragraph: {
       HTMLAttributes: {
         class: 'select-text pointer-events-auto transition-all',
@@ -138,6 +134,7 @@ export const defaultExtensions = ({
         spellcheck: 'false',
       },
     },
+    heading: false,
     undoRedo: false,
     gapcursor: false,
     dropcursor: false,
@@ -146,6 +143,11 @@ export const defaultExtensions = ({
     bulletList: false,
     listItem: false,
     codeBlock: false,
+  }),
+  CollapsibleHeading.configure({
+    HTMLAttributes: {
+      class: 'select-text pointer-events-auto',
+    },
   }),
   TableOfContents.configure({
     getIndex: getHierarchicalIndexes,
