@@ -14,26 +14,12 @@ import {
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
 import { IComment } from '../../package/extensions/comment';
-import {
-  TableOfContents,
-  getHierarchicalIndexes,
-} from '@tiptap-pro/extension-table-of-contents';
 import { fromUint8Array } from 'js-base64';
 import { crypto as cryptoUtils } from './crypto';
 import { collabStore } from './storage/collab-store';
 import { DocumentStylingPanel } from './DocumentStylingPanel';
 import { DocumentStyling, ICollaborationConfig } from '../../package/types';
 import { getKeyFromURLParams } from './utils';
-
-const sampleTags = [
-  { name: 'Talks & Presentations', isActive: true, color: '#F6B1B2' },
-  { name: 'Discussions', isActive: true, color: '#FFD6D7' },
-  { name: 'Meet-up', isActive: false, color: '#FFD887' },
-  { name: 'Workshop', isActive: false, color: '#FFF292' },
-  { name: 'Hackathon', isActive: false, color: '#D7F893' },
-  { name: 'Devcon Main Event', isActive: true, color: '#B7F1BA' },
-  { name: 'Specific Event', isActive: true, color: '#AAF5E4' },
-];
 
 function App() {
   const [enableCollaboration, setEnableCollaboration] = useState(false);
@@ -450,7 +436,6 @@ function App() {
         }}
         renderNavbar={renderNavbar}
         ensResolutionUrl={import.meta.env.ENS_RESOLUTION_URL}
-        tags={sampleTags}
         selectedTags={selectedTags}
         setSelectedTags={setSelectedTags}
         isCommentSectionOpen={isCommentSectionOpen}
@@ -482,10 +467,6 @@ function App() {
         onDeleteComment={handleDeleteComment}
         showTOC={showTOC}
         setShowTOC={setShowTOC}
-        proExtensions={{
-          TableOfContents: TableOfContents,
-          getHierarchicalIndexes: getHierarchicalIndexes,
-        }}
         isConnected={isConnected}
         connectViaWallet={async () => {}}
         isLoading={false}

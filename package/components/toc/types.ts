@@ -15,6 +15,7 @@ export type ToCProps = {
     items: ToCItemType[] | ((prev: ToCItemType[]) => ToCItemType[]),
   ) => void;
   editor: Editor;
+  orientation?: 'portrait' | 'landscape';
 };
 
 export type ToCItemProps = {
@@ -22,6 +23,7 @@ export type ToCItemProps = {
   onItemClick: (e: React.MouseEvent, id: string) => void;
   onItemRemove: (e: React.MouseEvent, id: string) => void;
   index: number;
+  orientation?: 'portrait' | 'landscape';
 };
 
 export interface DocumentOutlineProps {
@@ -34,4 +36,5 @@ export interface DocumentOutlineProps {
   showTOC: boolean | undefined;
   setShowTOC: React.Dispatch<SetStateAction<boolean>> | undefined;
   isPreviewMode: boolean;
+  orientation?: 'portrait' | 'landscape';
 }

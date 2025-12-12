@@ -39,6 +39,10 @@ import { EditorProvider } from './context/editor-context';
 import { fadeInTransition, slideUpTransition } from './components/motion-div';
 import { PreviewContentLoader } from './components/preview-content-loader';
 import { Reminder } from './extensions/reminder-block/types';
+import {
+  CANVAS_DIMENSIONS,
+  ORIENTATION_CONSTRAINTS,
+} from './constants/canvas-dimensions';
 
 const DdocEditor = forwardRef(
   (
@@ -113,7 +117,6 @@ const DdocEditor = forwardRef(
       renderThemeToggle,
       metadataProxyUrl,
       extensions,
-      proExtensions,
       onCopyHeadingLink,
       footerHeight,
       ipfsImageFetchFn,
@@ -176,9 +179,60 @@ const DdocEditor = forwardRef(
     const getCanvasStyle = () => mergedStyles.canvas;
     const getBackgroundStyle = () => mergedStyles.background;
 
+    /**
+     * Get dimension styles based on current orientation and zoom level
+     * Returns inline styles for width and minHeight
+     *
+     * Behavior:
+     * - Mobile: Responsive width (100%) and full viewport height
+     * - Desktop fixed widths: Applied from CANVAS_DIMENSIONS (mimics real paper)
+     * - Desktop zoom 1.4 (fit): Reduced percentages to account for 1.4x transform scaling
+     */
+    const getDimensionStyles = (): React.CSSProperties => {
+      // On mobile, use full viewport height for immersive editing experience
+      if (isNativeMobile) {
+        return {
+          minHeight: '100vh',
+        };
+      }
+
+      const orientation =
+        documentStyling?.orientation === 'landscape' ? 'landscape' : 'portrait';
+      const dimensions =
+        CANVAS_DIMENSIONS[orientation][
+          zoomLevel as keyof typeof CANVAS_DIMENSIONS.portrait
+        ];
+
+      if (!dimensions) return {};
+
+      const styles: React.CSSProperties = {};
+      const constraints = ORIENTATION_CONSTRAINTS[orientation];
+
+      // Apply width based on dimension type
+      if (typeof dimensions.width === 'number') {
+        // Fixed pixel widths - canvas behaves like real paper with consistent size
+        styles.width = `${dimensions.width}px`;
+        styles.maxWidth = `${dimensions.width}px`;
+      } else {
+        // Percentage widths (zoom 1.4 only) - account for transform: scaleX(1.4) scaling
+        // Use reduced percentages to prevent overflow after scaling
+        styles.width = constraints.zoomFitWidth;
+        styles.maxWidth = `${constraints.zoomFitMaxWidth}px`;
+      }
+
+      // Apply minHeight constraint
+      if (dimensions.minHeight) {
+        styles.minHeight = dimensions.minHeight;
+      }
+
+      return styles;
+    };
+
     const btn_ref = useRef(null);
     const isWidth1500px = useMediaQuery('(min-width: 1500px)');
     const isWidth3000px = useMediaQuery('(min-width: 3000px)');
+    const isWidth1600px = useMediaQuery('(min-width: 1600px)');
+    const isWidth1360px = useMediaQuery('(min-width: 1360px)');
     const { isNativeMobile, isIOS } = useResponsive();
 
     const [isHiddenTagsVisible, setIsHiddenTagsVisible] = useState(false);
@@ -247,7 +301,6 @@ const DdocEditor = forwardRef(
       isPresentationMode,
       metadataProxyUrl,
       extensions,
-      proExtensions,
       onCopyHeadingLink,
       isConnected,
       activeModel,
@@ -338,7 +391,7 @@ const DdocEditor = forwardRef(
             return;
           }
 
-          const existingUser = editor.storage.collaborationCursor?.users?.find(
+          const existingUser = editor.storage.collaborationCaret?.users?.find(
             (user: Record<string, unknown>) => {
               return user?.clientId === ydoc.clientID;
             },
@@ -400,7 +453,6 @@ const DdocEditor = forwardRef(
         prevTags.filter((tag) => tag.name !== tagName),
       );
     };
-
     const handleClosePresentationMode = () => {
       setIsPresentationMode?.(false);
 
@@ -488,7 +540,7 @@ const DdocEditor = forwardRef(
               <div
                 id="toolbar"
                 className={cn(
-                  'z-[45] hidden xl:flex items-center justify-center w-full h-[52px] fixed left-0 color-bg-default border-b color-border-default transition-transform duration-300 top-[3.5rem]',
+                  'z-[45] hidden mobile:flex items-center justify-center w-full h-[52px] fixed left-0 color-bg-default border-b color-border-default transition-transform duration-300 top-[3.5rem]',
                   {
                     'translate-y-0': isNavbarVisible,
                     'translate-y-[-108%]': !isNavbarVisible,
@@ -547,13 +599,14 @@ const DdocEditor = forwardRef(
                 showTOC={showTOC}
                 setShowTOC={setShowTOC}
                 isPreviewMode={isPreviewMode || !isNavbarVisible}
+                orientation={documentStyling?.orientation}
               />
             )}
 
             <div
               id="editor-wrapper"
               className={cn(
-                'w-full mx-auto rounded',
+                'w-full mx-auto rounded transition-all duration-300 ease-in-out',
                 !documentStyling?.canvasBackground && 'color-bg-default',
                 !isPreviewMode &&
                   (isNavbarVisible
@@ -577,7 +630,15 @@ const DdocEditor = forwardRef(
                 },
                 {
                   '!mx-auto':
-                    !isCommentSectionOpen ||
+                    (!isCommentSectionOpen &&
+                      !(
+                        showTOC &&
+                        !isNativeMobile &&
+                        zoomLevel === '1' &&
+                        documentStyling?.orientation === 'landscape' &&
+                        isWidth1360px && // Shift applies from 1360px
+                        !isWidth1600px // Up to 1600px, then canvas stays centered
+                      )) ||
                     zoomLevel === '0.5' ||
                     zoomLevel === '0.75' ||
                     zoomLevel === '1.4' ||
@@ -586,23 +647,16 @@ const DdocEditor = forwardRef(
                 {
                   '!ml-0': zoomLevel === '2' && isWidth1500px && !isWidth3000px,
                 },
+                // TOC shift for landscape mode on 1360-1599px - shift canvas right by TOC width + padding
+                // Provides just enough clearance (200px) without excessive gap
                 {
-                  'w-[700px] md:max-w-[700px] min-h-[150%]':
-                    zoomLevel === '0.5',
+                  'min-[1360px]:!ml-[200px] min-[1360px]:!mr-auto':
+                    showTOC &&
+                    !isNativeMobile &&
+                    zoomLevel === '1' &&
+                    documentStyling?.orientation === 'landscape' &&
+                    !isWidth1600px, // Only shift on screens < 1600px
                 },
-                {
-                  'w-[800px] md:max-w-[800px] min-h-[200%]':
-                    zoomLevel === '0.75',
-                },
-                {
-                  'w-[850px] md:max-w-[850px] min-h-[100%]': zoomLevel === '1',
-                },
-                { 'w-[70%] md:max-w-[70%] min-h-[200%]': zoomLevel === '1.4' },
-                {
-                  'w-[1062.5px] md:max-w-[1062.5px] min-h-[100%]':
-                    zoomLevel === '1.5',
-                },
-                { 'w-[1548px] md:max-w-[1548px]': zoomLevel === '2' },
               )}
               style={{
                 transformOrigin:
@@ -611,6 +665,7 @@ const DdocEditor = forwardRef(
                     : 'top center',
                 transform: `scaleX(${zoomLevel})`,
                 ...(getCanvasStyle() || {}),
+                ...getDimensionStyles(), // Apply dynamic width/height based on orientation
               }}
             >
               <div
@@ -633,6 +688,7 @@ const DdocEditor = forwardRef(
                   {editor && (
                     <EditorBubbleMenu
                       editor={editor}
+                      //@ts-expect-error error mismatch here
                       onError={onError}
                       zoomLevel={zoomLevel}
                       disableInlineComment={disableInlineComment || false}
@@ -688,7 +744,7 @@ const DdocEditor = forwardRef(
                             <div
                               ref={tagsContainerRef}
                               className={cn(
-                                'flex flex-wrap px-4 md:px-8 lg:px-[80px] items-center gap-1 mt-4 lg:!mt-0',
+                                'flex flex-wrap px-4 md:px-8 lg:px-[80px] mb-8 items-center gap-1 mt-4 lg:!mt-0',
                                 { 'pt-12': isPreviewMode },
                               )}
                               {...(getCanvasStyle() && {
@@ -755,9 +811,7 @@ const DdocEditor = forwardRef(
                               editor={editor}
                               id="editor"
                               className={cn(
-                                'w-full h-auto py-8',
-                                !documentStyling?.canvasBackground &&
-                                  'color-bg-default',
+                                'w-full h-auto',
                                 isPreviewMode && 'preview-mode',
                                 activeModel !== undefined &&
                                   isAIAgentEnabled &&
@@ -793,7 +847,7 @@ const DdocEditor = forwardRef(
             {!isPreviewMode && !disableBottomToolbar && (
               <div
                 className={cn(
-                  'flex xl:hidden items-center w-full h-[52px] fixed left-0 z-10 px-4 color-bg-default transition-all duration-300 ease-in-out border-b border-color-default',
+                  'flex mobile:hidden items-center w-full h-[52px] fixed left-0 z-10 px-4 color-bg-default transition-all duration-300 ease-in-out border-b border-color-default',
                   isKeyboardVisible && 'hidden',
                   { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
                 )}

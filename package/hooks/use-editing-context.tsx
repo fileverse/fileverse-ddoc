@@ -30,6 +30,7 @@ type EditingProviderProps = {
   isPreviewMode: boolean;
   isPresentationMode?: boolean;
   isCollaboratorsDoc?: boolean;
+  isPreviewEditor?: boolean;
 };
 
 // Create a Provider Component
@@ -38,10 +39,16 @@ export const EditingProvider: React.FC<EditingProviderProps> = ({
   isPreviewMode,
   isPresentationMode,
   isCollaboratorsDoc,
+  isPreviewEditor,
 }) => {
   const value = useMemo(
-    () => ({ isPreviewMode, isPresentationMode, isCollaboratorsDoc }),
-    [isPreviewMode, isPresentationMode, isCollaboratorsDoc],
+    () => ({
+      isPreviewMode,
+      isPresentationMode,
+      isCollaboratorsDoc,
+      isPreviewEditor,
+    }),
+    [isPreviewMode, isPresentationMode, isCollaboratorsDoc, isPreviewEditor],
   );
   return (
     <EditingContext.Provider value={value}>{children}</EditingContext.Provider>

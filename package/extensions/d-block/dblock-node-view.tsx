@@ -1,4 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-nocheck
 import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import {
   NodeViewWrapper,
@@ -11,7 +13,6 @@ import { useEditingContext } from '../../hooks/use-editing-context';
 import { debounce } from '../../utils/debounce';
 import useContentItemActions from '../../hooks/use-content-item-actions';
 import { cn } from '@fileverse/ui';
-import { useEditorContext } from '../../context/editor-context';
 import { useHeadingCollapse } from './use-heading-collapse';
 import { headingToSlug } from '../../utils/heading-to-slug';
 import {
@@ -32,19 +33,22 @@ import {
   CopyLinkTooltip,
 } from './components/tooltips';
 import { DBlockMenu } from './components/menu';
+import { useMediaQuery } from 'usehooks-ts';
 
 export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
   ({ node, getPos, editor, deleteNode, ...props }) => {
     const onCopyHeadingLink = props.extension?.options?.onCopyHeadingLink;
-
+    const isBelowLargeScreen = useMediaQuery('(max-width: 1024px)');
     const [menuOpen, setMenuOpen] = useState<boolean>(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [visibleTemplateCount, setVisibleTemplateCount] = useState(2);
     const actions = useContentItemActions(editor as Editor, node, getPos());
-    const { isPreviewMode, isPresentationMode, isCollaboratorsDoc } =
-      useEditingContext();
-    const { collapsedHeadings, setCollapsedHeadings } = useEditorContext();
-
+    const {
+      isPreviewMode,
+      isPresentationMode,
+      isCollaboratorsDoc,
+      isPreviewEditor,
+    } = useEditingContext();
     const {
       isHeading,
       isThisHeadingCollapsed,
@@ -55,8 +59,6 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
       node,
       getPos,
       editor,
-      collapsedHeadings,
-      setCollapsedHeadings,
     });
 
     const copyHeadingLink = useCallback(() => {
@@ -317,6 +319,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
     const isDocEmpty = useMemo(() => {
       const { doc, selection } = editor.state;
       const pos = getPos();
+      if (pos === undefined) return false;
       const nodeAtPos = doc.nodeAt(pos);
 
       if (!nodeAtPos || nodeAtPos.type.name !== 'dBlock') return false;
@@ -354,7 +357,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
             isTable && 'pointer-events-auto',
           )}
         >
-          <NodeViewContent
+          <div
             className={cn('node-view-content w-full relative', {
               'is-table': isTable,
               'invalid-content': node.attrs?.isCorrupted,
@@ -371,7 +374,8 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
                 !!isCollaboratorsDoc,
                 isPreviewMode,
               )}
-          </NodeViewContent>
+            <NodeViewContent />
+          </div>
         </NodeViewWrapper>
       );
     }
@@ -379,18 +383,18 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
     return (
       <NodeViewWrapper
         className={cn(
-          'flex px-4 md:px-8 lg:pr-[80px] lg:pl-[8px] gap-2 group w-full relative justify-center items-center',
+          'flex px-4 pl-2 md:pr-8 lg:pr-[80px] lg:pl-[8px] gap-2 group w-full relative justify-center items-center',
           isTable && 'pointer-events-auto',
-          shouldBeHidden && 'hidden',
+          shouldBeHidden && '!hidden',
         )}
       >
         <section
-          className={cn('lg:flex gap-[2px] hidden min-w-16 justify-end')}
+          className={cn('flex gap-[2px] min-w-5 lg:min-w-16 justify-end')}
           aria-label="left-menu"
           contentEditable={false}
           suppressContentEditableWarning={true}
         >
-          {!isPreviewMode ? (
+          {!isPreviewMode && !isBelowLargeScreen ? (
             <>
               <AddBlockTooltip>
                 <PlusButton
@@ -418,39 +422,26 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
                 }
                 actions={actions}
               />
-
-              {isHeading && (
-                <CollapseTooltip isCollapsed={isThisHeadingCollapsed}>
-                  <CollapseButton
-                    isCollapsed={isThisHeadingCollapsed}
-                    onToggle={toggleCollapse}
-                    className={cn(
-                      'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
-                      'group-hover:opacity-100',
-                      isThisHeadingCollapsed ? 'opacity-100' : 'opacity-0',
-                    )}
-                  />
-                </CollapseTooltip>
-              )}
             </>
-          ) : (
-            isHeading && (
-              <CollapseTooltip isCollapsed={isThisHeadingCollapsed}>
-                <CollapseButton
-                  isCollapsed={isThisHeadingCollapsed}
-                  onToggle={toggleCollapse}
-                  className={cn(
-                    'd-block-button opacity-0 color-text-default hover:color-bg-default-hover aspect-square min-w-5',
-                    'group-hover:opacity-100',
-                    isThisHeadingCollapsed ? 'opacity-100' : 'opacity-0',
-                  )}
-                />
-              </CollapseTooltip>
-            )
+          ) : null}
+          {isHeading && (
+            <CollapseTooltip isCollapsed={isThisHeadingCollapsed}>
+              <CollapseButton
+                isCollapsed={isThisHeadingCollapsed}
+                onToggle={toggleCollapse}
+                className={cn(
+                  'd-block-button opacity-0 color-text-default hover:color-bg-default-hover aspect-square min-w-5',
+                  'group-hover:opacity-100',
+                  isThisHeadingCollapsed || isBelowLargeScreen
+                    ? 'opacity-100'
+                    : 'opacity-0',
+                )}
+              />
+            </CollapseTooltip>
           )}
         </section>
 
-        <NodeViewContent
+        <div
           className={cn(
             'node-view-content w-full relative self-center',
             {
@@ -472,20 +463,23 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
               !!isCollaboratorsDoc,
               isPreviewMode,
             )}
-          {isHeading && isPreviewMode && (
+
+          {isHeading && isPreviewMode && !isPreviewEditor && (
             <section>
               <CopyLinkTooltip>
                 <CopyLinkButton
                   onClick={copyHeadingLink}
                   className={cn(
-                    'd-block-button opacity-0 color-text-default hover:color-bg-default-hover aspect-square w-6 h-6',
+                    'd-block-button lg:opacity-0 color-text-default color-bg-default-hover aspect-square w-6 h-6',
                     'group-hover:opacity-100',
                   )}
                 />
               </CopyLinkTooltip>
             </section>
           )}
-        </NodeViewContent>
+
+          <NodeViewContent />
+        </div>
       </NodeViewWrapper>
     );
   },

@@ -6,7 +6,11 @@ export default {
     '../package/**/*.{js,ts,tsx,jsx}',
   ],
   theme: {
-    extend: {},
+    extend: {
+      screens: {
+        mobile: '960px',
+      },
+    },
   },
   plugins: [require('tailwindcss-animate')],
 };

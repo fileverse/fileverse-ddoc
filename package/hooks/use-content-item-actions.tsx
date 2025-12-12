@@ -10,7 +10,6 @@ const useContentItemActions = (
   editor: Editor,
   currentNode: Node | null,
   currentNodePos: number,
-  setCollapsedHeadings?: (updater: (prev: Set<string>) => Set<string>) => void,
 ) => {
   const hasActiveAIWriter = useAIWriterActiveState(editor);
   const resetTextFormatting = useCallback(() => {
@@ -61,9 +60,7 @@ const useContentItemActions = (
 
   const deleteNode = useCallback(() => {
     // First, check if we're deleting a heading and expand its content if needed
-    if (setCollapsedHeadings) {
-      expandHeadingContent(editor, currentNodePos, setCollapsedHeadings);
-    }
+    expandHeadingContent(editor, currentNodePos);
 
     // Then delete the node
     editor
@@ -72,7 +69,7 @@ const useContentItemActions = (
       .setNodeSelection(currentNodePos)
       .deleteSelection()
       .run();
-  }, [editor, currentNodePos, setCollapsedHeadings]);
+  }, [editor, currentNodePos]);
 
   return {
     resetTextFormatting,

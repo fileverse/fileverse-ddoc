@@ -46,7 +46,7 @@ export const SecureImage = forwardRef<HTMLImageElement, Props>(
 
             const decryptedArrayBuffer = await decryptImage({
               encryptedKey,
-              privateKey: toByteArray(privateKey),
+              privateKey: new Uint8Array(toByteArray(privateKey)).buffer,
               iv,
               imageBuffer,
             });

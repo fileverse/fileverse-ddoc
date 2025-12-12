@@ -465,7 +465,12 @@ export class SocketClient {
       this._webSocket.onerror = (e) => {
         console.error('SocketAPI: socket error', e);
         this._webSocketStatus = SocketStatusEnum.CLOSED;
-        this._onError?.('Failed to connect to Socket');
+        if (
+          this._webSocket &&
+          this._webSocket.retryCount === WEBSOCKET_CONFIG.maxRetries
+        ) {
+          this._onError?.('Failed to connect to Socket');
+        }
       };
     });
   }

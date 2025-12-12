@@ -3,5 +3,5 @@ export const WEBSOCKET_CONFIG = {
   minReconnectionDelay: 1500,
   reconnectionDelayGrowFactor: 1.3,
   connectionTimeout: 6000,
-  maxRetries: 0,
+  maxRetries: 5,
 };
