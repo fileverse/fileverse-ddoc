@@ -725,18 +725,13 @@ export const DBlock = Node.create<DBlockOptions>({
                 cursorPos = dBlockPos + firstDBlockNode.nodeSize + 2;
               }
 
-              view.dispatch(tr);
+              // Set selection in the transaction itself (before dispatch)
+              tr.setSelection(TextSelection.create(tr.doc, cursorPos));
 
-              // Mobile browsers need selection to be set after the document update
-              // Set selection in a separate microtask to ensure DOM has updated
-              setTimeout(() => {
-                const newState = editor.view.state;
-                const targetPos = Math.min(
-                  cursorPos,
-                  newState.doc.content.size - 1,
-                );
-                editor.commands.setTextSelection(targetPos);
-              }, 0);
+              // Scroll into view to ensure cursor is visible
+              tr.scrollIntoView();
+
+              view.dispatch(tr);
 
               return true;
             }
