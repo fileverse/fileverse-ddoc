@@ -378,16 +378,6 @@ export const DBlock = Node.create<DBlockOptions>({
           doc,
         } = editor.state;
 
-        // Debug: Log every Backspace press
-        console.log(
-          '[BACKSPACE] from:',
-          from,
-          'parent:',
-          $head.node($head.depth - 1)?.type.name,
-          'node:',
-          $head.node($head.depth)?.type.name,
-        );
-
         // Handle selection deletion first
         if (from !== to) {
           if (from <= 2) {
@@ -735,37 +725,26 @@ export const DBlock = Node.create<DBlockOptions>({
                 cursorPos = dBlockPos + firstDBlockNode.nodeSize + 2;
               }
 
-              // Set selection in the transaction itself (before dispatch)
-              tr.setSelection(TextSelection.create(tr.doc, cursorPos));
-
-              // Scroll into view to ensure cursor is visible
-              tr.scrollIntoView();
-
-              // Debug logging
-              const debugInfo = {
-                before_cursorPos: cursorPos,
-                before_tr_selection: tr.selection.from,
-              };
-
               view.dispatch(tr);
 
-              debugInfo.after_editor_selection = editor.state.selection.from;
-              debugInfo.expected = cursorPos;
-              debugInfo.match = editor.state.selection.from === cursorPos;
+              // Mobile fix: Force cursor position after browser reconciles DOM
+              // requestAnimationFrame waits for next paint, more reliable than setTimeout on mobile
+              requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                  // Double RAF ensures DOM is fully updated
+                  const newState = editor.view.state;
+                  const targetPos = Math.min(
+                    cursorPos,
+                    newState.doc.content.size - 1,
+                  );
 
-              // Show on screen for mobile debugging
-              const debugDiv =
-                document.getElementById('debug-mobile') ||
-                document.createElement('div');
-              debugDiv.id = 'debug-mobile';
-              debugDiv.style.cssText =
-                'position:fixed;top:0;left:0;right:0;background:black;color:lime;padding:10px;font-size:12px;z-index:9999;max-height:200px;overflow:auto;';
-              debugDiv.innerHTML = `<strong>CASE 3 Debug:</strong><br>${JSON.stringify(debugInfo, null, 2).replace(/\n/g, '<br>').replace(/ /g, '&nbsp;')}`;
-              if (!document.getElementById('debug-mobile')) {
-                document.body.appendChild(debugDiv);
-              }
-
-              console.log('[CASE 3] Debug:', debugInfo);
+                  // Use a new transaction to set selection
+                  const selectionTr = newState.tr.setSelection(
+                    TextSelection.create(newState.doc, targetPos),
+                  );
+                  editor.view.dispatch(selectionTr);
+                });
+              });
 
               return true;
             }
