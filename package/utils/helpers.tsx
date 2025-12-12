@@ -25,7 +25,6 @@ export const EXTENSIONS_WITH_DUPLICATE_WARNINGS = [
   'blockquote',
   'code',
   'hardBreak',
-  'heading',
   'italic',
   'orderedList',
   'strike',
