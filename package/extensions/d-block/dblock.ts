@@ -378,6 +378,16 @@ export const DBlock = Node.create<DBlockOptions>({
           doc,
         } = editor.state;
 
+        // Debug: Log every Backspace press
+        console.log(
+          '[BACKSPACE] from:',
+          from,
+          'parent:',
+          $head.node($head.depth - 1)?.type.name,
+          'node:',
+          $head.node($head.depth)?.type.name,
+        );
+
         // Handle selection deletion first
         if (from !== to) {
           if (from <= 2) {
