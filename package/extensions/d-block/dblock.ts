@@ -725,14 +725,17 @@ export const DBlock = Node.create<DBlockOptions>({
                 cursorPos = dBlockPos + firstDBlockNode.nodeSize + 2;
               }
 
-              tr.setSelection(TextSelection.create(tr.doc, cursorPos));
-
               view.dispatch(tr);
 
-              // Force focus to correct position for mobile browsers
-              // Mobile browsers sometimes don't respect selection set in transaction
+              // Mobile browsers need selection to be set after the document update
+              // Set selection in a separate microtask to ensure DOM has updated
               setTimeout(() => {
-                editor.commands.focus(cursorPos);
+                const newState = editor.view.state;
+                const targetPos = Math.min(
+                  cursorPos,
+                  newState.doc.content.size - 1,
+                );
+                editor.commands.setTextSelection(targetPos);
               }, 0);
 
               return true;
