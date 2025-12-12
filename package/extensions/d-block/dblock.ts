@@ -728,6 +728,13 @@ export const DBlock = Node.create<DBlockOptions>({
               tr.setSelection(TextSelection.create(tr.doc, cursorPos));
 
               view.dispatch(tr);
+
+              // Force focus to correct position for mobile browsers
+              // Mobile browsers sometimes don't respect selection set in transaction
+              setTimeout(() => {
+                editor.commands.focus(cursorPos);
+              }, 0);
+
               return true;
             }
 
