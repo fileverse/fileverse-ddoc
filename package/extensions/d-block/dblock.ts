@@ -731,7 +731,31 @@ export const DBlock = Node.create<DBlockOptions>({
               // Scroll into view to ensure cursor is visible
               tr.scrollIntoView();
 
+              // Debug logging
+              const debugInfo = {
+                before_cursorPos: cursorPos,
+                before_tr_selection: tr.selection.from,
+              };
+
               view.dispatch(tr);
+
+              debugInfo.after_editor_selection = editor.state.selection.from;
+              debugInfo.expected = cursorPos;
+              debugInfo.match = editor.state.selection.from === cursorPos;
+
+              // Show on screen for mobile debugging
+              const debugDiv =
+                document.getElementById('debug-mobile') ||
+                document.createElement('div');
+              debugDiv.id = 'debug-mobile';
+              debugDiv.style.cssText =
+                'position:fixed;top:0;left:0;right:0;background:black;color:lime;padding:10px;font-size:12px;z-index:9999;max-height:200px;overflow:auto;';
+              debugDiv.innerHTML = `<strong>CASE 3 Debug:</strong><br>${JSON.stringify(debugInfo, null, 2).replace(/\n/g, '<br>').replace(/ /g, '&nbsp;')}`;
+              if (!document.getElementById('debug-mobile')) {
+                document.body.appendChild(debugDiv);
+              }
+
+              console.log('[CASE 3] Debug:', debugInfo);
 
               return true;
             }
