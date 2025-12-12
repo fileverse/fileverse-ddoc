@@ -725,25 +725,29 @@ export const DBlock = Node.create<DBlockOptions>({
                 cursorPos = dBlockPos + firstDBlockNode.nodeSize + 2;
               }
 
+              // Set selection in the transaction BEFORE dispatch
+              tr.setSelection(TextSelection.create(tr.doc, cursorPos));
+              tr.scrollIntoView();
+
               view.dispatch(tr);
 
-              // Mobile fix: Force cursor position after browser reconciles DOM
-              // requestAnimationFrame waits for next paint, more reliable than setTimeout on mobile
+              // Mobile browsers sometimes override selection during DOM reconciliation
+              // Force re-focus on the correct position after browser's paint cycle
               requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                  // Double RAF ensures DOM is fully updated
+                // Verify cursor is still at correct position, if not, fix it
+                const currentPos = editor.state.selection.from;
+                if (currentPos !== cursorPos) {
+                  // Cursor was moved by browser, restore it
                   const newState = editor.view.state;
                   const targetPos = Math.min(
                     cursorPos,
                     newState.doc.content.size - 1,
                   );
-
-                  // Use a new transaction to set selection
                   const selectionTr = newState.tr.setSelection(
                     TextSelection.create(newState.doc, targetPos),
                   );
                   editor.view.dispatch(selectionTr);
-                });
+                }
               });
 
               return true;
