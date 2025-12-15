@@ -6,6 +6,7 @@ import { TextSelection } from '@tiptap/pm/state';
 import { useState, useMemo, useCallback, memo, useRef, useEffect } from 'react';
 import { ToCProps, ToCItemProps, ToCItemType } from './types';
 import { useMediaQuery } from 'usehooks-ts';
+import { headingToSlug } from '../../utils/heading-to-slug';
 
 // Memoize the ToC item to prevent unnecessary re-renders
 export const ToCItem = memo(
@@ -25,6 +26,28 @@ export const ToCItem = memo(
       },
       [onItemClick, item.id],
     );
+
+    // Memoize the href generation
+    const href = useMemo(() => {
+      const heading = headingToSlug(item.textContent);
+      const uuid = item.id.replace(/-/g, '').substring(0, 8);
+      const headingValue = `${heading}-${uuid}`;
+
+      // Build the full URL with current location, preserving other hash params
+      const url = new URL(globalThis.location.href);
+
+      // Parse existing hash as URLSearchParams
+      const hash = url.hash.startsWith('#') ? url.hash.substring(1) : url.hash;
+      const hashParams = new URLSearchParams(hash);
+
+      // Update only the heading parameter
+      hashParams.set('heading', headingValue);
+
+      // Set the updated hash
+      url.hash = hashParams.toString();
+
+      return url.toString();
+    }, [item.id, item.textContent]);
 
     // Memoize the className calculation with orientation-based widths
     const className = useMemo(() => {
@@ -62,7 +85,7 @@ export const ToCItem = memo(
         className={className}
       >
         <a
-          href={`#${item.id}`}
+          href={href}
           onClick={handleClick}
           data-item-index={item.itemIndex}
           className="flex items-center justify-between pl-2 gap-1 h-[32px] transition-all no-underline w-full group"
