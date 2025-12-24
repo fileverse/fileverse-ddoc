@@ -495,39 +495,52 @@ const DdocEditor = forwardRef(
 
     useEffect(() => {
       if (!editor) return;
-      // Pressing the enter key will scroll the editor to the current selection
-      const handleEnterKey = (event: KeyboardEvent) => {
-        if (event.key === 'Enter') {
-          editor.commands.scrollIntoView();
-        }
-      };
 
-      const editorElement = editor.view.dom;
+      try {
+        const editorElement = editor.view.dom;
+        if (!editorElement) return;
 
-      editorElement.addEventListener('keydown', handleEnterKey);
+        // Pressing the enter key will scroll the editor to the current selection
+        const handleEnterKey = (event: KeyboardEvent) => {
+          if (event.key === 'Enter') {
+            editor.commands.scrollIntoView();
+          }
+        };
 
-      return () => {
-        editorElement.removeEventListener('keydown', handleEnterKey);
-      };
+        editorElement.addEventListener('keydown', handleEnterKey);
+
+        return () => {
+          editorElement.removeEventListener('keydown', handleEnterKey);
+        };
+      } catch (error) {
+        // View not ready yet, skip this effect
+        return;
+      }
     }, [editor]);
 
     // Push the editor to the top when the keyboard is visible
     useEffect(() => {
       if (!isNativeMobile || !editor) return;
 
-      const handleKeyboardShow = () => {
-        if (editorRef.current) {
-          editorRef.current.scrollIntoView();
-        }
-      };
+      try {
+        const editorElement = editor.view.dom;
+        if (!editorElement) return;
 
-      const editorElement = editor.view.dom;
+        const handleKeyboardShow = () => {
+          if (editorRef.current) {
+            editorRef.current.scrollIntoView();
+          }
+        };
 
-      editorElement.addEventListener('resize', handleKeyboardShow);
+        editorElement.addEventListener('resize', handleKeyboardShow);
 
-      return () => {
-        editorElement.removeEventListener('resize', handleKeyboardShow);
-      };
+        return () => {
+          editorElement.removeEventListener('resize', handleKeyboardShow);
+        };
+      } catch (error) {
+        // View not ready yet, skip this effect
+        return;
+      }
     }, [editor, editorRef, isNativeMobile]);
 
     const isMobile = useMediaQuery('(max-width: 768px)');

@@ -270,7 +270,7 @@ export const CommentProvider = ({
 
   const focusCommentInEditor = useCallback(
     (commentId: string) => {
-      if (!editor || !initialComments.length) return;
+      if (!editor || !editor.view?.dom || !initialComments.length) return;
 
       // Find the comment by ID
       const foundComment = initialComments.find((c) => c.id === commentId);
@@ -456,6 +456,7 @@ export const CommentProvider = ({
   );
 
   const onPrevComment = useCallback(() => {
+    if (!editor.view?.dom) return;
     if (activeCommentIndex > 0) {
       const prevComment = activeComments[activeCommentIndex - 1];
 
@@ -477,6 +478,7 @@ export const CommentProvider = ({
   }, [activeCommentIndex, activeComments, editor, focusCommentInEditor]);
 
   const onNextComment = useCallback(() => {
+    if (!editor.view?.dom) return;
     if (activeCommentIndex < activeComments.length - 1) {
       const nextComment = activeComments[activeCommentIndex + 1];
 

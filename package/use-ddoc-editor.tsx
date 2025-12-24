@@ -541,7 +541,9 @@ export const useDdocEditor = ({
 
   const scrollToHeading = useCallback(
     (headingId: string) => {
-      if (editor) {
+      if (!editor) return;
+
+      try {
         const allHeadings = editor.view.dom.querySelectorAll('[data-toc-id]');
         const element = Array.from(allHeadings).find((el) =>
           (el as HTMLElement).dataset.tocId?.includes(headingId),
@@ -603,6 +605,9 @@ export const useDdocEditor = ({
             });
           });
         }
+      } catch (error) {
+        // View not ready, skip
+        return;
       }
     },
     [editor, isNativeMobile],

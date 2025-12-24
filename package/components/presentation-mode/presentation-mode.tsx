@@ -70,6 +70,7 @@ const SlideContent = ({
 
   useEffect(() => {
     setTimeout(() => {
+      if (!editor.view?.dom) return;
       editor.commands.setContent(content);
 
       if (isSoloImage(content)) {
@@ -151,6 +152,7 @@ export const PresentationMode = ({
   }, [isPreviewMode]);
   const handlePresentationMode = useCallback(async () => {
     if (!editor) return;
+    if (!editor.view?.dom) return;
     if (!isPreviewMode) {
       const editorElement = editor.view.dom;
       const isEditorEmpty = editorElement.querySelector('.is-editor-empty');

@@ -143,6 +143,7 @@ export const ToC = memo(
     const getHeadingsMap = useCallback(() => {
       if (
         editor &&
+        editor.view?.dom &&
         (!headingsCacheRef.current ||
           Date.now() - lastCacheTimeRef.current > 250)
       ) {
@@ -289,7 +290,7 @@ export const ToC = memo(
         // Update active item
         setActiveId(id);
 
-        if (editor) {
+        if (editor && editor.view?.dom) {
           // First handle heading expansion - this is critical for making the TOC work
           expandHeadingAndItsAncestors(id);
 
