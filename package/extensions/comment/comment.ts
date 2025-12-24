@@ -69,6 +69,7 @@ export interface IComment {
 
 export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
   name: 'comment',
+  inclusive: false,
 
   addOptions() {
     return {
