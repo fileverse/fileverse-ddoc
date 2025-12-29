@@ -388,6 +388,7 @@ export const useDdocEditor = ({
         ),
         AiAutocomplete.configure({
           model: activeModel,
+          endpoint: activeModel.endpoint,
           maxTokens: maxTokens,
           temperature: 0.1,
           tone: 'neutral',
