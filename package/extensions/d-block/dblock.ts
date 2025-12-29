@@ -169,6 +169,23 @@ export const DBlock = Node.create<DBlockOptions>({
         const { selection } = editor.state;
         const { $from } = selection;
 
+        if ($from.pos > 0) {
+          const charBeforeCursor = editor.state.doc.textBetween(
+            $from.pos - 1,
+            $from.pos,
+            '\0', // Separator for textBetween, '\0' for no separator
+          );
+
+          // If the character before the cursor is an EM SPACE, delete it
+          if (charBeforeCursor === '\u2003') {
+            editor
+              .chain()
+              .deleteRange({ from: $from.pos - 2, to: $from.pos })
+              .run();
+            return true; // Consume the event, preventing further handling
+          }
+        }
+
         // Check if we're in a list item or task item
         for (let d = $from.depth; d > 0; d--) {
           const node = $from.node(d);
