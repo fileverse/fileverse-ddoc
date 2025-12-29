@@ -134,7 +134,6 @@ export const DBlock = Node.create<DBlockOptions>({
           (isNodeEmpty || isOnlyEmSpaces) &&
           (isHeading || (isParagraph && !isNested))
         ) {
-          console.log('tab');
           // I have tried using actual tab '\t', HTML entity version of tab '\u0009', nothing works except this HTML entity. Need to look into this more.
           editor.commands.insertContent('\u2003', {
             parseOptions: {
