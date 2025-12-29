@@ -71,6 +71,8 @@ export const AIWriterNodeView = memo(
       extensions: [StarterKit, ...SuperchargedTableExtensions],
       content: '',
       editable: true,
+      immediatelyRender: false,
+      shouldRerenderOnTransaction: false,
     });
 
     // Handle initial render animation
