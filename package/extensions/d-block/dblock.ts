@@ -117,6 +117,8 @@ export const DBlock = Node.create<DBlockOptions>({
         const { $from } = selection;
         const node = $from.node($from.depth);
 
+        const isNodeEmpty = node.textContent === '';
+        const isOnlyEmSpaces = node.textContent.match(/^(\u2003)+$/);
         const isParagraph = node.type.name === 'paragraph';
         const isHeading = node.type.name === 'heading';
         const depth = $from.depth;
@@ -126,10 +128,19 @@ export const DBlock = Node.create<DBlockOptions>({
           depth > 1 &&
           ['listItem', 'taskItem'].includes($from.node(depth - 1).type.name);
 
-        if (isHeading || (isParagraph && !isNested)) {
+        // Allow inserting EM SPACE if node is empty OR contains only EM SPACES,
+        // and it's a heading or a non-nested paragraph.
+        if (
+          (isNodeEmpty || isOnlyEmSpaces) &&
+          (isHeading || (isParagraph && !isNested))
+        ) {
           console.log('tab');
           // I have tried using actual tab '\t', HTML entity version of tab '\u0009', nothing works except this HTML entity. Need to look into this more.
-          editor.commands.insertContent('\u2003');
+          editor.commands.insertContent('\u2003', {
+            parseOptions: {
+              preserveWhitespace: 'full',
+            },
+          });
           return true;
         }
 
