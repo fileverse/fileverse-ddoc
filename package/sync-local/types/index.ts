@@ -58,7 +58,7 @@ export interface SyncMachineContext {
         removed: number[];
       }) => void)
     | null;
-  onError: ((e: string) => void) | null;
+  onError: ((e: Error) => void) | null;
   roomKey: string;
   wsUrl: string;
   uncommittedUpdatesIdList: string[];
@@ -136,9 +136,9 @@ export type Update = Uint8Array;
 export interface ISocketInitConfig {
   onConnect: ConnectHandler;
   onDisconnect: DisconnectHandler;
-  onError: (err: string) => void;
+  onError: (err: Error) => void;
   onWsEvent: EventHandler;
-  onHandShakeError: (err: string) => void;
+  onHandShakeError: (err: Error) => void;
   roomId: string;
 }
 

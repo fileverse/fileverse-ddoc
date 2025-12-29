@@ -45,7 +45,7 @@ export class SocketClient {
   private _machineEventHandler: EventHandler | null = null;
   private _onConnect: ConnectHandler | null = null;
   private _onDisconnection: DisconnectHandler | null = null;
-  private _onHandShakeError: ((err: string) => void) | null = null;
+  private _onHandShakeError: ((err: Error) => void) | null = null;
   private _sequenceCallbackMap: SequenceToRequestMap = {};
   _webSocketStatus: SocketStatusEnum = SocketStatusEnum.CLOSED;
   private _webSocket: ReconnectingWebSocket | null = null;
@@ -122,7 +122,10 @@ export class SocketClient {
       this._webSocketStatus !== SocketStatusEnum.CONNECTED ||
       !this._webSocket
     ) {
-      this._onError?.('Lost connection to websocket server');
+      const error = new Error('Lost connection to websocket server');
+      error.name = 'SocketConnectionLostError';
+
+      this._onError?.(error);
       return;
     }
 
@@ -344,7 +347,10 @@ export class SocketClient {
       roomKey: this.roomKey,
     });
     if (response.statusCode !== 200) {
-      this._onHandShakeError?.(response.error);
+      const message = response.err;
+      const error = new Error(message);
+      error.name = 'SocketHandshakeError';
+      this._onHandShakeError?.(error);
       return;
     }
     if (!response.is_handshake_response) {
@@ -469,7 +475,9 @@ export class SocketClient {
           this._webSocket &&
           this._webSocket.retryCount === WEBSOCKET_CONFIG.maxRetries
         ) {
-          this._onError?.('Failed to connect to Socket');
+          const error = new Error('Failed to connect to Socket');
+          error.name = 'SocketConnectionFailedError';
+          this._onError?.(error);
         }
       };
     });
