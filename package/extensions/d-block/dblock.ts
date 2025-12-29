@@ -115,6 +115,23 @@ export const DBlock = Node.create<DBlockOptions>({
       Tab: ({ editor }) => {
         const { selection } = editor.state;
         const { $from } = selection;
+        const node = $from.node($from.depth);
+
+        const isParagraph = node.type.name === 'paragraph';
+        const isHeading = node.type.name === 'heading';
+        const depth = $from.depth;
+
+        // Checking if it's nested since standard paragraphs are usually at depth 1.
+        const isNested =
+          depth > 1 &&
+          ['listItem', 'taskItem'].includes($from.node(depth - 1).type.name);
+
+        if (isHeading || (isParagraph && !isNested)) {
+          console.log('tab');
+          // I have tried using actual tab '\t', HTML entity version of tab '\u0009', nothing works except this HTML entity. Need to look into this more.
+          editor.commands.insertContent('\u2003');
+          return true;
+        }
 
         // Check if we're in a list item or task item
         for (let d = $from.depth; d > 0; d--) {
