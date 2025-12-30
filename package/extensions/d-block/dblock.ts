@@ -115,6 +115,27 @@ export const DBlock = Node.create<DBlockOptions>({
       Tab: ({ editor }) => {
         const { selection } = editor.state;
         const { $from } = selection;
+        const node = $from.node($from.depth);
+
+        const isParagraph = node.type.name === 'paragraph';
+        const isHeading = node.type.name === 'heading';
+        const depth = $from.depth;
+
+        // Checking if it's nested since standard paragraphs are usually at depth 1.
+        const parentNode = depth > 0 ? $from.node(depth - 1) : null;
+        const isParagraphUnderDBlock =
+          isParagraph && parentNode?.type.name === 'dBlock';
+
+        // Allow inserting EM SPACE if node is a heading or a non-nested paragraph.
+        if (isHeading || isParagraphUnderDBlock) {
+          // TODO: check with '\t' character and other HTML entities.
+          editor.commands.insertContent('\u2003', {
+            parseOptions: {
+              preserveWhitespace: 'full',
+            },
+          });
+          return true;
+        }
 
         // Check if we're in a list item or task item
         for (let d = $from.depth; d > 0; d--) {
@@ -146,6 +167,23 @@ export const DBlock = Node.create<DBlockOptions>({
       'Shift-Tab': ({ editor }) => {
         const { selection } = editor.state;
         const { $from } = selection;
+
+        if ($from.pos > 0) {
+          const charBeforeCursor = editor.state.doc.textBetween(
+            $from.pos - 1,
+            $from.pos,
+            '\0', // Separator for textBetween, '\0' for no separator
+          );
+
+          // If the character before the cursor is an EM SPACE, delete it
+          if (charBeforeCursor === '\u2003') {
+            editor
+              .chain()
+              .deleteRange({ from: $from.pos - 2, to: $from.pos }) // this range allows for the removal of em spaces in the same amount of tabs
+              .run();
+            return true; // Consume the event, preventing further handling
+          }
+        }
 
         // Check if we're in a list item or task item
         for (let d = $from.depth; d > 0; d--) {
