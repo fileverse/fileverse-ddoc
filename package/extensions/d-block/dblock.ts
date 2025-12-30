@@ -126,10 +126,9 @@ export const DBlock = Node.create<DBlockOptions>({
           depth > 1 &&
           ['listItem', 'taskItem'].includes($from.node(depth - 1).type.name);
 
-        // Allow inserting EM SPACE if node is empty OR contains only EM SPACES,
-        // and it's a heading or a non-nested paragraph.
+        // Allow inserting EM SPACE if node is a heading or a non-nested paragraph.
         if (isHeading || (isParagraph && !isNested)) {
-          // I have tried using actual tab '\t', HTML entity version of tab '\u0009', nothing works except this HTML entity. Need to look into this more.
+          // TODO: check with '\t' character and other HTML entities.
           editor.commands.insertContent('\u2003', {
             parseOptions: {
               preserveWhitespace: 'full',
