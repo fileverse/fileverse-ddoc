@@ -122,12 +122,12 @@ export const DBlock = Node.create<DBlockOptions>({
         const depth = $from.depth;
 
         // Checking if it's nested since standard paragraphs are usually at depth 1.
-        const isNested =
-          depth > 1 &&
-          ['listItem', 'taskItem'].includes($from.node(depth - 1).type.name);
+        const parentNode = depth > 0 ? $from.node(depth - 1) : null;
+        const isParagraphUnderDBlock =
+          isParagraph && parentNode?.type.name === 'dBlock';
 
         // Allow inserting EM SPACE if node is a heading or a non-nested paragraph.
-        if (isHeading || (isParagraph && !isNested)) {
+        if (isHeading || isParagraphUnderDBlock) {
           // TODO: check with '\t' character and other HTML entities.
           editor.commands.insertContent('\u2003', {
             parseOptions: {
@@ -179,7 +179,7 @@ export const DBlock = Node.create<DBlockOptions>({
           if (charBeforeCursor === '\u2003') {
             editor
               .chain()
-              .deleteRange({ from: $from.pos - 2, to: $from.pos })
+              .deleteRange({ from: $from.pos - 2, to: $from.pos }) // this range allows for the removal of em spaces in the same amount of tabs
               .run();
             return true; // Consume the event, preventing further handling
           }
