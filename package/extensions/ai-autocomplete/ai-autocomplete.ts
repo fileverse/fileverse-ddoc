@@ -11,6 +11,7 @@ export const AiAutocomplete = Extension.create({
   addOptions() {
     return {
       model: '',
+      endpoint: '',
       tone: 'neutral',
       maxTokens: 8,
       temperature: 0.1,
