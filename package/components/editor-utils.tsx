@@ -891,6 +891,7 @@ export const useEditorToolbar = ({
                 originalDoc,
                 ipfsImageFetchFn,
                 fetchV1ImageFn,
+                true,
               );
 
             const temporalEditor = getTemporaryEditor(

@@ -16,6 +16,10 @@ import { inlineLoader } from '../../utils/inline-loader';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../../types';
 import { isLikelyLatex } from '../../utils/is-likely-latex';
 import { getTemporaryEditor } from '../../utils/helpers';
+import {
+  compressImage,
+  getCompressedBase64Image,
+} from '../../utils/image-compression';
 
 // Initialize MarkdownIt for converting Markdown back to HTML with footnote support
 const markdownIt = new MarkdownIt().use(markdownItFootnote);
@@ -485,6 +489,7 @@ const MarkdownPasteHandler = (
                 originalDoc,
                 ipfsImageFetchFn,
                 fetchV1ImageFn,
+                true,
               );
 
             const temporalEditor = getTemporaryEditor(
@@ -999,6 +1004,7 @@ async function recreateNodeWithImageContent(
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>,
   fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>,
+  shouldCompress: boolean = false,
 ): Promise<PMNode> {
   const { version, mimeType, ipfsHash, ...attrs } = node.attrs;
   let buffer: ArrayBuffer;
@@ -1014,7 +1020,11 @@ async function recreateNodeWithImageContent(
         mimeType,
         authTag,
       });
-      buffer = await result.file.arrayBuffer();
+      buffer = shouldCompress
+        ? await (
+            await compressImage(result.file, 'MEDIUM', false)
+          ).arrayBuffer()
+        : await result.file.arrayBuffer();
     } else {
       const { url, encryptedKey, iv, privateKey } = attrs;
       if (!url || !encryptedKey || !iv || !privateKey) return node;
@@ -1037,6 +1047,12 @@ async function recreateNodeWithImageContent(
       if (!decrypted) return node;
 
       buffer = decrypted;
+    }
+    if (shouldCompress) {
+      const imgBlob = new Blob([buffer], { type: mimeType || 'image/jpeg' });
+      const compressed = await compressImage(imgBlob, 'MEDIUM', false);
+
+      buffer = await compressed.arrayBuffer();
     }
     const base64 = arrayBufferToBase64(buffer);
     const dataUrl = `data:${mimeType || 'image/jpeg'};base64,${base64}`;
@@ -1063,6 +1079,7 @@ export async function searchForSecureImageNodeAndEmbedImageContent(
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>,
   fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>,
+  shouldCompress: boolean = false,
 ): Promise<PMNode> {
   // We'll do a post-order traversal using a stack
   // so that we can handle children first, then build the parent node.
@@ -1106,7 +1123,21 @@ export async function searchForSecureImageNodeAndEmbedImageContent(
           current.node,
           ipfsImageFetchFn,
           fetchV1ImageFn,
+          shouldCompress,
         )) as any;
+      } else if (current.node.attrs['media-type'] === 'img' && shouldCompress) {
+        const { compressedBase64, mimeType } = await getCompressedBase64Image(
+          current.node.attrs['src'],
+          'MEDIUM',
+        );
+        const dataUrl = `data:${mimeType || 'image/jpeg'};base64,${compressedBase64}`;
+        const newAttrs = { ...current.node.attrs, src: dataUrl };
+
+        current.newNode = current.node.type.createChecked(
+          newAttrs,
+          current.node.content,
+          current.node.marks,
+        ) as any;
       } else {
         // Not a secure image => just copy node with new children
         // Build a Fragment from our childResults
