@@ -117,6 +117,14 @@ export const DBlock = Node.create<DBlockOptions>({
         const { $from } = selection;
         const node = $from.node($from.depth);
 
+        // Check if there's an active AI autocomplete suggestion - if so, let it handle Tab
+        const hasAutocompleteSuggestion =
+          typeof document !== 'undefined' &&
+          document.querySelector('.autocomplete-suggestion-container') !== null;
+        if (hasAutocompleteSuggestion) {
+          return false; // Let AI autocomplete handle the Tab key
+        }
+
         const isParagraph = node.type.name === 'paragraph';
         const isHeading = node.type.name === 'heading';
         const depth = $from.depth;
