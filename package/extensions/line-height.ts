@@ -138,7 +138,13 @@ export const LineHeight = Extension.create({
               stepMap.forEach((_oldStart, _oldEnd, newStart, newEnd) => {
                 // Check if new content was inserted
                 if (newEnd > newStart) {
-                  newState.doc.nodesBetween(newStart, newEnd, (node, pos) => {
+                  const docSize = newState.doc.content.size;
+                  const safeStart = Math.max(0, Math.min(newStart, docSize));
+                  const safeEnd = Math.max(0, Math.min(newEnd, docSize));
+
+                  if (safeEnd <= safeStart) return;
+
+                  newState.doc.nodesBetween(safeStart, safeEnd, (node, pos) => {
                     // Only process our target node types
                     if (!this.options.types.includes(node.type.name)) return;
 
