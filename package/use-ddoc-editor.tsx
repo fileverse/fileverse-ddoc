@@ -78,6 +78,7 @@ export const useDdocEditor = ({
   maxTokens,
   isAIAgentEnabled,
   collabConfig,
+  onIndexedDbError,
   ...rest
 }: Partial<DdocProps>) => {
   const [isContentLoading, setIsContentLoading] = useState(true);
@@ -506,8 +507,18 @@ export const useDdocEditor = ({
       await provider.destroy();
     }
     if (enableIndexeddbSync && ddocId) {
-      const newYjsIndexeddbProvider = new IndexeddbPersistence(ddocId, ydoc);
-      yjsIndexeddbProviderRef.current = newYjsIndexeddbProvider;
+      try {
+        const newYjsIndexeddbProvider = new IndexeddbPersistence(ddocId, ydoc);
+        // Wait for the database to be ready and synced
+        await newYjsIndexeddbProvider.whenSynced;
+        yjsIndexeddbProviderRef.current = newYjsIndexeddbProvider;
+      } catch (error) {
+        console.error('IndexedDB initialization failed:', error);
+        onIndexedDbError?.(
+          error instanceof Error ? error : new Error(String(error)),
+        );
+        // Don't rethrow - allow editor to continue without persistence
+      }
     }
   };
 
@@ -681,13 +692,9 @@ export const useDdocEditor = ({
           zoomService.setZoom(zoomLevel);
         }
 
-        initialiseYjsIndexedDbProvider()
-          .then(() => {
-            setIsContentLoading(false);
-          })
-          .catch((error) => {
-            console.log(error);
-          });
+        initialiseYjsIndexedDbProvider().finally(() => {
+          setIsContentLoading(false);
+        });
       });
 
       initialContentSetRef.current = true;

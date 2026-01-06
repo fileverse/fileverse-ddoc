@@ -188,6 +188,11 @@ export interface DdocProps extends CommentAccountProps {
   onUnMergedUpdates?: (state: boolean) => void;
   onCollabError?: (error: any) => void;
   isExistingCollabSession?: boolean;
+  /**
+   * Callback when IndexedDB initialization fails
+   * @description Called when the IndexedDB persistence provider fails to initialize (e.g., private browsing, quota exceeded, corrupted DB). The editor will continue to function without local persistence.
+   */
+  onIndexedDbError?: (error: Error) => void;
 }
 
 export interface IEditorSelectionData {
