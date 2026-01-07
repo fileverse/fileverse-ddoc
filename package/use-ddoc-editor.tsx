@@ -32,6 +32,7 @@ import { DBlock } from './extensions/d-block/dblock';
 import { useSyncMachine } from './sync-local/useSyncMachine';
 // import { type TableOfContentDataItem } from '@tiptap/extension-table-of-contents';
 import { ToCItemType } from './components/toc/types';
+import { TWITTER_REGEX } from './extensions/twitter-embed/embed-settings';
 // import { SyncCursor } from './extensions/sync-cursor';
 
 const usercolors = [
@@ -348,7 +349,38 @@ export const useDdocEditor = ({
             editor?.commands.unsetCommentActive();
           },
         },
-        handleClick: handleCommentClick,
+        handleClick: (view, pos, event) => {
+          // 1. Check for Modifier Keys (Ctrl or Cmd)
+          const isModifierPressed = event.metaKey || event.ctrlKey;
+
+          // 2. Check if the clicked element is a link
+          // Use 'target' safely cast to HTMLElement
+          const target = event.target as HTMLElement;
+          const link = target.closest('a');
+
+          // --- TWITTER LOGIC ---
+          // Only intercept if Modifier + Link + Matches Regex
+          if (
+            isModifierPressed &&
+            link &&
+            link.href &&
+            link.href.match(TWITTER_REGEX)
+          ) {
+            window.open(link.href, '_blank');
+            return true; // Stop Tiptap/ProseMirror from handling this event further
+          } else if (link && link.href) {
+            window.open(link.href, '_blank');
+          }
+
+          // --- COMMENT LOGIC ---
+          // If the Twitter logic didn't claim the event, delegate to handleCommentClick.
+          // We must return its result so Tiptap knows if the comment click was handled.
+          if (handleCommentClick) {
+            return handleCommentClick(view, pos, event);
+          }
+
+          return false;
+        },
         attributes: {
           spellCheck: 'true',
         },

@@ -7,11 +7,11 @@ interface EmbedSettingsProps {
   editor: Editor;
 }
 
-const TWITTER_REGEX =
+export const TWITTER_REGEX =
   /(?:https?:\/\/)?(?:www\.)?(?:twitter\.com|x\.com)\/(?:#!\/)?(\w+)\/status\/(\d+)/;
 
 export const EmbedSettings = ({ editor }: EmbedSettingsProps) => {
-  const embedBtnRef = useRef<HTMLButtonElement>(null);
+  const btnRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const href = editor.getAttributes('link').href;
   const isTwitterUrl = (url: string | null | undefined) => {
     if (!url) return false;
@@ -37,19 +37,32 @@ export const EmbedSettings = ({ editor }: EmbedSettingsProps) => {
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Escape') {
+    const { key } = e;
+    const currentIndex = 0;
+    let index = 0;
+    if (key === 'ArrowDown') {
+      e.preventDefault();
+      index = currentIndex >= btnRefs.current.length - 1 ? 0 : currentIndex + 1;
+      btnRefs.current[index]?.focus();
+    }
+    if (key === 'ArrowUp') {
+      e.preventDefault();
+      index = (index - 1) % 1;
+      btnRefs.current[index]?.focus();
+    }
+    if (key === 'Escape') {
       e.preventDefault();
       handleKeepAsUrl();
     }
   };
 
   const handleEmbedTweet = () => {
+    console.log('1', href);
     if (typeof href === 'string') {
       const tweetId = href.match(TWITTER_REGEX)?.[2];
+      console.log('2', tweetId);
       if (!tweetId) return;
-      const { selection } = editor.state;
-      const { $from } = selection;
-      console.log($from);
+      console.log('3');
       editor
         .chain()
         .focus()
@@ -66,7 +79,7 @@ export const EmbedSettings = ({ editor }: EmbedSettingsProps) => {
         placement: 'bottom',
         onShow: () => {
           setTimeout(() => {
-            embedBtnRef.current?.focus();
+            btnRefs.current[0]?.focus();
           }, 50);
         },
       }}
@@ -82,7 +95,7 @@ export const EmbedSettings = ({ editor }: EmbedSettingsProps) => {
           className="text-body-sm justify-start px-2 py-[5px] gap-0 focus-visible:bg-[hsl(var(--color-button-secondary-hover))] focus-visible:ring-0 focus-visible:ring-offset-0"
           autoFocus={true}
           onClick={handleEmbedTweet}
-          ref={embedBtnRef}
+          ref={(el) => (btnRefs.current[0] = el)}
         >
           <LucideIcon name={'GalleryVertical'} className="size-4 mr-2" />
           <span className="mr-4">Embed Tweet</span>
@@ -94,6 +107,7 @@ export const EmbedSettings = ({ editor }: EmbedSettingsProps) => {
           variant={'ghost'}
           className="text-body-sm justify-start px-2 py-[5px] gap-0 focus-visible:bg-[hsl(var(--color-button-secondary-hover))] focus-visible:ring-0 focus-visible:ring-offset-0"
           onClick={handleKeepAsUrl}
+          ref={(el) => (btnRefs.current[1] = el)}
         >
           <LucideIcon name={'Link'} className="size-4 mr-2" />
           <span className="mr-4">URL</span>
