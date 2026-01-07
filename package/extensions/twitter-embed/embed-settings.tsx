@@ -1,7 +1,7 @@
 import { Button, LucideIcon } from '@fileverse/ui';
 import { Editor } from '@tiptap/core';
 import { BubbleMenu } from '@tiptap/react/menus';
-import { useRef, useState } from 'react';
+import { useRef } from 'react';
 
 interface EmbedSettingsProps {
   editor: Editor;
@@ -11,7 +11,6 @@ const TWITTER_REGEX =
   /(?:https?:\/\/)?(?:www\.)?(?:twitter\.com|x\.com)\/(?:#!\/)?(\w+)\/status\/(\d+)/;
 
 export const EmbedSettings = ({ editor }: EmbedSettingsProps) => {
-  const [hide, setHide] = useState(false);
   const embedBtnRef = useRef<HTMLButtonElement>(null);
   const href = editor.getAttributes('link').href;
   const isTwitterUrl = (url: string | null | undefined) => {
@@ -26,8 +25,15 @@ export const EmbedSettings = ({ editor }: EmbedSettingsProps) => {
   };
 
   const handleKeepAsUrl = () => {
-    editor.chain().focus().run();
-    setHide(true);
+    const endPos = editor.state.selection.to;
+    editor.commands.extendMarkRange('link', { href });
+    editor
+      .chain()
+      .focus()
+      .setTextSelection(endPos) // Jump to end of link
+      .unsetMark('link') // Ensure next char isn't linked
+      .insertContent(' ') // Insert the "namespace" space
+      .run();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -57,12 +63,11 @@ export const EmbedSettings = ({ editor }: EmbedSettingsProps) => {
     <BubbleMenu
       editor={editor}
       options={{
-        hide: hide,
         placement: 'bottom',
         onShow: () => {
-          queueMicrotask(() => {
+          setTimeout(() => {
             embedBtnRef.current?.focus();
-          });
+          }, 50);
         },
       }}
       shouldShow={shouldShow}
