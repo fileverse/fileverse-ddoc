@@ -50,7 +50,7 @@ export const syncMachineServices = {
       const { socketClient, awareness, _awarenessUpdateHandler } = context;
 
       if (socketClient?._webSocketStatus === SocketStatusEnum.CONNECTED) {
-        socketClient.disconnect();
+        socketClient.disconnect('Socket disconnected by user', 1000);
       }
       awareness?.off('update', _awarenessUpdateHandler);
     };
