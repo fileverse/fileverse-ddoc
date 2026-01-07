@@ -744,6 +744,13 @@ export const DBlock = Node.create<DBlockOptions>({
               const dBlockNode = $head.node(dBlockDepth);
               const dBlockEnd = dBlockPos + dBlockNode.nodeSize;
 
+              // Check if we are actually targeting a dBlock.
+              // If we are inside a Blockquote/Callout, this node might be that container.
+              // We should not destroy it. Return false to let default behavior handle it.
+              if (dBlockNode.type.name !== 'dBlock') {
+                return false;
+              }
+
               // Replace the entire DBlock with new structure
               tr.replaceWith(
                 dBlockPos,
@@ -888,6 +895,7 @@ export const DBlock = Node.create<DBlockOptions>({
 
             // CASE 5: At end of list with empty content and no nested lists
             if (isLastItem && isNodeEmpty && !hasNestedList) {
+              console.log('this is the case');
               return restructureWithNestedContent();
             }
           }
