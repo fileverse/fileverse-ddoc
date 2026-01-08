@@ -10,9 +10,11 @@ interface EmbedSettingsProps {
 
 export const EmbedSettings = ({ editor }: EmbedSettingsProps) => {
   const btnRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const embedRef = useRef<HTMLDivElement>(null);
 
   const shouldShow = ({ editor }: { editor: Editor }) => {
     // 1. Basic checks
+
     if (!editor.isActive('link')) return false;
     const href = editor.getAttributes('link').href;
     const passesTwitterUrlCheck = isTwitterUrl(
@@ -49,6 +51,7 @@ export const EmbedSettings = ({ editor }: EmbedSettingsProps) => {
       .insertContent(' ') // Insert the "namespace" space
       .run();
   };
+
   const handleKeyDown = (e: React.KeyboardEvent, editor: Editor) => {
     const { key } = e;
     const currentIndex = 0;
@@ -100,6 +103,7 @@ export const EmbedSettings = ({ editor }: EmbedSettingsProps) => {
       <div
         className="flex flex-col gap-0.5"
         onKeyDown={(e) => handleKeyDown(e, editor)}
+        ref={embedRef}
       >
         <p className="text-helper-sm text-xs color-text-secondary p-2">
           Paste as
