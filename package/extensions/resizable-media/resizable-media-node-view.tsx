@@ -88,7 +88,6 @@ export const getResizableMediaNodeView =
         iframe.onload = () => {
           // Aspect Ratio from its original size
           setAspectRatio(iframe.offsetWidth / iframe.offsetHeight);
-
           onHorizontalResize('left', 0);
         };
       } else {
@@ -373,16 +372,18 @@ export const getResizableMediaNodeView =
             )}
 
             {mediaType === 'iframe' && (
-              <iframe
-                ref={resizableImgRef as LegacyRef<HTMLIFrameElement>}
-                className={cn(
-                  'rounded-lg max-w-full',
-                  isMouseDown && 'pointer-events-none',
-                )}
-                src={node.attrs.src}
-                width={node.attrs.width}
-                height={node.attrs.height}
-              />
+              <>
+                <iframe
+                  ref={resizableImgRef as LegacyRef<HTMLIFrameElement>}
+                  className={cn(
+                    'rounded-lg max-w-full',
+                    isMouseDown && 'pointer-events-none',
+                  )}
+                  src={node.attrs.src}
+                  width={node.attrs.width}
+                  height={node.attrs.height}
+                />
+              </>
             )}
 
             {!isPreviewMode && (
