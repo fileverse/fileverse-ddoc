@@ -67,16 +67,16 @@ export async function startImageUpload(
   pos: number,
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
 ) {
+  // check if the file is an image
+  if (!file.type.includes('image/')) {
+    console.log('file is not an image');
+    return;
+  }
+
+  // A fresh object to act as the ID for this upload - defined outside try so catch can access it
+  const id = {};
+
   try {
-    // check if the file is an image
-    if (!file.type.includes('image/')) {
-      console.log('file is not an image');
-      return;
-    }
-
-    // A fresh object to act as the ID for this upload
-    const id = {};
-
     // Replace the selection with a placeholder
     const tr = view.state.tr;
     if (!tr.selection.empty) tr.deleteSelection();
@@ -135,6 +135,9 @@ export async function startImageUpload(
     }
   } catch (error) {
     console.error('Error during image upload: ', error);
+    // Remove the placeholder on error (e.g., offline, upload failed)
+    const transaction = view.state.tr.setMeta(uploadKey, { remove: { id } });
+    view.dispatch(transaction);
   }
 }
 

@@ -1,5 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import ReconnectingWebSocket, { UrlProvider, CloseEvent } from 'partysocket/ws';
+import ReconnectingWebSocket, {
+  UrlProvider,
+  CloseEvent,
+  ErrorEvent,
+} from 'partysocket/ws';
 import * as ucans from '@ucans/ucans';
 import { v1 as uuidv1 } from 'uuid';
 
@@ -210,12 +214,12 @@ export class SocketClient {
     return await this._buildRequest('/documents/awareness', args);
   }
 
-  public disconnect = () => {
+  public disconnect = (reason: string, code: number) => {
     this._webSocketStatus = SocketStatusEnum.CLOSED;
     if (!this._webSocket) return;
     this._webSocket.onopen = null;
     this._webSocket.removeEventListener('message', this._processMessage);
-    this._webSocket.close(1000, 'auth failed');
+    this._webSocket.close(code, reason);
     this._webSocketStatus = SocketStatusEnum.CLOSED;
   };
 
@@ -228,7 +232,7 @@ export class SocketClient {
       sessionDid: this.collaborationKeyPair?.did(),
     };
     await this._buildRequest('/documents/terminate', args);
-    this.disconnect();
+    this.disconnect('Session terminated', 1000);
   };
 
   private async _buildRequest(cmd: string, args: any) {
@@ -347,14 +351,18 @@ export class SocketClient {
       roomKey: this.roomKey,
     });
     if (response.statusCode !== 200) {
-      const message = response.err;
+      const message =
+        (response?.err || 'Unknown error') +
+        `, statusCode: ${response?.statusCode}`;
+
       const error = new Error(message);
-      error.name = 'SocketHandshakeError';
+
       this._onHandShakeError?.(error);
       return;
     }
     if (!response.is_handshake_response) {
-      this.disconnect();
+      console.error('SocketAPI: handshake response is not valid', response);
+      this.disconnect('Handshake failed', response?.statusCode || 400);
       return;
     }
     this._onConnect?.();
@@ -389,7 +397,7 @@ export class SocketClient {
   };
 
   private _onSessionTerminated = () => {
-    this.disconnect();
+    this.disconnect('Session terminated', 1000);
     this.resetSocketClient();
   };
 
@@ -465,17 +473,31 @@ export class SocketClient {
         resolve();
       };
       this._webSocket.onclose = (e: CloseEvent) => {
+        console.error('SocketAPI: socket closed', e);
         this._webSocketStatus = SocketStatusEnum.CLOSED;
         this._onDisconnection?.(e);
       };
-      this._webSocket.onerror = (e) => {
+      this._webSocket.onerror = (e: ErrorEvent | Event) => {
         console.error('SocketAPI: socket error', e);
         this._webSocketStatus = SocketStatusEnum.CLOSED;
         if (
           this._webSocket &&
           this._webSocket.retryCount === WEBSOCKET_CONFIG.maxRetries
         ) {
-          const error = new Error('Failed to connect to Socket');
+          let errorMessage = 'Failed to connect to Socket';
+
+          if (e instanceof ErrorEvent) {
+            errorMessage += `, errorMessage: ${e?.message || 'Unknown message'}, errorName: ${e?.error?.name || 'Unknown name'}`;
+          } else {
+            if (e.target instanceof WebSocket) {
+              const ws = e.target as WebSocket;
+              errorMessage += `, readyState: ${ws?.readyState || 'Unknown ready state'}, wsUrl: ${ws?.url || 'Unknown url'}`;
+            } else {
+              errorMessage += `, errorMessage: 'Unknown error'`;
+            }
+          }
+
+          const error = new Error(errorMessage);
           error.name = 'SocketConnectionFailedError';
           this._onError?.(error);
         }
