@@ -5,7 +5,7 @@ import { DynamicDropdown, LucideIcon } from '@fileverse/ui';
 import { BubbleMenuItem, NodeSelectorProps } from './types';
 import { EditorState, Transaction } from 'prosemirror-state';
 import { Dispatch } from '@tiptap/react';
-import { Fragment, Node, ResolvedPos, Slice } from 'prosemirror-model';
+import { Node, ResolvedPos } from 'prosemirror-model';
 import { checkActiveListsAndDBlocks } from '../editor-utils';
 
 // Types
@@ -176,24 +176,21 @@ export const convertListToParagraphs = ({
   const paragraphNodes = newContent.map((json) =>
     state.schema.nodeFromJSON(json),
   );
-  const paragraphSlice = new Slice(Fragment.fromArray(paragraphNodes), 0, 0);
 
   if (tableCellRange) {
-    const selectionFrom = Math.max(from, tableCellRange.from);
-    const selectionTo = Math.min(to, tableCellRange.to);
-
-    if (listContent && listPos !== -1) {
-      tr.replaceRange(listPos, listPos + listContent.nodeSize, paragraphSlice);
-    } else {
-      tr.replaceRange(selectionFrom, selectionTo, paragraphSlice);
-    }
+    // Replace the list node inside the active cell.
+    tr.replaceWith(listPos, listPos + listContent.nodeSize, paragraphNodes);
 
     return true;
   }
 
   if (isInsideCallout && calloutNode && calloutPos !== -1) {
     // Replace only the list node inside the callout
-    tr.replaceRange(listPos, listPos + listContent.nodeSize, paragraphSlice);
+    const paragraphNodes = newContent.map((json) =>
+      state.schema.nodeFromJSON(json),
+    );
+
+    tr.replaceWith(listPos, listPos + listContent.nodeSize, paragraphNodes);
   } else {
     // Replace the whole dBlock with paragraphs
     const dBlockPos = listPos;
@@ -336,14 +333,17 @@ export const convertToList = ({
     const listNode = state.schema.nodeFromJSON(newListContent);
 
     if (listContent && listContentPos !== -1) {
+      // replace the list node directly (when a list already exists).
       tr.replaceWith(
         listContentPos,
         listContentPos + listContent.nodeSize,
         listNode,
       );
     } else if (firstBlockPos !== -1 && lastBlockPos !== -1) {
+      //  replace the block(s) in the cell when no list node is present.
       tr.replaceWith(firstBlockPos, lastBlockPos, listNode);
     } else {
+      // fall back to replacing the raw selection range in the cell.
       tr.replaceRangeWith(selectionFrom, selectionTo, listNode);
     }
 
