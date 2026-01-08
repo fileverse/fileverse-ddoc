@@ -817,6 +817,14 @@ export const DBlock = Node.create<DBlockOptions>({
               // If at start of non-first top-level item, split the list
               // This allows users to break lists by pressing Backspace at the start
               if (!isNestedItem && !isFirstItem) {
+                const listParent = $head.node($head.depth - 3);
+
+                // If the parent is NOT a dBlock (e.g. it's a Callout), abort!
+                // Return false to let Tiptap's default handler merge the items.
+                if (listParent?.type.name !== 'dBlock') {
+                  return false;
+                }
+
                 const listNode = $head.node($head.depth - 2);
                 const currentIndex = $head.index($head.depth - 2);
 
