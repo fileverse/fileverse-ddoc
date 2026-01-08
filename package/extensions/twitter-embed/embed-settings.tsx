@@ -1,7 +1,7 @@
 import { Button, LucideIcon } from '@fileverse/ui';
 import { Editor, getMarkRange } from '@tiptap/core';
 import { BubbleMenu } from '@tiptap/react/menus';
-import { useRef } from 'react';
+import { useCallback, useRef } from 'react';
 import { isTwitterUrl, TWITTER_REGEX } from '../../constants/twitter';
 
 interface EmbedSettingsProps {
@@ -9,12 +9,13 @@ interface EmbedSettingsProps {
 }
 
 export const EmbedSettings = ({ editor }: EmbedSettingsProps) => {
+  const showRef = useRef(true);
   const btnRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const embedRef = useRef<HTMLDivElement>(null);
 
   const shouldShow = ({ editor }: { editor: Editor }) => {
     // 1. Basic checks
-
+    if (!showRef.current) return false;
     if (!editor.isActive('link')) return false;
     const href = editor.getAttributes('link').href;
     const passesTwitterUrlCheck = isTwitterUrl(
@@ -33,13 +34,11 @@ export const EmbedSettings = ({ editor }: EmbedSettingsProps) => {
     // Extract the actual text seen by the user
     const linkText = state.doc.textBetween(range.from, range.to);
 
-    // 3. Compare. We clean protocols to handle "twitter.com" vs "https://twitter.com" cases
-    // Or just strictly check equality if you prefer strictly raw links.
-    // This simple check works for most auto-linked content:
+    // 3. Compare.
     return linkText === href;
   };
 
-  const handleKeepAsUrl = (editor: Editor) => {
+  const handleKeepAsUrl = useCallback(() => {
     const endPos = editor.state.selection.to;
     const href = editor.getAttributes('link').href;
     editor.commands.extendMarkRange('link', { href });
@@ -50,27 +49,49 @@ export const EmbedSettings = ({ editor }: EmbedSettingsProps) => {
       .unsetMark('link') // Ensure next char isn't linked
       .insertContent(' ') // Insert the "namespace" space
       .run();
-  };
+  }, [editor]);
 
-  const handleKeyDown = (e: React.KeyboardEvent, editor: Editor) => {
-    const { key } = e;
-    const currentIndex = 0;
-    let index = 0;
-    if (key === 'ArrowDown') {
-      e.preventDefault();
-      index = currentIndex >= btnRefs.current.length - 1 ? 0 : currentIndex + 1;
-      btnRefs.current[index]?.focus();
-    }
-    if (key === 'ArrowUp') {
-      e.preventDefault();
-      index = (index - 1) % 1;
-      btnRefs.current[index]?.focus();
-    }
-    if (key === 'Escape') {
-      e.preventDefault();
-      handleKeepAsUrl(editor);
-    }
-  };
+  const handleOutsideClick = useCallback(
+    (e: MouseEvent) => {
+      if (embedRef.current && embedRef.current.contains(e.target as Node))
+        return;
+      handleKeepAsUrl();
+    },
+    [handleKeepAsUrl],
+  );
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      const { key } = e;
+      // Get the currently focused button index. This assumes focus is within btnRefs.
+      // If no button is focused or focus is elsewhere, it defaults to 0.
+      const currentlyFocusedElement = document.activeElement;
+      let currentIndex = btnRefs.current.findIndex(
+        (btn) => btn === currentlyFocusedElement,
+      );
+      if (currentIndex === -1) currentIndex = 0; // Default to first button if none is focused
+
+      let nextIndex = currentIndex;
+
+      if (key === 'ArrowDown') {
+        e.preventDefault();
+        nextIndex = (currentIndex + 1) % btnRefs.current.length;
+        btnRefs.current[nextIndex]?.focus();
+      }
+      if (key === 'ArrowUp') {
+        e.preventDefault();
+        // Correct calculation for wrapping around upwards
+        nextIndex =
+          (currentIndex - 1 + btnRefs.current.length) % btnRefs.current.length;
+        btnRefs.current[nextIndex]?.focus();
+      }
+      if (key === 'Escape') {
+        e.preventDefault();
+        handleKeepAsUrl();
+      }
+    },
+    [btnRefs, handleKeepAsUrl], // Dependencies for useCallback
+  );
 
   const handleEmbedTweet = (editor: Editor) => {
     const href = editor.getAttributes('link').href;
@@ -92,19 +113,24 @@ export const EmbedSettings = ({ editor }: EmbedSettingsProps) => {
       options={{
         placement: 'bottom',
         onShow: () => {
+          document.addEventListener('keydown', handleKeyDown);
+          document.addEventListener('mousedown', handleOutsideClick);
           setTimeout(() => {
             btnRefs.current[0]?.focus();
           }, 50);
+          showRef.current = false;
         },
+        onHide: () => {
+          document.removeEventListener('keydown', handleKeyDown);
+          document.removeEventListener('mousedown', handleOutsideClick);
+          showRef.current = true;
+        },
+        hide: !showRef.current,
       }}
       shouldShow={shouldShow}
       className="p-2 border color-border-default shadow-elevation-3 color-bg-default rounded-lg"
     >
-      <div
-        className="flex flex-col gap-0.5"
-        onKeyDown={(e) => handleKeyDown(e, editor)}
-        ref={embedRef}
-      >
+      <div className="flex flex-col gap-0.5" ref={embedRef}>
         <p className="text-helper-sm text-xs color-text-secondary p-2">
           Paste as
         </p>
@@ -124,7 +150,7 @@ export const EmbedSettings = ({ editor }: EmbedSettingsProps) => {
         <Button
           variant={'ghost'}
           className="text-body-sm justify-start px-2 py-[5px] gap-0 focus-visible:bg-[hsl(var(--color-button-secondary-hover))] focus-visible:ring-0 focus-visible:ring-offset-0"
-          onClick={() => handleKeepAsUrl(editor)}
+          onClick={handleKeepAsUrl}
           ref={(el) => (btnRefs.current[1] = el)}
         >
           <LucideIcon name={'Link'} className="size-4 mr-2" />
