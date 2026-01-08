@@ -5,7 +5,7 @@ import { DynamicDropdown, LucideIcon } from '@fileverse/ui';
 import { BubbleMenuItem, NodeSelectorProps } from './types';
 import { EditorState, Transaction } from 'prosemirror-state';
 import { Dispatch } from '@tiptap/react';
-import { Node } from 'prosemirror-model';
+import { Fragment, Node, ResolvedPos, Slice } from 'prosemirror-model';
 import { checkActiveListsAndDBlocks } from '../editor-utils';
 
 // Types
@@ -24,27 +24,73 @@ type ListConversionProps = {
   listConfig?: ListConfig;
 };
 
+type ListProcessingOptions = {
+  wrapInDBlock?: boolean;
+  includeIndent?: boolean;
+};
+
 // Utility functions
-const processListContent = (node: any, isInsideCallout = false): any[] => {
+const TABLE_CELL_TYPES = new Set(['tableCell', 'tableHeader']);
+
+const findTableCellDepth = ($pos: ResolvedPos) => {
+  for (let depth = $pos.depth; depth > 0; depth--) {
+    if (TABLE_CELL_TYPES.has($pos.node(depth).type.name)) {
+      return depth;
+    }
+  }
+
+  return null;
+};
+
+const isSelectionInsideTable = (state: EditorState) => {
+  const { $from, $to } = state.selection;
+
+  return findTableCellDepth($from) !== null || findTableCellDepth($to) !== null;
+};
+
+const getTableCellSelectionRange = (state: EditorState) => {
+  const { $from, $to } = state.selection;
+  const fromDepth = findTableCellDepth($from);
+  const toDepth = findTableCellDepth($to);
+
+  if (fromDepth === null || toDepth === null) {
+    return null;
+  }
+
+  const fromPos = $from.before(fromDepth);
+  const toPos = $to.before(toDepth);
+
+  // If selection spans multiple cells, refuse to transform to avoid destroying table structure.
+  if (fromPos !== toPos) {
+    return null;
+  }
+
+  return {
+    from: $from.start(fromDepth),
+    to: $from.end(fromDepth),
+  };
+};
+
+const processListContent = (
+  node: any,
+  { wrapInDBlock = true, includeIndent = true }: ListProcessingOptions = {},
+): any[] => {
   // Base case: if node has no content or is not a list item
   if (!node.content || !Array.isArray(node.content)) {
     return [];
   }
 
-  // Helper function to create indented paragraph or plain paragraph if inside a callout
   const createIndentedParagraph = (content: any, level: number) => {
     const paragraphNode = {
       type: 'paragraph',
-      ...(isInsideCallout ? {} : { attrs: { indent: level } }), // Add indent only if not in callout
+      ...(includeIndent ? { attrs: { indent: level } } : {}),
       content: content,
     };
 
-    // If inside a callout, return plain paragraph
-    if (isInsideCallout) {
+    if (!wrapInDBlock) {
       return paragraphNode;
     }
 
-    // Otherwise, wrap paragraph in a dBlock
     return {
       type: 'dBlock',
       content: [paragraphNode],
@@ -85,6 +131,14 @@ export const convertListToParagraphs = ({
 }: ListConversionProps) => {
   if (!dispatch) return true;
 
+  const tableCellRange = getTableCellSelectionRange(state);
+  const isInsideTable = isSelectionInsideTable(state);
+
+  // Do nothing if the selection spans multiple cells.
+  if (isInsideTable && !tableCellRange) {
+    return false;
+  }
+
   let calloutPos = -1;
   let calloutNode: Node | null = null as unknown as Node;
   let listContent: Node | null = null as unknown as Node;
@@ -112,15 +166,34 @@ export const convertListToParagraphs = ({
 
   if (!listContent || listPos === -1) return false;
 
-  const newContent = processListContent(listContent.toJSON(), isInsideCallout);
+  // Avoid dBlocks inside tables and skip indent attrs inside callouts.
+  const newContent = processListContent(listContent.toJSON(), {
+    wrapInDBlock: !isInsideCallout && !tableCellRange,
+    includeIndent: !isInsideCallout,
+  });
+
+  // Replace only the content inside the active cell to keep the table node intact.
+  const paragraphNodes = newContent.map((json) =>
+    state.schema.nodeFromJSON(json),
+  );
+  const paragraphSlice = new Slice(Fragment.fromArray(paragraphNodes), 0, 0);
+
+  if (tableCellRange) {
+    const selectionFrom = Math.max(from, tableCellRange.from);
+    const selectionTo = Math.min(to, tableCellRange.to);
+
+    if (listContent && listPos !== -1) {
+      tr.replaceRange(listPos, listPos + listContent.nodeSize, paragraphSlice);
+    } else {
+      tr.replaceRange(selectionFrom, selectionTo, paragraphSlice);
+    }
+
+    return true;
+  }
 
   if (isInsideCallout && calloutNode && calloutPos !== -1) {
     // Replace only the list node inside the callout
-    const paragraphNodes = newContent.map((json) =>
-      state.schema.nodeFromJSON(json),
-    );
-
-    tr.replaceWith(listPos, listPos + listContent.nodeSize, paragraphNodes);
+    tr.replaceRange(listPos, listPos + listContent.nodeSize, paragraphSlice);
   } else {
     // Replace the whole dBlock with paragraphs
     const dBlockPos = listPos;
@@ -149,12 +222,22 @@ export const convertToList = ({
   if (!dispatch) return true;
   if (!listConfig?.type || !listConfig?.itemType) return false;
 
+  const tableCellRange = getTableCellSelectionRange(state);
+  const isInsideTable = isSelectionInsideTable(state);
+
+  // Do nothing if the selection spans multiple cells.
+  if (isInsideTable && !tableCellRange) {
+    return false;
+  }
+
   let isInsideCallout = false;
   let calloutNode: Node | null = null as unknown as Node;
   let calloutPos = -1;
 
   let firstDBlockPos = -1;
   let lastDBlockPos = -1;
+  let firstBlockPos = -1;
+  let lastBlockPos = -1;
   let listContent: Node | null = null as unknown as Node;
   let listContentPos = -1;
   const paragraphs: Node[] = [];
@@ -183,6 +266,9 @@ export const convertToList = ({
     }
 
     if (node.type.name === 'paragraph' || node.type.name === 'heading') {
+      if (firstBlockPos === -1) firstBlockPos = pos;
+      lastBlockPos = pos + node.nodeSize;
+
       const para =
         node.type.name === 'heading'
           ? state.schema.nodes.paragraph.create(null, node.content)
@@ -240,6 +326,28 @@ export const convertToList = ({
     };
   } else {
     return false;
+  }
+
+  // Replace content inside the active cell and keep the table node intact.
+  if (tableCellRange) {
+    const selectionFrom = Math.max(from, tableCellRange.from);
+    const selectionTo = Math.min(to, tableCellRange.to);
+
+    const listNode = state.schema.nodeFromJSON(newListContent);
+
+    if (listContent && listContentPos !== -1) {
+      tr.replaceWith(
+        listContentPos,
+        listContentPos + listContent.nodeSize,
+        listNode,
+      );
+    } else if (firstBlockPos !== -1 && lastBlockPos !== -1) {
+      tr.replaceWith(firstBlockPos, lastBlockPos, listNode);
+    } else {
+      tr.replaceRangeWith(selectionFrom, selectionTo, listNode);
+    }
+
+    return true;
   }
 
   // ✅ Case 1: INSIDE CALLOUT (partial replacement)
