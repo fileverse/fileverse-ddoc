@@ -32,7 +32,7 @@ import { DBlock } from './extensions/d-block/dblock';
 import { useSyncMachine } from './sync-local/useSyncMachine';
 // import { type TableOfContentDataItem } from '@tiptap/extension-table-of-contents';
 import { ToCItemType } from './components/toc/types';
-import { TWITTER_REGEX } from './extensions/twitter-embed/embed-settings';
+import { TWITTER_REGEX } from './constants/twitter';
 // import { SyncCursor } from './extensions/sync-cursor';
 
 const usercolors = [
@@ -364,11 +364,15 @@ export const useDdocEditor = ({
             isModifierPressed &&
             link &&
             link.href &&
-            link.href.match(TWITTER_REGEX)
+            link.textContent.match(TWITTER_REGEX)
           ) {
             window.open(link.href, '_blank');
             return true; // Stop Tiptap/ProseMirror from handling this event further
-          } else if (link && link.href) {
+          } else if (
+            link &&
+            link.href &&
+            !link.textContent.match(TWITTER_REGEX)
+          ) {
             window.open(link.href, '_blank');
           }
 
