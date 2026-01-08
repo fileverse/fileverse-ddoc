@@ -331,16 +331,15 @@ export const convertToList = ({
     const selectionTo = Math.min(to, tableCellRange.to);
 
     const listNode = state.schema.nodeFromJSON(newListContent);
-
+    // replace the list node directly when a list already exists.
     if (listContent && listContentPos !== -1) {
-      // replace the list node directly (when a list already exists).
       tr.replaceWith(
         listContentPos,
         listContentPos + listContent.nodeSize,
         listNode,
       );
+      // replace the block(s) in the cell when no list node is present.
     } else if (firstBlockPos !== -1 && lastBlockPos !== -1) {
-      //  replace the block(s) in the cell when no list node is present.
       tr.replaceWith(firstBlockPos, lastBlockPos, listNode);
     } else {
       // fall back to replacing the raw selection range in the cell.
