@@ -104,7 +104,7 @@ export const defaultExtensions = ({
     link: {
       shouldAutoLink: (url) => /^https?:\/\//.test(url),
       autolink: true,
-      openOnClick: true,
+      openOnClick: false,
       HTMLAttributes: {
         class: 'custom-text-link',
         rel: 'noopener noreferrer',

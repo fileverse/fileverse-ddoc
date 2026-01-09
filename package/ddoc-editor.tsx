@@ -43,6 +43,7 @@ import {
   CANVAS_DIMENSIONS,
   ORIENTATION_CONSTRAINTS,
 } from './constants/canvas-dimensions';
+import { EmbedSettings } from './extensions/twitter-embed/embed-settings';
 
 const DdocEditor = forwardRef(
   (
@@ -699,35 +700,38 @@ const DdocEditor = forwardRef(
               >
                 <div>
                   {editor && (
-                    <EditorBubbleMenu
-                      editor={editor}
-                      //@ts-expect-error error mismatch here
-                      onError={onError}
-                      zoomLevel={zoomLevel}
-                      disableInlineComment={disableInlineComment || false}
-                      setIsCommentSectionOpen={setIsCommentSectionOpen}
-                      inlineCommentData={inlineCommentData}
-                      setInlineCommentData={setInlineCommentData}
-                      isPreviewMode={isPreviewMode}
-                      username={username as string}
-                      walletAddress={walletAddress as string}
-                      onInlineComment={onInlineComment}
-                      activeCommentId={activeCommentId}
-                      isCollabDocumentPublished={isCollabDocumentPublished}
-                      ipfsImageFetchFn={ipfsImageFetchFn}
-                      fetchV1ImageFn={fetchV1ImageFn}
-                      ipfsImageUploadFn={ipfsImageUploadFn}
-                      onReminderCreate={
-                        extensions?.find(
-                          (ext: Extension) => ext.name === 'reminderBlock',
-                        )?.options?.onReminderCreate
-                      }
-                      isConnected={isConnected}
-                      isCollabDocOwner={
-                        collabConfig?.roomKey ? collabConfig?.isOwner : true
-                      }
-                      enableCollaboration={enableCollaboration}
-                    />
+                    <>
+                      <EditorBubbleMenu
+                        editor={editor}
+                        //@ts-expect-error error mismatch here
+                        onError={onError}
+                        zoomLevel={zoomLevel}
+                        disableInlineComment={disableInlineComment || false}
+                        setIsCommentSectionOpen={setIsCommentSectionOpen}
+                        inlineCommentData={inlineCommentData}
+                        setInlineCommentData={setInlineCommentData}
+                        isPreviewMode={isPreviewMode}
+                        username={username as string}
+                        walletAddress={walletAddress as string}
+                        onInlineComment={onInlineComment}
+                        activeCommentId={activeCommentId}
+                        isCollabDocumentPublished={isCollabDocumentPublished}
+                        ipfsImageFetchFn={ipfsImageFetchFn}
+                        fetchV1ImageFn={fetchV1ImageFn}
+                        ipfsImageUploadFn={ipfsImageUploadFn}
+                        onReminderCreate={
+                          extensions?.find(
+                            (ext: Extension) => ext.name === 'reminderBlock',
+                          )?.options?.onReminderCreate
+                        }
+                        isConnected={isConnected}
+                        isCollabDocOwner={
+                          collabConfig?.roomKey ? collabConfig?.isOwner : true
+                        }
+                        enableCollaboration={enableCollaboration}
+                      />
+                      <EmbedSettings editor={editor} />
+                    </>
                   )}
 
                   {editor && (
