@@ -903,7 +903,6 @@ export const DBlock = Node.create<DBlockOptions>({
 
             // CASE 5: At end of list with empty content and no nested lists
             if (isLastItem && isNodeEmpty && !hasNestedList) {
-              console.log('this is the case');
               return restructureWithNestedContent();
             }
           }
