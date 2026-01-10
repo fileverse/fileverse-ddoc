@@ -19,6 +19,7 @@ import { getTemporaryEditor } from '../../utils/helpers';
 import {
   compressImage,
   getCompressedBase64Image,
+  isValidBase64Image,
 } from '../../utils/image-compression';
 
 // Initialize MarkdownIt for converting Markdown back to HTML with footnote support
@@ -1125,7 +1126,11 @@ export async function searchForSecureImageNodeAndEmbedImageContent(
           fetchV1ImageFn,
           shouldCompress,
         )) as any;
-      } else if (current.node.attrs['media-type'] === 'img' && shouldCompress) {
+      } else if (
+        current.node.attrs['media-type'] === 'img' &&
+        shouldCompress &&
+        isValidBase64Image(current.node.attrs['src'] as string)
+      ) {
         const { compressedBase64, mimeType } = await getCompressedBase64Image(
           current.node.attrs['src'],
           'MEDIUM',

@@ -259,7 +259,8 @@ export class SocketClient {
   }
 
   private async getOwnerToken() {
-    if (!this.ownerKeyPair || !this.contractAddress) return undefined;
+    if (!this.ownerKeyPair || !this.contractAddress)
+      throw new Error('SocketClient: No owner key pair or contract address');
 
     if (this.ownerUcan && !ucans.isExpired(this.ownerUcan))
       return ucans.encode(this.ownerUcan);
@@ -285,7 +286,9 @@ export class SocketClient {
 
   private buildToken = async () => {
     if (!this._websocketServiceDid) {
-      throw new Error('Server did not response with the server DID');
+      throw new Error(
+        'SocketClient: Server did not response with the server DID',
+      );
     }
     if (this.collaborationUcan && !ucans.isExpired(this.collaborationUcan))
       return ucans.encode(this.collaborationUcan);

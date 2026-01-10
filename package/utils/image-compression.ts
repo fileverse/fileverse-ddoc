@@ -92,3 +92,7 @@ export const getCompressedBase64Image = async (
   const compressedBase64 = await compressImage(blob, compressionSettings, true);
   return { compressedBase64, mimeType };
 };
+
+export const isValidBase64Image = (value: string) => {
+  return value.match(/^(data:(image\/[a-zA-Z]+);base64,)/) !== null;
+};
