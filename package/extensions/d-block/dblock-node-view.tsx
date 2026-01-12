@@ -186,40 +186,40 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
       }
     };
 
-    const extractTweetId = (text: string) => {
-      const matches = text.match(
-        /(?:https?:\/\/)?(?:www\.)?(?:twitter\.com|x\.com)\/(?:#!\/)?(\w+)\/status\/(\d+)/,
-      );
-      return matches && matches[2] ? matches[2] : null;
-    };
+    // const extractTweetId = (text: string) => {
+    //   const matches = text.match(
+    //     /(?:https?:\/\/)?(?:www\.)?(?:twitter\.com|x\.com)\/(?:#!\/)?(\w+)\/status\/(\d+)/,
+    //   );
+    //   return matches && matches[2] ? matches[2] : null;
+    // };
 
-    const twitterRender = () => {
-      if (!nodeContentText) {
-        return;
-      }
+    // const twitterRender = () => {
+    //   if (!nodeContentText) {
+    //     return;
+    //   }
 
-      let filteredTweetId = null;
+    //   let filteredTweetId = null;
 
-      const isValidTweetId = extractTweetId(nodeContentText);
+    //   const isValidTweetId = extractTweetId(nodeContentText);
 
-      if (isValidTweetId) {
-        filteredTweetId = isValidTweetId;
-      } else if (nodeTweetContentLink) {
-        filteredTweetId = extractTweetId(nodeTweetContentLink.text);
-      }
+    //   if (isValidTweetId) {
+    //     filteredTweetId = isValidTweetId;
+    //   } else if (nodeTweetContentLink) {
+    //     filteredTweetId = extractTweetId(nodeTweetContentLink.text);
+    //   }
 
-      if (filteredTweetId) {
-        const pos = getPos();
-        const to = pos + node.nodeSize;
+    //   if (filteredTweetId) {
+    //     const pos = getPos();
+    //     const to = pos + node.nodeSize;
 
-        editor
-          ?.chain()
-          .focus(pos)
-          .deleteRange({ from: pos === 2 ? pos : pos + 1, to })
-          .setTweetEmbed({ tweetId: filteredTweetId })
-          .run();
-      }
-    };
+    //     editor
+    //       ?.chain()
+    //       .focus(pos)
+    //       .deleteRange({ from: pos === 2 ? pos : pos + 1, to })
+    //       .setTweetEmbed({ tweetId: filteredTweetId })
+    //       .run();
+    //   }
+    // };
 
     // Memoize event handlers
     const handleClick = useCallback((event: any) => {
@@ -258,15 +258,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
     );
 
     const handleSave = useCallback(() => {
-      const tweetId =
-        extractTweetId(nodeContentText) ||
-        (nodeTweetContentLink && extractTweetId(nodeTweetContentLink.text));
-
-      if (tweetId) {
-        twitterRender();
-      } else {
-        mediaRender();
-      }
+      mediaRender();
     }, [nodeContentText, nodeTweetContentLink]);
 
     const debouncedHandleSave = useMemo(
