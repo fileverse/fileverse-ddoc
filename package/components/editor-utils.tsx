@@ -41,6 +41,7 @@ import { inlineLoader } from '../utils/inline-loader';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { getTemporaryEditor } from '../utils/helpers';
 import { extractTitleFromContent } from '../utils/extract-title-from-content';
+import { hexToHSL } from '../utils/color-utils';
 
 export interface IEditorToolElement {
   icon: any;
@@ -1151,36 +1152,40 @@ export const TextHighlighter = ({
       ref={elementRef}
       className="z-50 h-auto gap-0.5 flex flex-wrap max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded color-bg-default px-2 py-2 shadow-elevation-3 transition-all"
     >
-      {colors.map((color) => (
-        <div
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => {
-            editor
-              .chain()
-              .focus()
-              .toggleHighlight({ color: color.color })
-              .run();
-            setVisibility(IEditorTool.NONE);
-          }}
-          key={color.color}
-          className={cn(
-            'w-5 rounded-full flex items-center justify-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-5',
-            color.code,
-          )}
-        >
-          <LucideIcon
-            name="Check"
+      {colors.map((color) => {
+        const hsl = hexToHSL(color.color);
+        return (
+          <div
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              editor
+                .chain()
+                .focus()
+                .toggleHighlight({ color: color.color })
+                .run();
+              setVisibility(IEditorTool.NONE);
+            }}
+            key={color.color}
             className={cn(
-              'w-[14px] aspect-square',
-              editor.isActive('highlight', {
-                color: color.color,
-              })
-                ? 'visible'
-                : 'invisible',
+              'w-5 rounded-full flex items-center justify-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-5',
+              color.code,
             )}
-          />
-        </div>
-      ))}
+          >
+            <LucideIcon
+              name="Check"
+              className={cn(
+                'w-[14px] aspect-square',
+                editor.isActive('highlight', {
+                  color: color.color,
+                })
+                  ? 'visible'
+                  : 'invisible',
+                hsl.l >= 50 && hsl.h > 180 ? 'text-black' : 'text-white',
+              )}
+            />
+          </div>
+        );
+      })}
 
       <Button
         variant="ghost"
