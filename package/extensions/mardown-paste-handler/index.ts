@@ -749,21 +749,20 @@ export async function handleMarkdownContent(
   let cleanMarkdown = stripFrontmatter(content);
 
   // Protect formulas from being interpreted as markdown by escaping asterisks
-  // Find lines that look like formulas and escape their asterisks
-  cleanMarkdown = cleanMarkdown.replace(/^.*$/gm, (line) => {
-    const trimmed = line.trim();
-    // eslint-disable-next-line no-useless-escape
-    const hasBrackets = /[\[\]()]/.test(trimmed);
-    const hasNumbers = /\d/.test(trimmed);
-    const hasMultiplyOrDivide = /[*/]/.test(trimmed);
-
-    if (hasBrackets && hasNumbers && hasMultiplyOrDivide) {
-      // This line looks like a formula
-      // Escape asterisks with backslash so MarkdownIt treats them as literal
-      return line.replace(/\*/g, '\\*');
-    }
-    return line;
-  });
+  // Only escape asterisks that are clearly part of math expressions (e.g., 4*6, [1,2]*[3,4])
+  // Use precise patterns to avoid breaking markdown formatting like **bold**, *italic*, or lists
+  cleanMarkdown = cleanMarkdown.replace(
+    /(\d)\*(\d)/g, // Match digit*digit (e.g., 4*6)
+    '$1\\*$2',
+  );
+  cleanMarkdown = cleanMarkdown.replace(
+    /(\])\*(\[)/g, // Match ]*[ (e.g., [1,2]*[3,4])
+    '$1\\*$2',
+  );
+  cleanMarkdown = cleanMarkdown.replace(
+    /(\))\*(\()/g, // Match )*( (e.g., (a+b)*(c+d))
+    '$1\\*$2',
+  );
 
   // Convert Markdown to HTML
   let convertedHtml = markdownIt.render(cleanMarkdown);
