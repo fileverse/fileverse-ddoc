@@ -1172,7 +1172,7 @@ export const TextHighlighter = ({
             name="Check"
             className={cn(
               'w-[14px] aspect-square',
-              editor.isActive('textStyle', {
+              editor.isActive('highlight', {
                 color: color.color,
               })
                 ? 'visible'
