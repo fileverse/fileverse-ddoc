@@ -41,7 +41,7 @@ import { inlineLoader } from '../utils/inline-loader';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { getTemporaryEditor } from '../utils/helpers';
 import { extractTitleFromContent } from '../utils/extract-title-from-content';
-import { hexToHSL } from '../utils/color-utils';
+import { getContrastColor } from '../utils/color-utils';
 
 export interface IEditorToolElement {
   icon: any;
@@ -1184,7 +1184,9 @@ export const TextHighlighter = ({
       className="z-50 h-auto gap-0.5 flex flex-wrap max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded color-bg-default px-2 py-2 shadow-elevation-3 transition-all"
     >
       {colors.map((color) => {
-        const hsl = hexToHSL(color.color);
+        const contrastColor = getContrastColor(color.color);
+        const tickColorClassName =
+          contrastColor === '#000000' ? 'text-black' : 'text-white';
         return (
           <div
             onMouseDown={(e) => e.preventDefault()}
@@ -1211,7 +1213,7 @@ export const TextHighlighter = ({
                 })
                   ? 'visible'
                   : 'invisible',
-                hsl.l >= 50 && hsl.h > 180 ? 'text-black' : 'text-white',
+                tickColorClassName,
               )}
             />
           </div>
@@ -1716,33 +1718,39 @@ export const TextColor = ({
       ref={elementRef}
       className="z-50 h-auto gap-0.5 flex flex-wrap max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded color-bg-default px-2 py-2 shadow-elevation-3 transition-all"
     >
-      {colors.map((color) => (
-        <div
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => {
-            if (!editor) return;
-            editor.chain().focus().setColor(color.color).run();
-            setVisibility(IEditorTool.NONE);
-          }}
-          key={color.color}
-          className={cn(
-            'w-5 rounded-full flex justify-center items-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-5',
-            color.code,
-          )}
-        >
-          <LucideIcon
-            name="Check"
+      {colors.map((color) => {
+        const contrastColor = getContrastColor(color.color);
+        const tickColorClassName =
+          contrastColor === '#000000' ? 'text-black' : 'text-white';
+        return (
+          <div
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              if (!editor) return;
+              editor.chain().focus().setColor(color.color).run();
+              setVisibility(IEditorTool.NONE);
+            }}
+            key={color.color}
             className={cn(
-              'w-[14px] aspect-square',
-              editor?.isActive('textStyle', {
-                color: color.color,
-              }) || false
-                ? 'visible'
-                : 'invisible',
+              'w-5 rounded-full flex justify-center items-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-5',
+              color.code,
             )}
-          />
-        </div>
-      ))}
+          >
+            <LucideIcon
+              name="Check"
+              className={cn(
+                'w-[14px] aspect-square',
+                editor?.isActive('textStyle', {
+                  color: color.color,
+                }) || false
+                  ? 'visible'
+                  : 'invisible',
+                tickColorClassName,
+              )}
+            />
+          </div>
+        );
+      })}
       <Button
         variant="ghost"
         onMouseDown={(e) => e.preventDefault()}

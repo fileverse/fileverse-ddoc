@@ -34,62 +34,27 @@ export const isBlackOrWhiteShade = (color: string) => {
   return blackShades.includes(color) || whiteShades.includes(color);
 };
 
-/**
- * Converts a hex color string to HSL.
- * @param hex - The hex string (e.g., "#ffffff" or "fff")
- * @returns An object containing h, s, and l values.
- */
-export const hexToHSL = (hex: string): { h: number; s: number; l: number } => {
-  // 1. Remove the hash and expand shorthand hex (e.g. "03f" -> "0033ff")
-  let r = 0,
-    g = 0,
-    b = 0;
-  hex = hex.replace(/^#/, '');
+export const getContrastColor = (hex: string): '#000000' | '#ffffff' => {
+  // Remove hash and parse RGB
+  const cleanHex = hex.replace('#', '');
+  const r = parseInt(cleanHex.substring(0, 2), 16) / 255;
+  const g = parseInt(cleanHex.substring(2, 4), 16) / 255;
+  const b = parseInt(cleanHex.substring(4, 6), 16) / 255;
 
-  if (hex.length === 3) {
-    r = parseInt(hex[0] + hex[0], 16);
-    g = parseInt(hex[1] + hex[1], 16);
-    b = parseInt(hex[2] + hex[2], 16);
-  } else {
-    r = parseInt(hex.substring(0, 2), 16);
-    g = parseInt(hex.substring(2, 4), 16);
-    b = parseInt(hex.substring(4, 6), 16);
-  }
-
-  // 2. Normalize RGB to [0, 1]
-  r /= 255;
-  g /= 255;
-  b /= 255;
-
-  const max = Math.max(r, g, b);
-  const min = Math.min(r, g, b);
-  const delta = max - min;
-
-  let h = 0;
-  let s = 0;
-  const l = (max + min) / 2;
-
-  // 3. Calculate Hue and Saturation
-  if (delta !== 0) {
-    s = l > 0.5 ? delta / (2 - max - min) : delta / (max + min);
-
-    switch (max) {
-      case r:
-        h = (g - b) / delta + (g < b ? 6 : 0);
-        break;
-      case g:
-        h = (b - r) / delta + 2;
-        break;
-      case b:
-        h = (r - g) / delta + 4;
-        break;
-    }
-    h /= 6;
-  }
-
-  return {
-    h: Math.round(h * 360),
-    s: Math.round(s * 100),
-    l: Math.round(l * 100),
+  // Calculate sRGB values using the WCAG formula for gamma correction
+  const getSRGB = (c: number) => {
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
   };
+
+  const R = getSRGB(r);
+  const G = getSRGB(g);
+  const B = getSRGB(b);
+
+  // Apply weights for perceived luminance
+  // Green is weighted highest as the eye is most sensitive to it
+  const luminance = 0.2126 * R + 0.7152 * G + 0.0722 * B;
+
+  // The threshold for mid-gray is 0.179.
+  // Above this, use black. Below this, use white.
+  return luminance > 0.179 ? '#000000' : '#ffffff';
 };
