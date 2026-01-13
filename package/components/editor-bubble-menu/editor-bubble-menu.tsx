@@ -156,7 +156,15 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         icon: 'MessageSquarePlus',
       },
     ];
-  }, [showsBubbleMenu]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    showsBubbleMenu,
+    editor,
+    isCommentActive,
+    setToolVisibility,
+    toolVisibility,
+    setInitialReminderTitle,
+  ]);
 
   const renderContent = (item: { name: string; initialComment?: string }) => {
     if (!editor) return null;

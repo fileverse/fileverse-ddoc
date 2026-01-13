@@ -333,6 +333,13 @@ export const IMG_UPLOAD_SETTINGS = {
   },
 };
 
+const initialFormattingState = {
+  isBold: false,
+  isItalic: false,
+  isUnderline: false,
+  isStrikethrough: false,
+};
+
 export const useEditorToolbar = ({
   editor,
   onError,
@@ -367,8 +374,30 @@ export const useEditorToolbar = ({
   } = useEditorToolVisiibility(IEditorTool.NONE);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [fileExportsOpen, setFileExportsOpen] = useState(false);
+  const [formattingState, setFormattingState] = useState(
+    initialFormattingState,
+  );
 
   const { buttonRef } = useComments();
+
+  useEffect(() => {
+    if (!editor) return;
+    const updateMarkStates = () => {
+      setFormattingState({
+        isBold: editor.isActive('bold'),
+        isItalic: editor.isActive('italic'),
+        isUnderline: editor.isActive('underline'),
+        isStrikethrough: editor.isActive('strike'),
+      });
+    };
+    updateMarkStates();
+    editor.on('selectionUpdate', updateMarkStates);
+    editor.on('transaction', updateMarkStates);
+    return () => {
+      editor.off('selectionUpdate', updateMarkStates);
+      editor.off('transaction', updateMarkStates);
+    };
+  });
 
   useEffect(() => {
     if (!editor) return;
@@ -499,6 +528,8 @@ export const useEditorToolbar = ({
     };
   }, [editor, setToolVisibility, buttonRef]);
 
+  useEffect(() => console.log('selection update'), [editor]);
+
   const undoRedoTools: Array<IEditorToolElement | null> = [
     {
       icon: 'Undo',
@@ -536,25 +567,25 @@ export const useEditorToolbar = ({
       icon: 'Bold',
       title: 'Bold',
       onClick: () => editor?.chain().focus().toggleBold().run(),
-      isActive: editor?.isActive('bold') || false,
+      isActive: formattingState.isBold,
     },
     {
       icon: 'Italic',
       title: 'Italic',
       onClick: () => editor?.chain().focus().toggleItalic().run(),
-      isActive: editor?.isActive('italic') || false,
+      isActive: formattingState.isItalic,
     },
     {
       icon: 'Underline',
       title: 'Underlined',
       onClick: () => editor?.chain().focus().toggleUnderline().run(),
-      isActive: editor?.isActive('underline') || false,
+      isActive: formattingState.isUnderline,
     },
     {
       icon: 'Strikethrough',
       title: 'Strikethrough',
       onClick: () => editor?.chain().focus().toggleStrike().run(),
-      isActive: editor?.isActive('strike') || false,
+      isActive: formattingState.isStrikethrough,
     },
     null,
     {
