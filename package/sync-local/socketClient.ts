@@ -161,7 +161,7 @@ export class SocketClient {
     const args = {
       data: update,
       update_snapshot_ref: null,
-      collaborationToken: await this.buildToken(),
+      collaborationToken: await this.buildSessionToken(),
     };
 
     return (await this._buildRequest(
@@ -258,18 +258,30 @@ export class SocketClient {
     return this.collaborationKeyPair;
   }
 
+  private isUcanValid(ucan: ucans.Ucan) {
+    const payload = ucan.payload;
+    const now = Math.floor(Date.now() / 1000);
+    const bufferSeconds = 60;
+
+    return (
+      (!payload.nbf || payload.nbf <= now) &&
+      (!payload.exp || payload.exp > now + bufferSeconds)
+    );
+  }
+
   private async getOwnerToken() {
     if (!this.ownerKeyPair || !this.contractAddress)
       throw new Error('SocketClient: No owner key pair or contract address');
 
-    if (this.ownerUcan && !ucans.isExpired(this.ownerUcan))
+    if (this.ownerUcan && this.isUcanValid(this.ownerUcan)) {
       return ucans.encode(this.ownerUcan);
+    }
 
     this.ownerUcan = await ucans.build({
       audience: this._websocketServiceDid,
       issuer: this.ownerKeyPair,
       lifetimeInSeconds: 3600, // 1 Hour
-      notBefore: Math.floor(Date.now() / 1000),
+      notBefore: Math.floor(Date.now() / 1000) - 60,
       capabilities: [
         {
           with: {
@@ -284,21 +296,22 @@ export class SocketClient {
     return ucans.encode(this.ownerUcan);
   }
 
-  private buildToken = async () => {
+  private buildSessionToken = async () => {
     if (!this._websocketServiceDid) {
       throw new Error(
         'SocketClient: Server did not response with the server DID',
       );
     }
-    if (this.collaborationUcan && !ucans.isExpired(this.collaborationUcan))
+    if (this.collaborationUcan && this.isUcanValid(this.collaborationUcan)) {
       return ucans.encode(this.collaborationUcan);
+    }
     const keyPair = this.getCollaborationKeyPair();
 
     this.collaborationUcan = await ucans.build({
       audience: this._websocketServiceDid,
       issuer: keyPair,
       lifetimeInSeconds: 3600, // 1 Hour
-      notBefore: Math.floor(Date.now() / 1000),
+      notBefore: Math.floor(Date.now() / 1000) - 60,
       capabilities: [
         {
           with: {
@@ -322,7 +335,7 @@ export class SocketClient {
       );
     }
 
-    const token = await this.buildToken();
+    const token = await this.buildSessionToken();
     const seqId = uuidv1();
     const args: IAuthArgs = {
       collaborationToken: token,
