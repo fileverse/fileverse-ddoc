@@ -57,7 +57,7 @@ export const fonts = [
     title: 'Default',
     value: 'default',
     command: (editor: Editor) => {
-      editor.commands.unsetFontFamily();
+      editor.chain().focus().unsetFontFamily().run();
     },
   },
   {
