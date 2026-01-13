@@ -37,14 +37,14 @@ export const EXTENSIONS_WITH_DUPLICATE_WARNINGS = [
 ];
 
 export const getTemporaryEditor = (editor: Editor, content: JSONContent) => {
+  const isCollaborationExtension = (name: string) =>
+    name.toLowerCase().startsWith('collaboration');
+
   const temporalEditor = new Editor({
     extensions: editor.extensionManager.extensions.filter(
-      (e) =>
-        ![
-          'collaboration',
-          'collaborationCursor',
-          ...EXTENSIONS_WITH_DUPLICATE_WARNINGS,
-        ].includes(e.name),
+      (extension) =>
+        !isCollaborationExtension(extension.name) &&
+        !EXTENSIONS_WITH_DUPLICATE_WARNINGS.includes(extension.name),
     ),
     content,
   });
