@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 import { BubbleMenu } from '@tiptap/react/menus';
-import React from 'react';
+import React, { useMemo, useState } from 'react';
 import { NodeSelector } from './node-selector';
 import {
   LinkPopup,
@@ -49,6 +49,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     enableCollaboration,
     fetchV1ImageFn,
   } = props;
+  const [showsBubbleMenu, setShowsBubbleMenu] = useState(false);
   const editorStates = useEditorStates(editor as Editor);
   const currentSize = editor ? editorStates.currentSize : undefined;
   const currentLineHeight = editor ? editorStates.currentLineHeight : undefined;
@@ -85,75 +86,85 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     isCommentResolved,
   } = useComments();
 
-  const items: BubbleMenuItem[] = [
-    {
-      name: 'Bold',
-      isActive: () => editor?.isActive('bold') ?? false,
-      command: () => editor?.chain().focus().toggleBold().run(),
-      icon: 'Bold',
-    },
-    {
-      name: 'Italic',
-      isActive: () => editor?.isActive('italic') ?? false,
-      command: () => editor?.chain().focus().toggleItalic().run(),
-      icon: 'Italic',
-    },
-    {
-      name: 'Underline',
-      isActive: () => editor?.isActive('underline') ?? false,
-      command: () => editor?.chain().focus().toggleUnderline().run(),
-      icon: 'Underline',
-    },
-    {
-      name: 'Strikethrough',
-      isActive: () => editor?.isActive('strike') ?? false,
-      command: () => editor?.chain().focus().toggleStrike().run(),
-      icon: 'Strikethrough',
-    },
-    {
-      name: 'Alignment',
-      isActive: () => toolVisibility === IEditorTool.ALIGNMENT,
-      command: () => setToolVisibility(IEditorTool.ALIGNMENT),
-      icon: 'AlignLeft',
-    },
-    {
-      name: 'Code',
-      isActive: () => editor?.isActive('code') ?? false,
-      command: () => editor?.chain().focus().toggleCode().run(),
-      icon: 'Code',
-    },
-    {
-      name: 'Link',
-      isActive: () => editor?.isActive('link') ?? false,
-      command: () => setToolVisibility(IEditorTool.LINK_POPUP),
-      icon: 'Link',
-    },
-    {
-      name: 'Scripts',
-      isActive: () => toolVisibility === IEditorTool.SCRIPTS,
-      command: () => setToolVisibility(IEditorTool.SCRIPTS),
-      icon: 'Superscript',
-    },
-    {
-      name: 'Reminder',
-      isActive: () => false,
-      command: () => {
-        const selectedText =
-          editor?.state.selection.content().content.firstChild?.textContent ||
-          '';
-        if (setInitialReminderTitle) {
-          setInitialReminderTitle(selectedText);
-        }
+  const items: BubbleMenuItem[] = useMemo(() => {
+    return [
+      {
+        name: 'Bold',
+        isActive: () => editor?.isActive('bold') ?? false,
+        command: () => editor?.chain().focus().toggleBold().run(),
+        icon: 'Bold',
       },
-      icon: 'AlarmClock',
-    },
-    {
-      name: 'Comment',
-      isActive: () => isCommentActive,
-      command: () => {},
-      icon: 'MessageSquarePlus',
-    },
-  ];
+      {
+        name: 'Italic',
+        isActive: () => editor?.isActive('italic') ?? false,
+        command: () => editor?.chain().focus().toggleItalic().run(),
+        icon: 'Italic',
+      },
+      {
+        name: 'Underline',
+        isActive: () => editor?.isActive('underline') ?? false,
+        command: () => editor?.chain().focus().toggleUnderline().run(),
+        icon: 'Underline',
+      },
+      {
+        name: 'Strikethrough',
+        isActive: () => editor?.isActive('strike') ?? false,
+        command: () => editor?.chain().focus().toggleStrike().run(),
+        icon: 'Strikethrough',
+      },
+      {
+        name: 'Alignment',
+        isActive: () => toolVisibility === IEditorTool.ALIGNMENT,
+        command: () => setToolVisibility(IEditorTool.ALIGNMENT),
+        icon: 'AlignLeft',
+      },
+      {
+        name: 'Code',
+        isActive: () => editor?.isActive('code') ?? false,
+        command: () => editor?.chain().focus().toggleCode().run(),
+        icon: 'Code',
+      },
+      {
+        name: 'Link',
+        isActive: () => editor?.isActive('link') ?? false,
+        command: () => setToolVisibility(IEditorTool.LINK_POPUP),
+        icon: 'Link',
+      },
+      {
+        name: 'Scripts',
+        isActive: () => toolVisibility === IEditorTool.SCRIPTS,
+        command: () => setToolVisibility(IEditorTool.SCRIPTS),
+        icon: 'Superscript',
+      },
+      {
+        name: 'Reminder',
+        isActive: () => false,
+        command: () => {
+          const selectedText =
+            editor?.state.selection.content().content.firstChild?.textContent ||
+            '';
+          if (setInitialReminderTitle) {
+            setInitialReminderTitle(selectedText);
+          }
+        },
+        icon: 'AlarmClock',
+      },
+      {
+        name: 'Comment',
+        isActive: () => isCommentActive,
+        command: () => {},
+        icon: 'MessageSquarePlus',
+      },
+    ];
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    showsBubbleMenu,
+    editor,
+    isCommentActive,
+    setToolVisibility,
+    toolVisibility,
+    setInitialReminderTitle,
+  ]);
 
   const renderContent = (item: { name: string; initialComment?: string }) => {
     if (!editor) return null;
@@ -252,6 +263,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         placement: 'top',
         flip: true,
         shift: true,
+        onHide: () => setShowsBubbleMenu(false),
+        onShow: () => setShowsBubbleMenu(true),
       }}
       shouldShow={shouldShow}
       className={cn(

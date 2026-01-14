@@ -33,3 +33,28 @@ export const isBlackOrWhiteShade = (color: string) => {
 
   return blackShades.includes(color) || whiteShades.includes(color);
 };
+
+export const getContrastColor = (hex: string): '#000000' | '#ffffff' => {
+  // Remove hash and parse RGB
+  const cleanHex = hex.replace('#', '');
+  const r = parseInt(cleanHex.substring(0, 2), 16) / 255;
+  const g = parseInt(cleanHex.substring(2, 4), 16) / 255;
+  const b = parseInt(cleanHex.substring(4, 6), 16) / 255;
+
+  // Calculate sRGB values using the WCAG formula for gamma correction
+  const getSRGB = (c: number) => {
+    return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+  };
+
+  const R = getSRGB(r);
+  const G = getSRGB(g);
+  const B = getSRGB(b);
+
+  // Apply weights for perceived luminance
+  // Green is weighted highest as the eye is most sensitive to it
+  const luminance = 0.2126 * R + 0.7152 * G + 0.0722 * B;
+
+  // The threshold for mid-gray is 0.179.
+  // Above this, use black. Below this, use white.
+  return luminance > 0.179 ? '#000000' : '#ffffff';
+};

@@ -41,6 +41,7 @@ import { inlineLoader } from '../utils/inline-loader';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { getTemporaryEditor } from '../utils/helpers';
 import { extractTitleFromContent } from '../utils/extract-title-from-content';
+import { getContrastColor } from '../utils/color-utils';
 
 export interface IEditorToolElement {
   icon: any;
@@ -332,6 +333,13 @@ export const IMG_UPLOAD_SETTINGS = {
   },
 };
 
+const initialFormattingState = {
+  isBold: false,
+  isItalic: false,
+  isUnderline: false,
+  isStrikethrough: false,
+};
+
 export const useEditorToolbar = ({
   editor,
   onError,
@@ -366,8 +374,30 @@ export const useEditorToolbar = ({
   } = useEditorToolVisiibility(IEditorTool.NONE);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [fileExportsOpen, setFileExportsOpen] = useState(false);
+  const [formattingState, setFormattingState] = useState(
+    initialFormattingState,
+  );
 
   const { buttonRef } = useComments();
+
+  useEffect(() => {
+    if (!editor) return;
+    const updateMarkStates = () => {
+      setFormattingState({
+        isBold: editor.isActive('bold'),
+        isItalic: editor.isActive('italic'),
+        isUnderline: editor.isActive('underline'),
+        isStrikethrough: editor.isActive('strike'),
+      });
+    };
+    updateMarkStates();
+    editor.on('selectionUpdate', updateMarkStates);
+    editor.on('transaction', updateMarkStates);
+    return () => {
+      editor.off('selectionUpdate', updateMarkStates);
+      editor.off('transaction', updateMarkStates);
+    };
+  }, [editor]);
 
   useEffect(() => {
     if (!editor) return;
@@ -535,25 +565,25 @@ export const useEditorToolbar = ({
       icon: 'Bold',
       title: 'Bold',
       onClick: () => editor?.chain().focus().toggleBold().run(),
-      isActive: editor?.isActive('bold') || false,
+      isActive: formattingState.isBold,
     },
     {
       icon: 'Italic',
       title: 'Italic',
       onClick: () => editor?.chain().focus().toggleItalic().run(),
-      isActive: editor?.isActive('italic') || false,
+      isActive: formattingState.isItalic,
     },
     {
       icon: 'Underline',
       title: 'Underlined',
       onClick: () => editor?.chain().focus().toggleUnderline().run(),
-      isActive: editor?.isActive('underline') || false,
+      isActive: formattingState.isUnderline,
     },
     {
       icon: 'Strikethrough',
       title: 'Strikethrough',
       onClick: () => editor?.chain().focus().toggleStrike().run(),
-      isActive: editor?.isActive('strike') || false,
+      isActive: formattingState.isStrikethrough,
     },
     null,
     {
@@ -1151,36 +1181,42 @@ export const TextHighlighter = ({
       ref={elementRef}
       className="z-50 h-auto gap-0.5 flex flex-wrap max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded color-bg-default px-2 py-2 shadow-elevation-3 transition-all"
     >
-      {colors.map((color) => (
-        <div
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => {
-            editor
-              .chain()
-              .focus()
-              .toggleHighlight({ color: color.color })
-              .run();
-            setVisibility(IEditorTool.NONE);
-          }}
-          key={color.color}
-          className={cn(
-            'w-5 rounded-full flex items-center justify-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-5',
-            color.code,
-          )}
-        >
-          <LucideIcon
-            name="Check"
+      {colors.map((color) => {
+        const contrastColor = getContrastColor(color.color);
+        const tickColorClassName =
+          contrastColor === '#000000' ? 'text-black' : 'text-white';
+        return (
+          <div
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              editor
+                .chain()
+                .focus()
+                .toggleHighlight({ color: color.color })
+                .run();
+              setVisibility(IEditorTool.NONE);
+            }}
+            key={color.color}
             className={cn(
-              'w-[14px] aspect-square',
-              editor.isActive('textStyle', {
-                color: color.color,
-              })
-                ? 'visible'
-                : 'invisible',
+              'w-5 rounded-full flex items-center justify-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-5',
+              color.code,
             )}
-          />
-        </div>
-      ))}
+          >
+            <LucideIcon
+              name="Check"
+              className={cn(
+                'w-[14px] aspect-square',
+                editor.isActive('highlight', {
+                  color: color.color,
+                })
+                  ? 'visible'
+                  : 'invisible',
+                tickColorClassName,
+              )}
+            />
+          </div>
+        );
+      })}
 
       <Button
         variant="ghost"
@@ -1680,33 +1716,39 @@ export const TextColor = ({
       ref={elementRef}
       className="z-50 h-auto gap-0.5 flex flex-wrap max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded color-bg-default px-2 py-2 shadow-elevation-3 transition-all"
     >
-      {colors.map((color) => (
-        <div
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => {
-            if (!editor) return;
-            editor.chain().focus().setColor(color.color).run();
-            setVisibility(IEditorTool.NONE);
-          }}
-          key={color.color}
-          className={cn(
-            'w-5 rounded-full flex justify-center items-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-5',
-            color.code,
-          )}
-        >
-          <LucideIcon
-            name="Check"
+      {colors.map((color) => {
+        const contrastColor = getContrastColor(color.color);
+        const tickColorClassName =
+          contrastColor === '#000000' ? 'text-black' : 'text-white';
+        return (
+          <div
+            onMouseDown={(e) => e.preventDefault()}
+            onClick={() => {
+              if (!editor) return;
+              editor.chain().focus().setColor(color.color).run();
+              setVisibility(IEditorTool.NONE);
+            }}
+            key={color.color}
             className={cn(
-              'w-[14px] aspect-square',
-              editor?.isActive('textStyle', {
-                color: color.color,
-              }) || false
-                ? 'visible'
-                : 'invisible',
+              'w-5 rounded-full flex justify-center items-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-5',
+              color.code,
             )}
-          />
-        </div>
-      ))}
+          >
+            <LucideIcon
+              name="Check"
+              className={cn(
+                'w-[14px] aspect-square',
+                editor?.isActive('textStyle', {
+                  color: color.color,
+                }) || false
+                  ? 'visible'
+                  : 'invisible',
+                tickColorClassName,
+              )}
+            />
+          </div>
+        );
+      })}
       <Button
         variant="ghost"
         onMouseDown={(e) => e.preventDefault()}
