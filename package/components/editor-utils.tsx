@@ -397,7 +397,7 @@ export const useEditorToolbar = ({
       editor.off('selectionUpdate', updateMarkStates);
       editor.off('transaction', updateMarkStates);
     };
-  });
+  }, [editor]);
 
   useEffect(() => {
     if (!editor) return;
@@ -527,8 +527,6 @@ export const useEditorToolbar = ({
       }
     };
   }, [editor, setToolVisibility, buttonRef]);
-
-  useEffect(() => console.log('selection update'), [editor]);
 
   const undoRedoTools: Array<IEditorToolElement | null> = [
     {
