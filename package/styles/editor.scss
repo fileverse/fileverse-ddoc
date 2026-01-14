@@ -561,10 +561,9 @@ ul[data-type='taskList'] li > label input[type='checkbox']:checked {
   }
 }
 
-ul[data-type='taskList'] li[data-checked='true'] > div > p {
+ul[data-type='taskList'] li[data-checked='true'] > div > p:not(:has( >span)), ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   color: hsla(var(--color-text-default));
   text-decoration: line-through;
-  text-decoration-thickness: 1px;
 }
 
 .collaboration-cursor__caret {
