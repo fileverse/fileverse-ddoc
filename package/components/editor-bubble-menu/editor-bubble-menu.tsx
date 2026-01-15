@@ -48,6 +48,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     isCollabDocOwner,
     enableCollaboration,
     fetchV1ImageFn,
+    isAccountReady,
   } = props;
   const [showsBubbleMenu, setShowsBubbleMenu] = useState(false);
   const editorStates = useEditorStates(editor as Editor);
@@ -287,31 +288,34 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           )}
         >
           {mobileCommentButton}
-          {isConnected && !enableCollaboration && !isPreviewMode && (
-            <DynamicDropdown
-              key="Reminder"
-              side="bottom"
-              sideOffset={15}
-              anchorTrigger={
-                <ToolbarButton
-                  icon={'AlarmClock'}
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    const selectedText =
-                      editor?.state.selection.content().content.firstChild
-                        ?.textContent || '';
-                    if (setInitialReminderTitle) {
-                      setInitialReminderTitle(selectedText);
-                    }
-                  }}
-                  disabled={!isConnected}
-                />
-              }
-              className="!max-w-[300px] border-none shadow-none"
-              content={renderContent({ name: 'Reminder' })}
-            />
-          )}
+          {isConnected &&
+            !enableCollaboration &&
+            !isPreviewMode &&
+            isAccountReady && (
+              <DynamicDropdown
+                key="Reminder"
+                side="bottom"
+                sideOffset={15}
+                anchorTrigger={
+                  <ToolbarButton
+                    icon={'AlarmClock'}
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      const selectedText =
+                        editor?.state.selection.content().content.firstChild
+                          ?.textContent || '';
+                      if (setInitialReminderTitle) {
+                        setInitialReminderTitle(selectedText);
+                      }
+                    }}
+                    disabled={!isConnected || !isAccountReady}
+                  />
+                }
+                className="!max-w-[300px] border-none shadow-none"
+                content={renderContent({ name: 'Reminder' })}
+              />
+            )}
         </div>
       ) : (
         <React.Fragment>
@@ -557,6 +561,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                 if (item.name === 'Reminder') {
                   return (
                     isConnected &&
+                    isAccountReady &&
                     isCollabDocOwner && (
                       <DynamicDropdown
                         key="Reminder"
@@ -566,7 +571,11 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                           <ToolbarButton
                             icon={item.icon}
                             variant="ghost"
-                            disabled={!isConnected || enableCollaboration}
+                            disabled={
+                              !isConnected ||
+                              enableCollaboration ||
+                              !isAccountReady
+                            }
                             size="sm"
                             onClick={item.command}
                             classNames="disabled:!bg-transparent"

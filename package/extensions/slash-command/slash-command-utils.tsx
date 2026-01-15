@@ -15,6 +15,7 @@ export const getSuggestionItems = ({
   ipfsImageUploadFn,
   editor,
   enableCollaboration,
+  isAccountReady,
 }: {
   query: string;
   onError?: (errorString: string) => void;
@@ -22,6 +23,7 @@ export const getSuggestionItems = ({
   isConnected?: boolean;
   editor?: any;
   enableCollaboration?: boolean;
+  isAccountReady?: boolean;
 }) => {
   const modelContext = (window as any).__MODEL_CONTEXT__;
   const isAIAgentEnabled =
@@ -166,9 +168,11 @@ export const getSuggestionItems = ({
       title: 'Reminder',
       description: !isConnected
         ? 'Log-in to start creating reminders.'
-        : enableCollaboration
-          ? 'Reminders are not available during real-time collaboration.'
-          : 'Set a reminder and we will notify you right on time.',
+        : !isAccountReady
+          ? 'Finalising account creation...'
+          : enableCollaboration
+            ? 'Reminders are not available during real-time collaboration.'
+            : 'Set a reminder and we will notify you right on time.',
       searchTerms: ['reminder', 'alert', 'notification'],
       icon: (
         <LucideIcon
