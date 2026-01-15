@@ -591,6 +591,9 @@ const MarkdownPasteHandler = (
         new InputRule({
           find: /(\S*)~((?:[^~]|\\~)+)~/,
           handler: ({ state, range, match }) => {
+            if (match[2].endsWith(' ')) {
+              return null;
+            }
             const { tr } = state;
             const start = range.from + match[1].length;
             const end = range.to;
