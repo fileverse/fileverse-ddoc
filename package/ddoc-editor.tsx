@@ -127,7 +127,6 @@ const DdocEditor = forwardRef(
       isAIAgentEnabled,
       collaborationKey,
       collaborationKeyPair,
-      isAccountReady,
       collabConfig,
       // Document styling object
       documentStyling,
@@ -309,7 +308,6 @@ const DdocEditor = forwardRef(
       isAIAgentEnabled,
       collaborationKey,
       collaborationKeyPair,
-      isAccountReady,
       collabConfig,
       ...rest,
     });
@@ -725,7 +723,6 @@ const DdocEditor = forwardRef(
                           )?.options?.onReminderCreate
                         }
                         isConnected={isConnected}
-                        isAccountReady={isAccountReady}
                         isCollabDocOwner={
                           collabConfig?.roomKey ? collabConfig?.isOwner : true
                         }
