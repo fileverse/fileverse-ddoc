@@ -364,7 +364,7 @@ const TiptapToolBar = ({
                   sideOffset={8}
                   anchorTrigger={
                     <button
-                      className="bg-transparent hover:!color-bg-default-hover rounded gap-2 p-2 flex items-center justify-center w-[108px]"
+                      className="bg-transparent hover:!color-bg-default-hover rounded gap-2 p-2 flex items-center justify-between w-[108px]"
                       onClick={() => setToolVisibility(IEditorTool.HEADING)}
                     >
                       <span className="text-body-sm line-clamp-1">
