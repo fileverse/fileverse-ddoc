@@ -291,7 +291,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           {isConnected &&
             !enableCollaboration &&
             !isPreviewMode &&
-            disableInlineComment && (
+            !disableInlineComment && (
               <DynamicDropdown
                 key="Reminder"
                 side="bottom"
@@ -561,7 +561,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                 if (item.name === 'Reminder') {
                   return (
                     isConnected &&
-                    disableInlineComment &&
+                    !disableInlineComment &&
                     isCollabDocOwner && (
                       <DynamicDropdown
                         key="Reminder"
@@ -574,7 +574,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                             disabled={
                               !isConnected ||
                               enableCollaboration ||
-                              !disableInlineComment
+                              disableInlineComment
                             }
                             size="sm"
                             onClick={item.command}
