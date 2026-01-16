@@ -301,6 +301,7 @@ const DdocEditor = forwardRef(
       isPresentationMode,
       metadataProxyUrl,
       extensions,
+      disableInlineComment,
       onCopyHeadingLink,
       isConnected,
       activeModel,

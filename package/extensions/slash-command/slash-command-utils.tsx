@@ -169,7 +169,7 @@ export const getSuggestionItems = ({
       description: !isConnected
         ? 'Log-in to start creating reminders.'
         : disableInlineComment
-          ? 'Reminders will be available shortly ...'
+          ? 'Reminders will be available shortly...'
           : enableCollaboration
             ? 'Reminders are not available during real-time collaboration.'
             : 'Set a reminder and we will notify you right on time.',

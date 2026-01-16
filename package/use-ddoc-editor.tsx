@@ -451,6 +451,7 @@ export const useDdocEditor = ({
     isAIAgentEnabled,
     isConnected,
     enableCollaboration,
+    disableInlineComment,
   ]);
 
   useEffect(() => {
