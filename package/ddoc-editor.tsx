@@ -127,7 +127,6 @@ const DdocEditor = forwardRef(
       isAIAgentEnabled,
       collaborationKey,
       collaborationKeyPair,
-
       collabConfig,
       // Document styling object
       documentStyling,
@@ -302,6 +301,7 @@ const DdocEditor = forwardRef(
       isPresentationMode,
       metadataProxyUrl,
       extensions,
+      disableInlineComment,
       onCopyHeadingLink,
       isConnected,
       activeModel,
@@ -309,7 +309,6 @@ const DdocEditor = forwardRef(
       isAIAgentEnabled,
       collaborationKey,
       collaborationKeyPair,
-
       collabConfig,
       ...rest,
     });

@@ -22,6 +22,7 @@ import { SuperchargedTableExtensions } from './supercharged-table';
 import { Document } from './document';
 import { TrailingNode } from './trailing-node';
 import { NodeType } from '@tiptap/pm/model';
+import { Plugin } from '@tiptap/pm/state';
 import { InputRule } from '@tiptap/core';
 import { actionButton } from './action-button';
 import { Markdown } from 'tiptap-markdown';
@@ -59,6 +60,43 @@ import { Emoji } from './emoji/emoji';
 const lowlight = createLowlight(common);
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { type ToCItemType } from '../components/toc/types';
+
+const ExtendedSubscript = Subscript.extend({
+  addProseMirrorPlugins() {
+    const parentPlugins = this.parent?.() || [];
+    return [
+      ...parentPlugins,
+      new Plugin({
+        props: {
+          // Extends the default Subscript mark so users can exit subscript mode by typing a space.
+          handleTextInput: (view, from, to, text) => {
+            if (text !== ' ') return false;
+            const { state } = view;
+            const { selection } = state;
+            if (!selection.empty) return false;
+
+            const subscriptMark = state.schema.marks.subscript;
+            if (!subscriptMark) return false;
+
+            const activeMarks = state.storedMarks || selection.$from.marks();
+            if (!subscriptMark.isInSet(activeMarks)) return false;
+
+            // Replace the current text input with a literal space and remove
+            // the stored subscript mark so subsequent typing is normal text.
+            const tr = state.tr.replaceRangeWith(
+              from,
+              to,
+              state.schema.text(' '),
+            );
+            tr.removeStoredMark(subscriptMark);
+            view.dispatch(tr);
+            return true;
+          },
+        },
+      }),
+    ];
+  },
+});
 
 export const defaultExtensions = ({
   ipfsImageFetchFn,
@@ -265,7 +303,7 @@ export const defaultExtensions = ({
       class: 'superscript',
     },
   }),
-  Subscript.configure({
+  ExtendedSubscript.configure({
     HTMLAttributes: {
       class: 'subscript',
     },

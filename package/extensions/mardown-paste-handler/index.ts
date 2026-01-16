@@ -589,8 +589,11 @@ const MarkdownPasteHandler = (
           },
         }),
         new InputRule({
-          find: /(\S*)~((?:[^~]|\\~)+)~/,
+          find: /(\S*)~((?:[^~]|\\~)+)~$/,
           handler: ({ state, range, match }) => {
+            if (/^\s|\s$/.test(match[2])) {
+              return null;
+            }
             const { tr } = state;
             const start = range.from + match[1].length;
             const end = range.to;
@@ -692,7 +695,7 @@ function isMarkdown(content: string): boolean {
     content.match(/<sup>(.*?)<\/sup>/g) !== null ||
     content.match(/<sub>(.*?)<\/sub>/g) !== null ||
     content.match(/\^[^\s^]+\^/g) !== null || // New superscript syntax
-    content.match(/~(.*?)~/g) !== null || // New subscript syntax
+    content.match(/~([^\s~](?:[^~]*[^\s~])?)~/g) !== null || // New subscript syntax
     content.match(/^===\s*$/m) !== null // Page break
   );
 }
@@ -895,7 +898,7 @@ export async function handleMarkdownContent(
 
   const subsupRegex = /<(sup|sub)>(.*?)<\/\1>/g;
   const superscriptRegex = /\^([^\s^]+)\^/g;
-  const subscriptRegex = /~(.*?)~/g;
+  const subscriptRegex = /~([^\s~](?:[^~]*[^\s~])?)~/g;
   const pageBreakRegex = /===\s*$/gm;
 
   // Process superscript and subscript tags in the HTML string
