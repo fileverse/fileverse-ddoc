@@ -48,7 +48,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     isCollabDocOwner,
     enableCollaboration,
     fetchV1ImageFn,
-    disableInlineComment,
   } = props;
   const [showsBubbleMenu, setShowsBubbleMenu] = useState(false);
   const editorStates = useEditorStates(editor as Editor);
