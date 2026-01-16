@@ -326,7 +326,7 @@ const TiptapToolBar = ({
                       onClick={() => setToolVisibility(IEditorTool.FONT_FAMILY)}
                     >
                       <span
-                        className="text-body-sm line-clamp-1"
+                        className="text-body-sm line-clamp-1 break-all"
                         style={{
                           fontFamily: activeFont?.value,
                         }}
@@ -364,17 +364,17 @@ const TiptapToolBar = ({
                   sideOffset={8}
                   anchorTrigger={
                     <button
-                      className="bg-transparent hover:!color-bg-default-hover rounded gap-2 p-2 flex items-center justify-center w-[83px]"
+                      className="bg-transparent hover:!color-bg-default-hover rounded gap-2 p-2 flex items-center justify-between w-[108px]"
                       onClick={() => setToolVisibility(IEditorTool.HEADING)}
                     >
                       <span className="text-body-sm line-clamp-1">
-                        {editor?.isActive('heading', { level: 1 })
-                          ? 'Heading 1'
-                          : editor?.isActive('heading', { level: 2 })
-                            ? 'Heading 2'
-                            : editor?.isActive('heading', { level: 3 })
-                              ? 'Heading 3'
-                              : 'Text'}
+                        {editor?.isActive('heading', { level: 1 }) &&
+                          'Heading 1'}
+                        {editor?.isActive('heading', { level: 2 }) &&
+                          'Heading 2'}
+                        {editor?.isActive('heading', { level: 3 }) &&
+                          'Heading 3'}
+                        {!editor?.isActive('heading') && 'Text'}
                       </span>
                       <LucideIcon name="ChevronDown" size="sm" />
                     </button>
