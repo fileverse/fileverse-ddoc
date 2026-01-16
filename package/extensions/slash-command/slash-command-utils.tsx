@@ -182,9 +182,9 @@ export const getSuggestionItems = ({
         />
       ),
       image: '',
-      isDisabled: !isConnected || enableCollaboration,
+      isDisabled: !isConnected || enableCollaboration || disableInlineComment,
       command: ({ editor, range }: CommandProps) => {
-        if (!isConnected || enableCollaboration) {
+        if (!isConnected || enableCollaboration || disableInlineComment) {
           return;
         }
         showReminderMenu(editor, range, 'slash', onError);
