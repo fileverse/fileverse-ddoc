@@ -80,6 +80,7 @@ export const useDdocEditor = ({
   isAIAgentEnabled,
   collabConfig,
   onIndexedDbError,
+  disableInlineComment,
   ...rest
 }: Partial<DdocProps>) => {
   const [isContentLoading, setIsContentLoading] = useState(true);
@@ -168,6 +169,7 @@ export const useDdocEditor = ({
       ipfsImageUploadFn,
       isConnected,
       enableCollaboration,
+      disableInlineComment,
     ),
     customTextInputRules,
     PageBreak,
@@ -204,11 +206,11 @@ export const useDdocEditor = ({
           ipfsImageUploadFn,
           isConnected,
           enableCollaboration,
+          disableInlineComment,
         ),
       ]);
     }
-  }, [isConnected, enableCollaboration]);
-
+  }, [isConnected, enableCollaboration, disableInlineComment]);
   const initialContentSetRef = useRef(false);
   const [slides, setSlides] = useState<string[]>([]);
 
@@ -439,6 +441,7 @@ export const useDdocEditor = ({
           ipfsImageUploadFn,
           isConnected,
           enableCollaboration,
+          disableInlineComment,
         ),
       ]);
     }
