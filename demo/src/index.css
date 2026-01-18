@@ -1,0 +1,4 @@
+@import '@fileverse/ui/styles';
+@tailwind base;
+@tailwind components;
+@tailwind utilities;

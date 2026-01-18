@@ -4,10 +4,8 @@ import { DdocProps } from './types';
 import { ColumnsMenu } from './extensions/multi-column/menus';
 import { EditingProvider } from './hooks/use-editing-context';
 import EditorToolBar from './components/editor-toolbar';
-import './styles/editor.scss';
-import 'tippy.js/animations/shift-toward-subtle.css';
 import { useDdocEditor } from './use-ddoc-editor';
-import './styles/index.css';
+import './styles/editor.css';
 import {
   forwardRef,
   useEffect,
