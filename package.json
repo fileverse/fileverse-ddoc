@@ -10,7 +10,7 @@
       "import": "./dist/index.es.js",
       "types": "./dist/index.d.ts"
     },
-    "./styles": "./dist/style.css",
+    "./style.css": "./dist/editor.css",
     "./types": "./dist/package/types.d.ts"
   },
   "files": [

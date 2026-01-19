@@ -2,7 +2,7 @@ import { FC, useRef, useState, useEffect } from 'react';
 import { NodeViewContent, NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 import { Editor } from '@tiptap/core';
 import Tippy from '@tippyjs/react';
-import './styles.scss';
+import './styles.css';
 import { useEditingContext } from '../../../hooks/use-editing-context';
 import cn from 'classnames';
 import { Button, Divider, LucideIcon } from '@fileverse/ui';

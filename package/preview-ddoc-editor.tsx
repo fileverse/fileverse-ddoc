@@ -1,10 +1,8 @@
 import { EditorContent } from '@tiptap/react';
 import { DdocProps } from './types';
 import { EditingProvider } from './hooks/use-editing-context';
-import './styles/editor.scss';
-import 'tippy.js/animations/shift-toward-subtle.css';
 import { useDdocEditor } from './use-ddoc-editor';
-import './styles/index.css';
+import './styles/editor.css';
 import {
   forwardRef,
   useEffect,
