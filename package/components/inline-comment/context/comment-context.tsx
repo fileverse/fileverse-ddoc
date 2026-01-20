@@ -146,7 +146,7 @@ export const CommentProvider = ({
 
   useOnClickOutside([portalRef, buttonRef, dropdownRef], () => {
     if (isCommentOpen) {
-      // editor.chain().unsetHighlight().run();
+      setIsBubbleMenuSuppressed(true);
       setIsCommentOpen(false);
     }
   });

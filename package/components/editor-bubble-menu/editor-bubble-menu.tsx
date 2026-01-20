@@ -94,10 +94,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     }
 
     const handleSelectionUpdate = () => {
-      const { from, to } = editor.state.selection;
-      if (from !== to) {
-        setIsBubbleMenuSuppressed(false);
-      }
+      setIsBubbleMenuSuppressed(false);
     };
 
     editor.on('selectionUpdate', handleSelectionUpdate);
