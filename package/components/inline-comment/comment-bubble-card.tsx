@@ -20,7 +20,8 @@ export const CommentBubbleCard = ({
   isCollabDocumentPublished: boolean | undefined;
   disableInlineComment?: boolean;
 }) => {
-  const { comments, username, dropdownRef } = useComments();
+  const { comments, username, dropdownRef, setIsBubbleMenuSuppressed } =
+    useComments();
   const disableInlineCommentRef = useRef(disableInlineComment || false);
   const [isReplyViewDismissed, setIsReplyViewDismissed] = useState(false);
 
@@ -43,6 +44,7 @@ export const CommentBubbleCard = ({
     }
 
     setIsReplyViewDismissed(true);
+    setIsBubbleMenuSuppressed(true);
   });
 
   useEffect(() => {
