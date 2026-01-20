@@ -346,7 +346,10 @@ export const CommentDropdown = ({
                 }
                 content={
                   isDropdownOpen ? (
-                    <div className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3">
+                    <div
+                      className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3"
+                      data-inline-comment-actions-menu
+                    >
                       <button
                         className="flex items-center color-text-danger text-sm font-medium gap-2 rounded p-2 transition-all hover:color-bg-default-hover w-full"
                         onClick={handleDeleteThread}
