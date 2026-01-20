@@ -1188,7 +1188,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p:not(:has( >span)), ul
 }
 
 .inline-comment--active {
-  @apply bg-[#BCF6C1] cursor-pointer transition-all;
+  @apply bg-[#88ED92] cursor-pointer transition-all;
 
   .dark & {
     background-color: #177e23;
