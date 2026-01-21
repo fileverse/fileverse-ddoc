@@ -57,6 +57,10 @@ function App() {
     ICollaborationConfig | undefined
   >(undefined);
 
+  const handleZoom = (zoom: string) => {
+    setZoomLevel(zoom);
+  };
+
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const editorRef = useRef<any>(null);
 
@@ -447,7 +451,7 @@ function App() {
         isPresentationMode={isPresentationMode}
         setIsPresentationMode={setIsPresentationMode}
         zoomLevel={zoomLevel}
-        setZoomLevel={setZoomLevel}
+        setZoomLevel={handleZoom}
         isNavbarVisible={isNavbarVisible}
         setIsNavbarVisible={setIsNavbarVisible}
         onComment={(): void => {}}

@@ -116,7 +116,7 @@ export interface DdocProps extends CommentAccountProps {
     React.SetStateAction<InlineCommentData>
   >;
   zoomLevel: string;
-  setZoomLevel: React.Dispatch<SetStateAction<string>>;
+  setZoomLevel: (zoomValue: string) => void;
   isNavbarVisible: boolean;
   setIsNavbarVisible: React.Dispatch<SetStateAction<boolean>>;
   editorCanvasClassNames?: string;
