@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 import { BubbleMenu } from '@tiptap/react/menus';
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { NodeSelector } from './node-selector';
 import {
   LinkPopup,
@@ -84,7 +84,25 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     buttonRef,
     isCommentActive,
     isCommentResolved,
+    isBubbleMenuSuppressed,
+    setIsBubbleMenuSuppressed,
   } = useComments();
+
+  useEffect(() => {
+    if (!editor || !isBubbleMenuSuppressed) {
+      return;
+    }
+
+    const handleSelectionUpdate = () => {
+      setIsBubbleMenuSuppressed(false);
+    };
+
+    editor.on('selectionUpdate', handleSelectionUpdate);
+
+    return () => {
+      editor.off('selectionUpdate', handleSelectionUpdate);
+    };
+  }, [editor, isBubbleMenuSuppressed, setIsBubbleMenuSuppressed]);
 
   const items: BubbleMenuItem[] = useMemo(() => {
     return [
@@ -269,7 +287,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       shouldShow={shouldShow}
       className={cn(
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border color-bg-default items-center shadow-elevation-3',
-        isCommentOpen || toolVisibility === IEditorTool.LINK_POPUP
+        isCommentOpen ||
+          toolVisibility === IEditorTool.LINK_POPUP ||
+          isBubbleMenuSuppressed
           ? '!invisible'
           : '!visible',
         isNativeMobile ? '!-translate-y-[120%]' : '',

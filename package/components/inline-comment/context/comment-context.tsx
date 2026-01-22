@@ -49,6 +49,7 @@ export const CommentProvider = ({
   const replySectionRef = useRef<HTMLDivElement | null>(null);
   const [selectedText, setSelectedText] = useState('');
   const [isCommentOpen, setIsCommentOpen] = useState(false);
+  const [isBubbleMenuSuppressed, setIsBubbleMenuSuppressed] = useState(false);
   const portalRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -145,7 +146,7 @@ export const CommentProvider = ({
 
   useOnClickOutside([portalRef, buttonRef, dropdownRef], () => {
     if (isCommentOpen) {
-      // editor.chain().unsetHighlight().run();
+      setIsBubbleMenuSuppressed(true);
       setIsCommentOpen(false);
     }
   });
@@ -534,6 +535,8 @@ export const CommentProvider = ({
       activeComment,
       selectedText,
       isCommentOpen,
+      isBubbleMenuSuppressed,
+      setIsBubbleMenuSuppressed,
       handleInlineComment,
       portalRef,
       buttonRef,
@@ -591,6 +594,8 @@ export const CommentProvider = ({
       selectedText,
       isCommentOpen,
       handleInlineComment,
+      isBubbleMenuSuppressed,
+      setIsBubbleMenuSuppressed,
       activeComments,
       handleInput,
       isCommentActive,

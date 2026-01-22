@@ -4,7 +4,8 @@ import { BubbleMenu } from '@tiptap/react/menus';
 import { Editor } from '@tiptap/core';
 import { useComments } from './context/comment-context';
 import { CommentDropdown } from './comment-dropdown';
-import { useRef, useEffect, useMemo } from 'react';
+import { useRef, useEffect, useMemo, useState } from 'react';
+import { useOnClickOutside } from 'usehooks-ts';
 
 export const CommentBubbleCard = ({
   editor,
@@ -19,12 +20,46 @@ export const CommentBubbleCard = ({
   isCollabDocumentPublished: boolean | undefined;
   disableInlineComment?: boolean;
 }) => {
-  const { comments, username } = useComments();
+  const { comments, username, dropdownRef, setIsBubbleMenuSuppressed } =
+    useComments();
   const disableInlineCommentRef = useRef(disableInlineComment || false);
+  const [isReplyViewDismissed, setIsReplyViewDismissed] = useState(false);
 
   useEffect(() => {
     disableInlineCommentRef.current = disableInlineComment || false;
   }, [disableInlineComment]);
+
+  useOnClickOutside(dropdownRef, (event) => {
+    const target = event.target as HTMLElement | null;
+    if (target && editor.view.dom.contains(target)) {
+      return;
+    }
+
+    if (target?.closest('[data-inline-comment-actions-menu]')) {
+      return;
+    }
+
+    if (!editor.isActive('comment') || isReplyViewDismissed) {
+      return;
+    }
+
+    setIsReplyViewDismissed(true);
+    setIsBubbleMenuSuppressed(true);
+  });
+
+  useEffect(() => {
+    const handleSelectionUpdate = () => {
+      if (isReplyViewDismissed) {
+        setIsReplyViewDismissed(false);
+      }
+    };
+
+    editor.on('selectionUpdate', handleSelectionUpdate);
+
+    return () => {
+      editor.off('selectionUpdate', handleSelectionUpdate);
+    };
+  }, [editor, isReplyViewDismissed]);
 
   const currentComment = comments?.find(
     (comment) => comment.id === activeCommentId,
@@ -83,7 +118,7 @@ export const CommentBubbleCard = ({
       editor={editor}
       className={cn(
         'shadow-elevation-4 rounded-lg color-bg-default border color-border-default',
-        commentDrawerOpen && 'hidden',
+        (commentDrawerOpen || isReplyViewDismissed) && 'hidden',
       )}
     >
       {/* @ts-expect-error ts */}

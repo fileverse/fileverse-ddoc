@@ -45,6 +45,8 @@ export interface CommentContextType extends CommentAccountProps {
   activeComment: IComment | undefined;
   selectedText: string;
   isCommentOpen: boolean;
+  isBubbleMenuSuppressed: boolean;
+  setIsBubbleMenuSuppressed: React.Dispatch<React.SetStateAction<boolean>>;
   handleInlineComment: () => void;
   portalRef: React.RefObject<HTMLDivElement>;
   buttonRef: React.RefObject<HTMLDivElement>;
