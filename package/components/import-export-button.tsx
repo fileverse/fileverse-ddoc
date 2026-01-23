@@ -93,23 +93,32 @@ const ImportExportButton = ({
               }}
               className="w-[220px] rounded-lg p-2 flex flex-col gap-1 scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default"
             >
-              {exportOptions.map((option, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    setFileExportsOpen(false);
-                    option?.onClick();
-                  }}
-                  className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
-                >
-                  <span className="text-body-sm">{option?.title}</span>
-                  {option?.isNew && (
-                    <p className="max-h-[16px] flex items-center text-[8px] color-bg-brand text-black rounded p-1 font-semibold">
-                      NEW
-                    </p>
-                  )}
-                </button>
-              ))}
+              {exportOptions
+                .filter((option) => option !== null)
+                .map((option, index) => (
+                  <button
+                    key={index}
+                    disabled={option?.disabled}
+                    onClick={() => {
+                      if (option?.disabled) return;
+                      setFileExportsOpen(false);
+                      option?.onClick();
+                    }}
+                    className={cn(
+                      'h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm',
+                      option?.disabled
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'hover:color-bg-default-hover',
+                    )}
+                  >
+                    <span className="text-body-sm">{option?.title}</span>
+                    {option?.isNew && (
+                      <p className="max-h-[16px] flex items-center text-[8px] color-bg-brand text-black rounded p-1 font-semibold">
+                        NEW
+                      </p>
+                    )}
+                  </button>
+                ))}
             </PopoverContent>
           </Popover>
 
@@ -146,23 +155,25 @@ const ImportExportButton = ({
               }}
               className="w-[220px] rounded-lg p-2 flex flex-col gap-1 scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default"
             >
-              {importOptions.map((option, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    setFileExportsOpen(false);
-                    option?.onClick();
-                  }}
-                  className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
-                >
-                  <span className="text-body-sm">{option?.title}</span>
-                  {option?.isNew && (
-                    <p className="max-h-[16px] flex items-center text-[8px] color-bg-brand text-black rounded p-1 font-semibold">
-                      NEW
-                    </p>
-                  )}
-                </button>
-              ))}
+              {importOptions
+                .filter((option) => option !== null)
+                .map((option, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setFileExportsOpen(false);
+                      option?.onClick();
+                    }}
+                    className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
+                  >
+                    <span className="text-body-sm">{option?.title}</span>
+                    {option?.isNew && (
+                      <p className="max-h-[16px] flex items-center text-[8px] color-bg-brand text-black rounded p-1 font-semibold">
+                        NEW
+                      </p>
+                    )}
+                  </button>
+                ))}
             </PopoverContent>
           </Popover>
         </div>
