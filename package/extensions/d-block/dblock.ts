@@ -311,7 +311,7 @@ export const DBlock = Node.create<DBlockOptions>({
             return editor
               .chain()
               .setDBlock()
-              .focus(from + 4)
+              .focus(from + 2)
               .setMark('textStyle', attrs)
               .run();
           }

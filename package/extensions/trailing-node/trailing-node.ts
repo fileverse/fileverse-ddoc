@@ -57,19 +57,8 @@ export const TrailingNode = Extension.create<TrailingNodeOptions>({
             class: 'trailing-node',
           };
 
-          // Create text with marks if textStyle is available
-          let textContent = schema.text(' ');
-          const attrs = this.editor.getAttributes('textStyle');
-
-          if (schema.marks.textStyle) {
-            const mark = schema.marks.textStyle.create({
-              ...attrs,
-            });
-            textContent = schema.text(' ', [mark]);
-          }
-
           // Create a single paragraph node with styled text content and node attributes
-          const styledNode = type.create(nodeAttrs, textContent);
+          const styledNode = type.create(nodeAttrs);
 
           // Insert only this one node
           return tr.insert(endPosition, styledNode);
