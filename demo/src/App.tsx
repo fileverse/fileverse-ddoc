@@ -138,7 +138,7 @@ function App() {
 
   //To handle comments from consumer side
 
-  const [isConnected, setIsConnected] = useState(false);
+  const [isConnected, setIsConnected] = useState(true);
 
   useEffect(() => {
     const collabConfig = collabStore.getCollabConf();
