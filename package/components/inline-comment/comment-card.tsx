@@ -254,6 +254,7 @@ export const CommentCard = ({
   return (
     <div
       ref={commentsContainerRef}
+      data-testid={id ? `comment-card-${id}` : 'comment-card'}
       className={cn(
         'flex flex-col gap-0 px-3 group comment-card',
         isResolved && 'opacity-70',

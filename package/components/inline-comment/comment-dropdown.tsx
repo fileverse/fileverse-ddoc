@@ -281,6 +281,7 @@ export const CommentDropdown = ({
   const renderInitialView = () => (
     <div className="p-3 flex flex-col gap-2 color-bg-secondary rounded-md">
       <TextAreaFieldV2
+        data-testid="comment-dropdown-input"
         value={comment}
         onChange={handleCommentChange}
         onKeyDown={handleKeyDown}
@@ -292,6 +293,7 @@ export const CommentDropdown = ({
 
       <div className="h-full flex items-center justify-end">
         <Button
+          data-testid="comment-dropdown-send"
           onClick={handleClick}
           className="px-4 py-2 w-20 min-w-20 h-9 font-medium text-sm"
           disabled={!comment.trim()}
@@ -351,6 +353,7 @@ export const CommentDropdown = ({
                       data-inline-comment-actions-menu
                     >
                       <button
+                        data-testid="comment-delete-btn"
                         className="flex items-center color-text-danger text-sm font-medium gap-2 rounded p-2 transition-all hover:color-bg-default-hover w-full"
                         onClick={handleDeleteThread}
                         onTouchEnd={handleDeleteThread}
@@ -375,6 +378,7 @@ export const CommentDropdown = ({
                 position="bottom"
               >
                 <IconButton
+                  data-testid={activeComment?.resolved ? 'comment-unresolve-btn' : 'comment-resolve-btn'}
                   icon={
                     activeComment?.resolved ? 'CircleCheck2' : 'CircleCheck'
                   }
@@ -443,6 +447,7 @@ export const CommentDropdown = ({
   const renderDropdownWrapper = (children: React.ReactNode) => (
     <div
       ref={dropdownRef}
+      data-testid="comment-dropdown"
       className="w-[300px] color-bg-default shadow-elevation-4 md:shadow-none rounded-md select-text"
     >
       {children}
