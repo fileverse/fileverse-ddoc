@@ -28,7 +28,12 @@ export const md = markdownIt;
 
 // Add the same custom rules as in markdown-paste-handler
 turndownService.addRule('pageBreak', {
-  filter: 'br',
+  filter: function (node) {
+    return (
+      node.nodeName === 'BR' &&
+      (node as HTMLElement).getAttribute('data-page-break') === 'true'
+    );
+  },
   replacement: function () {
     return '\n\n===\n\n';
   },

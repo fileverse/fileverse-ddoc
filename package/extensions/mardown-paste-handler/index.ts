@@ -80,7 +80,12 @@ turndownService.addRule('taskListItem', {
 
 // Custom rule for page breaks
 turndownService.addRule('pageBreak', {
-  filter: 'br',
+  filter: function (node) {
+    return (
+      node.nodeName === 'BR' &&
+      (node as HTMLElement).getAttribute('data-page-break') === 'true'
+    );
+  },
   replacement: function () {
     return '\n\n===\n\n';
   },
@@ -170,7 +175,7 @@ turndownService.addRule('listItem', {
     content = content
       .replace(/^\n+/, '') // remove leading newlines
       .replace(/\n+$/, '') // remove trailing newlines
-      .replace(/\n\s*\n/g, '\n') // replace multiple newlines with single newline
+      .replace(/^\s*(===)\s*$/gm, '') // remove ALL page-break artifacts inside list items
       .replace(/\n/gm, '\n    '); // indent
 
     let prefix = options.bulletListMarker + ' ';
