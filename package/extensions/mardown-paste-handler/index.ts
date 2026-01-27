@@ -80,7 +80,12 @@ turndownService.addRule('taskListItem', {
 
 // Custom rule for page breaks
 turndownService.addRule('pageBreak', {
-  filter: 'br',
+  filter: function (node) {
+    return (
+      node.nodeName === 'BR' &&
+      (node as HTMLElement).getAttribute('data-page-break') === 'true'
+    );
+  },
   replacement: function () {
     return '\n\n===\n\n';
   },
