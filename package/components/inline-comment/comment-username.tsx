@@ -13,6 +13,7 @@ const CommentUsername = ({
 }: CommentUsernameProps) => {
   return (
     <div
+      data-testid="comment-auth-modal"
       className={cn(
         'flex flex-col h-screen xl:!h-[80vh] !color-bg-default !rounded-b-lg',
         !isNavbarVisible && 'xl:!h-[calc(100vh-150px)]',
@@ -33,6 +34,7 @@ const CommentUsername = ({
           <div className="flex flex-col gap-2">
             <div className="flex gap-3 mt-2">
               <TextField
+                data-testid="comment-name-input"
                 type="text"
                 value={username!}
                 onChange={(e) => setUsername?.(e.target.value)}
@@ -45,6 +47,7 @@ const CommentUsername = ({
                 placeholder="Enter a name"
               />
               <Button
+                data-testid="comment-join-btn"
                 onClick={() => connectViaUsername?.(username!)}
                 disabled={!username || isLoading}
                 isLoading={isLoading}
@@ -71,6 +74,7 @@ const CommentUsername = ({
 
             <div className="text-center">
               <Button
+                data-testid="comment-ens-btn"
                 onClick={isConnected ? () => null : connectViaWallet}
                 disabled={isLoading}
                 className="custom-ens-button"
