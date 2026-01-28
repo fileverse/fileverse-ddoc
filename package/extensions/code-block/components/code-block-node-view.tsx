@@ -115,8 +115,10 @@ export default function CodeBlockNodeView({
     setCopyIcon('Check');
     toast({
       customIcon: 'Copy',
-      description: 'Code copied to clipboard',
-      variant: 'mini',
+      iconType: 'icon',
+      title: 'Code copied to clipboard',
+      variant: 'success',
+      toastType: 'mini',
     });
 
     const timeout = setTimeout(() => {

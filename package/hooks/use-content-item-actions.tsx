@@ -54,6 +54,7 @@ const useContentItemActions = (
     document.execCommand('copy');
     toast({
       title: 'Copied to clipboard',
+      toastType: 'mini',
       variant: 'success',
     });
   }, [editor, currentNodePos]);

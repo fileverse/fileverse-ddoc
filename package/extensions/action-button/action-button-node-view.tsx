@@ -41,7 +41,9 @@ export const ActionButtonNodeView = ({
     if (!inputValue) {
       toast({
         title: 'Please enter a valid URL',
-        variant: 'secondary',
+        iconType: 'icon',
+        toastType: 'mini',
+        variant: 'error',
       });
       return;
     }
@@ -76,7 +78,9 @@ export const ActionButtonNodeView = ({
         default: {
           toast({
             title: 'Please enter a valid URL',
-            variant: 'secondary',
+            iconType: 'icon',
+            toastType: 'mini',
+            variant: 'error',
           });
           return;
         }
@@ -107,7 +111,9 @@ export const ActionButtonNodeView = ({
     if (!inputValue) {
       toast({
         title: 'Please enter a valid URL',
-        variant: 'secondary',
+        iconType: 'icon',
+        toastType: 'mini',
+        variant: 'error',
       });
       return;
     }
@@ -123,7 +129,9 @@ export const ActionButtonNodeView = ({
     } else {
       toast({
         title: 'Please enter a valid URL',
-        variant: 'secondary',
+        iconType: 'icon',
+        toastType: 'mini',
+        variant: 'error',
       });
       return;
     }
@@ -147,7 +155,9 @@ export const ActionButtonNodeView = ({
     if (!inputValue) {
       toast({
         title: 'Please enter a valid URL',
-        variant: 'secondary',
+        iconType: 'icon',
+        toastType: 'mini',
+        variant: 'error',
       });
       return;
     }
@@ -195,7 +205,9 @@ export const ActionButtonNodeView = ({
         default: {
           toast({
             title: 'Please enter a valid URL',
-            variant: 'secondary',
+            iconType: 'icon',
+            toastType: 'mini',
+            variant: 'error',
           });
           return;
         }
