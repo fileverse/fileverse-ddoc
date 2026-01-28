@@ -55,6 +55,7 @@ const ImportExportButton = ({
               setFileExportsOpen((prev) => !prev);
               setDropdownOpen(false);
             }}
+            data-testid="export-import-dropdown"
           />
         </Tooltip>
       }
@@ -72,6 +73,7 @@ const ImportExportButton = ({
                   exportTimeout = setTimeout(() => setOpenExport(false), 300);
                 }}
                 className="appearance-none bg-transparent hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
+                data-testid="export-dropdown"
               >
                 <div className="flex items-center space-x-2">
                   <LucideIcon name="FileExport" className="w-5 h-5" />
@@ -110,6 +112,7 @@ const ImportExportButton = ({
                         ? 'opacity-50 cursor-not-allowed'
                         : 'hover:color-bg-default-hover',
                     )}
+                    data-testid={`export-${option?.title?.match(/\(\.(\w+)\)/)?.[1] || option?.title?.toLowerCase().replace(/[^a-z]/g, '-')}`}
                   >
                     <span className="text-body-sm">{option?.title}</span>
                     {option?.isNew && (
@@ -134,6 +137,7 @@ const ImportExportButton = ({
                   importTimeout = setTimeout(() => setOpenImport(false), 300);
                 }}
                 className="appearance-none bg-transparent hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
+                data-testid="import-dropdown"
               >
                 <div className="flex items-center space-x-2">
                   <LucideIcon name="FileImport" className="w-5 h-5" />
@@ -165,6 +169,7 @@ const ImportExportButton = ({
                       option?.onClick();
                     }}
                     className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
+                    data-testid={`import-${option?.title?.match(/\(\.(\w+)\)/)?.[1] || option?.title?.toLowerCase().replace(/[^a-z]/g, '-')}`}
                   >
                     <span className="text-body-sm">{option?.title}</span>
                     {option?.isNew && (
