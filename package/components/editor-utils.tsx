@@ -51,6 +51,7 @@ export interface IEditorToolElement {
   group?: string;
   isNew?: boolean;
   notVisible?: number;
+  disabled?: boolean;
 }
 
 export const fonts = [
@@ -352,6 +353,7 @@ export const useEditorToolbar = ({
   ipfsImageFetchFn,
   onDocxImport,
   fetchV1ImageFn,
+  isConnected,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -366,6 +368,7 @@ export const useEditorToolbar = ({
   ) => Promise<{ url: string; file: File }>;
   onDocxImport?: () => void;
   fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
+  isConnected?: boolean;
 }) => {
   const {
     ref: toolRef,
@@ -907,7 +910,7 @@ export const useEditorToolbar = ({
       icon: 'FileExport',
       title: 'PDF document (.pdf)',
       onClick: () => {
-        if (editor) {
+        if (editor && isConnected) {
           const closeAndPrint = async () => {
             const { showLoader, removeLoader } = inlineLoader(
               editor,
@@ -940,6 +943,7 @@ export const useEditorToolbar = ({
         }
       },
       isActive: false,
+      disabled: !isConnected,
     },
     {
       icon: 'FileOutput',

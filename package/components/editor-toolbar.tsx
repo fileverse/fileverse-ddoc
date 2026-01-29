@@ -52,6 +52,7 @@ const TiptapToolBar = ({
   isLoading,
   ipfsImageFetchFn,
   fetchV1ImageFn,
+  isConnected,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -71,6 +72,7 @@ const TiptapToolBar = ({
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
+  isConnected?: boolean;
 }) => {
   const {
     toolRef,
@@ -93,6 +95,7 @@ const TiptapToolBar = ({
     ipfsImageFetchFn,
     onDocxImport,
     fetchV1ImageFn,
+    isConnected,
   });
 
   const editorStates = useEditorStates(editor as Editor);

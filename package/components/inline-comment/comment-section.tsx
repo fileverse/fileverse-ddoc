@@ -117,6 +117,7 @@ export const CommentSection = ({
 
   return (
     <div
+      data-testid="comment-section"
       className={cn(
         'flex flex-col h-[100dvh] sm:h-[calc(100vh-40px)] xl:h-[calc(100vh-210px)] !color-bg-default !rounded-b-lg',
         'pb-[3rem] sm:pb-0',
@@ -194,6 +195,7 @@ export const CommentSection = ({
                 ) : (
                   <div className="pl-4 animate-in fade-in-5 flex flex-col gap-2 duration-300 mt-3">
                     <TextAreaFieldV2
+                      data-testid="comment-reply-input"
                       placeholder="Reply"
                       value={reply}
                       className={cn(
@@ -219,6 +221,7 @@ export const CommentSection = ({
                           Cancel
                         </Button>
                         <Button
+                          data-testid="comment-reply-send"
                           className="px-4 py-2 w-20 min-w-20 h-9"
                           disabled={!reply.trim()}
                           onClick={handleReplySubmit}
@@ -257,6 +260,7 @@ export const CommentSection = ({
         </div>
 
         <TextAreaFieldV2
+          data-testid="comment-section-input"
           value={comment}
           onChange={handleCommentChange}
           onKeyDown={handleCommentKeyDown}
@@ -267,6 +271,7 @@ export const CommentSection = ({
 
         <div className="flex justify-end">
           <Button
+            data-testid="comment-section-send"
             onClick={handleCommentSubmit}
             className="px-4 py-2 w-20 min-w-20 h-9"
             disabled={!comment.trim() || !username}

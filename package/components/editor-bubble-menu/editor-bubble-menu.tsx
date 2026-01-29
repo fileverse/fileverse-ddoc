@@ -239,6 +239,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     <React.Fragment>
       <ToolbarButton
         ref={buttonRef}
+        data-testid="inline-comment-btn-mobile"
         icon="MessageSquarePlus"
         size="sm"
         disabled={
@@ -544,6 +545,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                       anchorTrigger={
                         <ToolbarButton
                           ref={buttonRef}
+                          data-testid="inline-comment-btn"
                           icon="MessageSquarePlus"
                           variant="ghost"
                           size="sm"

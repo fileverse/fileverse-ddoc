@@ -28,7 +28,7 @@ export const CommentDrawer = ({
   });
 
   return (
-    <div>
+    <div data-testid="comment-drawer">
       {isBelow1280px ? (
         <DynamicDrawer
           open={isOpen}

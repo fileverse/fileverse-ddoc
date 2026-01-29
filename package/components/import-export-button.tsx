@@ -55,6 +55,7 @@ const ImportExportButton = ({
               setFileExportsOpen((prev) => !prev);
               setDropdownOpen(false);
             }}
+            data-testid="export-import-dropdown"
           />
         </Tooltip>
       }
@@ -72,6 +73,7 @@ const ImportExportButton = ({
                   exportTimeout = setTimeout(() => setOpenExport(false), 300);
                 }}
                 className="appearance-none bg-transparent hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
+                data-testid="export-dropdown"
               >
                 <div className="flex items-center space-x-2">
                   <LucideIcon name="FileExport" className="w-5 h-5" />
@@ -93,23 +95,33 @@ const ImportExportButton = ({
               }}
               className="w-[220px] rounded-lg p-2 flex flex-col gap-1 scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default"
             >
-              {exportOptions.map((option, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    setFileExportsOpen(false);
-                    option?.onClick();
-                  }}
-                  className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
-                >
-                  <span className="text-body-sm">{option?.title}</span>
-                  {option?.isNew && (
-                    <p className="max-h-[16px] flex items-center text-[8px] color-bg-brand text-black rounded p-1 font-semibold">
-                      NEW
-                    </p>
-                  )}
-                </button>
-              ))}
+              {exportOptions
+                .filter((option) => option !== null)
+                .map((option, index) => (
+                  <button
+                    key={index}
+                    disabled={option?.disabled}
+                    onClick={() => {
+                      if (option?.disabled) return;
+                      setFileExportsOpen(false);
+                      option?.onClick();
+                    }}
+                    className={cn(
+                      'h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm',
+                      option?.disabled
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'hover:color-bg-default-hover',
+                    )}
+                    data-testid={`export-${option?.title?.match(/\(\.(\w+)\)/)?.[1] || option?.title?.toLowerCase().replace(/[^a-z]/g, '-')}`}
+                  >
+                    <span className="text-body-sm">{option?.title}</span>
+                    {option?.isNew && (
+                      <p className="max-h-[16px] flex items-center text-[8px] color-bg-brand text-black rounded p-1 font-semibold">
+                        NEW
+                      </p>
+                    )}
+                  </button>
+                ))}
             </PopoverContent>
           </Popover>
 
@@ -125,6 +137,7 @@ const ImportExportButton = ({
                   importTimeout = setTimeout(() => setOpenImport(false), 300);
                 }}
                 className="appearance-none bg-transparent hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
+                data-testid="import-dropdown"
               >
                 <div className="flex items-center space-x-2">
                   <LucideIcon name="FileImport" className="w-5 h-5" />
@@ -146,23 +159,26 @@ const ImportExportButton = ({
               }}
               className="w-[220px] rounded-lg p-2 flex flex-col gap-1 scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default"
             >
-              {importOptions.map((option, index) => (
-                <button
-                  key={index}
-                  onClick={() => {
-                    setFileExportsOpen(false);
-                    option?.onClick();
-                  }}
-                  className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
-                >
-                  <span className="text-body-sm">{option?.title}</span>
-                  {option?.isNew && (
-                    <p className="max-h-[16px] flex items-center text-[8px] color-bg-brand text-black rounded p-1 font-semibold">
-                      NEW
-                    </p>
-                  )}
-                </button>
-              ))}
+              {importOptions
+                .filter((option) => option !== null)
+                .map((option, index) => (
+                  <button
+                    key={index}
+                    onClick={() => {
+                      setFileExportsOpen(false);
+                      option?.onClick();
+                    }}
+                    className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
+                    data-testid={`import-${option?.title?.match(/\(\.(\w+)\)/)?.[1] || option?.title?.toLowerCase().replace(/[^a-z]/g, '-')}`}
+                  >
+                    <span className="text-body-sm">{option?.title}</span>
+                    {option?.isNew && (
+                      <p className="max-h-[16px] flex items-center text-[8px] color-bg-brand text-black rounded p-1 font-semibold">
+                        NEW
+                      </p>
+                    )}
+                  </button>
+                ))}
             </PopoverContent>
           </Popover>
         </div>
