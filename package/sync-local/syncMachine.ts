@@ -43,10 +43,6 @@ const syncMachine = createMachine(
       SYNC_LATEST_COMMIT: {
         target: 'syncing_latest_commit',
       },
-      DISCONNECT: {
-        actions: 'handleDisconnectionDueToError',
-        target: 'disconnecting',
-      },
       INIT_AWARENESS: {
         actions: 'initializeAwareness',
       },

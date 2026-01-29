@@ -36,7 +36,7 @@ const hasContentInitialisedSelector = (state: any) =>
   state.context.initalDocumentDecryptionState === 'done';
 
 export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
-  const [, send, actorRef] = useMachine(syncMachine, {
+  const [state, send, actorRef] = useMachine(syncMachine, {
     context: {
       ...config,
     },
@@ -154,5 +154,6 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
     terminateSession,
     awareness,
     hasCollabContentInitialised,
+    state,
   };
 };

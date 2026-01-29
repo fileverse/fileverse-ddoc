@@ -28,7 +28,6 @@ import {
   setInitialCommitErrorMessageHandler,
   setInitialUpdateErrorMessageHandler,
   disconnectedStateHandler,
-  handleDisconnectionDueToError,
   terminateSessionHandler,
   setDocumentDecryptionStateHandler,
 } from '.';
@@ -61,7 +60,6 @@ export const syncMachineActions: Record<any, any> = {
   setInitialCommitErrorMessage: assign(setInitialCommitErrorMessageHandler),
   setInitialUpdateErrorMessage: assign(setInitialUpdateErrorMessageHandler),
   handleDisconnectedState: assign(disconnectedStateHandler),
-  handleDisconnectionDueToError: assign(handleDisconnectionDueToError),
   terminateSession: assign(terminateSessionHandler),
   setDocumentDecryptionState: assign(setDocumentDecryptionStateHandler),
 };
