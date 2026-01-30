@@ -284,7 +284,7 @@ const TiptapToolBar = ({
                         setFileExportsOpen(false);
                       }}
                     >
-                      <span className="text-body-sm line-clamp-1 w-fit">
+                      <span className="text-body-sm-bold line-clamp-1 w-fit">
                         {zoomLevels.find((z) => z.value === zoomLevel)?.title ||
                           '100%'}
                       </span>
@@ -329,7 +329,7 @@ const TiptapToolBar = ({
                       onClick={() => setToolVisibility(IEditorTool.FONT_FAMILY)}
                     >
                       <span
-                        className="text-body-sm line-clamp-1 break-all"
+                        className="text-body-sm-bold line-clamp-1 break-all"
                         style={{
                           fontFamily: activeFont?.value,
                         }}
@@ -370,7 +370,7 @@ const TiptapToolBar = ({
                       className="bg-transparent hover:!color-bg-default-hover rounded gap-2 p-2 flex items-center justify-between w-[108px]"
                       onClick={() => setToolVisibility(IEditorTool.HEADING)}
                     >
-                      <span className="text-body-sm line-clamp-1">
+                      <span className="text-body-sm-bold line-clamp-1">
                         {editor?.isActive('heading', { level: 1 }) &&
                           'Heading 1'}
                         {editor?.isActive('heading', { level: 2 }) &&
@@ -408,7 +408,7 @@ const TiptapToolBar = ({
                       className="bg-transparent hover:!color-bg-default-hover rounded gap-2 py-2 px-1 flex items-center justify-center w-[52px]"
                       onClick={() => setToolVisibility(IEditorTool.FONT_SIZE)}
                     >
-                      <span className="text-body-sm line-clamp-1">
+                      <span className="text-body-sm-bold line-clamp-1">
                         {getCurrentFontSize(editor, currentSize as string)}
                       </span>
                       <LucideIcon name="ChevronDown" size="sm" />

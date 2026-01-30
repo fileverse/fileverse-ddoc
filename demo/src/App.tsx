@@ -188,7 +188,8 @@ function App() {
     toast({
       title: 'Collaboration link copied to clipboard',
       variant: 'success',
-      hasIcon: true,
+      toastType: 'mini',
+      iconType: 'icon',
     });
   };
 
@@ -430,8 +431,8 @@ function App() {
           toast({
             title: 'Error',
             description: error,
-            variant: 'danger',
-            hasIcon: true,
+            variant: 'error',
+            iconType: 'icon',
           });
         }}
         renderNavbar={renderNavbar}
