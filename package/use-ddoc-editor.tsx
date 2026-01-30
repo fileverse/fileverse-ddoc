@@ -33,6 +33,7 @@ import { useSyncMachine } from './sync-local/useSyncMachine';
 // import { type TableOfContentDataItem } from '@tiptap/extension-table-of-contents';
 import { ToCItemType } from './components/toc/types';
 import { TWITTER_REGEX } from './constants/twitter';
+import { useRtcWebsocketDisconnector } from './hooks/use-rtc-websocket-disconnector';
 // import { SyncCursor } from './extensions/sync-cursor';
 
 const usercolors = [
@@ -92,6 +93,7 @@ export const useDdocEditor = ({
     terminateSession,
     awareness,
     hasCollabContentInitialised,
+    state: syncState,
   } = useSyncMachine({
     onError: rest.onCollabError,
     ydoc,
@@ -102,6 +104,8 @@ export const useDdocEditor = ({
     onUnMergedUpdates: rest.onUnMergedUpdates,
     onLocalUpdate: onChange,
   });
+
+  useRtcWebsocketDisconnector(syncState, enableCollaboration);
 
   const isCollaborationEnabled = useMemo(() => {
     return enableCollaboration;
