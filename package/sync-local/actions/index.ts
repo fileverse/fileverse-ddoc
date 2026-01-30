@@ -322,30 +322,6 @@ export const disconnectedStateHandler = () => {
     updateQueue: [],
   };
 };
-export const handleDisconnectionDueToError = (
-  _context: SyncMachineContext,
-  _event: SyncMachinEvent,
-) => {
-  return {
-    socketClient: null,
-    roomId: '',
-    roomMembers: [],
-    isConnected: false,
-    awareness: null,
-    _awarenessUpdateHandler: null,
-    roomKey: '',
-    wsUrl: '',
-    uncommittedUpdatesIdList: [],
-    updateQueue: [],
-    isOwner: false,
-    isReady: false,
-    isNewDoc: false,
-    contentTobeAppliedQueue: [],
-    initialUpdate: null,
-    errorCount: 0,
-    errorMessage: '',
-  };
-};
 
 export const terminateSessionHandler = (context: SyncMachineContext) => {
   awarenessProtocol.removeAwarenessStates(
