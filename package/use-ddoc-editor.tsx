@@ -490,35 +490,57 @@ export const useDdocEditor = ({
     return { ydoc, awareness };
   }, [isReady]);
 
+  const collaborationExtension = useMemo(() => {
+    if (!isReady || !awarenessProvider) return null;
+
+    return CollaborationCaret.configure({
+      provider: awarenessProvider,
+      user: {
+        name: collabConfig?.username || '',
+        color: usercolors[Math.floor(Math.random() * usercolors.length)],
+        isEns: collabConfig?.isEns,
+      },
+      render: getCursor,
+    });
+  }, [isReady, awarenessProvider, collabConfig?.username, collabConfig?.isEns]);
+
+  // Update extensions only when collaboration extension changes
   useEffect(() => {
-    if (!isReady) return;
+    if (!collaborationExtension) return;
 
-    const setupExtensions = async () => {
-      setExtensions([
-        ...extensions.filter((extension) => extension.name !== 'history'),
-        CollaborationCaret.configure({
-          provider: awarenessProvider,
-          user: {
-            name: collabConfig?.username || '',
-            color: usercolors[Math.floor(Math.random() * usercolors.length)],
-            isEns: collabConfig?.isEns,
-          },
-          render: getCursor,
-        }),
-      ]);
-    };
+    setExtensions((prevExtensions) => {
+      // Check if CollaborationCaret is already present
+      const hasCollabCaret = prevExtensions.some(
+        (ext) => ext.name === 'collaboration',
+      );
 
-    setupExtensions();
+      if (hasCollabCaret) {
+        // Don't recreate if already present
+        console.log('520 | hasCollabCaret');
+        return prevExtensions;
+      }
 
-    collaborationCleanupRef.current = () => {
-      // ydoc.destroy();
-      setExtensions([...extensions]);
-    };
+      // Add only if not present
+      return [
+        ...prevExtensions.filter((extension) => extension.name !== 'history'),
+        collaborationExtension,
+      ];
+    });
+  }, [collaborationExtension]);
 
-    return () => {
-      collaborationCleanupRef.current();
-    };
-  }, [isReady]);
+  useEffect(() => {
+    console.log('🔄 Extensions array changed', {
+      extensionsLength: extensions.length,
+      hasCollabCaret: extensions.some((e) => e.name === 'collaborationCursor'),
+      isReady,
+    });
+  }, [extensions]);
+
+  useEffect(() => {
+    console.log('📝 Editor recreated', {
+      autofocus: unFocused ? false : 'start',
+    });
+  }, [editor]);
 
   const ref = useRef<HTMLDivElement>(null);
 
