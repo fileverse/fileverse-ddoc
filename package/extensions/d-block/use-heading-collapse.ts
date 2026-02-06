@@ -508,35 +508,59 @@ export const useHeadingCollapse = ({
         // Find the end of all collapsed content
         const insertPos = findEndOfCollapsedContent();
 
-        // Insert a new dBlock after all the collapsed content (with trailing node optimisation)
+        // Check if there's already a trailing node at insertPos
         requestAnimationFrame(() => {
           const { doc } = editor.state;
 
-          // Check if we're at the end of the document
-          const isAtDocEnd = insertPos >= doc.content.size - 2;
+          // If insertPos is at or past the document end, we need to look backwards
+          // to find the last node (potential trailing node)
+          let checkPos = insertPos;
+          let nodeToCheck = doc.nodeAt(checkPos);
 
-          if (isAtDocEnd) {
-            // Check if there's already a dBlock at insertPos
-            const nodeAtInsertPos = doc.nodeAt(insertPos);
+          // If no node at insertPos, scan backwards to find the last node
+          if (!nodeToCheck && checkPos >= doc.content.size) {
+            // Start from the beginning and find the last node
+            let pos = 0;
+            let lastNodePos = 0;
+            let lastNode = null;
 
-            if (nodeAtInsertPos?.type.name === 'dBlock') {
-              // There's already a dBlock (likely a trailing node), just focus on it
-              const paragraphNode = nodeAtInsertPos.content.content?.[0];
+            while (pos < doc.content.size) {
+              const node = doc.nodeAt(pos);
+              if (node) {
+                lastNodePos = pos;
+                lastNode = node;
+                pos += node.nodeSize;
+              } else {
+                break;
+              }
+            }
 
-              // Check if the dBlock has an empty paragraph
-              if (
-                paragraphNode?.type.name === 'paragraph' &&
-                paragraphNode.content.size === 0
-              ) {
-                // Just focus on the existing empty dBlock
+            checkPos = lastNodePos;
+            nodeToCheck = lastNode;
+          }
+
+          // Check if this node is an empty dBlock (trailing node)
+          if (nodeToCheck?.type.name === 'dBlock') {
+            const paragraphNode = nodeToCheck.content.content?.[0];
+
+            if (
+              paragraphNode?.type.name === 'paragraph' &&
+              paragraphNode.content.size === 0
+            ) {
+              // Verify it's at the end of the document (trailing node)
+              const nodeEndPos = checkPos + nodeToCheck.nodeSize;
+              if (nodeEndPos >= doc.content.size) {
+                // Found the trailing node, just focus on it
                 editor
                   .chain()
-                  .focus(insertPos + 2) // Focus inside the existing paragraph
+                  .focus(checkPos + 2) // Focus inside the existing paragraph
                   .run();
                 return;
               }
             }
           }
+
+          // No trailing node found, insert a new dBlock
           editor
             .chain()
             .insertContentAt(insertPos, {
