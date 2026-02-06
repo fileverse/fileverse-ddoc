@@ -375,6 +375,94 @@ export const useHeadingCollapse = ({
     });
   }, [editor, headingId, getDocumentCache, getPos, node]);
 
+  const findEndOfCollapsedContent = useCallback(() => {
+    if (!headingId) return getPos() + node.nodeSize;
+
+    const { headingMap } = getDocumentCache();
+    const heading = headingMap.get(headingId);
+    if (!heading) return getPos() + node.nodeSize;
+
+    // Start from the position after this heading
+    const endPos = getPos() + node.nodeSize;
+    const { doc } = editor.state;
+
+    // Function to recursively get all descendant positions
+    const getDescendantPositions = (id: string): number[] => {
+      const h = headingMap.get(id);
+      if (!h || h.children.length === 0) return [];
+
+      const positions: number[] = [];
+      h.children.forEach((childId) => {
+        const child = headingMap.get(childId);
+        if (child) {
+          positions.push(child.position);
+          // Recursively get descendants
+          positions.push(...getDescendantPositions(childId));
+        }
+      });
+      return positions;
+    };
+
+    // Get all descendant heading positions
+    const descendantPositions = getDescendantPositions(headingId);
+
+    if (descendantPositions.length === 0) {
+      // No descendants, just need to find content until next heading at same or lower level
+      let pos = endPos;
+      while (pos < doc.content.size) {
+        const nodeAtPos = doc.nodeAt(pos);
+        if (!nodeAtPos) break;
+
+        // Check if this is a heading
+        if (nodeAtPos.type.name === 'dBlock') {
+          const content = nodeAtPos.content.content?.[0];
+          if (content?.type.name === 'heading') {
+            const level = content.attrs.level || 1;
+            // Stop if we hit a heading at same or lower level
+            if (level <= heading.level) {
+              break;
+            }
+          }
+        }
+
+        pos += nodeAtPos.nodeSize;
+      }
+      return pos;
+    } else {
+      // Find the last descendant position
+      const maxDescendantPos = Math.max(...descendantPositions);
+      const lastDescendantNode = doc.nodeAt(maxDescendantPos);
+
+      if (lastDescendantNode) {
+        // Start from after the last descendant
+        let pos = maxDescendantPos + lastDescendantNode.nodeSize;
+
+        // Continue scanning for content that belongs to this collapsed section
+        while (pos < doc.content.size) {
+          const nodeAtPos = doc.nodeAt(pos);
+          if (!nodeAtPos) break;
+
+          // Check if this is a heading
+          if (nodeAtPos.type.name === 'dBlock') {
+            const content = nodeAtPos.content.content?.[0];
+            if (content?.type.name === 'heading') {
+              const level = content.attrs.level || 1;
+              // Stop if we hit a heading at same or lower level than our heading
+              if (level <= heading.level) {
+                break;
+              }
+            }
+          }
+
+          pos += nodeAtPos.nodeSize;
+        }
+        return pos;
+      }
+
+      return endPos;
+    }
+  }, [editor, headingId, getDocumentCache, getPos, node]);
+
   // Add effect to handle auto-expansion on Enter at the end of a collapsed heading
   useEffect(() => {
     if (!editor || !isHeading || !headingId) return;
@@ -417,12 +505,47 @@ export const useHeadingCollapse = ({
           hasExpandedOnCreate.current = false;
         });
 
-        // Insert a new dBlock and focus on it
-        editor
-          .chain()
-          .setDBlock()
-          .focus($from.pos + 4)
-          .run();
+        // Find the end of all collapsed content
+        const insertPos = findEndOfCollapsedContent();
+
+        // Insert a new dBlock after all the collapsed content (with trailing node optimisation)
+        requestAnimationFrame(() => {
+          const { doc } = editor.state;
+
+          // Check if we're at the end of the document
+          const isAtDocEnd = insertPos >= doc.content.size - 2;
+
+          if (isAtDocEnd) {
+            // Check if there's already a dBlock at insertPos
+            const nodeAtInsertPos = doc.nodeAt(insertPos);
+
+            if (nodeAtInsertPos?.type.name === 'dBlock') {
+              // There's already a dBlock (likely a trailing node), just focus on it
+              const paragraphNode = nodeAtInsertPos.content.content?.[0];
+
+              // Check if the dBlock has an empty paragraph
+              if (
+                paragraphNode?.type.name === 'paragraph' &&
+                paragraphNode.content.size === 0
+              ) {
+                // Just focus on the existing empty dBlock
+                editor
+                  .chain()
+                  .focus(insertPos + 2) // Focus inside the existing paragraph
+                  .run();
+                return;
+              }
+            }
+          }
+          editor
+            .chain()
+            .insertContentAt(insertPos, {
+              type: 'dBlock',
+              content: [{ type: 'paragraph' }],
+            })
+            .focus(insertPos + 2) // Focus inside the new paragraph
+            .run();
+        });
       }
     };
 
