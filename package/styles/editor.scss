@@ -371,7 +371,6 @@
       grid-row: span 2;
     }
   }
-  
 }
 
 .table-wrapper,
@@ -391,7 +390,7 @@
   width: 100%;
 }
 
-.node-dBlock:last-child {
+#editor {
   padding-bottom: 4rem;
 }
 
@@ -561,7 +560,8 @@ ul[data-type='taskList'] li > label input[type='checkbox']:checked {
   }
 }
 
-ul[data-type='taskList'] li[data-checked='true'] > div > p:not(:has( >span)), ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
+ul[data-type='taskList'] li[data-checked='true'] > div > p:not(:has(> span)),
+ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   color: hsla(var(--color-text-default));
   text-decoration: line-through;
 }
