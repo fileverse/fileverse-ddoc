@@ -491,11 +491,36 @@ export const useHeadingCollapse = ({
 
         // Expand the heading
         const position = getPos();
+        const { headingMap } = getDocumentCache();
+        const heading = headingMap.get(headingId!);
         editor
           .chain()
           .setNodeSelection(position)
           .updateAttributes('heading', { isCollapsed: false })
           .run();
+
+        // Recursively expand all descendant headings
+        if (heading) {
+          const expandDescendants = (id: string) => {
+            const h = headingMap.get(id);
+            if (!h) return;
+
+            h.children.forEach((childId) => {
+              const childHeading = headingMap.get(childId);
+              if (childHeading) {
+                editor
+                  .chain()
+                  .setNodeSelection(childHeading.position)
+                  .updateAttributes('heading', { isCollapsed: false })
+                  .run();
+                // Recursively expand this child's descendants
+                expandDescendants(childId);
+              }
+            });
+          };
+
+          expandDescendants(headingId!);
+        }
 
         // Mark as expanded
         hasExpandedOnCreate.current = true;
