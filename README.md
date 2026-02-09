@@ -4,7 +4,8 @@
 
 dDocs enables secure, real-time and asynchronous collaboration without compromising user privacy. It also comes with powerful features like Markdown and LaTeX support, dark mode, offline editing, and mobile browser optimization.
 
-<img width="4410" alt="github_banner_final@3x" src="https://github.com/user-attachments/assets/c6ee706d-979d-41b6-9f73-d29fbabb5152" />
+<img width="2308" height="1458" alt="image" src="https://github.com/user-attachments/assets/32875e2e-b30b-431b-bbb6-74ce96f21141" />
+
 
 This repository contains:
 
