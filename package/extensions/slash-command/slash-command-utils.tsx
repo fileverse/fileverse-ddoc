@@ -327,7 +327,7 @@ export const getSuggestionItems = ({
           .chain()
           .focus()
           .deleteRange(range)
-          .setActionButton('iframe')
+          .setActionButton('iframe-video')
           .run();
       },
     },
@@ -343,6 +343,21 @@ export const getSuggestionItems = ({
           .focus()
           .deleteRange(range)
           .setActionButton('twitter')
+          .run();
+      },
+    },
+    {
+      title: 'Soundcloud Embed',
+      description: 'Embed an audio from Souncloud.',
+      searchTerms: ['audio', 'music', 'soundcloud', 'sc', 'embed'],
+      icon: <LucideIcon name="Soundcloud" size={'md'} />,
+      image: '',
+      command: ({ editor, range }: CommandProps) => {
+        editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          .setActionButton('iframe-soundcloud')
           .run();
       },
     },

@@ -15,12 +15,16 @@ export const ActionButtonNodeView = ({
   const { isPreviewMode } = useEditingContext();
   const twitterUrls = ['https://twitter.com', 'https://x.com'];
 
+  console.log(node.attrs);
+
   const renderIcon = () => {
     switch (node.attrs.data) {
       case 'twitter':
         return <LucideIcon name="XSocial" size={'md'} />;
-      case 'iframe':
+      case 'iframe-video':
         return <LucideIcon name="Youtube" size={'md'} />;
+      case 'iframe-soundcloud':
+        return <LucideIcon name="Soundcloud" size={'md'} />;
       default:
         return <LucideIcon name="Sparkles" size={'md'} />;
     }
@@ -30,8 +34,10 @@ export const ActionButtonNodeView = ({
     switch (node.attrs.data) {
       case 'twitter':
         return 'Embed a Twitter tweet';
-      case 'iframe':
+      case 'iframe-video':
         return 'Embed a video';
+      case 'iframe-soundcloud':
+        return 'Embed an audio';
       default:
         return 'Paste an Youtube or Twitter/X link to embed';
     }
