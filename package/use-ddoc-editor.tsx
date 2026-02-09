@@ -216,6 +216,7 @@ export const useDdocEditor = ({
     }
   }, [isConnected, enableCollaboration, disableInlineComment]);
   const initialContentSetRef = useRef(false);
+  const isInitialEditorCreation = useRef(true);
   const [slides, setSlides] = useState<string[]>([]);
 
   const isHighlightedYellow = (
@@ -395,12 +396,19 @@ export const useDdocEditor = ({
           spellCheck: 'true',
         },
       },
-      autofocus: unFocused ? false : 'start',
+      autofocus:
+        unFocused || !isInitialEditorCreation.current ? false : 'start',
       immediatelyRender: false,
       shouldRerenderOnTransaction: false,
     },
     [memoizedExtensions, isPresentationMode],
   );
+
+  useEffect(() => {
+    if (editor) {
+      isInitialEditorCreation.current = false;
+    }
+  }, [editor]);
 
   // Fix for TableOfContents not updating in Tiptap v3
   useEffect(() => {
