@@ -490,35 +490,40 @@ export const useDdocEditor = ({
     return { ydoc, awareness };
   }, [isReady]);
 
+  const collaborationExtension = useMemo(() => {
+    if (!isReady || !awarenessProvider) return null;
+    return CollaborationCaret.configure({
+      provider: awarenessProvider,
+      user: {
+        name: collabConfig?.username || '',
+        color: usercolors[Math.floor(Math.random() * usercolors.length)],
+        isEns: collabConfig?.isEns,
+      },
+      render: getCursor,
+    });
+  }, [isReady, awarenessProvider]);
+
   useEffect(() => {
-    if (!isReady) return;
+    if (!collaborationExtension) return;
 
-    const setupExtensions = async () => {
-      setExtensions([
-        ...extensions.filter((extension) => extension.name !== 'history'),
-        CollaborationCaret.configure({
-          provider: awarenessProvider,
-          user: {
-            name: collabConfig?.username || '',
-            color: usercolors[Math.floor(Math.random() * usercolors.length)],
-            isEns: collabConfig?.isEns,
-          },
-          render: getCursor,
-        }),
-      ]);
-    };
-
-    setupExtensions();
+    setExtensions((prev) => {
+      if (prev.some((ext) => ext.name === 'collaborationCaret')) return prev;
+      return [
+        ...prev.filter((ext) => ext.name !== 'history'),
+        collaborationExtension,
+      ];
+    });
 
     collaborationCleanupRef.current = () => {
-      // ydoc.destroy();
-      setExtensions([...extensions]);
+      setExtensions((prev) =>
+        prev.filter((ext) => ext.name !== 'collaborationCaret'),
+      );
     };
 
     return () => {
       collaborationCleanupRef.current();
     };
-  }, [isReady]);
+  }, [collaborationExtension]);
 
   const ref = useRef<HTMLDivElement>(null);
 
