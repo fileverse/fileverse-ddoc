@@ -332,9 +332,9 @@ export const getSuggestionItems = ({
       },
     },
     {
-      title: 'Twitter',
-      description: 'Embed a Twitter tweet.',
-      searchTerms: ['embed', 'twitter', 'tweet'],
+      title: 'X',
+      description: 'Embed a X post.',
+      searchTerms: ['X', 'embed', 'twitter', 'tweet'],
       icon: <LucideIcon name="XSocial" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) => {
