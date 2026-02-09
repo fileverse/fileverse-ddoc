@@ -542,26 +542,13 @@ export const useHeadingCollapse = ({
           let checkPos = insertPos;
           let nodeToCheck = doc.nodeAt(checkPos);
 
-          // If no node at insertPos, scan backwards to find the last node
+          // If no node at insertPos, use doc.lastChild to get the last node efficiently
           if (!nodeToCheck && checkPos >= doc.content.size) {
-            // Start from the beginning and find the last node
-            let pos = 0;
-            let lastNodePos = 0;
-            let lastNode = null;
-
-            while (pos < doc.content.size) {
-              const node = doc.nodeAt(pos);
-              if (node) {
-                lastNodePos = pos;
-                lastNode = node;
-                pos += node.nodeSize;
-              } else {
-                break;
-              }
+            const lastNode = doc.lastChild;
+            if (lastNode) {
+              checkPos = doc.content.size - lastNode.nodeSize;
+              nodeToCheck = lastNode;
             }
-
-            checkPos = lastNodePos;
-            nodeToCheck = lastNode;
           }
 
           // Check if this node is an empty dBlock (trailing node)
