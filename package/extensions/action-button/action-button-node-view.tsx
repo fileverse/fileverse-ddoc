@@ -3,14 +3,30 @@ import { NodeViewProps } from '@tiptap/core';
 import { NodeViewWrapper } from '@tiptap/react';
 import { useEditingContext } from '../../hooks/use-editing-context';
 import { debounce } from '../../utils/debounce';
-import { LucideIcon, TextField, toast } from '@fileverse/ui';
+import { LucideIcon, TextField } from '@fileverse/ui';
 
-export const ActionButtonNodeView = ({
+export const getActionButtonView =
+  (onError?: (message: string) => void) =>
+  ({ node, editor, getPos, deleteNode, ...props }: NodeViewProps) => {
+    return (
+      <ActionButtonNodeView
+        node={node}
+        editor={editor}
+        deleteNode={deleteNode}
+        onError={onError}
+        getPos={getPos}
+        {...props}
+      />
+    );
+  };
+// eslint-disable-next-line react-refresh/only-export-components
+const ActionButtonNodeView = ({
   node,
   editor,
   getPos,
   deleteNode,
-}: NodeViewProps) => {
+  onError,
+}: NodeViewProps & { onError?: (message: string) => void }) => {
   const [inputValue, setInputValue] = useState<string>('');
   const { isPreviewMode } = useEditingContext();
   const twitterUrls = ['https://twitter.com', 'https://x.com'];
@@ -59,12 +75,7 @@ export const ActionButtonNodeView = ({
 
   const iframeRender = () => {
     if (!inputValue) {
-      toast({
-        title: 'Please enter a valid URL',
-        iconType: 'icon',
-        toastType: 'mini',
-        variant: 'error',
-      });
+      onError?.('Please enter a valid URL');
       return;
     }
 
@@ -96,12 +107,7 @@ export const ActionButtonNodeView = ({
           break;
         }
         default: {
-          toast({
-            title: 'Please enter a valid URL',
-            iconType: 'icon',
-            toastType: 'mini',
-            variant: 'error',
-          });
+          onError?.('Please enter a valid URL');
           return;
         }
       }
@@ -129,12 +135,7 @@ export const ActionButtonNodeView = ({
 
   const twitterRender = () => {
     if (!inputValue) {
-      toast({
-        title: 'Please enter a valid URL',
-        iconType: 'icon',
-        toastType: 'mini',
-        variant: 'error',
-      });
+      onError?.('Please enter a valid URL');
       return;
     }
 
@@ -147,12 +148,7 @@ export const ActionButtonNodeView = ({
     if (isValidUrl && isValidTweetId) {
       filteredTweetId = matches[1];
     } else {
-      toast({
-        title: 'Please enter a valid URL',
-        iconType: 'icon',
-        toastType: 'mini',
-        variant: 'error',
-      });
+      onError?.('Please enter a valid post URL');
       return;
     }
 
@@ -176,12 +172,7 @@ export const ActionButtonNodeView = ({
     const SOUNDCLOUD_REGEX =
       /(?:https?:\/\/)?(?:www\.)?soundcloud\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+/;
     if (!inputValue) {
-      toast({
-        title: 'Please enter a valid URL',
-        iconType: 'icon',
-        toastType: 'mini',
-        variant: 'error',
-      });
+      onError?.('Please enter a valid URL');
       return;
     }
     if (SOUNDCLOUD_REGEX.test(inputValue)) {
@@ -213,24 +204,14 @@ export const ActionButtonNodeView = ({
         }
       }
     } else {
-      toast({
-        title: 'Please enter a valid Soundcloud URL',
-        iconType: 'icon',
-        toastType: 'mini',
-        variant: 'error',
-      });
+      onError?.('Please enter a valid Soundcloud URL');
       return;
     }
   };
 
   const multiRender = () => {
     if (!inputValue) {
-      toast({
-        title: 'Please enter a valid URL',
-        iconType: 'icon',
-        toastType: 'mini',
-        variant: 'error',
-      });
+      onError?.('Please enter a valid URL');
       return;
     }
 
@@ -275,12 +256,7 @@ export const ActionButtonNodeView = ({
           break;
         }
         default: {
-          toast({
-            title: 'Please enter a valid URL',
-            iconType: 'icon',
-            toastType: 'mini',
-            variant: 'error',
-          });
+          onError?.('Please enter a valid URL');
           return;
         }
       }

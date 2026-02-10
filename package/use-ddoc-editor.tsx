@@ -141,7 +141,10 @@ export const useDdocEditor = ({
   const hasAvailableModels = activeModel !== undefined && isAIAgentEnabled;
   const [extensions, setExtensions] = useState<AnyExtension[]>([
     ...(defaultExtensions({
-      onError: (error: string) => onError?.(error),
+      onError: (error: string) => {
+        console.log(error);
+        onError?.(error);
+      },
       ipfsImageUploadFn,
       metadataProxyUrl,
       onCopyHeadingLink,
