@@ -478,23 +478,28 @@ export const getResizableMediaNodeView =
 
           {!isPreviewMode && (
             <span className="absolute top-2 right-2 transition-all rounded-md overflow-hidden box-border border color-border-default color-bg-default shadow-elevation-3 opacity-0 group-hover:opacity-100 flex gap-1 p-1">
-              {resizableMediaActions.map((btn, index) => {
-                return (
-                  <ToolbarButton
-                    key={index}
-                    tooltip={btn.tooltip}
-                    isActive={mediaActionActiveState[btn.tooltip]}
-                    onClick={() =>
-                      btn.tooltip === 'Delete'
-                        ? deleteNode()
-                        : btn.action?.(updateAttributes)
-                    }
-                    icon={btn.icon as string}
-                    classNames="min-w-6 aspect-square"
-                    size="sm"
-                  />
-                );
-              })}
+              {resizableMediaActions
+                .filter(
+                  (btn) =>
+                    mediaType !== 'iframe' || btn.tooltip !== 'Add Caption',
+                )
+                .map((btn, index) => {
+                  return (
+                    <ToolbarButton
+                      key={index}
+                      tooltip={btn.tooltip}
+                      isActive={mediaActionActiveState[btn.tooltip]}
+                      onClick={() =>
+                        btn.tooltip === 'Delete'
+                          ? deleteNode()
+                          : btn.action?.(updateAttributes)
+                      }
+                      icon={btn.icon as string}
+                      classNames="min-w-6 aspect-square"
+                      size="sm"
+                    />
+                  );
+                })}
             </span>
           )}
         </div>
