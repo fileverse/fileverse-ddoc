@@ -15,8 +15,6 @@ export const ActionButtonNodeView = ({
   const { isPreviewMode } = useEditingContext();
   const twitterUrls = ['https://twitter.com', 'https://x.com'];
 
-  console.log(node.attrs);
-
   const renderIcon = () => {
     switch (node.attrs.data) {
       case 'twitter':
@@ -157,6 +155,58 @@ export const ActionButtonNodeView = ({
     }
   };
 
+  const soundcloudRender = () => {
+    let sanitizedURL: string;
+    const SOUNDCLOUD_REGEX =
+      /(?:https?:\/\/)?(?:www\.)?soundcloud\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+/;
+    if (!inputValue) {
+      toast({
+        title: 'Please enter a valid URL',
+        iconType: 'icon',
+        toastType: 'mini',
+        variant: 'error',
+      });
+      return;
+    }
+    if (SOUNDCLOUD_REGEX.test(inputValue)) {
+      const matches = inputValue.match(
+        /(soundcloud\.com\/[a-zA-Z0-9_-]+\/[a-zA-Z0-9_-]+)/,
+      );
+      if (matches && matches.length > 0) {
+        const trackUrl = `https://${matches[1]}`;
+        sanitizedURL = `https://w.soundcloud.com/player/?url=${encodeURIComponent(
+          trackUrl,
+        )}`;
+        const width = 670;
+        const height = 166;
+
+        const pos = getPos();
+
+        if (pos !== undefined) {
+          const to = pos + node.nodeSize;
+
+          sanitizedURL &&
+            editor
+              ?.chain()
+              .focus(pos)
+              .deleteRange({ from: pos, to })
+              .setIframe({ src: sanitizedURL, width, height })
+              .run();
+        } else {
+          deleteNode();
+        }
+      }
+    } else {
+      toast({
+        title: 'Please enter a valid Soundcloud URL',
+        iconType: 'icon',
+        toastType: 'mini',
+        variant: 'error',
+      });
+      return;
+    }
+  };
+
   const multiRender = () => {
     if (!inputValue) {
       toast({
@@ -245,8 +295,11 @@ export const ActionButtonNodeView = ({
       case 'twitter':
         twitterRender();
         break;
-      case 'iframe':
+      case 'iframe-video':
         iframeRender();
+        break;
+      case 'iframe-soundcloud':
+        soundcloudRender();
         break;
       default:
         multiRender();
