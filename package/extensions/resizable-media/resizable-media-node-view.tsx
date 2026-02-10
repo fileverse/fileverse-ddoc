@@ -26,10 +26,12 @@ export const getResizableMediaNodeView =
   ({ node, updateAttributes, deleteNode }: NodeViewProps) => {
     const { isPreviewMode } = useEditingContext();
 
-    console.log(node.attrs['media-type'], node.attrs);
-
     const mediaType: 'img' | 'secure-img' | 'video' | 'iframe' =
       node.attrs['media-type'];
+
+    const isSoundcloudIframe =
+      mediaType === 'iframe' &&
+      new URL(node.attrs.src).hostname === 'w.soundcloud.com';
 
     const [aspectRatio, setAspectRatio] = useState(0);
 
@@ -196,8 +198,6 @@ export const getResizableMediaNodeView =
 
       // Calculate height based on media type and aspect ratio
       if (mediaType === 'iframe') {
-        const isSoundcloudIframe =
-          new URL(node.attrs.src).hostname === 'w.soundcloud.com';
         // For SoundCloud keep fixed height (166px) and allow width resizing.
         if (isSoundcloudIframe) {
           newMediaDimensions.height = 166;
@@ -218,9 +218,6 @@ export const getResizableMediaNodeView =
         ? 0
         : newMediaDimensions.height;
 
-      const isSoundcloudIframe =
-        mediaType === 'iframe' &&
-        new URL(node.attrs.src).hostname === 'w.soundcloud.com';
       if (
         limitWidthOrHeight(newMediaDimensions, {
           isSoundcloud: isSoundcloudIframe,
