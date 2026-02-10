@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import React, { useRef, useState } from 'react';
 import cn from 'classnames';
 import { useMediaQuery } from 'usehooks-ts';
@@ -14,6 +15,21 @@ import {
 import { ToC } from './toc';
 import { DocumentOutlineProps } from './types';
 import { TabEmojiPicker } from './ddoc-emoji-picker';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  closestCenter,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  verticalListSortingStrategy,
+  arrayMove,
+} from '@dnd-kit/sortable';
 
 const MemorizedToC = React.memo(ToC);
 
@@ -28,92 +44,125 @@ export const DocumentOutline = ({
   orientation,
 }: DocumentOutlineProps) => {
   const isMediaMax1280px = useMediaQuery('(max-width:1280px)');
-  const tabs = ['Tab 1', 'Tab 2', 'Tab 3', 'Tab 4', 'Tab 5'];
+  const [tabs, setTabs] = useState([
+    'Tab 1',
+    'Tab 2',
+    'Tab 3',
+    'Tab 4',
+    'Tab 5',
+  ]);
   const [activeTabId, setActiveTabId] = useState('Tab 1');
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+  );
+
+  const [activeDragId, setActiveDragId] = useState<string | null>(null);
 
   const DesktopTOC = () => {
     return (
-      <div
-        className={cn(
-          'flex flex-col items-start w-[263px] justify-start absolute left-0 px-4',
-          !hasToC && 'hidden',
-          isPreviewMode ? 'top-[4rem]' : 'top-[7.3rem]',
-        )}
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={(e) => setActiveDragId(e.active.id as string)}
+        onDragEnd={(e) => {
+          const { active, over } = e;
+          setActiveDragId(null);
+
+          if (over && active.id !== over.id) {
+            setTabs((prev) => {
+              const oldIndex = prev.indexOf(active.id as string);
+              const newIndex = prev.indexOf(over.id as string);
+              return arrayMove(prev, oldIndex, newIndex);
+            });
+          }
+        }}
       >
-        <Tooltip
-          text={showTOC ? 'Hide document outline' : 'Show document outline'}
-          position="right"
-        >
-          <button
-            type="button"
-            onClick={() => setShowTOC?.((prev) => !prev)}
+        <SortableContext items={tabs} strategy={verticalListSortingStrategy}>
+          <div
             className={cn(
-              'group flex items-center gap-[8px] h-[30px] w-[30px] hover:min-w-[156px] min-h-[30px] rounded-full hover:color-bg-secondary-hover transition-[width,background-color] duration-200 ease-out overflow-hidden',
+              'flex flex-col items-start w-[263px] justify-start absolute left-0 px-4',
+              !hasToC && 'hidden',
+              isPreviewMode ? 'top-[4rem]' : 'top-[7.3rem]',
             )}
           >
-            <IconButton
-              icon={showTOC ? 'ChevronLeft' : 'List'}
-              variant="ghost"
-              size="sm"
-              rounded
-              className="h-[30px] w-[30px] min-w-[30px] p-[8px] bg-transparent pointer-events-none"
-            />
-
-            <span className="whitespace-nowrap text-heading-xsm color-text-default max-w-[110px] truncate opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-              Document outline
-            </span>
-          </button>
-        </Tooltip>
-
-        {showTOC && (
-          <>
-            <div className="flex flex-col gap-[8px] mt-[8px] w-full">
-              <div className="flex items-center px-[12px] py-[8px] justify-between">
-                <span className="text-heading-sm color-text-default">
-                  Document tabs
-                </span>
-
+            <Tooltip
+              text={showTOC ? 'Hide document outline' : 'Show document outline'}
+              position="right"
+            >
+              <button
+                type="button"
+                onClick={() => setShowTOC?.((prev) => !prev)}
+                className={cn(
+                  'group flex items-center gap-[8px] h-[30px] w-[30px] hover:min-w-[156px] min-h-[30px] rounded-full hover:color-bg-secondary-hover transition-[width,background-color] duration-200 ease-out overflow-hidden',
+                )}
+              >
                 <IconButton
-                  icon="Plus"
+                  icon={showTOC ? 'ChevronLeft' : 'List'}
                   variant="ghost"
                   size="sm"
                   rounded
-                  className="h-[24px] w-[24px] min-w-[24px]"
+                  className="h-[30px] w-[30px] min-w-[30px] p-[8px] bg-transparent pointer-events-none"
                 />
-              </div>
-            </div>
 
-            {tabs.map((title, index) => {
-              return (
-                <div
-                  key={index}
-                  className="w-full flex mt-[8px] flex-col gap-[8px]"
-                >
-                  <TabRow
-                    isActive={title === activeTabId}
-                    onClick={() => setActiveTabId(title)}
-                    name={title}
-                  />
+                <span className="whitespace-nowrap text-heading-xsm color-text-default max-w-[110px] truncate opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+                  Document outline
+                </span>
+              </button>
+            </Tooltip>
 
-                  <div
-                    className={cn(
-                      'table-of-contents animate-in fade-in slide-in-from-left-5',
-                      title === activeTabId ? 'block' : 'hidden',
-                    )}
-                  >
-                    <MemorizedToC
-                      editor={editor}
-                      items={items}
-                      setItems={setItems}
-                      orientation={orientation}
+            {showTOC && (
+              <>
+                <div className="flex flex-col gap-[8px] mt-[8px] w-full">
+                  <div className="flex items-center px-[12px] py-[8px] justify-between">
+                    <span className="text-heading-sm color-text-default">
+                      Document tabs
+                    </span>
+
+                    <IconButton
+                      icon="Plus"
+                      variant="ghost"
+                      size="sm"
+                      className="h-[24px] w-[24px] min-w-[24px]"
                     />
                   </div>
                 </div>
-              );
-            })}
-          </>
-        )}
-      </div>
+
+                {tabs.map((title) => (
+                  <div
+                    key={title}
+                    className="w-full flex mt-[8px] flex-col gap-[8px]"
+                  >
+                    <SortableTabRow
+                      key={title}
+                      id={title}
+                      name={title}
+                      isActive={title === activeTabId}
+                      onClick={() => setActiveTabId(title)}
+                    />
+                    <div
+                      className={cn(
+                        'table-of-contents animate-in fade-in slide-in-from-left-5',
+                        title === activeTabId ? 'block' : 'hidden',
+                      )}
+                    >
+                      <MemorizedToC
+                        editor={editor}
+                        items={items}
+                        setItems={setItems}
+                        orientation={orientation}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        </SortableContext>
+
+        <DragOverlay>
+          {activeDragId ? <TabDragPreview name={activeDragId} /> : null}
+        </DragOverlay>
+      </DndContext>
     );
   };
 
@@ -150,14 +199,46 @@ export const DocumentOutline = ({
   return !isMediaMax1280px ? DesktopTOC() : MobileTOC();
 };
 
+export const SortableTabRow = (props: any) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: props.id });
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={{
+        transform: CSS.Transform.toString(transform),
+        transition,
+      }}
+      className={cn(isDragging && 'opacity-0', 'w-full')}
+    >
+      <TabRow
+        {...props}
+        dragHandleProps={{
+          ...attributes,
+          ...listeners,
+        }}
+      />
+    </div>
+  );
+};
+
 export const TabRow = ({
   name,
   onClick,
   isActive,
+  dragHandleProps,
 }: {
   name: string;
   onClick: (title: string) => void;
   isActive: boolean;
+  dragHandleProps?: any;
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(name);
@@ -182,8 +263,9 @@ export const TabRow = ({
     <div
       onDoubleClick={startEditing}
       onClick={() => onClick(name)}
+      {...dragHandleProps}
       className={cn(
-        'flex items-center justify-between h-[40px] px-[12px] py-[8px] rounded-full hover:color-bg-secondary-hover',
+        'flex items-center active:cursor-grabbing justify-between h-[40px] px-[12px] py-[8px] rounded-full hover:color-bg-secondary-hover',
         isActive && 'color-bg-default-hover',
       )}
     >
@@ -230,7 +312,6 @@ export const TabRow = ({
             icon="EllipsisVertical"
             variant="ghost"
             size="sm"
-            rounded
             className="h-[24px] w-[24px] min-w-[24px]"
           />
         </PopoverTrigger>
@@ -293,6 +374,27 @@ export const TabRow = ({
           </div>
         </PopoverContent>
       </Popover>
+    </div>
+  );
+};
+
+export const TabDragPreview = ({ name }: { name: string }) => {
+  return (
+    <div
+      className="
+        flex items-center gap-[8px]
+        px-[12px] py-[8px]
+        w-[231px] h-[40px]
+        rounded-full
+        bg-[#F8F9FA]
+        opacity-90
+        shadow-elevation-3
+      "
+    >
+      <LucideIcon name="FileText" className="w-[16px]" />
+      <span className="text-heading-xsm color-text-default truncate">
+        {name}
+      </span>
     </div>
   );
 };
