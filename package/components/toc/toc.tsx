@@ -88,7 +88,7 @@ export const ToCItem = memo(
           href={href}
           onClick={handleClick}
           data-item-index={item.itemIndex}
-          className="flex items-center justify-between pl-2 gap-1 h-[32px] transition-all no-underline w-full group"
+          className="flex items-center justify-between pl-2 gap-1 h-[36px] transition-all no-underline w-full group"
         >
           <span className="truncate">{item.textContent}</span>
           {/* <IconButton
@@ -111,9 +111,9 @@ ToCItem.displayName = 'ToCItem';
 
 export const ToCEmptyState = memo(() => {
   return (
-    <div className="p-4 text-center text-body-sm color-text-secondary select-none">
-      <p>Start editing your document to see the outline.</p>
-    </div>
+    <p className="text-helper-text-sm px-[12px] color-text-secondary">
+      Heading that you add to the document will appear here
+    </p>
   );
 });
 
@@ -404,7 +404,7 @@ export const ToC = memo(
     }
 
     return (
-      <div className="flex flex-col max-[1280px]:gap-2 gap-4 overflow-auto no-scrollbar max-[1280px]:max-h-[168px] max-h-[calc(80vh-40px)] mb-3">
+      <div className="flex flex-col max-[1280px]:gap-2 gap-4 overflow-auto pl-[8px] no-scrollbar max-[1280px]:max-h-[168px] max-h-[calc(80vh-40px)] mb-3">
         {processedItems.map((item, i) => (
           <ToCItem
             onItemClick={onItemClick}
