@@ -267,7 +267,9 @@ export const defaultExtensions = ({
   CustomKeymap,
   Iframe.configure({ ipfsImageFetchFn, fetchV1ImageFn }),
   EmbeddedTweet,
-  actionButton,
+  actionButton.configure({
+    onError,
+  }),
   ColumnExtension,
   DocxFileHandler.configure({
     ipfsImageUploadFn,
