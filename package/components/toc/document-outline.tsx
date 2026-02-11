@@ -93,19 +93,19 @@ export const DocumentOutline = ({
                 type="button"
                 onClick={() => setShowTOC?.((prev) => !prev)}
                 className={cn(
-                  'group flex items-center gap-[8px] h-[30px] w-[30px] hover:min-w-[156px] min-h-[30px] rounded-full hover:color-bg-secondary-hover transition-[width,background-color] duration-200 ease-out overflow-hidden',
+                  'group flex items-center h-[30px] gap-[8px] !min-w-[30px]  min-h-[30px] p-[8px] rounded-full hover:color-bg-secondary-hover transition-[width,background-color] duration-200 ease-out overflow-hidden',
+                  !showTOC && 'hover:min-w-[156px]',
                 )}
               >
-                <IconButton
-                  icon={showTOC ? 'ChevronLeft' : 'List'}
-                  variant="ghost"
-                  size="sm"
-                  rounded
-                  className="h-[30px] w-[30px] min-w-[30px] p-[8px] bg-transparent pointer-events-none"
+                <LucideIcon
+                  name={showTOC ? 'ChevronLeft' : 'List'}
+                  className="!w-[16px]"
                 />
 
-                <span className="whitespace-nowrap text-heading-xsm color-text-default max-w-[110px] truncate opacity-0 group-hover:opacity-100 transition-opacity duration-150">
-                  Document outline
+                <span
+                  className={`whitespace-nowrap text-heading-xsm color-text-default max-w-[110px] truncate opacity-0 ${!showTOC ? 'group-hover:opacity-100 ' : 'hidden'} transition-opacity duration-150`}
+                >
+                  {activeTabId}
                 </span>
               </button>
             </Tooltip>
