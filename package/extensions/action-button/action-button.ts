@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Node, mergeAttributes } from '@tiptap/core';
-import { ActionButtonNodeView } from './action-button-node-view';
+import { getActionButtonView } from './action-button-node-view';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 
 declare module '@tiptap/core' {
@@ -16,6 +16,7 @@ declare module '@tiptap/core' {
 
 export interface ActionButtonOptions {
   HTMLAttributes: Record<string, any>;
+  onError?: (error: string) => void;
 }
 
 export const actionButton = Node.create<ActionButtonOptions>({
@@ -32,6 +33,7 @@ export const actionButton = Node.create<ActionButtonOptions>({
   addOptions() {
     return {
       HTMLAttributes: {},
+      onError: () => {},
     };
   },
 
@@ -44,7 +46,7 @@ export const actionButton = Node.create<ActionButtonOptions>({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(ActionButtonNodeView);
+    return ReactNodeViewRenderer(getActionButtonView(this.options.onError));
   },
 
   parseHTML() {
