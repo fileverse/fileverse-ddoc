@@ -219,6 +219,7 @@ export const useDdocEditor = ({
     }
   }, [isConnected, enableCollaboration, disableInlineComment]);
   const initialContentSetRef = useRef(false);
+  const isInitialEditorCreation = useRef(true);
   const [slides, setSlides] = useState<string[]>([]);
 
   const isHighlightedYellow = (
@@ -398,12 +399,19 @@ export const useDdocEditor = ({
           spellCheck: 'true',
         },
       },
-      autofocus: unFocused ? false : 'start',
+      autofocus:
+        unFocused || !isInitialEditorCreation.current ? false : 'start',
       immediatelyRender: false,
       shouldRerenderOnTransaction: false,
     },
     [memoizedExtensions, isPresentationMode],
   );
+
+  useEffect(() => {
+    if (editor) {
+      isInitialEditorCreation.current = false;
+    }
+  }, [editor]);
 
   // Fix for TableOfContents not updating in Tiptap v3
   useEffect(() => {
@@ -493,35 +501,40 @@ export const useDdocEditor = ({
     return { ydoc, awareness };
   }, [isReady]);
 
+  const collaborationExtension = useMemo(() => {
+    if (!isReady || !awarenessProvider) return null;
+    return CollaborationCaret.configure({
+      provider: awarenessProvider,
+      user: {
+        name: collabConfig?.username || '',
+        color: usercolors[Math.floor(Math.random() * usercolors.length)],
+        isEns: collabConfig?.isEns,
+      },
+      render: getCursor,
+    });
+  }, [isReady, awarenessProvider]);
+
   useEffect(() => {
-    if (!isReady) return;
+    if (!collaborationExtension) return;
 
-    const setupExtensions = async () => {
-      setExtensions([
-        ...extensions.filter((extension) => extension.name !== 'history'),
-        CollaborationCaret.configure({
-          provider: awarenessProvider,
-          user: {
-            name: collabConfig?.username || '',
-            color: usercolors[Math.floor(Math.random() * usercolors.length)],
-            isEns: collabConfig?.isEns,
-          },
-          render: getCursor,
-        }),
-      ]);
-    };
-
-    setupExtensions();
+    setExtensions((prev) => {
+      if (prev.some((ext) => ext.name === 'collaborationCaret')) return prev;
+      return [
+        ...prev.filter((ext) => ext.name !== 'history'),
+        collaborationExtension,
+      ];
+    });
 
     collaborationCleanupRef.current = () => {
-      // ydoc.destroy();
-      setExtensions([...extensions]);
+      setExtensions((prev) =>
+        prev.filter((ext) => ext.name !== 'collaborationCaret'),
+      );
     };
 
     return () => {
       collaborationCleanupRef.current();
     };
-  }, [isReady]);
+  }, [collaborationExtension]);
 
   const ref = useRef<HTMLDivElement>(null);
 
