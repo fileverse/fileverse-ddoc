@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import cn from 'classnames';
 import { useMediaQuery } from 'usehooks-ts';
 import {
@@ -33,6 +33,20 @@ import {
 
 const MemorizedToC = React.memo(ToC);
 
+type Tab = {
+  id: string;
+  name: string;
+  emoji: string;
+};
+
+const INITIAL_TABS: Tab[] = [
+  { id: 'tab-1', name: 'Tab 1', emoji: '' },
+  { id: 'tab-2', name: 'Tab 2', emoji: '' },
+  { id: 'tab-3', name: 'Tab 3', emoji: '' },
+  { id: 'tab-4', name: 'Tab 4', emoji: '' },
+  { id: 'tab-5', name: 'Tab 5', emoji: '' },
+];
+
 export const DocumentOutline = ({
   editor,
   hasToC,
@@ -44,19 +58,15 @@ export const DocumentOutline = ({
   orientation,
 }: DocumentOutlineProps) => {
   const isMediaMax1280px = useMediaQuery('(max-width:1280px)');
-  const [tabs, setTabs] = useState([
-    'Tab 1',
-    'Tab 2',
-    'Tab 3',
-    'Tab 4',
-    'Tab 5',
-  ]);
-  const [activeTabId, setActiveTabId] = useState('Tab 1');
+  const [tabs, setTabs] = useState<Tab[]>(INITIAL_TABS);
+  const [activeTabId, setActiveTabId] = useState(INITIAL_TABS[0].id);
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
 
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
+  const activeTab = tabs.find((tab) => tab.id === activeTabId);
+  const activeDragTab = tabs.find((tab) => tab.id === activeDragId);
 
   const DesktopTOC = () => {
     return (
@@ -70,14 +80,17 @@ export const DocumentOutline = ({
 
           if (over && active.id !== over.id) {
             setTabs((prev) => {
-              const oldIndex = prev.indexOf(active.id as string);
-              const newIndex = prev.indexOf(over.id as string);
+              const oldIndex = prev.findIndex((tab) => tab.id === active.id);
+              const newIndex = prev.findIndex((tab) => tab.id === over.id);
               return arrayMove(prev, oldIndex, newIndex);
             });
           }
         }}
       >
-        <SortableContext items={tabs} strategy={verticalListSortingStrategy}>
+        <SortableContext
+          items={tabs.map((tab) => tab.id)}
+          strategy={verticalListSortingStrategy}
+        >
           <div
             className={cn(
               'flex flex-col items-start w-[263px] justify-start absolute left-0 px-4',
@@ -105,7 +118,7 @@ export const DocumentOutline = ({
                 <span
                   className={`whitespace-nowrap text-heading-xsm color-text-default max-w-[110px] truncate opacity-0 ${!showTOC ? 'group-hover:opacity-100 ' : 'hidden'} transition-opacity duration-150`}
                 >
-                  {activeTabId}
+                  {activeTab?.name}
                 </span>
               </button>
             </Tooltip>
@@ -127,22 +140,41 @@ export const DocumentOutline = ({
                   </div>
                 </div>
 
-                {tabs.map((title) => (
+                {tabs.map((tab) => (
                   <div
-                    key={title}
+                    key={tab.id}
                     className="w-full flex mt-[8px] flex-col gap-[8px]"
                   >
                     <SortableTabRow
-                      key={title}
-                      id={title}
-                      name={title}
-                      isActive={title === activeTabId}
-                      onClick={() => setActiveTabId(title)}
+                      key={tab.id}
+                      id={tab.id}
+                      name={tab.name}
+                      emoji={tab.emoji}
+                      onNameChange={(nextName: string) =>
+                        setTabs((prev) =>
+                          prev.map((_tab) =>
+                            _tab.id === tab.id
+                              ? { ..._tab, name: nextName }
+                              : _tab,
+                          ),
+                        )
+                      }
+                      onEmojiChange={(nextEmoji: string) =>
+                        setTabs((prev) =>
+                          prev.map((_tab) =>
+                            _tab.id === tab.id
+                              ? { ..._tab, emoji: nextEmoji }
+                              : _tab,
+                          ),
+                        )
+                      }
+                      isActive={tab.id === activeTabId}
+                      onClick={() => setActiveTabId(tab.id)}
                     />
                     <div
                       className={cn(
                         'table-of-contents animate-in fade-in slide-in-from-left-5',
-                        title === activeTabId && !activeDragId
+                        tab.id === activeTabId && !activeDragId
                           ? 'block'
                           : 'hidden',
                       )}
@@ -162,7 +194,12 @@ export const DocumentOutline = ({
         </SortableContext>
 
         <DragOverlay>
-          {activeDragId ? <TabDragPreview name={activeDragId} /> : null}
+          {activeDragId ? (
+            <TabDragPreview
+              emoji={activeDragTab?.emoji ?? ''}
+              name={activeDragTab?.name ?? ''}
+            />
+          ) : null}
         </DragOverlay>
       </DndContext>
     );
@@ -233,19 +270,30 @@ export const SortableTabRow = (props: any) => {
 
 export const TabRow = ({
   name,
+  emoji,
+  onNameChange,
+  onEmojiChange,
   onClick,
   isActive,
   dragHandleProps,
 }: {
   name: string;
-  onClick: (title: string) => void;
+  emoji: string;
+  onNameChange: (name: string) => void;
+  onEmojiChange: (emoji: string) => void;
+  onClick: () => void;
   isActive: boolean;
   dragHandleProps?: any;
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(name);
   const originalTitleRef = useRef(title);
-  const [emoji, setEmoji] = useState('');
+
+  useEffect(() => {
+    if (!isEditing) {
+      setTitle(name);
+    }
+  }, [name, isEditing]);
 
   const startEditing = () => {
     originalTitleRef.current = title;
@@ -253,6 +301,9 @@ export const TabRow = ({
   };
 
   const stopEditing = () => {
+    const nextTitle = title.trim() || originalTitleRef.current;
+    setTitle(nextTitle);
+    onNameChange(nextTitle);
     setIsEditing(false);
   };
 
@@ -264,7 +315,7 @@ export const TabRow = ({
   return (
     <div
       onDoubleClick={startEditing}
-      onClick={() => onClick(name)}
+      onClick={onClick}
       {...dragHandleProps}
       className={cn(
         'flex items-center active:cursor-grabbing justify-between h-[40px] px-[12px] py-[8px] rounded-full hover:color-bg-secondary-hover',
@@ -277,7 +328,7 @@ export const TabRow = ({
             emoji={emoji}
             setEmoji={(_emoji) => {
               setIsEditing(false);
-              setEmoji(_emoji);
+              onEmojiChange(_emoji);
             }}
           />
         ) : (
@@ -380,20 +431,26 @@ export const TabRow = ({
   );
 };
 
-export const TabDragPreview = ({ name }: { name: string }) => {
+export const TabDragPreview = ({
+  name,
+  emoji,
+}: {
+  name: string;
+  emoji: string;
+}) => {
   return (
     <div
       className="
-        flex items-center gap-[8px]
-        px-[12px] py-[8px]
-        w-[231px] h-[40px]
-        rounded-full
-        bg-[#F8F9FA]
-        opacity-90
-        shadow-elevation-3
-      "
+        flex items-center gap-[8px] px-[12px] py-[8px] w-[231px] h-[40px] rounded-full color-bg-secondary shadow-elevation-3"
     >
-      <LucideIcon name="FileText" className="w-[16px]" />
+      {emoji ? (
+        <span className=" text-[16px] leading-[16px] w-[16px] flex items-center justify-center">
+          {emoji}
+        </span>
+      ) : (
+        <LucideIcon name="FileText" className="w-[16px]" />
+      )}
+
       <span className="text-heading-xsm color-text-default truncate">
         {name}
       </span>
