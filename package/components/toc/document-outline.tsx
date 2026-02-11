@@ -142,7 +142,9 @@ export const DocumentOutline = ({
                     <div
                       className={cn(
                         'table-of-contents animate-in fade-in slide-in-from-left-5',
-                        title === activeTabId ? 'block' : 'hidden',
+                        title === activeTabId && !activeDragId
+                          ? 'block'
+                          : 'hidden',
                       )}
                     >
                       <MemorizedToC
