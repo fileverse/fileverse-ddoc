@@ -57,6 +57,7 @@ export const TabItem = ({
   onClick,
   isActive,
   dragHandleProps,
+  hideContentMenu = false,
 }: {
   name: string;
   emoji: string;
@@ -65,6 +66,7 @@ export const TabItem = ({
   onClick: () => void;
   isActive: boolean;
   dragHandleProps?: any;
+  hideContentMenu?: boolean;
 }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [title, setTitle] = useState(name);
@@ -137,74 +139,84 @@ export const TabItem = ({
           />
         )}
       </div>
-      <Popover>
-        <PopoverTrigger onClick={(e) => e.stopPropagation()}>
-          <IconButton
-            icon="EllipsisVertical"
-            variant="ghost"
-            size="sm"
-            className="h-[24px] w-[24px] min-w-[24px]"
-          />
-        </PopoverTrigger>
-        <PopoverContent
-          align="end"
-          alignOffset={0}
-          elevation={2}
-          side="bottom"
-          sideOffset={4}
-          className="w-[160px] space-xsm"
-        >
-          <div
-            className={cn(
-              'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center',
-            )}
+      {!hideContentMenu && (
+        <Popover>
+          <PopoverTrigger onClick={(e) => e.stopPropagation()}>
+            <IconButton
+              icon="EllipsisVertical"
+              variant="ghost"
+              size="sm"
+              className="h-[24px] w-[24px] min-w-[24px]"
+            />
+          </PopoverTrigger>
+          <PopoverContent
+            align="end"
+            alignOffset={0}
+            elevation={2}
+            side="bottom"
+            sideOffset={4}
+            className="w-[160px] space-xsm"
           >
-            <LucideIcon name="SquarePen" className={cn('w-[16px] h-[16px]')} />
-            <p className={cn('text-heading-xsm color-text-default')}>Rename</p>
-          </div>
-          <div
-            className={cn(
-              'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center',
-            )}
-          >
-            <LucideIcon name="Copy" className={cn('w-[16px] h-[16px]')} />
-            <p className={cn('text-heading-xsm color-text-default')}>
-              Duplicate
-            </p>
-          </div>
-          <div
-            className={cn(
-              'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center',
-            )}
-          >
-            <LucideIcon name="SmilePlus" className={cn('w-[16px] h-[16px]')} />
-            <p className={cn('text-heading-xsm color-text-default')}>
-              Choose emoji
-            </p>
-          </div>
-          <hr className="border-t space-x-xsm color-border-default my-[4px] w-full" />
-          <div
-            className={cn(
-              'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center',
-            )}
-          >
-            <LucideIcon name="Share2" className={cn('w-[16px] h-[16px]')} />
-            <p className={cn('text-heading-xsm color-text-default')}>
-              Copy link
-            </p>
-          </div>
-          <div
-            className={cn(
-              'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center',
-            )}
-          >
-            <LucideIcon name="List" className={cn('w-[16px] h-[16px]')} />
-            <p className={cn('text-heading-xsm color-text-default')}>
-              Hide outline
-            </p>
-          </div>
-        </PopoverContent>
-      </Popover>
+            <div
+              className={cn(
+                'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center',
+              )}
+            >
+              <LucideIcon
+                name="SquarePen"
+                className={cn('w-[16px] h-[16px]')}
+              />
+              <p className={cn('text-heading-xsm color-text-default')}>
+                Rename
+              </p>
+            </div>
+            <div
+              className={cn(
+                'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center',
+              )}
+            >
+              <LucideIcon name="Copy" className={cn('w-[16px] h-[16px]')} />
+              <p className={cn('text-heading-xsm color-text-default')}>
+                Duplicate
+              </p>
+            </div>
+            <div
+              className={cn(
+                'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center',
+              )}
+            >
+              <LucideIcon
+                name="SmilePlus"
+                className={cn('w-[16px] h-[16px]')}
+              />
+              <p className={cn('text-heading-xsm color-text-default')}>
+                Choose emoji
+              </p>
+            </div>
+            <hr className="border-t space-x-xsm color-border-default my-[4px] w-full" />
+            <div
+              className={cn(
+                'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center',
+              )}
+            >
+              <LucideIcon name="Share2" className={cn('w-[16px] h-[16px]')} />
+              <p className={cn('text-heading-xsm color-text-default')}>
+                Copy link
+              </p>
+            </div>
+            <div
+              className={cn(
+                'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center',
+              )}
+            >
+              <LucideIcon name="List" className={cn('w-[16px] h-[16px]')} />
+              <p className={cn('text-heading-xsm color-text-default')}>
+                Hide outline
+              </p>
+            </div>
+          </PopoverContent>
+        </Popover>
+      )}
     </div>
   );
 };

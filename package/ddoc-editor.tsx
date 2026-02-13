@@ -927,7 +927,7 @@ const DdocEditor = forwardRef(
           <div
             id="editor-canvas"
             className={cn(
-              'h-[100%] w-full custom-scrollbar',
+              'h-[100%] w-full custom-scrollbar relative',
               !isPreviewMode &&
                 (isNavbarVisible ? 'mt-[6.7rem]' : 'mt-[3.3rem]'),
               isPreviewMode && 'mt-[3.5rem]',
