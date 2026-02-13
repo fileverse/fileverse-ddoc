@@ -80,3 +80,545 @@ export const colors = [
   { color: '#20124D', code: 'bg-[#20124D]' },
   { color: '#4C1130', code: 'bg-[#4C1130]' },
 ];
+
+export const textColors = [
+  {
+    name: 'rose',
+    light: '#B30000',
+    dark: '#FF6161',
+  },
+  {
+    name: 'alata',
+    light: '#B30036',
+    dark: '#FF6179',
+  },
+  {
+    name: 'fuchsia',
+    light: '#AD005C',
+    dark: '#FF4DCF',
+  },
+  {
+    name: 'plum',
+    light: '#A30085',
+    dark: '#BA75FF',
+  },
+  {
+    name: 'lilac',
+    light: '#9400BD',
+    dark: '#9985FF',
+  },
+  {
+    name: 'violet',
+    light: '#6800BD',
+    dark: '#5294FF',
+  },
+  {
+    name: 'blueberry',
+    light: '#600AFF',
+    dark: '#3D98FF',
+  },
+  {
+    name: 'juniper',
+    light: '#2930FF',
+    dark: '#009AFA',
+  },
+  {
+    name: 'acaiberry',
+    light: '#0537FF',
+    dark: '#00A4DB',
+  },
+  {
+    name: 'teal',
+    light: '#0056B3',
+    dark: '#00ABB8',
+  },
+  {
+    name: 'sage',
+    light: '#005C7A',
+    dark: '#00B5B8',
+  },
+  {
+    name: 'viridiflora',
+    light: '#00615F',
+    dark: '#00E0C6',
+  },
+  {
+    name: 'lxia',
+    light: '#006144',
+    dark: '#00FFD5',
+  },
+  {
+    name: 'basil',
+    light: '#006122',
+    dark: '#00CC7E',
+  },
+  {
+    name: 'snowpea',
+    light: '#1A6100',
+    dark: '#00FF88',
+  },
+  {
+    name: 'rose-1',
+    light: '#800000',
+    dark: '#FF9999',
+  },
+  {
+    name: 'alata-1',
+    light: '#800026',
+    dark: '#FFA8B5',
+  },
+  {
+    name: 'fuchsia-1',
+    light: '#7A0041',
+    dark: '#FFA3E7',
+  },
+  {
+    name: 'plum-1',
+    light: '#7A0064',
+    dark: '#D4A8FF',
+  },
+  {
+    name: 'lilac-1',
+    light: '#640080',
+    dark: '#C8BDFF',
+  },
+  {
+    name: 'violet-1',
+    light: '#490085',
+    dark: '#9EC3FF',
+  },
+  {
+    name: 'blueberry-1',
+    light: '#3D00AD',
+    dark: '#85BEFF',
+  },
+  {
+    name: 'juniper-1',
+    light: '#0007CC',
+    dark: '#66C4FF',
+  },
+  {
+    name: 'acaiberry-1',
+    light: '#002AD1',
+    dark: '#4DD2FF',
+  },
+  {
+    name: 'teal-1',
+    light: '#00458F',
+    dark: '#1FF0FF',
+  },
+  {
+    name: 'sage-1',
+    light: '#004961',
+    dark: '#29FBFF',
+  },
+  {
+    name: 'viridiflora-1',
+    light: '#004D4A',
+    dark: '#57FFEB',
+  },
+  {
+    name: 'lxia-1',
+    light: '#004D36',
+    dark: '#70FFE7',
+  },
+  {
+    name: 'basil-1',
+    light: '#004D1B',
+    dark: '#47FFB9',
+  },
+  {
+    name: 'snowpea-1',
+    light: '#165200',
+    dark: '#75FFBF',
+  },
+  {
+    name: 'rose-2',
+    light: '#4D0000',
+    dark: '#FFD1D1',
+  },
+  {
+    name: 'alata-2',
+    light: '#420014',
+    dark: '#FFD6DD',
+  },
+  {
+    name: 'fuchsia-2',
+    light: '#4D0029',
+    dark: '#FFD6F4',
+  },
+  {
+    name: 'plum-2',
+    light: '#420036',
+    dark: '#E0C2FF',
+  },
+  {
+    name: 'lilac-2',
+    light: '#3C004D',
+    dark: '#DDD6FF',
+  },
+  {
+    name: 'violet-2',
+    light: '#2A004D',
+    dark: '#CCE0FF',
+  },
+  {
+    name: 'blueberry-2',
+    light: '#240066',
+    dark: '#C2DEFF',
+  },
+  {
+    name: 'juniper-2',
+    light: '#000480',
+    dark: '#A8DEFF',
+  },
+  {
+    name: 'acaiberry-2',
+    light: '#001A80',
+    dark: '#B3ECFF',
+  },
+  {
+    name: 'teal-2',
+    light: '#002F61',
+    dark: '#8AF7FF',
+  },
+  {
+    name: 'sage-2',
+    light: '#003447',
+    dark: '#9EFDFF',
+  },
+  {
+    name: 'viridiflora-2',
+    light: '#003D3B',
+    dark: '#9EFFF4',
+  },
+  {
+    name: 'lxia-2',
+    light: '#00422E',
+    dark: '#B8FFF3',
+  },
+  {
+    name: 'basil-2',
+    light: '#003D15',
+    dark: '#ADFFE0',
+  },
+  {
+    name: 'snowpea-2',
+    light: '#124200',
+    dark: '#CCFFE7',
+  },
+  {
+    name: 'moss',
+    light: '#006614',
+    dark: '#3DFF64',
+  },
+  {
+    name: 'pine',
+    light: '#0C6600',
+    dark: '#00FF11',
+  },
+  {
+    name: 'pea',
+    light: '#006607',
+    dark: '#44FF00',
+  },
+  {
+    name: 'apple',
+    light: '#1B6600',
+    dark: '#44FF00',
+  },
+  {
+    name: 'lime',
+    light: '#325C00',
+    dark: '#D4FF00',
+  },
+  {
+    name: 'kiwi',
+    light: '#485C00',
+    dark: '#FFF700',
+  },
+  {
+    name: 'oak',
+    light: '#565C00',
+    dark: '#FFE433',
+  },
+  {
+    name: 'larch',
+    light: '#5C5000',
+    dark: '#FFDD00',
+  },
+  {
+    name: 'walnut',
+    light: '#705200',
+    dark: '#FFBB00',
+  },
+  {
+    name: 'teak',
+    light: '#7A4E00',
+    dark: '#FFA200',
+  },
+  {
+    name: 'rosewood',
+    light: '#854700',
+    dark: '#FF8800',
+  },
+  {
+    name: 'chestnut',
+    light: '#8F4000',
+    dark: '#FF7300',
+  },
+  {
+    name: 'umber',
+    light: '#993600',
+    dark: '#FF622E',
+  },
+  {
+    name: 'cedar',
+    light: '#A82A00',
+    dark: '#FF5900',
+  },
+  {
+    name: 'canna',
+    light: '#B30C00',
+    dark: '#FF6257',
+  },
+  {
+    name: 'moss-1',
+    light: '#00420D',
+    dark: '#99FFAD',
+  },
+  {
+    name: 'pine-1',
+    light: '#084700',
+    dark: '#8AFF92',
+  },
+  {
+    name: 'pea-1',
+    light: '#005706',
+    dark: '#9AFF75',
+  },
+  {
+    name: 'apple-1',
+    light: '#144D00',
+    dark: '#A5FF85',
+  },
+  {
+    name: 'lime-1',
+    light: '#2A4D00',
+    dark: '#E6FF66',
+  },
+  {
+    name: 'kiwi-1',
+    light: '#3C4D00',
+    dark: '#FFFB7A',
+  },
+  {
+    name: 'oak-1',
+    light: '#3E4200',
+    dark: '#FFEE80',
+  },
+  {
+    name: 'larch-1',
+    light: '#4D4100',
+    dark: '#FFEA61',
+  },
+  {
+    name: 'walnut-1',
+    light: '#523C00',
+    dark: '#FFD666',
+  },
+  {
+    name: 'teak-1',
+    light: '#664100',
+    dark: '#FFBF52',
+  },
+  {
+    name: 'rosewood-1',
+    light: '#6B3900',
+    dark: '#FFB35C',
+  },
+  {
+    name: 'chestnut-1',
+    light: '#6B3000',
+    dark: '#FFAB66',
+  },
+  {
+    name: 'umber-1',
+    light: '#752900',
+    dark: '#FF8861',
+  },
+  {
+    name: 'cedar-1',
+    light: '#852100',
+    dark: '#FF8E52',
+  },
+  {
+    name: 'canna-1',
+    light: '#8F0A00',
+    dark: '#FF8880',
+  },
+  {
+    name: 'moss-2',
+    light: '#00330A',
+    dark: '#C7FFD6',
+  },
+
+  {
+    name: 'pine-2',
+    light: '#073D00',
+    dark: '#C2FFC6',
+  },
+
+  {
+    name: 'pea-2',
+    light: '#003D04',
+    dark: '#D6FFC7',
+  },
+
+  {
+    name: 'apple-2',
+    light: '#124200',
+    dark: '#DAFFCC',
+  },
+
+  {
+    name: 'lime-2',
+    light: '#244200',
+    dark: '#F3FFB8',
+  },
+
+  {
+    name: 'kiwi-2',
+    light: '#303D00',
+    dark: '#FFFDB8',
+  },
+
+  {
+    name: 'oak-2',
+    light: '#343800',
+    dark: '#FFF9D1',
+  },
+
+  {
+    name: 'larch-2',
+    light: '#3D3500',
+    dark: '#FFF5B3',
+  },
+
+  {
+    name: 'walnut-2',
+    light: '#423200',
+    dark: '#FFE59E',
+  },
+
+  {
+    name: 'teak-2',
+    light: '#523400',
+    dark: '#FFDFA8',
+  },
+
+  {
+    name: 'rosewood-2',
+    light: '#472600',
+    dark: '#FFDBB3',
+  },
+
+  {
+    name: 'chestnut-2',
+    light: '#522500',
+    dark: '#FFD8B8',
+  },
+
+  {
+    name: 'umber-2',
+    light: '#4D1B00',
+    dark: '#FFC2AD',
+  },
+
+  {
+    name: 'cedar-2',
+    light: '#5C1700',
+    dark: '#FFC7A8',
+  },
+
+  {
+    name: 'canna-2',
+    light: '#3D0400',
+    dark: '#FFB3AD',
+  },
+  {
+    name: 'neutral',
+    light: '#000000',
+    dark: '#FFFFFF',
+  },
+  {
+    name: 'neutral-1',
+    light: '#080808',
+    dark: '#F8F8F8',
+  },
+  {
+    name: 'neutral-2',
+    light: '#0F0F0F',
+    dark: '#F0F0F0',
+  },
+  {
+    name: 'neutral-3',
+    light: '#171717',
+    dark: '#E9E9E9',
+  },
+  {
+    name: 'neutral-4',
+    light: '#1E1E1E',
+    dark: '#E1E1E1',
+  },
+  {
+    name: 'neutral-5',
+    light: '#262626',
+    dark: '#DADADA',
+  },
+  {
+    name: 'neutral-6',
+    light: '#2D2D2D',
+    dark: '#D2D2D2',
+  },
+  {
+    name: 'neutral-7',
+    light: '#353535',
+    dark: '#CBCBCB',
+  },
+  {
+    name: 'neutral-8',
+    light: '#3C3C3C',
+    dark: '#C3C3C3',
+  },
+  {
+    name: 'neutral-9',
+    light: '#444444',
+    dark: '#BCBCBC',
+  },
+  {
+    name: 'neutral-10',
+    light: '#4B4B4B',
+    dark: '#B4B4B4',
+  },
+  {
+    name: 'neutral-11',
+    light: '#696969',
+    dark: '#969696',
+  },
+  {
+    name: 'neutral-12',
+    light: '#717171',
+    dark: '#8F8F8F',
+  },
+  {
+    name: 'neutral-13',
+    light: '#787878',
+    dark: '#878787',
+  },
+  {
+    name: 'neutral-14',
+    light: '#808080',
+    dark: '#808080',
+  },
+];
