@@ -8,6 +8,7 @@ import { ToCProps, ToCItemProps, ToCItemType } from './types';
 import { useMediaQuery } from 'usehooks-ts';
 import { headingToSlug } from '../../utils/heading-to-slug';
 import type { Node as ProseMirrorNode } from 'prosemirror-model';
+import { Editor } from '@tiptap/core';
 
 // Memoize the ToC item to prevent unnecessary re-renders
 export const ToCItem = memo(
@@ -171,15 +172,19 @@ export const ToC = memo(
     useEffect(() => {
       if (!editor) return;
 
-      const handleUpdate = (transaction: Transaction) => {
+      const handleUpdate = (tr: {
+        editor: Editor;
+        transaction: Transaction;
+        appendedTransactions: Transaction[];
+      }) => {
         // ✅ Only invalidate cache if headings were actually modified
-        if (!transaction.docChanged) return;
+        if (!tr.transaction.docChanged) return;
 
         let headingsChanged = false;
-        transaction.steps.forEach((step) => {
+        tr.transaction.steps.forEach((step) => {
           const stepMap = step.getMap();
           stepMap.forEach((oldStart: number, oldEnd: number) => {
-            transaction.doc.nodesBetween(
+            tr.transaction.doc.nodesBetween(
               oldStart,
               oldEnd,
               (node: ProseMirrorNode) => {
@@ -203,14 +208,10 @@ export const ToC = memo(
         });
       };
 
-      editor.on('update', ({ transaction }) => {
-        handleUpdate(transaction);
-      });
+      editor.on('update', handleUpdate);
 
       return () => {
-        editor.off('update', ({ transaction }) => {
-          handleUpdate(transaction);
-        });
+        editor.off('update', handleUpdate);
         if (updateTimeoutRef.current) {
           cancelAnimationFrame(updateTimeoutRef.current);
         }
@@ -258,20 +259,20 @@ export const ToC = memo(
     useEffect(() => {
       if (!editor) return;
 
-      const handleUpdate = (transaction: Transaction) => {
-        if (transaction.docChanged) {
+      const handleUpdate = (tr: {
+        editor: Editor;
+        transaction: Transaction;
+        appendedTransactions: Transaction[];
+      }) => {
+        if (tr.transaction.docChanged) {
           // Clear cache on document changes
           headingPositionsRef.current.clear();
         }
       };
 
-      editor.on('update', ({ transaction }) => {
-        handleUpdate(transaction);
-      });
+      editor.on('update', handleUpdate);
       return () => {
-        editor.off('update', ({ transaction }) => {
-          handleUpdate(transaction);
-        });
+        editor.off('update', handleUpdate);
       };
     }, [editor]);
 
