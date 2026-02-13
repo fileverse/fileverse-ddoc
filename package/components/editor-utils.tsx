@@ -2553,14 +2553,13 @@ export const checkActiveListsAndDBlocks = (editor: Editor) => {
     if (node.type.name === 'dBlock') {
       activeDBlocks.push(pos);
       let containsList = false;
-      for (const child of node.content) {
+      node.content.forEach((child) => {
         if (
           ['bulletList', 'orderedList', 'taskList'].includes(child.type.name)
         ) {
           containsList = true;
-          break; // Stop iterating children once a list is found
         }
-      }
+      });
       if (containsList) {
         activeListDBlocks.push(pos);
       }
