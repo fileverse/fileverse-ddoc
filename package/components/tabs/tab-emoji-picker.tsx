@@ -20,9 +20,11 @@ import { LoaderIcon, SearchIcon } from 'lucide-react';
 export const TabEmojiPicker = ({
   emoji,
   setEmoji,
+  isEditing,
 }: {
   emoji: string;
   setEmoji: (emoji: string) => void;
+  isEditing: boolean;
 }) => {
   const [showPicker, setShowPicker] = useState(false);
   const toggleRef = useRef(null);
@@ -112,7 +114,7 @@ export const TabEmojiPicker = ({
               onClick={() => {
                 setShowPicker(!showPicker);
               }}
-              name="SmilePlus"
+              name={isEditing ? 'SmilePlus' : 'FileText'}
               className="w-[16px] shrink-0"
             />
           </Tooltip>
@@ -123,8 +125,8 @@ export const TabEmojiPicker = ({
           data-emoji-picker
           ref={toggleRef}
           className={cn(
-            'absolute top-[130px] ',
-            isMobile ? 'left-[42px]' : 'left-[39px]',
+            'absolute top-[35px] z-10 ',
+            isMobile ? 'left-[42px]' : 'left-[9px]',
           )}
         >
           <EmojiPicker

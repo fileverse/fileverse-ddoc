@@ -19,7 +19,7 @@ export type Tab = {
   emoji: string;
 };
 
-export const SortableTabRow = (props: any) => {
+export const SortableTabItem = (props: any) => {
   const {
     attributes,
     listeners,
@@ -38,7 +38,7 @@ export const SortableTabRow = (props: any) => {
       }}
       className={cn(isDragging && 'opacity-0', 'w-full')}
     >
-      <TabRow
+      <TabItem
         {...props}
         dragHandleProps={{
           ...attributes,
@@ -49,7 +49,7 @@ export const SortableTabRow = (props: any) => {
   );
 };
 
-export const TabRow = ({
+export const TabItem = ({
   name,
   emoji,
   onNameChange,
@@ -99,22 +99,19 @@ export const TabRow = ({
       onClick={onClick}
       {...dragHandleProps}
       className={cn(
-        'flex items-center active:cursor-grabbing justify-between h-[40px] px-[12px] py-[8px] rounded-full hover:color-bg-secondary-hover',
+        'flex items-center active:cursor-grabbing relative justify-between h-[40px] px-[12px] py-[8px] rounded-full hover:color-bg-secondary-hover',
         isActive && 'color-bg-default-hover',
       )}
     >
       <div className="flex items-center gap-[8px] flex-1">
-        {isEditing || emoji ? (
-          <TabEmojiPicker
-            emoji={emoji}
-            setEmoji={(_emoji) => {
-              setIsEditing(false);
-              onEmojiChange(_emoji);
-            }}
-          />
-        ) : (
-          <LucideIcon name="FileText" className="w-[16px] shrink-0" />
-        )}
+        <TabEmojiPicker
+          emoji={emoji}
+          setEmoji={(_emoji) => {
+            setIsEditing(false);
+            onEmojiChange(_emoji);
+          }}
+          isEditing={isEditing}
+        />
 
         {!isEditing ? (
           <span className="text-heading-xsm color-text-default max-w-[110px] truncate select-none">

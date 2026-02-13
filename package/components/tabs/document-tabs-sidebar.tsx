@@ -16,7 +16,7 @@ import {
 } from '@dnd-kit/sortable';
 import { DocumentOutlineProps } from '../toc/types';
 import { MemorizedToC } from '../toc/memorized-toc';
-import { TabDragPreview, SortableTabRow, Tab } from './tab-row';
+import { TabDragPreview, Tab, SortableTabItem } from './tab-item';
 
 export interface DocumentTabsSidebarProps {
   tabs: Tab[];
@@ -130,7 +130,7 @@ export const DocumentTabsSidebar = ({
                   key={tab.id}
                   className="w-full flex mt-[8px] flex-col gap-[8px]"
                 >
-                  <SortableTabRow
+                  <SortableTabItem
                     key={tab.id}
                     id={tab.id}
                     name={tab.name}

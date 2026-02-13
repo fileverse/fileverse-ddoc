@@ -3,7 +3,7 @@ import cn from 'classnames';
 import { useMediaQuery } from 'usehooks-ts';
 import { BottomDrawer } from '@fileverse/ui';
 import { DocumentTabsSidebar } from '../tabs/document-tabs-sidebar';
-import { Tab } from '../tabs/tab-row';
+import { Tab } from '../tabs/tab-item';
 import { DocumentOutlineProps } from './types';
 import { MemorizedToC } from './memorized-toc';
 
