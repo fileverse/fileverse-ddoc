@@ -161,13 +161,11 @@ export const useDdocEditor = ({
             clearTimeout(tocUpdateTimeoutRef.current);
           }
 
-          // Use requestAnimationFrame for smoother updates
-          requestAnimationFrame(() => {
-            tocUpdateTimeoutRef.current = window.setTimeout(() => {
-              setTocItems(data);
-              tocUpdateTimeoutRef.current = null;
-            }, 100); // Reduced debounce time
-          });
+          // ✅ INCREASED DEBOUNCE - only update TOC 300ms after last keystroke
+          tocUpdateTimeoutRef.current = window.setTimeout(() => {
+            setTocItems(data);
+            tocUpdateTimeoutRef.current = null;
+          }, 300); // ✅ Changed from 100ms to 300ms
         }
       },
     }) as AnyExtension[]),
@@ -237,6 +235,7 @@ export const useDdocEditor = ({
         )
       ) {
         _isHighlightedYellow = true;
+        return false;
       }
     });
     return _isHighlightedYellow;
@@ -268,6 +267,7 @@ export const useDdocEditor = ({
               if (mark.type.name === 'highlight') {
                 from = pos;
                 to = pos + node.nodeSize;
+                return false;
               }
             });
           }

@@ -2,11 +2,12 @@ import {
   cn,
   // IconButton
 } from '@fileverse/ui';
-import { TextSelection } from '@tiptap/pm/state';
+import { TextSelection, Transaction } from '@tiptap/pm/state';
 import { useState, useMemo, useCallback, memo, useRef, useEffect } from 'react';
 import { ToCProps, ToCItemProps, ToCItemType } from './types';
 import { useMediaQuery } from 'usehooks-ts';
 import { headingToSlug } from '../../utils/heading-to-slug';
+import type { Node as ProseMirrorNode } from 'prosemirror-model';
 
 // Memoize the ToC item to prevent unnecessary re-renders
 export const ToCItem = memo(
@@ -129,7 +130,8 @@ export const ToC = memo(
     const lastCacheTimeRef = useRef<number>(0);
     const updateTimeoutRef = useRef<number | null>(null);
 
-    // No longer using context for collapsed headings - they're stored in document
+    // ✅ Add a heading position cache at component level
+    const headingPositionsRef = useRef<Map<string, number>>(new Map());
 
     // Memoize the filtered and processed items for faster rendering
     const processedItems = useMemo(() => {
@@ -145,7 +147,7 @@ export const ToC = memo(
         editor &&
         editor.view?.dom &&
         (!headingsCacheRef.current ||
-          Date.now() - lastCacheTimeRef.current > 250)
+          Date.now() - lastCacheTimeRef.current > 1000)
       ) {
         const newMap = new Map<string, HTMLElement>();
 
@@ -165,28 +167,50 @@ export const ToC = memo(
       return headingsCacheRef.current;
     }, [editor]);
 
-    // Add effect to handle editor updates
+    // Add effect to handle editor updates - ONLY when headings change.
     useEffect(() => {
       if (!editor) return;
 
-      const handleUpdate = () => {
+      const handleUpdate = (transaction: Transaction) => {
+        // ✅ Only invalidate cache if headings were actually modified
+        if (!transaction.docChanged) return;
+
+        let headingsChanged = false;
+        transaction.steps.forEach((step) => {
+          const stepMap = step.getMap();
+          stepMap.forEach((oldStart: number, oldEnd: number) => {
+            transaction.doc.nodesBetween(
+              oldStart,
+              oldEnd,
+              (node: ProseMirrorNode) => {
+                if (node.type.name === 'heading') {
+                  headingsChanged = true;
+                }
+              },
+            );
+          });
+        });
+
+        if (!headingsChanged) return;
+
         if (updateTimeoutRef.current) {
           cancelAnimationFrame(updateTimeoutRef.current);
         }
 
         updateTimeoutRef.current = requestAnimationFrame(() => {
-          // Force cache refresh on editor update
           headingsCacheRef.current = null;
           getHeadingsMap();
         });
       };
 
-      editor.on('update', handleUpdate);
-      editor.on('selectionUpdate', handleUpdate);
+      editor.on('update', ({ transaction }) => {
+        handleUpdate(transaction);
+      });
 
       return () => {
-        editor.off('update', handleUpdate);
-        editor.off('selectionUpdate', handleUpdate);
+        editor.off('update', ({ transaction }) => {
+          handleUpdate(transaction);
+        });
         if (updateTimeoutRef.current) {
           cancelAnimationFrame(updateTimeoutRef.current);
         }
@@ -198,22 +222,26 @@ export const ToC = memo(
       (headingId: string) => {
         if (!editor) return;
 
-        // Find the heading in the document
-        const { doc } = editor.state;
-        let headingPos = -1;
+        // ✅ Check cache first
+        let headingPos = headingPositionsRef.current.get(headingId) ?? -1;
 
-        doc.descendants((node, pos) => {
-          if (node.type.name === 'dBlock') {
-            const headingNode = node.content.content?.[0];
-            if (
-              headingNode?.type.name === 'heading' &&
-              headingNode.attrs.id === headingId
-            ) {
-              headingPos = pos;
-              return false; // Stop searching
+        // ✅ Only traverse if not in cache
+        if (headingPos === -1) {
+          const { doc } = editor.state;
+          doc.descendants((node, pos) => {
+            if (node.type.name === 'dBlock') {
+              const headingNode = node.content.content?.[0];
+              if (headingNode?.type.name === 'heading') {
+                // ✅ Cache ALL heading positions while we're here
+                headingPositionsRef.current.set(headingNode.attrs.id, pos);
+
+                if (headingNode.attrs.id === headingId) {
+                  headingPos = pos;
+                }
+              }
             }
-          }
-        });
+          });
+        }
 
         if (headingPos !== -1) {
           editor
@@ -225,6 +253,27 @@ export const ToC = memo(
       },
       [editor],
     );
+
+    // ✅ Clear position cache when document changes significantly
+    useEffect(() => {
+      if (!editor) return;
+
+      const handleUpdate = (transaction: Transaction) => {
+        if (transaction.docChanged) {
+          // Clear cache on document changes
+          headingPositionsRef.current.clear();
+        }
+      };
+
+      editor.on('update', ({ transaction }) => {
+        handleUpdate(transaction);
+      });
+      return () => {
+        editor.off('update', ({ transaction }) => {
+          handleUpdate(transaction);
+        });
+      };
+    }, [editor]);
 
     // Fix for handling heading expansion
     const expandHeadingAndItsAncestors = useCallback(
