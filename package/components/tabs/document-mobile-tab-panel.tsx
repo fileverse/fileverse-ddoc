@@ -9,13 +9,14 @@ import {
 } from '@fileverse/ui';
 import { DocumentOutlineProps } from '../toc/types';
 import { MemorizedToC } from '../toc/memorized-toc';
-import { Tab, TabItem } from './tab-item';
+import { TabItem } from './tab-item';
+import { Tab } from './utils/tab-utils';
 
 export interface DocumentMobileTabPanelProps {
   tabs: Tab[];
   setTabs: Dispatch<SetStateAction<Tab[]>>;
   activeTabId: string;
-  setActiveTabId: Dispatch<SetStateAction<string>>;
+  setActiveTabId: (id: string) => void;
   editor: DocumentOutlineProps['editor'];
   items: DocumentOutlineProps['items'];
   setItems: DocumentOutlineProps['setItems'];
@@ -85,7 +86,7 @@ export const DocumentMobileTabPanel = ({
                   <TabItem
                     hideContentMenu={true}
                     name={tab.name}
-                    emoji={tab.emoji}
+                    emoji={tab.emoji || ''}
                     onNameChange={(nextName: string) =>
                       setTabs((prev) =>
                         prev.map((_tab) =>

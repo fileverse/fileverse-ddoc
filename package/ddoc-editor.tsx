@@ -267,6 +267,11 @@ const DdocEditor = forwardRef(
       tocItems,
       setTocItems,
       terminateSession,
+      tabs,
+      setTabs,
+      activeTabId,
+      setActiveTabId,
+      createTab,
     } = useDdocEditor({
       ipfsImageFetchFn,
       fetchV1ImageFn,
@@ -614,6 +619,11 @@ const DdocEditor = forwardRef(
                 setShowTOC={setShowTOC}
                 isPreviewMode={isPreviewMode || !isNavbarVisible}
                 orientation={documentStyling?.orientation}
+                tabs={tabs}
+                setTabs={setTabs}
+                activeTabId={activeTabId}
+                setActiveTabId={setActiveTabId}
+                createTab={createTab}
               />
             )}
 

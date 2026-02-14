@@ -16,13 +16,14 @@ import {
 } from '@dnd-kit/sortable';
 import { DocumentOutlineProps } from '../toc/types';
 import { MemorizedToC } from '../toc/memorized-toc';
-import { TabDragPreview, Tab, SortableTabItem } from './tab-item';
+import { TabDragPreview, SortableTabItem } from './tab-item';
+import { Tab } from './utils/tab-utils';
 
 export interface DocumentTabsSidebarProps {
   tabs: Tab[];
   setTabs: React.Dispatch<React.SetStateAction<Tab[]>>;
   activeTabId: string;
-  setActiveTabId: React.Dispatch<React.SetStateAction<string>>;
+  setActiveTabId: (id: string) => void;
   showTOC: DocumentOutlineProps['showTOC'];
   setShowTOC: DocumentOutlineProps['setShowTOC'];
   hasToC: DocumentOutlineProps['hasToC'];
@@ -31,6 +32,7 @@ export interface DocumentTabsSidebarProps {
   items: DocumentOutlineProps['items'];
   setItems: DocumentOutlineProps['setItems'];
   orientation?: DocumentOutlineProps['orientation'];
+  createTab: () => void;
 }
 
 export const DocumentTabsSidebar = ({
@@ -46,6 +48,7 @@ export const DocumentTabsSidebar = ({
   items,
   setItems,
   orientation,
+  createTab,
 }: DocumentTabsSidebarProps) => {
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -80,7 +83,7 @@ export const DocumentTabsSidebar = ({
           className={cn(
             'flex flex-col items-start w-[263px] justify-start absolute left-0 px-4',
             !hasToC && 'hidden',
-            isPreviewMode ? 'top-[4rem]' : 'top-[7.3rem]',
+            isPreviewMode ? 'top-[4rem]' : 'top-[16px]',
           )}
         >
           <Tooltip
@@ -121,6 +124,7 @@ export const DocumentTabsSidebar = ({
                     variant="ghost"
                     size="sm"
                     className="h-[24px] w-[24px] min-w-[24px]"
+                    onClick={createTab}
                   />
                 </div>
               </div>

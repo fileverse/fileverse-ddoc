@@ -1,5 +1,6 @@
 import { Editor } from '@tiptap/react';
-import { SetStateAction } from 'react';
+import React, { Dispatch, SetStateAction } from 'react';
+import { Tab } from '../tabs/utils/tab-utils';
 
 export interface ToCItemType {
   id: string;
@@ -34,7 +35,12 @@ export interface DocumentOutlineProps {
     items: ToCItemType[] | ((prev: ToCItemType[]) => ToCItemType[]),
   ) => void;
   showTOC: boolean | undefined;
-  setShowTOC: React.Dispatch<SetStateAction<boolean>> | undefined;
+  setShowTOC: Dispatch<SetStateAction<boolean>> | undefined;
   isPreviewMode: boolean;
   orientation?: 'portrait' | 'landscape';
+  tabs: Tab[];
+  setTabs: Dispatch<SetStateAction<Tab[]>>;
+  activeTabId: string;
+  setActiveTabId: (id: string) => void;
+  createTab: () => void;
 }
