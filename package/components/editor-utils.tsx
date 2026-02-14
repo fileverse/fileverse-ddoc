@@ -1729,27 +1729,27 @@ export const TextColor = ({
           );
           const tickColorClassName =
             contrastColor === '#000000' ? 'text-black' : 'text-white';
-          const bgColor = `var(--${color.name})`;
+          const colorCSSVariable = `var(--color-editor-${color.name})`;
           return (
             <div
               onMouseDown={(e) => e.preventDefault()}
               onClick={() => {
                 if (!editor) return;
-                editor.chain().focus().setColor(`var(--${color.name})`).run();
+                editor.chain().focus().setColor(colorCSSVariable).run();
                 setVisibility(IEditorTool.NONE);
               }}
               key={color.name}
               className={cn(
                 'w-5 rounded-full flex justify-center items-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-5',
               )}
-              style={{ backgroundColor: bgColor }}
+              style={{ backgroundColor: colorCSSVariable }}
             >
               <LucideIcon
                 name="Check"
                 className={cn(
                   'w-[14px] aspect-square',
                   editor?.isActive('textStyle', {
-                    color: `var(--${color.name})`,
+                    color: colorCSSVariable,
                   }) || false
                     ? 'visible'
                     : 'invisible',
