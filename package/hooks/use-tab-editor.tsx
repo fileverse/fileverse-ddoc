@@ -127,7 +127,7 @@ export const useTabEditor = ({
     useActiveComment();
 
   const hasAvailableModels = Boolean(activeModel && isAIAgentEnabled);
-  const { tocItems, setTocItems, handleTocUpdate } = useTocState();
+  const { tocItems, setTocItems, handleTocUpdate } = useTocState(activeTabId);
 
   const { extensions, setExtensions } = useEditorExtension({
     ydoc,
@@ -693,14 +693,37 @@ const useActiveComment = () => {
   };
 };
 
-const useTocState = () => {
+const useTocState = (activeTabId: string) => {
   const [tocItems, setTocItems] = useState<ToCItemType[]>([]);
   const tocUpdateTimeoutRef = useRef<number | null>(null);
+  const tabToTocCacheRef = useRef<Record<string, ToCItemType[]>>({});
+  const activeTabRef = useRef(activeTabId);
+
+  // immediately render TOC from cache if available on switching tabs
+  useEffect(() => {
+    activeTabRef.current = activeTabId;
+    const cached = tabToTocCacheRef.current[activeTabId];
+    if (cached) {
+      setTocItems(cached);
+    }
+  }, [activeTabId]);
 
   const handleTocUpdate = useCallback(
     (data: ToCItemType[], isCreate: boolean | undefined) => {
+      const targetTabId = activeTabId;
+
+      const cacheUpdate = () => {
+        tabToTocCacheRef.current = {
+          ...tabToTocCacheRef.current,
+          [targetTabId]: data,
+        };
+        if (activeTabRef.current === targetTabId) {
+          setTocItems(data);
+        }
+      };
+
       if (isCreate) {
-        setTocItems(data);
+        cacheUpdate();
         return;
       }
 
@@ -710,15 +733,19 @@ const useTocState = () => {
 
       requestAnimationFrame(() => {
         tocUpdateTimeoutRef.current = window.setTimeout(() => {
-          setTocItems(data);
+          cacheUpdate();
           tocUpdateTimeoutRef.current = null;
         }, 100);
       });
     },
-    [],
+    [activeTabId],
   );
 
-  return { tocItems, setTocItems, handleTocUpdate };
+  return {
+    tocItems,
+    setTocItems,
+    handleTocUpdate,
+  };
 };
 
 interface UseExtensionStackArgs {

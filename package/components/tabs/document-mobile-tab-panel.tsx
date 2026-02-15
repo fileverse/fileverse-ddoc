@@ -75,7 +75,7 @@ export const DocumentMobileTabPanel = ({
               className={cn(
                 'w-full no-scrollbar overflow-y-auto',
                 'h-[calc(100dvh-437px)]',
-                'transition-opacity duration-300 animate-in fade-in',
+                'transition-opacity duration-300',
               )}
             >
               {tabs.map((tab) => (
