@@ -94,6 +94,7 @@ export const useDdocEditor = ({
     hasCollabContentInitialised: yjsSetup.hasCollabContentInitialised,
     initialiseYjsIndexedDbProvider: yjsSetup.initialiseYjsIndexedDbProvider,
     externalExtensions,
+    activeTabId: tabManager.activeTabId,
   });
 
   const aggregatedContentLoading =

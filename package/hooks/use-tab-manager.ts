@@ -62,13 +62,13 @@ export const useTabManager = ({
       metadata.set('name', newTab.name);
       metadata.set('showOutline', newTab.showOutline);
       metadata.set('emoji', newTab.emoji);
-      tabsMap.set(tabId, metadata);
+      tabsMap.set(newTab.id, metadata);
 
       // Push to order
-      order.push([tabId]);
+      order.push([newTab.id]);
 
       // Create fragment
-      ydoc.getXmlFragment(tabId);
+      ydoc.getXmlFragment(newTab.id);
 
       // Save active state in yjs content if not in collaboration mode
       if (!enableCollaboration && activeTabText instanceof Y.Text) {

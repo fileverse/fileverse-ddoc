@@ -83,6 +83,7 @@ interface UseTabEditorArgs {
   initialiseYjsIndexedDbProvider: () => Promise<void>;
   externalExtensions?: Record<string, AnyExtension>;
   isContentLoading?: boolean;
+  activeTabId: string;
 }
 
 export const useTabEditor = ({
@@ -120,6 +121,7 @@ export const useTabEditor = ({
   initialiseYjsIndexedDbProvider,
   externalExtensions,
   isContentLoading,
+  activeTabId,
 }: UseTabEditorArgs) => {
   const { activeCommentId, setActiveCommentId, focusCommentWithActiveId } =
     useActiveComment();
@@ -150,6 +152,7 @@ export const useTabEditor = ({
     },
     onTocUpdate: handleTocUpdate,
     externalExtensions,
+    activeTabId,
   });
 
   const { handleCommentInteraction, handleCommentClick } =
@@ -736,6 +739,7 @@ interface UseExtensionStackArgs {
   onCommentActivated: (commentId: string | null) => void;
   onTocUpdate: (data: ToCItemType[], isCreate: boolean | undefined) => void;
   externalExtensions?: Record<string, AnyExtension>;
+  activeTabId: string;
 }
 
 const useEditorExtension = ({
@@ -756,6 +760,7 @@ const useEditorExtension = ({
   onCommentActivated,
   onTocUpdate,
   externalExtensions,
+  activeTabId,
 }: UseExtensionStackArgs) => {
   const createSlashCommand = useCallback(
     () =>
@@ -803,6 +808,7 @@ const useEditorExtension = ({
       commentExtension,
       Collaboration.configure({
         document: ydoc,
+        field: activeTabId,
       }),
       ...(externalExtensions ? Object.values(externalExtensions) : []),
     ];
@@ -820,11 +826,17 @@ const useEditorExtension = ({
     commentExtension,
     ydoc,
     externalExtensions,
+    activeTabId,
   ]);
 
-  const [extensions, setExtensions] = useState<AnyExtension[]>(() =>
-    buildExtensions(),
-  );
+  const [extensions, setExtensions] =
+    useState<AnyExtension[]>(buildExtensions());
+
+  useEffect(() => {
+    if (activeTabId) {
+      setExtensions(buildExtensions());
+    }
+  }, [activeTabId]);
 
   useEffect(() => {
     if (!isConnected) return;
