@@ -272,6 +272,8 @@ const DdocEditor = forwardRef(
       activeTabId,
       setActiveTabId,
       createTab,
+      renameTab,
+      duplicateTab,
     } = useDdocEditor({
       ipfsImageFetchFn,
       fetchV1ImageFn,
@@ -624,6 +626,8 @@ const DdocEditor = forwardRef(
                 activeTabId={activeTabId}
                 setActiveTabId={setActiveTabId}
                 createTab={createTab}
+                renameTab={renameTab}
+                duplicateTab={duplicateTab}
               />
             )}
 

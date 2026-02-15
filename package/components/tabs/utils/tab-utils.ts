@@ -79,3 +79,43 @@ export function deriveTabsFromEncodedState(
     activeTabId: activeTabId.toString(),
   };
 }
+
+export function getTabsYdocNodes(doc: Y.Doc) {
+  const root = doc.getMap('ddocTabs');
+
+  const order = root.get('order');
+  const tabs = root.get('tabs');
+  const activeTab = root.get('activeTabId');
+
+  if (!(order instanceof Y.Array)) {
+    throw new Error('Invalid ddocTabs.order');
+  }
+
+  if (!(tabs instanceof Y.Map)) {
+    throw new Error('Invalid ddocTabs.tabs');
+  }
+
+  return {
+    root,
+    order,
+    tabs,
+    activeTab: activeTab instanceof Y.Text ? activeTab : null,
+  };
+}
+
+export function cloneFragmentContent(
+  fragment: Y.XmlFragment,
+): (Y.XmlElement | Y.XmlText)[] {
+  return fragment
+    .toArray()
+    .map((item) => {
+      // Only clone shared types
+      if (item instanceof Y.XmlElement || item instanceof Y.XmlText) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        return item.clone() as any;
+      }
+      // If it's some other type (unlikely except YXmlHook), skip it
+      return null;
+    })
+    .filter((n): n is Y.XmlElement | Y.XmlText => n !== null);
+}

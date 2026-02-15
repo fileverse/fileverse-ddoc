@@ -17,6 +17,8 @@ export const DocumentOutline = ({
   activeTabId,
   setActiveTabId,
   createTab,
+  renameTab,
+  duplicateTab,
 }: DocumentOutlineProps) => {
   const isMediaMax1280px = useMediaQuery('(max-width:1280px)');
 
@@ -35,6 +37,8 @@ export const DocumentOutline = ({
       setItems={setItems}
       orientation={orientation}
       createTab={createTab}
+      renameTab={renameTab}
+      duplicateTab={duplicateTab}
     />
   ) : (
     <DocumentMobileTabPanel
@@ -46,6 +50,8 @@ export const DocumentOutline = ({
       items={items}
       setItems={setItems}
       orientation={orientation}
+      renameTab={renameTab}
+      duplicateTab={duplicateTab}
     />
   );
 };

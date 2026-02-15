@@ -33,6 +33,11 @@ export interface DocumentTabsSidebarProps {
   setItems: DocumentOutlineProps['setItems'];
   orientation?: DocumentOutlineProps['orientation'];
   createTab: () => void;
+  renameTab: (
+    tabId: string,
+    payload: { newName?: string; emoji?: string },
+  ) => void;
+  duplicateTab: (tabId: string) => void;
 }
 
 export const DocumentTabsSidebar = ({
@@ -49,7 +54,16 @@ export const DocumentTabsSidebar = ({
   setItems,
   orientation,
   createTab,
+  renameTab,
+  duplicateTab,
 }: DocumentTabsSidebarProps) => {
+  const handleNameChange = (tabId: string, nextName: string) => {
+    renameTab(tabId, { newName: nextName });
+  };
+
+  const handleEmojiChange = (tabId: string, nextEmoji: string) => {
+    renameTab(tabId, { emoji: nextEmoji });
+  };
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
@@ -137,26 +151,16 @@ export const DocumentTabsSidebar = ({
                   <SortableTabItem
                     key={tab.id}
                     id={tab.id}
+                    tabId={tab.id}
                     name={tab.name}
                     emoji={tab.emoji}
                     onNameChange={(nextName: string) =>
-                      setTabs((prev) =>
-                        prev.map((_tab) =>
-                          _tab.id === tab.id
-                            ? { ..._tab, name: nextName }
-                            : _tab,
-                        ),
-                      )
+                      handleNameChange(tab.id, nextName)
                     }
                     onEmojiChange={(nextEmoji: string) =>
-                      setTabs((prev) =>
-                        prev.map((_tab) =>
-                          _tab.id === tab.id
-                            ? { ..._tab, emoji: nextEmoji }
-                            : _tab,
-                        ),
-                      )
+                      handleEmojiChange(tab.id, nextEmoji)
                     }
+                    onDuplicate={() => duplicateTab(tab.id)}
                     isActive={tab.id === activeTabId}
                     onClick={() => setActiveTabId(tab.id)}
                   />

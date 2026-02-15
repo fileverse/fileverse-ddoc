@@ -43,4 +43,9 @@ export interface DocumentOutlineProps {
   activeTabId: string;
   setActiveTabId: (id: string) => void;
   createTab: () => void;
+  renameTab: (
+    tabId: string,
+    payload: { newName?: string; emoji?: string },
+  ) => void;
+  duplicateTab: (tabId: string) => void;
 }

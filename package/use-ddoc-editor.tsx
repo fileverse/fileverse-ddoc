@@ -115,5 +115,6 @@ export const useDdocEditor = ({
     createTab: tabManager.createTab,
     deleteTab: tabManager.deleteTab,
     renameTab: tabManager.renameTab,
+    duplicateTab: tabManager.duplicateTab,
   };
 };

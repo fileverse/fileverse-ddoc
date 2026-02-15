@@ -44,21 +44,25 @@ export const SortableTabItem = (props: any) => {
 };
 
 export const TabItem = ({
+  tabId,
   name,
   emoji,
   onNameChange,
   onEmojiChange,
   onClick,
   isActive,
+  onDuplicate,
   dragHandleProps,
   hideContentMenu = false,
 }: {
+  tabId: string;
   name: string;
   emoji: string;
   onNameChange: (name: string) => void;
   onEmojiChange: (emoji: string) => void;
   onClick: () => void;
   isActive: boolean;
+  onDuplicate?: (id: string) => void;
   dragHandleProps?: any;
   hideContentMenu?: boolean;
 }) => {
@@ -155,6 +159,10 @@ export const TabItem = ({
               className={cn(
                 'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center',
               )}
+              onClick={(e) => {
+                e.stopPropagation();
+                startEditing();
+              }}
             >
               <LucideIcon
                 name="SquarePen"
@@ -168,6 +176,10 @@ export const TabItem = ({
               className={cn(
                 'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center',
               )}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDuplicate?.(tabId);
+              }}
             >
               <LucideIcon name="Copy" className={cn('w-[16px] h-[16px]')} />
               <p className={cn('text-heading-xsm color-text-default')}>

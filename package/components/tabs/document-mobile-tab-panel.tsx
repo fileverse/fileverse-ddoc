@@ -21,19 +21,32 @@ export interface DocumentMobileTabPanelProps {
   items: DocumentOutlineProps['items'];
   setItems: DocumentOutlineProps['setItems'];
   orientation?: DocumentOutlineProps['orientation'];
+  renameTab: (
+    tabId: string,
+    payload: { newName?: string; emoji?: string },
+  ) => void;
+  duplicateTab: (tabId: string) => void;
 }
 
 export const DocumentMobileTabPanel = ({
   tabs,
-  setTabs,
   activeTabId,
   setActiveTabId,
   editor,
   items,
   setItems,
   orientation,
+  renameTab,
+  duplicateTab,
 }: DocumentMobileTabPanelProps) => {
   const [showContent, setShowContent] = useState(true);
+  const handleNameChange = (tabId: string, nextName: string) => {
+    renameTab(tabId, { newName: nextName });
+  };
+
+  const handleEmojiChange = (tabId: string, nextEmoji: string) => {
+    renameTab(tabId, { emoji: nextEmoji });
+  };
 
   return (
     <div
@@ -84,27 +97,17 @@ export const DocumentMobileTabPanel = ({
                   className="w-full flex mt-[8px] flex-col gap-[8px]"
                 >
                   <TabItem
+                    tabId={tab.id}
                     hideContentMenu={true}
                     name={tab.name}
                     emoji={tab.emoji || ''}
                     onNameChange={(nextName: string) =>
-                      setTabs((prev) =>
-                        prev.map((_tab) =>
-                          _tab.id === tab.id
-                            ? { ..._tab, name: nextName }
-                            : _tab,
-                        ),
-                      )
+                      handleNameChange(tab.id, nextName)
                     }
                     onEmojiChange={(nextEmoji: string) =>
-                      setTabs((prev) =>
-                        prev.map((_tab) =>
-                          _tab.id === tab.id
-                            ? { ..._tab, emoji: nextEmoji }
-                            : _tab,
-                        ),
-                      )
+                      handleEmojiChange(tab.id, nextEmoji)
                     }
+                    onDuplicate={() => duplicateTab(tab.id)}
                     isActive={tab.id === activeTabId}
                     onClick={() => setActiveTabId(tab.id)}
                   />
