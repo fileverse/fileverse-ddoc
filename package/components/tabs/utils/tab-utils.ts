@@ -11,6 +11,20 @@ export interface Tab {
 const DEFAULT_TAB_ID = 'default-tab';
 const DEFAULT_TAB_NAME = 'Tab 1';
 
+export function migrateDefaultFragmentToTab(doc: Y.Doc, targetTabId: string) {
+  const defaultFragment = doc.getXmlFragment('default');
+  const targetFragment = doc.getXmlFragment(targetTabId);
+
+  if (defaultFragment.length > 0 && targetFragment.length === 0) {
+    doc.transact(() => {
+      const clonedNodes = cloneFragmentContent(defaultFragment);
+
+      targetFragment.insert(0, clonedNodes);
+      defaultFragment.delete(0, defaultFragment.length);
+    });
+  }
+}
+
 export function deriveTabsFromEncodedState(
   yjsEncodedState: string,
   doc: Y.Doc,
@@ -56,6 +70,8 @@ export function deriveTabsFromEncodedState(
       doc.getXmlFragment(DEFAULT_TAB_ID);
     });
   }
+
+  migrateDefaultFragmentToTab(doc, DEFAULT_TAB_ID);
 
   const tabList: Tab[] = [];
 

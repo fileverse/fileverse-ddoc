@@ -798,13 +798,7 @@ const useEditorExtension = ({
         enableCollaboration,
         disableInlineComment,
       ),
-    [
-      onError,
-      ipfsImageUploadFn,
-      isConnected,
-      enableCollaboration,
-      disableInlineComment,
-    ],
+    [isConnected, enableCollaboration, disableInlineComment],
   );
 
   const commentExtension = useMemo(
