@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import cn from 'classnames';
 import { IconButton, LucideIcon, Tooltip } from '@fileverse/ui';
 import {
@@ -12,12 +12,13 @@ import {
 import {
   SortableContext,
   verticalListSortingStrategy,
-  arrayMove,
 } from '@dnd-kit/sortable';
 import { DocumentOutlineProps } from '../toc/types';
 import { MemorizedToC } from '../toc/memorized-toc';
 import { TabDragPreview, SortableTabItem } from './tab-item';
-import { Tab } from './utils/tab-utils';
+import { getTabsYdocNodes, Tab } from './utils/tab-utils';
+import { Editor } from '@tiptap/core';
+import * as Y from 'yjs';
 
 export interface DocumentTabsSidebarProps {
   tabs: Tab[];
@@ -38,11 +39,12 @@ export interface DocumentTabsSidebarProps {
     payload: { newName?: string; emoji?: string },
   ) => void;
   duplicateTab: (tabId: string) => void;
+  orderTab: (destinationTabId: string, activeTabId: string) => void;
+  ydoc: Y.Doc;
 }
 
 export const DocumentTabsSidebar = ({
   tabs,
-  setTabs,
   activeTabId,
   setActiveTabId,
   showTOC,
@@ -56,6 +58,8 @@ export const DocumentTabsSidebar = ({
   createTab,
   renameTab,
   duplicateTab,
+  orderTab,
+  ydoc,
 }: DocumentTabsSidebarProps) => {
   const handleNameChange = (tabId: string, nextName: string) => {
     renameTab(tabId, { newName: nextName });
@@ -79,13 +83,10 @@ export const DocumentTabsSidebar = ({
       onDragEnd={(e) => {
         const { active, over } = e;
         setActiveDragId(null);
-
         if (over && active.id !== over.id) {
-          setTabs((prev) => {
-            const oldIndex = prev.findIndex((tab) => tab.id === active.id);
-            const newIndex = prev.findIndex((tab) => tab.id === over.id);
-            return arrayMove(prev, oldIndex, newIndex);
-          });
+          const activeId = active.id as string;
+          const overId = over.id as string;
+          orderTab(overId, activeId);
         }
       }}
     >
@@ -144,42 +145,21 @@ export const DocumentTabsSidebar = ({
               </div>
 
               {tabs.map((tab) => (
-                <div
+                <DdocTab
                   key={tab.id}
-                  className="w-full flex mt-[8px] flex-col gap-[8px]"
-                >
-                  <SortableTabItem
-                    key={tab.id}
-                    id={tab.id}
-                    tabId={tab.id}
-                    name={tab.name}
-                    emoji={tab.emoji}
-                    onNameChange={(nextName: string) =>
-                      handleNameChange(tab.id, nextName)
-                    }
-                    onEmojiChange={(nextEmoji: string) =>
-                      handleEmojiChange(tab.id, nextEmoji)
-                    }
-                    onDuplicate={() => duplicateTab(tab.id)}
-                    isActive={tab.id === activeTabId}
-                    onClick={() => setActiveTabId(tab.id)}
-                  />
-                  <div
-                    className={cn(
-                      'table-of-contents animate-in fade-in slide-in-from-left-5',
-                      tab.id === activeTabId && !activeDragId
-                        ? 'block'
-                        : 'hidden',
-                    )}
-                  >
-                    <MemorizedToC
-                      editor={editor}
-                      items={items}
-                      setItems={setItems}
-                      orientation={orientation}
-                    />
-                  </div>
-                </div>
+                  tab={tab}
+                  handleEmojiChange={handleEmojiChange}
+                  handleNameChange={handleNameChange}
+                  onClick={() => setActiveTabId(tab.id)}
+                  editor={editor}
+                  tocItem={items}
+                  setTocItems={setItems}
+                  orientation={orientation}
+                  activeTabId={activeTabId}
+                  duplicateTab={duplicateTab}
+                  activeDragId={activeDragId}
+                  ydoc={ydoc}
+                />
               ))}
             </>
           )}
@@ -195,5 +175,88 @@ export const DocumentTabsSidebar = ({
         ) : null}
       </DragOverlay>
     </DndContext>
+  );
+};
+
+export const DdocTab = ({
+  tab,
+  handleEmojiChange,
+  handleNameChange,
+  onClick,
+  editor,
+  tocItem,
+  setTocItems,
+  orientation,
+  activeTabId,
+  duplicateTab,
+  activeDragId,
+  ydoc,
+}: {
+  tab: Tab;
+  handleNameChange: (tabId: string, nextName: string) => void;
+  handleEmojiChange: (tabId: string, nextEmoji: string) => void;
+  onClick: () => void;
+  editor: Editor;
+  tocItem: DocumentOutlineProps['items'];
+  setTocItems: DocumentOutlineProps['setItems'];
+  orientation: DocumentOutlineProps['orientation'];
+  activeTabId: string;
+  duplicateTab: (tabId: string) => void;
+  activeDragId: string | null;
+  ydoc: Y.Doc;
+}) => {
+  const [tabMetadata, setTabMetadata] = useState({
+    title: tab.name,
+    showToc: tab.showOutline,
+    emoji: tab.emoji,
+  });
+  useEffect(() => {
+    const { tabs } = getTabsYdocNodes(ydoc);
+    const metadataMap = tabs.get(tab.id);
+
+    if (!(metadataMap instanceof Y.Map)) return;
+
+    const observer = () => {
+      setTabMetadata({
+        title: metadataMap.get('name') as string,
+        emoji: metadataMap.get('emoji') as string,
+        showToc: metadataMap.get('showOutline') as boolean,
+      });
+    };
+
+    metadataMap.observe(observer);
+
+    return () => metadataMap.unobserve(observer);
+  }, [tab.id, ydoc]);
+  return (
+    <div className="w-full flex mt-[8px] flex-col gap-[8px]">
+      <SortableTabItem
+        key={tab.id}
+        id={tab.id}
+        tabId={tab.id}
+        name={tabMetadata.title}
+        emoji={tabMetadata.emoji}
+        onNameChange={(nextName: string) => handleNameChange(tab.id, nextName)}
+        onEmojiChange={(nextEmoji: string) =>
+          handleEmojiChange(tab.id, nextEmoji)
+        }
+        onDuplicate={() => duplicateTab(tab.id)}
+        isActive={tab.id === activeTabId}
+        onClick={onClick}
+      />
+      <div
+        className={cn(
+          'table-of-contents animate-in fade-in slide-in-from-left-5',
+          tab.id === activeTabId && !activeDragId ? 'block' : 'hidden',
+        )}
+      >
+        <MemorizedToC
+          editor={editor}
+          items={tocItem}
+          setItems={setTocItems}
+          orientation={orientation}
+        />
+      </div>
+    </div>
   );
 };

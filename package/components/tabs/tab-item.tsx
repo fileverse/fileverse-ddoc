@@ -12,7 +12,6 @@ import {
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { TabEmojiPicker } from './tab-emoji-picker';
-
 export const SortableTabItem = (props: any) => {
   const {
     attributes,

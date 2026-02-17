@@ -1,6 +1,7 @@
 import { Editor } from '@tiptap/react';
 import React, { Dispatch, SetStateAction } from 'react';
 import { Tab } from '../tabs/utils/tab-utils';
+import * as Y from 'yjs';
 
 export interface ToCItemType {
   id: string;
@@ -48,4 +49,6 @@ export interface DocumentOutlineProps {
     payload: { newName?: string; emoji?: string },
   ) => void;
   duplicateTab: (tabId: string) => void;
+  orderTab: (destinationTabId: string, activeTabId: string) => void;
+  ydoc: Y.Doc;
 }

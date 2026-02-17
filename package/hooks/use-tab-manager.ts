@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import * as Y from 'yjs';
 import { DdocProps } from '../types';
 import {
@@ -22,18 +22,56 @@ export const useTabManager = ({
   initialContent,
   enableCollaboration,
 }: UseTabManagerArgs) => {
-  const [activeTabId, setActiveTabId] = useState('');
+  const [activeTabId, _setActiveTabId] = useState('');
   const [tabs, setTabs] = useState<Tab[]>([]);
 
-  useMemo(() => {
+  const setActiveTabId = (id: string) => {
+    if (!ydoc) return;
+    const { activeTab } = getTabsYdocNodes(ydoc);
+    if (!(activeTab instanceof Y.Text)) return;
+
+    activeTab.delete(0, activeTab.length);
+    activeTab.insert(0, id);
+    _setActiveTabId(id);
+  };
+
+  useEffect(() => {
     const { tabList, activeTabId: id } = deriveTabsFromEncodedState(
       initialContent as string,
       ydoc,
     );
-    setActiveTabId(id);
+    _setActiveTabId(id);
     setTabs(tabList);
-    return tabList;
   }, [initialContent, ydoc]);
+
+  useEffect(() => {
+    if (!ydoc) return;
+
+    const { order, tabs: tabsMap, activeTab } = getTabsYdocNodes(ydoc);
+
+    if (!(order instanceof Y.Array)) return;
+
+    const handleTabList = () => {
+      const tabList: Tab[] = [];
+
+      order.toArray().forEach((tabId) => {
+        const tabMetadata = tabsMap.get(tabId);
+
+        if (!tabMetadata) return;
+
+        tabList.push({
+          id: tabId,
+          name: tabMetadata.get('name') as string,
+          showOutline: tabMetadata.get('showOutline') as boolean,
+          emoji: tabMetadata.get('emoji') as string | null,
+        });
+      });
+      setTabs(tabList);
+      _setActiveTabId(activeTab?.toString() || '');
+    };
+
+    order.observe(handleTabList);
+  }, [ydoc]);
 
   const createTab = useCallback(() => {
     const ddocTabs = ydoc.getMap('ddocTabs');
@@ -67,9 +105,6 @@ export const useTabManager = ({
       metadata.set('emoji', newTab.emoji);
       tabsMap.set(newTab.id, metadata);
 
-      // Push to order
-      order.push([newTab.id]);
-
       // Create fragment
       ydoc.getXmlFragment(newTab.id);
 
@@ -78,12 +113,9 @@ export const useTabManager = ({
         activeTabText.delete(0, activeTabText.length);
         activeTabText.insert(0, tabId);
       }
+      // Push to order
+      order.push([newTab.id]);
     });
-
-    setTabs((prev) => {
-      return [...prev, newTab];
-    });
-    setActiveTabId(tabId);
 
     return tabId;
   }, [enableCollaboration, ydoc, tabs]);
@@ -113,24 +145,11 @@ export const useTabManager = ({
         // Remove metadata
         tabs.delete(tabId);
 
-        // Remove from order
-        order.delete(index, 1);
-
         // Clear fragment content
         const fragment = ydoc.getXmlFragment(tabId);
         if (fragment.length > 0) {
           fragment.delete(0, fragment.length);
         }
-        setTabs((prev) => {
-          const index = prev.findIndex((t) => t.id === tabId);
-          if (index === -1) return prev;
-
-          const next = [...prev];
-          next.splice(index, 1);
-
-          return next;
-        });
-
         // Fix active tab if necessary
         if (activeTab instanceof Y.Text) {
           const currentActive = activeTab.toString();
@@ -144,6 +163,8 @@ export const useTabManager = ({
             }
           }
         }
+        // Remove from order
+        order.delete(index, 1);
       });
     },
     [ydoc],
@@ -170,17 +191,6 @@ export const useTabManager = ({
         newName && metadata.set('name', newName);
         emoji && metadata.set('emoji', emoji);
       });
-      setTabs((prev) =>
-        prev.map((_tab) =>
-          _tab.id === tabId
-            ? {
-                ..._tab,
-                name: newName ?? _tab.name,
-                emoji: emoji ?? _tab.emoji,
-              }
-            : _tab,
-        ),
-      );
     },
     [ydoc],
   );
@@ -208,7 +218,6 @@ export const useTabManager = ({
         });
 
         newMeta.set('name', newTabName);
-        tabs.set(newTabId, newMeta);
 
         const originalFragment = ydoc.getXmlFragment(tabId);
         const newFragment = ydoc.getXmlFragment(newTabId);
@@ -226,29 +235,29 @@ export const useTabManager = ({
           activeTab.delete(0, activeTab.length);
           activeTab.insert(0, newTabId);
         }
+        tabs.set(newTabId, newMeta);
       });
-
-      setTabs((prev) => {
-        const index = prev.findIndex((t) => t.id === tabId);
-        if (index === -1) return prev;
-
-        const original = prev[index];
-
-        const duplicated: Tab = {
-          ...original,
-          id: newTabId,
-          name: newTabName,
-        };
-
-        const next = [...prev];
-        next.splice(index + 1, 0, duplicated);
-
-        return next;
-      });
-
-      setActiveTabId(newTabId);
 
       return newTabId;
+    },
+    [ydoc],
+  );
+
+  const orderTab = useCallback(
+    (destinationTabId: string, movedTabId: string) => {
+      const { order } = getTabsYdocNodes(ydoc);
+      if (!(order instanceof Y.Array)) return;
+
+      const currentOrder = order.toArray();
+      const oldIndex = currentOrder.indexOf(movedTabId);
+      const newIndex = currentOrder.indexOf(destinationTabId);
+
+      if (oldIndex === -1 || newIndex === -1) return;
+
+      ydoc.transact(() => {
+        order.delete(oldIndex, 1);
+        order.insert(newIndex, [movedTabId]);
+      });
     },
     [ydoc],
   );
@@ -256,11 +265,12 @@ export const useTabManager = ({
   return {
     tabs,
     activeTabId,
-    setTabs: () => {},
+    setTabs,
     setActiveTabId,
     createTab,
     deleteTab,
     renameTab,
     duplicateTab,
+    orderTab,
   };
 };
