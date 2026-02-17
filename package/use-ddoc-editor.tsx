@@ -25,6 +25,7 @@ import { handleContentPrint, handlePrint } from './utils/handle-print';
 // import { Table } from './extensions/supercharged-table/extension-table';
 import { isBlackOrWhiteShade } from './utils/color-utils';
 import { useResponsive } from './utils/responsive';
+import { useTheme } from '@fileverse/ui';
 import { headingToSlug } from './utils/heading-to-slug';
 import { AiAutocomplete } from './extensions/ai-autocomplete/ai-autocomplete';
 import { AIWriter } from './extensions/ai-writer';
@@ -34,6 +35,8 @@ import { useSyncMachine } from './sync-local/useSyncMachine';
 import { ToCItemType } from './components/toc/types';
 import { TWITTER_REGEX } from './constants/twitter';
 import { useRtcWebsocketDisconnector } from './hooks/use-rtc-websocket-disconnector';
+import { getResponsiveColor } from './utils/colors';
+import { Mark } from 'prosemirror-model';
 // import { SyncCursor } from './extensions/sync-cursor';
 
 const usercolors = [
@@ -927,79 +930,69 @@ export const useDdocEditor = ({
   }, [editor]);
 
   // FOR AUTO TEXT STYLE CLEANUP WHEN DOCUMENT IS RENDERED
-  const isDarkMode = useRef(localStorage.getItem('theme') !== null);
-  const initialDarkModeCleanupDone = useRef(false); // Flag to run only once
-
+  const { theme } = useTheme();
+  const themeRef = useRef(theme);
   useEffect(() => {
-    // Exit if not dark mode, editor not ready, content loading, or cleanup already done
-    if (
-      !editor ||
-      isContentLoading ||
-      !isDarkMode.current ||
-      initialDarkModeCleanupDone.current
-    ) {
+    window.addEventListener(
+      'theme-update',
+      (e) => (themeRef.current = (e as CustomEvent).detail.value),
+    );
+  }, []);
+  useEffect(() => {
+    // Exit if editor not ready, content loading.
+    if (!editor || isContentLoading || !initialContent) {
       return;
     }
+    const timeoutId = setTimeout(() => {
+      const { from, to } = editor.state.selection;
 
-    // Only run if there's initial content to process
-    if (initialContent) {
-      const timeoutId = setTimeout(() => {
-        // Double-check editor exists inside timeout
-        if (!editor) return;
-
-        const { from, to } = editor.state.selection;
-
-        // Get all text color marks
-        const marks: { from: number; to: number; mark: any }[] = [];
-        editor.state.doc.descendants((node, pos) => {
-          if (node.marks) {
-            node.marks.forEach((mark) => {
-              if (mark.type.name === 'textStyle' && mark.attrs.color) {
-                marks.push({
-                  from: pos,
-                  to: pos + node.nodeSize,
-                  mark,
-                });
-              }
-            });
-          }
-        });
-
-        // Check if any marks need processing
-        if (marks.length > 0) {
-          // First, only remove color attribute from text styles
-          editor
-            .chain()
-            .selectAll()
-            .setColor('') // This removes only the color attribute
-            .run();
-
-          // Then, restore colors that aren't black/white shades
-          marks.forEach(({ from: markFrom, to: markTo, mark }) => {
-            const color = mark.attrs.color;
-            if (!isBlackOrWhiteShade(color)) {
-              editor
-                .chain()
-                .setTextSelection({ from: markFrom, to: markTo })
-                .setColor(color)
-                .run();
+      // Get all text color marks
+      const marks: { from: number; to: number; mark: Mark }[] = [];
+      editor.state.doc.descendants((node, pos) => {
+        if (node.marks) {
+          node.marks.forEach((mark) => {
+            if (mark.type.name === 'textStyle' && mark.attrs.color) {
+              marks.push({
+                from: pos,
+                to: pos + node.nodeSize,
+                mark,
+              });
             }
           });
-
-          // Restore original selection
-          editor.commands.setTextSelection({ from, to });
         }
+      });
 
-        // Mark cleanup as done
-        initialDarkModeCleanupDone.current = true;
-      }, 100);
+      // Check if any marks need processing
+      if (marks.length > 0) {
+        const transaction = editor.chain();
+        marks.forEach(({ from: markFrom, to: markTo, mark }) => {
+          console.log(mark);
+          const originalColor =
+            mark.attrs['data-original-color'] || mark.attrs.color;
+          if (originalColor.startsWith('var(--color-editor')) return;
+          const responsiveColor = getResponsiveColor(
+            originalColor,
+            themeRef.current,
+          );
 
-      return () => clearTimeout(timeoutId);
-    } else {
-      // If there's no initial content, consider cleanup done for this load
-      initialDarkModeCleanupDone.current = true;
-    }
-  }, [editor, initialContent, isContentLoading]); // Keep dependencies, the flag prevents re-runs
+          if (responsiveColor !== mark.attrs.color) {
+            transaction
+              .setTextSelection({ from: markFrom, to: markTo })
+              .setMark('textStyle', {
+                color: responsiveColor,
+                'data-original-color': originalColor,
+              });
+          }
+        });
+        transaction.run();
+
+        // Restore original selection
+        editor.commands.setTextSelection({ from, to });
+      }
+    }, 100);
+
+    return () => clearTimeout(timeoutId);
+  }, [editor, initialContent, isContentLoading, themeRef.current]);
 
   return {
     editor,

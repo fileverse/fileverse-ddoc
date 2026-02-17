@@ -10,6 +10,38 @@ import {
 } from '@tiptap/extension-table-of-contents';
 import Highlight from '@tiptap/extension-highlight';
 import { TextStyle } from '@tiptap/extension-text-style';
+
+const ExtendedTextStyle = TextStyle.extend({
+  addAttributes() {
+    return {
+      // ...this.parent?.(),
+      // color: {
+      //   default: null,
+      //   parseHTML: (element) => element.style.color,
+      //   renderHTML: (attributes) => {
+      //     if (!attributes.color) {
+      //       return {};
+      //     }
+      //     return {
+      //       style: `color: ${attributes.color}`,
+      //     };
+      //   },
+      // },
+      'data-original-color': {
+        default: null,
+        parseHTML: (element) => element.getAttribute('data-original-color'),
+        renderHTML: (attributes) => {
+          if (!attributes['data-original-color']) {
+            return {};
+          }
+          return {
+            'data-original-color': attributes['data-original-color'],
+          };
+        },
+      },
+    };
+  },
+});
 import HorizontalRule from './horizontal-rule';
 import ColumnExtension from './multi-column';
 import CustomKeymap from './custom-keymap';
@@ -223,7 +255,7 @@ export const defaultExtensions = ({
     showOnlyCurrent: true,
   }),
   Highlight.configure({ multicolor: true }),
-  TextStyle,
+  ExtendedTextStyle,
   Color,
   TaskList.configure({
     HTMLAttributes: {

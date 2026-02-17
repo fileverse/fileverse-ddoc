@@ -1,3 +1,5 @@
+import Color from 'color';
+
 export const colors = [
   { color: '#000000', code: 'bg-[#000000]' },
   { color: '#434343', code: 'bg-[#434343]' },
@@ -622,3 +624,30 @@ export const textColors = [
     dark: '#808080',
   },
 ];
+export const getResponsiveColor = (
+  color?: string,
+  theme: 'light' | 'dark' = 'light',
+) => {
+  if (!color) return;
+  const colorObj = Color(color);
+  if (theme === 'dark') {
+    if (colorObj.isDark()) {
+      console.log(
+        color,
+        colorObj.alpha(0.5).lighten(3).hex(),
+        'lightened color',
+      );
+      return colorObj.alpha(0.5).lighten(3).hex();
+    }
+  } else {
+    if (colorObj.isLight()) {
+      console.log(
+        color,
+        colorObj.alpha(0.5).darken(0.6).hex(),
+        'darkened color',
+      );
+      return colorObj.alpha(0.5).darken(0.6).hex();
+    }
+  }
+  return color;
+};
