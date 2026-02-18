@@ -17,29 +17,23 @@ export const shouldShow = ({ editor }: { editor: Editor }) => {
   }
 
   const { from, to, empty } = editor.state.selection;
-  const isImageSelected =
-    editor.state.doc.nodeAt(from)?.type.name === 'resizableMedia' ||
-    editor.isActive('image');
-  const isIframeSelected =
-    editor.state.doc.nodeAt(from)?.type.name === 'iframe';
+  const isImageSelected = editor.isActive('image');
   const isCodeBlockSelected = editor.isActive('codeBlock');
-  const isPageBreak = editor.state.doc.nodeAt(from)?.type.name === 'pageBreak';
-  const isReminderBlockSelected =
-    editor.state.doc.nodeAt(from)?.type.name === 'reminderBlock';
-  const isAIWriterSelected =
-    editor.state.doc.nodeAt(from)?.type.name === 'aiWriter';
   const isHorizontalRule = editor.isActive('horizontalRule');
 
-  if (
-    empty ||
-    isImageSelected ||
-    isCodeBlockSelected ||
-    isIframeSelected ||
-    isPageBreak ||
-    isReminderBlockSelected ||
-    isAIWriterSelected ||
-    isHorizontalRule
-  ) {
+  const ignoreList = [
+    'resizableMedia',
+    'iframe',
+    'pageBreak',
+    'reminderBlock',
+    'aiWriter',
+    'actionButton',
+  ];
+
+  if (ignoreList.includes(editor.state.doc.nodeAt(from)?.type.name ?? ''))
+    return false;
+
+  if (empty || isImageSelected || isCodeBlockSelected || isHorizontalRule) {
     return false;
   }
 
