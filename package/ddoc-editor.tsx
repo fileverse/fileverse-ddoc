@@ -318,6 +318,7 @@ const DdocEditor = forwardRef(
       collaborationKey,
       collaborationKeyPair,
       collabConfig,
+      isDDocOwner,
       ...rest,
     });
 

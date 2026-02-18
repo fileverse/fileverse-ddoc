@@ -33,7 +33,7 @@ export function deriveTabsFromEncodedState(
     try {
       Y.applyUpdate(doc, toUint8Array(yjsEncodedState));
     } catch (err) {
-      console.warn('Invalid Yjs update — initializing fresh doc.');
+      console.log(err);
     }
   }
 
@@ -99,23 +99,29 @@ export function deriveTabsFromEncodedState(
 export function getTabsYdocNodes(doc: Y.Doc) {
   const root = doc.getMap('ddocTabs');
 
-  const order = root.get('order');
-  const tabs = root.get('tabs');
-  const activeTab = root.get('activeTabId');
-
-  if (!(order instanceof Y.Array)) {
-    throw new Error('Invalid ddocTabs.order');
+  let order = root.get('order') as Y.Array<string>;
+  if (!order) {
+    order = new Y.Array<string>();
+    root.set('order', order);
   }
 
-  if (!(tabs instanceof Y.Map)) {
-    throw new Error('Invalid ddocTabs.tabs');
+  let tabs = root.get('tabs') as Y.Map<Y.Map<string | boolean>>;
+  if (!tabs) {
+    tabs = new Y.Map<Y.Map<string | boolean>>();
+    root.set('tabs', tabs);
+  }
+
+  let activeTab = root.get('activeTabId') as Y.Text;
+  if (!activeTab) {
+    activeTab = new Y.Text();
+    root.set('activeTabId', activeTab);
   }
 
   return {
     root,
     order,
     tabs,
-    activeTab: activeTab instanceof Y.Text ? activeTab : null,
+    activeTab,
   };
 }
 

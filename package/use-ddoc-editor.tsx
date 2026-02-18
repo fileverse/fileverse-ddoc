@@ -57,6 +57,7 @@ export const useDdocEditor = ({
     ydoc: yjsSetup.ydoc,
     initialContent,
     enableCollaboration,
+    isDDocOwner: rest.isDDocOwner || false,
   });
 
   const tabEditor = useTabEditor({

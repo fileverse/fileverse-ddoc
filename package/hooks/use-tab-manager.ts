@@ -15,12 +15,14 @@ interface UseTabManagerArgs {
   ydoc: Y.Doc;
   initialContent: DdocProps['initialContent'];
   enableCollaboration: DdocProps['enableCollaboration'];
+  isDDocOwner: boolean;
 }
 
 export const useTabManager = ({
   ydoc,
   initialContent,
   enableCollaboration,
+  isDDocOwner,
 }: UseTabManagerArgs) => {
   const [activeTabId, _setActiveTabId] = useState('');
   const [tabs, setTabs] = useState<Tab[]>([]);
@@ -28,34 +30,44 @@ export const useTabManager = ({
   const setActiveTabId = (id: string) => {
     if (!ydoc) return;
     const { activeTab } = getTabsYdocNodes(ydoc);
-    if (!(activeTab instanceof Y.Text)) return;
-
     activeTab.delete(0, activeTab.length);
     activeTab.insert(0, id);
     _setActiveTabId(id);
   };
 
   useEffect(() => {
-    const { tabList, activeTabId: id } = deriveTabsFromEncodedState(
-      initialContent as string,
-      ydoc,
-    );
-    _setActiveTabId(id);
-    setTabs(tabList);
-  }, [initialContent, ydoc]);
+    if (!ydoc) return;
+
+    const isNewDdoc = isDDocOwner && !enableCollaboration && !initialContent;
+
+    if (initialContent || isNewDdoc) {
+      const { tabList, activeTabId: id } = deriveTabsFromEncodedState(
+        initialContent as string,
+        ydoc,
+      );
+      _setActiveTabId(id);
+      setTabs(tabList);
+    }
+  }, [ydoc, initialContent, isDDocOwner, enableCollaboration]);
 
   useEffect(() => {
     if (!ydoc) return;
 
-    const { order, tabs: tabsMap, activeTab } = getTabsYdocNodes(ydoc);
-
-    if (!(order instanceof Y.Array)) return;
+    const root = ydoc.getMap('ddocTabs');
+    let observedOrder = root.get('order') as Y.Array<string> | undefined;
 
     const handleTabList = () => {
+      const currentOrder =
+        (root.get('order') as Y.Array<string>) || observedOrder;
+      const currentTabsMap = root.get('tabs') as Y.Map<Y.Map<string | boolean>>;
+      const currentActiveTab = root.get('activeTabId') as Y.Text;
+
+      if (!currentOrder) return;
+
       const tabList: Tab[] = [];
 
-      order.toArray().forEach((tabId) => {
-        const tabMetadata = tabsMap.get(tabId);
+      currentOrder.toArray().forEach((tabId) => {
+        const tabMetadata = currentTabsMap?.get(tabId);
 
         if (!tabMetadata) return;
 
@@ -67,10 +79,34 @@ export const useTabManager = ({
         });
       });
       setTabs(tabList);
-      _setActiveTabId(activeTab?.toString() || '');
+      _setActiveTabId(currentActiveTab?.toString() || '');
     };
 
-    order.observe(handleTabList);
+    const observeCurrentOrder = () => {
+      if (observedOrder) {
+        observedOrder.unobserve(handleTabList);
+      }
+      observedOrder = root.get('order') as Y.Array<string>;
+      observedOrder?.observe(handleTabList);
+    };
+
+    handleTabList();
+    observeCurrentOrder();
+
+    const handleRootChange = () => {
+      const latestOrder = root.get('order') as Y.Array<string> | undefined;
+      if (latestOrder !== observedOrder) {
+        observeCurrentOrder();
+        handleTabList();
+      }
+    };
+
+    root.observe(handleRootChange);
+
+    return () => {
+      observedOrder?.unobserve(handleTabList);
+      root.unobserve(handleRootChange);
+    };
   }, [ydoc]);
 
   const createTab = useCallback(() => {
@@ -91,7 +127,7 @@ export const useTabManager = ({
     const tabId = fromUint8Array(generateRandomBytes(), true);
 
     const newTab: Tab = {
-      name: `Tab ${tabs.length + 1}`,
+      name: `Tab ${order.length + 1}`,
       showOutline: true,
       emoji: null,
       id: tabId,
@@ -118,19 +154,11 @@ export const useTabManager = ({
     });
 
     return tabId;
-  }, [enableCollaboration, ydoc, tabs]);
+  }, [enableCollaboration, ydoc]);
 
   const deleteTab = useCallback(
     (tabId: string) => {
       const { order, tabs, activeTab } = getTabsYdocNodes(ydoc);
-
-      if (!(order instanceof Y.Array)) {
-        throw new Error('Invalid ddocTabs.order');
-      }
-
-      if (!(tabs instanceof Y.Map)) {
-        throw new Error('Invalid ddocTabs.tabs');
-      }
 
       if (order.length <= 1) {
         throw new Error('Cannot delete the last remaining tab');
@@ -182,7 +210,7 @@ export const useTabManager = ({
       if (!(metadata instanceof Y.Map)) {
         toast({
           title: 'Rename tab error',
-          description: `Unable to rename to ${newName} `,
+          description: `Tab not found.`,
         });
         return;
       }
@@ -211,7 +239,7 @@ export const useTabManager = ({
       const newTabName = `${originalName} (Copy)`;
 
       ydoc.transact(() => {
-        const newMeta = new Y.Map<string | boolean | null>();
+        const newMeta = new Y.Map<string | boolean>();
 
         originalMeta.forEach((value, key) => {
           newMeta.set(key, value);
@@ -246,7 +274,6 @@ export const useTabManager = ({
   const orderTab = useCallback(
     (destinationTabId: string, movedTabId: string) => {
       const { order } = getTabsYdocNodes(ydoc);
-      if (!(order instanceof Y.Array)) return;
 
       const currentOrder = order.toArray();
       const oldIndex = currentOrder.indexOf(movedTabId);
