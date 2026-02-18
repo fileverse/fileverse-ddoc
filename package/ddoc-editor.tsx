@@ -979,6 +979,7 @@ const DdocEditor = forwardRef(
                 setUsername={setUsername}
                 activeCommentId={activeCommentId}
                 setActiveCommentId={setActiveCommentId}
+                activeTabId={activeTabId}
                 focusCommentWithActiveId={focusCommentWithActiveId}
                 initialComments={initialComments}
                 setInitialComments={setInitialComments}

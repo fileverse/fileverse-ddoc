@@ -163,6 +163,11 @@ export const useTabEditor = ({
   const [slides, setSlides] = useState<string[]>([]);
   const memoizedExtensions = useMemo(() => extensions, [extensions]);
 
+  useEffect(() => {
+    if (!activeTabId) return;
+    setActiveCommentId(null);
+  }, [activeTabId, setActiveCommentId]);
+
   const preventDeletionIfItIsReminderNode = (
     view: EditorView,
     event: KeyboardEvent,

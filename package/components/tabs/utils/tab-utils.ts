@@ -8,8 +8,8 @@ export interface Tab {
   emoji: string | null;
 }
 
-const DEFAULT_TAB_ID = 'default-tab';
-const DEFAULT_TAB_NAME = 'Tab 1';
+export const DEFAULT_TAB_ID = 'default-tab';
+export const DEFAULT_TAB_NAME = 'Tab 1';
 
 export function migrateDefaultFragmentToTab(doc: Y.Doc, targetTabId: string) {
   const defaultFragment = doc.getXmlFragment('default');
