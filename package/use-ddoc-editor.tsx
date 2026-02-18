@@ -414,12 +414,22 @@ export const useDdocEditor = ({
   }, [editor]);
 
   // Fix for TableOfContents not updating in Tiptap v3
+  const tocDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   useEffect(() => {
     if (!editor) return;
 
     const handleUpdate = () => {
       if (editor && !editor.isDestroyed) {
-        editor.commands.updateTableOfContents();
+        if (tocDebounceRef.current) {
+          clearTimeout(tocDebounceRef.current);
+        }
+        tocDebounceRef.current = setTimeout(() => {
+          tocDebounceRef.current = null;
+          if (!editor.isDestroyed) {
+            editor.commands.updateTableOfContents();
+          }
+        }, 300);
       }
     };
 
@@ -427,6 +437,9 @@ export const useDdocEditor = ({
 
     return () => {
       editor.off('update', handleUpdate);
+      if (tocDebounceRef.current) {
+        clearTimeout(tocDebounceRef.current);
+      }
     };
   }, [editor]);
 
@@ -832,28 +845,67 @@ export const useDdocEditor = ({
     onCollaboratorChange?.(collaborators);
   }, [editor?.storage?.collaborationCaret?.users]);
 
+  const charCountDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
   useEffect(() => {
-    setCharacterCount &&
-      setCharacterCount(editor?.storage.characterCount.characters() ?? 0);
-    setWordCount && setWordCount(editor?.storage.characterCount.words() ?? 0);
-  }, [
-    editor?.storage.characterCount.characters(),
-    editor?.storage.characterCount.words(),
-  ]);
+    if (!editor) return;
+
+    const updateCounts = () => {
+      if (charCountDebounceRef.current) {
+        clearTimeout(charCountDebounceRef.current);
+      }
+      charCountDebounceRef.current = setTimeout(() => {
+        charCountDebounceRef.current = null;
+        if (editor && !editor.isDestroyed) {
+          setCharacterCount?.(editor.storage.characterCount.characters() ?? 0);
+          setWordCount?.(editor.storage.characterCount.words() ?? 0);
+        }
+      }, 500);
+    };
+
+    // Initial count
+    updateCounts();
+    editor.on('update', updateCounts);
+
+    return () => {
+      editor.off('update', updateCounts);
+      if (charCountDebounceRef.current) {
+        clearTimeout(charCountDebounceRef.current);
+      }
+    };
+  }, [editor]);
+
+  const onChangeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   useEffect(() => {
     const handler = (update: Uint8Array, origin: any) => {
       if (origin === 'self') return;
-      onChange?.(
-        fromUint8Array(Y.encodeStateAsUpdate(ydoc)),
-        fromUint8Array(update),
-      );
+      const chunk = fromUint8Array(update);
+
+      // Debounce the expensive full-state encoding.
+      // The incremental chunk is tiny and fires immediately via the second arg.
+      // The full Y.Doc encoding (first arg) is O(n) and only needed for
+      // persistence — batching it avoids encoding on every keystroke.
+      if (onChangeDebounceRef.current) {
+        clearTimeout(onChangeDebounceRef.current);
+      }
+      onChangeDebounceRef.current = setTimeout(() => {
+        onChangeDebounceRef.current = null;
+        onChange?.(fromUint8Array(Y.encodeStateAsUpdate(ydoc)), chunk);
+      }, 300);
     };
     if (ydoc) {
       ydoc.on('update', handler);
     }
     return () => {
       ydoc?.off('update', handler);
+      if (onChangeDebounceRef.current) {
+        clearTimeout(onChangeDebounceRef.current);
+      }
     };
   }, [ydoc]);
 

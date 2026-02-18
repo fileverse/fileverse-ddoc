@@ -34,6 +34,44 @@ interface DocumentCache {
 let globalDocCache: DocumentCache | null = null;
 let globalLastModifyTime = 0;
 
+// --- Global collapse state tracker ---
+// Instead of N DBlock instances each registering editor.on('update') and
+// forcing a re-render on every keystroke, a single listener tracks collapsed
+// heading IDs and only notifies subscribers when collapse state changes.
+type CollapseChangeCallback = () => void;
+const collapseSubscribers = new Set<CollapseChangeCallback>();
+let collapseTrackerEditor: Editor | null = null;
+let lastCollapseSnapshot = '';
+
+function getCollapsedSnapshot(editor: Editor): string {
+  const doc = editor.state.doc;
+  let snapshot = '';
+  for (let i = 0; i < doc.childCount; i++) {
+    const child = doc.child(i);
+    if (child.type.name === 'dBlock') {
+      const heading = child.content.firstChild;
+      if (heading?.type.name === 'heading' && heading.attrs.isCollapsed) {
+        snapshot += (heading.attrs.id || i) + ',';
+      }
+    }
+  }
+  return snapshot;
+}
+
+function initCollapseTracker(editor: Editor) {
+  if (collapseTrackerEditor === editor) return;
+  collapseTrackerEditor = editor;
+  lastCollapseSnapshot = '';
+
+  editor.on('update', () => {
+    const snapshot = getCollapsedSnapshot(editor);
+    if (snapshot !== lastCollapseSnapshot) {
+      lastCollapseSnapshot = snapshot;
+      collapseSubscribers.forEach((cb) => cb());
+    }
+  });
+}
+
 export const useHeadingCollapse = ({
   node,
   getPos,
@@ -45,15 +83,16 @@ export const useHeadingCollapse = ({
   // Keep track of the last document version we've seen
   const lastDocVersionRef = useRef<string>('');
 
-  // Force re-render when editor state changes (to detect heading attribute changes)
-  // CRITICAL FIX: Use transaction-based updates instead of listening to every update event
-  // to avoid O(n) event listeners where n = number of blocks
+  // Only re-render when heading collapse state actually changes,
+  // NOT on every keystroke. This is critical for performance —
+  // with N DBlocks, the old approach caused N re-renders per keystroke.
   const [renderCount, forceUpdate] = useReducer((x) => x + 1, 0);
   const rafIdRef = useRef<number | null>(null);
 
   useEffect(() => {
-    const updateHandler = () => {
-      // Debounce re-renders using requestAnimationFrame to batch updates
+    initCollapseTracker(editor);
+
+    const onCollapseChange = () => {
       if (rafIdRef.current) {
         cancelAnimationFrame(rafIdRef.current);
       }
@@ -63,10 +102,9 @@ export const useHeadingCollapse = ({
       });
     };
 
-    editor.on('update', updateHandler);
+    collapseSubscribers.add(onCollapseChange);
     return () => {
-      editor.off('update', updateHandler);
-      // Clean up pending RAF
+      collapseSubscribers.delete(onCollapseChange);
       if (rafIdRef.current) {
         cancelAnimationFrame(rafIdRef.current);
         rafIdRef.current = null;

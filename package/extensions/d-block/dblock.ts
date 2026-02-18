@@ -929,7 +929,28 @@ export const DBlock = Node.create<DBlockOptions>({
             // Only interested in single space
             if (text !== ' ') return false;
 
-            // Check if there's already an active AI Writer
+            const { state, dispatch } = view;
+            const { $from } = state.selection;
+            const parent = $from.node($from.depth - 1);
+            const node = $from.node($from.depth);
+
+            // Cheap checks first — bail early before any doc traversal.
+            // Only trigger in dBlock > paragraph, and only if paragraph is empty
+            if (
+              parent?.type?.name !== 'dBlock' ||
+              node?.type?.name !== 'paragraph' ||
+              node.textContent !== ''
+            ) {
+              return false;
+            }
+
+            // Check if previous char is also a space (double space)
+            const prevChar = state.doc.textBetween(from - 1, from, '\0');
+            if (prevChar === ' ') {
+              return false;
+            }
+
+            // Only now do the expensive check — we're about to insert aiWriter
             let hasActiveAIWriter = false;
             view.state.doc.descendants((node) => {
               if (node.type.name === 'aiWriter') {
@@ -943,37 +964,19 @@ export const DBlock = Node.create<DBlockOptions>({
               return false;
             }
 
-            const { state, dispatch } = view;
-            const { $from } = state.selection;
-            const parent = $from.node($from.depth - 1);
-            const node = $from.node($from.depth);
-            // Only trigger in dBlock > paragraph, and only if paragraph is empty
-            if (
-              parent?.type?.name === 'dBlock' &&
-              node?.type?.name === 'paragraph' &&
-              node.textContent === ''
-            ) {
-              // Check if previous char is also a space (double space)
-              const prevChar = state.doc.textBetween(from - 1, from, '\0');
-              if (prevChar === ' ') {
-                // Allow double space as normal
-                return false;
-              }
-              // Replace the empty paragraph with aiWriter node
-              const aiWriterNode = state.schema.nodes.aiWriter.create({
-                prompt: '',
-                content: '',
-                tone: 'neutral',
-              });
-              const tr = state.tr.replaceRangeWith(
-                $from.before(),
-                $from.after(),
-                aiWriterNode,
-              );
-              dispatch(tr);
-              return true;
-            }
-            return false;
+            // Replace the empty paragraph with aiWriter node
+            const aiWriterNode = state.schema.nodes.aiWriter.create({
+              prompt: '',
+              content: '',
+              tone: 'neutral',
+            });
+            const tr = state.tr.replaceRangeWith(
+              $from.before(),
+              $from.after(),
+              aiWriterNode,
+            );
+            dispatch(tr);
+            return true;
           },
         },
       }),
