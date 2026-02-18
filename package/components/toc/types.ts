@@ -51,4 +51,5 @@ export interface DocumentOutlineProps {
   duplicateTab: (tabId: string) => void;
   orderTab: (destinationTabId: string, activeTabId: string) => void;
   ydoc: Y.Doc;
+  tabCommentCounts: Record<string, number>;
 }

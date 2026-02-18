@@ -12,6 +12,7 @@ import {
   forwardRef,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -44,6 +45,7 @@ import {
   ORIENTATION_CONSTRAINTS,
 } from './constants/canvas-dimensions';
 import { EmbedSettings } from './extensions/twitter-embed/embed-settings';
+import { DEFAULT_TAB_ID } from './components/tabs/utils/tab-utils';
 
 const DdocEditor = forwardRef(
   (
@@ -553,6 +555,17 @@ const DdocEditor = forwardRef(
     }, [editor, editorRef, isNativeMobile]);
 
     const isMobile = useMediaQuery('(max-width: 768px)');
+    const tabCommentCounts = useMemo(() => {
+      return (initialComments || []).reduce<Record<string, number>>(
+        (acc, comment) => {
+          if (comment.deleted) return acc;
+          const tabId = comment.tabId || DEFAULT_TAB_ID;
+          acc[tabId] = (acc[tabId] || 0) + 1;
+          return acc;
+        },
+        {},
+      );
+    }, [initialComments]);
 
     const renderComp = () => {
       return (
@@ -632,6 +645,7 @@ const DdocEditor = forwardRef(
                 duplicateTab={duplicateTab}
                 orderTab={orderTab}
                 ydoc={ydoc}
+                tabCommentCounts={tabCommentCounts}
               />
             )}
 

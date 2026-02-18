@@ -21,6 +21,7 @@ export const DocumentOutline = ({
   duplicateTab,
   orderTab,
   ydoc,
+  tabCommentCounts,
 }: DocumentOutlineProps) => {
   const isMediaMax1280px = useMediaQuery('(max-width:1280px)');
 
@@ -43,6 +44,7 @@ export const DocumentOutline = ({
       duplicateTab={duplicateTab}
       orderTab={orderTab}
       ydoc={ydoc}
+      tabCommentCounts={tabCommentCounts}
     />
   ) : (
     <DocumentMobileTabPanel
@@ -56,6 +58,7 @@ export const DocumentOutline = ({
       orientation={orientation}
       renameTab={renameTab}
       duplicateTab={duplicateTab}
+      tabCommentCounts={tabCommentCounts}
     />
   );
 };

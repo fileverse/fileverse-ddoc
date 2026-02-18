@@ -41,6 +41,7 @@ export interface DocumentTabsSidebarProps {
   duplicateTab: (tabId: string) => void;
   orderTab: (destinationTabId: string, activeTabId: string) => void;
   ydoc: Y.Doc;
+  tabCommentCounts: Record<string, number>;
 }
 
 export const DocumentTabsSidebar = ({
@@ -60,6 +61,7 @@ export const DocumentTabsSidebar = ({
   duplicateTab,
   orderTab,
   ydoc,
+  tabCommentCounts,
 }: DocumentTabsSidebarProps) => {
   const handleNameChange = (tabId: string, nextName: string) => {
     renameTab(tabId, { newName: nextName });
@@ -159,6 +161,7 @@ export const DocumentTabsSidebar = ({
                   duplicateTab={duplicateTab}
                   activeDragId={activeDragId}
                   ydoc={ydoc}
+                  commentCount={tabCommentCounts[tab.id] || 0}
                 />
               ))}
             </>
@@ -191,6 +194,7 @@ export const DdocTab = ({
   duplicateTab,
   activeDragId,
   ydoc,
+  commentCount,
 }: {
   tab: Tab;
   handleNameChange: (tabId: string, nextName: string) => void;
@@ -204,6 +208,7 @@ export const DdocTab = ({
   duplicateTab: (tabId: string) => void;
   activeDragId: string | null;
   ydoc: Y.Doc;
+  commentCount: number;
 }) => {
   const [tabMetadata, setTabMetadata] = useState({
     title: tab.name,
@@ -243,6 +248,7 @@ export const DdocTab = ({
         onDuplicate={() => duplicateTab(tab.id)}
         isActive={tab.id === activeTabId}
         onClick={onClick}
+        commentCount={commentCount}
       />
       <div
         className={cn(

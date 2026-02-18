@@ -26,6 +26,7 @@ export interface DocumentMobileTabPanelProps {
     payload: { newName?: string; emoji?: string },
   ) => void;
   duplicateTab: (tabId: string) => void;
+  tabCommentCounts: Record<string, number>;
 }
 
 export const DocumentMobileTabPanel = ({
@@ -38,6 +39,7 @@ export const DocumentMobileTabPanel = ({
   orientation,
   renameTab,
   duplicateTab,
+  tabCommentCounts,
 }: DocumentMobileTabPanelProps) => {
   const [showContent, setShowContent] = useState(true);
   const handleNameChange = (tabId: string, nextName: string) => {
@@ -110,6 +112,7 @@ export const DocumentMobileTabPanel = ({
                     onDuplicate={() => duplicateTab(tab.id)}
                     isActive={tab.id === activeTabId}
                     onClick={() => setActiveTabId(tab.id)}
+                    commentCount={tabCommentCounts[tab.id] || 0}
                   />
                   <div
                     className={cn(
