@@ -1035,7 +1035,7 @@ export const useDdocEditor = ({
         tr.setMeta('addToHistory', false);
         editor.view.dispatch(tr);
       }
-    }, 100);
+    }, 0);
 
     return () => clearTimeout(timeoutId);
   }, [editor, initialContent, isContentLoading, themeRef.current]);

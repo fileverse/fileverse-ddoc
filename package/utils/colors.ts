@@ -628,10 +628,6 @@ const lightToDark = (light: number) => {
   return Math.min(95, Math.max(70, 95 - 0.52 * (light - 10)));
 };
 
-// const darkToLight = (light: number) => {
-//   return Math.min(58, Math.max(10, 10 + (95 - light) / 0.52));
-// };
-
 export const getResponsiveColor = (
   color?: string,
   theme: 'light' | 'dark' = 'light',
