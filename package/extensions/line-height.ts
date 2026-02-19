@@ -127,6 +127,29 @@ export const LineHeight = Extension.create({
       new Plugin({
         key: pluginKey,
         appendTransaction: (transactions, _oldState, newState) => {
+          // Only run when a transaction structurally changed the doc
+          // (node splits, pastes, etc.) — not on plain text input.
+          const hasStructuralChange = transactions.some((transaction) => {
+            if (!transaction.docChanged) return false;
+            // A structural change (Enter/split) adds more content than
+            // it replaces. Pure text typing has a 1:1 old-to-new ratio.
+            let structural = false;
+            transaction.steps.forEach((step) => {
+              const stepMap = step.getMap();
+              stepMap.forEach((oldStart, oldEnd, newStart, newEnd) => {
+                const oldSize = oldEnd - oldStart;
+                const newSize = newEnd - newStart;
+                // New block-level node insertion creates a larger delta
+                if (newSize - oldSize > 4) {
+                  structural = true;
+                }
+              });
+            });
+            return structural;
+          });
+
+          if (!hasStructuralChange) return null;
+
           const tr = newState.tr;
           let modified = false;
 
@@ -136,7 +159,6 @@ export const LineHeight = Extension.create({
             transaction.steps.forEach((step) => {
               const stepMap = step.getMap();
               stepMap.forEach((_oldStart, _oldEnd, newStart, newEnd) => {
-                // Check if new content was inserted
                 if (newEnd > newStart) {
                   const docSize = newState.doc.content.size;
                   const safeStart = Math.max(0, Math.min(newStart, docSize));
@@ -145,13 +167,10 @@ export const LineHeight = Extension.create({
                   if (safeEnd <= safeStart) return;
 
                   newState.doc.nodesBetween(safeStart, safeEnd, (node, pos) => {
-                    // Only process our target node types
                     if (!this.options.types.includes(node.type.name)) return;
 
-                    // If node already has lineHeight, skip
                     if (node.attrs.lineHeight) return;
 
-                    // Try to find previous sibling with lineHeight
                     const $pos = newState.doc.resolve(pos);
                     const indexBefore = $pos.index($pos.depth);
 
@@ -164,7 +183,6 @@ export const LineHeight = Extension.create({
                         this.options.types.includes(prevNode.type.name) &&
                         prevNode.attrs.lineHeight
                       ) {
-                        // Copy lineHeight from previous node
                         tr.setNodeMarkup(pos, undefined, {
                           ...node.attrs,
                           lineHeight: prevNode.attrs.lineHeight,

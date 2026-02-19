@@ -1,17 +1,17 @@
 import type { Editor } from '@tiptap/core';
-import { useRef, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useEffect, useCallback, useMemo, useState } from 'react';
 
 export function useAIWriterActiveState(editor: Editor | null): {
   hasAIWriter: boolean;
   canCreateAIWriter: boolean;
 } {
-  const hasAIWriterRef = useRef(false);
+  const [hasAIWriter, setHasAIWriter] = useState(false);
   const editorRef = useRef(editor);
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  // Memoize the check function to prevent recreation on every render
   const checkForAIWriter = useCallback(() => {
     if (!editorRef.current) {
-      hasAIWriterRef.current = false;
+      setHasAIWriter(false);
       return;
     }
 
@@ -23,36 +23,44 @@ export function useAIWriterActiveState(editor: Editor | null): {
       }
       return true;
     });
-    hasAIWriterRef.current = found;
+    setHasAIWriter(found);
   }, []);
 
   useEffect(() => {
     editorRef.current = editor;
     if (!editor) {
-      hasAIWriterRef.current = false;
+      setHasAIWriter(false);
       return;
     }
 
     // Initial check
     checkForAIWriter();
 
-    // Subscribe to document changes
+    // Debounce the doc traversal — aiWriter state doesn't need real-time accuracy
     const onUpdate = () => {
-      checkForAIWriter();
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
+      debounceRef.current = setTimeout(() => {
+        debounceRef.current = null;
+        checkForAIWriter();
+      }, 500);
     };
 
     editor.on('update', onUpdate);
     return () => {
       editor.off('update', onUpdate);
+      if (debounceRef.current) {
+        clearTimeout(debounceRef.current);
+      }
     };
   }, [editor, checkForAIWriter]);
 
-  // Memoize the return value to prevent unnecessary re-renders
   return useMemo(
     () => ({
-      hasAIWriter: hasAIWriterRef.current,
-      canCreateAIWriter: !hasAIWriterRef.current,
+      hasAIWriter,
+      canCreateAIWriter: !hasAIWriter,
     }),
-    [],
+    [hasAIWriter],
   );
 }

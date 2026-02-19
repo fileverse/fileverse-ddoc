@@ -394,11 +394,11 @@ export const useEditorToolbar = ({
       });
     };
     updateMarkStates();
+    // Only update mark states on selection changes — not every transaction.
+    // Text input transactions don't change which marks are active at the cursor.
     editor.on('selectionUpdate', updateMarkStates);
-    editor.on('transaction', updateMarkStates);
     return () => {
       editor.off('selectionUpdate', updateMarkStates);
-      editor.off('transaction', updateMarkStates);
     };
   }, [editor]);
 
