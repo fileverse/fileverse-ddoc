@@ -624,30 +624,25 @@ export const textColors = [
     dark: '#808080',
   },
 ];
+const lightToDark = (light: number) => {
+  return Math.min(95, Math.max(70, 95 - 0.52 * (light - 10)));
+};
+
+// const darkToLight = (light: number) => {
+//   return Math.min(58, Math.max(10, 10 + (95 - light) / 0.52));
+// };
+
 export const getResponsiveColor = (
   color?: string,
   theme: 'light' | 'dark' = 'light',
 ) => {
   if (!color) return;
+  if (color.startsWith('var')) return color;
   const colorObj = Color(color);
+  const light = colorObj.lightness();
   if (theme === 'dark') {
-    if (colorObj.isDark()) {
-      console.log(
-        color,
-        colorObj.alpha(0.5).lighten(3).hex(),
-        'lightened color',
-      );
-      return colorObj.alpha(0.5).lighten(3).hex();
-    }
-  } else {
-    if (colorObj.isLight()) {
-      console.log(
-        color,
-        colorObj.alpha(0.5).darken(0.6).hex(),
-        'darkened color',
-      );
-      return colorObj.alpha(0.5).darken(0.6).hex();
-    }
+    const newlight = lightToDark(light);
+    return colorObj.lightness(newlight).hex();
   }
   return color;
 };
