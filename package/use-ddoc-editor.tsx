@@ -25,6 +25,7 @@ import { handleContentPrint, handlePrint } from './utils/handle-print';
 // import { Table } from './extensions/supercharged-table/extension-table';
 import { isBlackOrWhiteShade } from './utils/color-utils';
 import { useResponsive } from './utils/responsive';
+import { useTheme } from '@fileverse/ui';
 import { headingToSlug } from './utils/heading-to-slug';
 import { AiAutocomplete } from './extensions/ai-autocomplete/ai-autocomplete';
 import { AIWriter } from './extensions/ai-writer';
@@ -34,6 +35,7 @@ import { useSyncMachine } from './sync-local/useSyncMachine';
 import { ToCItemType } from './components/toc/types';
 import { TWITTER_REGEX } from './constants/twitter';
 import { useRtcWebsocketDisconnector } from './hooks/use-rtc-websocket-disconnector';
+import { getResponsiveColor } from './utils/colors';
 // import { SyncCursor } from './extensions/sync-cursor';
 
 const usercolors = [
@@ -979,79 +981,64 @@ export const useDdocEditor = ({
   }, [editor]);
 
   // FOR AUTO TEXT STYLE CLEANUP WHEN DOCUMENT IS RENDERED
-  const isDarkMode = useRef(localStorage.getItem('theme') !== null);
-  const initialDarkModeCleanupDone = useRef(false); // Flag to run only once
-
+  const { theme } = useTheme();
+  const themeRef = useRef(theme);
   useEffect(() => {
-    // Exit if not dark mode, editor not ready, content loading, or cleanup already done
-    if (
-      !editor ||
-      isContentLoading ||
-      !isDarkMode.current ||
-      initialDarkModeCleanupDone.current
-    ) {
+    window.addEventListener(
+      'theme-update',
+      (e) => (themeRef.current = (e as CustomEvent).detail.value),
+    );
+  }, []);
+  useEffect(() => {
+    // Exit if editor not ready, content loading.
+    if (!editor || isContentLoading || !initialContent) {
       return;
     }
+    const timeoutId = setTimeout(() => {
+      const { tr, doc } = editor.state;
+      let hasChanges = false;
 
-    // Only run if there's initial content to process
-    if (initialContent) {
-      const timeoutId = setTimeout(() => {
-        // Double-check editor exists inside timeout
-        if (!editor) return;
+      doc.descendants((node, pos) => {
+        if (!node.marks || node.marks.length === 0) return;
 
-        const { from, to } = editor.state.selection;
+        const textStyleMark = node.marks.find(
+          (m) => m.type.name === 'textStyle' && m.attrs.color,
+        );
 
-        // Get all text color marks
-        const marks: { from: number; to: number; mark: any }[] = [];
-        editor.state.doc.descendants((node, pos) => {
-          if (node.marks) {
-            node.marks.forEach((mark) => {
-              if (mark.type.name === 'textStyle' && mark.attrs.color) {
-                marks.push({
-                  from: pos,
-                  to: pos + node.nodeSize,
-                  mark,
-                });
-              }
-            });
-          }
-        });
+        if (!textStyleMark) return;
 
-        // Check if any marks need processing
-        if (marks.length > 0) {
-          // First, only remove color attribute from text styles
-          editor
-            .chain()
-            .selectAll()
-            .setColor('') // This removes only the color attribute
-            .run();
+        const originalColor =
+          textStyleMark.attrs['data-original-color'] ||
+          textStyleMark.attrs.color;
 
-          // Then, restore colors that aren't black/white shades
-          marks.forEach(({ from: markFrom, to: markTo, mark }) => {
-            const color = mark.attrs.color;
-            if (!isBlackOrWhiteShade(color)) {
-              editor
-                .chain()
-                .setTextSelection({ from: markFrom, to: markTo })
-                .setColor(color)
-                .run();
-            }
+        if (originalColor.startsWith('var(--')) return;
+
+        const responsiveColor = getResponsiveColor(
+          originalColor,
+          themeRef.current,
+        );
+
+        if (responsiveColor !== textStyleMark.attrs.color) {
+          hasChanges = true;
+          const newMark = textStyleMark.type.create({
+            ...textStyleMark.attrs,
+            color: responsiveColor,
+            'data-original-color': originalColor,
           });
 
-          // Restore original selection
-          editor.commands.setTextSelection({ from, to });
+          tr.removeMark(pos, pos + node.nodeSize, textStyleMark);
+          tr.addMark(pos, pos + node.nodeSize, newMark);
         }
+      });
 
-        // Mark cleanup as done
-        initialDarkModeCleanupDone.current = true;
-      }, 100);
+      if (hasChanges) {
+        tr.setMeta('addToHistory', false);
+        editor.view.dispatch(tr);
+      }
+    }, 0);
 
-      return () => clearTimeout(timeoutId);
-    } else {
-      // If there's no initial content, consider cleanup done for this load
-      initialDarkModeCleanupDone.current = true;
-    }
-  }, [editor, initialContent, isContentLoading]); // Keep dependencies, the flag prevents re-runs
+    return () => clearTimeout(timeoutId);
+  }, [editor, initialContent, isContentLoading, themeRef.current]);
 
   return {
     editor,
