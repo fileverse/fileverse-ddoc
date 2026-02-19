@@ -59,6 +59,7 @@ export const DocumentOutline = ({
       renameTab={renameTab}
       duplicateTab={duplicateTab}
       tabCommentCounts={tabCommentCounts}
+      isPreviewMode={isPreviewMode}
     />
   );
 };

@@ -27,6 +27,7 @@ export interface DocumentMobileTabPanelProps {
   ) => void;
   duplicateTab: (tabId: string) => void;
   tabCommentCounts: Record<string, number>;
+  isPreviewMode: boolean;
 }
 
 export const DocumentMobileTabPanel = ({
@@ -40,6 +41,7 @@ export const DocumentMobileTabPanel = ({
   renameTab,
   duplicateTab,
   tabCommentCounts,
+  isPreviewMode,
 }: DocumentMobileTabPanelProps) => {
   const [showContent, setShowContent] = useState(true);
   const handleNameChange = (tabId: string, nextName: string) => {
@@ -113,6 +115,7 @@ export const DocumentMobileTabPanel = ({
                     isActive={tab.id === activeTabId}
                     onClick={() => setActiveTabId(tab.id)}
                     commentCount={tabCommentCounts[tab.id] || 0}
+                    isPreviewMode={isPreviewMode}
                   />
                   <div
                     className={cn(

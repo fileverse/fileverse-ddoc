@@ -98,9 +98,8 @@ export const DocumentTabsSidebar = ({
       >
         <div
           className={cn(
-            'flex flex-col items-start w-[263px] justify-start absolute left-0 px-4',
+            'flex flex-col items-start w-[263px] justify-start top-[16px] absolute left-0 px-4',
             !hasToC && 'hidden',
-            isPreviewMode ? 'top-[4rem]' : 'top-[16px]',
           )}
         >
           <Tooltip
@@ -123,7 +122,7 @@ export const DocumentTabsSidebar = ({
               <span
                 className={`whitespace-nowrap text-heading-xsm color-text-default max-w-[110px] truncate opacity-0 ${!showTOC ? 'group-hover:opacity-100 ' : 'hidden'} transition-opacity duration-150`}
               >
-                {activeTab?.name}
+                {tabs.length > 1 ? tabs.length : activeTab?.name}
               </span>
             </button>
           </Tooltip>
@@ -136,20 +135,24 @@ export const DocumentTabsSidebar = ({
                     Document tabs
                   </span>
 
-                  <IconButton
-                    icon="Plus"
-                    variant="ghost"
-                    size="sm"
-                    className="h-[24px] w-[24px] min-w-[24px]"
-                    onClick={createTab}
-                  />
+                  {!isPreviewMode && (
+                    <IconButton
+                      icon="Plus"
+                      variant="ghost"
+                      size="sm"
+                      className="h-[24px] w-[24px] min-w-[24px]"
+                      onClick={createTab}
+                    />
+                  )}
                 </div>
               </div>
 
-              {tabs.map((tab) => (
+              {tabs.map((tab, tabIndex) => (
                 <DdocTab
                   key={tab.id}
                   tab={tab}
+                  tabIndex={tabIndex}
+                  tabCount={tabs.length}
                   handleEmojiChange={handleEmojiChange}
                   handleNameChange={handleNameChange}
                   onClick={() => setActiveTabId(tab.id)}
@@ -160,8 +163,19 @@ export const DocumentTabsSidebar = ({
                   activeTabId={activeTabId}
                   duplicateTab={duplicateTab}
                   activeDragId={activeDragId}
+                  isPreviewMode={isPreviewMode}
                   ydoc={ydoc}
                   commentCount={tabCommentCounts[tab.id] || 0}
+                  moveTabUp={() => {
+                    if (tabIndex <= 0) return;
+                    orderTab(tabs[tabIndex - 1].id, tab.id);
+                  }}
+                  moveTabDown={() => {
+                    if (tabIndex >= tabs.length - 1) {
+                      return;
+                    }
+                    orderTab(tabs[tabIndex + 1].id, tab.id);
+                  }}
                 />
               ))}
             </>
@@ -183,6 +197,8 @@ export const DocumentTabsSidebar = ({
 
 export const DdocTab = ({
   tab,
+  tabIndex,
+  tabCount,
   handleEmojiChange,
   handleNameChange,
   onClick,
@@ -195,8 +211,13 @@ export const DdocTab = ({
   activeDragId,
   ydoc,
   commentCount,
+  moveTabUp,
+  moveTabDown,
+  isPreviewMode,
 }: {
   tab: Tab;
+  tabIndex: number;
+  tabCount: number;
   handleNameChange: (tabId: string, nextName: string) => void;
   handleEmojiChange: (tabId: string, nextEmoji: string) => void;
   onClick: () => void;
@@ -209,6 +230,9 @@ export const DdocTab = ({
   activeDragId: string | null;
   ydoc: Y.Doc;
   commentCount: number;
+  moveTabUp: () => void;
+  moveTabDown: () => void;
+  isPreviewMode: boolean;
 }) => {
   const [tabMetadata, setTabMetadata] = useState({
     title: tab.name,
@@ -240,7 +264,7 @@ export const DdocTab = ({
         id={tab.id}
         tabId={tab.id}
         name={tabMetadata.title}
-        emoji={tabMetadata.emoji}
+        emoji={tabMetadata.emoji || ''}
         onNameChange={(nextName: string) => handleNameChange(tab.id, nextName)}
         onEmojiChange={(nextEmoji: string) =>
           handleEmojiChange(tab.id, nextEmoji)
@@ -249,11 +273,24 @@ export const DdocTab = ({
         isActive={tab.id === activeTabId}
         onClick={onClick}
         commentCount={commentCount}
+        showOutline={tabMetadata.showToc}
+        canMoveUp={tabCount > 1 && tabIndex > 0}
+        canMoveDown={tabCount > 1 && tabIndex < tabCount - 1}
+        onMoveUp={moveTabUp}
+        onMoveDown={moveTabDown}
+        handleShowOutline={(value: boolean) => {
+          const { tabs } = getTabsYdocNodes(ydoc);
+          const metadataMap = tabs.get(tab.id);
+          metadataMap?.set('showOutline', value);
+        }}
+        isPreviewMode={isPreviewMode}
       />
       <div
         className={cn(
           'table-of-contents animate-in fade-in slide-in-from-left-5',
-          tab.id === activeTabId && !activeDragId ? 'block' : 'hidden',
+          tab.id === activeTabId && !activeDragId && tabMetadata.showToc
+            ? 'block'
+            : 'hidden',
         )}
       >
         <MemorizedToC

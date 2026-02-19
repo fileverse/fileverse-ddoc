@@ -7,7 +7,7 @@ import {
   PopoverTrigger,
   Tooltip,
 } from '@fileverse/ui';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
 import {
   type EmojiPickerListCategoryHeaderProps,
@@ -21,10 +21,12 @@ export const TabEmojiPicker = ({
   emoji,
   setEmoji,
   isEditing,
+  openPickerTrigger = 0,
 }: {
   emoji: string;
   setEmoji: (emoji: string) => void;
   isEditing: boolean;
+  openPickerTrigger?: number;
 }) => {
   const [showPicker, setShowPicker] = useState(false);
   const toggleRef = useRef(null);
@@ -41,6 +43,13 @@ export const TabEmojiPicker = ({
       setShowPicker(false);
     }
   });
+
+  useEffect(() => {
+    if (openPickerTrigger <= 0) return;
+    setShowPopOver(false);
+    setShowPicker(true);
+  }, [openPickerTrigger]);
+
   return (
     <>
       {emoji ? (

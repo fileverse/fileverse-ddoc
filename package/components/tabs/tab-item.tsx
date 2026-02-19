@@ -1,10 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useRef, useState } from 'react';
+import {
+  ComponentProps,
+  HTMLAttributes,
+  MouseEvent,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import cn from 'classnames';
 import {
-  IconButton,
   LucideIcon,
   Popover,
+  PopoverClose,
   PopoverContent,
   PopoverTrigger,
   TextField,
@@ -12,7 +20,49 @@ import {
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { TabEmojiPicker } from './tab-emoji-picker';
-export const SortableTabItem = (props: any) => {
+
+export interface TabItemProps {
+  tabId: string;
+  name: string;
+  emoji: string;
+  commentCount?: number;
+  onNameChange: (name: string) => void;
+  onEmojiChange: (emoji: string) => void;
+  onClick: () => void;
+  isActive: boolean;
+  onDuplicate?: (id: string) => void;
+  dragHandleProps?: HTMLAttributes<HTMLDivElement>;
+  hideContentMenu?: boolean;
+  showOutline?: boolean;
+  handleShowOutline?: (value: boolean) => void;
+  canMoveUp?: boolean;
+  canMoveDown?: boolean;
+  onMoveUp?: () => void;
+  onMoveDown?: () => void;
+  isPreviewMode: boolean;
+}
+
+interface SortableTabItemProps extends Omit<TabItemProps, 'dragHandleProps'> {
+  id: string;
+}
+
+interface TabContextMenuItem {
+  id: string;
+  label: string;
+  icon: ComponentProps<typeof LucideIcon>['name'];
+  onSelect?: () => void;
+  visible?: boolean;
+  closeOnSelect?: boolean;
+}
+
+interface TabContextMenuProps {
+  sections: TabContextMenuItem[][];
+}
+
+const menuItemClassName =
+  'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center';
+
+export const SortableTabItem = (props: SortableTabItemProps) => {
   const {
     attributes,
     listeners,
@@ -54,20 +104,16 @@ export const TabItem = ({
   onDuplicate,
   dragHandleProps,
   hideContentMenu = false,
-}: {
-  tabId: string;
-  name: string;
-  emoji: string;
-  commentCount?: number;
-  onNameChange: (name: string) => void;
-  onEmojiChange: (emoji: string) => void;
-  onClick: () => void;
-  isActive: boolean;
-  onDuplicate?: (id: string) => void;
-  dragHandleProps?: any;
-  hideContentMenu?: boolean;
-}) => {
+  showOutline,
+  handleShowOutline,
+  canMoveUp = false,
+  canMoveDown = false,
+  onMoveUp,
+  onMoveDown,
+  isPreviewMode,
+}: TabItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [openEmojiPickerTrigger, setOpenEmojiPickerTrigger] = useState(0);
   const [title, setTitle] = useState(name);
   const originalTitleRef = useRef(title);
 
@@ -94,13 +140,85 @@ export const TabItem = ({
     setIsEditing(false);
   };
 
+  const editMenuSections: TabContextMenuItem[][] = [
+    [
+      {
+        id: 'rename',
+        label: 'Rename',
+        icon: 'SquarePen',
+        onSelect: startEditing,
+      },
+      {
+        id: 'duplicate',
+        label: 'Duplicate',
+        icon: 'Copy',
+        onSelect: () => onDuplicate?.(tabId),
+      },
+      {
+        id: 'choose-emoji',
+        label: 'Choose emoji',
+        icon: 'SmilePlus',
+        onSelect: () => setOpenEmojiPickerTrigger((prev) => prev + 1),
+      },
+    ],
+    [
+      {
+        id: 'copy-link',
+        label: 'Copy link',
+        icon: 'Share2',
+      },
+      {
+        id: 'toggle-outline',
+        label: showOutline ? 'Hide outline' : 'Show outline',
+        icon: 'List',
+        onSelect: () => handleShowOutline?.(!showOutline),
+      },
+    ],
+    [
+      {
+        id: 'move-down',
+        label: 'Move down',
+        icon: 'MoveDown',
+        onSelect: () => onMoveDown?.(),
+        visible: canMoveDown,
+      },
+      {
+        id: 'move-up',
+        label: 'Move up',
+        icon: 'MoveUp',
+        onSelect: () => onMoveUp?.(),
+        visible: canMoveUp,
+      },
+    ],
+  ];
+
+  const previewModeMenu: TabContextMenuItem[][] = [
+    [
+      {
+        id: 'copy-link',
+        label: 'Copy link',
+        icon: 'Share2',
+      },
+      {
+        id: 'toggle-outline',
+        label: showOutline ? 'Hide outline' : 'Show outline',
+        icon: 'List',
+        onSelect: () => handleShowOutline?.(!showOutline),
+      },
+    ],
+  ];
+
+  const menuSections = useMemo(() => {
+    return isPreviewMode ? previewModeMenu : editMenuSections;
+  }, [isPreviewMode]);
+
   return (
     <div
       onDoubleClick={startEditing}
       onClick={onClick}
       {...dragHandleProps}
       className={cn(
-        'flex items-center active:cursor-grabbing relative justify-between h-[40px] px-[12px] py-[8px] rounded-full hover:color-bg-secondary-hover',
+        'flex items-center active:cursor-grabbing relative justify-between h-[40px] px-[12px] py-[8px] rounded-full',
         isActive && 'color-bg-default-hover',
       )}
     >
@@ -112,6 +230,7 @@ export const TabItem = ({
             onEmojiChange(_emoji);
           }}
           isEditing={isEditing}
+          openPickerTrigger={openEmojiPickerTrigger}
         />
 
         {!isEditing ? (
@@ -139,95 +258,10 @@ export const TabItem = ({
         )}
       </div>
       <div className="flex gap-[8px] items-center">
-        <span className="h-[18px] color-text-default text-[12px] rounded-full min-w-[18px] text-center color-bg-secondary-hover">
+        <span className="h-[18px] color-text-default text-[12px] text-helper-text-bold rounded-full min-w-[18px] text-center color-bg-tertiary">
           {commentCount}
         </span>
-        {!hideContentMenu && (
-          <Popover>
-            <PopoverTrigger onClick={(e) => e.stopPropagation()}>
-              <IconButton
-                icon="EllipsisVertical"
-                variant="ghost"
-                size="sm"
-                className="h-[24px] w-[24px] min-w-[24px]"
-              />
-            </PopoverTrigger>
-            <PopoverContent
-              align="end"
-              alignOffset={0}
-              elevation={2}
-              side="bottom"
-              sideOffset={4}
-              className="w-[160px] space-xsm"
-            >
-              <div
-                className={cn(
-                  'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center',
-                )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  startEditing();
-                }}
-              >
-                <LucideIcon
-                  name="SquarePen"
-                  className={cn('w-[16px] h-[16px]')}
-                />
-                <p className={cn('text-heading-xsm color-text-default')}>
-                  Rename
-                </p>
-              </div>
-              <div
-                className={cn(
-                  'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center',
-                )}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDuplicate?.(tabId);
-                }}
-              >
-                <LucideIcon name="Copy" className={cn('w-[16px] h-[16px]')} />
-                <p className={cn('text-heading-xsm color-text-default')}>
-                  Duplicate
-                </p>
-              </div>
-              <div
-                className={cn(
-                  'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center',
-                )}
-              >
-                <LucideIcon
-                  name="SmilePlus"
-                  className={cn('w-[16px] h-[16px]')}
-                />
-                <p className={cn('text-heading-xsm color-text-default')}>
-                  Choose emoji
-                </p>
-              </div>
-              <hr className="border-t space-x-xsm color-border-default my-[4px] w-full" />
-              <div
-                className={cn(
-                  'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center',
-                )}
-              >
-                <LucideIcon name="Share2" className={cn('w-[16px] h-[16px]')} />
-                <p className={cn('text-heading-xsm color-text-default')}>
-                  Copy link
-                </p>
-              </div>
-              <div
-                className={cn(
-                  'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center',
-                )}
-              >
-                <LucideIcon name="List" className={cn('w-[16px] h-[16px]')} />
-                <p className={cn('text-heading-xsm color-text-default')}>
-                  Hide outline
-                </p>
-              </div>
-            </PopoverContent>
-          </Popover>
-        )}
+        {!hideContentMenu && <TabContextMenu sections={menuSections} />}
       </div>
     </div>
   );
@@ -257,5 +291,64 @@ export const TabDragPreview = ({
         {name}
       </span>
     </div>
+  );
+};
+export const TabContextMenuAction = ({
+  item,
+}: {
+  item: TabContextMenuItem;
+}) => {
+  const content = (
+    <div
+      className={cn(menuItemClassName)}
+      onClick={(e: MouseEvent<HTMLDivElement>) => {
+        e.stopPropagation();
+        item.onSelect?.();
+      }}
+    >
+      <LucideIcon name={item.icon} className={cn('w-[16px] h-[16px]')} />
+      <p className={cn('text-heading-xsm color-text-default')}>{item.label}</p>
+    </div>
+  );
+
+  if (item.closeOnSelect === false) {
+    return content;
+  }
+
+  return <PopoverClose asChild>{content}</PopoverClose>;
+};
+
+export const TabContextMenu = ({ sections }: TabContextMenuProps) => {
+  const visibleSections = sections
+    .map((section) => section.filter((item) => item.visible !== false))
+    .filter((section) => section.length > 0);
+
+  return (
+    <Popover>
+      <PopoverTrigger onClick={(e) => e.stopPropagation()}>
+        <div className="h-[24px] rounded-[4px] w-[24px] hover:color-bg-secondary-hover min-w-[24px] flex items-center justify-center">
+          <LucideIcon name="EllipsisVertical" className="h-[16px] w-[16px]" />
+        </div>
+      </PopoverTrigger>
+      <PopoverContent
+        align="end"
+        alignOffset={0}
+        elevation={2}
+        side="bottom"
+        sideOffset={4}
+        className="w-[160px] space-xsm"
+      >
+        {visibleSections.map((section, sectionIndex) => (
+          <div key={`section-${sectionIndex}`}>
+            {sectionIndex > 0 && (
+              <hr className="border-t space-x-xsm color-border-default my-[4px] w-full" />
+            )}
+            {section.map((item) => (
+              <TabContextMenuAction key={item.id} item={item} />
+            ))}
+          </div>
+        ))}
+      </PopoverContent>
+    </Popover>
   );
 };
