@@ -11,6 +11,10 @@ import {
 import { useState } from 'react';
 import { IEditorToolElement } from './editor-utils';
 import { ExportAsModal } from './export-modal';
+import { Editor } from '@tiptap/react';
+import { Tab } from './tabs/utils/tab-utils';
+import * as Y from 'yjs';
+import { useDdocExport } from '../hooks/use-ddoc-export';
 
 const ImportExportButton = ({
   fileExportsOpen,
@@ -18,22 +22,37 @@ const ImportExportButton = ({
   exportOptions,
   importOptions,
   setDropdownOpen,
+  editor,
+  tabs,
+  ydoc,
 }: {
   fileExportsOpen: boolean;
   setFileExportsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   exportOptions: (IEditorToolElement | null)[];
   importOptions: (IEditorToolElement | null)[];
   setDropdownOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  editor: Editor | null;
+  tabs: Tab[];
+  ydoc: Y.Doc;
 }) => {
   const [openImport, setOpenImport] = useState<boolean>(false);
   const [openExport, setOpenExport] = useState<boolean>(false);
   let exportTimeout: ReturnType<typeof setTimeout>;
   let importTimeout: ReturnType<typeof setTimeout>;
   const [isModalOpen, setModalOpen] = useState(false);
+  const [selectedFormat, setSelectedFormat] = useState('pdf');
 
-  const handleExport = ({ format, tab }: { format: string; tab: string }) => {
-    console.log({ format, tab });
-  };
+  const { getOptionFormat, formatSelectOptions, handleExport } = useDdocExport({
+    editor,
+    tabs,
+    ydoc,
+    exportOptions,
+  });
+
+  const tabSelectOptions = [
+    { id: 'current', label: 'Current tab' },
+    { id: 'all', label: 'All tabs' },
+  ];
 
   return (
     <>
@@ -111,8 +130,13 @@ const ImportExportButton = ({
                       onClick={() => {
                         if (option?.disabled) return;
                         setFileExportsOpen(false);
+                        const format = option
+                          ? getOptionFormat(option.title)
+                          : '';
+                        if (format) {
+                          setSelectedFormat(format);
+                        }
                         setModalOpen(true);
-                        // option?.onClick();
                       }}
                       className={cn(
                         'h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm',
@@ -196,6 +220,10 @@ const ImportExportButton = ({
         open={isModalOpen}
         onOpenChange={setModalOpen}
         onExport={handleExport}
+        formatOptions={formatSelectOptions}
+        tabOptions={tabSelectOptions}
+        initialFormat={selectedFormat}
+        initialTab="current"
       />
     </>
   );

@@ -601,6 +601,8 @@ const DdocEditor = forwardRef(
                     ipfsImageFetchFn={ipfsImageFetchFn}
                     fetchV1ImageFn={fetchV1ImageFn}
                     isConnected={isConnected}
+                    tabs={tabs}
+                    ydoc={ydoc}
                   />
                 </div>
               </div>

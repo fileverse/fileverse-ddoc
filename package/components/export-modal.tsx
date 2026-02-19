@@ -6,21 +6,54 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@fileverse/ui';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+
+interface ExportFormatOption {
+  id: string;
+  label: string;
+}
+
+interface ExportTabOption {
+  id: string;
+  label: string;
+}
 
 interface ExportAsModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onExport?: (data: { format: string; tab: string }) => void;
+  formatOptions: ExportFormatOption[];
+  tabOptions: ExportTabOption[];
+  initialFormat?: string;
+  initialTab?: string;
 }
 
 export const ExportAsModal = ({
   open,
   onOpenChange,
   onExport,
+  formatOptions,
+  tabOptions,
+  initialFormat,
+  initialTab,
 }: ExportAsModalProps) => {
-  const [format, setFormat] = useState('pdf');
-  const [tab, setTab] = useState('current');
+  const [format, setFormat] = useState(initialFormat || 'pdf');
+  const [tab, setTab] = useState(initialTab || 'all');
+
+  useEffect(() => {
+    if (!open) return;
+    if (initialFormat) {
+      setFormat(initialFormat);
+    } else if (formatOptions.length > 0) {
+      setFormat(formatOptions[0].id);
+    }
+
+    if (initialTab) {
+      setTab(initialTab);
+    } else if (tabOptions.length > 0) {
+      setTab(tabOptions[0].id);
+    }
+  }, [open, initialFormat, initialTab, formatOptions, tabOptions]);
 
   const handleExport = () => {
     onExport?.({ format, tab });
@@ -48,9 +81,11 @@ export const ExportAsModal = ({
                 <SelectValue placeholder="Select format" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="pdf">PDF document (.pdf)</SelectItem>
-                <SelectItem value="docx">Word document (.docx)</SelectItem>
-                <SelectItem value="md">Markdown (.md)</SelectItem>
+                {formatOptions.map((option) => (
+                  <SelectItem key={option.id} value={option.id}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -64,8 +99,11 @@ export const ExportAsModal = ({
                 <SelectValue placeholder="Select tab" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="current">Current tab</SelectItem>
-                <SelectItem value="all">All tabs</SelectItem>
+                {tabOptions.map((option) => (
+                  <SelectItem key={option.id} value={option.id}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
