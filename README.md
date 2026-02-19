@@ -27,6 +27,23 @@ import { DdocEditor } from '@fileverse-dev/ddoc';
 import '@fileverse-dev/ddoc/styles'; // in App.jsx/App.tsx
 ```
 
+### Peer Dependencies
+
+This package requires the following peer dependencies to be installed in your project:
+
+```bash
+npm install @fileverse/ui @fileverse/crypto viem framer-motion
+```
+
+| Package | Version |
+| --- | --- |
+| `@fileverse/ui` | `>=5.0.0` |
+| `@fileverse/crypto` | `>=0.0.21` |
+| `viem` | `>=2.13.8` |
+| `framer-motion` | `>=11.2.10` |
+
+These are externalized from the bundle to avoid duplication when your app already uses them. If you don't have them installed, npm (v7+) will auto-install them for you.
+
 ### Update Tailwind Config
 
 In your tailwind config, add this line to content array :
