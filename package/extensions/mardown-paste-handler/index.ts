@@ -853,22 +853,12 @@ export async function handleMarkdownContent(
     }
   }
 
-  // Handle images and page breaks
+  // Handle images
   const paragraphs = doc.getElementsByTagName('p');
   for (let i = paragraphs.length - 1; i >= 0; i--) {
     const p = paragraphs[i];
     if (p.childNodes.length === 1 && p.firstChild?.nodeName === 'IMG') {
       p.parentNode?.replaceChild(p.firstChild, p);
-    }
-    // Replace === text content with a div element that will be converted to a page break node
-    if (
-      p.childNodes.length === 1 &&
-      p.firstChild?.textContent?.trim() === '==='
-    ) {
-      const pageBreakDiv = doc.createElement('div');
-      pageBreakDiv.setAttribute('data-type', 'page-break');
-      pageBreakDiv.setAttribute('data-page-break', 'true');
-      p.parentNode?.replaceChild(pageBreakDiv, p);
     }
   }
   const images = Array.from(doc.getElementsByTagName('img'));
@@ -904,7 +894,6 @@ export async function handleMarkdownContent(
   const subsupRegex = /<(sup|sub)>(.*?)<\/\1>/g;
   const superscriptRegex = /\^([^\s^]+)\^/g;
   const subscriptRegex = /~([^\s~](?:[^~]*[^\s~])?)~/g;
-  const pageBreakRegex = /===\s*$/gm;
 
   // Process superscript and subscript tags in the HTML string
   convertedHtml = convertedHtml.replace(subsupRegex, (content) => {
@@ -920,12 +909,6 @@ export async function handleMarkdownContent(
   convertedHtml = convertedHtml.replace(
     subscriptRegex,
     '<sub data-type="sub">$1</sub>',
-  );
-
-  // Process page breaks
-  convertedHtml = convertedHtml.replace(
-    pageBreakRegex,
-    '<div data-type="page-break" data-page-break="true"></div>',
   );
 
   // Sanitize the converted HTML
@@ -958,49 +941,27 @@ export async function handleMarkdownContent(
     view.state.schema,
   ).parse(domContent);
 
-  // Create a new transaction
-  const transaction = view.state.tr;
-
-  // Process the nodes and convert page break divs to actual page break nodes
-  let offset = 0;
-  proseMirrorNodes.descendants((node, pos) => {
-    if (node.isText) {
-      const nodeDOM = domContent.childNodes[pos];
-      if (nodeDOM && nodeDOM.nodeType === Node.ELEMENT_NODE) {
-        const element = nodeDOM as HTMLElement;
-        if (element.dataset.type === 'sup') {
-          transaction.addMark(
-            pos + offset,
-            pos + offset + node.nodeSize,
-            view.state.schema.marks.superscript.create(),
-          );
-        } else if (element.dataset.type === 'sub') {
-          transaction.addMark(
-            pos + offset,
-            pos + offset + node.nodeSize,
-            view.state.schema.marks.subscript.create(),
-          );
-        }
-      }
-    } else if (node.type.name === 'paragraph') {
-      const nodeDOM = domContent.childNodes[pos];
-      if (nodeDOM && nodeDOM.nodeType === Node.ELEMENT_NODE) {
-        const element = nodeDOM as HTMLElement;
-        if (element.dataset.type === 'page-break') {
-          // Replace the paragraph with a page break node
-          transaction.replaceWith(
-            pos + offset,
-            pos + offset + node.nodeSize,
-            view.state.schema.nodes.pageBreak.create(),
-          );
-          offset -= node.nodeSize - 1; // Adjust offset for the size difference
-        }
+  // Post-process: replace dBlock nodes containing a "===" paragraph with pageBreak nodes
+  const newChildren: PMNode[] = [];
+  proseMirrorNodes.forEach((child: PMNode) => {
+    if (child.type.name === 'dBlock' && child.childCount === 1) {
+      const inner = child.firstChild!;
+      if (
+        inner.type.name === 'paragraph' &&
+        inner.textContent.trim() === '==='
+      ) {
+        newChildren.push(view.state.schema.nodes.pageBreak.create());
+        return;
       }
     }
+    newChildren.push(child);
   });
 
+  const finalDoc = proseMirrorNodes.copy(Fragment.fromArray(newChildren));
+
   // Insert the content and apply the transaction
-  transaction.replaceSelectionWith(proseMirrorNodes, false);
+  const transaction = view.state.tr;
+  transaction.replaceSelectionWith(finalDoc, false);
   view.dispatch(transaction);
 }
 
