@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "3.0.49-patch-perf-1",
+  "version": "3.0.49-patch-perf-2",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
@@ -121,9 +121,9 @@
     "yjs": "^13.6.15"
   },
   "peerDependencies": {
-    "@fileverse/crypto": "^0.0.13",
-    "@fileverse/ui": "^5.0.0",
-    "viem": "^2.24.1"
+    "@fileverse/crypto": ">=0.0.21",
+    "@fileverse/ui": ">=5.0.0",
+    "viem": ">=2.13.8"
   },
   "devDependencies": {
     "@types/dompurify": "^3.0.5",
