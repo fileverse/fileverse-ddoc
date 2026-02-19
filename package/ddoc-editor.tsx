@@ -258,6 +258,7 @@ const DdocEditor = forwardRef(
       ref: editorRef,
       isContentLoading,
       ydoc,
+      awareness,
       refreshYjsIndexedDbProvider,
       activeCommentId,
       setActiveCommentId,
@@ -386,30 +387,24 @@ const DdocEditor = forwardRef(
           });
         },
         updateCollaboratorName: (name: string) => {
-          if (!editor) {
-            console.debug('collab: cannot find editor');
+          if (!editor || !awareness) {
+            console.debug('collab: cannot find editor or awareness');
             return;
           }
 
-          const existingUser = editor.storage.collaborationCaret?.users?.find(
-            (user: Record<string, unknown>) => {
-              return user?.clientId === ydoc.clientID;
-            },
-          ) as Record<string, unknown> | undefined;
+          const localState = awareness.getLocalState();
+          const existingUser = localState?.user as
+            | Record<string, unknown>
+            | undefined;
 
           const newUser = {
             name,
-          } as Record<string, unknown>;
+            color: existingUser?.color,
+            isEns: existingUser?.isEns,
+          };
 
-          if (existingUser) {
-            // newUser.clientId = existingUser.clientId;
-            newUser.color = existingUser.color;
-            newUser.isEns = existingUser.isEns;
-          }
-          if (typeof editor.commands.updateUser === 'function') {
-            editor.commands.updateUser(newUser);
-            editor.setEditable(true);
-          }
+          awareness.setLocalStateField('user', newUser);
+          editor.setEditable(true);
         },
         terminateSession,
       }),

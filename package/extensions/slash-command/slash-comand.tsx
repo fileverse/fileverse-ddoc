@@ -283,22 +283,27 @@ const renderItems = () => {
   };
 };
 
+export interface SlashCommandDynamicConfig {
+  isConnected?: boolean;
+  enableCollaboration?: boolean;
+  disableInlineComment?: boolean;
+}
+
 const SlashCommand = (
   onError?: (errorString: string) => void,
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
-  isConnected?: boolean,
-  enableCollaboration?: boolean,
-  disableInlineComment?: boolean,
+  configRef?: { current: SlashCommandDynamicConfig },
 ) => {
   const items = ({ query, editor }: { query: string; editor: Editor }) => {
+    const config = configRef?.current ?? {};
     return getSuggestionItems({
       query,
       onError,
       ipfsImageUploadFn,
-      isConnected,
+      isConnected: config.isConnected,
       editor,
-      enableCollaboration,
-      disableInlineComment,
+      enableCollaboration: config.enableCollaboration,
+      disableInlineComment: config.disableInlineComment,
     });
   };
   return Command.configure({

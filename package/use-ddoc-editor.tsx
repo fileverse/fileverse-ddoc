@@ -5,7 +5,7 @@ import { useEffect, useState, useRef, useCallback, useMemo } from 'react';
 import { DdocProps, DdocEditorProps } from './types';
 import * as Y from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration';
-import CollaborationCaret from '@tiptap/extension-collaboration-caret';
+import { yCursorPlugin, yCursorPluginKey } from '@tiptap/y-tiptap';
 import { defaultExtensions } from './extensions/default-extension';
 import { AnyExtension, JSONContent, useEditor } from '@tiptap/react';
 import { getCursor } from './utils/cursor';
@@ -141,6 +141,16 @@ export const useDdocEditor = ({
   // V2 - comment
   const [tocItems, setTocItems] = useState<ToCItemType[]>([]);
   const hasAvailableModels = activeModel !== undefined && isAIAgentEnabled;
+  const slashCommandConfigRef = useRef({
+    isConnected,
+    enableCollaboration,
+    disableInlineComment,
+  });
+  const userColorRef = useRef(
+    usercolors[Math.floor(Math.random() * usercolors.length)],
+  );
+  const onCollaboratorChangeRef = useRef(onCollaboratorChange);
+  onCollaboratorChangeRef.current = onCollaboratorChange;
   const [extensions, setExtensions] = useState<AnyExtension[]>([
     ...(defaultExtensions({
       onError: (error: string) => {
@@ -176,9 +186,7 @@ export const useDdocEditor = ({
     SlashCommand(
       (error: string) => onError?.(error),
       ipfsImageUploadFn,
-      isConnected,
-      enableCollaboration,
-      disableInlineComment,
+      slashCommandConfigRef,
     ),
     customTextInputRules,
     PageBreak,
@@ -207,18 +215,11 @@ export const useDdocEditor = ({
   // }, [isPreviewMode]);
 
   useEffect(() => {
-    if (isConnected) {
-      setExtensions((prev) => [
-        ...prev.filter((ext) => ext.name !== 'slash-command'),
-        SlashCommand(
-          (error: string) => onError?.(error),
-          ipfsImageUploadFn,
-          isConnected,
-          enableCollaboration,
-          disableInlineComment,
-        ),
-      ]);
-    }
+    slashCommandConfigRef.current = {
+      isConnected,
+      enableCollaboration,
+      disableInlineComment,
+    };
   }, [isConnected, enableCollaboration, disableInlineComment]);
   const initialContentSetRef = useRef(false);
   const isInitialEditorCreation = useRef(true);
@@ -469,20 +470,11 @@ export const useDdocEditor = ({
         SlashCommand(
           (error: string) => onError?.(error),
           ipfsImageUploadFn,
-          isConnected,
-          enableCollaboration,
-          disableInlineComment,
+          slashCommandConfigRef,
         ),
       ]);
     }
-  }, [
-    activeModel,
-    maxTokens,
-    isAIAgentEnabled,
-    isConnected,
-    enableCollaboration,
-    disableInlineComment,
-  ]);
+  }, [activeModel, maxTokens, isAIAgentEnabled]);
 
   useEffect(() => {
     if (zoomLevel) {
@@ -498,58 +490,61 @@ export const useDdocEditor = ({
 
   const collaborationCleanupRef = useRef<() => void>(() => {});
 
+  // Register collaboration cursor plugin directly via editor.registerPlugin
+  // instead of setExtensions, which would destroy and recreate the editor (causing scroll jump)
   useEffect(() => {
-    if (!isReady || !enableCollaboration || !collabConfig) return;
-    if (collabConfig.isEns) {
-      if (typeof editor?.commands?.updateUser === 'function') {
-        editor.commands.updateUser({
-          name: collabConfig.username,
-          color: usercolors[Math.floor(Math.random() * usercolors.length)],
-          isEns: collabConfig.isEns,
-        });
-      }
-    }
-  }, [isReady, enableCollaboration, collabConfig?.isEns]);
+    if (!editor || !awareness || !isReady) return;
 
-  const awarenessProvider = useMemo(() => {
-    if (!isReady || !awareness || !ydoc) return null;
-    return { ydoc, awareness };
-  }, [isReady]);
+    const user = {
+      name: collabConfig?.username || '',
+      color: userColorRef.current,
+      isEns: collabConfig?.isEns,
+    };
 
-  const collaborationExtension = useMemo(() => {
-    if (!isReady || !awarenessProvider) return null;
-    return CollaborationCaret.configure({
-      provider: awarenessProvider,
-      user: {
-        name: collabConfig?.username || '',
-        color: usercolors[Math.floor(Math.random() * usercolors.length)],
-        isEns: collabConfig?.isEns,
-      },
-      render: getCursor,
+    awareness.setLocalStateField('user', user);
+
+    const plugin = yCursorPlugin(awareness, {
+      cursorBuilder: getCursor,
     });
-  }, [isReady, awarenessProvider]);
+    editor.registerPlugin(plugin);
 
-  useEffect(() => {
-    if (!collaborationExtension) return;
-
-    setExtensions((prev) => {
-      if (prev.some((ext) => ext.name === 'collaborationCaret')) return prev;
-      return [
-        ...prev.filter((ext) => ext.name !== 'history'),
-        collaborationExtension,
-      ];
-    });
+    // Track collaborators via awareness updates
+    const updateCollaborators = () => {
+      const users = Array.from(
+        awareness.states as Map<number, Record<string, any>>,
+      ).map(([clientId, state]) => ({
+        clientId,
+        ...(state.user || {}),
+      }));
+      onCollaboratorChangeRef.current?.(users);
+    };
+    awareness.on('update', updateCollaborators);
+    updateCollaborators();
 
     collaborationCleanupRef.current = () => {
-      setExtensions((prev) =>
-        prev.filter((ext) => ext.name !== 'collaborationCaret'),
-      );
+      awareness.off('update', updateCollaborators);
+      if (!editor.isDestroyed) {
+        editor.unregisterPlugin(yCursorPluginKey);
+      }
     };
 
     return () => {
       collaborationCleanupRef.current();
+      collaborationCleanupRef.current = () => {};
     };
-  }, [collaborationExtension]);
+  }, [editor, awareness, isReady]);
+
+  // Update user info when ENS resolves
+  useEffect(() => {
+    if (!isReady || !enableCollaboration || !collabConfig || !awareness) return;
+    if (collabConfig.isEns) {
+      awareness.setLocalStateField('user', {
+        name: collabConfig.username,
+        color: userColorRef.current,
+        isEns: collabConfig.isEns,
+      });
+    }
+  }, [isReady, enableCollaboration, collabConfig?.isEns, awareness]);
 
   const ref = useRef<HTMLDivElement>(null);
 
@@ -835,17 +830,6 @@ export const useDdocEditor = ({
     };
   }, [enableCollaboration, Boolean(collabConfig)]);
 
-  useEffect(() => {
-    const collaborators = editor?.storage?.collaborationCaret?.users?.map(
-      (user) => ({
-        clientId: user.clientId,
-        name: user.name,
-        isEns: user.isEns,
-        color: user.color,
-      }),
-    );
-    onCollaboratorChange?.(collaborators);
-  }, [editor?.storage?.collaborationCaret?.users]);
 
   const charCountDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -1057,5 +1041,6 @@ export const useDdocEditor = ({
     tocItems,
     setTocItems,
     terminateSession,
+    awareness,
   };
 };
