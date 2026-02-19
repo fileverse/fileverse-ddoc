@@ -76,10 +76,7 @@ export const yjsUpdateHandler = (
     throw new Error('Ydoc is not available');
   }
 
-  let encryptedUpdate: string | undefined;
-  if (event.data.event_type === 'CONTENT_UPDATE') {
-    encryptedUpdate = event.data.event.data.data;
-  }
+  const encryptedUpdate: string | undefined = event.data?.event?.data?.data;
 
   if (!encryptedUpdate) return {};
 

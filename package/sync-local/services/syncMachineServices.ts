@@ -29,12 +29,17 @@ export const syncMachineServices = {
           send({ type: 'DISCONNECT', data: { error: 'Network error' } });
           onError?.(e);
         },
-        onWsEvent: (message) => {
-          if (!message?.event_type) {
-            throw new Error('Message is not an event');
-          }
-
-          send({ type: message.event_type, data: message });
+        onContentUpdate: (payload) => {
+          send({
+            type: 'CONTENT_UPDATE',
+            data: { event: { data: payload } },
+          });
+        },
+        onMembershipChange: (payload) => {
+          send({ type: 'ROOM_MEMBERSHIP_CHANGE', data: payload });
+        },
+        onSessionTerminated: () => {
+          send({ type: 'SESSION_TERMINATED', data: null });
         },
         onError: (e) => {
           console.log('error triggered by socket onError', e);
@@ -50,7 +55,7 @@ export const syncMachineServices = {
       const { socketClient, awareness, _awarenessUpdateHandler } = context;
 
       if (socketClient?._webSocketStatus === SocketStatusEnum.CONNECTED) {
-        socketClient.disconnect('Socket disconnected by user', 1000);
+        socketClient.disconnect();
       }
       awareness?.off('update', _awarenessUpdateHandler);
     };
@@ -69,7 +74,7 @@ export const syncMachineServices = {
         const response = await socketClient?.sendUpdate({
           update: updateToSend,
         });
-        const updateId = response?.data.id;
+        const updateId = response?.data?.id;
         return { updateId, queueOffset };
       }
     };
@@ -216,7 +221,7 @@ export const syncMachineServices = {
         const response = await context.socketClient?.sendUpdate({
           update: updateToSend,
         });
-        const updateId = response?.data.id;
+        const updateId = response?.data?.id;
         return !!updateId;
       } else {
         return true;
@@ -262,7 +267,7 @@ export const syncMachineServices = {
         const response = await context.socketClient?.sendUpdate({
           update: encryptedUpdate,
         });
-        const updateId = response?.data.id;
+        const updateId = response?.data?.id;
         return updateId;
       }
     };

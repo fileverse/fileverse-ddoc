@@ -1,29 +1,16 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import ReconnectingWebSocket, {
-  UrlProvider,
-  CloseEvent,
-  ErrorEvent,
-} from 'partysocket/ws';
+import { io, Socket } from 'socket.io-client';
 import * as ucans from '@ucans/ucans';
-import { v1 as uuidv1 } from 'uuid';
 
 import {
-  ConnectHandler,
-  DisconnectHandler,
   ISocketInitConfig,
-  EventHandler,
-  RequestPayload,
   RoomMember,
-  SequenceResponseCB,
-  SequenceToRequestMap,
-  SequenceToRequestMapValue,
   SocketStatusEnum,
-  // Update,
   SendUpdateResponse,
   CommitResponse,
   IAuthArgs,
+  AckResponse,
 } from './types';
-import { WEBSOCKET_CONFIG } from './constants/config';
 import { generateKeyPairFromSeed } from '@stablelib/ed25519';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { crypto } from './crypto';
@@ -32,7 +19,7 @@ import { Awareness, applyAwarenessUpdate } from 'y-protocols/awareness.js';
 import * as decoding from 'lib0/decoding';
 
 interface ISocketClientConfig {
-  wsUrl: UrlProvider;
+  wsUrl: string;
   roomKey: string;
   ownerEdSecret?: string;
   contractAddress?: string;
@@ -45,14 +32,9 @@ interface ISocketClientConfig {
   };
 }
 export class SocketClient {
-  private _websocketUrl: UrlProvider;
-  private _machineEventHandler: EventHandler | null = null;
-  private _onConnect: ConnectHandler | null = null;
-  private _onDisconnection: DisconnectHandler | null = null;
-  private _onHandShakeError: ((err: Error) => void) | null = null;
-  private _sequenceCallbackMap: SequenceToRequestMap = {};
+  private _socketUrl: string;
+  private _socket: Socket | null = null;
   _webSocketStatus: SocketStatusEnum = SocketStatusEnum.CLOSED;
-  private _webSocket: ReconnectingWebSocket | null = null;
   private _websocketServiceDid = '';
   private roomId = '';
 
@@ -75,9 +57,9 @@ export class SocketClient {
   _onCollaborationConnectCallback:
     | ISocketClientConfig['onCollaborationConnectCallback']
     | null = null;
+
   constructor(config: ISocketClientConfig) {
-    this._websocketUrl = config.wsUrl || 'ws://localhost:5000';
-    this._processMessage = this._processMessage.bind(this);
+    this._socketUrl = config.wsUrl || 'ws://localhost:5000';
     const { secretKey: ucanSecret } = generateKeyPairFromSeed(
       toUint8Array(config.roomKey),
     );
@@ -99,72 +81,53 @@ export class SocketClient {
     if (config.roomInfo) this.roomInfo = config.roomInfo;
   }
 
-  private _getSequenceIdCallback(id: string): SequenceToRequestMapValue {
-    return this._sequenceCallbackMap[id];
-  }
-
-  private _removeSequenceIdFromMap(id: string) {
-    delete this._sequenceCallbackMap[id];
-  }
-
   registerAwareness(awareness: Awareness) {
     this.awareness = awareness;
   }
 
-  private _registerSequenceCallback(
-    seq: string,
-    callback: SequenceResponseCB,
-  ): void {
-    this._sequenceCallbackMap[seq] = { callback };
-  }
-
-  private async _sendNetworkRequest(
-    data: string,
-    seqId?: string,
-  ): Promise<any> {
-    if (
-      this._webSocketStatus !== SocketStatusEnum.CONNECTED ||
-      !this._webSocket
-    ) {
-      const error = new Error('Lost connection to websocket server');
-      error.name = 'SocketConnectionLostError';
-
-      this._onError?.(error);
-      return;
-    }
-
-    return new Promise((resolve) => {
-      if (!this._webSocket) {
-        resolve(null);
+  private _emitWithAck<T = any>(
+    event: string,
+    args: any,
+  ): Promise<AckResponse<T>> {
+    return new Promise((resolve, reject) => {
+      if (
+        this._webSocketStatus !== SocketStatusEnum.CONNECTED ||
+        !this._socket
+      ) {
+        const error = new Error('Lost connection to websocket server');
+        error.name = 'SocketConnectionLostError';
+        this._onError?.(error);
+        reject(error);
         return;
       }
-      this._webSocket.send(data);
-      if (seqId) {
-        this._registerSequenceCallback(seqId, resolve);
-      } else {
-        resolve(null);
-      }
+
+      this._socket.emit(event, args, (response: AckResponse<T>) => {
+        resolve(response);
+      });
     });
   }
 
   private async _fetchRoomMembers() {
-    const data: any = await this._buildRequest('/documents/peers/list', {});
+    const data = await this._emitWithAck<{ peers: string[] }>(
+      '/documents/peers/list',
+      { documentId: this.roomId },
+    );
 
     if (!data || !data.status) {
       throw new Error('Failed to fetch room members');
     }
 
-    this.roomMembers = data.data.peers;
+    this.roomMembers = data.data?.peers as any;
   }
 
   public async sendUpdate({ update }: { update: string }) {
     const args = {
       data: update,
-      update_snapshot_ref: null,
+      documentId: this.roomId,
       collaborationToken: await this.buildSessionToken(),
     };
 
-    return (await this._buildRequest(
+    return (await this._emitWithAck(
       '/documents/update',
       args,
     )) as SendUpdateResponse;
@@ -174,11 +137,12 @@ export class SocketClient {
     const args = {
       updates,
       cid,
+      documentId: this.roomId,
       ownerToken: await this.getOwnerToken(),
       contractAddress: this.contractAddress,
       ownerAddress: this.ownerAddress,
     };
-    return (await this._buildRequest(
+    return (await this._emitWithAck(
       '/documents/commit',
       args,
     )) as CommitResponse;
@@ -186,71 +150,60 @@ export class SocketClient {
 
   async fetchLatestCommit() {
     const args = {
+      documentId: this.roomId,
       offset: 0,
       limit: 1,
       sort: 'desc',
     };
 
-    return await this._buildRequest('/documents/commit/history', args);
+    return await this._emitWithAck('/documents/commit/history', args);
   }
 
   async getUncommittedChanges() {
     const args = {
+      documentId: this.roomId,
       limit: 1000,
       offset: 0,
       filters: { committed: false },
       sort: 'desc',
     };
-    return await this._buildRequest('/documents/update/history', args);
+    return await this._emitWithAck('/documents/update/history', args);
   }
 
   public async broadcastAwareness(awarenessUpdate: string) {
-    if (this._webSocketStatus !== SocketStatusEnum.CONNECTED) return;
+    if (this._webSocketStatus !== SocketStatusEnum.CONNECTED || !this._socket)
+      return;
     const args = {
+      documentId: this.roomId,
       data: {
         position: awarenessUpdate,
       },
     };
-    return await this._buildRequest('/documents/awareness', args);
+    this._socket.emit('/documents/awareness', args, () => {
+      console.log('awareness update sent');
+    });
   }
 
-  public disconnect = (reason: string, code: number) => {
+  public disconnect = () => {
     this._webSocketStatus = SocketStatusEnum.CLOSED;
-    if (!this._webSocket) return;
-    this._webSocket.onopen = null;
-    this._webSocket.removeEventListener('message', this._processMessage);
-    this._webSocket.close(code, reason);
+    if (!this._socket) return;
+    this._socket.disconnect();
+    this._socket = null;
     this._webSocketStatus = SocketStatusEnum.CLOSED;
   };
 
   public terminateSession = async () => {
     const ownerToken = await this.getOwnerToken();
     const args = {
+      documentId: this.roomId,
       ownerToken,
       ownerAddress: this.ownerAddress,
       contractAddress: this.contractAddress,
       sessionDid: this.collaborationKeyPair?.did(),
     };
-    await this._buildRequest('/documents/terminate', args);
-    this.disconnect('Session terminated', 1000);
+    await this._emitWithAck('/documents/terminate', args);
+    this.disconnect();
   };
-
-  private async _buildRequest(cmd: string, args: any) {
-    if (!this.roomId) {
-      throw new Error(`Cannot perform action without room id: ${this.roomId}`);
-    }
-
-    const seqId = uuidv1();
-    const req: RequestPayload = {
-      cmd,
-      args: {
-        documentId: this.roomId,
-        ...args,
-      },
-      seqId: seqId,
-    };
-    return await this._sendNetworkRequest(JSON.stringify(req), seqId);
-  }
 
   private getCollaborationKeyPair() {
     if (!this.collaborationKeyPair)
@@ -326,8 +279,11 @@ export class SocketClient {
     return ucans.encode(this.collaborationUcan);
   };
 
-  private _handleHandShake = async (message: any) => {
-    this._websocketServiceDid = message.data.server_did;
+  private _handleHandShake = async (
+    message: { server_did: string; message: string },
+    config: ISocketInitConfig,
+  ) => {
+    this._websocketServiceDid = message.server_did;
 
     if (this._webSocketStatus !== SocketStatusEnum.CONNECTED || !this.roomId) {
       throw new Error(
@@ -336,7 +292,6 @@ export class SocketClient {
     }
 
     const token = await this.buildSessionToken();
-    const seqId = uuidv1();
     const args: IAuthArgs = {
       collaborationToken: token,
       sessionDid: this.collaborationKeyPair?.did(),
@@ -353,120 +308,51 @@ export class SocketClient {
     if (this.ownerAddress) args.ownerAddress = this.ownerAddress;
     if (this.contractAddress) args.contractAddress = this.contractAddress;
 
-    const req: RequestPayload = {
-      cmd: '/auth',
-      args,
-      seqId: seqId,
-    };
-    const response: any = await this._sendNetworkRequest(
-      JSON.stringify(req),
-      seqId,
-    );
+    const response = await this._emitWithAck('/auth', args);
+
     this._onCollaborationConnectCallback?.({
       data: response,
       roomKey: this.roomKey,
     });
+
     if (response.statusCode !== 200) {
       const message =
-        (response?.err || 'Unknown error') +
+        (response?.error || 'Unknown error') +
         `, statusCode: ${response?.statusCode}`;
 
       const error = new Error(message);
 
-      this._onHandShakeError?.(error);
+      config.onHandShakeError(error);
       return;
     }
-    if (!response.is_handshake_response) {
-      console.error('SocketAPI: handshake response is not valid', response);
-      this.disconnect('Handshake failed', response?.statusCode || 400);
-      return;
-    }
-    this._onConnect?.();
+
+    config.onConnect();
   };
 
-  private _executeRequestCallback = (data: any) => {
-    const callbackMap = this._getSequenceIdCallback(data.seqId);
+  private _handleAwarenessUpdate = (data: { data: any; roomId: string }) => {
+    if (!this.awareness) return;
 
-    if (callbackMap && typeof callbackMap.callback === 'function') {
-      this._removeSequenceIdFromMap(data.seqId);
-      delete data.seqId;
-      callbackMap.callback(data);
-      return;
-    }
-  };
+    const key = this.roomKey;
+    const encryptedPosition = data.data.position as string;
+    if (key) {
+      const decrypted = crypto.decryptData(
+        toUint8Array(key),
+        encryptedPosition,
+      );
 
-  private _dispatchEventHandler = async (message: any) => {
-    switch (message.type) {
-      case 'ROOM_UPDATE': {
-        if (message.event_type === 'ROOM_MEMBERSHIP_CHANGE') {
-          await this._fetchRoomMembers();
-        }
-        break;
+      const decryptedPosition = new Uint8Array(decrypted);
+      const decoder = decoding.createDecoder(decryptedPosition);
+      const len = decoding.readVarUint(decoder);
+
+      for (let i = 0; i < len; i++) {
+        decoding.readVarUint(decoder); // clientId
+        decoding.readVarUint(decoder); // clock
       }
-      case 'SESSION_TERMINATION': {
-        this._onSessionTerminated();
-        break;
-      }
-      default:
-        break;
+      applyAwarenessUpdate(this.awareness, decryptedPosition, null);
     }
   };
 
-  private _onSessionTerminated = () => {
-    this.disconnect('Session terminated', 1000);
-    this.resetSocketClient();
-  };
-
-  private async _processMessage(event: MessageEvent) {
-    if (!event.data) throw new Error('Failed to get message data');
-
-    const message = JSON.parse(event.data);
-
-    if (message.seqId) {
-      this._executeRequestCallback(message);
-      return;
-    }
-    if (message.is_handshake_response) {
-      this._handleHandShake(message);
-      return;
-    }
-
-    if (message.event_type === 'AWARENESS_UPDATE') {
-      await this._dispatchEventHandler(message);
-      if (this.awareness) {
-        const key = this.roomKey;
-        const encryptedPosition = message.event.data.position as string;
-        if (key) {
-          const decrypted = crypto.decryptData(
-            toUint8Array(key),
-            encryptedPosition,
-          );
-
-          const decryptedPosition = new Uint8Array(decrypted);
-          const decoder = decoding.createDecoder(decryptedPosition);
-          const len = decoding.readVarUint(decoder);
-
-          for (let i = 0; i < len; i++) {
-            decoding.readVarUint(decoder); // clientId
-            decoding.readVarUint(decoder); // clock
-          }
-          applyAwarenessUpdate(this.awareness, decryptedPosition, null);
-        }
-      }
-      return;
-    }
-
-    if (message.event) {
-      await this._dispatchEventHandler(message);
-      this._machineEventHandler?.(message);
-    }
-  }
-
-  private _clearSequenceCallbackMap() {
-    this._sequenceCallbackMap = {};
-  }
-
-  public connectSocket() {
+  public connectSocket(config: ISocketInitConfig) {
     if (
       this._webSocketStatus === SocketStatusEnum.CONNECTED ||
       this._webSocketStatus === SocketStatusEnum.CONNECTING
@@ -477,64 +363,90 @@ export class SocketClient {
     this._webSocketStatus = SocketStatusEnum.CONNECTING;
 
     return new Promise<void>((resolve) => {
-      this._webSocket = new ReconnectingWebSocket(
-        this._websocketUrl,
-        [],
-        WEBSOCKET_CONFIG,
-      );
-      this._webSocket.addEventListener('message', this._processMessage);
-      this._webSocket.onopen = () => {
+      this._socket = io(this._socketUrl, {
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1500,
+        reconnectionDelayMax: 10000,
+        timeout: 6000,
+        transports: ['websocket'],
+      });
+
+      this._socket.on('connect', () => {
         this._webSocketStatus = SocketStatusEnum.CONNECTED;
-        this._clearSequenceCallbackMap();
         resolve();
-      };
-      this._webSocket.onclose = (e: CloseEvent) => {
-        console.error('SocketAPI: socket closed', e);
-        this._webSocketStatus = SocketStatusEnum.CLOSED;
-        this._onDisconnection?.(e);
-      };
-      this._webSocket.onerror = (e: ErrorEvent | Event) => {
-        console.error('SocketAPI: socket error', e);
-        this._webSocketStatus = SocketStatusEnum.CLOSED;
-        if (
-          this._webSocket &&
-          this._webSocket.retryCount === WEBSOCKET_CONFIG.maxRetries
-        ) {
-          let errorMessage = 'Failed to connect to Socket';
+      });
 
-          if (e instanceof ErrorEvent) {
-            errorMessage += `, errorMessage: ${e?.message || 'Unknown message'}, errorName: ${e?.error?.name || 'Unknown name'}`;
-          } else {
-            if (e.target instanceof WebSocket) {
-              const ws = e.target as WebSocket;
-              errorMessage += `, readyState: ${ws?.readyState || 'Unknown ready state'}, wsUrl: ${ws?.url || 'Unknown url'}`;
-            } else {
-              errorMessage += `, errorMessage: 'Unknown error'`;
-            }
-          }
+      // Server handshake event — triggers auth flow
+      this._socket.on('/server/handshake', (message) => {
+        this._handleHandShake(message, config);
+      });
 
-          const error = new Error(errorMessage);
-          error.name = 'SocketConnectionFailedError';
-          this._onError?.(error);
-        }
-      };
+      // Server broadcast listeners
+      this._socket.on('/document/content_update', (data) => {
+        config.onContentUpdate(data);
+      });
+
+      this._socket.on('/document/awareness_update', (data) => {
+        this._handleAwarenessUpdate(data);
+      });
+
+      this._socket.on('/room/membership_change', (data) => {
+        this._fetchRoomMembers().catch(console.error);
+        config.onMembershipChange(data);
+      });
+
+      this._socket.on('/session/terminated', (data) => {
+        config.onSessionTerminated(data);
+        this._onSessionTerminated();
+      });
+
+      this._socket.on('disconnect', () => {
+        console.error('SocketAPI: socket disconnected');
+        this._webSocketStatus = SocketStatusEnum.CLOSED;
+        config.onDisconnect();
+      });
+
+      this._socket.on('connect_error', (err) => {
+        console.error('SocketAPI: socket connect error', err);
+        this._webSocketStatus = SocketStatusEnum.CLOSED;
+
+        const error = new Error(
+          `Failed to connect to Socket, errorMessage: ${err?.message || 'Unknown error'}`,
+        );
+        error.name = 'SocketConnectionFailedError';
+        this._onError?.(error);
+      });
+
+      this._socket.on('reconnect_failed', () => {
+        console.error('SocketAPI: reconnection failed');
+        this._webSocketStatus = SocketStatusEnum.CLOSED;
+        const error = new Error('Failed to reconnect to Socket');
+        error.name = 'SocketConnectionFailedError';
+        this._onError?.(error);
+      });
+
+      this._socket.on('reconnect', () => {
+        this._webSocketStatus = SocketStatusEnum.CONNECTED;
+      });
     });
   }
 
   public async init(config: ISocketInitConfig) {
-    this._onConnect = config.onConnect;
-    this._onDisconnection = config.onDisconnect;
-    this._machineEventHandler = config.onWsEvent;
     this._onError = config.onError;
-    this._onHandShakeError = config.onHandShakeError;
     this.roomId = config.roomId;
 
-    await this.connectSocket();
+    await this.connectSocket(config);
   }
+
+  private _onSessionTerminated = () => {
+    this.disconnect();
+    this.resetSocketClient();
+  };
 
   private resetSocketClient = () => {
     this._webSocketStatus = SocketStatusEnum.CLOSED;
-    this._webSocket = null;
+    this._socket = null;
     this._websocketServiceDid = '';
     this.roomId = '';
     this.roomMembers = [];

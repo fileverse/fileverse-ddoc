@@ -9,35 +9,30 @@ export interface IRoomMember {
   role: 'owner' | 'editor';
 }
 
-export interface SendUpdateResponse {
-  data: {
-    agent_id: string;
-    commitCid: string | null;
-    created_at: number;
-    data: string;
-    documentId: string;
-    id: string;
-    update_snapshot_ref: string | null;
-    updateType: string;
-  };
-  is_handshake_response: boolean;
+export interface AckResponse<T = Record<string, any>> {
   status: boolean;
   statusCode: number;
+  data?: T;
+  error?: string;
 }
 
-export interface CommitResponse {
-  data: {
-    agent_id: string;
+export interface SendUpdateResponse
+  extends AckResponse<{
+    id: string;
+    documentId: string;
+    data: string;
+    updateType: string;
+    commitCid: string | null;
+    createdAt: number;
+  }> {}
+
+export interface CommitResponse
+  extends AckResponse<{
     cid: string;
-    created_at: number;
-    data: any | null;
+    createdAt: number;
     documentId: string;
     updates: string[];
-  };
-  is_handshake_response: boolean;
-  status: boolean;
-  statusCode: number;
-}
+  }> {}
 
 export interface SyncMachineContext {
   ydoc: Y.Doc;
@@ -82,63 +77,26 @@ export interface SyncMachineContext {
     updateChunk: string,
   ) => void;
 }
-export interface ErrorResponseMessage {
-  status: boolean;
-  statusCode: number;
-  seqId: string | null;
-  is_handshake_response: boolean;
-  err: string;
-  err_detail: { [key: string]: any } | null;
-}
-
-export interface SuccessResponseMessage {
-  status: boolean;
-  statusCode: number;
-  seqId: string | null;
-  is_handshake_response: boolean;
-  data: { [key: string]: any };
-}
-
-export interface EventMessage {
-  type: string;
-  event_type: string;
-  event: { data: any; roomId: string };
-}
-
-export type RequestResponse = ErrorResponseMessage | SuccessResponseMessage;
-export type OnMessagePayloadType = RequestResponse | EventMessage;
-
-export type EventHandler = (message: EventMessage) => void;
-export type DisconnectHandler = (e: CloseEvent | ErrorEvent) => void;
-export type ConnectHandler = () => void;
-
-export interface PartialRequest {
-  cmd: string;
-  args: { [key: string]: any };
-}
-
-export interface RequestPayload extends PartialRequest {
-  seqId: string;
-}
-
-export type SequenceResponseCB = (data: RequestResponse) => void;
-
-export interface SequenceToRequestMapValue {
-  callback: SequenceResponseCB;
-}
-
-export type SequenceToRequestMap = {
-  [key: string]: SequenceToRequestMapValue;
-};
 
 export type Update = Uint8Array;
 
 export interface ISocketInitConfig {
-  onConnect: ConnectHandler;
-  onDisconnect: DisconnectHandler;
+  onConnect: () => void;
+  onDisconnect: () => void;
   onError: (err: Error) => void;
-  onWsEvent: EventHandler;
   onHandShakeError: (err: Error) => void;
+  onContentUpdate: (data: {
+    id: string;
+    data: string;
+    createdAt: number;
+    roomId: string;
+  }) => void;
+  onMembershipChange: (data: {
+    action: string;
+    user: { role: string };
+    roomId: string;
+  }) => void;
+  onSessionTerminated: (data: { roomId: string }) => void;
   roomId: string;
 }
 
