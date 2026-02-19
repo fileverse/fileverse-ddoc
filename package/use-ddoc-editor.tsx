@@ -36,7 +36,6 @@ import { ToCItemType } from './components/toc/types';
 import { TWITTER_REGEX } from './constants/twitter';
 import { useRtcWebsocketDisconnector } from './hooks/use-rtc-websocket-disconnector';
 import { getResponsiveColor } from './utils/colors';
-import { Mark } from 'prosemirror-model';
 // import { SyncCursor } from './extensions/sync-cursor';
 
 const usercolors = [
@@ -944,50 +943,45 @@ export const useDdocEditor = ({
       return;
     }
     const timeoutId = setTimeout(() => {
-      const { from, to } = editor.state.selection;
+      const { tr, doc } = editor.state;
+      let hasChanges = false;
 
-      // Get all text color marks
-      const marks: { from: number; to: number; mark: Mark }[] = [];
-      editor.state.doc.descendants((node, pos) => {
-        if (node.marks) {
-          node.marks.forEach((mark) => {
-            if (mark.type.name === 'textStyle' && mark.attrs.color) {
-              marks.push({
-                from: pos,
-                to: pos + node.nodeSize,
-                mark,
-              });
-            }
+      doc.descendants((node, pos) => {
+        if (!node.marks || node.marks.length === 0) return;
+
+        const textStyleMark = node.marks.find(
+          (m) => m.type.name === 'textStyle' && m.attrs.color,
+        );
+
+        if (!textStyleMark) return;
+
+        const originalColor =
+          textStyleMark.attrs['data-original-color'] ||
+          textStyleMark.attrs.color;
+
+        if (originalColor.startsWith('var(--')) return;
+
+        const responsiveColor = getResponsiveColor(
+          originalColor,
+          themeRef.current,
+        );
+
+        if (responsiveColor !== textStyleMark.attrs.color) {
+          hasChanges = true;
+          const newMark = textStyleMark.type.create({
+            ...textStyleMark.attrs,
+            color: responsiveColor,
+            'data-original-color': originalColor,
           });
+
+          tr.removeMark(pos, pos + node.nodeSize, textStyleMark);
+          tr.addMark(pos, pos + node.nodeSize, newMark);
         }
       });
 
-      // Check if any marks need processing
-      if (marks.length > 0) {
-        const transaction = editor.chain();
-        marks.forEach(({ from: markFrom, to: markTo, mark }) => {
-          console.log(mark);
-          const originalColor =
-            mark.attrs['data-original-color'] || mark.attrs.color;
-          if (originalColor.startsWith('var(--color-editor')) return;
-          const responsiveColor = getResponsiveColor(
-            originalColor,
-            themeRef.current,
-          );
-
-          if (responsiveColor !== mark.attrs.color) {
-            transaction
-              .setTextSelection({ from: markFrom, to: markTo })
-              .setMark('textStyle', {
-                color: responsiveColor,
-                'data-original-color': originalColor,
-              });
-          }
-        });
-        transaction.run();
-
-        // Restore original selection
-        editor.commands.setTextSelection({ from, to });
+      if (hasChanges) {
+        tr.setMeta('addToHistory', false);
+        editor.view.dispatch(tr);
       }
     }, 100);
 
