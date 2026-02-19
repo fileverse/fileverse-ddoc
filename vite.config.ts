@@ -18,7 +18,10 @@ export default defineConfig({
       fileName: (format) => `index.${format}.js`,
     },
     rollupOptions: {
-      external: ['react', 'react-dom'],
+      external: (id) =>
+        ['react', 'react-dom', '@fileverse/ui'].includes(id) ||
+        id.startsWith('@fileverse/crypto') ||
+        id.startsWith('viem'),
       output: {
         globals: {
           react: 'React',
