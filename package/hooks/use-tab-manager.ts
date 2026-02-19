@@ -27,13 +27,16 @@ export const useTabManager = ({
   const [activeTabId, _setActiveTabId] = useState('');
   const [tabs, setTabs] = useState<Tab[]>([]);
 
-  const setActiveTabId = (id: string) => {
-    if (!ydoc) return;
-    const { activeTab } = getTabsYdocNodes(ydoc);
-    activeTab.delete(0, activeTab.length);
-    activeTab.insert(0, id);
-    _setActiveTabId(id);
-  };
+  const setActiveTabId = useCallback(
+    (id: string) => {
+      if (!ydoc || id === activeTabId) return;
+      const { activeTab } = getTabsYdocNodes(ydoc);
+      activeTab.delete(0, activeTab.length);
+      activeTab.insert(0, id);
+      _setActiveTabId(id);
+    },
+    [activeTabId, ydoc],
+  );
 
   useEffect(() => {
     if (!ydoc) return;

@@ -21,7 +21,7 @@ export function migrateDefaultFragmentToTab(doc: Y.Doc, targetTabId: string) {
 
       targetFragment.insert(0, clonedNodes);
       defaultFragment.delete(0, defaultFragment.length);
-    });
+    }, 'self');
   }
 }
 
@@ -31,7 +31,7 @@ export function deriveTabsFromEncodedState(
 ) {
   if (yjsEncodedState) {
     try {
-      Y.applyUpdate(doc, toUint8Array(yjsEncodedState));
+      Y.applyUpdate(doc, toUint8Array(yjsEncodedState), 'self');
     } catch (err) {
       console.log(err);
     }
@@ -68,7 +68,7 @@ export function deriveTabsFromEncodedState(
 
       // Ensure fragment exists
       doc.getXmlFragment(DEFAULT_TAB_ID);
-    });
+    }, 'self');
   }
 
   migrateDefaultFragmentToTab(doc, DEFAULT_TAB_ID);
