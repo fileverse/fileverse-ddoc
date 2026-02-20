@@ -40,11 +40,12 @@ export const shouldShow = ({ editor }: { editor: Editor }) => {
   let hasYellowHighlight = false;
   editor.state.doc.nodesBetween(from, to, (node) => {
     if (node.marks) {
-      node.marks.forEach((mark) => {
+      for (const mark of node.marks) {
         if (mark.type.name === 'highlight' && mark.attrs.color === 'yellow') {
           hasYellowHighlight = true;
+          return false; // Stop traversal early
         }
-      });
+      }
     }
   });
   return !hasYellowHighlight;
