@@ -478,6 +478,7 @@ function App() {
         collabConfig={collabConfig}
         onCollaboratorChange={onCollaboratorChange}
         documentStyling={documentStyling}
+        isDDocOwner={true}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}
