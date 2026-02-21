@@ -28,7 +28,12 @@ export function migrateDefaultFragmentToTab(doc: Y.Doc, targetTabId: string) {
 export function deriveTabsFromEncodedState(
   yjsEncodedState: string,
   doc: Y.Doc,
+  options?: {
+    createDefaultTabIfMissing?: boolean;
+  },
 ) {
+  const createDefaultTabIfMissing = options?.createDefaultTabIfMissing ?? true;
+
   if (yjsEncodedState) {
     try {
       Y.applyUpdate(doc, toUint8Array(yjsEncodedState), 'self');
@@ -42,6 +47,13 @@ export function deriveTabsFromEncodedState(
   let order = ddocTabs.get('order') as Y.Array<string>;
   let tabsMap = ddocTabs.get('tabs') as Y.Map<Y.Map<string | boolean | null>>;
   let activeTabId = ddocTabs.get('activeTabId') as Y.Text;
+
+  if ((!order || !tabsMap) && !createDefaultTabIfMissing) {
+    return {
+      tabList: [],
+      activeTabId: activeTabId?.toString() || 'default',
+    };
+  }
 
   if (!order || !tabsMap) {
     doc.transact(() => {
@@ -71,7 +83,9 @@ export function deriveTabsFromEncodedState(
     }, 'self');
   }
 
-  migrateDefaultFragmentToTab(doc, DEFAULT_TAB_ID);
+  if (createDefaultTabIfMissing) {
+    migrateDefaultFragmentToTab(doc, DEFAULT_TAB_ID);
+  }
 
   const tabList: Tab[] = [];
 

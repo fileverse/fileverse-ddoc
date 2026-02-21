@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import cn from 'classnames';
 import { IconButton, LucideIcon, Tooltip } from '@fileverse/ui';
 import {
@@ -19,6 +19,7 @@ import { TabDragPreview, SortableTabItem } from './tab-item';
 import { getTabsYdocNodes, Tab } from './utils/tab-utils';
 import { Editor } from '@tiptap/core';
 import * as Y from 'yjs';
+import { createPortal } from 'react-dom';
 
 export interface DocumentTabsSidebarProps {
   tabs: Tab[];
@@ -42,9 +43,23 @@ export interface DocumentTabsSidebarProps {
   orderTab: (destinationTabId: string, activeTabId: string) => void;
   ydoc: Y.Doc;
   tabCommentCounts: Record<string, number>;
+  tabSectionContainer?: HTMLElement;
+  isVersionHistoryMode?: boolean;
 }
 
 export const DocumentTabsSidebar = ({
+  tabSectionContainer,
+  ...rest
+}: DocumentTabsSidebarProps) => {
+  if (!tabSectionContainer && rest.isVersionHistoryMode) return null;
+
+  if (tabSectionContainer) {
+    return createPortal(<TabSidebar {...rest} />, tabSectionContainer);
+  }
+  return <TabSidebar {...rest} />;
+};
+
+export const TabSidebar = ({
   tabs,
   activeTabId,
   setActiveTabId,
@@ -62,6 +77,7 @@ export const DocumentTabsSidebar = ({
   orderTab,
   ydoc,
   tabCommentCounts,
+  isVersionHistoryMode,
 }: DocumentTabsSidebarProps) => {
   const handleNameChange = (tabId: string, nextName: string) => {
     renameTab(tabId, { newName: nextName });
@@ -74,8 +90,14 @@ export const DocumentTabsSidebar = ({
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
   );
   const [activeDragId, setActiveDragId] = useState<string | null>(null);
-  const activeTab = tabs.find((tab) => tab.id === activeTabId);
-  const activeDragTab = tabs.find((tab) => tab.id === activeDragId);
+  const activeTab = useMemo(
+    () => tabs.find((tab) => tab.id === activeTabId),
+    [tabs, activeTabId],
+  );
+  const activeDragTab = useMemo(
+    () => tabs.find((tab) => tab.id === activeDragId),
+    [tabs, activeDragId],
+  );
 
   return (
     <DndContext
@@ -93,13 +115,15 @@ export const DocumentTabsSidebar = ({
       }}
     >
       <SortableContext
+        disabled={isPreviewMode || isVersionHistoryMode}
         items={tabs.map((tab) => tab.id)}
         strategy={verticalListSortingStrategy}
       >
         <div
           className={cn(
-            'flex flex-col items-start w-[263px] justify-start top-[16px] absolute left-0 px-4',
+            'flex flex-col items-start max-w-[263px] w-full justify-start absolute left-0 px-4',
             !hasToC && 'hidden',
+            !isVersionHistoryMode ? 'top-[16px]' : 'top-[0px]',
           )}
         >
           <Tooltip
@@ -129,9 +153,9 @@ export const DocumentTabsSidebar = ({
 
           {showTOC && (
             <>
-              <div className="flex flex-col gap-[8px] mt-[8px] w-full">
+              <div className="flex flex-col gap-[8px] mt-[16px] w-full">
                 <div className="flex items-center px-[12px] py-[8px] justify-between">
-                  <span className="text-heading-sm color-text-default">
+                  <span className="text-heading-sm truncate color-text-default">
                     Document tabs
                   </span>
 
@@ -165,6 +189,7 @@ export const DocumentTabsSidebar = ({
                   activeDragId={activeDragId}
                   isPreviewMode={isPreviewMode}
                   ydoc={ydoc}
+                  isVersionHistoryMode={isVersionHistoryMode}
                   commentCount={tabCommentCounts[tab.id] || 0}
                   moveTabUp={() => {
                     if (tabIndex <= 0) return;
@@ -214,6 +239,7 @@ export const DdocTab = ({
   moveTabUp,
   moveTabDown,
   isPreviewMode,
+  isVersionHistoryMode,
 }: {
   tab: Tab;
   tabIndex: number;
@@ -233,6 +259,7 @@ export const DdocTab = ({
   moveTabUp: () => void;
   moveTabDown: () => void;
   isPreviewMode: boolean;
+  isVersionHistoryMode?: boolean;
 }) => {
   const [tabMetadata, setTabMetadata] = useState({
     title: tab.name,
@@ -284,11 +311,16 @@ export const DdocTab = ({
           metadataMap?.set('showOutline', value);
         }}
         isPreviewMode={isPreviewMode}
+        isVersionHistoryMode={isVersionHistoryMode}
       />
+
       <div
         className={cn(
           'table-of-contents animate-in fade-in slide-in-from-left-5',
-          tab.id === activeTabId && !activeDragId && tabMetadata.showToc
+          tab.id === activeTabId &&
+            !activeDragId &&
+            tabMetadata.showToc &&
+            !isVersionHistoryMode
             ? 'block'
             : 'hidden',
         )}

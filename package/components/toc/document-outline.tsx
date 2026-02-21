@@ -22,6 +22,8 @@ export const DocumentOutline = ({
   orderTab,
   ydoc,
   tabCommentCounts,
+  tabSectionContainer,
+  isVersionHistoryMode,
 }: DocumentOutlineProps) => {
   const isMediaMax1280px = useMediaQuery('(max-width:1280px)');
 
@@ -45,6 +47,8 @@ export const DocumentOutline = ({
       orderTab={orderTab}
       ydoc={ydoc}
       tabCommentCounts={tabCommentCounts}
+      tabSectionContainer={tabSectionContainer}
+      isVersionHistoryMode={isVersionHistoryMode}
     />
   ) : (
     <DocumentMobileTabPanel

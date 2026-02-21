@@ -50,6 +50,9 @@ const usercolors = [
 
 interface UseTabEditorArgs {
   ydoc: Y.Doc;
+  isVersionMode?: boolean;
+  hasTabState?: boolean;
+  versionId?: string;
   isPreviewMode?: boolean;
   initialContent: DdocProps['initialContent'];
   enableCollaboration?: boolean;
@@ -88,6 +91,9 @@ interface UseTabEditorArgs {
 
 export const useTabEditor = ({
   ydoc,
+  isVersionMode,
+  hasTabState,
+  versionId,
   isPreviewMode,
   initialContent,
   enableCollaboration,
@@ -299,6 +305,7 @@ export const useTabEditor = ({
   // ----- Intitalise and handle content from consumer app -----
 
   const initialContentSetRef = useRef(false);
+  const versionHydrationKeyRef = useRef<string | null>(null);
 
   const mergeAndApplyUpdate = useCallback(
     (contents: string[]) => {
@@ -316,15 +323,30 @@ export const useTabEditor = ({
   );
 
   useEffect(() => {
-    if (
-      initialContent === null ||
-      !editor ||
-      initialContentSetRef.current ||
-      !ydoc
-    ) {
+    if (initialContent === null || !editor || !ydoc) {
       if (initialContent !== null) {
         setIsContentLoading(false);
       }
+      return;
+    }
+
+    if (isVersionMode && hasTabState && !activeTabId) {
+      setIsContentLoading(true);
+      return;
+    }
+
+    const targetField = activeTabId || 'default';
+    const hydrationKey = `${versionId || 'no-version-id'}:${targetField}`;
+
+    if (!isVersionMode && initialContentSetRef.current) {
+      if (initialContent !== null) {
+        setIsContentLoading(false);
+      }
+      return;
+    }
+
+    if (isVersionMode && versionHydrationKeyRef.current === hydrationKey) {
+      setIsContentLoading(false);
       return;
     }
 
@@ -352,18 +374,25 @@ export const useTabEditor = ({
       if (zoomLevel) {
         zoomService.setZoom(zoomLevel);
       }
-
+      if (isVersionMode) {
+        versionHydrationKeyRef.current = hydrationKey;
+        setIsContentLoading(false);
+        return;
+      }
       initialiseYjsIndexedDbProvider().finally(() => {
         setIsContentLoading(false);
       });
     });
-
     initialContentSetRef.current = true;
   }, [
     initialContent,
     editor,
     ydoc,
     zoomLevel,
+    isVersionMode,
+    hasTabState,
+    activeTabId,
+    versionId,
     setIsContentLoading,
     initialiseYjsIndexedDbProvider,
     ignoreCorruptedData,

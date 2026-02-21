@@ -40,6 +40,7 @@ export interface TabItemProps {
   onMoveUp?: () => void;
   onMoveDown?: () => void;
   isPreviewMode: boolean;
+  isVersionHistoryMode?: boolean;
 }
 
 interface SortableTabItemProps extends Omit<TabItemProps, 'dragHandleProps'> {
@@ -111,6 +112,7 @@ export const TabItem = ({
   onMoveUp,
   onMoveDown,
   isPreviewMode,
+  isVersionHistoryMode,
 }: TabItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [openEmojiPickerTrigger, setOpenEmojiPickerTrigger] = useState(0);
@@ -222,7 +224,7 @@ export const TabItem = ({
         isActive && 'color-bg-default-hover',
       )}
     >
-      <div className="flex items-center gap-[8px] flex-1">
+      <div className="flex items-center gap-[8px] min-w-0 flex-1">
         <TabEmojiPicker
           emoji={emoji}
           setEmoji={(_emoji) => {
@@ -234,7 +236,7 @@ export const TabItem = ({
         />
 
         {!isEditing ? (
-          <span className="text-heading-xsm color-text-default max-w-[110px] truncate select-none">
+          <span className="text-heading-xsm color-text-default flex-1 truncate select-none">
             {title}
           </span>
         ) : (
@@ -257,12 +259,14 @@ export const TabItem = ({
           />
         )}
       </div>
-      <div className="flex gap-[8px] items-center">
-        <span className="h-[18px] color-text-default text-[12px] text-helper-text-bold rounded-full min-w-[18px] text-center color-bg-tertiary">
-          {commentCount}
-        </span>
-        {!hideContentMenu && <TabContextMenu sections={menuSections} />}
-      </div>
+      {!isVersionHistoryMode && (
+        <div className="flex gap-[8px] items-center">
+          <span className="h-[18px] color-text-default text-[12px] text-helper-text-bold rounded-full min-w-[18px] text-center color-bg-tertiary">
+            {commentCount}
+          </span>
+          {!hideContentMenu && <TabContextMenu sections={menuSections} />}
+        </div>
+      )}
     </div>
   );
 };

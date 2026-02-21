@@ -52,4 +52,6 @@ export interface DocumentOutlineProps {
   orderTab: (destinationTabId: string, activeTabId: string) => void;
   ydoc: Y.Doc;
   tabCommentCounts: Record<string, number>;
+  tabSectionContainer?: HTMLElement;
+  isVersionHistoryMode?: boolean;
 }

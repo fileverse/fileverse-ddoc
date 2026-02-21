@@ -87,6 +87,12 @@ export interface DocumentStyling {
   orientation?: 'portrait' | 'landscape';
 }
 export interface DdocProps extends CommentAccountProps {
+  versionHistoryState?: {
+    enabled: boolean;
+    versionId: string;
+    content: string | string[];
+  };
+  tabSectionContainer?: HTMLElement;
   isCollabDocumentPublished?: boolean;
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,

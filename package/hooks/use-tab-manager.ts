@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import * as Y from 'yjs';
 import { DdocProps } from '../types';
 import {
@@ -16,6 +16,7 @@ interface UseTabManagerArgs {
   initialContent: DdocProps['initialContent'];
   enableCollaboration: DdocProps['enableCollaboration'];
   isDDocOwner: boolean;
+  isVersionMode?: boolean;
 }
 
 export const useTabManager = ({
@@ -23,9 +24,11 @@ export const useTabManager = ({
   initialContent,
   enableCollaboration,
   isDDocOwner,
+  isVersionMode,
 }: UseTabManagerArgs) => {
   const [activeTabId, _setActiveTabId] = useState('');
   const [tabs, setTabs] = useState<Tab[]>([]);
+  const hasTabState = useMemo(() => tabs.length > 0, [tabs]);
 
   const setActiveTabId = useCallback(
     (id: string) => {
@@ -47,11 +50,15 @@ export const useTabManager = ({
       const { tabList, activeTabId: id } = deriveTabsFromEncodedState(
         initialContent as string,
         ydoc,
+        {
+          createDefaultTabIfMissing: !isVersionMode,
+        },
       );
       _setActiveTabId(id);
       setTabs(tabList);
+      return;
     }
-  }, [ydoc, initialContent, isDDocOwner, enableCollaboration]);
+  }, [ydoc, initialContent, isDDocOwner, enableCollaboration, isVersionMode]);
 
   useEffect(() => {
     if (!ydoc) return;
@@ -294,6 +301,7 @@ export const useTabManager = ({
 
   return {
     tabs,
+    hasTabState,
     activeTabId,
     setTabs,
     setActiveTabId,

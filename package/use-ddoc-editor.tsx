@@ -7,6 +7,7 @@ import { useYjsSetup } from './hooks/use-yjs-setup';
 export const useDdocEditor = ({
   isPreviewMode,
   initialContent,
+  versionHistoryState,
   enableCollaboration,
   onChange,
   onCollaboratorChange,
@@ -38,6 +39,8 @@ export const useDdocEditor = ({
 }: Partial<DdocProps>) => {
   const [isContentLoading, setIsContentLoading] = useState(true);
   const [isCollabContentLoading, setIsCollabContentLoading] = useState(true);
+  const isVersionMode = Boolean(versionHistoryState?.enabled);
+  const ddocContent = versionHistoryState?.content ?? initialContent;
 
   const yjsSetup = useYjsSetup({
     onChange,
@@ -55,16 +58,18 @@ export const useDdocEditor = ({
 
   const tabManager = useTabManager({
     ydoc: yjsSetup.ydoc,
-    initialContent,
+    initialContent: ddocContent,
     enableCollaboration,
     isDDocOwner: rest.isDDocOwner || false,
+    isVersionMode,
   });
 
   const tabEditor = useTabEditor({
     ydoc: yjsSetup.ydoc,
     isPreviewMode,
-    initialContent,
+    initialContent: ddocContent,
     enableCollaboration,
+    versionId: versionHistoryState?.versionId,
     collabConfig,
     isReady: yjsSetup.isReady,
     awareness: yjsSetup.awareness,
@@ -96,6 +101,8 @@ export const useDdocEditor = ({
     initialiseYjsIndexedDbProvider: yjsSetup.initialiseYjsIndexedDbProvider,
     externalExtensions,
     activeTabId: tabManager.activeTabId,
+    hasTabState: tabManager.hasTabState,
+    isVersionMode,
   });
 
   const aggregatedContentLoading =
@@ -110,6 +117,8 @@ export const useDdocEditor = ({
     terminateSession: yjsSetup.terminateSession,
     isContentLoading: Boolean(aggregatedContentLoading),
     tabs: tabManager.tabs,
+    hasTabState: tabManager.hasTabState,
+    isVersionMode,
     activeTabId: tabManager.activeTabId,
     setTabs: tabManager.setTabs,
     setActiveTabId: tabManager.setActiveTabId,
