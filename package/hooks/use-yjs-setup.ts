@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import * as Y from 'yjs';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { JSONContent } from '@tiptap/react';
@@ -59,43 +59,61 @@ export const useYjsSetup = ({
 
   useRtcWebsocketDisconnector(syncState, enableCollaboration);
 
-  const providerRef = useRef<IndexeddbPersistence | null>(null);
+  const yjsIndexeddbProviderRef = useRef<IndexeddbPersistence | null>(null);
 
-  const initialiseYjsIndexedDbProvider = useCallback(async () => {
-    const provider = providerRef.current;
+  const initialiseYjsIndexedDbProvider = async () => {
+    const provider = yjsIndexeddbProviderRef.current;
     if (provider) {
       await provider.destroy();
     }
-
     if (enableIndexeddbSync && ddocId) {
       try {
-        const newProvider = new IndexeddbPersistence(ddocId, ydoc);
-        await newProvider.whenSynced;
-        providerRef.current = newProvider;
+        const newYjsIndexeddbProvider = new IndexeddbPersistence(ddocId, ydoc);
+        // Wait for the database to be ready and synced
+        await newYjsIndexeddbProvider.whenSynced;
+        yjsIndexeddbProviderRef.current = newYjsIndexeddbProvider;
       } catch (error) {
         console.error('IndexedDB initialization failed:', error);
         onIndexedDbError?.(
           error instanceof Error ? error : new Error(String(error)),
         );
+        // Don't rethrow - allow editor to continue without persistence
       }
     }
-  }, [enableIndexeddbSync, ddocId, ydoc, onIndexedDbError]);
+  };
+
+  const onChangeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handler = (update: Uint8Array, origin: any) => {
       if (origin === 'self') return;
-      onChange?.(
-        fromUint8Array(Y.encodeStateAsUpdate(ydoc)),
-        fromUint8Array(update),
-      );
-    };
+      const chunk = fromUint8Array(update);
 
-    ydoc.on('update', handler);
-    return () => {
-      ydoc.off('update', handler);
+      // Debounce the expensive full-state encoding.
+      // The incremental chunk is tiny and fires immediately via the second arg.
+      // The full Y.Doc encoding (first arg) is O(n) and only needed for
+      // persistence — batching it avoids encoding on every keystroke.
+      if (onChangeDebounceRef.current) {
+        clearTimeout(onChangeDebounceRef.current);
+      }
+      onChangeDebounceRef.current = setTimeout(() => {
+        onChangeDebounceRef.current = null;
+        onChange?.(fromUint8Array(Y.encodeStateAsUpdate(ydoc)), chunk);
+      }, 300);
     };
-  }, [ydoc, onChange]);
+    if (ydoc) {
+      ydoc.on('update', handler);
+    }
+    return () => {
+      ydoc?.off('update', handler);
+      if (onChangeDebounceRef.current) {
+        clearTimeout(onChangeDebounceRef.current);
+      }
+    };
+  }, [ydoc]);
 
   return {
     ydoc,

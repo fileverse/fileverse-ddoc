@@ -26,9 +26,12 @@ export const getResizableMediaNodeView =
   ({ node, updateAttributes, deleteNode }: NodeViewProps) => {
     const { isPreviewMode } = useEditingContext();
 
-    const [mediaType, setMediaType] = useState<
-      'img' | 'secure-img' | 'video' | 'iframe'
-    >();
+    const mediaType: 'img' | 'secure-img' | 'video' | 'iframe' =
+      node.attrs['media-type'];
+
+    const isSoundcloudIframe =
+      mediaType === 'iframe' &&
+      new URL(node.attrs.src).hostname === 'w.soundcloud.com';
 
     const [aspectRatio, setAspectRatio] = useState(0);
 
@@ -111,8 +114,14 @@ export const getResizableMediaNodeView =
       mediaSetupOnLoad();
     }, []);
 
-    const limitWidthOrHeight = ({ width, height }: WidthAndHeight) =>
-      width < 200 || height < 200;
+    const limitWidthOrHeight = (
+      { width, height }: WidthAndHeight,
+      opts: { isSoundcloud?: boolean } = {},
+    ) => {
+      const minWidth = 200;
+      const minHeight = opts.isSoundcloud ? 166 : 200;
+      return width < minWidth || height < minHeight;
+    };
 
     const documentHorizontalMouseMove = (e: MouseEvent | TouchEvent) => {
       // Determine if the event is a touch event and extract clientX accordingly
@@ -189,8 +198,12 @@ export const getResizableMediaNodeView =
 
       // Calculate height based on media type and aspect ratio
       if (mediaType === 'iframe') {
-        // Protect against division by zero or undefined aspectRatio
-        newMediaDimensions.height = newMediaDimensions.width / (16 / 9);
+        // For SoundCloud keep fixed height (166px) and allow width resizing.
+        if (isSoundcloudIframe) {
+          newMediaDimensions.height = 166;
+        } else {
+          newMediaDimensions.height = newMediaDimensions.width / (16 / 9);
+        }
       } else {
         // Ensure aspectRatio is a valid number
         const validAspectRatio = isNaN(aspectRatio) ? 1 : aspectRatio; // Fallback to 1 if aspectRatio is NaN
@@ -205,7 +218,12 @@ export const getResizableMediaNodeView =
         ? 0
         : newMediaDimensions.height;
 
-      if (limitWidthOrHeight(newMediaDimensions)) return;
+      if (
+        limitWidthOrHeight(newMediaDimensions, {
+          isSoundcloud: isSoundcloudIframe,
+        })
+      )
+        return;
 
       updateAttributes(newMediaDimensions);
     };
@@ -231,7 +249,6 @@ export const getResizableMediaNodeView =
     const [isAlign, setIsAlign] = useState<boolean>();
 
     useEffect(() => {
-      setMediaType(node.attrs['media-type']);
       calculateMediaActionActiveStates();
       setIsFloat(node.attrs.dataFloat);
       setIsAlign(node.attrs.dataAlign);
@@ -461,23 +478,28 @@ export const getResizableMediaNodeView =
 
           {!isPreviewMode && (
             <span className="absolute top-2 right-2 transition-all rounded-md overflow-hidden box-border border color-border-default color-bg-default shadow-elevation-3 opacity-0 group-hover:opacity-100 flex gap-1 p-1">
-              {resizableMediaActions.map((btn, index) => {
-                return (
-                  <ToolbarButton
-                    key={index}
-                    tooltip={btn.tooltip}
-                    isActive={mediaActionActiveState[btn.tooltip]}
-                    onClick={() =>
-                      btn.tooltip === 'Delete'
-                        ? deleteNode()
-                        : btn.action?.(updateAttributes)
-                    }
-                    icon={btn.icon as string}
-                    classNames="min-w-6 aspect-square"
-                    size="sm"
-                  />
-                );
-              })}
+              {resizableMediaActions
+                .filter(
+                  (btn) =>
+                    mediaType !== 'iframe' || btn.tooltip !== 'Add Caption',
+                )
+                .map((btn, index) => {
+                  return (
+                    <ToolbarButton
+                      key={index}
+                      tooltip={btn.tooltip}
+                      isActive={mediaActionActiveState[btn.tooltip]}
+                      onClick={() =>
+                        btn.tooltip === 'Delete'
+                          ? deleteNode()
+                          : btn.action?.(updateAttributes)
+                      }
+                      icon={btn.icon as string}
+                      classNames="min-w-6 aspect-square"
+                      size="sm"
+                    />
+                  );
+                })}
             </span>
           )}
         </div>

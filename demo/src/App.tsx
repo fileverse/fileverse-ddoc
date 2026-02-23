@@ -33,6 +33,9 @@ function App() {
   const [showTOC, setShowTOC] = useState<boolean>(false);
   const [collaborationId, setCollaborationId] = useState<string>('');
 
+  const [, setCharacterCount] = useState(0);
+  const [, setWordCount] = useState(0);
+
   // Document styling state - starts undefined to allow dark mode to work
   const [documentStyling, setDocumentStyling] = useState<
     DocumentStyling | undefined
@@ -479,6 +482,8 @@ function App() {
         onCollaboratorChange={onCollaboratorChange}
         documentStyling={documentStyling}
         isDDocOwner={true}
+        setCharacterCount={setCharacterCount}
+        setWordCount={setWordCount}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}

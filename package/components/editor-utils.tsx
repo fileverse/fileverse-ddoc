@@ -26,9 +26,10 @@ import {
   TextAreaFieldV2,
   TextField,
   Tooltip,
+  useTheme,
 } from '@fileverse/ui';
 import { useMediaQuery } from 'usehooks-ts';
-import { colors } from '../utils/colors';
+import { colors, textColors } from '../utils/colors';
 import { validateImageExtension } from '../utils/check-image-type';
 import { handleContentPrint } from '../utils/handle-print';
 import { useComments } from '../components/inline-comment/context/comment-context';
@@ -394,11 +395,11 @@ export const useEditorToolbar = ({
       });
     };
     updateMarkStates();
+    // Only update mark states on selection changes — not every transaction.
+    // Text input transactions don't change which marks are active at the cursor.
     editor.on('selectionUpdate', updateMarkStates);
-    editor.on('transaction', updateMarkStates);
     return () => {
       editor.off('selectionUpdate', updateMarkStates);
-      editor.off('transaction', updateMarkStates);
     };
   }, [editor]);
 
@@ -1715,44 +1716,50 @@ export const TextColor = ({
   elementRef: React.RefObject<HTMLDivElement>;
   setVisibility: Dispatch<SetStateAction<IEditorTool>>;
 }) => {
+  const { theme } = useTheme();
   return (
     <div
       ref={elementRef}
-      className="z-50 h-auto gap-0.5 flex flex-wrap max-h-[400px] w-[14.7rem] overflow-y-auto scroll-smooth rounded color-bg-default px-2 py-2 shadow-elevation-3 transition-all"
+      className="h-auto gap-0.5 rounded color-bg-default px-3 py-3 shadow-elevation-3 transition-all max-w-fit"
     >
-      {colors.map((color) => {
-        const contrastColor = getContrastColor(color.color);
-        const tickColorClassName =
-          contrastColor === '#000000' ? 'text-black' : 'text-white';
-        return (
-          <div
-            onMouseDown={(e) => e.preventDefault()}
-            onClick={() => {
-              if (!editor) return;
-              editor.chain().focus().setColor(color.color).run();
-              setVisibility(IEditorTool.NONE);
-            }}
-            key={color.color}
-            className={cn(
-              'w-5 rounded-full flex justify-center items-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-5',
-              color.code,
-            )}
-          >
-            <LucideIcon
-              name="Check"
+      <div className="grid grid-cols-[repeat(15,_minmax(0,_1fr))] gap-0.5">
+        {textColors.map((color) => {
+          const contrastColor = getContrastColor(
+            theme === 'dark' ? color.dark : color.light,
+          );
+          const tickColorClassName =
+            contrastColor === '#000000' ? 'text-black' : 'text-white';
+          const colorCSSVariable = `var(--color-editor-${color.name})`;
+          return (
+            <div
+              onMouseDown={(e) => e.preventDefault()}
+              onClick={() => {
+                if (!editor) return;
+                editor.chain().focus().setColor(colorCSSVariable).run();
+                setVisibility(IEditorTool.NONE);
+              }}
+              key={color.name}
               className={cn(
-                'w-[14px] aspect-square',
-                editor?.isActive('textStyle', {
-                  color: color.color,
-                }) || false
-                  ? 'visible'
-                  : 'invisible',
-                tickColorClassName,
+                'w-5 rounded-full flex justify-center items-center cursor-pointer ease-in duration-200 hover:scale-[1.05] h-5',
               )}
-            />
-          </div>
-        );
-      })}
+              style={{ backgroundColor: colorCSSVariable }}
+            >
+              <LucideIcon
+                name="Check"
+                className={cn(
+                  'w-[14px] aspect-square',
+                  editor?.isActive('textStyle', {
+                    color: colorCSSVariable,
+                  }) || false
+                    ? 'visible'
+                    : 'invisible',
+                  tickColorClassName,
+                )}
+              />
+            </div>
+          );
+        })}
+      </div>
       <Button
         variant="ghost"
         onMouseDown={(e) => e.preventDefault()}
@@ -1761,7 +1768,7 @@ export const TextColor = ({
           editor.chain().focus().unsetColor().run();
           setVisibility(IEditorTool.NONE);
         }}
-        className="w-full justify-start mt-2 gap-1 !p-1 h-fit"
+        className="w-full justify-center mt-2 gap-1 !p-1 h-fit min-w-fit"
       >
         <LucideIcon name="Ban" className="w-[18px] aspect-square" />
         <span>None</span>

@@ -36,6 +36,9 @@ import { TWITTER_REGEX } from '../constants/twitter';
 import { IConnectConf } from '../sync-local/useSyncMachine';
 import { headingToSlug } from '../utils/heading-to-slug';
 import { useResponsive } from '../utils/responsive';
+import { yCursorPlugin, yCursorPluginKey } from 'y-prosemirror';
+import { useTheme } from '@fileverse/ui';
+import { getResponsiveColor } from '../utils/colors';
 
 const usercolors = [
   '#30bced',
@@ -217,6 +220,7 @@ export const useTabEditor = ({
           mouseover: handleCommentInteraction,
           keydown: (_view, event) => {
             preventDeletionIfItIsReminderNode(_view, event);
+            // prevent default event listeners from firing when slash command is active
             if (['ArrowUp', 'ArrowDown', 'Enter'].includes(event.key)) {
               const slashCommand = document.querySelector('#slash-command');
               const emojiList = document.querySelector('#emoji-list');
@@ -266,12 +270,16 @@ export const useTabEditor = ({
           spellCheck: 'true',
         },
       },
-      autofocus: unFocused ? false : 'start',
+      autofocus:
+        unFocused || !isInitialEditorCreation.current ? false : 'start',
       immediatelyRender: false,
       shouldRerenderOnTransaction: false,
     },
     [memoizedExtensions, isPresentationMode],
   );
+  const isCollaborationEnabled = useMemo(() => {
+    return enableCollaboration;
+  }, [enableCollaboration]);
 
   // TODO: to see why this is necessary
   useEffect(() => {
@@ -280,14 +288,44 @@ export const useTabEditor = ({
     }
   }, [editor]);
 
+  // Fix for TableOfContents not updating in Tiptap v3
+  const tocDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!editor) return;
+
+    const handleUpdate = () => {
+      if (editor && !editor.isDestroyed) {
+        if (tocDebounceRef.current) {
+          clearTimeout(tocDebounceRef.current);
+        }
+        tocDebounceRef.current = setTimeout(() => {
+          tocDebounceRef.current = null;
+          if (!editor.isDestroyed) {
+            editor.commands.updateTableOfContents();
+          }
+        }, 300);
+      }
+    };
+
+    editor.on('update', handleUpdate);
+
+    return () => {
+      editor.off('update', handleUpdate);
+      if (tocDebounceRef.current) {
+        clearTimeout(tocDebounceRef.current);
+      }
+    };
+  }, [editor]);
+
   // Editor ready state handler
   const readyState = useMemo(() => {
-    if (enableCollaboration) {
+    if (isCollaborationEnabled) {
       return Boolean(hasCollabContentInitialised && isReady);
     }
     return isPreviewMode ? false : true;
   }, [
-    enableCollaboration,
+    isCollaborationEnabled,
     hasCollabContentInitialised,
     isPreviewMode,
     isReady,
@@ -298,9 +336,9 @@ export const useTabEditor = ({
   }, [editor, readyState]);
 
   useEffect(() => {
-    if (!enableCollaboration) return;
+    if (!isCollaborationEnabled) return;
     setIsCollabContentLoading(!isReady);
-  }, [enableCollaboration, isReady, setIsCollabContentLoading]);
+  }, [isCollaborationEnabled, isReady]);
 
   // ----- Intitalise and handle content from consumer app -----
 
@@ -394,7 +432,6 @@ export const useTabEditor = ({
     activeTabId,
     versionId,
     setIsContentLoading,
-    initialiseYjsIndexedDbProvider,
     ignoreCorruptedData,
     onInvalidContentError,
     mergeAndApplyUpdate,
@@ -430,6 +467,7 @@ export const useTabEditor = ({
     enableCollaboration,
     setExtensions,
     collaborationCleanupRef,
+    onCollaboratorChange,
   });
 
   // ZOOM handler
@@ -507,15 +545,37 @@ export const useTabEditor = ({
   }, [editor]);
 
   // Word / Character count handler
+  const charCountDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null,
+  );
+
   useEffect(() => {
     if (!editor) return;
 
-    setCharacterCount?.(editor.storage.characterCount.characters() ?? 0);
-    setWordCount?.(editor.storage.characterCount.words() ?? 0);
-  }, [
-    editor?.storage.characterCount.characters(),
-    editor?.storage.characterCount.words(),
-  ]);
+    const updateCounts = () => {
+      if (charCountDebounceRef.current) {
+        clearTimeout(charCountDebounceRef.current);
+      }
+      charCountDebounceRef.current = setTimeout(() => {
+        charCountDebounceRef.current = null;
+        if (editor && !editor.isDestroyed) {
+          setCharacterCount?.(editor.storage.characterCount.characters() ?? 0);
+          setWordCount?.(editor.storage.characterCount.words() ?? 0);
+        }
+      }, 500);
+    };
+
+    // Initial count
+    updateCounts();
+    editor.on('update', updateCounts);
+
+    return () => {
+      editor.off('update', updateCounts);
+      if (charCountDebounceRef.current) {
+        clearTimeout(charCountDebounceRef.current);
+      }
+    };
+  }, [editor]);
 
   // Print shortcut handler
   useEffect(() => {
@@ -560,19 +620,6 @@ export const useTabEditor = ({
       collaborationCleanupRef.current();
     };
   }, [enableCollaboration, Boolean(collabConfig)]);
-
-  // Editor collatorators onChange handler
-  useEffect(() => {
-    const collaborators = editor?.storage?.collaborationCaret?.users?.map(
-      (user) => ({
-        clientId: user.clientId,
-        name: user.name,
-        isEns: user.isEns,
-        color: user.color,
-      }),
-    );
-    onCollaboratorChange?.(collaborators);
-  }, [editor?.storage?.collaborationCaret?.users]);
 
   // Scroll to heading handler for preview mode
   const hash = window.location.hash.startsWith('#')
@@ -670,6 +717,67 @@ export const useTabEditor = ({
     isContentLoading,
     scrollToHeading,
   ]);
+
+  // FOR AUTO TEXT STYLE CLEANUP WHEN DOCUMENT IS RENDERED
+  const { theme } = useTheme();
+  const themeRef = useRef(theme);
+  useEffect(() => {
+    window.addEventListener(
+      'theme-update',
+      (e) => (themeRef.current = (e as CustomEvent).detail.value),
+    );
+  }, []);
+
+  useEffect(() => {
+    // Exit if editor not ready, content loading.
+    if (!editor || isContentLoading || !initialContent) {
+      return;
+    }
+    const timeoutId = setTimeout(() => {
+      const { tr, doc } = editor.state;
+      let hasChanges = false;
+
+      doc.descendants((node, pos) => {
+        if (!node.marks || node.marks.length === 0) return;
+
+        const textStyleMark = node.marks.find(
+          (m) => m.type.name === 'textStyle' && m.attrs.color,
+        );
+
+        if (!textStyleMark) return;
+
+        const originalColor =
+          textStyleMark.attrs['data-original-color'] ||
+          textStyleMark.attrs.color;
+
+        if (originalColor.startsWith('var(--')) return;
+
+        const responsiveColor = getResponsiveColor(
+          originalColor,
+          themeRef.current,
+        );
+
+        if (responsiveColor !== textStyleMark.attrs.color) {
+          hasChanges = true;
+          const newMark = textStyleMark.type.create({
+            ...textStyleMark.attrs,
+            color: responsiveColor,
+            'data-original-color': originalColor,
+          });
+
+          tr.removeMark(pos, pos + node.nodeSize, textStyleMark);
+          tr.addMark(pos, pos + node.nodeSize, newMark);
+        }
+      });
+
+      if (hasChanges) {
+        tr.setMeta('addToHistory', false);
+        editor.view.dispatch(tr);
+      }
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [editor, initialContent, isContentLoading, themeRef.current]);
 
   // Destroy editor on unmount
   useEffect(() => {
@@ -823,14 +931,25 @@ const useEditorExtension = ({
   externalExtensions,
   activeTabId,
 }: UseExtensionStackArgs) => {
+  const slashCommandConfigRef = useRef({
+    isConnected,
+    enableCollaboration,
+    disableInlineComment,
+  });
+
+  useEffect(() => {
+    slashCommandConfigRef.current = {
+      isConnected,
+      enableCollaboration,
+      disableInlineComment,
+    };
+  }, [isConnected, enableCollaboration, disableInlineComment]);
   const createSlashCommand = useCallback(
     () =>
       SlashCommand(
         (error: string) => onError?.(error),
         ipfsImageUploadFn,
-        isConnected,
-        enableCollaboration,
-        disableInlineComment,
+        slashCommandConfigRef,
       ),
     [isConnected, enableCollaboration, disableInlineComment],
   );
@@ -1020,6 +1139,7 @@ interface UseExtensionSyncWithCollaborationArgs {
   enableCollaboration?: boolean;
   setExtensions: Dispatch<SetStateAction<AnyExtension[]>>;
   collaborationCleanupRef: MutableRefObject<() => void>;
+  onCollaboratorChange: DdocProps['onCollaboratorChange'];
 }
 
 const useExtensionSyncWithCollaboration = ({
@@ -1031,25 +1151,73 @@ const useExtensionSyncWithCollaboration = ({
   enableCollaboration,
   setExtensions,
   collaborationCleanupRef,
+  onCollaboratorChange,
 }: UseExtensionSyncWithCollaborationArgs) => {
+  const onCollaboratorChangeRef = useRef(onCollaboratorChange);
+  onCollaboratorChangeRef.current = onCollaboratorChange;
+  const userColorRef = useRef(
+    usercolors[Math.floor(Math.random() * usercolors.length)],
+  );
   const awarenessProvider = useMemo(() => {
     if (!isReady || !awareness || !ydoc) return null;
     return { ydoc, awareness };
   }, [isReady, awareness, ydoc]);
 
+  // Register collaboration cursor plugin directly via editor.registerPlugin
+  // instead of setExtensions, which would destroy and recreate the editor (causing scroll jump)
   useEffect(() => {
-    if (!isReady || !enableCollaboration || !collabConfig) return;
-    if (
-      collabConfig.isEns &&
-      typeof editor?.commands?.updateUser === 'function'
-    ) {
-      editor.commands.updateUser({
+    if (!editor || !awareness || !isReady) return;
+
+    const user = {
+      name: collabConfig?.username || '',
+      color: userColorRef.current,
+      isEns: collabConfig?.isEns,
+    };
+
+    awareness.setLocalStateField('user', user);
+
+    const plugin = yCursorPlugin(awareness, {
+      cursorBuilder: getCursor,
+    });
+    editor.registerPlugin(plugin);
+
+    // Track collaborators via awareness updates
+    const updateCollaborators = () => {
+      const users = Array.from(
+        awareness.states as Map<number, Record<string, any>>,
+      ).map(([clientId, state]) => ({
+        clientId,
+        ...(state.user || {}),
+      }));
+      onCollaboratorChangeRef.current?.(users);
+    };
+    awareness.on('update', updateCollaborators);
+    updateCollaborators();
+
+    collaborationCleanupRef.current = () => {
+      awareness.off('update', updateCollaborators);
+      if (!editor.isDestroyed) {
+        editor.unregisterPlugin(yCursorPluginKey);
+      }
+    };
+
+    return () => {
+      collaborationCleanupRef.current();
+      collaborationCleanupRef.current = () => {};
+    };
+  }, [editor, awareness, isReady]);
+
+  // Update user info when ENS resolves
+  useEffect(() => {
+    if (!isReady || !enableCollaboration || !collabConfig || !awareness) return;
+    if (collabConfig.isEns) {
+      awareness.setLocalStateField('user', {
         name: collabConfig.username,
-        color: usercolors[Math.floor(Math.random() * usercolors.length)],
+        color: userColorRef.current,
         isEns: collabConfig.isEns,
       });
     }
-  }, [isReady, enableCollaboration, collabConfig?.isEns]);
+  }, [isReady, enableCollaboration, collabConfig?.isEns, awareness]);
 
   const collaborationExtension = useMemo(() => {
     if (!isReady || !awarenessProvider) return null;
