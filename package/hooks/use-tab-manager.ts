@@ -28,7 +28,7 @@ export const useTabManager = ({
   createDefaultTabIfMissing,
   shouldSyncActiveTab,
 }: UseTabManagerArgs) => {
-  const [activeTabId, _setActiveTabId] = useState('');
+  const [activeTabId, _setActiveTabId] = useState('default');
   const [tabs, setTabs] = useState<Tab[]>([]);
   const hasTabState = useMemo(() => tabs.length > 0, [tabs]);
 
