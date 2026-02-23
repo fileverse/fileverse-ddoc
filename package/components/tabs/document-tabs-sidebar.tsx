@@ -131,9 +131,13 @@ export const TabSidebar = ({
         >
           <div
             className={cn(
-              'flex flex-col items-start max-w-[263px] w-full justify-start absolute left-0 px-4',
+              'flex flex-col items-start max-w-[263px] w-full justify-start fixed left-0 px-4 z-20',
               !hasToC && 'hidden',
-              !isVersionHistoryMode ? 'top-[16px]' : 'top-[0px]',
+              isVersionHistoryMode
+                ? 'top-[16px] max-h-[calc(100vh-32px)]'
+                : isPreviewMode
+                  ? 'top-[70px] max-h-[calc(100vh-86px)]'
+                  : 'top-[124px] max-h-[calc(100vh-140px)]',
             )}
           >
             <Tooltip
@@ -169,8 +173,8 @@ export const TabSidebar = ({
             </Tooltip>
 
             {showTOC && (
-              <>
-                <div className="flex flex-col gap-[8px] mt-[16px] w-full">
+              <div className="flex flex-col gap-[8px] mt-[16px] w-full min-h-0 flex-1">
+                <div className="w-full">
                   <div className="flex items-center px-[12px] py-[8px] justify-between">
                     <span className="text-heading-sm truncate color-text-default">
                       Document tabs
@@ -187,42 +191,43 @@ export const TabSidebar = ({
                     )}
                   </div>
                 </div>
-
-                {tabs.map((tab, tabIndex) => (
-                  <DdocTab
-                    key={tab.id}
-                    tab={tab}
-                    tabIndex={tabIndex}
-                    tabCount={tabs.length}
-                    handleEmojiChange={handleEmojiChange}
-                    handleNameChange={handleNameChange}
-                    onClick={() => setActiveTabId(tab.id)}
-                    editor={editor}
-                    tocItem={items}
-                    setTocItems={setItems}
-                    orientation={orientation}
-                    activeTabId={activeTabId}
-                    duplicateTab={duplicateTab}
-                    activeDragId={activeDragId}
-                    isPreviewMode={isPreviewMode}
-                    ydoc={ydoc}
-                    onDelete={(targetTab) => setPendingDeleteTab(targetTab)}
-                    isVersionHistoryMode={isVersionHistoryMode}
-                    commentCount={tabCommentCounts[tab.id] || 0}
-                    moveTabUp={() => {
-                      if (tabIndex <= 0) return;
-                      orderTab(tabs[tabIndex - 1].id, tab.id);
-                    }}
-                    moveTabDown={() => {
-                      if (tabIndex >= tabs.length - 1) {
-                        return;
-                      }
-                      orderTab(tabs[tabIndex + 1].id, tab.id);
-                    }}
-                    tabConfig={tabConfig}
-                  />
-                ))}
-              </>
+                <div className="w-full min-h-0 flex-1 overflow-y-auto">
+                  {tabs.map((tab, tabIndex) => (
+                    <DdocTab
+                      key={tab.id}
+                      tab={tab}
+                      tabIndex={tabIndex}
+                      tabCount={tabs.length}
+                      handleEmojiChange={handleEmojiChange}
+                      handleNameChange={handleNameChange}
+                      onClick={() => setActiveTabId(tab.id)}
+                      editor={editor}
+                      tocItem={items}
+                      setTocItems={setItems}
+                      orientation={orientation}
+                      activeTabId={activeTabId}
+                      duplicateTab={duplicateTab}
+                      activeDragId={activeDragId}
+                      isPreviewMode={isPreviewMode}
+                      ydoc={ydoc}
+                      onDelete={(targetTab) => setPendingDeleteTab(targetTab)}
+                      isVersionHistoryMode={isVersionHistoryMode}
+                      commentCount={tabCommentCounts[tab.id] || 0}
+                      moveTabUp={() => {
+                        if (tabIndex <= 0) return;
+                        orderTab(tabs[tabIndex - 1].id, tab.id);
+                      }}
+                      moveTabDown={() => {
+                        if (tabIndex >= tabs.length - 1) {
+                          return;
+                        }
+                        orderTab(tabs[tabIndex + 1].id, tab.id);
+                      }}
+                      tabConfig={tabConfig}
+                    />
+                  ))}
+                </div>
+              </div>
             )}
           </div>
         </SortableContext>

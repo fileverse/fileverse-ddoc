@@ -321,10 +321,13 @@ export const ToC = memo(
             tr.setSelection(new TextSelection(tr.doc.resolve(pos)));
             editor.view.dispatch(tr);
 
+            // Prefer the main editor canvas so outline interactions only scroll editor content.
+            const editorCanvas = document.getElementById('editor-canvas');
+
             // Find all possible scroll containers
             const possibleContainers = [
+              editorCanvas,
               document.querySelector('.ProseMirror'),
-              document.getElementById('editor-canvas'),
               element.closest('.ProseMirror'),
               element.closest('[class*="editor"]'),
               editor.view.dom.parentElement,
