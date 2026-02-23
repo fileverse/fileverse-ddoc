@@ -205,7 +205,7 @@ export const TabItem = ({
         icon: 'Trash2',
         onSelect: () => onDelete?.(),
         visible: Boolean(onDelete),
-        textClassName: '!text-[#FB3449]',
+        textClassName: 'color-text-danger',
         iconStroke: '#FB3449',
       },
     ],

@@ -23,7 +23,6 @@ export const ConfirmDeleteModal = ({
   onClose,
   onConfirm,
   isOpen,
-  documentTitle,
   isLoading,
   title,
   overlayClasses,
@@ -52,9 +51,7 @@ export const ConfirmDeleteModal = ({
       noOverlay={noOverlay}
       content={
         <p className="text-body-sm color-text-default">
-          You are about to delete &quot;{documentTitle}&quot;. This action will
-          permanently remove the documents for both you and any users who have
-          access to it.
+          This tab and the content within it will be deleted
         </p>
       }
       primaryAction={{
@@ -88,7 +85,7 @@ export const ConfirmDeleteModal = ({
               className="h-[18px] w-[18px]"
             />
           )}
-          <p className="text-heading-sm">{title || 'Delete document'}</p>
+          <p className="text-heading-sm">{title || 'Delete this tab?'}</p>
         </div>
       }
     />

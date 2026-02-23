@@ -251,7 +251,6 @@ export const TabSidebar = ({
         }}
         documentTitle={pendingDeleteTab?.name || ''}
         isLoading={false}
-        title="Delete tab"
         primaryLabel="Delete tab"
       />
     </>
