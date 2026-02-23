@@ -61,7 +61,9 @@ export const useDdocEditor = ({
     initialContent: ddocContent,
     enableCollaboration,
     isDDocOwner: rest.isDDocOwner || false,
-    isVersionMode,
+    createDefaultTabIfMissing: Boolean(
+      !isVersionMode && !isPreviewMode && rest.isDDocOwner,
+    ),
   });
 
   const tabEditor = useTabEditor({

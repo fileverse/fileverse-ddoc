@@ -22,11 +22,13 @@ export const TabEmojiPicker = ({
   setEmoji,
   isEditing,
   openPickerTrigger = 0,
+  disableEmoji,
 }: {
   emoji: string;
   setEmoji: (emoji: string) => void;
   isEditing: boolean;
   openPickerTrigger?: number;
+  disableEmoji: boolean;
 }) => {
   const [showPicker, setShowPicker] = useState(false);
   const toggleRef = useRef(null);
@@ -64,6 +66,7 @@ export const TabEmojiPicker = ({
           <PopoverTrigger
             data-emoji-picker
             onClick={(e) => e.stopPropagation()}
+            disabled={disableEmoji}
           >
             <Button
               variant="ghost"
@@ -121,6 +124,7 @@ export const TabEmojiPicker = ({
             <LucideIcon
               ref={toggleButtonRef}
               onClick={() => {
+                if (disableEmoji) return;
                 setShowPicker(!showPicker);
               }}
               name={isEditing ? 'SmilePlus' : 'FileText'}

@@ -159,7 +159,7 @@ const PreviewDdocEditorContent = forwardRef(
 
     return (
       <>
-        {editor && (
+        {editor && rest.tabs.length > 0 && (
           <DocumentOutline
             editor={editor}
             hasToC={true}

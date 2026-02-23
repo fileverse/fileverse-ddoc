@@ -16,7 +16,7 @@ interface UseTabManagerArgs {
   initialContent: DdocProps['initialContent'];
   enableCollaboration: DdocProps['enableCollaboration'];
   isDDocOwner: boolean;
-  isVersionMode?: boolean;
+  createDefaultTabIfMissing: boolean;
 }
 
 export const useTabManager = ({
@@ -24,7 +24,7 @@ export const useTabManager = ({
   initialContent,
   enableCollaboration,
   isDDocOwner,
-  isVersionMode,
+  createDefaultTabIfMissing,
 }: UseTabManagerArgs) => {
   const [activeTabId, _setActiveTabId] = useState('');
   const [tabs, setTabs] = useState<Tab[]>([]);
@@ -34,8 +34,11 @@ export const useTabManager = ({
     (id: string) => {
       if (!ydoc || id === activeTabId) return;
       const { activeTab } = getTabsYdocNodes(ydoc);
-      activeTab.delete(0, activeTab.length);
-      activeTab.insert(0, id);
+      ydoc.transact(() => {
+        activeTab.delete(0, activeTab.length);
+        activeTab.insert(0, id);
+      }, 'self');
+
       _setActiveTabId(id);
     },
     [activeTabId, ydoc],
@@ -51,14 +54,20 @@ export const useTabManager = ({
         initialContent as string,
         ydoc,
         {
-          createDefaultTabIfMissing: !isVersionMode,
+          createDefaultTabIfMissing,
         },
       );
       _setActiveTabId(id);
       setTabs(tabList);
       return;
     }
-  }, [ydoc, initialContent, isDDocOwner, enableCollaboration, isVersionMode]);
+  }, [
+    ydoc,
+    initialContent,
+    isDDocOwner,
+    enableCollaboration,
+    createDefaultTabIfMissing,
+  ]);
 
   useEffect(() => {
     if (!ydoc) return;

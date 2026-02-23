@@ -4,7 +4,6 @@ import {
   HTMLAttributes,
   MouseEvent,
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -210,9 +209,7 @@ export const TabItem = ({
     ],
   ];
 
-  const menuSections = useMemo(() => {
-    return isPreviewMode ? previewModeMenu : editMenuSections;
-  }, [isPreviewMode]);
+  const menuSections = isPreviewMode ? previewModeMenu : editMenuSections;
 
   return (
     <div
@@ -231,6 +228,7 @@ export const TabItem = ({
             setIsEditing(false);
             onEmojiChange(_emoji);
           }}
+          disableEmoji={Boolean(isPreviewMode || isVersionHistoryMode)}
           isEditing={isEditing}
           openPickerTrigger={openEmojiPickerTrigger}
         />
@@ -261,9 +259,12 @@ export const TabItem = ({
       </div>
       {!isVersionHistoryMode && (
         <div className="flex gap-[8px] items-center">
-          <span className="h-[18px] color-text-default text-[12px] text-helper-text-bold rounded-full min-w-[18px] text-center color-bg-tertiary">
-            {commentCount}
-          </span>
+          {commentCount > 0 && (
+            <span className="h-[18px] color-text-default text-[12px] text-helper-text-bold rounded-full min-w-[18px] text-center color-bg-tertiary">
+              {commentCount}
+            </span>
+          )}
+
           {!hideContentMenu && <TabContextMenu sections={menuSections} />}
         </div>
       )}

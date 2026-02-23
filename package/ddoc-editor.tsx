@@ -628,7 +628,7 @@ const DdocEditor = forwardRef(
                 fetchV1ImageFn={fetchV1ImageFn}
               />
             )}
-            {editor && (
+            {editor && tabs.length > 0 && (
               <DocumentOutline
                 editor={editor}
                 hasToC={true}
