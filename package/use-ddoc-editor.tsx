@@ -115,6 +115,7 @@ export const useDdocEditor = ({
   return {
     ...tabEditor,
     ydoc: yjsSetup.ydoc,
+    awareness: yjsSetup.awareness,
     refreshYjsIndexedDbProvider: yjsSetup.refreshYjsIndexedDbProvider,
     terminateSession: yjsSetup.terminateSession,
     isContentLoading: Boolean(aggregatedContentLoading),

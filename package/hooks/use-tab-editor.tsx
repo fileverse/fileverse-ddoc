@@ -12,7 +12,6 @@ import {
 import { DdocProps, DdocEditorProps } from '../types';
 import * as Y from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration';
-import CollaborationCaret from '@tiptap/extension-collaboration-caret';
 import { defaultExtensions } from '../extensions/default-extension';
 import { AnyExtension, JSONContent, Editor, useEditor } from '@tiptap/react';
 import { getCursor } from '../utils/cursor';
@@ -138,7 +137,7 @@ export const useTabEditor = ({
   const hasAvailableModels = Boolean(activeModel && isAIAgentEnabled);
   const { tocItems, setTocItems, handleTocUpdate } = useTocState(activeTabId);
 
-  const { extensions, setExtensions } = useEditorExtension({
+  const { extensions } = useEditorExtension({
     ydoc,
     onError,
     ipfsImageUploadFn,
@@ -462,10 +461,8 @@ export const useTabEditor = ({
     editor,
     isReady,
     awareness,
-    ydoc,
     collabConfig,
     enableCollaboration,
-    setExtensions,
     collaborationCleanupRef,
     onCollaboratorChange,
   });
@@ -1134,10 +1131,8 @@ interface UseExtensionSyncWithCollaborationArgs {
   editor?: Editor | null;
   isReady?: boolean;
   awareness?: any;
-  ydoc: Y.Doc;
   collabConfig?: DdocProps['collabConfig'];
   enableCollaboration?: boolean;
-  setExtensions: Dispatch<SetStateAction<AnyExtension[]>>;
   collaborationCleanupRef: MutableRefObject<() => void>;
   onCollaboratorChange: DdocProps['onCollaboratorChange'];
 }
@@ -1146,10 +1141,8 @@ const useExtensionSyncWithCollaboration = ({
   editor,
   isReady,
   awareness,
-  ydoc,
   collabConfig,
   enableCollaboration,
-  setExtensions,
   collaborationCleanupRef,
   onCollaboratorChange,
 }: UseExtensionSyncWithCollaborationArgs) => {
@@ -1158,11 +1151,6 @@ const useExtensionSyncWithCollaboration = ({
   const userColorRef = useRef(
     usercolors[Math.floor(Math.random() * usercolors.length)],
   );
-  const awarenessProvider = useMemo(() => {
-    if (!isReady || !awareness || !ydoc) return null;
-    return { ydoc, awareness };
-  }, [isReady, awareness, ydoc]);
-
   // Register collaboration cursor plugin directly via editor.registerPlugin
   // instead of setExtensions, which would destroy and recreate the editor (causing scroll jump)
   useEffect(() => {
@@ -1218,41 +1206,6 @@ const useExtensionSyncWithCollaboration = ({
       });
     }
   }, [isReady, enableCollaboration, collabConfig?.isEns, awareness]);
-
-  const collaborationExtension = useMemo(() => {
-    if (!isReady || !awarenessProvider) return null;
-    return CollaborationCaret.configure({
-      provider: awarenessProvider,
-      user: {
-        name: collabConfig?.username || '',
-        color: usercolors[Math.floor(Math.random() * usercolors.length)],
-        isEns: collabConfig?.isEns,
-      },
-      render: getCursor,
-    });
-  }, [isReady, awarenessProvider]);
-
-  useEffect(() => {
-    if (!collaborationExtension) return;
-
-    setExtensions((prev) => {
-      if (prev.some((ext) => ext.name === 'collaborationCaret')) return prev;
-      return [
-        ...prev.filter((ext) => ext.name !== 'history'),
-        collaborationExtension,
-      ];
-    });
-
-    collaborationCleanupRef.current = () => {
-      setExtensions((prev) =>
-        prev.filter((ext) => ext.name !== 'collaborationCaret'),
-      );
-    };
-
-    return () => {
-      collaborationCleanupRef.current();
-    };
-  }, [collaborationExtension]);
 };
 
 const useDarkModeStyleCleanup = (
