@@ -35,7 +35,7 @@ import { TWITTER_REGEX } from '../constants/twitter';
 import { IConnectConf } from '../sync-local/useSyncMachine';
 import { headingToSlug } from '../utils/heading-to-slug';
 import { useResponsive } from '../utils/responsive';
-import { yCursorPlugin, yCursorPluginKey } from 'y-prosemirror';
+import { yCursorPlugin, yCursorPluginKey } from '@tiptap/y-tiptap';
 import { useTheme } from '@fileverse/ui';
 import { getResponsiveColor } from '../utils/colors';
 

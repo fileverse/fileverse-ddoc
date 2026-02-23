@@ -17,6 +17,7 @@ interface UseTabManagerArgs {
   enableCollaboration: DdocProps['enableCollaboration'];
   isDDocOwner: boolean;
   createDefaultTabIfMissing: boolean;
+  shouldSyncActiveTab: boolean;
 }
 
 export const useTabManager = ({
@@ -25,6 +26,7 @@ export const useTabManager = ({
   enableCollaboration,
   isDDocOwner,
   createDefaultTabIfMissing,
+  shouldSyncActiveTab,
 }: UseTabManagerArgs) => {
   const [activeTabId, _setActiveTabId] = useState('');
   const [tabs, setTabs] = useState<Tab[]>([]);
@@ -33,15 +35,20 @@ export const useTabManager = ({
   const setActiveTabId = useCallback(
     (id: string) => {
       if (!ydoc || id === activeTabId) return;
+
+      if (!shouldSyncActiveTab) {
+        _setActiveTabId(id);
+        return;
+      }
+
       const { activeTab } = getTabsYdocNodes(ydoc);
       ydoc.transact(() => {
         activeTab.delete(0, activeTab.length);
         activeTab.insert(0, id);
       }, 'self');
-
       _setActiveTabId(id);
     },
-    [activeTabId, ydoc],
+    [activeTabId, ydoc, shouldSyncActiveTab],
   );
 
   useEffect(() => {

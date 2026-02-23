@@ -64,6 +64,12 @@ export const useDdocEditor = ({
     createDefaultTabIfMissing: Boolean(
       !isVersionMode && !isPreviewMode && rest.isDDocOwner,
     ),
+    shouldSyncActiveTab: Boolean(
+      !isVersionMode &&
+        !isPreviewMode &&
+        !enableCollaboration &&
+        rest.isDDocOwner,
+    ),
   });
 
   const tabEditor = useTabEditor({
@@ -114,6 +120,7 @@ export const useDdocEditor = ({
 
   return {
     ...tabEditor,
+    ...yjsSetup,
     ydoc: yjsSetup.ydoc,
     awareness: yjsSetup.awareness,
     refreshYjsIndexedDbProvider: yjsSetup.refreshYjsIndexedDbProvider,
