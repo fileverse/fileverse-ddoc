@@ -58,4 +58,5 @@ export interface DocumentOutlineProps {
     onCopyTabLink?: (tabId: string) => void;
     defaultTabId?: string;
   };
+  deleteTab?: (tabId: string) => void;
 }

@@ -25,6 +25,7 @@ export const DocumentOutline = ({
   tabSectionContainer,
   isVersionHistoryMode,
   tabConfig,
+  deleteTab,
 }: DocumentOutlineProps) => {
   const isMediaMax1280px = useMediaQuery('(max-width:1280px)');
 
@@ -46,6 +47,7 @@ export const DocumentOutline = ({
       renameTab={renameTab}
       duplicateTab={duplicateTab}
       orderTab={orderTab}
+      deleteTab={deleteTab}
       ydoc={ydoc}
       tabCommentCounts={tabCommentCounts}
       tabSectionContainer={tabSectionContainer}

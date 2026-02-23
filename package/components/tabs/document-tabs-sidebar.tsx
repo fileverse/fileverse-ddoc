@@ -16,10 +16,11 @@ import {
 import { DocumentOutlineProps } from '../toc/types';
 import { MemorizedToC } from '../toc/memorized-toc';
 import { TabDragPreview, SortableTabItem } from './tab-item';
-import { getTabsYdocNodes, Tab } from './utils/tab-utils';
+import { DEFAULT_TAB_ID, getTabsYdocNodes, Tab } from './utils/tab-utils';
 import { Editor } from '@tiptap/core';
 import * as Y from 'yjs';
 import { createPortal } from 'react-dom';
+import { ConfirmDeleteModal } from './confirm-delete-modal';
 
 export interface DocumentTabsSidebarProps {
   tabs: Tab[];
@@ -46,6 +47,7 @@ export interface DocumentTabsSidebarProps {
   tabSectionContainer?: HTMLElement;
   isVersionHistoryMode?: boolean;
   tabConfig?: DocumentOutlineProps['tabConfig'];
+  deleteTab?: (tabId: string) => void;
 }
 
 export const DocumentTabsSidebar = ({
@@ -80,6 +82,7 @@ export const TabSidebar = ({
   tabCommentCounts,
   isVersionHistoryMode,
   tabConfig,
+  deleteTab,
 }: DocumentTabsSidebarProps) => {
   const handleNameChange = (tabId: string, nextName: string) => {
     renameTab(tabId, { newName: nextName });
@@ -100,136 +103,158 @@ export const TabSidebar = ({
     () => tabs.find((tab) => tab.id === activeDragId),
     [tabs, activeDragId],
   );
+  const [pendingDeleteTab, setPendingDeleteTab] = useState<Tab | null>(null);
   const [isHovered, setIsHovered] = useState(false);
 
   const shouldExpand = !showTOC && isHovered;
 
   return (
-    <DndContext
-      sensors={sensors}
-      collisionDetection={closestCenter}
-      onDragStart={(e) => setActiveDragId(e.active.id as string)}
-      onDragEnd={(e) => {
-        const { active, over } = e;
-        setActiveDragId(null);
-        if (over && active.id !== over.id) {
-          const activeId = active.id as string;
-          const overId = over.id as string;
-          orderTab(overId, activeId);
-        }
-      }}
-    >
-      <SortableContext
-        disabled={isPreviewMode || isVersionHistoryMode}
-        items={tabs.map((tab) => tab.id)}
-        strategy={verticalListSortingStrategy}
+    <>
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={(e) => setActiveDragId(e.active.id as string)}
+        onDragEnd={(e) => {
+          const { active, over } = e;
+          setActiveDragId(null);
+          if (over && active.id !== over.id) {
+            const activeId = active.id as string;
+            const overId = over.id as string;
+            orderTab(overId, activeId);
+          }
+        }}
       >
-        <div
-          className={cn(
-            'flex flex-col items-start max-w-[263px] w-full justify-start absolute left-0 px-4',
-            !hasToC && 'hidden',
-            !isVersionHistoryMode ? 'top-[16px]' : 'top-[0px]',
-          )}
+        <SortableContext
+          disabled={isPreviewMode || isVersionHistoryMode}
+          items={tabs.map((tab) => tab.id)}
+          strategy={verticalListSortingStrategy}
         >
-          <Tooltip
-            text={showTOC ? 'Hide document outline' : 'Show document outline'}
-            position="right"
+          <div
+            className={cn(
+              'flex flex-col items-start max-w-[263px] w-full justify-start absolute left-0 px-4',
+              !hasToC && 'hidden',
+              !isVersionHistoryMode ? 'top-[16px]' : 'top-[0px]',
+            )}
           >
-            <button
-              type="button"
-              onMouseEnter={() => !showTOC && setIsHovered(true)}
-              onMouseLeave={() => setIsHovered(false)}
-              onClick={() => setShowTOC?.((prev) => !prev)}
-              className={cn(
-                'group flex items-center h-[30px]  !min-w-[30px]  min-h-[30px] p-[8px] rounded-full hover:color-bg-secondary-hover transition-[width,background-color] duration-200 ease-out overflow-hidden',
-                !showTOC && 'hover:min-w-[156px] gap-[8px]',
-                tabs.length > 0 && !showTOC && 'color-bg-secondary-hover',
-              )}
+            <Tooltip
+              text={showTOC ? 'Hide document outline' : 'Show document outline'}
+              position="right"
             >
-              <LucideIcon
-                name={showTOC ? 'ChevronLeft' : 'List'}
-                className="!w-[16px]"
-              />
-
-              <span
-                className={`whitespace-nowrap text-heading-xsm color-text-default max-w-[110px] truncate transition-opacity duration-150`}
+              <button
+                type="button"
+                onMouseEnter={() => !showTOC && setIsHovered(true)}
+                onMouseLeave={() => setIsHovered(false)}
+                onClick={() => setShowTOC?.((prev) => !prev)}
+                className={cn(
+                  'group flex items-center h-[30px]  !min-w-[30px]  min-h-[30px] p-[8px] rounded-full hover:color-bg-secondary-hover transition-[width,background-color] duration-200 ease-out overflow-hidden',
+                  !showTOC && 'hover:min-w-[156px] gap-[8px]',
+                  tabs.length > 0 && !showTOC && 'color-bg-secondary-hover',
+                )}
               >
-                {!shouldExpand
-                  ? showTOC
-                    ? null
-                    : tabs.length
-                  : activeTab?.name}
-              </span>
-            </button>
-          </Tooltip>
-
-          {showTOC && (
-            <>
-              <div className="flex flex-col gap-[8px] mt-[16px] w-full">
-                <div className="flex items-center px-[12px] py-[8px] justify-between">
-                  <span className="text-heading-sm truncate color-text-default">
-                    Document tabs
-                  </span>
-
-                  {!isPreviewMode && (
-                    <IconButton
-                      icon="Plus"
-                      variant="ghost"
-                      size="sm"
-                      className="h-[24px] w-[24px] min-w-[24px]"
-                      onClick={createTab}
-                    />
-                  )}
-                </div>
-              </div>
-
-              {tabs.map((tab, tabIndex) => (
-                <DdocTab
-                  key={tab.id}
-                  tab={tab}
-                  tabIndex={tabIndex}
-                  tabCount={tabs.length}
-                  handleEmojiChange={handleEmojiChange}
-                  handleNameChange={handleNameChange}
-                  onClick={() => setActiveTabId(tab.id)}
-                  editor={editor}
-                  tocItem={items}
-                  setTocItems={setItems}
-                  orientation={orientation}
-                  activeTabId={activeTabId}
-                  duplicateTab={duplicateTab}
-                  activeDragId={activeDragId}
-                  isPreviewMode={isPreviewMode}
-                  ydoc={ydoc}
-                  isVersionHistoryMode={isVersionHistoryMode}
-                  commentCount={tabCommentCounts[tab.id] || 0}
-                  moveTabUp={() => {
-                    if (tabIndex <= 0) return;
-                    orderTab(tabs[tabIndex - 1].id, tab.id);
-                  }}
-                  moveTabDown={() => {
-                    if (tabIndex >= tabs.length - 1) {
-                      return;
-                    }
-                    orderTab(tabs[tabIndex + 1].id, tab.id);
-                  }}
-                  tabConfig={tabConfig}
+                <LucideIcon
+                  name={showTOC ? 'ChevronLeft' : 'List'}
+                  className="!w-[16px]"
                 />
-              ))}
-            </>
-          )}
-        </div>
-      </SortableContext>
 
-      <DragOverlay>
-        {activeDragId ? (
-          <TabDragPreview
-            emoji={activeDragTab?.emoji ?? ''}
-            name={activeDragTab?.name ?? ''}
-          />
-        ) : null}
-      </DragOverlay>
-    </DndContext>
+                <span
+                  className={`whitespace-nowrap text-heading-xsm color-text-default max-w-[110px] truncate transition-opacity duration-150`}
+                >
+                  {!shouldExpand
+                    ? showTOC
+                      ? null
+                      : tabs.length
+                    : activeTab?.name}
+                </span>
+              </button>
+            </Tooltip>
+
+            {showTOC && (
+              <>
+                <div className="flex flex-col gap-[8px] mt-[16px] w-full">
+                  <div className="flex items-center px-[12px] py-[8px] justify-between">
+                    <span className="text-heading-sm truncate color-text-default">
+                      Document tabs
+                    </span>
+
+                    {!isPreviewMode && (
+                      <IconButton
+                        icon="Plus"
+                        variant="ghost"
+                        size="sm"
+                        className="h-[24px] w-[24px] min-w-[24px]"
+                        onClick={createTab}
+                      />
+                    )}
+                  </div>
+                </div>
+
+                {tabs.map((tab, tabIndex) => (
+                  <DdocTab
+                    key={tab.id}
+                    tab={tab}
+                    tabIndex={tabIndex}
+                    tabCount={tabs.length}
+                    handleEmojiChange={handleEmojiChange}
+                    handleNameChange={handleNameChange}
+                    onClick={() => setActiveTabId(tab.id)}
+                    editor={editor}
+                    tocItem={items}
+                    setTocItems={setItems}
+                    orientation={orientation}
+                    activeTabId={activeTabId}
+                    duplicateTab={duplicateTab}
+                    activeDragId={activeDragId}
+                    isPreviewMode={isPreviewMode}
+                    ydoc={ydoc}
+                    onDelete={(targetTab) => setPendingDeleteTab(targetTab)}
+                    isVersionHistoryMode={isVersionHistoryMode}
+                    commentCount={tabCommentCounts[tab.id] || 0}
+                    moveTabUp={() => {
+                      if (tabIndex <= 0) return;
+                      orderTab(tabs[tabIndex - 1].id, tab.id);
+                    }}
+                    moveTabDown={() => {
+                      if (tabIndex >= tabs.length - 1) {
+                        return;
+                      }
+                      orderTab(tabs[tabIndex + 1].id, tab.id);
+                    }}
+                    tabConfig={tabConfig}
+                  />
+                ))}
+              </>
+            )}
+          </div>
+        </SortableContext>
+
+        <DragOverlay>
+          {activeDragId ? (
+            <TabDragPreview
+              emoji={activeDragTab?.emoji ?? ''}
+              name={activeDragTab?.name ?? ''}
+            />
+          ) : null}
+        </DragOverlay>
+      </DndContext>
+      <ConfirmDeleteModal
+        isOpen={Boolean(pendingDeleteTab)}
+        onClose={() => setPendingDeleteTab(null)}
+        onConfirm={() => {
+          if (!pendingDeleteTab) return;
+          try {
+            deleteTab?.(pendingDeleteTab.id);
+          } catch (error) {
+            console.error(error);
+          } finally {
+            setPendingDeleteTab(null);
+          }
+        }}
+        documentTitle={pendingDeleteTab?.name || ''}
+        isLoading={false}
+        title="Delete tab"
+        primaryLabel="Delete tab"
+      />
+    </>
   );
 };
 
@@ -254,6 +279,7 @@ export const DdocTab = ({
   isPreviewMode,
   isVersionHistoryMode,
   tabConfig,
+  onDelete,
 }: {
   tab: Tab;
   tabIndex: number;
@@ -275,7 +301,10 @@ export const DdocTab = ({
   isPreviewMode: boolean;
   isVersionHistoryMode?: boolean;
   tabConfig?: DocumentOutlineProps['tabConfig'];
+  onDelete?: (tab: Tab) => void;
 }) => {
+  const isDefaultTab = tab.id === DEFAULT_TAB_ID;
+
   const [tabMetadata, setTabMetadata] = useState({
     title: tab.name,
     showToc: tab.showOutline,
@@ -311,6 +340,7 @@ export const DdocTab = ({
         onEmojiChange={(nextEmoji: string) =>
           handleEmojiChange(tab.id, nextEmoji)
         }
+        onDelete={isDefaultTab ? undefined : () => onDelete?.(tab)}
         onDuplicate={() => duplicateTab(tab.id)}
         isActive={tab.id === activeTabId}
         onClick={onClick}

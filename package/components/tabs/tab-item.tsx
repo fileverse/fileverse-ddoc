@@ -41,6 +41,7 @@ export interface TabItemProps {
   isPreviewMode: boolean;
   isVersionHistoryMode?: boolean;
   onCopyLink?: () => void;
+  onDelete?: () => void;
 }
 
 interface SortableTabItemProps extends Omit<TabItemProps, 'dragHandleProps'> {
@@ -54,6 +55,8 @@ interface TabContextMenuItem {
   onSelect?: () => void;
   visible?: boolean;
   closeOnSelect?: boolean;
+  textClassName?: string;
+  iconStroke?: string;
 }
 
 interface TabContextMenuProps {
@@ -114,6 +117,7 @@ export const TabItem = ({
   isPreviewMode,
   isVersionHistoryMode,
   onCopyLink,
+  onDelete,
 }: TabItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [openEmojiPickerTrigger, setOpenEmojiPickerTrigger] = useState(0);
@@ -192,6 +196,17 @@ export const TabItem = ({
         icon: 'MoveUp',
         onSelect: () => onMoveUp?.(),
         visible: canMoveUp,
+      },
+    ],
+    [
+      {
+        id: 'delete-tab',
+        label: 'Delete',
+        icon: 'Trash2',
+        onSelect: () => onDelete?.(),
+        visible: Boolean(onDelete),
+        textClassName: '!text-[#FB3449]',
+        iconStroke: '#FB3449',
       },
     ],
   ];
@@ -315,8 +330,19 @@ export const TabContextMenuAction = ({
         item.onSelect?.();
       }}
     >
-      <LucideIcon name={item.icon} className={cn('w-[16px] h-[16px]')} />
-      <p className={cn('text-heading-xsm color-text-default')}>{item.label}</p>
+      <LucideIcon
+        name={item.icon}
+        stroke={item.iconStroke}
+        className={cn('w-[16px] h-[16px]')}
+      />
+      <p
+        className={cn(
+          'text-heading-xsm color-text-default',
+          item.textClassName,
+        )}
+      >
+        {item.label}
+      </p>
     </div>
   );
 

@@ -279,6 +279,7 @@ const DdocEditor = forwardRef(
       renameTab,
       duplicateTab,
       orderTab,
+      deleteTab,
     } = useDdocEditor({
       ipfsImageFetchFn,
       fetchV1ImageFn,
@@ -643,6 +644,7 @@ const DdocEditor = forwardRef(
                 renameTab={renameTab}
                 duplicateTab={duplicateTab}
                 orderTab={orderTab}
+                deleteTab={deleteTab}
                 ydoc={ydoc}
                 tabCommentCounts={tabCommentCounts}
                 tabConfig={tabConfig}
