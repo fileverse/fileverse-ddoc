@@ -25,7 +25,6 @@ import { handleContentPrint, handlePrint } from './utils/handle-print';
 // import { Table } from './extensions/supercharged-table/extension-table';
 import { isBlackOrWhiteShade } from './utils/color-utils';
 import { useResponsive } from './utils/responsive';
-import { useTheme } from '@fileverse/ui';
 import { headingToSlug } from './utils/heading-to-slug';
 import { AiAutocomplete } from './extensions/ai-autocomplete/ai-autocomplete';
 import { AIWriter } from './extensions/ai-writer';
@@ -67,6 +66,7 @@ export const useDdocEditor = ({
   ddocId,
   enableIndexeddbSync,
   unFocused,
+  theme,
   zoomLevel,
   onInvalidContentError,
   ignoreCorruptedData,
@@ -830,7 +830,6 @@ export const useDdocEditor = ({
     };
   }, [enableCollaboration, Boolean(collabConfig)]);
 
-
   const charCountDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
@@ -965,14 +964,6 @@ export const useDdocEditor = ({
   }, [editor]);
 
   // FOR AUTO TEXT STYLE CLEANUP WHEN DOCUMENT IS RENDERED
-  const { theme } = useTheme();
-  const themeRef = useRef(theme);
-  useEffect(() => {
-    window.addEventListener(
-      'theme-update',
-      (e) => (themeRef.current = (e as CustomEvent).detail.value),
-    );
-  }, []);
   useEffect(() => {
     // Exit if editor not ready, content loading.
     if (!editor || isContentLoading || !initialContent) {
@@ -991,16 +982,16 @@ export const useDdocEditor = ({
 
         if (!textStyleMark) return;
 
-        const originalColor =
-          textStyleMark.attrs['data-original-color'] ||
-          textStyleMark.attrs.color;
+        const originalColor = (textStyleMark.attrs['data-original-color'] ||
+          textStyleMark.attrs.color) as string;
 
-        if (originalColor.startsWith('var(--')) return;
+        if (
+          originalColor.startsWith('var(--color-editor-') ||
+          originalColor === 'inherit'
+        )
+          return;
 
-        const responsiveColor = getResponsiveColor(
-          originalColor,
-          themeRef.current,
-        );
+        const responsiveColor = getResponsiveColor(originalColor, theme);
 
         if (responsiveColor !== textStyleMark.attrs.color) {
           hasChanges = true;
@@ -1022,7 +1013,7 @@ export const useDdocEditor = ({
     }, 0);
 
     return () => clearTimeout(timeoutId);
-  }, [editor, initialContent, isContentLoading, themeRef.current]);
+  }, [editor, initialContent, isContentLoading, theme]);
 
   return {
     editor,

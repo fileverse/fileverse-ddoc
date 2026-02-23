@@ -1,4 +1,4 @@
-import Color from 'color';
+import Color, { ColorInstance } from 'color';
 
 export const colors = [
   { color: '#000000', code: 'bg-[#000000]' },
@@ -624,21 +624,46 @@ export const textColors = [
     dark: '#808080',
   },
 ];
-const lightToDark = (light: number) => {
-  return Math.min(95, Math.max(70, 95 - 0.52 * (light - 10)));
-};
+// const lightToDark = (light: number) => {
+//   return Math.min(95, Math.max(70, 95 - 0.52 * (light - 10)));
+// };
+
+// const darkToLight = (light: number) => {
+//   return Math.min(58, Math.max(10, 10 + (95 - light) / 0.52));
+// };
+
+function lightenBy(color: ColorInstance, ratio: number) {
+  const lightness = color.lightness();
+  return color.lightness(lightness + (100 - lightness) * ratio).hex();
+}
+
+function darkenBy(color: ColorInstance, ratio: number) {
+  const lightness = color.lightness();
+  return color.lightness(lightness - lightness * ratio).hex();
+}
 
 export const getResponsiveColor = (
   color?: string,
   theme: 'light' | 'dark' = 'light',
 ) => {
   if (!color) return;
-  if (color.startsWith('var')) return color;
-  const colorObj = Color(color);
-  const light = colorObj.lightness();
-  if (theme === 'dark') {
-    const newlight = lightToDark(light);
-    return colorObj.lightness(newlight).hex();
+  try {
+    if (color.startsWith('var(--color-editor-')) return color;
+    const colorObj = Color(color);
+    if (theme === 'dark') {
+      if (colorObj.isDark()) {
+        if (colorObj.black() === 100) return colorObj.negate().hex(); // if the color is hard black, turn to white
+        return lightenBy(colorObj, 0.7);
+      }
+      return color;
+    } else {
+      if (colorObj.isLight()) {
+        if (colorObj.white() === 100) return colorObj.negate().hex(); // if the color is hard black, turn to white
+        return darkenBy(colorObj, 0.3);
+      }
+      return color;
+    }
+  } catch {
+    return color;
   }
-  return color;
 };
