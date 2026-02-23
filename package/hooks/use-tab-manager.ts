@@ -64,7 +64,7 @@ export const useTabManager = ({
           createDefaultTabIfMissing,
         },
       );
-      _setActiveTabId(id);
+      shouldSyncActiveTab && _setActiveTabId(id);
       setTabs(tabList);
       return;
     }
@@ -74,6 +74,7 @@ export const useTabManager = ({
     isDDocOwner,
     enableCollaboration,
     createDefaultTabIfMissing,
+    shouldSyncActiveTab,
   ]);
 
   useEffect(() => {
