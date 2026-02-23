@@ -121,6 +121,7 @@ const DdocEditor = forwardRef(
       metadataProxyUrl,
       extensions,
       onCopyHeadingLink,
+      tabConfig,
       footerHeight,
       ipfsImageFetchFn,
       fetchV1ImageFn,
@@ -322,6 +323,7 @@ const DdocEditor = forwardRef(
       collaborationKeyPair,
       collabConfig,
       isDDocOwner,
+      tabConfig,
       ...rest,
     });
 
@@ -643,6 +645,7 @@ const DdocEditor = forwardRef(
                 orderTab={orderTab}
                 ydoc={ydoc}
                 tabCommentCounts={tabCommentCounts}
+                tabConfig={tabConfig}
               />
             )}
 

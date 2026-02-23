@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as Y from 'yjs';
 import { DdocProps } from '../types';
 import {
@@ -18,6 +18,7 @@ interface UseTabManagerArgs {
   isDDocOwner: boolean;
   createDefaultTabIfMissing: boolean;
   shouldSyncActiveTab: boolean;
+  defaultTabId?: string;
 }
 
 export const useTabManager = ({
@@ -27,6 +28,7 @@ export const useTabManager = ({
   isDDocOwner,
   createDefaultTabIfMissing,
   shouldSyncActiveTab,
+  defaultTabId,
 }: UseTabManagerArgs) => {
   const [activeTabId, _setActiveTabId] = useState('default');
   const [tabs, setTabs] = useState<Tab[]>([]);
@@ -64,7 +66,9 @@ export const useTabManager = ({
           createDefaultTabIfMissing,
         },
       );
-      shouldSyncActiveTab && _setActiveTabId(id);
+      if (shouldSyncActiveTab) {
+        _setActiveTabId(id);
+      }
       setTabs(tabList);
       return;
     }
@@ -76,6 +80,23 @@ export const useTabManager = ({
     createDefaultTabIfMissing,
     shouldSyncActiveTab,
   ]);
+
+  const hasInitializedDefaultTabIdRef = useRef(false);
+  useEffect(() => {
+    if (
+      !initialContent ||
+      !defaultTabId ||
+      hasInitializedDefaultTabIdRef.current ||
+      !tabs.length
+    )
+      return;
+    const defaultTab = tabs.find((tab) => tab.id === defaultTabId);
+    if (!defaultTab) {
+      return;
+    }
+    _setActiveTabId(defaultTabId);
+    hasInitializedDefaultTabIdRef.current = true;
+  }, [initialContent, defaultTabId, tabs]);
 
   useEffect(() => {
     if (!ydoc) return;
@@ -93,11 +114,15 @@ export const useTabManager = ({
 
       const tabList: Tab[] = [];
 
+      let isDefaultIdValid = false;
+
       currentOrder.toArray().forEach((tabId) => {
         const tabMetadata = currentTabsMap?.get(tabId);
 
         if (!tabMetadata) return;
-
+        if (defaultTabId && defaultTabId === tabId) {
+          isDefaultIdValid = true;
+        }
         tabList.push({
           id: tabId,
           name: tabMetadata.get('name') as string,
@@ -106,7 +131,13 @@ export const useTabManager = ({
         });
       });
       setTabs(tabList);
-      _setActiveTabId(currentActiveTab?.toString() || '');
+      _setActiveTabId(() => {
+        if (shouldSyncActiveTab) return currentActiveTab?.toString();
+        if (defaultTabId && isDefaultIdValid) {
+          return defaultTabId;
+        }
+        return 'default';
+      });
     };
 
     const observeCurrentOrder = () => {
@@ -134,7 +165,7 @@ export const useTabManager = ({
       observedOrder?.unobserve(handleTabList);
       root.unobserve(handleRootChange);
     };
-  }, [ydoc]);
+  }, [ydoc, defaultTabId, shouldSyncActiveTab]);
 
   const createTab = useCallback(() => {
     const ddocTabs = ydoc.getMap('ddocTabs');

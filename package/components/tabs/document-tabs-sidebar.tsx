@@ -45,6 +45,7 @@ export interface DocumentTabsSidebarProps {
   tabCommentCounts: Record<string, number>;
   tabSectionContainer?: HTMLElement;
   isVersionHistoryMode?: boolean;
+  tabConfig?: DocumentOutlineProps['tabConfig'];
 }
 
 export const DocumentTabsSidebar = ({
@@ -78,6 +79,7 @@ export const TabSidebar = ({
   ydoc,
   tabCommentCounts,
   isVersionHistoryMode,
+  tabConfig,
 }: DocumentTabsSidebarProps) => {
   const handleNameChange = (tabId: string, nextName: string) => {
     renameTab(tabId, { newName: nextName });
@@ -211,6 +213,7 @@ export const TabSidebar = ({
                     }
                     orderTab(tabs[tabIndex + 1].id, tab.id);
                   }}
+                  tabConfig={tabConfig}
                 />
               ))}
             </>
@@ -250,6 +253,7 @@ export const DdocTab = ({
   moveTabDown,
   isPreviewMode,
   isVersionHistoryMode,
+  tabConfig,
 }: {
   tab: Tab;
   tabIndex: number;
@@ -270,6 +274,7 @@ export const DdocTab = ({
   moveTabDown: () => void;
   isPreviewMode: boolean;
   isVersionHistoryMode?: boolean;
+  tabConfig?: DocumentOutlineProps['tabConfig'];
 }) => {
   const [tabMetadata, setTabMetadata] = useState({
     title: tab.name,
@@ -315,6 +320,7 @@ export const DdocTab = ({
         canMoveDown={tabCount > 1 && tabIndex < tabCount - 1}
         onMoveUp={moveTabUp}
         onMoveDown={moveTabDown}
+        onCopyLink={() => tabConfig?.onCopyTabLink?.(tab.id)}
         handleShowOutline={(value: boolean) => {
           const { tabs } = getTabsYdocNodes(ydoc);
           const metadataMap = tabs.get(tab.id);

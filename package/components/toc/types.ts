@@ -54,4 +54,8 @@ export interface DocumentOutlineProps {
   tabCommentCounts: Record<string, number>;
   tabSectionContainer?: HTMLElement;
   isVersionHistoryMode?: boolean;
+  tabConfig?: {
+    onCopyTabLink?: (tabId: string) => void;
+    defaultTabId?: string;
+  };
 }

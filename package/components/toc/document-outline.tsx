@@ -24,6 +24,7 @@ export const DocumentOutline = ({
   tabCommentCounts,
   tabSectionContainer,
   isVersionHistoryMode,
+  tabConfig,
 }: DocumentOutlineProps) => {
   const isMediaMax1280px = useMediaQuery('(max-width:1280px)');
 
@@ -49,6 +50,7 @@ export const DocumentOutline = ({
       tabCommentCounts={tabCommentCounts}
       tabSectionContainer={tabSectionContainer}
       isVersionHistoryMode={isVersionHistoryMode}
+      tabConfig={tabConfig}
     />
   ) : (
     <DocumentMobileTabPanel
@@ -64,6 +66,7 @@ export const DocumentOutline = ({
       duplicateTab={duplicateTab}
       tabCommentCounts={tabCommentCounts}
       isPreviewMode={isPreviewMode}
+      tabConfig={tabConfig}
     />
   );
 };

@@ -40,6 +40,7 @@ export interface TabItemProps {
   onMoveDown?: () => void;
   isPreviewMode: boolean;
   isVersionHistoryMode?: boolean;
+  onCopyLink?: () => void;
 }
 
 interface SortableTabItemProps extends Omit<TabItemProps, 'dragHandleProps'> {
@@ -112,6 +113,7 @@ export const TabItem = ({
   onMoveDown,
   isPreviewMode,
   isVersionHistoryMode,
+  onCopyLink,
 }: TabItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [openEmojiPickerTrigger, setOpenEmojiPickerTrigger] = useState(0);
@@ -167,6 +169,7 @@ export const TabItem = ({
         id: 'copy-link',
         label: 'Copy link',
         icon: 'Share2',
+        onSelect: onCopyLink,
       },
       {
         id: 'toggle-outline',
@@ -199,6 +202,7 @@ export const TabItem = ({
         id: 'copy-link',
         label: 'Copy link',
         icon: 'Share2',
+        onSelect: onCopyLink,
       },
       {
         id: 'toggle-outline',

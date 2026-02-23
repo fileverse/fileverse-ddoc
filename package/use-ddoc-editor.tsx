@@ -64,6 +64,7 @@ export const useDdocEditor = ({
     createDefaultTabIfMissing: Boolean(
       !isVersionMode && !isPreviewMode && rest.isDDocOwner,
     ),
+    defaultTabId: rest.tabConfig?.defaultTabId,
     shouldSyncActiveTab: Boolean(
       !isVersionMode &&
         !isPreviewMode &&
