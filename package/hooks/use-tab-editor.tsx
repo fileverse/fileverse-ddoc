@@ -437,23 +437,6 @@ export const useTabEditor = ({
     isContentYjsEncoded,
   ]);
 
-  // TOC update handler
-  useEffect(() => {
-    if (!editor) return;
-
-    const handleUpdate = () => {
-      if (editor && !editor.isDestroyed) {
-        editor.commands.updateTableOfContents();
-      }
-    };
-
-    editor.on('update', handleUpdate);
-
-    return () => {
-      editor.off('update', handleUpdate);
-    };
-  }, [editor]);
-
   const collaborationCleanupRef = useRef<() => void>(() => {});
   const ref = useRef<HTMLDivElement>(null);
 
