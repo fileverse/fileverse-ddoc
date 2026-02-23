@@ -199,17 +199,16 @@ export const useTabManager = ({
         // Remove metadata
         tabs.delete(tabId);
 
-        // Clear fragment content
-        const fragment = ydoc.getXmlFragment(tabId);
-        if (fragment.length > 0) {
-          fragment.delete(0, fragment.length);
-        }
+        // NOTE: Fragment content is intentionally NOT deleted here.
+        // The orphaned Y.XmlFragment remains in the Y.Doc so that
+        // future undo can restore the tab without data loss.
+
         // Fix active tab if necessary
         if (activeTab instanceof Y.Text) {
           const currentActive = activeTab.toString();
 
           if (currentActive === tabId) {
-            const fallbackId = order.get(index) ?? order.get(index - 1);
+            const fallbackId = order.get(index + 1) ?? order.get(index - 1);
 
             if (fallbackId) {
               activeTab.delete(0, activeTab.length);
@@ -242,8 +241,8 @@ export const useTabManager = ({
       }
 
       ydoc.transact(() => {
-        newName && metadata.set('name', newName);
-        emoji && metadata.set('emoji', emoji);
+        if (newName !== undefined) metadata.set('name', newName);
+        if (emoji !== undefined) metadata.set('emoji', emoji);
       });
     },
     [ydoc],
