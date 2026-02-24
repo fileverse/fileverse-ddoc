@@ -144,6 +144,7 @@ export const DocumentMobileTabPanel = ({
 
   return (
     <div
+      data-testid="mobile-tab-panel"
       className="fixed z-[999] w-full flex flex-col transition-[bottom] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
       style={{
         bottom: showTabList
@@ -176,6 +177,7 @@ export const DocumentMobileTabPanel = ({
                 Document tabs
               </h2>
               <LucideIcon
+                data-testid="mobile-tab-close"
                 onClick={() => setShowContent(false)}
                 name="X"
                 className="w-[16px] h-[16px] cursor-pointer transition-transform duration-200 hover:scale-110 active:scale-95"
@@ -262,7 +264,10 @@ export const DocumentMobileTabPanel = ({
                   name="FileText"
                   className="w-[16px] h-[16px] transition-transform duration-200 group-hover:scale-105"
                 />
-                <p className="text-heading-xsm max-w-[150px] truncate">
+                <p
+                  data-testid="mobile-tab-active-name"
+                  className="text-heading-xsm max-w-[150px] truncate"
+                >
                   {tabs.find((t) => t.id === activeTabId)?.name ?? 'Tab name'}
                 </p>
               </div>
@@ -308,7 +313,7 @@ export const DocumentMobileTabPanel = ({
                   name="FileText"
                   className="w-[16px] h-[16px] transition-transform duration-200 group-hover:scale-105"
                 />
-                <p className="text-heading-xsm">
+                <p data-testid="mobile-tab-active-name" className="text-heading-xsm">
                   {tabs.find((t) => t.id === activeTabId)?.name ?? 'Tab name'}
                 </p>
               </div>

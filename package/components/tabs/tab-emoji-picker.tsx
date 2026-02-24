@@ -64,6 +64,7 @@ export const TabEmojiPicker = ({
           open={showPopOver}
         >
           <PopoverTrigger
+            data-testid="tab-emoji-trigger"
             data-emoji-picker
             onClick={(e) => e.stopPropagation()}
             disabled={disableEmoji}
@@ -93,6 +94,7 @@ export const TabEmojiPicker = ({
             className="w-[160px] space-xsm"
           >
             <div
+              data-testid="tab-emoji-choose"
               onClick={() => {
                 setShowPicker(true);
                 setShowPopOver(false);
@@ -105,6 +107,7 @@ export const TabEmojiPicker = ({
               </p>
             </div>
             <div
+              data-testid="tab-emoji-clear"
               onClick={() => {
                 setEmoji('');
                 setShowPopOver(false);

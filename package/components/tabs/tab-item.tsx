@@ -232,6 +232,8 @@ export const TabItem = ({
 
   return (
     <div
+      data-testid={`tab-item-${tabId}`}
+      data-active={isActive}
       onDoubleClick={startEditing}
       onClick={onClick}
       {...dragHandleProps}
@@ -253,11 +255,15 @@ export const TabItem = ({
         />
 
         {!isEditing ? (
-          <span className="text-heading-xsm color-text-default flex-1 truncate select-none">
+          <span
+            data-testid={`tab-name-${tabId}`}
+            className="text-heading-xsm color-text-default flex-1 truncate select-none"
+          >
             {title}
           </span>
         ) : (
           <TextField
+            data-testid="tab-rename-input"
             autoFocus
             value={title}
             onChange={(e) => setTitle(e.target.value)}
@@ -300,6 +306,7 @@ export const TabDragPreview = ({
 }) => {
   return (
     <div
+      data-testid="tab-drag-preview"
       className="
         flex items-center gap-[8px] px-[12px] py-[8px] w-[231px] h-[40px] rounded-full color-bg-secondary shadow-elevation-3"
     >
@@ -324,6 +331,7 @@ export const TabContextMenuAction = ({
 }) => {
   const content = (
     <div
+      data-testid={`tab-menu-${item.id}`}
       className={cn(menuItemClassName)}
       onClick={(e: MouseEvent<HTMLDivElement>) => {
         e.stopPropagation();
@@ -361,7 +369,10 @@ export const TabContextMenu = ({ sections }: TabContextMenuProps) => {
   return (
     <Popover>
       <PopoverTrigger onClick={(e) => e.stopPropagation()}>
-        <div className="h-[24px] rounded-[4px] w-[24px] hover:color-bg-secondary-hover min-w-[24px] flex items-center justify-center">
+        <div
+          data-testid="tab-context-menu-trigger"
+          className="h-[24px] rounded-[4px] w-[24px] hover:color-bg-secondary-hover min-w-[24px] flex items-center justify-center"
+        >
           <LucideIcon name="EllipsisVertical" className="h-[16px] w-[16px]" />
         </div>
       </PopoverTrigger>

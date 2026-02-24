@@ -130,6 +130,7 @@ export const TabSidebar = ({
           strategy={verticalListSortingStrategy}
         >
           <div
+            data-testid="tab-sidebar"
             className={cn(
               'flex flex-col items-start max-w-[263px] w-full justify-start  left-0 px-4 z-20',
               !hasToC && 'hidden',
@@ -146,6 +147,7 @@ export const TabSidebar = ({
               position="right"
             >
               <button
+                data-testid="tab-sidebar-toggle"
                 type="button"
                 onMouseEnter={() => !showTOC && setIsHovered(true)}
                 onMouseLeave={() => setIsHovered(false)}
@@ -177,12 +179,16 @@ export const TabSidebar = ({
               <div className="flex flex-col gap-[8px] mt-[16px] w-full min-h-0 flex-1">
                 <div className="w-full">
                   <div className="flex items-center px-[12px] py-[8px] justify-between">
-                    <span className="text-heading-sm truncate color-text-default">
+                    <span
+                      data-testid="tab-sidebar-heading"
+                      className="text-heading-sm truncate color-text-default"
+                    >
                       Document tabs
                     </span>
 
                     {!isPreviewMode && (
                       <IconButton
+                        data-testid="tab-create-button"
                         icon="Plus"
                         variant="ghost"
                         size="sm"
