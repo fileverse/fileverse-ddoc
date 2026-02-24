@@ -131,13 +131,14 @@ export const TabSidebar = ({
         >
           <div
             className={cn(
-              'flex flex-col items-start max-w-[263px] w-full justify-start fixed left-0 px-4 z-20',
+              'flex flex-col items-start max-w-[263px] w-full justify-start  left-0 px-4 z-20',
               !hasToC && 'hidden',
               isVersionHistoryMode
                 ? 'top-[16px] max-h-[calc(100vh-32px)]'
                 : isPreviewMode
                   ? 'top-[70px] max-h-[calc(100vh-86px)]'
                   : 'top-[124px] max-h-[calc(100vh-140px)]',
+              !isVersionHistoryMode && 'fixed',
             )}
           >
             <Tooltip
