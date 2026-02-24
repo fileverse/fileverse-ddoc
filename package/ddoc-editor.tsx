@@ -567,7 +567,8 @@ const DdocEditor = forwardRef(
 
     const renderComp = () => {
       const shouldRenderDocumentOutline =
-        tabs.length > 0 || tocItems.length > 0;
+        tabs.length > 0 ||
+        (tocItems.length > 0 && !rest.versionHistoryState?.enabled);
       return (
         <AnimatePresence>
           <>
