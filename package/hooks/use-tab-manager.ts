@@ -32,6 +32,10 @@ interface UseTabManagerArgs {
   defaultTabId?: string;
 }
 
+export const getNewTabId = () => {
+  return fromUint8Array(generateRandomBytes(5), true);
+};
+
 export const useTabManager = ({
   ydoc,
   initialContent,
@@ -194,8 +198,7 @@ export const useTabManager = ({
       throw new Error('Invalid ddocTabs.tabs');
     }
 
-    const tabId = fromUint8Array(generateRandomBytes(), true);
-
+    const tabId = getNewTabId();
     const newTab: Tab = {
       name: `Tab ${order.length + 1}`,
       showOutline: true,
@@ -374,7 +377,7 @@ export const useTabManager = ({
         return;
       }
 
-      const newTabId = fromUint8Array(generateRandomBytes());
+      const newTabId = getNewTabId();
       const originalName = originalMeta.get('name') as string;
       const newTabName = `${originalName} (Copy)`;
 

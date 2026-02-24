@@ -65,10 +65,13 @@ export const DocumentOutline = ({
       setItems={setItems}
       orientation={orientation}
       renameTab={renameTab}
+      createTab={createTab}
       duplicateTab={duplicateTab}
+      deleteTab={deleteTab}
       tabCommentCounts={tabCommentCounts}
       isPreviewMode={isPreviewMode}
       tabConfig={tabConfig}
+      isVersionHistoryMode={!!isVersionHistoryMode}
     />
   );
 };
