@@ -11,6 +11,17 @@ import { generateRandomBytes } from '@fileverse/crypto/utils';
 import { fromUint8Array } from 'js-base64';
 import { toast } from '@fileverse/ui';
 
+const UNDO_WINDOW_MS = 10_000; // 10 seconds
+
+interface DeleteSnapshot {
+  tabId: string;
+  name: string;
+  showOutline: boolean;
+  emoji: string | null;
+  orderIndex: number;
+  timestamp: number;
+}
+
 interface UseTabManagerArgs {
   ydoc: Y.Doc;
   initialContent: DdocProps['initialContent'];
@@ -33,6 +44,7 @@ export const useTabManager = ({
   const [activeTabId, _setActiveTabId] = useState('default');
   const [tabs, setTabs] = useState<Tab[]>([]);
   const hasTabState = useMemo(() => tabs.length > 0, [tabs]);
+  const lastDeleteRef = useRef<DeleteSnapshot | null>(null);
 
   const setActiveTabId = useCallback(
     (id: string) => {
@@ -227,13 +239,26 @@ export const useTabManager = ({
         throw new Error('Tab not found in order');
       }
 
+      // Snapshot metadata before delete for undo
+      const tabMeta = tabs.get(tabId);
+      if (tabMeta instanceof Y.Map) {
+        lastDeleteRef.current = {
+          tabId,
+          name: tabMeta.get('name') as string,
+          showOutline: tabMeta.get('showOutline') as boolean,
+          emoji: (tabMeta.get('emoji') as string | null) ?? null,
+          orderIndex: index,
+          timestamp: Date.now(),
+        };
+      }
+
       ydoc.transact(() => {
         // Remove metadata
         tabs.delete(tabId);
 
         // NOTE: Fragment content is intentionally NOT deleted here.
         // The orphaned Y.XmlFragment remains in the Y.Doc so that
-        // future undo can restore the tab without data loss.
+        // undo can restore the tab without data loss.
 
         // Fix active tab if necessary
         if (activeTab instanceof Y.Text) {
@@ -254,6 +279,64 @@ export const useTabManager = ({
     },
     [ydoc],
   );
+
+  const restoreDeletedTab = useCallback(() => {
+    const snapshot = lastDeleteRef.current;
+    if (!snapshot) return false;
+    if (Date.now() - snapshot.timestamp > UNDO_WINDOW_MS) {
+      lastDeleteRef.current = null;
+      return false;
+    }
+
+    const { order, tabs, activeTab } = getTabsYdocNodes(ydoc);
+
+    // Guard: tab already exists (e.g. restored by collab peer)
+    if (tabs.get(snapshot.tabId)) {
+      lastDeleteRef.current = null;
+      return false;
+    }
+
+    ydoc.transact(() => {
+      const metadata = new Y.Map<string | boolean>();
+      metadata.set('name', snapshot.name);
+      metadata.set('showOutline', snapshot.showOutline);
+      if (snapshot.emoji) metadata.set('emoji', snapshot.emoji);
+      tabs.set(snapshot.tabId, metadata);
+
+      // Ensure fragment is registered (content was preserved by soft-delete)
+      ydoc.getXmlFragment(snapshot.tabId);
+
+      // Re-insert at original position (clamped to current length)
+      const insertIndex = Math.min(snapshot.orderIndex, order.length);
+      order.insert(insertIndex, [snapshot.tabId]);
+
+      if (activeTab instanceof Y.Text) {
+        activeTab.delete(0, activeTab.length);
+        activeTab.insert(0, snapshot.tabId);
+      }
+    });
+
+    _setActiveTabId(snapshot.tabId);
+    lastDeleteRef.current = null;
+    return true;
+  }, [ydoc]);
+
+  // Ctrl+Z interceptor — capture phase, fires before TipTap
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+        const snapshot = lastDeleteRef.current;
+        if (snapshot && Date.now() - snapshot.timestamp <= UNDO_WINDOW_MS) {
+          e.preventDefault();
+          e.stopPropagation();
+          restoreDeletedTab();
+        }
+        // Otherwise: let event bubble to TipTap for normal content undo
+      }
+    };
+    window.addEventListener('keydown', handler, true);
+    return () => window.removeEventListener('keydown', handler, true);
+  }, [restoreDeletedTab]);
 
   const renameTab = useCallback(
     (
