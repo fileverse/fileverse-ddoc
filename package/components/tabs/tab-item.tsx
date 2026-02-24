@@ -123,12 +123,19 @@ export const TabItem = ({
   const [openEmojiPickerTrigger, setOpenEmojiPickerTrigger] = useState(0);
   const [title, setTitle] = useState(name);
   const originalTitleRef = useRef(title);
+  const inputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
     if (!isEditing) {
       setTitle(name);
     }
   }, [name, isEditing]);
+
+  useEffect(() => {
+    if (isEditing && inputRef.current) {
+      inputRef.current.select();
+    }
+  }, [isEditing]);
 
   const startEditing = () => {
     originalTitleRef.current = title;
@@ -234,7 +241,10 @@ export const TabItem = ({
     <div
       data-testid={`tab-item-${tabId}`}
       data-active={isActive}
-      onDoubleClick={startEditing}
+      onDoubleClick={() => {
+        if (isPreviewMode) return;
+        startEditing();
+      }}
       onClick={onClick}
       {...dragHandleProps}
       className={cn(
@@ -264,6 +274,7 @@ export const TabItem = ({
         ) : (
           <TextField
             data-testid="tab-rename-input"
+            ref={inputRef}
             autoFocus
             value={title}
             onChange={(e) => setTitle(e.target.value)}

@@ -7,7 +7,7 @@ import {
   PopoverTrigger,
   Tooltip,
 } from '@fileverse/ui';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
 import {
   type EmojiPickerListCategoryHeaderProps,
@@ -31,11 +31,14 @@ export const TabEmojiPicker = ({
   disableEmoji: boolean;
 }) => {
   const [showPicker, setShowPicker] = useState(false);
-  const toggleRef = useRef(null);
-  const toggleButtonRef = useRef(null);
+  const toggleRef = useRef<HTMLElement | null>(null);
+  const triggerRef = useRef<HTMLElement | null>(null);
   const [showPopOver, setShowPopOver] = useState(false);
+  const [pickerPosition, setPickerPosition] = useState({ top: 40, left: 10 });
   const isMobile = useMediaQuery('(max-width: 1000px)', { defaultValue: true });
-  useOnClickOutside([toggleRef, toggleButtonRef], (event) => {
+
+  // Close the emoji picker when interaction moves outside both trigger and panel.
+  useOnClickOutside([toggleRef, triggerRef], (event) => {
     if (
       toggleRef.current &&
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -46,11 +49,25 @@ export const TabEmojiPicker = ({
     }
   });
 
+  // Use viewport coordinates from the trigger and render the panel with `fixed`
+  // so it does not get clipped by scroll/overflow containers (like TabSidebar).
+  const openPicker = useCallback(() => {
+    const triggerRect = triggerRef.current?.getBoundingClientRect();
+    if (triggerRect) {
+      setPickerPosition({
+        top: triggerRect.bottom + 8,
+        left: triggerRect.left,
+      });
+    }
+    setShowPicker(true);
+  }, []);
+
   useEffect(() => {
     if (openPickerTrigger <= 0) return;
     setShowPopOver(false);
-    setShowPicker(true);
-  }, [openPickerTrigger]);
+    // Supports opening the picker from external actions (e.g. context menu).
+    openPicker();
+  }, [openPickerTrigger, openPicker]);
 
   return (
     <>
@@ -70,6 +87,9 @@ export const TabEmojiPicker = ({
             disabled={disableEmoji}
           >
             <Button
+              ref={(el) => {
+                triggerRef.current = el;
+              }}
               variant="ghost"
               className={cn(
                 '!min-w-[16px] !min-h-[16px] !w-[16px] !h-[16px] !p-0 flex items-center justify-center !hover:bg-transparent',
@@ -96,7 +116,7 @@ export const TabEmojiPicker = ({
             <div
               data-testid="tab-emoji-choose"
               onClick={() => {
-                setShowPicker(true);
+                openPicker();
                 setShowPopOver(false);
               }}
               className="space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center"
@@ -122,13 +142,22 @@ export const TabEmojiPicker = ({
           </PopoverContent>
         </Popover>
       ) : (
-        <div className="flex items-center" data-emoji-picker>
+        <div
+          className="flex items-center"
+          data-emoji-picker
+          ref={(el) => {
+            triggerRef.current = el;
+          }}
+        >
           <Tooltip position={'top'} text="Choose emoji">
             <LucideIcon
-              ref={toggleButtonRef}
               onClick={() => {
                 if (disableEmoji) return;
-                setShowPicker(!showPicker);
+                if (showPicker) {
+                  setShowPicker(false);
+                  return;
+                }
+                openPicker();
               }}
               name={isEditing ? 'SmilePlus' : 'FileText'}
               className="w-[16px] shrink-0"
@@ -139,11 +168,12 @@ export const TabEmojiPicker = ({
       {showPicker && (
         <div
           data-emoji-picker
-          ref={toggleRef}
-          className={cn(
-            'absolute top-[35px] z-10 ',
-            isMobile ? 'left-[42px]' : 'left-[9px]',
-          )}
+          ref={(el) => {
+            toggleRef.current = el;
+          }}
+          // `fixed` keeps the picker visible even if parent containers have overflow clipping.
+          className={cn('fixed z-50')}
+          style={{ top: pickerPosition.top, left: pickerPosition.left }}
         >
           <EmojiPicker
             className={cn(

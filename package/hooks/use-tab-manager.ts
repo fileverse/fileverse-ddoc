@@ -10,13 +10,13 @@ import {
 import { generateRandomBytes } from '@fileverse/crypto/utils';
 import { fromUint8Array } from 'js-base64';
 import { toast } from '@fileverse/ui';
+import { useTabMetadataHistory } from './use-tab-metadata-history';
 
 const UNDO_WINDOW_MS = 10_000; // 10 seconds
 
 interface DeleteSnapshot {
   tabId: string;
   name: string;
-  showOutline: boolean;
   emoji: string | null;
   orderIndex: number;
   timestamp: number;
@@ -49,6 +49,11 @@ export const useTabManager = ({
   const [tabs, setTabs] = useState<Tab[]>([]);
   const hasTabState = useMemo(() => tabs.length > 0, [tabs]);
   const lastDeleteRef = useRef<DeleteSnapshot | null>(null);
+  const {
+    applyRename,
+    undo: undoTabMetadataChange,
+    redo: redoTabMetadataChange,
+  } = useTabMetadataHistory(ydoc);
 
   const setActiveTabId = useCallback(
     (id: string) => {
@@ -123,7 +128,7 @@ export const useTabManager = ({
     const handleTabList = () => {
       const currentOrder =
         (root.get('order') as Y.Array<string>) || observedOrder;
-      const currentTabsMap = root.get('tabs') as Y.Map<Y.Map<string | boolean>>;
+      const currentTabsMap = root.get('tabs') as Y.Map<Y.Map<string | null>>;
       const currentActiveTab = root.get('activeTabId') as Y.Text;
 
       if (!currentOrder) return;
@@ -142,7 +147,6 @@ export const useTabManager = ({
         tabList.push({
           id: tabId,
           name: tabMetadata.get('name') as string,
-          showOutline: tabMetadata.get('showOutline') as boolean,
           emoji: tabMetadata.get('emoji') as string | null,
         });
       });
@@ -201,16 +205,14 @@ export const useTabManager = ({
     const tabId = getNewTabId();
     const newTab: Tab = {
       name: `Tab ${order.length + 1}`,
-      showOutline: true,
       emoji: null,
       id: tabId,
     };
 
     ydoc.transact(() => {
       // Create metadata
-      const metadata = new Y.Map<string | boolean | null>();
+      const metadata = new Y.Map<string | null>();
       metadata.set('name', newTab.name);
-      metadata.set('showOutline', newTab.showOutline);
       metadata.set('emoji', newTab.emoji);
       tabsMap.set(newTab.id, metadata);
 
@@ -248,7 +250,6 @@ export const useTabManager = ({
         lastDeleteRef.current = {
           tabId,
           name: tabMeta.get('name') as string,
-          showOutline: tabMeta.get('showOutline') as boolean,
           emoji: (tabMeta.get('emoji') as string | null) ?? null,
           orderIndex: index,
           timestamp: Date.now(),
@@ -300,10 +301,9 @@ export const useTabManager = ({
     }
 
     ydoc.transact(() => {
-      const metadata = new Y.Map<string | boolean>();
+      const metadata = new Y.Map<string | null>();
       metadata.set('name', snapshot.name);
-      metadata.set('showOutline', snapshot.showOutline);
-      if (snapshot.emoji) metadata.set('emoji', snapshot.emoji);
+      metadata.set('emoji', snapshot.emoji);
       tabs.set(snapshot.tabId, metadata);
 
       // Ensure fragment is registered (content was preserved by soft-delete)
@@ -324,46 +324,58 @@ export const useTabManager = ({
     return true;
   }, [ydoc]);
 
-  // Ctrl+Z interceptor — capture phase, fires before TipTap
+  // Tab metadata (name/emoji) is stored in ddocTabs map, outside the active
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
-      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && !e.shiftKey) {
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        e.key.toLowerCase() === 'z' &&
+        !e.shiftKey
+      ) {
         const snapshot = lastDeleteRef.current;
         if (snapshot && Date.now() - snapshot.timestamp <= UNDO_WINDOW_MS) {
           e.preventDefault();
           e.stopPropagation();
           restoreDeletedTab();
+          return;
+        }
+
+        if (undoTabMetadataChange()) {
+          e.preventDefault();
+          e.stopPropagation();
         }
         // Otherwise: let event bubble to TipTap for normal content undo
+      }
+
+      if (
+        (e.metaKey || e.ctrlKey) &&
+        (e.key.toLowerCase() === 'y' ||
+          (e.key.toLowerCase() === 'z' && e.shiftKey))
+      ) {
+        if (redoTabMetadataChange()) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
       }
     };
     window.addEventListener('keydown', handler, true);
     return () => window.removeEventListener('keydown', handler, true);
-  }, [restoreDeletedTab]);
+  }, [redoTabMetadataChange, restoreDeletedTab, undoTabMetadataChange]);
 
   const renameTab = useCallback(
     (
       tabId: string,
       { newName, emoji }: { newName?: string; emoji?: string },
     ) => {
-      const { tabs } = getTabsYdocNodes(ydoc);
-
-      const metadata = tabs.get(tabId);
-
-      if (!(metadata instanceof Y.Map)) {
+      const result = applyRename({ tabId, newName, emoji });
+      if (result.tabNotFound) {
         toast({
           title: 'Rename tab error',
           description: `Tab not found.`,
         });
-        return;
       }
-
-      ydoc.transact(() => {
-        if (newName !== undefined) metadata.set('name', newName);
-        if (emoji !== undefined) metadata.set('emoji', emoji);
-      });
     },
-    [ydoc],
+    [applyRename],
   );
 
   const duplicateTab = useCallback(
@@ -380,15 +392,13 @@ export const useTabManager = ({
       const newTabId = getNewTabId();
       const originalName = originalMeta.get('name') as string;
       const newTabName = `${originalName} (Copy)`;
+      const originalEmoji =
+        (originalMeta.get('emoji') as string | null) ?? null;
 
       ydoc.transact(() => {
-        const newMeta = new Y.Map<string | boolean>();
-
-        originalMeta.forEach((value, key) => {
-          newMeta.set(key, value);
-        });
-
+        const newMeta = new Y.Map<string | null>();
         newMeta.set('name', newTabName);
+        newMeta.set('emoji', originalEmoji);
 
         const originalFragment = ydoc.getXmlFragment(tabId);
         const newFragment = ydoc.getXmlFragment(newTabId);

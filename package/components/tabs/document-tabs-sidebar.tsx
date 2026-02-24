@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import cn from 'classnames';
 import { IconButton, LucideIcon, Tooltip } from '@fileverse/ui';
 import {
@@ -105,6 +105,52 @@ export const TabSidebar = ({
   );
   const [pendingDeleteTab, setPendingDeleteTab] = useState<Tab | null>(null);
   const [isHovered, setIsHovered] = useState(false);
+  const [tabOutlineOverrides, setTabOutlineOverrides] = useState<
+    Record<string, boolean>
+  >({});
+  const getDefaultOutlineVisibility = useCallback(
+    (tabId: string) => isPreviewMode || tabId === activeTabId,
+    [activeTabId, isPreviewMode],
+  );
+
+  const getOutlineVisibility = useCallback(
+    (tabId: string) =>
+      tabOutlineOverrides[tabId] ?? getDefaultOutlineVisibility(tabId),
+    [getDefaultOutlineVisibility, tabOutlineOverrides],
+  );
+
+  const handleTabOutlineChange = useCallback(
+    (tabId: string, value: boolean, nextActiveTabId?: string) => {
+      setTabOutlineOverrides((previous) => {
+        const hasOverride = Object.prototype.hasOwnProperty.call(
+          previous,
+          tabId,
+        );
+        const defaultValue =
+          isPreviewMode || tabId === (nextActiveTabId ?? activeTabId);
+        const currentValue = hasOverride ? previous[tabId] : defaultValue;
+
+        if (currentValue === value) {
+          return previous;
+        }
+
+        if (value === defaultValue) {
+          if (!hasOverride) {
+            return previous;
+          }
+          const next = { ...previous };
+          delete next[tabId];
+          return next;
+        }
+
+        return {
+          ...previous,
+          [tabId]: value,
+        };
+      });
+    },
+    [activeTabId, isPreviewMode],
+  );
 
   const shouldExpand = !showTOC && isHovered;
 
@@ -132,7 +178,7 @@ export const TabSidebar = ({
           <div
             data-testid="tab-sidebar"
             className={cn(
-              'flex flex-col items-start max-w-[263px] w-full justify-start  left-0 px-4 z-20',
+              'flex flex-col items-start max-w-[263px] w-full h-full justify-start  left-0 px-4 z-20',
               !hasToC && 'hidden',
               isVersionHistoryMode
                 ? 'top-[16px] max-h-[calc(100vh-32px)]'
@@ -164,12 +210,17 @@ export const TabSidebar = ({
                 />
 
                 <span
-                  className={`whitespace-nowrap text-heading-xsm color-text-default max-w-[110px] truncate transition-opacity duration-150`}
+                  className={cn(
+                    `whitespace-nowrap text-heading-xsm color-text-default max-w-[110px] truncate transition-opacity duration-150`,
+                    tabs.length === 1 && !shouldExpand && !showTOC && 'hidden',
+                  )}
                 >
                   {!shouldExpand
                     ? showTOC
                       ? null
-                      : tabs.length
+                      : tabs.length > 1
+                        ? tabs.length
+                        : null
                     : activeTab?.name}
                 </span>
               </button>
@@ -231,6 +282,13 @@ export const TabSidebar = ({
                         orderTab(tabs[tabIndex + 1].id, tab.id);
                       }}
                       tabConfig={tabConfig}
+                      showOutline={getOutlineVisibility(tab.id)}
+                      onShowOutlineChange={(value) => {
+                        if (activeTabId !== tab.id) {
+                          setActiveTabId(tab.id);
+                        }
+                        handleTabOutlineChange(tab.id, value, tab.id);
+                      }}
                     />
                   ))}
                 </div>
@@ -291,6 +349,8 @@ export const DdocTab = ({
   isVersionHistoryMode,
   tabConfig,
   onDelete,
+  showOutline,
+  onShowOutlineChange,
 }: {
   tab: Tab;
   tabIndex: number;
@@ -313,12 +373,13 @@ export const DdocTab = ({
   isVersionHistoryMode?: boolean;
   tabConfig?: DocumentOutlineProps['tabConfig'];
   onDelete?: (tab: Tab) => void;
+  showOutline: boolean;
+  onShowOutlineChange: (value: boolean) => void;
 }) => {
   const isDefaultTab = tab.id === DEFAULT_TAB_ID;
 
   const [tabMetadata, setTabMetadata] = useState({
     title: tab.name,
-    showToc: tab.showOutline,
     emoji: tab.emoji,
   });
   useEffect(() => {
@@ -331,7 +392,6 @@ export const DdocTab = ({
       setTabMetadata({
         title: metadataMap.get('name') as string,
         emoji: metadataMap.get('emoji') as string,
-        showToc: metadataMap.get('showOutline') as boolean,
       });
     };
 
@@ -356,17 +416,13 @@ export const DdocTab = ({
         isActive={tab.id === activeTabId}
         onClick={onClick}
         commentCount={commentCount}
-        showOutline={tabMetadata.showToc}
+        showOutline={showOutline}
         canMoveUp={tabCount > 1 && tabIndex > 0}
         canMoveDown={tabCount > 1 && tabIndex < tabCount - 1}
         onMoveUp={moveTabUp}
         onMoveDown={moveTabDown}
         onCopyLink={() => tabConfig?.onCopyTabLink?.(tab.id)}
-        handleShowOutline={(value: boolean) => {
-          const { tabs } = getTabsYdocNodes(ydoc);
-          const metadataMap = tabs.get(tab.id);
-          metadataMap?.set('showOutline', value);
-        }}
+        handleShowOutline={onShowOutlineChange}
         isPreviewMode={isPreviewMode}
         isVersionHistoryMode={isVersionHistoryMode}
       />
@@ -374,10 +430,7 @@ export const DdocTab = ({
       <div
         className={cn(
           'table-of-contents animate-in fade-in slide-in-from-left-5',
-          tab.id === activeTabId &&
-            !activeDragId &&
-            tabMetadata.showToc &&
-            !isVersionHistoryMode
+          !activeDragId && showOutline && !isVersionHistoryMode
             ? 'block'
             : 'hidden',
         )}

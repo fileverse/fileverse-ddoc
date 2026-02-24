@@ -5,6 +5,7 @@ import * as Y from 'yjs';
 import { yXmlFragmentToProsemirrorJSON } from 'y-prosemirror';
 import { IEditorToolElement } from '../components/editor-utils';
 import { Tab } from '../components/tabs/utils/tab-utils';
+import { stripFrontmatter } from '../extensions/mardown-paste-handler';
 import { extractTitleFromContent } from '../utils/extract-title-from-content';
 import { getTemporaryEditor } from '../utils/helpers';
 import { handleContentPrint } from '../utils/handle-print';
@@ -22,6 +23,22 @@ const useDdocExport = ({
   ydoc,
   exportOptions,
 }: UseDdocExportArgs) => {
+  const normalizeTabTitle = useCallback(
+    (title?: string) => (title || 'Untitled').replace(/\s+/g, ' ').trim(),
+    [],
+  );
+
+  const escapeHtml = useCallback(
+    (value: string) =>
+      value
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;'),
+    [],
+  );
+
   const getOptionFormat = useCallback((title: string) => {
     if (title.includes('(.pdf)')) return 'pdf';
     if (title.includes('(.md)')) return 'md';
@@ -119,14 +136,16 @@ const useDdocExport = ({
         const tempEditor = createTempEditorForTab(tab.id);
         if (!tempEditor) continue;
         tempEditors.push(tempEditor);
+        const tabTitle = normalizeTabTitle(tab.name);
         const markdown = await tempEditor.commands.exportMarkdownFile({
-          title: tab.name || 'Untitled',
+          title: tabTitle,
           returnMDFile: true,
         });
-        allTabMd.push(markdown);
+        const tabMarkdown = stripFrontmatter(markdown).trim();
+        allTabMd.push(`# ${tabTitle}\n\n${tabMarkdown}`.trim());
       }
 
-      const combinedMarkdown = allTabMd.join('\n\n===\n\n');
+      const combinedMarkdown = allTabMd.join('\n\n');
       const blob = new Blob([combinedMarkdown], {
         type: 'text/markdown;charset=utf-8',
       });
@@ -141,7 +160,7 @@ const useDdocExport = ({
     } finally {
       tempEditors.forEach((tempEditor) => tempEditor.destroy());
     }
-  }, [createTempEditorForTab, editor, getTitle, tabs, ydoc]);
+  }, [createTempEditorForTab, editor, getTitle, normalizeTabTitle, tabs, ydoc]);
 
   const exportAllTabsAsHtml = useCallback(async () => {
     if (!editor || !ydoc || tabs.length === 0) return;
@@ -154,12 +173,13 @@ const useDdocExport = ({
         const tempEditor = createTempEditorForTab(tab.id);
         if (!tempEditor) continue;
         tempEditors.push(tempEditor);
-        allTabHtml.push(tempEditor.getHTML());
+        const tabTitle = normalizeTabTitle(tab.name);
+        allTabHtml.push(
+          `<h1>${escapeHtml(tabTitle)}</h1>\n${tempEditor.getHTML()}`,
+        );
       }
 
-      const combinedHtml = allTabHtml.join(
-        '\n<div data-type="page-break" data-page-break="true"></div>\n',
-      );
+      const combinedHtml = allTabHtml.join('\n');
       const htmlDocument = `<!DOCTYPE html><html><head><title>${baseTitle}</title></head><body>${combinedHtml}</body></html>`;
       const blob = new Blob([htmlDocument], {
         type: 'text/html;charset=utf-8',
@@ -175,7 +195,15 @@ const useDdocExport = ({
     } finally {
       tempEditors.forEach((tempEditor) => tempEditor.destroy());
     }
-  }, [createTempEditorForTab, editor, getTitle, tabs, ydoc]);
+  }, [
+    createTempEditorForTab,
+    editor,
+    escapeHtml,
+    getTitle,
+    normalizeTabTitle,
+    tabs,
+    ydoc,
+  ]);
 
   const exportAllTabsAsText = useCallback(async () => {
     if (!editor || !ydoc || tabs.length === 0) return;

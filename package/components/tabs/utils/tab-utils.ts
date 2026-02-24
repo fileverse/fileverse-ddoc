@@ -4,7 +4,6 @@ import * as Y from 'yjs';
 export interface Tab {
   id: string;
   name: string;
-  showOutline: boolean;
   emoji: string | null;
 }
 
@@ -31,7 +30,7 @@ export function deriveTabsFromEncodedState(
   let ddocTabs = doc.getMap('ddocTabs');
 
   let order = ddocTabs.get('order') as Y.Array<string>;
-  let tabsMap = ddocTabs.get('tabs') as Y.Map<Y.Map<string | boolean | null>>;
+  let tabsMap = ddocTabs.get('tabs') as Y.Map<Y.Map<string | null>>;
   let activeTabId = ddocTabs.get('activeTabId') as Y.Text;
 
   if ((!order || !tabsMap) && !createDefaultTabIfMissing) {
@@ -46,7 +45,7 @@ export function deriveTabsFromEncodedState(
       ddocTabs = doc.getMap('ddocTabs');
 
       order = new Y.Array<string>();
-      tabsMap = new Y.Map<Y.Map<string | boolean | null>>();
+      tabsMap = new Y.Map<Y.Map<string | null>>();
       activeTabId = new Y.Text();
 
       ddocTabs.set('order', order);
@@ -54,9 +53,8 @@ export function deriveTabsFromEncodedState(
       ddocTabs.set('activeTabId', activeTabId);
 
       // Create default tab metadata
-      const defaultMetadata = new Y.Map<string | boolean | null>();
+      const defaultMetadata = new Y.Map<string | null>();
       defaultMetadata.set('name', DEFAULT_TAB_NAME);
-      defaultMetadata.set('showOutline', true);
       defaultMetadata.set('emoji', null);
 
       tabsMap.set(DEFAULT_TAB_ID, defaultMetadata);
@@ -79,7 +77,6 @@ export function deriveTabsFromEncodedState(
     tabList.push({
       id: tabId,
       name: tabMetadata.get('name') as string,
-      showOutline: tabMetadata.get('showOutline') as boolean,
       emoji: tabMetadata.get('emoji') as string | null,
     });
 
@@ -101,9 +98,9 @@ export function getTabsYdocNodes(doc: Y.Doc) {
     root.set('order', order);
   }
 
-  let tabs = root.get('tabs') as Y.Map<Y.Map<string | boolean>>;
+  let tabs = root.get('tabs') as Y.Map<Y.Map<string | null>>;
   if (!tabs) {
-    tabs = new Y.Map<Y.Map<string | boolean>>();
+    tabs = new Y.Map<Y.Map<string | null>>();
     root.set('tabs', tabs);
   }
 
