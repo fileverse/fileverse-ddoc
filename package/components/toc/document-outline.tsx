@@ -1,7 +1,8 @@
-import { useMediaQuery } from 'usehooks-ts';
 import { DocumentTabsSidebar } from '../tabs/document-tabs-sidebar';
 import { DocumentMobileTabPanel } from '../tabs/document-mobile-tab-panel';
 import { DocumentOutlineProps } from './types';
+import { useMediaQuery } from 'usehooks-ts';
+import { DocumentOutlineTOCPanel } from './document-outline-toc-panel';
 
 export const DocumentOutline = ({
   editor,
@@ -28,6 +29,21 @@ export const DocumentOutline = ({
   deleteTab,
 }: DocumentOutlineProps) => {
   const isMediaMax1280px = useMediaQuery('(max-width:1280px)');
+
+  if (!tabs.length) {
+    return (
+      <DocumentOutlineTOCPanel
+        editor={editor}
+        hasToC={hasToC}
+        items={items}
+        setItems={setItems}
+        showTOC={showTOC}
+        setShowTOC={setShowTOC}
+        isPreviewMode={isPreviewMode}
+        orientation={orientation}
+      />
+    );
+  }
 
   return !isMediaMax1280px ? (
     <DocumentTabsSidebar

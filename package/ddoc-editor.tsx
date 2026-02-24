@@ -566,6 +566,8 @@ const DdocEditor = forwardRef(
     }, [initialComments]);
 
     const renderComp = () => {
+      const shouldRenderDocumentOutline =
+        tabs.length > 0 || tocItems.length > 0;
       return (
         <AnimatePresence>
           <>
@@ -626,7 +628,7 @@ const DdocEditor = forwardRef(
                 fetchV1ImageFn={fetchV1ImageFn}
               />
             )}
-            {editor && tabs.length > 0 && (
+            {editor && shouldRenderDocumentOutline && (
               <DocumentOutline
                 editor={editor}
                 hasToC={true}
