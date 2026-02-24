@@ -156,15 +156,6 @@ const DdocEditor = forwardRef(
       const background: React.CSSProperties = {};
       const currentTheme = theme as 'light' | 'dark';
 
-      console.log({
-        currentTheme,
-        documentTextColor: documentStyling.textColor,
-        responsiveColor: getResponsiveColor(
-          documentStyling.textColor,
-          currentTheme,
-        ),
-      });
-
       // Apply custom document styling
       if (documentStyling.canvasBackground) {
         canvas.backgroundColor = documentStyling.canvasBackground;
@@ -174,7 +165,6 @@ const DdocEditor = forwardRef(
           documentStyling.textColor,
           currentTheme,
         );
-        // canvas.color = documentStyling.textColor;
       }
       if (documentStyling.fontFamily) {
         canvas.fontFamily = documentStyling.fontFamily;
