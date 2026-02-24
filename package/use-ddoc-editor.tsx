@@ -371,22 +371,24 @@ export const useDdocEditor = ({
           const target = event.target as HTMLElement;
           const link = target.closest('a');
 
-          // --- TWITTER LOGIC ---
-          // Only intercept if Modifier + Link + Matches Regex
-          if (
-            isModifierPressed &&
-            link &&
-            link.href &&
-            link.textContent.match(TWITTER_REGEX)
-          ) {
-            window.open(link.href, '_blank');
-            return true; // Stop Tiptap/ProseMirror from handling this event further
-          } else if (
-            link &&
-            link.href &&
-            !link.textContent.match(TWITTER_REGEX)
-          ) {
-            window.open(link.href, '_blank');
+          if (link && link.href) {
+            if (isPreviewMode) {
+              return false;
+            }
+
+            const isTwitter = link.textContent.match(TWITTER_REGEX);
+
+            if (isTwitter) {
+              if (isModifierPressed) {
+                event.preventDefault();
+                window.open(link.href, '_blank');
+                return true;
+              }
+            } else {
+              event.preventDefault();
+              window.open(link.href, '_blank');
+              return true;
+            }
           }
 
           // --- COMMENT LOGIC ---
@@ -407,7 +409,7 @@ export const useDdocEditor = ({
       immediatelyRender: false,
       shouldRerenderOnTransaction: false,
     },
-    [memoizedExtensions, isPresentationMode],
+    [memoizedExtensions, isPresentationMode, isPreviewMode],
   );
 
   useEffect(() => {
@@ -829,7 +831,6 @@ export const useDdocEditor = ({
       collaborationCleanupRef.current();
     };
   }, [enableCollaboration, Boolean(collabConfig)]);
-
 
   const charCountDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
