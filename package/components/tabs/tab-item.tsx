@@ -374,7 +374,11 @@ export const TabContextMenuAction = ({
   return <PopoverClose asChild>{content}</PopoverClose>;
 };
 
-export const TabContextMenu = ({ sections, popoverSide = 'bottom', popoverClassName }: TabContextMenuProps) => {
+export const TabContextMenu = ({
+  sections,
+  popoverSide = 'bottom',
+  popoverClassName,
+}: TabContextMenuProps) => {
   const visibleSections = sections
     .map((section) => section.filter((item) => item.visible !== false))
     .filter((section) => section.length > 0);

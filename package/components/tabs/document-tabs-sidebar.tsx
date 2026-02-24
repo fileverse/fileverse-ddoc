@@ -109,8 +109,8 @@ export const TabSidebar = ({
     Record<string, boolean>
   >({});
   const getDefaultOutlineVisibility = useCallback(
-    (tabId: string) => isPreviewMode || tabId === activeTabId,
-    [activeTabId, isPreviewMode],
+    (tabId: string) => tabId === activeTabId,
+    [activeTabId],
   );
 
   const getOutlineVisibility = useCallback(

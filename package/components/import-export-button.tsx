@@ -53,6 +53,7 @@ const ImportExportButton = ({
     { id: 'current', label: 'Current tab' },
     { id: 'all', label: 'All tabs' },
   ];
+  const hasMultipleTabs = tabs.length > 1;
 
   return (
     <>
@@ -133,9 +134,13 @@ const ImportExportButton = ({
                         const format = option
                           ? getOptionFormat(option.title)
                           : '';
-                        if (format) {
-                          setSelectedFormat(format);
+                        if (!format) return;
+
+                        if (!hasMultipleTabs) {
+                          handleExport({ format, tab: 'current' });
+                          return;
                         }
+                        setSelectedFormat(format);
                         setModalOpen(true);
                       }}
                       className={cn(
@@ -216,15 +221,17 @@ const ImportExportButton = ({
           </div>
         }
       />
-      <ExportAsModal
-        open={isModalOpen}
-        onOpenChange={setModalOpen}
-        onExport={handleExport}
-        formatOptions={formatSelectOptions}
-        tabOptions={tabSelectOptions}
-        initialFormat={selectedFormat}
-        initialTab="current"
-      />
+      {hasMultipleTabs && (
+        <ExportAsModal
+          open={isModalOpen}
+          onOpenChange={setModalOpen}
+          onExport={handleExport}
+          formatOptions={formatSelectOptions}
+          tabOptions={tabSelectOptions}
+          initialFormat={selectedFormat}
+          initialTab="current"
+        />
+      )}
     </>
   );
 };
