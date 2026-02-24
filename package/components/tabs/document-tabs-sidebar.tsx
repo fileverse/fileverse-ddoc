@@ -120,36 +120,13 @@ export const TabSidebar = ({
   );
 
   const handleTabOutlineChange = useCallback(
-    (tabId: string, value: boolean, nextActiveTabId?: string) => {
-      setTabOutlineOverrides((previous) => {
-        const hasOverride = Object.prototype.hasOwnProperty.call(
-          previous,
-          tabId,
-        );
-        const defaultValue =
-          isPreviewMode || tabId === (nextActiveTabId ?? activeTabId);
-        const currentValue = hasOverride ? previous[tabId] : defaultValue;
-
-        if (currentValue === value) {
-          return previous;
-        }
-
-        if (value === defaultValue) {
-          if (!hasOverride) {
-            return previous;
-          }
-          const next = { ...previous };
-          delete next[tabId];
-          return next;
-        }
-
-        return {
-          ...previous,
-          [tabId]: value,
-        };
-      });
+    (tabId: string, value: boolean) => {
+      setTabOutlineOverrides((previous) => ({
+        ...previous,
+        [tabId]: value,
+      }));
     },
-    [activeTabId, isPreviewMode],
+    [],
   );
 
   const shouldExpand = !showTOC && isHovered;
@@ -287,7 +264,7 @@ export const TabSidebar = ({
                         if (activeTabId !== tab.id) {
                           setActiveTabId(tab.id);
                         }
-                        handleTabOutlineChange(tab.id, value, tab.id);
+                        handleTabOutlineChange(tab.id, value);
                       }}
                     />
                   ))}

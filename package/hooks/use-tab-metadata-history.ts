@@ -36,15 +36,18 @@ export const useTabMetadataHistory = (ydoc: Y.Doc) => {
         direction === 'undo' ? change.previousEmoji : change.nextEmoji;
 
       isReplayingRef.current = true;
-      ydoc.transact(() => {
-        if (nameValue !== undefined) {
-          metadata.set('name', nameValue);
-        }
-        if (emojiValue !== undefined) {
-          metadata.set('emoji', emojiValue);
-        }
-      });
-      isReplayingRef.current = false;
+      try {
+        ydoc.transact(() => {
+          if (nameValue !== undefined) {
+            metadata.set('name', nameValue);
+          }
+          if (emojiValue !== undefined) {
+            metadata.set('emoji', emojiValue);
+          }
+        });
+      } finally {
+        isReplayingRef.current = false;
+      }
 
       return true;
     },

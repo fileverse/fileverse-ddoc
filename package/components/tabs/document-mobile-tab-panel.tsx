@@ -4,6 +4,7 @@ import { LucideIcon } from '@fileverse/ui';
 import { DocumentOutlineProps } from '../toc/types';
 import { MemorizedToC } from '../toc/memorized-toc';
 import { TabContextMenu, TabItem } from './tab-item';
+import { ConfirmDeleteModal } from './confirm-delete-modal';
 import { DEFAULT_TAB_ID, Tab } from './utils/tab-utils';
 
 export interface DocumentMobileTabPanelProps {
@@ -46,6 +47,7 @@ export const DocumentMobileTabPanel = ({
   isVersionHistoryMode,
 }: DocumentMobileTabPanelProps) => {
   const [showContent, setShowContent] = useState(false);
+  const [pendingDeleteTab, setPendingDeleteTab] = useState<Tab | null>(null);
   const activeTabIndex = tabs.findIndex((tab) => tab.id === activeTabId);
   const activeTab = tabs.find((tab) => tab.id === activeTabId);
   const defaultTabId = tabConfig?.defaultTabId || DEFAULT_TAB_ID;
@@ -132,7 +134,7 @@ export const DocumentMobileTabPanel = ({
         iconStroke: '#FB3449',
         onSelect: () => {
           if (!activeTab || !deleteTab || isDefaultTab) return;
-          deleteTab(activeTab.id);
+          setPendingDeleteTab(activeTab);
         },
         visible: Boolean(activeTab && deleteTab && !isDefaultTab),
       },
@@ -145,7 +147,10 @@ export const DocumentMobileTabPanel = ({
   return (
     <div
       data-testid="mobile-tab-panel"
-      className="fixed z-[999] w-full flex flex-col transition-[bottom] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]"
+      className={cn(
+        'fixed w-full flex flex-col transition-[bottom] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
+        pendingDeleteTab ? 'z-[9]' : 'z-[999]',
+      )}
       style={{
         bottom: showTabList
           ? '0px'
@@ -327,10 +332,27 @@ export const DocumentMobileTabPanel = ({
               </div>
             </div>
 
-            <TabContextMenu sections={menuSections} />
+            <TabContextMenu sections={menuSections} popoverSide="top" popoverClassName="z-[1000]" />
           </div>
         )}
       </div>
+      <ConfirmDeleteModal
+        isOpen={Boolean(pendingDeleteTab)}
+        onClose={() => setPendingDeleteTab(null)}
+        onConfirm={() => {
+          if (!pendingDeleteTab) return;
+          try {
+            deleteTab?.(pendingDeleteTab.id);
+          } catch (error) {
+            console.error(error);
+          } finally {
+            setPendingDeleteTab(null);
+          }
+        }}
+        documentTitle={pendingDeleteTab?.name || ''}
+        isLoading={false}
+        primaryLabel="Delete tab"
+      />
     </div>
   );
 };

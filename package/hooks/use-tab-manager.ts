@@ -324,7 +324,8 @@ export const useTabManager = ({
     return true;
   }, [ydoc]);
 
-  // Tab metadata (name/emoji) is stored in ddocTabs map, outside the active
+  // Capture-phase Ctrl+Z/Y interceptor for tab delete undo and metadata undo/redo.
+  // Fires before TipTap; falls through to editor undo when no tab-level action applies.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if (

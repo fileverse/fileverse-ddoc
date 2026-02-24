@@ -61,6 +61,8 @@ interface TabContextMenuItem {
 
 interface TabContextMenuProps {
   sections: TabContextMenuItem[][];
+  popoverSide?: 'top' | 'bottom';
+  popoverClassName?: string;
 }
 
 const menuItemClassName =
@@ -372,7 +374,7 @@ export const TabContextMenuAction = ({
   return <PopoverClose asChild>{content}</PopoverClose>;
 };
 
-export const TabContextMenu = ({ sections }: TabContextMenuProps) => {
+export const TabContextMenu = ({ sections, popoverSide = 'bottom', popoverClassName }: TabContextMenuProps) => {
   const visibleSections = sections
     .map((section) => section.filter((item) => item.visible !== false))
     .filter((section) => section.length > 0);
@@ -391,9 +393,9 @@ export const TabContextMenu = ({ sections }: TabContextMenuProps) => {
         align="end"
         alignOffset={0}
         elevation={2}
-        side="bottom"
+        side={popoverSide}
         sideOffset={4}
-        className="w-[160px] space-xsm"
+        className={cn('w-[160px] space-xsm', popoverClassName)}
       >
         {visibleSections.map((section, sectionIndex) => (
           <div key={`section-${sectionIndex}`}>
