@@ -16,7 +16,7 @@ import {
 import { DocumentOutlineProps } from '../toc/types';
 import { MemorizedToC } from '../toc/memorized-toc';
 import { TabDragPreview, SortableTabItem } from './tab-item';
-import { DEFAULT_TAB_ID, Tab } from './utils/tab-utils';
+import { Tab } from './utils/tab-utils';
 import { Editor } from '@tiptap/core';
 import * as Y from 'yjs';
 import { createPortal } from 'react-dom';
@@ -118,17 +118,11 @@ export const TabSidebar = ({
   const [tabOutlineOverrides, setTabOutlineOverrides] = useState<
     Record<string, boolean>
   >({});
-  const getDefaultOutlineVisibility = useCallback(
-    (tabId: string) => tabId === activeTabId,
-    [activeTabId],
-  );
 
   const getOutlineVisibility = useCallback(
     (tabId: string) =>
-      tabId === activeTabId
-        ? (tabOutlineOverrides[tabId] ?? getDefaultOutlineVisibility(tabId))
-        : false,
-    [activeTabId, getDefaultOutlineVisibility, tabOutlineOverrides],
+      tabId === activeTabId ? (tabOutlineOverrides[tabId] ?? false) : false,
+    [activeTabId, tabOutlineOverrides],
   );
 
   const handleTabOutlineChange = useCallback(
@@ -147,6 +141,28 @@ export const TabSidebar = ({
         ...previous,
         [tabId]: value,
       }));
+    },
+    [activeTabId, setActiveTabId],
+  );
+
+  const handleTabClick = useCallback(
+    (tabId: string) => {
+      if (tabId !== activeTabId) {
+        setActiveTabId(tabId);
+        setTabOutlineOverrides((previous) => ({
+          ...previous,
+          [activeTabId]: false,
+          [tabId]: false,
+        }));
+        return;
+      }
+
+      setTabOutlineOverrides((previous) => {
+        return {
+          ...previous,
+          [tabId]: true,
+        };
+      });
     },
     [activeTabId, setActiveTabId],
   );
@@ -177,7 +193,12 @@ export const TabSidebar = ({
           <div
             data-testid="tab-sidebar"
             className={cn(
-              'flex flex-col items-start max-w-[263px] w-full h-full justify-start  left-0 px-4 z-20',
+              'flex flex-col items-start w-full h-full overflow-y-auto justify-start left-0 px-4 z-20',
+              // Keep landscape TOC responsive: it can shrink to 182px on tighter widths
+              // and grow up to the original 263px when space allows.
+              orientation === 'landscape'
+                ? '!w-[clamp(182px,calc((100vw-1190px)/2),263px)] min-w-[182px] max-w-[263px]'
+                : 'max-w-[263px]',
               !hasToC && 'hidden',
               isVersionHistoryMode
                 ? 'top-[16px] max-h-[calc(100vh-32px)]'
@@ -188,7 +209,9 @@ export const TabSidebar = ({
             )}
           >
             <Tooltip
-              text={showTOC ? 'Hide document outline' : 'Show document outline'}
+              text={
+                showTOC ? 'Hide tabs and outlines' : 'Show tabs and outlines'
+              }
               position="right"
             >
               <button
@@ -248,7 +271,7 @@ export const TabSidebar = ({
                     )}
                   </div>
                 </div>
-                <div className="w-full min-h-0 flex-1 overflow-y-auto">
+                <div className="w-full min-h-0 flex-1">
                   {tabs.map((tab, tabIndex) => (
                     <DdocTab
                       key={tab.id}
@@ -257,14 +280,13 @@ export const TabSidebar = ({
                       tabCount={tabs.length}
                       handleEmojiChange={handleEmojiChange}
                       handleNameChange={handleNameChange}
-                      onClick={() => setActiveTabId(tab.id)}
+                      onClick={() => handleTabClick(tab.id)}
                       editor={editor}
                       tocItem={items}
                       setTocItems={setItems}
                       orientation={orientation}
                       activeTabId={activeTabId}
                       duplicateTab={duplicateTab}
-                      activeDragId={activeDragId}
                       isPreviewMode={isPreviewMode}
                       onDelete={(targetTab) => setPendingDeleteTab(targetTab)}
                       isVersionHistoryMode={isVersionHistoryMode}
@@ -336,7 +358,6 @@ export const DdocTab = ({
   orientation,
   activeTabId,
   duplicateTab,
-  activeDragId,
   commentCount,
   moveTabUp,
   moveTabDown,
@@ -364,7 +385,6 @@ export const DdocTab = ({
   orientation: DocumentOutlineProps['orientation'];
   activeTabId: string;
   duplicateTab: (tabId: string) => void;
-  activeDragId: string | null;
   commentCount: number;
   moveTabUp: () => void;
   moveTabDown: () => void;
@@ -376,7 +396,7 @@ export const DdocTab = ({
   onShowOutlineChange: (value: boolean) => void;
   isConnected?: boolean;
 }) => {
-  const isDefaultTab = tab.id === DEFAULT_TAB_ID;
+  const canDeleteTab = tabCount > 1;
   return (
     <div className="w-full flex mt-[8px] flex-col gap-[8px]">
       <SortableTabItem
@@ -391,7 +411,7 @@ export const DdocTab = ({
         onEmojiChange={(nextEmoji: string) =>
           handleEmojiChange(tab.id, nextEmoji)
         }
-        onDelete={isDefaultTab ? undefined : () => onDelete?.(tab)}
+        onDelete={canDeleteTab ? () => onDelete?.(tab) : undefined}
         onDuplicate={() => duplicateTab(tab.id)}
         isActive={tab.id === activeTabId}
         onClick={onClick}
@@ -411,9 +431,7 @@ export const DdocTab = ({
       <div
         className={cn(
           'table-of-contents animate-in fade-in slide-in-from-left-5',
-          !activeDragId && showOutline && !isVersionHistoryMode
-            ? 'block'
-            : 'hidden',
+          showOutline && !isVersionHistoryMode ? 'block' : 'hidden',
         )}
       >
         <MemorizedToC

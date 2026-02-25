@@ -354,7 +354,6 @@ export const useEditorToolbar = ({
   ipfsImageFetchFn,
   onDocxImport,
   fetchV1ImageFn,
-  isConnected,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -911,7 +910,7 @@ export const useEditorToolbar = ({
       icon: 'FileExport',
       title: 'PDF document (.pdf)',
       onClick: () => {
-        if (editor && isConnected) {
+        if (editor) {
           const closeAndPrint = async () => {
             const { showLoader, removeLoader } = inlineLoader(
               editor,
@@ -944,7 +943,6 @@ export const useEditorToolbar = ({
         }
       },
       isActive: false,
-      disabled: !isConnected,
     },
     {
       icon: 'FileOutput',

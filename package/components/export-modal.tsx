@@ -6,7 +6,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@fileverse/ui';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 
 interface ExportFormatOption {
   id: string;
@@ -39,21 +39,20 @@ export const ExportAsModal = ({
 }: ExportAsModalProps) => {
   const [format, setFormat] = useState(initialFormat || 'pdf');
   const [tab, setTab] = useState(initialTab || 'all');
+  const defaultFormat = useMemo(
+    () => initialFormat ?? formatOptions[0]?.id ?? 'pdf',
+    [initialFormat, formatOptions],
+  );
+  const defaultTab = useMemo(
+    () => initialTab ?? tabOptions[0]?.id ?? 'all',
+    [initialTab, tabOptions],
+  );
 
   useEffect(() => {
     if (!open) return;
-    if (initialFormat) {
-      setFormat(initialFormat);
-    } else if (formatOptions.length > 0) {
-      setFormat(formatOptions[0].id);
-    }
-
-    if (initialTab) {
-      setTab(initialTab);
-    } else if (tabOptions.length > 0) {
-      setTab(tabOptions[0].id);
-    }
-  }, [open, initialFormat, initialTab, formatOptions, tabOptions]);
+    setFormat((prev) => (prev === defaultFormat ? prev : defaultFormat));
+    setTab((prev) => (prev === defaultTab ? prev : defaultTab));
+  }, [open, defaultFormat, defaultTab]);
 
   const handleExport = () => {
     onExport?.({ format, tab });

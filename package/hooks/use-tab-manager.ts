@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import * as Y from 'yjs';
+import { Editor } from '@tiptap/react';
+import { yUndoPluginKey } from '@tiptap/y-tiptap';
 import { DdocProps } from '../types';
 import {
   cloneFragmentContent,
@@ -31,6 +33,7 @@ interface UseTabManagerArgs {
   shouldSyncActiveTab: boolean;
   defaultTabId?: string;
   onVersionHistoryActiveTabChange?: (tabId: string | null) => void;
+  getEditor?: () => Editor | null;
 }
 
 export const getNewTabId = () => {
@@ -46,6 +49,7 @@ export const useTabManager = ({
   shouldSyncActiveTab,
   defaultTabId,
   onVersionHistoryActiveTabChange,
+  getEditor,
 }: UseTabManagerArgs) => {
   // Derive tab state synchronously from initialContent so the first render
   // builds Collaboration extensions with the correct fragment field.
@@ -305,6 +309,23 @@ export const useTabManager = ({
     return true;
   }, [ydoc]);
 
+  const isYjsUndoStackEmpty = useCallback(() => {
+    const editor = getEditor?.();
+
+    if (!editor || editor.isDestroyed) {
+      return true;
+    }
+
+    const undoState = yUndoPluginKey.getState(editor.state);
+    const undoManager = undoState?.undoManager;
+
+    if (!undoManager) {
+      return true;
+    }
+
+    return undoManager.undoStack.length === 0;
+  }, [getEditor]);
+
   // Capture-phase Ctrl+Z/Y interceptor for tab delete undo and metadata undo/redo.
   // Fires before TipTap; falls through to editor undo when no tab-level action applies.
   useEffect(() => {
@@ -322,7 +343,7 @@ export const useTabManager = ({
           return;
         }
 
-        if (undoTabMetadataChange()) {
+        if (isYjsUndoStackEmpty() && undoTabMetadataChange()) {
           e.preventDefault();
           e.stopPropagation();
         }
@@ -342,7 +363,12 @@ export const useTabManager = ({
     };
     window.addEventListener('keydown', handler, true);
     return () => window.removeEventListener('keydown', handler, true);
-  }, [redoTabMetadataChange, restoreDeletedTab, undoTabMetadataChange]);
+  }, [
+    isYjsUndoStackEmpty,
+    redoTabMetadataChange,
+    restoreDeletedTab,
+    undoTabMetadataChange,
+  ]);
 
   const renameTab = useCallback(
     (

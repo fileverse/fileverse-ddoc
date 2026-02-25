@@ -89,6 +89,7 @@ interface UseTabEditorArgs {
   isContentLoading?: boolean;
   activeTabId: string;
   theme?: 'dark' | 'light';
+  editorRef?: MutableRefObject<Editor | null>;
 }
 
 export const useTabEditor = ({
@@ -131,6 +132,7 @@ export const useTabEditor = ({
   isContentLoading,
   activeTabId,
   theme,
+  editorRef,
 }: UseTabEditorArgs) => {
   const { activeCommentId, setActiveCommentId, focusCommentWithActiveId } =
     useActiveComment();
@@ -279,6 +281,11 @@ export const useTabEditor = ({
     },
     [memoizedExtensions, isPresentationMode, isPreviewMode],
   );
+
+  useEffect(() => {
+    if (!editorRef) return;
+    editorRef.current = editor ?? null;
+  }, [editor, editorRef]);
   const isCollaborationEnabled = useMemo(() => {
     return enableCollaboration;
   }, [enableCollaboration]);

@@ -106,16 +106,20 @@ const useDdocExport = ({
     if (!editor || !ydoc || tabs.length === 0) return;
     const tempEditors: Editor[] = [];
     try {
-      const allTabHtml: string[] = [];
+      const allTabPages: string[] = [];
 
       for (const tab of tabs) {
         const tempEditor = createTempEditorForTab(tab.id);
         if (!tempEditor) continue;
         tempEditors.push(tempEditor);
-        allTabHtml.push(tempEditor.getHTML());
+        const tabTitle = normalizeTabTitle(tab.name);
+        allTabPages.push(
+          `<section class="tab-title-page"><h1 class="tab-title-page__text">${escapeHtml(tabTitle)}</h1></section>`,
+        );
+        allTabPages.push(tempEditor.getHTML());
       }
 
-      const combinedHtml = allTabHtml.join(
+      const combinedHtml = allTabPages.join(
         '\n<div data-type="page-break" data-page-break="true"></div>\n',
       );
 
@@ -123,133 +127,141 @@ const useDdocExport = ({
     } finally {
       tempEditors.forEach((tempEditor) => tempEditor.destroy());
     }
-  }, [createTempEditorForTab, editor, tabs, ydoc]);
-
-  const exportAllTabsAsMarkdown = useCallback(async (name?: string) => {
-    if (!editor || !ydoc || tabs.length === 0) return;
-    const baseTitle = name || getTitle();
-    const tempEditors: Editor[] = [];
-    try {
-      const allTabMd: string[] = [];
-
-      for (const tab of tabs) {
-        const tempEditor = createTempEditorForTab(tab.id);
-        if (!tempEditor) continue;
-        tempEditors.push(tempEditor);
-        const tabTitle = normalizeTabTitle(tab.name);
-        const markdown = await tempEditor.commands.exportMarkdownFile({
-          title: tabTitle,
-          returnMDFile: true,
-        });
-        const tabMarkdown = stripFrontmatter(markdown).trim();
-        allTabMd.push(`# ${tabTitle}\n\n${tabMarkdown}`.trim());
-      }
-
-      const combinedMarkdown = allTabMd.join('\n\n');
-      const blob = new Blob([combinedMarkdown], {
-        type: 'text/markdown;charset=utf-8',
-      });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${baseTitle}.md`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } finally {
-      tempEditors.forEach((tempEditor) => tempEditor.destroy());
-    }
-  }, [createTempEditorForTab, editor, getTitle, normalizeTabTitle, tabs, ydoc]);
-
-  const exportAllTabsAsHtml = useCallback(async (name?: string) => {
-    if (!editor || !ydoc || tabs.length === 0) return;
-    const baseTitle = name || getTitle();
-    const tempEditors: Editor[] = [];
-    try {
-      const allTabHtml: string[] = [];
-
-      for (const tab of tabs) {
-        const tempEditor = createTempEditorForTab(tab.id);
-        if (!tempEditor) continue;
-        tempEditors.push(tempEditor);
-        const tabTitle = normalizeTabTitle(tab.name);
-        allTabHtml.push(
-          `<h1>${escapeHtml(tabTitle)}</h1>\n${tempEditor.getHTML()}`,
-        );
-      }
-
-      const combinedHtml = allTabHtml.join('\n');
-      const htmlDocument = `<!DOCTYPE html><html><head><title>${baseTitle}</title></head><body>${combinedHtml}</body></html>`;
-      const blob = new Blob([htmlDocument], {
-        type: 'text/html;charset=utf-8',
-      });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${baseTitle}.html`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } finally {
-      tempEditors.forEach((tempEditor) => tempEditor.destroy());
-    }
   }, [
     createTempEditorForTab,
     editor,
     escapeHtml,
-    getTitle,
     normalizeTabTitle,
     tabs,
     ydoc,
   ]);
 
-  const exportAllTabsAsText = useCallback(async (name?: string) => {
-    if (!editor || !ydoc || tabs.length === 0) return;
-    const baseTitle = name || getTitle();
-    const tempEditors: Editor[] = [];
-    try {
-      const allTabText: string[] = [];
+  const exportAllTabsAsMarkdown = useCallback(
+    async (name?: string) => {
+      if (!editor || !ydoc || tabs.length === 0) return;
+      const baseTitle = name || getTitle();
+      const tempEditors: Editor[] = [];
+      try {
+        const allTabMd: string[] = [];
 
-      for (const tab of tabs) {
-        const tempEditor = createTempEditorForTab(tab.id);
-        if (!tempEditor) continue;
-        tempEditors.push(tempEditor);
-        const text = tempEditor
-          .getText()
-          .replace(/\n{3,}/g, '\n\n')
-          .trim();
-        allTabText.push(text);
+        for (const tab of tabs) {
+          const tempEditor = createTempEditorForTab(tab.id);
+          if (!tempEditor) continue;
+          tempEditors.push(tempEditor);
+          const tabTitle = normalizeTabTitle(tab.name);
+          const markdown = await tempEditor.commands.exportMarkdownFile({
+            title: tabTitle,
+            returnMDFile: true,
+          });
+          const tabMarkdown = stripFrontmatter(markdown).trim();
+          allTabMd.push(`# ${tabTitle}\n\n${tabMarkdown}`.trim());
+        }
+
+        const combinedMarkdown = allTabMd.join('\n\n');
+        const blob = new Blob([combinedMarkdown], {
+          type: 'text/markdown;charset=utf-8',
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${baseTitle}.md`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } finally {
+        tempEditors.forEach((tempEditor) => tempEditor.destroy());
       }
+    },
+    [createTempEditorForTab, editor, getTitle, normalizeTabTitle, tabs, ydoc],
+  );
 
-      const combinedText = allTabText.join('\n\n===\n\n');
-      const blob = new Blob([combinedText], {
-        type: 'text/plain;charset=utf-8',
-      });
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${baseTitle}.txt`;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-    } finally {
-      tempEditors.forEach((tempEditor) => tempEditor.destroy());
-    }
-  }, [createTempEditorForTab, editor, getTitle, tabs, ydoc]);
+  const exportAllTabsAsHtml = useCallback(
+    async (name?: string) => {
+      if (!editor || !ydoc || tabs.length === 0) return;
+      const baseTitle = name || getTitle();
+      const tempEditors: Editor[] = [];
+      try {
+        const allTabHtml: string[] = [];
+
+        for (const tab of tabs) {
+          const tempEditor = createTempEditorForTab(tab.id);
+          if (!tempEditor) continue;
+          tempEditors.push(tempEditor);
+          const tabTitle = normalizeTabTitle(tab.name);
+          allTabHtml.push(
+            `<h1>${escapeHtml(tabTitle)}</h1>\n${tempEditor.getHTML()}`,
+          );
+        }
+
+        const combinedHtml = allTabHtml.join('\n');
+        const htmlDocument = `<!DOCTYPE html><html><head><title>${baseTitle}</title></head><body>${combinedHtml}</body></html>`;
+        const blob = new Blob([htmlDocument], {
+          type: 'text/html;charset=utf-8',
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${baseTitle}.html`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } finally {
+        tempEditors.forEach((tempEditor) => tempEditor.destroy());
+      }
+    },
+    [
+      createTempEditorForTab,
+      editor,
+      escapeHtml,
+      getTitle,
+      normalizeTabTitle,
+      tabs,
+      ydoc,
+    ],
+  );
+
+  const exportAllTabsAsText = useCallback(
+    async (name?: string) => {
+      if (!editor || !ydoc || tabs.length === 0) return;
+      const baseTitle = name || getTitle();
+      const tempEditors: Editor[] = [];
+      try {
+        const allTabText: string[] = [];
+
+        for (const tab of tabs) {
+          const tempEditor = createTempEditorForTab(tab.id);
+          if (!tempEditor) continue;
+          tempEditors.push(tempEditor);
+          const text = tempEditor
+            .getText()
+            .replace(/\n{3,}/g, '\n\n')
+            .trim();
+          allTabText.push(text);
+        }
+
+        const combinedText = allTabText.join('\n\n===\n\n');
+        const blob = new Blob([combinedText], {
+          type: 'text/plain;charset=utf-8',
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${baseTitle}.txt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } finally {
+        tempEditors.forEach((tempEditor) => tempEditor.destroy());
+      }
+    },
+    [createTempEditorForTab, editor, getTitle, tabs, ydoc],
+  );
 
   const handleExport = useCallback(
-    ({
-      format,
-      tab,
-      name,
-    }: {
-      format: string;
-      tab: string;
-      name?: string;
-    }) => {
+    ({ format, tab, name }: { format: string; tab: string; name?: string }) => {
       const runExport = async () => {
         if (!editor) return;
         const isAllTabs = tab === 'all';

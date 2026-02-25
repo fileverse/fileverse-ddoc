@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { DdocProps } from './types';
 import { useTabEditor } from './hooks/use-tab-editor';
 import { useTabManager } from './hooks/use-tab-manager';
 import { useYjsSetup } from './hooks/use-yjs-setup';
+import { Editor } from '@tiptap/react';
 
 export const useDdocEditor = ({
   isPreviewMode,
@@ -40,6 +41,7 @@ export const useDdocEditor = ({
 }: Partial<DdocProps>) => {
   const [isContentLoading, setIsContentLoading] = useState(true);
   const [isCollabContentLoading, setIsCollabContentLoading] = useState(true);
+  const editorRef = useRef<Editor | null>(null);
   const isVersionMode = Boolean(versionHistoryState?.enabled);
   const ddocContent = versionHistoryState?.content ?? initialContent;
 
@@ -73,6 +75,7 @@ export const useDdocEditor = ({
         rest.isDDocOwner,
     ),
     onVersionHistoryActiveTabChange: versionHistoryState?.onActiveTabChange,
+    getEditor: () => editorRef.current,
   });
 
   const tabEditor = useTabEditor({
@@ -115,6 +118,7 @@ export const useDdocEditor = ({
     hasTabState: tabManager.hasTabState,
     isVersionMode,
     theme,
+    editorRef,
   });
 
   const aggregatedContentLoading =

@@ -8,7 +8,7 @@ import {
   PopoverContent,
   Popover,
 } from '@fileverse/ui';
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { IEditorToolElement } from './editor-utils';
 import { ExportAsModal } from './export-modal';
 import { Editor } from '@tiptap/react';
@@ -56,10 +56,13 @@ const ImportExportButton = ({
     exportOptions,
   });
 
-  const tabSelectOptions = [
-    { id: 'current', label: 'Current tab' },
-    { id: 'all', label: 'All tabs' },
-  ];
+  const tabSelectOptions = useMemo(
+    () => [
+      { id: 'current', label: 'Current tab' },
+      { id: 'all', label: 'All tabs' },
+    ],
+    [],
+  );
   const hasMultipleTabs = tabs.length > 1;
 
   const triggerExport = useCallback(
@@ -81,7 +84,6 @@ const ImportExportButton = ({
     },
     [formatSelectOptions, setFileExportsOpen, hasMultipleTabs, handleExport],
   );
-
   useEffect(() => {
     onRegisterExportTrigger?.(triggerExport);
 

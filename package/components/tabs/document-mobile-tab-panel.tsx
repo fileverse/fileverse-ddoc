@@ -12,7 +12,7 @@ import { MemorizedToC } from '../toc/memorized-toc';
 import { TabContextMenu, TabItem } from './tab-item';
 import { ConfirmDeleteModal } from './confirm-delete-modal';
 import { TabEmojiPicker } from './tab-emoji-picker';
-import { DEFAULT_TAB_ID, Tab } from './utils/tab-utils';
+import { Tab } from './utils/tab-utils';
 
 export interface DocumentMobileTabPanelProps {
   tabs: Tab[];
@@ -64,8 +64,7 @@ export const DocumentMobileTabPanel = ({
   const activeTabInputRef = useRef<HTMLInputElement | null>(null);
   const activeTabIndex = tabs.findIndex((tab) => tab.id === activeTabId);
   const activeTab = tabs.find((tab) => tab.id === activeTabId);
-  const defaultTabId = tabConfig?.defaultTabId || DEFAULT_TAB_ID;
-  const isDefaultTab = activeTab?.id === defaultTabId;
+  const canDeleteTab = tabs.length > 1;
   const canNavigatePrev = activeTabIndex > 0;
   const canNavigateNext =
     activeTabIndex >= 0 && activeTabIndex < tabs.length - 1;
@@ -191,10 +190,10 @@ export const DocumentMobileTabPanel = ({
         textClassName: 'color-text-danger',
         iconStroke: '#FB3449',
         onSelect: () => {
-          if (!activeTab || !deleteTab || isDefaultTab) return;
+          if (!activeTab || !deleteTab || !canDeleteTab) return;
           setPendingDeleteTab(activeTab);
         },
-        visible: Boolean(activeTab && deleteTab && !isDefaultTab),
+        visible: Boolean(activeTab && deleteTab && canDeleteTab),
       },
     ],
   ];
@@ -206,15 +205,15 @@ export const DocumentMobileTabPanel = ({
     <div
       data-testid="mobile-tab-panel"
       className={cn(
-        'fixed w-full flex flex-col transition-[bottom] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
-        pendingDeleteTab ? 'z-[9]' : 'z-[999]',
+        'fixed w-full flex flex-col transition-[bottom] z-[9] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
       )}
       style={{
-        bottom: showTabList
-          ? '0px'
-          : isVersionHistoryMode
-            ? 'var(--version-sheet-bottom, 24px)'
-            : '24px',
+        bottom:
+          showTabList || (isPreviewMode && !isVersionHistoryMode)
+            ? '0px'
+            : isVersionHistoryMode
+              ? 'var(--version-sheet-bottom, 24px)'
+              : '24px',
       }}
     >
       <div
@@ -324,9 +323,11 @@ export const DocumentMobileTabPanel = ({
               className="flex flex-col px-[12px] items-center cursor-pointer transition-opacity duration-200 hover:opacity-80"
             >
               <div className="flex items-center gap-[8px] justify-center py-[4px]">
-                <LucideIcon
-                  name="FileText"
-                  className="w-[16px] h-[16px] transition-transform duration-200 group-hover:scale-105"
+                <TabEmojiPicker
+                  emoji={activeTab?.emoji || ''}
+                  setEmoji={() => {}}
+                  disableEmoji={true}
+                  isEditing={false}
                 />
                 <p
                   data-testid="mobile-tab-active-name"
