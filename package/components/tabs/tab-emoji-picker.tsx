@@ -54,13 +54,25 @@ export const TabEmojiPicker = ({
   const openPicker = useCallback(() => {
     const triggerRect = triggerRef.current?.getBoundingClientRect();
     if (triggerRect) {
+      const pickerHeight = isMobile ? 287 : 340;
+      const viewportPadding = 8;
+      const verticalOffset = 8;
+      const hasSpaceBelow =
+        triggerRect.bottom + verticalOffset + pickerHeight <=
+        window.innerHeight - viewportPadding;
+
       setPickerPosition({
-        top: triggerRect.bottom + 8,
+        top: hasSpaceBelow
+          ? triggerRect.bottom + verticalOffset
+          : Math.max(
+              viewportPadding,
+              triggerRect.top - verticalOffset - pickerHeight,
+            ),
         left: triggerRect.left,
       });
     }
     setShowPicker(true);
-  }, []);
+  }, [isMobile]);
 
   useEffect(() => {
     if (openPickerTrigger <= 0) return;

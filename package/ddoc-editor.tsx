@@ -139,6 +139,7 @@ const DdocEditor = forwardRef(
   ) => {
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const exportTriggerRef = useRef<((format?: string) => void) | null>(null);
 
     /**
      * Document styling system with dark mode support
@@ -420,6 +421,9 @@ const DdocEditor = forwardRef(
           awareness.setLocalStateField('user', newUser);
           editor.setEditable(true);
         },
+        exportCurrentTabOrOpenExportModal: (format = 'pdf') => {
+          exportTriggerRef.current?.(format);
+        },
         terminateSession,
       }),
 
@@ -604,6 +608,9 @@ const DdocEditor = forwardRef(
                     isConnected={isConnected}
                     tabs={tabs}
                     ydoc={ydoc}
+                    onRegisterExportTrigger={(trigger) => {
+                      exportTriggerRef.current = trigger;
+                    }}
                   />
                 </div>
               </div>

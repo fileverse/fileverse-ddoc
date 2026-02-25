@@ -25,7 +25,7 @@ export interface TabItemProps {
   name: string;
   emoji: string;
   commentCount?: number;
-  onNameChange: (name: string) => void;
+  onNameChange: (name: string, emoji?: string) => void;
   onEmojiChange: (emoji: string) => void;
   onClick: () => void;
   isActive: boolean;
@@ -122,10 +122,14 @@ export const TabItem = ({
   onDelete,
 }: TabItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [openEmojiPickerTrigger, setOpenEmojiPickerTrigger] = useState(0);
   const [title, setTitle] = useState(name);
   const originalTitleRef = useRef(title);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  // Prevents the input blur handler from issuing a second rename commit
+  // right after we already submitted a combined name+emoji update.
+  const skipBlurCommitRef = useRef(false);
 
   useEffect(() => {
     if (!isEditing) {
@@ -144,9 +148,17 @@ export const TabItem = ({
     setIsEditing(true);
   };
 
-  const stopEditing = () => {
-    const nextTitle = title.trim() || originalTitleRef.current;
+  const commitTitle = () => {
+    // Read from the input ref to avoid stale state when emoji is selected
+    // in the same interaction as a title edit.
+    const nextTitle =
+      (inputRef.current?.value ?? title).trim() || originalTitleRef.current;
     setTitle(nextTitle);
+    return nextTitle;
+  };
+
+  const stopEditing = () => {
+    const nextTitle = commitTitle();
     onNameChange(nextTitle);
     setIsEditing(false);
   };
@@ -193,18 +205,18 @@ export const TabItem = ({
     ],
     [
       {
-        id: 'move-down',
-        label: 'Move down',
-        icon: 'MoveDown',
-        onSelect: () => onMoveDown?.(),
-        visible: canMoveDown,
-      },
-      {
         id: 'move-up',
         label: 'Move up',
         icon: 'MoveUp',
         onSelect: () => onMoveUp?.(),
         visible: canMoveUp,
+      },
+      {
+        id: 'move-down',
+        label: 'Move down',
+        icon: 'MoveDown',
+        onSelect: () => onMoveDown?.(),
+        visible: canMoveDown,
       },
     ],
     [
@@ -238,11 +250,14 @@ export const TabItem = ({
   ];
 
   const menuSections = isPreviewMode ? previewModeMenu : editMenuSections;
+  const shouldShowContextMenu = isActive || isHovered;
 
   return (
     <div
       data-testid={`tab-item-${tabId}`}
       data-active={isActive}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       onDoubleClick={() => {
         if (isPreviewMode) return;
         startEditing();
@@ -258,7 +273,14 @@ export const TabItem = ({
         <TabEmojiPicker
           emoji={emoji}
           setEmoji={(_emoji) => {
-            setIsEditing(false);
+            if (isEditing) {
+              // Emit a single metadata update when name and emoji change together.
+              skipBlurCommitRef.current = true;
+              const nextTitle = commitTitle();
+              onNameChange(nextTitle, _emoji);
+              setIsEditing(false);
+              return;
+            }
             onEmojiChange(_emoji);
           }}
           disableEmoji={Boolean(isPreviewMode || isVersionHistoryMode)}
@@ -281,6 +303,10 @@ export const TabItem = ({
             value={title}
             onChange={(e) => setTitle(e.target.value)}
             onBlur={(e) => {
+              if (skipBlurCommitRef.current) {
+                skipBlurCommitRef.current = false;
+                return;
+              }
               const nextFocused = e.relatedTarget as HTMLElement | null;
               if (nextFocused?.closest('[data-emoji-picker]')) {
                 return;
@@ -303,7 +329,9 @@ export const TabItem = ({
             </span>
           )}
 
-          {!hideContentMenu && <TabContextMenu sections={menuSections} />}
+          {!hideContentMenu && shouldShowContextMenu && (
+            <TabContextMenu sections={menuSections} />
+          )}
         </div>
       )}
     </div>

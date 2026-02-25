@@ -123,11 +123,9 @@ export const useTabManager = ({
     if (!ydoc) return;
 
     const root = ydoc.getMap('ddocTabs');
-    let observedOrder = root.get('order') as Y.Array<string> | undefined;
 
     const handleTabList = () => {
-      const currentOrder =
-        (root.get('order') as Y.Array<string>) || observedOrder;
+      const currentOrder = root.get('order') as Y.Array<string>;
       const currentTabsMap = root.get('tabs') as Y.Map<Y.Map<string | null>>;
       const currentActiveTab = root.get('activeTabId') as Y.Text;
 
@@ -151,39 +149,23 @@ export const useTabManager = ({
         });
       });
       setTabs(tabList);
-      _setActiveTabId(() => {
-        if (shouldSyncActiveTab) return currentActiveTab?.toString();
-        if (defaultTabId && isDefaultIdValid) {
-          return defaultTabId;
-        }
-        return 'default';
-      });
-    };
 
-    const observeCurrentOrder = () => {
-      if (observedOrder) {
-        observedOrder.unobserve(handleTabList);
-      }
-      observedOrder = root.get('order') as Y.Array<string>;
-      observedOrder?.observe(handleTabList);
+      const nextActiveTabId = shouldSyncActiveTab
+        ? currentActiveTab?.toString()
+        : defaultTabId && isDefaultIdValid
+          ? defaultTabId
+          : 'default';
+
+      _setActiveTabId((prevActiveTabId) =>
+        prevActiveTabId === nextActiveTabId ? prevActiveTabId : nextActiveTabId,
+      );
     };
 
     handleTabList();
-    observeCurrentOrder();
-
-    const handleRootChange = () => {
-      const latestOrder = root.get('order') as Y.Array<string> | undefined;
-      if (latestOrder !== observedOrder) {
-        observeCurrentOrder();
-        handleTabList();
-      }
-    };
-
-    root.observe(handleRootChange);
+    root.observeDeep(handleTabList);
 
     return () => {
-      observedOrder?.unobserve(handleTabList);
-      root.unobserve(handleRootChange);
+      root.unobserveDeep(handleTabList);
     };
   }, [ydoc, defaultTabId, shouldSyncActiveTab]);
 

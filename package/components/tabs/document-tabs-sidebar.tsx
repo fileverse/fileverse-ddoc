@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import cn from 'classnames';
 import { IconButton, LucideIcon, Tooltip } from '@fileverse/ui';
 import {
@@ -16,7 +16,7 @@ import {
 import { DocumentOutlineProps } from '../toc/types';
 import { MemorizedToC } from '../toc/memorized-toc';
 import { TabDragPreview, SortableTabItem } from './tab-item';
-import { DEFAULT_TAB_ID, getTabsYdocNodes, Tab } from './utils/tab-utils';
+import { DEFAULT_TAB_ID, Tab } from './utils/tab-utils';
 import { Editor } from '@tiptap/core';
 import * as Y from 'yjs';
 import { createPortal } from 'react-dom';
@@ -78,14 +78,22 @@ export const TabSidebar = ({
   renameTab,
   duplicateTab,
   orderTab,
-  ydoc,
   tabCommentCounts,
   isVersionHistoryMode,
   tabConfig,
   deleteTab,
 }: DocumentTabsSidebarProps) => {
-  const handleNameChange = (tabId: string, nextName: string) => {
-    renameTab(tabId, { newName: nextName });
+  const handleNameChange = (
+    tabId: string,
+    nextName: string,
+    nextEmoji?: string,
+  ) => {
+    // When rename + emoji pick happen in one edit flow, send both fields
+    // together so metadata is applied in one renameTab call.
+    renameTab(tabId, {
+      newName: nextName,
+      ...(nextEmoji !== undefined ? { emoji: nextEmoji } : {}),
+    });
   };
 
   const handleEmojiChange = (tabId: string, nextEmoji: string) => {
@@ -115,18 +123,30 @@ export const TabSidebar = ({
 
   const getOutlineVisibility = useCallback(
     (tabId: string) =>
-      tabOutlineOverrides[tabId] ?? getDefaultOutlineVisibility(tabId),
-    [getDefaultOutlineVisibility, tabOutlineOverrides],
+      tabId === activeTabId
+        ? (tabOutlineOverrides[tabId] ?? getDefaultOutlineVisibility(tabId))
+        : false,
+    [activeTabId, getDefaultOutlineVisibility, tabOutlineOverrides],
   );
 
   const handleTabOutlineChange = useCallback(
     (tabId: string, value: boolean) => {
+      if (tabId !== activeTabId) {
+        setActiveTabId(tabId);
+        setTabOutlineOverrides((previous) => ({
+          ...previous,
+          [activeTabId]: false,
+          [tabId]: value,
+        }));
+        return;
+      }
+
       setTabOutlineOverrides((previous) => ({
         ...previous,
         [tabId]: value,
       }));
     },
-    [],
+    [activeTabId, setActiveTabId],
   );
 
   const shouldExpand = !showTOC && isHovered;
@@ -209,7 +229,7 @@ export const TabSidebar = ({
                   <div className="flex items-center px-[12px] py-[8px] justify-between">
                     <span
                       data-testid="tab-sidebar-heading"
-                      className="text-heading-sm truncate color-text-default"
+                      className="text-heading-xsm truncate color-text-default"
                     >
                       Document tabs
                     </span>
@@ -244,7 +264,6 @@ export const TabSidebar = ({
                       duplicateTab={duplicateTab}
                       activeDragId={activeDragId}
                       isPreviewMode={isPreviewMode}
-                      ydoc={ydoc}
                       onDelete={(targetTab) => setPendingDeleteTab(targetTab)}
                       isVersionHistoryMode={isVersionHistoryMode}
                       commentCount={tabCommentCounts[tab.id] || 0}
@@ -260,12 +279,9 @@ export const TabSidebar = ({
                       }}
                       tabConfig={tabConfig}
                       showOutline={getOutlineVisibility(tab.id)}
-                      onShowOutlineChange={(value) => {
-                        if (activeTabId !== tab.id) {
-                          setActiveTabId(tab.id);
-                        }
-                        handleTabOutlineChange(tab.id, value);
-                      }}
+                      onShowOutlineChange={(value) =>
+                        handleTabOutlineChange(tab.id, value)
+                      }
                     />
                   ))}
                 </div>
@@ -318,7 +334,6 @@ export const DdocTab = ({
   activeTabId,
   duplicateTab,
   activeDragId,
-  ydoc,
   commentCount,
   moveTabUp,
   moveTabDown,
@@ -332,7 +347,11 @@ export const DdocTab = ({
   tab: Tab;
   tabIndex: number;
   tabCount: number;
-  handleNameChange: (tabId: string, nextName: string) => void;
+  handleNameChange: (
+    tabId: string,
+    nextName: string,
+    nextEmoji?: string,
+  ) => void;
   handleEmojiChange: (tabId: string, nextEmoji: string) => void;
   onClick: () => void;
   editor: Editor;
@@ -342,7 +361,6 @@ export const DdocTab = ({
   activeTabId: string;
   duplicateTab: (tabId: string) => void;
   activeDragId: string | null;
-  ydoc: Y.Doc;
   commentCount: number;
   moveTabUp: () => void;
   moveTabDown: () => void;
@@ -354,37 +372,17 @@ export const DdocTab = ({
   onShowOutlineChange: (value: boolean) => void;
 }) => {
   const isDefaultTab = tab.id === DEFAULT_TAB_ID;
-
-  const [tabMetadata, setTabMetadata] = useState({
-    title: tab.name,
-    emoji: tab.emoji,
-  });
-  useEffect(() => {
-    const { tabs } = getTabsYdocNodes(ydoc);
-    const metadataMap = tabs.get(tab.id);
-
-    if (!(metadataMap instanceof Y.Map)) return;
-
-    const observer = () => {
-      setTabMetadata({
-        title: metadataMap.get('name') as string,
-        emoji: metadataMap.get('emoji') as string,
-      });
-    };
-
-    metadataMap.observe(observer);
-
-    return () => metadataMap.unobserve(observer);
-  }, [tab.id, ydoc]);
   return (
     <div className="w-full flex mt-[8px] flex-col gap-[8px]">
       <SortableTabItem
         key={tab.id}
         id={tab.id}
         tabId={tab.id}
-        name={tabMetadata.title}
-        emoji={tabMetadata.emoji || ''}
-        onNameChange={(nextName: string) => handleNameChange(tab.id, nextName)}
+        name={tab.name}
+        emoji={tab.emoji || ''}
+        onNameChange={(nextName: string, nextEmoji?: string) =>
+          handleNameChange(tab.id, nextName, nextEmoji)
+        }
         onEmojiChange={(nextEmoji: string) =>
           handleEmojiChange(tab.id, nextEmoji)
         }

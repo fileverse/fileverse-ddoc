@@ -8,7 +8,7 @@ import {
   PopoverContent,
   Popover,
 } from '@fileverse/ui';
-import { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { IEditorToolElement } from './editor-utils';
 import { ExportAsModal } from './export-modal';
 import { Editor } from '@tiptap/react';
@@ -25,6 +25,7 @@ const ImportExportButton = ({
   editor,
   tabs,
   ydoc,
+  onRegisterExportTrigger,
 }: {
   fileExportsOpen: boolean;
   setFileExportsOpen: React.Dispatch<React.SetStateAction<boolean>>;
@@ -34,6 +35,9 @@ const ImportExportButton = ({
   editor: Editor | null;
   tabs: Tab[];
   ydoc: Y.Doc;
+  onRegisterExportTrigger?:
+    | ((trigger: ((format?: string) => void) | null) => void)
+    | undefined;
 }) => {
   const [openImport, setOpenImport] = useState<boolean>(false);
   const [openExport, setOpenExport] = useState<boolean>(false);
@@ -54,6 +58,33 @@ const ImportExportButton = ({
     { id: 'all', label: 'All tabs' },
   ];
   const hasMultipleTabs = tabs.length > 1;
+
+  const triggerExport = useCallback(
+    (format = 'pdf') => {
+      const formatOption = formatSelectOptions.find(
+        (option) => option.id === format,
+      );
+      if (!formatOption) return;
+
+      setFileExportsOpen(false);
+      if (hasMultipleTabs) {
+        setSelectedFormat(format);
+        setModalOpen(true);
+        return;
+      }
+
+      handleExport({ format, tab: 'current' });
+    },
+    [formatSelectOptions, setFileExportsOpen, hasMultipleTabs, handleExport],
+  );
+
+  useEffect(() => {
+    onRegisterExportTrigger?.(triggerExport);
+
+    return () => {
+      onRegisterExportTrigger?.(null);
+    };
+  }, [onRegisterExportTrigger, triggerExport]);
 
   return (
     <>
@@ -135,13 +166,7 @@ const ImportExportButton = ({
                           ? getOptionFormat(option.title)
                           : '';
                         if (!format) return;
-
-                        if (!hasMultipleTabs) {
-                          handleExport({ format, tab: 'current' });
-                          return;
-                        }
-                        setSelectedFormat(format);
-                        setModalOpen(true);
+                        triggerExport(format);
                       }}
                       className={cn(
                         'h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm',

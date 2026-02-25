@@ -57,6 +57,7 @@ const TiptapToolBar = ({
   isConnected,
   tabs,
   ydoc,
+  onRegisterExportTrigger,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -79,6 +80,9 @@ const TiptapToolBar = ({
   isConnected?: boolean;
   tabs: Tab[];
   ydoc: Y.Doc;
+  onRegisterExportTrigger?:
+    | ((trigger: ((format?: string) => void) | null) => void)
+    | undefined;
 }) => {
   const {
     toolRef,
@@ -227,6 +231,7 @@ const TiptapToolBar = ({
                   editor={editor}
                   tabs={tabs}
                   ydoc={ydoc}
+                  onRegisterExportTrigger={onRegisterExportTrigger}
                 />,
                 'markdown-dropdown-transition',
               )}
