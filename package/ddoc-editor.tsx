@@ -47,6 +47,7 @@ import {
 import { EmbedSettings } from './extensions/twitter-embed/embed-settings';
 import { DEFAULT_TAB_ID } from './components/tabs/utils/tab-utils';
 import { getResponsiveColor } from './utils/colors';
+import { PreviewModeExportTrigger } from './components/preview-export-trigger';
 
 const DdocEditor = forwardRef(
   (
@@ -141,7 +142,9 @@ const DdocEditor = forwardRef(
   ) => {
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
-    const exportTriggerRef = useRef<((format?: string) => void) | null>(null);
+    const exportTriggerRef = useRef<
+      ((format?: string, name?: string) => void) | null
+    >(null);
 
     /**
      * Document styling system with dark mode support
@@ -429,8 +432,8 @@ const DdocEditor = forwardRef(
           awareness.setLocalStateField('user', newUser);
           editor.setEditable(true);
         },
-        exportCurrentTabOrOpenExportModal: (format = 'pdf') => {
-          exportTriggerRef.current?.(format);
+        exportCurrentTabOrOpenExportModal: (format = 'pdf', name?: string) => {
+          exportTriggerRef.current?.(format, name);
         },
         terminateSession,
       }),
@@ -469,6 +472,7 @@ const DdocEditor = forwardRef(
         return uniqueTags.slice(0, 6);
       });
     };
+
     const handleRemoveTag = (tagName: string) => {
       setSelectedTags?.((prevTags) =>
         prevTags.filter((tag) => tag.name !== tagName),
@@ -623,6 +627,27 @@ const DdocEditor = forwardRef(
                 </div>
               </div>
             )}
+            {isPreviewMode && editor && (
+              <PreviewModeExportTrigger
+                editor={editor}
+                ydoc={ydoc}
+                tabs={tabs}
+                onRegisterExportTrigger={(trigger) => {
+                  exportTriggerRef.current = trigger;
+                }}
+                onError={onError}
+                ipfsImageUploadFn={ipfsImageUploadFn}
+                onMarkdownExport={onMarkdownExport}
+                onMarkdownImport={onMarkdownImport}
+                onPdfExport={onPdfExport}
+                onHtmlExport={onHtmlExport}
+                onTxtExport={onTxtExport}
+                ipfsImageFetchFn={ipfsImageFetchFn}
+                onDocxImport={onDocxImport}
+                fetchV1ImageFn={fetchV1ImageFn}
+                isConnected={isConnected}
+              />
+            )}
             {isPresentationMode && editor && (
               <PresentationMode
                 editor={editor}
@@ -666,6 +691,7 @@ const DdocEditor = forwardRef(
                 ydoc={ydoc}
                 tabCommentCounts={tabCommentCounts}
                 tabConfig={tabConfig}
+                isConnected={isConnected}
               />
             )}
 

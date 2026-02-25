@@ -83,10 +83,10 @@ const useDdocExport = ({
   }, [editor]);
 
   const triggerSingleTabExport = useCallback(
-    async (format: string) => {
+    async (format: string, name?: string) => {
       const option = formatOptionMap[format];
       if (!option || option.disabled) return;
-      option.onClick();
+      option.onClick(name);
     },
     [formatOptionMap],
   );
@@ -125,9 +125,9 @@ const useDdocExport = ({
     }
   }, [createTempEditorForTab, editor, tabs, ydoc]);
 
-  const exportAllTabsAsMarkdown = useCallback(async () => {
+  const exportAllTabsAsMarkdown = useCallback(async (name?: string) => {
     if (!editor || !ydoc || tabs.length === 0) return;
-    const baseTitle = getTitle();
+    const baseTitle = name || getTitle();
     const tempEditors: Editor[] = [];
     try {
       const allTabMd: string[] = [];
@@ -162,9 +162,9 @@ const useDdocExport = ({
     }
   }, [createTempEditorForTab, editor, getTitle, normalizeTabTitle, tabs, ydoc]);
 
-  const exportAllTabsAsHtml = useCallback(async () => {
+  const exportAllTabsAsHtml = useCallback(async (name?: string) => {
     if (!editor || !ydoc || tabs.length === 0) return;
-    const baseTitle = getTitle();
+    const baseTitle = name || getTitle();
     const tempEditors: Editor[] = [];
     try {
       const allTabHtml: string[] = [];
@@ -205,9 +205,9 @@ const useDdocExport = ({
     ydoc,
   ]);
 
-  const exportAllTabsAsText = useCallback(async () => {
+  const exportAllTabsAsText = useCallback(async (name?: string) => {
     if (!editor || !ydoc || tabs.length === 0) return;
-    const baseTitle = getTitle();
+    const baseTitle = name || getTitle();
     const tempEditors: Editor[] = [];
     try {
       const allTabText: string[] = [];
@@ -241,7 +241,15 @@ const useDdocExport = ({
   }, [createTempEditorForTab, editor, getTitle, tabs, ydoc]);
 
   const handleExport = useCallback(
-    ({ format, tab }: { format: string; tab: string }) => {
+    ({
+      format,
+      tab,
+      name,
+    }: {
+      format: string;
+      tab: string;
+      name?: string;
+    }) => {
       const runExport = async () => {
         if (!editor) return;
         const isAllTabs = tab === 'all';
@@ -252,20 +260,20 @@ const useDdocExport = ({
             return;
           }
           if (format === 'md') {
-            await exportAllTabsAsMarkdown();
+            await exportAllTabsAsMarkdown(name);
             return;
           }
           if (format === 'html') {
-            await exportAllTabsAsHtml();
+            await exportAllTabsAsHtml(name);
             return;
           }
           if (format === 'txt') {
-            await exportAllTabsAsText();
+            await exportAllTabsAsText(name);
             return;
           }
           return;
         }
-        await triggerSingleTabExport(format);
+        await triggerSingleTabExport(format, name);
       };
 
       void runExport();

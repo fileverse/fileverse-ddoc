@@ -36,7 +36,7 @@ const ImportExportButton = ({
   tabs: Tab[];
   ydoc: Y.Doc;
   onRegisterExportTrigger?:
-    | ((trigger: ((format?: string) => void) | null) => void)
+    | ((trigger: ((format?: string, name?: string) => void) | null) => void)
     | undefined;
 }) => {
   const [openImport, setOpenImport] = useState<boolean>(false);
@@ -45,6 +45,9 @@ const ImportExportButton = ({
   let importTimeout: ReturnType<typeof setTimeout>;
   const [isModalOpen, setModalOpen] = useState(false);
   const [selectedFormat, setSelectedFormat] = useState('pdf');
+  const [pendingExportName, setPendingExportName] = useState<
+    string | undefined
+  >(undefined);
 
   const { getOptionFormat, formatSelectOptions, handleExport } = useDdocExport({
     editor,
@@ -60,7 +63,7 @@ const ImportExportButton = ({
   const hasMultipleTabs = tabs.length > 1;
 
   const triggerExport = useCallback(
-    (format = 'pdf') => {
+    (format = 'pdf', name?: string) => {
       const formatOption = formatSelectOptions.find(
         (option) => option.id === format,
       );
@@ -69,11 +72,12 @@ const ImportExportButton = ({
       setFileExportsOpen(false);
       if (hasMultipleTabs) {
         setSelectedFormat(format);
+        setPendingExportName(name);
         setModalOpen(true);
         return;
       }
 
-      handleExport({ format, tab: 'current' });
+      handleExport({ format, tab: 'current', name });
     },
     [formatSelectOptions, setFileExportsOpen, hasMultipleTabs, handleExport],
   );
@@ -250,7 +254,9 @@ const ImportExportButton = ({
         <ExportAsModal
           open={isModalOpen}
           onOpenChange={setModalOpen}
-          onExport={handleExport}
+          onExport={({ format, tab }) =>
+            handleExport({ format, tab, name: pendingExportName })
+          }
           formatOptions={formatSelectOptions}
           tabOptions={tabSelectOptions}
           initialFormat={selectedFormat}

@@ -27,6 +27,7 @@ export const DocumentOutline = ({
   isVersionHistoryMode,
   tabConfig,
   deleteTab,
+  isConnected,
 }: DocumentOutlineProps) => {
   const isMediaMax1280px = useMediaQuery('(max-width:1280px)');
 
@@ -69,6 +70,7 @@ export const DocumentOutline = ({
       tabSectionContainer={tabSectionContainer}
       isVersionHistoryMode={isVersionHistoryMode}
       tabConfig={tabConfig}
+      isConnected={isConnected}
     />
   ) : (
     <DocumentMobileTabPanel
@@ -88,6 +90,7 @@ export const DocumentOutline = ({
       isPreviewMode={isPreviewMode}
       tabConfig={tabConfig}
       isVersionHistoryMode={!!isVersionHistoryMode}
+      isConnected={isConnected}
     />
   );
 };

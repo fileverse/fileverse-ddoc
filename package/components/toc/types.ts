@@ -59,4 +59,5 @@ export interface DocumentOutlineProps {
     defaultTabId?: string;
   };
   deleteTab?: (tabId: string) => void;
+  isConnected?: boolean;
 }

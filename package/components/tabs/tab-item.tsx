@@ -15,6 +15,7 @@ import {
   PopoverContent,
   PopoverTrigger,
   TextField,
+  Tooltip,
 } from '@fileverse/ui';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -42,6 +43,7 @@ export interface TabItemProps {
   isVersionHistoryMode?: boolean;
   onCopyLink?: () => void;
   onDelete?: () => void;
+  isConnected?: boolean;
 }
 
 interface SortableTabItemProps extends Omit<TabItemProps, 'dragHandleProps'> {
@@ -57,6 +59,8 @@ interface TabContextMenuItem {
   closeOnSelect?: boolean;
   textClassName?: string;
   iconStroke?: string;
+  tooltipText?: string;
+  disabled?: boolean;
 }
 
 interface TabContextMenuProps {
@@ -66,7 +70,7 @@ interface TabContextMenuProps {
 }
 
 const menuItemClassName =
-  'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center';
+  'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center w-full';
 
 export const SortableTabItem = (props: SortableTabItemProps) => {
   const {
@@ -120,6 +124,7 @@ export const TabItem = ({
   isVersionHistoryMode,
   onCopyLink,
   onDelete,
+  isConnected = true,
 }: TabItemProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
@@ -195,6 +200,10 @@ export const TabItem = ({
         label: 'Copy link',
         icon: 'Share2',
         onSelect: onCopyLink,
+        tooltipText: !isConnected
+          ? 'Login/Signup to share this Tab'
+          : undefined,
+        disabled: !isConnected,
       },
       {
         id: 'toggle-outline',
@@ -370,12 +379,16 @@ export const TabContextMenuAction = ({
 }: {
   item: TabContextMenuItem;
 }) => {
+  const [isTooltipOpen, setIsTooltipOpen] = useState(false); // used to fix tooltip being visible by default without hovering on item
   const content = (
     <div
       data-testid={`tab-menu-${item.id}`}
-      className={cn(menuItemClassName)}
+      className={cn(menuItemClassName, item.disabled && '!cursor-not-allowed')}
       onClick={(e: MouseEvent<HTMLDivElement>) => {
         e.stopPropagation();
+        if (item.disabled) {
+          return;
+        }
         item.onSelect?.();
       }}
     >
@@ -395,11 +408,28 @@ export const TabContextMenuAction = ({
     </div>
   );
 
-  if (item.closeOnSelect === false) {
-    return content;
+  const action =
+    item.closeOnSelect === false ? (
+      content
+    ) : (
+      <PopoverClose asChild>{content}</PopoverClose>
+    );
+
+  if (!item.tooltipText) {
+    return action;
   }
 
-  return <PopoverClose asChild>{content}</PopoverClose>;
+  return (
+    <div
+      onMouseEnter={() => setIsTooltipOpen(true)}
+      onMouseLeave={() => setIsTooltipOpen(false)}
+      className="[&_[data-testid='tooltip-trigger']]:w-full [&_[data-testid='tooltip-trigger']]:block"
+    >
+      <Tooltip text={item.tooltipText} position="top" open={isTooltipOpen}>
+        {action}
+      </Tooltip>
+    </div>
+  );
 };
 
 export const TabContextMenu = ({

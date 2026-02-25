@@ -34,6 +34,7 @@ export interface DocumentMobileTabPanelProps {
   isPreviewMode: boolean;
   tabConfig?: DocumentOutlineProps['tabConfig'];
   isVersionHistoryMode: boolean;
+  isConnected?: boolean;
 }
 
 export const DocumentMobileTabPanel = ({
@@ -52,6 +53,7 @@ export const DocumentMobileTabPanel = ({
   isPreviewMode,
   tabConfig,
   isVersionHistoryMode,
+  isConnected,
 }: DocumentMobileTabPanelProps) => {
   const [showContent, setShowContent] = useState(false);
   const [pendingDeleteTab, setPendingDeleteTab] = useState<Tab | null>(null);
@@ -274,6 +276,7 @@ export const DocumentMobileTabPanel = ({
                     commentCount={tabCommentCounts[tab.id] || 0}
                     isPreviewMode={isPreviewMode}
                     onCopyLink={() => tabConfig?.onCopyTabLink?.(tab.id)}
+                    isConnected={isConnected}
                   />
                   <div
                     className={cn(

@@ -48,6 +48,7 @@ export interface DocumentTabsSidebarProps {
   isVersionHistoryMode?: boolean;
   tabConfig?: DocumentOutlineProps['tabConfig'];
   deleteTab?: (tabId: string) => void;
+  isConnected?: boolean;
 }
 
 export const DocumentTabsSidebar = ({
@@ -82,6 +83,7 @@ export const TabSidebar = ({
   isVersionHistoryMode,
   tabConfig,
   deleteTab,
+  isConnected,
 }: DocumentTabsSidebarProps) => {
   const handleNameChange = (
     tabId: string,
@@ -282,6 +284,7 @@ export const TabSidebar = ({
                       onShowOutlineChange={(value) =>
                         handleTabOutlineChange(tab.id, value)
                       }
+                      isConnected={isConnected}
                     />
                   ))}
                 </div>
@@ -343,6 +346,7 @@ export const DdocTab = ({
   onDelete,
   showOutline,
   onShowOutlineChange,
+  isConnected,
 }: {
   tab: Tab;
   tabIndex: number;
@@ -370,6 +374,7 @@ export const DdocTab = ({
   onDelete?: (tab: Tab) => void;
   showOutline: boolean;
   onShowOutlineChange: (value: boolean) => void;
+  isConnected?: boolean;
 }) => {
   const isDefaultTab = tab.id === DEFAULT_TAB_ID;
   return (
@@ -400,6 +405,7 @@ export const DdocTab = ({
         handleShowOutline={onShowOutlineChange}
         isPreviewMode={isPreviewMode}
         isVersionHistoryMode={isVersionHistoryMode}
+        isConnected={isConnected}
       />
 
       <div

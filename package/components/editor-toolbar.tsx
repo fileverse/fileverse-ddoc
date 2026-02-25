@@ -81,7 +81,7 @@ const TiptapToolBar = ({
   tabs: Tab[];
   ydoc: Y.Doc;
   onRegisterExportTrigger?:
-    | ((trigger: ((format?: string) => void) | null) => void)
+    | ((trigger: ((format?: string, name?: string) => void) | null) => void)
     | undefined;
 }) => {
   const {
