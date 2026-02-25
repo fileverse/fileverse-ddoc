@@ -125,6 +125,7 @@ export interface DdocProps extends CommentAccountProps {
   setInlineCommentData?: React.Dispatch<
     React.SetStateAction<InlineCommentData>
   >;
+  theme?: 'dark' | 'light';
   zoomLevel: string;
   setZoomLevel: React.Dispatch<SetStateAction<string>>;
   isNavbarVisible: boolean;

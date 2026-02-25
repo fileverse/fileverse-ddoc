@@ -46,6 +46,7 @@ import {
 } from './constants/canvas-dimensions';
 import { EmbedSettings } from './extensions/twitter-embed/embed-settings';
 import { DEFAULT_TAB_ID } from './components/tabs/utils/tab-utils';
+import { getResponsiveColor } from './utils/colors';
 
 const DdocEditor = forwardRef(
   (
@@ -108,6 +109,7 @@ const DdocEditor = forwardRef(
       onResolveComment,
       onUnresolveComment,
       onDeleteComment,
+      theme,
       showTOC,
       setShowTOC,
       isConnected,
@@ -156,13 +158,17 @@ const DdocEditor = forwardRef(
 
       const canvas: React.CSSProperties = {};
       const background: React.CSSProperties = {};
+      const currentTheme = theme as 'light' | 'dark';
 
       // Apply custom document styling
       if (documentStyling.canvasBackground) {
         canvas.backgroundColor = documentStyling.canvasBackground;
       }
       if (documentStyling.textColor) {
-        canvas.color = documentStyling.textColor;
+        canvas.color = getResponsiveColor(
+          documentStyling.textColor,
+          currentTheme,
+        );
       }
       if (documentStyling.fontFamily) {
         canvas.fontFamily = documentStyling.fontFamily;
@@ -282,6 +288,7 @@ const DdocEditor = forwardRef(
       orderTab,
       deleteTab,
     } = useDdocEditor({
+      documentStyling,
       ipfsImageFetchFn,
       fetchV1ImageFn,
       enableIndexeddbSync,
@@ -305,6 +312,7 @@ const DdocEditor = forwardRef(
       setIsCommentSectionOpen,
       setInlineCommentData,
       inlineCommentData,
+      theme,
       zoomLevel,
       setZoomLevel,
       isNavbarVisible,
@@ -879,9 +887,6 @@ const DdocEditor = forwardRef(
                                   'has-available-models',
                                 disableInlineComment && 'hide-inline-comments',
                               )}
-                              {...(getCanvasStyle() && {
-                                style: getCanvasStyle(),
-                              })}
                             />
                           </div>
                         </EditingProvider>

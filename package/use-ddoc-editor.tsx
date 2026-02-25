@@ -19,6 +19,7 @@ export const useDdocEditor = ({
   ddocId,
   enableIndexeddbSync,
   unFocused,
+  theme,
   zoomLevel,
   onInvalidContentError,
   ignoreCorruptedData,
@@ -112,6 +113,7 @@ export const useDdocEditor = ({
     activeTabId: tabManager.activeTabId,
     hasTabState: tabManager.hasTabState,
     isVersionMode,
+    theme,
   });
 
   const aggregatedContentLoading =

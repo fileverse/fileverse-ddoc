@@ -36,7 +36,6 @@ import { IConnectConf } from '../sync-local/useSyncMachine';
 import { headingToSlug } from '../utils/heading-to-slug';
 import { useResponsive } from '../utils/responsive';
 import { yCursorPlugin, yCursorPluginKey } from '@tiptap/y-tiptap';
-import { useTheme } from '@fileverse/ui';
 import { getResponsiveColor } from '../utils/colors';
 
 const usercolors = [
@@ -89,6 +88,7 @@ interface UseTabEditorArgs {
   externalExtensions?: Record<string, AnyExtension>;
   isContentLoading?: boolean;
   activeTabId: string;
+  theme?: 'dark' | 'light';
 }
 
 export const useTabEditor = ({
@@ -130,6 +130,7 @@ export const useTabEditor = ({
   externalExtensions,
   isContentLoading,
   activeTabId,
+  theme,
 }: UseTabEditorArgs) => {
   const { activeCommentId, setActiveCommentId, focusCommentWithActiveId } =
     useActiveComment();
@@ -239,22 +240,24 @@ export const useTabEditor = ({
           // Use 'target' safely cast to HTMLElement
           const target = event.target as HTMLElement;
           const link = target.closest('a');
-          // --- TWITTER LOGIC ---
-          // Only intercept if Modifier + Link + Matches Regex
-          if (
-            isModifierPressed &&
-            link &&
-            link.href &&
-            link.textContent.match(TWITTER_REGEX)
-          ) {
-            window.open(link.href, '_blank');
-            return true; // Stop Tiptap/ProseMirror from handling this event further
-          } else if (
-            link &&
-            link.href &&
-            !link.textContent.match(TWITTER_REGEX)
-          ) {
-            window.open(link.href, '_blank');
+          if (link && link.href) {
+            if (isPreviewMode) {
+              return false;
+            }
+
+            const isTwitter = link.textContent.match(TWITTER_REGEX);
+
+            if (isTwitter) {
+              if (isModifierPressed) {
+                event.preventDefault();
+                window.open(link.href, '_blank');
+                return true;
+              }
+            } else {
+              event.preventDefault();
+              window.open(link.href, '_blank');
+              return true;
+            }
           }
           // --- COMMENT LOGIC ---
           // If the Twitter logic didn't claim the event, delegate to handleCommentClick.
@@ -274,7 +277,7 @@ export const useTabEditor = ({
       immediatelyRender: false,
       shouldRerenderOnTransaction: false,
     },
-    [memoizedExtensions, isPresentationMode],
+    [memoizedExtensions, isPresentationMode, isPreviewMode],
   );
   const isCollaborationEnabled = useMemo(() => {
     return enableCollaboration;
@@ -702,15 +705,6 @@ export const useTabEditor = ({
   ]);
 
   // FOR AUTO TEXT STYLE CLEANUP WHEN DOCUMENT IS RENDERED
-  const { theme } = useTheme();
-  const themeRef = useRef(theme);
-  useEffect(() => {
-    window.addEventListener(
-      'theme-update',
-      (e) => (themeRef.current = (e as CustomEvent).detail.value),
-    );
-  }, []);
-
   useEffect(() => {
     // Exit if editor not ready, content loading.
     if (!editor || isContentLoading || !initialContent) {
@@ -729,16 +723,16 @@ export const useTabEditor = ({
 
         if (!textStyleMark) return;
 
-        const originalColor =
-          textStyleMark.attrs['data-original-color'] ||
-          textStyleMark.attrs.color;
+        const originalColor = (textStyleMark.attrs['data-original-color'] ||
+          textStyleMark.attrs.color) as string;
 
-        if (originalColor.startsWith('var(--')) return;
+        if (
+          originalColor.startsWith('var(--color-editor-') ||
+          originalColor === 'inherit'
+        )
+          return;
 
-        const responsiveColor = getResponsiveColor(
-          originalColor,
-          themeRef.current,
-        );
+        const responsiveColor = getResponsiveColor(originalColor, theme);
 
         if (responsiveColor !== textStyleMark.attrs.color) {
           hasChanges = true;
@@ -760,7 +754,7 @@ export const useTabEditor = ({
     }, 0);
 
     return () => clearTimeout(timeoutId);
-  }, [editor, initialContent, isContentLoading, themeRef.current]);
+  }, [editor, initialContent, isContentLoading, theme]);
 
   // Destroy editor on unmount
   useEffect(() => {
