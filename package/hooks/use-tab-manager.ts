@@ -70,6 +70,18 @@ export const useTabManager = ({
   const [tabs, setTabs] = useState<Tab[]>(initialTabState.tabList);
   const hasTabState = useMemo(() => tabs.length > 0, [tabs]);
   const lastDeleteRef = useRef<DeleteSnapshot | null>(null);
+
+  // Sync state when initialContent loads asynchronously (e.g. from server).
+  // useState only uses initialTabState once; this handles subsequent changes.
+  const hasHydratedRef = useRef(initialTabState.tabList.length > 0);
+  useEffect(() => {
+    if (hasHydratedRef.current || initialTabState.tabList.length === 0) return;
+    hasHydratedRef.current = true;
+    setTabs(initialTabState.tabList);
+    if (shouldSyncActiveTab) {
+      _setActiveTabId(defaultTabId || initialTabState.activeTabId);
+    }
+  }, [initialTabState, shouldSyncActiveTab, defaultTabId]);
   const {
     applyRename,
     undo: undoTabMetadataChange,
