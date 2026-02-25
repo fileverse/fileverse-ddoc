@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DdocEditor from '../../package/ddoc-editor';
 import { JSONContent } from '@tiptap/react';
 import {
@@ -17,14 +17,114 @@ import { IComment } from '../../package/extensions/comment';
 import { fromUint8Array } from 'js-base64';
 import { crypto as cryptoUtils } from './crypto';
 import { collabStore } from './storage/collab-store';
+import { docStore } from './storage/doc-store';
 import { DocumentStylingPanel } from './DocumentStylingPanel';
 import { DocumentStyling, ICollaborationConfig } from '../../package/types';
-import { getKeyFromURLParams } from './utils';
+import {
+  getKeyFromURLParams,
+  generateDocId,
+  getDocIdFromURL,
+  getTabIdFromURL,
+  setURLParams,
+  buildDocTabURL,
+} from './utils';
+import { DevBar } from './components/DevBar';
+import { DocSwitcher } from './components/DocSwitcher';
 
 function App() {
+  // --- Document identity ---
+  const [docId] = useState<string>(() => {
+    const urlDocId = getDocIdFromURL();
+    if (urlDocId) {
+      const list = docStore.getDocList();
+      if (!list.find((d) => d.id === urlDocId)) {
+        docStore.addDoc({
+          id: urlDocId,
+          title: 'Untitled',
+          createdAt: Date.now(),
+          lastModifiedAt: Date.now(),
+        });
+      }
+      docStore.setCurrentDocId(urlDocId);
+      return urlDocId;
+    }
+
+    const storedDocId = docStore.getCurrentDocId();
+    if (storedDocId) {
+      setURLParams({ doc: storedDocId });
+      return storedDocId;
+    }
+
+    const newId = generateDocId();
+    docStore.addDoc({
+      id: newId,
+      title: 'Untitled',
+      createdAt: Date.now(),
+      lastModifiedAt: Date.now(),
+    });
+    docStore.setCurrentDocId(newId);
+    setURLParams({ doc: newId });
+    return newId;
+  });
+
+  const urlTabId = getTabIdFromURL();
+
+  // --- Persistence ---
+  // Use undefined (not null) when no saved content — null has special meaning
+  // in use-tab-editor.tsx (it signals "content explicitly not ready yet")
+  const [initialContent] = useState<string | undefined>(() =>
+    docStore.getContent(docId) || undefined,
+  );
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const handleContentChange = useCallback(
+    (updatedDocContent: string | JSONContent, _updateChunk: string) => {
+      if (typeof updatedDocContent === 'string') {
+        if (saveTimeoutRef.current) {
+          clearTimeout(saveTimeoutRef.current);
+        }
+        saveTimeoutRef.current = setTimeout(() => {
+          docStore.setContent(docId, updatedDocContent);
+          setLastSavedAt(Date.now());
+        }, 100);
+      }
+    },
+    [docId],
+  );
+
+  // --- Tab deep linking ---
+  const handleCopyTabLink = useCallback(
+    (tabId: string) => {
+      const url = buildDocTabURL(docId, tabId);
+      navigator.clipboard.writeText(url).then(() => {
+        toast({
+          title: 'Tab link copied to clipboard',
+          variant: 'success',
+          toastType: 'mini',
+          iconType: 'icon',
+        });
+      });
+    },
+    [docId],
+  );
+
+  const tabConfig = useMemo(
+    () => ({
+      defaultTabId: urlTabId,
+      onCopyTabLink: handleCopyTabLink,
+    }),
+    [urlTabId, handleCopyTabLink],
+  );
+
+  // --- Dev bar state ---
+  const [activeTabInfo, setActiveTabInfo] = useState({
+    activeTabId: 'default',
+    tabCount: 0,
+  });
+
   const [enableCollaboration, setEnableCollaboration] = useState(false);
   const [username, setUsername] = useState('username');
-  const [title, setTitle] = useState('Untitled');
   const isMobile = useMediaQuery('(max-width: 768px)');
   const isMediaMax1280px = useMediaQuery('(max-width: 1280px)');
   const [selectedTags, setSelectedTags] = useState<TagType[]>([]);
@@ -33,8 +133,23 @@ function App() {
   const [showTOC, setShowTOC] = useState<boolean>(false);
   const [collaborationId, setCollaborationId] = useState<string>('');
 
-  const [, setCharacterCount] = useState(0);
-  const [, setWordCount] = useState(0);
+  const [characterCount, setCharacterCount] = useState(0);
+  const [wordCount, setWordCount] = useState(0);
+
+  // --- Title with persistence ---
+  const [title, setTitle] = useState(() => {
+    const list = docStore.getDocList();
+    const doc = list.find((d) => d.id === docId);
+    return doc?.title || 'Untitled';
+  });
+
+  const handleTitleChange = useCallback(
+    (newTitle: string) => {
+      setTitle(newTitle);
+      docStore.updateDocTitle(docId, newTitle);
+    },
+    [docId],
+  );
 
   // Document styling state - starts undefined to allow dark mode to work
   const [documentStyling, setDocumentStyling] = useState<
@@ -62,6 +177,29 @@ function App() {
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const editorRef = useRef<any>(null);
+
+  // Poll tab state from Y.Doc for DevBar
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!editorRef.current) return;
+      try {
+        const ydoc = editorRef.current.getYdoc();
+        if (!ydoc) return;
+        const root = ydoc.getMap('ddocTabs');
+        const order = root.get('order');
+        const activeTab = root.get('activeTabId');
+        if (order && activeTab) {
+          setActiveTabInfo({
+            activeTabId: activeTab.toString() || 'default',
+            tabCount: order.length,
+          });
+        }
+      } catch {
+        // Editor not ready yet
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     const setupCollaboration = async () => {
@@ -202,7 +340,7 @@ function App() {
     return (
       <>
         <div className="flex items-center gap-[12px]">
-          <IconButton variant={'ghost'} icon="Menu" size="md" />
+          <DocSwitcher currentDocId={docId} currentTitle={title} />
 
           <div className="relative truncate inline-block xl:!max-w-[300px] !max-w-[108px] color-bg-default text-[14px] font-medium leading-[20px]">
             <span className="invisible whitespace-pre">
@@ -213,14 +351,14 @@ function App() {
               type="text"
               placeholder="Untitled"
               value={title}
-              onChange={(e) => setTitle?.(e.target.value)}
+              onChange={(e) => handleTitleChange(e.target.value)}
             />
           </div>
           <Tag
             icon="BadgeCheck"
             className="h-6 rounded !border !color-border-default color-text-secondary text-[12px] font-normal hidden xl:flex"
           >
-            Saved in local storage
+            {lastSavedAt ? 'Saved' : 'Not saved yet'}
           </Tag>
           <div className="w-6 h-6 rounded color-bg-secondary flex justify-center items-center border color-border-default xl:hidden">
             <LucideIcon
@@ -430,6 +568,11 @@ function App() {
         setUsername={setUsername}
         isPreviewMode={isPreviewMode}
         disableInlineComment={disableInlineComment}
+        onChange={handleContentChange}
+        initialContent={initialContent}
+        enableIndexeddbSync={true}
+        ddocId={docId}
+        tabConfig={tabConfig}
         onError={(error) => {
           toast({
             title: 'Error',
@@ -488,6 +631,15 @@ function App() {
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}
         duration={3000}
+      />
+      <DevBar
+        docId={docId}
+        activeTabId={activeTabInfo.activeTabId}
+        tabCount={activeTabInfo.tabCount}
+        characterCount={characterCount}
+        wordCount={wordCount}
+        enableCollaboration={enableCollaboration}
+        lastSavedAt={lastSavedAt}
       />
     </div>
   );

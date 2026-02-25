@@ -45,8 +45,29 @@ export const useTabManager = ({
   shouldSyncActiveTab,
   defaultTabId,
 }: UseTabManagerArgs) => {
-  const [activeTabId, _setActiveTabId] = useState('default');
-  const [tabs, setTabs] = useState<Tab[]>([]);
+  // Derive tab state synchronously from initialContent so the first render
+  // builds Collaboration extensions with the correct fragment field.
+  const initialTabState = useMemo(() => {
+    if (!ydoc) return { tabList: [] as Tab[], activeTabId: 'default' };
+    const isNewDdoc = isDDocOwner && !enableCollaboration && !initialContent;
+    if (initialContent || isNewDdoc) {
+      return deriveTabsFromEncodedState(initialContent as string, ydoc, {
+        createDefaultTabIfMissing,
+      });
+    }
+    return { tabList: [] as Tab[], activeTabId: 'default' };
+  }, [
+    ydoc,
+    initialContent,
+    isDDocOwner,
+    enableCollaboration,
+    createDefaultTabIfMissing,
+  ]);
+
+  const [activeTabId, _setActiveTabId] = useState(
+    defaultTabId || initialTabState.activeTabId,
+  );
+  const [tabs, setTabs] = useState<Tab[]>(initialTabState.tabList);
   const hasTabState = useMemo(() => tabs.length > 0, [tabs]);
   const lastDeleteRef = useRef<DeleteSnapshot | null>(null);
   const {
@@ -68,56 +89,11 @@ export const useTabManager = ({
       ydoc.transact(() => {
         activeTab.delete(0, activeTab.length);
         activeTab.insert(0, id);
-      }, 'self');
+      });
       _setActiveTabId(id);
     },
     [activeTabId, ydoc, shouldSyncActiveTab],
   );
-
-  useEffect(() => {
-    if (!ydoc) return;
-
-    const isNewDdoc = isDDocOwner && !enableCollaboration && !initialContent;
-
-    if (initialContent || isNewDdoc) {
-      const { tabList, activeTabId: id } = deriveTabsFromEncodedState(
-        initialContent as string,
-        ydoc,
-        {
-          createDefaultTabIfMissing,
-        },
-      );
-      if (shouldSyncActiveTab) {
-        _setActiveTabId(id);
-      }
-      setTabs(tabList);
-      return;
-    }
-  }, [
-    ydoc,
-    initialContent,
-    isDDocOwner,
-    enableCollaboration,
-    createDefaultTabIfMissing,
-    shouldSyncActiveTab,
-  ]);
-
-  const hasInitializedDefaultTabIdRef = useRef(false);
-  useEffect(() => {
-    if (
-      !initialContent ||
-      !defaultTabId ||
-      hasInitializedDefaultTabIdRef.current ||
-      !tabs.length
-    )
-      return;
-    const defaultTab = tabs.find((tab) => tab.id === defaultTabId);
-    if (!defaultTab) {
-      return;
-    }
-    _setActiveTabId(defaultTabId);
-    hasInitializedDefaultTabIdRef.current = true;
-  }, [initialContent, defaultTabId, tabs]);
 
   useEffect(() => {
     if (!ydoc) return;
@@ -150,11 +126,16 @@ export const useTabManager = ({
       });
       setTabs(tabList);
 
+      const syncedId = currentActiveTab?.toString();
+      const firstTabId =
+        currentOrder.length > 0 ? currentOrder.get(0) : 'default';
       const nextActiveTabId = shouldSyncActiveTab
-        ? currentActiveTab?.toString()
+        ? syncedId || firstTabId
         : defaultTabId && isDefaultIdValid
           ? defaultTabId
           : 'default';
+
+      if (!nextActiveTabId) return;
 
       _setActiveTabId((prevActiveTabId) =>
         prevActiveTabId === nextActiveTabId ? prevActiveTabId : nextActiveTabId,
