@@ -95,6 +95,7 @@ export interface DdocProps extends CommentAccountProps {
     enabled: boolean;
     versionId: string;
     content: string | string[];
+    onActiveTabChange?: (tabId: string | null) => void;
   };
   tabSectionContainer?: HTMLElement;
   isCollabDocumentPublished?: boolean;

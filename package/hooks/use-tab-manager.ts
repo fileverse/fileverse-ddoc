@@ -30,6 +30,7 @@ interface UseTabManagerArgs {
   createDefaultTabIfMissing: boolean;
   shouldSyncActiveTab: boolean;
   defaultTabId?: string;
+  onVersionHistoryActiveTabChange?: (tabId: string | null) => void;
 }
 
 export const getNewTabId = () => {
@@ -44,6 +45,7 @@ export const useTabManager = ({
   createDefaultTabIfMissing,
   shouldSyncActiveTab,
   defaultTabId,
+  onVersionHistoryActiveTabChange,
 }: UseTabManagerArgs) => {
   // Derive tab state synchronously from initialContent so the first render
   // builds Collaboration extensions with the correct fragment field.
@@ -87,6 +89,10 @@ export const useTabManager = ({
     undo: undoTabMetadataChange,
     redo: redoTabMetadataChange,
   } = useTabMetadataHistory(ydoc);
+  useEffect(() => {
+    const nextTabId = activeTabId || null;
+    onVersionHistoryActiveTabChange?.(nextTabId);
+  }, [activeTabId, onVersionHistoryActiveTabChange]);
 
   const setActiveTabId = useCallback(
     (id: string) => {

@@ -72,6 +72,7 @@ export const useDdocEditor = ({
         !enableCollaboration &&
         rest.isDDocOwner,
     ),
+    onVersionHistoryActiveTabChange: versionHistoryState?.onActiveTabChange,
   });
 
   const tabEditor = useTabEditor({
