@@ -204,9 +204,7 @@ export const DocumentMobileTabPanel = ({
   return (
     <div
       data-testid="mobile-tab-panel"
-      className={cn(
-        'fixed w-full flex flex-col transition-[bottom] z-[9] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]',
-      )}
+      className={cn('fixed w-full flex flex-col z-[9]')}
       style={{
         bottom:
           showTabList || (isPreviewMode && !isVersionHistoryMode)
@@ -219,7 +217,6 @@ export const DocumentMobileTabPanel = ({
       <div
         className={cn(
           'rounded-t-[12px] color-bg-default flex flex-col w-full gap-[8px] overflow-hidden',
-          'transition-all duration-400 ease-[cubic-bezier(0.16,1,0.3,1)]',
           showTabList
             ? 'h-[300px] space-md shadow-[0_-12px_32px_rgba(0,0,0,0.18)]'
             : ' px-[8px] py-[2px] border color-bg-secondary shadow-none',
@@ -229,11 +226,7 @@ export const DocumentMobileTabPanel = ({
         {showTabList ? (
           <>
             <div
-              className={cn(
-                'gap-xsm flex items-center justify-between w-full',
-                'transition-all duration-300',
-                'animate-in fade-in slide-in-from-bottom-2',
-              )}
+              className={cn('gap-xsm flex items-center justify-between w-full')}
             >
               <h2 className="text-heading-xsm color-text-default">
                 Document tabs
@@ -248,8 +241,8 @@ export const DocumentMobileTabPanel = ({
 
             <div
               className={cn(
-                'w-full no-scrollbar overflow-y-auto',
-                'h-[calc(100dvh-437px)]',
+                'w-full no-scrollbar overflow-y-auto flex-1',
+                'min-h-0',
                 'transition-opacity duration-300',
               )}
             >
