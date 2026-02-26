@@ -12,6 +12,7 @@ import {
   forwardRef,
   useEffect,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -44,7 +45,9 @@ import {
   ORIENTATION_CONSTRAINTS,
 } from './constants/canvas-dimensions';
 import { EmbedSettings } from './extensions/twitter-embed/embed-settings';
+import { DEFAULT_TAB_ID } from './components/tabs/utils/tab-utils';
 import { getResponsiveColor } from './utils/colors';
+import { PreviewModeExportTrigger } from './components/preview-export-trigger';
 
 const DdocEditor = forwardRef(
   (
@@ -121,6 +124,7 @@ const DdocEditor = forwardRef(
       metadataProxyUrl,
       extensions,
       onCopyHeadingLink,
+      tabConfig,
       footerHeight,
       ipfsImageFetchFn,
       fetchV1ImageFn,
@@ -138,6 +142,9 @@ const DdocEditor = forwardRef(
   ) => {
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const exportTriggerRef = useRef<
+      ((format?: string, name?: string) => void) | null
+    >(null);
 
     /**
      * Document styling system with dark mode support
@@ -274,6 +281,15 @@ const DdocEditor = forwardRef(
       tocItems,
       setTocItems,
       terminateSession,
+      tabs,
+      setTabs,
+      activeTabId,
+      setActiveTabId,
+      createTab,
+      renameTab,
+      duplicateTab,
+      orderTab,
+      deleteTab,
     } = useDdocEditor({
       documentStyling,
       ipfsImageFetchFn,
@@ -319,6 +335,8 @@ const DdocEditor = forwardRef(
       collaborationKey,
       collaborationKeyPair,
       collabConfig,
+      isDDocOwner,
+      tabConfig,
       ...rest,
     });
 
@@ -414,6 +432,9 @@ const DdocEditor = forwardRef(
           awareness.setLocalStateField('user', newUser);
           editor.setEditable(true);
         },
+        exportCurrentTabOrOpenExportModal: (format = 'pdf', name?: string) => {
+          exportTriggerRef.current?.(format, name);
+        },
         terminateSession,
       }),
 
@@ -451,6 +472,7 @@ const DdocEditor = forwardRef(
         return uniqueTags.slice(0, 6);
       });
     };
+
     const handleRemoveTag = (tagName: string) => {
       setSelectedTags?.((prevTags) =>
         prevTags.filter((tag) => tag.name !== tagName),
@@ -547,8 +569,31 @@ const DdocEditor = forwardRef(
     }, [editor, editorRef, isNativeMobile]);
 
     const isMobile = useMediaQuery('(max-width: 768px)');
+    const tabCommentCounts = useMemo(() => {
+      return (initialComments || []).reduce<Record<string, number>>(
+        (acc, comment) => {
+          if (comment.deleted) return acc;
+          const tabId = comment.tabId || DEFAULT_TAB_ID;
+          acc[tabId] = (acc[tabId] || 0) + 1;
+          return acc;
+        },
+        {},
+      );
+    }, [initialComments]);
 
     const renderComp = () => {
+      const shouldRenderDocumentOutline =
+        tabs.length > 0 ||
+        (tocItems.length > 0 && !rest.versionHistoryState?.enabled);
+      // Apply a dedicated landscape shift only when TOC is visible on medium-large
+      // screens. This keeps the canvas clear of the fixed sidebar.
+      const shouldApplyLandscapeTOCShift =
+        showTOC &&
+        !isNativeMobile &&
+        zoomLevel === '1' &&
+        documentStyling?.orientation === 'landscape' &&
+        isWidth1360px &&
+        !isWidth1600px;
       return (
         <AnimatePresence>
           <>
@@ -582,9 +627,35 @@ const DdocEditor = forwardRef(
                     ipfsImageFetchFn={ipfsImageFetchFn}
                     fetchV1ImageFn={fetchV1ImageFn}
                     isConnected={isConnected}
+                    tabs={tabs}
+                    ydoc={ydoc}
+                    onRegisterExportTrigger={(trigger) => {
+                      exportTriggerRef.current = trigger;
+                    }}
                   />
                 </div>
               </div>
+            )}
+            {isPreviewMode && editor && (
+              <PreviewModeExportTrigger
+                editor={editor}
+                ydoc={ydoc}
+                tabs={tabs}
+                onRegisterExportTrigger={(trigger) => {
+                  exportTriggerRef.current = trigger;
+                }}
+                onError={onError}
+                ipfsImageUploadFn={ipfsImageUploadFn}
+                onMarkdownExport={onMarkdownExport}
+                onMarkdownImport={onMarkdownImport}
+                onPdfExport={onPdfExport}
+                onHtmlExport={onHtmlExport}
+                onTxtExport={onTxtExport}
+                ipfsImageFetchFn={ipfsImageFetchFn}
+                onDocxImport={onDocxImport}
+                fetchV1ImageFn={fetchV1ImageFn}
+                isConnected={isConnected}
+              />
             )}
             {isPresentationMode && editor && (
               <PresentationMode
@@ -607,7 +678,7 @@ const DdocEditor = forwardRef(
                 fetchV1ImageFn={fetchV1ImageFn}
               />
             )}
-            {editor && (
+            {editor && shouldRenderDocumentOutline && (
               <DocumentOutline
                 editor={editor}
                 hasToC={true}
@@ -617,6 +688,19 @@ const DdocEditor = forwardRef(
                 setShowTOC={setShowTOC}
                 isPreviewMode={isPreviewMode || !isNavbarVisible}
                 orientation={documentStyling?.orientation}
+                tabs={tabs}
+                setTabs={setTabs}
+                activeTabId={activeTabId}
+                setActiveTabId={setActiveTabId}
+                createTab={createTab}
+                renameTab={renameTab}
+                duplicateTab={duplicateTab}
+                orderTab={orderTab}
+                deleteTab={deleteTab}
+                ydoc={ydoc}
+                tabCommentCounts={tabCommentCounts}
+                tabConfig={tabConfig}
+                isConnected={isConnected}
               />
             )}
 
@@ -647,15 +731,7 @@ const DdocEditor = forwardRef(
                 },
                 {
                   '!mx-auto':
-                    (!isCommentSectionOpen &&
-                      !(
-                        showTOC &&
-                        !isNativeMobile &&
-                        zoomLevel === '1' &&
-                        documentStyling?.orientation === 'landscape' &&
-                        isWidth1360px && // Shift applies from 1360px
-                        !isWidth1600px // Up to 1600px, then canvas stays centered
-                      )) ||
+                    (!isCommentSectionOpen && !shouldApplyLandscapeTOCShift) ||
                     zoomLevel === '0.5' ||
                     zoomLevel === '0.75' ||
                     zoomLevel === '1.4' ||
@@ -664,16 +740,6 @@ const DdocEditor = forwardRef(
                 {
                   '!ml-0': zoomLevel === '2' && isWidth1500px && !isWidth3000px,
                 },
-                // TOC shift for landscape mode on 1360-1599px - shift canvas right by TOC width + padding
-                // Provides just enough clearance (200px) without excessive gap
-                {
-                  'min-[1360px]:!ml-[200px] min-[1360px]:!mr-auto':
-                    showTOC &&
-                    !isNativeMobile &&
-                    zoomLevel === '1' &&
-                    documentStyling?.orientation === 'landscape' &&
-                    !isWidth1600px, // Only shift on screens < 1600px
-                },
               )}
               style={{
                 transformOrigin:
@@ -681,6 +747,15 @@ const DdocEditor = forwardRef(
                     ? 'left center'
                     : 'top center',
                 transform: `scaleX(${zoomLevel})`,
+                ...(shouldApplyLandscapeTOCShift
+                  ? {
+                      // Matches landscape sidebar clamp (182px..263px) plus internal
+                      // sidebar padding so the canvas never sits under the sidebar.
+                      marginLeft:
+                        'clamp(200px,calc((100vw - 1190px)/2 + 114px),281px)',
+                      marginRight: 'auto',
+                    }
+                  : {}),
                 ...(getCanvasStyle() || {}),
                 ...getDimensionStyles(), // Apply dynamic width/height based on orientation
               }}
@@ -927,7 +1002,7 @@ const DdocEditor = forwardRef(
           <div
             id="editor-canvas"
             className={cn(
-              'h-[100%] w-full custom-scrollbar',
+              'h-[100%] w-full custom-scrollbar relative',
               !isPreviewMode &&
                 (isNavbarVisible ? 'mt-[6.7rem]' : 'mt-[3.3rem]'),
               isPreviewMode && 'mt-[3.5rem]',
@@ -961,6 +1036,7 @@ const DdocEditor = forwardRef(
                 setUsername={setUsername}
                 activeCommentId={activeCommentId}
                 setActiveCommentId={setActiveCommentId}
+                activeTabId={activeTabId}
                 focusCommentWithActiveId={focusCommentWithActiveId}
                 initialComments={initialComments}
                 setInitialComments={setInitialComments}

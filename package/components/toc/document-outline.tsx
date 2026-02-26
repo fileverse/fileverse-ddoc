@@ -1,11 +1,8 @@
-import React from 'react';
-import cn from 'classnames';
-import { useMediaQuery } from 'usehooks-ts';
-import { BottomDrawer, IconButton, Tooltip } from '@fileverse/ui';
-import { ToC } from './toc';
+import { DocumentTabsSidebar } from '../tabs/document-tabs-sidebar';
+import { DocumentMobileTabPanel } from '../tabs/document-mobile-tab-panel';
 import { DocumentOutlineProps } from './types';
-
-const MemorizedToC = React.memo(ToC);
+import { useMediaQuery } from 'usehooks-ts';
+import { DocumentOutlineTOCPanel } from './document-outline-toc-panel';
 
 export const DocumentOutline = ({
   editor,
@@ -16,78 +13,84 @@ export const DocumentOutline = ({
   setShowTOC,
   isPreviewMode,
   orientation,
+  tabs,
+  setTabs,
+  activeTabId,
+  setActiveTabId,
+  createTab,
+  renameTab,
+  duplicateTab,
+  orderTab,
+  ydoc,
+  tabCommentCounts,
+  tabSectionContainer,
+  isVersionHistoryMode,
+  tabConfig,
+  deleteTab,
+  isConnected,
 }: DocumentOutlineProps) => {
   const isMediaMax1280px = useMediaQuery('(max-width:1280px)');
 
-  const shouldHideToC = items.length < 2;
-
-  const DesktopTOC = () => {
+  if (!tabs.length) {
     return (
-      <div
-        className={cn(
-          'flex flex-col gap-4 items-start justify-start absolute left-4',
-          (!hasToC || shouldHideToC) && 'hidden',
-          isPreviewMode ? 'top-[4rem]' : 'top-[7.3rem]',
-        )}
-      >
-        <Tooltip
-          text={showTOC ? 'Hide document outline' : 'Show document outline'}
-          position="right"
-        >
-          <IconButton
-            icon={showTOC ? 'ChevronLeft' : 'List'}
-            variant="ghost"
-            size="lg"
-            onClick={() => setShowTOC?.((prev) => !prev)}
-            className="color-text-default min-w-9 h-9"
-          />
-        </Tooltip>
-        <div
-          className={cn(
-            'table-of-contents animate-in fade-in slide-in-from-left-5',
-            showTOC ? 'block' : 'hidden',
-          )}
-        >
-          <MemorizedToC
-            editor={editor}
-            items={items}
-            setItems={setItems}
-            orientation={orientation}
-          />
-        </div>
-      </div>
-    );
-  };
-
-  const MobileTOC = () => {
-    return (
-      <BottomDrawer
-        key="mobile-toc"
-        open={showTOC!}
-        onOpenChange={setShowTOC!}
-        className="w-full shadow-elevation-4"
-        contentClassName="w-full h-full !border-none !shadow-elevation-4 !gap-2"
-        footerClassName="hidden"
-        noOverlay
-        hasCloseIcon
-        content={
-          <React.Fragment>
-            <div className="flex justify-between items-center p-4">
-              <h2 className="text-heading-sm-bold">Document outline</h2>
-            </div>
-            <div className={cn('table-of-contents px-4')}>
-              <MemorizedToC
-                editor={editor}
-                items={items}
-                setItems={setItems}
-                orientation={orientation}
-              />
-            </div>
-          </React.Fragment>
-        }
+      <DocumentOutlineTOCPanel
+        editor={editor}
+        hasToC={hasToC}
+        items={items}
+        setItems={setItems}
+        showTOC={showTOC}
+        setShowTOC={setShowTOC}
+        isPreviewMode={isPreviewMode}
+        orientation={orientation}
       />
     );
-  };
+  }
 
-  return !isMediaMax1280px ? DesktopTOC() : MobileTOC();
+  return !isMediaMax1280px ? (
+    <DocumentTabsSidebar
+      tabs={tabs}
+      setTabs={setTabs}
+      activeTabId={activeTabId}
+      setActiveTabId={setActiveTabId}
+      showTOC={showTOC}
+      setShowTOC={setShowTOC}
+      hasToC={hasToC}
+      isPreviewMode={isPreviewMode}
+      editor={editor}
+      items={items}
+      setItems={setItems}
+      orientation={orientation}
+      createTab={createTab}
+      renameTab={renameTab}
+      duplicateTab={duplicateTab}
+      orderTab={orderTab}
+      deleteTab={deleteTab}
+      ydoc={ydoc}
+      tabCommentCounts={tabCommentCounts}
+      tabSectionContainer={tabSectionContainer}
+      isVersionHistoryMode={isVersionHistoryMode}
+      tabConfig={tabConfig}
+      isConnected={isConnected}
+    />
+  ) : (
+    <DocumentMobileTabPanel
+      tabs={tabs}
+      setTabs={setTabs}
+      activeTabId={activeTabId}
+      setActiveTabId={setActiveTabId}
+      editor={editor}
+      items={items}
+      setItems={setItems}
+      orientation={orientation}
+      renameTab={renameTab}
+      createTab={createTab}
+      duplicateTab={duplicateTab}
+      deleteTab={deleteTab}
+      tabCommentCounts={tabCommentCounts}
+      isPreviewMode={isPreviewMode}
+      tabConfig={tabConfig}
+      isVersionHistoryMode={!!isVersionHistoryMode}
+      isConnected={isConnected}
+    />
+  );
 };

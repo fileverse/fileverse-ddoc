@@ -48,7 +48,7 @@ import { getCurrentFontFamily } from '../utils/get-current-font-family';
 export interface IEditorToolElement {
   icon: any;
   title: string;
-  onClick: () => void;
+  onClick: (name?: string) => void;
   isActive: boolean;
   group?: string;
   isNew?: boolean;
@@ -216,7 +216,6 @@ export const useEditorToolbar = ({
   ipfsImageFetchFn,
   onDocxImport,
   fetchV1ImageFn,
-  isConnected,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -773,7 +772,7 @@ export const useEditorToolbar = ({
       icon: 'FileExport',
       title: 'PDF document (.pdf)',
       onClick: () => {
-        if (editor && isConnected) {
+        if (editor) {
           const closeAndPrint = async () => {
             const { showLoader, removeLoader } = inlineLoader(
               editor,
@@ -806,25 +805,25 @@ export const useEditorToolbar = ({
         }
       },
       isActive: false,
-      disabled: !isConnected,
     },
     {
       icon: 'FileOutput',
       title: 'Markdown (.md)',
-      onClick: async () => {
+      onClick: async (name?: string) => {
         if (editor) {
           const editorContent = editor?.getJSON();
           const title = extractTitleFromContent(
             editorContent as unknown as { content: JSONContent },
           );
+          const fileName = name || title || 'Untitled';
           const generateDownloadUrl = await editor.commands.exportMarkdownFile({
-            title: title || 'Untitled',
+            title: fileName,
           });
           if (generateDownloadUrl) {
             const url = generateDownloadUrl;
             const link = document.createElement('a');
             link.href = url;
-            link.download = `${title || 'Untitled'}.md`;
+            link.download = `${fileName}.md`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -838,20 +837,21 @@ export const useEditorToolbar = ({
     {
       icon: 'FileText',
       title: 'Web page (.html)',
-      onClick: async () => {
+      onClick: async (name?: string) => {
         if (editor) {
           const editorContent = editor.getJSON();
           const title = extractTitleFromContent(
             editorContent as unknown as { content: JSONContent },
           );
+          const fileName = name || title || 'Untitled';
           const generateDownloadUrl = await editor.commands.exportHtmlFile({
-            title: title || 'Untitled',
+            title: fileName,
           });
           if (generateDownloadUrl) {
             const url = generateDownloadUrl;
             const link = document.createElement('a');
             link.href = url;
-            link.download = `${title || 'Untitled'}.html`;
+            link.download = `${fileName}.html`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
@@ -866,18 +866,19 @@ export const useEditorToolbar = ({
     {
       icon: 'FileText',
       title: 'Plain Text (.txt)',
-      onClick: async () => {
+      onClick: async (name?: string) => {
         if (editor) {
           const editorContent = editor.getJSON();
           const title = extractTitleFromContent(
             editorContent as unknown as { content: JSONContent },
           );
+          const fileName = name || title || 'Untitled';
           const generateDownloadUrl = await editor.commands.exportTxtFile();
           if (generateDownloadUrl) {
             const url = generateDownloadUrl;
             const link = document.createElement('a');
             link.href = url;
-            link.download = `${title || 'Untitled'}.txt`;
+            link.download = `${fileName}.txt`;
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);
