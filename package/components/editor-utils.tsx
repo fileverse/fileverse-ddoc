@@ -43,6 +43,7 @@ import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { getTemporaryEditor } from '../utils/helpers';
 import { extractTitleFromContent } from '../utils/extract-title-from-content';
 import { getContrastColor } from '../utils/color-utils';
+import { getCurrentFontFamily } from '../utils/get-current-font-family';
 
 export interface IEditorToolElement {
   icon: any;
@@ -55,205 +56,60 @@ export interface IEditorToolElement {
   disabled?: boolean;
 }
 
+export const fontStacks: Record<string, string> = {
+  Arial: 'Arial, Helvetica, sans-serif',
+  Calibri: 'Calibri, sans-serif',
+  'Comic Sans MS': 'Comic Sans MS, Comic Sans',
+  Cursive: 'cursive',
+  Georgia: 'Georgia, serif',
+  'IBM Plex Mono': 'IBM Plex Mono, monospace',
+  Impact: 'Impact, Charcoal, sans-serif',
+  'Inclusive Sans': 'Inclusive Sans, sans-serif',
+  Inter: 'Inter, sans-serif',
+  'JetBrains Mono': 'JetBrains Mono, monospace',
+  Lato: 'Lato, sans-serif',
+  'Lucida Grande': 'Lucida Sans Unicode, Lucida Grande, sans-serif',
+  Monospace: 'monospace',
+  Oswald: 'Oswald, sans-serif',
+  Palatino: 'Palatino Linotype, Book Antiqua, Palatino, serif',
+  'Playfair Display': 'Playfair Display, serif',
+  Poppins: 'Poppins, sans-serif',
+  'PT Sans Narrow': 'PT Sans Narrow, sans-serif',
+  REM: 'REM, sans-serif',
+  Roboto: 'Roboto, sans-serif',
+  Serif: 'serif',
+  'Times New Roman': 'Times New Roman, serif',
+  'Trebuchet MS': 'Trebuchet MS, sans-serif',
+  Verdana: 'Verdana, Geneva, sans-serif',
+  Volkhov: 'Volkhov, serif',
+};
+
 export const fonts = [
   {
     title: 'Default',
-    value: 'default',
-    command: (editor: Editor) => {
-      editor.chain().focus().unsetFontFamily().run();
-    },
-  },
-  {
-    title: 'Arial',
-    value: 'Arial, Helvetica, sans-serif',
+    value: 'Default',
     command: (editor: Editor) => {
       editor
         .chain()
         .focus()
-        .setFontFamily('Arial, Helvetica, sans-serif')
+        .unsetFontFamily()
+        .updateAttributes('paragraph', { fontFamily: null })
         .run();
     },
   },
-  {
-    title: 'Calibri',
-    value: 'Calibri, sans-serif',
+  ...Object.keys(fontStacks).map((title) => ({
+    title,
+    value: title,
     command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Calibri, sans-serif').run();
-    },
-  },
-  {
-    title: 'Comic Sans MS',
-    value: 'Comic Sans MS, Comic Sans',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Comic Sans MS, Comic Sans').run();
-    },
-  },
-  {
-    title: 'Cursive',
-    value: 'cursive',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('cursive').run();
-    },
-  },
-  {
-    title: 'Georgia',
-    value: 'Georgia, serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Georgia, serif').run();
-    },
-  },
-  {
-    title: 'IBM Plex Mono',
-    value: 'IBM Plex Mono, monospace',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('IBM Plex Mono, monospace').run();
-    },
-  },
-  {
-    title: 'Impact',
-    value: 'Impact, Charcoal, sans-serif',
-    command: (editor: Editor) => {
+      const stack = fontStacks[title];
       editor
         .chain()
         .focus()
-        .setFontFamily('Impact, Charcoal, sans-serif')
+        .setFontFamily(stack)
+        .updateAttributes('paragraph', { fontFamily: title })
         .run();
     },
-  },
-  {
-    title: 'Inclusive Sans',
-    value: 'Inclusive Sans, sans-serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Inclusive Sans, sans-serif').run();
-    },
-  },
-  {
-    title: 'Inter',
-    value: 'Inter, sans-serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Inter, sans-serif').run();
-    },
-  },
-  {
-    title: 'JetBrains Mono',
-    value: 'JetBrains Mono, monospace',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('JetBrains Mono, monospace').run();
-    },
-  },
-  {
-    title: 'Lato',
-    value: 'Lato, sans-serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Lato, sans-serif').run();
-    },
-  },
-  {
-    title: 'Lucida Grande',
-    value: 'Lucida Sans Unicode, Lucida Grande, sans-serif',
-    command: (editor: Editor) => {
-      editor
-        .chain()
-        .focus()
-        .setFontFamily('Lucida Sans Unicode, Lucida Grande, sans-serif')
-        .run();
-    },
-  },
-  {
-    title: 'Monospace',
-    value: 'monospace',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('monospace').run();
-    },
-  },
-  {
-    title: 'Oswald',
-    value: 'Oswald, sans-serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Oswald, sans-serif').run();
-    },
-  },
-  {
-    title: 'Palatino',
-    value: 'Palatino Linotype, Book Antiqua, Palatino, serif',
-    command: (editor: Editor) => {
-      editor
-        .chain()
-        .focus()
-        .setFontFamily('Palatino Linotype, Book Antiqua, Palatino, serif')
-        .run();
-    },
-  },
-  {
-    title: 'Playfair Display',
-    value: 'Playfair Display, serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Playfair Display, serif').run();
-    },
-  },
-  {
-    title: 'Poppins',
-    value: 'Poppins, sans-serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Poppins, sans-serif').run();
-    },
-  },
-  {
-    title: 'PT Sans Narrow',
-    value: 'PT Sans Narrow, sans-serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('PT Sans Narrow, sans-serif').run();
-    },
-  },
-  {
-    title: 'REM',
-    value: 'REM, sans-serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('REM, sans-serif').run();
-    },
-  },
-  {
-    title: 'Roboto',
-    value: 'Roboto, sans-serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Roboto, sans-serif').run();
-    },
-  },
-  {
-    title: 'Serif',
-    value: 'serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('serif').run();
-    },
-  },
-  {
-    title: 'Times New Roman',
-    value: 'Times New Roman, serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Times New Roman, serif').run();
-    },
-  },
-  {
-    title: 'Trebuchet MS',
-    value: 'Trebuchet MS, sans-serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Trebuchet MS, sans-serif').run();
-    },
-  },
-  {
-    title: 'Verdana',
-    value: 'Verdana, Geneva, sans-serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Verdana, Geneva, sans-serif').run();
-    },
-  },
-  {
-    title: 'Volkhov',
-    value: 'Volkhov, serif',
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontFamily('Volkhov, serif').run();
-    },
-  },
+  })),
 ];
 
 export const FONT_SIZES = [
@@ -266,7 +122,13 @@ export const getFontSizeOptions = (editor?: Editor) => {
     value: `${size}px`,
     label: size.toString(),
     command: (editor: Editor) => {
-      editor.chain().focus().setFontSize(`${size}px`).run();
+      const value = `${size}px`;
+      editor
+        .chain()
+        .focus()
+        .setFontSize(value)
+        .updateAttributes('paragraph', { fontSize: value })
+        .run();
     },
     isActive: () => editor?.isActive('fontSize', { size: `${size}px` }),
   }));
@@ -1249,6 +1111,8 @@ export const EditorFontFamily = ({
   editor: Editor;
   setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
 }) => {
+  const currentFont = getCurrentFontFamily(editor);
+
   return (
     <div
       ref={elementRef}
@@ -1266,11 +1130,11 @@ export const EditorFontFamily = ({
           }}
           key={font.title}
           style={{
-            fontFamily: font.title,
+            fontFamily: fontStackToTitle(font.value) || font.value,
           }}
           className={cn(
             'flex w-full items-center space-x-2 rounded px-2 py-1 text-left text-sm color-text-default transition',
-            editor.isActive('textStyle', { fontFamily: font.value })
+            currentFont === font.value
               ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
               : 'hover:color-bg-default-hover',
           )}
@@ -1280,6 +1144,10 @@ export const EditorFontFamily = ({
       ))}
     </div>
   );
+};
+
+const fontStackToTitle = (stack: string) => {
+  return Object.keys(fontStacks).find((key) => fontStacks[key] === stack);
 };
 
 export const EditorAlignment = ({
@@ -2125,7 +1993,7 @@ export const TextFormatingPopup = ({
       description: 'Superscript text',
       icon: 'Superscript',
       command: (editor: Editor) =>
-        editor.chain().unsetSubscript().toggleSuperscript().run(),
+        editor.chain().unsetSuperscript().toggleSuperscript().run(),
       isActive: () => editor?.isActive('superscript'),
     },
     {
@@ -2133,7 +2001,7 @@ export const TextFormatingPopup = ({
       description: 'Subscript text',
       icon: 'Subscript',
       command: (editor: Editor) =>
-        editor.chain().unsetSuperscript().toggleSubscript().run(),
+        editor.chain().unsetSubscript().toggleSubscript().run(),
       isActive: () => editor?.isActive('subscript'),
     },
   ];

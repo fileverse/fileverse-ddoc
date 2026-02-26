@@ -89,6 +89,8 @@ export const DBlock = Node.create<DBlockOptions>({
             selection: { from },
           } = state;
 
+          const paragraphAttrs = this.editor.getAttributes('paragraph');
+
           const pos =
             position !== undefined || position !== null ? from : position;
 
@@ -98,6 +100,10 @@ export const DBlock = Node.create<DBlockOptions>({
               content: [
                 {
                   type: 'paragraph',
+                  attrs: {
+                    fontFamily: paragraphAttrs.fontFamily,
+                    fontSize: paragraphAttrs.fontSize,
+                  },
                 },
               ],
             })
@@ -214,6 +220,7 @@ export const DBlock = Node.create<DBlockOptions>({
           doc,
         } = editor.state;
         const attrs = editor.getAttributes('textStyle');
+        const paragraphAttrs = editor.getAttributes('paragraph');
 
         // Get the current node and its parent
         const currentNode = $head.node($head.depth);
@@ -286,7 +293,15 @@ export const DBlock = Node.create<DBlockOptions>({
                 .deleteRange({ from: currentItemStart, to: currentItemEnd })
                 .insertContentAt(currentItemStart, {
                   type: 'dBlock',
-                  content: [{ type: 'paragraph' }],
+                  content: [
+                    {
+                      type: 'paragraph',
+                      attrs: {
+                        fontFamily: paragraphAttrs.fontFamily,
+                        fontSize: paragraphAttrs.fontSize,
+                      },
+                    },
+                  ],
                 })
                 .focus(currentItemStart + 2)
                 .unsetAllMarks()
@@ -367,6 +382,10 @@ export const DBlock = Node.create<DBlockOptions>({
                   content: [
                     {
                       type: 'paragraph',
+                      attrs: {
+                        fontFamily: paragraphAttrs.fontFamily,
+                        fontSize: paragraphAttrs.fontSize,
+                      },
                     },
                   ],
                 })
@@ -436,6 +455,7 @@ export const DBlock = Node.create<DBlockOptions>({
         const node = $head.node($head.depth);
         const nodeStartPos = $head.start();
         const isAtStartOfNode = nodeStartPos === from;
+        const paragraphAttrs = editor.getAttributes('paragraph');
 
         const isListOrTaskList =
           parent?.type.name === 'listItem' || parent?.type.name === 'taskItem';
@@ -520,6 +540,10 @@ export const DBlock = Node.create<DBlockOptions>({
                         : [
                             {
                               type: 'paragraph',
+                              attrs: {
+                                fontFamily: paragraphAttrs.fontFamily,
+                                fontSize: paragraphAttrs.fontSize,
+                              },
                             },
                           ],
                   });
@@ -718,7 +742,15 @@ export const DBlock = Node.create<DBlockOptions>({
               // Add empty text block (where cursor will be)
               newContent.push({
                 type: 'dBlock',
-                content: [{ type: 'paragraph' }],
+                content: [
+                  {
+                    type: 'paragraph',
+                    attrs: {
+                      fontFamily: paragraphAttrs.fontFamily,
+                      fontSize: paragraphAttrs.fontSize,
+                    },
+                  },
+                ],
               });
 
               // Add items after current as a list

@@ -92,6 +92,7 @@ import { Emoji } from './emoji/emoji';
 const lowlight = createLowlight(common);
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { type ToCItemType } from '../components/toc/types';
+import { Extension } from '@tiptap/core';
 
 const ExtendedSubscript = Subscript.extend({
   addProseMirrorPlugins() {
@@ -126,6 +127,36 @@ const ExtendedSubscript = Subscript.extend({
           },
         },
       }),
+    ];
+  },
+});
+
+const BlockStyle = Extension.create({
+  name: 'blockStyle',
+  addGlobalAttributes() {
+    return [
+      {
+        types: ['paragraph'],
+        attributes: {
+          fontFamily: {
+            default: null,
+            parseHTML: (element) =>
+              element.style.fontFamily?.replace(/['"]+/g, ''),
+            renderHTML: (attributes) => {
+              if (!attributes.fontFamily) return {};
+              return { style: `font-family: ${attributes.fontFamily}` };
+            },
+          },
+          fontSize: {
+            default: null,
+            parseHTML: (element) => element.style.fontSize,
+            renderHTML: (attributes) => {
+              if (!attributes.fontSize) return {};
+              return { style: `font-size: ${attributes.fontSize}` };
+            },
+          },
+        },
+      },
     ];
   },
 });
@@ -348,6 +379,7 @@ export const defaultExtensions = ({
   }),
   Callout,
   Emoji,
+  BlockStyle,
 ];
 
 export const createInputRule = (

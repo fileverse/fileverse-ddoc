@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import {
   EditorAlignment,
   EditorFontFamily,
@@ -30,7 +30,6 @@ import { AnimatePresence } from 'framer-motion';
 import { fadeInTransition, slideUpTransition } from './motion-div';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { ImportExportButton } from './import-export-button';
-import { getCurrentFontFamily } from '../utils/get-current-font-family';
 import EditorToolbarDropdown from './editor-toolbar-dropdown';
 import { Tab } from './tabs/utils/tab-utils';
 import * as Y from 'yjs';
@@ -110,6 +109,7 @@ const TiptapToolBar = ({
 
   const editorStates = useEditorStates(editor as Editor);
   const currentSize = editor ? editorStates.currentSize : undefined;
+  const currentFont = editor ? editorStates.currentFont : 'Default';
   const onSetFontSize = editor ? editorStates.onSetFontSize : () => {};
   const currentLineHeight = editor ? editorStates.currentLineHeight : undefined;
   const onSetLineHeight = editor ? editorStates.onSetLineHeight : () => {};
@@ -129,33 +129,7 @@ const TiptapToolBar = ({
     { title: '200%', value: '2' },
   ];
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [currentFont, setCurrentFont] = useState('Default');
   const activeFont = fonts.find((f) => f.value === currentFont);
-
-  useEffect(() => {
-    if (!editor) return;
-
-    const update = () => setCurrentFont(getCurrentFontFamily(editor));
-
-    editor.on('selectionUpdate', update);
-    editor.on('transaction', ({ transaction }) => {
-      // Only refresh when selection or stored marks/doc changed
-      if (
-        transaction.selectionSet ||
-        transaction.storedMarksSet ||
-        transaction.docChanged
-      ) {
-        update();
-      }
-    });
-
-    update();
-
-    return () => {
-      editor.off('selectionUpdate', update);
-      editor.off('transaction');
-    };
-  }, [editor]);
 
   const renderContent = (tool: {
     title: string;
@@ -345,7 +319,10 @@ const TiptapToolBar = ({
                       <span
                         className="text-body-sm-bold line-clamp-1 break-all"
                         style={{
-                          fontFamily: activeFont?.value,
+                          fontFamily:
+                            activeFont?.value !== 'Default'
+                              ? activeFont?.value
+                              : '',
                         }}
                       >
                         {activeFont?.title || 'Default'}
