@@ -1993,7 +1993,7 @@ export const TextFormatingPopup = ({
       description: 'Superscript text',
       icon: 'Superscript',
       command: (editor: Editor) =>
-        editor.chain().unsetSubscript().toggleSuperscript().run(),
+        editor.chain().unsetSuperscript().toggleSuperscript().run(),
       isActive: () => editor?.isActive('superscript'),
     },
     {
