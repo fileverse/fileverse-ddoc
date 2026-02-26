@@ -52,6 +52,7 @@ export interface CommentStorage {
 
 export interface IComment {
   id?: string;
+  tabId?: string;
   username?: string;
   reactions?: {
     count: number;

@@ -32,6 +32,8 @@ import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { ImportExportButton } from './import-export-button';
 import { getCurrentFontFamily } from '../utils/get-current-font-family';
 import EditorToolbarDropdown from './editor-toolbar-dropdown';
+import { Tab } from './tabs/utils/tab-utils';
+import * as Y from 'yjs';
 const MemoizedFontSizePicker = React.memo(FontSizePicker);
 const MemoizedLineHeightPicker = React.memo(LineHeightPicker);
 
@@ -53,6 +55,9 @@ const TiptapToolBar = ({
   ipfsImageFetchFn,
   fetchV1ImageFn,
   isConnected,
+  tabs,
+  ydoc,
+  onRegisterExportTrigger,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -73,6 +78,11 @@ const TiptapToolBar = ({
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
   isConnected?: boolean;
+  tabs: Tab[];
+  ydoc: Y.Doc;
+  onRegisterExportTrigger?:
+    | ((trigger: ((format?: string, name?: string) => void) | null) => void)
+    | undefined;
 }) => {
   const {
     toolRef,
@@ -218,6 +228,10 @@ const TiptapToolBar = ({
                   exportOptions={exportOptions}
                   importOptions={importOptions}
                   setDropdownOpen={setDropdownOpen}
+                  editor={editor}
+                  tabs={tabs}
+                  ydoc={ydoc}
+                  onRegisterExportTrigger={onRegisterExportTrigger}
                 />,
                 'markdown-dropdown-transition',
               )}
