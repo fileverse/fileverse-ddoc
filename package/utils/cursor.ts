@@ -6,9 +6,15 @@ export const getRegularUserCursor = (user: IUser) => {
   const cursor = document.createElement('span');
   cursor.classList.add('collaboration-cursor__caret');
   cursor.setAttribute('style', `border-color: ${user.color}`);
+  if (user.clientId) {
+    cursor.setAttribute('data-client-id', user.clientId.toString());
+  }
 
   const label = document.createElement('div');
   label.classList.add('collaboration-cursor__label');
+  if (user.isTyping) {
+    label.classList.add('is-typing');
+  }
   label.setAttribute('style', `background-color: ${user.color}`);
   label.insertBefore(document.createTextNode(user.name), null);
 
@@ -19,11 +25,17 @@ export const getRegularUserCursor = (user: IUser) => {
 export const getEnsUserCursor = (user: IUser) => {
   const cursor = document.createElement('span');
   cursor.classList.add('custom-cursor__caret');
+  if (user.clientId) {
+    cursor.setAttribute('data-client-id', user.clientId.toString());
+  }
 
   cursor.setAttribute('style', `border-color: ${user.color}`);
 
   const labelContainer = document.createElement('div');
   labelContainer.classList.add('custom-cursor__label-container');
+  if (user.isTyping) {
+    labelContainer.classList.add('is-typing');
+  }
   labelContainer.setAttribute('style', `border: 1px solid ${user.color}`);
 
   const icon = document.createElement('img');
