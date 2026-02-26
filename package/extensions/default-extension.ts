@@ -178,6 +178,7 @@ export const defaultExtensions = ({
       HTMLAttributes: {
         class: 'custom-text-link',
         rel: 'noopener noreferrer',
+        target: '_blank',
       },
     },
     paragraph: {
