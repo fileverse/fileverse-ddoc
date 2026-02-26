@@ -160,7 +160,7 @@ export const TabSidebar = ({
       setTabOutlineOverrides((previous) => {
         return {
           ...previous,
-          [tabId]: true,
+          [tabId]: !previous[tabId],
         };
       });
     },
