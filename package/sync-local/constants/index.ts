@@ -12,6 +12,7 @@ export const initialContext: SyncMachineContext = {
   _awarenessUpdateHandler: null,
   onError: null,
   roomKey: '',
+  roomKeyBytes: null,
   wsUrl: '',
   uncommittedUpdatesIdList: [],
   updateQueue: [],
@@ -28,7 +29,7 @@ export const initialContext: SyncMachineContext = {
   onFetchCommitContent: () => Promise.resolve({}),
   onSessionTerminated: () => {},
   onUnMergedUpdates: () => {},
-  initalDocumentDecryptionState: 'pending',
+  initialDocumentDecryptionState: 'pending',
 };
 export const STORAGE_API =
   'https://dev-fileverse-storage.herokuapp.com/upload/public';

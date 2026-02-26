@@ -1,9 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import {
-  SocketStatusEnum,
-  SyncMachineContext,
-  SyncMachinEvent,
-} from '../types';
+import { SyncMachineContext, SyncMachinEvent } from '../types';
 import * as awarenessProtocol from 'y-protocols/awareness';
 
 import {
@@ -18,15 +14,18 @@ import { crypto as cryptoUtils } from '../crypto';
 
 export const initAwarenessHandler = (context: SyncMachineContext) => {
   const awareness = new awarenessProtocol.Awareness(context.ydoc);
-  const handler = createAwarenessUpdateHandler(awareness, context);
+  const handler = createAwarenessUpdateHandler(
+    awareness,
+    context.socketClient!,
+    context.roomKey,
+  );
   awareness.on('update', handler);
   context.socketClient?.registerAwareness(awareness);
   return { awareness, _awarenessUpdateHandler: handler };
 };
 
 export const updateConnectionStateHandler = (context: SyncMachineContext) => {
-  const isConnected =
-    context.socketClient?._webSocketStatus === SocketStatusEnum.CONNECTED;
+  const isConnected = context.socketClient?.isConnected ?? false;
   return {
     isConnected,
   };
@@ -56,6 +55,7 @@ export const websocketInitializer = (
 
     initialUpdate: event.data.initialUpdate,
     roomKey: event.data.roomKey,
+    roomKeyBytes: toUint8Array(event.data.roomKey),
     roomId: event.data.roomId,
     isOwner: event.data.isOwner,
     isEns: event.data.isEns,
@@ -80,10 +80,13 @@ export const yjsUpdateHandler = (
 
   if (!encryptedUpdate) return {};
 
-  const update = cryptoUtils.decryptData(
-    toUint8Array(context.roomKey),
-    encryptedUpdate,
-  );
+  let update: Uint8Array;
+  try {
+    update = cryptoUtils.decryptData(context.roomKeyBytes!, encryptedUpdate);
+  } catch (err) {
+    console.warn('sync-machine: failed to decrypt update, skipping', err);
+    return {};
+  }
   applyUpdate(context.ydoc, update, 'self');
   if (context.onLocalUpdate && typeof context.onLocalUpdate === 'function') {
     context.onLocalUpdate(
@@ -102,9 +105,7 @@ export const yjsUpdateHandler = (
       uncommittedUpdatesIdList: list,
     };
   } else {
-    return {
-      uncommittedUpdatesIdList: [],
-    };
+    return {};
   }
 };
 
@@ -138,7 +139,7 @@ export const removeLastProcessedUpdate = (
   event: SyncMachinEvent,
 ) => {
   const offset = event.data.queueOffset;
-  const newUpdateQueue = context.updateQueue.splice(offset);
+  const newUpdateQueue = context.updateQueue.slice(offset);
   return {
     updateQueue: newUpdateQueue,
   };
@@ -189,8 +190,7 @@ export const commitUncommittedIdsHandler = (
 export const setConnectionActiveStateHandler = (
   context: SyncMachineContext,
 ) => {
-  const isConnected =
-    context.socketClient?._webSocketStatus === SocketStatusEnum.CONNECTED;
+  const isConnected = context.socketClient?.isConnected ?? false;
   return {
     isConnected,
   };
@@ -340,6 +340,7 @@ export const terminateSessionHandler = (context: SyncMachineContext) => {
     awareness: null,
     _awarenessUpdateHandler: null,
     roomKey: '',
+    roomKeyBytes: null,
     wsUrl: '',
     uncommittedUpdatesIdList: [],
     updateQueue: [],
@@ -358,6 +359,6 @@ export const setDocumentDecryptionStateHandler = (
   event: SyncMachinEvent,
 ) => {
   return {
-    initalDocumentDecryptionState: event.data,
+    initialDocumentDecryptionState: event.data,
   };
 };

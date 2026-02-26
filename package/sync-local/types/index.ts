@@ -55,6 +55,7 @@ export interface SyncMachineContext {
     | null;
   onError: ((e: Error) => void) | null;
   roomKey: string;
+  roomKeyBytes: Uint8Array | null;
   wsUrl: string;
   uncommittedUpdatesIdList: string[];
   isOwner: boolean;
@@ -66,7 +67,7 @@ export interface SyncMachineContext {
   errorCount: number;
   errorMaxRetryCount: number;
   errorMessage: string;
-  initalDocumentDecryptionState: 'done' | 'pending';
+  initialDocumentDecryptionState: 'done' | 'pending';
   onCollaborationConnectCallback: (response: any) => void;
   onCollaborationCommit: (file: File) => Promise<string>;
   onFetchCommitContent: (cid: string) => Promise<any>;

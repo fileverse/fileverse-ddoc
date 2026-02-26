@@ -1,11 +1,7 @@
 import { Sender } from 'xstate';
-import {
-  SocketStatusEnum,
-  SyncMachineContext,
-  SyncMachinEvent,
-} from '../types';
+import { SyncMachineContext, SyncMachinEvent } from '../types';
 import * as Y from 'yjs';
-import { fromUint8Array, toUint8Array } from 'js-base64';
+import { toUint8Array } from 'js-base64';
 import { objectToFile } from '../utils/objectToFile';
 
 import { crypto as cryptoUtils } from '../crypto';
@@ -54,7 +50,7 @@ export const syncMachineServices = {
     return async () => {
       const { socketClient, awareness, _awarenessUpdateHandler } = context;
 
-      if (socketClient?._webSocketStatus === SocketStatusEnum.CONNECTED) {
+      if (socketClient?.isConnected) {
         socketClient.disconnect();
       }
       awareness?.off('update', _awarenessUpdateHandler);
@@ -68,7 +64,7 @@ export const syncMachineServices = {
         const nextUpdate = Y.mergeUpdates(context.updateQueue);
         const { socketClient } = context;
         const updateToSend = cryptoUtils.encryptData(
-          toUint8Array(context.roomKey),
+          context.roomKeyBytes!,
           nextUpdate,
         );
         const response = await socketClient?.sendUpdate({
@@ -100,17 +96,11 @@ export const syncMachineServices = {
 
         const commitContent = {
           data: cryptoUtils.encryptData(
-            toUint8Array(context.roomKey),
+            context.roomKeyBytes!,
             Y.encodeStateAsUpdate(context.ydoc),
           ),
         };
         const file = objectToFile(commitContent, 'commit');
-        if (typeof context.onCollaborationCommit !== 'function') {
-          console.log(
-            'syncmachine: no commit function provided, skipping commit',
-          );
-          return;
-        }
         const ipfsHash = await context.onCollaborationCommit(file);
         const response = await context?.socketClient?.commitUpdates({
           updates,
@@ -130,22 +120,36 @@ export const syncMachineServices = {
       const history = latestCommit?.data.history[0];
       let decryptedCommit;
       if (history?.data) {
-        const content = history.data;
-        decryptedCommit = cryptoUtils.decryptData(
-          toUint8Array(context.roomKey),
-          content,
-        );
+        try {
+          const content = history.data;
+          decryptedCommit = cryptoUtils.decryptData(
+            context.roomKeyBytes!,
+            content,
+          );
+        } catch (err) {
+          console.warn(
+            'sync-machine: failed to decrypt commit data, skipping',
+            err,
+          );
+        }
       }
       const updates: Uint8Array[] = [];
 
       if (history?.cid) {
         const content = await context.onFetchCommitContent(history?.cid);
         if (content?.data) {
-          const decryptedContent = cryptoUtils.decryptData(
-            toUint8Array(context.roomKey),
-            content.data,
-          );
-          updates.push(decryptedContent);
+          try {
+            const decryptedContent = cryptoUtils.decryptData(
+              context.roomKeyBytes!,
+              content.data,
+            );
+            updates.push(decryptedContent);
+          } catch (err) {
+            console.warn(
+              'sync-machine: failed to decrypt commit content, skipping',
+              err,
+            );
+          }
         }
       }
 
@@ -155,26 +159,14 @@ export const syncMachineServices = {
       const uncommittedChangesId: string[] = [];
       let unbroadcastedUpdate = null;
 
-      const localUpdates: string[] = [];
       const machineInitialUpdate = context.initialUpdate;
 
-      if (localUpdates.length > 0) {
-        const t = localUpdates.map((u: string) => toUint8Array(u));
-        let merged: Uint8Array;
-        if (machineInitialUpdate) {
-          merged = Y.mergeUpdates([...t, toUint8Array(machineInitialUpdate)]);
-        } else {
-          merged = Y.mergeUpdates(t);
-        }
-
-        updates.push(merged);
-        unbroadcastedUpdate = fromUint8Array(merged);
-      } else if (machineInitialUpdate) {
+      if (machineInitialUpdate) {
         updates.push(toUint8Array(machineInitialUpdate));
         unbroadcastedUpdate = machineInitialUpdate;
       }
       if (decryptedCommit) updates.push(decryptedCommit);
-      if (encryptedUpdates.length > 0) {
+      if (encryptedUpdates && encryptedUpdates.length > 0) {
         if (
           context.isOwner &&
           typeof context.onUnMergedUpdates === 'function'
@@ -183,12 +175,19 @@ export const syncMachineServices = {
         }
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         encryptedUpdates.forEach((encryptedUpdate: any) => {
-          const data = cryptoUtils.decryptData(
-            toUint8Array(context.roomKey),
-            encryptedUpdate.data,
-          );
-          uncommittedChangesId.push(encryptedUpdate.id);
-          updates.push(data);
+          try {
+            const data = cryptoUtils.decryptData(
+              context.roomKeyBytes!,
+              encryptedUpdate.data,
+            );
+            uncommittedChangesId.push(encryptedUpdate.id);
+            updates.push(data);
+          } catch (err) {
+            console.warn(
+              'sync-machine: failed to decrypt uncommitted update, skipping',
+              err,
+            );
+          }
         });
       }
 
@@ -215,7 +214,7 @@ export const syncMachineServices = {
         const update = event.data.unbroadcastedUpdate;
 
         const updateToSend = cryptoUtils.encryptData(
-          toUint8Array(context.roomKey),
+          context.roomKeyBytes!,
           toUint8Array(update),
         );
         const response = await context.socketClient?.sendUpdate({
@@ -236,7 +235,7 @@ export const syncMachineServices = {
       if (context.isNewDoc) return;
 
       const localContent = cryptoUtils.encryptData(
-        toUint8Array(context.roomKey),
+        context.roomKeyBytes!,
         Y.encodeStateAsUpdate(context.ydoc),
       );
 
@@ -261,7 +260,7 @@ export const syncMachineServices = {
       }
       if (event.data.unbroadcastedUpdate) {
         const encryptedUpdate = cryptoUtils.encryptData(
-          toUint8Array(context.roomKey),
+          context.roomKeyBytes!,
           toUint8Array(event.data.unbroadcastedUpdate),
         );
         const response = await context.socketClient?.sendUpdate({

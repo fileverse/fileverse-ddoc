@@ -33,14 +33,15 @@ const isConnectedSelector = (state: any) => state.context.isConnected;
 
 const errorMessageSelector = (state: any) => state.context.errorMessage;
 const hasContentInitialisedSelector = (state: any) =>
-  state.context.initalDocumentDecryptionState === 'done';
+  state.context.initialDocumentDecryptionState === 'done';
 
 export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
   const [state, send, actorRef] = useMachine(syncMachine, {
     context: {
       ...config,
     },
-    devTools: true,
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    devTools: (globalThis as any).process?.env?.NODE_ENV !== 'production',
   });
 
   const awareness = useSelector(actorRef, awarenessSelector);
@@ -125,22 +126,29 @@ export const useSyncMachine = (config: Partial<SyncMachineContext>) => {
   useEffect(() => {
     if (!awareness) return;
 
+    const beforeUnloadHandler = () => {
+      removeAwarenessStates(
+        awareness,
+        [config.ydoc!.clientID],
+        'window unload',
+      );
+    };
+
     if (
       typeof window !== 'undefined' &&
       typeof window.addEventListener === 'function'
     ) {
-      window.addEventListener('beforeunload', () => {
-        removeAwarenessStates(
-          awareness,
-          [config.ydoc!.clientID],
-          'window unload',
-        );
-      });
+      window.addEventListener('beforeunload', beforeUnloadHandler);
     }
 
     return () => {
       removeAwarenessStates(awareness, [config.ydoc!.clientID], 'hook unmount');
-      awareness?.off('update');
+      if (
+        typeof window !== 'undefined' &&
+        typeof window.removeEventListener === 'function'
+      ) {
+        window.removeEventListener('beforeunload', beforeUnloadHandler);
+      }
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [awareness !== undefined]);

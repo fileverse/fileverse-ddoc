@@ -16,8 +16,6 @@ import { fromUint8Array, toUint8Array } from 'js-base64';
 import { crypto } from './crypto';
 import { Awareness, applyAwarenessUpdate } from 'y-protocols/awareness.js';
 
-import * as decoding from 'lib0/decoding';
-
 interface ISocketClientConfig {
   wsUrl: string;
   roomKey: string;
@@ -34,7 +32,15 @@ interface ISocketClientConfig {
 export class SocketClient {
   private _socketUrl: string;
   private _socket: Socket | null = null;
-  _webSocketStatus: SocketStatusEnum = SocketStatusEnum.CLOSED;
+  private _webSocketStatus: SocketStatusEnum = SocketStatusEnum.CLOSED;
+
+  get isConnected(): boolean {
+    return this._webSocketStatus === SocketStatusEnum.CONNECTED;
+  }
+
+  get status(): SocketStatusEnum {
+    return this._webSocketStatus;
+  }
   private _websocketServiceDid = '';
   private roomId = '';
 
@@ -88,6 +94,7 @@ export class SocketClient {
   private _emitWithAck<T = any>(
     event: string,
     args: any,
+    timeoutMs = 15000,
   ): Promise<AckResponse<T>> {
     return new Promise((resolve, reject) => {
       if (
@@ -101,7 +108,20 @@ export class SocketClient {
         return;
       }
 
+      let timedOut = false;
+      const timer = setTimeout(() => {
+        timedOut = true;
+        const error = new Error(
+          `Socket emit "${event}" timed out after ${timeoutMs}ms`,
+        );
+        error.name = 'SocketTimeoutError';
+        this._onError?.(error);
+        reject(error);
+      }, timeoutMs);
+
       this._socket.emit(event, args, (response: AckResponse<T>) => {
+        if (timedOut) return;
+        clearTimeout(timer);
         resolve(response);
       });
     });
@@ -179,9 +199,7 @@ export class SocketClient {
         position: awarenessUpdate,
       },
     };
-    this._socket.emit('/documents/awareness', args, () => {
-      console.log('awareness update sent');
-    });
+    this._socket.emit('/documents/awareness', args);
   }
 
   public disconnect = () => {
@@ -335,20 +353,18 @@ export class SocketClient {
     const key = this.roomKey;
     const encryptedPosition = data.data.position as string;
     if (key) {
-      const decrypted = crypto.decryptData(
-        toUint8Array(key),
-        encryptedPosition,
-      );
-
-      const decryptedPosition = new Uint8Array(decrypted);
-      const decoder = decoding.createDecoder(decryptedPosition);
-      const len = decoding.readVarUint(decoder);
-
-      for (let i = 0; i < len; i++) {
-        decoding.readVarUint(decoder); // clientId
-        decoding.readVarUint(decoder); // clock
+      try {
+        const decrypted = crypto.decryptData(
+          toUint8Array(key),
+          encryptedPosition,
+        );
+        applyAwarenessUpdate(this.awareness, new Uint8Array(decrypted), null);
+      } catch (err) {
+        console.warn(
+          'sync-machine: failed to decrypt awareness update, skipping',
+          err,
+        );
       }
-      applyAwarenessUpdate(this.awareness, decryptedPosition, null);
     }
   };
 
@@ -379,7 +395,9 @@ export class SocketClient {
 
       // Server handshake event — triggers auth flow
       this._socket.on('/server/handshake', (message) => {
-        this._handleHandShake(message, config);
+        this._handleHandShake(message, config).catch((err) => {
+          config.onHandShakeError(err);
+        });
       });
 
       // Server broadcast listeners

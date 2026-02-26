@@ -1,12 +1,13 @@
 import { encodeAwarenessUpdate, type Awareness } from 'y-protocols/awareness';
-import { SyncMachineContext } from '../types';
 import { toUint8Array } from 'js-base64';
 import { crypto as cryptoUtils } from '../crypto';
 import { debounce } from '../../utils/debounce';
+import { SocketClient } from '../socketClient';
 
 export const createAwarenessUpdateHandler = (
   awareness: Awareness,
-  context: SyncMachineContext,
+  socketClient: SocketClient,
+  roomKey: string,
 ) => {
   return debounce(
     ({
@@ -21,12 +22,12 @@ export const createAwarenessUpdateHandler = (
       const changedClients = added.concat(updated).concat(removed);
       const update = encodeAwarenessUpdate(awareness, changedClients);
 
-      if (context.isConnected && context.socketClient) {
+      if (socketClient.isConnected) {
         const encryptedUpdate = cryptoUtils.encryptData(
-          toUint8Array(context.roomKey),
+          toUint8Array(roomKey),
           update,
         );
-        context.socketClient.broadcastAwareness(encryptedUpdate);
+        socketClient.broadcastAwareness(encryptedUpdate);
       }
     },
     100,
