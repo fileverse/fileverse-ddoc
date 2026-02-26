@@ -19,6 +19,7 @@ export interface IDocCollabUsers {
   name: string;
   isEns: string;
   color: string;
+  isTyping?: boolean;
 }
 
 export type InlineCommentData = {
@@ -209,6 +210,8 @@ export interface IUser {
   name: string;
   color: string;
   isEns: boolean;
+  isTyping?: boolean;
+  clientId?: number;
 }
 
 export { type IComment };

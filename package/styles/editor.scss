@@ -591,6 +591,15 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   top: -2em;
   user-select: none;
   white-space: nowrap;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+
+  &.is-typing {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Give a remote user a caret */
@@ -636,6 +645,15 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   white-space: nowrap;
   border-radius: 9999px 9999px 9999px 0;
   color: #363b3f;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  opacity: 0;
+  transform: translateY(4px);
+  pointer-events: none;
+
+  &.is-typing {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .custom-cursor__label {

@@ -499,6 +499,7 @@ export const useDdocEditor = ({
       name: collabConfig?.username || '',
       color: userColorRef.current,
       isEns: collabConfig?.isEns,
+      clientId: ydoc.clientID,
     };
 
     awareness.setLocalStateField('user', user);
@@ -534,17 +535,105 @@ export const useDdocEditor = ({
     };
   }, [editor, awareness, isReady]);
 
+  useEffect(() => {
+    if (!editor || !awareness) return;
+
+    let typingTimeout: ReturnType<typeof setTimeout> | null = null;
+
+    const handleActivity = () => {
+      const currentLocalState = awareness.getLocalState();
+      if (!currentLocalState?.user) return;
+
+      const user = currentLocalState.user;
+
+      if (!user.isTyping) {
+        awareness.setLocalStateField('user', {
+          ...user,
+          isTyping: true,
+          clientId: ydoc.clientID,
+        });
+      }
+
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
+
+      typingTimeout = setTimeout(() => {
+        const state = awareness.getLocalState();
+        if (state?.user) {
+          awareness.setLocalStateField('user', {
+            ...state.user,
+            isTyping: false,
+            clientId: ydoc.clientID,
+          });
+        }
+        typingTimeout = null;
+      }, 2000);
+    };
+
+    const handleAwarenessUpdate = ({
+      added,
+      updated,
+    }: {
+      added: number[];
+      updated: number[];
+      removed: number[];
+    }) => {
+      const changedClients = [...added, ...updated];
+      changedClients.forEach((clientId) => {
+        if (clientId === ydoc.clientID) return;
+
+        const state = awareness.getStates().get(clientId);
+        const user = state?.user;
+        const isTyping = user?.isTyping;
+
+        // Find the cursor element in the DOM
+        const cursorElement = document.querySelector(
+          `[data-client-id="${clientId}"]`,
+        );
+        if (cursorElement) {
+          const label = cursorElement.querySelector(
+            '.collaboration-cursor__label, .custom-cursor__label-container',
+          );
+          if (label) {
+            if (isTyping) {
+              label.classList.add('is-typing');
+            } else {
+              label.classList.remove('is-typing');
+            }
+          }
+        }
+      });
+    };
+
+    editor.on('update', handleActivity);
+    editor.on('selectionUpdate', handleActivity);
+    awareness.on('update', handleAwarenessUpdate);
+
+    return () => {
+      editor.off('update', handleActivity);
+      editor.off('selectionUpdate', handleActivity);
+      awareness.off('update', handleAwarenessUpdate);
+      if (typingTimeout) {
+        clearTimeout(typingTimeout);
+      }
+    };
+  }, [editor, awareness, ydoc]);
+
   // Update user info when ENS resolves
   useEffect(() => {
     if (!isReady || !enableCollaboration || !collabConfig || !awareness) return;
     if (collabConfig.isEns) {
+      const currentLocalState = awareness.getLocalState();
       awareness.setLocalStateField('user', {
+        ...(currentLocalState?.user || {}),
         name: collabConfig.username,
         color: userColorRef.current,
         isEns: collabConfig.isEns,
+        clientId: ydoc.clientID,
       });
     }
-  }, [isReady, enableCollaboration, collabConfig?.isEns, awareness]);
+  }, [isReady, enableCollaboration, collabConfig?.isEns, awareness, ydoc]);
 
   const ref = useRef<HTMLDivElement>(null);
 
@@ -829,7 +918,6 @@ export const useDdocEditor = ({
       collaborationCleanupRef.current();
     };
   }, [enableCollaboration, Boolean(collabConfig)]);
-
 
   const charCountDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,

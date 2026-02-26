@@ -394,13 +394,15 @@ const DdocEditor = forwardRef(
 
           const localState = awareness.getLocalState();
           const existingUser = localState?.user as
-            | Record<string, unknown>
+            | Record<string, any>
             | undefined;
 
           const newUser = {
+            ...existingUser,
             name,
             color: existingUser?.color,
             isEns: existingUser?.isEns,
+            clientId: ydoc.clientID,
           };
 
           awareness.setLocalStateField('user', newUser);
