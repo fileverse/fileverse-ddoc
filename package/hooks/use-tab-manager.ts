@@ -76,6 +76,8 @@ export const useTabManager = ({
   const [tabs, setTabs] = useState<Tab[]>(initialTabState.tabList);
   const hasTabState = useMemo(() => tabs.length > 0, [tabs]);
   const lastDeleteRef = useRef<DeleteSnapshot | null>(null);
+  const activeTabIdRef = useRef(activeTabId);
+  activeTabIdRef.current = activeTabId;
 
   // Sync state when initialContent loads asynchronously (e.g. from server).
   // useState only uses initialTabState once; this handles subsequent changes.
@@ -120,6 +122,22 @@ export const useTabManager = ({
   useEffect(() => {
     if (!ydoc) return;
 
+    // When shouldSyncActiveTab is true (including false→true transitions),
+    // ensure Y.Doc matches the current React activeTabId.
+    // On initial mount with shouldSyncActiveTab=true, Y.Doc already has the
+    // correct value from initialTabState → no-op. On transition from collab
+    // (false→true), this writes the user's current tab so it persists.
+    if (shouldSyncActiveTab) {
+      const { activeTab } = getTabsYdocNodes(ydoc);
+      const syncedId = activeTab.toString();
+      if (syncedId !== activeTabIdRef.current) {
+        ydoc.transact(() => {
+          activeTab.delete(0, activeTab.length);
+          activeTab.insert(0, activeTabIdRef.current);
+        });
+      }
+    }
+
     const root = ydoc.getMap('ddocTabs');
 
     const handleTabList = () => {
@@ -151,17 +169,21 @@ export const useTabManager = ({
       const syncedId = currentActiveTab?.toString();
       const firstTabId =
         currentOrder.length > 0 ? currentOrder.get(0) : 'default';
-      const nextActiveTabId = shouldSyncActiveTab
-        ? syncedId || firstTabId
-        : defaultTabId && isDefaultIdValid
-          ? defaultTabId
-          : 'default';
 
-      if (!nextActiveTabId) return;
-
-      _setActiveTabId((prevActiveTabId) =>
-        prevActiveTabId === nextActiveTabId ? prevActiveTabId : nextActiveTabId,
-      );
+      if (shouldSyncActiveTab) {
+        const nextActiveTabId = syncedId || firstTabId;
+        _setActiveTabId((prev) =>
+          prev === nextActiveTabId ? prev : nextActiveTabId,
+        );
+      } else if (defaultTabId && isDefaultIdValid) {
+        _setActiveTabId((prev) =>
+          prev === defaultTabId ? prev : defaultTabId,
+        );
+      } else {
+        // Validate current tab still exists (peer may have deleted it)
+        const validTabIds = new Set(tabList.map((t) => t.id));
+        _setActiveTabId((prev) => (validTabIds.has(prev) ? prev : firstTabId));
+      }
     };
 
     handleTabList();
@@ -204,8 +226,8 @@ export const useTabManager = ({
       // Create fragment
       ydoc.getXmlFragment(newTab.id);
 
-      // Save active state in yjs content if not in collaboration mode
-      if (!enableCollaboration && activeTabText instanceof Y.Text) {
+      // Y.Doc activeTab: only when shouldSyncActiveTab (persistence)
+      if (shouldSyncActiveTab && activeTabText instanceof Y.Text) {
         activeTabText.delete(0, activeTabText.length);
         activeTabText.insert(0, tabId);
       }
@@ -213,8 +235,11 @@ export const useTabManager = ({
       order.push([newTab.id]);
     });
 
+    // React state: always switch to the new tab locally
+    _setActiveTabId(tabId);
+
     return tabId;
-  }, [enableCollaboration, ydoc]);
+  }, [shouldSyncActiveTab, ydoc]);
 
   const deleteTab = useCallback(
     (tabId: string) => {
@@ -241,6 +266,14 @@ export const useTabManager = ({
         };
       }
 
+      // Compute fallback before the delete transaction
+      const currentActive =
+        activeTab instanceof Y.Text ? activeTab.toString() : '';
+      const needsFallback = currentActive === tabId;
+      const fallbackId = needsFallback
+        ? (order.get(index + 1) ?? order.get(index - 1) ?? 'default')
+        : null;
+
       ydoc.transact(() => {
         // Remove metadata
         tabs.delete(tabId);
@@ -249,24 +282,27 @@ export const useTabManager = ({
         // The orphaned Y.XmlFragment remains in the Y.Doc so that
         // undo can restore the tab without data loss.
 
-        // Fix active tab if necessary
-        if (activeTab instanceof Y.Text) {
-          const currentActive = activeTab.toString();
-
-          if (currentActive === tabId) {
-            const fallbackId = order.get(index + 1) ?? order.get(index - 1);
-
-            if (fallbackId) {
-              activeTab.delete(0, activeTab.length);
-              activeTab.insert(0, fallbackId);
-            }
-          }
+        // Y.Doc activeTab: only when shouldSyncActiveTab (persistence)
+        if (
+          needsFallback &&
+          fallbackId &&
+          shouldSyncActiveTab &&
+          activeTab instanceof Y.Text
+        ) {
+          activeTab.delete(0, activeTab.length);
+          activeTab.insert(0, fallbackId);
         }
+
         // Remove from order
         order.delete(index, 1);
       });
+
+      // React state: always switch locally if deleted tab was active
+      if (needsFallback && fallbackId) {
+        _setActiveTabId(fallbackId);
+      }
     },
-    [ydoc],
+    [ydoc, shouldSyncActiveTab],
   );
 
   const restoreDeletedTab = useCallback(() => {
@@ -298,16 +334,18 @@ export const useTabManager = ({
       const insertIndex = Math.min(snapshot.orderIndex, order.length);
       order.insert(insertIndex, [snapshot.tabId]);
 
-      if (activeTab instanceof Y.Text) {
+      // Y.Doc activeTab: only when shouldSyncActiveTab (persistence)
+      if (shouldSyncActiveTab && activeTab instanceof Y.Text) {
         activeTab.delete(0, activeTab.length);
         activeTab.insert(0, snapshot.tabId);
       }
     });
 
+    // React state: always switch to restored tab
     _setActiveTabId(snapshot.tabId);
     lastDeleteRef.current = null;
     return true;
-  }, [ydoc]);
+  }, [ydoc, shouldSyncActiveTab]);
 
   const isYjsUndoStackEmpty = useCallback(() => {
     const editor = getEditor?.();
@@ -420,16 +458,20 @@ export const useTabManager = ({
         const index = order.toArray().indexOf(tabId);
         order.insert(index + 1, [newTabId]);
 
-        if (activeTab) {
+        // Y.Doc activeTab: only when shouldSyncActiveTab (persistence)
+        if (shouldSyncActiveTab && activeTab) {
           activeTab.delete(0, activeTab.length);
           activeTab.insert(0, newTabId);
         }
         tabs.set(newTabId, newMeta);
       });
 
+      // React state: always switch to duplicated tab
+      _setActiveTabId(newTabId);
+
       return newTabId;
     },
-    [ydoc],
+    [ydoc, shouldSyncActiveTab],
   );
 
   const orderTab = useCallback(
