@@ -1,9 +1,11 @@
 import { Editor, useEditorState } from '@tiptap/react';
 import { useCallback } from 'react';
+import { getCurrentFontFamily } from '../utils/get-current-font-family';
 
 type EditorStateResult = {
   currentSize: string | undefined;
   currentLineHeight: string | undefined;
+  currentFont: string | undefined;
 };
 
 export const useEditorStates = (editor: Editor | null) => {
@@ -36,10 +38,17 @@ export const useEditorStates = (editor: Editor | null) => {
     editor,
     selector: (state: { editor: Editor | null }) => {
       if (!state.editor)
-        return { currentSize: undefined, currentLineHeight: undefined };
+        return {
+          currentSize: undefined,
+          currentLineHeight: undefined,
+          currentFont: undefined,
+        };
 
-      // First check if there's a custom font size set
-      const customFontSize = state.editor.getAttributes('textStyle')?.fontSize;
+      // First check if there's a custom font size set (mark or node attribute)
+      let customFontSize = state.editor.getAttributes('textStyle')?.fontSize;
+      if (!customFontSize && state.editor.isActive('paragraph')) {
+        customFontSize = state.editor.getAttributes('paragraph')?.fontSize;
+      }
 
       // Get line height from paragraph, heading, or listItem
       let customLineHeight =
@@ -51,10 +60,13 @@ export const useEditorStates = (editor: Editor | null) => {
         customLineHeight = state.editor.getAttributes('listItem')?.lineHeight;
       }
 
+      const currentFont = getCurrentFontFamily(state.editor);
+
       if (customFontSize) {
         return {
           currentSize: customFontSize,
           currentLineHeight: customLineHeight || '138%',
+          currentFont,
         };
       }
 
@@ -66,16 +78,19 @@ export const useEditorStates = (editor: Editor | null) => {
             return {
               currentSize: '32px',
               currentLineHeight: customLineHeight || '138%',
+              currentFont,
             };
           case 2:
             return {
               currentSize: '24px',
               currentLineHeight: customLineHeight || '138%',
+              currentFont,
             };
           case 3:
             return {
               currentSize: '18px',
               currentLineHeight: customLineHeight || '138%',
+              currentFont,
             };
         }
       }
@@ -84,6 +99,7 @@ export const useEditorStates = (editor: Editor | null) => {
       return {
         currentSize: '16px',
         currentLineHeight: customLineHeight || '138%',
+        currentFont,
       };
     },
   }) as EditorStateResult;
