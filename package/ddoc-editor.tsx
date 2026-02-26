@@ -402,7 +402,7 @@ const DdocEditor = forwardRef(
 
           const localState = awareness.getLocalState();
           const existingUser = localState?.user as
-            | Record<string, any>
+            | Record<string, unknown>
             | undefined;
 
           const newUser = {
