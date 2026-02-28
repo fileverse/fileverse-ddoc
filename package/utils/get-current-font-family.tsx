@@ -17,9 +17,21 @@ export const getCurrentFontFamily = (editor: Editor | null) => {
     const $pos = state.doc.resolve(from);
     const m = $pos.marks().find((m) => m.type.name === 'textStyle');
     if (m?.attrs?.fontFamily) return m.attrs.fontFamily;
+
+    // Fallback: check if the node itself has a fontFamily attribute (e.g. empty paragraph)
+    const node = $pos.node($pos.depth);
+    if (node?.attrs?.fontFamily) return node.attrs.fontFamily;
+
     return 'Default';
   }
 
   // 3) If range, use merged attributes across selection
-  return editor.getAttributes('textStyle')?.fontFamily;
+  const customFontFamily = editor.getAttributes('textStyle')?.fontFamily;
+  if (customFontFamily) return customFontFamily;
+  
+  if (editor.isActive('paragraph')) {
+    return editor.getAttributes('paragraph')?.fontFamily || 'Default';
+  }
+
+  return 'Default';
 };

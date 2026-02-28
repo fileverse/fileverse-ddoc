@@ -281,15 +281,18 @@ export const DBlock = Node.create<DBlockOptions>({
 
             // If it's the last item, exit the list and create a text block
             if (isLastItem) {
+              const fontFamily = attrs?.fontFamily || null;
+              const fontSize = attrs?.fontSize || null;
               return editor
                 .chain()
                 .deleteRange({ from: currentItemStart, to: currentItemEnd })
                 .insertContentAt(currentItemStart, {
                   type: 'dBlock',
-                  content: [{ type: 'paragraph' }],
+                  content: [
+                    { type: 'paragraph', attrs: { fontFamily, fontSize } },
+                  ],
                 })
                 .focus(currentItemStart + 2)
-                .unsetAllMarks()
                 .run();
             }
 
@@ -299,7 +302,20 @@ export const DBlock = Node.create<DBlockOptions>({
               .deleteRange({ from: currentItemStart, to: currentItemEnd })
               .run();
           }
-          //nested lists are handled by tiptap's default list behavior
+          // Handle empty items in nested lists: lift and preserve font attrs
+          if (isCurrentItemEmpty && !isTopLevelList) {
+            const itemType = parent.type.name as 'listItem' | 'taskItem';
+            const fontFamily = attrs?.fontFamily || null;
+            const fontSize = attrs?.fontSize || null;
+            const result = editor.commands.liftListItem(itemType);
+            if (result && (fontFamily || fontSize)) {
+              editor.commands.setMark('textStyle', {
+                ...(fontFamily ? { fontFamily } : {}),
+                ...(fontSize ? { fontSize } : {}),
+              });
+            }
+            return result;
+          }
         }
 
         // Handle blockquote
@@ -360,6 +376,8 @@ export const DBlock = Node.create<DBlockOptions>({
               ['columns', 'heading'].includes(currentActiveNodeType) &&
               isAtEndOfTheNode
             ) {
+              const fontFamily = attrs?.fontFamily || null;
+              const fontSize = attrs?.fontSize || null;
               return editor
                 .chain()
                 .insertContent({
@@ -367,6 +385,7 @@ export const DBlock = Node.create<DBlockOptions>({
                   content: [
                     {
                       type: 'paragraph',
+                      attrs: { fontFamily, fontSize },
                     },
                   ],
                 })
@@ -398,13 +417,21 @@ export const DBlock = Node.create<DBlockOptions>({
                 .run();
             }
 
+            const fontFamily = attrs?.fontFamily || null;
+            const fontSize = attrs?.fontSize || null;
+
+            const finalContent =
+              content && content.length > 0
+                ? content
+                : [{ type: 'paragraph', attrs: { fontFamily, fontSize } }];
+
             return editor
               .chain()
               .insertContentAt(
                 { from, to: currentActiveNodeTo },
                 {
                   type: this.name,
-                  content,
+                  content: finalContent,
                 },
               )
               .focus(from + 4)
