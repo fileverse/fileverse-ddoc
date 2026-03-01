@@ -27,6 +27,13 @@ export type InlineCommentData = {
   handleClick: boolean;
 };
 
+export type CommentMutationType = 'create' | 'resolve' | 'unresolve' | 'delete';
+
+export interface CommentMutationMeta {
+  type: CommentMutationType;
+  updateChunk: string;
+}
+
 export interface CommentAccountProps {
   isConnected?: boolean;
   connectViaWallet?: () => Promise<void>;
@@ -99,10 +106,19 @@ export interface DdocProps extends CommentAccountProps {
   initialComments?: IComment[];
   setInitialComments?: React.Dispatch<SetStateAction<IComment[]>>;
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
-  onNewComment?: (newComment: IComment) => void;
-  onResolveComment?: (activeCommentId: string) => void;
-  onUnresolveComment?: (activeCommentId: string) => void;
-  onDeleteComment?: (activeCommentId: string) => void;
+  onNewComment?: (newComment: IComment, meta?: CommentMutationMeta) => void;
+  onResolveComment?: (
+    activeCommentId: string,
+    meta?: CommentMutationMeta,
+  ) => void;
+  onUnresolveComment?: (
+    activeCommentId: string,
+    meta?: CommentMutationMeta,
+  ) => void;
+  onDeleteComment?: (
+    activeCommentId: string,
+    meta?: CommentMutationMeta,
+  ) => void;
   //Comments V2 Props
   showTOC?: boolean;
   setShowTOC?: React.Dispatch<SetStateAction<boolean>>;
