@@ -67,11 +67,17 @@ export const FontSize = Extension.create({
   addCommands() {
     const getExistingTextStyleAttrs = (editor: typeof this.editor) => {
       const attrs = editor.getAttributes('textStyle');
-      // Also check the paragraph node attribute as fallback for empty paragraphs
-      if (!attrs.fontFamily && editor.isActive('paragraph')) {
-        const paragraphAttrs = editor.getAttributes('paragraph');
-        if (paragraphAttrs.fontFamily) {
-          attrs.fontFamily = paragraphAttrs.fontFamily;
+      // Read paragraph node directly — storedMarks can be cleared by blur,
+      // but node attrs persist reliably
+      const { selection } = editor.state;
+      const $pos = selection.$from;
+      const node = $pos.node($pos.depth);
+      if (node?.type.name === 'paragraph') {
+        if (!attrs.fontFamily && node.attrs.fontFamily) {
+          attrs.fontFamily = node.attrs.fontFamily;
+        }
+        if (!attrs.fontSize && node.attrs.fontSize) {
+          attrs.fontSize = node.attrs.fontSize;
         }
       }
       return attrs;
@@ -249,15 +255,15 @@ export const FontSize = Extension.create({
             const storedFontSize = storedTextStyle?.attrs?.fontSize || null;
 
             if (storedFontSize && node.attrs.fontSize !== storedFontSize) {
-              // Explicit font size set → sync to node attr
               const tr = newState.tr;
               tr.setNodeMarkup($pos.before($pos.depth), undefined, {
                 ...node.attrs,
                 fontSize: storedFontSize,
               });
               return tr;
-            } else if (!storedTextStyle && node.attrs.fontSize) {
-              // All textStyle marks removed (unset) → clear node attr
+            } else if (newState.storedMarks && !storedTextStyle && node.attrs.fontSize) {
+              // storedMarks exist but textStyle was explicitly removed → clear node attr
+              // (don't clear when storedMarks is null — that means they were consumed, not unset)
               const tr = newState.tr;
               tr.setNodeMarkup($pos.before($pos.depth), undefined, {
                 ...node.attrs,

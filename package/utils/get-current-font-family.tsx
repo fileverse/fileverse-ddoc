@@ -16,10 +16,10 @@ export const getCurrentFontFamily = (editor: Editor | null) => {
   if (empty) {
     const $pos = state.doc.resolve(from);
     const m = $pos.marks().find((m) => m.type.name === 'textStyle');
+    const node = $pos.node($pos.depth);
     if (m?.attrs?.fontFamily) return m.attrs.fontFamily;
 
     // Fallback: check if the node itself has a fontFamily attribute (e.g. empty paragraph)
-    const node = $pos.node($pos.depth);
     if (node?.attrs?.fontFamily) return node.attrs.fontFamily;
 
     return 'Default';
