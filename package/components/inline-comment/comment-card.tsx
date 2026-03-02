@@ -366,7 +366,7 @@ export const CommentCard = ({
           <div className="highlight-comment-bg p-1 rounded-lg">
             <div className="relative">
               <span
-                className={cn('text-body-sm italic block', {
+                className={cn('text-body-sm italic block break-all', {
                   'line-clamp-2': !isExpanded && selectedContent.length > 70,
                 })}
               >
