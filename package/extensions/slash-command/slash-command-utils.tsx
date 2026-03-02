@@ -199,8 +199,22 @@ export const getSuggestionItems = ({
       image: '',
       command: ({ editor, range }: CommandProps) => {
         const attrs = editor.getAttributes('textStyle');
+        // Fall back to paragraph node attrs for fontFamily/fontSize
+        const { selection } = editor.state;
+        const $pos = selection.$from;
+        const node = $pos.node($pos.depth);
+        if (node?.type.name === 'paragraph') {
+          if (!attrs.fontFamily && node.attrs.fontFamily) {
+            attrs.fontFamily = node.attrs.fontFamily;
+          }
+          if (!attrs.fontSize && node.attrs.fontSize) {
+            attrs.fontSize = node.attrs.fontSize;
+          }
+        }
 
-        // First insert callout without styles
+        const fontFamily = attrs?.fontFamily || null;
+        const fontSize = attrs?.fontSize || null;
+
         editor
           .chain()
           .focus()
@@ -210,6 +224,7 @@ export const getSuggestionItems = ({
             content: [
               {
                 type: 'paragraph',
+                attrs: { fontFamily, fontSize },
                 content: [],
               },
             ],
@@ -217,7 +232,7 @@ export const getSuggestionItems = ({
           .run();
 
         // Then apply textStyle marks to content inside callout
-        if (attrs) {
+        if (attrs && Object.keys(attrs).length > 0) {
           editor.chain().focus().setMark('textStyle', attrs).run();
         }
       },

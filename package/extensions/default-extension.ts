@@ -83,6 +83,7 @@ import { ResizableMedia } from './resizable-media';
 import LinkPreview from './link-preview/link-preview';
 import { Callout } from './callout/callout';
 import { FontSize } from './font-size';
+import { FontFamilyPersistence } from './font-family-persistence';
 import { CustomCodeBlockLowlight } from './code-block/custom-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
 import { LineHeight } from './line-height';
@@ -150,6 +151,7 @@ export const defaultExtensions = ({
   onTocUpdate?: (data: ToCItemType[], isCreate?: boolean) => void;
 }) => [
   FontFamily,
+  FontFamilyPersistence,
   StarterKit.configure({
     strike: {
       HTMLAttributes: {

@@ -1,68 +1,17 @@
-import { Attributes, Extension } from '@tiptap/core';
+import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
-import { FONT_SIZES } from '../../components/editor-utils';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
-    customFontSize: {
-      setFontSize: (size: string) => ReturnType;
-      unsetFontSize: () => ReturnType;
-      increaseFontSize: () => ReturnType;
-      decreaseFontSize: () => ReturnType;
+    fontFamilyPersistence: {
+      setFontFamily: (fontFamily: string) => ReturnType;
+      unsetFontFamily: () => ReturnType;
     };
   }
 }
 
-export const FontSize = Extension.create({
-  name: 'fontSize',
-
-  addOptions() {
-    return {
-      types: ['textStyle'],
-    };
-  },
-
-  addGlobalAttributes() {
-    return [
-      {
-        types: ['paragraph'],
-        attributes: {
-          class: {},
-          fontSize: {
-            default: null,
-            parseHTML: (element) => element.style.fontSize?.replace(/['"]+/g, '') || null,
-            renderHTML: (attributes) => {
-              if (!attributes.fontSize) {
-                return {};
-              }
-              return {
-                style: `font-size: ${attributes.fontSize}`,
-              };
-            },
-          },
-        },
-      },
-      {
-        types: this.options.types,
-        attributes: {
-          fontSize: {
-            default: null,
-            parseHTML: (element) => {
-              return element.style.fontSize?.replace(/['"]+/g, '') || null;
-            },
-            renderHTML: (attributes) => {
-              if (!attributes.fontSize) {
-                return {};
-              }
-              return {
-                style: `font-size: ${attributes.fontSize}`,
-              };
-            },
-          },
-        } as Attributes,
-      },
-    ];
-  },
+export const FontFamilyPersistence = Extension.create({
+  name: 'fontFamilyPersistence',
 
   addCommands() {
     const getExistingTextStyleAttrs = (editor: typeof this.editor) => {
@@ -84,67 +33,53 @@ export const FontSize = Extension.create({
     };
 
     return {
-      setFontSize:
-        (fontSize: string) =>
+      setFontFamily:
+        (fontFamily: string) =>
         ({ chain }) => {
           const existing = getExistingTextStyleAttrs(this.editor);
           return chain()
-            .setMark('textStyle', { ...existing, fontSize })
+            .setMark('textStyle', { ...existing, fontFamily })
             .run();
         },
-      unsetFontSize:
+      unsetFontFamily:
         () =>
         ({ chain }) => {
           const existing = getExistingTextStyleAttrs(this.editor);
           return chain()
-            .setMark('textStyle', { ...existing, fontSize: null })
+            .setMark('textStyle', { ...existing, fontFamily: null })
             .removeEmptyTextStyle()
-            .run();
-        },
-      increaseFontSize:
-        () =>
-        ({ chain }) => {
-          const attrs = getExistingTextStyleAttrs(this.editor);
-          let currentSizeNum = parseInt(attrs.fontSize || '16');
-          if (isNaN(currentSizeNum)) currentSizeNum = 16;
-
-          const nextSize = FONT_SIZES.find((size) => size > currentSizeNum);
-          if (!nextSize) return false;
-
-          return chain()
-            .setMark('textStyle', { ...attrs, fontSize: `${nextSize}px` })
-            .run();
-        },
-      decreaseFontSize:
-        () =>
-        ({ chain }) => {
-          const attrs = getExistingTextStyleAttrs(this.editor);
-          let currentSizeNum = parseInt(attrs.fontSize || '16');
-          if (isNaN(currentSizeNum)) currentSizeNum = 16;
-
-          const nextSize = [...FONT_SIZES]
-            .reverse()
-            .find((size) => size < currentSizeNum);
-          if (!nextSize) return false;
-
-          return chain()
-            .setMark('textStyle', { ...attrs, fontSize: `${nextSize}px` })
             .run();
         },
     };
   },
 
-  addKeyboardShortcuts() {
-    return {
-      'Mod-Shift-.': () => this.editor.commands.increaseFontSize(),
-      'Mod-Shift-,': () => this.editor.commands.decreaseFontSize(),
-    };
+  addGlobalAttributes() {
+    return [
+      {
+        types: ['paragraph'],
+        attributes: {
+          fontFamily: {
+            default: null,
+            parseHTML: (element) => element.style.fontFamily?.replace(/['"]+/g, '') || null,
+            renderHTML: (attributes) => {
+              if (!attributes.fontFamily) {
+                return {};
+              }
+              return {
+                style: `font-family: ${attributes.fontFamily}`,
+              };
+            },
+          },
+        },
+      },
+    ];
   },
 
   addProseMirrorPlugins() {
     return [
+      // Inheritance plugin
       new Plugin({
-        key: new PluginKey('fontSizeInheritance'),
+        key: new PluginKey('fontFamilyInheritance'),
         appendTransaction: (transactions, _oldState, newState) => {
           const hasStructuralChange = transactions.some((transaction) => {
             if (!transaction.docChanged) return false;
@@ -152,9 +87,7 @@ export const FontSize = Extension.create({
             transaction.steps.forEach((step) => {
               const stepMap = step.getMap();
               stepMap.forEach((oldStart, oldEnd, newStart, newEnd) => {
-                if (newEnd - newStart > oldEnd - oldStart) {
-                  structural = true;
-                }
+                if (newEnd - newStart - (oldEnd - oldStart) > 4) structural = true;
               });
             });
             return structural;
@@ -179,17 +112,17 @@ export const FontSize = Extension.create({
 
                   newState.doc.nodesBetween(safeStart, safeEnd, (node, pos) => {
                     if (node.type.name !== 'paragraph') return;
-                    if (node.attrs.fontSize) return;
+                    if (node.attrs.fontFamily) return;
 
                     const $pos = newState.doc.resolve(pos);
                     const indexBefore = $pos.index($pos.depth);
 
                     if (indexBefore > 0) {
                       const prevNode = $pos.node($pos.depth).child(indexBefore - 1);
-                      if (prevNode && prevNode.type.name === 'paragraph' && prevNode.attrs.fontSize) {
+                      if (prevNode && prevNode.type.name === 'paragraph' && prevNode.attrs.fontFamily) {
                         tr.setNodeMarkup(pos, undefined, {
                           ...node.attrs,
-                          fontSize: prevNode.attrs.fontSize,
+                          fontFamily: prevNode.attrs.fontFamily,
                         });
                         modified = true;
                       }
@@ -204,10 +137,11 @@ export const FontSize = Extension.create({
         },
       }),
 
+      // StoredMarks restoration plugin
       new Plugin({
-        key: new PluginKey('fontSizeStoredMarks'),
+        key: new PluginKey('fontFamilyStoredMarks'),
         appendTransaction: (transactions, _oldState, newState) => {
-          const selectionChanged = transactions.some((tr) => tr.selectionSet);
+          const selectionChanged = transactions.some(tr => tr.selectionSet);
           if (!selectionChanged) return null;
 
           const { selection } = newState;
@@ -216,20 +150,16 @@ export const FontSize = Extension.create({
           const $pos = selection.$from;
           const node = $pos.node($pos.depth);
 
-          if (node?.type.name === 'paragraph' && node.textContent === '' && node.attrs.fontSize) {
+          if (node?.type.name === 'paragraph' && node.textContent === '' && node.attrs.fontFamily) {
             const markType = newState.schema.marks.textStyle;
             if (!markType) return null;
-
+            
             const tr = newState.tr;
-            const existingMark =
-              tr.storedMarks?.find((m) => m.type === markType) ||
-              newState.storedMarks?.find((m) => m.type === markType);
+            const existingMark = tr.storedMarks?.find(m => m.type === markType) || newState.storedMarks?.find(m => m.type === markType);
+            
+            if (existingMark && existingMark.attrs.fontFamily === node.attrs.fontFamily) return null;
 
-            if (existingMark && existingMark.attrs.fontSize === node.attrs.fontSize) return null;
-
-            const attrs = existingMark
-              ? { ...existingMark.attrs, fontSize: node.attrs.fontSize }
-              : { fontSize: node.attrs.fontSize };
+            const attrs = existingMark ? { ...existingMark.attrs, fontFamily: node.attrs.fontFamily } : { fontFamily: node.attrs.fontFamily };
             tr.addStoredMark(markType.create(attrs));
             return tr;
           }
@@ -238,10 +168,11 @@ export const FontSize = Extension.create({
         },
       }),
 
+      // Sync plugin: when storedMarks change on empty paragraph, update node attribute
       new Plugin({
-        key: new PluginKey('fontSizeSyncNodeAttr'),
+        key: new PluginKey('fontFamilySyncNodeAttr'),
         appendTransaction: (transactions, _oldState, newState) => {
-          const hasStoredMarksChange = transactions.some((tr) => tr.storedMarksSet);
+          const hasStoredMarksChange = transactions.some(tr => tr.storedMarksSet);
           if (!hasStoredMarksChange) return null;
 
           const { selection } = newState;
@@ -251,23 +182,23 @@ export const FontSize = Extension.create({
           const node = $pos.node($pos.depth);
 
           if (node?.type.name === 'paragraph' && node.textContent === '') {
-            const storedTextStyle = newState.storedMarks?.find((m) => m.type.name === 'textStyle');
-            const storedFontSize = storedTextStyle?.attrs?.fontSize || null;
+            const storedTextStyle = newState.storedMarks?.find(m => m.type.name === 'textStyle');
+            const storedFontFamily = storedTextStyle?.attrs?.fontFamily || null;
 
-            if (storedFontSize && node.attrs.fontSize !== storedFontSize) {
+            if (storedFontFamily && node.attrs.fontFamily !== storedFontFamily) {
               const tr = newState.tr;
               tr.setNodeMarkup($pos.before($pos.depth), undefined, {
                 ...node.attrs,
-                fontSize: storedFontSize,
+                fontFamily: storedFontFamily,
               });
               return tr;
-            } else if (newState.storedMarks && !storedTextStyle && node.attrs.fontSize) {
+            } else if (newState.storedMarks && !storedTextStyle && node.attrs.fontFamily) {
               // storedMarks exist but textStyle was explicitly removed → clear node attr
               // (don't clear when storedMarks is null — that means they were consumed, not unset)
               const tr = newState.tr;
               tr.setNodeMarkup($pos.before($pos.depth), undefined, {
                 ...node.attrs,
-                fontSize: null,
+                fontFamily: null,
               });
               return tr;
             }
