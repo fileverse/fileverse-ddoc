@@ -1,12 +1,9 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { SyncMachineContext, SyncMachinEvent } from '../types';
 import * as awarenessProtocol from 'y-protocols/awareness';
 
-import {
-  fromUint8Array,
-  toUint8Array,
-  isValid as isValidBase64,
-} from 'js-base64';
+import { fromUint8Array, toUint8Array } from 'js-base64';
 import { applyUpdate, encodeStateAsUpdate, mergeUpdates } from 'yjs';
 import { createAwarenessUpdateHandler } from '../utils/createAwarenessUpdateHandler';
 import { SocketClient } from '../socketClient';
@@ -207,7 +204,11 @@ export const addRemoteContentToQueueHandler = (
   event: SyncMachinEvent,
 ) => {
   const remoteContent = event.data.event.data.data;
-  const newList = [...context.contentTobeAppliedQueue, remoteContent];
+  const remoteContentId = event.data.event.data.id;
+  const newList = [
+    ...context.contentTobeAppliedQueue,
+    { data: remoteContent, id: remoteContentId },
+  ];
 
   return {
     contentTobeAppliedQueue: newList,
@@ -217,13 +218,32 @@ export const addRemoteContentToQueueHandler = (
 export const applyContentsFromRemote = (context: SyncMachineContext) => {
   if (context.contentTobeAppliedQueue.length <= 0) return {};
 
-  const contents = context.contentTobeAppliedQueue
-    .map((content) => {
-      if (!isValidBase64(content)) return undefined;
-      return toUint8Array(content);
-    })
-    .filter((content) => content !== undefined);
-  const mergedContents = mergeUpdates(contents);
+  const decryptedContents: Uint8Array[] = [];
+  const queuedUpdateIds: string[] = [];
+
+  for (const item of context.contentTobeAppliedQueue) {
+    try {
+      const decrypted = cryptoUtils.decryptData(
+        context.roomKeyBytes!,
+        item.data,
+      );
+      decryptedContents.push(decrypted);
+      if (item.id) {
+        queuedUpdateIds.push(item.id);
+      }
+    } catch (err) {
+      console.warn(
+        'sync-machine: failed to decrypt queued remote content, skipping',
+        err,
+      );
+    }
+  }
+
+  if (decryptedContents.length === 0) {
+    return { contentTobeAppliedQueue: [] };
+  }
+
+  const mergedContents = mergeUpdates(decryptedContents);
 
   applyUpdate(context.ydoc, mergedContents);
   if (context.onLocalUpdate && typeof context.onLocalUpdate === 'function') {
@@ -232,9 +252,19 @@ export const applyContentsFromRemote = (context: SyncMachineContext) => {
       fromUint8Array(mergedContents),
     );
   }
-  return {
+
+  const result: Record<string, any> = {
     contentTobeAppliedQueue: [],
   };
+
+  if (context.isOwner && queuedUpdateIds.length > 0) {
+    result.uncommittedUpdatesIdList = [
+      ...context.uncommittedUpdatesIdList,
+      ...queuedUpdateIds,
+    ];
+  }
+
+  return result;
 };
 
 export const clearErrorCountHandler = () => {
@@ -249,13 +279,22 @@ export const updateErrorCountHandler = (context: SyncMachineContext) => {
   };
 };
 
+function extractErrorMessage(eventData: any, fallback: string): string {
+  if (eventData?.message) return `${fallback}: ${eventData.message}`;
+  if (typeof eventData === 'string') return `${fallback}: ${eventData}`;
+  return fallback;
+}
+
 export const setCommitMessageErrorHandler = (
   _context: SyncMachineContext,
   event: SyncMachinEvent,
 ) => {
   console.error('commit error message', event.data);
   return {
-    errorMessage: 'Failed to create latest commit',
+    errorMessage: extractErrorMessage(
+      event.data,
+      'Failed to create latest commit',
+    ),
   };
 };
 
@@ -265,7 +304,7 @@ export const setUpdateErrorMessageHandler = (
 ) => {
   console.error('Failed to process update', event.data);
   return {
-    errorMessage: 'Failed to process update',
+    errorMessage: extractErrorMessage(event.data, 'Failed to process update'),
   };
 };
 
@@ -275,7 +314,10 @@ export const setConnectionErrorMessageHandler = (
 ) => {
   console.error('connection error', event.data);
   return {
-    errorMessage: 'Failed to establish websocket connection',
+    errorMessage: extractErrorMessage(
+      event.data,
+      'Failed to establish websocket connection',
+    ),
   };
 };
 
@@ -285,7 +327,10 @@ export const setIpfsQueryErrorMessageHandler = (
 ) => {
   console.error('error from fetching commit on IPFS', event.data);
   return {
-    errorMessage: 'Error fetching commit from IPFS',
+    errorMessage: extractErrorMessage(
+      event.data,
+      'Error fetching commit from IPFS',
+    ),
   };
 };
 
@@ -293,9 +338,12 @@ export const setInitialCommitErrorMessageHandler = (
   _context: SyncMachineContext,
   event: SyncMachinEvent,
 ) => {
-  console.error('error committinng initial content', event.data);
+  console.error('error committing initial content', event.data);
   return {
-    errorMessage: 'Error committing local contents',
+    errorMessage: extractErrorMessage(
+      event.data,
+      'Error committing local contents',
+    ),
   };
 };
 
@@ -305,7 +353,10 @@ export const setInitialUpdateErrorMessageHandler = (
 ) => {
   console.error('error broadcasting initial content', event.data);
   return {
-    errorMessage: 'Error broadcasting initial local contents',
+    errorMessage: extractErrorMessage(
+      event.data,
+      'Error broadcasting initial local contents',
+    ),
   };
 };
 export const disconnectedStateHandler = () => {
@@ -321,11 +372,13 @@ export const disconnectedStateHandler = () => {
 };
 
 export const terminateSessionHandler = (context: SyncMachineContext) => {
-  awarenessProtocol.removeAwarenessStates(
-    context.awareness!,
-    [context.ydoc!.clientID],
-    'session terminated',
-  );
+  if (context.awareness) {
+    awarenessProtocol.removeAwarenessStates(
+      context.awareness,
+      [context.ydoc!.clientID],
+      'session terminated',
+    );
+  }
   if (context.isOwner) {
     context.socketClient?.terminateSession();
   } else {

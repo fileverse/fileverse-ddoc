@@ -9,11 +9,28 @@ export interface IRoomMember {
   role: 'owner' | 'editor';
 }
 
+export enum ServerErrorCode {
+  AUTH_TOKEN_MISSING = 'AUTH_TOKEN_MISSING',
+  AUTH_TOKEN_INVALID = 'AUTH_TOKEN_INVALID',
+  SESSION_NOT_FOUND = 'SESSION_NOT_FOUND',
+  SESSION_TERMINATED = 'SESSION_TERMINATED',
+  SESSION_DID_MISSING = 'SESSION_DID_MISSING',
+  DOCUMENT_ID_MISSING = 'DOCUMENT_ID_MISSING',
+  UPDATE_DATA_MISSING = 'UPDATE_DATA_MISSING',
+  COMMIT_UNAUTHORIZED = 'COMMIT_UNAUTHORIZED',
+  COMMIT_MISSING_DATA = 'COMMIT_MISSING_DATA',
+  INVALID_ADDRESS = 'INVALID_ADDRESS',
+  NOT_AUTHENTICATED = 'NOT_AUTHENTICATED',
+  DB_ERROR = 'DB_ERROR',
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
+}
+
 export interface AckResponse<T = Record<string, any>> {
   status: boolean;
   statusCode: number;
   data?: T;
   error?: string;
+  errorCode?: ServerErrorCode;
 }
 
 export interface SendUpdateResponse
@@ -24,7 +41,7 @@ export interface SendUpdateResponse
     updateType: string;
     commitCid: string | null;
     createdAt: number;
-  }> {}
+  }> { }
 
 export interface CommitResponse
   extends AckResponse<{
@@ -32,7 +49,7 @@ export interface CommitResponse
     createdAt: number;
     documentId: string;
     updates: string[];
-  }> {}
+  }> { }
 
 export interface SyncMachineContext {
   ydoc: Y.Doc;
@@ -43,16 +60,16 @@ export interface SyncMachineContext {
   isConnected: boolean;
   awareness: any;
   _awarenessUpdateHandler:
-    | (({
-        added,
-        updated,
-        removed,
-      }: {
-        added: number[];
-        updated: number[];
-        removed: number[];
-      }) => void)
-    | null;
+  | (({
+    added,
+    updated,
+    removed,
+  }: {
+    added: number[];
+    updated: number[];
+    removed: number[];
+  }) => void)
+  | null;
   onError: ((e: Error) => void) | null;
   roomKey: string;
   roomKeyBytes: Uint8Array | null;
@@ -62,7 +79,7 @@ export interface SyncMachineContext {
   updateQueue: Uint8Array[];
   isReady: boolean;
   isNewDoc: boolean;
-  contentTobeAppliedQueue: string[];
+  contentTobeAppliedQueue: Array<{ data: string; id?: string }>;
   initialUpdate: string | null;
   errorCount: number;
   errorMaxRetryCount: number;

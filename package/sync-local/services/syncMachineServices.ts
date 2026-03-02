@@ -70,6 +70,14 @@ export const syncMachineServices = {
         const response = await socketClient?.sendUpdate({
           update: updateToSend,
         });
+
+        if (!response?.status) {
+          const errorMsg = response?.error || 'Server rejected update';
+          throw new Error(
+            `Failed to send update: ${errorMsg}${response?.statusCode ? ` (${response.statusCode})` : ''}`,
+          );
+        }
+
         const updateId = response?.data?.id;
         return { updateId, queueOffset };
       }
@@ -102,12 +110,22 @@ export const syncMachineServices = {
         };
         const file = objectToFile(commitContent, 'commit');
         const ipfsHash = await context.onCollaborationCommit(file);
+
+        if (!ipfsHash) {
+          throw new Error('Failed to upload commit to IPFS: no hash returned');
+        }
+
         const response = await context?.socketClient?.commitUpdates({
           updates,
           cid: ipfsHash,
         });
 
-        if (!response?.status) return;
+        if (!response?.status) {
+          const errorMsg = response?.error || 'Server rejected commit';
+          throw new Error(
+            `Failed to commit updates: ${errorMsg}${response?.statusCode ? ` (${response.statusCode})` : ''}`,
+          );
+        }
 
         send({ type: 'CLEAR_UNCOMMITED_UPDATES', data: null });
       }
@@ -251,11 +269,24 @@ export const syncMachineServices = {
           return;
         }
         const ipfsHash = await context.onCollaborationCommit(file);
+
+        if (!ipfsHash) {
+          throw new Error('Failed to upload commit to IPFS: no hash returned');
+        }
+
         const updates = context.uncommittedUpdatesIdList;
-        await context?.socketClient?.commitUpdates({
+        const commitResponse = await context?.socketClient?.commitUpdates({
           updates,
           cid: ipfsHash,
         });
+
+        if (!commitResponse?.status) {
+          const errorMsg = commitResponse?.error || 'Server rejected commit';
+          throw new Error(
+            `Failed to commit local contents: ${errorMsg}${commitResponse?.statusCode ? ` (${commitResponse.statusCode})` : ''}`,
+          );
+        }
+
         send({ type: 'CLEAR_UNCOMMITED_UPDATES', data: null });
       }
       if (event.data.unbroadcastedUpdate) {
@@ -266,6 +297,14 @@ export const syncMachineServices = {
         const response = await context.socketClient?.sendUpdate({
           update: encryptedUpdate,
         });
+
+        if (!response?.status) {
+          const errorMsg = response?.error || 'Server rejected update';
+          throw new Error(
+            `Failed to broadcast local contents: ${errorMsg}${response?.statusCode ? ` (${response.statusCode})` : ''}`,
+          );
+        }
+
         const updateId = response?.data?.id;
         return updateId;
       }

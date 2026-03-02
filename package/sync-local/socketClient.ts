@@ -378,7 +378,9 @@ export class SocketClient {
 
     this._webSocketStatus = SocketStatusEnum.CONNECTING;
 
-    return new Promise<void>((resolve) => {
+    return new Promise<void>((resolve, reject) => {
+      let settled = false;
+
       this._socket = io(this._socketUrl, {
         reconnection: true,
         reconnectionAttempts: 5,
@@ -388,7 +390,23 @@ export class SocketClient {
         transports: ['websocket'],
       });
 
+      // Safety net: reject if connection isn't established within 60s
+      const connectionTimeout = setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          this._webSocketStatus = SocketStatusEnum.CLOSED;
+          const error = new Error('Connection timed out after 60s');
+          error.name = 'SocketConnectionTimeoutError';
+          this._onError?.(error);
+          reject(error);
+        }
+      }, 60000);
+
       this._socket.on('connect', () => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(connectionTimeout);
+        }
         this._webSocketStatus = SocketStatusEnum.CONNECTED;
         resolve();
       });
@@ -419,6 +437,13 @@ export class SocketClient {
         this._onSessionTerminated();
       });
 
+      this._socket.on('/server/error' as any, (data: any) => {
+        console.error('SocketAPI: server error event', data);
+        const error = new Error(data?.message || 'Server error');
+        error.name = 'ServerError';
+        this._onError?.(error);
+      });
+
       this._socket.on('disconnect', () => {
         console.error('SocketAPI: socket disconnected');
         this._webSocketStatus = SocketStatusEnum.CLOSED;
@@ -442,6 +467,11 @@ export class SocketClient {
         const error = new Error('Failed to reconnect to Socket');
         error.name = 'SocketConnectionFailedError';
         this._onError?.(error);
+        if (!settled) {
+          settled = true;
+          clearTimeout(connectionTimeout);
+          reject(error);
+        }
       });
 
       this._socket.on('reconnect', () => {
