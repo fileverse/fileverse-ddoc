@@ -2,6 +2,56 @@
 import { Data } from '../../types';
 import { SocketClient } from '../socketClient';
 import * as Y from 'yjs';
+import { Awareness } from 'y-protocols/awareness';
+
+export enum SyncStatus {
+  DISCONNECTED = 'disconnected',
+  CONNECTING = 'connecting',
+  SYNCING = 'syncing',
+  CONNECTED = 'connected',
+  PROCESSING = 'processing',
+  DISCONNECTING = 'disconnecting',
+}
+
+export interface SyncManagerConfig {
+  ydoc: Y.Doc;
+  onError?: (e: Error) => void;
+  onCollaborationConnectCallback?: (response: any) => void;
+  onCollaborationCommit?: (file: File) => Promise<string>;
+  onFetchCommitContent?: (cid: string) => Promise<any>;
+  onSessionTerminated?: () => void;
+  onUnMergedUpdates?: (state: boolean) => void;
+  onLocalUpdate?: (
+    updatedDocContent: Data['editorJSONData'],
+    updateChunk: string,
+  ) => void;
+}
+
+export interface ConnectConfig {
+  username?: string;
+  roomKey: string;
+  roomId: string;
+  isOwner: boolean;
+  ownerEdSecret?: string;
+  contractAddress?: string;
+  ownerAddress?: string;
+  isEns?: boolean;
+  wsUrl: string;
+  roomInfo?: {
+    documentTitle: string;
+    portalAddress: string;
+    commentKey: string;
+  };
+}
+
+export interface SyncManagerSnapshot {
+  status: SyncStatus;
+  isConnected: boolean;
+  isReady: boolean;
+  errorMessage: string;
+  awareness: Awareness | null;
+  initialDocumentDecryptionState: 'done' | 'pending';
+}
 
 export interface IRoomMember {
   userId: string;

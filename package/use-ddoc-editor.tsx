@@ -30,11 +30,10 @@ import { headingToSlug } from './utils/heading-to-slug';
 import { AiAutocomplete } from './extensions/ai-autocomplete/ai-autocomplete';
 import { AIWriter } from './extensions/ai-writer';
 import { DBlock } from './extensions/d-block/dblock';
-import { useSyncMachine } from './sync-local/useSyncMachine';
+import { useSyncManager } from './sync-local/useSyncManager';
 // import { type TableOfContentDataItem } from '@tiptap/extension-table-of-contents';
 import { ToCItemType } from './components/toc/types';
 import { TWITTER_REGEX } from './constants/twitter';
-import { useRtcWebsocketDisconnector } from './hooks/use-rtc-websocket-disconnector';
 import { getResponsiveColor } from './utils/colors';
 // import { SyncCursor } from './extensions/sync-cursor';
 
@@ -95,8 +94,7 @@ export const useDdocEditor = ({
     terminateSession,
     awareness,
     hasCollabContentInitialised,
-    state: syncState,
-  } = useSyncMachine({
+  } = useSyncManager({
     onError: rest.onCollabError,
     ydoc,
     onCollaborationConnectCallback: rest.onCollaborationConnectCallback,
@@ -106,8 +104,6 @@ export const useDdocEditor = ({
     onUnMergedUpdates: rest.onUnMergedUpdates,
     onLocalUpdate: onChange,
   });
-
-  useRtcWebsocketDisconnector(syncState, enableCollaboration);
 
   const isCollaborationEnabled = useMemo(() => {
     return enableCollaboration;
