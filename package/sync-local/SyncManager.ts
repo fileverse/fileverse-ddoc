@@ -29,7 +29,6 @@ export class SyncManager {
   private socketClient: SocketClient | null = null;
   private roomKey = '';
   private roomKeyBytes: Uint8Array | null = null;
-  private roomId = '';
   private isOwner = false;
   private updateQueue: Uint8Array[] = [];
   private uncommittedUpdatesIdList: string[] = [];
@@ -120,7 +119,6 @@ export class SyncManager {
 
     this.roomKey = config.roomKey;
     this.roomKeyBytes = toUint8Array(config.roomKey);
-    this.roomId = config.roomId;
     this.isOwner = config.isOwner;
 
     const initialUpdate = fromUint8Array(Y.encodeStateAsUpdate(this.ydoc));
@@ -128,11 +126,13 @@ export class SyncManager {
     this.socketClient = new SocketClient({
       wsUrl: config.wsUrl,
       roomKey: config.roomKey,
+      roomId: config.roomId,
       ownerEdSecret: config.ownerEdSecret,
       contractAddress: config.contractAddress,
       ownerAddress: config.ownerAddress,
       onCollaborationConnectCallback:
         this.onCollaborationConnectCallback || (() => {}),
+      onError: this.onError,
       roomInfo: config.roomInfo,
     });
 
@@ -144,6 +144,11 @@ export class SyncManager {
       this.setStatus(SyncStatus.SYNCING);
       await this.syncLatestCommit(initialUpdate);
 
+      // Verify socket is still alive after sync
+      if (!this.socketClient?.isConnected) {
+        throw new Error('Socket disconnected during sync');
+      }
+
       // Apply any queued remote contents received during sync
       this.applyQueuedRemoteContents();
 
@@ -152,7 +157,9 @@ export class SyncManager {
 
       // If there are queued local updates, process them
       if (this.updateQueue.length > 0) {
-        this.processUpdateQueue();
+        this.processUpdateQueue().catch((err) => {
+          console.error('SyncManager: processUpdateQueue failed', err);
+        });
       }
     } catch (err) {
       console.error('SyncManager: connect failed', err);
@@ -247,8 +254,7 @@ export class SyncManager {
 
       let settled = false;
 
-      this.socketClient.init({
-        roomId: this.roomId,
+      this.socketClient.connectSocket({
         onConnect: () => {
           if (!settled) {
             settled = true;
@@ -294,7 +300,7 @@ export class SyncManager {
           }
           this.disconnect();
         },
-      });
+      })?.catch(() => { /* handled via callbacks */ });
     });
   }
 
@@ -495,6 +501,11 @@ export class SyncManager {
         }
       }
 
+      // Commit remote-only accumulated updates
+      if (this._isConnected && this.isOwner && this.uncommittedUpdatesIdList.length >= 10) {
+        await this.processCommit();
+      }
+
       // Back to connected if still connected
       if (this._isConnected) {
         this.errorCount = 0;
@@ -627,7 +638,7 @@ export class SyncManager {
     createdAt: number;
     roomId: string;
   }): void {
-    if (this._status === SyncStatus.SYNCING) {
+    if (this._status === SyncStatus.SYNCING || this._status === SyncStatus.CONNECTING) {
       // Queue for later application
       this.contentTobeAppliedQueue.push({
         data: payload.data,
@@ -641,7 +652,9 @@ export class SyncManager {
     if (this.isOwner && !this.isProcessing && this._isReady) {
       // Check if we need to commit
       if (this.uncommittedUpdatesIdList.length >= 10) {
-        this.processUpdateQueue();
+        this.processUpdateQueue().catch((err) => {
+          console.error('SyncManager: processUpdateQueue failed', err);
+        });
       }
     }
   }
@@ -796,7 +809,6 @@ export class SyncManager {
     this._initialDocumentDecryptionState = 'pending';
     this.roomKey = '';
     this.roomKeyBytes = null;
-    this.roomId = '';
     this.isOwner = false;
   }
 }

@@ -19,10 +19,12 @@ import { Awareness, applyAwarenessUpdate } from 'y-protocols/awareness.js';
 interface ISocketClientConfig {
   wsUrl: string;
   roomKey: string;
+  roomId: string;
   ownerEdSecret?: string;
   contractAddress?: string;
   ownerAddress?: string;
   onCollaborationConnectCallback: (response: any) => void;
+  onError?: (e: Error) => void;
   roomInfo?: {
     documentTitle: string;
     portalAddress: string;
@@ -71,6 +73,8 @@ export class SocketClient {
     );
 
     this.roomKey = config.roomKey;
+    this.roomId = config.roomId;
+    this._onError = config.onError || null;
 
     this.collaborationKeyPair = ucans.EdKeypair.fromSecretKey(
       fromUint8Array(ucanSecret),
@@ -376,7 +380,7 @@ export class SocketClient {
       this._webSocketStatus === SocketStatusEnum.CONNECTED ||
       this._webSocketStatus === SocketStatusEnum.CONNECTING
     ) {
-      return;
+      return Promise.resolve();
     }
 
     this._webSocketStatus = SocketStatusEnum.CONNECTING;
@@ -481,13 +485,6 @@ export class SocketClient {
         this._webSocketStatus = SocketStatusEnum.CONNECTED;
       });
     });
-  }
-
-  public async init(config: ISocketInitConfig) {
-    this._onError = config.onError;
-    this.roomId = config.roomId;
-
-    await this.connectSocket(config);
   }
 
   private _onSessionTerminated = () => {

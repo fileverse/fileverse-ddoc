@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Data } from '../../types';
-import { SocketClient } from '../socketClient';
 import * as Y from 'yjs';
 import { Awareness } from 'y-protocols/awareness';
 
@@ -53,12 +52,6 @@ export interface SyncManagerSnapshot {
   initialDocumentDecryptionState: 'done' | 'pending';
 }
 
-export interface IRoomMember {
-  userId: string;
-  username: string;
-  role: 'owner' | 'editor';
-}
-
 export enum ServerErrorCode {
   AUTH_TOKEN_MISSING = 'AUTH_TOKEN_MISSING',
   AUTH_TOKEN_INVALID = 'AUTH_TOKEN_INVALID',
@@ -101,53 +94,6 @@ export interface CommitResponse
     updates: string[];
   }> { }
 
-export interface SyncMachineContext {
-  ydoc: Y.Doc;
-  socketClient: SocketClient | null;
-  roomId: string;
-  username: string;
-  roomMembers: IRoomMember[];
-  isConnected: boolean;
-  awareness: any;
-  _awarenessUpdateHandler:
-  | (({
-    added,
-    updated,
-    removed,
-  }: {
-    added: number[];
-    updated: number[];
-    removed: number[];
-  }) => void)
-  | null;
-  onError: ((e: Error) => void) | null;
-  roomKey: string;
-  roomKeyBytes: Uint8Array | null;
-  wsUrl: string;
-  uncommittedUpdatesIdList: string[];
-  isOwner: boolean;
-  updateQueue: Uint8Array[];
-  isReady: boolean;
-  isNewDoc: boolean;
-  contentTobeAppliedQueue: Array<{ data: string; id?: string }>;
-  initialUpdate: string | null;
-  errorCount: number;
-  errorMaxRetryCount: number;
-  errorMessage: string;
-  initialDocumentDecryptionState: 'done' | 'pending';
-  onCollaborationConnectCallback: (response: any) => void;
-  onCollaborationCommit: (file: File) => Promise<string>;
-  onFetchCommitContent: (cid: string) => Promise<any>;
-  onSessionTerminated: () => void;
-  onUnMergedUpdates: (state: boolean) => void;
-  onLocalUpdate?: (
-    updatedDocContent: Data['editorJSONData'],
-    updateChunk: string,
-  ) => void;
-}
-
-export type Update = Uint8Array;
-
 export interface ISocketInitConfig {
   onConnect: () => void;
   onDisconnect: () => void;
@@ -165,7 +111,6 @@ export interface ISocketInitConfig {
     roomId: string;
   }) => void;
   onSessionTerminated: (data: { roomId: string }) => void;
-  roomId: string;
 }
 
 export enum SocketStatusEnum {
@@ -180,21 +125,6 @@ export interface RoomMember {
   username: string;
   userId: string;
   role: 'owner' | 'editor';
-}
-
-export type IAesKey = string;
-
-export type SyncMachinEvent = {
-  type: string;
-  data: any;
-};
-export interface IpfsUploadResponse {
-  ipfsUrl: string;
-  ipfsHash: string;
-  ipfsStorage: string;
-  cachedUrl: string;
-  fileSize: number;
-  mimetype: string;
 }
 
 export interface IAuthArgs {
