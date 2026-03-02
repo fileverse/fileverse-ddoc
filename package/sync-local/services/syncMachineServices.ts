@@ -20,7 +20,7 @@ export const syncMachineServices = {
         onConnect: () => {
           send({ type: 'SYNC_LATEST_COMMIT', data: null });
         },
-        onDisconnect: () => send({ type: 'DISCONNECTED', data: null }),
+        onDisconnect: () => send({ type: 'DISCONNECT', data: null }),
         onHandShakeError: (e) => {
           send({ type: 'DISCONNECT', data: { error: 'Network error' } });
           onError?.(e);
@@ -238,8 +238,15 @@ export const syncMachineServices = {
         const response = await context.socketClient?.sendUpdate({
           update: updateToSend,
         });
-        const updateId = response?.data?.id;
-        return !!updateId;
+
+        if (!response?.status) {
+          const errorMsg = response?.error || 'Server rejected update';
+          throw new Error(
+            `Failed to broadcast local contents: ${errorMsg}${response?.statusCode ? ` (${response.statusCode})` : ''}`,
+          );
+        }
+
+        return !!response?.data?.id;
       } else {
         return true;
       }

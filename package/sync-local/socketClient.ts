@@ -211,16 +211,19 @@ export class SocketClient {
   };
 
   public terminateSession = async () => {
-    const ownerToken = await this.getOwnerToken();
-    const args = {
-      documentId: this.roomId,
-      ownerToken,
-      ownerAddress: this.ownerAddress,
-      contractAddress: this.contractAddress,
-      sessionDid: this.collaborationKeyPair?.did(),
-    };
-    await this._emitWithAck('/documents/terminate', args);
-    this.disconnect();
+    try {
+      const ownerToken = await this.getOwnerToken();
+      const args = {
+        documentId: this.roomId,
+        ownerToken,
+        ownerAddress: this.ownerAddress,
+        contractAddress: this.contractAddress,
+        sessionDid: this.collaborationKeyPair?.did(),
+      };
+      await this._emitWithAck('/documents/terminate', args);
+    } finally {
+      this.disconnect();
+    }
   };
 
   private getCollaborationKeyPair() {

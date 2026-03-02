@@ -10,15 +10,20 @@ import { SocketClient } from '../socketClient';
 import { crypto as cryptoUtils } from '../crypto';
 
 export const initAwarenessHandler = (context: SyncMachineContext) => {
-  const awareness = new awarenessProtocol.Awareness(context.ydoc);
-  const handler = createAwarenessUpdateHandler(
-    awareness,
-    context.socketClient!,
-    context.roomKey,
-  );
-  awareness.on('update', handler);
-  context.socketClient?.registerAwareness(awareness);
-  return { awareness, _awarenessUpdateHandler: handler };
+  try {
+    const awareness = new awarenessProtocol.Awareness(context.ydoc);
+    const handler = createAwarenessUpdateHandler(
+      awareness,
+      context.socketClient!,
+      context.roomKey,
+    );
+    awareness.on('update', handler);
+    context.socketClient?.registerAwareness(awareness);
+    return { awareness, _awarenessUpdateHandler: handler };
+  } catch (err) {
+    console.error('sync-machine: failed to initialize awareness', err);
+    return { awareness: null, _awarenessUpdateHandler: null };
+  }
 };
 
 export const updateConnectionStateHandler = (context: SyncMachineContext) => {
@@ -84,12 +89,21 @@ export const yjsUpdateHandler = (
     console.warn('sync-machine: failed to decrypt update, skipping', err);
     return {};
   }
-  applyUpdate(context.ydoc, update, 'self');
-  if (context.onLocalUpdate && typeof context.onLocalUpdate === 'function') {
-    context.onLocalUpdate(
-      fromUint8Array(encodeStateAsUpdate(context.ydoc)),
-      fromUint8Array(update),
-    );
+  try {
+    applyUpdate(context.ydoc, update, 'self');
+  } catch (err) {
+    console.error('sync-machine: failed to apply remote Yjs update, skipping', err);
+    return {};
+  }
+  try {
+    if (context.onLocalUpdate && typeof context.onLocalUpdate === 'function') {
+      context.onLocalUpdate(
+        fromUint8Array(encodeStateAsUpdate(context.ydoc)),
+        fromUint8Array(update),
+      );
+    }
+  } catch (err) {
+    console.error('sync-machine: onLocalUpdate callback threw', err);
   }
 
   if (context.isOwner) {
@@ -245,12 +259,21 @@ export const applyContentsFromRemote = (context: SyncMachineContext) => {
 
   const mergedContents = mergeUpdates(decryptedContents);
 
-  applyUpdate(context.ydoc, mergedContents);
-  if (context.onLocalUpdate && typeof context.onLocalUpdate === 'function') {
-    context.onLocalUpdate(
-      fromUint8Array(encodeStateAsUpdate(context.ydoc)),
-      fromUint8Array(mergedContents),
-    );
+  try {
+    applyUpdate(context.ydoc, mergedContents);
+  } catch (err) {
+    console.error('sync-machine: failed to apply queued remote contents, skipping', err);
+    return { contentTobeAppliedQueue: [] };
+  }
+  try {
+    if (context.onLocalUpdate && typeof context.onLocalUpdate === 'function') {
+      context.onLocalUpdate(
+        fromUint8Array(encodeStateAsUpdate(context.ydoc)),
+        fromUint8Array(mergedContents),
+      );
+    }
+  } catch (err) {
+    console.error('sync-machine: onLocalUpdate callback threw', err);
   }
 
   const result: Record<string, any> = {
@@ -380,8 +403,13 @@ export const terminateSessionHandler = (context: SyncMachineContext) => {
     );
   }
   if (context.isOwner) {
-    context.socketClient?.terminateSession();
+    // Fire server notification as best-effort, then disconnect
+    // terminateSession() already calls this.disconnect() via try/finally
+    context.socketClient?.terminateSession().catch((err) => {
+      console.error('sync-machine: failed to notify server of session termination', err);
+    });
   } else {
+    context.socketClient?.disconnect();
     context.onSessionTerminated?.();
   }
 

@@ -17,6 +17,9 @@ const syncMachine = createMachine(
     initial: 'disconnected',
     context: initialContext,
     on: {
+      DISCONNECT: {
+        target: 'disconnecting',
+      },
       SEND_UPDATE: [
         {
           target: 'processing',
