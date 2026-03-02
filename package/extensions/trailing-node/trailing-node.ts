@@ -52,12 +52,27 @@ export const TrailingNode = Extension.create<TrailingNodeOptions>({
           const endPosition = doc.content.size;
           const type = schema.nodes[this.options.node];
 
-          // Add node attributes
+          // Find the last paragraph in the last dBlock, traversing into
+          // callouts, blockquotes, tables, etc.
+          const lastChild = doc.lastChild;
+          let fontFamily: string | null = null;
+          let fontSize: string | null = null;
+          if (lastChild?.type.name === 'dBlock') {
+            // Walk the last dBlock's descendants to find the last paragraph
+            lastChild.descendants((node) => {
+              if (node.type.name === 'paragraph') {
+                fontFamily = node.attrs.fontFamily || null;
+                fontSize = node.attrs.fontSize || null;
+              }
+            });
+          }
+
           const nodeAttrs = {
             class: 'trailing-node',
+            fontFamily,
+            fontSize,
           };
 
-          // Create a single paragraph node with styled text content and node attributes
           const styledNode = type.create(nodeAttrs);
 
           // Insert only this one node
