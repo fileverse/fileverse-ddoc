@@ -36,15 +36,14 @@ export class SyncManager {
   private isProcessing = false;
   private errorCount = 0;
   private _awarenessUpdateHandler:
-    | (({
-        added,
-        updated,
-        removed,
-      }: {
-        added: number[];
-        updated: number[];
-        removed: number[];
-      }) => void)
+    | ((
+        changes: {
+          added: number[];
+          updated: number[];
+          removed: number[];
+        },
+        origin: any,
+      ) => void)
     | null = null;
 
   // --- Config (from constructor) ---
@@ -234,6 +233,9 @@ export class SyncManager {
   forceCleanup(): void {
     if (this._awareness && this._awarenessUpdateHandler) {
       this._awareness.off('update', this._awarenessUpdateHandler);
+    }
+    if (this._awareness) {
+      this._awareness.destroy();
     }
     // Always tear down socket — even if already CLOSED —
     // to prevent socket.io auto-reconnection
@@ -789,6 +791,9 @@ export class SyncManager {
 
     if (this._awareness && this._awarenessUpdateHandler) {
       this._awareness.off('update', this._awarenessUpdateHandler);
+    }
+    if (this._awareness) {
+      this._awareness.destroy();
     }
 
     this.reset();

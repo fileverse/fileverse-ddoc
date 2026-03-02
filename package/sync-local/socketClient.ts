@@ -14,7 +14,12 @@ import {
 import { generateKeyPairFromSeed } from '@stablelib/ed25519';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { crypto } from './crypto';
-import { Awareness, applyAwarenessUpdate } from 'y-protocols/awareness.js';
+import {
+  Awareness,
+  applyAwarenessUpdate,
+  removeAwarenessStates,
+  encodeAwarenessUpdate,
+} from 'y-protocols/awareness.js';
 
 interface ISocketClientConfig {
   wsUrl: string;
@@ -365,7 +370,7 @@ export class SocketClient {
           toUint8Array(key),
           encryptedPosition,
         );
-        applyAwarenessUpdate(this.awareness, new Uint8Array(decrypted), null);
+        applyAwarenessUpdate(this.awareness, new Uint8Array(decrypted), 'remote');
       } catch (err) {
         console.warn(
           'sync-machine: failed to decrypt awareness update, skipping',
@@ -394,7 +399,7 @@ export class SocketClient {
         reconnectionDelay: 1500,
         reconnectionDelayMax: 10000,
         timeout: 6000,
-        transports: ['websocket'],
+        transports: ['websocket', 'polling'],
       });
 
       // Safety net: reject if connection isn't established within 60s
@@ -454,6 +459,18 @@ export class SocketClient {
       this._socket.on('disconnect', () => {
         console.error('SocketAPI: socket disconnected');
         this._webSocketStatus = SocketStatusEnum.CLOSED;
+
+        // Clean up remote awareness states (prevents ghost cursors)
+        if (this.awareness) {
+          const states = this.awareness.getStates();
+          const remoteClients = Array.from(states.keys()).filter(
+            (clientId) => clientId !== this.awareness!.clientID,
+          );
+          if (remoteClients.length > 0) {
+            removeAwarenessStates(this.awareness, remoteClients, 'socket disconnect');
+          }
+        }
+
         config.onDisconnect();
       });
 
@@ -483,6 +500,19 @@ export class SocketClient {
 
       this._socket.on('reconnect', () => {
         this._webSocketStatus = SocketStatusEnum.CONNECTED;
+
+        // Re-broadcast local awareness state so other clients see our cursor
+        if (this.awareness) {
+          const localState = this.awareness.getLocalState();
+          if (localState) {
+            const update = encodeAwarenessUpdate(this.awareness, [this.awareness.clientID]);
+            const key = this.roomKey;
+            if (key) {
+              const encryptedUpdate = crypto.encryptData(toUint8Array(key), update);
+              this.broadcastAwareness(encryptedUpdate);
+            }
+          }
+        }
       });
     });
   }
