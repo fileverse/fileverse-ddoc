@@ -235,9 +235,9 @@ export class SyncManager {
     if (this._awareness && this._awarenessUpdateHandler) {
       this._awareness.off('update', this._awarenessUpdateHandler);
     }
-    if (this.socketClient?.isConnected) {
-      this.socketClient.disconnect();
-    }
+    // Always tear down socket — even if already CLOSED —
+    // to prevent socket.io auto-reconnection
+    this.socketClient?.disconnect();
     this.reset();
     this._status = SyncStatus.DISCONNECTED;
     this.cachedSnapshot = null;
@@ -783,9 +783,10 @@ export class SyncManager {
   private async disconnectInternal(): Promise<void> {
     this.setStatus(SyncStatus.DISCONNECTING);
 
-    if (this.socketClient?.isConnected) {
-      this.socketClient.disconnect();
-    }
+    // Always tear down socket — even if already CLOSED —
+    // to prevent socket.io auto-reconnection
+    this.socketClient?.disconnect();
+
     if (this._awareness && this._awarenessUpdateHandler) {
       this._awareness.off('update', this._awarenessUpdateHandler);
     }

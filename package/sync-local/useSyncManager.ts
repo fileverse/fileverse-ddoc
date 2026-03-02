@@ -115,7 +115,9 @@ export const useSyncManager = (config: SyncManagerConfig) => {
 
   const connect = useCallback(
     (connectConfig: ConnectConfig) => {
-      manager.connect(connectConfig);
+      manager.connect(connectConfig).catch((err) => {
+        console.error('useSyncManager: connect failed', err);
+      });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [config.ydoc],

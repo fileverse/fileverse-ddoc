@@ -32,11 +32,11 @@ import { AIWriter } from '../extensions/ai-writer';
 import { DBlock } from '../extensions/d-block/dblock';
 import { ToCItemType } from '../components/toc/types';
 import { TWITTER_REGEX } from '../constants/twitter';
-import { IConnectConf } from '../sync-local/useSyncMachine';
 import { headingToSlug } from '../utils/heading-to-slug';
 import { useResponsive } from '../utils/responsive';
 import { yCursorPlugin, yCursorPluginKey } from '@tiptap/y-tiptap';
 import { getResponsiveColor } from '../utils/colors';
+import { ConnectConfig } from '../sync-local/types';
 
 const usercolors = [
   '#30bced',
@@ -82,7 +82,7 @@ interface UseTabEditorArgs {
   onInvalidContentError?: DdocProps['onInvalidContentError'];
   ignoreCorruptedData?: boolean;
   onCollaboratorChange?: DdocProps['onCollaboratorChange'];
-  onConnect: (connectConfig: IConnectConf) => void;
+  onConnect: (connectConfig: ConnectConfig) => void;
   hasCollabContentInitialised?: boolean;
   initialiseYjsIndexedDbProvider: () => Promise<void>;
   externalExtensions?: Record<string, AnyExtension>;
