@@ -18,8 +18,9 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { EditorProvider } from './context/editor-context';
 import { fadeInTransition, slideUpTransition } from './components/motion-div';
 import { PreviewContentLoader } from './components/preview-content-loader';
+import { DocumentOutline } from './components/toc/document-outline';
 
-const PreviewDdocEditor = forwardRef(
+const PreviewDdocEditorContent = forwardRef(
   (
     {
       isPreviewMode = false,
@@ -46,6 +47,10 @@ const PreviewDdocEditor = forwardRef(
       fetchV1ImageFn,
       contentClassName,
       isLoading,
+      versionHistoryState,
+      showTOC,
+      setShowTOC,
+      tabSectionContainer,
     }: DdocProps & { contentClassName?: string; isLoading?: boolean },
     ref,
   ) => {
@@ -72,11 +77,13 @@ const PreviewDdocEditor = forwardRef(
       ref: editorRef,
       isContentLoading,
       ydoc,
+      ...rest
     } = useDdocEditor({
       ipfsImageFetchFn,
       fetchV1ImageFn,
       isPreviewMode,
       initialContent,
+      versionHistoryState,
       enableCollaboration,
       collaborationId,
       walletAddress,
@@ -150,89 +157,135 @@ const PreviewDdocEditor = forwardRef(
 
     const isMobile = useMediaQuery('(max-width: 768px)');
 
-    return !editor || isContentLoading || isLoading
-      ? fadeInTransition(
-          <div className={cn(`${!isMobile ? 'mx-20' : 'mx-10 mt-10'}`)}>
-            <Skeleton
-              className={`${isPreviewMode ? 'w-full' : isMobile ? 'w-full' : 'w-[400px]'}  h-[32px] rounded-sm mb-4`}
-            />
-            {isPreviewMode && <PreviewContentLoader />}
-          </div>,
-          'content-transition',
-        )
-      : slideUpTransition(
-          <EditorProvider>
-            <div ref={editorRef} className={cn('overflow-x-hidden', className)}>
-              <EditingProvider
-                isPreviewMode={isPreviewMode}
-                isPreviewEditor={true}
-              >
-                {tags && tags.length > 0 && (
-                  <div
-                    ref={tagsContainerRef}
-                    className="flex flex-wrap px-4 md:px-[80px] lg:!px-[124px] items-center gap-1 mb-4 mt-4 lg:!mt-0"
-                  >
-                    {visibleTags.map((tag, index) => (
-                      <Tag
-                        key={index}
-                        style={{ backgroundColor: tag?.color }}
-                        onRemove={() => handleRemoveTag(tag?.name)}
-                        isRemovable={!isPreviewMode}
-                        className="!h-6 rounded"
-                      >
-                        {tag?.name}
-                      </Tag>
-                    ))}
-                    {hiddenTagsCount > 0 && !isHiddenTagsVisible && (
-                      <Button
-                        variant="ghost"
-                        className="!h-6 rounded min-w-fit !px-2 color-bg-secondary text-helper-text-sm"
-                        onClick={() => setIsHiddenTagsVisible(true)}
-                      >
-                        +{hiddenTagsCount}
-                      </Button>
-                    )}
-                    <AnimatePresence>
-                      {isHiddenTagsVisible && (
-                        <motion.div
-                          initial={{ opacity: 0, height: 0 }}
-                          animate={{ opacity: 1, height: 'auto' }}
-                          exit={{ opacity: 0, height: 0 }}
-                          transition={{ duration: 0.3 }}
-                          className="flex flex-wrap items-center gap-1"
-                        >
-                          {selectedTags?.slice(4).map((tag, index) => (
-                            <Tag
-                              key={index + 4}
-                              style={{ backgroundColor: tag?.color }}
-                              onRemove={() => handleRemoveTag(tag?.name)}
-                              isRemovable={!isPreviewMode}
-                              className="!h-6 rounded"
-                            >
-                              {tag?.name}
-                            </Tag>
-                          ))}
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                    <TagInput
-                      tags={tags || []}
-                      selectedTags={selectedTags as TagType[]}
-                      onAddTag={handleAddTag}
-                      isPreviewMode={isPreviewMode}
-                    />
-                  </div>
-                )}
-                <EditorContent
-                  editor={editor}
-                  id="editor"
-                  className={cn('w-full h-auto py-8', contentClassName)}
+    return (
+      <>
+        {editor && rest.tabs.length > 0 && (
+          <DocumentOutline
+            editor={editor}
+            hasToC={true}
+            items={rest.tocItems}
+            setItems={rest.setTocItems}
+            showTOC={showTOC}
+            setShowTOC={setShowTOC}
+            isPreviewMode={isPreviewMode}
+            tabs={rest.tabs}
+            setTabs={rest.setTabs}
+            activeTabId={rest.activeTabId}
+            setActiveTabId={rest.setActiveTabId}
+            createTab={rest.createTab}
+            renameTab={rest.renameTab}
+            duplicateTab={rest.duplicateTab}
+            orderTab={rest.orderTab}
+            ydoc={ydoc}
+            tabCommentCounts={{}}
+            tabSectionContainer={tabSectionContainer}
+            isVersionHistoryMode={versionHistoryState?.enabled}
+          />
+        )}
+
+        {!editor || isContentLoading || isLoading
+          ? fadeInTransition(
+              <div className={cn(`${!isMobile ? 'mx-20' : 'mx-10 mt-10'}`)}>
+                <Skeleton
+                  className={`${isPreviewMode ? 'w-full' : isMobile ? 'w-full' : 'w-[400px]'}  h-[32px] rounded-sm mb-4`}
                 />
-              </EditingProvider>
-            </div>
-          </EditorProvider>,
-          'editor-transition',
-        );
+                {isPreviewMode && <PreviewContentLoader />}
+              </div>,
+              'content-transition',
+            )
+          : slideUpTransition(
+              <EditorProvider>
+                <div
+                  ref={editorRef}
+                  className={cn('overflow-x-hidden', className)}
+                >
+                  <EditingProvider
+                    isPreviewMode={isPreviewMode}
+                    isPreviewEditor={true}
+                  >
+                    {tags && tags.length > 0 && (
+                      <div
+                        ref={tagsContainerRef}
+                        className="flex flex-wrap px-4 md:px-[80px] lg:!px-[124px] items-center gap-1 mb-4 mt-4 lg:!mt-0"
+                      >
+                        {visibleTags.map((tag, index) => (
+                          <Tag
+                            key={index}
+                            style={{ backgroundColor: tag?.color }}
+                            onRemove={() => handleRemoveTag(tag?.name)}
+                            isRemovable={!isPreviewMode}
+                            className="!h-6 rounded"
+                          >
+                            {tag?.name}
+                          </Tag>
+                        ))}
+                        {hiddenTagsCount > 0 && !isHiddenTagsVisible && (
+                          <Button
+                            variant="ghost"
+                            className="!h-6 rounded min-w-fit !px-2 color-bg-secondary text-helper-text-sm"
+                            onClick={() => setIsHiddenTagsVisible(true)}
+                          >
+                            +{hiddenTagsCount}
+                          </Button>
+                        )}
+                        <AnimatePresence>
+                          {isHiddenTagsVisible && (
+                            <motion.div
+                              initial={{ opacity: 0, height: 0 }}
+                              animate={{ opacity: 1, height: 'auto' }}
+                              exit={{ opacity: 0, height: 0 }}
+                              transition={{ duration: 0.3 }}
+                              className="flex flex-wrap items-center gap-1"
+                            >
+                              {selectedTags?.slice(4).map((tag, index) => (
+                                <Tag
+                                  key={index + 4}
+                                  style={{ backgroundColor: tag?.color }}
+                                  onRemove={() => handleRemoveTag(tag?.name)}
+                                  isRemovable={!isPreviewMode}
+                                  className="!h-6 rounded"
+                                >
+                                  {tag?.name}
+                                </Tag>
+                              ))}
+                            </motion.div>
+                          )}
+                        </AnimatePresence>
+                        <TagInput
+                          tags={tags || []}
+                          selectedTags={selectedTags as TagType[]}
+                          onAddTag={handleAddTag}
+                          isPreviewMode={isPreviewMode}
+                        />
+                      </div>
+                    )}
+                    <EditorContent
+                      editor={editor}
+                      id="editor"
+                      className={cn('w-full h-auto py-8', contentClassName)}
+                    />
+                  </EditingProvider>
+                </div>
+              </EditorProvider>,
+              'editor-transition',
+            )}
+      </>
+    );
+  },
+);
+
+const PreviewDdocEditor = forwardRef(
+  (
+    props: DdocProps & { contentClassName?: string; isLoading?: boolean },
+    ref,
+  ) => {
+    const isVersionMode = Boolean(props.versionHistoryState?.enabled);
+    const versionId = props.versionHistoryState?.versionId || 'default';
+    const editorSessionKey = isVersionMode ? versionId : 'default';
+
+    return (
+      <PreviewDdocEditorContent key={editorSessionKey} {...props} ref={ref} />
+    );
   },
 );
 

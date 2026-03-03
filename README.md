@@ -32,15 +32,19 @@ import '@fileverse-dev/ddoc/styles'; // in App.jsx/App.tsx
 This package requires the following peer dependencies to be installed in your project:
 
 ```bash
-npm install @fileverse/ui @fileverse/crypto viem framer-motion
+npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities @fileverse/ui @fileverse/crypto viem framer-motion frimousse
 ```
 
 | Package | Version |
 | --- | --- |
+| `@dnd-kit/core` | `>=6.3.1` |
+| `@dnd-kit/sortable` | `>=10.0.0` |
+| `@dnd-kit/utilities` | `>=3.2.2` |
 | `@fileverse/ui` | `>=5.0.0` |
 | `@fileverse/crypto` | `>=0.0.21` |
 | `viem` | `>=2.13.8` |
 | `framer-motion` | `>=11.2.10` |
+| `frimousse` | `>=0.3.0` |
 
 These are externalized from the bundle to avoid duplication when your app already uses them. If you don't have them installed, npm (v7+) will auto-install them for you.
 

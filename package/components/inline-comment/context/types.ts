@@ -60,6 +60,7 @@ export interface CommentContextType extends CommentAccountProps {
   isCommentActive: boolean;
   isCommentResolved: boolean;
   ensResolutionUrl: string;
+  activeTabId: string;
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
   onComment?: () => void;
   setCommentDrawerOpen?: React.Dispatch<React.SetStateAction<boolean>>;
@@ -104,6 +105,7 @@ export interface CommentProviderProps extends CommentAccountProps {
   setUsername?: React.Dispatch<SetStateAction<string>>;
   activeCommentId: string | null;
   setActiveCommentId: React.Dispatch<React.SetStateAction<string | null>>;
+  activeTabId: string;
   focusCommentWithActiveId: (id: string) => void;
   ensResolutionUrl: string;
   onInlineComment?: () => void;
