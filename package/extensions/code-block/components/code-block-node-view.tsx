@@ -66,7 +66,7 @@ export default function CodeBlockNodeView({
   const shouldFocus = node.attrs.shouldFocus;
   const { isMobile } = useResponsive();
 
-  const code = node.attrs.code || node.textContent || '';
+  const code = node.textContent || node.attrs.code || '';
 
   const codeLines = useMemo(() => {
     const lines = code.split('\n');
