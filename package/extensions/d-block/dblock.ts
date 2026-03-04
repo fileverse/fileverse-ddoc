@@ -281,8 +281,10 @@ export const DBlock = Node.create<DBlockOptions>({
 
             // If it's the last item, exit the list and create a text block
             if (isLastItem) {
-              const fontFamily = attrs?.fontFamily || currentNode?.attrs?.fontFamily || null;
-              const fontSize = attrs?.fontSize || currentNode?.attrs?.fontSize || null;
+              const fontFamily =
+                attrs?.fontFamily || currentNode?.attrs?.fontFamily || null;
+              const fontSize =
+                attrs?.fontSize || currentNode?.attrs?.fontSize || null;
               return editor
                 .chain()
                 .deleteRange({ from: currentItemStart, to: currentItemEnd })
@@ -305,8 +307,10 @@ export const DBlock = Node.create<DBlockOptions>({
           // Handle empty items in nested lists: lift and preserve font attrs
           if (isCurrentItemEmpty && !isTopLevelList) {
             const itemType = parent.type.name as 'listItem' | 'taskItem';
-            const fontFamily = attrs?.fontFamily || currentNode?.attrs?.fontFamily || null;
-            const fontSize = attrs?.fontSize || currentNode?.attrs?.fontSize || null;
+            const fontFamily =
+              attrs?.fontFamily || currentNode?.attrs?.fontFamily || null;
+            const fontSize =
+              attrs?.fontSize || currentNode?.attrs?.fontSize || null;
             const result = editor.commands.liftListItem(itemType);
             if (result && (fontFamily || fontSize)) {
               editor.commands.setMark('textStyle', {
@@ -376,8 +380,10 @@ export const DBlock = Node.create<DBlockOptions>({
               ['columns', 'heading'].includes(currentActiveNodeType) &&
               isAtEndOfTheNode
             ) {
-              const fontFamily = attrs?.fontFamily || currentNode?.attrs?.fontFamily || null;
-              const fontSize = attrs?.fontSize || currentNode?.attrs?.fontSize || null;
+              const fontFamily =
+                attrs?.fontFamily || currentNode?.attrs?.fontFamily || null;
+              const fontSize =
+                attrs?.fontSize || currentNode?.attrs?.fontSize || null;
               return editor
                 .chain()
                 .insertContent({
@@ -420,8 +426,10 @@ export const DBlock = Node.create<DBlockOptions>({
             // Read font attrs from textStyle marks first, then fall back to
             // paragraph node attrs (reliable when cursor is at start of text
             // and storedMarks are absent)
-            const fontFamily = attrs?.fontFamily || currentNode?.attrs?.fontFamily || null;
-            const fontSize = attrs?.fontSize || currentNode?.attrs?.fontSize || null;
+            const fontFamily =
+              attrs?.fontFamily || currentNode?.attrs?.fontFamily || null;
+            const fontSize =
+              attrs?.fontSize || currentNode?.attrs?.fontSize || null;
 
             const finalContent =
               content && content.length > 0

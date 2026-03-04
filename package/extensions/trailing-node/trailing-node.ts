@@ -43,40 +43,105 @@ export const TrailingNode = Extension.create<TrailingNodeOptions>({
     return [
       new Plugin({
         key: plugin,
-        appendTransaction: (_, __, state) => {
+        appendTransaction: (transactions, __, state) => {
           const { doc, tr, schema } = state;
 
           const shouldInsertNodeAtEnd = plugin.getState(state);
-          if (!shouldInsertNodeAtEnd) return;
 
-          const endPosition = doc.content.size;
-          const type = schema.nodes[this.options.node];
+          // Path 1: trailing node doesn't exist yet — insert it with inherited font attrs
+          if (shouldInsertNodeAtEnd) {
+            const endPosition = doc.content.size;
+            const type = schema.nodes[this.options.node];
 
-          // Find the last paragraph in the last dBlock, traversing into
-          // callouts, blockquotes, tables, etc.
-          const lastChild = doc.lastChild;
-          let fontFamily: string | null = null;
-          let fontSize: string | null = null;
-          if (lastChild?.type.name === 'dBlock') {
-            // Walk the last dBlock's descendants to find the last paragraph
-            lastChild.descendants((node) => {
-              if (node.type.name === 'paragraph') {
-                fontFamily = node.attrs.fontFamily || null;
-                fontSize = node.attrs.fontSize || null;
-              }
+            // Find the last paragraph in the last dBlock, traversing into
+            // callouts, blockquotes, tables, etc.
+            const lastChild = doc.lastChild;
+            let fontFamily: string | null = null;
+            let fontSize: string | null = null;
+            if (lastChild?.type.name === 'dBlock') {
+              lastChild.descendants((node) => {
+                if (node.type.name === 'paragraph') {
+                  fontFamily = node.attrs.fontFamily || null;
+                  fontSize = node.attrs.fontSize || null;
+                }
+              });
+            }
+
+            const styledNode = type.create({
+              class: 'trailing-node',
+              fontFamily,
+              fontSize,
             });
+
+            return tr.insert(endPosition, styledNode);
           }
 
-          const nodeAttrs = {
-            class: 'trailing-node',
-            fontFamily,
-            fontSize,
-          };
+          // Path 2: trailing node already exists — sync its font attrs from
+          // the previous sibling when fonts change inside callouts/blockquotes.
+          // Guards: only on doc changes, only if trailing node exists, only if
+          // previous sibling's font actually changed, skip if cursor is inside
+          // the trailing node (user manually changed it).
+          const hasDocChange = transactions.some((t) => t.docChanged);
+          if (!hasDocChange) return null;
 
-          const styledNode = type.create(nodeAttrs);
+          // Find the trailing node (last paragraph with class='trailing-node')
+          const lastDBlock = doc.lastChild;
+          if (lastDBlock?.type.name !== 'dBlock') return null;
 
-          // Insert only this one node
-          return tr.insert(endPosition, styledNode);
+          let trailingPara: typeof lastDBlock | null = null;
+          let trailingParaPos = -1;
+          const lastDBlockStart = doc.content.size - lastDBlock.nodeSize;
+          lastDBlock.descendants((node, pos) => {
+            if (node.type.name === 'paragraph') {
+              trailingPara = node;
+              // pos is relative to lastDBlock start; +1 for the dBlock's own token
+              trailingParaPos = lastDBlockStart + 1 + pos;
+            }
+          });
+
+          if (
+            !trailingPara ||
+            (trailingPara as typeof lastDBlock).attrs.class !== 'trailing-node'
+          ) {
+            return null;
+          }
+
+          // Skip if cursor is inside the trailing node (user is editing it)
+          const cursorPos = state.selection.$from.pos;
+          const trailingEnd =
+            trailingParaPos + (trailingPara as typeof lastDBlock).nodeSize;
+          if (cursorPos >= trailingParaPos && cursorPos <= trailingEnd)
+            return null;
+
+          // Read font from the second-to-last dBlock's last paragraph
+          if (doc.childCount < 2) return null;
+          const prevDBlock = doc.child(doc.childCount - 2);
+          let prevFontFamily: string | null = null;
+          let prevFontSize: string | null = null;
+          prevDBlock.descendants((node) => {
+            if (node.type.name === 'paragraph') {
+              prevFontFamily = node.attrs.fontFamily || null;
+              prevFontSize = node.attrs.fontSize || null;
+            }
+          });
+
+          // Skip if font attrs haven't changed
+          const currentAttrs = (trailingPara as typeof lastDBlock).attrs;
+          if (
+            prevFontFamily === currentAttrs.fontFamily &&
+            prevFontSize === currentAttrs.fontSize
+          ) {
+            return null;
+          }
+
+          // Update the trailing node's font attrs
+          const updateTr = state.tr;
+          updateTr.setNodeMarkup(trailingParaPos, undefined, {
+            ...currentAttrs,
+            fontFamily: prevFontFamily,
+            fontSize: prevFontSize,
+          });
+          return updateTr;
         },
         state: {
           init: (_, state) => {

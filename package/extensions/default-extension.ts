@@ -84,6 +84,7 @@ import LinkPreview from './link-preview/link-preview';
 import { Callout } from './callout/callout';
 import { FontSize } from './font-size';
 import { FontFamilyPersistence } from './font-family-persistence';
+import { TypographyPersistence } from './typography-persistence';
 import { CustomCodeBlockLowlight } from './code-block/custom-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
 import { LineHeight } from './line-height';
@@ -152,6 +153,7 @@ export const defaultExtensions = ({
 }) => [
   FontFamily,
   FontFamilyPersistence,
+  TypographyPersistence,
   StarterKit.configure({
     strike: {
       HTMLAttributes: {
