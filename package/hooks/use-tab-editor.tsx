@@ -371,7 +371,8 @@ export const useTabEditor = ({
 
   useEffect(() => {
     const isInitialContentResolved =
-      initialContent !== undefined && initialContent !== null;
+      enableCollaboration ||
+      (initialContent !== undefined && initialContent !== null);
 
     if (!editor || !ydoc) {
       return;
