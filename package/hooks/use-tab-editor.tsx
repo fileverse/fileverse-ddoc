@@ -378,7 +378,11 @@ export const useTabEditor = ({
     }
 
     if (!isInitialContentResolved) {
-      setIsContentLoading(true);
+      if (initialContent !== null) {
+        setIsContentLoading(false);
+      } else {
+        setIsContentLoading(true);
+      }
       return;
     }
 
