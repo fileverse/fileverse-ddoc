@@ -370,10 +370,15 @@ export const useTabEditor = ({
   );
 
   useEffect(() => {
-    if (initialContent === null || !editor || !ydoc) {
-      if (initialContent !== null) {
-        setIsContentLoading(false);
-      }
+    const isInitialContentResolved =
+      initialContent !== undefined && initialContent !== null;
+
+    if (!editor || !ydoc) {
+      return;
+    }
+
+    if (!isInitialContentResolved) {
+      setIsContentLoading(true);
       return;
     }
 
@@ -386,9 +391,7 @@ export const useTabEditor = ({
     const hydrationKey = `${versionId || 'no-version-id'}:${targetField}`;
 
     if (!isVersionMode && initialContentSetRef.current) {
-      if (initialContent !== null) {
-        setIsContentLoading(false);
-      }
+      setIsContentLoading(false);
       return;
     }
 
