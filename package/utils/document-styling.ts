@@ -8,7 +8,7 @@ export const isThemeVariantValue = (
   typeof value.light === 'string' &&
   typeof value.dark === 'string';
 
-export const resolveDocumentStylingValue = (
+export const getThemeStyle = (
   value?: DocumentStylingValue,
   theme: 'light' | 'dark' = 'light',
 ): string | undefined => {

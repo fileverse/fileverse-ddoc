@@ -6,7 +6,7 @@ import { DdocProps } from '../../types';
 import { getResponsiveColor } from '../../utils/colors';
 import {
   isThemeVariantValue,
-  resolveDocumentStylingValue,
+  getThemeStyle,
 } from '../../utils/document-styling';
 
 interface PreviewPanelProps {
@@ -38,25 +38,22 @@ export const PreviewPanel = ({
     }
   }, [currentSlide, isMobile]);
 
-  const resolvedCanvasBackground = resolveDocumentStylingValue(
+  const themeCanvasBackground = getThemeStyle(
     documentStyling?.canvasBackground,
     theme,
   );
-  const resolvedTextColor = resolveDocumentStylingValue(
-    documentStyling?.textColor,
-    theme,
-  );
+  const themeTextColor = getThemeStyle(documentStyling?.textColor, theme);
 
-  const finalTextColor = resolvedTextColor
+  const finalTextColor = themeTextColor
     ? isThemeVariantValue(documentStyling?.textColor)
-      ? resolvedTextColor
-      : getResponsiveColor(resolvedTextColor, theme)
+      ? themeTextColor
+      : getResponsiveColor(themeTextColor, theme)
     : undefined;
 
   // Create canvas styles for preview slides
   const canvasStyles = {
-    ...(resolvedCanvasBackground && {
-      backgroundColor: resolvedCanvasBackground,
+    ...(themeCanvasBackground && {
+      backgroundColor: themeCanvasBackground,
     }),
     ...(finalTextColor && { color: finalTextColor }),
     ...(documentStyling?.fontFamily && {
@@ -113,7 +110,7 @@ export const PreviewPanel = ({
             <div
               className={cn(
                 'presentation-mode preview-slide w-[400%] h-[400%]',
-                !resolvedCanvasBackground && 'color-bg-default',
+                !themeCanvasBackground && 'color-bg-default',
               )}
               style={canvasStyles}
               dangerouslySetInnerHTML={{ __html: slideContent }}

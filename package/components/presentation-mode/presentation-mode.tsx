@@ -21,7 +21,7 @@ import { EXTENSIONS_WITH_DUPLICATE_WARNINGS } from '../../utils/helpers';
 import { getResponsiveColor } from '../../utils/colors';
 import {
   isThemeVariantValue,
-  resolveDocumentStylingValue,
+  getThemeStyle,
 } from '../../utils/document-styling';
 
 interface PresentationModeProps {
@@ -90,25 +90,22 @@ const SlideContent = ({
     });
   }, [content]);
 
-  const resolvedCanvasBackground = resolveDocumentStylingValue(
+  const themeCanvasBackground = getThemeStyle(
     documentStyling?.canvasBackground,
     theme,
   );
-  const resolvedTextColor = resolveDocumentStylingValue(
-    documentStyling?.textColor,
-    theme,
-  );
+  const themeTextColor = getThemeStyle(documentStyling?.textColor, theme);
 
-  const finalTextColor = resolvedTextColor
+  const finalTextColor = themeTextColor
     ? isThemeVariantValue(documentStyling?.textColor)
-      ? resolvedTextColor
-      : getResponsiveColor(resolvedTextColor, theme)
+      ? themeTextColor
+      : getResponsiveColor(themeTextColor, theme)
     : undefined;
 
   // Create canvas styles for presentation mode (no background)
   const editorStyles = {
-    ...(resolvedCanvasBackground && {
-      backgroundColor: resolvedCanvasBackground,
+    ...(themeCanvasBackground && {
+      backgroundColor: themeCanvasBackground,
     }),
     ...(finalTextColor && { color: finalTextColor }),
     ...(documentStyling?.fontFamily && {
@@ -161,7 +158,7 @@ export const PresentationMode = ({
     'forward',
   );
 
-  const resolvedCanvasBackground = resolveDocumentStylingValue(
+  const themeCanvasBackground = getThemeStyle(
     documentStyling?.canvasBackground,
     theme,
   );
@@ -511,15 +508,15 @@ export const PresentationMode = ({
           <div
             className={cn(
               'w-full rounded-lg overflow-hidden relative',
-              !resolvedCanvasBackground && 'color-bg-default',
+              !themeCanvasBackground && 'color-bg-default',
               isFullscreen
                 ? 'h-full max-w-none flex items-start justify-center'
                 : 'px-8 md:px-0 scale-[0.35] md:scale-[0.75] xl:scale-100 min-w-[1080px] max-w-[1080px] aspect-video py-[48px]',
             )}
             style={{
               transformOrigin: 'center',
-              ...(resolvedCanvasBackground && {
-                backgroundColor: resolvedCanvasBackground,
+              ...(themeCanvasBackground && {
+                backgroundColor: themeCanvasBackground,
               }),
             }}
           >

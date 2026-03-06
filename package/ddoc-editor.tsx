@@ -48,10 +48,7 @@ import { EmbedSettings } from './extensions/twitter-embed/embed-settings';
 import { DEFAULT_TAB_ID } from './components/tabs/utils/tab-utils';
 import { getResponsiveColor } from './utils/colors';
 import { PreviewModeExportTrigger } from './components/preview-export-trigger';
-import {
-  isThemeVariantValue,
-  resolveDocumentStylingValue,
-} from './utils/document-styling';
+import { isThemeVariantValue, getThemeStyle } from './utils/document-styling';
 
 const DdocEditor = forwardRef(
   (
@@ -169,32 +166,32 @@ const DdocEditor = forwardRef(
 
       // Apply custom document styling
       if (documentStyling.canvasBackground) {
-        const resolvedCanvasBackground = resolveDocumentStylingValue(
+        const themeCanvasBackground = getThemeStyle(
           documentStyling.canvasBackground,
           currentTheme,
         );
-        canvas.backgroundColor = resolvedCanvasBackground;
+        canvas.backgroundColor = themeCanvasBackground;
       }
       if (documentStyling.textColor) {
-        const resolvedTextColor = resolveDocumentStylingValue(
+        const themeTextColor = getThemeStyle(
           documentStyling.textColor,
           currentTheme,
         );
-        if (resolvedTextColor) {
+        if (themeTextColor) {
           canvas.color = isThemeVariantValue(documentStyling.textColor)
-            ? resolvedTextColor
-            : getResponsiveColor(resolvedTextColor, currentTheme);
+            ? themeTextColor
+            : getResponsiveColor(themeTextColor, currentTheme);
         }
       }
       if (documentStyling.fontFamily) {
         canvas.fontFamily = documentStyling.fontFamily;
       }
       if (documentStyling.background) {
-        const resolvedBackground = resolveDocumentStylingValue(
+        const themeBackgroundStyle = getThemeStyle(
           documentStyling.background,
           currentTheme,
         );
-        background.background = resolvedBackground;
+        background.background = themeBackgroundStyle;
       }
 
       return {
