@@ -105,26 +105,31 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 The `documentStyling` prop allows you to customize the visual appearance of your document with three distinct styling areas:
 
 ```typescript
+interface ThemeVariantValue {
+  light: string;
+  dark: string;
+}
+
 interface DocumentStyling {
   /** 
    * Background styling for the outer document area.
    * Supports CSS background values including gradients.
    * Example: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
    */
-  background?: string;
+  background?: string | ThemeVariantValue;
   
   /** 
    * Background color for the editor canvas/content area.
    * Should be a solid color value.
    * Example: "#ffffff" or "rgb(255, 255, 255)"
    */
-  canvasBackground?: string;
+  canvasBackground?: string | ThemeVariantValue;
   
   /** 
    * Text color for the editor content.
    * Example: "#333333" or "rgb(51, 51, 51)"
    */
-  textColor?: string;
+  textColor?: string | ThemeVariantValue;
   
   /** 
    * Font family for the editor content.
@@ -139,9 +144,12 @@ interface DocumentStyling {
 ```tsx
 <DdocEditor
   documentStyling={{
-    background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-    canvasBackground: "#ffffff",
-    textColor: "#333333",
+    background: {
+      light: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
+      dark: "linear-gradient(135deg, #2a3145 0%, #3a2f59 100%)",
+    },
+    canvasBackground: { light: "#ffffff", dark: "#1e1f22" },
+    textColor: { light: "#333333", dark: "#e8ebec" },
     fontFamily: "Inter, sans-serif"
   }}
   // ... other props

@@ -3,12 +3,18 @@ import { useRef, useEffect } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
 import { useResponsive } from '../../utils/responsive';
 import { DdocProps } from '../../types';
+import { getResponsiveColor } from '../../utils/colors';
+import {
+  isThemeVariantValue,
+  getThemeStyle,
+} from '../../utils/document-styling';
 
 interface PreviewPanelProps {
   slides: string[];
   currentSlide: number;
   setCurrentSlide: (index: number) => void;
   documentStyling?: DdocProps['documentStyling'];
+  theme?: 'light' | 'dark';
 }
 
 export const PreviewPanel = ({
@@ -16,6 +22,7 @@ export const PreviewPanel = ({
   currentSlide,
   setCurrentSlide,
   documentStyling,
+  theme = 'light',
 }: PreviewPanelProps) => {
   const slideRefs = useRef<{ [key: number]: HTMLDivElement | null }>({});
   const previewPanelRef = useRef<HTMLDivElement>(null);
@@ -31,12 +38,24 @@ export const PreviewPanel = ({
     }
   }, [currentSlide, isMobile]);
 
+  const themeCanvasBackground = getThemeStyle(
+    documentStyling?.canvasBackground,
+    theme,
+  );
+  const themeTextColor = getThemeStyle(documentStyling?.textColor, theme);
+
+  const finalTextColor = themeTextColor
+    ? isThemeVariantValue(documentStyling?.textColor)
+      ? themeTextColor
+      : getResponsiveColor(themeTextColor, theme)
+    : undefined;
+
   // Create canvas styles for preview slides
   const canvasStyles = {
-    ...(documentStyling?.canvasBackground && {
-      backgroundColor: documentStyling.canvasBackground,
+    ...(themeCanvasBackground && {
+      backgroundColor: themeCanvasBackground,
     }),
-    ...(documentStyling?.textColor && { color: documentStyling.textColor }),
+    ...(finalTextColor && { color: finalTextColor }),
     ...(documentStyling?.fontFamily && {
       fontFamily: documentStyling.fontFamily,
     }),
@@ -91,7 +110,7 @@ export const PreviewPanel = ({
             <div
               className={cn(
                 'presentation-mode preview-slide w-[400%] h-[400%]',
-                !documentStyling?.canvasBackground && 'color-bg-default',
+                !themeCanvasBackground && 'color-bg-default',
               )}
               style={canvasStyles}
               dangerouslySetInnerHTML={{ __html: slideContent }}
