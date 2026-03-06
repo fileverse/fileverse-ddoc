@@ -1032,6 +1032,7 @@ const DdocEditor = forwardRef(
             ) : (
               <CommentProvider
                 editor={editor}
+                ydoc={ydoc}
                 username={username as string}
                 setUsername={setUsername}
                 activeCommentId={activeCommentId}
