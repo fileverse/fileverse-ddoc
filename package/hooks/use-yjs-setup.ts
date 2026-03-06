@@ -2,8 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import * as Y from 'yjs';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { JSONContent } from '@tiptap/react';
-import { useSyncMachine } from '../sync-local/useSyncMachine';
-import { useRtcWebsocketDisconnector } from './use-rtc-websocket-disconnector';
+import { useSyncManager } from '../sync-local/useSyncManager';
 import { fromUint8Array } from 'js-base64';
 import { DdocProps } from '../types';
 
@@ -28,7 +27,6 @@ export const useYjsSetup = ({
   onChange,
   enableIndexeddbSync,
   ddocId,
-  enableCollaboration,
   onIndexedDbError,
   onCollabError,
   onCollaborationConnectCallback,
@@ -45,8 +43,7 @@ export const useYjsSetup = ({
     terminateSession,
     awareness,
     hasCollabContentInitialised,
-    state: syncState,
-  } = useSyncMachine({
+  } = useSyncManager({
     onError: onCollabError,
     ydoc,
     onCollaborationConnectCallback,
@@ -56,8 +53,6 @@ export const useYjsSetup = ({
     onUnMergedUpdates,
     onLocalUpdate: onChange,
   });
-
-  useRtcWebsocketDisconnector(syncState, enableCollaboration);
 
   const yjsIndexeddbProviderRef = useRef<IndexeddbPersistence | null>(null);
 
