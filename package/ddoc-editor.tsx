@@ -48,6 +48,10 @@ import { EmbedSettings } from './extensions/twitter-embed/embed-settings';
 import { DEFAULT_TAB_ID } from './components/tabs/utils/tab-utils';
 import { getResponsiveColor } from './utils/colors';
 import { PreviewModeExportTrigger } from './components/preview-export-trigger';
+import {
+  isThemeVariantValue,
+  resolveDocumentStylingValue,
+} from './utils/document-styling';
 
 const DdocEditor = forwardRef(
   (
@@ -161,23 +165,36 @@ const DdocEditor = forwardRef(
 
       const canvas: React.CSSProperties = {};
       const background: React.CSSProperties = {};
-      const currentTheme = theme as 'light' | 'dark';
+      const currentTheme = theme ?? 'light';
 
       // Apply custom document styling
       if (documentStyling.canvasBackground) {
-        canvas.backgroundColor = documentStyling.canvasBackground;
+        const resolvedCanvasBackground = resolveDocumentStylingValue(
+          documentStyling.canvasBackground,
+          currentTheme,
+        );
+        canvas.backgroundColor = resolvedCanvasBackground;
       }
       if (documentStyling.textColor) {
-        canvas.color = getResponsiveColor(
+        const resolvedTextColor = resolveDocumentStylingValue(
           documentStyling.textColor,
           currentTheme,
         );
+        if (resolvedTextColor) {
+          canvas.color = isThemeVariantValue(documentStyling.textColor)
+            ? resolvedTextColor
+            : getResponsiveColor(resolvedTextColor, currentTheme);
+        }
       }
       if (documentStyling.fontFamily) {
         canvas.fontFamily = documentStyling.fontFamily;
       }
       if (documentStyling.background) {
-        background.background = documentStyling.background;
+        const resolvedBackground = resolveDocumentStylingValue(
+          documentStyling.background,
+          currentTheme,
+        );
+        background.background = resolvedBackground;
       }
 
       return {
@@ -676,6 +693,7 @@ const DdocEditor = forwardRef(
                 ipfsImageFetchFn={ipfsImageFetchFn}
                 documentStyling={documentStyling}
                 fetchV1ImageFn={fetchV1ImageFn}
+                theme={theme ?? 'light'}
               />
             )}
             {editor && shouldRenderDocumentOutline && (
@@ -985,7 +1003,10 @@ const DdocEditor = forwardRef(
     };
 
     return (
-      <EditorProvider documentStyling={documentStyling}>
+      <EditorProvider
+        documentStyling={documentStyling}
+        theme={theme ?? 'light'}
+      >
         <div
           className={cn(
             'w-full',

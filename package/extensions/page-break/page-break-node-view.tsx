@@ -4,22 +4,28 @@ import cn from 'classnames';
 import { LucideIcon, Tooltip } from '@fileverse/ui';
 import { useEditingContext } from '../../hooks/use-editing-context';
 import { useEditorContext } from '../../context/editor-context';
+import { resolveDocumentStylingValue } from '../../utils/document-styling';
 
 export const PageBreakNodeView: React.FC<NodeViewProps> = ({
   editor,
   deleteNode,
 }) => {
   const { isPreviewMode } = useEditingContext();
-  const { documentStyling } = useEditorContext();
+  const { documentStyling, theme } = useEditorContext();
   const handleDeleteNode = () => {
     editor.commands.unsetPageBreak();
     deleteNode();
   };
 
+  const resolvedBackground = resolveDocumentStylingValue(
+    documentStyling?.background,
+    theme,
+  );
+
   // Apply document background styling to the page break gap
   const pageBreakStyle = {
-    ...(documentStyling?.background && {
-      background: documentStyling.background,
+    ...(resolvedBackground && {
+      background: resolvedBackground,
     }),
   };
 

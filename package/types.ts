@@ -52,6 +52,13 @@ export interface CustomModel {
   systemPrompt: string;
 }
 
+export interface ThemeVariantValue {
+  light: string;
+  dark: string;
+}
+
+export type DocumentStylingValue = string | ThemeVariantValue;
+
 /**
  * Document styling configuration interface
  * @description Defines the styling options available for customizing the document editor appearance
@@ -60,23 +67,23 @@ export interface DocumentStyling {
   /**
    * Outer page/document background
    * @description Controls the background of the entire editor area. Supports solid colors and CSS gradients.
-   * @example "#f8f9fa" | "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
+   * @example "#f8f9fa" | "linear-gradient(135deg, #667eea 0%, #764ba2 100%)" | { light: "#f8f9fa", dark: "#1e1f22" }
    */
-  background?: string;
+  background?: DocumentStylingValue;
 
   /**
    * Editor content area background
    * @description Controls the background color of the actual editor content where text is written. Should be solid colors for readability.
-   * @example "#ffffff" | "#f5f5f5"
+   * @example "#ffffff" | "#f5f5f5" | { light: "#ffffff", dark: "#1e1f22" }
    */
-  canvasBackground?: string;
+  canvasBackground?: DocumentStylingValue;
 
   /**
    * Text color
    * @description Controls the color of the text content in the editor.
-   * @example "#000000" | "#1a1a1a"
+   * @example "#000000" | "#1a1a1a" | { light: "#1a1a1a", dark: "#e8ebec" }
    */
-  textColor?: string;
+  textColor?: DocumentStylingValue;
 
   /**
    * Font family

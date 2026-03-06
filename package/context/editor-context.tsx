@@ -4,6 +4,7 @@ import { DocumentStyling } from '../types';
 
 interface EditorContextType {
   documentStyling?: DocumentStyling;
+  theme: 'light' | 'dark';
 }
 
 export const EditorContext = createContext<EditorContextType | null>(null);
@@ -19,12 +20,14 @@ export const useEditorContext = () => {
 export const EditorProvider: React.FC<{
   children: ReactNode;
   documentStyling?: DocumentStyling;
-}> = ({ children, documentStyling }) => {
+  theme?: 'light' | 'dark';
+}> = ({ children, documentStyling, theme = 'light' }) => {
   const value = useMemo(
     () => ({
       documentStyling,
+      theme,
     }),
-    [documentStyling],
+    [documentStyling, theme],
   );
 
   return (

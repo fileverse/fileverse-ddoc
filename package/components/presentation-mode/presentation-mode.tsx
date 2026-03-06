@@ -18,6 +18,11 @@ import { convertMarkdownToHTML } from '../../utils/md-to-html';
 import { useResponsive } from '../../utils/responsive';
 import { IpfsImageFetchPayload, DdocProps } from '../../types';
 import { EXTENSIONS_WITH_DUPLICATE_WARNINGS } from '../../utils/helpers';
+import { getResponsiveColor } from '../../utils/colors';
+import {
+  isThemeVariantValue,
+  resolveDocumentStylingValue,
+} from '../../utils/document-styling';
 
 interface PresentationModeProps {
   editor: Editor;
@@ -41,6 +46,7 @@ interface PresentationModeProps {
   ) => Promise<{ url: string; file: File }>;
   documentStyling?: DdocProps['documentStyling'];
   fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
+  theme?: 'light' | 'dark';
 }
 
 const SlideContent = ({
@@ -51,6 +57,7 @@ const SlideContent = ({
   onTouchEnd,
   isFullscreen,
   documentStyling,
+  theme = 'light',
 }: {
   content: string;
   editor: Editor;
@@ -59,6 +66,7 @@ const SlideContent = ({
   onTouchEnd: () => void;
   isFullscreen: boolean;
   documentStyling?: DdocProps['documentStyling'];
+  theme?: 'light' | 'dark';
 }) => {
   const isSoloImage = (html: string): boolean => {
     const parser = new DOMParser();
@@ -82,12 +90,27 @@ const SlideContent = ({
     });
   }, [content]);
 
+  const resolvedCanvasBackground = resolveDocumentStylingValue(
+    documentStyling?.canvasBackground,
+    theme,
+  );
+  const resolvedTextColor = resolveDocumentStylingValue(
+    documentStyling?.textColor,
+    theme,
+  );
+
+  const finalTextColor = resolvedTextColor
+    ? isThemeVariantValue(documentStyling?.textColor)
+      ? resolvedTextColor
+      : getResponsiveColor(resolvedTextColor, theme)
+    : undefined;
+
   // Create canvas styles for presentation mode (no background)
   const editorStyles = {
-    ...(documentStyling?.canvasBackground && {
-      backgroundColor: documentStyling.canvasBackground,
+    ...(resolvedCanvasBackground && {
+      backgroundColor: resolvedCanvasBackground,
     }),
-    ...(documentStyling?.textColor && { color: documentStyling.textColor }),
+    ...(finalTextColor && { color: finalTextColor }),
     ...(documentStyling?.fontFamily && {
       fontFamily: documentStyling.fontFamily,
     }),
@@ -125,6 +148,7 @@ export const PresentationMode = ({
   ipfsImageFetchFn,
   documentStyling,
   fetchV1ImageFn,
+  theme = 'light',
 }: PresentationModeProps) => {
   const [showLinkCopied, setShowLinkCopied] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -135,6 +159,11 @@ export const PresentationMode = ({
   const minSwipeDistance = 50;
   const [slideDirection, setSlideDirection] = useState<'forward' | 'backward'>(
     'forward',
+  );
+
+  const resolvedCanvasBackground = resolveDocumentStylingValue(
+    documentStyling?.canvasBackground,
+    theme,
   );
 
   const presentationEditor = useMemo(() => {
@@ -376,6 +405,7 @@ export const PresentationMode = ({
           currentSlide={currentSlide}
           setCurrentSlide={setCurrentSlide}
           documentStyling={documentStyling}
+          theme={theme}
         />
       )}
       {/* Main Content */}
@@ -481,15 +511,15 @@ export const PresentationMode = ({
           <div
             className={cn(
               'w-full rounded-lg overflow-hidden relative',
-              !documentStyling?.canvasBackground && 'color-bg-default',
+              !resolvedCanvasBackground && 'color-bg-default',
               isFullscreen
                 ? 'h-full max-w-none flex items-start justify-center'
                 : 'px-8 md:px-0 scale-[0.35] md:scale-[0.75] xl:scale-100 min-w-[1080px] max-w-[1080px] aspect-video py-[48px]',
             )}
             style={{
               transformOrigin: 'center',
-              ...(documentStyling?.canvasBackground && {
-                backgroundColor: documentStyling.canvasBackground,
+              ...(resolvedCanvasBackground && {
+                backgroundColor: resolvedCanvasBackground,
               }),
             }}
           >
@@ -529,6 +559,7 @@ export const PresentationMode = ({
                   onTouchEnd={onTouchEnd}
                   isFullscreen={isFullscreen}
                   documentStyling={documentStyling}
+                  theme={theme}
                 />
               )}
             </EditingProvider>
