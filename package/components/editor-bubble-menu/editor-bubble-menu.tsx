@@ -277,11 +277,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   return (
     <BubbleMenu
       editor={editor}
-      // appendTo={() => document.getElementById('editor-canvas')!}
+      appendTo={document.body}
       options={{
         placement: 'top',
+        strategy: 'absolute',
         flip: true,
         shift: true,
+        scrollTarget: document.getElementById('editor-canvas'),
         onHide: () => setShowsBubbleMenu(false),
         onShow: () => setShowsBubbleMenu(true),
       }}
