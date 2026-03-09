@@ -104,6 +104,20 @@ export const fonts = [
     },
   },
   {
+    title: 'IBM Plex Sans',
+    value: 'IBM Plex Sans, sans-serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('IBM Plex Sans, sans-serif').run();
+    },
+  },
+  {
+    title: 'IBM Plex Serif',
+    value: 'IBM Plex Serif, serif',
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily('IBM Plex Serif, serif').run();
+    },
+  },
+  {
     title: 'IBM Plex Mono',
     value: 'IBM Plex Mono, monospace',
     command: (editor: Editor) => {
