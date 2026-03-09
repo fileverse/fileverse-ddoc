@@ -370,15 +370,15 @@ export const useTabEditor = ({
   );
 
   useEffect(() => {
-    const isInitialContentResolved =
-      enableCollaboration ||
-      (initialContent !== undefined && initialContent !== null);
-
     if (!editor || !ydoc) {
       return;
     }
 
-    if (!isInitialContentResolved) {
+    const isInitialContentResolved =
+      enableCollaboration ||
+      (initialContent !== undefined && initialContent !== null);
+
+    if (!isInitialContentResolved && enableCollaboration) {
       setIsContentLoading(true);
       return;
     }
@@ -403,7 +403,7 @@ export const useTabEditor = ({
 
     setIsContentLoading(true);
     queueMicrotask(() => {
-      if (initialContent !== '') {
+      if (isInitialContentResolved && initialContent !== '') {
         const isYjsEncoded = isContentYjsEncoded(initialContent as string);
         if (isYjsEncoded) {
           if (Array.isArray(initialContent)) {
@@ -449,6 +449,8 @@ export const useTabEditor = ({
     onInvalidContentError,
     mergeAndApplyUpdate,
     isContentYjsEncoded,
+    enableCollaboration,
+    initialiseYjsIndexedDbProvider,
   ]);
 
   const collaborationCleanupRef = useRef<() => void>(() => {});

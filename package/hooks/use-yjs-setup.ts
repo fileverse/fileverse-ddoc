@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import * as Y from 'yjs';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { JSONContent } from '@tiptap/react';
@@ -56,7 +56,7 @@ export const useYjsSetup = ({
 
   const yjsIndexeddbProviderRef = useRef<IndexeddbPersistence | null>(null);
 
-  const initialiseYjsIndexedDbProvider = async () => {
+  const initialiseYjsIndexedDbProvider = useCallback(async () => {
     const provider = yjsIndexeddbProviderRef.current;
     if (provider) {
       await provider.destroy();
@@ -75,7 +75,7 @@ export const useYjsSetup = ({
         // Don't rethrow - allow editor to continue without persistence
       }
     }
-  };
+  }, [enableIndexeddbSync, ddocId, ydoc, onIndexedDbError]);
 
   const onChangeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,

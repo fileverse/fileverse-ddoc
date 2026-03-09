@@ -1,7 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
-import * as Y from 'yjs';
-import { fromUint8Array } from 'js-base64';
 import { removeAwarenessStates } from 'y-protocols/awareness.js';
 
 import { SyncManager } from './SyncManager';
@@ -30,6 +28,7 @@ export const useSyncManager = (config: SyncManagerConfig) => {
     initialDocumentDecryptionState,
   } = snapshot;
 
+
   const hasCollabContentInitialised = initialDocumentDecryptionState === 'done';
 
   // Awareness init — when connected and content has been initialised
@@ -51,16 +50,6 @@ export const useSyncManager = (config: SyncManagerConfig) => {
 
     const updateHandler = (update: Uint8Array, origin: any) => {
       if (origin === 'self' || !isReady) return;
-      if (config.onLocalUpdate && typeof config.onLocalUpdate === 'function') {
-        try {
-          config.onLocalUpdate(
-            fromUint8Array(Y.encodeStateAsUpdate(config.ydoc)),
-            fromUint8Array(update),
-          );
-        } catch (err) {
-          console.error('useSyncManager: onLocalUpdate callback threw', err);
-        }
-      }
       manager.enqueueLocalUpdate(update);
     };
 
