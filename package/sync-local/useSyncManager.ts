@@ -1,23 +1,51 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useCallback, useEffect, useRef, useSyncExternalStore } from 'react';
+import { useCallback, useEffect, useReducer, useRef } from 'react';
 import { removeAwarenessStates } from 'y-protocols/awareness.js';
 
 import { SyncManager } from './SyncManager';
-import { SyncManagerConfig, ConnectConfig } from './types';
+import {
+  SyncManagerConfig,
+  SyncManagerSnapshot,
+  SyncStatus,
+  ConnectConfig,
+} from './types';
+
+const INITIAL_SNAPSHOT: SyncManagerSnapshot = {
+  status: SyncStatus.DISCONNECTED,
+  isConnected: false,
+  isReady: false,
+  errorMessage: '',
+  awareness: null,
+  initialDocumentDecryptionState: 'pending',
+};
+
+function snapshotReducer(
+  prev: SyncManagerSnapshot,
+  next: SyncManagerSnapshot,
+): SyncManagerSnapshot {
+  if (
+    prev.status === next.status &&
+    prev.isConnected === next.isConnected &&
+    prev.isReady === next.isReady &&
+    prev.errorMessage === next.errorMessage &&
+    prev.awareness === next.awareness &&
+    prev.initialDocumentDecryptionState === next.initialDocumentDecryptionState
+  ) {
+    return prev;
+  }
+  return next;
+}
 
 export const useSyncManager = (config: SyncManagerConfig) => {
+  const [snapshot, dispatch] = useReducer(snapshotReducer, INITIAL_SNAPSHOT);
+
   const managerRef = useRef<SyncManager | null>(null);
 
   if (!managerRef.current) {
-    managerRef.current = new SyncManager(config);
+    managerRef.current = new SyncManager(config, dispatch);
   }
 
   const manager = managerRef.current;
-
-  const snapshot = useSyncExternalStore(
-    manager.subscribe,
-    manager.getSnapshot,
-  );
 
   const {
     status,

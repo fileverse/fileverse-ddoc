@@ -59,11 +59,10 @@ export class SyncManager {
     updateChunk: string,
   ) => void;
 
-  // --- Observer pattern ---
-  private listeners = new Set<() => void>();
-  private cachedSnapshot: SyncManagerSnapshot | null = null;
-
-  constructor(config: SyncManagerConfig) {
+  constructor(
+    config: SyncManagerConfig,
+    private onStateChange: (snapshot: SyncManagerSnapshot) => void,
+  ) {
     this.ydoc = config.ydoc;
     this.onError = config.onError;
     this.onCollaborationConnectCallback = config.onCollaborationConnectCallback;
@@ -74,34 +73,15 @@ export class SyncManager {
     this.onLocalUpdate = config.onLocalUpdate;
   }
 
-  // ─── Observer pattern (for useSyncExternalStore) ───
-
-  subscribe = (listener: () => void): (() => void) => {
-    this.listeners.add(listener);
-    return () => {
-      this.listeners.delete(listener);
-    };
-  };
-
-  getSnapshot = (): SyncManagerSnapshot => {
-    if (!this.cachedSnapshot) {
-      this.cachedSnapshot = {
-        status: this._status,
-        isConnected: this._isConnected,
-        isReady: this._isReady,
-        errorMessage: this._errorMessage,
-        awareness: this._awareness,
-        initialDocumentDecryptionState: this._initialDocumentDecryptionState,
-      };
-    }
-    return this.cachedSnapshot;
-  };
-
   private notify() {
-    this.cachedSnapshot = null;
-    for (const listener of this.listeners) {
-      listener();
-    }
+    this.onStateChange({
+      status: this._status,
+      isConnected: this._isConnected,
+      isReady: this._isReady,
+      errorMessage: this._errorMessage,
+      awareness: this._awareness,
+      initialDocumentDecryptionState: this._initialDocumentDecryptionState,
+    });
   }
 
   private setStatus(status: SyncStatus) {
@@ -231,6 +211,10 @@ export class SyncManager {
   }
 
   forceCleanup(): void {
+    // Broadcast awareness removal BEFORE tearing down handler/socket
+    if (this._awareness) {
+      removeAwarenessStates(this._awareness, [this.ydoc.clientID], 'cleanup');
+    }
     if (this._awareness && this._awarenessUpdateHandler) {
       this._awareness.off('update', this._awarenessUpdateHandler);
     }
@@ -242,7 +226,7 @@ export class SyncManager {
     this.socketClient?.disconnect();
     this.reset();
     this._status = SyncStatus.DISCONNECTED;
-    this.cachedSnapshot = null;
+    this.notify();
   }
 
   // ─── Internal methods ───
@@ -785,9 +769,10 @@ export class SyncManager {
   private async disconnectInternal(): Promise<void> {
     this.setStatus(SyncStatus.DISCONNECTING);
 
-    // Always tear down socket — even if already CLOSED —
-    // to prevent socket.io auto-reconnection
-    this.socketClient?.disconnect();
+    // Broadcast awareness removal BEFORE tearing down handler/socket
+    if (this._awareness) {
+      removeAwarenessStates(this._awareness, [this.ydoc.clientID], 'disconnect');
+    }
 
     if (this._awareness && this._awarenessUpdateHandler) {
       this._awareness.off('update', this._awarenessUpdateHandler);
@@ -795,6 +780,9 @@ export class SyncManager {
     if (this._awareness) {
       this._awareness.destroy();
     }
+
+    // Disconnect socket AFTER broadcasting removal
+    this.socketClient?.disconnect();
 
     this.reset();
     this.setStatus(SyncStatus.DISCONNECTED);
