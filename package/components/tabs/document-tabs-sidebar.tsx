@@ -193,7 +193,7 @@ export const TabSidebar = ({
           <div
             data-testid="tab-sidebar"
             className={cn(
-              'flex flex-col items-start w-full h-full overflow-y-auto justify-start left-0 px-4 z-20',
+              'flex flex-col items-start w-full h-full overflow-y-auto justify-start left-0 px-4',
               // Keep landscape TOC responsive: it can shrink to 182px on tighter widths
               // and grow up to the original 263px when space allows.
               orientation === 'landscape'

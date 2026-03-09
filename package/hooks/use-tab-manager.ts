@@ -52,8 +52,7 @@ export const useTabManager = ({
   getEditor,
 }: UseTabManagerArgs) => {
   const isInitialContentResolved =
-    enableCollaboration ||
-    (initialContent !== undefined && initialContent !== null);
+    enableCollaboration || initialContent !== null;
 
   // Derive tab state synchronously from initialContent so the first render
   // builds Collaboration extensions with the correct fragment field.

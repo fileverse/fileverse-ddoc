@@ -374,11 +374,13 @@ export const useTabEditor = ({
       return;
     }
 
-    const isInitialContentResolved =
-      enableCollaboration ||
-      (initialContent !== undefined && initialContent !== null);
+    // In collab mode, content arrives via WebSocket — skip hydration entirely.
+    if (enableCollaboration) {
+      setIsContentLoading(false);
+      return;
+    }
 
-    if (!isInitialContentResolved && enableCollaboration) {
+    if (initialContent === null) {
       setIsContentLoading(true);
       return;
     }
@@ -403,7 +405,7 @@ export const useTabEditor = ({
 
     setIsContentLoading(true);
     queueMicrotask(() => {
-      if (isInitialContentResolved && initialContent !== '') {
+      if (initialContent !== '' && initialContent !== undefined) {
         const isYjsEncoded = isContentYjsEncoded(initialContent as string);
         if (isYjsEncoded) {
           if (Array.isArray(initialContent)) {
@@ -437,6 +439,7 @@ export const useTabEditor = ({
     initialContentSetRef.current = true;
   }, [
     initialContent,
+    enableCollaboration,
     editor,
     ydoc,
     zoomLevel,

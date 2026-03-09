@@ -51,6 +51,8 @@ const PreviewDdocEditorContent = forwardRef(
       showTOC,
       setShowTOC,
       tabSectionContainer,
+      documentStyling,
+      theme,
     }: DdocProps & { contentClassName?: string; isLoading?: boolean },
     ref,
   ) => {
@@ -98,6 +100,7 @@ const PreviewDdocEditorContent = forwardRef(
       setWordCount,
       ipfsImageUploadFn,
       unFocused,
+      theme,
     });
 
     useImperativeHandle(
@@ -194,7 +197,10 @@ const PreviewDdocEditorContent = forwardRef(
               'content-transition',
             )
           : slideUpTransition(
-              <EditorProvider>
+              <EditorProvider
+                documentStyling={documentStyling}
+                theme={theme ?? 'light'}
+              >
                 <div
                   ref={editorRef}
                   className={cn('overflow-x-hidden', className)}
