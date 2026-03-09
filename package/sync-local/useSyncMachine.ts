@@ -8,7 +8,7 @@ import { fromUint8Array } from 'js-base64';
 import { removeAwarenessStates } from 'y-protocols/awareness.js';
 import { useMachine } from '@xstate-ninja/react';
 
-interface IConnectConf {
+export interface IConnectConf {
   username?: string;
   roomKey: string;
   roomId: string;

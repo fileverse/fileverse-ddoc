@@ -19,8 +19,15 @@ export default defineConfig({
     },
     rollupOptions: {
       external: (id) =>
-        ['react', 'react-dom', '@fileverse/ui', 'framer-motion'].includes(id) ||
+        [
+          'react',
+          'react-dom',
+          '@fileverse/ui',
+          'framer-motion',
+          'frimousse',
+        ].includes(id) ||
         id.startsWith('@fileverse/crypto') ||
+        id.startsWith('@dnd-kit/') ||
         id.startsWith('viem'),
       output: {
         globals: {

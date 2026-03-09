@@ -360,6 +360,23 @@ export const handleContentPrint = (content: string) => {
           .print-page:last-child {
             page-break-after: auto;
           }
+          .tab-title-page {
+            min-height: calc(100vh - 0.5in);
+            display: flex;
+            align-items: flex-start;
+            justify-content: flex-start;
+            text-align: left;
+            padding: 0 1rem;
+            box-sizing: border-box;
+          }
+          .tab-title-page__text {
+            margin: 0;
+            font-size: 36px;
+            line-height: 1.2;
+            font-weight: 600;
+            color: #0d0d0d;
+            word-break: break-word;
+          }
           
           img {
             max-width: 100%;

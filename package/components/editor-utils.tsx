@@ -47,10 +47,11 @@ import { getContrastColor } from '../utils/color-utils';
 export interface IEditorToolElement {
   icon: any;
   title: string;
-  onClick: () => void;
+  onClick: (name?: string) => void;
   isActive: boolean;
   group?: string;
   isNew?: boolean;
+  subtitle?: string;
   notVisible?: number;
   disabled?: boolean;
 }
@@ -354,7 +355,6 @@ export const useEditorToolbar = ({
   ipfsImageFetchFn,
   onDocxImport,
   fetchV1ImageFn,
-  isConnected,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -911,7 +911,7 @@ export const useEditorToolbar = ({
       icon: 'FileExport',
       title: 'PDF document (.pdf)',
       onClick: () => {
-        if (editor && isConnected) {
+        if (editor) {
           const closeAndPrint = async () => {
             const { showLoader, removeLoader } = inlineLoader(
               editor,
@@ -944,7 +944,61 @@ export const useEditorToolbar = ({
         }
       },
       isActive: false,
-      disabled: !isConnected,
+    },
+    {
+      icon: 'FileText',
+      title: 'Web page (.html)',
+      subtitle: 'AO3 compatible',
+      onClick: async (name?: string) => {
+        if (editor) {
+          const editorContent = editor.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const fileName = name || title || 'Untitled';
+          const generateDownloadUrl = await editor.commands.exportHtmlFile({
+            title: fileName,
+          });
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${fileName}.html`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onHtmlExport?.();
+      },
+      isActive: false,
+    },
+    {
+      icon: 'FileText',
+      title: 'Plain Text (.txt)',
+      onClick: async (name?: string) => {
+        if (editor) {
+          const editorContent = editor.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const fileName = name || title || 'Untitled';
+          const generateDownloadUrl = await editor.commands.exportTxtFile();
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${fileName}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onTxtExport?.();
+      },
+      isActive: false,
     },
     {
       icon: 'FileOutput',
@@ -972,60 +1026,6 @@ export const useEditorToolbar = ({
         onMarkdownExport?.();
       },
       isActive: false,
-    },
-    {
-      icon: 'FileText',
-      title: 'Web page (.html)',
-      onClick: async () => {
-        if (editor) {
-          const editorContent = editor.getJSON();
-          const title = extractTitleFromContent(
-            editorContent as unknown as { content: JSONContent },
-          );
-          const generateDownloadUrl = await editor.commands.exportHtmlFile({
-            title: title || 'Untitled',
-          });
-          if (generateDownloadUrl) {
-            const url = generateDownloadUrl;
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${title || 'Untitled'}.html`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-          }
-        }
-        onHtmlExport?.();
-      },
-      isActive: false,
-      isNew: true,
-    },
-    {
-      icon: 'FileText',
-      title: 'Plain Text (.txt)',
-      onClick: async () => {
-        if (editor) {
-          const editorContent = editor.getJSON();
-          const title = extractTitleFromContent(
-            editorContent as unknown as { content: JSONContent },
-          );
-          const generateDownloadUrl = await editor.commands.exportTxtFile();
-          if (generateDownloadUrl) {
-            const url = generateDownloadUrl;
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${title || 'Untitled'}.txt`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-          }
-        }
-        onTxtExport?.();
-      },
-      isActive: false,
-      isNew: true,
     },
   ];
 

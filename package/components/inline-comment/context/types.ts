@@ -1,8 +1,9 @@
 import { Editor } from '@tiptap/react';
 import { IComment } from '../../../extensions/comment';
 import { SetStateAction } from 'react';
-import { CommentAccountProps } from '../../../types';
+import { CommentAccountProps, CommentMutationMeta } from '../../../types';
 import { EnsStatus } from '../types';
+import * as Y from 'yjs';
 
 export interface CommentContextType extends CommentAccountProps {
   comments: IComment[];
@@ -59,6 +60,7 @@ export interface CommentContextType extends CommentAccountProps {
   isCommentActive: boolean;
   isCommentResolved: boolean;
   ensResolutionUrl: string;
+  activeTabId: string;
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
   onComment?: () => void;
   setCommentDrawerOpen?: React.Dispatch<React.SetStateAction<boolean>>;
@@ -82,17 +84,28 @@ export interface CommentContextType extends CommentAccountProps {
 export interface CommentProviderProps extends CommentAccountProps {
   children: React.ReactNode;
   editor: Editor;
+  ydoc: Y.Doc;
   initialComments?: IComment[];
   setInitialComments?: React.Dispatch<SetStateAction<IComment[]>>;
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
-  onNewComment?: (newComment: IComment) => void;
-  onResolveComment?: (activeCommentId: string) => void;
-  onUnresolveComment?: (activeCommentId: string) => void;
-  onDeleteComment?: (activeCommentId: string) => void;
+  onNewComment?: (newComment: IComment, meta?: CommentMutationMeta) => void;
+  onResolveComment?: (
+    activeCommentId: string,
+    meta?: CommentMutationMeta,
+  ) => void;
+  onUnresolveComment?: (
+    activeCommentId: string,
+    meta?: CommentMutationMeta,
+  ) => void;
+  onDeleteComment?: (
+    activeCommentId: string,
+    meta?: CommentMutationMeta,
+  ) => void;
   username: string | null;
   setUsername?: React.Dispatch<SetStateAction<string>>;
   activeCommentId: string | null;
   setActiveCommentId: React.Dispatch<React.SetStateAction<string | null>>;
+  activeTabId: string;
   focusCommentWithActiveId: (id: string) => void;
   ensResolutionUrl: string;
   onInlineComment?: () => void;

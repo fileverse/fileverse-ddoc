@@ -52,6 +52,7 @@ export interface CommentStorage {
 
 export interface IComment {
   id?: string;
+  tabId?: string;
   username?: string;
   reactions?: {
     count: number;
@@ -92,18 +93,10 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
           (el as HTMLSpanElement).getAttribute('data-resolved'),
         renderHTML: (attrs) => ({
           'data-resolved': attrs.resolved,
-          class: attrs.active
-            ? 'inline-comment--active'
-            : attrs.resolved
-              ? 'inline-comment--resolved'
-              : 'inline-comment--unresolved',
+          class: attrs.resolved
+            ? 'inline-comment--resolved'
+            : 'inline-comment--unresolved',
         }),
-      },
-      active: {
-        default: false,
-        parseHTML: (el) =>
-          (el as HTMLSpanElement).getAttribute('data-active') === 'true',
-        renderHTML: (attrs) => ({ 'data-active': attrs.active }),
       },
     };
   },
@@ -154,6 +147,58 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
   },
 
   addCommands() {
+    const getCommentNodesById = (editorDom: HTMLElement, commentId: string) => {
+      const safeId =
+        typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+          ? CSS.escape(commentId)
+          : commentId.replace(/"/g, '\\"');
+
+      return editorDom.querySelectorAll<HTMLElement>(
+        `[data-comment-id="${safeId}"]`,
+      );
+    };
+
+    const setCommentNodeVisualState = (
+      node: HTMLElement,
+      isActive: boolean,
+    ) => {
+      const isResolved = node.dataset.resolved === 'true';
+
+      node.setAttribute('data-active', isActive ? 'true' : 'false');
+
+      node.classList.toggle('inline-comment--active', isActive);
+      node.classList.toggle(
+        'inline-comment--resolved',
+        !isActive && isResolved,
+      );
+      node.classList.toggle(
+        'inline-comment--unresolved',
+        !isActive && !isResolved,
+      );
+    };
+
+    // Update only the affected comment ids, not the whole document.
+    const syncActiveCommentClassInDOM = (
+      previousCommentId: string | null,
+      nextCommentId: string | null,
+    ) => {
+      if (previousCommentId === nextCommentId) return;
+
+      const editorDom = this.editor?.view?.dom as HTMLElement | undefined;
+      if (!editorDom) return;
+
+      if (previousCommentId) {
+        getCommentNodesById(editorDom, previousCommentId).forEach((node) => {
+          setCommentNodeVisualState(node, false);
+        });
+      }
+
+      if (nextCommentId) {
+        getCommentNodesById(editorDom, nextCommentId).forEach((node) => {
+          setCommentNodeVisualState(node, true);
+        });
+      }
+    };
     return {
       setComment:
         (commentId: string) =>
@@ -193,7 +238,8 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
           });
 
           this.options.onCommentDeleted?.(commentId);
-          return dispatch?.(tr);
+          dispatch?.(tr);
+          return true;
         },
       resolveComment:
         (commentId: string) =>
@@ -232,7 +278,8 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
           });
 
           this.options.onCommentResolved?.(commentId);
-          return dispatch?.(tr);
+          dispatch?.(tr);
+          return true;
         },
       unresolveComment:
         (commentId: string) =>
@@ -271,54 +318,26 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
           });
 
           this.options.onCommentUnresolved?.(commentId);
-          return dispatch?.(tr);
+          dispatch?.(tr);
+          return true;
         },
-      setCommentActive:
-        (commentId: string) =>
-        ({ tr, dispatch }) => {
-          if (!commentId) return false;
-
-          // First, remove active state from all comments
-          tr.doc.descendants((node, pos) => {
-            const commentMark = node.marks.find(
-              (mark) => mark.type.name === 'comment',
-            );
-            if (commentMark) {
-              tr.addMark(
-                pos,
-                pos + node.nodeSize,
-                this.editor.schema.marks.comment.create({
-                  ...commentMark.attrs,
-                  active: commentMark.attrs.commentId === commentId,
-                }),
-              );
-            }
-          });
-
-          return dispatch?.(tr);
-        },
-      unsetCommentActive:
-        () =>
-        ({ tr, dispatch }) => {
-          // Remove active state from all comments
-          tr.doc.descendants((node, pos) => {
-            const commentMark = node.marks.find(
-              (mark) => mark.type.name === 'comment',
-            );
-            if (commentMark) {
-              tr.addMark(
-                pos,
-                pos + node.nodeSize,
-                this.editor.schema.marks.comment.create({
-                  ...commentMark.attrs,
-                  active: false,
-                }),
-              );
-            }
-          });
-
-          return dispatch?.(tr);
-        },
+      setCommentActive: (commentId: string) => () => {
+        if (!commentId) return false;
+        const previousActiveCommentId = this.storage.activeCommentId;
+        if (previousActiveCommentId === commentId) return true;
+        this.storage.activeCommentId = commentId;
+        // Update UI classes in-place so "active comment" does not create doc updates.
+        syncActiveCommentClassInDOM(previousActiveCommentId, commentId);
+        return true;
+      },
+      unsetCommentActive: () => () => {
+        const previousActiveCommentId = this.storage.activeCommentId;
+        if (!previousActiveCommentId) return true;
+        this.storage.activeCommentId = null;
+        // Reset active styling without touching persisted mark attributes.
+        syncActiveCommentClassInDOM(previousActiveCommentId, null);
+        return true;
+      },
     };
   },
 });

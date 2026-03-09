@@ -13,18 +13,24 @@ import { useOnClickOutside } from 'usehooks-ts';
 import { CommentContextType, CommentProviderProps, EnsCache } from './types';
 import { getAddressName } from '../../../utils/getAddressName';
 import { EnsStatus } from '../types';
+import { CommentMutationMeta, CommentMutationType } from '../../../types';
+import * as Y from 'yjs';
+import { fromUint8Array } from 'js-base64';
+import { DEFAULT_TAB_ID } from '../../tabs/utils/tab-utils';
 
 const CommentContext = createContext<CommentContextType | undefined>(undefined);
 
 export const CommentProvider = ({
   children,
   editor,
+  ydoc,
   initialComments = [],
   setInitialComments,
   username,
   setUsername,
   activeCommentId,
   setActiveCommentId,
+  activeTabId,
   focusCommentWithActiveId,
   onNewComment,
   onCommentReply,
@@ -139,9 +145,17 @@ export const CommentProvider = ({
     [inProgressFetch, ensCache, ensResolutionUrl],
   );
 
+  const tabComments = useMemo(
+    () =>
+      initialComments.filter(
+        (comment) => (comment.tabId ?? DEFAULT_TAB_ID) === activeTabId,
+      ),
+    [initialComments, activeTabId],
+  );
+
   const activeComment = useMemo(
-    () => initialComments.find((comment) => comment.id === activeCommentId),
-    [initialComments, activeCommentId],
+    () => tabComments.find((comment) => comment.id === activeCommentId),
+    [tabComments, activeCommentId],
   );
 
   useOnClickOutside([portalRef, buttonRef, dropdownRef], () => {
@@ -184,6 +198,7 @@ export const CommentProvider = ({
     ): IComment => {
       return {
         id: `comment-${uuid()}`,
+        tabId: activeTabId,
         username,
         selectedContent,
         // Preserve line breaks in content
@@ -192,7 +207,31 @@ export const CommentProvider = ({
         createdAt: new Date(),
       };
     },
-    [],
+    [activeTabId],
+  );
+
+  const createMutationMeta = useCallback(
+    (
+      type: CommentMutationType,
+      mutate: () => boolean,
+    ): CommentMutationMeta | undefined => {
+      // we snapshot the current state vector, run exactly one command,
+      // then encode only what changed relative to that snapshot.
+      // This helps  determine yjs updates such as highlights for new comments.
+      const beforeStateVector = Y.encodeStateVector(ydoc);
+      const hasMutated = mutate();
+      if (!hasMutated) return undefined;
+
+      const update = Y.encodeStateAsUpdate(ydoc, beforeStateVector);
+      // Some commands can no-op (or fail); do not emit empty metadata.
+      if (!update || update.byteLength === 0) return undefined;
+
+      return {
+        type,
+        updateChunk: fromUint8Array(update),
+      };
+    },
+    [ydoc],
   );
 
   const addComment = useCallback(
@@ -207,10 +246,14 @@ export const CommentProvider = ({
         content,
         usernameProp || username!,
       );
-      editor?.commands.setComment(newComment.id || '');
+      const mutationMeta = createMutationMeta('create', () =>
+        editor.commands.setComment(newComment.id || ''),
+      );
+      // Inline comments must have a concrete highlight delta to be replayable.
+      if (newComment.selectedContent && !mutationMeta) return;
       setActiveCommentId(newComment.id || '');
       setTimeout(focusCommentWithActiveId, 0); // Pass function reference
-      onNewComment?.(newComment);
+      onNewComment?.(newComment, mutationMeta);
       return newComment.id;
     },
     [
@@ -220,31 +263,38 @@ export const CommentProvider = ({
       setActiveCommentId,
       focusCommentWithActiveId,
       onNewComment,
+      createMutationMeta,
     ],
   );
 
   const resolveComment = useCallback(
     (commentId: string) => {
-      editor.commands.resolveComment(commentId);
-      onResolveComment?.(commentId);
+      const mutationMeta = createMutationMeta('resolve', () =>
+        editor.commands.resolveComment(commentId),
+      );
+      onResolveComment?.(commentId, mutationMeta);
     },
-    [editor, onResolveComment],
+    [editor, onResolveComment, createMutationMeta],
   );
 
   const unresolveComment = useCallback(
     (commentId: string) => {
-      editor.commands.unresolveComment(commentId);
-      onUnresolveComment?.(commentId);
+      const mutationMeta = createMutationMeta('unresolve', () =>
+        editor.commands.unresolveComment(commentId),
+      );
+      onUnresolveComment?.(commentId, mutationMeta);
     },
-    [editor, onUnresolveComment],
+    [editor, onUnresolveComment, createMutationMeta],
   );
 
   const deleteComment = useCallback(
     (commentId: string) => {
-      editor.commands.unsetComment(commentId);
-      onDeleteComment?.(commentId);
+      const mutationMeta = createMutationMeta('delete', () =>
+        editor.commands.unsetComment(commentId),
+      );
+      onDeleteComment?.(commentId, mutationMeta);
     },
-    [editor, onDeleteComment],
+    [editor, onDeleteComment, createMutationMeta],
   );
 
   const handleAddReply = useCallback(
@@ -257,6 +307,7 @@ export const CommentProvider = ({
 
       const newReply = {
         id: `reply-${uuid()}`,
+        tabId: activeTabId,
         content: replyContent,
         username: username!,
         replies: [],
@@ -266,19 +317,19 @@ export const CommentProvider = ({
 
       replyCallback?.(currentActiveCommentId, newReply);
     },
-    [username],
+    [activeTabId, username],
   );
 
   const focusCommentInEditor = useCallback(
     (commentId: string) => {
-      if (!editor || !editor.view?.dom || !initialComments.length) return;
+      if (!editor || !editor.view?.dom || !tabComments.length) return;
 
       // Find the comment by ID
-      const foundComment = initialComments.find((c) => c.id === commentId);
-      if (!foundComment) return;
+      const foundTabComment = tabComments.find((c) => c.id === commentId);
+      if (!foundTabComment) return;
 
       // Find the element with the matching data-comment-id
-      if (foundComment.selectedContent) {
+      if (foundTabComment.selectedContent) {
         const commentElement = editor.view.dom.querySelector<HTMLElement>(
           `[data-comment-id="${commentId}"]`,
         );
@@ -334,7 +385,7 @@ export const CommentProvider = ({
       // Set this as active comment
       setActiveCommentId(commentId);
     },
-    [editor, initialComments, setActiveCommentId],
+    [editor, tabComments, setActiveCommentId],
   );
 
   const handleReplyChange = useCallback(
@@ -365,6 +416,7 @@ export const CommentProvider = ({
 
     const newComment = {
       id: `comment-${uuid()}`,
+      tabId: activeTabId,
       username: username!,
       selectedContent: '', // Empty for generic comments
       content: comment,
@@ -387,9 +439,9 @@ export const CommentProvider = ({
       }
     });
   }, [
-    editor,
     comment,
     username,
+    activeTabId,
     onNewComment,
     setActiveCommentId,
     onComment,
@@ -441,14 +493,14 @@ export const CommentProvider = ({
 
   const activeComments = useMemo(
     () =>
-      initialComments.filter(
+      tabComments.filter(
         (c) =>
           !c.resolved &&
           c.selectedContent &&
           c.selectedContent.length > 0 &&
           !c.deleted,
       ),
-    [initialComments],
+    [tabComments],
   );
 
   const activeCommentIndex = useMemo(
@@ -502,7 +554,7 @@ export const CommentProvider = ({
 
   const contextValue = useMemo<CommentContextType>(
     () => ({
-      comments: initialComments,
+      comments: tabComments,
       showResolved,
       editor,
       username,
@@ -547,6 +599,7 @@ export const CommentProvider = ({
       isCommentActive,
       isCommentResolved,
       ensResolutionUrl,
+      activeTabId,
       onCommentReply,
       isConnected,
       connectViaWallet,
@@ -561,7 +614,7 @@ export const CommentProvider = ({
       ensCache,
     }),
     [
-      initialComments,
+      tabComments,
       showResolved,
       editor,
       username,
@@ -601,6 +654,7 @@ export const CommentProvider = ({
       isCommentActive,
       isCommentResolved,
       ensResolutionUrl,
+      activeTabId,
       onCommentReply,
       isConnected,
       connectViaWallet,
