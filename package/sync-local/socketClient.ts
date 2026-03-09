@@ -40,6 +40,7 @@ export class SocketClient {
   private _socketUrl: string;
   private _socket: Socket | null = null;
   private _webSocketStatus: SocketStatusEnum = SocketStatusEnum.CLOSED;
+  private _isIntentionalDisconnect = false;
 
   get isConnected(): boolean {
     return this._webSocketStatus === SocketStatusEnum.CONNECTED;
@@ -107,7 +108,8 @@ export class SocketClient {
   ): Promise<AckResponse<T>> {
     return new Promise((resolve, reject) => {
       if (
-        this._webSocketStatus !== SocketStatusEnum.CONNECTED ||
+        (this._webSocketStatus !== SocketStatusEnum.CONNECTED &&
+         this._webSocketStatus !== SocketStatusEnum.CONNECTING) ||
         !this._socket
       ) {
         const error = new Error('Lost connection to websocket server');
@@ -212,6 +214,7 @@ export class SocketClient {
   }
 
   public disconnect = () => {
+    this._isIntentionalDisconnect = true;
     this._webSocketStatus = SocketStatusEnum.CLOSED;
     if (!this._socket) return;
     this._socket.disconnect();
@@ -315,7 +318,7 @@ export class SocketClient {
   ) => {
     this._websocketServiceDid = message.server_did;
 
-    if (this._webSocketStatus !== SocketStatusEnum.CONNECTED || !this.roomId) {
+    if (this._webSocketStatus === SocketStatusEnum.CLOSED || !this.roomId) {
       throw new Error(
         'Cannot establish handshake. WebSocket not connected or roomId not defined',
       );
@@ -356,6 +359,7 @@ export class SocketClient {
       return;
     }
 
+    this._webSocketStatus = SocketStatusEnum.CONNECTED;
     config.onConnect();
   };
 
@@ -419,7 +423,7 @@ export class SocketClient {
           settled = true;
           clearTimeout(connectionTimeout);
         }
-        this._webSocketStatus = SocketStatusEnum.CONNECTED;
+        this._webSocketStatus = SocketStatusEnum.CONNECTING;
         resolve();
       });
 
@@ -471,18 +475,15 @@ export class SocketClient {
           }
         }
 
-        config.onDisconnect();
+        if (this._isIntentionalDisconnect) {
+          config.onDisconnect();
+        }
+        // Otherwise, Socket.IO will attempt reconnection automatically
       });
 
       this._socket.on('connect_error', (err) => {
         console.error('SocketAPI: socket connect error', err);
-        this._webSocketStatus = SocketStatusEnum.CLOSED;
-
-        const error = new Error(
-          `Failed to connect to Socket, errorMessage: ${err?.message || 'Unknown error'}`,
-        );
-        error.name = 'SocketConnectionFailedError';
-        this._onError?.(error);
+        this._webSocketStatus = SocketStatusEnum.CONNECTING;
       });
 
       this._socket.on('reconnect_failed', () => {
@@ -490,6 +491,7 @@ export class SocketClient {
         this._webSocketStatus = SocketStatusEnum.CLOSED;
         const error = new Error('Failed to reconnect to Socket');
         error.name = 'SocketConnectionFailedError';
+        config.onDisconnect();
         this._onError?.(error);
         if (!settled) {
           settled = true;
@@ -499,7 +501,9 @@ export class SocketClient {
       });
 
       this._socket.on('reconnect', () => {
-        this._webSocketStatus = SocketStatusEnum.CONNECTED;
+        this._isIntentionalDisconnect = false;
+        // Status will be set to CONNECTED by _handleHandShake after re-auth
+        this._webSocketStatus = SocketStatusEnum.CONNECTING;
 
         // Re-broadcast local awareness state so other clients see our cursor
         if (this.awareness) {

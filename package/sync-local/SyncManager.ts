@@ -231,6 +231,31 @@ export class SyncManager {
 
   // ─── Internal methods ───
 
+  private async handleReconnection(): Promise<void> {
+    try {
+      this.setStatus(SyncStatus.SYNCING);
+      this._isConnected = true;
+
+      // Re-initialize awareness if it was cleaned up
+      if (!this._awareness) {
+        this.initializeAwareness();
+      }
+
+      this._isReady = true;
+      this.setStatus(SyncStatus.CONNECTED);
+
+      // Process any updates that were queued during disconnect
+      if (this.updateQueue.length > 0) {
+        this.processUpdateQueue().catch((err) => {
+          console.error('SyncManager: post-reconnect processUpdateQueue failed', err);
+        });
+      }
+    } catch (err) {
+      console.error('SyncManager: reconnection handling failed', err);
+      await this.disconnectInternal();
+    }
+  }
+
   private connectSocket(): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       if (!this.socketClient) {
@@ -245,6 +270,9 @@ export class SyncManager {
           if (!settled) {
             settled = true;
             resolve();
+          } else {
+            // Reconnection: re-sync state
+            this.handleReconnection();
           }
         },
         onDisconnect: () => {
