@@ -8,17 +8,17 @@ import {
 } from '@fileverse/ui';
 import { useEffect, useMemo, useState } from 'react';
 
-interface ExportFormatOption {
+export interface ExportFormatOption {
   id: string;
   label: string;
 }
 
-interface ExportTabOption {
+export interface ExportTabOption {
   id: string;
   label: string;
 }
 
-interface ExportAsModalProps {
+export interface DdocExportModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onExport?: (data: { format: string; tab: string }) => void;
@@ -28,7 +28,7 @@ interface ExportAsModalProps {
   initialTab?: string;
 }
 
-export const ExportAsModal = ({
+export const DdocExportModal = ({
   open,
   onOpenChange,
   onExport,
@@ -36,7 +36,7 @@ export const ExportAsModal = ({
   tabOptions,
   initialFormat,
   initialTab,
-}: ExportAsModalProps) => {
+}: DdocExportModalProps) => {
   const [format, setFormat] = useState(initialFormat || 'pdf');
   const [tab, setTab] = useState(initialTab || 'all');
   const defaultFormat = useMemo(

@@ -10,7 +10,7 @@ import {
 } from '@fileverse/ui';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { IEditorToolElement } from './editor-utils';
-import { ExportAsModal } from './export-modal';
+import { DdocExportModal } from './export-modal';
 import { Editor } from '@tiptap/react';
 import { Tab } from './tabs/utils/tab-utils';
 import * as Y from 'yjs';
@@ -256,7 +256,7 @@ const ImportExportButton = ({
         }
       />
       {hasMultipleTabs && (
-        <ExportAsModal
+        <DdocExportModal
           open={isModalOpen}
           onOpenChange={setModalOpen}
           onExport={({ format, tab }) =>
