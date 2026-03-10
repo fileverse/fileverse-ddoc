@@ -51,11 +51,20 @@ export const useTabManager = ({
   onVersionHistoryActiveTabChange,
   getEditor,
 }: UseTabManagerArgs) => {
+  const isInitialContentResolved =
+    enableCollaboration || initialContent !== null;
+
   // Derive tab state synchronously from initialContent so the first render
   // builds Collaboration extensions with the correct fragment field.
   const initialTabState = useMemo(() => {
     if (!ydoc) return { tabList: [] as Tab[], activeTabId: 'default' };
-    const isNewDdoc = isDDocOwner && !enableCollaboration && !initialContent;
+
+    if (!isInitialContentResolved) {
+      return { tabList: [] as Tab[], activeTabId: 'default' };
+    }
+    const isNewDdoc =
+      isDDocOwner && !enableCollaboration && initialContent === '';
+
     if (initialContent || isNewDdoc) {
       return deriveTabsFromEncodedState(initialContent as string, ydoc, {
         createDefaultTabIfMissing,
@@ -68,6 +77,7 @@ export const useTabManager = ({
     isDDocOwner,
     enableCollaboration,
     createDefaultTabIfMissing,
+    isInitialContentResolved,
   ]);
 
   const [activeTabId, _setActiveTabId] = useState(
@@ -104,7 +114,7 @@ export const useTabManager = ({
     (id: string) => {
       if (!ydoc || id === activeTabId) return;
 
-      if (!shouldSyncActiveTab) {
+      if (!shouldSyncActiveTab || !isInitialContentResolved) {
         _setActiveTabId(id);
         return;
       }
@@ -116,11 +126,11 @@ export const useTabManager = ({
       });
       _setActiveTabId(id);
     },
-    [activeTabId, ydoc, shouldSyncActiveTab],
+    [activeTabId, ydoc, shouldSyncActiveTab, isInitialContentResolved],
   );
 
   useEffect(() => {
-    if (!ydoc) return;
+    if (!ydoc || !isInitialContentResolved) return;
 
     // When shouldSyncActiveTab is true (including false→true transitions),
     // ensure Y.Doc matches the current React activeTabId.
@@ -192,7 +202,7 @@ export const useTabManager = ({
     return () => {
       root.unobserveDeep(handleTabList);
     };
-  }, [ydoc, defaultTabId, shouldSyncActiveTab]);
+  }, [ydoc, defaultTabId, shouldSyncActiveTab, isInitialContentResolved]);
 
   const createTab = useCallback(() => {
     const ddocTabs = ydoc.getMap('ddocTabs');

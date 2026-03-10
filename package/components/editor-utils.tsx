@@ -51,6 +51,7 @@ export interface IEditorToolElement {
   isActive: boolean;
   group?: string;
   isNew?: boolean;
+  subtitle?: string;
   notVisible?: number;
   disabled?: boolean;
 }
@@ -791,36 +792,9 @@ export const useEditorToolbar = ({
       isActive: false,
     },
     {
-      icon: 'FileOutput',
-      title: 'Markdown (.md)',
-      onClick: async (name?: string) => {
-        if (editor) {
-          const editorContent = editor?.getJSON();
-          const title = extractTitleFromContent(
-            editorContent as unknown as { content: JSONContent },
-          );
-          const fileName = name || title || 'Untitled';
-          const generateDownloadUrl = await editor.commands.exportMarkdownFile({
-            title: fileName,
-          });
-          if (generateDownloadUrl) {
-            const url = generateDownloadUrl;
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${fileName}.md`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-          }
-        }
-        onMarkdownExport?.();
-      },
-      isActive: false,
-    },
-    {
       icon: 'FileText',
       title: 'Web page (.html)',
+      subtitle: 'AO3 compatible',
       onClick: async (name?: string) => {
         if (editor) {
           const editorContent = editor.getJSON();
@@ -845,7 +819,6 @@ export const useEditorToolbar = ({
         onHtmlExport?.();
       },
       isActive: false,
-      isNew: true,
     },
     {
       icon: 'FileText',
@@ -872,7 +845,33 @@ export const useEditorToolbar = ({
         onTxtExport?.();
       },
       isActive: false,
-      isNew: true,
+    },
+    {
+      icon: 'FileOutput',
+      title: 'Markdown (.md)',
+      onClick: async () => {
+        if (editor) {
+          const editorContent = editor?.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const generateDownloadUrl = await editor.commands.exportMarkdownFile({
+            title: title || 'Untitled',
+          });
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${title || 'Untitled'}.md`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onMarkdownExport?.();
+      },
+      isActive: false,
     },
   ];
 

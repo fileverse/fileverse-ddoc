@@ -49,7 +49,7 @@ const ImportExportButton = ({
     string | undefined
   >(undefined);
 
-  const { getOptionFormat, formatSelectOptions, handleExport } = useDdocExport({
+  const { formatSelectOptions, handleExport } = useDdocExport({
     editor,
     tabs,
     ydoc,
@@ -168,21 +168,24 @@ const ImportExportButton = ({
                       onClick={() => {
                         if (option?.disabled) return;
                         setFileExportsOpen(false);
-                        const format = option
-                          ? getOptionFormat(option.title)
-                          : '';
-                        if (!format) return;
-                        triggerExport(format);
+                        option?.onClick();
                       }}
                       className={cn(
-                        'h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm',
+                        'min-h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm',
                         option?.disabled
                           ? 'opacity-50 cursor-not-allowed'
                           : 'hover:color-bg-default-hover',
                       )}
                       data-testid={`export-${option?.title?.match(/\(\.(\w+)\)/)?.[1] || option?.title?.toLowerCase().replace(/[^a-z]/g, '-')}`}
                     >
-                      <span className="text-body-sm">{option?.title}</span>
+                      <div className="flex flex-col">
+                        <span className="text-body-sm">{option?.title}</span>
+                        {option?.subtitle && (
+                          <span className="text-xs leading-tight color-text-secondary">
+                            {option.subtitle}
+                          </span>
+                        )}
+                      </div>
                       {option?.isNew && (
                         <p className="max-h-[16px] flex items-center text-[8px] color-bg-brand text-black rounded p-1 font-semibold">
                           NEW
