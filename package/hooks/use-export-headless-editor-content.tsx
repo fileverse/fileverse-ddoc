@@ -52,7 +52,7 @@ const isSupportedFormat = (
   HEADLESS_EXPORT_FORMATS.includes(format as HeadlessEditorExportFormat);
 
 export const useExportHeadlessEditorContent = (
-  props?: UseHeadlessEditorProps,
+  props?: UseHeadlessEditorProps & { onExportError?: (error: unknown) => void },
 ) => {
   const activeSessionRef = useRef<DdocExportSession | null>(null);
   const isExportInProgressRef = useRef(false);
@@ -337,6 +337,7 @@ export const useExportHeadlessEditorContent = (
         })
         .catch((error) => {
           console.log('Export failed:', error);
+          props?.onExportError?.(error);
         });
     },
     [clearExportSession, handleExportContent, ddocExportSession],
