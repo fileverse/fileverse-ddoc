@@ -27,6 +27,18 @@ export const FontSize = Extension.create({
         types: ['paragraph'],
         attributes: {
           class: {},
+          fontSize: {
+            default: null,
+            parseHTML: (element) => element.style.fontSize?.replace(/['"]+/g, '') || null,
+            renderHTML: (attributes) => {
+              if (!attributes.fontSize) {
+                return {};
+              }
+              return {
+                style: `font-size: ${attributes.fontSize}`,
+              };
+            },
+          },
         },
       },
       {
@@ -52,22 +64,46 @@ export const FontSize = Extension.create({
   },
 
   addCommands() {
+    const getExistingTextStyleAttrs = (editor: typeof this.editor) => {
+      const attrs = editor.getAttributes('textStyle');
+      // Read paragraph node directly — storedMarks can be cleared by blur,
+      // but node attrs persist reliably
+      const { selection } = editor.state;
+      const $pos = selection.$from;
+      const node = $pos.node($pos.depth);
+      if (node?.type.name === 'paragraph') {
+        if (!attrs.fontFamily && node.attrs.fontFamily) {
+          attrs.fontFamily = node.attrs.fontFamily;
+        }
+        if (!attrs.fontSize && node.attrs.fontSize) {
+          attrs.fontSize = node.attrs.fontSize;
+        }
+      }
+      return attrs;
+    };
+
     return {
       setFontSize:
         (fontSize: string) =>
-        ({ chain }) =>
-          chain().setMark('textStyle', { fontSize }).run(),
+        ({ chain }) => {
+          const existing = getExistingTextStyleAttrs(this.editor);
+          return chain()
+            .setMark('textStyle', { ...existing, fontSize })
+            .run();
+        },
       unsetFontSize:
         () =>
-        ({ chain }) =>
-          chain()
-            .setMark('textStyle', { fontSize: null })
+        ({ chain }) => {
+          const existing = getExistingTextStyleAttrs(this.editor);
+          return chain()
+            .setMark('textStyle', { ...existing, fontSize: null })
             .removeEmptyTextStyle()
-            .run(),
+            .run();
+        },
       increaseFontSize:
         () =>
         ({ chain }) => {
-          const attrs = this.editor.getAttributes('textStyle');
+          const attrs = getExistingTextStyleAttrs(this.editor);
           let currentSizeNum = parseInt(attrs.fontSize || '16');
           if (isNaN(currentSizeNum)) currentSizeNum = 16;
 
@@ -75,13 +111,13 @@ export const FontSize = Extension.create({
           if (!nextSize) return false;
 
           return chain()
-            .setMark('textStyle', { fontSize: `${nextSize}px` })
+            .setMark('textStyle', { ...attrs, fontSize: `${nextSize}px` })
             .run();
         },
       decreaseFontSize:
         () =>
         ({ chain }) => {
-          const attrs = this.editor.getAttributes('textStyle');
+          const attrs = getExistingTextStyleAttrs(this.editor);
           let currentSizeNum = parseInt(attrs.fontSize || '16');
           if (isNaN(currentSizeNum)) currentSizeNum = 16;
 
@@ -91,7 +127,7 @@ export const FontSize = Extension.create({
           if (!nextSize) return false;
 
           return chain()
-            .setMark('textStyle', { fontSize: `${nextSize}px` })
+            .setMark('textStyle', { ...attrs, fontSize: `${nextSize}px` })
             .run();
         },
     };
@@ -103,4 +139,6 @@ export const FontSize = Extension.create({
       'Mod-Shift-,': () => this.editor.commands.decreaseFontSize(),
     };
   },
+
 });
+
