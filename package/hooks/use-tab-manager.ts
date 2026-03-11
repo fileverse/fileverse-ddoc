@@ -62,8 +62,7 @@ export const useTabManager = ({
     if (!isInitialContentResolved) {
       return { tabList: [] as Tab[], activeTabId: 'default' };
     }
-    const isNewDdoc =
-      isDDocOwner && !enableCollaboration && initialContent === '';
+    const isNewDdoc = isDDocOwner && !enableCollaboration && !initialContent;
 
     if (initialContent || isNewDdoc) {
       return deriveTabsFromEncodedState(initialContent as string, ydoc, {

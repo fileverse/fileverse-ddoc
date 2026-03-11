@@ -72,8 +72,8 @@ function App() {
   // --- Persistence ---
   // Use undefined (not null) when no saved content — null has special meaning
   // in use-tab-editor.tsx (it signals "content explicitly not ready yet")
-  const [initialContent] = useState<string | undefined>(() =>
-    docStore.getContent(docId) || undefined,
+  const [initialContent] = useState<string | undefined>(
+    () => docStore.getContent(docId) || undefined,
   );
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(null);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
