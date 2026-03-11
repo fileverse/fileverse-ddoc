@@ -28,8 +28,7 @@ interface ISocketClientConfig {
   ownerEdSecret?: string;
   contractAddress?: string;
   ownerAddress?: string;
-  onCollaborationConnectCallback: (response: any) => void;
-  onError?: (e: Error) => void;
+  onHandshakeData?: (response: { data: AckResponse; roomKey: string }) => void;
   roomInfo?: {
     documentTitle: string;
     portalAddress: string;
@@ -66,11 +65,10 @@ export class SocketClient {
     commentKey: string;
   };
   private awareness: Awareness | null = null;
+  private connectionAttemptErrorCount = 0;
 
-  _onError: ISocketInitConfig['onError'] | null = null;
-  _onCollaborationConnectCallback:
-    | ISocketClientConfig['onCollaborationConnectCallback']
-    | null = null;
+  private _onHandshakeData: ISocketClientConfig['onHandshakeData'] | null =
+    null;
 
   constructor(config: ISocketClientConfig) {
     this._socketUrl = config.wsUrl || 'ws://localhost:5000';
@@ -80,7 +78,6 @@ export class SocketClient {
 
     this.roomKey = config.roomKey;
     this.roomId = config.roomId;
-    this._onError = config.onError || null;
 
     this.collaborationKeyPair = ucans.EdKeypair.fromSecretKey(
       fromUint8Array(ucanSecret),
@@ -91,9 +88,7 @@ export class SocketClient {
 
     if (config.contractAddress) this.contractAddress = config.contractAddress;
     if (config.ownerAddress) this.ownerAddress = config.ownerAddress;
-    if (config.onCollaborationConnectCallback)
-      this._onCollaborationConnectCallback =
-        config.onCollaborationConnectCallback;
+    if (config.onHandshakeData) this._onHandshakeData = config.onHandshakeData;
     if (config.roomInfo) this.roomInfo = config.roomInfo;
   }
 
@@ -109,12 +104,11 @@ export class SocketClient {
     return new Promise((resolve, reject) => {
       if (
         (this._webSocketStatus !== SocketStatusEnum.CONNECTED &&
-         this._webSocketStatus !== SocketStatusEnum.CONNECTING) ||
+          this._webSocketStatus !== SocketStatusEnum.CONNECTING) ||
         !this._socket
       ) {
         const error = new Error('Lost connection to websocket server');
         error.name = 'SocketConnectionLostError';
-        this._onError?.(error);
         reject(error);
         return;
       }
@@ -126,7 +120,6 @@ export class SocketClient {
           `Socket emit "${event}" timed out after ${timeoutMs}ms`,
         );
         error.name = 'SocketTimeoutError';
-        this._onError?.(error);
         reject(error);
       }, timeoutMs);
 
@@ -343,24 +336,24 @@ export class SocketClient {
 
     const response = await this._emitWithAck('/auth', args);
 
-    this._onCollaborationConnectCallback?.({
+    // Always notify consumer with handshake data (for room info, link copying, etc.)
+    this._onHandshakeData?.({
       data: response,
       roomKey: this.roomKey,
     });
 
+    // Check statusCode FIRST — only proceed for 200
     if (response.statusCode !== 200) {
       const message =
         (response?.error || 'Unknown error') +
         `, statusCode: ${response?.statusCode}`;
-
       const error = new Error(message);
-
-      config.onHandShakeError(error);
+      config.onHandShakeError(error, response.statusCode);
       return;
     }
 
     this._webSocketStatus = SocketStatusEnum.CONNECTED;
-    config.onConnect();
+    config.onHandshakeSuccess();
   };
 
   private _handleAwarenessUpdate = (data: { data: any; roomId: string }) => {
@@ -374,7 +367,11 @@ export class SocketClient {
           toUint8Array(key),
           encryptedPosition,
         );
-        applyAwarenessUpdate(this.awareness, new Uint8Array(decrypted), 'remote');
+        applyAwarenessUpdate(
+          this.awareness,
+          new Uint8Array(decrypted),
+          'remote',
+        );
       } catch (err) {
         console.warn(
           'sync-machine: failed to decrypt awareness update, skipping',
@@ -399,9 +396,8 @@ export class SocketClient {
 
       this._socket = io(this._socketUrl, {
         reconnection: true,
-        reconnectionAttempts: 5,
+        reconnectionAttempts: 3,
         reconnectionDelay: 1500,
-        reconnectionDelayMax: 10000,
         timeout: 6000,
         transports: ['websocket', 'polling'],
       });
@@ -411,12 +407,13 @@ export class SocketClient {
         if (!settled) {
           settled = true;
           this._webSocketStatus = SocketStatusEnum.CLOSED;
-          const error = new Error('Connection timed out after 60s');
+          const error = new Error('Connection timed out after 30s');
           error.name = 'SocketConnectionTimeoutError';
-          this._onError?.(error);
+          config.onError(error);
           reject(error);
+          this.disconnect();
         }
-      }, 60000);
+      }, 30000);
 
       this._socket.on('connect', () => {
         if (!settled) {
@@ -457,7 +454,7 @@ export class SocketClient {
         console.error('SocketAPI: server error event', data);
         const error = new Error(data?.message || 'Server error');
         error.name = 'ServerError';
-        this._onError?.(error);
+        config.onError(error);
       });
 
       this._socket.on('disconnect', () => {
@@ -471,31 +468,49 @@ export class SocketClient {
             (clientId) => clientId !== this.awareness!.clientID,
           );
           if (remoteClients.length > 0) {
-            removeAwarenessStates(this.awareness, remoteClients, 'socket disconnect');
+            removeAwarenessStates(
+              this.awareness,
+              remoteClients,
+              'socket disconnect',
+            );
           }
         }
 
         if (this._isIntentionalDisconnect) {
           config.onDisconnect();
+        } else {
+          // Unintentional drop — notify SyncManager so it can transition to reconnecting
+          config.onSocketDropped();
         }
-        // Otherwise, Socket.IO will attempt reconnection automatically
       });
 
       this._socket.on('connect_error', (err) => {
         console.error('SocketAPI: socket connect error', err);
         this._webSocketStatus = SocketStatusEnum.CONNECTING;
+
+        if (this.connectionAttemptErrorCount >= 3) {
+          clearTimeout(connectionTimeout);
+          this.connectionAttemptErrorCount = 0;
+          const error = new Error('Failed to establish socket connection');
+          error.name = 'SocketConnectionFailedError';
+          config.onError(error);
+          reject(error);
+          this.disconnect();
+          // return;
+        } else {
+          this.connectionAttemptErrorCount++;
+        }
       });
 
       this._socket.on('reconnect_failed', () => {
         console.error('SocketAPI: reconnection failed');
         this._webSocketStatus = SocketStatusEnum.CLOSED;
-        const error = new Error('Failed to reconnect to Socket');
-        error.name = 'SocketConnectionFailedError';
-        config.onDisconnect();
-        this._onError?.(error);
+        config.onReconnectFailed();
         if (!settled) {
           settled = true;
           clearTimeout(connectionTimeout);
+          const error = new Error('Failed to reconnect to Socket');
+          error.name = 'SocketConnectionFailedError';
           reject(error);
         }
       });
@@ -509,10 +524,15 @@ export class SocketClient {
         if (this.awareness) {
           const localState = this.awareness.getLocalState();
           if (localState) {
-            const update = encodeAwarenessUpdate(this.awareness, [this.awareness.clientID]);
+            const update = encodeAwarenessUpdate(this.awareness, [
+              this.awareness.clientID,
+            ]);
             const key = this.roomKey;
             if (key) {
-              const encryptedUpdate = crypto.encryptData(toUint8Array(key), update);
+              const encryptedUpdate = crypto.encryptData(
+                toUint8Array(key),
+                update,
+              );
               this.broadcastAwareness(encryptedUpdate);
             }
           }

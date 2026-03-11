@@ -8,22 +8,30 @@ import { crypto as cryptoUtils } from './crypto';
 import { objectToFile } from './utils/objectToFile';
 import { createAwarenessUpdateHandler } from './utils/createAwarenessUpdateHandler';
 import {
-  SyncStatus,
   SyncManagerConfig,
-  ConnectConfig,
-  SyncManagerSnapshot,
+  CollabConnectionConfig,
+  CollabServices,
+  CollabCallbacks,
+  CollabStatus,
+  CollabState,
+  CollabEvent,
+  CollabContext,
+  CollabError,
 } from './types';
+import {
+  transition,
+  deriveCollabState,
+  createCollabError,
+  INITIAL_CONTEXT,
+} from './collabStateMachine';
 
 const MAX_RETRIES = 3;
 
 export class SyncManager {
-  // --- Reactive state (triggers notify on change) ---
-  private _status: SyncStatus = SyncStatus.DISCONNECTED;
-  private _isConnected = false;
-  private _isReady = false;
-  private _errorMessage = '';
+  // --- State machine ---
+  private _status: CollabStatus = 'idle';
+  private _context: CollabContext = { ...INITIAL_CONTEXT };
   private _awareness: Awareness | null = null;
-  private _initialDocumentDecryptionState: 'done' | 'pending' = 'pending';
 
   // --- Internal state ---
   private socketClient: SocketClient | null = null;
@@ -34,26 +42,21 @@ export class SyncManager {
   private uncommittedUpdatesIdList: string[] = [];
   private contentTobeAppliedQueue: Array<{ data: string; id?: string }> = [];
   private isProcessing = false;
-  private errorCount = 0;
   private _awarenessUpdateHandler:
     | ((
-        changes: {
-          added: number[];
-          updated: number[];
-          removed: number[];
-        },
-        origin: any,
-      ) => void)
+      changes: {
+        added: number[];
+        updated: number[];
+        removed: number[];
+      },
+      origin: any,
+    ) => void)
     | null = null;
 
   // --- Config (from constructor) ---
   private ydoc: Y.Doc;
-  private onError?: (e: Error) => void;
-  private onCollaborationConnectCallback?: (response: any) => void;
-  private onCollaborationCommit?: (file: File) => Promise<string>;
-  private onFetchCommitContent?: (cid: string) => Promise<any>;
-  private onSessionTerminated?: () => void;
-  private onUnMergedUpdates?: (state: boolean) => void;
+  private servicesRef: CollabServices | undefined;
+  private callbacksRef: CollabCallbacks | undefined;
   private onLocalUpdate?: (
     updatedDocContent: string,
     updateChunk: string,
@@ -61,40 +64,107 @@ export class SyncManager {
 
   constructor(
     config: SyncManagerConfig,
-    private onStateChange: (snapshot: SyncManagerSnapshot) => void,
+    private onCollabStateChange: (state: CollabState) => void,
   ) {
     this.ydoc = config.ydoc;
-    this.onError = config.onError;
-    this.onCollaborationConnectCallback = config.onCollaborationConnectCallback;
-    this.onCollaborationCommit = config.onCollaborationCommit;
-    this.onFetchCommitContent = config.onFetchCommitContent;
-    this.onSessionTerminated = config.onSessionTerminated;
-    this.onUnMergedUpdates = config.onUnMergedUpdates;
+    this.servicesRef = config.services;
+    this.callbacksRef = config.callbacks;
     this.onLocalUpdate = config.onLocalUpdate;
   }
 
-  private notify() {
-    this.onStateChange({
-      status: this._status,
-      isConnected: this._isConnected,
-      isReady: this._isReady,
-      errorMessage: this._errorMessage,
-      awareness: this._awareness,
-      initialDocumentDecryptionState: this._initialDocumentDecryptionState,
-    });
+  /** Called by useSyncManager on every render to keep refs fresh */
+  updateRefs(
+    services: CollabServices | undefined,
+    callbacks: CollabCallbacks | undefined,
+    onLocalUpdate?: (updatedDocContent: string, updateChunk: string) => void,
+  ) {
+    this.servicesRef = services;
+    this.callbacksRef = callbacks;
+    this.onLocalUpdate = onLocalUpdate;
   }
 
-  private setStatus(status: SyncStatus) {
-    if (this._status === status) return;
-    this._status = status;
-    this._isConnected = status !== SyncStatus.DISCONNECTED && status !== SyncStatus.DISCONNECTING;
-    this.notify();
+  // ─── Derived properties ───
+
+  get isConnected(): boolean {
+    return (
+      this._status === 'syncing' ||
+      this._status === 'ready' ||
+      this._status === 'reconnecting'
+    );
+  }
+
+  get isReady(): boolean {
+    return this._status === 'ready';
+  }
+
+  get awareness(): Awareness | null {
+    return this._awareness;
+  }
+
+  get status(): CollabStatus {
+    return this._status;
+  }
+
+  get collabState(): CollabState {
+    return deriveCollabState(this._status, this._context);
+  }
+
+  // ─── State machine core ───
+
+  private send(event: CollabEvent): boolean {
+    const result = transition(this._status, event, this._context);
+    if (!result) {
+      console.warn(
+        `SyncManager: invalid transition (${this._status}, ${event.type}) — ignored`,
+      );
+      return false;
+    }
+
+    const prevStatus = this._status;
+
+    // Exit actions
+    this.runExitActions(prevStatus, result.status);
+
+    // Update state
+    this._status = result.status;
+    this._context = { ...this._context, ...result.context };
+
+    // Entry actions
+    this.runEntryActions(result.status, prevStatus);
+
+    // Notify consumer
+    const state = deriveCollabState(this._status, this._context);
+    this.callbacksRef?.onStateChange?.(state);
+    this.onCollabStateChange(state);
+
+    return true;
+  }
+
+  private runExitActions(from: CollabStatus, to: CollabStatus): void {
+    if (from === 'ready' && to === 'reconnecting') {
+      this.cleanupAwareness();
+    }
+    if (to === 'idle') {
+      this.cleanupAwareness();
+    }
+  }
+
+  private runEntryActions(to: CollabStatus, from: CollabStatus): void {
+    if (to === 'ready' && from === 'syncing') {
+      this.initializeAwareness();
+    }
+    if (to === 'error') {
+      const error = this._context.error;
+      if (error) {
+        this.callbacksRef?.onError?.(error);
+      }
+    }
   }
 
   // ─── Public API ───
 
-  async connect(config: ConnectConfig): Promise<void> {
-    if (this._status !== SyncStatus.DISCONNECTED) return;
+  async connect(config: CollabConnectionConfig): Promise<void> {
+    if (this._status !== 'idle') return;
 
     this.roomKey = config.roomKey;
     this.roomKeyBytes = toUint8Array(config.roomKey);
@@ -109,18 +179,17 @@ export class SyncManager {
       ownerEdSecret: config.ownerEdSecret,
       contractAddress: config.contractAddress,
       ownerAddress: config.ownerAddress,
-      onCollaborationConnectCallback:
-        this.onCollaborationConnectCallback || (() => {}),
-      onError: this.onError,
+      onHandshakeData: this.callbacksRef?.onHandshakeData,
       roomInfo: config.roomInfo,
     });
 
-    this.setStatus(SyncStatus.CONNECTING);
+    this.send({ type: 'CONNECT' });
 
     try {
       await this.connectSocket();
-      // After successful handshake, sync latest commit
-      this.setStatus(SyncStatus.SYNCING);
+      // After successful handshake, transition to syncing
+      this.send({ type: 'AUTH_SUCCESS' });
+
       await this.syncLatestCommit(initialUpdate);
 
       // Verify socket is still alive after sync
@@ -131,8 +200,8 @@ export class SyncManager {
       // Apply any queued remote contents received during sync
       this.applyQueuedRemoteContents();
 
-      this._isReady = true;
-      this.setStatus(SyncStatus.CONNECTED);
+      // Transition to ready — awareness is initialized in entry action
+      this.send({ type: 'SYNC_COMPLETE' });
 
       // If there are queued local updates, process them
       if (this.updateQueue.length > 0) {
@@ -142,22 +211,18 @@ export class SyncManager {
       }
     } catch (err) {
       console.error('SyncManager: connect failed', err);
-      this.onError?.(err instanceof Error ? err : new Error(String(err)));
-      await this.disconnectInternal();
+      const error = err instanceof Error ? err : new Error(String(err));
+      this.handleConnectionError(error);
     }
   }
 
   async disconnect(): Promise<void> {
-    if (
-      this._status === SyncStatus.DISCONNECTED ||
-      this._status === SyncStatus.DISCONNECTING
-    )
-      return;
+    if (this._status === 'idle' || this._status === 'terminated') return;
     await this.disconnectInternal();
   }
 
   async terminateSession(): Promise<void> {
-    if (this._status === SyncStatus.DISCONNECTED) return;
+    if (this._status === 'idle') return;
 
     try {
       if (this._awareness) {
@@ -171,42 +236,22 @@ export class SyncManager {
         await this.socketClient?.terminateSession();
       } else {
         this.socketClient?.disconnect();
-        this.onSessionTerminated?.();
       }
     } finally {
-      this.reset();
-      this.setStatus(SyncStatus.DISCONNECTED);
+      this.resetInternalState();
+      this.send({
+        type: 'SESSION_TERMINATED',
+        reason: 'User terminated session',
+      });
+      // After terminated, reset to idle for potential reuse
+      this.send({ type: 'RESET' });
     }
   }
 
   enqueueLocalUpdate(update: Uint8Array): void {
     this.updateQueue.push(update);
-    if (
-      this._isConnected &&
-      this._isReady &&
-      !this.isProcessing &&
-      this._status !== SyncStatus.SYNCING
-    ) {
+    if (this._status === 'ready' && !this.isProcessing) {
       this.processUpdateQueue();
-    }
-  }
-
-  initializeAwareness(): void {
-    if (this._awareness || !this.socketClient) return;
-    try {
-      const awareness = new Awareness(this.ydoc);
-      const handler = createAwarenessUpdateHandler(
-        awareness,
-        this.socketClient,
-        this.roomKey,
-      );
-      awareness.on('update', handler);
-      this.socketClient.registerAwareness(awareness);
-      this._awareness = awareness;
-      this._awarenessUpdateHandler = handler;
-      this.notify();
-    } catch (err) {
-      console.error('SyncManager: failed to initialize awareness', err);
     }
   }
 
@@ -215,44 +260,87 @@ export class SyncManager {
     if (this._awareness) {
       removeAwarenessStates(this._awareness, [this.ydoc.clientID], 'cleanup');
     }
-    if (this._awareness && this._awarenessUpdateHandler) {
-      this._awareness.off('update', this._awarenessUpdateHandler);
-    }
-    if (this._awareness) {
-      this._awareness.destroy();
-    }
+    this.cleanupAwareness();
+
     // Always tear down socket — even if already CLOSED —
     // to prevent socket.io auto-reconnection
     this.socketClient?.disconnect();
-    this.reset();
-    this._status = SyncStatus.DISCONNECTED;
-    this.notify();
+    this.resetInternalState();
+    this._status = 'idle';
+    this._context = { ...INITIAL_CONTEXT };
+
+    const state = deriveCollabState(this._status, this._context);
+    this.onCollabStateChange(state);
   }
 
   // ─── Internal methods ───
 
+  private handleConnectionError(error: Error): void {
+    const errorName = error.name || '';
+    const errorMessage = error.message || '';
+
+    let collabError: CollabError;
+
+    if (
+      errorName === 'SocketConnectionTimeoutError' ||
+      errorMessage.includes('timed out')
+    ) {
+      collabError = createCollabError('TIMEOUT', error.message);
+    } else if (
+      errorName === 'SocketConnectionFailedError' ||
+      errorMessage.includes('Failed to reconnect')
+    ) {
+      collabError = createCollabError('CONNECTION_FAILED', error.message);
+    } else if (
+      errorMessage.includes('statusCode: 401') ||
+      errorMessage.includes('AUTH_')
+    ) {
+      collabError = createCollabError('AUTH_FAILED', error.message);
+    } else if (
+      errorMessage.includes('sync') ||
+      errorMessage.includes('decrypt')
+    ) {
+      collabError = createCollabError('SYNC_FAILED', error.message);
+    } else {
+      collabError = createCollabError('UNKNOWN', error.message);
+    }
+
+    // Clean up socket
+    this.socketClient?.disconnect();
+    this.resetInternalState();
+
+    this.send({ type: 'ERROR', error: collabError });
+  }
+
   private async handleReconnection(): Promise<void> {
     try {
-      this.setStatus(SyncStatus.SYNCING);
-      this._isConnected = true;
+      this.send({ type: 'RECONNECTED' });
 
-      // Re-initialize awareness if it was cleaned up
-      if (!this._awareness) {
-        this.initializeAwareness();
+      const initialUpdate = fromUint8Array(Y.encodeStateAsUpdate(this.ydoc));
+      await this.syncLatestCommit(initialUpdate);
+
+      if (!this.socketClient?.isConnected) {
+        throw new Error('Socket disconnected during re-sync');
       }
 
-      this._isReady = true;
-      this.setStatus(SyncStatus.CONNECTED);
+      this.applyQueuedRemoteContents();
 
-      // Process any updates that were queued during disconnect
+      // Transition to ready — awareness re-initialized in entry action
+      this.send({ type: 'SYNC_COMPLETE' });
+
+      // Process any updates queued during disconnect
       if (this.updateQueue.length > 0) {
         this.processUpdateQueue().catch((err) => {
-          console.error('SyncManager: post-reconnect processUpdateQueue failed', err);
+          console.error(
+            'SyncManager: post-reconnect processUpdateQueue failed',
+            err,
+          );
         });
       }
     } catch (err) {
       console.error('SyncManager: reconnection handling failed', err);
-      await this.disconnectInternal();
+      const error = err instanceof Error ? err : new Error(String(err));
+      this.handleConnectionError(error);
     }
   }
 
@@ -265,56 +353,110 @@ export class SyncManager {
 
       let settled = false;
 
-      this.socketClient.connectSocket({
-        onConnect: () => {
-          if (!settled) {
-            settled = true;
-            resolve();
-          } else {
-            // Reconnection: re-sync state
-            this.handleReconnection();
-          }
-        },
-        onDisconnect: () => {
-          if (!settled) {
-            settled = true;
-            reject(new Error('Socket disconnected during connection'));
-            return;
-          }
-          // Socket disconnected after connection was established
-          this.disconnect();
-        },
-        onHandShakeError: (e) => {
-          this.onError?.(e);
-          if (!settled) {
-            settled = true;
-            reject(e);
-            return;
-          }
-          this.disconnect();
-        },
-        onContentUpdate: (payload) => {
-          this.handleRemoteContentUpdate(payload);
-        },
-        onMembershipChange: () => {
-          // Room membership changes are handled by socketClient internally
-        },
-        onSessionTerminated: () => {
-          this.onSessionTerminated?.();
-          this.reset();
-          this.setStatus(SyncStatus.DISCONNECTED);
-        },
-        onError: (e) => {
-          console.error('SyncManager: socket error', e);
-          this.onError?.(e);
-          if (!settled) {
-            settled = true;
-            reject(e);
-            return;
-          }
-          this.disconnect();
-        },
-      })?.catch(() => { /* handled via callbacks */ });
+      this.socketClient
+        .connectSocket({
+          onHandshakeSuccess: () => {
+            if (!settled) {
+              settled = true;
+              resolve();
+            } else {
+              // Reconnection: socket dropped then reconnected
+              // Only send SOCKET_DROPPED if not already in reconnecting state
+              // (onSocketDropped may have already transitioned us)
+              if (this._status !== 'reconnecting') {
+                this.send({ type: 'SOCKET_DROPPED' });
+              }
+              this.handleReconnection();
+            }
+          },
+          onDisconnect: () => {
+            if (!settled) {
+              settled = true;
+              reject(new Error('Socket disconnected during connection'));
+              return;
+            }
+            // Intentional disconnect after connection was established
+            this.disconnect();
+          },
+          onSocketDropped: () => {
+            if (this._status === 'ready') {
+              this.send({ type: 'SOCKET_DROPPED' });
+            }
+          },
+          onHandShakeError: (e, statusCode) => {
+            // Classify error by statusCode
+            if (statusCode === 404) {
+              this.socketClient?.disconnect();
+              this.resetInternalState();
+              this.send({
+                type: 'SESSION_TERMINATED',
+                reason: 'Session not found',
+              });
+              if (!settled) {
+                settled = true;
+                // Don't reject — the state machine handles this
+                resolve();
+              }
+              return;
+            }
+
+            if (!settled) {
+              settled = true;
+              reject(e);
+              return;
+            }
+            this.disconnect();
+          },
+          onContentUpdate: (payload) => {
+            this.handleRemoteContentUpdate(payload);
+          },
+          onMembershipChange: () => {
+            // Room membership changes are handled by socketClient internally
+          },
+          onSessionTerminated: () => {
+            this.resetInternalState();
+            this.send({
+              type: 'SESSION_TERMINATED',
+              reason: 'Terminated by owner',
+            });
+          },
+          onReconnectFailed: () => {
+            if (this._status === 'reconnecting') {
+              this.send({ type: 'RETRY_EXHAUSTED' });
+            } else if (this._status === 'ready') {
+              // Safety net: disconnect event was missed, go straight to error
+              const error = createCollabError(
+                'CONNECTION_FAILED',
+                'Connection lost and reconnection failed',
+              );
+              this.send({ type: 'ERROR', error });
+            }
+            // Also reject the initial connection promise if it hasn't settled
+            if (!settled) {
+              settled = true;
+              const error = new Error(
+                'Failed to connect to collaboration server',
+              );
+              error.name = 'SocketConnectionFailedError';
+              reject(error);
+            }
+          },
+          onError: (e) => {
+            console.error('SyncManager: socket error', e);
+            if (!settled) {
+              settled = true;
+              reject(e);
+              return;
+            }
+            // Socket error while connected — trigger reconnect flow
+            if (this._status === 'ready') {
+              this.send({ type: 'SOCKET_DROPPED' });
+            }
+          },
+        })
+        ?.catch(() => {
+          /* handled via callbacks */
+        });
     });
   }
 
@@ -340,8 +482,8 @@ export class SyncManager {
 
       const updates: Uint8Array[] = [];
 
-      if (history?.cid && this.onFetchCommitContent) {
-        const content = await this.onFetchCommitContent(history.cid);
+      if (history?.cid && this.servicesRef?.fetchFromStorage) {
+        const content = await this.servicesRef.fetchFromStorage(history.cid);
         if (content?.data) {
           try {
             const decryptedContent = cryptoUtils.decryptData(
@@ -371,8 +513,9 @@ export class SyncManager {
       if (decryptedCommit) updates.push(decryptedCommit);
 
       if (encryptedUpdates && encryptedUpdates.length > 0) {
-        if (this.isOwner && typeof this.onUnMergedUpdates === 'function') {
-          this.onUnMergedUpdates(true);
+        // Signal unmerged peer updates via state machine
+        if (this.isOwner) {
+          this.send({ type: 'SET_UNMERGED_UPDATES', hasUpdates: true });
         }
         for (const encryptedUpdate of encryptedUpdates) {
           try {
@@ -396,12 +539,10 @@ export class SyncManager {
         Y.applyUpdate(this.ydoc, mergedState, 'self');
       }
 
-      if (this.isOwner && typeof this.onUnMergedUpdates === 'function') {
-        this.onUnMergedUpdates(false);
+      // Clear unmerged updates — state machine ensures no stuck state
+      if (this.isOwner) {
+        this.send({ type: 'SET_UNMERGED_UPDATES', hasUpdates: false });
       }
-
-      this._initialDocumentDecryptionState = 'done';
-      this.notify();
 
       this.uncommittedUpdatesIdList = uncommittedChangesId;
 
@@ -417,12 +558,41 @@ export class SyncManager {
     }, 'syncLatestCommit');
   }
 
+  private initializeAwareness(): void {
+    if (this._awareness || !this.socketClient) return;
+    try {
+      const awareness = new Awareness(this.ydoc);
+      const handler = createAwarenessUpdateHandler(
+        awareness,
+        this.socketClient,
+        this.roomKey,
+      );
+      awareness.on('update', handler);
+      this.socketClient.registerAwareness(awareness);
+      this._awareness = awareness;
+      this._awarenessUpdateHandler = handler;
+    } catch (err) {
+      console.error('SyncManager: failed to initialize awareness', err);
+    }
+  }
+
+  private cleanupAwareness(): void {
+    if (this._awareness && this._awarenessUpdateHandler) {
+      this._awareness.off('update', this._awarenessUpdateHandler);
+    }
+    if (this._awareness) {
+      this._awareness.destroy();
+    }
+    this._awareness = null;
+    this._awarenessUpdateHandler = null;
+  }
+
   private async commitLocalContents(
     ids: string[],
     unbroadcastedUpdate: string | null,
   ): Promise<void> {
     if (ids.length >= 10) {
-      if (typeof this.onCollaborationCommit !== 'function') {
+      if (typeof this.servicesRef?.commitToStorage !== 'function') {
         console.debug(
           'SyncManager: no commit function provided, skipping commit',
         );
@@ -432,7 +602,7 @@ export class SyncManager {
           Y.encodeStateAsUpdate(this.ydoc),
         );
         const file = objectToFile({ data: localContent }, 'commit');
-        const ipfsHash = await this.onCollaborationCommit(file);
+        const ipfsHash = await this.servicesRef.commitToStorage(file);
 
         if (!ipfsHash) {
           throw new Error('Failed to upload commit to IPFS: no hash returned');
@@ -502,11 +672,10 @@ export class SyncManager {
   private async processUpdateQueue(): Promise<void> {
     if (this.isProcessing) return;
     this.isProcessing = true;
-    this.setStatus(SyncStatus.PROCESSING);
 
     try {
       while (this.updateQueue.length > 0) {
-        if (!this._isConnected) break;
+        if (!this.isConnected) break;
         await this.processNextUpdate();
 
         // If owner and enough uncommitted updates, commit
@@ -516,16 +685,15 @@ export class SyncManager {
       }
 
       // Commit remote-only accumulated updates
-      if (this._isConnected && this.isOwner && this.uncommittedUpdatesIdList.length >= 10) {
+      if (
+        this.isConnected &&
+        this.isOwner &&
+        this.uncommittedUpdatesIdList.length >= 10
+      ) {
         await this.processCommit();
       }
 
-      // Back to connected if still connected
-      if (this._isConnected) {
-        this.errorCount = 0;
-        this._errorMessage = '';
-        this.setStatus(SyncStatus.CONNECTED);
-      } else {
+      if (!this.isConnected) {
         await this.disconnectInternal();
       }
     } catch (err) {
@@ -566,14 +734,9 @@ export class SyncManager {
         }
         // Remove processed updates from queue
         this.updateQueue = this.updateQueue.slice(queueOffset);
-        this.errorCount = 0;
-        this._errorMessage = '';
         return;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
-        this.errorCount++;
-        this._errorMessage = `Failed to process update: ${lastError.message}`;
-        this.notify();
         console.error(
           `SyncManager: processNextUpdate attempt ${attempt + 1} failed`,
           err,
@@ -586,8 +749,8 @@ export class SyncManager {
 
   private async processCommit(): Promise<void> {
     if (
-      !this.onCollaborationCommit ||
-      typeof this.onCollaborationCommit !== 'function'
+      !this.servicesRef?.commitToStorage ||
+      typeof this.servicesRef.commitToStorage !== 'function'
     ) {
       console.debug(
         'SyncManager: no commit function provided, skipping commit',
@@ -609,7 +772,7 @@ export class SyncManager {
           ),
         };
         const file = objectToFile(commitContent, 'commit');
-        const ipfsHash = await this.onCollaborationCommit(file);
+        const ipfsHash = await this.servicesRef!.commitToStorage(file);
 
         if (!ipfsHash) {
           throw new Error('Failed to upload commit to IPFS: no hash returned');
@@ -628,14 +791,9 @@ export class SyncManager {
         }
 
         this.uncommittedUpdatesIdList = [];
-        this.errorCount = 0;
-        this._errorMessage = '';
         return;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
-        this.errorCount++;
-        this._errorMessage = `Failed to create latest commit: ${lastError.message}`;
-        this.notify();
         console.error(
           `SyncManager: processCommit attempt ${attempt + 1} failed`,
           err,
@@ -652,7 +810,7 @@ export class SyncManager {
     createdAt: number;
     roomId: string;
   }): void {
-    if (this._status === SyncStatus.SYNCING || this._status === SyncStatus.CONNECTING) {
+    if (this._status === 'syncing' || this._status === 'connecting') {
       // Queue for later application
       this.contentTobeAppliedQueue.push({
         data: payload.data,
@@ -663,7 +821,7 @@ export class SyncManager {
 
     this.applyRemoteYjsUpdate(payload.data, payload.id);
 
-    if (this.isOwner && !this.isProcessing && this._isReady) {
+    if (this.isOwner && !this.isProcessing && this.isReady) {
       // Check if we need to commit
       if (this.uncommittedUpdatesIdList.length >= 10) {
         this.processUpdateQueue().catch((err) => {
@@ -763,22 +921,13 @@ export class SyncManager {
     }
   }
 
-  private async withRetry<T>(
-    fn: () => Promise<T>,
-    label: string,
-  ): Promise<T> {
+  private async withRetry<T>(fn: () => Promise<T>, label: string): Promise<T> {
     let lastError: Error | null = null;
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
       try {
-        const result = await fn();
-        this.errorCount = 0;
-        this._errorMessage = '';
-        return result;
+        return await fn();
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
-        this.errorCount++;
-        this._errorMessage = `${label} failed: ${lastError.message}`;
-        this.notify();
         console.error(
           `SyncManager: ${label} attempt ${attempt + 1} failed`,
           err,
@@ -787,7 +936,7 @@ export class SyncManager {
         if (attempt === MAX_RETRIES) break;
 
         // Check if we should keep retrying
-        if (!this._isConnected && label !== 'syncLatestCommit') break;
+        if (!this.isConnected && label !== 'syncLatestCommit') break;
       }
     }
 
@@ -795,40 +944,30 @@ export class SyncManager {
   }
 
   private async disconnectInternal(): Promise<void> {
-    this.setStatus(SyncStatus.DISCONNECTING);
-
     // Broadcast awareness removal BEFORE tearing down handler/socket
     if (this._awareness) {
-      removeAwarenessStates(this._awareness, [this.ydoc.clientID], 'disconnect');
+      removeAwarenessStates(
+        this._awareness,
+        [this.ydoc.clientID],
+        'disconnect',
+      );
     }
 
-    if (this._awareness && this._awarenessUpdateHandler) {
-      this._awareness.off('update', this._awarenessUpdateHandler);
-    }
-    if (this._awareness) {
-      this._awareness.destroy();
-    }
+    this.cleanupAwareness();
 
     // Disconnect socket AFTER broadcasting removal
     this.socketClient?.disconnect();
 
-    this.reset();
-    this.setStatus(SyncStatus.DISCONNECTED);
+    this.resetInternalState();
+    this.send({ type: 'RESET' });
   }
 
-  private reset(): void {
+  private resetInternalState(): void {
     this.socketClient = null;
-    this._isConnected = false;
-    this._awareness = null;
-    this._awarenessUpdateHandler = null;
     this.uncommittedUpdatesIdList = [];
     this.updateQueue = [];
     this.contentTobeAppliedQueue = [];
     this.isProcessing = false;
-    this.errorCount = 0;
-    this._errorMessage = '';
-    this._isReady = false;
-    this._initialDocumentDecryptionState = 'pending';
     this.roomKey = '';
     this.roomKeyBytes = null;
     this.isOwner = false;

@@ -1,41 +1,18 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Data } from '../../types';
+import { Data, IDocCollabUsers } from '../../types';
 import * as Y from 'yjs';
-import { Awareness } from 'y-protocols/awareness';
 
-export enum SyncStatus {
-  DISCONNECTED = 'disconnected',
-  CONNECTING = 'connecting',
-  SYNCING = 'syncing',
-  CONNECTED = 'connected',
-  PROCESSING = 'processing',
-  DISCONNECTING = 'disconnecting',
-}
+// ─── Collaboration prop types ───
 
-export interface SyncManagerConfig {
-  ydoc: Y.Doc;
-  onError?: (e: Error) => void;
-  onCollaborationConnectCallback?: (response: any) => void;
-  onCollaborationCommit?: (file: File) => Promise<string>;
-  onFetchCommitContent?: (cid: string) => Promise<any>;
-  onSessionTerminated?: () => void;
-  onUnMergedUpdates?: (state: boolean) => void;
-  onLocalUpdate?: (
-    updatedDocContent: Data['editorJSONData'],
-    updateChunk: string,
-  ) => void;
-}
-
-export interface ConnectConfig {
-  username?: string;
+/** Connection identity — changes to these trigger reconnect */
+export interface CollabConnectionConfig {
   roomKey: string;
   roomId: string;
+  wsUrl: string;
   isOwner: boolean;
   ownerEdSecret?: string;
   contractAddress?: string;
   ownerAddress?: string;
-  isEns?: boolean;
-  wsUrl: string;
   roomInfo?: {
     documentTitle: string;
     portalAddress: string;
@@ -43,13 +20,100 @@ export interface ConnectConfig {
   };
 }
 
-export interface SyncManagerSnapshot {
-  status: SyncStatus;
-  isConnected: boolean;
-  isReady: boolean;
-  errorMessage: string;
-  awareness: Awareness | null;
-  initialDocumentDecryptionState: 'done' | 'pending';
+/** Session metadata — changes to these update awareness, NOT reconnect */
+export interface CollabSessionMeta {
+  username: string;
+  isEns?: boolean;
+}
+
+/** Storage integrations the sync engine depends on */
+export interface CollabServices {
+  commitToStorage?: (file: File) => Promise<string>;
+  fetchFromStorage?: (cid: string) => Promise<any>;
+}
+
+// ─── State Machine Types ───
+
+export type CollabErrorCode =
+  | 'CONNECTION_FAILED'
+  | 'AUTH_FAILED'
+  | 'SYNC_FAILED'
+  | 'TIMEOUT'
+  | 'UNKNOWN';
+
+export type CollabError = {
+  code: CollabErrorCode;
+  message: string;
+  recoverable: boolean;
+};
+
+export type CollabStatus =
+  | 'idle'
+  | 'connecting'
+  | 'syncing'
+  | 'ready'
+  | 'reconnecting'
+  | 'error'
+  | 'terminated';
+
+export type CollabState =
+  | { status: 'idle' }
+  | { status: 'connecting' }
+  | { status: 'syncing'; hasUnmergedPeerUpdates: boolean }
+  | { status: 'ready' }
+  | { status: 'reconnecting'; attempt: number; maxAttempts: number }
+  | { status: 'error'; error: CollabError }
+  | { status: 'terminated'; reason?: string };
+
+export type CollabEvent =
+  | { type: 'CONNECT' }
+  | { type: 'AUTH_SUCCESS' }
+  | { type: 'SYNC_COMPLETE' }
+  | { type: 'SET_UNMERGED_UPDATES'; hasUpdates: boolean }
+  | { type: 'SOCKET_DROPPED' }
+  | { type: 'RECONNECTED' }
+  | { type: 'RETRY_EXHAUSTED' }
+  | { type: 'ERROR'; error: CollabError }
+  | { type: 'SESSION_TERMINATED'; reason?: string }
+  | { type: 'RESET' };
+
+export interface CollabContext {
+  hasUnmergedPeerUpdates: boolean;
+  reconnectAttempt: number;
+  maxReconnectAttempts: number;
+  error: CollabError | null;
+  terminationReason?: string;
+}
+
+/** Event callbacks the consumer reacts to */
+export interface CollabCallbacks {
+  onStateChange?: (state: CollabState) => void;
+  onError?: (error: CollabError) => void;
+  onCollaboratorsChange?: (collaborators: IDocCollabUsers[]) => void;
+  onHandshakeData?: (data: { data: AckResponse; roomKey: string }) => void;
+}
+
+/** Discriminated union — TypeScript enforces config+services only when enabled */
+export type CollaborationProps =
+  | { enabled: false }
+  | {
+    enabled: true;
+    connection: CollabConnectionConfig;
+    session: CollabSessionMeta;
+    services: CollabServices;
+    on?: CollabCallbacks;
+  };
+
+// ─── Internal sync types ───
+
+export interface SyncManagerConfig {
+  ydoc: Y.Doc;
+  services?: CollabServices;
+  callbacks?: CollabCallbacks;
+  onLocalUpdate?: (
+    updatedDocContent: Data['editorJSONData'],
+    updateChunk: string,
+  ) => void;
 }
 
 export enum ServerErrorCode {
@@ -95,10 +159,11 @@ export interface CommitResponse
   }> { }
 
 export interface ISocketInitConfig {
-  onConnect: () => void;
+  onHandshakeSuccess: () => void;
   onDisconnect: () => void;
+  onSocketDropped: () => void;
   onError: (err: Error) => void;
-  onHandShakeError: (err: Error) => void;
+  onHandShakeError: (err: Error, statusCode?: number) => void;
   onContentUpdate: (data: {
     id: string;
     data: string;
@@ -111,6 +176,7 @@ export interface ISocketInitConfig {
     roomId: string;
   }) => void;
   onSessionTerminated: (data: { roomId: string }) => void;
+  onReconnectFailed: () => void;
 }
 
 export enum SocketStatusEnum {

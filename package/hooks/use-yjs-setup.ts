@@ -4,7 +4,11 @@ import { IndexeddbPersistence } from 'y-indexeddb';
 import { JSONContent } from '@tiptap/react';
 import { useSyncManager } from '../sync-local/useSyncManager';
 import { fromUint8Array } from 'js-base64';
-import { DdocProps } from '../types';
+import {
+  CollaborationProps,
+  CollabServices,
+  CollabCallbacks,
+} from '../sync-local/types';
 
 interface UseYjsSetupArgs {
   onChange?: (
@@ -13,29 +17,26 @@ interface UseYjsSetupArgs {
   ) => void;
   enableIndexeddbSync?: boolean;
   ddocId?: string;
-  enableCollaboration?: boolean;
+  collaboration?: CollaborationProps;
   onIndexedDbError?: (error: Error) => void;
-  onCollabError?: DdocProps['onCollabError'];
-  onCollaborationConnectCallback?: DdocProps['onCollaborationConnectCallback'];
-  onCollaborationCommit?: DdocProps['onCollaborationCommit'];
-  onFetchCommitContent?: DdocProps['onFetchCommitContent'];
-  onCollabSessionTermination?: () => void;
-  onUnMergedUpdates?: (state: boolean) => void;
 }
 
 export const useYjsSetup = ({
   onChange,
   enableIndexeddbSync,
   ddocId,
+  collaboration,
   onIndexedDbError,
-  onCollabError,
-  onCollaborationConnectCallback,
-  onCollaborationCommit,
-  onFetchCommitContent,
-  onCollabSessionTermination,
-  onUnMergedUpdates,
 }: UseYjsSetupArgs) => {
   const [ydoc] = useState(new Y.Doc());
+
+  const collabEnabled = collaboration?.enabled === true;
+  const services: CollabServices | undefined = collabEnabled
+    ? collaboration.services
+    : undefined;
+  const callbacks: CollabCallbacks | undefined = collabEnabled
+    ? collaboration.on
+    : undefined;
 
   const {
     connect,
@@ -43,14 +44,11 @@ export const useYjsSetup = ({
     terminateSession,
     awareness,
     hasCollabContentInitialised,
+    state: collabState,
   } = useSyncManager({
-    onError: onCollabError,
     ydoc,
-    onCollaborationConnectCallback,
-    onCollaborationCommit,
-    onFetchCommitContent,
-    onSessionTerminated: onCollabSessionTermination,
-    onUnMergedUpdates,
+    services,
+    callbacks,
     onLocalUpdate: onChange,
   });
 
@@ -119,5 +117,6 @@ export const useYjsSetup = ({
     hasCollabContentInitialised,
     initialiseYjsIndexedDbProvider,
     refreshYjsIndexedDbProvider: initialiseYjsIndexedDbProvider,
+    collabState,
   };
 };

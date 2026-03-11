@@ -1,83 +1,39 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useCallback, useEffect, useReducer, useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { removeAwarenessStates } from 'y-protocols/awareness.js';
 
 import { SyncManager } from './SyncManager';
 import {
   SyncManagerConfig,
-  SyncManagerSnapshot,
-  SyncStatus,
-  ConnectConfig,
+  CollabConnectionConfig,
+  CollabState,
 } from './types';
 
-const INITIAL_SNAPSHOT: SyncManagerSnapshot = {
-  status: SyncStatus.DISCONNECTED,
-  isConnected: false,
-  isReady: false,
-  errorMessage: '',
-  awareness: null,
-  initialDocumentDecryptionState: 'pending',
-};
-
-function snapshotReducer(
-  prev: SyncManagerSnapshot,
-  next: SyncManagerSnapshot,
-): SyncManagerSnapshot {
-  if (
-    prev.status === next.status &&
-    prev.isConnected === next.isConnected &&
-    prev.isReady === next.isReady &&
-    prev.errorMessage === next.errorMessage &&
-    prev.awareness === next.awareness &&
-    prev.initialDocumentDecryptionState === next.initialDocumentDecryptionState
-  ) {
-    return prev;
-  }
-  return next;
-}
+const INITIAL_STATE: CollabState = { status: 'idle' };
 
 export const useSyncManager = (config: SyncManagerConfig) => {
-  const [snapshot, dispatch] = useReducer(snapshotReducer, INITIAL_SNAPSHOT);
+  const [collabState, setCollabState] = useState<CollabState>(INITIAL_STATE);
 
   const managerRef = useRef<SyncManager | null>(null);
 
   if (!managerRef.current) {
-    managerRef.current = new SyncManager(config, dispatch);
+    managerRef.current = new SyncManager(config, setCollabState);
   }
 
   const manager = managerRef.current;
 
-  const {
-    status,
-    isConnected,
-    isReady,
-    errorMessage,
-    awareness,
-    initialDocumentDecryptionState,
-  } = snapshot;
+  // Keep refs fresh on every render to prevent stale closures
+  manager.updateRefs(config.services, config.callbacks, config.onLocalUpdate);
 
-
-  const hasCollabContentInitialised = initialDocumentDecryptionState === 'done';
-
-  // Awareness init — when connected and content has been initialised
-  useEffect(() => {
-    if (
-      config.ydoc &&
-      !awareness &&
-      isConnected &&
-      hasCollabContentInitialised
-    ) {
-      manager.initializeAwareness();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config.ydoc, awareness, isConnected, hasCollabContentInitialised]);
+  const isReady = manager.isReady;
+  const awareness = manager.awareness;
 
   // Local ydoc update listener — when ready, listen for ydoc update events
   useEffect(() => {
     if (!isReady || !config.ydoc) return;
 
     const updateHandler = (update: Uint8Array, origin: any) => {
-      if (origin === 'self' || !isReady) return;
+      if (origin === 'self' || !manager.isReady) return;
       manager.enqueueLocalUpdate(update);
     };
 
@@ -93,11 +49,7 @@ export const useSyncManager = (config: SyncManagerConfig) => {
     if (!awareness) return;
 
     const beforeUnloadHandler = () => {
-      removeAwarenessStates(
-        awareness,
-        [config.ydoc.clientID],
-        'window unload',
-      );
+      removeAwarenessStates(awareness, [config.ydoc.clientID], 'window unload');
     };
 
     if (
@@ -108,11 +60,7 @@ export const useSyncManager = (config: SyncManagerConfig) => {
     }
 
     return () => {
-      removeAwarenessStates(
-        awareness,
-        [config.ydoc.clientID],
-        'hook unmount',
-      );
+      removeAwarenessStates(awareness, [config.ydoc.clientID], 'hook unmount');
       if (
         typeof window !== 'undefined' &&
         typeof window.removeEventListener === 'function'
@@ -131,7 +79,7 @@ export const useSyncManager = (config: SyncManagerConfig) => {
   }, []);
 
   const connect = useCallback(
-    (connectConfig: ConnectConfig) => {
+    (connectConfig: CollabConnectionConfig) => {
       manager.connect(connectConfig).catch((err) => {
         console.error('useSyncManager: connect failed', err);
       });
@@ -148,15 +96,21 @@ export const useSyncManager = (config: SyncManagerConfig) => {
     manager.terminateSession();
   }, [manager]);
 
+  // Derive hasCollabContentInitialised from state:
+  // Content is initialised once we've passed through syncing to ready,
+  // or if we're currently in syncing (decryption happening).
+  // The key signal is that we've entered 'ready' at least once,
+  // but for backward compat we derive from status.
+  const hasCollabContentInitialised =
+    collabState.status === 'ready' || collabState.status === 'reconnecting';
+
   return {
+    state: collabState,
     connect,
     disconnect,
     terminateSession,
-    isConnected,
-    isReady: isReady && !!awareness,
-    error: errorMessage,
+    isReady: collabState.status === 'ready' && !!awareness,
     awareness,
     hasCollabContentInitialised,
-    status,
   };
 };

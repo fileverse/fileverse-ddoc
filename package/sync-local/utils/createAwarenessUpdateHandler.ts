@@ -30,7 +30,11 @@ export const createAwarenessUpdateHandler = (
   };
 
   return (
-    { added, updated, removed }: { added: number[]; updated: number[]; removed: number[] },
+    {
+      added,
+      updated,
+      removed,
+    }: { added: number[]; updated: number[]; removed: number[] },
     origin: any,
   ) => {
     // Only broadcast local awareness changes (skip remote echoes)
