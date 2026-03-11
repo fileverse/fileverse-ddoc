@@ -477,7 +477,12 @@ export const getResizableMediaNodeView =
           )}
 
           {!isPreviewMode && (
-            <span className="absolute top-2 right-2 transition-all rounded-md overflow-hidden box-border border color-border-default color-bg-default shadow-elevation-3 opacity-0 group-hover:opacity-100 flex gap-1 p-1">
+            <span
+              className={cn(
+                'absolute transition-all rounded-md overflow-hidden box-border border color-border-default color-bg-default shadow-elevation-3 opacity-0 group-hover:opacity-100 flex gap-1 p-1',
+                isSoundcloudIframe ? 'bottom-2 left-2' : 'top-2 right-2',
+              )}
+            >
               {resizableMediaActions
                 .filter(
                   (btn) =>
