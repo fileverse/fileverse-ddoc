@@ -38,8 +38,13 @@ export const useEditorStates = (editor: Editor | null) => {
       if (!state.editor)
         return { currentSize: undefined, currentLineHeight: undefined };
 
-      // First check if there's a custom font size set
-      const customFontSize = state.editor.getAttributes('textStyle')?.fontSize;
+      // First check if there's a custom font size set in textStyle marks
+      let customFontSize = state.editor.getAttributes('textStyle')?.fontSize;
+      
+      // Fallback for empty paragraphs where textStyle marks aren't present
+      if (!customFontSize && state.editor.isActive('paragraph')) {
+        customFontSize = state.editor.getAttributes('paragraph')?.fontSize;
+      }
 
       // Get line height from paragraph, heading, or listItem
       let customLineHeight =
