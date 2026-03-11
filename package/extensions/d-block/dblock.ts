@@ -213,7 +213,9 @@ export const DBlock = Node.create<DBlockOptions>({
           selection: { $head, from, to },
           doc,
         } = editor.state;
-        const attrs = editor.getAttributes('textStyle');
+        const headMarks = $head.marks();
+        const textStyleMark = headMarks.find(m => m.type.name === 'textStyle');
+        const attrs = textStyleMark?.attrs ?? {};
 
         // Get the current node and its parent
         const currentNode = $head.node($head.depth);
@@ -328,11 +330,20 @@ export const DBlock = Node.create<DBlockOptions>({
           currentNode.type.name === 'paragraph'
         ) {
           if (currentNode.textContent === '') {
+            const fontFamily =
+              attrs?.fontFamily || currentNode?.attrs?.fontFamily || null;
+            const fontSize =
+              attrs?.fontSize || currentNode?.attrs?.fontSize || null;
             return editor
               .chain()
-              .setDBlock()
+              .insertContentAt(from, {
+                type: 'dBlock',
+                content: [
+                  { type: 'paragraph', attrs: { fontFamily, fontSize } },
+                ],
+              })
               .focus(from + 2)
-              .setMark('textStyle', attrs)
+              .setMark('textStyle', { ...attrs, fontFamily, fontSize })
               .run();
           }
         }
@@ -432,9 +443,10 @@ export const DBlock = Node.create<DBlockOptions>({
               attrs?.fontSize || currentNode?.attrs?.fontSize || null;
 
             const finalContent =
-              content && content.length > 0
+              content && content.length > 0 && !isAtEndOfTheNode
                 ? content
                 : [{ type: 'paragraph', attrs: { fontFamily, fontSize } }];
+
 
             return editor
               .chain()
