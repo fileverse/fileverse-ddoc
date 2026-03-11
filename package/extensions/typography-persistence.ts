@@ -37,7 +37,8 @@ export const TypographyPersistence = Extension.create({
             transaction.steps.forEach((step) => {
               const stepMap = step.getMap();
               stepMap.forEach((oldStart, oldEnd, newStart, newEnd) => {
-                if (newEnd - newStart - (oldEnd - oldStart) > 4) structural = true;
+                if (newEnd - newStart - (oldEnd - oldStart) > 4)
+                  structural = true;
               });
             });
             return structural;
@@ -74,12 +75,14 @@ export const TypographyPersistence = Extension.create({
                   const prevNode = $pos.node($pos.depth).child(indexBefore - 1);
                   if (!prevNode || prevNode.type.name !== 'paragraph') return;
 
-                  const inheritFamily = !node.attrs.fontFamily && prevNode.attrs.fontFamily
-                    ? prevNode.attrs.fontFamily
-                    : node.attrs.fontFamily;
-                  const inheritSize = !node.attrs.fontSize && prevNode.attrs.fontSize
-                    ? prevNode.attrs.fontSize
-                    : node.attrs.fontSize;
+                  const inheritFamily =
+                    !node.attrs.fontFamily && prevNode.attrs.fontFamily
+                      ? prevNode.attrs.fontFamily
+                      : node.attrs.fontFamily;
+                  const inheritSize =
+                    !node.attrs.fontSize && prevNode.attrs.fontSize
+                      ? prevNode.attrs.fontSize
+                      : node.attrs.fontSize;
 
                   if (
                     inheritFamily !== node.attrs.fontFamily ||
@@ -170,7 +173,9 @@ export const TypographyPersistence = Extension.create({
       new Plugin({
         key: new PluginKey('typographySyncNodeAttr'),
         appendTransaction: (transactions, _oldState, newState) => {
-          const hasStoredMarksChange = transactions.some((tr) => tr.storedMarksSet);
+          const hasStoredMarksChange = transactions.some(
+            (tr) => tr.storedMarksSet,
+          );
           if (!hasStoredMarksChange) return null;
 
           const { selection } = newState;
@@ -179,7 +184,8 @@ export const TypographyPersistence = Extension.create({
           const $pos = selection.$from;
           const node = $pos.node($pos.depth);
 
-          if (node?.type.name !== 'paragraph' || node.textContent !== '') return null;
+          if (node?.type.name !== 'paragraph' || node.textContent !== '')
+            return null;
 
           const storedTextStyle = newState.storedMarks?.find(
             (m) => m.type.name === 'textStyle',
@@ -188,11 +194,11 @@ export const TypographyPersistence = Extension.create({
           const storedFontSize = storedTextStyle?.attrs?.fontSize ?? null;
 
           const newFontFamily = storedTextStyle
-            ? storedFontFamily  // use stored value (may be null = user unset)
+            ? storedFontFamily // use stored value (may be null = user unset)
             : node.attrs.fontFamily; // no textStyle stored → don't change
 
           const newFontSize = storedTextStyle
-            ? storedFontSize  // use stored value (may be null = user unset)
+            ? storedFontSize // use stored value (may be null = user unset)
             : node.attrs.fontSize; // no textStyle stored → don't change
 
           if (

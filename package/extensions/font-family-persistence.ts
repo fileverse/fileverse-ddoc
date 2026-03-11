@@ -59,7 +59,8 @@ export const FontFamilyPersistence = Extension.create({
         attributes: {
           fontFamily: {
             default: null,
-            parseHTML: (element) => element.style.fontFamily?.replace(/['"]+/g, '') || null,
+            parseHTML: (element) =>
+              element.style.fontFamily?.replace(/['"]+/g, '') || null,
             renderHTML: (attributes) => {
               if (!attributes.fontFamily) {
                 return {};
@@ -73,6 +74,4 @@ export const FontFamilyPersistence = Extension.create({
       },
     ];
   },
-
 });
-
