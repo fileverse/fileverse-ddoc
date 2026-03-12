@@ -62,6 +62,8 @@ const fontStack = {
   'Comic Sans MS': 'Comic Sans MS, Comic Sans',
   Cursive: 'Cursive',
   Georgia: 'Georgia, serif',
+  'IBM Plex Sans': 'IBM Plex Sans, sans-serif',
+  'IBM Plex Serif': 'IBM Plex Serif, serif',
   'IBM Plex Mono': 'IBM Plex Mono, monospace',
   Impact: 'Impact, Charcoal, sans-serif',
   'Inclusive Sans': 'Inclusive Sans, sans-serif',
