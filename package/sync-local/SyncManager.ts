@@ -192,6 +192,9 @@ export class SyncManager {
 
       await this.syncLatestCommit(initialUpdate);
 
+      // Yield to allow React to render the unmerged-updates toast
+      await new Promise(resolve => setTimeout(resolve, 0));
+
       // Verify socket is still alive after sync
       if (!this.socketClient?.isConnected) {
         throw new Error('Socket disconnected during sync');
@@ -537,11 +540,6 @@ export class SyncManager {
       if (updates.length) {
         const mergedState = Y.mergeUpdates(updates);
         Y.applyUpdate(this.ydoc, mergedState, 'self');
-      }
-
-      // Clear unmerged updates — state machine ensures no stuck state
-      if (this.isOwner) {
-        this.send({ type: 'SET_UNMERGED_UPDATES', hasUpdates: false });
       }
 
       this.uncommittedUpdatesIdList = uncommittedChangesId;

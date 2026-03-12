@@ -73,6 +73,7 @@ function App() {
 
   const urlTabId = getTabIdFromURL();
 
+  const isOwnerEdSecretSet = import.meta.env.VITE_OWNER_ED_SECRET;
   // --- Persistence ---
   // Use undefined (not null) when no saved content — null has special meaning
   // in use-tab-editor.tsx (it signals "content explicitly not ready yet")
@@ -491,6 +492,7 @@ function App() {
           {!collabEnabled ? (
             <IconButton
               variant={'ghost'}
+              disabled={!isOwnerEdSecretSet}
               icon="Users"
               size="md"
               onClick={onToggleCollaboration}
@@ -602,7 +604,14 @@ function App() {
           } else {
             setCollabStatus(state.status);
           }
-          if (state.status === 'reconnecting') {
+          if (state.status === 'syncing' && state.hasUnmergedPeerUpdates) {
+            toast({
+              title: 'Syncing all new changes',
+              variant: 'info',
+              toastType: 'mini',
+              iconType: 'icon',
+            });
+          } else if (state.status === 'reconnecting') {
             toast({
               title: `Reconnecting (${state.attempt}/${state.maxAttempts})...`,
               variant: 'warning',

@@ -12,7 +12,7 @@ import {
 export const INITIAL_CONTEXT: CollabContext = {
   hasUnmergedPeerUpdates: false,
   reconnectAttempt: 0,
-  maxReconnectAttempts: 5,
+  maxReconnectAttempts: 3,
   error: null,
   terminationReason: undefined,
 };
@@ -33,7 +33,6 @@ export function transition(
 ): TransitionResult {
   const type = event.type;
 
-  console.log('transition', currentStatus, event, context);
   switch (currentStatus) {
     case 'idle':
       if (type === 'CONNECT') return { status: 'connecting', context: {} };
@@ -60,7 +59,7 @@ export function transition(
       return null;
 
     case 'syncing':
-      if (type === 'SYNC_COMPLETE') return { status: 'ready', context: {} };
+      if (type === 'SYNC_COMPLETE') return { status: 'ready', context: { hasUnmergedPeerUpdates: false } };
       if (type === 'SET_UNMERGED_UPDATES')
         return {
           status: 'syncing',
