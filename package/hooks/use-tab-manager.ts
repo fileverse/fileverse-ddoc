@@ -27,7 +27,7 @@ interface DeleteSnapshot {
 interface UseTabManagerArgs {
   ydoc: Y.Doc;
   initialContent: DdocProps['initialContent'];
-  enableCollaboration: DdocProps['enableCollaboration'];
+  enableCollaboration?: boolean;
   isDDocOwner: boolean;
   createDefaultTabIfMissing: boolean;
   shouldSyncActiveTab: boolean;

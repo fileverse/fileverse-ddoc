@@ -15,4 +15,14 @@ export {
   type ReminderBlockOptions,
 } from './package/extensions/reminder-block/types';
 export { Editor } from '@tiptap/react';
-export type { ICollaborationConfig } from './package/types';
+export type {
+  CollaborationProps,
+  CollabConnectionConfig,
+  CollabSessionMeta,
+  CollabServices,
+  CollabCallbacks,
+  CollabState,
+  CollabError,
+  CollabErrorCode,
+  CollabStatus,
+} from './package/sync-local/types';

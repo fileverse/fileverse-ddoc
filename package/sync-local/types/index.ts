@@ -1,145 +1,182 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Data } from '../../types';
-import { SocketClient } from '../socketClient';
+import { Data, IDocCollabUsers } from '../../types';
 import * as Y from 'yjs';
 
-export interface IRoomMember {
-  userId: string;
-  username: string;
-  role: 'owner' | 'editor';
-}
+// ─── Collaboration prop types ───
 
-export interface SendUpdateResponse {
-  data: {
-    agent_id: string;
-    commitCid: string | null;
-    created_at: number;
-    data: string;
-    documentId: string;
-    id: string;
-    update_snapshot_ref: string | null;
-    updateType: string;
-  };
-  is_handshake_response: boolean;
-  status: boolean;
-  statusCode: number;
-}
-
-export interface CommitResponse {
-  data: {
-    agent_id: string;
-    cid: string;
-    created_at: number;
-    data: any | null;
-    documentId: string;
-    updates: string[];
-  };
-  is_handshake_response: boolean;
-  status: boolean;
-  statusCode: number;
-}
-
-export interface SyncMachineContext {
-  ydoc: Y.Doc;
-  socketClient: SocketClient | null;
-  roomId: string;
-  username: string;
-  roomMembers: IRoomMember[];
-  isConnected: boolean;
-  awareness: any;
-  _awarenessUpdateHandler:
-    | (({
-        added,
-        updated,
-        removed,
-      }: {
-        added: number[];
-        updated: number[];
-        removed: number[];
-      }) => void)
-    | null;
-  onError: ((e: Error) => void) | null;
+/** Connection identity — changes to these trigger reconnect */
+export interface CollabConnectionConfig {
   roomKey: string;
+  roomId: string;
   wsUrl: string;
-  uncommittedUpdatesIdList: string[];
   isOwner: boolean;
-  updateQueue: Uint8Array[];
-  isReady: boolean;
-  isNewDoc: boolean;
-  contentTobeAppliedQueue: string[];
-  initialUpdate: string | null;
-  errorCount: number;
-  errorMaxRetryCount: number;
-  errorMessage: string;
-  initalDocumentDecryptionState: 'done' | 'pending';
-  onCollaborationConnectCallback: (response: any) => void;
-  onCollaborationCommit: (file: File) => Promise<string>;
-  onFetchCommitContent: (cid: string) => Promise<any>;
-  onSessionTerminated: () => void;
-  onUnMergedUpdates: (state: boolean) => void;
+  ownerEdSecret?: string;
+  contractAddress?: string;
+  ownerAddress?: string;
+  roomInfo?: {
+    documentTitle: string;
+    portalAddress: string;
+    commentKey: string;
+  };
+}
+
+/** Session metadata — changes to these update awareness, NOT reconnect */
+export interface CollabSessionMeta {
+  username: string;
+  isEns?: boolean;
+}
+
+/** Storage integrations the sync engine depends on */
+export interface CollabServices {
+  commitToStorage?: (file: File) => Promise<string>;
+  fetchFromStorage?: (cid: string) => Promise<any>;
+}
+
+// ─── State Machine Types ───
+
+export type CollabErrorCode =
+  | 'CONNECTION_FAILED'
+  | 'AUTH_FAILED'
+  | 'SYNC_FAILED'
+  | 'TIMEOUT'
+  | 'UNKNOWN';
+
+export type CollabError = {
+  code: CollabErrorCode;
+  message: string;
+  recoverable: boolean;
+};
+
+export type CollabStatus =
+  | 'idle'
+  | 'connecting'
+  | 'syncing'
+  | 'ready'
+  | 'reconnecting'
+  | 'error'
+  | 'terminated';
+
+export type CollabState =
+  | { status: 'idle' }
+  | { status: 'connecting' }
+  | { status: 'syncing'; hasUnmergedPeerUpdates: boolean }
+  | { status: 'ready' }
+  | { status: 'reconnecting'; attempt: number; maxAttempts: number }
+  | { status: 'error'; error: CollabError }
+  | { status: 'terminated'; reason?: string };
+
+export type CollabEvent =
+  | { type: 'CONNECT' }
+  | { type: 'AUTH_SUCCESS' }
+  | { type: 'SYNC_COMPLETE' }
+  | { type: 'SET_UNMERGED_UPDATES'; hasUpdates: boolean }
+  | { type: 'SOCKET_DROPPED' }
+  | { type: 'RECONNECTED' }
+  | { type: 'RETRY_EXHAUSTED' }
+  | { type: 'ERROR'; error: CollabError }
+  | { type: 'SESSION_TERMINATED'; reason?: string }
+  | { type: 'RESET' };
+
+export interface CollabContext {
+  hasUnmergedPeerUpdates: boolean;
+  reconnectAttempt: number;
+  maxReconnectAttempts: number;
+  error: CollabError | null;
+  terminationReason?: string;
+}
+
+/** Event callbacks the consumer reacts to */
+export interface CollabCallbacks {
+  onStateChange?: (state: CollabState) => void;
+  onError?: (error: CollabError) => void;
+  onCollaboratorsChange?: (collaborators: IDocCollabUsers[]) => void;
+  onHandshakeData?: (data: { data: AckResponse; roomKey: string }) => void;
+}
+
+/** Discriminated union — TypeScript enforces config+services only when enabled */
+export type CollaborationProps =
+  | { enabled: false }
+  | {
+    enabled: true;
+    connection: CollabConnectionConfig;
+    session: CollabSessionMeta;
+    services: CollabServices;
+    on?: CollabCallbacks;
+  };
+
+// ─── Internal sync types ───
+
+export interface SyncManagerConfig {
+  ydoc: Y.Doc;
+  services?: CollabServices;
+  callbacks?: CollabCallbacks;
   onLocalUpdate?: (
     updatedDocContent: Data['editorJSONData'],
     updateChunk: string,
   ) => void;
 }
-export interface ErrorResponseMessage {
+
+export enum ServerErrorCode {
+  AUTH_TOKEN_MISSING = 'AUTH_TOKEN_MISSING',
+  AUTH_TOKEN_INVALID = 'AUTH_TOKEN_INVALID',
+  SESSION_NOT_FOUND = 'SESSION_NOT_FOUND',
+  SESSION_TERMINATED = 'SESSION_TERMINATED',
+  SESSION_DID_MISSING = 'SESSION_DID_MISSING',
+  DOCUMENT_ID_MISSING = 'DOCUMENT_ID_MISSING',
+  UPDATE_DATA_MISSING = 'UPDATE_DATA_MISSING',
+  COMMIT_UNAUTHORIZED = 'COMMIT_UNAUTHORIZED',
+  COMMIT_MISSING_DATA = 'COMMIT_MISSING_DATA',
+  INVALID_ADDRESS = 'INVALID_ADDRESS',
+  NOT_AUTHENTICATED = 'NOT_AUTHENTICATED',
+  DB_ERROR = 'DB_ERROR',
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
+}
+
+export interface AckResponse<T = Record<string, any>> {
   status: boolean;
   statusCode: number;
-  seqId: string | null;
-  is_handshake_response: boolean;
-  err: string;
-  err_detail: { [key: string]: any } | null;
+  data?: T;
+  error?: string;
+  errorCode?: ServerErrorCode;
 }
 
-export interface SuccessResponseMessage {
-  status: boolean;
-  statusCode: number;
-  seqId: string | null;
-  is_handshake_response: boolean;
-  data: { [key: string]: any };
-}
+export interface SendUpdateResponse
+  extends AckResponse<{
+    id: string;
+    documentId: string;
+    data: string;
+    updateType: string;
+    commitCid: string | null;
+    createdAt: number;
+  }> { }
 
-export interface EventMessage {
-  type: string;
-  event_type: string;
-  event: { data: any; roomId: string };
-}
-
-export type RequestResponse = ErrorResponseMessage | SuccessResponseMessage;
-export type OnMessagePayloadType = RequestResponse | EventMessage;
-
-export type EventHandler = (message: EventMessage) => void;
-export type DisconnectHandler = (e: CloseEvent | ErrorEvent) => void;
-export type ConnectHandler = () => void;
-
-export interface PartialRequest {
-  cmd: string;
-  args: { [key: string]: any };
-}
-
-export interface RequestPayload extends PartialRequest {
-  seqId: string;
-}
-
-export type SequenceResponseCB = (data: RequestResponse) => void;
-
-export interface SequenceToRequestMapValue {
-  callback: SequenceResponseCB;
-}
-
-export type SequenceToRequestMap = {
-  [key: string]: SequenceToRequestMapValue;
-};
-
-export type Update = Uint8Array;
+export interface CommitResponse
+  extends AckResponse<{
+    cid: string;
+    createdAt: number;
+    documentId: string;
+    updates: string[];
+  }> { }
 
 export interface ISocketInitConfig {
-  onConnect: ConnectHandler;
-  onDisconnect: DisconnectHandler;
+  onHandshakeSuccess: () => void;
+  onDisconnect: () => void;
+  onSocketDropped: () => void;
   onError: (err: Error) => void;
-  onWsEvent: EventHandler;
-  onHandShakeError: (err: Error) => void;
-  roomId: string;
+  onHandShakeError: (err: Error, statusCode?: number) => void;
+  onContentUpdate: (data: {
+    id: string;
+    data: string;
+    createdAt: number;
+    roomId: string;
+  }) => void;
+  onMembershipChange: (data: {
+    action: string;
+    user: { role: string };
+    roomId: string;
+  }) => void;
+  onSessionTerminated: (data: { roomId: string }) => void;
+  onReconnectFailed: () => void;
 }
 
 export enum SocketStatusEnum {
@@ -154,21 +191,6 @@ export interface RoomMember {
   username: string;
   userId: string;
   role: 'owner' | 'editor';
-}
-
-export type IAesKey = string;
-
-export type SyncMachinEvent = {
-  type: string;
-  data: any;
-};
-export interface IpfsUploadResponse {
-  ipfsUrl: string;
-  ipfsHash: string;
-  ipfsStorage: string;
-  cachedUrl: string;
-  fileSize: number;
-  mimetype: string;
 }
 
 export interface IAuthArgs {

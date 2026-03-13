@@ -9,7 +9,7 @@ export const useDdocEditor = ({
   isPreviewMode,
   initialContent,
   versionHistoryState,
-  enableCollaboration,
+  collaboration,
   onChange,
   onCollaboratorChange,
   onCommentInteraction,
@@ -34,7 +34,6 @@ export const useDdocEditor = ({
   activeModel,
   maxTokens,
   isAIAgentEnabled,
-  collabConfig,
   onIndexedDbError,
   disableInlineComment,
   ...rest
@@ -45,34 +44,27 @@ export const useDdocEditor = ({
   const isVersionMode = Boolean(versionHistoryState?.enabled);
   const ddocContent = versionHistoryState?.content ?? initialContent;
 
+  const collabEnabled = collaboration?.enabled === true;
+
   const yjsSetup = useYjsSetup({
     onChange,
     enableIndexeddbSync,
     ddocId,
-    enableCollaboration,
+    collaboration,
     onIndexedDbError,
-    onCollabError: rest.onCollabError,
-    onCollaborationConnectCallback: rest.onCollaborationConnectCallback,
-    onCollaborationCommit: rest.onCollaborationCommit,
-    onFetchCommitContent: rest.onFetchCommitContent,
-    onCollabSessionTermination: rest.onCollabSessionTermination,
-    onUnMergedUpdates: rest.onUnMergedUpdates,
   });
 
   const tabManager = useTabManager({
     ydoc: yjsSetup.ydoc,
     initialContent: ddocContent,
-    enableCollaboration,
+    enableCollaboration: collabEnabled,
     isDDocOwner: rest.isDDocOwner || false,
     createDefaultTabIfMissing: Boolean(
       !isVersionMode && !isPreviewMode && rest.isDDocOwner,
     ),
     defaultTabId: rest.tabConfig?.defaultTabId,
     shouldSyncActiveTab: Boolean(
-      !isVersionMode &&
-        !isPreviewMode &&
-        !enableCollaboration &&
-        rest.isDDocOwner,
+      !isVersionMode && !isPreviewMode && !collabEnabled && rest.isDDocOwner,
     ),
     onVersionHistoryActiveTabChange: versionHistoryState?.onActiveTabChange,
     getEditor: () => editorRef.current,
@@ -82,9 +74,8 @@ export const useDdocEditor = ({
     ydoc: yjsSetup.ydoc,
     isPreviewMode,
     initialContent: ddocContent,
-    enableCollaboration,
+    collaboration,
     versionId: versionHistoryState?.versionId,
-    collabConfig,
     isReady: yjsSetup.isReady,
     awareness: yjsSetup.awareness,
     disableInlineComment,
@@ -121,8 +112,9 @@ export const useDdocEditor = ({
     editorRef,
   });
 
+  const isOwner = collabEnabled ? collaboration.connection.isOwner : true;
   const aggregatedContentLoading =
-    enableCollaboration && !collabConfig?.isOwner
+    collabEnabled && !isOwner
       ? tabEditor.isContentLoading || isCollabContentLoading
       : tabEditor.isContentLoading;
 
