@@ -420,7 +420,7 @@ Supports both **single-tab** and **all-tabs** export:
 | HTML | Page-break divs, wrapped in `<!DOCTYPE html>` |
 | Text | `\n\n===\n\n` between tabs |
 
-### `ExportAsModal`
+### `DdocExportModal`
 
 **File**: `package/components/export-modal.tsx`
 
@@ -502,7 +502,7 @@ isDDocOwner?: boolean;
 | `package/components/toc/document-outline.tsx` | Simplified to router between desktop `DocumentTabsSidebar` and mobile `DocumentMobileTabPanel` |
 | `package/components/inline-comment/context/comment-context.tsx` | Per-tab comment filtering via `tabComments` memo, `tabId` on new comments |
 | `package/types.ts` | Added `tabConfig`, `versionHistoryState`, `tabSectionContainer`, `isDDocOwner` |
-| `package/components/import-export-button.tsx` | Refactored to use `ExportAsModal` with tab-aware export |
+| `package/components/import-export-button.tsx` | Refactored to use `DdocExportModal` with tab-aware export |
 
 ### Unchanged (notable)
 
