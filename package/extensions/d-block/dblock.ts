@@ -214,7 +214,9 @@ export const DBlock = Node.create<DBlockOptions>({
           doc,
         } = editor.state;
         const headMarks = $head.marks();
-        const textStyleMark = headMarks.find(m => m.type.name === 'textStyle');
+        const textStyleMark = headMarks.find(
+          (m) => m.type.name === 'textStyle',
+        );
         const attrs = textStyleMark?.attrs ?? {};
 
         // Get the current node and its parent
@@ -446,7 +448,6 @@ export const DBlock = Node.create<DBlockOptions>({
               content && content.length > 0 && !isAtEndOfTheNode
                 ? content
                 : [{ type: 'paragraph', attrs: { fontFamily, fontSize } }];
-
 
             return editor
               .chain()
