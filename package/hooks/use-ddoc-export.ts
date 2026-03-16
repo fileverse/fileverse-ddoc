@@ -13,7 +13,7 @@ import { handleContentPrint } from '../utils/handle-print';
 interface UseDdocExportArgs {
   editor: Editor | null;
   tabs: Tab[];
-  ydoc: Y.Doc;
+  ydoc: Y.Doc | null;
   exportOptions: (IEditorToolElement | null)[];
 }
 
@@ -260,35 +260,40 @@ const useDdocExport = ({
     [createTempEditorForTab, editor, getTitle, tabs, ydoc],
   );
 
-  const handleExport = useCallback(
-    ({ format, tab, name }: { format: string; tab: string; name?: string }) => {
-      const runExport = async () => {
-        if (!editor) return;
-        const isAllTabs = tab === 'all';
+  const runExport = useCallback(
+    async ({
+      format,
+      tab,
+      name,
+    }: {
+      format: string;
+      tab: string;
+      name?: string;
+    }) => {
+      if (!editor) return;
+      const isAllTabs = tab === 'all';
 
-        if (isAllTabs) {
-          if (format === 'pdf') {
-            await exportAllTabsAsPdf();
-            return;
-          }
-          if (format === 'md') {
-            await exportAllTabsAsMarkdown(name);
-            return;
-          }
-          if (format === 'html') {
-            await exportAllTabsAsHtml(name);
-            return;
-          }
-          if (format === 'txt') {
-            await exportAllTabsAsText(name);
-            return;
-          }
+      if (isAllTabs) {
+        if (format === 'pdf') {
+          await exportAllTabsAsPdf();
           return;
         }
-        await triggerSingleTabExport(format, name);
-      };
+        if (format === 'md') {
+          await exportAllTabsAsMarkdown(name);
+          return;
+        }
+        if (format === 'html') {
+          await exportAllTabsAsHtml(name);
+          return;
+        }
+        if (format === 'txt') {
+          await exportAllTabsAsText(name);
+          return;
+        }
+        return;
+      }
 
-      void runExport();
+      await triggerSingleTabExport(format, name);
     },
     [
       editor,
@@ -300,10 +305,33 @@ const useDdocExport = ({
     ],
   );
 
+  const handleExport = useCallback(
+    ({ format, tab, name }: { format: string; tab: string; name?: string }) => {
+      void runExport({ format, tab, name });
+    },
+    [runExport],
+  );
+
+  const handleExportAsync = useCallback(
+    async ({
+      format,
+      tab,
+      name,
+    }: {
+      format: string;
+      tab: string;
+      name?: string;
+    }) => {
+      await runExport({ format, tab, name });
+    },
+    [runExport],
+  );
+
   return {
     getOptionFormat,
     formatSelectOptions,
     handleExport,
+    handleExportAsync,
   };
 };
 

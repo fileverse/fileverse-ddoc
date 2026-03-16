@@ -55,8 +55,7 @@ const DdocEditor = forwardRef(
     {
       isPreviewMode = false,
       initialContent,
-      enableCollaboration,
-      collaborationId,
+      collaboration,
       username,
       setUsername,
       renderNavbar,
@@ -132,9 +131,6 @@ const DdocEditor = forwardRef(
       activeModel,
       maxTokens,
       isAIAgentEnabled,
-      collaborationKey,
-      collaborationKeyPair,
-      collabConfig,
       // Document styling object
       documentStyling,
       ...rest
@@ -312,8 +308,7 @@ const DdocEditor = forwardRef(
       ddocId,
       isPreviewMode,
       initialContent,
-      enableCollaboration,
-      collaborationId,
+      collaboration,
       walletAddress,
       username,
       onChange,
@@ -346,9 +341,6 @@ const DdocEditor = forwardRef(
       activeModel,
       maxTokens,
       isAIAgentEnabled,
-      collaborationKey,
-      collaborationKeyPair,
-      collabConfig,
       isDDocOwner,
       tabConfig,
       ...rest,
@@ -819,9 +811,11 @@ const DdocEditor = forwardRef(
                         }
                         isConnected={isConnected}
                         isCollabDocOwner={
-                          collabConfig?.roomKey ? collabConfig?.isOwner : true
+                          collaboration?.enabled
+                            ? collaboration.connection.isOwner
+                            : true
                         }
-                        enableCollaboration={enableCollaboration}
+                        enableCollaboration={collaboration?.enabled}
                       />
                       <EmbedSettings editor={editor} />
                     </>
@@ -847,7 +841,8 @@ const DdocEditor = forwardRef(
                         <EditingProvider
                           isPreviewMode={isPreviewMode}
                           isCollaboratorsDoc={
-                            !!collabConfig?.roomKey && !collabConfig?.isOwner
+                            collaboration?.enabled === true &&
+                            !collaboration.connection.isOwner
                           }
                         >
                           {tags && tags.length > 0 && (

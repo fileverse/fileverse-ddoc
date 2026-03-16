@@ -19,7 +19,11 @@ import { crypto as cryptoUtils } from './crypto';
 import { collabStore } from './storage/collab-store';
 import { docStore } from './storage/doc-store';
 import { DocumentStylingPanel } from './DocumentStylingPanel';
-import { DocumentStyling, ICollaborationConfig } from '../../package/types';
+import {
+  DocumentStyling,
+  CollaborationProps,
+  CollabState,
+} from '../../package/types';
 import {
   getKeyFromURLParams,
   generateDocId,
@@ -69,6 +73,7 @@ function App() {
 
   const urlTabId = getTabIdFromURL();
 
+  const isOwnerEdSecretSet = import.meta.env.VITE_OWNER_ED_SECRET;
   // --- Persistence ---
   // Use undefined (not null) when no saved content — null has special meaning
   // in use-tab-editor.tsx (it signals "content explicitly not ready yet")
@@ -123,7 +128,8 @@ function App() {
     tabCount: 0,
   });
 
-  const [enableCollaboration, setEnableCollaboration] = useState(false);
+  const [collabEnabled, setCollabEnabled] = useState(false);
+  const [collabStatus, setCollabStatus] = useState<string>('off');
   const [username, setUsername] = useState('username');
   const isMobile = useMediaQuery('(max-width: 768px)');
   const isMediaMax1280px = useMediaQuery('(max-width: 1280px)');
@@ -132,6 +138,7 @@ function App() {
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showTOC, setShowTOC] = useState<boolean>(false);
   const [collaborationId, setCollaborationId] = useState<string>('');
+  const [collabRoomKey, setCollabRoomKey] = useState<string>('');
 
   const [characterCount, setCharacterCount] = useState(0);
   const [wordCount, setWordCount] = useState(0);
@@ -171,9 +178,13 @@ function App() {
   const searchParams = new URLSearchParams(window.location.search);
   const paramCollaborationId = searchParams.get('collaborationId');
   const paramKey = getKeyFromURLParams(searchParams);
-  const [collabConfig, setCollabConf] = useState<
-    ICollaborationConfig | undefined
-  >(undefined);
+  const [collabIsOwner, setCollabIsOwner] = useState(false);
+  const [collabExtras, setCollabExtras] = useState<{
+    ownerEdSecret?: string;
+    contractAddress?: string;
+    ownerAddress?: string;
+    isEns?: boolean;
+  }>({});
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const editorRef = useRef<any>(null);
@@ -202,23 +213,16 @@ function App() {
   }, []);
 
   useEffect(() => {
-    const setupCollaboration = async () => {
-      if (paramCollaborationId && paramKey) {
-        const name = prompt('Whats your username');
-        if (!name) return;
+    if (paramCollaborationId && paramKey) {
+      const name = prompt('Whats your username');
+      if (!name) return;
 
-        setCollabConf({
-          roomKey: paramKey,
-          collaborationId: paramCollaborationId,
-          username: name,
-          isOwner: false,
-          wsUrl: import.meta.env.VITE_COLLAB_WS_URL,
-        });
-
-        setEnableCollaboration(true);
-      }
-    };
-    setupCollaboration();
+      setCollabRoomKey(paramKey);
+      setCollaborationId(paramCollaborationId);
+      setUsername(name);
+      setCollabIsOwner(false);
+      setCollabEnabled(true);
+    }
   }, [paramCollaborationId, paramKey]);
   //To handle comments from consumer side
 
@@ -282,12 +286,19 @@ function App() {
   const [isConnected, setIsConnected] = useState(true);
 
   useEffect(() => {
-    const collabConfig = collabStore.getCollabConf();
-    if (collabConfig) {
-      setCollabConf(collabConfig);
-      setCollaborationId(collabConfig.collaborationId);
-      setUsername(collabConfig.username);
-      setEnableCollaboration(true);
+    const stored = collabStore.getCollabConf();
+    if (stored) {
+      setCollabRoomKey(stored.roomKey);
+      setCollaborationId(stored.roomId || (stored as any).collaborationId);
+      setUsername(stored.username);
+      setCollabIsOwner(stored.isOwner);
+      setCollabExtras({
+        ownerEdSecret: stored.ownerEdSecret,
+        contractAddress: stored.contractAddress,
+        ownerAddress: stored.ownerAddress,
+        isEns: stored.isEns,
+      });
+      setCollabEnabled(true);
     }
   }, []);
 
@@ -296,34 +307,38 @@ function App() {
     if (!name) return;
     const { privateKey } = cryptoUtils.generateKeyPair();
 
-    const collaborationId = crypto.randomUUID();
+    const newCollabId = crypto.randomUUID();
     const privateKeyBase64 = fromUint8Array(privateKey, true);
 
-    const collabConfig = {
-      roomKey: privateKeyBase64,
-      collaborationId,
-      username: name,
-      isOwner: true,
+    const extras = {
       ownerEdSecret: import.meta.env.VITE_OWNER_ED_SECRET,
       contractAddress: import.meta.env.VITE_COLLAB_CONTRACT_ADDRESS,
       ownerAddress: import.meta.env.VITE_COLLAB_OWNER_ADDRESS,
-      isEns: true,
-      wsUrl: import.meta.env.VITE_COLLAB_WS_URL,
+      isEns: true as const,
     };
-    setCollabConf(collabConfig);
 
-    collabStore.setCollabConf(collabConfig);
+    collabStore.setCollabConf({
+      roomKey: privateKeyBase64,
+      roomId: newCollabId,
+      wsUrl: import.meta.env.VITE_COLLAB_WS_URL,
+      isOwner: true,
+      username: name,
+      ...extras,
+    });
 
-    setCollaborationId(collaborationId);
+    setCollabRoomKey(privateKeyBase64);
+    setCollaborationId(newCollabId);
     setUsername(name);
-    setEnableCollaboration(true);
+    setCollabIsOwner(true);
+    setCollabExtras(extras);
+    setCollabEnabled(true);
+
     console.log(
-      `${window.location.origin}?collaborationId=${collaborationId}#key=${privateKeyBase64}`,
+      `${window.location.origin}?collaborationId=${newCollabId}#key=${privateKeyBase64}`,
     );
 
-    // copy to clipboard
     await navigator.clipboard.writeText(
-      `${window.location.origin}?collaborationId=${collaborationId}#key=${privateKeyBase64}`,
+      `${window.location.origin}?collaborationId=${newCollabId}#key=${privateKeyBase64}`,
     );
 
     toast({
@@ -474,9 +489,10 @@ function App() {
             size="md"
             onClick={() => setCommentDrawerOpen((prev) => !prev)}
           />
-          {!enableCollaboration ? (
+          {!collabEnabled ? (
             <IconButton
               variant={'ghost'}
+              disabled={!isOwnerEdSecretSet}
               icon="Users"
               size="md"
               onClick={onToggleCollaboration}
@@ -491,15 +507,18 @@ function App() {
               }
               content={
                 <div className="flex flex-col gap-1 p-2 w-fit shadow-elevation-3 ">
-                  {collabConfig?.isOwner ? (
+                  {collabIsOwner ? (
                     <Button
                       variant={'ghost'}
                       onClick={() => {
                         editorRef.current?.terminateSession();
-                        setEnableCollaboration(false);
-                        setCollabConf(undefined);
+                        setCollabEnabled(false);
                         setCollaborationId('');
+                        setCollabRoomKey('');
                         setUsername('');
+                        setCollabIsOwner(false);
+                        setCollabExtras({});
+                        setCollabStatus('off');
                         collabStore.clearCollabConf();
                       }}
                     >
@@ -552,6 +571,82 @@ function App() {
     console.log('onCollaboratorChange', collaborators);
   };
 
+  const collaboration = useMemo((): CollaborationProps => {
+    if (!collabEnabled || !collaborationId || !collabRoomKey) {
+      return { enabled: false };
+    }
+    return {
+      enabled: true,
+      connection: {
+        roomKey: collabRoomKey,
+        roomId: collaborationId,
+        wsUrl: import.meta.env.VITE_COLLAB_WS_URL,
+        isOwner: collabIsOwner,
+        ownerEdSecret: collabExtras.ownerEdSecret,
+        contractAddress: collabExtras.contractAddress,
+        ownerAddress: collabExtras.ownerAddress,
+      },
+      session: {
+        username,
+        isEns: collabExtras.isEns,
+      },
+      services: {
+        commitToStorage: undefined,
+        fetchFromStorage: undefined,
+      },
+      on: {
+        onStateChange: (state: CollabState) => {
+          console.log('onStateChange', state);
+          if (state.status === 'syncing') {
+            setCollabStatus(
+              state.hasUnmergedPeerUpdates ? 'merging' : 'syncing',
+            );
+          } else {
+            setCollabStatus(state.status);
+          }
+          if (state.status === 'syncing' && state.hasUnmergedPeerUpdates) {
+            toast({
+              title: 'Syncing all new changes',
+              variant: 'info',
+              toastType: 'mini',
+              iconType: 'icon',
+            });
+          } else if (state.status === 'reconnecting') {
+            toast({
+              title: `Reconnecting (${state.attempt}/${state.maxAttempts})...`,
+              variant: 'warning',
+              toastType: 'mini',
+              iconType: 'icon',
+            });
+          } else if (state.status === 'error') {
+            toast({
+              title: 'Collaboration error',
+              description: state.error.message,
+              variant: 'error',
+              iconType: 'icon',
+            });
+          }
+        },
+        onError: (error) => {
+          console.log('onError', error);
+          toast({
+            title: 'Collaboration error',
+            description: error.message,
+            variant: 'error',
+            iconType: 'icon',
+          });
+        },
+      },
+    };
+  }, [
+    collabEnabled,
+    collaborationId,
+    collabRoomKey,
+    collabIsOwner,
+    collabExtras,
+    username,
+  ]);
+
   return (
     <div>
       <DocumentStylingPanel
@@ -562,8 +657,7 @@ function App() {
       />
       <DdocEditor
         ref={editorRef}
-        enableCollaboration={enableCollaboration}
-        collaborationId={collaborationId}
+        collaboration={collaboration}
         username={username}
         setUsername={setUsername}
         isPreviewMode={isPreviewMode}
@@ -621,7 +715,6 @@ function App() {
         onCopyHeadingLink={(link: string) => {
           navigator.clipboard.writeText(link);
         }}
-        collabConfig={collabConfig}
         onCollaboratorChange={onCollaboratorChange}
         documentStyling={documentStyling}
         isDDocOwner={true}
@@ -638,7 +731,7 @@ function App() {
         tabCount={activeTabInfo.tabCount}
         characterCount={characterCount}
         wordCount={wordCount}
-        enableCollaboration={enableCollaboration}
+        collabStatus={collabStatus}
         lastSavedAt={lastSavedAt}
       />
     </div>
