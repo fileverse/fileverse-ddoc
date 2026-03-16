@@ -32,11 +32,14 @@ import { AIWriter } from '../extensions/ai-writer';
 import { DBlock } from '../extensions/d-block/dblock';
 import { ToCItemType } from '../components/toc/types';
 import { TWITTER_REGEX } from '../constants/twitter';
-import { IConnectConf } from '../sync-local/useSyncMachine';
 import { headingToSlug } from '../utils/heading-to-slug';
 import { useResponsive } from '../utils/responsive';
 import { yCursorPlugin, yCursorPluginKey } from '@tiptap/y-tiptap';
 import { getResponsiveColor } from '../utils/colors';
+import {
+  CollabConnectionConfig,
+  CollaborationProps,
+} from '../sync-local/types';
 
 const usercolors = [
   '#30bced',
@@ -56,8 +59,7 @@ interface UseTabEditorArgs {
   versionId?: string;
   isPreviewMode?: boolean;
   initialContent: DdocProps['initialContent'];
-  enableCollaboration?: boolean;
-  collabConfig?: DdocProps['collabConfig'];
+  collaboration?: CollaborationProps;
   isReady?: boolean;
   awareness?: any;
   disableInlineComment?: boolean;
@@ -82,7 +84,7 @@ interface UseTabEditorArgs {
   onInvalidContentError?: DdocProps['onInvalidContentError'];
   ignoreCorruptedData?: boolean;
   onCollaboratorChange?: DdocProps['onCollaboratorChange'];
-  onConnect: (connectConfig: IConnectConf) => void;
+  onConnect: (connectConfig: CollabConnectionConfig) => void;
   hasCollabContentInitialised?: boolean;
   initialiseYjsIndexedDbProvider: () => Promise<void>;
   externalExtensions?: Record<string, AnyExtension>;
@@ -99,8 +101,7 @@ export const useTabEditor = ({
   versionId,
   isPreviewMode,
   initialContent,
-  enableCollaboration,
-  collabConfig,
+  collaboration,
   isReady,
   awareness,
   disableInlineComment,
@@ -134,6 +135,8 @@ export const useTabEditor = ({
   theme,
   editorRef,
 }: UseTabEditorArgs) => {
+  const collabEnabled = collaboration?.enabled === true;
+  const connection = collabEnabled ? collaboration.connection : null;
   const { activeCommentId, setActiveCommentId, focusCommentWithActiveId } =
     useActiveComment();
 
@@ -148,7 +151,7 @@ export const useTabEditor = ({
     onCopyHeadingLink,
     ipfsImageFetchFn,
     fetchV1ImageFn,
-    enableCollaboration,
+    enableCollaboration: collabEnabled,
     disableInlineComment,
     isConnected,
     activeModel,
@@ -287,8 +290,8 @@ export const useTabEditor = ({
     editorRef.current = editor ?? null;
   }, [editor, editorRef]);
   const isCollaborationEnabled = useMemo(() => {
-    return enableCollaboration;
-  }, [enableCollaboration]);
+    return collabEnabled;
+  }, [collabEnabled]);
 
   // TODO: to see why this is necessary
   useEffect(() => {
@@ -375,7 +378,7 @@ export const useTabEditor = ({
     }
 
     // In collab mode, content arrives via WebSocket — skip hydration entirely.
-    if (enableCollaboration) {
+    if (collabEnabled) {
       setIsContentLoading(false);
       return;
     }
@@ -439,7 +442,7 @@ export const useTabEditor = ({
     initialContentSetRef.current = true;
   }, [
     initialContent,
-    enableCollaboration,
+    collabEnabled,
     editor,
     ydoc,
     zoomLevel,
@@ -452,6 +455,7 @@ export const useTabEditor = ({
     onInvalidContentError,
     mergeAndApplyUpdate,
     isContentYjsEncoded,
+    initialiseYjsIndexedDbProvider,
   ]);
 
   const collaborationCleanupRef = useRef<() => void>(() => {});
@@ -461,8 +465,7 @@ export const useTabEditor = ({
     editor,
     isReady,
     awareness,
-    collabConfig,
-    enableCollaboration,
+    collaboration,
     collaborationCleanupRef,
     onCollaboratorChange,
   });
@@ -593,30 +596,20 @@ export const useTabEditor = ({
     };
   }, [editor, isPresentationMode, slides]);
 
-  // Collaboration onConnect handler
+  // Collaboration onConnect handler — watches connection identity fields only
   useEffect(() => {
-    if (
-      enableCollaboration &&
-      collabConfig?.collaborationId &&
-      collabConfig?.roomKey
-    ) {
-      onConnect({
-        username: collabConfig?.username,
-        roomKey: collabConfig?.roomKey,
-        roomId: collabConfig?.collaborationId,
-        isOwner: collabConfig?.isOwner,
-        ownerEdSecret: collabConfig?.ownerEdSecret,
-        contractAddress: collabConfig?.contractAddress,
-        ownerAddress: collabConfig?.ownerAddress,
-        isEns: collabConfig?.isEns,
-        wsUrl: collabConfig.wsUrl,
-        roomInfo: collabConfig.roomInfo,
-      });
+    if (collabEnabled && connection) {
+      onConnect(connection);
     }
     return () => {
       collaborationCleanupRef.current();
     };
-  }, [enableCollaboration, Boolean(collabConfig)]);
+  }, [
+    collabEnabled,
+    connection?.roomKey,
+    connection?.roomId,
+    connection?.wsUrl,
+  ]);
 
   // Scroll to heading handler for preview mode
   const hash = window.location.hash.startsWith('#')
@@ -1125,8 +1118,7 @@ interface UseExtensionSyncWithCollaborationArgs {
   editor?: Editor | null;
   isReady?: boolean;
   awareness?: any;
-  collabConfig?: DdocProps['collabConfig'];
-  enableCollaboration?: boolean;
+  collaboration?: CollaborationProps;
   collaborationCleanupRef: MutableRefObject<() => void>;
   onCollaboratorChange: DdocProps['onCollaboratorChange'];
 }
@@ -1135,11 +1127,13 @@ const useExtensionSyncWithCollaboration = ({
   editor,
   isReady,
   awareness,
-  collabConfig,
-  enableCollaboration,
+  collaboration,
   collaborationCleanupRef,
   onCollaboratorChange,
 }: UseExtensionSyncWithCollaborationArgs) => {
+  const collabEnabled = collaboration?.enabled === true;
+  const session = collabEnabled ? collaboration.session : null;
+
   const onCollaboratorChangeRef = useRef(onCollaboratorChange);
   onCollaboratorChangeRef.current = onCollaboratorChange;
   const userColorRef = useRef(
@@ -1151,9 +1145,9 @@ const useExtensionSyncWithCollaboration = ({
     if (!editor || !awareness || !isReady) return;
 
     const user = {
-      name: collabConfig?.username || '',
+      name: session?.username || '',
       color: userColorRef.current,
-      isEns: collabConfig?.isEns,
+      isEns: session?.isEns,
     };
 
     awareness.setLocalStateField('user', user);
@@ -1189,17 +1183,17 @@ const useExtensionSyncWithCollaboration = ({
     };
   }, [editor, awareness, isReady]);
 
-  // Update user info when ENS resolves
+  // Awareness update — separate effect watches session metadata (e.g. ENS resolution)
   useEffect(() => {
-    if (!isReady || !enableCollaboration || !collabConfig || !awareness) return;
-    if (collabConfig.isEns) {
+    if (!isReady || !collabEnabled || !awareness || !session) return;
+    if (session.isEns) {
       awareness.setLocalStateField('user', {
-        name: collabConfig.username,
+        name: session.username,
         color: userColorRef.current,
-        isEns: collabConfig.isEns,
+        isEns: session.isEns,
       });
     }
-  }, [isReady, enableCollaboration, collabConfig?.isEns, awareness]);
+  }, [isReady, collabEnabled, session?.username, session?.isEns, awareness]);
 };
 
 const useDarkModeStyleCleanup = (

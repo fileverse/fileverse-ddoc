@@ -274,7 +274,7 @@ export const TabItem = ({
       onClick={onClick}
       {...dragHandleProps}
       className={cn(
-        'flex items-center active:cursor-grabbing relative justify-between h-[40px] px-[12px] py-[8px] rounded-full',
+        'flex items-center active:cursor-grabbing relative justify-between h-[40px] px-[12px] py-[8px] rounded-[4px]',
         isActive && 'color-bg-default-hover',
       )}
     >
@@ -358,7 +358,7 @@ export const TabDragPreview = ({
     <div
       data-testid="tab-drag-preview"
       className="
-        flex items-center gap-[8px] px-[12px] py-[8px] w-[231px] h-[40px] rounded-full color-bg-secondary shadow-elevation-3"
+        flex items-center gap-[8px] px-[12px] py-[8px] w-[231px] h-[40px] rounded-[4px] color-bg-secondary shadow-elevation-3"
     >
       {emoji ? (
         <span className=" text-[16px] leading-[16px] w-[16px] flex items-center justify-center">

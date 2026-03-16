@@ -1,0 +1,77 @@
+import { Extension } from '@tiptap/core';
+
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    fontFamilyPersistence: {
+      setFontFamily: (fontFamily: string) => ReturnType;
+      unsetFontFamily: () => ReturnType;
+    };
+  }
+}
+
+export const FontFamilyPersistence = Extension.create({
+  name: 'fontFamilyPersistence',
+
+  addCommands() {
+    const getExistingTextStyleAttrs = (editor: typeof this.editor) => {
+      const attrs = editor.getAttributes('textStyle');
+      // Read paragraph node directly — storedMarks can be cleared by blur,
+      // but node attrs persist reliably
+      const { selection } = editor.state;
+      const $pos = selection.$from;
+      const node = $pos.node($pos.depth);
+      if (node?.type.name === 'paragraph') {
+        if (!attrs.fontFamily && node.attrs.fontFamily) {
+          attrs.fontFamily = node.attrs.fontFamily;
+        }
+        if (!attrs.fontSize && node.attrs.fontSize) {
+          attrs.fontSize = node.attrs.fontSize;
+        }
+      }
+      return attrs;
+    };
+
+    return {
+      setFontFamily:
+        (fontFamily: string) =>
+        ({ chain }) => {
+          const existing = getExistingTextStyleAttrs(this.editor);
+          return chain()
+            .setMark('textStyle', { ...existing, fontFamily })
+            .run();
+        },
+      unsetFontFamily:
+        () =>
+        ({ chain }) => {
+          const existing = getExistingTextStyleAttrs(this.editor);
+          return chain()
+            .setMark('textStyle', { ...existing, fontFamily: null })
+            .removeEmptyTextStyle()
+            .run();
+        },
+    };
+  },
+
+  addGlobalAttributes() {
+    return [
+      {
+        types: ['paragraph'],
+        attributes: {
+          fontFamily: {
+            default: null,
+            parseHTML: (element) =>
+              element.style.fontFamily?.replace(/['"]+/g, '') || null,
+            renderHTML: (attributes) => {
+              if (!attributes.fontFamily) {
+                return {};
+              }
+              return {
+                style: `font-family: ${attributes.fontFamily}`,
+              };
+            },
+          },
+        },
+      },
+    ];
+  },
+});

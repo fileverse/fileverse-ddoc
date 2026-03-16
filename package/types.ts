@@ -5,6 +5,20 @@ import { EditorProps } from '@tiptap/pm/view';
 import { Editor } from '@tiptap/react';
 import React, { SetStateAction } from 'react';
 import { IComment } from './extensions/comment';
+import { CollaborationProps } from './sync-local/types';
+
+// Re-export collaboration types for consumer access via @fileverse-dev/ddoc/types
+export type {
+  CollaborationProps,
+  CollabConnectionConfig,
+  CollabSessionMeta,
+  CollabServices,
+  CollabCallbacks,
+  CollabState,
+  CollabError,
+  CollabErrorCode,
+  CollabStatus,
+} from './sync-local/types';
 
 export const DdocEditorProps: EditorProps = {
   attributes: {
@@ -143,7 +157,7 @@ export interface DdocProps extends CommentAccountProps {
   extensions?: Record<string, Extension | any>;
   selectedTags?: TagType[];
   setSelectedTags?: React.Dispatch<SetStateAction<TagType[]>>;
-  enableCollaboration?: boolean | undefined;
+  collaboration?: CollaborationProps;
   setIsCommentSectionOpen?: React.Dispatch<SetStateAction<boolean>>;
   inlineCommentData?: InlineCommentData;
   setInlineCommentData?: React.Dispatch<
@@ -156,7 +170,6 @@ export interface DdocProps extends CommentAccountProps {
   setIsNavbarVisible: React.Dispatch<SetStateAction<boolean>>;
   editorCanvasClassNames?: string;
   isCommentSectionOpen?: boolean;
-  collaborationId?: string;
   isPreviewMode: boolean;
   ensResolutionUrl?: string;
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
@@ -205,24 +218,11 @@ export interface DdocProps extends CommentAccountProps {
   activeModel?: CustomModel;
   maxTokens?: number;
   isAIAgentEnabled?: boolean;
-  collaborationKey?: CryptoKey | null;
-  collaborationKeyPair?: {
-    publicKey: string;
-    privateKey: string;
-  };
-  collabConfig?: ICollaborationConfig;
   /**
    * Document styling configuration
    * @description Customize the appearance of the document editor
    */
   documentStyling?: DocumentStyling;
-  onCollaborationConnectCallback?: (response: any) => void;
-  onCollaborationCommit?: (file: File) => Promise<string>;
-  onFetchCommitContent?: (cid: string) => Promise<any>;
-  onCollabSessionTermination?: () => void;
-  onUnMergedUpdates?: (state: boolean) => void;
-  onCollabError?: (error: any) => void;
-  isExistingCollabSession?: boolean;
   /**
    * Callback when IndexedDB initialization fails
    * @description Called when the IndexedDB persistence provider fails to initialize (e.g., private browsing, quota exceeded, corrupted DB). The editor will continue to function without local persistence.
@@ -261,21 +261,4 @@ export interface IpfsImageFetchPayload {
   ipfsHash: string;
   mimeType: string;
   authTag: string;
-}
-
-export interface ICollaborationConfig {
-  roomKey: string;
-  collaborationId: string;
-  username: string;
-  isOwner: boolean;
-  ownerEdSecret?: string;
-  contractAddress?: string;
-  ownerAddress?: string;
-  wsUrl: string;
-  isEns?: boolean;
-  roomInfo?: {
-    documentTitle: string;
-    portalAddress: string;
-    commentKey: string;
-  };
 }

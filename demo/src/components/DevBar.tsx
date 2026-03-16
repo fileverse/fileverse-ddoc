@@ -8,7 +8,7 @@ interface DevBarProps {
   tabCount: number;
   characterCount: number;
   wordCount: number;
-  enableCollaboration: boolean;
+  collabStatus: string;
   lastSavedAt: number | null;
 }
 
@@ -32,7 +32,7 @@ export function DevBar({
   tabCount,
   characterCount,
   wordCount,
-  enableCollaboration,
+  collabStatus,
   lastSavedAt,
 }: DevBarProps) {
   const [visible, setVisible] = useState(false);
@@ -109,8 +109,22 @@ export function DevBar({
       <Separator />
       <span title="Collaboration status">
         <strong>collab:</strong>{' '}
-        <span className={enableCollaboration ? 'text-green-500' : ''}>
-          {enableCollaboration ? 'active' : 'off'}
+        <span
+          className={
+            collabStatus === 'ready'
+              ? 'text-green-500'
+              : collabStatus === 'reconnecting'
+                ? 'text-yellow-500'
+                : collabStatus === 'error'
+                  ? 'text-red-500'
+                  : collabStatus === 'connecting' ||
+                      collabStatus === 'syncing' ||
+                      collabStatus === 'merging'
+                    ? 'text-blue-500'
+                    : ''
+          }
+        >
+          {collabStatus}
         </span>
       </span>
       <Separator />

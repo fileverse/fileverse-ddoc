@@ -193,7 +193,7 @@ export const TabSidebar = ({
           <div
             data-testid="tab-sidebar"
             className={cn(
-              'flex flex-col items-start w-full h-full overflow-y-auto justify-start left-0 px-4 z-20',
+              'flex flex-col items-start w-full h-full overflow-y-auto justify-start left-0 px-4',
               // Keep landscape TOC responsive: it can shrink to 182px on tighter widths
               // and grow up to the original 263px when space allows.
               orientation === 'landscape'
@@ -221,9 +221,9 @@ export const TabSidebar = ({
                 onMouseLeave={() => setIsHovered(false)}
                 onClick={() => setShowTOC?.((prev) => !prev)}
                 className={cn(
-                  'group flex items-center h-[30px]  !min-w-[30px]  min-h-[30px] p-[8px] rounded-full hover:color-bg-secondary-hover transition-[width,background-color] duration-200 ease-out overflow-hidden',
+                  'group flex items-center h-[30px]  !min-w-[30px]  min-h-[30px] p-[8px] rounded-[4px] hover:color-bg-secondary-hover transition-[width,background-color] duration-200 ease-out overflow-hidden',
                   !showTOC && 'hover:min-w-[156px] gap-[8px]',
-                  tabs.length > 0 && !showTOC && 'color-bg-secondary-hover',
+                  tabs.length > 0 && !showTOC && 'color-bg-default-hover',
                 )}
               >
                 <LucideIcon

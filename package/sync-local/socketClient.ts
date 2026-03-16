@@ -1,43 +1,34 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import ReconnectingWebSocket, {
-  UrlProvider,
-  CloseEvent,
-  ErrorEvent,
-} from 'partysocket/ws';
+import { io, Socket } from 'socket.io-client';
 import * as ucans from '@ucans/ucans';
-import { v1 as uuidv1 } from 'uuid';
 
 import {
-  ConnectHandler,
-  DisconnectHandler,
   ISocketInitConfig,
-  EventHandler,
-  RequestPayload,
   RoomMember,
-  SequenceResponseCB,
-  SequenceToRequestMap,
-  SequenceToRequestMapValue,
   SocketStatusEnum,
-  // Update,
   SendUpdateResponse,
   CommitResponse,
   IAuthArgs,
+  AckResponse,
 } from './types';
-import { WEBSOCKET_CONFIG } from './constants/config';
 import { generateKeyPairFromSeed } from '@stablelib/ed25519';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { crypto } from './crypto';
-import { Awareness, applyAwarenessUpdate } from 'y-protocols/awareness.js';
-
-import * as decoding from 'lib0/decoding';
+import {
+  Awareness,
+  applyAwarenessUpdate,
+  removeAwarenessStates,
+  encodeAwarenessUpdate,
+} from 'y-protocols/awareness.js';
 
 interface ISocketClientConfig {
-  wsUrl: UrlProvider;
+  wsUrl: string;
   roomKey: string;
+  roomId: string;
   ownerEdSecret?: string;
   contractAddress?: string;
   ownerAddress?: string;
-  onCollaborationConnectCallback: (response: any) => void;
+  onHandshakeData?: (response: { data: AckResponse; roomKey: string }) => void;
   roomInfo?: {
     documentTitle: string;
     portalAddress: string;
@@ -45,14 +36,18 @@ interface ISocketClientConfig {
   };
 }
 export class SocketClient {
-  private _websocketUrl: UrlProvider;
-  private _machineEventHandler: EventHandler | null = null;
-  private _onConnect: ConnectHandler | null = null;
-  private _onDisconnection: DisconnectHandler | null = null;
-  private _onHandShakeError: ((err: Error) => void) | null = null;
-  private _sequenceCallbackMap: SequenceToRequestMap = {};
-  _webSocketStatus: SocketStatusEnum = SocketStatusEnum.CLOSED;
-  private _webSocket: ReconnectingWebSocket | null = null;
+  private _socketUrl: string;
+  private _socket: Socket | null = null;
+  private _webSocketStatus: SocketStatusEnum = SocketStatusEnum.CLOSED;
+  private _isIntentionalDisconnect = false;
+
+  get isConnected(): boolean {
+    return this._webSocketStatus === SocketStatusEnum.CONNECTED;
+  }
+
+  get status(): SocketStatusEnum {
+    return this._webSocketStatus;
+  }
   private _websocketServiceDid = '';
   private roomId = '';
 
@@ -70,19 +65,19 @@ export class SocketClient {
     commentKey: string;
   };
   private awareness: Awareness | null = null;
+  private connectionAttemptErrorCount = 0;
 
-  _onError: ISocketInitConfig['onError'] | null = null;
-  _onCollaborationConnectCallback:
-    | ISocketClientConfig['onCollaborationConnectCallback']
-    | null = null;
+  private _onHandshakeData: ISocketClientConfig['onHandshakeData'] | null =
+    null;
+
   constructor(config: ISocketClientConfig) {
-    this._websocketUrl = config.wsUrl || 'ws://localhost:5000';
-    this._processMessage = this._processMessage.bind(this);
+    this._socketUrl = config.wsUrl || 'ws://localhost:5000';
     const { secretKey: ucanSecret } = generateKeyPairFromSeed(
       toUint8Array(config.roomKey),
     );
 
     this.roomKey = config.roomKey;
+    this.roomId = config.roomId;
 
     this.collaborationKeyPair = ucans.EdKeypair.fromSecretKey(
       fromUint8Array(ucanSecret),
@@ -93,78 +88,70 @@ export class SocketClient {
 
     if (config.contractAddress) this.contractAddress = config.contractAddress;
     if (config.ownerAddress) this.ownerAddress = config.ownerAddress;
-    if (config.onCollaborationConnectCallback)
-      this._onCollaborationConnectCallback =
-        config.onCollaborationConnectCallback;
+    if (config.onHandshakeData) this._onHandshakeData = config.onHandshakeData;
     if (config.roomInfo) this.roomInfo = config.roomInfo;
-  }
-
-  private _getSequenceIdCallback(id: string): SequenceToRequestMapValue {
-    return this._sequenceCallbackMap[id];
-  }
-
-  private _removeSequenceIdFromMap(id: string) {
-    delete this._sequenceCallbackMap[id];
   }
 
   registerAwareness(awareness: Awareness) {
     this.awareness = awareness;
   }
 
-  private _registerSequenceCallback(
-    seq: string,
-    callback: SequenceResponseCB,
-  ): void {
-    this._sequenceCallbackMap[seq] = { callback };
-  }
-
-  private async _sendNetworkRequest(
-    data: string,
-    seqId?: string,
-  ): Promise<any> {
-    if (
-      this._webSocketStatus !== SocketStatusEnum.CONNECTED ||
-      !this._webSocket
-    ) {
-      const error = new Error('Lost connection to websocket server');
-      error.name = 'SocketConnectionLostError';
-
-      this._onError?.(error);
-      return;
-    }
-
-    return new Promise((resolve) => {
-      if (!this._webSocket) {
-        resolve(null);
+  private _emitWithAck<T = any>(
+    event: string,
+    args: any,
+    timeoutMs = 15000,
+  ): Promise<AckResponse<T>> {
+    return new Promise((resolve, reject) => {
+      if (
+        (this._webSocketStatus !== SocketStatusEnum.CONNECTED &&
+          this._webSocketStatus !== SocketStatusEnum.CONNECTING) ||
+        !this._socket
+      ) {
+        const error = new Error('Lost connection to websocket server');
+        error.name = 'SocketConnectionLostError';
+        reject(error);
         return;
       }
-      this._webSocket.send(data);
-      if (seqId) {
-        this._registerSequenceCallback(seqId, resolve);
-      } else {
-        resolve(null);
-      }
+
+      let timedOut = false;
+      const timer = setTimeout(() => {
+        timedOut = true;
+        const error = new Error(
+          `Socket emit "${event}" timed out after ${timeoutMs}ms`,
+        );
+        error.name = 'SocketTimeoutError';
+        reject(error);
+      }, timeoutMs);
+
+      this._socket.emit(event, args, (response: AckResponse<T>) => {
+        if (timedOut) return;
+        clearTimeout(timer);
+        resolve(response);
+      });
     });
   }
 
   private async _fetchRoomMembers() {
-    const data: any = await this._buildRequest('/documents/peers/list', {});
+    const data = await this._emitWithAck<{ peers: string[] }>(
+      '/documents/peers/list',
+      { documentId: this.roomId },
+    );
 
     if (!data || !data.status) {
       throw new Error('Failed to fetch room members');
     }
 
-    this.roomMembers = data.data.peers;
+    this.roomMembers = data.data?.peers as any;
   }
 
   public async sendUpdate({ update }: { update: string }) {
     const args = {
       data: update,
-      update_snapshot_ref: null,
+      documentId: this.roomId,
       collaborationToken: await this.buildSessionToken(),
     };
 
-    return (await this._buildRequest(
+    return (await this._emitWithAck(
       '/documents/update',
       args,
     )) as SendUpdateResponse;
@@ -174,11 +161,12 @@ export class SocketClient {
     const args = {
       updates,
       cid,
+      documentId: this.roomId,
       ownerToken: await this.getOwnerToken(),
       contractAddress: this.contractAddress,
       ownerAddress: this.ownerAddress,
     };
-    return (await this._buildRequest(
+    return (await this._emitWithAck(
       '/documents/commit',
       args,
     )) as CommitResponse;
@@ -186,71 +174,62 @@ export class SocketClient {
 
   async fetchLatestCommit() {
     const args = {
+      documentId: this.roomId,
       offset: 0,
       limit: 1,
       sort: 'desc',
     };
 
-    return await this._buildRequest('/documents/commit/history', args);
+    return await this._emitWithAck('/documents/commit/history', args);
   }
 
   async getUncommittedChanges() {
     const args = {
+      documentId: this.roomId,
       limit: 1000,
       offset: 0,
       filters: { committed: false },
       sort: 'desc',
     };
-    return await this._buildRequest('/documents/update/history', args);
+    return await this._emitWithAck('/documents/update/history', args);
   }
 
   public async broadcastAwareness(awarenessUpdate: string) {
-    if (this._webSocketStatus !== SocketStatusEnum.CONNECTED) return;
+    if (this._webSocketStatus !== SocketStatusEnum.CONNECTED || !this._socket)
+      return;
     const args = {
+      documentId: this.roomId,
       data: {
         position: awarenessUpdate,
       },
     };
-    return await this._buildRequest('/documents/awareness', args);
+    this._socket.emit('/documents/awareness', args);
   }
 
-  public disconnect = (reason: string, code: number) => {
+  public disconnect = () => {
+    this._isIntentionalDisconnect = true;
     this._webSocketStatus = SocketStatusEnum.CLOSED;
-    if (!this._webSocket) return;
-    this._webSocket.onopen = null;
-    this._webSocket.removeEventListener('message', this._processMessage);
-    this._webSocket.close(code, reason);
+    if (!this._socket) return;
+    this._socket.disconnect();
+    this._socket = null;
     this._webSocketStatus = SocketStatusEnum.CLOSED;
   };
 
   public terminateSession = async () => {
-    const ownerToken = await this.getOwnerToken();
-    const args = {
-      ownerToken,
-      ownerAddress: this.ownerAddress,
-      contractAddress: this.contractAddress,
-      sessionDid: this.collaborationKeyPair?.did(),
-    };
-    await this._buildRequest('/documents/terminate', args);
-    this.disconnect('Session terminated', 1000);
-  };
-
-  private async _buildRequest(cmd: string, args: any) {
-    if (!this.roomId) {
-      throw new Error(`Cannot perform action without room id: ${this.roomId}`);
-    }
-
-    const seqId = uuidv1();
-    const req: RequestPayload = {
-      cmd,
-      args: {
+    try {
+      const ownerToken = await this.getOwnerToken();
+      const args = {
         documentId: this.roomId,
-        ...args,
-      },
-      seqId: seqId,
-    };
-    return await this._sendNetworkRequest(JSON.stringify(req), seqId);
-  }
+        ownerToken,
+        ownerAddress: this.ownerAddress,
+        contractAddress: this.contractAddress,
+        sessionDid: this.collaborationKeyPair?.did(),
+      };
+      await this._emitWithAck('/documents/terminate', args);
+    } finally {
+      this.disconnect();
+    }
+  };
 
   private getCollaborationKeyPair() {
     if (!this.collaborationKeyPair)
@@ -326,17 +305,19 @@ export class SocketClient {
     return ucans.encode(this.collaborationUcan);
   };
 
-  private _handleHandShake = async (message: any) => {
-    this._websocketServiceDid = message.data.server_did;
+  private _handleHandShake = async (
+    message: { server_did: string; message: string },
+    config: ISocketInitConfig,
+  ) => {
+    this._websocketServiceDid = message.server_did;
 
-    if (this._webSocketStatus !== SocketStatusEnum.CONNECTED || !this.roomId) {
+    if (this._webSocketStatus === SocketStatusEnum.CLOSED || !this.roomId) {
       throw new Error(
         'Cannot establish handshake. WebSocket not connected or roomId not defined',
       );
     }
 
     const token = await this.buildSessionToken();
-    const seqId = uuidv1();
     const args: IAuthArgs = {
       collaborationToken: token,
       sessionDid: this.collaborationKeyPair?.did(),
@@ -353,188 +334,221 @@ export class SocketClient {
     if (this.ownerAddress) args.ownerAddress = this.ownerAddress;
     if (this.contractAddress) args.contractAddress = this.contractAddress;
 
-    const req: RequestPayload = {
-      cmd: '/auth',
-      args,
-      seqId: seqId,
-    };
-    const response: any = await this._sendNetworkRequest(
-      JSON.stringify(req),
-      seqId,
-    );
-    this._onCollaborationConnectCallback?.({
+    const response = await this._emitWithAck('/auth', args);
+
+    // Always notify consumer with handshake data (for room info, link copying, etc.)
+    this._onHandshakeData?.({
       data: response,
       roomKey: this.roomKey,
     });
+
+    // Check statusCode FIRST — only proceed for 200
     if (response.statusCode !== 200) {
       const message =
-        (response?.err || 'Unknown error') +
+        (response?.error || 'Unknown error') +
         `, statusCode: ${response?.statusCode}`;
-
       const error = new Error(message);
+      config.onHandShakeError(error, response.statusCode);
+      return;
+    }
 
-      this._onHandShakeError?.(error);
-      return;
-    }
-    if (!response.is_handshake_response) {
-      console.error('SocketAPI: handshake response is not valid', response);
-      this.disconnect('Handshake failed', response?.statusCode || 400);
-      return;
-    }
-    this._onConnect?.();
+    this._webSocketStatus = SocketStatusEnum.CONNECTED;
+    config.onHandshakeSuccess();
   };
 
-  private _executeRequestCallback = (data: any) => {
-    const callbackMap = this._getSequenceIdCallback(data.seqId);
+  private _handleAwarenessUpdate = (data: { data: any; roomId: string }) => {
+    if (!this.awareness) return;
 
-    if (callbackMap && typeof callbackMap.callback === 'function') {
-      this._removeSequenceIdFromMap(data.seqId);
-      delete data.seqId;
-      callbackMap.callback(data);
-      return;
-    }
-  };
-
-  private _dispatchEventHandler = async (message: any) => {
-    switch (message.type) {
-      case 'ROOM_UPDATE': {
-        if (message.event_type === 'ROOM_MEMBERSHIP_CHANGE') {
-          await this._fetchRoomMembers();
-        }
-        break;
+    const key = this.roomKey;
+    const encryptedPosition = data.data.position as string;
+    if (key) {
+      try {
+        const decrypted = crypto.decryptData(
+          toUint8Array(key),
+          encryptedPosition,
+        );
+        applyAwarenessUpdate(
+          this.awareness,
+          new Uint8Array(decrypted),
+          'remote',
+        );
+      } catch (err) {
+        console.warn(
+          'sync-machine: failed to decrypt awareness update, skipping',
+          err,
+        );
       }
-      case 'SESSION_TERMINATION': {
-        this._onSessionTerminated();
-        break;
-      }
-      default:
-        break;
     }
   };
 
-  private _onSessionTerminated = () => {
-    this.disconnect('Session terminated', 1000);
-    this.resetSocketClient();
-  };
-
-  private async _processMessage(event: MessageEvent) {
-    if (!event.data) throw new Error('Failed to get message data');
-
-    const message = JSON.parse(event.data);
-
-    if (message.seqId) {
-      this._executeRequestCallback(message);
-      return;
-    }
-    if (message.is_handshake_response) {
-      this._handleHandShake(message);
-      return;
-    }
-
-    if (message.event_type === 'AWARENESS_UPDATE') {
-      await this._dispatchEventHandler(message);
-      if (this.awareness) {
-        const key = this.roomKey;
-        const encryptedPosition = message.event.data.position as string;
-        if (key) {
-          const decrypted = crypto.decryptData(
-            toUint8Array(key),
-            encryptedPosition,
-          );
-
-          const decryptedPosition = new Uint8Array(decrypted);
-          const decoder = decoding.createDecoder(decryptedPosition);
-          const len = decoding.readVarUint(decoder);
-
-          for (let i = 0; i < len; i++) {
-            decoding.readVarUint(decoder); // clientId
-            decoding.readVarUint(decoder); // clock
-          }
-          applyAwarenessUpdate(this.awareness, decryptedPosition, null);
-        }
-      }
-      return;
-    }
-
-    if (message.event) {
-      await this._dispatchEventHandler(message);
-      this._machineEventHandler?.(message);
-    }
-  }
-
-  private _clearSequenceCallbackMap() {
-    this._sequenceCallbackMap = {};
-  }
-
-  public connectSocket() {
+  public connectSocket(config: ISocketInitConfig) {
     if (
       this._webSocketStatus === SocketStatusEnum.CONNECTED ||
       this._webSocketStatus === SocketStatusEnum.CONNECTING
     ) {
-      return;
+      return Promise.resolve();
     }
 
     this._webSocketStatus = SocketStatusEnum.CONNECTING;
 
-    return new Promise<void>((resolve) => {
-      this._webSocket = new ReconnectingWebSocket(
-        this._websocketUrl,
-        [],
-        WEBSOCKET_CONFIG,
-      );
-      this._webSocket.addEventListener('message', this._processMessage);
-      this._webSocket.onopen = () => {
-        this._webSocketStatus = SocketStatusEnum.CONNECTED;
-        this._clearSequenceCallbackMap();
-        resolve();
-      };
-      this._webSocket.onclose = (e: CloseEvent) => {
-        console.error('SocketAPI: socket closed', e);
-        this._webSocketStatus = SocketStatusEnum.CLOSED;
-        this._onDisconnection?.(e);
-      };
-      this._webSocket.onerror = (e: ErrorEvent | Event) => {
-        console.error('SocketAPI: socket error', e);
-        this._webSocketStatus = SocketStatusEnum.CLOSED;
-        if (
-          this._webSocket &&
-          this._webSocket.retryCount === WEBSOCKET_CONFIG.maxRetries
-        ) {
-          let errorMessage = 'Failed to connect to Socket';
+    return new Promise<void>((resolve, reject) => {
+      let settled = false;
 
-          if (e instanceof ErrorEvent) {
-            errorMessage += `, errorMessage: ${e?.message || 'Unknown message'}, errorName: ${e?.error?.name || 'Unknown name'}`;
-          } else {
-            if (e.target instanceof WebSocket) {
-              const ws = e.target as WebSocket;
-              errorMessage += `, readyState: ${ws?.readyState || 'Unknown ready state'}, wsUrl: ${ws?.url || 'Unknown url'}`;
-            } else {
-              errorMessage += `, errorMessage: 'Unknown error'`;
+      this._socket = io(this._socketUrl, {
+        reconnection: true,
+        reconnectionAttempts: 3,
+        reconnectionDelay: 1500,
+        timeout: 6000,
+        transports: ['websocket', 'polling'],
+      });
+
+      // Safety net: reject if connection isn't established within 60s
+      const connectionTimeout = setTimeout(() => {
+        if (!settled) {
+          settled = true;
+          this._webSocketStatus = SocketStatusEnum.CLOSED;
+          const error = new Error('Connection timed out after 30s');
+          error.name = 'SocketConnectionTimeoutError';
+          config.onError(error);
+          reject(error);
+          this.disconnect();
+        }
+      }, 30000);
+
+      this._socket.on('connect', () => {
+        if (!settled) {
+          settled = true;
+          clearTimeout(connectionTimeout);
+        }
+        this._webSocketStatus = SocketStatusEnum.CONNECTING;
+        resolve();
+      });
+
+      // Server handshake event — triggers auth flow
+      this._socket.on('/server/handshake', (message) => {
+        this._handleHandShake(message, config).catch((err) => {
+          config.onHandShakeError(err);
+        });
+      });
+
+      // Server broadcast listeners
+      this._socket.on('/document/content_update', (data) => {
+        config.onContentUpdate(data);
+      });
+
+      this._socket.on('/document/awareness_update', (data) => {
+        this._handleAwarenessUpdate(data);
+      });
+
+      this._socket.on('/room/membership_change', (data) => {
+        this._fetchRoomMembers().catch(console.error);
+        config.onMembershipChange(data);
+      });
+
+      this._socket.on('/session/terminated', (data) => {
+        config.onSessionTerminated(data);
+        this._onSessionTerminated();
+      });
+
+      this._socket.on('/server/error' as any, (data: any) => {
+        console.error('SocketAPI: server error event', data);
+        const error = new Error(data?.message || 'Server error');
+        error.name = 'ServerError';
+        config.onError(error);
+      });
+
+      this._socket.on('disconnect', () => {
+        console.error('SocketAPI: socket disconnected');
+        this._webSocketStatus = SocketStatusEnum.CLOSED;
+
+        // Clean up remote awareness states (prevents ghost cursors)
+        if (this.awareness) {
+          const states = this.awareness.getStates();
+          const remoteClients = Array.from(states.keys()).filter(
+            (clientId) => clientId !== this.awareness!.clientID,
+          );
+          if (remoteClients.length > 0) {
+            removeAwarenessStates(
+              this.awareness,
+              remoteClients,
+              'socket disconnect',
+            );
+          }
+        }
+
+        if (this._isIntentionalDisconnect) {
+          config.onDisconnect();
+        } else {
+          // Unintentional drop — notify SyncManager so it can transition to reconnecting
+          config.onSocketDropped();
+        }
+      });
+
+      this._socket.on('connect_error', (err) => {
+        console.error('SocketAPI: socket connect error', err);
+        this._webSocketStatus = SocketStatusEnum.CONNECTING;
+
+        if (this.connectionAttemptErrorCount >= 3) {
+          clearTimeout(connectionTimeout);
+          this.connectionAttemptErrorCount = 0;
+          const error = new Error('Failed to establish socket connection');
+          error.name = 'SocketConnectionFailedError';
+          config.onError(error);
+          reject(error);
+          this.disconnect();
+          // return;
+        } else {
+          this.connectionAttemptErrorCount++;
+        }
+      });
+
+      this._socket.on('reconnect_failed', () => {
+        console.error('SocketAPI: reconnection failed');
+        this._webSocketStatus = SocketStatusEnum.CLOSED;
+        config.onReconnectFailed();
+        if (!settled) {
+          settled = true;
+          clearTimeout(connectionTimeout);
+          const error = new Error('Failed to reconnect to Socket');
+          error.name = 'SocketConnectionFailedError';
+          reject(error);
+        }
+      });
+
+      this._socket.on('reconnect', () => {
+        this._isIntentionalDisconnect = false;
+        // Status will be set to CONNECTED by _handleHandShake after re-auth
+        this._webSocketStatus = SocketStatusEnum.CONNECTING;
+
+        // Re-broadcast local awareness state so other clients see our cursor
+        if (this.awareness) {
+          const localState = this.awareness.getLocalState();
+          if (localState) {
+            const update = encodeAwarenessUpdate(this.awareness, [
+              this.awareness.clientID,
+            ]);
+            const key = this.roomKey;
+            if (key) {
+              const encryptedUpdate = crypto.encryptData(
+                toUint8Array(key),
+                update,
+              );
+              this.broadcastAwareness(encryptedUpdate);
             }
           }
-
-          const error = new Error(errorMessage);
-          error.name = 'SocketConnectionFailedError';
-          this._onError?.(error);
         }
-      };
+      });
     });
   }
 
-  public async init(config: ISocketInitConfig) {
-    this._onConnect = config.onConnect;
-    this._onDisconnection = config.onDisconnect;
-    this._machineEventHandler = config.onWsEvent;
-    this._onError = config.onError;
-    this._onHandShakeError = config.onHandShakeError;
-    this.roomId = config.roomId;
-
-    await this.connectSocket();
-  }
+  private _onSessionTerminated = () => {
+    this.disconnect();
+    this.resetSocketClient();
+  };
 
   private resetSocketClient = () => {
     this._webSocketStatus = SocketStatusEnum.CLOSED;
-    this._webSocket = null;
+    this._socket = null;
     this._websocketServiceDid = '';
     this.roomId = '';
     this.roomMembers = [];

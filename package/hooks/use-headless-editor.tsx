@@ -13,9 +13,11 @@ import { IpfsImageUploadResponse } from '../types';
 import mammoth from 'mammoth';
 import { CommentExtension as Comment } from '../extensions/comment';
 
-export const useHeadlessEditor = (props?: {
+export interface UseHeadlessEditorProps {
   optionalExtensions?: string[];
-}) => {
+}
+
+export const useHeadlessEditor = (props?: UseHeadlessEditorProps) => {
   const getEditor = () => {
     const ydoc = new Y.Doc();
 

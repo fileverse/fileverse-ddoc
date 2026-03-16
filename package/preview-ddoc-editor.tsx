@@ -25,8 +25,6 @@ const PreviewDdocEditorContent = forwardRef(
     {
       isPreviewMode = false,
       initialContent,
-      enableCollaboration,
-      collaborationId,
       username,
       walletAddress,
       onChange,
@@ -86,8 +84,6 @@ const PreviewDdocEditorContent = forwardRef(
       isPreviewMode,
       initialContent,
       versionHistoryState,
-      enableCollaboration,
-      collaborationId,
       walletAddress,
       username,
       onChange,

@@ -1,11 +1,14 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import * as Y from 'yjs';
 import { IndexeddbPersistence } from 'y-indexeddb';
 import { JSONContent } from '@tiptap/react';
-import { useSyncMachine } from '../sync-local/useSyncMachine';
-import { useRtcWebsocketDisconnector } from './use-rtc-websocket-disconnector';
+import { useSyncManager } from '../sync-local/useSyncManager';
 import { fromUint8Array } from 'js-base64';
-import { DdocProps } from '../types';
+import {
+  CollaborationProps,
+  CollabServices,
+  CollabCallbacks,
+} from '../sync-local/types';
 
 interface UseYjsSetupArgs {
   onChange?: (
@@ -14,30 +17,26 @@ interface UseYjsSetupArgs {
   ) => void;
   enableIndexeddbSync?: boolean;
   ddocId?: string;
-  enableCollaboration?: boolean;
+  collaboration?: CollaborationProps;
   onIndexedDbError?: (error: Error) => void;
-  onCollabError?: DdocProps['onCollabError'];
-  onCollaborationConnectCallback?: DdocProps['onCollaborationConnectCallback'];
-  onCollaborationCommit?: DdocProps['onCollaborationCommit'];
-  onFetchCommitContent?: DdocProps['onFetchCommitContent'];
-  onCollabSessionTermination?: () => void;
-  onUnMergedUpdates?: (state: boolean) => void;
 }
 
 export const useYjsSetup = ({
   onChange,
   enableIndexeddbSync,
   ddocId,
-  enableCollaboration,
+  collaboration,
   onIndexedDbError,
-  onCollabError,
-  onCollaborationConnectCallback,
-  onCollaborationCommit,
-  onFetchCommitContent,
-  onCollabSessionTermination,
-  onUnMergedUpdates,
 }: UseYjsSetupArgs) => {
   const [ydoc] = useState(new Y.Doc());
+
+  const collabEnabled = collaboration?.enabled === true;
+  const services: CollabServices | undefined = collabEnabled
+    ? collaboration.services
+    : undefined;
+  const callbacks: CollabCallbacks | undefined = collabEnabled
+    ? collaboration.on
+    : undefined;
 
   const {
     connect,
@@ -45,23 +44,17 @@ export const useYjsSetup = ({
     terminateSession,
     awareness,
     hasCollabContentInitialised,
-    state: syncState,
-  } = useSyncMachine({
-    onError: onCollabError,
+    state: collabState,
+  } = useSyncManager({
     ydoc,
-    onCollaborationConnectCallback,
-    onCollaborationCommit,
-    onFetchCommitContent,
-    onSessionTerminated: onCollabSessionTermination,
-    onUnMergedUpdates,
+    services,
+    callbacks,
     onLocalUpdate: onChange,
   });
 
-  useRtcWebsocketDisconnector(syncState, enableCollaboration);
-
   const yjsIndexeddbProviderRef = useRef<IndexeddbPersistence | null>(null);
 
-  const initialiseYjsIndexedDbProvider = async () => {
+  const initialiseYjsIndexedDbProvider = useCallback(async () => {
     const provider = yjsIndexeddbProviderRef.current;
     if (provider) {
       await provider.destroy();
@@ -80,7 +73,7 @@ export const useYjsSetup = ({
         // Don't rethrow - allow editor to continue without persistence
       }
     }
-  };
+  }, [enableIndexeddbSync, ddocId, ydoc, onIndexedDbError]);
 
   const onChangeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
@@ -124,5 +117,6 @@ export const useYjsSetup = ({
     hasCollabContentInitialised,
     initialiseYjsIndexedDbProvider,
     refreshYjsIndexedDbProvider: initialiseYjsIndexedDbProvider,
+    collabState,
   };
 };

@@ -21,9 +21,12 @@ import {
   getCompressedBase64Image,
   isValidBase64Image,
 } from '../../utils/image-compression';
+import { markdownHtmlGuardPlugin } from './mark-down-html-guard-plugin';
 
-// Initialize MarkdownIt for converting Markdown back to HTML with footnote support
-const markdownIt = new MarkdownIt().use(markdownItFootnote);
+// Initialize MarkdownIt for converting Markdown back to HTML with footnote support.
+const markdownIt = new MarkdownIt({ html: true })
+  .use(markdownItFootnote)
+  .use(markdownHtmlGuardPlugin);
 
 // Initialize TurndownService for converting HTML to Markdown
 export const turndownService = new TurndownService({
@@ -774,11 +777,6 @@ export async function handleMarkdownContent(
 
   // Convert Markdown to HTML
   let convertedHtml = markdownIt.render(cleanMarkdown);
-
-  // Decode HTML entities
-  const textarea = document.createElement('textarea');
-  textarea.innerHTML = convertedHtml;
-  convertedHtml = textarea.value;
 
   // Parse the HTML string into DOM nodes
   const parser = new DOMParser();
