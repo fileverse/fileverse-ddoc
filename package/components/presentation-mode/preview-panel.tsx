@@ -3,9 +3,8 @@ import { useRef, useEffect } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
 import { useResponsive } from '../../utils/responsive';
 import { DdocProps } from '../../types';
-import { getResponsiveColor } from '../../utils/colors';
 import {
-  isThemeVariantValue,
+  getResponsiveThemeTextColor,
   getThemeStyle,
 } from '../../utils/document-styling';
 
@@ -42,13 +41,10 @@ export const PreviewPanel = ({
     documentStyling?.canvasBackground,
     theme,
   );
-  const themeTextColor = getThemeStyle(documentStyling?.textColor, theme);
-
-  const finalTextColor = themeTextColor
-    ? isThemeVariantValue(documentStyling?.textColor)
-      ? themeTextColor
-      : getResponsiveColor(themeTextColor, theme)
-    : undefined;
+  const finalTextColor = getResponsiveThemeTextColor(
+    documentStyling?.textColor,
+    theme,
+  );
 
   // Create canvas styles for preview slides
   const canvasStyles = {

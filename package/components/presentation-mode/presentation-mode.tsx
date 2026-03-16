@@ -18,9 +18,8 @@ import { convertMarkdownToHTML } from '../../utils/md-to-html';
 import { useResponsive } from '../../utils/responsive';
 import { IpfsImageFetchPayload, DdocProps } from '../../types';
 import { EXTENSIONS_WITH_DUPLICATE_WARNINGS } from '../../utils/helpers';
-import { getResponsiveColor } from '../../utils/colors';
 import {
-  isThemeVariantValue,
+  getResponsiveThemeTextColor,
   getThemeStyle,
 } from '../../utils/document-styling';
 
@@ -94,13 +93,10 @@ const SlideContent = ({
     documentStyling?.canvasBackground,
     theme,
   );
-  const themeTextColor = getThemeStyle(documentStyling?.textColor, theme);
-
-  const finalTextColor = themeTextColor
-    ? isThemeVariantValue(documentStyling?.textColor)
-      ? themeTextColor
-      : getResponsiveColor(themeTextColor, theme)
-    : undefined;
+  const finalTextColor = getResponsiveThemeTextColor(
+    documentStyling?.textColor,
+    theme,
+  );
 
   // Create canvas styles for presentation mode (no background)
   const editorStyles = {
