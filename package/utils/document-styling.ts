@@ -1,4 +1,5 @@
 import { DocumentStylingValue, ThemeVariantValue } from '../types';
+import { getResponsiveColor } from './colors';
 
 export const isThemeVariantValue = (
   value: DocumentStylingValue | undefined,
@@ -23,4 +24,14 @@ export const getThemeStyle = (
   }
 
   return value.light || value.dark;
+};
+
+export const getResponsiveThemeTextColor = (
+  value?: DocumentStylingValue,
+  theme: 'light' | 'dark' = 'light',
+): string | undefined => {
+  const themeStyle = getThemeStyle(value, theme);
+  if (!themeStyle) return;
+
+  return getResponsiveColor(themeStyle, theme);
 };
