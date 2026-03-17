@@ -96,7 +96,9 @@ export const useTabManager = ({
     hasHydratedRef.current = true;
     setTabs(initialTabState.tabList);
     if (shouldSyncActiveTab) {
-      _setActiveTabId(defaultTabId || initialTabState.activeTabId);
+      const newActiveId = defaultTabId || initialTabState.activeTabId;
+      activeTabIdRef.current = newActiveId;
+      _setActiveTabId(newActiveId);
     }
   }, [initialTabState, shouldSyncActiveTab, defaultTabId]);
   const {
