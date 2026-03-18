@@ -28,7 +28,7 @@ export const FullScreenToolbar = ({
   toggleFullscreenMode,
 }: FullScreenToolbarProps) => {
   return (
-    <div className="fixed right-[24px] items-center flex gap-[4px] top-[24px]">
+    <div className="fixed right-[24px] z-[9] items-center flex gap-[4px] top-[24px]">
       <DynamicDropdownV2
         key="zoom-levels"
         align="start"
