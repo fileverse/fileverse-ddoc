@@ -68,6 +68,7 @@ export const useDdocEditor = ({
     ),
     onVersionHistoryActiveTabChange: versionHistoryState?.onActiveTabChange,
     getEditor: () => editorRef.current,
+    flushPendingUpdate: yjsSetup.flushPendingUpdate,
   });
 
   const tabEditor = useTabEditor({
