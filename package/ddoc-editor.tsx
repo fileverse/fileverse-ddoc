@@ -51,6 +51,8 @@ import {
   getResponsiveThemeTextColor,
   getThemeStyle,
 } from './utils/document-styling';
+import { useFullscreenMode } from './hooks/use-fullscreen-mode';
+import { FullScreenToolbar } from './components/fullscreen-toolbar';
 
 const DdocEditor = forwardRef(
   (
@@ -275,6 +277,7 @@ const DdocEditor = forwardRef(
         setIsHiddenTagsVisible(false);
       }
     }, [selectedTags]);
+    const [dropdownOpen, setDropdownOpen] = useState(false);
 
     const {
       editor,
@@ -586,6 +589,7 @@ const DdocEditor = forwardRef(
         {},
       );
     }, [initialComments]);
+    const { isFullscreenMode, toggleFullscreenMode } = useFullscreenMode();
 
     const renderComp = () => {
       const shouldRenderDocumentOutline =
@@ -603,7 +607,19 @@ const DdocEditor = forwardRef(
       return (
         <AnimatePresence>
           <>
-            {!isPreviewMode && (
+            {isFullscreenMode && (
+              <FullScreenToolbar
+                dropdownOpen={dropdownOpen}
+                setDropdownOpen={setDropdownOpen}
+                zoomLevel={zoomLevel}
+                setZoomLevel={setZoomLevel}
+                showTOC={showTOC}
+                setShowTOC={setShowTOC}
+                toggleFullscreenMode={toggleFullscreenMode}
+              />
+            )}
+
+            {!isPreviewMode && !isFullscreenMode && (
               <div
                 id="toolbar"
                 className={cn(
@@ -635,6 +651,7 @@ const DdocEditor = forwardRef(
                     isConnected={isConnected}
                     tabs={tabs}
                     ydoc={ydoc}
+                    toggleFullscreenMode={toggleFullscreenMode}
                     onRegisterExportTrigger={(trigger) => {
                       exportTriggerRef.current = trigger;
                     }}
@@ -715,13 +732,16 @@ const DdocEditor = forwardRef(
               id="editor-wrapper"
               className={cn(
                 'w-full mx-auto rounded transition-all duration-300 ease-in-out',
-                !documentStyling?.canvasBackground && 'color-bg-default',
+                !documentStyling?.canvasBackground &&
+                  !isFullscreenMode &&
+                  'color-bg-default',
                 !isPreviewMode &&
+                  !isFullscreenMode &&
                   (isNavbarVisible
                     ? '-mt-[1.5rem] md:!mt-[0.8rem] pt-0 md:pt-[5rem]'
                     : 'pt-0 md:pt-[1.5rem]'),
                 isPreviewMode && 'md:!mt-[1rem] pt-0 md:!pt-[5rem]',
-                { 'md:!mt-[0.7rem]': !isPreviewMode },
+                { 'md:!mt-[0.7rem]': !isPreviewMode && !isFullscreenMode },
                 {
                   '-mt-[1.5rem] md:!mt-[0.7rem]':
                     !isNavbarVisible && !isPreviewMode,
@@ -747,6 +767,7 @@ const DdocEditor = forwardRef(
                 {
                   '!ml-0': zoomLevel === '2' && isWidth1500px && !isWidth3000px,
                 },
+                isFullscreenMode && 'mt-[48px]',
               )}
               style={{
                 transformOrigin:
@@ -775,7 +796,8 @@ const DdocEditor = forwardRef(
                   {
                     'color-bg-default':
                       !documentStyling?.canvasBackground &&
-                      (zoomLevel === '1.4' || zoomLevel === '1.5'),
+                      (zoomLevel === '1.4' || zoomLevel === '1.5') &&
+                      !isFullscreenMode,
                   },
                 )}
                 style={{
@@ -1005,11 +1027,13 @@ const DdocEditor = forwardRef(
             !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
           )}
           style={{
-            height: !isPreviewMode
-              ? isNavbarVisible
-                ? `calc(100vh - 108px - ${footerHeight || '0px'})`
-                : `calc(100vh - 52px - ${footerHeight || '0px'})`
-              : `calc(100vh - 52px - ${footerHeight || '0px'})`,
+            height: isFullscreenMode
+              ? '100vh'
+              : !isPreviewMode
+                ? isNavbarVisible
+                  ? `calc(100vh - 108px - ${footerHeight || '0px'})`
+                  : `calc(100vh - 52px - ${footerHeight || '0px'})`
+                : `calc(100vh - 52px - ${footerHeight || '0px'})`,
           }}
         >
           <div
@@ -1017,8 +1041,9 @@ const DdocEditor = forwardRef(
             className={cn(
               'h-[100%] w-full custom-scrollbar relative',
               !isPreviewMode &&
+                !isFullscreenMode &&
                 (isNavbarVisible ? 'mt-[6.7rem]' : 'mt-[3.3rem]'),
-              isPreviewMode && 'mt-[3.5rem]',
+              isPreviewMode && !isFullscreenMode && 'mt-[3.5rem]',
               {
                 'overflow-x-hidden': zoomLevel !== '2',
                 'overflow-x-auto scroll-container': zoomLevel === '2',
@@ -1028,18 +1053,21 @@ const DdocEditor = forwardRef(
             )}
             style={getBackgroundStyle()}
           >
-            <nav
-              id="Navbar"
-              className={cn(
-                'h-14 color-bg-default py-2 px-0 md:px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-[45] transition-transform duration-300',
-                {
-                  'translate-y-0': isNavbarVisible,
-                  'translate-y-[-100%]': !isNavbarVisible || isPresentationMode,
-                },
-              )}
-            >
-              {editor && renderNavbar?.({ editor: editor.getJSON() })}
-            </nav>
+            {!isFullscreenMode && (
+              <nav
+                id="Navbar"
+                className={cn(
+                  'h-14 color-bg-default py-2 px-0 md:px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-[45] transition-transform duration-300',
+                  {
+                    'translate-y-0': isNavbarVisible,
+                    'translate-y-[-100%]':
+                      !isNavbarVisible || isPresentationMode,
+                  },
+                )}
+              >
+                {editor && renderNavbar?.({ editor: editor.getJSON() })}
+              </nav>
+            )}
             {!editor ? (
               renderComp()
             ) : (

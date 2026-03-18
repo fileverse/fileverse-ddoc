@@ -26,7 +26,7 @@ const EditorToolbarDropdown = ({
       sideOffset={8}
       anchorTrigger={
         <Tooltip text={tool.title}>
-          <IconButton icon={tool.icon} variant="ghost" size="md" />
+          <IconButton icon={tool.icon} variant="ghost" size="sm" />
         </Tooltip>
       }
       content={renderContent(tool)}
