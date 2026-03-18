@@ -206,12 +206,9 @@ export const DocumentMobileTabPanel = ({
       data-testid="mobile-tab-panel"
       className={cn('fixed w-full flex flex-col z-[9]')}
       style={{
-        bottom:
-          showTabList || (isPreviewMode && !isVersionHistoryMode)
-            ? '0px'
-            : isVersionHistoryMode
-              ? 'var(--version-sheet-bottom, 24px)'
-              : '24px',
+        bottom: isVersionHistoryMode
+          ? 'var(--version-sheet-bottom, 24px)'
+          : '24px',
       }}
     >
       <div
