@@ -655,7 +655,7 @@ const DdocEditor = forwardRef(
             )}
             <div
               className={cn(
-                'flex-[1_1_263px]',
+                !isMobile && 'flex-[1_1_263px]',
                 !isPreviewMode &&
                   !isFullscreenMode &&
                   isNavbarVisible &&
@@ -914,7 +914,9 @@ const DdocEditor = forwardRef(
               </div>
             </div>
 
-            {!shouldHideRight && <div className="flex-[1_1_263px]"></div>}
+            {!shouldHideRight && !isMobile && (
+              <div className="flex-[1_1_263px]"></div>
+            )}
 
             {showCommentButton && !isNativeMobile && (
               <Button
