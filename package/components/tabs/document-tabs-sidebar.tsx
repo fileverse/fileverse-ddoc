@@ -210,7 +210,6 @@ export const TabSidebar = ({
                   : isPreviewMode
                     ? 'top-[70px] max-h-[calc(100vh-86px)]'
                     : 'top-[124px] max-h-[calc(100vh-140px)]',
-              !isVersionHistoryMode && 'fixed',
             )}
           >
             {(!isFullscreenMode || showTOC) && (
