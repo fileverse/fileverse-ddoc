@@ -26,14 +26,26 @@ export const useSyncManager = (config: SyncManagerConfig) => {
   manager.updateRefs(config.services, config.callbacks, config.onLocalUpdate);
 
   const isReady = manager.isReady;
+  const isConnected = manager.isConnected;
   const awareness = manager.awareness;
 
-  // Local ydoc update listener — when ready, listen for ydoc update events
+  // Once the editor has been ready with awareness, keep it "ready" through
+  // reconnection.  This matches the old XState behaviour where isReady was
+  // a sticky flag set once by setMachineReadyStateHandler.
+  const hasBeenReadyRef = useRef(false);
+  if (isReady && awareness) {
+    hasBeenReadyRef.current = true;
+  }
+
+  // Local ydoc update listener — use isConnected (covers ready, syncing,
+  // reconnecting) so local edits are queued during reconnection instead of
+  // being dropped.  enqueueLocalUpdate only processes the queue when status
+  // is 'ready', so queued updates are held safely until then.
   useEffect(() => {
-    if (!isReady || !config.ydoc) return;
+    if (!isConnected || !config.ydoc) return;
 
     const updateHandler = (update: Uint8Array, origin: any) => {
-      if (origin === 'self' || !manager.isReady) return;
+      if (origin === 'self' || !manager.isConnected) return;
       manager.enqueueLocalUpdate(update);
     };
 
@@ -42,7 +54,7 @@ export const useSyncManager = (config: SyncManagerConfig) => {
       config.ydoc.off('update', updateHandler);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config.ydoc, isReady]);
+  }, [config.ydoc, isConnected]);
 
   // Awareness cleanup — on unmount + beforeunload
   useEffect(() => {
@@ -96,20 +108,26 @@ export const useSyncManager = (config: SyncManagerConfig) => {
     manager.terminateSession();
   }, [manager]);
 
-  // Derive hasCollabContentInitialised from state:
-  // Content is initialised once we've passed through syncing to ready,
-  // or if we're currently in syncing (decryption happening).
-  // The key signal is that we've entered 'ready' at least once,
-  // but for backward compat we derive from status.
+  // Sticky: once content has been initialised (we reached 'ready' at least
+  // once), don't flip back during reconnection.
   const hasCollabContentInitialised =
-    collabState.status === 'ready' || collabState.status === 'reconnecting';
+    hasBeenReadyRef.current ||
+    collabState.status === 'ready' ||
+    collabState.status === 'reconnecting';
+
+  // Stable isReady: if we've been ready and awareness is still alive
+  // (preserved through reconnection), keep reporting ready so the editor
+  // doesn't flash loading / toggle editable state.
+  const stableIsReady =
+    (hasBeenReadyRef.current && !!awareness) ||
+    (collabState.status === 'ready' && !!awareness);
 
   return {
     state: collabState,
     connect,
     disconnect,
     terminateSession,
-    isReady: collabState.status === 'ready' && !!awareness,
+    isReady: stableIsReady,
     awareness,
     hasCollabContentInitialised,
   };
