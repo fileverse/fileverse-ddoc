@@ -78,6 +78,7 @@ export const useDdocEditor = ({
     collaboration,
     versionId: versionHistoryState?.versionId,
     isReady: yjsSetup.isReady,
+    isSyncing: yjsSetup.isSyncing,
     awareness: yjsSetup.awareness,
     disableInlineComment,
     onCommentInteraction,

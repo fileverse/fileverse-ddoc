@@ -25,17 +25,8 @@ export const useSyncManager = (config: SyncManagerConfig) => {
   // Keep refs fresh on every render to prevent stale closures
   manager.updateRefs(config.services, config.callbacks, config.onLocalUpdate);
 
-  const isReady = manager.isReady;
   const isConnected = manager.isConnected;
   const awareness = manager.awareness;
-
-  // Once the editor has been ready with awareness, keep it "ready" through
-  // reconnection.  This matches the old XState behaviour where isReady was
-  // a sticky flag set once by setMachineReadyStateHandler.
-  const hasBeenReadyRef = useRef(false);
-  if (isReady && awareness) {
-    hasBeenReadyRef.current = true;
-  }
 
   // Local ydoc update listener — use isConnected (covers ready, syncing,
   // reconnecting) so local edits are queued during reconnection instead of
@@ -108,26 +99,22 @@ export const useSyncManager = (config: SyncManagerConfig) => {
     manager.terminateSession();
   }, [manager]);
 
-  // Sticky: once content has been initialised (we reached 'ready' at least
-  // once), don't flip back during reconnection.
-  const hasCollabContentInitialised =
-    hasBeenReadyRef.current ||
-    collabState.status === 'ready' ||
-    collabState.status === 'reconnecting';
+  const isSyncing = collabState.status === 'syncing';
+  const isReady = collabState.status === 'ready' && !!awareness;
 
-  // Stable isReady: if we've been ready and awareness is still alive
-  // (preserved through reconnection), keep reporting ready so the editor
-  // doesn't flash loading / toggle editable state.
-  const stableIsReady =
-    (hasBeenReadyRef.current && !!awareness) ||
-    (collabState.status === 'ready' && !!awareness);
+  // Content is initialised once we've reached 'ready' at least once.
+  // During reconnection we pass through 'reconnecting' — content is still
+  // present locally so we keep this true.
+  const hasCollabContentInitialised =
+    collabState.status === 'ready' || collabState.status === 'reconnecting';
 
   return {
     state: collabState,
     connect,
     disconnect,
     terminateSession,
-    isReady: stableIsReady,
+    isReady,
+    isSyncing,
     awareness,
     hasCollabContentInitialised,
   };

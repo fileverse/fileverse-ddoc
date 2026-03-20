@@ -41,6 +41,7 @@ export const useYjsSetup = ({
   const {
     connect,
     isReady,
+    isSyncing,
     terminateSession,
     awareness,
     hasCollabContentInitialised,
@@ -123,6 +124,7 @@ export const useYjsSetup = ({
     ydoc,
     onConnect: connect,
     isReady,
+    isSyncing,
     terminateSession,
     awareness,
     hasCollabContentInitialised,
