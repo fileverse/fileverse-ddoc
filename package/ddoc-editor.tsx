@@ -728,8 +728,12 @@ const DdocEditor = forwardRef(
                   isFullscreenMode && 'mt-[48px]',
                 )}
                 style={{
-                  width: `${scaledWidth}px`,
-                  maxWidth: `${scaledWidth}px`,
+                  ...(isMobile
+                    ? {}
+                    : {
+                        width: `${scaledWidth}px`,
+                        maxWidth: `${scaledWidth}px`,
+                      }),
                   flexShrink: 0,
                   minHeight: '100%',
                   ...(getCanvasStyle() || {}),
@@ -747,12 +751,16 @@ const DdocEditor = forwardRef(
                         !isFullscreenMode,
                     },
                   )}
-                  style={{
-                    width: `${baseWidth}px`,
-                    transform: `scale(${zoom})`,
-                    transformOrigin: 'top left',
-                    height: `${100 / zoom}%`,
-                  }}
+                  style={
+                    isMobile
+                      ? {}
+                      : {
+                          width: `${baseWidth}px`,
+                          transform: `scale(${zoom})`,
+                          transformOrigin: 'top left',
+                          height: `${100 / zoom}%`,
+                        }
+                  }
                 >
                   <div>
                     {editor && (

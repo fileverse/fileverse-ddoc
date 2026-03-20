@@ -12,6 +12,7 @@ import uuid from 'react-uuid';
 import { useOnClickOutside } from 'usehooks-ts';
 import { CommentContextType, CommentProviderProps, EnsCache } from './types';
 import { getAddressName } from '../../../utils/getAddressName';
+import { getEditorScrollContainer } from '../../../utils/get-editor-scroll-container';
 import { EnsStatus } from '../types';
 import { CommentMutationMeta, CommentMutationType } from '../../../types';
 import * as Y from 'yjs';
@@ -342,23 +343,10 @@ export const CommentProvider = ({
           // Set selection to the comment text
           editor.commands.setTextSelection({ from, to });
 
-          // Find all possible scroll containers
-          const possibleContainers = [
-            document.querySelector<HTMLElement>('.ProseMirror'),
-            document.getElementById('editor-canvas'),
-            commentElement.closest<HTMLElement>('.ProseMirror'),
-            commentElement.closest<HTMLElement>('[class*="editor"]'),
-            editor.view.dom.parentElement,
-          ].filter((el): el is HTMLElement => el !== null); // Type guard
-
-          // Find the first scrollable container
-          const scrollContainer = possibleContainers.find(
-            (container) =>
-              container &&
-              (container.scrollHeight > container.clientHeight ||
-                window.getComputedStyle(container).overflow === 'auto' ||
-                window.getComputedStyle(container).overflowY === 'auto'),
-          );
+          const scrollContainer = getEditorScrollContainer({
+            targetElement: commentElement,
+            editorRoot: editor.view.dom as HTMLElement,
+          });
 
           if (scrollContainer) {
             // Use requestAnimationFrame to ensure DOM updates are complete

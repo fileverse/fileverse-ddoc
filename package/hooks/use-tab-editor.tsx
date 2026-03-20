@@ -36,6 +36,7 @@ import { headingToSlug } from '../utils/heading-to-slug';
 import { useResponsive } from '../utils/responsive';
 import { yCursorPlugin, yCursorPluginKey } from '@tiptap/y-tiptap';
 import { getResponsiveColor } from '../utils/colors';
+import { getEditorScrollContainer } from '../utils/get-editor-scroll-container';
 import {
   CollabConnectionConfig,
   CollaborationProps,
@@ -648,26 +649,10 @@ export const useTabEditor = ({
         tr.setSelection(new TextSelection(tr.doc.resolve(pos)));
         editor.view.dispatch(tr);
 
-        // Prefer the main editor canvas so outline interactions only scroll editor content.
-        const editorCanvas = document.getElementById('editor-canvas');
-
-        // Find all possible scroll containers
-        const possibleContainers = [
-          editorCanvas,
-          document.querySelector('.ProseMirror'),
-          element.closest('.ProseMirror'),
-          element.closest('[class*="editor"]'),
-          editor.view.dom.parentElement,
-        ].filter(Boolean);
-
-        // Find the first scrollable container
-        const scrollContainer = possibleContainers.find(
-          (container) =>
-            container &&
-            (container.scrollHeight > container.clientHeight ||
-              window.getComputedStyle(container).overflow === 'auto' ||
-              window.getComputedStyle(container).overflowY === 'auto'),
-        );
+        const scrollContainer = getEditorScrollContainer({
+          targetElement: element as HTMLElement,
+          editorRoot: editor.view.dom as HTMLElement,
+        });
         if (scrollContainer) {
           // Use requestAnimationFrame to ensure DOM updates are complete
           requestAnimationFrame(() => {

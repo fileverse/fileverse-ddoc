@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useMediaQuery } from 'usehooks-ts';
 
 const isApiFullscreen = () => Boolean(document.fullscreenElement);
 
@@ -10,14 +11,19 @@ const isBrowserFullscreen = () => {
 };
 
 export const useFullscreenMode = () => {
-  const [isFullscreenMode, setIsFullscreenMode] = useState(
-    isBrowserFullscreen(),
-  );
+  const [isFullscreenMode, setIsFullscreenMode] = useState(false);
+  const isMobile = useMediaQuery('(max-width: 1024px)');
 
   useEffect(() => {
     const sync = () => {
+      if (isMobile) {
+        setIsFullscreenMode(false);
+        return;
+      }
       setIsFullscreenMode(isBrowserFullscreen());
     };
+
+    sync();
 
     document.addEventListener('fullscreenchange', sync);
     window.addEventListener('resize', sync);
@@ -26,7 +32,7 @@ export const useFullscreenMode = () => {
       document.removeEventListener('fullscreenchange', sync);
       window.removeEventListener('resize', sync);
     };
-  }, []);
+  }, [isMobile]);
 
   const toggleFullscreenMode = async () => {
     if (isApiFullscreen()) {
