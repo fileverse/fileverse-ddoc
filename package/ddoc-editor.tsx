@@ -17,14 +17,7 @@ import {
   useState,
 } from 'react';
 import cn from 'classnames';
-import {
-  Button,
-  LucideIcon,
-  Tag,
-  TagType,
-  TagInput,
-  Skeleton,
-} from '@fileverse/ui';
+import { Button, LucideIcon, Tag, TagType, TagInput } from '@fileverse/ui';
 import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
 import { AnimatePresence, motion } from 'framer-motion';
 import * as Y from 'yjs';
@@ -828,10 +821,7 @@ const DdocEditor = forwardRef(
 
                 {!editor || isContentLoading
                   ? fadeInTransition(
-                      <div className={`${!isMobile ? 'mx-20' : 'mx-10 mt-10'}`}>
-                        <Skeleton
-                          className={`${isPreviewMode ? 'w-full' : isMobile ? 'w-full' : 'w-[400px]'}  h-[32px] rounded-sm mb-4`}
-                        />
+                      <div className={`${!isMobile ? 'px-20' : 'px-10 pt-10'}`}>
                         {isPreviewMode && <PreviewContentLoader />}
                       </div>,
                       'content-transition',
