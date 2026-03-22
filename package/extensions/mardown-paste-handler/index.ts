@@ -380,6 +380,8 @@ declare module '@tiptap/core' {
       exportMarkdownFile: (props?: {
         title?: string;
         returnMDFile?: boolean;
+        metadataFormat?: 'yaml' | 'reference-links';
+        metadata?: Record<string, string>;
       }) => any;
     };
   }
@@ -482,7 +484,7 @@ const MarkdownPasteHandler = (
             return true;
           },
         exportMarkdownFile:
-          (props?: { title?: string; returnMDFile?: boolean }) =>
+          (props?: { title?: string; returnMDFile?: boolean; metadataFormat?: 'yaml' | 'reference-links'; metadata?: Record<string, string> }) =>
           async ({ editor }: { editor: Editor }): Promise<string> => {
             const { showLoader, removeLoader } = inlineLoader(
               editor,
@@ -509,24 +511,33 @@ const MarkdownPasteHandler = (
             const inlineHtml = temporalEditor.getHTML();
             const markdown = turndownService.turndown(inlineHtml);
 
-            const metadata = {
+            const metadataEntries: Record<string, string> = {
               title: props?.title || 'Untitled',
               date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+              ...props?.metadata,
             };
 
-            const frontmatter =
-              '---\n' +
-              Object.entries(metadata)
-                .map(([key, value]) => {
-                  if (Array.isArray(value)) {
-                    return `${key}:\n${value.map((v) => `  - ${v}`).join('\n')}`;
-                  }
-                  return `${key}: ${value}`;
-                })
-                .join('\n') +
-              '\n---\n\n';
+            let markdownWithMeta: string;
 
-            const markdownWithMeta = frontmatter + markdown;
+            if (props?.metadataFormat === 'reference-links') {
+              const refs = Object.entries(metadataEntries)
+                .map(([key, value]) => `[${key}]: <> (${value})`)
+                .join('\n');
+              markdownWithMeta = refs + '\n\n' + markdown;
+            } else {
+              const frontmatter =
+                '---\n' +
+                Object.entries(metadataEntries)
+                  .map(([key, value]) => {
+                    if (Array.isArray(value)) {
+                      return `${key}:\n${value.map((v: string) => `  - ${v}`).join('\n')}`;
+                    }
+                    return `${key}: ${value}`;
+                  })
+                  .join('\n') +
+                '\n---\n\n';
+              markdownWithMeta = frontmatter + markdown;
+            }
 
             if (props?.returnMDFile) {
               temporalEditor.destroy();
