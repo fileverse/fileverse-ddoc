@@ -34,6 +34,7 @@ interface UseTabManagerArgs {
   defaultTabId?: string;
   onVersionHistoryActiveTabChange?: (tabId: string | null) => void;
   getEditor?: () => Editor | null;
+  flushPendingUpdate?: () => void;
 }
 
 export const getNewTabId = () => {
@@ -49,6 +50,7 @@ export const useTabManager = ({
   shouldSyncActiveTab,
   defaultTabId,
   onVersionHistoryActiveTabChange,
+  flushPendingUpdate,
   getEditor,
 }: UseTabManagerArgs) => {
   const isInitialContentResolved =
@@ -96,7 +98,9 @@ export const useTabManager = ({
     hasHydratedRef.current = true;
     setTabs(initialTabState.tabList);
     if (shouldSyncActiveTab) {
-      _setActiveTabId(defaultTabId || initialTabState.activeTabId);
+      const newActiveId = defaultTabId || initialTabState.activeTabId;
+      activeTabIdRef.current = newActiveId;
+      _setActiveTabId(newActiveId);
     }
   }, [initialTabState, shouldSyncActiveTab, defaultTabId]);
   const {
@@ -247,8 +251,11 @@ export const useTabManager = ({
     // React state: always switch to the new tab locally
     _setActiveTabId(tabId);
 
+    // Flush immediately so the new tab is persisted before a potential refresh
+    flushPendingUpdate?.();
+
     return tabId;
-  }, [shouldSyncActiveTab, ydoc]);
+  }, [shouldSyncActiveTab, ydoc, flushPendingUpdate]);
 
   const deleteTab = useCallback(
     (tabId: string) => {
@@ -310,8 +317,11 @@ export const useTabManager = ({
       if (needsFallback && fallbackId) {
         _setActiveTabId(fallbackId);
       }
+
+      // Flush immediately so the deletion is persisted before a potential refresh
+      flushPendingUpdate?.();
     },
-    [ydoc, shouldSyncActiveTab],
+    [ydoc, shouldSyncActiveTab, flushPendingUpdate],
   );
 
   const restoreDeletedTab = useCallback(() => {
@@ -353,8 +363,12 @@ export const useTabManager = ({
     // React state: always switch to restored tab
     _setActiveTabId(snapshot.tabId);
     lastDeleteRef.current = null;
+
+    // Flush immediately so the restore is persisted before a potential refresh
+    flushPendingUpdate?.();
+
     return true;
-  }, [ydoc, shouldSyncActiveTab]);
+  }, [ydoc, shouldSyncActiveTab, flushPendingUpdate]);
 
   const isYjsUndoStackEmpty = useCallback(() => {
     const editor = getEditor?.();
@@ -429,8 +443,10 @@ export const useTabManager = ({
           description: `Tab not found.`,
         });
       }
+      // Flush immediately so the rename is persisted before a potential refresh
+      flushPendingUpdate?.();
     },
-    [applyRename],
+    [applyRename, flushPendingUpdate],
   );
 
   const duplicateTab = useCallback(
@@ -478,9 +494,12 @@ export const useTabManager = ({
       // React state: always switch to duplicated tab
       _setActiveTabId(newTabId);
 
+      // Flush immediately so the duplicate is persisted before a potential refresh
+      flushPendingUpdate?.();
+
       return newTabId;
     },
-    [ydoc, shouldSyncActiveTab],
+    [ydoc, shouldSyncActiveTab, flushPendingUpdate],
   );
 
   const orderTab = useCallback(
@@ -497,8 +516,11 @@ export const useTabManager = ({
         order.delete(oldIndex, 1);
         order.insert(newIndex, [movedTabId]);
       });
+
+      // Flush immediately so the reorder is persisted before a potential refresh
+      flushPendingUpdate?.();
     },
-    [ydoc],
+    [ydoc, flushPendingUpdate],
   );
 
   return {

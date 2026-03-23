@@ -25,15 +25,18 @@ export const useSyncManager = (config: SyncManagerConfig) => {
   // Keep refs fresh on every render to prevent stale closures
   manager.updateRefs(config.services, config.callbacks, config.onLocalUpdate);
 
-  const isReady = manager.isReady;
+  const isConnected = manager.isConnected;
   const awareness = manager.awareness;
 
-  // Local ydoc update listener — when ready, listen for ydoc update events
+  // Local ydoc update listener — use isConnected (covers ready, syncing,
+  // reconnecting) so local edits are queued during reconnection instead of
+  // being dropped.  enqueueLocalUpdate only processes the queue when status
+  // is 'ready', so queued updates are held safely until then.
   useEffect(() => {
-    if (!isReady || !config.ydoc) return;
+    if (!isConnected || !config.ydoc) return;
 
     const updateHandler = (update: Uint8Array, origin: any) => {
-      if (origin === 'self' || !manager.isReady) return;
+      if (origin === 'self' || !manager.isConnected) return;
       manager.enqueueLocalUpdate(update);
     };
 
@@ -42,7 +45,7 @@ export const useSyncManager = (config: SyncManagerConfig) => {
       config.ydoc.off('update', updateHandler);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [config.ydoc, isReady]);
+  }, [config.ydoc, isConnected]);
 
   // Awareness cleanup — on unmount + beforeunload
   useEffect(() => {
@@ -96,11 +99,12 @@ export const useSyncManager = (config: SyncManagerConfig) => {
     manager.terminateSession();
   }, [manager]);
 
-  // Derive hasCollabContentInitialised from state:
-  // Content is initialised once we've passed through syncing to ready,
-  // or if we're currently in syncing (decryption happening).
-  // The key signal is that we've entered 'ready' at least once,
-  // but for backward compat we derive from status.
+  const isSyncing = collabState.status === 'syncing';
+  const isReady = collabState.status === 'ready' && !!awareness;
+
+  // Content is initialised once we've reached 'ready' at least once.
+  // During reconnection we pass through 'reconnecting' — content is still
+  // present locally so we keep this true.
   const hasCollabContentInitialised =
     collabState.status === 'ready' || collabState.status === 'reconnecting';
 
@@ -109,7 +113,8 @@ export const useSyncManager = (config: SyncManagerConfig) => {
     connect,
     disconnect,
     terminateSession,
-    isReady: collabState.status === 'ready' && !!awareness,
+    isReady,
+    isSyncing,
     awareness,
     hasCollabContentInitialised,
   };
