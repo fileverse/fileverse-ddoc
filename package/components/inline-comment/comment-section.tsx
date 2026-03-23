@@ -11,8 +11,6 @@ import {
 import { CommentCard } from './comment-card';
 import { useComments } from './context/comment-context';
 import EnsLogo from '../../assets/ens.svg';
-import verifiedMark from '../../assets/ens-check.svg';
-import { nameFormatter } from '../../utils/helpers';
 import { CommentSectionProps } from './types';
 import { CommentUsername } from './comment-username';
 import { useEffect, useState } from 'react';
@@ -130,7 +128,7 @@ export const CommentSection = ({
       ) : (
         <div
           ref={commentsSectionRef}
-          className="flex flex-col overflow-y-auto no-scrollbar flex-1"
+          className="flex flex-col overflow-y-auto flex-1"
         >
           {filteredComments.map((comment) => (
             <div
@@ -194,20 +192,41 @@ export const CommentSection = ({
                   </Button>
                 ) : (
                   <div className="pl-4 animate-in fade-in-5 flex flex-col gap-2 duration-300 mt-3">
-                    <TextAreaFieldV2
-                      data-testid="comment-reply-input"
-                      placeholder="Reply"
-                      value={reply}
-                      className={cn(
-                        'color-bg-default text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap',
-                        comment.id === activeCommentId && 'color-bg-default',
-                      )}
-                      id={comment.id}
-                      onChange={handleReplyChange}
-                      onKeyDown={handleReplyKeyDown}
-                      autoFocus={isNativeMobile}
-                      onInput={(e) => handleInput(e, reply)}
-                    />
+                    <div className="border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
+                      <Avatar
+                        src={
+                          ensStatus.isEns
+                            ? EnsLogo
+                            : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                                ensStatus.name,
+                              )}`
+                        }
+                        className="w-[16px] h-[16px]"
+                      />
+                      <TextAreaFieldV2
+                        data-testid="comment-reply-input"
+                        placeholder={
+                          comment.replies?.length === 0
+                            ? `Reply to @${comment.username}`
+                            : comment.replies?.length >= 2
+                              ? `Add a reply`
+                              : `Reply `
+                        }
+                        value={reply}
+                        style={{
+                          ...(!reply ? { height: '20px' } : {}),
+                        }}
+                        className={cn(
+                          'color-bg-default text-body-sm color-text-default  max-h-[96px] !border-none !p-0 overflow-y-auto no-scrollbar whitespace-pre-wrap',
+                          comment.id === activeCommentId && 'color-bg-default',
+                        )}
+                        id={comment.id}
+                        onChange={handleReplyChange}
+                        onKeyDown={handleReplyKeyDown}
+                        autoFocus={isNativeMobile}
+                        onInput={(e) => handleInput(e, reply)}
+                      />
+                    </div>
                     {comment.id === activeCommentId && (
                       <ButtonGroup className="w-full justify-end">
                         <Button
@@ -237,8 +256,8 @@ export const CommentSection = ({
           ))}
         </div>
       )}
-      <div className="flex flex-col gap-3 color-bg-secondary border-t border-b color-border-default px-6 py-5 rounded-b-lg">
-        <div className="flex justify-start items-center gap-2">
+      <div className="flex flex-col gap-3 color-bg-default border-t border-b color-border-default px-6 py-5 rounded-b-lg">
+        <div className="border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
           <Avatar
             src={
               ensStatus.isEns
@@ -247,29 +266,32 @@ export const CommentSection = ({
                     ensStatus.name,
                   )}`
             }
-            size="sm"
-            className="min-w-6"
+            className="w-[16px] h-[16px]"
           />
-
-          <span className="text-body-sm-bold inline-flex items-center gap-1">
-            {nameFormatter(ensStatus.name)}
-            {ensStatus.isEns && (
-              <img src={verifiedMark} alt="verified" className="w-3.5 h-3.5" />
-            )}
-          </span>
+          <TextAreaFieldV2
+            data-testid="comment-section-input"
+            value={comment}
+            onChange={handleCommentChange}
+            onKeyDown={handleCommentKeyDown}
+            style={{
+              ...(!comment ? { height: '20px' } : {}),
+            }}
+            className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[96px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
+            placeholder="Add a comment"
+            onInput={(e) => handleInput(e, comment)}
+          />
         </div>
 
-        <TextAreaFieldV2
-          data-testid="comment-section-input"
-          value={comment}
-          onChange={handleCommentChange}
-          onKeyDown={handleCommentKeyDown}
-          className="color-bg-default w-full text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
-          placeholder="Type your comment"
-          onInput={(e) => handleInput(e, comment)}
-        />
-
-        <div className="flex justify-end">
+        <div className="flex items-center color-bg-default justify-between">
+          <div className="color-bg-secondary border rounded-[4px] flex gap-[8px] py-[4px]">
+            <LucideIcon
+              name="Lock"
+              className="color-icon-secondary w-[14px] h-[14px]"
+            />
+            <p className="text-helper-text-sm color-text-secondary pr-[8px]">
+              Comments are End-to-end Encrypted
+            </p>
+          </div>
           <Button
             data-testid="comment-section-send"
             onClick={handleCommentSubmit}

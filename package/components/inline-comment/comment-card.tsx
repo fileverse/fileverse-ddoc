@@ -49,7 +49,7 @@ const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
         size="sm"
         className="min-w-6"
       />
-      <div className="flex flex-col">
+      <div className="flex gap-[8px]">
         <span className="text-body-sm-bold inline-flex items-center gap-1">
           {nameFormatter(ensStatus.name)}
           {ensStatus.isEns && (
@@ -256,7 +256,7 @@ export const CommentCard = ({
       ref={commentsContainerRef}
       data-testid={id ? `comment-card-${id}` : 'comment-card'}
       className={cn(
-        'flex flex-col gap-0 px-3 group comment-card',
+        'flex flex-col gap-[4px] px-3 group comment-card',
         isResolved && 'opacity-70',
         !isDropdown && '!px-6',
         isDropdown && 'py-3',
@@ -361,7 +361,7 @@ export const CommentCard = ({
           </Tooltip>
         )}
       </div>
-      <div className="flex flex-col gap-2 ml-3 pl-4 border-l custom-border py-3">
+      <div className="flex flex-col gap-2 ml-3 pl-4 border-l custom-border py-0 pb-3">
         {selectedContent && (
           <div className="highlight-comment-bg p-1 rounded-lg">
             <div className="relative">
