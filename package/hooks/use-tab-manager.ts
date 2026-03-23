@@ -141,13 +141,19 @@ export const useTabManager = ({
     // correct value from initialTabState → no-op. On transition from collab
     // (false→true), this writes the user's current tab so it persists.
     if (shouldSyncActiveTab) {
-      const { activeTab } = getTabsYdocNodes(ydoc);
-      const syncedId = activeTab.toString();
-      if (syncedId !== activeTabIdRef.current) {
-        ydoc.transact(() => {
-          activeTab.delete(0, activeTab.length);
-          activeTab.insert(0, activeTabIdRef.current);
-        });
+      const root = ydoc.getMap('ddocTabs');
+      const existingOrder = root.get('order');
+      if (existingOrder) {
+        // Only sync if metadata already exists — don't create empty entries
+        // that could conflict with real tab data arriving from a merge.
+        const { activeTab } = getTabsYdocNodes(ydoc);
+        const syncedId = activeTab.toString();
+        if (syncedId !== activeTabIdRef.current) {
+          ydoc.transact(() => {
+            activeTab.delete(0, activeTab.length);
+            activeTab.insert(0, activeTabIdRef.current);
+          });
+        }
       }
     }
 

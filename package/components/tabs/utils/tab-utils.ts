@@ -41,6 +41,36 @@ export function deriveTabsFromEncodedState(
   }
 
   if (!order || !tabsMap) {
+    // Before creating defaults, check if the Y.Doc has content fragments
+    // from tabs that exist but whose metadata is from a different client.
+    // Creating default Y.Map entries here would produce conflicting operations
+    // that can overwrite real tab metadata during Yjs merges (last-writer-wins).
+    const hasContentFragments = Array.from(doc.share.entries()).some(
+      ([name, abstractType]) => {
+        if (name === 'ddocTabs') return false;
+        try {
+          // Only count XmlFragments that actually have content
+          if (abstractType instanceof Y.XmlFragment) {
+            return abstractType.length > 0;
+          }
+          return false;
+        } catch {
+          return false;
+        }
+      },
+    );
+
+    if (hasContentFragments) {
+      // Content exists but no tab metadata — don't create conflicting defaults.
+      // Return empty and let the tab manager's observeDeep handler update
+      // when the real metadata arrives from a merge.
+      return {
+        tabList: [],
+        activeTabId: activeTabId?.toString() || 'default',
+      };
+    }
+
+    // Genuinely new/empty document — safe to create default tab
     doc.transact(() => {
       ddocTabs = doc.getMap('ddocTabs');
 
