@@ -3,8 +3,12 @@ import { Plugin, PluginKey } from '@tiptap/pm/state';
 
 /**
  * TypographyPersistence consolidates fontFamily and fontSize persistence logic
- * into a single extension with 3 plugins, replacing the 6 individual plugins
- * that were split across FontFamilyPersistence and FontSize.
+ * into a single extension with 2 plugins.
+ *
+ * Node-attr syncing (storedMarks → paragraph attrs) is handled directly by the
+ * setFontFamily/unsetFontFamily/setFontSize/unsetFontSize commands rather than
+ * via an appendTransaction plugin, because appendTransaction's setNodeMarkup
+ * clears storedMarks and drops other textStyle attrs like color.
  *
  * Plugins:
  * 1. typographyInheritance — when a new paragraph is inserted next to a styled
@@ -13,12 +17,6 @@ import { Plugin, PluginKey } from '@tiptap/pm/state';
  *    at creation time, but should not be overridden when the user clears them).
  * 2. typographyStoredMarks — when selection moves into an empty styled
  *    paragraph, restore storedMarks for both fontFamily and fontSize at once.
- * 3. typographySyncNodeAttr — when storedMarks change on an empty paragraph,
- *    update both node attributes in one setNodeMarkup call.
- *    Clearing only happens when the textStyle mark itself explicitly has a null
- *    value for the property — NOT when non-textStyle marks (bold, italic, etc.)
- *    are stored, which was previously causing font attrs to be wiped on
- *    bold/italic toggle.
  */
 export const TypographyPersistence = Extension.create({
   name: 'typographyPersistence',
@@ -142,75 +140,21 @@ export const TypographyPersistence = Extension.create({
               return null;
             }
 
-            const attrs = existingMark
-              ? {
-                  ...existingMark.attrs,
-                  fontFamily: node.attrs.fontFamily,
-                  fontSize: node.attrs.fontSize,
-                }
-              : {
-                  fontFamily: node.attrs.fontFamily,
-                  fontSize: node.attrs.fontSize,
-                };
+            // Preserve all existing textStyle attrs (color, data-original-color, etc.)
+            // when updating only fontFamily/fontSize — the else branch previously
+            // created a mark with only font attrs, dropping color.
+            const currentStoredTextStyle = newState.storedMarks?.find(
+              (m) => m.type === markType,
+            );
+            const baseAttrs =
+              existingMark?.attrs ?? currentStoredTextStyle?.attrs ?? {};
+            const attrs = {
+              ...baseAttrs,
+              fontFamily: node.attrs.fontFamily,
+              fontSize: node.attrs.fontSize,
+            };
 
             tr.addStoredMark(markType.create(attrs));
-            return tr;
-          }
-
-          return null;
-        },
-      }),
-
-      // Plugin 3: Sync node attrs ↔ storedMarks
-      // When storedMarks change on an empty paragraph, reflect the new
-      // fontFamily/fontSize back to the node attrs so they persist when the
-      // user navigates away.
-      //
-      // IMPORTANT: Only clear a node attr when the textStyle mark itself
-      // exists but has an explicit null for that property. If storedMarks
-      // contains only non-textStyle marks (bold, italic, etc.), do NOT clear
-      // font attrs — that was the cause of bold/italic wiping fontSize.
-      new Plugin({
-        key: new PluginKey('typographySyncNodeAttr'),
-        appendTransaction: (transactions, _oldState, newState) => {
-          const hasStoredMarksChange = transactions.some(
-            (tr) => tr.storedMarksSet,
-          );
-          if (!hasStoredMarksChange) return null;
-
-          const { selection } = newState;
-          if (!selection.empty) return null;
-
-          const $pos = selection.$from;
-          const node = $pos.node($pos.depth);
-
-          if (node?.type.name !== 'paragraph' || node.textContent !== '')
-            return null;
-
-          const storedTextStyle = newState.storedMarks?.find(
-            (m) => m.type.name === 'textStyle',
-          );
-          const storedFontFamily = storedTextStyle?.attrs?.fontFamily ?? null;
-          const storedFontSize = storedTextStyle?.attrs?.fontSize ?? null;
-
-          const newFontFamily = storedTextStyle
-            ? storedFontFamily // use stored value (may be null = user unset)
-            : node.attrs.fontFamily; // no textStyle stored → don't change
-
-          const newFontSize = storedTextStyle
-            ? storedFontSize // use stored value (may be null = user unset)
-            : node.attrs.fontSize; // no textStyle stored → don't change
-
-          if (
-            newFontFamily !== node.attrs.fontFamily ||
-            newFontSize !== node.attrs.fontSize
-          ) {
-            const tr = newState.tr;
-            tr.setNodeMarkup($pos.before($pos.depth), undefined, {
-              ...node.attrs,
-              fontFamily: newFontFamily,
-              fontSize: newFontSize,
-            });
             return tr;
           }
 
