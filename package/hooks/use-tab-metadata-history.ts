@@ -1,6 +1,9 @@
 import { useCallback, useRef } from 'react';
 import * as Y from 'yjs';
-import { getTabsYdocNodes } from '../components/tabs/utils/tab-utils';
+import {
+  getTabMetadata,
+  getTabsYdocNodes,
+} from '../components/tabs/utils/tab-utils';
 
 interface TabMetadataChange {
   tabId: string;
@@ -23,10 +26,10 @@ export const useTabMetadataHistory = (ydoc: Y.Doc) => {
 
   const applyChange = useCallback(
     (change: TabMetadataChange, direction: 'undo' | 'redo') => {
-      const { tabs } = getTabsYdocNodes(ydoc);
-      const metadata = tabs.get(change.tabId);
+      const tabNodes = getTabsYdocNodes(ydoc);
+      const tabMetadata = getTabMetadata(tabNodes, change.tabId);
 
-      if (!(metadata instanceof Y.Map)) {
+      if (!tabMetadata) {
         return false;
       }
 
@@ -39,10 +42,10 @@ export const useTabMetadataHistory = (ydoc: Y.Doc) => {
       try {
         ydoc.transact(() => {
           if (nameValue !== undefined) {
-            metadata.set('name', nameValue);
+            tabNodes.nameById.set(change.tabId, nameValue);
           }
           if (emojiValue !== undefined) {
-            metadata.set('emoji', emojiValue);
+            tabNodes.emojiById.set(change.tabId, emojiValue);
           }
         });
       } finally {
@@ -83,15 +86,15 @@ export const useTabMetadataHistory = (ydoc: Y.Doc) => {
 
   const applyRename = useCallback(
     ({ tabId, newName, emoji }: ApplyRenameArgs) => {
-      const { tabs } = getTabsYdocNodes(ydoc);
-      const metadata = tabs.get(tabId);
+      const tabNodes = getTabsYdocNodes(ydoc);
+      const tabMetadata = getTabMetadata(tabNodes, tabId);
 
-      if (!(metadata instanceof Y.Map)) {
+      if (!tabMetadata) {
         return { tabNotFound: true };
       }
 
-      const previousName = metadata.get('name') as string | undefined;
-      const previousEmoji = (metadata.get('emoji') as string | null) ?? null;
+      const previousName = tabMetadata.name;
+      const previousEmoji = tabMetadata.emoji;
       const nextName = newName ?? previousName;
       const nextEmoji = emoji ?? previousEmoji;
 
@@ -116,10 +119,10 @@ export const useTabMetadataHistory = (ydoc: Y.Doc) => {
 
       ydoc.transact(() => {
         if (newName !== undefined) {
-          metadata.set('name', newName);
+          tabNodes.nameById.set(tabId, newName);
         }
         if (emoji !== undefined) {
-          metadata.set('emoji', emoji);
+          tabNodes.emojiById.set(tabId, emoji);
         }
       });
 

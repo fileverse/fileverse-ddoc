@@ -5,8 +5,13 @@ import { yUndoPluginKey } from '@tiptap/y-tiptap';
 import { DdocProps } from '../types';
 import {
   cloneFragmentContent,
+  DEFAULT_TAB_ID,
   deriveTabsFromEncodedState,
+  getActiveTabIdFromNodes,
+  getTabListFromNodes,
+  getTabMetadata,
   getTabsYdocNodes,
+  syncTabStateAndGetNodes,
   Tab,
 } from '../components/tabs/utils/tab-utils';
 import { generateRandomBytes } from '@fileverse/crypto/utils';
@@ -55,23 +60,48 @@ export const useTabManager = ({
 }: UseTabManagerArgs) => {
   const isInitialContentResolved =
     enableCollaboration || initialContent !== null;
+  const hasSavedInitialMigrationRef = useRef(false);
 
-  // Derive tab state synchronously from initialContent so the first render
-  // builds Collaboration extensions with the correct fragment field.
+  // Hydrate tabs before the first editor render so the correct fragment is chosen.
   const initialTabState = useMemo(() => {
-    if (!ydoc) return { tabList: [] as Tab[], activeTabId: 'default' };
+    if (!ydoc) {
+      return {
+        tabList: [] as Tab[],
+        activeTabId: DEFAULT_TAB_ID,
+        didWrite: false,
+      };
+    }
 
     if (!isInitialContentResolved) {
-      return { tabList: [] as Tab[], activeTabId: 'default' };
+      return {
+        tabList: [] as Tab[],
+        activeTabId: DEFAULT_TAB_ID,
+        didWrite: false,
+      };
     }
     const isNewDdoc = isDDocOwner && !enableCollaboration && !initialContent;
 
     if (initialContent || isNewDdoc) {
-      return deriveTabsFromEncodedState(initialContent as string, ydoc, {
-        createDefaultTabIfMissing,
-      });
+      const derivedTabState = deriveTabsFromEncodedState(
+        initialContent as string,
+        ydoc,
+        {
+          createDefaultTabIfMissing,
+        },
+      );
+
+      if (derivedTabState.didWrite && !hasSavedInitialMigrationRef.current) {
+        hasSavedInitialMigrationRef.current = true;
+        flushPendingUpdate?.();
+      }
+
+      return derivedTabState;
     }
-    return { tabList: [] as Tab[], activeTabId: 'default' };
+    return {
+      tabList: [] as Tab[],
+      activeTabId: DEFAULT_TAB_ID,
+      didWrite: false,
+    };
   }, [
     ydoc,
     initialContent,
@@ -79,6 +109,7 @@ export const useTabManager = ({
     enableCollaboration,
     createDefaultTabIfMissing,
     isInitialContentResolved,
+    flushPendingUpdate,
   ]);
 
   const [activeTabId, _setActiveTabId] = useState(
@@ -90,8 +121,7 @@ export const useTabManager = ({
   const activeTabIdRef = useRef(activeTabId);
   activeTabIdRef.current = activeTabId;
 
-  // Sync state when initialContent loads asynchronously (e.g. from server).
-  // useState only uses initialTabState once; this handles subsequent changes.
+  // initialContent can arrive later than the first render.
   const hasHydratedRef = useRef(initialTabState.tabList.length > 0);
   useEffect(() => {
     if (hasHydratedRef.current || initialTabState.tabList.length === 0) return;
@@ -122,10 +152,9 @@ export const useTabManager = ({
         return;
       }
 
-      const { activeTab } = getTabsYdocNodes(ydoc);
+      const tabNodes = getTabsYdocNodes(ydoc);
       ydoc.transact(() => {
-        activeTab.delete(0, activeTab.length);
-        activeTab.insert(0, id);
+        tabNodes.tabState.set('activeTabId', id);
       });
       _setActiveTabId(id);
     },
@@ -135,53 +164,42 @@ export const useTabManager = ({
   useEffect(() => {
     if (!ydoc || !isInitialContentResolved) return;
 
-    // When shouldSyncActiveTab is true (including false→true transitions),
-    // ensure Y.Doc matches the current React activeTabId.
-    // On initial mount with shouldSyncActiveTab=true, Y.Doc already has the
-    // correct value from initialTabState → no-op. On transition from collab
-    // (false→true), this writes the user's current tab so it persists.
+    const syncedTabNodes = syncTabStateAndGetNodes(ydoc, {
+      createDefaultTabIfMissing,
+    });
+    if (syncedTabNodes.didWrite) {
+      flushPendingUpdate?.();
+    }
+
+    // Keep persisted active tab aligned with the local tab when persistence is enabled.
     if (shouldSyncActiveTab) {
-      const { activeTab } = getTabsYdocNodes(ydoc);
-      const syncedId = activeTab.toString();
+      const syncedId = getActiveTabIdFromNodes(syncedTabNodes);
       if (syncedId !== activeTabIdRef.current) {
         ydoc.transact(() => {
-          activeTab.delete(0, activeTab.length);
-          activeTab.insert(0, activeTabIdRef.current);
+          syncedTabNodes.tabState.set('activeTabId', activeTabIdRef.current);
         });
       }
     }
 
-    const root = ydoc.getMap('ddocTabs');
+    const tabNodes = getTabsYdocNodes(ydoc);
 
-    const handleTabList = () => {
-      const currentOrder = root.get('order') as Y.Array<string>;
-      const currentTabsMap = root.get('tabs') as Y.Map<Y.Map<string | null>>;
-      const currentActiveTab = root.get('activeTabId') as Y.Text;
+    const applyTabList = (
+      currentTabNodes: Pick<
+        typeof syncedTabNodes,
+        'order' | 'nameById' | 'emojiById' | 'tabState'
+      > = syncedTabNodes,
+    ) => {
+      const tabList = getTabListFromNodes(currentTabNodes);
+      const currentOrder = currentTabNodes.order.toArray();
+      const isDefaultIdValid = defaultTabId
+        ? currentOrder.includes(defaultTabId)
+        : false;
 
-      if (!currentOrder) return;
-
-      const tabList: Tab[] = [];
-
-      let isDefaultIdValid = false;
-
-      currentOrder.toArray().forEach((tabId) => {
-        const tabMetadata = currentTabsMap?.get(tabId);
-
-        if (!tabMetadata) return;
-        if (defaultTabId && defaultTabId === tabId) {
-          isDefaultIdValid = true;
-        }
-        tabList.push({
-          id: tabId,
-          name: tabMetadata.get('name') as string,
-          emoji: tabMetadata.get('emoji') as string | null,
-        });
-      });
       setTabs(tabList);
 
-      const syncedId = currentActiveTab?.toString();
+      const syncedId = getActiveTabIdFromNodes(currentTabNodes);
       const firstTabId =
-        currentOrder.length > 0 ? currentOrder.get(0) : 'default';
+        currentOrder.length > 0 ? currentOrder[0] : DEFAULT_TAB_ID;
 
       if (shouldSyncActiveTab) {
         const nextActiveTabId = syncedId || firstTabId;
@@ -199,53 +217,55 @@ export const useTabManager = ({
       }
     };
 
-    handleTabList();
-    root.observeDeep(handleTabList);
+    const handleTabListChange = () => {
+      applyTabList(getTabsYdocNodes(ydoc));
+    };
+
+    // Watch flat roots directly after the initial migration/self-heal pass.
+    applyTabList(syncedTabNodes);
+    tabNodes.order.observe(handleTabListChange);
+    tabNodes.nameById.observe(handleTabListChange);
+    tabNodes.emojiById.observe(handleTabListChange);
+    tabNodes.tabState.observe(handleTabListChange);
+    tabNodes.deletedById.observe(handleTabListChange);
 
     return () => {
-      root.unobserveDeep(handleTabList);
+      tabNodes.order.unobserve(handleTabListChange);
+      tabNodes.nameById.unobserve(handleTabListChange);
+      tabNodes.emojiById.unobserve(handleTabListChange);
+      tabNodes.tabState.unobserve(handleTabListChange);
+      tabNodes.deletedById.unobserve(handleTabListChange);
     };
-  }, [ydoc, defaultTabId, shouldSyncActiveTab, isInitialContentResolved]);
+  }, [
+    ydoc,
+    defaultTabId,
+    shouldSyncActiveTab,
+    isInitialContentResolved,
+    createDefaultTabIfMissing,
+    flushPendingUpdate,
+  ]);
 
   const createTab = useCallback(() => {
-    const ddocTabs = ydoc.getMap('ddocTabs');
-
-    const order = ddocTabs.get('order');
-    const tabsMap = ddocTabs.get('tabs');
-    const activeTabText = ddocTabs.get('activeTabId');
-
-    if (!(order instanceof Y.Array)) {
-      throw new Error('Invalid ddocTabs.order');
-    }
-
-    if (!(tabsMap instanceof Y.Map)) {
-      throw new Error('Invalid ddocTabs.tabs');
-    }
+    const tabNodes = getTabsYdocNodes(ydoc);
+    const tabOrder = tabNodes.order;
 
     const tabId = getNewTabId();
     const newTab: Tab = {
-      name: `Tab ${order.length + 1}`,
+      name: `Tab ${tabOrder.length + 1}`,
       emoji: null,
       id: tabId,
     };
 
     ydoc.transact(() => {
-      // Create metadata
-      const metadata = new Y.Map<string | null>();
-      metadata.set('name', newTab.name);
-      metadata.set('emoji', newTab.emoji);
-      tabsMap.set(newTab.id, metadata);
-
-      // Create fragment
+      tabNodes.nameById.set(newTab.id, newTab.name);
+      tabNodes.emojiById.set(newTab.id, newTab.emoji);
       ydoc.getXmlFragment(newTab.id);
 
-      // Y.Doc activeTab: only when shouldSyncActiveTab (persistence)
-      if (shouldSyncActiveTab && activeTabText instanceof Y.Text) {
-        activeTabText.delete(0, activeTabText.length);
-        activeTabText.insert(0, tabId);
+      if (shouldSyncActiveTab) {
+        tabNodes.tabState.set('activeTabId', tabId);
       }
-      // Push to order
-      order.push([newTab.id]);
+
+      tabOrder.push([newTab.id]);
     });
 
     // React state: always switch to the new tab locally
@@ -259,65 +279,53 @@ export const useTabManager = ({
 
   const deleteTab = useCallback(
     (tabId: string) => {
-      const { order, tabs, activeTab } = getTabsYdocNodes(ydoc);
+      const tabNodes = getTabsYdocNodes(ydoc);
+      const { order: tabOrder } = tabNodes;
 
-      if (order.length <= 1) {
+      if (tabOrder.length <= 1) {
         throw new Error('Cannot delete the last remaining tab');
       }
 
-      const index = order.toArray().indexOf(tabId);
+      const index = tabOrder.toArray().indexOf(tabId);
       if (index === -1) {
         throw new Error('Tab not found in order');
       }
 
-      // Snapshot metadata before delete for undo
-      const tabMeta = tabs.get(tabId);
-      if (tabMeta instanceof Y.Map) {
+      // Keep enough metadata to restore the tab inside the undo window.
+      const tabMeta = getTabMetadata(tabNodes, tabId);
+      if (tabMeta) {
         lastDeleteRef.current = {
           tabId,
-          name: tabMeta.get('name') as string,
-          emoji: (tabMeta.get('emoji') as string | null) ?? null,
+          name: tabMeta.name,
+          emoji: tabMeta.emoji,
           orderIndex: index,
           timestamp: Date.now(),
         };
       }
-
       // Compute fallback before the delete transaction
-      const currentActive =
-        activeTab instanceof Y.Text ? activeTab.toString() : '';
+      const currentActive = getActiveTabIdFromNodes(tabNodes) || '';
       const needsFallback = currentActive === tabId;
       const fallbackId = needsFallback
-        ? (order.get(index + 1) ?? order.get(index - 1) ?? 'default')
+        ? (tabOrder.get(index + 1) ?? tabOrder.get(index - 1) ?? DEFAULT_TAB_ID)
         : null;
 
       ydoc.transact(() => {
-        // Remove metadata
-        tabs.delete(tabId);
+        // Fragment content is kept; the tombstone prevents it from being re-added as an orphan.
+        tabNodes.nameById.delete(tabId);
+        tabNodes.emojiById.delete(tabId);
+        tabNodes.deletedById.set(tabId, true);
 
-        // NOTE: Fragment content is intentionally NOT deleted here.
-        // The orphaned Y.XmlFragment remains in the Y.Doc so that
-        // undo can restore the tab without data loss.
-
-        // Y.Doc activeTab: only when shouldSyncActiveTab (persistence)
-        if (
-          needsFallback &&
-          fallbackId &&
-          shouldSyncActiveTab &&
-          activeTab instanceof Y.Text
-        ) {
-          activeTab.delete(0, activeTab.length);
-          activeTab.insert(0, fallbackId);
+        if (needsFallback && fallbackId && shouldSyncActiveTab) {
+          tabNodes.tabState.set('activeTabId', fallbackId);
         }
-
         // Remove from order
-        order.delete(index, 1);
+        tabOrder.delete(index, 1);
       });
-
       // React state: always switch locally if deleted tab was active
+
       if (needsFallback && fallbackId) {
         _setActiveTabId(fallbackId);
       }
-
       // Flush immediately so the deletion is persisted before a potential refresh
       flushPendingUpdate?.();
     },
@@ -332,39 +340,31 @@ export const useTabManager = ({
       return false;
     }
 
-    const { order, tabs, activeTab } = getTabsYdocNodes(ydoc);
+    const tabNodes = getTabsYdocNodes(ydoc);
+    const { order: tabOrder } = tabNodes;
 
     // Guard: tab already exists (e.g. restored by collab peer)
-    if (tabs.get(snapshot.tabId)) {
+    if (tabNodes.nameById.has(snapshot.tabId)) {
       lastDeleteRef.current = null;
       return false;
     }
 
     ydoc.transact(() => {
-      const metadata = new Y.Map<string | null>();
-      metadata.set('name', snapshot.name);
-      metadata.set('emoji', snapshot.emoji);
-      tabs.set(snapshot.tabId, metadata);
-
-      // Ensure fragment is registered (content was preserved by soft-delete)
+      tabNodes.deletedById.delete(snapshot.tabId);
+      tabNodes.nameById.set(snapshot.tabId, snapshot.name);
+      tabNodes.emojiById.set(snapshot.tabId, snapshot.emoji);
       ydoc.getXmlFragment(snapshot.tabId);
 
-      // Re-insert at original position (clamped to current length)
-      const insertIndex = Math.min(snapshot.orderIndex, order.length);
-      order.insert(insertIndex, [snapshot.tabId]);
+      const insertIndex = Math.min(snapshot.orderIndex, tabOrder.length);
+      tabOrder.insert(insertIndex, [snapshot.tabId]);
 
-      // Y.Doc activeTab: only when shouldSyncActiveTab (persistence)
-      if (shouldSyncActiveTab && activeTab instanceof Y.Text) {
-        activeTab.delete(0, activeTab.length);
-        activeTab.insert(0, snapshot.tabId);
+      if (shouldSyncActiveTab) {
+        tabNodes.tabState.set('activeTabId', snapshot.tabId);
       }
     });
 
-    // React state: always switch to restored tab
     _setActiveTabId(snapshot.tabId);
     lastDeleteRef.current = null;
-
-    // Flush immediately so the restore is persisted before a potential refresh
     flushPendingUpdate?.();
 
     return true;
@@ -451,26 +451,20 @@ export const useTabManager = ({
 
   const duplicateTab = useCallback(
     (tabId: string) => {
-      const { tabs, order, activeTab } = getTabsYdocNodes(ydoc);
+      const tabNodes = getTabsYdocNodes(ydoc);
+      const { order: tabOrder } = tabNodes;
+      const originalMeta = getTabMetadata(tabNodes, tabId);
 
-      const originalMeta = tabs.get(tabId);
-
-      if (!originalMeta || !(originalMeta instanceof Y.Map)) {
+      if (!originalMeta) {
         console.warn('Duplicate aborted: tab does not exist', tabId);
         return;
       }
 
       const newTabId = getNewTabId();
-      const originalName = originalMeta.get('name') as string;
-      const newTabName = `${originalName} (Copy)`;
-      const originalEmoji =
-        (originalMeta.get('emoji') as string | null) ?? null;
+      const newTabName = `${originalMeta.name} (Copy)`;
+      const originalEmoji = originalMeta.emoji;
 
       ydoc.transact(() => {
-        const newMeta = new Y.Map<string | null>();
-        newMeta.set('name', newTabName);
-        newMeta.set('emoji', originalEmoji);
-
         const originalFragment = ydoc.getXmlFragment(tabId);
         const newFragment = ydoc.getXmlFragment(newTabId);
 
@@ -480,21 +474,18 @@ export const useTabManager = ({
           newFragment.insert(0, clonedNodes);
         }
 
-        const index = order.toArray().indexOf(tabId);
-        order.insert(index + 1, [newTabId]);
+        const index = tabOrder.toArray().indexOf(tabId);
+        tabOrder.insert(index + 1, [newTabId]);
 
-        // Y.Doc activeTab: only when shouldSyncActiveTab (persistence)
-        if (shouldSyncActiveTab && activeTab) {
-          activeTab.delete(0, activeTab.length);
-          activeTab.insert(0, newTabId);
+        tabNodes.nameById.set(newTabId, newTabName);
+        tabNodes.emojiById.set(newTabId, originalEmoji);
+
+        if (shouldSyncActiveTab) {
+          tabNodes.tabState.set('activeTabId', newTabId);
         }
-        tabs.set(newTabId, newMeta);
       });
 
-      // React state: always switch to duplicated tab
       _setActiveTabId(newTabId);
-
-      // Flush immediately so the duplicate is persisted before a potential refresh
       flushPendingUpdate?.();
 
       return newTabId;
@@ -504,20 +495,19 @@ export const useTabManager = ({
 
   const orderTab = useCallback(
     (destinationTabId: string, movedTabId: string) => {
-      const { order } = getTabsYdocNodes(ydoc);
+      const { order: tabOrder } = getTabsYdocNodes(ydoc);
 
-      const currentOrder = order.toArray();
+      const currentOrder = tabOrder.toArray();
       const oldIndex = currentOrder.indexOf(movedTabId);
       const newIndex = currentOrder.indexOf(destinationTabId);
 
       if (oldIndex === -1 || newIndex === -1) return;
 
       ydoc.transact(() => {
-        order.delete(oldIndex, 1);
-        order.insert(newIndex, [movedTabId]);
+        tabOrder.delete(oldIndex, 1);
+        tabOrder.insert(newIndex, [movedTabId]);
       });
 
-      // Flush immediately so the reorder is persisted before a potential refresh
       flushPendingUpdate?.();
     },
     [ydoc, flushPendingUpdate],
