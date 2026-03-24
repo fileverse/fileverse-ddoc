@@ -443,7 +443,11 @@ function syncMapEntries<T>(map: Y.Map<T>, nextValuesById: Map<string, T>) {
   return changed;
 }
 
-function applyResolvedTabState(doc: Y.Doc, resolvedTabState: ResolvedTabState) {
+function applyResolvedTabState(
+  doc: Y.Doc,
+  resolvedTabState: ResolvedTabState,
+  transactionOrigin: unknown = 'self',
+) {
   const tabNodesV2 = getTabsNodesV2(doc);
   let didWrite = false;
   const deletedTabIds = new Map(
@@ -470,7 +474,7 @@ function applyResolvedTabState(doc: Y.Doc, resolvedTabState: ResolvedTabState) {
       ) || didWrite;
     didWrite =
       syncMapEntries(tabNodesV2.deletedById, deletedTabIds) || didWrite;
-  }, 'self');
+  }, transactionOrigin);
 
   return didWrite;
 }
@@ -491,9 +495,13 @@ function getResolvedTabStateForDoc(doc: Y.Doc, options?: TabSyncOptions) {
   };
 }
 
-export function syncTabState(doc: Y.Doc, options?: TabSyncOptions) {
+export function syncTabState(
+  doc: Y.Doc,
+  options?: TabSyncOptions,
+  transactionOrigin: unknown = 'self',
+) {
   const { resolvedTabState } = getResolvedTabStateForDoc(doc, options);
-  return applyResolvedTabState(doc, resolvedTabState);
+  return applyResolvedTabState(doc, resolvedTabState, transactionOrigin);
 }
 
 export function deriveTabsFromEncodedState(
@@ -523,8 +531,9 @@ export function getTabsYdocNodes(doc: Y.Doc): TabsYdocNodes {
 export function syncTabStateAndGetNodes(
   doc: Y.Doc,
   options?: TabSyncOptions,
+  transactionOrigin: unknown = 'self',
 ): SyncedTabsYdocNodes {
-  const didWrite = syncTabState(doc, options);
+  const didWrite = syncTabState(doc, options, transactionOrigin);
 
   return {
     ...getTabsNodesV2(doc),

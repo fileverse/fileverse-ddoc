@@ -11,6 +11,7 @@ import {
   getTabListFromNodes,
   getTabMetadata,
   getTabsYdocNodes,
+  LEGACY_ROOT_KEY,
   syncTabStateAndGetNodes,
   Tab,
 } from '../components/tabs/utils/tab-utils';
@@ -221,13 +222,29 @@ export const useTabManager = ({
       applyTabList(getTabsYdocNodes(ydoc));
     };
 
+    const legacyRoot = ydoc.getMap(LEGACY_ROOT_KEY);
+    const handleLegacyTabStateChange = () => {
+      const syncedLegacyTabNodes = syncTabStateAndGetNodes(
+        ydoc,
+        {
+          createDefaultTabIfMissing,
+        },
+        enableCollaboration ? 'legacy-collab-migration' : 'self',
+      );
+
+      applyTabList(syncedLegacyTabNodes);
+    };
+
     // Watch flat roots directly after the initial migration/self-heal pass.
+    // Keep a legacy observer as well so collaborative old-arch updates can be
+    // migrated after the initial effect has already attached.
     applyTabList(syncedTabNodes);
     tabNodes.order.observe(handleTabListChange);
     tabNodes.nameById.observe(handleTabListChange);
     tabNodes.emojiById.observe(handleTabListChange);
     tabNodes.tabState.observe(handleTabListChange);
     tabNodes.deletedById.observe(handleTabListChange);
+    legacyRoot.observeDeep(handleLegacyTabStateChange);
 
     return () => {
       tabNodes.order.unobserve(handleTabListChange);
@@ -235,11 +252,13 @@ export const useTabManager = ({
       tabNodes.emojiById.unobserve(handleTabListChange);
       tabNodes.tabState.unobserve(handleTabListChange);
       tabNodes.deletedById.unobserve(handleTabListChange);
+      legacyRoot.unobserveDeep(handleLegacyTabStateChange);
     };
   }, [
     ydoc,
     defaultTabId,
     shouldSyncActiveTab,
+    enableCollaboration,
     isInitialContentResolved,
     createDefaultTabIfMissing,
     flushPendingUpdate,
