@@ -62,6 +62,7 @@ interface UseTabEditorArgs {
   initialContent: DdocProps['initialContent'];
   collaboration?: CollaborationProps;
   isReady?: boolean;
+  isSyncing?: boolean;
   awareness?: any;
   disableInlineComment?: boolean;
   onCommentInteraction?: DdocProps['onCommentInteraction'];
@@ -104,6 +105,7 @@ export const useTabEditor = ({
   initialContent,
   collaboration,
   isReady,
+  isSyncing,
   awareness,
   disableInlineComment,
   onCommentInteraction,
@@ -128,7 +130,6 @@ export const useTabEditor = ({
   ignoreCorruptedData,
   onCollaboratorChange,
   onConnect,
-  hasCollabContentInitialised,
   initialiseYjsIndexedDbProvider,
   externalExtensions,
   isContentLoading,
@@ -332,17 +333,16 @@ export const useTabEditor = ({
   }, [editor]);
 
   // Editor ready state handler
+  // Editability is disabled only during active content sync (server merging
+  // updates into the ydoc).  All other collab states (connecting, ready,
+  // reconnecting, terminating) keep the editor editable so there is no
+  // scroll-jump on start or flicker on stop.
   const readyState = useMemo(() => {
-    if (isCollaborationEnabled) {
-      return Boolean(hasCollabContentInitialised && isReady);
-    }
-    return isPreviewMode ? false : true;
-  }, [
-    isCollaborationEnabled,
-    hasCollabContentInitialised,
-    isPreviewMode,
-    isReady,
-  ]);
+    if (isPreviewMode) return false;
+    if (!isCollaborationEnabled) return true;
+    if (isSyncing) return false;
+    return true;
+  }, [isPreviewMode, isCollaborationEnabled, isSyncing]);
 
   useEffect(() => {
     editor?.setEditable(readyState);

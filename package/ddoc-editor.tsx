@@ -393,7 +393,7 @@ const DdocEditor = forwardRef(
       }),
 
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [editor],
+      [editor, awareness],
     );
 
     const handleAddTag = (tag: TagType) => {

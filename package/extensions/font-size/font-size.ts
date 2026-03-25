@@ -29,7 +29,8 @@ export const FontSize = Extension.create({
           class: {},
           fontSize: {
             default: null,
-            parseHTML: (element) => element.style.fontSize?.replace(/['"]+/g, '') || null,
+            parseHTML: (element) =>
+              element.style.fontSize?.replace(/['"]+/g, '') || null,
             renderHTML: (attributes) => {
               if (!attributes.fontSize) {
                 return {};
@@ -85,16 +86,36 @@ export const FontSize = Extension.create({
     return {
       setFontSize:
         (fontSize: string) =>
-        ({ chain }) => {
+        ({ chain, state, tr }) => {
           const existing = getExistingTextStyleAttrs(this.editor);
+          // Sync to paragraph node attr directly for empty paragraphs
+          const { selection } = state;
+          const $pos = selection.$from;
+          const node = $pos.node($pos.depth);
+          if (node?.type.name === 'paragraph' && node.textContent === '') {
+            tr.setNodeMarkup($pos.before($pos.depth), undefined, {
+              ...node.attrs,
+              fontSize,
+            });
+          }
           return chain()
             .setMark('textStyle', { ...existing, fontSize })
             .run();
         },
       unsetFontSize:
         () =>
-        ({ chain }) => {
+        ({ chain, state, tr }) => {
           const existing = getExistingTextStyleAttrs(this.editor);
+          // Clear the paragraph node attr directly so Plugin 3 doesn't need to
+          const { selection } = state;
+          const $pos = selection.$from;
+          const node = $pos.node($pos.depth);
+          if (node?.type.name === 'paragraph' && node.textContent === '') {
+            tr.setNodeMarkup($pos.before($pos.depth), undefined, {
+              ...node.attrs,
+              fontSize: null,
+            });
+          }
           return chain()
             .setMark('textStyle', { ...existing, fontSize: null })
             .removeEmptyTextStyle()
@@ -102,7 +123,7 @@ export const FontSize = Extension.create({
         },
       increaseFontSize:
         () =>
-        ({ chain }) => {
+        ({ chain, state, tr }) => {
           const attrs = getExistingTextStyleAttrs(this.editor);
           let currentSizeNum = parseInt(attrs.fontSize || '16');
           if (isNaN(currentSizeNum)) currentSizeNum = 16;
@@ -110,13 +131,23 @@ export const FontSize = Extension.create({
           const nextSize = FONT_SIZES.find((size) => size > currentSizeNum);
           if (!nextSize) return false;
 
+          const fontSize = `${nextSize}px`;
+          const { selection } = state;
+          const $pos = selection.$from;
+          const node = $pos.node($pos.depth);
+          if (node?.type.name === 'paragraph' && node.textContent === '') {
+            tr.setNodeMarkup($pos.before($pos.depth), undefined, {
+              ...node.attrs,
+              fontSize,
+            });
+          }
           return chain()
-            .setMark('textStyle', { ...attrs, fontSize: `${nextSize}px` })
+            .setMark('textStyle', { ...attrs, fontSize })
             .run();
         },
       decreaseFontSize:
         () =>
-        ({ chain }) => {
+        ({ chain, state, tr }) => {
           const attrs = getExistingTextStyleAttrs(this.editor);
           let currentSizeNum = parseInt(attrs.fontSize || '16');
           if (isNaN(currentSizeNum)) currentSizeNum = 16;
@@ -126,6 +157,16 @@ export const FontSize = Extension.create({
             .find((size) => size < currentSizeNum);
           if (!nextSize) return false;
 
+          const fontSize = `${nextSize}px`;
+          const { selection } = state;
+          const $pos = selection.$from;
+          const node = $pos.node($pos.depth);
+          if (node?.type.name === 'paragraph' && node.textContent === '') {
+            tr.setNodeMarkup($pos.before($pos.depth), undefined, {
+              ...node.attrs,
+              fontSize,
+            });
+          }
           return chain()
             .setMark('textStyle', { ...attrs, fontSize: `${nextSize}px` })
             .run();
@@ -139,6 +180,4 @@ export const FontSize = Extension.create({
       'Mod-Shift-,': () => this.editor.commands.decreaseFontSize(),
     };
   },
-
 });
-

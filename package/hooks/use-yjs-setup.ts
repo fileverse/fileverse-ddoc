@@ -41,6 +41,7 @@ export const useYjsSetup = ({
   const {
     connect,
     isReady,
+    isSyncing,
     terminateSession,
     awareness,
     hasCollabContentInitialised,
@@ -79,6 +80,17 @@ export const useYjsSetup = ({
     null,
   );
 
+  // Immediately flush any pending debounced onChange.
+  // Call this after critical structural changes (tab create/delete/rename/reorder)
+  // to ensure persistence happens before a potential page refresh.
+  const flushPendingUpdate = useCallback(() => {
+    if (onChangeDebounceRef.current) {
+      clearTimeout(onChangeDebounceRef.current);
+      onChangeDebounceRef.current = null;
+    }
+    onChange?.(fromUint8Array(Y.encodeStateAsUpdate(ydoc)), '');
+  }, [ydoc, onChange]);
+
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handler = (update: Uint8Array, origin: any) => {
@@ -112,11 +124,13 @@ export const useYjsSetup = ({
     ydoc,
     onConnect: connect,
     isReady,
+    isSyncing,
     terminateSession,
     awareness,
     hasCollabContentInitialised,
     initialiseYjsIndexedDbProvider,
     refreshYjsIndexedDbProvider: initialiseYjsIndexedDbProvider,
+    flushPendingUpdate,
     collabState,
   };
 };
