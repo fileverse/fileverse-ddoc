@@ -1,46 +1,35 @@
 import { useEffect, useState } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
 
-const isApiFullscreen = () => Boolean(document.fullscreenElement);
-
-const isBrowserFullscreen = () => {
-  return (
-    Math.abs(window.innerHeight - screen.height) <= 2 &&
-    Math.abs(window.innerWidth - screen.width) <= 2
-  );
+type UseFocusModeOptions = {
+  onFocusMode?: (isFocusMode: boolean) => void;
 };
 
-export const useFullscreenMode = () => {
-  const [isFullscreenMode, setIsFullscreenMode] = useState(false);
+export const useFocusMode = ({ onFocusMode }: UseFocusModeOptions = {}) => {
+  const [isFocusMode, setisFocusMode] = useState(false);
   const isMobile = useMediaQuery('(max-width: 1024px)');
 
   useEffect(() => {
-    const sync = () => {
-      if (isMobile) {
-        setIsFullscreenMode(false);
-        return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.metaKey && e.shiftKey && e.key.toLowerCase() === 'f') {
+        e.preventDefault();
+        toggleFocusMode();
       }
-      setIsFullscreenMode(isBrowserFullscreen());
     };
 
-    sync();
-
-    document.addEventListener('fullscreenchange', sync);
-    window.addEventListener('resize', sync);
+    window.addEventListener('keydown', onKeyDown);
 
     return () => {
-      document.removeEventListener('fullscreenchange', sync);
-      window.removeEventListener('resize', sync);
+      window.removeEventListener('keydown', onKeyDown);
     };
   }, [isMobile]);
 
-  const toggleFullscreenMode = async () => {
-    if (isApiFullscreen()) {
-      await document.exitFullscreen();
-    } else {
-      await document.documentElement.requestFullscreen();
-    }
+  const toggleFocusMode = async () => {
+    setisFocusMode((prev) => {
+      onFocusMode?.(!prev);
+      return !prev;
+    });
   };
 
-  return { isFullscreenMode, toggleFullscreenMode };
+  return { isFocusMode, toggleFocusMode };
 };

@@ -21,7 +21,7 @@ import { Editor } from '@tiptap/core';
 import * as Y from 'yjs';
 import { createPortal } from 'react-dom';
 import { ConfirmDeleteModal } from './confirm-delete-modal';
-import { useFullscreenMode } from '../../hooks/use-fullscreen-mode';
+import { useFocusMode } from '../../hooks/use-fullscreen-mode';
 
 export interface DocumentTabsSidebarProps {
   tabs: Tab[];
@@ -170,7 +170,7 @@ export const TabSidebar = ({
 
   const shouldExpand = !showTOC && isHovered;
 
-  const { isFullscreenMode } = useFullscreenMode();
+  const { isFocusMode } = useFocusMode();
 
   return (
     <>
@@ -205,14 +205,14 @@ export const TabSidebar = ({
               !hasToC && 'hidden',
               isVersionHistoryMode
                 ? 'top-[16px] max-h-[calc(100vh-32px)]'
-                : isFullscreenMode
+                : isFocusMode
                   ? 'top-[48px] max-h-[calc(100vh-140px)]'
                   : isPreviewMode
                     ? 'top-[70px] max-h-[calc(100vh-86px)]'
                     : 'top-[124px] max-h-[calc(100vh-140px)]',
             )}
           >
-            {(!isFullscreenMode || showTOC) && (
+            {(!isFocusMode || showTOC) && (
               <Tooltip
                 text={
                   showTOC ? 'Hide tabs and outlines' : 'Show tabs and outlines'

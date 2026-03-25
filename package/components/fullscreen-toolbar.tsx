@@ -15,7 +15,7 @@ type FullScreenToolbarProps = {
   setZoomLevel: DdocProps['setZoomLevel'];
   showTOC: DdocProps['showTOC'];
   setShowTOC: DdocProps['setShowTOC'];
-  toggleFullscreenMode: () => Promise<void>;
+  toggleFocusMode: () => Promise<void>;
 };
 
 export const FullScreenToolbar = ({
@@ -25,7 +25,7 @@ export const FullScreenToolbar = ({
   setZoomLevel,
   showTOC,
   setShowTOC,
-  toggleFullscreenMode,
+  toggleFocusMode,
 }: FullScreenToolbarProps) => {
   return (
     <div className="fixed right-[24px] z-[9] items-center flex gap-[4px] top-[24px]">
@@ -88,7 +88,7 @@ export const FullScreenToolbar = ({
           icon={'Minimize'}
           size="sm"
           variant="ghost"
-          onClick={toggleFullscreenMode}
+          onClick={toggleFocusMode}
           className="!w-[30px] !h-[30px] !min-w-[30px] disabled:bg-transparent"
         />
       </Tooltip>

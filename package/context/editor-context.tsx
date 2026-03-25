@@ -5,6 +5,7 @@ import { DocumentStyling } from '../types';
 interface EditorContextType {
   documentStyling?: DocumentStyling;
   theme: 'light' | 'dark';
+  isFocusMode: boolean;
 }
 
 export const EditorContext = createContext<EditorContextType | null>(null);
@@ -21,13 +22,15 @@ export const EditorProvider: React.FC<{
   children: ReactNode;
   documentStyling?: DocumentStyling;
   theme?: 'light' | 'dark';
-}> = ({ children, documentStyling, theme = 'light' }) => {
+  isFocusMode?: boolean;
+}> = ({ children, documentStyling, theme = 'light', isFocusMode = false }) => {
   const value = useMemo(
     () => ({
       documentStyling,
       theme,
+      isFocusMode,
     }),
-    [documentStyling, theme],
+    [documentStyling, theme, isFocusMode],
   );
 
   return (

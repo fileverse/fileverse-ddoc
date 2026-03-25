@@ -59,7 +59,7 @@ const TiptapToolBar = ({
   tabs,
   ydoc,
   onRegisterExportTrigger,
-  toggleFullscreenMode,
+  toggleFocusMode,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -82,7 +82,7 @@ const TiptapToolBar = ({
   isConnected?: boolean;
   tabs: Tab[];
   ydoc: Y.Doc;
-  toggleFullscreenMode?: () => void;
+  toggleFocusMode?: () => void;
   onRegisterExportTrigger?:
     | ((trigger: ((format?: string, name?: string) => void) | null) => void)
     | undefined;
@@ -596,7 +596,7 @@ const TiptapToolBar = ({
               icon={'Maximize'}
               size="sm"
               variant="ghost"
-              onClick={toggleFullscreenMode}
+              onClick={toggleFocusMode}
             />
           </Tooltip>
           {isLoading

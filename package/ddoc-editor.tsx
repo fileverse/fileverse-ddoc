@@ -47,7 +47,7 @@ import {
   getResponsiveThemeTextColor,
   getThemeStyle,
 } from './utils/document-styling';
-import { useFullscreenMode } from './hooks/use-fullscreen-mode';
+import { useFocusMode } from './hooks/use-fullscreen-mode';
 import { FullScreenToolbar } from './components/fullscreen-toolbar';
 
 const DdocEditor = forwardRef(
@@ -89,6 +89,7 @@ const DdocEditor = forwardRef(
       setIsNavbarVisible,
       onComment,
       onInlineComment,
+      onFocusMode,
       onMarkdownExport,
       onMarkdownImport,
       onPdfExport,
@@ -137,6 +138,7 @@ const DdocEditor = forwardRef(
     }: DdocProps,
     ref,
   ) => {
+    const { isFocusMode, toggleFocusMode } = useFocusMode({ onFocusMode });
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const exportTriggerRef = useRef<
@@ -532,7 +534,6 @@ const DdocEditor = forwardRef(
         {},
       );
     }, [initialComments]);
-    const { isFullscreenMode, toggleFullscreenMode } = useFullscreenMode();
     const baseWidth = documentStyling?.orientation === 'landscape' ? 1190 : 850;
 
     const zoom = Number(zoomLevel);
@@ -540,7 +541,7 @@ const DdocEditor = forwardRef(
     const shouldRenderDocumentOutline =
       (tabs.length > 0 ||
         (tocItems.length > 0 && !rest.versionHistoryState?.enabled)) &&
-      (!isFullscreenMode || showTOC);
+      (!isFocusMode || showTOC);
 
     const containerWidth =
       typeof window !== 'undefined' ? window.innerWidth : 0;
@@ -558,7 +559,7 @@ const DdocEditor = forwardRef(
       return (
         <AnimatePresence>
           <>
-            {isFullscreenMode && (
+            {isFocusMode && (
               <FullScreenToolbar
                 dropdownOpen={dropdownOpen}
                 setDropdownOpen={setDropdownOpen}
@@ -566,18 +567,20 @@ const DdocEditor = forwardRef(
                 setZoomLevel={setZoomLevel}
                 showTOC={showTOC}
                 setShowTOC={setShowTOC}
-                toggleFullscreenMode={toggleFullscreenMode}
+                toggleFocusMode={toggleFocusMode}
               />
             )}
 
-            {!isPreviewMode && !isFullscreenMode && (
+            {!isPreviewMode && (
               <div
                 id="toolbar"
                 className={cn(
-                  'z-[45] hidden mobile:flex items-center justify-center w-full h-[52px] fixed left-0 color-bg-default border-b color-border-default transition-transform duration-300 top-[3.5rem]',
+                  'z-[45] hidden mobile:flex items-center justify-center w-full h-[52px] fixed left-0 color-bg-default border-b color-border-default transition-all duration-300 top-[3.5rem]',
                   {
-                    'translate-y-0': isNavbarVisible,
-                    'translate-y-[-108%]': !isNavbarVisible,
+                    'translate-y-0 opacity-100':
+                      !isFocusMode && isNavbarVisible,
+                    'translate-y-[-108%] opacity-0 pointer-events-none':
+                      isFocusMode || !isNavbarVisible,
                   },
                 )}
               >
@@ -602,7 +605,7 @@ const DdocEditor = forwardRef(
                     isConnected={isConnected}
                     tabs={tabs}
                     ydoc={ydoc}
-                    toggleFullscreenMode={toggleFullscreenMode}
+                    toggleFocusMode={toggleFocusMode}
                     onRegisterExportTrigger={(trigger) => {
                       exportTriggerRef.current = trigger;
                     }}
@@ -657,17 +660,17 @@ const DdocEditor = forwardRef(
               className={cn(
                 !isMobile && 'flex-[1_1_263px]',
                 !isPreviewMode &&
-                  !isFullscreenMode &&
+                  !isFocusMode &&
                   isNavbarVisible &&
                   '-mt-[1.5rem] md:!mt-[0.8rem]',
                 isPreviewMode && 'md:!mt-[1rem]',
-                { 'md:!mt-[0.7rem]': !isPreviewMode && !isFullscreenMode },
+                { 'md:!mt-[0.7rem]': !isPreviewMode && !isFocusMode },
                 {
                   '-mt-[1.5rem] md:!mt-[0.7rem]':
                     !isNavbarVisible && !isPreviewMode,
                 },
-                isFullscreenMode && 'mt-[48px]',
-                isFullscreenMode && !showTOC && shouldHideRight && 'hidden',
+                isFocusMode && 'mt-[48px]',
+                isFocusMode && !showTOC && shouldHideRight && 'hidden',
               )}
             >
               {editor && shouldRenderDocumentOutline && (
@@ -712,20 +715,20 @@ const DdocEditor = forwardRef(
                 className={cn(
                   'w-full flex-grow min-w-0 no-scrollbar rounded transition-all overflow-auto mx-auto duration-300 ease-in-out',
                   !documentStyling?.canvasBackground &&
-                    !isFullscreenMode &&
+                    !isFocusMode &&
                     'color-bg-default',
                   !isPreviewMode &&
-                    !isFullscreenMode &&
+                    !isFocusMode &&
                     (isNavbarVisible
                       ? '-mt-[1.5rem] md:!mt-[0.8rem] pt-0 md:pt-[5rem]'
                       : 'pt-0 md:pt-[1.5rem]'),
                   isPreviewMode && 'md:!mt-[1rem] pt-0 md:!pt-[5rem]',
-                  { 'md:!mt-[0.7rem]': !isPreviewMode && !isFullscreenMode },
+                  { 'md:!mt-[0.7rem]': !isPreviewMode && !isFocusMode },
                   {
                     '-mt-[1.5rem] md:!mt-[0.7rem]':
                       !isNavbarVisible && !isPreviewMode,
                   },
-                  isFullscreenMode && 'mt-[48px]',
+                  isFocusMode && 'mt-[48px]',
                 )}
                 style={{
                   ...(isMobile
@@ -748,7 +751,7 @@ const DdocEditor = forwardRef(
                       'color-bg-default':
                         !documentStyling?.canvasBackground &&
                         (zoomLevel === '1.4' || zoomLevel === '1.5') &&
-                        !isFullscreenMode,
+                        !isFocusMode,
                     },
                   )}
                   style={
@@ -993,6 +996,7 @@ const DdocEditor = forwardRef(
       <EditorProvider
         documentStyling={documentStyling}
         theme={theme ?? 'light'}
+        isFocusMode={isFocusMode}
       >
         <div
           className={cn(
@@ -1000,7 +1004,7 @@ const DdocEditor = forwardRef(
             !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
           )}
           style={{
-            height: isFullscreenMode
+            height: isFocusMode
               ? '100vh'
               : !isPreviewMode
                 ? isNavbarVisible
@@ -1014,29 +1018,28 @@ const DdocEditor = forwardRef(
             className={cn(
               'h-[100%] flex w-full custom-scrollbar overflow-hidden relative',
               !isPreviewMode &&
-                !isFullscreenMode &&
+                !isFocusMode &&
                 (isNavbarVisible ? 'mt-[6.7rem]' : 'mt-[3.3rem]'),
-              isPreviewMode && !isFullscreenMode && 'mt-[3.5rem]',
+              isPreviewMode && !isFocusMode && 'mt-[3.5rem]',
               !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
               editorCanvasClassNames,
             )}
             style={getBackgroundStyle()}
           >
-            {!isFullscreenMode && (
-              <nav
-                id="Navbar"
-                className={cn(
-                  'h-14 color-bg-default py-2 px-0 md:px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-[45] transition-transform duration-300',
-                  {
-                    'translate-y-0': isNavbarVisible,
-                    'translate-y-[-100%]':
-                      !isNavbarVisible || isPresentationMode,
-                  },
-                )}
-              >
-                {editor && renderNavbar?.({ editor: editor.getJSON() })}
-              </nav>
-            )}
+            <nav
+              id="Navbar"
+              className={cn(
+                'h-14 color-bg-default py-2 px-0 md:px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-[45] transition-all duration-300',
+                {
+                  'translate-y-0 opacity-100':
+                    !isFocusMode && isNavbarVisible && !isPresentationMode,
+                  'translate-y-[-100%] opacity-0 pointer-events-none':
+                    isFocusMode || !isNavbarVisible || isPresentationMode,
+                },
+              )}
+            >
+              {editor && renderNavbar?.({ editor: editor.getJSON() })}
+            </nav>
             {!editor ? (
               renderComp()
             ) : (
