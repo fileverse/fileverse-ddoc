@@ -302,12 +302,16 @@ export const TabItem = ({
         />
 
         {!isEditing ? (
-          <span
-            data-testid={`tab-name-${tabId}`}
-            className="text-heading-xsm color-text-default flex-1 truncate select-none"
-          >
-            {title}
-          </span>
+          <div className="min-w-0 flex [&>*]:w-full">
+            <Tooltip text={title} position="bottom">
+              <span
+                data-testid={`tab-name-${tabId}`}
+                className="block w-full truncate select-none text-heading-xsm color-text-default"
+              >
+                {title}
+              </span>
+            </Tooltip>
+          </div>
         ) : (
           <TextField
             data-testid="tab-rename-input"
