@@ -29,7 +29,7 @@ import { useMediaQuery, useOnClickOutside } from 'usehooks-ts';
 import { AnimatePresence, motion } from 'framer-motion';
 import * as Y from 'yjs';
 import MobileToolbar from './components/mobile-toolbar';
-import { fromUint8Array, toUint8Array } from 'js-base64';
+import { toUint8Array } from 'js-base64';
 import { PresentationMode } from './components/presentation-mode/presentation-mode';
 import { CommentDrawer } from './components/inline-comment/comment-drawer';
 import { useResponsive } from './utils/responsive';
@@ -51,6 +51,7 @@ import {
   getResponsiveThemeTextColor,
   getThemeStyle,
 } from './utils/document-styling';
+import { mergeTabAwareYjsUpdates } from './components/tabs/utils/tab-utils';
 
 const DdocEditor = forwardRef(
   (
@@ -353,12 +354,14 @@ const DdocEditor = forwardRef(
         getYdoc: () => ydoc,
         refreshYjsIndexedDbProvider,
         mergeYjsContents: (_contents: string[]) => {
-          const contents = Y.mergeUpdates(
-            _contents.map((content) => toUint8Array(content)),
+          const mergedContent = mergeTabAwareYjsUpdates(_contents);
+          Y.applyUpdate(
+            ydoc as unknown as Y.Doc,
+            toUint8Array(mergedContent),
+            'self',
           );
-          Y.applyUpdate(ydoc as unknown as Y.Doc, contents, 'self');
 
-          return fromUint8Array(contents);
+          return mergedContent;
         },
         exportContentAsMarkDown: async (filename: string) => {
           if (editor) {
@@ -445,7 +448,7 @@ const DdocEditor = forwardRef(
       }),
 
       // eslint-disable-next-line react-hooks/exhaustive-deps
-      [editor],
+      [editor, awareness],
     );
 
     const handleAddTag = (tag: TagType) => {

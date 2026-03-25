@@ -140,10 +140,12 @@ export class SyncManager {
     return true;
   }
 
-  private runExitActions(from: CollabStatus, to: CollabStatus): void {
-    if (from === 'ready' && to === 'reconnecting') {
-      this.cleanupAwareness();
-    }
+  private runExitActions(_from: CollabStatus, to: CollabStatus): void {
+    // Awareness is preserved during reconnection (ready → reconnecting).
+    // The SocketClient object and roomKey stay the same, so the handler
+    // closures remain valid.  Remote cursors are already cleaned up by
+    // socketClient's disconnect handler; local state is re-broadcast on
+    // the 'reconnect' event.  Only tear down awareness on full disconnect.
     if (to === 'idle') {
       this.cleanupAwareness();
     }

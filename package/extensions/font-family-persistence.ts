@@ -34,16 +34,36 @@ export const FontFamilyPersistence = Extension.create({
     return {
       setFontFamily:
         (fontFamily: string) =>
-        ({ chain }) => {
+        ({ chain, state, tr }) => {
           const existing = getExistingTextStyleAttrs(this.editor);
+          // Sync to paragraph node attr directly for empty paragraphs
+          const { selection } = state;
+          const $pos = selection.$from;
+          const node = $pos.node($pos.depth);
+          if (node?.type.name === 'paragraph' && node.textContent === '') {
+            tr.setNodeMarkup($pos.before($pos.depth), undefined, {
+              ...node.attrs,
+              fontFamily,
+            });
+          }
           return chain()
             .setMark('textStyle', { ...existing, fontFamily })
             .run();
         },
       unsetFontFamily:
         () =>
-        ({ chain }) => {
+        ({ chain, state, tr }) => {
           const existing = getExistingTextStyleAttrs(this.editor);
+          // Clear the paragraph node attr directly so Plugin 3 doesn't need to
+          const { selection } = state;
+          const $pos = selection.$from;
+          const node = $pos.node($pos.depth);
+          if (node?.type.name === 'paragraph' && node.textContent === '') {
+            tr.setNodeMarkup($pos.before($pos.depth), undefined, {
+              ...node.attrs,
+              fontFamily: null,
+            });
+          }
           return chain()
             .setMark('textStyle', { ...existing, fontFamily: null })
             .removeEmptyTextStyle()

@@ -82,6 +82,10 @@ export const SortableTabItem = (props: SortableTabItemProps) => {
     isDragging,
   } = useSortable({ id: props.id });
 
+  // Filter tabIndex keeping it makes the tab list a focus fallback when the editor blurs.
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { tabIndex, ...dragHandleAttributes } = attributes;
+
   return (
     <div
       ref={setNodeRef}
@@ -94,7 +98,7 @@ export const SortableTabItem = (props: SortableTabItemProps) => {
       <TabItem
         {...props}
         dragHandleProps={{
-          ...attributes,
+          ...dragHandleAttributes,
           ...listeners,
         }}
       />
@@ -298,12 +302,16 @@ export const TabItem = ({
         />
 
         {!isEditing ? (
-          <span
-            data-testid={`tab-name-${tabId}`}
-            className="text-heading-xsm color-text-default flex-1 truncate select-none"
-          >
-            {title}
-          </span>
+          <div className="min-w-0 flex [&>*]:w-full">
+            <Tooltip text={title} position="bottom">
+              <span
+                data-testid={`tab-name-${tabId}`}
+                className="block w-full truncate select-none text-heading-xsm color-text-default"
+              >
+                {title}
+              </span>
+            </Tooltip>
+          </div>
         ) : (
           <TextField
             data-testid="tab-rename-input"

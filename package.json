@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "3.0.73-blog-md-patch-1",
+  "version": "3.0.82",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
