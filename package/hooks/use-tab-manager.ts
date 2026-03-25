@@ -91,7 +91,14 @@ export const useTabManager = ({
         },
       );
 
-      if (derivedTabState.didWrite && !hasSavedInitialMigrationRef.current) {
+      const shouldPersistInitialHydration =
+        derivedTabState.didWrite &&
+        !hasSavedInitialMigrationRef.current &&
+        !isNewDdoc;
+
+      // A brand-new empty doc bootstraps its default tab locally, but that
+      // should not look like a meaningful user edit to consumer onChange handlers.
+      if (shouldPersistInitialHydration) {
         hasSavedInitialMigrationRef.current = true;
         flushPendingUpdate?.();
       }
