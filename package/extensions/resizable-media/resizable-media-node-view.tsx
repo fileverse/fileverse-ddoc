@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
-import { LegacyRef, useEffect, useRef, useState } from 'react';
+import { LegacyRef, useCallback, useEffect, useRef, useState } from 'react';
 import { NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 import { resizableMediaActions } from './resizable-media-menu-util';
 import cn from 'classnames';
@@ -9,8 +9,6 @@ import ToolbarButton from '../../common/toolbar-button';
 import { SecureImage } from '../../components/secure-image.tsx';
 import { SecureImageV2 } from '../../components/secure-image-v2.tsx';
 import { IpfsImageFetchPayload } from '../../types.ts';
-
-let lastClientX: number;
 interface WidthAndHeight {
   width: number;
   height: number;
@@ -29,6 +27,8 @@ export const getResizableMediaNodeView =
     const mediaType: 'img' | 'secure-img' | 'video' | 'iframe' =
       node.attrs['media-type'];
 
+    const isImageType = mediaType === 'img' || mediaType === 'secure-img';
+
     const isSoundcloudIframe =
       mediaType === 'iframe' &&
       new URL(node.attrs.src).hostname === 'w.soundcloud.com';
@@ -46,7 +46,12 @@ export const getResizableMediaNodeView =
       HTMLImageElement | HTMLVideoElement | HTMLIFrameElement | null
     >(null);
 
+    const lastClientXRef = useRef<number>(-1);
+
     const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
+
+    const [isSelected, setIsSelected] = useState(false);
+    const nodeWrapperRef = useRef<HTMLDivElement>(null);
 
     const [isDragging, setIsDragging] = useState(false);
     const [touchTimeout, setTouchTimeout] = useState<ReturnType<
@@ -107,7 +112,7 @@ export const getResizableMediaNodeView =
     };
 
     const setLastClientX = (x: number) => {
-      lastClientX = x;
+      lastClientXRef.current = x;
     };
 
     useEffect(() => {
@@ -134,7 +139,7 @@ export const getResizableMediaNodeView =
       e.stopPropagation();
       // Check if it's a touch event and extract the clientX accordingly
       const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
-      lastClientX = clientX;
+      lastClientXRef.current = clientX;
 
       setTimeout(() => {
         // Use both mouse and touch events for move and end actions
@@ -148,7 +153,7 @@ export const getResizableMediaNodeView =
     };
 
     const stopHorizontalResize = () => {
-      lastClientX = -1;
+      lastClientXRef.current = -1;
 
       document.removeEventListener('mousemove', documentHorizontalMouseMove);
       document.removeEventListener('mouseup', stopHorizontalResize);
@@ -229,9 +234,9 @@ export const getResizableMediaNodeView =
     };
 
     const onHorizontalMouseMove = (clientX: number) => {
-      if (lastClientX === -1) return;
+      if (lastClientXRef.current === -1) return;
 
-      const diff = lastClientX - clientX;
+      const diff = lastClientXRef.current - clientX;
 
       if (diff === 0) return;
 
@@ -240,7 +245,7 @@ export const getResizableMediaNodeView =
 
       setTimeout(() => {
         onHorizontalResize(directionOfMouseMove, Math.abs(diff));
-        lastClientX = clientX;
+        lastClientXRef.current = clientX;
       });
     };
 
@@ -302,6 +307,76 @@ export const getResizableMediaNodeView =
       };
     }, [touchTimeout]);
 
+    const handleImageClick = useCallback(() => {
+      if (isImageType && !isPreviewMode) {
+        setIsSelected(true);
+      }
+    }, [isImageType, isPreviewMode]);
+
+    useEffect(() => {
+      if (!isImageType || !isSelected) return;
+
+      const handleClickOutside = (e: MouseEvent) => {
+        if (
+          nodeWrapperRef.current &&
+          !nodeWrapperRef.current.contains(e.target as Node)
+        ) {
+          setIsSelected(false);
+        }
+      };
+
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }, [isImageType, isSelected]);
+
+    const startCornerResize = (
+      corner: 'tl' | 'tr' | 'bl' | 'br',
+      e: React.MouseEvent | React.TouchEvent,
+    ) => {
+      e.stopPropagation();
+      e.preventDefault();
+      const clientX = 'touches' in e ? e.touches[0].clientX : e.clientX;
+      lastClientXRef.current = clientX;
+
+      const direction: 'left' | 'right' =
+        corner === 'tl' || corner === 'bl' ? 'left' : 'right';
+
+      const handleMove = (ev: MouseEvent | TouchEvent) => {
+        const currentX = 'touches' in ev ? ev.touches[0].clientX : ev.clientX;
+        const diff = lastClientXRef.current - currentX;
+        if (diff === 0) return;
+
+        const actualDirection: 'left' | 'right' =
+          direction === 'left'
+            ? diff > 0
+              ? 'right'
+              : 'left'
+            : diff > 0
+              ? 'left'
+              : 'right';
+
+        onHorizontalResize(actualDirection, Math.abs(diff));
+        lastClientXRef.current = currentX;
+      };
+
+      const handleUp = () => {
+        lastClientXRef.current = -1;
+        document.removeEventListener('mousemove', handleMove);
+        document.removeEventListener('mouseup', handleUp);
+        document.removeEventListener('touchmove', handleMove);
+        document.removeEventListener('touchend', handleUp);
+        setIsMouseDown(false);
+      };
+
+      document.addEventListener('mousemove', handleMove);
+      document.addEventListener('mouseup', handleUp);
+      document.addEventListener('touchmove', handleMove);
+      document.addEventListener('touchend', handleUp);
+      setIsMouseDown(true);
+    };
+
     return (
       <NodeViewWrapper
         as="article"
@@ -312,12 +387,14 @@ export const getResizableMediaNodeView =
         )}
       >
         <div
+          ref={nodeWrapperRef}
           draggable={isDragging}
           data-drag-handle={isDragging}
           className={cn(
             'w-fit flex flex-col relative group transition-all ease-in-out',
             isDragging && 'opacity-50',
           )}
+          onClick={handleImageClick}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -329,6 +406,7 @@ export const getResizableMediaNodeView =
               node.attrs.dataAlign === 'start' && 'self-start',
               node.attrs.dataAlign === 'center' && 'self-center',
               node.attrs.dataAlign === 'end' && 'self-end',
+              isImageType && isSelected && 'border-2 border-[#5c0aff]',
             )}
           >
             {mediaType === 'img' && (
@@ -403,7 +481,7 @@ export const getResizableMediaNodeView =
               </>
             )}
 
-            {!isPreviewMode && (
+            {!isPreviewMode && !isImageType && (
               <div
                 className="horizontal-resize-handle group-hover:bg-[#2E2E2E] group-hover:border-2 group-hover:border-[#E8EBEC]"
                 title="Resize"
@@ -413,6 +491,19 @@ export const getResizableMediaNodeView =
                 onTouchStart={(e: any) => startHorizontalResize(e)}
                 onTouchEnd={stopHorizontalResize}
               />
+            )}
+
+            {!isPreviewMode && isImageType && isSelected && (
+              <>
+                {(['tl', 'tr', 'bl', 'br'] as const).map((corner) => (
+                  <div
+                    key={corner}
+                    className={`corner-resize-handle ${corner}`}
+                    onMouseDown={(e) => startCornerResize(corner, e)}
+                    onTouchStart={(e) => startCornerResize(corner, e)}
+                  />
+                ))}
+              </>
             )}
           </div>
 
@@ -484,10 +575,11 @@ export const getResizableMediaNodeView =
               )}
             >
               {resizableMediaActions
-                .filter(
-                  (btn) =>
-                    mediaType !== 'iframe' || btn.tooltip !== 'Add Caption',
-                )
+                .filter((btn) => {
+                  if (mediaType === 'iframe' && btn.tooltip === 'Add Caption')
+                    return false;
+                  return true;
+                })
                 .map((btn, index) => {
                   return (
                     <ToolbarButton
