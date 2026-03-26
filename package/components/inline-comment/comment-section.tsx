@@ -283,12 +283,12 @@ export const CommentSection = ({
         </div>
 
         <div className="flex items-center color-bg-default justify-between">
-          <div className="color-bg-secondary border rounded-[4px] flex gap-[8px] py-[4px]">
+          <div className="color-bg-secondary border rounded-[4px] px-[8px] flex gap-[8px] py-[4px]">
             <LucideIcon
               name="Lock"
               className="color-icon-secondary w-[14px] h-[14px]"
             />
-            <p className="text-helper-text-sm color-text-secondary pr-[8px]">
+            <p className="text-helper-text-sm color-text-secondary">
               Comments are End-to-end Encrypted
             </p>
           </div>
