@@ -12,6 +12,7 @@ import { handleMarkdownContent } from '../extensions/mardown-paste-handler';
 import { IpfsImageUploadResponse } from '../types';
 import mammoth from 'mammoth';
 import { CommentExtension as Comment } from '../extensions/comment';
+import { mergeTabAwareYjsUpdates } from '../components/tabs/utils/tab-utils';
 
 export interface UseHeadlessEditorProps {
   optionalExtensions?: string[];
@@ -57,13 +58,11 @@ export const useHeadlessEditor = (props?: UseHeadlessEditorProps) => {
   };
 
   const mergeAndApplyUpdate = (contents: string[], ydoc: Y.Doc) => {
-    const parsedContents = contents.map((content) => toUint8Array(content));
-    Y.applyUpdate(ydoc, Y.mergeUpdates(parsedContents));
+    Y.applyUpdate(ydoc, toUint8Array(mergeTabAwareYjsUpdates(contents)));
   };
 
   const mergeYjsUpdates = (contents: string[]) => {
-    const parsedContents = contents.map((content) => toUint8Array(content));
-    return fromUint8Array(Y.mergeUpdates(parsedContents));
+    return mergeTabAwareYjsUpdates(contents);
   };
 
   const setContent = (
