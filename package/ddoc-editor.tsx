@@ -844,10 +844,13 @@ const DdocEditor = forwardRef(
                               <div
                                 className={`${!isMobile ? 'mx-20' : 'mx-10 mt-10'}`}
                               >
-                                <Skeleton
-                                  className={`${isPreviewMode ? 'w-full' : isMobile ? 'w-full' : 'w-[400px]'}  h-[32px] rounded-sm mb-4`}
-                                />
-                                {isPreviewMode && <PreviewContentLoader />}
+                                {isPreviewMode ? (
+                                  <PreviewContentLoader />
+                                ) : (
+                                  <Skeleton
+                                    className={`${isMobile ? 'w-full' : 'w-[400px]'}  h-[32px] rounded-sm mb-4`}
+                                  />
+                                )}
                               </div>,
                               'content-transition',
                             )
