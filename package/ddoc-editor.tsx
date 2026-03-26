@@ -562,15 +562,30 @@ const DdocEditor = forwardRef(
     const handleFocusModeMouseDown = (event: React.MouseEvent) => {
       if (!isFocusMode || !editor || event.button !== 0) return;
 
-      const target = event.target as Node;
+      const target = event.target as HTMLElement;
 
+      // 1. Ignore clicks inside editor
       const clickedInsideEditor = editorContentRef.current?.contains(target);
 
-      if (clickedInsideEditor) {
-        return;
-      }
+      if (clickedInsideEditor) return;
 
+      // 2. Ignore clicks inside ANY modal / portal
+      const clickedInsideModal = target.closest(
+        '[data-radix-dialog-content], [role="dialog"], [data-modal], [data-overlay]',
+      );
+
+      if (clickedInsideModal) return;
+
+      // 3. Ignore dropdowns / popovers (important for your comment system)
+      const clickedInsideFloatingUI = target.closest(
+        '[data-radix-popper-content-wrapper], [data-floating-ui-portal]',
+      );
+
+      if (clickedInsideFloatingUI) return;
+
+      // 4. Only now treat as canvas click
       event.preventDefault();
+
       editor.commands.focus('end', { scrollIntoView: false });
     };
 
