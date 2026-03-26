@@ -554,6 +554,22 @@ const DdocEditor = forwardRef(
 
     // should editor overflow?
     const shouldScroll = scaledWidth > availableSpace;
+    const editorContentRef = useRef<HTMLDivElement | null>(null);
+
+    const handleFocusModeMouseDown = (event: React.MouseEvent) => {
+      if (!isFocusMode || !editor || event.button !== 0) return;
+
+      const target = event.target as Node;
+
+      const clickedInsideEditor = editorContentRef.current?.contains(target);
+
+      if (clickedInsideEditor) {
+        return;
+      }
+
+      event.preventDefault();
+      editor.commands.focus('end', { scrollIntoView: false });
+    };
 
     const renderComp = () => {
       return (
@@ -699,184 +715,163 @@ const DdocEditor = forwardRef(
                 />
               )}
             </div>
-
-            <div
-              className={cn(
-                'flex-grow min-w-0 flex items-stretch',
-                shouldRenderDocumentOutline
-                  ? shouldScroll
-                    ? 'justify-start overflow-x-auto'
-                    : 'justify-center overflow-x-hidden'
-                  : 'justify-start overflow-x-auto',
-              )}
-            >
-              <div
-                id="editor-wrapper"
-                className={cn(
-                  'w-full flex-grow min-w-0 no-scrollbar rounded transition-all overflow-auto mx-auto duration-300 ease-in-out',
-                  !documentStyling?.canvasBackground &&
-                    !isFocusMode &&
-                    'color-bg-default',
-                  !isPreviewMode &&
-                    !isFocusMode &&
-                    (isNavbarVisible
-                      ? '-mt-[1.5rem] md:!mt-[0.8rem] pt-0 md:pt-[5rem]'
-                      : 'pt-0 md:pt-[1.5rem]'),
-                  isPreviewMode && 'md:!mt-[1rem] pt-0 md:!pt-[5rem]',
-                  { 'md:!mt-[0.7rem]': !isPreviewMode && !isFocusMode },
-                  {
-                    '-mt-[1.5rem] md:!mt-[0.7rem]':
-                      !isNavbarVisible && !isPreviewMode,
-                  },
-                  isFocusMode && 'mt-[48px]',
-                )}
-                style={{
-                  ...(isMobile
-                    ? {}
-                    : {
-                        width: `${scaledWidth}px`,
-                        maxWidth: `${scaledWidth}px`,
-                      }),
-                  flexShrink: 0,
-                  minHeight: '100%',
-                  ...(getCanvasStyle() || {}),
-                }}
-              >
+            <div className={cn('flex w-full overflow-auto')}>
+              <div className="w-full h-full">
                 <div
-                  ref={editorRef}
-                  className={cn(
-                    'w-full pt-8 md:pt-0',
-                    { 'custom-ios-padding': isIOS },
-                    {
-                      'color-bg-default':
-                        !documentStyling?.canvasBackground &&
-                        (zoomLevel === '1.4' || zoomLevel === '1.5') &&
-                        !isFocusMode,
-                    },
-                  )}
-                  style={
-                    isMobile
-                      ? {}
-                      : {
-                          width: `${baseWidth}px`,
-                          transform: `scale(${zoom})`,
-                          transformOrigin: 'top left',
-                          height: `${100 / zoom}%`,
-                        }
-                  }
+                  className={cn('flex min-h-[100%]', !isMobile && 'min-w-max')}
                 >
-                  <div>
-                    {editor && (
-                      <>
-                        <EditorBubbleMenu
-                          editor={editor}
-                          //@ts-expect-error error mismatch here
-                          onError={onError}
-                          zoomLevel={zoomLevel}
-                          disableInlineComment={disableInlineComment || false}
-                          setIsCommentSectionOpen={setIsCommentSectionOpen}
-                          inlineCommentData={inlineCommentData}
-                          setInlineCommentData={setInlineCommentData}
-                          isPreviewMode={isPreviewMode}
-                          username={username as string}
-                          walletAddress={walletAddress as string}
-                          onInlineComment={onInlineComment}
-                          activeCommentId={activeCommentId}
-                          isCollabDocumentPublished={isCollabDocumentPublished}
-                          ipfsImageFetchFn={ipfsImageFetchFn}
-                          fetchV1ImageFn={fetchV1ImageFn}
-                          ipfsImageUploadFn={ipfsImageUploadFn}
-                          onReminderCreate={
-                            extensions?.find(
-                              (ext: Extension) => ext.name === 'reminderBlock',
-                            )?.options?.onReminderCreate
-                          }
-                          isConnected={isConnected}
-                          isCollabDocOwner={
-                            collaboration?.enabled
-                              ? collaboration.connection.isOwner
-                              : true
-                          }
-                          enableCollaboration={collaboration?.enabled}
-                        />
-                        <EmbedSettings editor={editor} />
-                      </>
+                  <div
+                    className={cn(
+                      'flex-grow min-w-0 flex overflow-y-hidden items-stretch',
+                      shouldRenderDocumentOutline
+                        ? shouldScroll
+                          ? 'justify-start overflow-x-auto'
+                          : 'justify-center'
+                        : 'justify-start overflow-x-auto',
                     )}
-
-                    {editor && (
-                      <ColumnsMenu editor={editor} appendTo={editorRef} />
-                    )}
-                  </div>
-
-                  {!editor || isContentLoading
-                    ? fadeInTransition(
-                        <div
-                          className={`${!isMobile ? 'mx-20' : 'mx-10 mt-10'}`}
-                        >
-                          <Skeleton
-                            className={`${isPreviewMode ? 'w-full' : isMobile ? 'w-full' : 'w-[400px]'}  h-[32px] rounded-sm mb-4`}
-                          />
-                          {isPreviewMode && <PreviewContentLoader />}
-                        </div>,
-                        'content-transition',
-                      )
-                    : slideUpTransition(
+                  >
+                    <div
+                      id="editor-wrapper"
+                      className={cn(
+                        'w-full flex-grow min-w-0 no-scrollbar rounded transition-all mx-auto duration-300 ease-in-out',
+                        !documentStyling?.canvasBackground &&
+                          !isFocusMode &&
+                          'color-bg-default',
+                        !isPreviewMode &&
+                          !isFocusMode &&
+                          (isNavbarVisible
+                            ? '-mt-[1.5rem] md:!mt-[0.8rem] pt-0 md:pt-[5rem]'
+                            : 'pt-0 md:pt-[1.5rem]'),
+                        isPreviewMode && 'md:!mt-[1rem] pt-0 md:!pt-[5rem]',
+                        { 'md:!mt-[0.7rem]': !isPreviewMode && !isFocusMode },
+                        {
+                          '-mt-[1.5rem] md:!mt-[0.7rem]':
+                            !isNavbarVisible && !isPreviewMode,
+                        },
+                        isFocusMode && 'mt-[48px]',
+                        zoomLevel !== '1' && 'overflow-auto',
+                      )}
+                      style={{
+                        ...(isMobile
+                          ? {}
+                          : {
+                              width: `${scaledWidth}px`,
+                              maxWidth: `${scaledWidth}px`,
+                            }),
+                        flexShrink: 0,
+                        minHeight: '100%',
+                        ...(!isFocusMode ? getCanvasStyle() || {} : {}),
+                      }}
+                    >
+                      <div
+                        ref={editorRef}
+                        className={cn(
+                          'w-full pt-8 md:pt-0',
+                          { 'custom-ios-padding': isIOS },
+                          {
+                            'color-bg-default':
+                              !documentStyling?.canvasBackground &&
+                              (zoomLevel === '1.4' || zoomLevel === '1.5') &&
+                              !isFocusMode,
+                          },
+                        )}
+                        style={
+                          isMobile
+                            ? {}
+                            : {
+                                width: `${baseWidth}px`,
+                                transform: `scale(${zoom})`,
+                                transformOrigin: 'top left',
+                                height: `${100 / zoom}%`,
+                              }
+                        }
+                      >
                         <div>
-                          <EditingProvider
-                            isPreviewMode={isPreviewMode}
-                            isCollaboratorsDoc={
-                              collaboration?.enabled === true &&
-                              !collaboration.connection.isOwner
-                            }
-                          >
-                            {tags && tags.length > 0 && (
-                              <div
-                                ref={tagsContainerRef}
-                                className={cn(
-                                  'flex flex-wrap px-4 md:px-8 lg:px-[80px] mb-8 items-center gap-1 mt-4 lg:!mt-0',
-                                  { 'pt-12': isPreviewMode },
-                                )}
-                                {...(getCanvasStyle() && {
-                                  style: getCanvasStyle(),
-                                })}
-                              >
-                                {visibleTags.map((tag, index) => (
-                                  <Tag
-                                    key={index}
-                                    style={{ backgroundColor: tag?.color }}
-                                    onRemove={() => handleRemoveTag(tag?.name)}
-                                    isRemovable={!isPreviewMode}
-                                    className="!h-6 rounded"
-                                  >
-                                    {tag?.name}
-                                  </Tag>
-                                ))}
-                                {hiddenTagsCount > 0 &&
-                                  !isHiddenTagsVisible && (
-                                    <Button
-                                      variant="ghost"
-                                      className="!h-6 rounded min-w-fit !px-2 color-bg-secondary text-helper-text-sm"
-                                      onClick={() =>
-                                        setIsHiddenTagsVisible(true)
-                                      }
-                                    >
-                                      +{hiddenTagsCount}
-                                    </Button>
-                                  )}
+                          {editor && (
+                            <>
+                              <EditorBubbleMenu
+                                editor={editor}
+                                //@ts-expect-error error mismatch here
+                                onError={onError}
+                                zoomLevel={zoomLevel}
+                                disableInlineComment={
+                                  disableInlineComment || false
+                                }
+                                setIsCommentSectionOpen={
+                                  setIsCommentSectionOpen
+                                }
+                                inlineCommentData={inlineCommentData}
+                                setInlineCommentData={setInlineCommentData}
+                                isPreviewMode={isPreviewMode}
+                                username={username as string}
+                                walletAddress={walletAddress as string}
+                                onInlineComment={onInlineComment}
+                                activeCommentId={activeCommentId}
+                                isCollabDocumentPublished={
+                                  isCollabDocumentPublished
+                                }
+                                ipfsImageFetchFn={ipfsImageFetchFn}
+                                fetchV1ImageFn={fetchV1ImageFn}
+                                ipfsImageUploadFn={ipfsImageUploadFn}
+                                onReminderCreate={
+                                  extensions?.find(
+                                    (ext: Extension) =>
+                                      ext.name === 'reminderBlock',
+                                  )?.options?.onReminderCreate
+                                }
+                                isConnected={isConnected}
+                                isCollabDocOwner={
+                                  collaboration?.enabled
+                                    ? collaboration.connection.isOwner
+                                    : true
+                                }
+                                enableCollaboration={collaboration?.enabled}
+                              />
+                              <EmbedSettings editor={editor} />
+                            </>
+                          )}
 
-                                {isHiddenTagsVisible && (
-                                  <motion.div
-                                    initial={{ opacity: 0, height: 0 }}
-                                    animate={{ opacity: 1, height: 'auto' }}
-                                    exit={{ opacity: 0, height: 0 }}
-                                    transition={{ duration: 0.3 }}
-                                    className="flex flex-wrap items-center gap-1"
-                                  >
-                                    {selectedTags
-                                      ?.slice(4)
-                                      .map((tag, index) => (
+                          {editor && (
+                            <ColumnsMenu editor={editor} appendTo={editorRef} />
+                          )}
+                        </div>
+
+                        {!editor || isContentLoading
+                          ? fadeInTransition(
+                              <div
+                                className={`${!isMobile ? 'mx-20' : 'mx-10 mt-10'}`}
+                              >
+                                <Skeleton
+                                  className={`${isPreviewMode ? 'w-full' : isMobile ? 'w-full' : 'w-[400px]'}  h-[32px] rounded-sm mb-4`}
+                                />
+                                {isPreviewMode && <PreviewContentLoader />}
+                              </div>,
+                              'content-transition',
+                            )
+                          : slideUpTransition(
+                              <div>
+                                <EditingProvider
+                                  isPreviewMode={isPreviewMode}
+                                  isCollaboratorsDoc={
+                                    collaboration?.enabled === true &&
+                                    !collaboration.connection.isOwner
+                                  }
+                                >
+                                  {tags && tags.length > 0 && (
+                                    <div
+                                      ref={tagsContainerRef}
+                                      className={cn(
+                                        'flex flex-wrap px-4 md:px-8 lg:px-[80px] mb-8 items-center gap-1 mt-4 lg:!mt-0',
+                                        { 'pt-12': isPreviewMode },
+                                      )}
+                                      {...(!isFocusMode &&
+                                        getCanvasStyle() && {
+                                          style: getCanvasStyle(),
+                                        })}
+                                    >
+                                      {visibleTags.map((tag, index) => (
                                         <Tag
-                                          key={index + 4}
+                                          key={index}
                                           style={{
                                             backgroundColor: tag?.color,
                                           }}
@@ -889,45 +884,106 @@ const DdocEditor = forwardRef(
                                           {tag?.name}
                                         </Tag>
                                       ))}
-                                  </motion.div>
-                                )}
+                                      {hiddenTagsCount > 0 &&
+                                        !isHiddenTagsVisible && (
+                                          <Button
+                                            variant="ghost"
+                                            className="!h-6 rounded min-w-fit !px-2 color-bg-secondary text-helper-text-sm"
+                                            onClick={() =>
+                                              setIsHiddenTagsVisible(true)
+                                            }
+                                          >
+                                            +{hiddenTagsCount}
+                                          </Button>
+                                        )}
 
-                                {selectedTags && selectedTags?.length < 6 ? (
-                                  <TagInput
-                                    tags={tags || []}
-                                    selectedTags={selectedTags as TagType[]}
-                                    onAddTag={handleAddTag}
-                                    isPreviewMode={isPreviewMode}
-                                  />
-                                ) : null}
-                              </div>
+                                      {isHiddenTagsVisible && (
+                                        <motion.div
+                                          initial={{ opacity: 0, height: 0 }}
+                                          animate={{
+                                            opacity: 1,
+                                            height: 'auto',
+                                          }}
+                                          exit={{ opacity: 0, height: 0 }}
+                                          transition={{ duration: 0.3 }}
+                                          className="flex flex-wrap items-center gap-1"
+                                        >
+                                          {selectedTags
+                                            ?.slice(4)
+                                            .map((tag, index) => (
+                                              <Tag
+                                                key={index + 4}
+                                                style={{
+                                                  backgroundColor: tag?.color,
+                                                }}
+                                                onRemove={() =>
+                                                  handleRemoveTag(tag?.name)
+                                                }
+                                                isRemovable={!isPreviewMode}
+                                                className="!h-6 rounded"
+                                              >
+                                                {tag?.name}
+                                              </Tag>
+                                            ))}
+                                        </motion.div>
+                                      )}
+
+                                      {selectedTags &&
+                                      selectedTags?.length < 6 ? (
+                                        <TagInput
+                                          tags={tags || []}
+                                          selectedTags={
+                                            selectedTags as TagType[]
+                                          }
+                                          onAddTag={handleAddTag}
+                                          isPreviewMode={isPreviewMode}
+                                        />
+                                      ) : null}
+                                    </div>
+                                  )}
+                                  <div className="grammarly-wrapper">
+                                    <EditorContent
+                                      editor={editor}
+                                      id="editor"
+                                      ref={editorContentRef}
+                                      className={cn(
+                                        'w-full h-auto',
+                                        isPreviewMode && 'preview-mode',
+                                        activeModel !== undefined &&
+                                          isAIAgentEnabled &&
+                                          'has-available-models',
+                                        disableInlineComment &&
+                                          'hide-inline-comments',
+                                      )}
+                                    />
+                                  </div>
+                                </EditingProvider>
+                              </div>,
+                              'editor-transition',
                             )}
-                            <div className="grammarly-wrapper">
-                              <EditorContent
-                                editor={editor}
-                                id="editor"
-                                className={cn(
-                                  'w-full h-auto',
-                                  isPreviewMode && 'preview-mode',
-                                  activeModel !== undefined &&
-                                    isAIAgentEnabled &&
-                                    'has-available-models',
-                                  disableInlineComment &&
-                                    'hide-inline-comments',
-                                )}
-                              />
-                            </div>
-                          </EditingProvider>
-                        </div>,
-                        'editor-transition',
-                      )}
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
+              <div
+                className={cn(
+                  !isMobile && 'flex-[1_1_263px]',
+                  !isPreviewMode &&
+                    !isFocusMode &&
+                    isNavbarVisible &&
+                    '-mt-[1.5rem] md:!mt-[0.8rem]',
+                  isPreviewMode && 'md:!mt-[1rem]',
+                  { 'md:!mt-[0.7rem]': !isPreviewMode && !isFocusMode },
+                  {
+                    '-mt-[1.5rem] md:!mt-[0.7rem]':
+                      !isNavbarVisible && !isPreviewMode,
+                  },
+                  isFocusMode && 'mt-[48px]',
+                  isFocusMode && !showTOC && shouldHideRight && 'hidden',
+                )}
+              ></div>
             </div>
-
-            {!shouldHideRight && !isMobile && (
-              <div className="flex-[1_1_263px]"></div>
-            )}
 
             {showCommentButton && !isNativeMobile && (
               <Button
@@ -1015,8 +1071,9 @@ const DdocEditor = forwardRef(
         >
           <div
             id="editor-canvas"
+            onMouseDown={handleFocusModeMouseDown}
             className={cn(
-              'h-[100%] flex w-full custom-scrollbar overflow-hidden relative',
+              'h-[100%] flex w-full overflow-auto relative',
               !isPreviewMode &&
                 !isFocusMode &&
                 (isNavbarVisible ? 'mt-[6.7rem]' : 'mt-[3.3rem]'),
@@ -1024,7 +1081,7 @@ const DdocEditor = forwardRef(
               !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
               editorCanvasClassNames,
             )}
-            style={getBackgroundStyle()}
+            style={!isFocusMode ? getBackgroundStyle() : undefined}
           >
             <nav
               id="Navbar"

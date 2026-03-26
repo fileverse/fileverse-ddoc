@@ -4,7 +4,7 @@ import {
   LucideIcon,
   Tooltip,
 } from '@fileverse/ui';
-import type { Dispatch, SetStateAction } from 'react';
+import { useEffect, type Dispatch, type SetStateAction } from 'react';
 import type { DdocProps } from '../types';
 import { zoomLevels } from '../constants/zoom';
 
@@ -27,6 +27,9 @@ export const FullScreenToolbar = ({
   setShowTOC,
   toggleFocusMode,
 }: FullScreenToolbarProps) => {
+  useEffect(() => {
+    setShowTOC?.(false);
+  }, []);
   return (
     <div className="fixed right-[24px] z-[9] items-center flex gap-[4px] top-[24px]">
       <DynamicDropdownV2
