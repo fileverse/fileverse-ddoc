@@ -47,7 +47,7 @@ import {
   getResponsiveThemeTextColor,
   getThemeStyle,
 } from './utils/document-styling';
-import { useFocusMode } from './hooks/use-fullscreen-mode';
+import { useFocusMode } from './hooks/use-focus-mode';
 import { FullScreenToolbar } from './components/fullscreen-toolbar';
 import { mergeTabAwareYjsUpdates } from './components/tabs/utils/tab-utils';
 

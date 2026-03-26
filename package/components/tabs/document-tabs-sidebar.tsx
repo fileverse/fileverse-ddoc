@@ -21,7 +21,7 @@ import { Editor } from '@tiptap/core';
 import * as Y from 'yjs';
 import { createPortal } from 'react-dom';
 import { ConfirmDeleteModal } from './confirm-delete-modal';
-import { useFocusMode } from '../../hooks/use-fullscreen-mode';
+import { useFocusMode } from '../../hooks/use-focus-mode';
 
 export interface DocumentTabsSidebarProps {
   tabs: Tab[];
