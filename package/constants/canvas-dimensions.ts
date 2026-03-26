@@ -34,16 +34,16 @@ export const CANVAS_DIMENSIONS = {
     '0.5': { width: 700, minHeight: '150%' },
     '0.75': { width: 800, minHeight: '200%' },
     '1': { width: 850, minHeight: '100%' },
-    '1.4': { width: '70%', minHeight: '200%' }, // Overridden by getDimensionStyles for scaling
-    '1.5': { width: 1062.5, minHeight: '100%' },
-    '2': { width: 1548, minHeight: undefined },
+    '1.4': { width: 1190, minHeight: '140%' },
+    '1.5': { width: 1275, minHeight: '150%' },
+    '2': { width: 1700, minHeight: '200%' },
   },
   landscape: {
     '0.5': { width: 980, minHeight: '150%' },
     '0.75': { width: 1135, minHeight: '200%' },
     '1': { width: 1190, minHeight: '100%' },
-    '1.4': { width: '90%', minHeight: '200%' }, // Overridden by getDimensionStyles for scaling
-    '1.5': { width: 1487.5, minHeight: '100%' },
-    '2': { width: 2166, minHeight: undefined },
+    '1.4': { width: 1666, minHeight: '140%' },
+    '1.5': { width: 1785, minHeight: '150%' },
+    '2': { width: 2380, minHeight: '200%' },
   },
 } as const;

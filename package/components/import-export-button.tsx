@@ -109,7 +109,7 @@ const ImportExportButton = ({
             <IconButton
               icon="File"
               variant="ghost"
-              size="md"
+              size="sm"
               isActive={fileExportsOpen}
               className={cn(
                 'color-text-default',
