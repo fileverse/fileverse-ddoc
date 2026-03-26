@@ -6,7 +6,6 @@ dDocs enables secure, real-time and asynchronous collaboration without compromis
 
 <img width="2308" height="1458" alt="image" src="https://github.com/user-attachments/assets/32875e2e-b30b-431b-bbb6-74ce96f21141" />
 
-
 This repository contains:
 
 - `/package` – The core package code.
@@ -35,16 +34,16 @@ This package requires the following peer dependencies to be installed in your pr
 npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities @fileverse/ui @fileverse/crypto viem framer-motion frimousse
 ```
 
-| Package | Version |
-| --- | --- |
-| `@dnd-kit/core` | `>=6.3.1` |
-| `@dnd-kit/sortable` | `>=10.0.0` |
-| `@dnd-kit/utilities` | `>=3.2.2` |
-| `@fileverse/ui` | `>=5.0.0` |
-| `@fileverse/crypto` | `>=0.0.21` |
-| `viem` | `>=2.13.8` |
-| `framer-motion` | `>=11.2.10` |
-| `frimousse` | `>=0.3.0` |
+| Package              | Version     |
+| -------------------- | ----------- |
+| `@dnd-kit/core`      | `>=6.3.1`   |
+| `@dnd-kit/sortable`  | `>=10.0.0`  |
+| `@dnd-kit/utilities` | `>=3.2.2`   |
+| `@fileverse/ui`      | `>=5.0.0`   |
+| `@fileverse/crypto`  | `>=0.0.21`  |
+| `viem`               | `>=2.13.8`  |
+| `framer-motion`      | `>=11.2.10` |
+| `frimousse`          | `>=0.3.0`   |
 
 These are externalized from the bundle to avoid duplication when your app already uses them. If you don't have them installed, npm (v7+) will auto-install them for you.
 
@@ -87,17 +86,17 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 
 ## UI/UX Props
 
-| Property                | Type                                      | Description                          |
-| ----------------------- | ----------------------------------------- | ------------------------------------ |
-| `zoomLevel`             | `string`                                  | Current zoom level of the editor     |
-| `setZoomLevel`          | `React.Dispatch<SetStateAction<string>>`  | Function to update zoom level        |
-| `isNavbarVisible`       | `boolean`                                 | Controls navbar visibility           |
-| `setIsNavbarVisible`    | `React.Dispatch<SetStateAction<boolean>>` | Function to toggle navbar visibility |
-| `renderNavbar`          | `() => JSX.Element`                       | Custom navbar renderer               |
-| `renderThemeToggle`     | `() => JSX.Element`                       | Custom theme toggle renderer         |
-| `isPresentationMode`    | `boolean`                                 | Controls presentation mode           |
-| `setIsPresentationMode` | `React.Dispatch<SetStateAction<boolean>>` | Function to toggle presentation mode |
-| `sharedSlidesLink`      | `string`                                  | Link for shared presentation slides  |
+| Property                | Type                                      | Description                            |
+| ----------------------- | ----------------------------------------- | -------------------------------------- |
+| `zoomLevel`             | `string`                                  | Current zoom level of the editor       |
+| `setZoomLevel`          | `React.Dispatch<SetStateAction<string>>`  | Function to update zoom level          |
+| `isNavbarVisible`       | `boolean`                                 | Controls navbar visibility             |
+| `setIsNavbarVisible`    | `React.Dispatch<SetStateAction<boolean>>` | Function to toggle navbar visibility   |
+| `renderNavbar`          | `() => JSX.Element`                       | Custom navbar renderer                 |
+| `renderThemeToggle`     | `() => JSX.Element`                       | Custom theme toggle renderer           |
+| `isPresentationMode`    | `boolean`                                 | Controls presentation mode             |
+| `setIsPresentationMode` | `React.Dispatch<SetStateAction<boolean>>` | Function to toggle presentation mode   |
+| `sharedSlidesLink`      | `string`                                  | Link for shared presentation slides    |
 | `documentStyling`       | `DocumentStyling`                         | Custom styling for document appearance |
 
 ## Document Styling
@@ -111,27 +110,27 @@ interface ThemeVariantValue {
 }
 
 interface DocumentStyling {
-  /** 
+  /**
    * Background styling for the outer document area.
    * Supports CSS background values including gradients.
    * Example: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
    */
   background?: string | ThemeVariantValue;
-  
-  /** 
+
+  /**
    * Background color for the editor canvas/content area.
    * Should be a solid color value.
    * Example: "#ffffff" or "rgb(255, 255, 255)"
    */
   canvasBackground?: string | ThemeVariantValue;
-  
-  /** 
+
+  /**
    * Text color for the editor content.
    * Example: "#333333" or "rgb(51, 51, 51)"
    */
   textColor?: string | ThemeVariantValue;
-  
-  /** 
+
+  /**
    * Font family for the editor content.
    * Example: "Inter, sans-serif" or "'Times New Roman', serif"
    */
@@ -145,12 +144,12 @@ interface DocumentStyling {
 <DdocEditor
   documentStyling={{
     background: {
-      light: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-      dark: "linear-gradient(135deg, #2a3145 0%, #3a2f59 100%)",
+      light: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+      dark: 'linear-gradient(135deg, #2a3145 0%, #3a2f59 100%)',
     },
-    canvasBackground: { light: "#ffffff", dark: "#1e1f22" },
-    textColor: { light: "#333333", dark: "#e8ebec" },
-    fontFamily: "Inter, sans-serif"
+    canvasBackground: { light: '#ffffff', dark: '#1e1f22' },
+    textColor: { light: '#333333', dark: '#e8ebec' },
+    fontFamily: 'Inter, sans-serif',
   }}
   // ... other props
 />
@@ -185,29 +184,28 @@ interface DocumentStyling {
 
 ## Utility Props
 
-| Property               | Type                                     | Description                  |
-| ---------------------- | ---------------------------------------- | ---------------------------- |
-| `setCharacterCount`    | `React.Dispatch<SetStateAction<number>>` | Updates character count      |
-| `setWordCount`         | `React.Dispatch<SetStateAction<number>>` | Updates word count           |
-| `ensResolutionUrl`     | `string`                                 | URL for ENS name resolution  |
-| `ipfsImageUploadFn` | ` (file: File) => Promise<IpfsImageUploadResponse>`                                 | function for secure image uploads |
-| `ipfsImageFetchFn` | ` (_data: IpfsImageFetchPayload) => Promise<{ url: string;file: File;}>`                                 | function for fetch secure image from IPFS |
-| `onError`              | `(error: string) => void`                | General error handler        |
-| `onInlineComment`      | `() => void`                             | Callback for inline comments |
-| `onMarkdownExport`     | `() => void`                             | Callback for markdown export |
-| `onMarkdownImport`     | `() => void`                             | Callback for markdown import |
-| `onPdfExport`          | `() => void`                             | Callback for pdf export      |
-| `onSlidesShare`        | `() => void`                             | Callback for slides sharing  |
-| `onComment`            | `() => void`                             | General comment callback     |
-
+| Property            | Type                                                                     | Description                               |
+| ------------------- | ------------------------------------------------------------------------ | ----------------------------------------- |
+| `setCharacterCount` | `React.Dispatch<SetStateAction<number>>`                                 | Updates character count                   |
+| `setWordCount`      | `React.Dispatch<SetStateAction<number>>`                                 | Updates word count                        |
+| `ensResolutionUrl`  | `string`                                                                 | URL for ENS name resolution               |
+| `ipfsImageUploadFn` | ` (file: File) => Promise<IpfsImageUploadResponse>`                      | function for secure image uploads         |
+| `ipfsImageFetchFn`  | ` (_data: IpfsImageFetchPayload) => Promise<{ url: string;file: File;}>` | function for fetch secure image from IPFS |
+| `onError`           | `(error: string) => void`                                                | General error handler                     |
+| `onInlineComment`   | `() => void`                                                             | Callback for inline comments              |
+| `onMarkdownExport`  | `() => void`                                                             | Callback for markdown export              |
+| `onMarkdownImport`  | `() => void`                                                             | Callback for markdown import              |
+| `onPdfExport`       | `() => void`                                                             | Callback for pdf export                   |
+| `onSlidesShare`     | `() => void`                                                             | Callback for slides sharing               |
+| `onComment`         | `() => void`                                                             | General comment callback                  |
 
 ## AI Writer Props
 
-| Property           | Type      | Description                                    |
-| ------------------ | --------- | ---------------------------------------------- |
+| Property           | Type          | Description                                     |
+| ------------------ | ------------- | ----------------------------------------------- |
 | `activeModel`      | `CustomModel` | Currently selected AI model for text generation |
-| `maxTokens`        | `number`   | Maximum token limit for AI-generated content    |
-| `isAIAgentEnabled` | `boolean`  | Toggle for AI agent functionality               |
+| `maxTokens`        | `number`      | Maximum token limit for AI-generated content    |
+| `isAIAgentEnabled` | `boolean`     | Toggle for AI agent functionality               |
 
 ### Steps to run this example locally
 
