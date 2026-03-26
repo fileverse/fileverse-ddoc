@@ -425,7 +425,7 @@ export const CommentDropdown = ({
 
       <div
         ref={commentsContainerRef}
-        className="max-h-[224px] overflow-y-auto no-scrollbar"
+        className="max-h-[calc(100vh-350px)] overflow-y-auto no-scrollbar"
       >
         <CommentCard
           username={activeComment?.username}
