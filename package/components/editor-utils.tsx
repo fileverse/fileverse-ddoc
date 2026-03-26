@@ -2208,7 +2208,7 @@ export const TextFormatingPopup = ({
                     },
                   )}
                 >
-                  <LucideIcon name={textStyle.icon} size="md" />
+                  <LucideIcon name={textStyle.icon} size="sm" />
                 </button>
               ))}
             </div>
@@ -2226,7 +2226,7 @@ export const TextFormatingPopup = ({
                     },
                   )}
                 >
-                  <LucideIcon name={textStyle.icon} size="md" />
+                  <LucideIcon name={textStyle.icon} size="sm" />
                 </button>
               ))}
             </div>

@@ -21,6 +21,7 @@ import { Editor } from '@tiptap/core';
 import * as Y from 'yjs';
 import { createPortal } from 'react-dom';
 import { ConfirmDeleteModal } from './confirm-delete-modal';
+import { useFocusMode } from '../../hooks/use-focus-mode';
 
 export interface DocumentTabsSidebarProps {
   tabs: Tab[];
@@ -169,6 +170,8 @@ export const TabSidebar = ({
 
   const shouldExpand = !showTOC && isHovered;
 
+  const { isFocusMode } = useFocusMode();
+
   return (
     <>
       <DndContext
@@ -202,51 +205,57 @@ export const TabSidebar = ({
               !hasToC && 'hidden',
               isVersionHistoryMode
                 ? 'top-[16px] max-h-[calc(100vh-32px)]'
-                : isPreviewMode
-                  ? 'top-[70px] max-h-[calc(100vh-86px)]'
-                  : 'top-[124px] max-h-[calc(100vh-140px)]',
-              !isVersionHistoryMode && 'fixed',
+                : isFocusMode
+                  ? 'top-[48px] max-h-[calc(100vh-140px)]'
+                  : isPreviewMode
+                    ? 'top-[70px] max-h-[calc(100vh-86px)]'
+                    : 'top-[124px] max-h-[calc(100vh-140px)]',
             )}
           >
-            <Tooltip
-              text={
-                showTOC ? 'Hide tabs and outlines' : 'Show tabs and outlines'
-              }
-              position="right"
-            >
-              <button
-                data-testid="tab-sidebar-toggle"
-                type="button"
-                onMouseEnter={() => !showTOC && setIsHovered(true)}
-                onMouseLeave={() => setIsHovered(false)}
-                onClick={() => setShowTOC?.((prev) => !prev)}
-                className={cn(
-                  'group flex items-center h-[30px]  !min-w-[30px]  min-h-[30px] p-[8px] rounded-[4px] hover:color-bg-secondary-hover transition-[width,background-color] duration-200 ease-out overflow-hidden',
-                  !showTOC && 'hover:min-w-[156px] gap-[8px]',
-                  tabs.length > 0 && !showTOC && 'color-bg-default-hover',
-                )}
+            {(!isFocusMode || showTOC) && (
+              <Tooltip
+                text={
+                  showTOC ? 'Hide tabs and outlines' : 'Show tabs and outlines'
+                }
+                position="right"
               >
-                <LucideIcon
-                  name={showTOC ? 'ChevronLeft' : 'List'}
-                  className="!w-[16px]"
-                />
-
-                <span
+                <button
+                  data-testid="tab-sidebar-toggle"
+                  type="button"
+                  onMouseEnter={() => !showTOC && setIsHovered(true)}
+                  onMouseLeave={() => setIsHovered(false)}
+                  onClick={() => setShowTOC?.((prev) => !prev)}
                   className={cn(
-                    `whitespace-nowrap text-heading-xsm color-text-default max-w-[110px] truncate transition-opacity duration-150`,
-                    tabs.length === 1 && !shouldExpand && !showTOC && 'hidden',
+                    'group flex items-center h-[30px]  !min-w-[30px]  min-h-[30px] p-[8px] rounded-[4px] hover:color-bg-secondary-hover transition-[width,background-color] duration-200 ease-out overflow-hidden',
+                    !showTOC && 'hover:min-w-[156px] gap-[8px]',
+                    tabs.length > 0 && !showTOC && 'color-bg-default-hover',
                   )}
                 >
-                  {!shouldExpand
-                    ? showTOC
-                      ? null
-                      : tabs.length > 1
-                        ? tabs.length
-                        : null
-                    : activeTab?.name}
-                </span>
-              </button>
-            </Tooltip>
+                  <LucideIcon
+                    name={showTOC ? 'ChevronLeft' : 'List'}
+                    className="!w-[16px]"
+                  />
+
+                  <span
+                    className={cn(
+                      `whitespace-nowrap text-heading-xsm color-text-default max-w-[110px] truncate transition-opacity duration-150`,
+                      tabs.length === 1 &&
+                        !shouldExpand &&
+                        !showTOC &&
+                        'hidden',
+                    )}
+                  >
+                    {!shouldExpand
+                      ? showTOC
+                        ? null
+                        : tabs.length > 1
+                          ? tabs.length
+                          : null
+                      : activeTab?.name}
+                  </span>
+                </button>
+              </Tooltip>
+            )}
 
             {showTOC && (
               <div className="flex flex-col gap-[8px] mt-[16px] w-full min-h-0 flex-1">
