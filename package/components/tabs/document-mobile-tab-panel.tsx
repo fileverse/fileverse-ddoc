@@ -35,6 +35,7 @@ export interface DocumentMobileTabPanelProps {
   tabConfig?: DocumentOutlineProps['tabConfig'];
   isVersionHistoryMode: boolean;
   isConnected?: boolean;
+  isFocusMode?: boolean;
 }
 
 export const DocumentMobileTabPanel = ({
@@ -54,6 +55,7 @@ export const DocumentMobileTabPanel = ({
   tabConfig,
   isVersionHistoryMode,
   isConnected,
+  isFocusMode,
 }: DocumentMobileTabPanelProps) => {
   const [showContent, setShowContent] = useState(false);
   const [pendingDeleteTab, setPendingDeleteTab] = useState<Tab | null>(null);
@@ -208,7 +210,9 @@ export const DocumentMobileTabPanel = ({
       style={{
         bottom: isVersionHistoryMode
           ? 'var(--version-sheet-bottom, 24px)'
-          : '24px',
+          : isFocusMode
+            ? '0px'
+            : '24px',
       }}
     >
       <div

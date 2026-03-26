@@ -730,6 +730,7 @@ const DdocEditor = forwardRef(
                   tabCommentCounts={tabCommentCounts}
                   tabConfig={tabConfig}
                   isConnected={isConnected}
+                  isFocusMode={isFocusMode}
                 />
               )}
             </div>
