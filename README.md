@@ -188,6 +188,7 @@ interface DocumentStyling {
 | ------------------- | ------------------------------------------------------------------------ | ----------------------------------------- |
 | `setCharacterCount` | `React.Dispatch<SetStateAction<number>>`                                 | Updates character count                   |
 | `setWordCount`      | `React.Dispatch<SetStateAction<number>>`                                 | Updates word count                        |
+| `setPageCount`      | `React.Dispatch<SetStateAction<number>>`                                 | Updates approx. export page count         |
 | `ensResolutionUrl`  | `string`                                                                 | URL for ENS name resolution               |
 | `ipfsImageUploadFn` | ` (file: File) => Promise<IpfsImageUploadResponse>`                      | function for secure image uploads         |
 | `ipfsImageFetchFn`  | ` (_data: IpfsImageFetchPayload) => Promise<{ url: string;file: File;}>` | function for fetch secure image from IPFS |
