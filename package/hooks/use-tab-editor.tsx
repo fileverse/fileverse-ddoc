@@ -599,8 +599,8 @@ export const useTabEditor = ({
       return;
     }
 
-    // Create one page counter per mounted editor, else sibling editors can clobber
-    // the same hidden measurement surface.
+    // Keep the measurement iframe scoped to this mounted hook instance, else
+    // separate editor mounts can clobber the same hidden measurement surface.
     const pageCounter = createPageCounter();
     pageCounterRef.current = pageCounter;
 
@@ -646,7 +646,7 @@ export const useTabEditor = ({
               pageCountIdleTaskRef.current = null;
 
               pageCounter
-                .estimatePageCount(html)
+                .getPageCount(html)
                 .then((pageCount) => {
                   if (
                     requestId === pageCountRequestIdRef.current &&

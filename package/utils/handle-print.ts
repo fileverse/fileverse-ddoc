@@ -235,7 +235,7 @@ const CONTENT_PRINT_KATEX_OPTIONS = {
 };
 
 interface PageCounter {
-  estimatePageCount: (content: string) => Promise<number>;
+  getPageCount: (content: string) => Promise<number>;
   destroy: () => void;
 }
 
@@ -512,7 +512,7 @@ export const createPageCounter = (): PageCounter => {
   let latestRequestId = 0;
 
   return {
-    estimatePageCount: async (content: string): Promise<number> => {
+    getPageCount: async (content: string): Promise<number> => {
       const requestId = ++latestRequestId;
 
       const sections = splitContentIntoPrintSections(content); // preserve page-break semantics, else page count diverges from print/export.
