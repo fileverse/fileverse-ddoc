@@ -736,7 +736,10 @@ const DdocEditor = forwardRef(
                 />
               )}
             </div>
-            <div className={cn('flex w-full overflow-auto')}>
+            <div
+              data-editor-scroll-container="true"
+              className={cn('flex w-full overflow-auto')}
+            >
               <div className="w-full h-full">
                 <div
                   className={cn('flex min-h-[100%]', !isMobile && 'min-w-max')}
