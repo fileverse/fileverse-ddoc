@@ -34,6 +34,7 @@ import { getCurrentFontFamily } from '../utils/get-current-font-family';
 import EditorToolbarDropdown from './editor-toolbar-dropdown';
 import { Tab } from './tabs/utils/tab-utils';
 import * as Y from 'yjs';
+import { zoomLevels } from '../constants/zoom';
 const MemoizedFontSizePicker = React.memo(FontSizePicker);
 const MemoizedLineHeightPicker = React.memo(LineHeightPicker);
 
@@ -58,6 +59,7 @@ const TiptapToolBar = ({
   tabs,
   ydoc,
   onRegisterExportTrigger,
+  toggleFocusMode,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -80,6 +82,7 @@ const TiptapToolBar = ({
   isConnected?: boolean;
   tabs: Tab[];
   ydoc: Y.Doc;
+  toggleFocusMode?: () => void;
   onRegisterExportTrigger?:
     | ((trigger: ((format?: string, name?: string) => void) | null) => void)
     | undefined;
@@ -120,14 +123,6 @@ const TiptapToolBar = ({
   const isBelow1160px = useMediaQuery('(max-width: 1160px)');
   const isBelow1030px = useMediaQuery('(max-width: 1030px)');
 
-  const zoomLevels = [
-    { title: 'Fit', value: '1.4' },
-    { title: '50%', value: '0.5' },
-    { title: '75%', value: '0.75' },
-    { title: '100%', value: '1' },
-    { title: '150%', value: '1.5' },
-    { title: '200%', value: '2' },
-  ];
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [currentFont, setCurrentFont] = useState('Default');
   const activeFont = fonts.find((f) => f.value === currentFont);
@@ -247,7 +242,7 @@ const TiptapToolBar = ({
                     {isLoading
                       ? fadeInTransition(
                           <Skeleton
-                            className={`w-[36px] h-[36px] rounded-sm`}
+                            className={`w-[30px] h-[30px] rounded-sm`}
                           />,
                           'redo-skeleton-transition',
                         )
@@ -257,7 +252,7 @@ const TiptapToolBar = ({
                             variant={'ghost'}
                             icon={tool.icon}
                             onClick={() => tool.onClick()}
-                            size="md"
+                            size="sm"
                             disabled={!tool.isActive}
                           />,
                           'redo-tool-transition',
@@ -292,7 +287,7 @@ const TiptapToolBar = ({
                   onClose={() => setDropdownOpen(false)}
                   anchorTrigger={
                     <button
-                      className="bg-transparent hover:!color-bg-default-hover rounded p-2 flex items-center justify-center gap-2 w-[78px]"
+                      className="bg-transparent hover:!color-bg-default-hover rounded p-2 h-[30px] flex items-center justify-center gap-2 w-[78px]"
                       onClick={() => {
                         setDropdownOpen((prev) => !prev);
                         setFileExportsOpen(false);
@@ -339,7 +334,7 @@ const TiptapToolBar = ({
                   sideOffset={8}
                   anchorTrigger={
                     <button
-                      className="bg-transparent hover:!color-bg-default-hover rounded p-2 flex items-center justify-center gap-2 w-[85px]"
+                      className="bg-transparent hover:!color-bg-default-hover rounded p-2 h-[30px] flex items-center justify-center gap-2 w-[85px]"
                       onClick={() => setToolVisibility(IEditorTool.FONT_FAMILY)}
                     >
                       <span
@@ -381,7 +376,7 @@ const TiptapToolBar = ({
                   sideOffset={8}
                   anchorTrigger={
                     <button
-                      className="bg-transparent hover:!color-bg-default-hover rounded gap-2 p-2 flex items-center justify-between w-[108px]"
+                      className="bg-transparent hover:!color-bg-default-hover rounded gap-2 p-2 h-[30px] flex items-center justify-between w-[108px]"
                       onClick={() => setToolVisibility(IEditorTool.HEADING)}
                     >
                       <span className="text-body-sm-bold line-clamp-1">
@@ -419,7 +414,7 @@ const TiptapToolBar = ({
                   sideOffset={8}
                   anchorTrigger={
                     <button
-                      className="bg-transparent hover:!color-bg-default-hover rounded gap-2 py-2 px-1 flex items-center justify-center w-[52px]"
+                      className="bg-transparent hover:!color-bg-default-hover rounded gap-2 h-[30px] py-2 px-1 flex items-center justify-center w-[52px]"
                       onClick={() => setToolVisibility(IEditorTool.FONT_SIZE)}
                     >
                       <span className="text-body-sm-bold line-clamp-1">
@@ -506,7 +501,7 @@ const TiptapToolBar = ({
                               id="more-dropdown"
                               icon="Ellipsis"
                               variant="ghost"
-                              size="md"
+                              size="sm"
                             />
                           </Tooltip>
                         }
@@ -539,6 +534,7 @@ const TiptapToolBar = ({
                                 return (
                                   <ToolbarButton
                                     key={moreTool.title}
+                                    size="sm"
                                     icon={moreTool.icon}
                                     onClick={moreTool.onClick || (() => {})}
                                     isActive={moreTool.isActive || false}
@@ -580,6 +576,7 @@ const TiptapToolBar = ({
                       <ToolbarButton
                         icon={tool.icon}
                         onClick={tool.onClick}
+                        size="sm"
                         isActive={tool.isActive}
                       />
                     </Tooltip>,
@@ -594,6 +591,14 @@ const TiptapToolBar = ({
         </div>
         <div className="flex items-center gap-1">
           <div className="w-[1px] h-4 vertical-divider mx-2"></div>
+          <Tooltip text="Enter focus mode">
+            <IconButton
+              icon={'Maximize'}
+              size="sm"
+              variant="ghost"
+              onClick={toggleFocusMode}
+            />
+          </Tooltip>
           {isLoading
             ? fadeInTransition(
                 <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
@@ -601,7 +606,7 @@ const TiptapToolBar = ({
               )
             : slideUpTransition(
                 <IconButton
-                  size="md"
+                  size="sm"
                   variant="ghost"
                   icon={isNavbarVisible ? 'ChevronUp' : 'ChevronDown'}
                   onClick={() => setIsNavbarVisible((prev) => !prev)}

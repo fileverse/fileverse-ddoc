@@ -7,6 +7,7 @@ import { useState, useMemo, useCallback, memo, useRef, useEffect } from 'react';
 import { ToCProps, ToCItemProps, ToCItemType } from './types';
 import { useMediaQuery } from 'usehooks-ts';
 import { headingToSlug } from '../../utils/heading-to-slug';
+import { getEditorScrollContainer } from '../../utils/get-editor-scroll-container';
 
 // Memoize the ToC item to prevent unnecessary re-renders
 export const ToCItem = memo(
@@ -321,26 +322,10 @@ export const ToC = memo(
             tr.setSelection(new TextSelection(tr.doc.resolve(pos)));
             editor.view.dispatch(tr);
 
-            // Prefer the main editor canvas so outline interactions only scroll editor content.
-            const editorCanvas = document.getElementById('editor-canvas');
-
-            // Find all possible scroll containers
-            const possibleContainers = [
-              editorCanvas,
-              document.querySelector('.ProseMirror'),
-              element.closest('.ProseMirror'),
-              element.closest('[class*="editor"]'),
-              editor.view.dom.parentElement,
-            ].filter(Boolean);
-
-            // Find the first scrollable container
-            const scrollContainer = possibleContainers.find(
-              (container) =>
-                container &&
-                (container.scrollHeight > container.clientHeight ||
-                  window.getComputedStyle(container).overflow === 'auto' ||
-                  window.getComputedStyle(container).overflowY === 'auto'),
-            );
+            const scrollContainer = getEditorScrollContainer({
+              targetElement: element,
+              editorRoot: editor.view.dom as HTMLElement,
+            });
 
             if (scrollContainer) {
               // Use requestAnimationFrame to ensure DOM updates are complete

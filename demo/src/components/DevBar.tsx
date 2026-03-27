@@ -7,6 +7,7 @@ interface DevBarProps {
   activeTabId: string;
   tabCount: number;
   characterCount: number;
+  pageCount: number;
   wordCount: number;
   collabStatus: string;
   lastSavedAt: number | null;
@@ -31,6 +32,7 @@ export function DevBar({
   activeTabId,
   tabCount,
   characterCount,
+  pageCount,
   wordCount,
   collabStatus,
   lastSavedAt,
@@ -97,6 +99,10 @@ export function DevBar({
       <Separator />
       <span title="Character count">
         <strong>chars:</strong> {characterCount.toLocaleString()}
+      </span>
+      <Separator />
+      <span title="Character count">
+        <strong>page:</strong> {pageCount.toLocaleString()}
       </span>
       <Separator />
       <span title="Word count">

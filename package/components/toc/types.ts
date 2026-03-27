@@ -60,4 +60,5 @@ export interface DocumentOutlineProps {
   };
   deleteTab?: (tabId: string) => void;
   isConnected?: boolean;
+  isFocusMode?: boolean;
 }

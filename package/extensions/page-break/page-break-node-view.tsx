@@ -11,7 +11,7 @@ export const PageBreakNodeView: React.FC<NodeViewProps> = ({
   deleteNode,
 }) => {
   const { isPreviewMode } = useEditingContext();
-  const { documentStyling, theme } = useEditorContext();
+  const { documentStyling, theme, isFocusMode } = useEditorContext();
   const handleDeleteNode = () => {
     editor.commands.unsetPageBreak();
     deleteNode();
@@ -39,35 +39,60 @@ export const PageBreakNodeView: React.FC<NodeViewProps> = ({
         data-page-break="true"
         style={{ pageBreakAfter: 'always' }}
       />
-      {!isPreviewMode && (
-        <div className="opacity-0 hover:opacity-100 transition-opacity duration-200">
-          <div className="absolute top-[-15px] left-0 right-0 h-4">
-            <div
-              className="absolute inset-0 border-b-1 border-transparent"
-              style={{
-                background:
-                  'linear-gradient(to bottom, transparent, #FFDF0A33)',
-              }}
-            ></div>
-          </div>
+      {isFocusMode ? (
+        <div className="flex group items-center cursor-pointer gap-4 w-[221px] h-[36px]">
+          {/* Left line */}
+          <div className="flex-1 h-px w-[64px]  bg-gradient-to-l from-[#E8EBEC] to-transparent" />
 
-          <Tooltip sideOffset={5} position="bottom" text="Remove page breaker">
-            <LucideIcon
-              name="PageBreakRemove"
-              onClick={handleDeleteNode}
-              className="color-text-secondary cursor-pointer"
-            />
-          </Tooltip>
-          <div className="absolute bottom-[-15px] left-0 right-0 h-4">
-            <div
-              className="absolute inset-0 border-b-1 border-transparent"
-              style={{
-                background:
-                  'linear-gradient(to bottom, #FFDF0A33, transparent)',
-              }}
-            ></div>
-          </div>
+          {/* Label */}
+          <span className="text-helper-text-sm group-hover:hidden color-text-secondary whitespace-nowrap">
+            Page break
+          </span>
+          <span
+            onClick={handleDeleteNode}
+            className="text-helper-text-sm hidden group-hover:inline  color-text-secondary whitespace-nowrap"
+          >
+            Remove
+          </span>
+
+          {/* Right line */}
+          <div className="flex-1 h-px w-[64px] bg-gradient-to-r from-[#E8EBEC] to-transparent" />
         </div>
+      ) : (
+        !isPreviewMode && (
+          <div className="opacity-0 hover:opacity-100 transition-opacity duration-200">
+            <div className="absolute top-[-15px] left-0 right-0 h-4">
+              <div
+                className="absolute inset-0 border-b-1 border-transparent"
+                style={{
+                  background:
+                    'linear-gradient(to bottom, transparent, #FFDF0A33)',
+                }}
+              ></div>
+            </div>
+
+            <Tooltip
+              sideOffset={5}
+              position="bottom"
+              text="Remove page breaker"
+            >
+              <LucideIcon
+                name="PageBreakRemove"
+                onClick={handleDeleteNode}
+                className="color-text-secondary cursor-pointer"
+              />
+            </Tooltip>
+            <div className="absolute bottom-[-15px] left-0 right-0 h-4">
+              <div
+                className="absolute inset-0 border-b-1 border-transparent"
+                style={{
+                  background:
+                    'linear-gradient(to bottom, #FFDF0A33, transparent)',
+                }}
+              ></div>
+            </div>
+          </div>
+        )
       )}
     </NodeViewWrapper>
   );

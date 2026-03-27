@@ -193,6 +193,7 @@ export interface DdocProps extends CommentAccountProps {
   onError?: (error: string) => void;
   setCharacterCount?: React.Dispatch<SetStateAction<number>>;
   setWordCount?: React.Dispatch<SetStateAction<number>>;
+  setPageCount?: React.Dispatch<SetStateAction<number>>;
   tags?: Array<{ name: string; color: string }>;
   className?: string;
   unFocused?: boolean;
@@ -200,6 +201,7 @@ export interface DdocProps extends CommentAccountProps {
   setIsPresentationMode?: React.Dispatch<SetStateAction<boolean>>;
   onComment?: () => void;
   onInlineComment?: () => void;
+  onFocusMode?: (isFocusMode: boolean) => void;
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
   onPdfExport?: () => void;

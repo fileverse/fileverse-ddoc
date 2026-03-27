@@ -1,3 +1,609 @@
+import renderMathInElement from 'katex/contrib/auto-render';
+
+const A4_HEIGHT_INCHES = 11.69;
+const A4_WIDTH_INCHES = 8.27;
+const PAGE_MARGIN_VERTICAL_INCHES = 0.25;
+const PAGE_MARGIN_HORIZONTAL_INCHES = 0.5;
+const CSS_DPI = 96;
+const CONTENT_PRINT_TITLE = 'Print Preview';
+const CONTENT_PRINT_MEASUREMENT_HOST_ID = 'content-print-measurement-host';
+const CONTENT_PRINT_RESOURCE_TIMEOUT_MS = 5000;
+const INTER_FONT_STYLESHEET_URL =
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap';
+const KATEX_STYLESHEET_URL =
+  'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css';
+const KATEX_SCRIPT_URL =
+  'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js';
+const KATEX_AUTORENDER_SCRIPT_URL =
+  'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js';
+
+const PRINTABLE_PAGE_WIDTH_PX = Math.floor(
+  (A4_WIDTH_INCHES - PAGE_MARGIN_HORIZONTAL_INCHES * 2) * CSS_DPI,
+);
+const PRINTABLE_PAGE_HEIGHT_PX = Math.floor(
+  (A4_HEIGHT_INCHES - PAGE_MARGIN_VERTICAL_INCHES * 2) * CSS_DPI,
+);
+
+const CONTENT_STYLES = `
+  .print-content-root {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+  }
+  .print-content-root img {
+    max-width: 100%;
+    height: auto;
+    aspect-ratio: auto;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .print-content-root h3 {
+    font-weight: 600;
+    color: #0D0D0D;
+    font-size: 20px;
+    line-height: 1.2;
+  }
+  .print-content-root p {
+    line-height: 1.5;
+    color: #0D0D0D;
+    font-size: 16px;
+  }
+  .print-content-root ul,
+  .print-content-root ol {
+    font-size: 16px;
+    line-height: 1.5;
+    margin: 0 0 16px 0;
+    padding-left: 24px;
+  }
+  .print-content-root input[type='checkbox'] {
+    -webkit-appearance: none;
+    appearance: none;
+    background-color: #fff;
+    margin: 0;
+    cursor: pointer;
+    width: 1.5em;
+    height: 1.5em;
+    position: relative;
+    border: 2px solid black;
+    margin-right: 0.5rem;
+    display: grid;
+    place-content: center;
+    font-family: 'Inter', sans-serif;
+  }
+  .print-content-root input[type='checkbox']::before {
+    content: '';
+    width: 1em;
+    height: 1em;
+    transform: scale(0);
+    transition: 120ms transform ease-in-out;
+    box-shadow: inset 1em 1em;
+    transform-origin: center;
+    clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+  }
+  .print-content-root input[type='checkbox']:checked::before {
+    transform: scale(1);
+  }
+  .print-content-root li:has(input[type="checkbox"]) {
+    list-style-type: none;
+    transform: translateX(-16px);
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+  }
+  .print-content-root ol {
+    list-style-type: decimal;
+  }
+  .print-content-root ol ol {
+    list-style-type: lower-latin;
+  }
+  .print-content-root ol ol ol {
+    list-style-type: lower-roman;
+  }
+  .print-content-root table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 16px 0;
+    font-size: 16px;
+  }
+  .print-content-root th {
+    background: #F8F9FA;
+    font-weight: 600;
+    text-align: left;
+  }
+  .print-content-root td,
+  .print-content-root th {
+    border: 1px solid #E8EBEC;
+    padding: 12px;
+  }
+  .print-content-root pre {
+    background: #F8F9FA;
+    padding: 16px;
+    border-radius: 4px;
+    font-family: monospace;
+    font-size: 12px;
+    margin: 16px 0;
+  }
+  .print-content-root blockquote {
+    border-left: 4px solid #E8EBEC;
+    margin: 16px 0;
+    padding-left: 16px;
+    font-style: italic;
+  }
+  .print-content-root [data-type="columns"] {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+  }
+  .print-content-root .katex {
+    font-size: 1.1em;
+  }
+  .print-content-root .katex-display {
+    margin: 1em 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+    text-align: center;
+  }
+  .print-content-root .katex-display > .katex {
+    display: inline-block;
+    text-align: initial;
+  }
+  .print-page {
+    page-break-after: always;
+    box-sizing: border-box;
+  }
+  .print-page:last-child {
+    page-break-after: auto;
+  }
+  .print-content-root .tab-title-page {
+    min-height: calc(${A4_HEIGHT_INCHES}in - ${PAGE_MARGIN_VERTICAL_INCHES * 2}in);
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+    text-align: left;
+    padding: 0 1rem;
+    box-sizing: border-box;
+  }
+  .print-content-root .tab-title-page__text {
+    margin: 0;
+    font-size: 36px;
+    line-height: 1.2;
+    font-weight: 600;
+    color: #0d0d0d;
+    word-break: break-word;
+  }
+`;
+
+const CONTENT_MEDIA_STYLES = `
+  @media print {
+    @page {
+      margin: ${PAGE_MARGIN_VERTICAL_INCHES}in ${PAGE_MARGIN_HORIZONTAL_INCHES}in;
+    }
+    html {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    body {
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+      margin: 0;
+    }
+    body:before,
+    body:after,
+    head:before,
+    head:after,
+    div:before,
+    div:after,
+    html:before,
+    html:after {
+      content: none !important;
+      display: none !important;
+    }
+  }
+`;
+
+const createMeasurementContentRoot = (
+  iframeDocument: Document,
+  host: HTMLDivElement,
+  sectionsHtml: string,
+) => {
+  const contentRoot = iframeDocument.createElement('div');
+
+  contentRoot.className = 'print-content-root';
+  contentRoot.style.cssText = `
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: ${PRINTABLE_PAGE_WIDTH_PX}px;
+    visibility: hidden;
+    pointer-events: none;
+  `;
+
+  contentRoot.innerHTML = sectionsHtml;
+
+  host.appendChild(contentRoot);
+
+  return contentRoot;
+};
+const CONTENT_PRINT_KATEX_OPTIONS = {
+  delimiters: [
+    { left: '$$', right: '$$', display: true },
+    { left: '$', right: '$', display: false },
+  ],
+  throwOnError: false,
+};
+
+interface PageCounter {
+  getPageCount: (content: string) => Promise<number>;
+  destroy: () => void;
+}
+
+interface ContentPrintMeasurementFrame {
+  iframe: HTMLIFrameElement;
+  iframeDocument: Document;
+  host: HTMLDivElement;
+}
+
+const getSectionHtml = (nodes: Node[]) => {
+  const sectionDiv = document.createElement('div');
+  nodes.forEach((node) => sectionDiv.appendChild(node));
+  return sectionDiv.innerHTML;
+};
+
+// Preserve explicit empty pages around manual breaks so the live estimate
+// matches what print/export will generate for trailing or consecutive breaks.
+export const splitContentIntoPrintSections = (content: string): string[] => {
+  const tempDiv = document.createElement('div');
+  tempDiv.innerHTML = content;
+
+  const sections: string[] = [];
+  let currentSectionContent: Node[] = [];
+  let endedWithPageBreak = false;
+
+  Array.from(tempDiv.childNodes).forEach((node) => {
+    const isPageBreak =
+      node instanceof HTMLElement &&
+      node.getAttribute('data-page-break') === 'true';
+
+    if (isPageBreak) {
+      sections.push(getSectionHtml(currentSectionContent));
+      currentSectionContent = [];
+      endedWithPageBreak = true;
+      return;
+    }
+
+    currentSectionContent.push(node);
+    endedWithPageBreak = false;
+  });
+
+  if (
+    currentSectionContent.length > 0 ||
+    endedWithPageBreak ||
+    sections.length === 0
+  ) {
+    sections.push(getSectionHtml(currentSectionContent));
+  }
+
+  return sections;
+};
+
+const getPrintSectionsHtml = (sections: string[]) =>
+  sections
+    .map(
+      (sectionContent) => `
+        <div class="print-page">
+            ${sectionContent}
+        </div>
+    `,
+    )
+    .join('');
+
+const contentLikelyContainsMath = (html: string) =>
+  CONTENT_PRINT_MATH_PATTERN.test(html) ||
+  html.includes('data-type="equation"') ||
+  html.includes('class="katex"') ||
+  html.includes('class="katex-display"');
+
+const CONTENT_PRINT_MATH_PATTERN = /(^|[^\\])\$(\$)?[\s\S]+?\$(\$)?/;
+
+// Both the browser print iframe and the measurement iframe should start from
+// the same head/styles so the live estimate stays aligned with export layout.
+const buildContentPrintHead = ({
+  includePrintMediaStyles = true,
+  includeMathScripts = false,
+  includeRemoteStylesheets = true,
+}: {
+  includePrintMediaStyles?: boolean;
+  includeMathScripts?: boolean;
+  includeRemoteStylesheets?: boolean;
+}) => `
+  <head>
+    ${
+      includeRemoteStylesheets
+        ? `
+    <link href="${INTER_FONT_STYLESHEET_URL}" rel="stylesheet" />
+    <link rel="stylesheet" href="${KATEX_STYLESHEET_URL}" />
+    `
+        : ''
+    }
+
+    ${
+      includeMathScripts
+        ? `
+    <script defer src="${KATEX_SCRIPT_URL}"></script>
+    <script defer src="${KATEX_AUTORENDER_SCRIPT_URL}"></script>
+    `
+        : ''
+    }
+
+    <title>${CONTENT_PRINT_TITLE}</title>
+    <style>
+      ${includePrintMediaStyles ? CONTENT_MEDIA_STYLES : ''}
+      ${CONTENT_STYLES}
+    </style>
+  </head>
+`;
+
+const buildContentPrintDocument = (sectionsHtml: string) => `
+  <!DOCTYPE html>
+  <html>
+    ${buildContentPrintHead({
+      includePrintMediaStyles: true,
+      includeMathScripts: true,
+    })}
+    <body>
+      <div class="print-content-root">
+        ${sectionsHtml}
+      </div>
+      <script>
+        window.onload = () => {
+          renderMathInElement(document.body, {
+            delimiters: [
+              { left: '$$', right: '$$', display: true },
+              { left: '$', right: '$', display: false }
+            ],
+            throwOnError: false
+          });
+
+          setTimeout(() => {
+            window.print();
+            window.onafterprint = () => {
+              window.close();
+            };
+          }, 100);
+        }
+      </script>
+    </body>
+  </html>
+`;
+
+const buildContentPrintMeasurementDocument = () => `
+  <!doctype html>
+  <html>
+    ${buildContentPrintHead({
+      includePrintMediaStyles: true,
+      includeRemoteStylesheets: false, // Do not block on fonts/stylesheets here, else typing becomes network-bound.
+    })}
+    <body>
+      <div id="${CONTENT_PRINT_MEASUREMENT_HOST_ID}"></div>
+    </body>
+  </html>
+`;
+
+const waitForAnimationFrame = (view: Window | null | undefined = window) =>
+  new Promise<void>((resolve) => {
+    const requestFrame = view?.requestAnimationFrame?.bind(view);
+
+    if (requestFrame) {
+      requestFrame(() => resolve());
+      return;
+    }
+
+    window.setTimeout(() => resolve(), 16);
+  });
+
+const waitForMeasurementImages = async (container: ParentNode) => {
+  const images = Array.from(container.querySelectorAll('img'));
+
+  if (images.length === 0) {
+    return;
+  }
+
+  await Promise.all(
+    images.map(
+      (image) =>
+        new Promise<void>((resolve) => {
+          if (image.complete) {
+            resolve();
+            return;
+          }
+
+          const ownerWindow = image.ownerDocument.defaultView ?? window;
+          const cleanup = () => {
+            image.removeEventListener('load', onLoad);
+            image.removeEventListener('error', onError);
+            ownerWindow.clearTimeout(timeoutId);
+          };
+
+          const onLoad = () => {
+            cleanup();
+            resolve();
+          };
+
+          const onError = () => {
+            cleanup();
+            resolve();
+          };
+
+          const timeoutId = ownerWindow.setTimeout(() => {
+            cleanup();
+            resolve();
+          }, CONTENT_PRINT_RESOURCE_TIMEOUT_MS);
+
+          image.addEventListener('load', onLoad, { once: true });
+          image.addEventListener('error', onError, { once: true });
+        }),
+    ),
+  );
+};
+
+const createMeasurementIframe = () => {
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.tabIndex = -1;
+  iframe.style.cssText = `
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    width: ${PRINTABLE_PAGE_WIDTH_PX}px;
+    height: ${PRINTABLE_PAGE_HEIGHT_PX}px;
+    visibility: hidden;
+    pointer-events: none;
+    border: 0;
+  `;
+  document.body.appendChild(iframe);
+
+  return iframe;
+};
+
+const createContentPrintMeasurementFrame = async (
+  iframe: HTMLIFrameElement,
+): Promise<ContentPrintMeasurementFrame> => {
+  const iframeDocument = iframe.contentDocument;
+
+  if (!iframeDocument) {
+    throw new Error('Unable to access print measurement iframe document.');
+  }
+
+  iframeDocument.open();
+  iframeDocument.write(buildContentPrintMeasurementDocument());
+  iframeDocument.close();
+
+  const host = iframeDocument.getElementById(
+    CONTENT_PRINT_MEASUREMENT_HOST_ID,
+  ) as HTMLDivElement | null;
+
+  if (!host) {
+    throw new Error('Unable to initialize print measurement host.');
+  }
+
+  // The host mirrors the printable page width so the estimated heights are
+  // based on export-style wrapping instead of the editor viewport.
+  host.style.cssText = `
+    position: relative;
+    width: ${PRINTABLE_PAGE_WIDTH_PX}px;
+    min-height: ${PRINTABLE_PAGE_HEIGHT_PX}px;
+    overflow: hidden;
+  `;
+
+  return {
+    iframe,
+    iframeDocument,
+    host,
+  };
+};
+
+export const createPageCounter = (): PageCounter => {
+  const iframe = createMeasurementIframe();
+  const framePromise = createContentPrintMeasurementFrame(iframe);
+
+  let isDestroyed = false;
+  let latestRequestId = 0;
+
+  return {
+    getPageCount: async (content: string): Promise<number> => {
+      const requestId = ++latestRequestId;
+
+      const sections = splitContentIntoPrintSections(content); // preserve page-break semantics, else page count diverges from print/export.
+
+      if (sections.length === 0 || isDestroyed) {
+        return 1;
+      }
+
+      let frame: ContentPrintMeasurementFrame;
+
+      try {
+        frame = await framePromise;
+      } catch {
+        return 1;
+      }
+
+      if (isDestroyed || requestId !== latestRequestId) {
+        return 1;
+      }
+
+      const sectionsHtml = getPrintSectionsHtml(sections);
+
+      // Create a fresh root per request, else concurrent estimates will
+      // measure and clear the same subtree.
+      const contentRoot = createMeasurementContentRoot(
+        frame.iframeDocument,
+        frame.host,
+        sectionsHtml,
+      );
+
+      try {
+        // Gate KaTeX work on the HTML, else every estimate pays the math
+        // rendering cost whether or not equations exist.
+        if (contentLikelyContainsMath(sectionsHtml)) {
+          renderMathInElement(contentRoot, CONTENT_PRINT_KATEX_OPTIONS);
+          await waitForAnimationFrame(frame.iframe.contentWindow);
+        }
+
+        if (isDestroyed || requestId !== latestRequestId) {
+          return 1;
+        }
+
+        // Wait for images before measuring, else late loads will undercount
+        // the section height.
+        await waitForMeasurementImages(contentRoot);
+
+        if (isDestroyed || requestId !== latestRequestId) {
+          return 1;
+        }
+
+        await waitForAnimationFrame(frame.iframe.contentWindow);
+
+        if (isDestroyed || requestId !== latestRequestId) {
+          return 1;
+        }
+
+        const sectionElements = Array.from(
+          contentRoot.querySelectorAll<HTMLElement>('.print-page'),
+        );
+
+        const pageCount = sectionElements.reduce((total, sectionElement) => {
+          const contentHeight = Math.max(
+            sectionElement.scrollHeight,
+            Math.ceil(sectionElement.getBoundingClientRect().height),
+          );
+
+          return (
+            total +
+            Math.max(1, Math.ceil(contentHeight / PRINTABLE_PAGE_HEIGHT_PX))
+          );
+        }, 0);
+
+        return Math.max(1, pageCount);
+      } finally {
+        if (contentRoot.parentNode) {
+          contentRoot.parentNode.removeChild(contentRoot);
+        }
+      }
+    },
+
+    destroy: () => {
+      isDestroyed = true;
+      latestRequestId += 1;
+
+      if (document.body.contains(iframe)) {
+        document.body.removeChild(iframe);
+      }
+    },
+  };
+};
+
 export const handlePrint = (slides: string[]) => {
   const slidesHTML = slides
     .map(
@@ -236,299 +842,10 @@ export const handlePrint = (slides: string[]) => {
 };
 
 export const handleContentPrint = (content: string) => {
-  const tempDiv = document.createElement('div');
-  tempDiv.innerHTML = content;
-
-  // Find all page breaks and split content
-  const pages: string[] = [];
-  let currentPageContent: Node[] = [];
-
-  // Iterate through all nodes
-  Array.from(tempDiv.childNodes).forEach((node) => {
-    if (
-      node instanceof HTMLElement &&
-      ((node.getAttribute('data-type') === 'page-break' &&
-        node.getAttribute('data-page-break') === 'true') ||
-        (node.tagName.toLowerCase() === 'br' &&
-          node.getAttribute('data-page-break') === 'true'))
-    ) {
-      // Only create a new page if we have content
-      if (currentPageContent.length > 0) {
-        const pageDiv = document.createElement('div');
-        currentPageContent.forEach((n) =>
-          pageDiv.appendChild(n.cloneNode(true)),
-        );
-        pages.push(pageDiv.innerHTML);
-        currentPageContent = [];
-      }
-      // Skip adding the page break element itself
-    } else {
-      currentPageContent.push(node.cloneNode(true));
-    }
-  });
-
-  // Add the last page if it has content
-  if (currentPageContent.length > 0) {
-    const pageDiv = document.createElement('div');
-    currentPageContent.forEach((n) => pageDiv.appendChild(n.cloneNode(true)));
-    pages.push(pageDiv.innerHTML);
-  }
-
-  const pagesHTML = pages
-    .map(
-      (pageContent) => `
-        <div class="print-page">
-            ${pageContent}
-        </div>
-    `,
-    )
-    .join('');
-
-  const htmlContent = `
-  <!DOCTYPE html>
-  <html>
-    <head>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-      <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-      <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-      <title>Print Preview</title>
-      <style>
-        @media print {
-          @page { 
-            margin: 0.25in 0.5in;
-          }
-          html {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          body {
-            -webkit-print-color-adjust: exact;
-            print-color-adjust: exact;
-          }
-          body:before, body:after,
-          head:before, head:after,
-          div:before, div:after {
-            content: none !important;
-            display: none !important;
-          }
-          html:before, html:after,
-        }
-        body {
-          font-family: Arial, sans-serif;
-          line-height: 1.6;
-          margin: 0;
-        }
-        img {
-          max-width: fit-content;
-          height: auto;
-          aspect-ratio: auto;
-          display: block;
-          margin-left: auto;
-          margin-right: auto;
-        }
-        h3 {
-          font-weight: 600;
-          color: #0D0D0D;
-          font-size: 20px;
-          line-height: 1.2;
-        }
-        p {
-          line-height: 1.5;
-          color: #0D0D0D;
-          font-size: 16px;
-        }
-        /* Lists */
-        ul, ol {
-          font-size: 16px;
-          line-height: 1.5;
-          margin: 0 0 16px 0;
-          padding-left: 24px;
-        }
-        /* Task List Styles */
-        input[type='checkbox'] {
-            -webkit-appearance: none;
-            appearance: none;
-            background-color: #fff;
-            margin: 0;
-            font-family: 'Inter', sans-serif;
-          }
-          .print-page {
-            page-break-after: always;
-            box-sizing: border-box;
-          }
-          .print-page:last-child {
-            page-break-after: auto;
-          }
-          .tab-title-page {
-            min-height: calc(100vh - 0.5in);
-            display: flex;
-            align-items: flex-start;
-            justify-content: flex-start;
-            text-align: left;
-            padding: 0 1rem;
-            box-sizing: border-box;
-          }
-          .tab-title-page__text {
-            margin: 0;
-            font-size: 36px;
-            line-height: 1.2;
-            font-weight: 600;
-            color: #0d0d0d;
-            word-break: break-word;
-          }
-          
-          img {
-            max-width: 100%;
-            height: auto;
-          }
-          h3 {
-            font-weight: 600;
-            color: #0D0D0D;
-            font-size: 20px;
-            line-height: 1.2;
-          }
-          p {
-            line-height: 1.5;
-            color: #0D0D0D;
-            font-size: 16px;
-          }
-          /* Lists */
-          ul, ol {
-            font-size: 16px;
-            line-height: 1.5;
-            margin: 0 0 16px 0;
-            padding-left: 24px;
-          }
-          /* Task List Styles */
-          input[type='checkbox'] {
-              -webkit-appearance: none;
-              appearance: none;
-              background-color: #fff;
-              margin: 0;
-              cursor: pointer;
-              width: 1.5em;
-              height: 1.5em;
-              position: relative;
-              border: 2px solid black;
-              margin-right: 0.5rem;
-              display: grid;
-              place-content: center;
-          }
-
-          input[type='checkbox']::before {
-              content: '';
-              width: 1em;
-              height: 1em;
-              transform: scale(0);
-              transition: 120ms transform ease-in-out;
-              box-shadow: inset 1em 1em;
-              transform-origin: center;
-              clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-          }
-
-          input[type='checkbox']:checked::before {
-              transform: scale(1);
-          }
-
-          li:has(input[type="checkbox"]) {
-              list-style-type: none;
-              transform: translateX(-16px);
-              font-size: 24px;
-              display: flex;
-              align-items: center;
-          }
-          ol {
-            list-style-type: decimal;
-          }
-          ol ol {
-            list-style-type: lower-latin;
-          }
-          ol ol ol {
-            list-style-type: lower-roman;
-          }
-          /* Tables */
-          table {
-            width: 100%;
-            border-collapse: collapse;
-            margin: 16px 0;
-            font-size: 16px;
-          }
-          th {
-            background: #F8F9FA;
-            font-weight: 600;
-            text-align: left;
-          }
-          td, th {
-            border: 1px solid #E8EBEC;
-            padding: 12px;
-          }
-          /* Code blocks */
-          pre {
-            background: #F8F9FA;
-            padding: 16px;
-            border-radius: 4px;
-            font-family: monospace;
-            font-size: 12px;
-            margin: 16px 0;
-          }
-          /* Blockquotes */
-          blockquote {
-            border-left: 4px solid #E8EBEC;
-            margin: 16px 0;
-            padding-left: 16px;
-            font-style: italic;
-          }
-
-          /* Columns */
-          [data-type="columns"] {
-            width: 100%;
-            display: flex;
-            flex-direction: row;
-            justify-content: space-between;
-          }
-
-          /* KaTeX styles */
-          .katex {
-            font-size: 1.1em;
-          }
-          .katex-display {
-            margin: 1em 0;
-            overflow-x: auto;
-            overflow-y: hidden;
-            text-align: center;
-          }
-          .katex-display > .katex {
-            display: inline-block;
-            text-align: initial;
-          }
-        }
-      </style>
-    </head>
-    <body>
-      ${pagesHTML}
-      <script>
-        window.onload = () => {
-          // Render math equations
-          renderMathInElement(document.body, {
-            delimiters: [
-              {left: '$$', right: '$$', display: true},
-              {left: '$', right: '$', display: false}
-            ],
-            throwOnError: false
-          });
-          
-          // Print after math is rendered
-          setTimeout(() => {
-            window.print();
-            window.onafterprint = () => {
-              window.close();
-            };
-          }, 100);
-        }
-      </script>
-    </body>
-  </html>`;
+  const sectionsHtml = getPrintSectionsHtml(
+    splitContentIntoPrintSections(content),
+  );
+  const htmlContent = buildContentPrintDocument(sectionsHtml);
 
   printHelper(htmlContent);
 };
