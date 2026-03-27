@@ -615,8 +615,10 @@ const DdocEditor = forwardRef(
                   {
                     'translate-y-0 opacity-100':
                       !isFocusMode && isNavbarVisible,
+                    'translate-y-[-108%] opacity-100':
+                      !isFocusMode && !isNavbarVisible,
                     'translate-y-[-108%] opacity-0 pointer-events-none':
-                      isFocusMode || !isNavbarVisible,
+                      isFocusMode,
                   },
                 )}
               >
@@ -736,7 +738,10 @@ const DdocEditor = forwardRef(
                 />
               )}
             </div>
-            <div className={cn('flex w-full overflow-auto')}>
+            <div
+              data-editor-scroll-container="true"
+              className={cn('flex w-full overflow-auto')}
+            >
               <div className="w-full h-full">
                 <div
                   className={cn('flex min-h-[100%]', !isMobile && 'min-w-max')}
