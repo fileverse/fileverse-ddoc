@@ -25,7 +25,11 @@ import { isJSONString } from '../utils/isJsonString';
 import { zoomService } from '../zoom-service';
 import { sanitizeContent } from '../utils/sanitize-content';
 import { CommentExtension as Comment } from '../extensions/comment';
-import { handleContentPrint, handlePrint } from '../utils/handle-print';
+import {
+  estimateContentPrintPageCount,
+  handleContentPrint,
+  handlePrint,
+} from '../utils/handle-print';
 import { isBlackOrWhiteShade } from '../utils/color-utils';
 import { AiAutocomplete } from '../extensions/ai-autocomplete/ai-autocomplete';
 import { AIWriter } from '../extensions/ai-writer';
@@ -78,6 +82,7 @@ interface UseTabEditorArgs {
   isAIAgentEnabled?: boolean;
   setCharacterCount?: DdocProps['setCharacterCount'];
   setWordCount?: DdocProps['setWordCount'];
+  setPageCount?: DdocProps['setPageCount'];
   setIsContentLoading: Dispatch<SetStateAction<boolean>>;
   setIsCollabContentLoading: Dispatch<SetStateAction<boolean>>;
   unFocused?: boolean;
@@ -121,6 +126,7 @@ export const useTabEditor = ({
   isAIAgentEnabled,
   setCharacterCount,
   setWordCount,
+  setPageCount,
   setIsContentLoading,
   setIsCollabContentLoading,
   unFocused,
@@ -545,23 +551,47 @@ export const useTabEditor = ({
     };
   }, [editor]);
 
-  // Word / Character count handler
-  const charCountDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
-    null,
-  );
+  // Footer stats handler
+  const statsDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // Page-count measurement is async, so newer edits must be able to ignore
+  // older results that resolve out of order.
+  const pageCountRequestIdRef = useRef(0);
 
   useEffect(() => {
     if (!editor) return;
+    if (!setCharacterCount && !setWordCount && !setPageCount) return;
 
     const updateCounts = () => {
-      if (charCountDebounceRef.current) {
-        clearTimeout(charCountDebounceRef.current);
+      if (statsDebounceRef.current) {
+        clearTimeout(statsDebounceRef.current);
       }
-      charCountDebounceRef.current = setTimeout(() => {
-        charCountDebounceRef.current = null;
+
+      statsDebounceRef.current = setTimeout(() => {
+        statsDebounceRef.current = null;
+
         if (editor && !editor.isDestroyed) {
           setCharacterCount?.(editor.storage.characterCount.characters() ?? 0);
           setWordCount?.(editor.storage.characterCount.words() ?? 0);
+
+          if (setPageCount) {
+            const requestId = ++pageCountRequestIdRef.current;
+
+            estimateContentPrintPageCount(editor.getHTML())
+              .then((pageCount) => {
+                if (
+                  requestId === pageCountRequestIdRef.current &&
+                  editor &&
+                  !editor.isDestroyed
+                ) {
+                  setPageCount(pageCount);
+                }
+              })
+              .catch(() => {
+                if (requestId === pageCountRequestIdRef.current) {
+                  setPageCount(1);
+                }
+              });
+          }
         }
       }, 500);
     };
@@ -572,11 +602,12 @@ export const useTabEditor = ({
 
     return () => {
       editor.off('update', updateCounts);
-      if (charCountDebounceRef.current) {
-        clearTimeout(charCountDebounceRef.current);
+      if (statsDebounceRef.current) {
+        clearTimeout(statsDebounceRef.current);
       }
+      pageCountRequestIdRef.current += 1;
     };
-  }, [editor]);
+  }, [activeTabId, editor, setCharacterCount, setPageCount, setWordCount]);
 
   // Print shortcut handler
   useEffect(() => {
