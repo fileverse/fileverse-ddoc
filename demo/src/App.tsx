@@ -142,6 +142,7 @@ function App() {
 
   const [characterCount, setCharacterCount] = useState(0);
   const [wordCount, setWordCount] = useState(0);
+  const [pageCount, setPageCount] = useState(0);
 
   // --- Title with persistence ---
   const [title, setTitle] = useState(() => {
@@ -720,12 +721,14 @@ function App() {
         isDDocOwner={true}
         setCharacterCount={setCharacterCount}
         setWordCount={setWordCount}
+        setPageCount={setPageCount}
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}
         duration={3000}
       />
       <DevBar
+        pageCount={pageCount}
         docId={docId}
         activeTabId={activeTabInfo.activeTabId}
         tabCount={activeTabInfo.tabCount}
