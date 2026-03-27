@@ -43,7 +43,6 @@ export const CommentDropdown = ({
     activeComment,
     selectedText,
     dropdownRef,
-    handleInput,
     isCommentActive,
     // onNextComment,
     // onPrevComment,
@@ -68,16 +67,31 @@ export const CommentDropdown = ({
     !activeComment?.createdAt;
 
   const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const value = e.target.value;
-    setComment(value);
-    if (!value) {
-      e.target.style.height = '40px';
-    }
+    setComment(e.target.value);
   };
 
   const handleReplyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
     setReply(value);
+  };
+
+  // Reuse the existing outside-close handlers.
+  const handleCancel = () => {
+    if (typeof document === 'undefined') {
+      return;
+    }
+
+    // Run after the button click, then fire the same outside events.
+    window.setTimeout(() => {
+      // The popover layer closes on pointerdown outside.
+      document.body.dispatchEvent(
+        new PointerEvent('pointerdown', { bubbles: true }),
+      );
+      // Our outside-click hooks listen for mousedown.
+      document.body.dispatchEvent(
+        new MouseEvent('mousedown', { bubbles: true }),
+      );
+    }, 0);
   };
 
   const handleClick = async () => {
@@ -285,13 +299,19 @@ export const CommentDropdown = ({
         value={comment}
         onChange={handleCommentChange}
         onKeyDown={handleKeyDown}
-        className="color-bg-default w-full text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
+        className="color-bg-default w-full text-body-sm color-text-default min-h-[40px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
         placeholder="Type your comment"
         autoFocus
-        onInput={(e) => handleInput(e, comment)}
       />
 
-      <div className="h-full flex items-center justify-end">
+      <div className="h-full flex items-center gap-[20px] justify-end">
+        <Button
+          onClick={handleCancel}
+          className="!w-[80px] !min-w-[80px]"
+          variant={'ghost'}
+        >
+          Cancel
+        </Button>
         <Button
           data-testid="comment-dropdown-send"
           onClick={handleClick}
@@ -378,7 +398,11 @@ export const CommentDropdown = ({
                 position="bottom"
               >
                 <IconButton
-                  data-testid={activeComment?.resolved ? 'comment-unresolve-btn' : 'comment-resolve-btn'}
+                  data-testid={
+                    activeComment?.resolved
+                      ? 'comment-unresolve-btn'
+                      : 'comment-resolve-btn'
+                  }
                   icon={
                     activeComment?.resolved ? 'CircleCheck2' : 'CircleCheck'
                   }
@@ -401,7 +425,7 @@ export const CommentDropdown = ({
 
       <div
         ref={commentsContainerRef}
-        className="max-h-[224px] overflow-y-auto no-scrollbar"
+        className="max-h-[calc(100vh-350px)] overflow-y-auto no-scrollbar"
       >
         <CommentCard
           username={activeComment?.username}
@@ -424,14 +448,20 @@ export const CommentDropdown = ({
           value={reply}
           onChange={handleReplyChange}
           onKeyDown={handleKeyDown}
-          className="color-bg-default text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
+          className="color-bg-default text-body-sm color-text-default min-h-[40px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
           placeholder={isDisabled ? 'Available in a moment' : 'Reply'}
           autoFocus
           disabled={activeComment?.resolved || isDisabled || emptyComment}
-          onInput={(e) => handleInput(e, reply)}
         />
 
         <div className="h-full flex justify-end pt-2">
+          <Button
+            onClick={handleCancel}
+            className="!w-[80px] !min-w-[80px]"
+            variant={'ghost'}
+          >
+            Cancel
+          </Button>
           <Button
             onClick={handleReplySubmit}
             className="px-4 py-2 w-20 min-w-20 h-9"

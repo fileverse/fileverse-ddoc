@@ -1,5 +1,4 @@
 import { Editor, JSONContent } from '@tiptap/core';
-import { formatDistanceToNow, isAfter, subDays } from 'date-fns';
 
 export const nameFormatter = (username: string) => {
   if (!username) return username;
@@ -51,24 +50,34 @@ export const getTemporaryEditor = (editor: Editor, content: JSONContent) => {
   return temporalEditor;
 };
 
-export const dateFormatter = (date: Date) => {
-  const oneDayAgo = subDays(new Date(), 1);
+export const dateFormatter = (date: Date | string | number) => {
+  const normalizedDate = new Date(date);
 
-  // Show relative time if less than 24 hours ago
-  if (isAfter(date, oneDayAgo)) {
-    return formatDistanceToNow(date, { addSuffix: true });
+  if (Number.isNaN(normalizedDate.getTime())) {
+    return '';
   }
 
-  // Otherwise use the existing format
+  const oneDayAgo = Date.now() - 24 * 60 * 60 * 1000;
+
+  if (normalizedDate.getTime() > oneDayAgo) {
+    return (
+      <>
+        {normalizedDate
+          .toLocaleTimeString([], {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true,
+          })
+          .toUpperCase()}
+        <span>&#8226;</span>
+        Today
+      </>
+    );
+  }
+
   return (
     <>
-      {date.toLocaleTimeString([], {
-        hour: 'numeric',
-        minute: '2-digit',
-        hour12: true,
-      })}
-      <span>&#8226;</span>
-      {date.toLocaleDateString('en-US', {
+      {normalizedDate.toLocaleDateString('en-US', {
         day: 'numeric',
         month: 'short',
         year: 'numeric',
