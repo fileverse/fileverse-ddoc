@@ -26,7 +26,7 @@ import { zoomService } from '../zoom-service';
 import { sanitizeContent } from '../utils/sanitize-content';
 import { CommentExtension as Comment } from '../extensions/comment';
 import {
-  estimateContentPrintPageCount,
+  createPageCounter,
   handleContentPrint,
   handlePrint,
 } from '../utils/handle-print';
@@ -56,6 +56,40 @@ const usercolors = [
   '#0ad7f2',
   '#1bff39',
 ];
+
+type ScheduledIdleTask = {
+  kind: 'idle' | 'timeout';
+  handle: number;
+} | null;
+
+const scheduleIdleTask = (callback: () => void): ScheduledIdleTask => {
+  if (typeof window.requestIdleCallback === 'function') {
+    return {
+      kind: 'idle',
+      handle: window.requestIdleCallback(() => callback(), {
+        timeout: 300,
+      }),
+    };
+  }
+
+  return {
+    kind: 'timeout',
+    handle: window.setTimeout(callback, 16),
+  };
+};
+
+const cancelIdleTask = (task: ScheduledIdleTask) => {
+  if (!task) {
+    return;
+  }
+
+  if (task.kind === 'idle' && typeof window.cancelIdleCallback === 'function') {
+    window.cancelIdleCallback(task.handle);
+    return;
+  }
+
+  window.clearTimeout(task.handle);
+};
 
 interface UseTabEditorArgs {
   ydoc: Y.Doc;
@@ -553,9 +587,30 @@ export const useTabEditor = ({
 
   // Footer stats handler
   const statsDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Page-count measurement is async, so newer edits must be able to ignore
-  // older results that resolve out of order.
+  const pageCountIdleTaskRef = useRef<ScheduledIdleTask>(null);
   const pageCountRequestIdRef = useRef(0);
+  const pageCounterRef = useRef<ReturnType<typeof createPageCounter> | null>(
+    null,
+  );
+  const lastPageCountByTabRef = useRef<Record<string, number>>({});
+
+  useEffect(() => {
+    if (!setPageCount) {
+      return;
+    }
+
+    // Create one page counter per mounted editor, else sibling editors can clobber
+    // the same hidden measurement surface.
+    const pageCounter = createPageCounter();
+    pageCounterRef.current = pageCounter;
+
+    return () => {
+      if (pageCounterRef.current === pageCounter) {
+        pageCounterRef.current = null;
+      }
+      pageCounter.destroy();
+    };
+  }, [setPageCount]);
 
   useEffect(() => {
     if (!editor) return;
@@ -574,23 +629,48 @@ export const useTabEditor = ({
           setWordCount?.(editor.storage.characterCount.words() ?? 0);
 
           if (setPageCount) {
-            const requestId = ++pageCountRequestIdRef.current;
+            const pageCounter = pageCounterRef.current;
 
-            estimateContentPrintPageCount(editor.getHTML())
-              .then((pageCount) => {
-                if (
-                  requestId === pageCountRequestIdRef.current &&
-                  editor &&
-                  !editor.isDestroyed
-                ) {
-                  setPageCount(pageCount);
-                }
-              })
-              .catch(() => {
-                if (requestId === pageCountRequestIdRef.current) {
-                  setPageCount(1);
-                }
-              });
+            if (!pageCounter) {
+              return;
+            }
+
+            const html = editor.getHTML();
+            const requestId = ++pageCountRequestIdRef.current;
+            // Cancel the queued estimate before scheduling a new one, else
+            // slower stale HTML can win after a newer edit.
+            cancelIdleTask(pageCountIdleTaskRef.current);
+            // Push page counting off the typing path, else measurement work
+            // competes with input responsiveness.
+            pageCountIdleTaskRef.current = scheduleIdleTask(() => {
+              pageCountIdleTaskRef.current = null;
+
+              pageCounter
+                .estimatePageCount(html)
+                .then((pageCount) => {
+                  if (
+                    requestId === pageCountRequestIdRef.current &&
+                    editor &&
+                    !editor.isDestroyed
+                  ) {
+                    lastPageCountByTabRef.current[activeTabId] = pageCount;
+                    setPageCount(pageCount);
+                  }
+                })
+                .catch(() => {
+                  if (
+                    requestId === pageCountRequestIdRef.current &&
+                    editor &&
+                    !editor.isDestroyed
+                  ) {
+                    // Reuse the last good count for this tab, else transient
+                    // measurement failures collapse the footer back to 1.
+                    setPageCount(
+                      lastPageCountByTabRef.current[activeTabId] ?? 1,
+                    );
+                  }
+                });
+            });
           }
         }
       }, 500);
@@ -605,6 +685,8 @@ export const useTabEditor = ({
       if (statsDebounceRef.current) {
         clearTimeout(statsDebounceRef.current);
       }
+      cancelIdleTask(pageCountIdleTaskRef.current);
+      pageCountIdleTaskRef.current = null;
       pageCountRequestIdRef.current += 1;
     };
   }, [activeTabId, editor, setCharacterCount, setPageCount, setWordCount]);

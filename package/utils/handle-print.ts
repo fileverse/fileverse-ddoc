@@ -5,6 +5,17 @@ const A4_WIDTH_INCHES = 8.27;
 const PAGE_MARGIN_VERTICAL_INCHES = 0.25;
 const PAGE_MARGIN_HORIZONTAL_INCHES = 0.5;
 const CSS_DPI = 96;
+const CONTENT_PRINT_TITLE = 'Print Preview';
+const CONTENT_PRINT_MEASUREMENT_HOST_ID = 'content-print-measurement-host';
+const CONTENT_PRINT_RESOURCE_TIMEOUT_MS = 5000;
+const INTER_FONT_STYLESHEET_URL =
+  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap';
+const KATEX_STYLESHEET_URL =
+  'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css';
+const KATEX_SCRIPT_URL =
+  'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js';
+const KATEX_AUTORENDER_SCRIPT_URL =
+  'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js';
 
 const PRINTABLE_PAGE_WIDTH_PX = Math.floor(
   (A4_WIDTH_INCHES - PAGE_MARGIN_HORIZONTAL_INCHES * 2) * CSS_DPI,
@@ -146,7 +157,7 @@ const CONTENT_STYLES = `
     page-break-after: auto;
   }
   .print-content-root .tab-title-page {
-    min-height: calc(100vh - 0.5in);
+    min-height: calc(${A4_HEIGHT_INCHES}in - ${PAGE_MARGIN_VERTICAL_INCHES * 2}in);
     display: flex;
     align-items: flex-start;
     justify-content: flex-start;
@@ -192,6 +203,29 @@ const CONTENT_MEDIA_STYLES = `
   }
 `;
 
+const createMeasurementContentRoot = (
+  iframeDocument: Document,
+  host: HTMLDivElement,
+  sectionsHtml: string,
+) => {
+  const contentRoot = iframeDocument.createElement('div');
+
+  contentRoot.className = 'print-content-root';
+  contentRoot.style.cssText = `
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: ${PRINTABLE_PAGE_WIDTH_PX}px;
+    visibility: hidden;
+    pointer-events: none;
+  `;
+
+  contentRoot.innerHTML = sectionsHtml;
+
+  host.appendChild(contentRoot);
+
+  return contentRoot;
+};
 const CONTENT_PRINT_KATEX_OPTIONS = {
   delimiters: [
     { left: '$$', right: '$$', display: true },
@@ -200,12 +234,20 @@ const CONTENT_PRINT_KATEX_OPTIONS = {
   throwOnError: false,
 };
 
-let measurementRoot: HTMLDivElement | null = null;
-let measurementContentRoot: HTMLDivElement | null = null;
+interface PageCounter {
+  estimatePageCount: (content: string) => Promise<number>;
+  destroy: () => void;
+}
+
+interface ContentPrintMeasurementFrame {
+  iframe: HTMLIFrameElement;
+  iframeDocument: Document;
+  host: HTMLDivElement;
+}
 
 const getSectionHtml = (nodes: Node[]) => {
   const sectionDiv = document.createElement('div');
-  nodes.forEach((node) => sectionDiv.appendChild(node.cloneNode(true)));
+  nodes.forEach((node) => sectionDiv.appendChild(node));
   return sectionDiv.innerHTML;
 };
 
@@ -231,7 +273,7 @@ export const splitContentIntoPrintSections = (content: string): string[] => {
       return;
     }
 
-    currentSectionContent.push(node.cloneNode(true));
+    currentSectionContent.push(node);
     endedWithPageBreak = false;
   });
 
@@ -257,20 +299,59 @@ const getPrintSectionsHtml = (sections: string[]) =>
     )
     .join('');
 
+const contentLikelyContainsMath = (html: string) =>
+  CONTENT_PRINT_MATH_PATTERN.test(html) ||
+  html.includes('data-type="equation"') ||
+  html.includes('class="katex"') ||
+  html.includes('class="katex-display"');
+
+const CONTENT_PRINT_MATH_PATTERN = /(^|[^\\])\$(\$)?[\s\S]+?\$(\$)?/;
+
+// Both the browser print iframe and the measurement iframe should start from
+// the same head/styles so the live estimate stays aligned with export layout.
+const buildContentPrintHead = ({
+  includePrintMediaStyles = true,
+  includeMathScripts = false,
+  includeRemoteStylesheets = true,
+}: {
+  includePrintMediaStyles?: boolean;
+  includeMathScripts?: boolean;
+  includeRemoteStylesheets?: boolean;
+}) => `
+  <head>
+    ${
+      includeRemoteStylesheets
+        ? `
+    <link href="${INTER_FONT_STYLESHEET_URL}" rel="stylesheet" />
+    <link rel="stylesheet" href="${KATEX_STYLESHEET_URL}" />
+    `
+        : ''
+    }
+
+    ${
+      includeMathScripts
+        ? `
+    <script defer src="${KATEX_SCRIPT_URL}"></script>
+    <script defer src="${KATEX_AUTORENDER_SCRIPT_URL}"></script>
+    `
+        : ''
+    }
+
+    <title>${CONTENT_PRINT_TITLE}</title>
+    <style>
+      ${includePrintMediaStyles ? CONTENT_MEDIA_STYLES : ''}
+      ${CONTENT_STYLES}
+    </style>
+  </head>
+`;
+
 const buildContentPrintDocument = (sectionsHtml: string) => `
   <!DOCTYPE html>
   <html>
-    <head>
-      <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-      <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css">
-      <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.js"></script>
-      <script src="https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/contrib/auto-render.min.js"></script>
-      <title>Print Preview</title>
-      <style>
-        ${CONTENT_MEDIA_STYLES}
-        ${CONTENT_STYLES}
-      </style>
-    </head>
+    ${buildContentPrintHead({
+      includePrintMediaStyles: true,
+      includeMathScripts: true,
+    })}
     <body>
       <div class="print-content-root">
         ${sectionsHtml}
@@ -297,50 +378,29 @@ const buildContentPrintDocument = (sectionsHtml: string) => `
   </html>
 `;
 
-const getMeasurementRoot = () => {
-  // Reuse a single hidden root between updates to avoid rebuilding and
-  // tearing down a full offscreen tree after every debounced editor change.
-  if (
-    measurementRoot &&
-    measurementContentRoot &&
-    document.body.contains(measurementRoot)
-  ) {
-    return {
-      root: measurementRoot,
-      contentRoot: measurementContentRoot,
-    };
-  }
+const buildContentPrintMeasurementDocument = () => `
+  <!doctype html>
+  <html>
+    ${buildContentPrintHead({
+      includePrintMediaStyles: true,
+      includeRemoteStylesheets: false, // Do not block on fonts/stylesheets here, else typing becomes network-bound.
+    })}
+    <body>
+      <div id="${CONTENT_PRINT_MEASUREMENT_HOST_ID}"></div>
+    </body>
+  </html>
+`;
 
-  measurementRoot = document.createElement('div');
-  measurementRoot.style.cssText = `
-    position: absolute;
-    left: -9999px;
-    top: 0;
-    width: ${PRINTABLE_PAGE_WIDTH_PX}px;
-    visibility: hidden;
-    pointer-events: none;
-    overflow: hidden;
-  `;
-
-  const styleElement = document.createElement('style');
-  styleElement.textContent = CONTENT_STYLES;
-  measurementRoot.appendChild(styleElement);
-
-  measurementContentRoot = document.createElement('div');
-  measurementContentRoot.className = 'print-content-root';
-  measurementRoot.appendChild(measurementContentRoot);
-
-  document.body.appendChild(measurementRoot);
-
-  return {
-    root: measurementRoot,
-    contentRoot: measurementContentRoot,
-  };
-};
-
-const waitForAnimationFrame = () =>
+const waitForAnimationFrame = (view: Window | null | undefined = window) =>
   new Promise<void>((resolve) => {
-    requestAnimationFrame(() => resolve());
+    const requestFrame = view?.requestAnimationFrame?.bind(view);
+
+    if (requestFrame) {
+      requestFrame(() => resolve());
+      return;
+    }
+
+    window.setTimeout(() => resolve(), 16);
   });
 
 const waitForMeasurementImages = async (container: ParentNode) => {
@@ -359,10 +419,11 @@ const waitForMeasurementImages = async (container: ParentNode) => {
             return;
           }
 
+          const ownerWindow = image.ownerDocument.defaultView ?? window;
           const cleanup = () => {
             image.removeEventListener('load', onLoad);
             image.removeEventListener('error', onError);
-            window.clearTimeout(timeoutId);
+            ownerWindow.clearTimeout(timeoutId);
           };
 
           const onLoad = () => {
@@ -375,10 +436,10 @@ const waitForMeasurementImages = async (container: ParentNode) => {
             resolve();
           };
 
-          const timeoutId = window.setTimeout(() => {
+          const timeoutId = ownerWindow.setTimeout(() => {
             cleanup();
             resolve();
-          }, 5000);
+          }, CONTENT_PRINT_RESOURCE_TIMEOUT_MS);
 
           image.addEventListener('load', onLoad, { once: true });
           image.addEventListener('error', onError, { once: true });
@@ -387,47 +448,160 @@ const waitForMeasurementImages = async (container: ParentNode) => {
   );
 };
 
-export const estimateContentPrintPageCount = async (
-  content: string,
-): Promise<number> => {
-  const sections = splitContentIntoPrintSections(content);
+const createMeasurementIframe = () => {
+  const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
+  iframe.tabIndex = -1;
+  iframe.style.cssText = `
+    position: absolute;
+    left: -9999px;
+    top: 0;
+    width: ${PRINTABLE_PAGE_WIDTH_PX}px;
+    height: ${PRINTABLE_PAGE_HEIGHT_PX}px;
+    visibility: hidden;
+    pointer-events: none;
+    border: 0;
+  `;
+  document.body.appendChild(iframe);
 
-  if (sections.length === 0) {
-    return 1;
+  return iframe;
+};
+
+const createContentPrintMeasurementFrame = async (
+  iframe: HTMLIFrameElement,
+): Promise<ContentPrintMeasurementFrame> => {
+  const iframeDocument = iframe.contentDocument;
+
+  if (!iframeDocument) {
+    throw new Error('Unable to access print measurement iframe document.');
   }
 
-  const { contentRoot } = getMeasurementRoot();
+  iframeDocument.open();
+  iframeDocument.write(buildContentPrintMeasurementDocument());
+  iframeDocument.close();
 
-  try {
-    contentRoot.innerHTML = getPrintSectionsHtml(sections);
+  const host = iframeDocument.getElementById(
+    CONTENT_PRINT_MEASUREMENT_HOST_ID,
+  ) as HTMLDivElement | null;
 
-    // The estimate needs the same settle points as export or math/image-heavy
-    // documents will undercount until the next edit.
-    renderMathInElement(contentRoot, CONTENT_PRINT_KATEX_OPTIONS);
-
-    await waitForAnimationFrame();
-    await waitForMeasurementImages(contentRoot);
-    await waitForAnimationFrame();
-
-    const sectionElements = Array.from(
-      contentRoot.querySelectorAll<HTMLElement>('.print-page'),
-    );
-
-    const pageCount = sectionElements.reduce((total, sectionElement) => {
-      const contentHeight = Math.max(
-        sectionElement.scrollHeight,
-        Math.ceil(sectionElement.getBoundingClientRect().height),
-      );
-
-      return (
-        total + Math.max(1, Math.ceil(contentHeight / PRINTABLE_PAGE_HEIGHT_PX))
-      );
-    }, 0);
-
-    return Math.max(1, pageCount);
-  } finally {
-    contentRoot.innerHTML = '';
+  if (!host) {
+    throw new Error('Unable to initialize print measurement host.');
   }
+
+  // The host mirrors the printable page width so the estimated heights are
+  // based on export-style wrapping instead of the editor viewport.
+  host.style.cssText = `
+    position: relative;
+    width: ${PRINTABLE_PAGE_WIDTH_PX}px;
+    min-height: ${PRINTABLE_PAGE_HEIGHT_PX}px;
+    overflow: hidden;
+  `;
+
+  return {
+    iframe,
+    iframeDocument,
+    host,
+  };
+};
+
+export const createPageCounter = (): PageCounter => {
+  const iframe = createMeasurementIframe();
+  const framePromise = createContentPrintMeasurementFrame(iframe);
+
+  let isDestroyed = false;
+  let latestRequestId = 0;
+
+  return {
+    estimatePageCount: async (content: string): Promise<number> => {
+      const requestId = ++latestRequestId;
+
+      const sections = splitContentIntoPrintSections(content); // preserve page-break semantics, else page count diverges from print/export.
+
+      if (sections.length === 0 || isDestroyed) {
+        return 1;
+      }
+
+      let frame: ContentPrintMeasurementFrame;
+
+      try {
+        frame = await framePromise;
+      } catch {
+        return 1;
+      }
+
+      if (isDestroyed || requestId !== latestRequestId) {
+        return 1;
+      }
+
+      const sectionsHtml = getPrintSectionsHtml(sections);
+
+      // Create a fresh root per request, else concurrent estimates will
+      // measure and clear the same subtree.
+      const contentRoot = createMeasurementContentRoot(
+        frame.iframeDocument,
+        frame.host,
+        sectionsHtml,
+      );
+
+      try {
+        // Gate KaTeX work on the HTML, else every estimate pays the math
+        // rendering cost whether or not equations exist.
+        if (contentLikelyContainsMath(sectionsHtml)) {
+          renderMathInElement(contentRoot, CONTENT_PRINT_KATEX_OPTIONS);
+          await waitForAnimationFrame(frame.iframe.contentWindow);
+        }
+
+        if (isDestroyed || requestId !== latestRequestId) {
+          return 1;
+        }
+
+        // Wait for images before measuring, else late loads will undercount
+        // the section height.
+        await waitForMeasurementImages(contentRoot);
+
+        if (isDestroyed || requestId !== latestRequestId) {
+          return 1;
+        }
+
+        await waitForAnimationFrame(frame.iframe.contentWindow);
+
+        if (isDestroyed || requestId !== latestRequestId) {
+          return 1;
+        }
+
+        const sectionElements = Array.from(
+          contentRoot.querySelectorAll<HTMLElement>('.print-page'),
+        );
+
+        const pageCount = sectionElements.reduce((total, sectionElement) => {
+          const contentHeight = Math.max(
+            sectionElement.scrollHeight,
+            Math.ceil(sectionElement.getBoundingClientRect().height),
+          );
+
+          return (
+            total +
+            Math.max(1, Math.ceil(contentHeight / PRINTABLE_PAGE_HEIGHT_PX))
+          );
+        }, 0);
+
+        return Math.max(1, pageCount);
+      } finally {
+        if (contentRoot.parentNode) {
+          contentRoot.parentNode.removeChild(contentRoot);
+        }
+      }
+    },
+
+    destroy: () => {
+      isDestroyed = true;
+      latestRequestId += 1;
+
+      if (document.body.contains(iframe)) {
+        document.body.removeChild(iframe);
+      }
+    },
+  };
 };
 
 export const handlePrint = (slides: string[]) => {
