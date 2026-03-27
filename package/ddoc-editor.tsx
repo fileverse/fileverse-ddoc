@@ -613,8 +613,10 @@ const DdocEditor = forwardRef(
                   {
                     'translate-y-0 opacity-100':
                       !isFocusMode && isNavbarVisible,
+                    'translate-y-[-108%] opacity-100':
+                      !isFocusMode && !isNavbarVisible,
                     'translate-y-[-108%] opacity-0 pointer-events-none':
-                      isFocusMode || !isNavbarVisible,
+                      isFocusMode,
                   },
                 )}
               >
