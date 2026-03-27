@@ -192,7 +192,7 @@ export const CommentSection = ({
                   </Button>
                 ) : (
                   <div className="pl-4 animate-in fade-in-5 flex flex-col gap-2 duration-300 mt-3">
-                    <div className="border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
+                    <div className="border color-bg-default flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
                       <Avatar
                         src={
                           ensStatus.isEns
@@ -289,7 +289,7 @@ export const CommentSection = ({
               className="color-icon-secondary w-[14px] h-[14px]"
             />
             <p className="text-helper-text-sm color-text-secondary">
-              Comments are End-to-end Encrypted
+              End-to-end Encrypted
             </p>
           </div>
           <Button
