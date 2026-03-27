@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
-import { LegacyRef, useCallback, useEffect, useRef, useState } from 'react';
+import { LegacyRef, useEffect, useRef, useState } from 'react';
 import { NodeViewWrapper, NodeViewProps } from '@tiptap/react';
 import { resizableMediaActions } from './resizable-media-menu-util';
 import cn from 'classnames';
@@ -21,7 +21,7 @@ export const getResizableMediaNodeView =
     ) => Promise<{ url: string; file: File }>,
     fetchV1ImageFn: (url: string) => Promise<ArrayBuffer | undefined>,
   ) =>
-  ({ node, updateAttributes, deleteNode }: NodeViewProps) => {
+  ({ node, updateAttributes, deleteNode, selected }: NodeViewProps) => {
     const { isPreviewMode } = useEditingContext();
 
     const mediaType: 'img' | 'secure-img' | 'video' | 'iframe' =
@@ -49,9 +49,6 @@ export const getResizableMediaNodeView =
     const lastClientXRef = useRef<number>(-1);
 
     const [isMouseDown, setIsMouseDown] = useState<boolean>(false);
-
-    const [isSelected, setIsSelected] = useState(false);
-    const nodeWrapperRef = useRef<HTMLDivElement>(null);
 
     const [isDragging, setIsDragging] = useState(false);
     const [touchTimeout, setTouchTimeout] = useState<ReturnType<
@@ -307,30 +304,6 @@ export const getResizableMediaNodeView =
       };
     }, [touchTimeout]);
 
-    const handleImageClick = useCallback(() => {
-      if (isImageType && !isPreviewMode) {
-        setIsSelected(true);
-      }
-    }, [isImageType, isPreviewMode]);
-
-    useEffect(() => {
-      if (!isImageType || !isSelected) return;
-
-      const handleClickOutside = (e: MouseEvent) => {
-        if (
-          nodeWrapperRef.current &&
-          !nodeWrapperRef.current.contains(e.target as Node)
-        ) {
-          setIsSelected(false);
-        }
-      };
-
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => {
-        document.removeEventListener('mousedown', handleClickOutside);
-      };
-    }, [isImageType, isSelected]);
-
     const startCornerResize = (
       corner: 'tl' | 'tr' | 'bl' | 'br',
       e: React.MouseEvent | React.TouchEvent,
@@ -387,14 +360,12 @@ export const getResizableMediaNodeView =
         )}
       >
         <div
-          ref={nodeWrapperRef}
           draggable={isDragging}
           data-drag-handle={isDragging}
           className={cn(
             'w-fit flex flex-col relative group transition-all ease-in-out',
             isDragging && 'opacity-50',
           )}
-          onClick={handleImageClick}
           onTouchStart={handleTouchStart}
           onTouchMove={handleTouchMove}
           onTouchEnd={handleTouchEnd}
@@ -407,7 +378,7 @@ export const getResizableMediaNodeView =
               node.attrs.dataAlign === 'center' && 'self-center',
               node.attrs.dataAlign === 'end' && 'self-end',
               isImageType && 'border-2',
-              isImageType && isSelected
+              isImageType && selected
                 ? 'border-[#5c0aff]'
                 : 'border-transparent',
             )}
@@ -496,7 +467,7 @@ export const getResizableMediaNodeView =
               />
             )}
 
-            {!isPreviewMode && isImageType && isSelected && (
+            {!isPreviewMode && isImageType && selected && (
               <>
                 {(['tl', 'tr', 'bl', 'br'] as const).map((corner) => (
                   <div
