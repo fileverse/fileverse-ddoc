@@ -406,7 +406,10 @@ export const getResizableMediaNodeView =
               node.attrs.dataAlign === 'start' && 'self-start',
               node.attrs.dataAlign === 'center' && 'self-center',
               node.attrs.dataAlign === 'end' && 'self-end',
-              isImageType && isSelected && 'border-2 border-[#5c0aff]',
+              isImageType && 'border-2',
+              isImageType && isSelected
+                ? 'border-[#5c0aff]'
+                : 'border-transparent',
             )}
           >
             {mediaType === 'img' && (
