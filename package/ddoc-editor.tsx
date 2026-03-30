@@ -1,4 +1,4 @@
-import { EditorContent, Extension, isTextSelection } from '@tiptap/react';
+import { EditorContent, isTextSelection } from '@tiptap/react';
 import { EditorBubbleMenu } from './components/editor-bubble-menu/editor-bubble-menu';
 import { DdocProps } from './types';
 import { ColumnsMenu } from './extensions/multi-column/menus';
@@ -39,7 +39,6 @@ import { DocumentOutline } from './components/toc/document-outline';
 import { EditorProvider } from './context/editor-context';
 import { fadeInTransition, slideUpTransition } from './components/motion-div';
 import { PreviewContentLoader } from './components/preview-content-loader';
-import { Reminder } from './extensions/reminder-block/types';
 import { EmbedSettings } from './extensions/twitter-embed/embed-settings';
 import { DEFAULT_TAB_ID } from './components/tabs/utils/tab-utils';
 import { PreviewModeExportTrigger } from './components/preview-export-trigger';
@@ -328,48 +327,6 @@ const DdocEditor = forwardRef(
               URL.revokeObjectURL(url);
             }
           }
-        },
-        updateReminderNode: ({
-          id,
-          status,
-        }: {
-          id: string;
-          status: Reminder['status'];
-        }) => {
-          if (!editor) throw new Error('cannot update node without editor');
-
-          editor.commands.command(({ tr, state, dispatch }) => {
-            const { doc } = state;
-            let updated = false;
-
-            doc.descendants((node, pos) => {
-              if (
-                node.type.name === 'reminderBlock' &&
-                node.attrs.reminder.id === id
-              ) {
-                if (status === 'cancelled') {
-                  tr.delete(pos, pos + node.nodeSize);
-                } else {
-                  tr.setNodeMarkup(pos, undefined, {
-                    ...node.attrs,
-                    reminder: {
-                      ...node.attrs.reminder,
-                      status,
-                    },
-                  });
-                }
-                updated = true;
-                return false; // stop traversal
-              }
-            });
-
-            if (updated && dispatch) {
-              dispatch(tr);
-              return true;
-            }
-
-            return false;
-          });
         },
         updateCollaboratorName: (name: string) => {
           if (!editor || !awareness) {
@@ -839,18 +796,6 @@ const DdocEditor = forwardRef(
                                 ipfsImageFetchFn={ipfsImageFetchFn}
                                 fetchV1ImageFn={fetchV1ImageFn}
                                 ipfsImageUploadFn={ipfsImageUploadFn}
-                                onReminderCreate={
-                                  extensions?.find(
-                                    (ext: Extension) =>
-                                      ext.name === 'reminderBlock',
-                                  )?.options?.onReminderCreate
-                                }
-                                isConnected={isConnected}
-                                isCollabDocOwner={
-                                  collaboration?.enabled
-                                    ? collaboration.connection.isOwner
-                                    : true
-                                }
                                 enableCollaboration={collaboration?.enabled}
                               />
                               <EmbedSettings editor={editor} />
