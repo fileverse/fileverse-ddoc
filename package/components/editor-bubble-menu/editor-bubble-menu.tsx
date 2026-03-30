@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 import { BubbleMenu } from '@tiptap/react/menus';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { NodeSelector } from './node-selector';
 import {
   LinkPopup,
@@ -25,8 +25,6 @@ import { shouldShow } from './props';
 import { useComments } from '../inline-comment/context/comment-context';
 import { useEditorStates } from '../../hooks/use-editor-states';
 import { Editor } from '@tiptap/react';
-import { ReminderMenu } from '../../extensions/reminder-block/reminder-menu';
-import { useReminder } from '../../hooks/use-reminder';
 
 const MemoizedFontSizePicker = React.memo(FontSizePicker);
 const MemoizedLineHeightPicker = React.memo(LineHeightPicker);
@@ -41,15 +39,11 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     activeCommentId,
     isCollabDocumentPublished,
     disableInlineComment,
-    onReminderCreate,
-    isConnected,
     ipfsImageUploadFn,
     ipfsImageFetchFn,
-    isCollabDocOwner,
     enableCollaboration,
     fetchV1ImageFn,
   } = props;
-  const [showsBubbleMenu, setShowsBubbleMenu] = useState(false);
   const editorStates = useEditorStates(editor as Editor);
   const currentSize = editor ? editorStates.currentSize : undefined;
   const currentLineHeight = editor ? editorStates.currentLineHeight : undefined;
@@ -62,18 +56,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     ipfsImageUploadFn,
     ipfsImageFetchFn,
     fetchV1ImageFn,
-  });
-
-  const {
-    reminderRef,
-    handleReminderOnClose,
-    handleReminderCreate,
-    initialReminderTitle,
-    setInitialReminderTitle,
-  } = useReminder({
-    editor,
-    onReminderCreate,
-    onError,
   });
 
   const {
@@ -155,19 +137,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         icon: 'Superscript',
       },
       {
-        name: 'Reminder',
-        isActive: () => false,
-        command: () => {
-          const selectedText =
-            editor?.state.selection.content().content.firstChild?.textContent ||
-            '';
-          if (setInitialReminderTitle) {
-            setInitialReminderTitle(selectedText);
-          }
-        },
-        icon: 'AlarmClock',
-      },
-      {
         name: 'Comment',
         isActive: () => isCommentActive,
         command: () => {},
@@ -175,14 +144,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       },
     ];
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    showsBubbleMenu,
-    editor,
-    isCommentActive,
-    setToolVisibility,
-    toolVisibility,
-    setInitialReminderTitle,
-  ]);
+  }, [editor, isCommentActive, setToolVisibility, toolVisibility]);
 
   const renderContent = (item: { name: string; initialComment?: string }) => {
     if (!editor) return null;
@@ -218,18 +180,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         );
       case 'Scripts':
         return <ScriptsPopup editor={editor} elementRef={toolRef} />;
-      case 'Reminder':
-        return (
-          <ReminderMenu
-            ref={reminderRef}
-            type={'inline'}
-            isOpen={true}
-            onClose={handleReminderOnClose}
-            onCreateReminder={handleReminderCreate}
-            initialReminderTitle={initialReminderTitle}
-            setInitialReminderTitle={setInitialReminderTitle}
-          />
-        );
       default:
         return null;
     }
@@ -282,8 +232,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         placement: 'top',
         flip: true,
         shift: true,
-        onHide: () => setShowsBubbleMenu(false),
-        onShow: () => setShowsBubbleMenu(true),
       }}
       shouldShow={shouldShow}
       className={cn(
@@ -308,34 +256,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           )}
         >
           {mobileCommentButton}
-          {isConnected &&
-            !enableCollaboration &&
-            !isPreviewMode &&
-            !disableInlineComment && (
-              <DynamicDropdown
-                key="Reminder"
-                side="bottom"
-                sideOffset={15}
-                anchorTrigger={
-                  <ToolbarButton
-                    icon={'AlarmClock'}
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => {
-                      const selectedText =
-                        editor?.state.selection.content().content.firstChild
-                          ?.textContent || '';
-                      if (setInitialReminderTitle) {
-                        setInitialReminderTitle(selectedText);
-                      }
-                    }}
-                    disabled={!isConnected || !disableInlineComment}
-                  />
-                }
-                className="!max-w-[300px] border-none shadow-none"
-                content={renderContent({ name: 'Reminder' })}
-              />
-            )}
         </div>
       ) : (
         <React.Fragment>
@@ -576,41 +496,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                           : null
                       }
                     />
-                  );
-                }
-
-                if (item.name === 'Reminder') {
-                  return (
-                    isConnected &&
-                    !disableInlineComment &&
-                    isCollabDocOwner && (
-                      <DynamicDropdown
-                        key="Reminder"
-                        side="bottom"
-                        sideOffset={15}
-                        anchorTrigger={
-                          <ToolbarButton
-                            icon={item.icon}
-                            variant="ghost"
-                            disabled={
-                              !isConnected ||
-                              enableCollaboration ||
-                              disableInlineComment
-                            }
-                            size="sm"
-                            onClick={item.command}
-                            classNames="disabled:!bg-transparent"
-                            tooltip={
-                              enableCollaboration
-                                ? 'Reminders are not available during real-time collaboration'
-                                : ''
-                            }
-                          />
-                        }
-                        className="!max-w-[300px] border-none shadow-none"
-                        content={renderContent(item)}
-                      />
-                    )
                   );
                 }
 

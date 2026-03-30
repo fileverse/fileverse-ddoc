@@ -224,37 +224,6 @@ export const useTabEditor = ({
     setActiveCommentId(null);
   }, [activeTabId, setActiveCommentId]);
 
-  const preventDeletionIfItIsReminderNode = (
-    view: EditorView,
-    event: KeyboardEvent,
-  ) => {
-    const { state } = view;
-    const { selection } = state;
-    const { from, to, empty } = selection;
-
-    if (event.key === 'Backspace' || event.key === 'Delete') {
-      let deletingReminder = false;
-
-      if (!empty) {
-        state.doc.nodesBetween(from, to, (node) => {
-          if (node.type.name === 'reminderBlock') deletingReminder = true;
-        });
-      } else {
-        const $from = selection.$from;
-        const adjacent =
-          event.key === 'Backspace' ? $from.nodeBefore : $from.nodeAfter;
-        if (adjacent?.type.name === 'reminderBlock') {
-          deletingReminder = true;
-        }
-      }
-
-      if (deletingReminder) {
-        event.preventDefault();
-        return true;
-      }
-    }
-  };
-
   const editor = useEditor(
     {
       extensions: memoizedExtensions,
@@ -266,7 +235,6 @@ export const useTabEditor = ({
         handleDOMEvents: {
           mouseover: handleCommentInteraction,
           keydown: (_view, event) => {
-            preventDeletionIfItIsReminderNode(_view, event);
             // prevent default event listeners from firing when slash command is active
             if (['ArrowUp', 'ArrowDown', 'Enter'].includes(event.key)) {
               const slashCommand = document.querySelector('#slash-command');
@@ -1048,7 +1016,7 @@ const useEditorExtension = ({
   );
 
   const buildExtensions = useCallback(() => {
-    const coreExtensions: AnyExtension[] = [
+    const coreExtensions = [
       ...defaultExtensions({
         onError: (error: string) => onError?.(error),
         ipfsImageUploadFn,
@@ -1069,7 +1037,7 @@ const useEditorExtension = ({
       ...(externalExtensions ? Object.values(externalExtensions) : []),
     ];
 
-    return coreExtensions;
+    return coreExtensions as unknown as AnyExtension[];
   }, [
     onError,
     ipfsImageUploadFn,

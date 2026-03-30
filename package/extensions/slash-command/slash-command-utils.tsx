@@ -5,17 +5,13 @@ import { startImageUpload } from '../../utils/upload-images';
 import { IMG_UPLOAD_SETTINGS } from '../../components/editor-utils';
 import { validateImageExtension } from '../../utils/check-image-type';
 import { CommandProps } from './types';
-import { showReminderMenu } from '../reminder-block/reminder-menu-renderer';
 import { IpfsImageUploadResponse } from '../../types';
 
 export const getSuggestionItems = ({
   query,
   onError,
-  isConnected,
   ipfsImageUploadFn,
   editor,
-  enableCollaboration,
-  disableInlineComment,
 }: {
   query: string;
   onError?: (errorString: string) => void;
@@ -162,33 +158,6 @@ export const getSuggestionItems = ({
       image: '',
       command: ({ editor, range }: CommandProps) => {
         editor.chain().focus().deleteRange(range).toggleOrderedList().run();
-      },
-    },
-    {
-      title: 'Reminder',
-      description: !isConnected
-        ? 'Log-in to start creating reminders.'
-        : disableInlineComment
-          ? 'Reminders will be available shortly...'
-          : enableCollaboration
-            ? 'Reminders are not available during real-time collaboration.'
-            : 'Set a reminder and we will notify you right on time.',
-      searchTerms: ['reminder', 'alert', 'notification'],
-      icon: (
-        <LucideIcon
-          name="AlarmClock"
-          size={'md'}
-          stroke={(!isConnected && '#a1aab1') || undefined}
-        />
-      ),
-      image: '',
-      isDisabled: !isConnected || enableCollaboration || disableInlineComment,
-      command: ({ editor, range }: CommandProps) => {
-        if (!isConnected || enableCollaboration || disableInlineComment) {
-          return;
-        }
-        showReminderMenu(editor, range, 'slash', onError);
-        return true;
       },
     },
     {

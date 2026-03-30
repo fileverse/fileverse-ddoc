@@ -50,7 +50,7 @@ In `package/hooks/`, create `use-viewer-editor.ts` that loads only:
 - TextAlign, FontFamily, Color, Highlight, TextStyle
 - Subscript, Superscript, Typography
 - HorizontalRule
-- Any custom rendering-only extensions (reminder-block, etc.)
+- Any custom rendering-only extensions
 
 Skip these extensions entirely:
 - Collaboration, CollaborationCaret
