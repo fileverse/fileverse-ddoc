@@ -789,6 +789,15 @@ const DdocEditor = forwardRef(
                         ...(!isFocusMode ? getCanvasStyle() || {} : {}),
                       }}
                     >
+                      {isMobile && isPreviewMode && (
+                        <p className="text-center color-text-secondary text-helper-text-sm flex gap-2 items-center justify-center mt-3">
+                          <LucideIcon
+                            name={'LockKeyhole'}
+                            className="w-[14px] h-[14px]"
+                          />
+                          <span>End-to-end Encrypted</span>
+                        </p>
+                      )}
                       <div
                         ref={editorRef}
                         className={cn(
@@ -800,6 +809,7 @@ const DdocEditor = forwardRef(
                               (zoomLevel === '1.4' || zoomLevel === '1.5') &&
                               !isFocusMode,
                           },
+                          isPreviewMode && 'pt-3',
                         )}
                         style={
                           isMobile

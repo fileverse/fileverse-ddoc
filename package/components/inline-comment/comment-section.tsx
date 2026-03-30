@@ -7,6 +7,7 @@ import {
   TextAreaFieldV2,
   Button,
   cn,
+  Tooltip,
 } from '@fileverse/ui';
 import { CommentCard } from './comment-card';
 import { useComments } from './context/comment-context';
@@ -283,15 +284,23 @@ export const CommentSection = ({
         </div>
 
         <div className="flex items-center color-bg-default justify-between">
-          <div className="color-bg-secondary border rounded-[4px] px-[8px] flex gap-[8px] py-[4px]">
-            <LucideIcon
-              name="Lock"
-              className="color-icon-secondary w-[14px] h-[14px]"
-            />
-            <p className="text-helper-text-sm color-text-secondary">
-              End-to-end Encrypted
-            </p>
-          </div>
+          <Tooltip
+            text={
+              'End-to-end encrypted. Only you and selected recipients can access this document.'
+            }
+            beakAlignment={'start'}
+            className="max-w-[275px] w-fit text-helper-text-sm"
+          >
+            <div className="flex gap-2 py-1">
+              <LucideIcon
+                name="LockKeyhole"
+                className="color-icon-secondary w-[14px] h-[14px]"
+              />
+              <p className="text-helper-text-sm color-text-secondary">
+                Comments are End-to-end Encrypted
+              </p>
+            </div>
+          </Tooltip>
           <Button
             data-testid="comment-section-send"
             onClick={handleCommentSubmit}
