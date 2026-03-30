@@ -25,7 +25,6 @@ export const shouldShow = ({ editor }: { editor: Editor }) => {
     'resizableMedia',
     'iframe',
     'pageBreak',
-    'reminderBlock',
     'aiWriter',
     'actionButton',
   ];

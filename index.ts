@@ -12,11 +12,6 @@ export type {
   ExportTabOption,
 } from './package/components/export-modal';
 export type { VersionTabSnapshot } from './package/components/tabs/utils/version-diff-snapshot';
-export { ReminderBlock } from './package/extensions/reminder-block/reminder-block';
-export {
-  type Reminder,
-  type ReminderBlockOptions,
-} from './package/extensions/reminder-block/types';
 export { Editor } from '@tiptap/react';
 export type {
   CollaborationProps,
