@@ -797,6 +797,11 @@ const DdocEditor = forwardRef(
                                 fetchV1ImageFn={fetchV1ImageFn}
                                 ipfsImageUploadFn={ipfsImageUploadFn}
                                 enableCollaboration={collaboration?.enabled}
+                                isCollabDocOwner={
+                                  collaboration?.enabled
+                                    ? collaboration.connection.isOwner
+                                    : true
+                                }
                               />
                               <EmbedSettings editor={editor} />
                             </>
