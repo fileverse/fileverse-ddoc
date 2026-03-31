@@ -8,11 +8,6 @@ import {
   CollabServices,
   CollabCallbacks,
 } from '../sync-local/types';
-import {
-  EDITOR_CONTENT_CHANGE,
-  EditorChangeMetadata,
-  INDEXEDDB_REHYDRATION_CHANGE,
-} from '../editor-change-metadata';
 import { DdocProps } from '../types';
 
 interface UseYjsSetupArgs {
@@ -90,42 +85,24 @@ export const useYjsSetup = ({
   const onChangeDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(
     null,
   );
-  const pendingChangeMetaRef = useRef<EditorChangeMetadata>(
-    EDITOR_CONTENT_CHANGE,
-  );
 
   // Immediately flush any pending debounced onChange.
   // Call this after critical structural changes (tab create/delete/rename/reorder)
   // to ensure persistence happens before a potential page refresh.
-  const flushPendingUpdate = useCallback(
-    (changeMeta: EditorChangeMetadata = EDITOR_CONTENT_CHANGE) => {
-      if (onChangeDebounceRef.current) {
-        clearTimeout(onChangeDebounceRef.current);
-        onChangeDebounceRef.current = null;
-      }
-      onChange?.(fromUint8Array(Y.encodeStateAsUpdate(ydoc)), '', changeMeta);
-    },
-    [ydoc, onChange],
-  );
-
-  const getChangeMeta = useCallback((origin: unknown): EditorChangeMetadata => {
-    // Classify IndexedDB replay separately so refresh does not look like a first edit.
-    if (
-      yjsIndexeddbProviderRef.current &&
-      origin === yjsIndexeddbProviderRef.current
-    ) {
-      return INDEXEDDB_REHYDRATION_CHANGE;
+  const flushPendingUpdate = useCallback(() => {
+    if (onChangeDebounceRef.current) {
+      clearTimeout(onChangeDebounceRef.current);
+      onChangeDebounceRef.current = null;
     }
-
-    return EDITOR_CONTENT_CHANGE;
-  }, []);
+    onChange?.(fromUint8Array(Y.encodeStateAsUpdate(ydoc)), '');
+  }, [ydoc, onChange]);
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handler = (update: Uint8Array, origin: any) => {
-      if (origin === 'self') return;
+      if (origin === 'self' || origin === yjsIndexeddbProviderRef.current)
+        return;
       const chunk = fromUint8Array(update);
-      pendingChangeMetaRef.current = getChangeMeta(origin);
 
       // Debounce the expensive full-state encoding.
       // The incremental chunk is tiny and fires immediately via the second arg.
@@ -136,12 +113,7 @@ export const useYjsSetup = ({
       }
       onChangeDebounceRef.current = setTimeout(() => {
         onChangeDebounceRef.current = null;
-        // Forward change metadata so the consumer can decide whether to sync this update.
-        onChange?.(
-          fromUint8Array(Y.encodeStateAsUpdate(ydoc)),
-          chunk,
-          pendingChangeMetaRef.current,
-        );
+        onChange?.(fromUint8Array(Y.encodeStateAsUpdate(ydoc)), chunk);
       }, 300);
     };
     if (ydoc) {
@@ -153,7 +125,7 @@ export const useYjsSetup = ({
         clearTimeout(onChangeDebounceRef.current);
       }
     };
-  }, [getChangeMeta, onChange, ydoc]);
+  }, [onChange, ydoc]);
 
   return {
     ydoc,

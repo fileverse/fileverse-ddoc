@@ -6,7 +6,6 @@ export { useHeadlessEditor } from './package/hooks/use-headless-editor';
 export { useExportHeadlessEditorContent } from './package/hooks/use-export-headless-editor-content';
 export { mergeTabAwareYjsUpdates } from './package/components/tabs/utils/tab-utils';
 export { buildVersionDiffSnapshot } from './package/components/tabs/utils/version-diff-snapshot';
-export type { EditorChangeMetadata } from './package/editor-change-metadata';
 export type {
   DdocExportModalProps,
   ExportFormatOption,

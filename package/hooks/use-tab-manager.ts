@@ -19,7 +19,6 @@ import { generateRandomBytes } from '@fileverse/crypto/utils';
 import { fromUint8Array } from 'js-base64';
 import { toast } from '@fileverse/ui';
 import { useTabMetadataHistory } from './use-tab-metadata-history';
-import { EditorChangeMetadata } from '../editor-change-metadata';
 
 const UNDO_WINDOW_MS = 10_000; // 10 seconds
 
@@ -41,7 +40,7 @@ interface UseTabManagerArgs {
   defaultTabId?: string;
   onVersionHistoryActiveTabChange?: (tabId: string | null) => void;
   getEditor?: () => Editor | null;
-  flushPendingUpdate?: (changeMeta?: EditorChangeMetadata) => void;
+  flushPendingUpdate?: () => void;
 }
 
 export const getNewTabId = () => {
