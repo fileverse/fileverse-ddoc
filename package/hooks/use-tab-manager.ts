@@ -63,7 +63,7 @@ export const useTabManager = ({
     enableCollaboration || initialContent !== null;
   const hasSavedInitialMigrationRef = useRef(false);
   const isNewDdoc = isDDocOwner && !enableCollaboration && !initialContent;
-  const flushStructuralUpdate = useCallback(() => {
+  const flushTabUpdate = useCallback(() => {
     if (isNewDdoc) return;
     flushPendingUpdate?.();
   }, [isNewDdoc, flushPendingUpdate]);
@@ -178,7 +178,7 @@ export const useTabManager = ({
       createDefaultTabIfMissing,
     });
     if (syncedTabNodes.didWrite) {
-      flushStructuralUpdate();
+      flushTabUpdate();
     }
 
     // Keep persisted active tab aligned with the local tab when persistence is enabled.
