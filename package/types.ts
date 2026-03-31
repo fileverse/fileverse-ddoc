@@ -181,7 +181,7 @@ export interface DdocProps extends CommentAccountProps {
   setUsername?: React.Dispatch<SetStateAction<string>>;
   renderNavbar?: ({ editor }: { editor: JSONContent }) => JSX.Element;
   onChange?: (
-    updatedDocContent: Data['editorJSONData'],
+    updatedDocContent: string | JSONContent,
     updateChunk: string,
   ) => void;
   onCollaboratorChange?: (collaborators: undefined | IDocCollabUsers[]) => void;

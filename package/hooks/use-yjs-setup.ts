@@ -1,7 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import * as Y from 'yjs';
 import { IndexeddbPersistence } from 'y-indexeddb';
-import { JSONContent } from '@tiptap/react';
 import { useSyncManager } from '../sync-local/useSyncManager';
 import { fromUint8Array } from 'js-base64';
 import {
@@ -9,12 +8,10 @@ import {
   CollabServices,
   CollabCallbacks,
 } from '../sync-local/types';
+import { DdocProps } from '../types';
 
 interface UseYjsSetupArgs {
-  onChange?: (
-    updatedDocContent: string | JSONContent,
-    updateChunk: string,
-  ) => void;
+  onChange?: DdocProps['onChange'];
   enableIndexeddbSync?: boolean;
   ddocId?: string;
   collaboration?: CollaborationProps;
@@ -29,6 +26,8 @@ export const useYjsSetup = ({
   onIndexedDbError,
 }: UseYjsSetupArgs) => {
   const [ydoc] = useState(new Y.Doc());
+  const [isIndexeddbSynced, setIsIndexeddbSynced] =
+    useState(!enableIndexeddbSync);
 
   const collabEnabled = collaboration?.enabled === true;
   const services: CollabServices | undefined = collabEnabled
@@ -61,18 +60,25 @@ export const useYjsSetup = ({
       await provider.destroy();
     }
     if (enableIndexeddbSync && ddocId) {
+      setIsIndexeddbSynced(false);
       try {
         const newYjsIndexeddbProvider = new IndexeddbPersistence(ddocId, ydoc);
+        // Capture the provider before sync resolves so origin checks can detect IndexedDB replay.
+        yjsIndexeddbProviderRef.current = newYjsIndexeddbProvider;
         // Wait for the database to be ready and synced
         await newYjsIndexeddbProvider.whenSynced;
-        yjsIndexeddbProviderRef.current = newYjsIndexeddbProvider;
+        setIsIndexeddbSynced(true);
       } catch (error) {
         console.error('IndexedDB initialization failed:', error);
+        yjsIndexeddbProviderRef.current = null;
+        setIsIndexeddbSynced(true);
         onIndexedDbError?.(
           error instanceof Error ? error : new Error(String(error)),
         );
         // Don't rethrow - allow editor to continue without persistence
       }
+    } else {
+      setIsIndexeddbSynced(true);
     }
   }, [enableIndexeddbSync, ddocId, ydoc, onIndexedDbError]);
 
@@ -94,7 +100,8 @@ export const useYjsSetup = ({
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const handler = (update: Uint8Array, origin: any) => {
-      if (origin === 'self') return;
+      if (origin === 'self' || origin === yjsIndexeddbProviderRef.current)
+        return;
       const chunk = fromUint8Array(update);
 
       // Debounce the expensive full-state encoding.
@@ -118,7 +125,7 @@ export const useYjsSetup = ({
         clearTimeout(onChangeDebounceRef.current);
       }
     };
-  }, [ydoc]);
+  }, [onChange, ydoc]);
 
   return {
     ydoc,
@@ -128,6 +135,7 @@ export const useYjsSetup = ({
     terminateSession,
     awareness,
     hasCollabContentInitialised,
+    isIndexeddbSynced,
     initialiseYjsIndexedDbProvider,
     refreshYjsIndexedDbProvider: initialiseYjsIndexedDbProvider,
     flushPendingUpdate,

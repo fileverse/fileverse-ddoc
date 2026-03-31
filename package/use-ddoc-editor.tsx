@@ -54,6 +54,14 @@ export const useDdocEditor = ({
     collaboration,
     onIndexedDbError,
   });
+  const shouldWaitForIndexeddbBeforeCreatingDefaultTab = Boolean(
+    enableIndexeddbSync &&
+      !collabEnabled &&
+      rest.isDDocOwner &&
+      !isVersionMode &&
+      !isPreviewMode &&
+      !ddocContent,
+  );
 
   const tabManager = useTabManager({
     ydoc: yjsSetup.ydoc,
@@ -61,7 +69,13 @@ export const useDdocEditor = ({
     enableCollaboration: collabEnabled,
     isDDocOwner: rest.isDDocOwner || false,
     createDefaultTabIfMissing: Boolean(
-      !isVersionMode && !isPreviewMode && rest.isDDocOwner,
+      !isVersionMode &&
+        !isPreviewMode &&
+        rest.isDDocOwner &&
+        // Wait for y-indexedDB sync before deciding whether an unsaved local doc
+        // still needs a default tab, otherwise refresh keeps bootstrapping one.
+        (!shouldWaitForIndexeddbBeforeCreatingDefaultTab ||
+          yjsSetup.isIndexeddbSynced),
     ),
     defaultTabId: rest.tabConfig?.defaultTabId,
     shouldSyncActiveTab: Boolean(

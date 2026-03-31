@@ -62,6 +62,11 @@ export const useTabManager = ({
   const isInitialContentResolved =
     enableCollaboration || initialContent !== null;
   const hasSavedInitialMigrationRef = useRef(false);
+  const isNewDdoc = isDDocOwner && !enableCollaboration && !initialContent;
+  const flushTabUpdate = useCallback(() => {
+    if (isNewDdoc) return;
+    flushPendingUpdate?.();
+  }, [isNewDdoc, flushPendingUpdate]);
 
   // Hydrate tabs before the first editor render so the correct fragment is chosen.
   const initialTabState = useMemo(() => {
@@ -80,8 +85,6 @@ export const useTabManager = ({
         didWrite: false,
       };
     }
-    const isNewDdoc = isDDocOwner && !enableCollaboration && !initialContent;
-
     if (initialContent || isNewDdoc) {
       const derivedTabState = deriveTabsFromEncodedState(
         initialContent as string,
@@ -117,7 +120,6 @@ export const useTabManager = ({
     enableCollaboration,
     createDefaultTabIfMissing,
     isInitialContentResolved,
-    flushPendingUpdate,
   ]);
 
   const [activeTabId, _setActiveTabId] = useState(
@@ -176,7 +178,7 @@ export const useTabManager = ({
       createDefaultTabIfMissing,
     });
     if (syncedTabNodes.didWrite) {
-      flushPendingUpdate?.();
+      flushTabUpdate();
     }
 
     // Keep persisted active tab aligned with the local tab when persistence is enabled.
@@ -185,7 +187,7 @@ export const useTabManager = ({
       if (syncedId !== activeTabIdRef.current) {
         ydoc.transact(() => {
           syncedTabNodes.tabState.set('activeTabId', activeTabIdRef.current);
-        });
+        }, 'self');
       }
     }
 
@@ -533,7 +535,6 @@ export const useTabManager = ({
         tabOrder.delete(oldIndex, 1);
         tabOrder.insert(newIndex, [movedTabId]);
       });
-
       flushPendingUpdate?.();
     },
     [ydoc, flushPendingUpdate],
