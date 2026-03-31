@@ -38,6 +38,7 @@ export type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   ) => Promise<{ url: string; file: File }>;
   fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
   enableCollaboration?: boolean;
+  isCollabDocOwner?: boolean;
 };
 
 export interface NodeSelectorProps {
