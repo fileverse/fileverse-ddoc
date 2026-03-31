@@ -6,6 +6,7 @@ import { Editor } from '@tiptap/react';
 import React, { SetStateAction } from 'react';
 import { IComment } from './extensions/comment';
 import { CollaborationProps } from './sync-local/types';
+import { EditorChangeMetadata } from './editor-change-metadata';
 
 // Re-export collaboration types for consumer access via @fileverse-dev/ddoc/types
 export type {
@@ -181,8 +182,9 @@ export interface DdocProps extends CommentAccountProps {
   setUsername?: React.Dispatch<SetStateAction<string>>;
   renderNavbar?: ({ editor }: { editor: JSONContent }) => JSX.Element;
   onChange?: (
-    updatedDocContent: Data['editorJSONData'],
+    updatedDocContent: string | JSONContent,
     updateChunk: string,
+    meta?: EditorChangeMetadata,
   ) => void;
   onCollaboratorChange?: (collaborators: undefined | IDocCollabUsers[]) => void;
   onTextSelection?: (data: IEditorSelectionData) => void;

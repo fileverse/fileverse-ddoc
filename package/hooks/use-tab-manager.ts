@@ -19,6 +19,7 @@ import { generateRandomBytes } from '@fileverse/crypto/utils';
 import { fromUint8Array } from 'js-base64';
 import { toast } from '@fileverse/ui';
 import { useTabMetadataHistory } from './use-tab-metadata-history';
+import { EditorChangeMetadata } from '../editor-change-metadata';
 
 const UNDO_WINDOW_MS = 10_000; // 10 seconds
 
@@ -40,7 +41,7 @@ interface UseTabManagerArgs {
   defaultTabId?: string;
   onVersionHistoryActiveTabChange?: (tabId: string | null) => void;
   getEditor?: () => Editor | null;
-  flushPendingUpdate?: () => void;
+  flushPendingUpdate?: (changeMeta?: EditorChangeMetadata) => void;
 }
 
 export const getNewTabId = () => {
@@ -62,6 +63,11 @@ export const useTabManager = ({
   const isInitialContentResolved =
     enableCollaboration || initialContent !== null;
   const hasSavedInitialMigrationRef = useRef(false);
+  const isNewDdoc = isDDocOwner && !enableCollaboration && !initialContent;
+  const flushStructuralUpdate = useCallback(() => {
+    if (isNewDdoc) return;
+    flushPendingUpdate?.();
+  }, [isNewDdoc, flushPendingUpdate]);
 
   // Hydrate tabs before the first editor render so the correct fragment is chosen.
   const initialTabState = useMemo(() => {
@@ -80,8 +86,6 @@ export const useTabManager = ({
         didWrite: false,
       };
     }
-    const isNewDdoc = isDDocOwner && !enableCollaboration && !initialContent;
-
     if (initialContent || isNewDdoc) {
       const derivedTabState = deriveTabsFromEncodedState(
         initialContent as string,
@@ -117,7 +121,6 @@ export const useTabManager = ({
     enableCollaboration,
     createDefaultTabIfMissing,
     isInitialContentResolved,
-    flushPendingUpdate,
   ]);
 
   const [activeTabId, _setActiveTabId] = useState(
@@ -176,7 +179,7 @@ export const useTabManager = ({
       createDefaultTabIfMissing,
     });
     if (syncedTabNodes.didWrite) {
-      flushPendingUpdate?.();
+      flushStructuralUpdate();
     }
 
     // Keep persisted active tab aligned with the local tab when persistence is enabled.
@@ -185,7 +188,7 @@ export const useTabManager = ({
       if (syncedId !== activeTabIdRef.current) {
         ydoc.transact(() => {
           syncedTabNodes.tabState.set('activeTabId', activeTabIdRef.current);
-        });
+        }, 'self');
       }
     }
 
@@ -533,7 +536,6 @@ export const useTabManager = ({
         tabOrder.delete(oldIndex, 1);
         tabOrder.insert(newIndex, [movedTabId]);
       });
-
       flushPendingUpdate?.();
     },
     [ydoc, flushPendingUpdate],
