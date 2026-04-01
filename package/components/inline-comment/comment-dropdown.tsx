@@ -15,7 +15,8 @@ import {
 import uuid from 'react-uuid';
 import { CommentCard } from './comment-card';
 import { CommentDropdownProps } from './types';
-import { useComments } from './context/comment-context';
+import { useCommentStore } from '../../stores/comment-store';
+import { useCommentRefs } from '../../stores/comment-store-provider';
 import EnsLogo from '../../assets/ens.svg';
 
 export const CommentDropdown = ({
@@ -33,33 +34,29 @@ export const CommentDropdown = ({
   const commentsContainerRef = useRef<HTMLDivElement>(null);
   const [hideCommentDropdown, setHideCommentDropdown] = useState(false);
 
-  const {
-    inlineCommentData,
-    setInlineCommentData,
-    addComment,
-    comments,
-    activeComments,
-    username,
-    activeComment,
-    selectedText,
-    dropdownRef,
-    isCommentActive,
-    // onNextComment,
-    // onPrevComment,
-    // activeCommentIndex,
-    onCommentReply,
-    resolveComment,
-    unresolveComment,
-    deleteComment,
-    isDDocOwner,
-    onComment,
-    isConnected,
-    setCommentDrawerOpen,
-    isLoading,
-    connectViaUsername,
-    connectViaWallet,
-    setUsername,
-  } = useComments();
+  const inlineCommentData = useCommentStore((s) => s.inlineCommentData);
+  const setInlineCommentData = useCommentStore((s) => s.setInlineCommentData);
+  const addComment = useCommentStore((s) => s.addComment);
+  const comments = useCommentStore((s) => s.getTabComments());
+  const activeComments = useCommentStore((s) => s.getActiveComments());
+  const username = useCommentStore((s) => s.username);
+  const activeComment = useCommentStore((s) => s.getActiveComment());
+  const selectedText = useCommentStore((s) => s.selectedText);
+  const handleInput = useCommentStore((s) => s.handleInput);
+  const isCommentActive = useCommentStore((s) => s.getIsCommentActive());
+  const onCommentReply = useCommentStore((s) => s.onCommentReply);
+  const resolveComment = useCommentStore((s) => s.resolveComment);
+  const unresolveComment = useCommentStore((s) => s.unresolveComment);
+  const deleteComment = useCommentStore((s) => s.deleteComment);
+  const isDDocOwner = useCommentStore((s) => s.isDDocOwner);
+  const onComment = useCommentStore((s) => s.onComment);
+  const isConnected = useCommentStore((s) => s.isConnected);
+  const setCommentDrawerOpen = useCommentStore((s) => s.setCommentDrawerOpen);
+  const isLoading = useCommentStore((s) => s.isLoading);
+  const connectViaUsername = useCommentStore((s) => s.connectViaUsername);
+  const connectViaWallet = useCommentStore((s) => s.connectViaWallet);
+  const setUsername = useCommentStore((s) => s.setUsername);
+  const { dropdownRef } = useCommentRefs();
 
   const emptyComment =
     !activeComment?.content &&

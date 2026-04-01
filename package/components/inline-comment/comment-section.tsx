@@ -10,7 +10,8 @@ import {
   Tooltip,
 } from '@fileverse/ui';
 import { CommentCard } from './comment-card';
-import { useComments } from './context/comment-context';
+import { useCommentStore } from '../../stores/comment-store';
+import { useCommentRefs } from '../../stores/comment-store-provider';
 import EnsLogo from '../../assets/ens.svg';
 import { CommentSectionProps } from './types';
 import { CommentUsername } from './comment-username';
@@ -23,36 +24,33 @@ export const CommentSection = ({
   isNavbarVisible,
   isPresentationMode,
 }: CommentSectionProps) => {
-  const {
-    comments,
-    username,
-    setUsername,
-    focusCommentInEditor,
-    handleReplyChange,
-    handleCommentChange,
-    handleCommentKeyDown,
-    handleReplySubmit,
-    setOpenReplyId,
-    handleReplyKeyDown,
-    openReplyId,
-    showResolved,
-    commentsSectionRef,
-    replySectionRef,
-    comment,
-    reply,
-    handleCommentSubmit,
-    handleInput,
-    resolveComment,
-    unresolveComment,
-    deleteComment,
-    isConnected,
-    connectViaWallet,
-    isLoading,
-    connectViaUsername,
-    isDDocOwner,
-    getEnsStatus,
-    ensCache,
-  } = useComments();
+  const comments = useCommentStore((s) => s.getTabComments());
+  const username = useCommentStore((s) => s.username);
+  const setUsername = useCommentStore((s) => s.setUsername);
+  const focusCommentInEditor = useCommentStore((s) => s.focusCommentInEditor);
+  const handleReplyChange = useCommentStore((s) => s.handleReplyChange);
+  const handleCommentChange = useCommentStore((s) => s.handleCommentChange);
+  const handleCommentKeyDown = useCommentStore((s) => s.handleCommentKeyDown);
+  const handleReplySubmit = useCommentStore((s) => s.handleReplySubmit);
+  const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
+  const handleReplyKeyDown = useCommentStore((s) => s.handleReplyKeyDown);
+  const openReplyId = useCommentStore((s) => s.openReplyId);
+  const showResolved = useCommentStore((s) => s.showResolved);
+  const comment = useCommentStore((s) => s.comment);
+  const reply = useCommentStore((s) => s.reply);
+  const handleCommentSubmit = useCommentStore((s) => s.handleCommentSubmit);
+  const handleInput = useCommentStore((s) => s.handleInput);
+  const resolveComment = useCommentStore((s) => s.resolveComment);
+  const unresolveComment = useCommentStore((s) => s.unresolveComment);
+  const deleteComment = useCommentStore((s) => s.deleteComment);
+  const isConnected = useCommentStore((s) => s.isConnected);
+  const connectViaWallet = useCommentStore((s) => s.connectViaWallet);
+  const isLoading = useCommentStore((s) => s.isLoading);
+  const connectViaUsername = useCommentStore((s) => s.connectViaUsername);
+  const isDDocOwner = useCommentStore((s) => s.isDDocOwner);
+  const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
+  const ensCache = useCommentStore((s) => s.ensCache);
+  const { commentsSectionRef, replySectionRef } = useCommentRefs();
   const { isNativeMobile } = useResponsive();
 
   const _filteredComments = comments.filter((comment) => !comment.deleted);

@@ -22,7 +22,8 @@ import { createPortal } from 'react-dom';
 import { EditorBubbleMenuProps, BubbleMenuItem } from './types';
 import { useResponsive } from '../../utils/responsive';
 import { shouldShow } from './props';
-import { useComments } from '../inline-comment/context/comment-context';
+import { useCommentStore } from '../../stores/comment-store';
+import { useCommentRefs } from '../../stores/comment-store-provider';
 import { useEditorStates } from '../../hooks/use-editor-states';
 import { Editor } from '@tiptap/react';
 
@@ -59,17 +60,14 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     fetchV1ImageFn,
   });
 
-  const {
-    activeComment,
-    isCommentOpen,
-    handleInlineComment,
-    portalRef,
-    buttonRef,
-    isCommentActive,
-    isCommentResolved,
-    isBubbleMenuSuppressed,
-    setIsBubbleMenuSuppressed,
-  } = useComments();
+  const activeComment = useCommentStore((s) => s.getActiveComment());
+  const isCommentOpen = useCommentStore((s) => s.isCommentOpen);
+  const handleInlineComment = useCommentStore((s) => s.handleInlineComment);
+  const isCommentActive = useCommentStore((s) => s.getIsCommentActive());
+  const isCommentResolved = useCommentStore((s) => s.getIsCommentResolved());
+  const isBubbleMenuSuppressed = useCommentStore((s) => s.isBubbleMenuSuppressed);
+  const setIsBubbleMenuSuppressed = useCommentStore((s) => s.setIsBubbleMenuSuppressed);
+  const { portalRef, buttonRef } = useCommentRefs();
 
   useEffect(() => {
     if (!editor || !isBubbleMenuSuppressed) {

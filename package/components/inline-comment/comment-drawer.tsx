@@ -8,7 +8,7 @@ import {
 import cn from 'classnames';
 import { CommentDrawerProps } from './types';
 import { CommentSection } from './comment-section';
-import { useComments } from './context/comment-context';
+import { useCommentStore } from '../../stores/comment-store';
 import { useResponsive } from '../../utils/responsive';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
 
@@ -20,7 +20,9 @@ export const CommentDrawer = ({
   activeCommentId,
   isPreviewMode,
 }: CommentDrawerProps) => {
-  const { toggleResolved, showResolved, isConnected } = useComments();
+  const toggleResolved = useCommentStore((s) => s.toggleResolved);
+  const showResolved = useCommentStore((s) => s.showResolved);
+  const isConnected = useCommentStore((s) => s.isConnected);
   const { isBelow1280px } = useResponsive();
 
   useEscapeKey(() => {

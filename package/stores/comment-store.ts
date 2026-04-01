@@ -4,7 +4,7 @@ import { useStore } from 'zustand';
 import { Editor } from '@tiptap/react';
 import { IComment } from '../extensions/comment';
 import { CommentMutationMeta, CommentMutationType } from '../types';
-import { EnsCache, EnsEntry } from '../components/inline-comment/context/types';
+import { EnsCache } from '../components/inline-comment/context/types';
 import { EnsStatus } from '../components/inline-comment/types';
 import { getAddressName } from '../utils/getAddressName';
 import { DEFAULT_TAB_ID } from '../components/tabs/utils/tab-utils';
@@ -125,6 +125,12 @@ export interface CommentStoreState {
     setEnsStatus: React.Dispatch<React.SetStateAction<EnsStatus>>
   ) => void;
 
+  // Internal helpers
+  createMutationMeta: (
+    type: CommentMutationType,
+    mutate: () => boolean
+  ) => CommentMutationMeta | undefined;
+
   // Sync method — called on every render to push props into store
   syncExternalDeps: (props: CommentStoreExternalDeps) => void;
 }
@@ -137,9 +143,9 @@ export interface CommentStoreExternalDeps {
   activeCommentId: string | null;
   activeTabId: string;
   ensResolutionUrl: string;
-  isConnected: boolean;
-  isLoading: boolean;
-  isDDocOwner: boolean;
+  isConnected?: boolean;
+  isLoading?: boolean;
+  isDDocOwner?: boolean;
   setUsername?: (name: string) => void;
   setInitialComments?: (comments: IComment[]) => void;
   setActiveCommentId: (id: string | null) => void;

@@ -15,7 +15,7 @@ import {
   EnsStatus,
   UserDisplayProps,
 } from './types';
-import { useComments } from './context/comment-context';
+import { useCommentStore } from '../../stores/comment-store';
 import EnsLogo from '../../assets/ens.svg';
 import verifiedMark from '../../assets/ens-check.svg';
 import {
@@ -26,7 +26,8 @@ import {
 import { Spinner } from '../../common/spinner';
 
 const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
-  const { getEnsStatus, ensCache } = useComments();
+  const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
+  const ensCache = useCommentStore((s) => s.ensCache);
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
     name: username,
     isEns: false,
@@ -110,8 +111,9 @@ export const CommentCard = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [showAllReplies, setShowAllReplies] = useState(false);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
-  const { setOpenReplyId } = useComments();
-  const { getEnsStatus, ensCache } = useComments();
+  const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
+  const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
+  const ensCache = useCommentStore((s) => s.ensCache);
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
     name: username as string,
     isEns: false,

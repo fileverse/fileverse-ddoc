@@ -33,7 +33,7 @@ import { toUint8Array } from 'js-base64';
 import { PresentationMode } from './components/presentation-mode/presentation-mode';
 import { CommentDrawer } from './components/inline-comment/comment-drawer';
 import { useResponsive } from './utils/responsive';
-import { CommentProvider } from './components/inline-comment/context/comment-context';
+import { CommentStoreProvider } from './stores/comment-store-provider';
 import { CommentBubbleCard } from './components/inline-comment/comment-bubble-card';
 import { DocumentOutline } from './components/toc/document-outline';
 import { EditorProvider } from './context/editor-context';
@@ -1089,7 +1089,7 @@ const DdocEditor = forwardRef(
             {!editor ? (
               renderComp()
             ) : (
-              <CommentProvider
+              <CommentStoreProvider
                 editor={editor}
                 ydoc={ydoc}
                 username={username as string}
@@ -1116,7 +1116,7 @@ const DdocEditor = forwardRef(
                 setCommentDrawerOpen={setCommentDrawerOpen}
               >
                 {renderComp()}
-              </CommentProvider>
+              </CommentStoreProvider>
             )}
           </div>
         </div>

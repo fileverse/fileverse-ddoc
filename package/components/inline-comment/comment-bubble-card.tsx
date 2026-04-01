@@ -2,7 +2,8 @@
 import { cn } from '@fileverse/ui';
 import { BubbleMenu } from '@tiptap/react/menus';
 import { Editor } from '@tiptap/core';
-import { useComments } from './context/comment-context';
+import { useCommentStore } from '../../stores/comment-store';
+import { useCommentRefs } from '../../stores/comment-store-provider';
 import { CommentDropdown } from './comment-dropdown';
 import { useRef, useEffect, useMemo, useState } from 'react';
 import { useOnClickOutside } from 'usehooks-ts';
@@ -20,8 +21,10 @@ export const CommentBubbleCard = ({
   isCollabDocumentPublished: boolean | undefined;
   disableInlineComment?: boolean;
 }) => {
-  const { comments, username, dropdownRef, setIsBubbleMenuSuppressed } =
-    useComments();
+  const comments = useCommentStore((s) => s.getTabComments());
+  const username = useCommentStore((s) => s.username);
+  const setIsBubbleMenuSuppressed = useCommentStore((s) => s.setIsBubbleMenuSuppressed);
+  const { dropdownRef } = useCommentRefs();
   const disableInlineCommentRef = useRef(disableInlineComment || false);
   const [isReplyViewDismissed, setIsReplyViewDismissed] = useState(false);
 
