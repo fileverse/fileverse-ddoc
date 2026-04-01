@@ -218,9 +218,48 @@ export const DBlock = Node.create<DBlockOptions>({
           (m) => m.type.name === 'textStyle',
         );
         const attrs = textStyleMark?.attrs ?? {};
+        const highlightMark = headMarks.find(
+          (m) => m.type.name === 'highlight',
+        );
+        const hasBold = headMarks.some((m) => m.type.name === 'bold');
+        const hasItalic = headMarks.some((m) => m.type.name === 'italic');
+        const hasUnderline = headMarks.some((m) => m.type.name === 'underline');
+        const hasStrike = headMarks.some((m) => m.type.name === 'strike');
 
         // Get the current node and its parent
         const currentNode = $head.node($head.depth);
+
+        // Read all style attributes
+        const fontFamily =
+          attrs?.fontFamily || currentNode?.attrs?.fontFamily || null;
+        const fontSize =
+          attrs?.fontSize || currentNode?.attrs?.fontSize || null;
+        const color = attrs?.color || currentNode?.attrs?.color || null;
+        const highlightColor =
+          highlightMark?.attrs?.color ||
+          currentNode?.attrs?.highlightColor ||
+          null;
+        const lineHeight = currentNode?.attrs?.lineHeight || null;
+        const textAlign = currentNode?.attrs?.textAlign || null;
+        const isBold = hasBold || currentNode?.attrs?.isBold || false;
+        const isItalic = hasItalic || currentNode?.attrs?.isItalic || false;
+        const isUnderline =
+          hasUnderline || currentNode?.attrs?.isUnderline || false;
+        const isStrike = hasStrike || currentNode?.attrs?.isStrike || false;
+
+        const currentStyles = {
+          fontFamily,
+          fontSize,
+          color,
+          highlightColor,
+          lineHeight,
+          textAlign,
+          isBold,
+          isItalic,
+          isUnderline,
+          isStrike,
+        };
+
         const parent = $head.node($head.depth - 1);
         const headString = $head.toString();
         const nodePaths = headString.split('/');
@@ -285,18 +324,12 @@ export const DBlock = Node.create<DBlockOptions>({
 
             // If it's the last item, exit the list and create a text block
             if (isLastItem) {
-              const fontFamily =
-                attrs?.fontFamily || currentNode?.attrs?.fontFamily || null;
-              const fontSize =
-                attrs?.fontSize || currentNode?.attrs?.fontSize || null;
               return editor
                 .chain()
                 .deleteRange({ from: currentItemStart, to: currentItemEnd })
                 .insertContentAt(currentItemStart, {
                   type: 'dBlock',
-                  content: [
-                    { type: 'paragraph', attrs: { fontFamily, fontSize } },
-                  ],
+                  content: [{ type: 'paragraph', attrs: currentStyles }],
                 })
                 .focus(currentItemStart + 2)
                 .run();
@@ -311,17 +344,21 @@ export const DBlock = Node.create<DBlockOptions>({
           // Handle empty items in nested lists: lift and preserve font attrs
           if (isCurrentItemEmpty && !isTopLevelList) {
             const itemType = parent.type.name as 'listItem' | 'taskItem';
-            const fontFamily =
-              attrs?.fontFamily || currentNode?.attrs?.fontFamily || null;
-            const fontSize =
-              attrs?.fontSize || currentNode?.attrs?.fontSize || null;
             const result = editor.commands.liftListItem(itemType);
-            if (result && (fontFamily || fontSize)) {
+            if (result && (fontFamily || fontSize || color)) {
               editor.commands.setMark('textStyle', {
                 ...(fontFamily ? { fontFamily } : {}),
                 ...(fontSize ? { fontSize } : {}),
+                ...(color ? { color } : {}),
               });
             }
+            if (result && highlightColor) {
+              editor.commands.setMark('highlight', { color: highlightColor });
+            }
+            if (result && isBold) editor.commands.setMark('bold');
+            if (result && isItalic) editor.commands.setMark('italic');
+            if (result && isUnderline) editor.commands.setMark('underline');
+            if (result && isStrike) editor.commands.setMark('strike');
             return result;
           }
         }
@@ -332,20 +369,14 @@ export const DBlock = Node.create<DBlockOptions>({
           currentNode.type.name === 'paragraph'
         ) {
           if (currentNode.textContent === '') {
-            const fontFamily =
-              attrs?.fontFamily || currentNode?.attrs?.fontFamily || null;
-            const fontSize =
-              attrs?.fontSize || currentNode?.attrs?.fontSize || null;
             return editor
               .chain()
               .insertContentAt(from, {
                 type: 'dBlock',
-                content: [
-                  { type: 'paragraph', attrs: { fontFamily, fontSize } },
-                ],
+                content: [{ type: 'paragraph', attrs: currentStyles }],
               })
               .focus(from + 2)
-              .setMark('textStyle', { ...attrs, fontFamily, fontSize })
+              .setMark('textStyle', { ...attrs, fontFamily, fontSize, color })
               .run();
           }
         }
@@ -393,10 +424,6 @@ export const DBlock = Node.create<DBlockOptions>({
               ['columns', 'heading'].includes(currentActiveNodeType) &&
               isAtEndOfTheNode
             ) {
-              const fontFamily =
-                attrs?.fontFamily || currentNode?.attrs?.fontFamily || null;
-              const fontSize =
-                attrs?.fontSize || currentNode?.attrs?.fontSize || null;
               return editor
                 .chain()
                 .insertContent({
@@ -404,7 +431,7 @@ export const DBlock = Node.create<DBlockOptions>({
                   content: [
                     {
                       type: 'paragraph',
-                      attrs: { fontFamily, fontSize },
+                      attrs: currentStyles,
                     },
                   ],
                 })
@@ -436,18 +463,10 @@ export const DBlock = Node.create<DBlockOptions>({
                 .run();
             }
 
-            // Read font attrs from textStyle marks first, then fall back to
-            // paragraph node attrs (reliable when cursor is at start of text
-            // and storedMarks are absent)
-            const fontFamily =
-              attrs?.fontFamily || currentNode?.attrs?.fontFamily || null;
-            const fontSize =
-              attrs?.fontSize || currentNode?.attrs?.fontSize || null;
-
             const finalContent =
               content && content.length > 0 && !isAtEndOfTheNode
                 ? content
-                : [{ type: 'paragraph', attrs: { fontFamily, fontSize } }];
+                : [{ type: 'paragraph', attrs: currentStyles }];
 
             return editor
               .chain()
@@ -459,16 +478,15 @@ export const DBlock = Node.create<DBlockOptions>({
                 },
               )
               .command(({ tr, dispatch }) => {
-                // After insertContentAt, set font attrs on the original (now empty) paragraph
+                // After insertContentAt, set style attrs on the original (now empty) paragraph
                 // The paragraph position is from - 1 (from was the cursor pos inside the paragraph)
-                if (dispatch && (fontFamily || fontSize)) {
+                if (dispatch) {
                   const paragraphPos = from - 1;
                   const node = tr.doc.nodeAt(paragraphPos);
                   if (node && node.type.name === 'paragraph') {
                     tr.setNodeMarkup(paragraphPos, undefined, {
                       ...node.attrs,
-                      fontFamily,
-                      fontSize,
+                      ...currentStyles,
                     });
                   }
                 }

@@ -85,6 +85,9 @@ import { Callout } from './callout/callout';
 import { FontSize } from './font-size';
 import { FontFamilyPersistence } from './font-family-persistence';
 import { TypographyPersistence } from './typography-persistence';
+import { ColorPersistence } from './color-persistence';
+import { HighlightPersistence } from './highlight-persistence';
+import { FormattingPersistence } from './formatting-persistence';
 import { CustomCodeBlockLowlight } from './code-block/custom-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
 import { LineHeight } from './line-height';
@@ -152,8 +155,6 @@ export const defaultExtensions = ({
   onTocUpdate?: (data: ToCItemType[], isCreate?: boolean) => void;
 }) => [
   FontFamily,
-  FontFamilyPersistence,
-  TypographyPersistence,
   StarterKit.configure({
     strike: {
       HTMLAttributes: {
@@ -352,6 +353,12 @@ export const defaultExtensions = ({
   }),
   Callout,
   Emoji,
+  // Persistence extensions should be at the end to override commands
+  FontFamilyPersistence,
+  TypographyPersistence,
+  ColorPersistence,
+  HighlightPersistence,
+  FormattingPersistence,
 ];
 
 export const createInputRule = (
