@@ -15,7 +15,7 @@ import {
   EnsStatus,
   UserDisplayProps,
 } from './types';
-import { useComments } from './context/comment-context';
+import { useCommentStore } from '../../stores/comment-store';
 import EnsLogo from '../../assets/ens.svg';
 import verifiedMark from '../../assets/ens-check.svg';
 import {
@@ -27,7 +27,8 @@ import { Spinner } from '../../common/spinner';
 import { DeleteConfirmOverlay } from './delete-confirm-overlay';
 
 const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
-  const { getEnsStatus, ensCache } = useComments();
+  const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
+  const ensCache = useCommentStore((s) => s.ensCache);
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
     name: username,
     isEns: false,
@@ -76,7 +77,7 @@ const CommentReply = ({
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [isCommentExpanded, setIsCommentExpanded] = useState(false);
   const [isDeleteOverlayVisible, setIsDeleteOverlayVisible] = useState(false);
-  const { deleteReply } = useComments();
+  const deleteReply = useCommentStore((s) => s.deleteReply);
   const isCommentTruncated = Boolean(reply && reply.length > 70);
 
   const displayedComment =
@@ -193,8 +194,9 @@ export const CommentCard = ({
   const [showAllReplies, setShowAllReplies] = useState(false);
   const [isCommentExpanded, setIsCommentExpanded] = useState(false);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
-  const { setOpenReplyId } = useComments();
-  const { getEnsStatus, ensCache } = useComments();
+  const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
+  const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
+  const ensCache = useCommentStore((s) => s.ensCache);
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
     name: username as string,
     isEns: false,

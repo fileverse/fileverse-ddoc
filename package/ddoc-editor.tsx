@@ -33,7 +33,7 @@ import { toUint8Array } from 'js-base64';
 import { PresentationMode } from './components/presentation-mode/presentation-mode';
 import { CommentDrawer } from './components/inline-comment/comment-drawer';
 import { useResponsive } from './utils/responsive';
-import { CommentProvider } from './components/inline-comment/context/comment-context';
+import { CommentStoreProvider } from './stores/comment-store-provider';
 import { CommentBubbleCard } from './components/inline-comment/comment-bubble-card';
 import { CommentFloatingContainer } from './components/inline-comment/comment-floating-container';
 import { DocumentOutline } from './components/toc/document-outline';
@@ -1112,38 +1112,34 @@ const DdocEditor = forwardRef(
             >
               {editor && renderNavbar?.({ editor: editor.getJSON() })}
             </nav>
-            {!editor ? (
-              renderComp()
-            ) : (
-              <CommentProvider
-                editor={editor}
-                ydoc={ydoc}
-                username={username as string}
-                setUsername={setUsername}
-                activeCommentId={activeCommentId}
-                setActiveCommentId={setActiveCommentId}
-                activeTabId={activeTabId}
-                focusCommentWithActiveId={focusCommentWithActiveId}
-                initialComments={initialComments}
-                setInitialComments={setInitialComments}
-                onNewComment={onNewComment}
-                onCommentReply={onCommentReply}
-                onResolveComment={onResolveComment}
-                onUnresolveComment={onUnresolveComment}
-                onDeleteComment={onDeleteComment}
-                ensResolutionUrl={ensResolutionUrl as string}
-                isConnected={isConnected}
-                connectViaWallet={connectViaWallet}
-                isLoading={isLoading}
-                connectViaUsername={connectViaUsername}
-                isDDocOwner={isDDocOwner}
-                onInlineComment={onInlineComment}
-                onComment={onComment}
-                setCommentDrawerOpen={setCommentDrawerOpen}
-              >
-                {renderComp()}
-              </CommentProvider>
-            )}
+            <CommentStoreProvider
+              editor={editor ?? null}
+              ydoc={ydoc}
+              username={username as string}
+              setUsername={setUsername}
+              activeCommentId={activeCommentId}
+              setActiveCommentId={setActiveCommentId}
+              activeTabId={activeTabId}
+              focusCommentWithActiveId={focusCommentWithActiveId}
+              initialComments={initialComments}
+              setInitialComments={setInitialComments}
+              onNewComment={onNewComment}
+              onCommentReply={onCommentReply}
+              onResolveComment={onResolveComment}
+              onUnresolveComment={onUnresolveComment}
+              onDeleteComment={onDeleteComment}
+              ensResolutionUrl={ensResolutionUrl as string}
+              isConnected={isConnected}
+              connectViaWallet={connectViaWallet}
+              isLoading={isLoading}
+              connectViaUsername={connectViaUsername}
+              isDDocOwner={isDDocOwner}
+              onInlineComment={onInlineComment}
+              onComment={onComment}
+              setCommentDrawerOpen={setCommentDrawerOpen}
+            >
+              {renderComp()}
+            </CommentStoreProvider>
           </div>
         </div>
       </EditorProvider>

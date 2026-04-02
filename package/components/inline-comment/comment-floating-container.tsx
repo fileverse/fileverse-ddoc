@@ -9,7 +9,8 @@ import { Avatar, Button, TextAreaFieldV2, Tooltip, cn } from '@fileverse/ui';
 import { Editor } from '@tiptap/react';
 import { useOnClickOutside } from 'usehooks-ts';
 import { CommentCard } from './comment-card';
-import { useComments } from './context/comment-context';
+import { IComment } from '../../extensions/comment';
+import { useCommentStore } from '../../stores/comment-store';
 import {
   CommentFloatingDraftItem,
   CommentFloatingItem,
@@ -352,13 +353,13 @@ const DraftFloatingCard = ({
   isHidden: boolean;
   registerCardNode: (itemId: string, node: HTMLDivElement | null) => void;
 }) => {
-  const {
-    cancelFloatingDraft,
-    focusFloatingItem,
-    submitFloatingDraft,
-    updateFloatingDraftText,
-    username,
-  } = useComments();
+  const cancelFloatingDraft = useCommentStore((s) => s.cancelFloatingDraft);
+  const focusFloatingItem = useCommentStore((s) => s.focusFloatingItem);
+  const submitFloatingDraft = useCommentStore((s) => s.submitFloatingDraft);
+  const updateFloatingDraftText = useCommentStore(
+    (s) => s.updateFloatingDraftText,
+  );
+  const username = useCommentStore((s) => s.username);
   const draftCardRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -451,24 +452,19 @@ const ThreadFloatingCard = ({
   registerCardNode,
 }: {
   thread: CommentFloatingThreadItem;
-  comment: ReturnType<typeof useComments>['comments'][number] | undefined;
+  comment: IComment | undefined;
   isHidden: boolean;
   registerCardNode: (itemId: string, node: HTMLDivElement | null) => void;
 }) => {
-  const {
-    blurFloatingItem,
-    focusFloatingItem,
-    handleAddReply,
-    isConnected,
-    // isDDocOwner,
-    onCommentReply,
-    resolveComment,
-    setCommentDrawerOpen,
-    username,
-    deleteComment,
-    // unresolveComment,
-    handleInput,
-  } = useComments();
+  const blurFloatingItem = useCommentStore((s) => s.blurFloatingItem);
+  const focusFloatingItem = useCommentStore((s) => s.focusFloatingItem);
+  const handleAddReply = useCommentStore((s) => s.handleAddReply);
+  const isConnected = useCommentStore((s) => s.isConnected);
+  const resolveComment = useCommentStore((s) => s.resolveComment);
+  const setCommentDrawerOpen = useCommentStore((s) => s.setCommentDrawerOpen);
+  const username = useCommentStore((s) => s.username);
+  const deleteComment = useCommentStore((s) => s.deleteComment);
+  const handleInput = useCommentStore((s) => s.handleInput);
   const [replyText, setReplyText] = useState('');
   const [isDeleteOverlayVisible, setIsDeleteOverlayVisible] = useState(false);
 
@@ -486,11 +482,7 @@ const ThreadFloatingCard = ({
       return;
     }
 
-    if (!onCommentReply) {
-      return;
-    }
-
-    handleAddReply(thread.commentId, replyText, onCommentReply);
+    handleAddReply(thread.commentId, replyText);
     setReplyText('');
     blurFloatingItem(thread.itemId);
   };
@@ -621,12 +613,12 @@ export const CommentFloatingContainer = ({
   scrollContainerRef: React.RefObject<HTMLDivElement>;
   isHidden: boolean;
 }) => {
-  const {
-    blurFloatingItem,
-    comments,
-    floatingItems,
-    isDesktopFloatingEnabled,
-  } = useComments();
+  const blurFloatingItem = useCommentStore((s) => s.blurFloatingItem);
+  const comments = useCommentStore((s) => s.tabComments);
+  const floatingItems = useCommentStore((s) => s.floatingItems);
+  const isDesktopFloatingEnabled = useCommentStore(
+    (s) => s.isDesktopFloatingEnabled,
+  );
   const railHostRef = useRef<HTMLDivElement | null>(null);
   const registryRef = useRef<Map<string, AnchorEntry>>(new Map());
   const runtimeRef = useRef<Map<string, RuntimeItemState>>(new Map());
