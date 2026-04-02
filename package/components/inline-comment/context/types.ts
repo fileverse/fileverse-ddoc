@@ -44,10 +44,12 @@ export interface CommentContextType extends CommentAccountProps {
   submitFloatingDraft: (draftId: string) => void;
   openFloatingThread: (commentId: string) => void;
   closeFloatingItem: (itemId: string) => void;
+  blurFloatingItem: (itemId: string) => void;
   focusFloatingItem: (itemId: string) => void;
   resolveComment: (commentId: string) => void;
   unresolveComment: (commentId: string) => void;
   deleteComment: (commentId: string) => void;
+  deleteReply: (commentId: string, replyId: string) => void;
   handleAddReply: (
     activeCommentId: string,
     replyContent: string,

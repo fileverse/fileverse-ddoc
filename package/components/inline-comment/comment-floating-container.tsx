@@ -5,14 +5,9 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import {
-  Button,
-  IconButton,
-  TextAreaFieldV2,
-  Tooltip,
-  cn,
-} from '@fileverse/ui';
+import { Avatar, Button, TextAreaFieldV2, Tooltip, cn } from '@fileverse/ui';
 import { Editor } from '@tiptap/react';
+import { useOnClickOutside } from 'usehooks-ts';
 import { CommentCard } from './comment-card';
 import { useComments } from './context/comment-context';
 import {
@@ -25,6 +20,7 @@ import {
   FloatingLayoutDirtyFlag,
   computeFloatingCommentLayout,
 } from './comment-floating-layout';
+import { DeleteConfirmOverlay } from './delete-confirm-overlay';
 
 type AnchorType = 'draft' | 'thread';
 
@@ -143,6 +139,14 @@ const getAnchorStartPos = (editor: Editor, elements: HTMLElement[]) => {
   });
 
   return minPos;
+};
+
+const getEditorRoot = (editor: Editor): HTMLElement | null => {
+  try {
+    return editor.view.dom as HTMLElement;
+  } catch {
+    return null;
+  }
 };
 
 const collectRelevantAnchorIds = (node: Node, anchorIds: Set<string>) => {
@@ -353,6 +357,7 @@ const DraftFloatingCard = ({
     focusFloatingItem,
     submitFloatingDraft,
     updateFloatingDraftText,
+    username,
   } = useComments();
   const draftCardRef = useRef<HTMLDivElement | null>(null);
 
@@ -385,31 +390,39 @@ const DraftFloatingCard = ({
       isFocused={draft.isFocused}
       onFocus={() => focusFloatingItem(draft.itemId)}
     >
-      <div className="flex items-center justify-between border-b color-border-default px-3 py-2">
-        <p className="text-body-sm-bold">New Comment</p>
-        <IconButton
-          icon="X"
-          variant="ghost"
-          size="sm"
-          onClick={() => cancelFloatingDraft(draft.draftId)}
+      <div className="flex items-center gap-2 color-border-default px-3 py-2">
+        <Avatar
+          src={`https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+            username || '',
+          )}`}
+          className="w-[24px] h-[24px]"
         />
+        <p className="text-body-sm-bold">{username}</p>
       </div>
-      <div className="flex flex-col gap-3 p-3">
-        {draft.selectedText ? (
+      <div className="flex flex-col gap-3 p-3 pt-0">
+        {/* {draft.selectedText ? (
           <div className="highlight-comment-bg rounded-lg p-2">
             <p className="text-body-sm italic whitespace-pre-wrap break-words">
               "{draft.selectedText}"
             </p>
           </div>
-        ) : null}
-        <TextAreaFieldV2
-          value={draft.draftText}
-          onChange={(event) =>
-            updateFloatingDraftText(draft.draftId, event.target.value)
-          }
-          className="color-bg-default text-body-sm color-text-default min-h-[88px] max-h-[196px] overflow-y-auto no-scrollbar whitespace-pre-wrap px-3 py-2"
-          placeholder="Type your comment"
-        />
+        ) : null} */}
+        <div className="border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
+          <TextAreaFieldV2
+            value={draft.draftText}
+            onChange={(event) =>
+              updateFloatingDraftText(draft.draftId, event.target.value)
+            }
+            onKeyDown={(event) => {
+              if (event.key === 'Enter' && (!event.shiftKey || event.metaKey)) {
+                event.preventDefault();
+                submitFloatingDraft(draft.draftId);
+              }
+            }}
+            className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
+            placeholder="Add a comment"
+          />
+        </div>
         <div className="flex items-center justify-end gap-2">
           <Button
             variant="ghost"
@@ -443,20 +456,21 @@ const ThreadFloatingCard = ({
   registerCardNode: (itemId: string, node: HTMLDivElement | null) => void;
 }) => {
   const {
-    // closeFloatingItem,
+    blurFloatingItem,
     focusFloatingItem,
     handleAddReply,
     isConnected,
     // isDDocOwner,
     onCommentReply,
-    // resolveComment,
+    resolveComment,
     setCommentDrawerOpen,
-    // username,
-    // deleteComment,
+    username,
+    deleteComment,
     // unresolveComment,
     handleInput,
   } = useComments();
   const [replyText, setReplyText] = useState('');
+  const [isDeleteOverlayVisible, setIsDeleteOverlayVisible] = useState(false);
 
   // const canManageThread =
   //   Boolean(comment?.username && comment.username === username) || isDDocOwner;
@@ -478,6 +492,28 @@ const ThreadFloatingCard = ({
 
     handleAddReply(thread.commentId, replyText, onCommentReply);
     setReplyText('');
+    blurFloatingItem(thread.itemId);
+  };
+
+  const handleDeleteOverlayOpen = () => {
+    if (!thread.commentId) {
+      return;
+    }
+
+    setIsDeleteOverlayVisible(true);
+  };
+
+  const handleDeleteOverlayClose = () => {
+    setIsDeleteOverlayVisible(false);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!thread.commentId) {
+      return;
+    }
+
+    setIsDeleteOverlayVisible(false);
+    deleteComment(thread.commentId);
   };
 
   return (
@@ -488,16 +524,19 @@ const ThreadFloatingCard = ({
       isFocused={thread.isFocused}
       onFocus={() => focusFloatingItem(thread.itemId)}
     >
-      <div className="max-h-[420px] overflow-y-auto">
+      <div>
         <CommentCard
           id={comment?.id}
           username={comment?.username}
           selectedContent={comment?.selectedContent || thread.selectedText}
           comment={comment?.content}
           createdAt={comment?.createdAt}
+          isFocused={thread.isFocused}
           replies={comment?.replies}
           isResolved={comment?.resolved}
           isDropdown
+          onResolve={resolveComment}
+          onRequestDelete={handleDeleteOverlayOpen}
           isDisabled={Boolean(
             comment &&
               !Object.prototype.hasOwnProperty.call(comment, 'commentIndex'),
@@ -505,33 +544,67 @@ const ThreadFloatingCard = ({
           version={comment?.version}
           emptyComment={!comment}
         />
-      </div>
-      <div className="border-t color-border-default p-3">
-        <TextAreaFieldV2
-          value={replyText}
-          onChange={(event) => setReplyText(event.target.value)}
-          onInput={(event) => handleInput(event, event.currentTarget.value)}
-          onKeyDown={(event) => {
-            if (event.key === 'Enter' && !event.shiftKey) {
-              event.preventDefault();
-              onReplySubmit();
-            }
-          }}
-          className="color-bg-default text-body-sm color-text-default min-h-[40px] max-h-[96px] overflow-y-auto no-scrollbar whitespace-pre-wrap px-3 py-2"
-          placeholder={canReply ? 'Reply' : 'Thread resolved'}
-          disabled={!canReply}
+        {thread.isFocused && (
+          <div className="group p-3 pt-0">
+            <div className="border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
+              <Avatar
+                src={`https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                  username || '',
+                )}`}
+                className="w-[16px] h-[16px]"
+              />
+              <TextAreaFieldV2
+                value={replyText}
+                onChange={(event) => setReplyText(event.target.value)}
+                onInput={(event) =>
+                  handleInput(event, event.currentTarget.value)
+                }
+                onKeyDown={(event) => {
+                  if (
+                    event.key === 'Enter' &&
+                    (!event.shiftKey || event.metaKey)
+                  ) {
+                    event.preventDefault();
+                    onReplySubmit();
+                  }
+                }}
+                style={{
+                  ...(!comment ? { height: '20px' } : {}),
+                }}
+                className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
+                placeholder={canReply ? 'Add a reply' : 'Thread resolved'}
+                disabled={!canReply}
+              />
+            </div>
+            <div className="hidden items-center justify-end gap-2 pt-2 group-focus-within:flex">
+              <Button
+                variant={'ghost'}
+                className="w-20 min-w-20"
+                onClick={() => {
+                  setReplyText('');
+                  blurFloatingItem(thread.itemId);
+                }}
+              >
+                <p className="text-body-sm-bold">Cancel</p>
+              </Button>
+              <Tooltip text={!isConnected ? 'Sign in to reply' : ''}>
+                <Button
+                  className="w-20 min-w-20"
+                  disabled={!canReply || !replyText.trim()}
+                  onClick={onReplySubmit}
+                >
+                  Send
+                </Button>
+              </Tooltip>
+            </div>
+          </div>
+        )}
+        <DeleteConfirmOverlay
+          isVisible={isDeleteOverlayVisible}
+          title="Delete this comment thread ?"
+          onCancel={handleDeleteOverlayClose}
+          onConfirm={handleConfirmDelete}
         />
-        <div className="flex items-center justify-end gap-2 pt-2">
-          <Tooltip text={!isConnected ? 'Sign in to reply' : ''}>
-            <Button
-              className="w-20 min-w-20"
-              disabled={!canReply || !replyText.trim()}
-              onClick={onReplySubmit}
-            >
-              Send
-            </Button>
-          </Tooltip>
-        </div>
       </div>
     </FloatingCardShell>
   );
@@ -548,7 +621,12 @@ export const CommentFloatingContainer = ({
   scrollContainerRef: React.RefObject<HTMLDivElement>;
   isHidden: boolean;
 }) => {
-  const { comments, floatingItems, isDesktopFloatingEnabled } = useComments();
+  const {
+    blurFloatingItem,
+    comments,
+    floatingItems,
+    isDesktopFloatingEnabled,
+  } = useComments();
   const railHostRef = useRef<HTMLDivElement | null>(null);
   const registryRef = useRef<Map<string, AnchorEntry>>(new Map());
   const runtimeRef = useRef<Map<string, RuntimeItemState>>(new Map());
@@ -564,6 +642,7 @@ export const CommentFloatingContainer = ({
   const lastContainerTopRef = useRef<number | null>(null);
   const mountedItemIdsRef = useRef<string[]>([]);
   const cardNodesRef = useRef<Map<string, HTMLDivElement>>(new Map());
+  const focusedCardRef = useRef<HTMLDivElement | null>(null);
   const nodeToItemIdRef = useRef(new WeakMap<Element, string>());
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const dirtyStartIndexRef = useRef(0);
@@ -576,6 +655,10 @@ export const CommentFloatingContainer = ({
 
   const openItemMap = useMemo(
     () => new Map(openItems.map((item) => [item.itemId, item])),
+    [openItems],
+  );
+  const focusedItemId = useMemo(
+    () => openItems.find((item) => item.isFocused)?.itemId ?? null,
     [openItems],
   );
 
@@ -631,7 +714,7 @@ export const CommentFloatingContainer = ({
     rafIdRef.current = window.requestAnimationFrame(() => {
       rafIdRef.current = null;
 
-      const editorRoot = editor.view.dom as HTMLElement | undefined;
+      const editorRoot = getEditorRoot(editor);
       const scrollContainer = scrollContainerRef.current;
       const railHost = railHostRef.current;
 
@@ -953,16 +1036,41 @@ export const CommentFloatingContainer = ({
 
       if (!node) {
         cardNodesRef.current.delete(itemId);
+        if (focusedCardRef.current === previousNode) {
+          focusedCardRef.current = null;
+        }
         return;
       }
 
       cardNodesRef.current.set(itemId, node);
+      if (itemId === focusedItemId) {
+        focusedCardRef.current = node;
+      }
       nodeToItemIdRef.current.set(node, itemId);
       pendingHeightReadIdsRef.current.add(itemId);
       resizeObserverRef.current?.observe(node);
       schedulePipeline();
     },
-    [schedulePipeline],
+    [focusedItemId, schedulePipeline],
+  );
+
+  useEffect(() => {
+    focusedCardRef.current = focusedItemId
+      ? (cardNodesRef.current.get(focusedItemId) ?? null)
+      : null;
+  }, [focusedItemId, mountedItemIds]);
+
+  useOnClickOutside(
+    focusedCardRef,
+    () => {
+      if (!isDesktopFloatingEnabled || !focusedItemId) {
+        return;
+      }
+
+      blurFloatingItem(focusedItemId);
+    },
+    'mousedown',
+    { capture: true },
   );
 
   useEffect(() => {
@@ -1042,13 +1150,10 @@ export const CommentFloatingContainer = ({
       return;
     }
 
-    const editorRoot = editor.view.dom as HTMLElement | undefined;
+    let observer: MutationObserver | null = null;
+    let frameId: number | null = null;
 
-    if (!editorRoot) {
-      return;
-    }
-
-    const observer = new MutationObserver((mutations) => {
+    const handleMutations = (mutations: MutationRecord[]) => {
       const anchorIds = new Set<string>();
 
       mutations.forEach((mutation) => {
@@ -1069,19 +1174,35 @@ export const CommentFloatingContainer = ({
         pendingRegistryAnchorIdsRef.current.add(anchorId),
       );
       schedulePipeline();
-    });
+    };
 
-    observer.observe(editorRoot, {
-      subtree: true,
-      childList: true,
-      characterData: true,
-    });
+    const attachObserver = () => {
+      const editorRoot = getEditorRoot(editor);
 
-    pendingRegistryRefreshAllRef.current = true;
-    schedulePipeline();
+      if (!editorRoot) {
+        frameId = window.requestAnimationFrame(attachObserver);
+        return;
+      }
+
+      observer = new MutationObserver(handleMutations);
+      observer.observe(editorRoot, {
+        subtree: true,
+        childList: true,
+        characterData: true,
+      });
+
+      pendingRegistryRefreshAllRef.current = true;
+      schedulePipeline();
+    };
+
+    attachObserver();
 
     return () => {
-      observer.disconnect();
+      if (frameId !== null) {
+        window.cancelAnimationFrame(frameId);
+      }
+
+      observer?.disconnect();
     };
   }, [editor, isDesktopFloatingEnabled, openItems.length, schedulePipeline]);
 
@@ -1101,7 +1222,11 @@ export const CommentFloatingContainer = ({
   return (
     <div
       ref={railHostRef}
-      className={cn('relative shrink-0', isHidden && 'pointer-events-none')}
+      className={cn(
+        'comment-floating-rail relative shrink-0',
+        isHidden && 'pointer-events-none',
+      )}
+      data-floating-comment-hidden={isHidden ? 'true' : 'false'}
       style={{
         width: FLOATING_CARD_WIDTH,
         minHeight: '100%',

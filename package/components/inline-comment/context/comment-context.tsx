@@ -323,6 +323,29 @@ export const CommentProvider = ({
     [activeCommentId, editor, setActiveCommentId],
   );
 
+  const blurFloatingItem = useCallback(
+    (itemId: string) => {
+      const itemToBlur = floatingItemsRef.current.find(
+        (item) => item.itemId === itemId,
+      );
+
+      if (!itemToBlur) return;
+
+      if (
+        itemToBlur.type === 'thread' &&
+        activeCommentId === itemToBlur.commentId
+      ) {
+        setActiveCommentId(null);
+        editor.commands.unsetCommentActive();
+      }
+
+      setFloatingItems((prevItems) =>
+        prevItems.map((item) => ({ ...item, isFocused: false })),
+      );
+    },
+    [activeCommentId, editor, setActiveCommentId],
+  );
+
   const cancelFloatingDraft = useCallback(
     (draftId: string) => {
       const draftItem = floatingItemsRef.current.find(
@@ -725,6 +748,26 @@ export const CommentProvider = ({
     ],
   );
 
+  const deleteReply = useCallback(
+    (commentId: string, replyId: string) => {
+      setInitialComments?.((prevComments) =>
+        prevComments.map((comment) => {
+          if (comment.id !== commentId) {
+            return comment;
+          }
+
+          return {
+            ...comment,
+            replies: (comment.replies || []).map((reply) =>
+              reply.id === replyId ? { ...reply, deleted: true } : reply,
+            ),
+          };
+        }),
+      );
+    },
+    [setInitialComments],
+  );
+
   const handleAddReply = useCallback(
     (
       currentActiveCommentId: string,
@@ -984,10 +1027,12 @@ export const CommentProvider = ({
       submitFloatingDraft,
       openFloatingThread,
       closeFloatingItem,
+      blurFloatingItem,
       focusFloatingItem,
       resolveComment,
       unresolveComment,
       deleteComment,
+      deleteReply,
       handleAddReply,
       focusCommentInEditor,
       handleReplyChange,
@@ -1053,10 +1098,12 @@ export const CommentProvider = ({
       submitFloatingDraft,
       openFloatingThread,
       closeFloatingItem,
+      blurFloatingItem,
       focusFloatingItem,
       resolveComment,
       unresolveComment,
       deleteComment,
+      deleteReply,
       handleAddReply,
       focusCommentInEditor,
       handleReplyChange,
