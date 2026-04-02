@@ -572,9 +572,13 @@ export const createCommentStore = () =>
         setEnsStatus({ ...ensCache[walletAddress] });
         return;
       }
-      console.log('[ens] walletAddress:', walletAddress, 'ensResolutionUrl:', !!ensResolutionUrl, 'cached:', !!ensCache[walletAddress]);
+      // If the username is already an ENS name, no need to resolve
+      if (walletAddress && walletAddress.endsWith('.eth')) {
+        setEnsStatus({ name: walletAddress, isEns: true });
+        return;
+      }
+
       if (!walletAddress || !ensResolutionUrl) {
-        console.log('[ens] skipping — missing walletAddress or ensResolutionUrl');
         setEnsStatus({ name: walletAddress || 'Anonymous', isEns: false });
         return;
       }
