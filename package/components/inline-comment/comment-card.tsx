@@ -355,7 +355,7 @@ export const CommentCard = ({
         'flex flex-col gap-[4px] px-3 group comment-card',
         isResolved && 'opacity-70',
         !isDropdown && '!px-6',
-        isDropdown && 'py-3',
+        isDropdown && 'py-3 pt-0',
       )}
     >
       <div className="flex flex-col gap-[8px] p-[4px]">

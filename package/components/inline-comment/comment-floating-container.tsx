@@ -468,11 +468,13 @@ const DraftFloatingCard = ({
 const ThreadFloatingCard = ({
   thread,
   comment,
+  tabName,
   isHidden,
   registerCardNode,
 }: {
   thread: CommentFloatingThreadItem;
   comment: IComment | undefined;
+  tabName: string;
   isHidden: boolean;
   registerCardNode: (itemId: string, node: HTMLDivElement | null) => void;
 }) => {
@@ -536,7 +538,10 @@ const ThreadFloatingCard = ({
       isFocused={thread.isFocused}
       onFocus={() => focusFloatingItem(thread.itemId)}
     >
-      <div>
+      <div className="flex flex-col gap-[8px]">
+        <p className="text-helper-text-sm px-[12px] pt-[12px] h-[26px] max-w-[270px] truncate color-text-secondary">
+          {tabName}
+        </p>
         <CommentCard
           id={comment?.id}
           username={comment?.username}
@@ -626,11 +631,13 @@ export const CommentFloatingContainer = ({
   editor,
   editorWrapperRef,
   scrollContainerRef,
+  tabName,
   isHidden,
 }: {
   editor: Editor;
   editorWrapperRef: React.RefObject<HTMLDivElement>;
   scrollContainerRef: React.RefObject<HTMLDivElement>;
+  tabName: string;
   isHidden: boolean;
 }) => {
   const blurFloatingItem = useCommentStore((s) => s.blurFloatingItem);
@@ -1272,6 +1279,7 @@ export const CommentFloatingContainer = ({
             key={item.itemId}
             thread={item}
             comment={comment}
+            tabName={tabName}
             isHidden={isHidden}
             registerCardNode={registerCardNode}
           />

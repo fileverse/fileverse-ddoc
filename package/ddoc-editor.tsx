@@ -41,7 +41,10 @@ import { EditorProvider } from './context/editor-context';
 import { fadeInTransition, slideUpTransition } from './components/motion-div';
 import { PreviewContentLoader } from './components/preview-content-loader';
 import { EmbedSettings } from './extensions/twitter-embed/embed-settings';
-import { DEFAULT_TAB_ID } from './components/tabs/utils/tab-utils';
+import {
+  DEFAULT_TAB_ID,
+  DEFAULT_TAB_NAME,
+} from './components/tabs/utils/tab-utils';
 import { PreviewModeExportTrigger } from './components/preview-export-trigger';
 import {
   getResponsiveThemeTextColor,
@@ -298,6 +301,12 @@ const DdocEditor = forwardRef(
       tabConfig,
       ...rest,
     });
+    const currentTabName = useMemo(
+      () =>
+        tabs.find((tab) => tab.id === (activeTabId || DEFAULT_TAB_ID))?.name ||
+        DEFAULT_TAB_NAME,
+      [activeTabId, tabs],
+    );
 
     useImperativeHandle(
       ref,
@@ -972,6 +981,7 @@ const DdocEditor = forwardRef(
                             editor={editor}
                             editorWrapperRef={editorWrapperRef}
                             scrollContainerRef={editorScrollContainerRef}
+                            tabName={currentTabName}
                             isHidden={Boolean(commentDrawerOpen)}
                           />
                         </div>
