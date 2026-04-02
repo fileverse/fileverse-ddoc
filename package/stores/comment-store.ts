@@ -572,7 +572,9 @@ export const createCommentStore = () =>
         setEnsStatus({ ...ensCache[walletAddress] });
         return;
       }
+      console.log('[ens] walletAddress:', walletAddress, 'ensResolutionUrl:', !!ensResolutionUrl, 'cached:', !!ensCache[walletAddress]);
       if (!walletAddress || !ensResolutionUrl) {
+        console.log('[ens] skipping — missing walletAddress or ensResolutionUrl');
         setEnsStatus({ name: walletAddress || 'Anonymous', isEns: false });
         return;
       }
