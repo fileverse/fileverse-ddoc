@@ -192,6 +192,26 @@ const collectRelevantAnchorIds = (node: Node, anchorIds: Set<string>) => {
     });
 };
 
+const collectRelevantAnchorIdsFromAttributeMutation = (
+  mutation: MutationRecord,
+  anchorIds: Set<string>,
+) => {
+  if (!(mutation.target instanceof HTMLElement)) {
+    return;
+  }
+
+  collectRelevantAnchorIds(mutation.target, anchorIds);
+
+  if (
+    mutation.type === 'attributes' &&
+    (mutation.attributeName === 'data-comment-id' ||
+      mutation.attributeName === 'data-draft-comment-id') &&
+    mutation.oldValue
+  ) {
+    anchorIds.add(mutation.oldValue);
+  }
+};
+
 const getFirstIntersectingRect = ({
   elements,
   viewportTop,
@@ -1149,7 +1169,7 @@ export const CommentFloatingContainer = ({
       const anchorIds = new Set<string>();
 
       mutations.forEach((mutation) => {
-        collectRelevantAnchorIds(mutation.target, anchorIds);
+        collectRelevantAnchorIdsFromAttributeMutation(mutation, anchorIds);
         mutation.addedNodes.forEach((node) =>
           collectRelevantAnchorIds(node, anchorIds),
         );
@@ -1181,6 +1201,9 @@ export const CommentFloatingContainer = ({
         subtree: true,
         childList: true,
         characterData: true,
+        attributes: true,
+        attributeOldValue: true,
+        attributeFilter: ['data-comment-id', 'data-draft-comment-id'],
       });
 
       pendingRegistryRefreshAllRef.current = true;

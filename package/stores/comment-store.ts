@@ -723,6 +723,7 @@ export const createCommentStore = () =>
         return;
       }
 
+      get().setActiveCommentId(newComment.id || '');
       setActiveCommentId(newComment.id || '');
       setTimeout(() => focusCommentWithActiveId(newComment.id || ''), 0);
       onNewComment?.(newComment, mutationMeta);
@@ -737,23 +738,36 @@ export const createCommentStore = () =>
               item.commentId === newComment.id
             ),
         );
+        const replacementThreadItem = {
+          itemId: draftItem.itemId,
+          type: 'thread' as const,
+          commentId: newComment.id || '',
+          selectedText: draftItem.selectedText,
+          isOpen: true,
+          isFocused: true,
+        };
+        const replacementIndex = nextItems.findIndex(
+          (item) => item.itemId === draftItem.itemId,
+        );
 
         return {
-          floatingItems: nextItems.map((item) =>
-            item.itemId === draftItem.itemId
-              ? {
-                  itemId: draftItem.itemId,
-                  type: 'thread',
-                  commentId: newComment.id || '',
-                  selectedText: draftItem.selectedText,
-                  isOpen: true,
-                  isFocused: true,
-                }
-              : {
-                  ...item,
-                  isFocused: false,
-                },
-          ),
+          floatingItems:
+            replacementIndex >= 0
+              ? nextItems.map((item) =>
+                  item.itemId === draftItem.itemId
+                    ? replacementThreadItem
+                    : {
+                        ...item,
+                        isFocused: false,
+                      },
+                )
+              : [
+                  ...nextItems.map((item) => ({
+                    ...item,
+                    isFocused: false,
+                  })),
+                  replacementThreadItem,
+                ],
         };
       });
     },
