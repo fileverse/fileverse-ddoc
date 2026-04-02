@@ -55,6 +55,16 @@ export interface CommentStoreState {
   isLoading: boolean;
   isDDocOwner: boolean;
 
+  // --- External callbacks (synced via useEffect, read by consumers) ---
+  onComment: (() => void) | null;
+  setCommentDrawerOpen: ((open: boolean) => void) | null;
+  connectViaWallet: (() => Promise<void>) | null;
+  connectViaUsername: ((username: string) => Promise<void>) | null;
+
+  // --- Editor-derived state (synced when activeCommentId changes) ---
+  isCommentActive: boolean;
+  isCommentResolved: boolean;
+
   // --- Owned state ---
   showResolved: boolean;
   reply: string;
@@ -87,6 +97,12 @@ export interface CommentStoreState {
   setIsConnected: (connected: boolean) => void;
   setIsLoading: (loading: boolean) => void;
   setIsDDocOwner: (isOwner: boolean) => void;
+  setOnComment: (fn: (() => void) | null) => void;
+  setCommentDrawerOpenFn: (fn: ((open: boolean) => void) | null) => void;
+  setConnectViaWallet: (fn: (() => Promise<void>) | null) => void;
+  setConnectViaUsername: (fn: ((username: string) => Promise<void>) | null) => void;
+  setIsCommentActive: (active: boolean) => void;
+  setIsCommentResolved: (resolved: boolean) => void;
 
   // --- Derived getters ---
   getTabComments: () => IComment[];
@@ -184,6 +200,16 @@ export const createCommentStore = () =>
     isLoading: false,
     isDDocOwner: false,
 
+    // --- External callbacks ---
+    onComment: null,
+    setCommentDrawerOpen: null,
+    connectViaWallet: null,
+    connectViaUsername: null,
+
+    // --- Editor-derived state ---
+    isCommentActive: false,
+    isCommentResolved: false,
+
     // --- Owned state ---
     showResolved: true,
     reply: '',
@@ -227,10 +253,20 @@ export const createCommentStore = () =>
       set({ tabComments, activeComments, activeComment, activeCommentIndex });
     },
 
-    // --- Synced data setters (each triggers derived recomputation) ---
+    // --- Synced data setters (batch with derived recomputation to avoid double set) ---
     setInitialComments: (comments) => {
       set({ initialComments: comments });
-      get()._recomputeDerived();
+      // Recompute in same tick — Zustand batches synchronous set() calls
+      const { activeTabId, activeCommentId } = get();
+      const tabComments = comments.filter(
+        (c) => (c.tabId ?? DEFAULT_TAB_ID) === activeTabId,
+      );
+      const activeComments = tabComments.filter(
+        (c) => !c.resolved && c.selectedContent && c.selectedContent.length > 0 && !c.deleted,
+      );
+      const activeComment = tabComments.find((c) => c.id === activeCommentId);
+      const activeCommentIndex = activeComments.findIndex((c) => c.id === activeCommentId);
+      set({ tabComments, activeComments, activeComment, activeCommentIndex });
     },
     setUsername: (username) => {
       set({ username });
@@ -238,7 +274,11 @@ export const createCommentStore = () =>
     },
     setActiveCommentId: (id) => {
       set({ activeCommentId: id });
-      get()._recomputeDerived();
+      const tabComments = get().tabComments;
+      const activeComments = get().activeComments;
+      const activeComment = tabComments.find((c) => c.id === id);
+      const activeCommentIndex = activeComments.findIndex((c) => c.id === id);
+      set({ activeComment, activeCommentIndex });
     },
     setActiveTabId: (tabId) => {
       set({ activeTabId: tabId });
@@ -247,20 +287,20 @@ export const createCommentStore = () =>
     setIsConnected: (connected) => set({ isConnected: connected }),
     setIsLoading: (loading) => set({ isLoading: loading }),
     setIsDDocOwner: (isOwner) => set({ isDDocOwner: isOwner }),
+    setOnComment: (fn) => set({ onComment: fn }),
+    setCommentDrawerOpenFn: (fn) => set({ setCommentDrawerOpen: fn }),
+    setConnectViaWallet: (fn) => set({ connectViaWallet: fn }),
+    setConnectViaUsername: (fn) => set({ connectViaUsername: fn }),
+    setIsCommentActive: (active) => set({ isCommentActive: active }),
+    setIsCommentResolved: (resolved) => set({ isCommentResolved: resolved }),
 
     // --- Derived getters (read from pre-computed state) ---
     getTabComments: () => get().tabComments,
     getActiveComment: () => get().activeComment,
     getActiveComments: () => get().activeComments,
     getActiveCommentIndex: () => get().activeCommentIndex,
-    getIsCommentActive: () => {
-      const { editor } = getExtDeps(get);
-      return editor?.isActive('comment') ?? false;
-    },
-    getIsCommentResolved: () => {
-      const { editor } = getExtDeps(get);
-      return editor?.getAttributes('comment').resolved ?? false;
-    },
+    getIsCommentActive: () => get().isCommentActive,
+    getIsCommentResolved: () => get().isCommentResolved,
 
     // --- Owned state setters ---
     setShowResolved: (show) => set({ showResolved: show }),
@@ -313,8 +353,8 @@ export const createCommentStore = () =>
       set({ reply: '' });
     },
     handleCommentSubmit: () => {
-      const { comment, username, activeTabId } = get();
-      const { onNewComment, setActiveCommentId, onComment } = getExtDeps(get);
+      const { comment, username, activeTabId, onComment } = get();
+      const { onNewComment, setActiveCommentId } = getExtDeps(get);
       if (!comment.trim() || !username) return;
 
       const newComment: IComment = {
@@ -420,6 +460,7 @@ export const createCommentStore = () =>
     handleAddReply: (activeCommentId, replyContent, replyCallback) => {
       if (!replyContent.trim()) return;
       const { activeTabId, username } = get();
+      const { onCommentReply } = getExtDeps(get);
       const newReply: IComment = {
         id: `reply-${uuid()}`,
         tabId: activeTabId,
@@ -429,7 +470,8 @@ export const createCommentStore = () =>
         createdAt: new Date(),
         selectedContent: '',
       };
-      replyCallback?.(activeCommentId, newReply);
+      const callback = replyCallback ?? onCommentReply;
+      callback?.(activeCommentId, newReply);
     },
 
     focusCommentInEditor: (commentId) => {

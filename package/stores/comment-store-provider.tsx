@@ -147,6 +147,40 @@ export const CommentStoreProvider = ({
     store.getState().setIsDDocOwner(isDDocOwner);
   }, [isDDocOwner, store]);
 
+  // --- Sync external callbacks consumers need to read ---
+  useEffect(() => {
+    store.getState().setOnComment(onComment ?? null);
+  }, [onComment, store]);
+
+  useEffect(() => {
+    store.getState().setCommentDrawerOpenFn(setCommentDrawerOpen ?? null);
+  }, [setCommentDrawerOpen, store]);
+
+  useEffect(() => {
+    store.getState().setConnectViaWallet(connectViaWallet ?? null);
+  }, [connectViaWallet, store]);
+
+  useEffect(() => {
+    store.getState().setConnectViaUsername(connectViaUsername ?? null);
+  }, [connectViaUsername, store]);
+
+  // --- Sync editor-derived state ---
+  useEffect(() => {
+    if (!editor) return;
+    const updateEditorState = () => {
+      store.getState().setIsCommentActive(editor.isActive('comment'));
+      store.getState().setIsCommentResolved(
+        editor.getAttributes('comment').resolved ?? false
+      );
+    };
+    editor.on('selectionUpdate', updateEditorState);
+    editor.on('transaction', updateEditorState);
+    return () => {
+      editor.off('selectionUpdate', updateEditorState);
+      editor.off('transaction', updateEditorState);
+    };
+  }, [editor, store]);
+
   // --- DOM refs ---
   const commentsSectionRef = useRef<HTMLDivElement | null>(null);
   const replySectionRef = useRef<HTMLDivElement | null>(null);

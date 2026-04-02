@@ -12,7 +12,6 @@ import {
   Tooltip,
   Divider,
 } from '@fileverse/ui';
-import uuid from 'react-uuid';
 import { CommentCard } from './comment-card';
 import { CommentDropdownProps } from './types';
 import { useCommentStore } from '../../stores/comment-store';
@@ -43,8 +42,8 @@ export const CommentDropdown = ({
   const activeComment = useCommentStore((s) => s.activeComment);
   const selectedText = useCommentStore((s) => s.selectedText);
   const handleInput = useCommentStore((s) => s.handleInput);
-  const isCommentActive = useCommentStore((s) => s.getIsCommentActive());
-  const onCommentReply = useCommentStore((s) => s.onCommentReply);
+  const isCommentActive = useCommentStore((s) => s.isCommentActive);
+  const handleAddReply = useCommentStore((s) => s.handleAddReply);
   const resolveComment = useCommentStore((s) => s.resolveComment);
   const unresolveComment = useCommentStore((s) => s.unresolveComment);
   const deleteComment = useCommentStore((s) => s.deleteComment);
@@ -128,17 +127,8 @@ export const CommentDropdown = ({
       return;
     }
 
-    const newReply = {
-      id: `reply-${uuid()}`,
-      username: username!,
-      content: reply,
-      replies: [],
-      createdAt: new Date(),
-      selectedContent: selectedContent,
-    };
-
     if (reply.trim() && activeCommentId) {
-      onCommentReply?.(activeCommentId, newReply);
+      handleAddReply(activeCommentId, reply);
       setReply('');
     }
   };

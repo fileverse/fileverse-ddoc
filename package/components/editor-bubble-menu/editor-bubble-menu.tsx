@@ -63,8 +63,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const activeComment = useCommentStore((s) => s.activeComment);
   const isCommentOpen = useCommentStore((s) => s.isCommentOpen);
   const handleInlineComment = useCommentStore((s) => s.handleInlineComment);
-  const isCommentActive = useCommentStore((s) => s.getIsCommentActive());
-  const isCommentResolved = useCommentStore((s) => s.getIsCommentResolved());
+  const isCommentActive = useCommentStore((s) => s.isCommentActive);
+  const isCommentResolved = useCommentStore((s) => s.isCommentResolved);
   const isBubbleMenuSuppressed = useCommentStore((s) => s.isBubbleMenuSuppressed);
   const setIsBubbleMenuSuppressed = useCommentStore((s) => s.setIsBubbleMenuSuppressed);
   const { portalRef, buttonRef } = useCommentRefs();
