@@ -476,48 +476,33 @@ export const createCommentStore = () =>
 
     focusCommentInEditor: (commentId) => {
       const { editor, setActiveCommentId } = getExtDeps(get);
-      if (!editor?.view?.dom) return;
+      console.log('[comment:focus] editor:', !!editor, 'commentId:', commentId);
+      if (!editor?.view?.dom) {
+        console.log('[comment:focus] no editor view, skipping');
+        return;
+      }
 
       const tabComments = get().getTabComments();
       const foundComment = tabComments.find((c) => c.id === commentId);
+      console.log('[comment:focus] foundComment:', !!foundComment, 'selectedContent:', foundComment?.selectedContent);
       if (!foundComment) return;
 
       if (foundComment.selectedContent) {
         const commentElement = editor.view.dom.querySelector<HTMLElement>(
           `[data-comment-id="${commentId}"]`,
         );
+        console.log('[comment:focus] commentElement:', !!commentElement);
         if (commentElement) {
           const from = editor.view.posAtDOM(commentElement, 0);
           const to = from + (commentElement.textContent?.length ?? 0);
           editor.commands.setTextSelection({ from, to });
 
-          const possibleContainers = [
-            document.querySelector<HTMLElement>('.ProseMirror'),
-            document.getElementById('editor-canvas'),
-            commentElement.closest<HTMLElement>('.ProseMirror'),
-            commentElement.closest<HTMLElement>('[class*="editor"]'),
-            editor.view.dom.parentElement,
-          ].filter((el): el is HTMLElement => el !== null);
-
-          const scrollContainer = possibleContainers.find(
-            (container) =>
-              container.scrollHeight > container.clientHeight ||
-              window.getComputedStyle(container).overflow === 'auto' ||
-              window.getComputedStyle(container).overflowY === 'auto',
-          );
-
-          if (scrollContainer) {
-            requestAnimationFrame(() => {
-              const containerRect = scrollContainer.getBoundingClientRect();
-              const elementRect = commentElement.getBoundingClientRect();
-              const scrollTop =
-                elementRect.top -
-                containerRect.top -
-                containerRect.height / 2 +
-                elementRect.height / 2;
-              scrollContainer.scrollBy({ top: scrollTop, behavior: 'smooth' });
+          requestAnimationFrame(() => {
+            commentElement.scrollIntoView({
+              behavior: 'smooth',
+              block: 'center',
             });
-          }
+          });
         }
       }
       setActiveCommentId(commentId);
