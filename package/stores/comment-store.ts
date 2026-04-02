@@ -308,7 +308,16 @@ export const createCommentStore = () =>
     setComment: (comment) => set({ comment }),
     setOpenReplyId: (id) => set({ openReplyId: id }),
     setSelectedText: (text) => set({ selectedText: text }),
-    setIsCommentOpen: (open) => set({ isCommentOpen: open }),
+    setIsCommentOpen: (open) => {
+      // Remove temporary highlight when closing comment dialog
+      if (!open) {
+        const { editor } = getExtDeps(get);
+        if (editor && editor.isActive('highlight')) {
+          editor.chain().unsetHighlight().run();
+        }
+      }
+      set({ isCommentOpen: open });
+    },
     setIsBubbleMenuSuppressed: (suppressed) =>
       set({ isBubbleMenuSuppressed: suppressed }),
     setInlineCommentData: (data) => set({ inlineCommentData: data }),
@@ -389,6 +398,12 @@ export const createCommentStore = () =>
         }
       } else {
         set({ selectedText: text });
+        // Apply temporary highlight to show which text is being commented
+        const isDarkTheme = document.documentElement.getAttribute('data-theme') === 'dark';
+        editor
+          .chain()
+          .setHighlight({ color: isDarkTheme ? '#15521d' : '#DDFBDF' })
+          .run();
       }
       set({ isCommentOpen: true });
       onInlineComment?.();
@@ -415,6 +430,11 @@ export const createCommentStore = () =>
         replies: [],
         createdAt: new Date(),
       };
+
+      // Remove temporary highlight before applying comment mark
+      if (editor.isActive('highlight')) {
+        editor.chain().unsetHighlight().run();
+      }
 
       const mutationMeta = get().createMutationMeta('create', () =>
         editor.commands.setComment(newComment.id || ''),

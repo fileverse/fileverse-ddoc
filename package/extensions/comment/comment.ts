@@ -202,10 +202,17 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
     return {
       setComment:
         (commentId: string) =>
-        ({ commands }: CommandProps): boolean => {
+        ({ tr, dispatch, state }: CommandProps): boolean => {
           if (!commentId) return false;
 
-          commands.setMark('comment', { commentId });
+          const { from, to } = state.selection;
+          if (from === to) return false;
+
+          const mark = this.editor.schema.marks.comment.create({
+            commentId,
+          });
+          tr.addMark(from, to, mark);
+          dispatch?.(tr);
           return true;
         },
       unsetComment:
