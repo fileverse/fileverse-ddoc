@@ -50,7 +50,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const currentLineHeight = editor ? editorStates.currentLineHeight : undefined;
   const onSetFontSize = editor ? editorStates.onSetFontSize : () => {};
   const onSetLineHeight = editor ? editorStates.onSetLineHeight : () => {};
-  const { isNativeMobile } = useResponsive();
+  const { isBelow1280px, isNativeMobile } = useResponsive();
+  const shouldUseFloatingComments = !isBelow1280px && !isNativeMobile;
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
     editor: editor ?? null,
     onError,
@@ -261,38 +262,56 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       ) : (
         <React.Fragment>
           {isPreviewMode ? (
-            <DynamicDropdown
-              key="Comment"
-              side="bottom"
-              sideOffset={15}
-              alignOffset={-5}
-              align="end"
-              className="!z-[50] shadow-elevation-3"
-              anchorTrigger={
-                <ToolbarButton
-                  icon="MessageSquarePlus"
-                  variant="ghost"
-                  size="sm"
-                  tooltip={isCommentResolved ? 'Comment resolved' : ''}
-                  disabled={
-                    isCommentResolved ||
-                    !isCollabDocumentPublished ||
-                    disableInlineComment
-                  }
-                  isActive={isCommentActive}
-                  onClick={handleInlineComment}
-                  classNames="disabled:!bg-transparent"
-                />
-              }
-              content={
-                !isCommentActive
-                  ? renderContent({
-                      name: 'Comment',
-                      initialComment: activeComment?.content || '',
-                    })
-                  : null
-              }
-            />
+            shouldUseFloatingComments ? (
+              <ToolbarButton
+                ref={buttonRef}
+                icon="MessageSquarePlus"
+                variant="ghost"
+                size="sm"
+                tooltip={isCommentResolved ? 'Comment resolved' : ''}
+                disabled={
+                  isCommentResolved ||
+                  !isCollabDocumentPublished ||
+                  disableInlineComment
+                }
+                isActive={isCommentActive}
+                onClick={handleInlineComment}
+                classNames="disabled:!bg-transparent"
+              />
+            ) : (
+              <DynamicDropdown
+                key="Comment"
+                side="bottom"
+                sideOffset={15}
+                alignOffset={-5}
+                align="end"
+                className="!z-[50] shadow-elevation-3"
+                anchorTrigger={
+                  <ToolbarButton
+                    icon="MessageSquarePlus"
+                    variant="ghost"
+                    size="sm"
+                    tooltip={isCommentResolved ? 'Comment resolved' : ''}
+                    disabled={
+                      isCommentResolved ||
+                      !isCollabDocumentPublished ||
+                      disableInlineComment
+                    }
+                    isActive={isCommentActive}
+                    onClick={handleInlineComment}
+                    classNames="disabled:!bg-transparent"
+                  />
+                }
+                content={
+                  !isCommentActive
+                    ? renderContent({
+                        name: 'Comment',
+                        initialComment: activeComment?.content || '',
+                      })
+                    : null
+                }
+              />
+            )
           ) : (
             <React.Fragment>
               <NodeSelector editor={editor} elementRef={toolRef} />
@@ -455,6 +474,35 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                 }
 
                 if (item.name === 'Comment') {
+                  if (shouldUseFloatingComments) {
+                    return (
+                      <ToolbarButton
+                        key="Comment"
+                        ref={buttonRef}
+                        data-testid="inline-comment-btn"
+                        icon="MessageSquarePlus"
+                        variant="ghost"
+                        size="sm"
+                        tooltip={
+                          enableCollaboration
+                            ? 'Comments are not available during real-time  collaboration'
+                            : isCommentResolved
+                              ? 'Comment resolved'
+                              : ''
+                        }
+                        disabled={
+                          isCommentResolved ||
+                          !isCollabDocumentPublished ||
+                          disableInlineComment ||
+                          enableCollaboration
+                        }
+                        isActive={isCommentActive}
+                        onClick={handleInlineComment}
+                        classNames="disabled:!bg-transparent"
+                      />
+                    );
+                  }
+
                   return (
                     <DynamicDropdown
                       key="Comment"

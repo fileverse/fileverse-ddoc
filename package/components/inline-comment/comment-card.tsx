@@ -68,18 +68,10 @@ const CommentReply = ({
   reply,
   username,
   createdAt,
-  isLast,
+  // isLast,
 }: CommentReplyProps) => {
   return (
-    <div className="flex flex-col gap-2 relative pl-4 pb-3 last:pb-0">
-      <div
-        className={cn('absolute left-0 top-0 h-full w-[1px] custom-border-bg', {
-          hidden: isLast,
-        })}
-      />
-      <div className="absolute left-0 top-0 w-4">
-        <div className="w-[10px] h-[20px] border-l border-b rounded-bl-lg custom-border" />
-      </div>
+    <div className="flex flex-col gap-2 relative pb-3 last:pb-0">
       <UserDisplay username={username} createdAt={createdAt} />
       <span className="text-body-sm flex flex-col gap-2 ml-3 pl-4 border-l custom-border whitespace-pre-wrap break-words">
         {renderTextWithLinks(reply)}
@@ -90,7 +82,7 @@ const CommentReply = ({
 
 export const CommentCard = ({
   username,
-  selectedContent,
+  // selectedContent,
   comment,
   createdAt,
   replies,
@@ -107,7 +99,6 @@ export const CommentCard = ({
   emptyComment,
 }: CommentCardProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
   const [showAllReplies, setShowAllReplies] = useState(false);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
   const { setOpenReplyId } = useComments();
@@ -181,18 +172,18 @@ export const CommentCard = ({
     }
 
     return (
-      <div className="flex flex-col gap-0 ml-3 relative">
+      <div className="flex flex-col gap-0 relative">
         {replies.length > 3 && !showAllReplies && (
           <div
             onClick={() => setShowAllReplies(true)}
-            className="text-helper-text-sm color-text-secondary hover:underline text-left pl-2 pb-3 border-l custom-border cursor-pointer flex items-center gap-1"
+            className="text-helper-text-sm color-text-secondary hover:underline pb-3 custom-border cursor-pointer flex items-center gap-2 pl-[2px]"
           >
             <IconButton
               icon="ChevronDown"
               variant="ghost"
               size="sm"
               rounded
-              className="color-text-secondary border custom-border scale-[0.8]"
+              className="color-text-secondary border custom-border !min-w-[20px] !w-[20px] !h-[20px]"
               onClick={() => setShowAllReplies(true)}
             />
             <div className="flex items-center -space-x-1">
@@ -288,19 +279,40 @@ export const CommentCard = ({
                 </Tooltip>
               )}
 
-              <Tooltip
-                text={!isDisabled ? 'Coming soon' : ''}
-                sideOffset={0}
-                position="bottom"
-              >
+              <div className="flex opacity-0 group-hover:opacity-100 gap-[4px]">
                 <IconButton
                   variant={'ghost'}
-                  icon="Smile"
-                  disabled
+                  icon="Check"
                   size="sm"
-                  className="opacity-0 group-hover:opacity-100  transition-opacity duration-300 disabled:bg-transparent"
+                  className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
                 />
-              </Tooltip>
+                <DynamicDropdown
+                  key={`thread-actions-${id}`}
+                  align="end"
+                  sideOffset={4}
+                  anchorTrigger={
+                    <IconButton
+                      icon="EllipsisVertical"
+                      variant="ghost"
+                      size="sm"
+                      className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
+                    />
+                  }
+                  content={
+                    <div className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3">
+                      <button className="flex items-center color-text-default text-sm font-medium gap-2 rounded p-2 transition-all hover:color-bg-default-hover w-full">
+                        Edit comment
+                      </button>
+                      <button
+                        className="flex items-center color-text-danger text-sm font-medium gap-2 rounded p-2 transition-all hover:color-bg-default-hover w-full"
+                        // onClick={() => deleteComment(comment.id as string)}
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  }
+                />
+              </div>
 
               {!isDropdown && isCommentOwner && (
                 <DynamicDropdown
@@ -362,7 +374,7 @@ export const CommentCard = ({
         )}
       </div>
       <div className="flex flex-col gap-2 ml-3 pl-4 border-l custom-border py-0 pb-3">
-        {selectedContent && (
+        {/* {selectedContent && (
           <div className="highlight-comment-bg p-1 rounded-lg">
             <div className="relative">
               <span
@@ -382,7 +394,7 @@ export const CommentCard = ({
               )}
             </div>
           </div>
-        )}
+        )} */}
         {comment && (
           <div>
             <span className="text-body-sm whitespace-pre-wrap break-words">

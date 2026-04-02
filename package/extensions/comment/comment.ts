@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { CommandProps, Mark, mergeAttributes, Range } from '@tiptap/core';
 import { Mark as PMMark } from '@tiptap/pm/model';
+import { Plugin, PluginKey, type EditorState } from '@tiptap/pm/state';
+import { Decoration, DecorationSet } from '@tiptap/pm/view';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -29,6 +31,18 @@ declare module '@tiptap/core' {
        * Unset comment active
        */
       unsetCommentActive: () => ReturnType;
+      /**
+       * Add a local draft anchor that tracks through transactions.
+       */
+      setDraftComment: (draftId: string) => ReturnType;
+      /**
+       * Remove a local draft anchor.
+       */
+      unsetDraftComment: (draftId: string) => ReturnType;
+      /**
+       * Replace a draft anchor with a persisted comment mark.
+       */
+      promoteDraftComment: (draftId: string, commentId: string) => ReturnType;
     };
   }
 }
@@ -49,6 +63,79 @@ export interface CommentOptions {
 export interface CommentStorage {
   activeCommentId: string | null;
 }
+
+export interface DraftCommentRange {
+  draftId: string;
+  from: number;
+  to: number;
+}
+
+interface DraftCommentPluginState {
+  decorations: DecorationSet;
+  drafts: Map<string, DraftCommentRange>;
+}
+
+interface DraftCommentMeta {
+  type: 'add' | 'remove' | 'clear';
+  draftId?: string;
+  from?: number;
+  to?: number;
+}
+
+export const draftCommentPluginKey = new PluginKey<DraftCommentPluginState>(
+  'draftComment',
+);
+
+const createDraftDecorations = (
+  doc: EditorState['doc'],
+  drafts: Map<string, DraftCommentRange>,
+) => {
+  const decorations = Array.from(drafts.values())
+    .filter((draft) => draft.from < draft.to)
+    .map((draft) =>
+      Decoration.inline(
+        draft.from,
+        draft.to,
+        {
+          class: 'inline-comment inline-comment--draft',
+          'data-draft-comment-id': draft.draftId,
+          'data-active': 'false',
+        },
+        {
+          draftId: draft.draftId,
+          inclusiveStart: false,
+          inclusiveEnd: false,
+        },
+      ),
+    );
+
+  return DecorationSet.create(doc, decorations);
+};
+
+const mapDraftRange = (
+  range: DraftCommentRange,
+  mapping: Parameters<DecorationSet['map']>[0],
+) => {
+  const from = mapping.map(range.from, 1);
+  const to = mapping.map(range.to, -1);
+
+  if (from >= to) {
+    return null;
+  }
+
+  return {
+    ...range,
+    from,
+    to,
+  };
+};
+
+export const getDraftCommentState = (state: EditorState) =>
+  draftCommentPluginKey.getState(state);
+
+export const getDraftCommentRange = (state: EditorState, draftId: string) => {
+  return getDraftCommentState(state)?.drafts.get(draftId) ?? null;
+};
 
 export interface IComment {
   id?: string;
@@ -144,6 +231,74 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
     return {
       activeCommentId: null,
     };
+  },
+
+  addProseMirrorPlugins() {
+    return [
+      new Plugin<DraftCommentPluginState>({
+        key: draftCommentPluginKey,
+        state: {
+          init: () => ({
+            decorations: DecorationSet.empty,
+            drafts: new Map<string, DraftCommentRange>(),
+          }),
+          apply: (tr, pluginState) => {
+            const meta = tr.getMeta(
+              draftCommentPluginKey,
+            ) as DraftCommentMeta | null;
+
+            if (!tr.docChanged && !meta) {
+              return pluginState;
+            }
+
+            const drafts = new Map<string, DraftCommentRange>();
+
+            pluginState.drafts.forEach((draft, draftId) => {
+              const mappedDraft = tr.docChanged
+                ? mapDraftRange(draft, tr.mapping)
+                : draft;
+
+              if (mappedDraft) {
+                drafts.set(draftId, mappedDraft);
+              }
+            });
+
+            if (
+              meta?.type === 'add' &&
+              meta.draftId &&
+              meta.from !== undefined &&
+              meta.to !== undefined
+            ) {
+              if (meta.from < meta.to) {
+                drafts.set(meta.draftId, {
+                  draftId: meta.draftId,
+                  from: meta.from,
+                  to: meta.to,
+                });
+              }
+            }
+
+            if (meta?.type === 'remove' && meta.draftId) {
+              drafts.delete(meta.draftId);
+            }
+
+            if (meta?.type === 'clear') {
+              drafts.clear();
+            }
+
+            return {
+              drafts,
+              decorations: createDraftDecorations(tr.doc, drafts),
+            };
+          },
+        },
+        props: {
+          decorations(state) {
+            return draftCommentPluginKey.getState(state)?.decorations ?? null;
+          },
+        },
+      }),
+    ];
   },
 
   addCommands() {
@@ -338,6 +493,66 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
         syncActiveCommentClassInDOM(previousActiveCommentId, null);
         return true;
       },
+      setDraftComment:
+        (draftId: string) =>
+        ({ state, tr, dispatch }) => {
+          if (!draftId || state.selection.empty) return false;
+
+          const { from, to } = state.selection;
+
+          if (from >= to) return false;
+
+          tr.setMeta(draftCommentPluginKey, {
+            type: 'add',
+            draftId,
+            from,
+            to,
+          } satisfies DraftCommentMeta);
+
+          dispatch?.(tr);
+          return true;
+        },
+      unsetDraftComment:
+        (draftId: string) =>
+        ({ tr, dispatch }) => {
+          if (!draftId) return false;
+
+          tr.setMeta(draftCommentPluginKey, {
+            type: 'remove',
+            draftId,
+          } satisfies DraftCommentMeta);
+
+          dispatch?.(tr);
+          return true;
+        },
+      promoteDraftComment:
+        (draftId: string, commentId: string) =>
+        ({ state, tr, dispatch }) => {
+          if (!draftId || !commentId) return false;
+
+          const draft = getDraftCommentRange(state, draftId);
+          const commentMark = state.schema.marks.comment;
+
+          if (!draft || !commentMark || draft.from >= draft.to) {
+            return false;
+          }
+
+          tr.addMark(
+            draft.from,
+            draft.to,
+            commentMark.create({
+              commentId,
+              resolved: false,
+            }),
+          );
+          tr.setMeta(draftCommentPluginKey, {
+            type: 'remove',
+            draftId,
+          } satisfies DraftCommentMeta);
+
+          dispatch?.(tr);
+          return true;
+        },
     };
   },
 });

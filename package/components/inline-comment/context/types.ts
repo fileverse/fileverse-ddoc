@@ -1,9 +1,32 @@
-import { Editor } from '@tiptap/react';
-import { IComment } from '../../../extensions/comment';
-import { SetStateAction } from 'react';
-import { CommentAccountProps, CommentMutationMeta } from '../../../types';
-import { EnsStatus } from '../types';
-import * as Y from 'yjs';
+import { Editor } from "@tiptap/react";
+import { IComment } from "../../../extensions/comment";
+import { SetStateAction } from "react";
+import { CommentAccountProps, CommentMutationMeta } from "../../../types";
+import { EnsStatus } from "../types";
+import * as Y from "yjs";
+
+export interface CommentFloatingBaseItem {
+  itemId: string;
+  selectedText: string;
+  isOpen: boolean;
+  isFocused: boolean;
+}
+
+export interface CommentFloatingDraftItem extends CommentFloatingBaseItem {
+  type: "draft";
+  draftId: string;
+  draftText: string;
+  isAuthPending: boolean;
+}
+
+export interface CommentFloatingThreadItem extends CommentFloatingBaseItem {
+  type: "thread";
+  commentId: string;
+}
+
+export type CommentFloatingItem =
+  | CommentFloatingDraftItem
+  | CommentFloatingThreadItem;
 
 export interface CommentContextType extends CommentAccountProps {
   comments: IComment[];
@@ -13,6 +36,15 @@ export interface CommentContextType extends CommentAccountProps {
   setUsername?: React.Dispatch<SetStateAction<string>>;
   showResolved: boolean;
   setShowResolved: (show: boolean) => void;
+  floatingItems: CommentFloatingItem[];
+  isDesktopFloatingEnabled: boolean;
+  createFloatingDraft: () => string | null;
+  updateFloatingDraftText: (draftId: string, value: string) => void;
+  cancelFloatingDraft: (draftId: string) => void;
+  submitFloatingDraft: (draftId: string) => void;
+  openFloatingThread: (commentId: string) => void;
+  closeFloatingItem: (itemId: string) => void;
+  focusFloatingItem: (itemId: string) => void;
   resolveComment: (commentId: string) => void;
   unresolveComment: (commentId: string) => void;
   deleteComment: (commentId: string) => void;

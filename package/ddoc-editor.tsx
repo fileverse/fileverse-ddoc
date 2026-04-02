@@ -35,6 +35,7 @@ import { CommentDrawer } from './components/inline-comment/comment-drawer';
 import { useResponsive } from './utils/responsive';
 import { CommentProvider } from './components/inline-comment/context/comment-context';
 import { CommentBubbleCard } from './components/inline-comment/comment-bubble-card';
+import { CommentFloatingContainer } from './components/inline-comment/comment-floating-container';
 import { DocumentOutline } from './components/toc/document-outline';
 import { EditorProvider } from './context/editor-context';
 import { fadeInTransition, slideUpTransition } from './components/motion-div';
@@ -204,7 +205,9 @@ const DdocEditor = forwardRef(
     const getBackgroundStyle = () => mergedStyles.background;
 
     const btn_ref = useRef(null);
-    const { isNativeMobile, isIOS } = useResponsive();
+    const editorScrollContainerRef = useRef<HTMLDivElement | null>(null);
+    const editorWrapperRef = useRef<HTMLDivElement | null>(null);
+    const { isBelow1280px, isNativeMobile, isIOS } = useResponsive();
 
     const [isHiddenTagsVisible, setIsHiddenTagsVisible] = useState(false);
     const tagsContainerRef = useRef(null);
@@ -696,12 +699,16 @@ const DdocEditor = forwardRef(
               )}
             </div>
             <div
+              ref={editorScrollContainerRef}
               data-editor-scroll-container="true"
               className={cn('flex w-full overflow-auto')}
             >
               <div className="w-full h-full">
                 <div
-                  className={cn('flex min-h-[100%]', !isMobile && 'min-w-max')}
+                  className={cn(
+                    'flex min-h-[100%] items-start',
+                    !isMobile && 'min-w-max',
+                  )}
                 >
                   <div
                     className={cn(
@@ -715,6 +722,7 @@ const DdocEditor = forwardRef(
                   >
                     <div
                       id="editor-wrapper"
+                      ref={editorWrapperRef}
                       className={cn(
                         'w-full flex-grow min-w-0 no-scrollbar rounded transition-all mx-auto duration-300 ease-in-out',
                         !documentStyling?.canvasBackground &&
@@ -957,6 +965,7 @@ const DdocEditor = forwardRef(
               </div>
               <div
                 className={cn(
+                  'relative overflow-visible',
                   !isMobile && 'flex-[1_1_263px]',
                   !isPreviewMode &&
                     !isFocusMode &&
@@ -971,7 +980,16 @@ const DdocEditor = forwardRef(
                   isFocusMode && 'mt-[48px]',
                   isFocusMode && !showTOC && shouldHideRight && 'hidden',
                 )}
-              ></div>
+              >
+                {editor && (
+                  <CommentFloatingContainer
+                    editor={editor}
+                    editorWrapperRef={editorWrapperRef}
+                    scrollContainerRef={editorScrollContainerRef}
+                    isHidden={Boolean(commentDrawerOpen)}
+                  />
+                )}
+              </div>
             </div>
 
             {showCommentButton && !isNativeMobile && (
@@ -1022,7 +1040,7 @@ const DdocEditor = forwardRef(
             )}
 
             <div>
-              {editor && (
+              {editor && isBelow1280px && (
                 <CommentBubbleCard
                   editor={editor}
                   activeCommentId={activeCommentId}
