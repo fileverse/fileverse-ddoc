@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { Dispatch, Node, mergeAttributes } from '@tiptap/core';
-import { ReactNodeViewRenderer } from '@tiptap/react';
-import { DBlockNodeView } from './dblock-node-view';
-import { TextSelection, Transaction } from '@tiptap/pm/state';
-import { IpfsImageUploadResponse } from '../../types';
-import { Plugin, PluginKey } from 'prosemirror-state';
+import { Dispatch, Node, mergeAttributes } from "@tiptap/core";
+import { ReactNodeViewRenderer } from "@tiptap/react";
+import { DBlockNodeView } from "./dblock-node-view";
+import { TextSelection, Transaction } from "@tiptap/pm/state";
+import { IpfsImageUploadResponse } from "../../types";
+import { Plugin, PluginKey } from "prosemirror-state";
 
 export interface DBlockOptions {
   HTMLAttributes: Record<string, any>;
@@ -13,7 +13,7 @@ export interface DBlockOptions {
   hasAvailableModels: boolean;
 }
 
-declare module '@tiptap/core' {
+declare module "@tiptap/core" {
   interface Commands<ReturnType> {
     dBlock: {
       setDBlock: (position?: number) => ReturnType;
@@ -28,7 +28,7 @@ interface ListContent {
 }
 
 interface DBlockContent {
-  type: 'dBlock';
+  type: "dBlock";
   content: ListContent[];
 }
 
@@ -38,13 +38,13 @@ interface NestedList {
 }
 
 export const DBlock = Node.create<DBlockOptions>({
-  name: 'dBlock',
+  name: "dBlock",
 
   priority: 1000,
 
-  group: 'dBlock',
+  group: "dBlock",
 
-  content: '(block|columns)',
+  content: "(block|columns)",
 
   draggable: true,
 
@@ -74,8 +74,8 @@ export const DBlock = Node.create<DBlockOptions>({
 
   renderHTML({ HTMLAttributes }: { HTMLAttributes: any }) {
     return [
-      'div',
-      mergeAttributes(HTMLAttributes, { 'data-type': 'd-block' }),
+      "div",
+      mergeAttributes(HTMLAttributes, { "data-type": "d-block" }),
       0,
     ];
   },
@@ -97,7 +97,7 @@ export const DBlock = Node.create<DBlockOptions>({
               type: this.name,
               content: [
                 {
-                  type: 'paragraph',
+                  type: "paragraph",
                 },
               ],
             })
@@ -109,7 +109,7 @@ export const DBlock = Node.create<DBlockOptions>({
 
   addKeyboardShortcuts() {
     return {
-      'Mod-Alt-0': () => this.editor.commands.setDBlock(),
+      "Mod-Alt-0": () => this.editor.commands.setDBlock(),
       // Tab: Indent list item (sink)
       // DBlock has priority 1000, so we need to explicitly handle Tab for lists
       Tab: ({ editor }) => {
@@ -119,27 +119,27 @@ export const DBlock = Node.create<DBlockOptions>({
 
         // Check if there's an active AI autocomplete suggestion - if so, let it handle Tab
         const hasAutocompleteSuggestion =
-          typeof document !== 'undefined' &&
-          document.querySelector('.autocomplete-suggestion-container') !== null;
+          typeof document !== "undefined" &&
+          document.querySelector(".autocomplete-suggestion-container") !== null;
         if (hasAutocompleteSuggestion) {
           return false; // Let AI autocomplete handle the Tab key
         }
 
-        const isParagraph = node.type.name === 'paragraph';
-        const isHeading = node.type.name === 'heading';
+        const isParagraph = node.type.name === "paragraph";
+        const isHeading = node.type.name === "heading";
         const depth = $from.depth;
 
         // Checking if it's nested since standard paragraphs are usually at depth 1.
         const parentNode = depth > 0 ? $from.node(depth - 1) : null;
         const isParagraphUnderDBlock =
-          isParagraph && parentNode?.type.name === 'dBlock';
+          isParagraph && parentNode?.type.name === "dBlock";
 
         // Allow inserting EM SPACE if node is a heading or a non-nested paragraph.
         if (isHeading || isParagraphUnderDBlock) {
           // TODO: check with '\t' character and other HTML entities.
-          editor.commands.insertContent('\u2003', {
+          editor.commands.insertContent("\u2003", {
             parseOptions: {
-              preserveWhitespace: 'full',
+              preserveWhitespace: "full",
             },
           });
           return true;
@@ -149,19 +149,19 @@ export const DBlock = Node.create<DBlockOptions>({
         for (let d = $from.depth; d > 0; d--) {
           const node = $from.node(d);
 
-          if (node.type.name === 'listItem') {
+          if (node.type.name === "listItem") {
             // Try to sink the list item
             // If it's the first item, sinkListItem will return false and nothing happens
-            editor.commands.sinkListItem('listItem');
+            editor.commands.sinkListItem("listItem");
 
             // Always return true to prevent browser Tab behavior
             return true;
           }
 
-          if (node.type.name === 'taskItem') {
+          if (node.type.name === "taskItem") {
             // Try to sink the task item
             // If it's the first item, sinkListItem will return false and nothing happens
-            editor.commands.sinkListItem('taskItem');
+            editor.commands.sinkListItem("taskItem");
 
             // Always return true to prevent browser Tab behavior
             return true;
@@ -172,7 +172,7 @@ export const DBlock = Node.create<DBlockOptions>({
         return false;
       },
       // Shift+Tab: Unindent list item (lift)
-      'Shift-Tab': ({ editor }) => {
+      "Shift-Tab": ({ editor }) => {
         const { selection } = editor.state;
         const { $from } = selection;
 
@@ -180,11 +180,11 @@ export const DBlock = Node.create<DBlockOptions>({
           const charBeforeCursor = editor.state.doc.textBetween(
             $from.pos - 1,
             $from.pos,
-            '\0', // Separator for textBetween, '\0' for no separator
+            "\0", // Separator for textBetween, '\0' for no separator
           );
 
           // If the character before the cursor is an EM SPACE, delete it
-          if (charBeforeCursor === '\u2003') {
+          if (charBeforeCursor === "\u2003") {
             editor
               .chain()
               .deleteRange({ from: $from.pos - 2, to: $from.pos }) // this range allows for the removal of em spaces in the same amount of tabs
@@ -197,11 +197,11 @@ export const DBlock = Node.create<DBlockOptions>({
         for (let d = $from.depth; d > 0; d--) {
           const node = $from.node(d);
 
-          if (node.type.name === 'listItem') {
-            return editor.commands.liftListItem('listItem');
+          if (node.type.name === "listItem") {
+            return editor.commands.liftListItem("listItem");
           }
-          if (node.type.name === 'taskItem') {
-            return editor.commands.liftListItem('taskItem');
+          if (node.type.name === "taskItem") {
+            return editor.commands.liftListItem("taskItem");
           }
         }
 
@@ -215,16 +215,16 @@ export const DBlock = Node.create<DBlockOptions>({
         } = editor.state;
         const headMarks = $head.marks();
         const textStyleMark = headMarks.find(
-          (m) => m.type.name === 'textStyle',
+          (m) => m.type.name === "textStyle",
         );
         const attrs = textStyleMark?.attrs ?? {};
         const highlightMark = headMarks.find(
-          (m) => m.type.name === 'highlight',
+          (m) => m.type.name === "highlight",
         );
-        const hasBold = headMarks.some((m) => m.type.name === 'bold');
-        const hasItalic = headMarks.some((m) => m.type.name === 'italic');
-        const hasUnderline = headMarks.some((m) => m.type.name === 'underline');
-        const hasStrike = headMarks.some((m) => m.type.name === 'strike');
+        const hasBold = headMarks.some((m) => m.type.name === "bold");
+        const hasItalic = headMarks.some((m) => m.type.name === "italic");
+        const hasUnderline = headMarks.some((m) => m.type.name === "underline");
+        const hasStrike = headMarks.some((m) => m.type.name === "strike");
 
         // Get the current node and its parent
         const currentNode = $head.node($head.depth);
@@ -262,24 +262,24 @@ export const DBlock = Node.create<DBlockOptions>({
 
         const parent = $head.node($head.depth - 1);
         const headString = $head.toString();
-        const nodePaths = headString.split('/');
+        const nodePaths = headString.split("/");
         const isAtEndOfTheNode = $head.end() === from;
         const isAtStartOfTheNode = $head.start() === from;
 
         // Check if inside table
-        const isInsideTable = nodePaths.some((path) => path.includes('table'));
+        const isInsideTable = nodePaths.some((path) => path.includes("table"));
 
         // Handle lists press enter action
         if (
-          parent?.type.name === 'listItem' ||
-          parent?.type.name === 'taskItem'
+          parent?.type.name === "listItem" ||
+          parent?.type.name === "taskItem"
         ) {
           // 🛡️ Check if inside table - if so, don't handle lists specially
           if (isInsideTable) {
             return false;
           }
 
-          const isCurrentItemEmpty = currentNode.textContent === '';
+          const isCurrentItemEmpty = currentNode.textContent === "";
           const grandParent = $head.node($head.depth - 2);
           const currentIndex = $head.index($head.depth - 2);
           const isLastItem = currentIndex === grandParent.childCount - 1;
@@ -289,8 +289,8 @@ export const DBlock = Node.create<DBlockOptions>({
           for (let d = $head.depth - 1; d >= 0; d--) {
             const node = $head.node(d);
             if (
-              node?.type.name === 'listItem' ||
-              node?.type.name === 'taskItem'
+              node?.type.name === "listItem" ||
+              node?.type.name === "taskItem"
             ) {
               listDepth++;
             }
@@ -309,8 +309,8 @@ export const DBlock = Node.create<DBlockOptions>({
             let hasNestedContent = false;
             currentItem.forEach((node) => {
               if (
-                node.type.name === 'bulletList' ||
-                node.type.name === 'orderedList'
+                node.type.name === "bulletList" ||
+                node.type.name === "orderedList"
               ) {
                 hasNestedContent = true;
               }
@@ -328,8 +328,8 @@ export const DBlock = Node.create<DBlockOptions>({
                 .chain()
                 .deleteRange({ from: currentItemStart, to: currentItemEnd })
                 .insertContentAt(currentItemStart, {
-                  type: 'dBlock',
-                  content: [{ type: 'paragraph', attrs: currentStyles }],
+                  type: "dBlock",
+                  content: [{ type: "paragraph", attrs: currentStyles }],
                 })
                 .focus(currentItemStart + 2)
                 .run();
@@ -343,45 +343,45 @@ export const DBlock = Node.create<DBlockOptions>({
           }
           // Handle empty items in nested lists: lift and preserve font attrs
           if (isCurrentItemEmpty && !isTopLevelList) {
-            const itemType = parent.type.name as 'listItem' | 'taskItem';
+            const itemType = parent.type.name as "listItem" | "taskItem";
             const result = editor.commands.liftListItem(itemType);
             if (result && (fontFamily || fontSize || color)) {
-              editor.commands.setMark('textStyle', {
+              editor.commands.setMark("textStyle", {
                 ...(fontFamily ? { fontFamily } : {}),
                 ...(fontSize ? { fontSize } : {}),
                 ...(color ? { color } : {}),
               });
             }
             if (result && highlightColor) {
-              editor.commands.setMark('highlight', { color: highlightColor });
+              editor.commands.setMark("highlight", { color: highlightColor });
             }
-            if (result && isBold) editor.commands.setMark('bold');
-            if (result && isItalic) editor.commands.setMark('italic');
-            if (result && isUnderline) editor.commands.setMark('underline');
-            if (result && isStrike) editor.commands.setMark('strike');
+            if (result && isBold) editor.commands.setMark("bold");
+            if (result && isItalic) editor.commands.setMark("italic");
+            if (result && isUnderline) editor.commands.setMark("underline");
+            if (result && isStrike) editor.commands.setMark("strike");
             return result;
           }
         }
 
         // Handle blockquote
         if (
-          parent?.type.name === 'blockquote' &&
-          currentNode.type.name === 'paragraph'
+          parent?.type.name === "blockquote" &&
+          currentNode.type.name === "paragraph"
         ) {
-          if (currentNode.textContent === '') {
+          if (currentNode.textContent === "") {
             return editor
               .chain()
               .insertContentAt(from, {
-                type: 'dBlock',
-                content: [{ type: 'paragraph', attrs: currentStyles }],
+                type: "dBlock",
+                content: [{ type: "paragraph", attrs: currentStyles }],
               })
               .focus(from + 2)
-              .setMark('textStyle', { ...attrs, fontFamily, fontSize, color })
+              .setMark("textStyle", { ...attrs, fontFamily, fontSize, color })
               .run();
           }
         }
 
-        if (parent?.type.name !== 'dBlock') {
+        if (parent?.type.name !== "dBlock") {
           // If inside table, do nothing
           if (isInsideTable) {
             return false;
@@ -389,9 +389,9 @@ export const DBlock = Node.create<DBlockOptions>({
         }
 
         // Handle dBlock content
-        if (parent?.type.name === 'dBlock') {
+        if (parent?.type.name === "dBlock") {
           let currentActiveNodeTo = -1;
-          let currentActiveNodeType = '';
+          let currentActiveNodeType = "";
 
           doc.descendants((node, pos) => {
             if (currentActiveNodeTo !== -1) return false;
@@ -411,36 +411,36 @@ export const DBlock = Node.create<DBlockOptions>({
             ?.toJSON().content;
 
           try {
-            if (currentActiveNodeType === 'codeBlock') {
+            if (currentActiveNodeType === "codeBlock") {
               return editor
                 .chain()
                 .newlineInCode()
-                .setMark('textStyle', attrs)
+                .setMark("textStyle", attrs)
                 .focus()
                 .run();
             }
 
             if (
-              ['columns', 'heading'].includes(currentActiveNodeType) &&
+              ["columns", "heading"].includes(currentActiveNodeType) &&
               isAtEndOfTheNode
             ) {
               return editor
                 .chain()
                 .insertContent({
-                  type: 'dBlock',
+                  type: "dBlock",
                   content: [
                     {
-                      type: 'paragraph',
+                      type: "paragraph",
                       attrs: currentStyles,
                     },
                   ],
                 })
                 .focus(from + 4)
-                .setMark('textStyle', attrs)
+                .setMark("textStyle", attrs)
                 .run();
             } else if (
-              currentActiveNodeType === 'columns' ||
-              (currentActiveNodeType === 'heading' && !isAtStartOfTheNode)
+              currentActiveNodeType === "columns" ||
+              (currentActiveNodeType === "heading" && !isAtStartOfTheNode)
             ) {
               return editor
                 .chain()
@@ -453,20 +453,20 @@ export const DBlock = Node.create<DBlockOptions>({
                     dispatch: Dispatch;
                   }) => {
                     if (dispatch) {
-                      tr.insertText('\n');
+                      tr.insertText("\n");
                     }
                     return true;
                   },
                 )
                 .focus(from)
-                .setMark('textStyle', attrs)
+                .setMark("textStyle", attrs)
                 .run();
             }
 
             const finalContent =
               content && content.length > 0 && !isAtEndOfTheNode
                 ? content
-                : [{ type: 'paragraph', attrs: currentStyles }];
+                : [{ type: "paragraph", attrs: currentStyles }];
 
             return editor
               .chain()
@@ -483,7 +483,7 @@ export const DBlock = Node.create<DBlockOptions>({
                 if (dispatch) {
                   const paragraphPos = from - 1;
                   const node = tr.doc.nodeAt(paragraphPos);
-                  if (node && node.type.name === 'paragraph') {
+                  if (node && node.type.name === "paragraph") {
                     tr.setNodeMarkup(paragraphPos, undefined, {
                       ...node.attrs,
                       ...currentStyles,
@@ -493,7 +493,7 @@ export const DBlock = Node.create<DBlockOptions>({
                 return true;
               })
               .focus(from + 4)
-              .setMark('textStyle', attrs)
+              .setMark("textStyle", attrs)
               .run();
           } catch (error) {
             console.error(`Error inserting content into dBlock node: ${error}`);
@@ -523,18 +523,18 @@ export const DBlock = Node.create<DBlockOptions>({
         const isAtStartOfNode = nodeStartPos === from;
 
         const isListOrTaskList =
-          parent?.type.name === 'listItem' || parent?.type.name === 'taskItem';
-        const isNodeEmpty = node?.textContent === '';
+          parent?.type.name === "listItem" || parent?.type.name === "taskItem";
+        const isNodeEmpty = node?.textContent === "";
 
         // If not in a dBlock, handle special cases
-        if (parent?.type.name !== 'dBlock') {
+        if (parent?.type.name !== "dBlock") {
           // Handle page break
           let isPrevNodePageBreak = false;
           let currentNodePos = -1;
 
           doc.descendants((node, pos) => {
             if (currentNodePos !== -1) return false;
-            if (node.type.name === 'pageBreak' && pos < from) {
+            if (node.type.name === "pageBreak" && pos < from) {
               isPrevNodePageBreak = true;
               currentNodePos = pos;
             }
@@ -552,7 +552,7 @@ export const DBlock = Node.create<DBlockOptions>({
           if (isAtStartOfNode && isListOrTaskList) {
             // Check if there's a dBlock before this position
             const isNearestDBlock =
-              from > 4 ? doc.nodeAt(from - 4)?.type.name === 'dBlock' : false;
+              from > 4 ? doc.nodeAt(from - 4)?.type.name === "dBlock" : false;
 
             const grandParent = $head.node($head.depth - 2);
             const isFirstItem = $head.index($head.depth - 2) === 0;
@@ -563,9 +563,9 @@ export const DBlock = Node.create<DBlockOptions>({
             // Check for nested list content inside this item
             const hasNestedList = node.content.content.some(
               (content: any) =>
-                content.type.name === 'bulletList' ||
-                content.type.name === 'orderedList' ||
-                content.type.name === 'taskList',
+                content.type.name === "bulletList" ||
+                content.type.name === "orderedList" ||
+                content.type.name === "taskList",
             );
 
             // Check if this is the first list in the first dBlock
@@ -591,27 +591,27 @@ export const DBlock = Node.create<DBlockOptions>({
                   // Extract text content from the first item
                   const nonListContent = firstItemContent.filter(
                     (content: any) =>
-                      !['bulletList', 'orderedList', 'taskList'].includes(
+                      !["bulletList", "orderedList", "taskList"].includes(
                         content.type,
                       ),
                   );
 
                   // Create new dBlock with first item's text content
                   remainingContent.push({
-                    type: 'dBlock',
+                    type: "dBlock",
                     content:
                       nonListContent.length > 0
                         ? nonListContent
                         : [
                             {
-                              type: 'paragraph',
+                              type: "paragraph",
                             },
                           ],
                   });
 
                   const nestedLists = firstItemContent.filter(
                     (content: NestedList) =>
-                      ['bulletList', 'orderedList', 'taskList'].includes(
+                      ["bulletList", "orderedList", "taskList"].includes(
                         content.type,
                       ),
                   );
@@ -620,7 +620,7 @@ export const DBlock = Node.create<DBlockOptions>({
                     // Add lifted nested lists
                     nestedLists.forEach((nestedList: NestedList) => {
                       remainingContent.push({
-                        type: 'dBlock',
+                        type: "dBlock",
                         content: [nestedList],
                       });
                     });
@@ -634,7 +634,7 @@ export const DBlock = Node.create<DBlockOptions>({
                     // Only add if there are actual remaining items
                     if (remainingListContent.length > 0) {
                       remainingContent.push({
-                        type: 'dBlock',
+                        type: "dBlock",
                         content: [
                           {
                             type: listNode.type.name,
@@ -656,7 +656,7 @@ export const DBlock = Node.create<DBlockOptions>({
                         listPos,
                         listEnd,
                         editor.schema.nodeFromJSON({
-                          type: 'doc',
+                          type: "doc",
                           content: remainingContent,
                         }),
                       );
@@ -706,8 +706,8 @@ export const DBlock = Node.create<DBlockOptions>({
               let hasNestedContentCase2 = false;
               listItemNode.forEach((node) => {
                 if (
-                  node.type.name === 'bulletList' ||
-                  node.type.name === 'orderedList'
+                  node.type.name === "bulletList" ||
+                  node.type.name === "orderedList"
                 ) {
                   hasNestedContentCase2 = true;
                 }
@@ -740,8 +740,8 @@ export const DBlock = Node.create<DBlockOptions>({
               for (let d = $head.depth - 3; d >= 0; d--) {
                 const ancestorNode = $head.node(d);
                 if (
-                  ancestorNode.type.name === 'listItem' ||
-                  ancestorNode.type.name === 'taskItem'
+                  ancestorNode.type.name === "listItem" ||
+                  ancestorNode.type.name === "taskItem"
                 ) {
                   isNestedItem = true;
                   break;
@@ -751,7 +751,7 @@ export const DBlock = Node.create<DBlockOptions>({
               // If nested and empty, unindent it first (like Shift+Tab)
               if (isNestedItem) {
                 const itemType =
-                  parent?.type.name === 'taskItem' ? 'taskItem' : 'listItem';
+                  parent?.type.name === "taskItem" ? "taskItem" : "listItem";
                 return editor.commands.liftListItem(itemType);
               }
 
@@ -766,8 +766,8 @@ export const DBlock = Node.create<DBlockOptions>({
               let hasNestedContentBackspace = false;
               currentItem.forEach((node) => {
                 if (
-                  node.type.name === 'bulletList' ||
-                  node.type.name === 'orderedList'
+                  node.type.name === "bulletList" ||
+                  node.type.name === "orderedList"
                 ) {
                   hasNestedContentBackspace = true;
                 }
@@ -790,7 +790,7 @@ export const DBlock = Node.create<DBlockOptions>({
               // Add items before current as a list
               if (itemsBeforeCurrent.length > 0) {
                 newContent.push({
-                  type: 'dBlock',
+                  type: "dBlock",
                   content: [
                     {
                       type: grandParent.type.name,
@@ -802,14 +802,14 @@ export const DBlock = Node.create<DBlockOptions>({
 
               // Add empty text block (where cursor will be)
               newContent.push({
-                type: 'dBlock',
-                content: [{ type: 'paragraph' }],
+                type: "dBlock",
+                content: [{ type: "paragraph" }],
               });
 
               // Add items after current as a list
               if (itemsAfterCurrent.length > 0) {
                 newContent.push({
-                  type: 'dBlock',
+                  type: "dBlock",
                   content: [
                     {
                       type: grandParent.type.name,
@@ -832,7 +832,7 @@ export const DBlock = Node.create<DBlockOptions>({
               // Check if we are actually targeting a dBlock.
               // If we are inside a Blockquote/Callout, this node might be that container.
               // We should not destroy it. Return false to let default behavior handle it.
-              if (dBlockNode.type.name !== 'dBlock') {
+              if (dBlockNode.type.name !== "dBlock") {
                 return false;
               }
 
@@ -841,7 +841,7 @@ export const DBlock = Node.create<DBlockOptions>({
                 dBlockPos,
                 dBlockEnd,
                 editor.schema.nodeFromJSON({
-                  type: 'doc',
+                  type: "doc",
                   content: newContent,
                 }),
               );
@@ -852,7 +852,7 @@ export const DBlock = Node.create<DBlockOptions>({
               if (itemsBeforeCurrent.length > 0) {
                 // If there are items before, cursor is in the second DBlock
                 const firstDBlockNode = editor.schema.nodeFromJSON({
-                  type: 'dBlock',
+                  type: "dBlock",
                   content: [
                     {
                       type: grandParent.type.name,
@@ -877,8 +877,8 @@ export const DBlock = Node.create<DBlockOptions>({
               for (let d = $head.depth - 3; d >= 0; d--) {
                 const ancestorNode = $head.node(d);
                 if (
-                  ancestorNode.type.name === 'listItem' ||
-                  ancestorNode.type.name === 'taskItem'
+                  ancestorNode.type.name === "listItem" ||
+                  ancestorNode.type.name === "taskItem"
                 ) {
                   isNestedItem = true;
                   break;
@@ -888,7 +888,7 @@ export const DBlock = Node.create<DBlockOptions>({
               // If this is a nested item, unindent it (lift) instead of restructuring
               if (isNestedItem) {
                 const itemType =
-                  parent?.type.name === 'taskItem' ? 'taskItem' : 'listItem';
+                  parent?.type.name === "taskItem" ? "taskItem" : "listItem";
                 return editor.commands.liftListItem(itemType);
               }
 
@@ -906,7 +906,7 @@ export const DBlock = Node.create<DBlockOptions>({
 
                 // If the parent is NOT a dBlock (e.g. it's a Callout), abort!
                 // Return false to let Tiptap's default handler merge the items.
-                if (listParent?.type.name !== 'dBlock') {
+                if (listParent?.type.name !== "dBlock") {
                   return false;
                 }
 
@@ -935,7 +935,7 @@ export const DBlock = Node.create<DBlockOptions>({
 
                   const newContent: DBlockContent[] = [
                     {
-                      type: 'dBlock',
+                      type: "dBlock",
                       content: [
                         {
                           type: grandParent.type.name,
@@ -944,7 +944,7 @@ export const DBlock = Node.create<DBlockOptions>({
                       ],
                     },
                     {
-                      type: 'dBlock',
+                      type: "dBlock",
                       content: [
                         {
                           type: grandParent.type.name,
@@ -958,14 +958,14 @@ export const DBlock = Node.create<DBlockOptions>({
                     dBlockPos,
                     dBlockEnd,
                     editor.schema.nodeFromJSON({
-                      type: 'doc',
+                      type: "doc",
                       content: newContent,
                     }),
                   );
 
                   // Calculate cursor position at start of second list
                   const firstDBlockNode = editor.schema.nodeFromJSON({
-                    type: 'dBlock',
+                    type: "dBlock",
                     content: [
                       {
                         type: grandParent.type.name,
@@ -1008,11 +1008,11 @@ export const DBlock = Node.create<DBlockOptions>({
     }
     return [
       new Plugin({
-        key: new PluginKey('dblock-aiwriter-space'),
+        key: new PluginKey("dblock-aiwriter-space"),
         props: {
           handleTextInput: (view, from, _to, text) => {
             // Only interested in single space
-            if (text !== ' ') return false;
+            if (text !== " ") return false;
 
             const { state, dispatch } = view;
             const { $from } = state.selection;
@@ -1022,23 +1022,23 @@ export const DBlock = Node.create<DBlockOptions>({
             // Cheap checks first — bail early before any doc traversal.
             // Only trigger in dBlock > paragraph, and only if paragraph is empty
             if (
-              parent?.type?.name !== 'dBlock' ||
-              node?.type?.name !== 'paragraph' ||
-              node.textContent !== ''
+              parent?.type?.name !== "dBlock" ||
+              node?.type?.name !== "paragraph" ||
+              node.textContent !== ""
             ) {
               return false;
             }
 
             // Check if previous char is also a space (double space)
-            const prevChar = state.doc.textBetween(from - 1, from, '\0');
-            if (prevChar === ' ') {
+            const prevChar = state.doc.textBetween(from - 1, from, "\0");
+            if (prevChar === " ") {
               return false;
             }
 
             // Only now do the expensive check — we're about to insert aiWriter
             let hasActiveAIWriter = false;
             view.state.doc.descendants((node) => {
-              if (node.type.name === 'aiWriter') {
+              if (node.type.name === "aiWriter") {
                 hasActiveAIWriter = true;
                 return false;
               }
@@ -1051,9 +1051,9 @@ export const DBlock = Node.create<DBlockOptions>({
 
             // Replace the empty paragraph with aiWriter node
             const aiWriterNode = state.schema.nodes.aiWriter.create({
-              prompt: '',
-              content: '',
-              tone: 'neutral',
+              prompt: "",
+              content: "",
+              tone: "neutral",
             });
             const tr = state.tr.replaceRangeWith(
               $from.before(),

@@ -72,14 +72,13 @@ export const ColorPersistence = Extension.create({
         attributes: {
           color: {
             default: null,
-            parseHTML: (element) => element.style.color || null,
+            parseHTML: (element) =>
+              element.getAttribute('data-color') || element.style.color || null,
             renderHTML: (attributes) => {
               if (!attributes.color) {
                 return {};
               }
-              return {
-                style: `color: ${attributes.color}`,
-              };
+              return { 'data-color': attributes.color };
             },
           },
         },

@@ -71,17 +71,14 @@ export const HighlightPersistence = Extension.create({
           highlightColor: {
             default: null,
             parseHTML: (element) =>
-              element.getAttribute('data-color') ||
+              element.getAttribute('data-highlight-color') ||
               element.style.backgroundColor ||
               null,
             renderHTML: (attributes) => {
               if (!attributes.highlightColor) {
                 return {};
               }
-              return {
-                style: `background-color: ${attributes.highlightColor}`,
-                'data-color': attributes.highlightColor,
-              };
+              return { 'data-highlight-color': attributes.highlightColor };
             },
           },
         },
