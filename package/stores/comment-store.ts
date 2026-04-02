@@ -476,22 +476,16 @@ export const createCommentStore = () =>
 
     focusCommentInEditor: (commentId) => {
       const { editor, setActiveCommentId } = getExtDeps(get);
-      console.log('[comment:focus] editor:', !!editor, 'commentId:', commentId);
-      if (!editor?.view?.dom) {
-        console.log('[comment:focus] no editor view, skipping');
-        return;
-      }
+      if (!editor?.view?.dom) return;
 
       const tabComments = get().getTabComments();
       const foundComment = tabComments.find((c) => c.id === commentId);
-      console.log('[comment:focus] foundComment:', !!foundComment, 'selectedContent:', foundComment?.selectedContent);
       if (!foundComment) return;
 
       if (foundComment.selectedContent) {
         const commentElement = editor.view.dom.querySelector<HTMLElement>(
           `[data-comment-id="${commentId}"]`,
         );
-        console.log('[comment:focus] commentElement:', !!commentElement);
         if (commentElement) {
           const from = editor.view.posAtDOM(commentElement, 0);
           const to = from + (commentElement.textContent?.length ?? 0);
