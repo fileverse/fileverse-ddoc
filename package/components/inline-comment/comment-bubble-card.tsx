@@ -21,9 +21,11 @@ export const CommentBubbleCard = ({
   isCollabDocumentPublished: boolean | undefined;
   disableInlineComment?: boolean;
 }) => {
-  const comments = useCommentStore((s) => s.getTabComments());
+  const comments = useCommentStore((s) => s.tabComments);
   const username = useCommentStore((s) => s.username);
-  const setIsBubbleMenuSuppressed = useCommentStore((s) => s.setIsBubbleMenuSuppressed);
+  const setIsBubbleMenuSuppressed = useCommentStore(
+    (s) => s.setIsBubbleMenuSuppressed,
+  );
   const { dropdownRef } = useCommentRefs();
   const disableInlineCommentRef = useRef(disableInlineComment || false);
   const [isReplyViewDismissed, setIsReplyViewDismissed] = useState(false);

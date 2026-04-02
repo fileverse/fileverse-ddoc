@@ -24,7 +24,7 @@ export const CommentSection = ({
   isNavbarVisible,
   isPresentationMode,
 }: CommentSectionProps) => {
-  const comments = useCommentStore((s) => s.getTabComments());
+  const comments = useCommentStore((s) => s.tabComments);
   const username = useCommentStore((s) => s.username);
   const setUsername = useCommentStore((s) => s.setUsername);
   const focusCommentInEditor = useCommentStore((s) => s.focusCommentInEditor);

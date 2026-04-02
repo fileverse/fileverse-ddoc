@@ -37,10 +37,10 @@ export const CommentDropdown = ({
   const inlineCommentData = useCommentStore((s) => s.inlineCommentData);
   const setInlineCommentData = useCommentStore((s) => s.setInlineCommentData);
   const addComment = useCommentStore((s) => s.addComment);
-  const comments = useCommentStore((s) => s.getTabComments());
-  const activeComments = useCommentStore((s) => s.getActiveComments());
+  const comments = useCommentStore((s) => s.tabComments);
+  const activeComments = useCommentStore((s) => s.activeComments);
   const username = useCommentStore((s) => s.username);
-  const activeComment = useCommentStore((s) => s.getActiveComment());
+  const activeComment = useCommentStore((s) => s.activeComment);
   const selectedText = useCommentStore((s) => s.selectedText);
   const handleInput = useCommentStore((s) => s.handleInput);
   const isCommentActive = useCommentStore((s) => s.getIsCommentActive());

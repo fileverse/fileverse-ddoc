@@ -60,7 +60,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     fetchV1ImageFn,
   });
 
-  const activeComment = useCommentStore((s) => s.getActiveComment());
+  const activeComment = useCommentStore((s) => s.activeComment);
   const isCommentOpen = useCommentStore((s) => s.isCommentOpen);
   const handleInlineComment = useCommentStore((s) => s.handleInlineComment);
   const isCommentActive = useCommentStore((s) => s.getIsCommentActive());
