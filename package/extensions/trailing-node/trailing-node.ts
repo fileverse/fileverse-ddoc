@@ -1,4 +1,5 @@
 import { Extension } from '@tiptap/core';
+import { Node as ProsemirrorNode } from '@tiptap/pm/model';
 import { Plugin, PluginKey } from 'prosemirror-state';
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -40,6 +41,19 @@ export const TrailingNode = Extension.create<TrailingNodeOptions>({
       .map(([, value]) => value)
       .filter((node) => this.options.notAfter.includes(node.name));
 
+    const getInheritableAttrs = (node: ProsemirrorNode) => ({
+      fontFamily: node.attrs.fontFamily || null,
+      fontSize: node.attrs.fontSize || null,
+      color: node.attrs.color || null,
+      highlightColor: node.attrs.highlightColor || null,
+      textAlign: node.attrs.textAlign || 'left',
+      lineHeight: node.attrs.lineHeight || '138%',
+      isBold: node.attrs.isBold || false,
+      isItalic: node.attrs.isItalic || false,
+      isUnderline: node.attrs.isUnderline || false,
+      isStrike: node.attrs.isStrike || false,
+    });
+
     return [
       new Plugin({
         key: plugin,
@@ -56,21 +70,18 @@ export const TrailingNode = Extension.create<TrailingNodeOptions>({
             // Find the last paragraph in the last dBlock, traversing into
             // callouts, blockquotes, tables, etc.
             const lastChild = doc.lastChild;
-            let fontFamily: string | null = null;
-            let fontSize: string | null = null;
+            let inheritedAttrs = {};
             if (lastChild?.type.name === 'dBlock') {
               lastChild.descendants((node) => {
                 if (node.type.name === 'paragraph') {
-                  fontFamily = node.attrs.fontFamily || null;
-                  fontSize = node.attrs.fontSize || null;
+                  inheritedAttrs = getInheritableAttrs(node);
                 }
               });
             }
 
             const styledNode = type.create({
+              ...inheritedAttrs,
               class: 'trailing-node',
-              fontFamily,
-              fontSize,
             });
 
             return tr.insert(endPosition, styledNode);
@@ -88,7 +99,7 @@ export const TrailingNode = Extension.create<TrailingNodeOptions>({
           const lastDBlock = doc.lastChild;
           if (lastDBlock?.type.name !== 'dBlock') return null;
 
-          let trailingPara: typeof lastDBlock | null = null;
+          let trailingPara: ProsemirrorNode | null = null;
           let trailingParaPos = -1;
           const lastDBlockStart = doc.content.size - lastDBlock.nodeSize;
           lastDBlock.descendants((node, pos) => {
@@ -99,38 +110,35 @@ export const TrailingNode = Extension.create<TrailingNodeOptions>({
             }
           });
 
-          if (
-            !trailingPara ||
-            (trailingPara as typeof lastDBlock).attrs.class !== 'trailing-node'
-          ) {
+          if (!trailingPara || trailingPara.attrs.class !== 'trailing-node') {
             return null;
           }
 
           // Skip if cursor is inside the trailing node (user is editing it)
           const cursorPos = state.selection.$from.pos;
-          const trailingEnd =
-            trailingParaPos + (trailingPara as typeof lastDBlock).nodeSize;
+          const trailingEnd = trailingParaPos + trailingPara.nodeSize;
           if (cursorPos >= trailingParaPos && cursorPos <= trailingEnd)
             return null;
 
           // Read font from the second-to-last dBlock's last paragraph
           if (doc.childCount < 2) return null;
           const prevDBlock = doc.child(doc.childCount - 2);
-          let prevFontFamily: string | null = null;
-          let prevFontSize: string | null = null;
+          let prevAttrs: Record<string, any> | null = null;
           prevDBlock.descendants((node) => {
             if (node.type.name === 'paragraph') {
-              prevFontFamily = node.attrs.fontFamily || null;
-              prevFontSize = node.attrs.fontSize || null;
+              prevAttrs = getInheritableAttrs(node);
             }
           });
 
+          if (!prevAttrs) return null;
+
           // Skip if font attrs haven't changed
-          const currentAttrs = (trailingPara as typeof lastDBlock).attrs;
-          if (
-            prevFontFamily === currentAttrs.fontFamily &&
-            prevFontSize === currentAttrs.fontSize
-          ) {
+          const currentAttrs = trailingPara.attrs;
+          const hasChanged = Object.keys(prevAttrs).some(
+            (key) => (prevAttrs as Record<string, any>)[key] !== currentAttrs[key]
+          );
+
+          if (!hasChanged) {
             return null;
           }
 
@@ -138,8 +146,7 @@ export const TrailingNode = Extension.create<TrailingNodeOptions>({
           const updateTr = state.tr;
           updateTr.setNodeMarkup(trailingParaPos, undefined, {
             ...currentAttrs,
-            fontFamily: prevFontFamily,
-            fontSize: prevFontSize,
+            ...prevAttrs,
           });
           return updateTr;
         },

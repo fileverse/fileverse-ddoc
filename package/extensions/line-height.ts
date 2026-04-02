@@ -1,5 +1,4 @@
 import { Extension } from '@tiptap/core';
-import { Plugin, PluginKey } from '@tiptap/pm/state';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -118,87 +117,5 @@ export const LineHeight = Extension.create({
           return true;
         },
     };
-  },
-
-  addProseMirrorPlugins() {
-    const pluginKey = new PluginKey('lineHeightInheritance');
-
-    return [
-      new Plugin({
-        key: pluginKey,
-        appendTransaction: (transactions, _oldState, newState) => {
-          // Only run when a transaction structurally changed the doc
-          // (node splits, pastes, etc.) — not on plain text input.
-          const hasStructuralChange = transactions.some((transaction) => {
-            if (!transaction.docChanged) return false;
-            // A structural change (Enter/split) adds more content than
-            // it replaces. Pure text typing has a 1:1 old-to-new ratio.
-            let structural = false;
-            transaction.steps.forEach((step) => {
-              const stepMap = step.getMap();
-              stepMap.forEach((oldStart, oldEnd, newStart, newEnd) => {
-                const oldSize = oldEnd - oldStart;
-                const newSize = newEnd - newStart;
-                // New block-level node insertion creates a larger delta
-                if (newSize - oldSize > 4) {
-                  structural = true;
-                }
-              });
-            });
-            return structural;
-          });
-
-          if (!hasStructuralChange) return null;
-
-          const tr = newState.tr;
-          let modified = false;
-
-          transactions.forEach((transaction) => {
-            if (!transaction.docChanged) return;
-
-            transaction.steps.forEach((step) => {
-              const stepMap = step.getMap();
-              stepMap.forEach((_oldStart, _oldEnd, newStart, newEnd) => {
-                if (newEnd > newStart) {
-                  const docSize = newState.doc.content.size;
-                  const safeStart = Math.max(0, Math.min(newStart, docSize));
-                  const safeEnd = Math.max(0, Math.min(newEnd, docSize));
-
-                  if (safeEnd <= safeStart) return;
-
-                  newState.doc.nodesBetween(safeStart, safeEnd, (node, pos) => {
-                    if (!this.options.types.includes(node.type.name)) return;
-
-                    if (node.attrs.lineHeight) return;
-
-                    const $pos = newState.doc.resolve(pos);
-                    const indexBefore = $pos.index($pos.depth);
-
-                    if (indexBefore > 0) {
-                      const prevNode = $pos
-                        .node($pos.depth)
-                        .child(indexBefore - 1);
-                      if (
-                        prevNode &&
-                        this.options.types.includes(prevNode.type.name) &&
-                        prevNode.attrs.lineHeight
-                      ) {
-                        tr.setNodeMarkup(pos, undefined, {
-                          ...node.attrs,
-                          lineHeight: prevNode.attrs.lineHeight,
-                        });
-                        modified = true;
-                      }
-                    }
-                  });
-                }
-              });
-            });
-          });
-
-          return modified ? tr : null;
-        },
-      }),
-    ];
   },
 });
