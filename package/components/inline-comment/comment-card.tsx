@@ -109,7 +109,12 @@ const CommentReply = ({
   };
 
   return (
-    <div className="flex group relative flex-col gap-2 p-[4px] last:pb-0">
+    <div
+      className={cn(
+        'flex group relative flex-col gap-2 p-[4px] last:pb-0',
+        isDeleteOverlayVisible && 'min-h-[100px]',
+      )}
+    >
       <div className="flex justify-between">
         <UserDisplay username={username} createdAt={createdAt} />
         <div className=" opacity-0 group-hover:opacity-100">
