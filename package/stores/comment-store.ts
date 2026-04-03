@@ -1,6 +1,12 @@
 import { Editor } from '@tiptap/react';
 import { createContext, useContext } from 'react';
 import React from 'react';
+import {
+  CommentAnchor,
+  createCommentAnchorFromSelection,
+  createCommentAnchorFromEditor,
+  triggerDecorationRebuild,
+} from '../extensions/comment/comment-decoration-plugin';
 import uuid from 'react-uuid';
 import { createStore, useStore } from 'zustand';
 import { fromUint8Array } from 'js-base64';
@@ -35,6 +41,7 @@ export interface CommentExternalDeps {
   connectViaWallet?: () => Promise<void>;
   connectViaUsername?: (username: string) => Promise<void>;
   ensResolutionUrl: string;
+  commentAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
 }
 
 type FloatingItemsUpdater = React.SetStateAction<CommentFloatingItem[]>;
@@ -527,6 +534,7 @@ export const createCommentStore = () =>
         onNewComment,
         setActiveCommentId,
         focusCommentWithActiveId,
+        commentAnchorsRef,
       } = getExtDeps(get);
       const { username, activeTabId } = get();
 
@@ -548,22 +556,35 @@ export const createCommentStore = () =>
         createdAt: new Date(),
       };
 
-      // Remove temporary highlight before applying comment mark
+      // Remove temporary highlight
       if (editor.isActive('highlight')) {
         editor.chain().unsetHighlight().run();
       }
 
-      const mutationMeta = get().createMutationMeta('create', () =>
-        editor.commands.setComment(newComment.id || ''),
-      );
+      // Create decoration anchor — no mark for new comments
+      const decorationAnchor = createCommentAnchorFromSelection(editor);
 
-      if (newComment.selectedContent && !mutationMeta) {
+      if (newComment.selectedContent && !decorationAnchor) {
         return undefined;
+      }
+
+      if (decorationAnchor && commentAnchorsRef) {
+        commentAnchorsRef.current = [
+          ...commentAnchorsRef.current,
+          {
+            id: newComment.id!,
+            anchorFrom: decorationAnchor.anchorFrom,
+            anchorTo: decorationAnchor.anchorTo,
+            resolved: false,
+            deleted: false,
+          },
+        ];
+        triggerDecorationRebuild(editor);
       }
 
       setActiveCommentId(newComment.id || '');
       setTimeout(() => focusCommentWithActiveId(newComment.id || ''), 0);
-      onNewComment?.(newComment, mutationMeta);
+      onNewComment?.(newComment);
       return newComment.id;
     },
     createFloatingDraft: () => {
@@ -710,29 +731,50 @@ export const createCommentStore = () =>
         createdAt: new Date(),
       };
 
-      const mutationMeta = get().createMutationMeta('create', () =>
-        editor.commands.promoteDraftComment(draftId, newComment.id || ''),
-      );
+      // Get draft position from the draft plugin state, create decoration anchor
+      const { commentAnchorsRef } = getExtDeps(get);
+      const draftRange = getDraftCommentRange(editor.state, draftId);
 
-      if (draftItem.selectedText && !mutationMeta) {
+      if (draftItem.selectedText && !draftRange) {
         set((state) => ({
           floatingItems: state.floatingItems.map((item) =>
             item.type === 'draft' && item.draftId === draftId
-              ? {
-                  ...item,
-                  isAuthPending: false,
-                }
+              ? { ...item, isAuthPending: false }
               : item,
           ),
         }));
         return;
       }
 
+      // Create decoration anchor from draft range (no mark)
+      if (draftRange && commentAnchorsRef) {
+        const anchor = createCommentAnchorFromEditor(
+          editor,
+          draftRange.from,
+          draftRange.to,
+        );
+        if (anchor) {
+          commentAnchorsRef.current = [
+            ...commentAnchorsRef.current,
+            {
+              id: newComment.id!,
+              anchorFrom: anchor.anchorFrom,
+              anchorTo: anchor.anchorTo,
+              resolved: false,
+              deleted: false,
+            },
+          ];
+        }
+      }
+
+      // Remove draft decoration (no mark promotion)
+      editor.commands.unsetDraftComment(draftId);
+      triggerDecorationRebuild(editor);
+
       get().setActiveCommentId(newComment.id || '');
       setActiveCommentId(newComment.id || '');
       setTimeout(() => focusCommentWithActiveId(newComment.id || ''), 0);
-      onNewComment?.(newComment, mutationMeta);
-      editor.commands.setCommentActive(newComment.id || '');
+      onNewComment?.(newComment);
 
       set((state) => {
         const nextItems = state.floatingItems.filter(
@@ -945,15 +987,27 @@ export const createCommentStore = () =>
         });
     },
     resolveComment: (commentId) => {
-      const { editor, onResolveComment, setActiveCommentId } = getExtDeps(get);
+      const { editor, onResolveComment, setActiveCommentId, commentAnchorsRef } =
+        getExtDeps(get);
 
-      if (!editor) {
-        return;
-      }
+      if (!editor) return;
 
-      const mutationMeta = get().createMutationMeta('resolve', () =>
-        editor.commands.resolveComment(commentId),
+      const isDecoration = commentAnchorsRef?.current.some(
+        (a) => a.id === commentId,
       );
+
+      if (isDecoration && commentAnchorsRef) {
+        commentAnchorsRef.current = commentAnchorsRef.current.map((a) =>
+          a.id === commentId ? { ...a, resolved: true } : a,
+        );
+        triggerDecorationRebuild(editor);
+        onResolveComment?.(commentId);
+      } else {
+        const mutationMeta = get().createMutationMeta('resolve', () =>
+          editor.commands.resolveComment(commentId),
+        );
+        onResolveComment?.(commentId, mutationMeta);
+      }
 
       set((state) => ({
         floatingItems: state.floatingItems.filter(
@@ -964,32 +1018,52 @@ export const createCommentStore = () =>
       if (get().activeCommentId === commentId) {
         setActiveCommentId(null);
       }
-
-      onResolveComment?.(commentId, mutationMeta);
     },
     unresolveComment: (commentId) => {
-      const { editor, onUnresolveComment } = getExtDeps(get);
+      const { editor, onUnresolveComment, commentAnchorsRef } =
+        getExtDeps(get);
 
-      if (!editor) {
-        return;
-      }
+      if (!editor) return;
 
-      const mutationMeta = get().createMutationMeta('unresolve', () =>
-        editor.commands.unresolveComment(commentId),
+      const isDecoration = commentAnchorsRef?.current.some(
+        (a) => a.id === commentId,
       );
 
-      onUnresolveComment?.(commentId, mutationMeta);
+      if (isDecoration && commentAnchorsRef) {
+        commentAnchorsRef.current = commentAnchorsRef.current.map((a) =>
+          a.id === commentId ? { ...a, resolved: false } : a,
+        );
+        triggerDecorationRebuild(editor);
+        onUnresolveComment?.(commentId);
+      } else {
+        const mutationMeta = get().createMutationMeta('unresolve', () =>
+          editor.commands.unresolveComment(commentId),
+        );
+        onUnresolveComment?.(commentId, mutationMeta);
+      }
     },
     deleteComment: (commentId) => {
-      const { editor, onDeleteComment, setActiveCommentId } = getExtDeps(get);
+      const { editor, onDeleteComment, setActiveCommentId, commentAnchorsRef } =
+        getExtDeps(get);
 
-      if (!editor) {
-        return;
-      }
+      if (!editor) return;
 
-      const mutationMeta = get().createMutationMeta('delete', () =>
-        editor.commands.unsetComment(commentId),
+      const isDecoration = commentAnchorsRef?.current.some(
+        (a) => a.id === commentId,
       );
+
+      if (isDecoration && commentAnchorsRef) {
+        commentAnchorsRef.current = commentAnchorsRef.current.filter(
+          (a) => a.id !== commentId,
+        );
+        triggerDecorationRebuild(editor);
+        onDeleteComment?.(commentId);
+      } else {
+        const mutationMeta = get().createMutationMeta('delete', () =>
+          editor.commands.unsetComment(commentId),
+        );
+        onDeleteComment?.(commentId, mutationMeta);
+      }
 
       set((state) => ({
         floatingItems: state.floatingItems.filter(
@@ -1000,8 +1074,6 @@ export const createCommentStore = () =>
       if (get().activeCommentId === commentId) {
         setActiveCommentId(null);
       }
-
-      onDeleteComment?.(commentId, mutationMeta);
     },
     deleteReply: (commentId, replyId) => {
       getExtDeps(get).setInitialComments?.((previousComments) =>

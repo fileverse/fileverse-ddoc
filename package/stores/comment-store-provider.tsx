@@ -3,6 +3,10 @@ import { Editor } from '@tiptap/react';
 import { useOnClickOutside } from 'usehooks-ts';
 import * as Y from 'yjs';
 import { IComment } from '../extensions/comment';
+import {
+  CommentAnchor,
+  getCommentAtPosition,
+} from '../extensions/comment/comment-decoration-plugin';
 import { CommentMutationMeta } from '../types';
 import { useResponsive } from '../utils/responsive';
 import {
@@ -29,6 +33,7 @@ export interface CommentStoreProviderProps {
   connectViaWallet?: () => Promise<void>;
   connectViaUsername?: (username: string) => Promise<void>;
   ensResolutionUrl: string;
+  commentAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
   // Synced data — go into store via useEffect
   initialComments: IComment[];
   username: string | null;
@@ -59,6 +64,7 @@ export const CommentStoreProvider = ({
   connectViaWallet,
   connectViaUsername,
   ensResolutionUrl,
+  commentAnchorsRef,
   setUsername: setUsernameProp,
   // Synced data (useEffect-based)
   initialComments,
@@ -92,6 +98,7 @@ export const CommentStoreProvider = ({
     connectViaWallet,
     connectViaUsername,
     ensResolutionUrl,
+    commentAnchorsRef,
   });
 
   // Update ref on every render — no set(), no re-render loop
@@ -113,6 +120,7 @@ export const CommentStoreProvider = ({
     connectViaWallet,
     connectViaUsername,
     ensResolutionUrl,
+    commentAnchorsRef,
   };
 
   // Inject ref into store once
@@ -199,10 +207,33 @@ export const CommentStoreProvider = ({
 
     const updateEditorState = () => {
       const state = store.getState();
-      state.setIsCommentActive(editor.isActive('comment'));
+      const isMarkActive = editor.isActive('comment');
+      const cursorPos = editor.state.selection.from;
+      const decorationComment = commentAnchorsRef
+        ? getCommentAtPosition(
+            editor,
+            cursorPos,
+            () => commentAnchorsRef.current,
+          )
+        : null;
+
+      state.setIsCommentActive(isMarkActive || decorationComment !== null);
       state.setIsCommentResolved(
-        editor.getAttributes('comment').resolved ?? false,
+        isMarkActive
+          ? editor.getAttributes('comment').resolved ?? false
+          : decorationComment?.resolved ?? false,
       );
+
+      // For decoration-based comments, trigger the same activation flow
+      // that onCommentActivated does for mark-based comments
+      if (decorationComment && !isMarkActive) {
+        const currentActiveId = state.activeCommentId;
+        if (currentActiveId !== decorationComment.id) {
+          state.setActiveCommentId(decorationComment.id);
+          state.openFloatingThread(decorationComment.id);
+        }
+      }
+
       state.pruneFloatingItems();
     };
 
