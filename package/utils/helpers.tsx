@@ -99,7 +99,7 @@ export const renderTextWithLinks = (text: string) => {
           href={part}
           target="_blank"
           rel="noopener noreferrer"
-          className="custom-text-link"
+          className="color-text-link"
         >
           {part}
         </a>

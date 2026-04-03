@@ -1,121 +1,36 @@
-import { Editor } from '@tiptap/react';
-import { IComment } from '../../../extensions/comment';
-import { SetStateAction } from 'react';
-import { CommentAccountProps, CommentMutationMeta } from '../../../types';
-import { EnsStatus } from '../types';
-import * as Y from 'yjs';
+import type { Dispatch, RefObject, SetStateAction } from 'react';
+import type { IComment } from '../../../extensions/comment';
+import type { CommentStoreState } from '../../../stores/comment-store';
+import type { CommentStoreProviderProps } from '../../../stores/comment-store-provider';
+import type { CommentAccountProps } from '../../../types';
 
-export interface CommentContextType extends CommentAccountProps {
-  comments: IComment[];
-  setComments: React.Dispatch<SetStateAction<IComment[]>>;
-  editor: Editor;
-  username?: string | null;
-  setUsername?: React.Dispatch<SetStateAction<string>>;
-  showResolved: boolean;
-  setShowResolved: (show: boolean) => void;
-  resolveComment: (commentId: string) => void;
-  unresolveComment: (commentId: string) => void;
-  deleteComment: (commentId: string) => void;
-  handleAddReply: (
-    activeCommentId: string,
-    replyContent: string,
-    onCommentReply: (activeCommentId: string, reply: IComment) => void,
-  ) => void;
-  focusCommentInEditor: (commentId: string) => void;
-  handleReplyChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  handleCommentChange: (event: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  handleCommentKeyDown: (
-    event: React.KeyboardEvent<HTMLTextAreaElement>,
-  ) => void;
-  handleReplySubmit: () => void;
-  toggleResolved: () => void;
-  openReplyId: string | null;
-  setOpenReplyId: (id: string | null) => void;
-  handleReplyKeyDown: (event: React.KeyboardEvent<HTMLTextAreaElement>) => void;
-  commentsSectionRef: React.RefObject<HTMLDivElement>;
-  replySectionRef: React.RefObject<HTMLDivElement>;
-  addComment: (content?: string) => void;
-  handleCommentSubmit: () => void;
-  reply: string;
-  setReply: React.Dispatch<React.SetStateAction<string>>;
-  comment: string;
-  setComment: React.Dispatch<React.SetStateAction<string>>;
-  onPrevComment: () => void;
-  onNextComment: () => void;
-  activeCommentIndex: number;
-  activeComment: IComment | undefined;
+export interface CommentFloatingBaseItem {
+  itemId: string;
   selectedText: string;
-  isCommentOpen: boolean;
-  isBubbleMenuSuppressed: boolean;
-  setIsBubbleMenuSuppressed: React.Dispatch<React.SetStateAction<boolean>>;
-  handleInlineComment: () => void;
-  portalRef: React.RefObject<HTMLDivElement>;
-  buttonRef: React.RefObject<HTMLDivElement>;
-  dropdownRef: React.RefObject<HTMLDivElement>;
-  activeComments: IComment[];
-  handleInput: (
-    e: React.FormEvent<HTMLTextAreaElement>,
-    content: string,
-  ) => void;
-  isCommentActive: boolean;
-  isCommentResolved: boolean;
-  ensResolutionUrl: string;
-  activeTabId: string;
-  onCommentReply?: (activeCommentId: string, reply: IComment) => void;
-  onComment?: () => void;
-  setCommentDrawerOpen?: React.Dispatch<React.SetStateAction<boolean>>;
-  inlineCommentData: {
-    inlineCommentText: string;
-    handleClick: boolean;
-  };
-  setInlineCommentData: React.Dispatch<
-    React.SetStateAction<{
-      inlineCommentText: string;
-      handleClick: boolean;
-    }>
-  >;
-  getEnsStatus: (
-    walletAddress: string,
-    setEnsStatus: React.Dispatch<React.SetStateAction<EnsStatus>>,
-  ) => void;
-  ensCache: EnsCache;
+  isOpen: boolean;
+  isFocused: boolean;
 }
 
-export interface CommentProviderProps extends CommentAccountProps {
-  children: React.ReactNode;
-  editor: Editor;
-  ydoc: Y.Doc;
-  initialComments?: IComment[];
-  setInitialComments?: React.Dispatch<SetStateAction<IComment[]>>;
-  onCommentReply?: (activeCommentId: string, reply: IComment) => void;
-  onNewComment?: (newComment: IComment, meta?: CommentMutationMeta) => void;
-  onResolveComment?: (
-    activeCommentId: string,
-    meta?: CommentMutationMeta,
-  ) => void;
-  onUnresolveComment?: (
-    activeCommentId: string,
-    meta?: CommentMutationMeta,
-  ) => void;
-  onDeleteComment?: (
-    activeCommentId: string,
-    meta?: CommentMutationMeta,
-  ) => void;
-  username: string | null;
-  setUsername?: React.Dispatch<SetStateAction<string>>;
-  activeCommentId: string | null;
-  setActiveCommentId: React.Dispatch<React.SetStateAction<string | null>>;
-  activeTabId: string;
-  focusCommentWithActiveId: (id: string) => void;
-  ensResolutionUrl: string;
-  onInlineComment?: () => void;
-  onComment?: () => void;
-  setCommentDrawerOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+export interface CommentFloatingDraftItem extends CommentFloatingBaseItem {
+  type: 'draft';
+  draftId: string;
+  draftText: string;
+  isAuthPending: boolean;
 }
-export interface CommentUsernameProps extends CommentAccountProps {
-  username?: string | null;
-  setUsername?: React.Dispatch<SetStateAction<string>>;
-  isNavbarVisible?: boolean;
+
+export interface CommentFloatingThreadItem extends CommentFloatingBaseItem {
+  type: 'thread';
+  commentId: string;
+}
+
+export type CommentFloatingItem =
+  | CommentFloatingDraftItem
+  | CommentFloatingThreadItem;
+
+export interface InlineCommentData {
+  highlightedTextContent?: string;
+  inlineCommentText: string;
+  handleClick: boolean;
 }
 
 export interface EnsEntry {
@@ -124,3 +39,85 @@ export interface EnsEntry {
 }
 
 export type EnsCache = Record<string, EnsEntry>;
+
+export type CommentProviderProps = CommentStoreProviderProps;
+
+export type CommentContextType = Pick<
+  CommentStoreState,
+  | 'activeComment'
+  | 'activeCommentIndex'
+  | 'activeComments'
+  | 'activeTabId'
+  | 'addComment'
+  | 'blurFloatingItem'
+  | 'cancelFloatingDraft'
+  | 'closeFloatingItem'
+  | 'comment'
+  | 'connectViaUsername'
+  | 'connectViaWallet'
+  | 'createFloatingDraft'
+  | 'deleteComment'
+  | 'deleteReply'
+  | 'ensCache'
+  | 'floatingItems'
+  | 'focusCommentInEditor'
+  | 'focusFloatingItem'
+  | 'getEnsStatus'
+  | 'handleAddReply'
+  | 'handleCommentChange'
+  | 'handleCommentKeyDown'
+  | 'handleCommentSubmit'
+  | 'handleInlineComment'
+  | 'handleInput'
+  | 'handleReplyChange'
+  | 'handleReplyKeyDown'
+  | 'handleReplySubmit'
+  | 'inlineCommentData'
+  | 'isBubbleMenuSuppressed'
+  | 'isCommentActive'
+  | 'isCommentOpen'
+  | 'isCommentResolved'
+  | 'isConnected'
+  | 'isDDocOwner'
+  | 'isDesktopFloatingEnabled'
+  | 'isLoading'
+  | 'onComment'
+  | 'onNextComment'
+  | 'onPrevComment'
+  | 'openFloatingThread'
+  | 'openReplyId'
+  | 'reply'
+  | 'resolveComment'
+  | 'setComment'
+  | 'setCommentDrawerOpen'
+  | 'setInlineCommentData'
+  | 'setIsBubbleMenuSuppressed'
+  | 'setOpenReplyId'
+  | 'setReply'
+  | 'setShowResolved'
+  | 'setUsername'
+  | 'selectedText'
+  | 'showResolved'
+  | 'submitFloatingDraft'
+  | 'toggleResolved'
+  | 'unresolveComment'
+  | 'updateFloatingDraftText'
+  | 'username'
+> & {
+  comments: IComment[];
+  commentsSectionRef: RefObject<HTMLDivElement>;
+  dropdownRef: RefObject<HTMLDivElement>;
+  buttonRef: RefObject<HTMLDivElement>;
+  portalRef: RefObject<HTMLDivElement>;
+  replySectionRef: RefObject<HTMLDivElement>;
+  editor: CommentStoreProviderProps['editor'];
+  ensResolutionUrl: string;
+  onCommentReply?: CommentStoreProviderProps['onCommentReply'];
+  setComments?: Dispatch<SetStateAction<IComment[]>>;
+};
+
+export interface CommentUsernameProps extends CommentAccountProps {
+  username?: string | null;
+  setUsername?: Dispatch<SetStateAction<string>>;
+  isNavbarVisible?: boolean;
+}

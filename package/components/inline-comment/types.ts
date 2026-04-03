@@ -40,6 +40,7 @@ export interface CommentCardProps extends IComment {
   comment?: string;
   onResolve?: (commentId: string) => void;
   onDelete?: (commentId: string) => void;
+  onRequestDelete?: (commentId: string) => void;
   onUnresolve?: (commentId: string) => void;
   isResolved?: boolean;
   isDropdown?: boolean;
@@ -48,6 +49,7 @@ export interface CommentCardProps extends IComment {
   isCommentOwner?: boolean;
   version?: string;
   emptyComment?: boolean;
+  isFocused?: boolean;
 }
 
 export type CommentBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
@@ -55,6 +57,8 @@ export type CommentBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
 };
 
 export interface CommentReplyProps {
+  commentId: string;
+  replyId: string;
   reply: string;
   username: string;
   createdAt: Date;
