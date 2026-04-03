@@ -723,7 +723,7 @@ const DdocEditor = forwardRef(
                 >
                   <div
                     className={cn(
-                      'editor-main-lane flex-grow min-w-0 flex overflow-visible items-stretch',
+                      'editor-main-lane flex-grow min-w-0 flex overflow-visible min-h-[calc(100vh-108px)] items-stretch',
                       shouldRenderDocumentOutline
                         ? shouldScroll
                           ? 'justify-start overflow-x-auto'
