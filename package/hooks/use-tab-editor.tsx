@@ -1002,7 +1002,7 @@ const useEditorExtension = ({
         ipfsImageUploadFn,
         slashCommandConfigRef,
       ),
-    [isConnected, enableCollaboration, disableInlineComment],
+    [onError, ipfsImageUploadFn],
   );
 
   const commentExtension = useMemo(
@@ -1062,14 +1062,6 @@ const useEditorExtension = ({
       setExtensions(buildExtensions());
     }
   }, [activeTabId]);
-
-  useEffect(() => {
-    if (!isConnected) return;
-    setExtensions((prev) => [
-      ...prev.filter((ext) => ext.name !== 'slash-command'),
-      createSlashCommand(),
-    ]);
-  }, [createSlashCommand]);
 
   useEffect(() => {
     if (!activeModel) return;
@@ -1229,7 +1221,7 @@ const useExtensionSyncWithCollaboration = ({
       const parts: string[] = [];
       awareness
         .getStates()
-        .forEach((state: Record<string, unknown>, clientId: number) => {
+        .forEach((state: any, clientId: number) => {
           if (clientId === awareness.clientID) return;
           const cursor = state.cursor;
           if (cursor) {

@@ -612,15 +612,12 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   top: -2em;
   user-select: none;
   white-space: nowrap;
-  /* Auto-hide: show on cursor activity, fade out after 2s of inactivity.
-     Animation restarts each time the cursor DOM element is recreated
-     (which happens on each awareness update / cursor position change). */
-  animation: cursor-label-fade 3s ease-out forwards;
+  animation: cursor-label-fade 2.5s ease-out forwards;
 }
 
 @keyframes cursor-label-fade {
-  0%, 66% { opacity: 1; }   /* visible for ~2s */
-  100% { opacity: 0; }       /* fade out over ~1s */
+  0%, 80% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 /* Give a remote user a caret */
@@ -666,7 +663,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   white-space: nowrap;
   border-radius: 9999px 9999px 9999px 0;
   color: #363b3f;
-  animation: cursor-label-fade 3s ease-out forwards;
 }
 
 .custom-cursor__label {
