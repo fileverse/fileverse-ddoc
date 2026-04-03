@@ -86,6 +86,42 @@ export const getSuggestionItems = ({
       },
     },
     {
+      title: 'Inline Equation',
+      description: 'Insert an inline LaTeX math expression.',
+      searchTerms: ['math', 'latex', 'equation', 'inline'],
+      icon: <span className="text-base">$..$</span>,
+      image: '',
+      command: ({ editor, range }: CommandProps) => {
+        editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          .insertContent('$')
+          .run();
+        // Move cursor between the delimiters
+        const newPos = range.from + 1;
+        editor.commands.setTextSelection(newPos);
+      },
+    },
+    {
+      title: 'Block Equation',
+      description: 'Insert a block LaTeX math expression.',
+      searchTerms: ['math', 'latex', 'equation', 'block'],
+      icon: <LucideIcon name="Sigma" size={'md'} />,
+      image: '',
+      command: ({ editor, range }: CommandProps) => {
+        editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          .insertContent('$$')
+          .run();
+        // Move cursor between the delimiters
+        const newPos = range.from + 2;
+        editor.commands.setTextSelection(newPos);
+      },
+    },
+    {
       title: 'To-do List',
       description: 'Track tasks with a to-do list.',
       searchTerms: ['todo', 'task', 'list', 'check', 'checkbox'],
