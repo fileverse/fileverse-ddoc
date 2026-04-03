@@ -46,10 +46,9 @@ export const createAwarenessUpdateHandler = (
       if (!pending.includes(id)) pending.push(id);
     }
 
-    // Leading + trailing throttle
-    if (!timer) {
-      flush(); // Send immediately (leading edge)
-      timer = setTimeout(flush, THROTTLE_MS); // Also send trailing
-    }
+    // Trailing-only throttle: ensures awareness never arrives before
+    // content updates (which use the same 50ms window via SyncManager)
+    if (timer) clearTimeout(timer);
+    timer = setTimeout(flush, THROTTLE_MS);
   };
 };
