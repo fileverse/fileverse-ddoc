@@ -183,7 +183,8 @@ export const CommentCard = ({
   createdAt,
   replies,
   onResolve,
-  onDelete,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  onDelete: _onDelete,
   onRequestDelete,
   onUnresolve,
   isResolved,
@@ -191,7 +192,8 @@ export const CommentCard = ({
   activeCommentId,
   id,
   isDisabled = false,
-  isCommentOwner,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  isCommentOwner: _isCommentOwner,
   version,
   emptyComment,
 }: CommentCardProps) => {
@@ -242,10 +244,6 @@ export const CommentCard = ({
     removePopoverContent();
   };
 
-  const handleDeleteClick = () => {
-    onDelete?.(id as string);
-    removePopoverContent();
-  };
 
   const handleRequestDeleteClick = () => {
     onRequestDelete?.(id as string);
@@ -391,15 +389,17 @@ export const CommentCard = ({
                 )}
 
                 <div className="flex opacity-0 group-hover:opacity-100 gap-[4px]">
-                  <Tooltip text="Mark as resolved" position="bottom">
-                    <IconButton
-                      variant={'ghost'}
-                      icon="Check"
-                      size="sm"
-                      className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
-                      onClick={handleResolveClick}
-                    />
-                  </Tooltip>
+                  {!isResolved && (
+                    <Tooltip text="Mark as resolved" position="bottom">
+                      <IconButton
+                        variant={'ghost'}
+                        icon="Check"
+                        size="sm"
+                        className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
+                        onClick={handleResolveClick}
+                      />
+                    </Tooltip>
+                  )}
 
                   <DynamicDropdown
                     key={`thread-actions-${id}`}
@@ -418,12 +418,24 @@ export const CommentCard = ({
                         ref={dropdownRef}
                         className="flex flex-col p-2 w-40 shadow-elevation-3"
                       >
-                        <button className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full">
-                          <LucideIcon name="Pencil" size="sm" />
-                          <p className="text-body-sm color-text-default">
-                            Edit
-                          </p>
-                        </button>
+                        {isResolved ? (
+                          <button
+                            className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
+                            onClick={handleUnresolveClick}
+                          >
+                            <LucideIcon name="RotateCcw" size="sm" />
+                            <p className="text-body-sm color-text-default">
+                              Unresolve
+                            </p>
+                          </button>
+                        ) : (
+                          <button className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full">
+                            <LucideIcon name="Pencil" size="sm" />
+                            <p className="text-body-sm color-text-default">
+                              Edit
+                            </p>
+                          </button>
+                        )}
                         <button
                           className="flex items-center h-[32px] color-text-danger text-sm font-medium gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
                           onClick={handleRequestDeleteClick}
@@ -442,51 +454,6 @@ export const CommentCard = ({
                   />
                 </div>
 
-                {!isDropdown && isCommentOwner && (
-                  <DynamicDropdown
-                    key="comment-card-more-actions"
-                    align="end"
-                    sideOffset={4}
-                    anchorTrigger={
-                      <IconButton
-                        icon={'Ellipsis'}
-                        variant="ghost"
-                        disabled={isDisabled}
-                        size="sm"
-                        className={cn(
-                          'opacity-0 group-hover:opacity-100  transition-opacity duration-300 disabled:bg-transparent',
-                        )}
-                      />
-                    }
-                    content={
-                      <div
-                        ref={dropdownRef}
-                        className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3"
-                      >
-                        <button
-                          className={cn(
-                            'flex items-center color-text-default text-sm font-medium gap-2 rounded p-2 transition-all hover:color-bg-default-hover w-full',
-                          )}
-                          onClick={
-                            isResolved
-                              ? handleUnresolveClick
-                              : handleResolveClick
-                          }
-                        >
-                          <LucideIcon name="CircleCheck" size="sm" />
-                          {isResolved ? 'Unresolve' : 'Resolve'}
-                        </button>
-                        <button
-                          className="flex items-center color-text-danger text-sm font-medium gap-2 rounded p-2 transition-all hover:color-bg-default-hover w-full"
-                          onClick={handleDeleteClick}
-                        >
-                          <LucideIcon name="Trash2" size="sm" />
-                          Delete
-                        </button>
-                      </div>
-                    }
-                  />
-                )}
               </ButtonGroup>
             </Tooltip>
           ) : (

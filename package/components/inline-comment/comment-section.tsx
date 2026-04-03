@@ -136,6 +136,7 @@ export const CommentSection = ({
                   openReplyId === comment.id && 'ml-5 pl-4',
                   comment.resolved && 'hidden',
                 )}
+                onClick={(e) => e.stopPropagation()}
               >
                 {openReplyId !== comment.id ? (
                   <Button
@@ -163,7 +164,6 @@ export const CommentSection = ({
                     commentId={comment.id as string}
                     commentUsername={comment.username}
                     replyCount={comment.replies?.length ?? 0}
-                    activeCommentId={activeCommentId as string}
                   />
                 )}
               </div>

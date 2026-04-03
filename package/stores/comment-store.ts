@@ -478,14 +478,19 @@ export const createCommentStore = () =>
       }
     },
     handleReplySubmit: () => {
-      const { activeCommentId, reply } = get();
+      const { activeCommentId, openReplyId, reply } = get();
       const { onCommentReply } = getExtDeps(get);
+      const targetCommentId = openReplyId || activeCommentId;
 
-      if (!activeCommentId || !reply.trim()) {
+      if (!targetCommentId || !reply.trim()) {
         return;
       }
 
-      get().handleAddReply(activeCommentId, reply, onCommentReply ?? undefined);
+      get().handleAddReply(
+        targetCommentId,
+        reply,
+        onCommentReply ?? undefined,
+      );
       set({ reply: '' });
     },
     handleCommentSubmit: () => {

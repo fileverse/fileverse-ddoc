@@ -15,14 +15,12 @@ interface CommentReplyInputProps {
   commentId: string;
   commentUsername?: string;
   replyCount: number;
-  activeCommentId: string;
 }
 
 export const CommentReplyInput = ({
   commentId,
   commentUsername,
   replyCount,
-  activeCommentId,
 }: CommentReplyInputProps) => {
   const reply = useCommentStore((s) => s.reply);
   const handleReplyChange = useCommentStore((s) => s.handleReplyChange);
@@ -45,7 +43,10 @@ export const CommentReplyInput = ({
   }, [username, ensCache]);
 
   return (
-    <div className="pl-4 animate-in fade-in-5 flex flex-col gap-2 duration-300 mt-3">
+    <div
+      className="pl-4 animate-in fade-in-5 flex flex-col gap-2 duration-300 mt-3"
+      onClick={(e) => e.stopPropagation()}
+    >
       <div className="border color-bg-default flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
         <Avatar
           src={
@@ -72,7 +73,7 @@ export const CommentReplyInput = ({
           }}
           className={cn(
             'color-bg-default text-body-sm color-text-default max-h-[96px] !border-none !p-0 overflow-y-auto no-scrollbar whitespace-pre-wrap',
-            commentId === activeCommentId && 'color-bg-default',
+            'color-bg-default',
           )}
           id={commentId}
           onChange={handleReplyChange}
@@ -81,8 +82,7 @@ export const CommentReplyInput = ({
           onInput={(e) => handleInput(e, reply)}
         />
       </div>
-      {commentId === activeCommentId && (
-        <ButtonGroup className="w-full justify-end">
+      <ButtonGroup className="w-full justify-end">
           <Button
             variant="ghost"
             className="px-4 py-2 w-20 min-w-20 h-9"
@@ -101,8 +101,7 @@ export const CommentReplyInput = ({
           >
             Reply
           </Button>
-        </ButtonGroup>
-      )}
+      </ButtonGroup>
     </div>
   );
 };
