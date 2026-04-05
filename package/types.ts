@@ -50,6 +50,14 @@ export interface CommentMutationMeta {
   anchorTo?: string;
 }
 
+export interface SerializedCommentAnchor {
+  id: string;
+  anchorFrom: string;
+  anchorTo: string;
+  resolved: boolean;
+  deleted: boolean;
+}
+
 export interface CommentAccountProps {
   isConnected?: boolean;
   connectViaWallet?: () => Promise<void>;
@@ -138,6 +146,7 @@ export interface DdocProps extends CommentAccountProps {
   commentDrawerOpen?: boolean;
   setCommentDrawerOpen?: React.Dispatch<SetStateAction<boolean>>;
   initialComments?: IComment[];
+  initialCommentAnchors?: SerializedCommentAnchor[];
   setInitialComments?: React.Dispatch<SetStateAction<IComment[]>>;
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
   onNewComment?: (newComment: IComment, meta?: CommentMutationMeta) => void;

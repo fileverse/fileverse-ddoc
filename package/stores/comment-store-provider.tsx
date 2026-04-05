@@ -6,8 +6,9 @@ import { IComment } from '../extensions/comment';
 import {
   CommentAnchor,
   getCommentAtPosition,
+  triggerDecorationRebuild,
 } from '../extensions/comment/comment-decoration-plugin';
-import { CommentMutationMeta } from '../types';
+import { CommentMutationMeta, SerializedCommentAnchor } from '../types';
 import { useResponsive } from '../utils/responsive';
 import {
   CommentExternalDeps,
@@ -34,6 +35,7 @@ export interface CommentStoreProviderProps {
   connectViaUsername?: (username: string) => Promise<void>;
   ensResolutionUrl: string;
   commentAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
+  initialCommentAnchors?: SerializedCommentAnchor[];
   // Synced data — go into store via useEffect
   initialComments: IComment[];
   username: string | null;
@@ -65,6 +67,7 @@ export const CommentStoreProvider = ({
   connectViaUsername,
   ensResolutionUrl,
   commentAnchorsRef,
+  initialCommentAnchors,
   setUsername: setUsernameProp,
   // Synced data (useEffect-based)
   initialComments,
@@ -132,6 +135,37 @@ export const CommentStoreProvider = ({
   useEffect(() => {
     store.getState().setInitialComments(initialComments);
   }, [initialComments, store]);
+
+  // Deserialize consumer-provided anchors into commentAnchorsRef
+  useEffect(() => {
+    if (!initialCommentAnchors || !commentAnchorsRef) return;
+
+    const deserialized: CommentAnchor[] = initialCommentAnchors
+      .map((a) => {
+        try {
+          return {
+            id: a.id,
+            anchorFrom: Y.decodeRelativePosition(
+              Uint8Array.from(atob(a.anchorFrom), (c) => c.charCodeAt(0)),
+            ),
+            anchorTo: Y.decodeRelativePosition(
+              Uint8Array.from(atob(a.anchorTo), (c) => c.charCodeAt(0)),
+            ),
+            resolved: a.resolved,
+            deleted: a.deleted,
+          };
+        } catch {
+          return null;
+        }
+      })
+      .filter((a): a is CommentAnchor => a !== null);
+
+    commentAnchorsRef.current = deserialized;
+
+    if (editor) {
+      triggerDecorationRebuild(editor);
+    }
+  }, [initialCommentAnchors, commentAnchorsRef, editor]);
 
   useEffect(() => {
     store.getState().setUsername(username);

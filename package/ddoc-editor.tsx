@@ -109,6 +109,7 @@ const DdocEditor = forwardRef(
       commentDrawerOpen,
       setCommentDrawerOpen,
       initialComments = [],
+      initialCommentAnchors,
       onNewComment,
       onCommentReply,
       setInitialComments,
@@ -1149,6 +1150,7 @@ const DdocEditor = forwardRef(
               onComment={onComment}
               setCommentDrawerOpen={setCommentDrawerOpen}
               commentAnchorsRef={commentAnchorsRef}
+              initialCommentAnchors={initialCommentAnchors}
             >
               {renderComp()}
             </CommentStoreProvider>
