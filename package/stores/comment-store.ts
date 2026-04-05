@@ -584,7 +584,19 @@ export const createCommentStore = () =>
 
       setActiveCommentId(newComment.id || '');
       setTimeout(() => focusCommentWithActiveId(newComment.id || ''), 0);
-      onNewComment?.(newComment);
+
+      const meta: CommentMutationMeta | undefined = decorationAnchor
+        ? {
+            type: 'create',
+            anchorFrom: fromUint8Array(
+              Y.encodeRelativePosition(decorationAnchor.anchorFrom),
+            ),
+            anchorTo: fromUint8Array(
+              Y.encodeRelativePosition(decorationAnchor.anchorTo),
+            ),
+          }
+        : undefined;
+      onNewComment?.(newComment, meta);
       return newComment.id;
     },
     createFloatingDraft: () => {
@@ -747,6 +759,11 @@ export const createCommentStore = () =>
       }
 
       // Create decoration anchor from draft range (no mark)
+      let createdAnchor: {
+        anchorFrom: Y.RelativePosition;
+        anchorTo: Y.RelativePosition;
+      } | null = null;
+
       if (draftRange && commentAnchorsRef) {
         const anchor = createCommentAnchorFromEditor(
           editor,
@@ -754,6 +771,7 @@ export const createCommentStore = () =>
           draftRange.to,
         );
         if (anchor) {
+          createdAnchor = anchor;
           commentAnchorsRef.current = [
             ...commentAnchorsRef.current,
             {
@@ -774,7 +792,19 @@ export const createCommentStore = () =>
       get().setActiveCommentId(newComment.id || '');
       setActiveCommentId(newComment.id || '');
       setTimeout(() => focusCommentWithActiveId(newComment.id || ''), 0);
-      onNewComment?.(newComment);
+
+      const meta: CommentMutationMeta | undefined = createdAnchor
+        ? {
+            type: 'create',
+            anchorFrom: fromUint8Array(
+              Y.encodeRelativePosition(createdAnchor.anchorFrom),
+            ),
+            anchorTo: fromUint8Array(
+              Y.encodeRelativePosition(createdAnchor.anchorTo),
+            ),
+          }
+        : undefined;
+      onNewComment?.(newComment, meta);
 
       set((state) => {
         const nextItems = state.floatingItems.filter(

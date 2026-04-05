@@ -45,7 +45,9 @@ export type CommentMutationType = 'create' | 'resolve' | 'unresolve' | 'delete';
 
 export interface CommentMutationMeta {
   type: CommentMutationType;
-  updateChunk: string;
+  updateChunk?: string;
+  anchorFrom?: string;
+  anchorTo?: string;
 }
 
 export interface CommentAccountProps {
