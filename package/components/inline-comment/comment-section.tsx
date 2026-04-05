@@ -6,10 +6,11 @@ import { useCommentStore } from '../../stores/comment-store';
 import { useCommentRefs } from '../../stores/comment-store-provider';
 import { CommentSectionProps } from './types';
 import { CommentUsername } from './comment-username';
-import { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { EmptyComments } from './empty-comments';
 import { CommentReplyInput } from './comment-reply-input';
 import { CommentComposeInput } from './comment-compose-input';
+import { DeleteConfirmOverlay } from './delete-confirm-overlay';
 
 export const CommentSection = ({
   activeCommentId,
@@ -99,79 +100,133 @@ export const CommentSection = ({
           className="flex flex-col overflow-y-auto flex-1"
         >
           {filteredComments.map((comment) => (
-            <div
+            <SidebarCommentItem
               key={comment.id}
-              data-comment-id={comment.id}
-              className={cn(
-                'flex flex-col w-full box-border transition-all border-b color-border-default hover:color-bg-default-hover last:border-b-0 py-3',
-                comment.id === activeCommentId && 'color-bg-default-selected',
-                comment.replies?.length > 0 && 'gap-0',
-              )}
-              onClick={() => handleCommentClick(comment.id as string)}
-            >
-              <CommentCard
-                id={comment.id}
-                activeCommentId={activeCommentId as string}
-                username={comment.username}
-                selectedContent={comment.selectedContent}
-                createdAt={comment.createdAt}
-                comment={comment.content}
-                replies={comment.replies}
-                onResolve={resolveComment}
-                onUnresolve={unresolveComment}
-                onDelete={deleteComment}
-                isResolved={comment.resolved}
-                isDisabled={comment && !Object.hasOwn(comment, 'commentIndex')}
-                isCommentOwner={comment.username === username || isDDocOwner}
-                version={comment.version}
-                emptyComment={
-                  !comment.content && !comment.username && !comment.createdAt
-                }
-              />
-
-              <div
-                ref={replySectionRef}
-                className={cn(
-                  'pr-6 pl-8 flex flex-col gap-2',
-                  openReplyId === comment.id && 'ml-5 pl-4',
-                  comment.resolved && 'hidden',
-                )}
-                onClick={(e) => e.stopPropagation()}
-              >
-                {openReplyId !== comment.id ? (
-                  <Button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setOpenReplyId(comment.id as string);
-                    }}
-                    className={cn(
-                      'w-full flex items-center justify-start gap-2 mt-3 hover:!bg-transparent pl-6',
-                      comment.replies?.length === 0 && 'hidden',
-                    )}
-                    variant="ghost"
-                  >
-                    <LucideIcon
-                      name="MessageSquarePlus"
-                      className="color-text-secondary"
-                      size="sm"
-                    />
-                    <span className="text-xs font-medium">
-                      Reply to this thread
-                    </span>
-                  </Button>
-                ) : (
-                  <CommentReplyInput
-                    commentId={comment.id as string}
-                    commentUsername={comment.username}
-                    replyCount={comment.replies?.length ?? 0}
-                  />
-                )}
-              </div>
-            </div>
+              comment={comment}
+              activeCommentId={activeCommentId}
+              username={username}
+              isDDocOwner={isDDocOwner}
+              openReplyId={openReplyId}
+              replySectionRef={replySectionRef}
+              onCommentClick={handleCommentClick}
+              onResolve={resolveComment}
+              onUnresolve={unresolveComment}
+              onDelete={deleteComment}
+              onSetOpenReplyId={setOpenReplyId}
+            />
           ))}
         </div>
       )}
       <CommentComposeInput />
+    </div>
+  );
+};
+
+const SidebarCommentItem = ({
+  comment,
+  activeCommentId,
+  username,
+  isDDocOwner,
+  openReplyId,
+  replySectionRef,
+  onCommentClick,
+  onResolve,
+  onUnresolve,
+  onDelete,
+  onSetOpenReplyId,
+}: {
+  comment: any;
+  activeCommentId: string | null;
+  username: string | null;
+  isDDocOwner: boolean;
+  openReplyId: string | null;
+  replySectionRef: React.RefObject<HTMLDivElement>;
+  onCommentClick: (id: string) => void;
+  onResolve: (id: string) => void;
+  onUnresolve: (id: string) => void;
+  onDelete: (id: string) => void;
+  onSetOpenReplyId: (id: string | null) => void;
+}) => {
+  const [isDeleteOverlayVisible, setIsDeleteOverlayVisible] = useState(false);
+
+  return (
+    <div
+      data-comment-id={comment.id}
+      className={cn(
+        'relative flex flex-col w-full box-border transition-all border-b color-border-default hover:color-bg-default-hover last:border-b-0 py-3',
+        comment.id === activeCommentId && 'color-bg-default-selected',
+        comment.replies?.length > 0 && 'gap-0',
+      )}
+      onClick={() => onCommentClick(comment.id as string)}
+    >
+      <CommentCard
+        id={comment.id}
+        activeCommentId={activeCommentId as string}
+        username={comment.username}
+        selectedContent={comment.selectedContent}
+        createdAt={comment.createdAt}
+        comment={comment.content}
+        replies={comment.replies}
+        onResolve={onResolve}
+        onUnresolve={onUnresolve}
+        onRequestDelete={() => setIsDeleteOverlayVisible(true)}
+        isResolved={comment.resolved}
+        isDisabled={comment && !Object.hasOwn(comment, 'commentIndex')}
+        isCommentOwner={comment.username === username || isDDocOwner}
+        version={comment.version}
+        emptyComment={
+          !comment.content && !comment.username && !comment.createdAt
+        }
+      />
+
+      <div
+        ref={replySectionRef}
+        className={cn(
+          'pr-6 pl-8 flex flex-col gap-2',
+          openReplyId === comment.id && 'ml-5 pl-4',
+          comment.resolved && 'hidden',
+        )}
+        onClick={(e) => e.stopPropagation()}
+      >
+        {openReplyId !== comment.id ? (
+          <Button
+            onClick={(e) => {
+              e.stopPropagation();
+              onSetOpenReplyId(comment.id as string);
+            }}
+            className={cn(
+              'w-full flex items-center justify-start gap-2 mt-3 hover:!bg-transparent pl-6',
+              comment.replies?.length === 0 && 'hidden',
+            )}
+            variant="ghost"
+          >
+            <LucideIcon
+              name="MessageSquarePlus"
+              className="color-text-secondary"
+              size="sm"
+            />
+            <span className="text-xs font-medium">
+              Reply to this thread
+            </span>
+          </Button>
+        ) : (
+          <CommentReplyInput
+            commentId={comment.id as string}
+            commentUsername={comment.username}
+            replyCount={comment.replies?.length ?? 0}
+          />
+        )}
+      </div>
+
+      <DeleteConfirmOverlay
+        isVisible={isDeleteOverlayVisible}
+        title="Delete this comment?"
+        onCancel={() => setIsDeleteOverlayVisible(false)}
+        onConfirm={() => {
+          setIsDeleteOverlayVisible(false);
+          onDelete(comment.id as string);
+        }}
+      />
     </div>
   );
 };
