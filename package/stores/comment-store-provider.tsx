@@ -296,10 +296,10 @@ export const CommentStoreProvider = ({
     const handleTransaction = ({
       transaction,
     }: {
-      transaction: { getMeta: (key: string) => unknown };
+      transaction: { selectionSet: boolean };
     }) => {
-      // Re-check comment activation after blur dispatches a recheck
-      if (transaction.getMeta('commentRecheck')) {
+      // Re-check comment activation when selection changes via transaction
+      if (transaction.selectionSet) {
         updateEditorState();
       }
 

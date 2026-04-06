@@ -1146,17 +1146,6 @@ export const CommentFloatingContainer = ({
       }
 
       blurFloatingItem(focusedItemId);
-
-      // After blur, re-check cursor position after the editor processes
-      // the click. Without this, if the cursor doesn't move (same position),
-      // selectionUpdate won't fire and the new comment won't activate.
-      requestAnimationFrame(() => {
-        if (editor?.view && !editor.isDestroyed) {
-          const tr = editor.state.tr;
-          tr.setMeta('commentRecheck', true);
-          editor.view.dispatch(tr);
-        }
-      });
     },
     'mousedown',
     { capture: true },
