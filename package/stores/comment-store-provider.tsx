@@ -262,10 +262,14 @@ export const CommentStoreProvider = ({
           )
         : null;
 
-      const nextCommentActive = isMarkActive || decorationComment !== null;
-      const nextCommentResolved = isMarkActive
-        ? (editor.getAttributes('comment').resolved ?? false)
-        : (decorationComment?.resolved ?? false);
+      const nextCommentActive =
+        isMarkActive ||
+        (decorationComment !== null && !decorationComment.resolved);
+      const nextCommentResolved = nextCommentActive
+        ? isMarkActive
+          ? (editor.getAttributes('comment').resolved ?? false)
+          : false
+        : false;
 
       // Only update store when values actually change
       if (nextCommentActive !== prevCommentActive) {
@@ -278,7 +282,8 @@ export const CommentStoreProvider = ({
       }
 
       // For decoration-based comments, trigger activation flow
-      if (decorationComment && !isMarkActive) {
+      // Skip resolved — they shouldn't block new comments or open popups
+      if (decorationComment && !isMarkActive && !decorationComment.resolved) {
         const currentActiveId = state.activeCommentId;
         if (currentActiveId !== decorationComment.id) {
           state.setActiveCommentId(decorationComment.id);
