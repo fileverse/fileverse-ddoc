@@ -136,9 +136,17 @@ export const CommentStoreProvider = ({
     store.getState().setInitialComments(initialComments);
   }, [initialComments, store]);
 
-  // Deserialize consumer-provided anchors into commentAnchorsRef
+  // Deserialize consumer-provided anchors into commentAnchorsRef.
+  // Trigger rebuild only when anchors actually change, not on editor init.
+  const prevAnchorKeyRef = useRef<string | null>(null);
   useEffect(() => {
     if (!initialCommentAnchors || !commentAnchorsRef) return;
+
+    const key = initialCommentAnchors
+      .map((a) => `${a.id}:${a.resolved}:${a.deleted}`)
+      .join(',');
+    if (key === prevAnchorKeyRef.current) return;
+    prevAnchorKeyRef.current = key;
 
     const deserialized: CommentAnchor[] = initialCommentAnchors
       .map((a) => {

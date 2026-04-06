@@ -725,13 +725,16 @@ const DdocEditor = forwardRef(
                 >
                   <div
                     className={cn(
-                      'editor-main-lane flex-grow min-w-0 flex overflow-visible min-h-[calc(100vh-108px)] items-stretch',
-                      shouldRenderDocumentOutline
-                        ? shouldScroll
-                          ? 'justify-start overflow-x-auto'
-                          : 'justify-center'
-                        : 'justify-start overflow-x-auto',
+                      'editor-main-lane flex-grow min-w-0 flex overflow-visible items-stretch',
+                      shouldScroll
+                        ? 'justify-start overflow-x-auto'
+                        : 'justify-center',
                     )}
+                    style={{
+                      minHeight: isFocusMode
+                        ? '100vh'
+                        : `calc(100vh - 108px - ${footerHeight || '0px'})`,
+                    }}
                   >
                     <div className="editor-comment-layout relative shrink-0 overflow-visible">
                       <div

@@ -51,14 +51,14 @@ const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
         size="sm"
         className="min-w-6"
       />
-      <div className="flex gap-[8px]">
-        <span className="text-body-sm-bold inline-flex items-center gap-1">
+      <div className="flex items-center gap-[8px] flex-wrap">
+        <span className="text-body-sm-bold inline-flex items-center gap-1 whitespace-nowrap">
           {nameFormatter(ensStatus.name)}
           {ensStatus.isEns && (
             <img src={verifiedMark} alt="verified" className="w-3.5 h-3.5" />
           )}
         </span>
-        <span className="text-helper-text-sm color-text-secondary inline-flex items-center gap-1">
+        <span className="text-helper-text-sm color-text-secondary inline-flex items-center gap-1 whitespace-nowrap">
           {createdAt && dateFormatter(createdAt)}
         </span>
       </div>
