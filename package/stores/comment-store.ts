@@ -601,10 +601,21 @@ export const createCommentStore = () =>
     },
     createFloatingDraft: () => {
       const { editor, onInlineComment } = getExtDeps(get);
-      const { activeComment, isDesktopFloatingEnabled, isCommentActive } =
-        get();
+      const {
+        activeComment,
+        isDesktopFloatingEnabled,
+        isCommentActive,
+        isConnected,
+        setCommentDrawerOpen,
+      } = get();
 
       if (!editor) {
+        return null;
+      }
+
+      // Auth wall — must be connected to create or view comments
+      if (!isConnected) {
+        setCommentDrawerOpen?.(true);
         return null;
       }
 
@@ -850,6 +861,14 @@ export const createCommentStore = () =>
     },
     openFloatingThread: (commentId) => {
       const { editor, setActiveCommentId } = getExtDeps(get);
+      const { isConnected, setCommentDrawerOpen } = get();
+
+      // Auth wall — must be connected to view comments
+      if (!isConnected) {
+        setCommentDrawerOpen?.(true);
+        return;
+      }
+
       const commentToOpen = get().tabComments.find(
         (comment) =>
           comment.id === commentId && !comment.deleted && !comment.resolved,
