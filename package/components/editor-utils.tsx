@@ -200,6 +200,7 @@ export const useEditorToolbar = ({
   onPdfExport,
   onHtmlExport,
   onTxtExport,
+  onOdtExport,
   ipfsImageFetchFn,
   onDocxImport,
   fetchV1ImageFn,
@@ -212,6 +213,7 @@ export const useEditorToolbar = ({
   onPdfExport?: () => void;
   onHtmlExport?: () => void;
   onTxtExport?: () => void;
+  onOdtExport?: () => void;
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
@@ -872,6 +874,34 @@ export const useEditorToolbar = ({
           }
         }
         onMarkdownExport?.();
+      },
+      isActive: false,
+    },
+    {
+      icon: 'FileText',
+      title: 'OpenDocument (.odt)',
+      onClick: async (name?: string) => {
+        if (editor) {
+          const editorContent = editor.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const fileName = name || title || 'Untitled';
+          const generateDownloadUrl = await editor.commands.exportOdtFile({
+            title: fileName,
+          });
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${fileName}.odt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onOdtExport?.();
       },
       isActive: false,
     },
