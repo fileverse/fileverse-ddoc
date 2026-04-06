@@ -564,7 +564,6 @@ const ThreadFloatingCard = ({
 
     handleAddReply(thread.commentId, replyText);
     setReplyText('');
-    blurFloatingItem(thread.itemId);
   };
 
   const handleDeleteOverlayOpen = () => {
@@ -1147,6 +1146,17 @@ export const CommentFloatingContainer = ({
       }
 
       blurFloatingItem(focusedItemId);
+
+      // After blur, re-check cursor position after the editor processes
+      // the click. Without this, if the cursor doesn't move (same position),
+      // selectionUpdate won't fire and the new comment won't activate.
+      requestAnimationFrame(() => {
+        if (editor?.view && !editor.isDestroyed) {
+          const tr = editor.state.tr;
+          tr.setMeta('commentRecheck', true);
+          editor.view.dispatch(tr);
+        }
+      });
     },
     'mousedown',
     { capture: true },
@@ -1267,7 +1277,6 @@ export const CommentFloatingContainer = ({
       observer.observe(editorRoot, {
         subtree: true,
         childList: true,
-        characterData: true,
         attributes: true,
         attributeOldValue: true,
         attributeFilter: ['data-comment-id', 'data-draft-comment-id'],
@@ -1286,7 +1295,7 @@ export const CommentFloatingContainer = ({
 
       observer?.disconnect();
     };
-  }, [editor, isDesktopFloatingEnabled, openItems.length, schedulePipeline]);
+  }, [editor, isDesktopFloatingEnabled, schedulePipeline]);
 
   useEffect(() => {
     return () => {

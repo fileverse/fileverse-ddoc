@@ -293,7 +293,16 @@ export const CommentStoreProvider = ({
     };
 
     let pruneTimer: ReturnType<typeof setTimeout> | null = null;
-    const handleTransaction = () => {
+    const handleTransaction = ({
+      transaction,
+    }: {
+      transaction: { getMeta: (key: string) => unknown };
+    }) => {
+      // Re-check comment activation after blur dispatches a recheck
+      if (transaction.getMeta('commentRecheck')) {
+        updateEditorState();
+      }
+
       if (pruneTimer) return;
       pruneTimer = setTimeout(() => {
         pruneTimer = null;
