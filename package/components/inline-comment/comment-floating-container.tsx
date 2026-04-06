@@ -5,7 +5,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Avatar, Button, TextAreaFieldV2, Tooltip, cn } from '@fileverse/ui';
+import { Avatar, Button, TextAreaFieldV2, cn } from '@fileverse/ui';
 import { Editor } from '@tiptap/react';
 import { useOnClickOutside } from 'usehooks-ts';
 import { CommentCard } from './comment-card';
@@ -22,6 +22,8 @@ import {
   computeFloatingCommentLayout,
 } from './comment-floating-layout';
 import { DeleteConfirmOverlay } from './delete-confirm-overlay';
+import EnsLogo from '../../assets/ens.svg';
+import { Divider, TextField } from '@fileverse/ui';
 
 type AnchorType = 'draft' | 'thread';
 
@@ -330,6 +332,58 @@ const areItemIdListsEqual = (a: string[], b: string[]) => {
   return a.every((value, index) => value === b[index]);
 };
 
+const FloatingAuthPrompt = () => {
+  const connectViaWallet = useCommentStore((s) => s.connectViaWallet);
+  const connectViaUsername = useCommentStore((s) => s.connectViaUsername);
+  const isLoading = useCommentStore((s) => s.isLoading);
+  const [name, setName] = useState('');
+
+  return (
+    <div className="p-3 pt-0 flex flex-col gap-2">
+      <div className="flex gap-2">
+        <TextField
+          type="text"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && name) {
+              connectViaUsername?.(name);
+            }
+          }}
+          className="font-normal text-body-sm"
+          placeholder="Enter a name"
+        />
+        <Button
+          onClick={() => connectViaUsername?.(name)}
+          disabled={!name || isLoading}
+          isLoading={isLoading}
+          className="min-w-[60px]"
+          size="sm"
+        >
+          Join
+        </Button>
+      </div>
+      <div className="text-[11px] text-gray-400 flex items-center">
+        <Divider direction="horizontal" size="sm" className="flex-grow" />
+        <span className="px-2 whitespace-nowrap">
+          or join with <span className="font-semibold">.eth</span>
+        </span>
+        <Divider direction="horizontal" size="sm" className="flex-grow" />
+      </div>
+      <Button
+        onClick={connectViaWallet ?? undefined}
+        disabled={isLoading}
+        variant="ghost"
+        size="sm"
+        className="w-full"
+      >
+        <img alt="ens-logo" src={EnsLogo} className="w-4 h-4 mr-1" />
+        {isLoading ? 'Connecting...' : 'Continue with ENS'}
+      </Button>
+    </div>
+  );
+};
+
 const FloatingCardShell = React.forwardRef<
   HTMLDivElement,
   {
@@ -380,6 +434,7 @@ const DraftFloatingCard = ({
     (s) => s.updateFloatingDraftText,
   );
   const username = useCommentStore((s) => s.username);
+  const isConnected = useCommentStore((s) => s.isConnected);
   const draftCardRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -411,56 +466,58 @@ const DraftFloatingCard = ({
       isFocused={draft.isFocused}
       onFocus={() => focusFloatingItem(draft.itemId)}
     >
-      <div className="flex items-center gap-2 color-border-default px-3 py-2">
-        <Avatar
-          src={`https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-            username || '',
-          )}`}
-          className="w-[24px] h-[24px]"
-        />
-        <p className="text-body-sm-bold">{username}</p>
-      </div>
-      <div className="flex flex-col gap-3 p-3 pt-0">
-        {/* {draft.selectedText ? (
-          <div className="highlight-comment-bg rounded-lg p-2">
-            <p className="text-body-sm italic whitespace-pre-wrap break-words">
-              "{draft.selectedText}"
-            </p>
+      {!isConnected ? (
+        <FloatingAuthPrompt />
+      ) : (
+        <>
+          <div className="flex items-center gap-2 color-border-default px-3 py-2">
+            <Avatar
+              src={`https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                username || '',
+              )}`}
+              className="w-[24px] h-[24px]"
+            />
+            <p className="text-body-sm-bold">{username}</p>
           </div>
-        ) : null} */}
-        <div className="border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
-          <TextAreaFieldV2
-            value={draft.draftText}
-            onChange={(event) =>
-              updateFloatingDraftText(draft.draftId, event.target.value)
-            }
-            onKeyDown={(event) => {
-              if (event.key === 'Enter' && (!event.shiftKey || event.metaKey)) {
-                event.preventDefault();
-                submitFloatingDraft(draft.draftId);
-              }
-            }}
-            className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
-            placeholder="Add a comment"
-          />
-        </div>
-        <div className="flex items-center justify-end gap-2">
-          <Button
-            variant="ghost"
-            className="!w-[80px] !min-w-[80px]"
-            onClick={() => cancelFloatingDraft(draft.draftId)}
-          >
-            Cancel
-          </Button>
-          <Button
-            className="w-20 min-w-20"
-            disabled={!draft.draftText.trim()}
-            onClick={() => submitFloatingDraft(draft.draftId)}
-          >
-            Send
-          </Button>
-        </div>
-      </div>
+          <div className="flex flex-col gap-3 p-3 pt-0">
+            <div className="border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
+              <TextAreaFieldV2
+                value={draft.draftText}
+                onChange={(event) =>
+                  updateFloatingDraftText(draft.draftId, event.target.value)
+                }
+                onKeyDown={(event) => {
+                  if (
+                    event.key === 'Enter' &&
+                    (!event.shiftKey || event.metaKey)
+                  ) {
+                    event.preventDefault();
+                    submitFloatingDraft(draft.draftId);
+                  }
+                }}
+                className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
+                placeholder="Add a comment"
+              />
+            </div>
+            <div className="flex items-center justify-end gap-2">
+              <Button
+                variant="ghost"
+                className="!w-[80px] !min-w-[80px]"
+                onClick={() => cancelFloatingDraft(draft.draftId)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className="w-20 min-w-20"
+                disabled={!draft.draftText.trim()}
+                onClick={() => submitFloatingDraft(draft.draftId)}
+              >
+                Send
+              </Button>
+            </div>
+          </div>
+        </>
+      )}
     </FloatingCardShell>
   );
 };
@@ -563,7 +620,10 @@ const ThreadFloatingCard = ({
           version={comment?.version}
           emptyComment={!comment}
         />
-        {thread.isFocused && (
+        {thread.isFocused && !isConnected && (
+          <FloatingAuthPrompt />
+        )}
+        {thread.isFocused && isConnected && (
           <div className="group p-3 pt-0">
             <div className="border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
               <Avatar
@@ -606,15 +666,13 @@ const ThreadFloatingCard = ({
               >
                 <p className="text-body-sm-bold">Cancel</p>
               </Button>
-              <Tooltip text={!isConnected ? 'Sign in to reply' : ''}>
-                <Button
-                  className="w-20 min-w-20"
-                  disabled={!canReply || !replyText.trim()}
-                  onClick={onReplySubmit}
-                >
-                  Send
-                </Button>
-              </Tooltip>
+              <Button
+                className="w-20 min-w-20"
+                disabled={!canReply || !replyText.trim()}
+                onClick={onReplySubmit}
+              >
+                Send
+              </Button>
             </div>
           </div>
         )}
