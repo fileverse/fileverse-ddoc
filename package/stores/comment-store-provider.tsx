@@ -247,6 +247,10 @@ export const CommentStoreProvider = ({
       return;
     }
 
+    let prevCommentActive = false;
+    let prevCommentResolved = false;
+    let prevDecorationId: string | null = null;
+
     const updateEditorState = () => {
       const state = store.getState();
       const isMarkActive = editor.isActive('comment');
@@ -259,33 +263,53 @@ export const CommentStoreProvider = ({
           )
         : null;
 
-      state.setIsCommentActive(isMarkActive || decorationComment !== null);
-      state.setIsCommentResolved(
-        isMarkActive
-          ? editor.getAttributes('comment').resolved ?? false
-          : decorationComment?.resolved ?? false,
-      );
+      const nextCommentActive = isMarkActive || decorationComment !== null;
+      const nextCommentResolved = isMarkActive
+        ? editor.getAttributes('comment').resolved ?? false
+        : decorationComment?.resolved ?? false;
 
-      // For decoration-based comments, trigger the same activation flow
-      // that onCommentActivated does for mark-based comments
-      if (decorationComment && !isMarkActive) {
-        const currentActiveId = state.activeCommentId;
-        if (currentActiveId !== decorationComment.id) {
-          state.setActiveCommentId(decorationComment.id);
-          state.openFloatingThread(decorationComment.id);
-        }
+      // Only update store when values actually change
+      if (nextCommentActive !== prevCommentActive) {
+        prevCommentActive = nextCommentActive;
+        state.setIsCommentActive(nextCommentActive);
+      }
+      if (nextCommentResolved !== prevCommentResolved) {
+        prevCommentResolved = nextCommentResolved;
+        state.setIsCommentResolved(nextCommentResolved);
       }
 
-      state.pruneFloatingItems();
+      // For decoration-based comments, trigger activation flow
+      if (decorationComment && !isMarkActive) {
+        if (decorationComment.id !== prevDecorationId) {
+          prevDecorationId = decorationComment.id;
+          const currentActiveId = state.activeCommentId;
+          if (currentActiveId !== decorationComment.id) {
+            state.setActiveCommentId(decorationComment.id);
+            state.openFloatingThread(decorationComment.id);
+          }
+        }
+      } else {
+        prevDecorationId = null;
+      }
+    };
+
+    let pruneTimer: ReturnType<typeof setTimeout> | null = null;
+    const handleTransaction = () => {
+      if (pruneTimer) return;
+      pruneTimer = setTimeout(() => {
+        pruneTimer = null;
+        store.getState().pruneFloatingItems();
+      }, 200);
     };
 
     updateEditorState();
     editor.on('selectionUpdate', updateEditorState);
-    editor.on('transaction', updateEditorState);
+    editor.on('transaction', handleTransaction);
 
     return () => {
       editor.off('selectionUpdate', updateEditorState);
-      editor.off('transaction', updateEditorState);
+      editor.off('transaction', handleTransaction);
+      if (pruneTimer) clearTimeout(pruneTimer);
     };
   }, [editor, store]);
 
