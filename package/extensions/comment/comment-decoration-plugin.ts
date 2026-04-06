@@ -53,35 +53,43 @@ function buildDecorations(
   const { doc, type, binding } = syncState;
   const decorations: Decoration[] = [];
 
+  const maxPos = state.doc.content.size;
+
   for (const anchor of anchors) {
     if (anchor.deleted) continue;
 
-    const from = relativePositionToAbsolutePosition(
-      doc,
-      type,
-      anchor.anchorFrom,
-      binding.mapping,
-    );
-    const to = relativePositionToAbsolutePosition(
-      doc,
-      type,
-      anchor.anchorTo,
-      binding.mapping,
-    );
+    try {
+      const from = relativePositionToAbsolutePosition(
+        doc,
+        type,
+        anchor.anchorFrom,
+        binding.mapping,
+      );
+      const to = relativePositionToAbsolutePosition(
+        doc,
+        type,
+        anchor.anchorTo,
+        binding.mapping,
+      );
 
-    if (from === null || to === null) continue;
-    if (from >= to) continue;
+      if (from === null || to === null) continue;
+      if (from >= to) continue;
+      if (from < 0 || to > maxPos) continue;
 
-    const className = anchor.resolved
-      ? 'inline-comment inline-comment--resolved'
-      : 'inline-comment inline-comment--unresolved';
+      const className = anchor.resolved
+        ? 'inline-comment inline-comment--resolved'
+        : 'inline-comment inline-comment--unresolved';
 
-    decorations.push(
-      Decoration.inline(from, to, {
-        class: className,
-        'data-comment-id': anchor.id,
-      }),
-    );
+      decorations.push(
+        Decoration.inline(from, to, {
+          class: className,
+          'data-comment-id': anchor.id,
+        }),
+      );
+    } catch {
+      // Anchor position can't be resolved — skip silently
+      continue;
+    }
   }
 
   return DecorationSet.create(state.doc, decorations);
@@ -202,6 +210,7 @@ export function createCommentAnchorFromSelection(
 }
 
 export function triggerDecorationRebuild(editor: any) {
+  if (!editor?.view || editor.isDestroyed) return;
   const tr = editor.state.tr;
   tr.setMeta(commentDecorationPluginKey, { rebuild: true });
   editor.view.dispatch(tr);
@@ -221,20 +230,26 @@ export function getCommentAtPosition(
 
   for (const anchor of anchors) {
     if (anchor.deleted) continue;
-    const from = relativePositionToAbsolutePosition(
-      doc,
-      type,
-      anchor.anchorFrom,
-      binding.mapping,
-    );
-    const to = relativePositionToAbsolutePosition(
-      doc,
-      type,
-      anchor.anchorTo,
-      binding.mapping,
-    );
-    if (from !== null && to !== null && pos >= from && pos <= to) {
-      return anchor;
+    try {
+      const from = relativePositionToAbsolutePosition(
+        doc,
+        type,
+        anchor.anchorFrom,
+        binding.mapping,
+      );
+      const to = relativePositionToAbsolutePosition(
+        doc,
+        type,
+        anchor.anchorTo,
+        binding.mapping,
+      );
+      if (from === null || to === null) continue;
+      if (from < 0 || to > state.doc.content.size) continue;
+      if (pos >= from && pos <= to) {
+        return anchor;
+      }
+    } catch {
+      continue;
     }
   }
   return null;

@@ -249,7 +249,6 @@ export const CommentStoreProvider = ({
 
     let prevCommentActive = false;
     let prevCommentResolved = false;
-    let prevDecorationId: string | null = null;
 
     const updateEditorState = () => {
       const state = store.getState();
@@ -265,8 +264,8 @@ export const CommentStoreProvider = ({
 
       const nextCommentActive = isMarkActive || decorationComment !== null;
       const nextCommentResolved = isMarkActive
-        ? editor.getAttributes('comment').resolved ?? false
-        : decorationComment?.resolved ?? false;
+        ? (editor.getAttributes('comment').resolved ?? false)
+        : (decorationComment?.resolved ?? false);
 
       // Only update store when values actually change
       if (nextCommentActive !== prevCommentActive) {
@@ -280,21 +279,20 @@ export const CommentStoreProvider = ({
 
       // For decoration-based comments, trigger activation flow
       if (decorationComment && !isMarkActive) {
-        if (decorationComment.id !== prevDecorationId) {
-          prevDecorationId = decorationComment.id;
-          const currentActiveId = state.activeCommentId;
-          if (currentActiveId !== decorationComment.id) {
-            state.setActiveCommentId(decorationComment.id);
-            state.openFloatingThread(decorationComment.id);
-          }
+        const currentActiveId = state.activeCommentId;
+        if (currentActiveId !== decorationComment.id) {
+          state.setActiveCommentId(decorationComment.id);
+          state.openFloatingThread(decorationComment.id);
         }
-      } else {
-        prevDecorationId = null;
       }
     };
 
     let pruneTimer: ReturnType<typeof setTimeout> | null = null;
     const handleTransaction = () => {
+      // Run comment activation check on transactions too (e.g. after
+      // unsetCommentActive dispatches a transaction from click-outside)
+      updateEditorState();
+
       if (pruneTimer) return;
       pruneTimer = setTimeout(() => {
         pruneTimer = null;
