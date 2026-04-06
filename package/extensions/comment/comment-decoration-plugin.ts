@@ -43,10 +43,7 @@ export const commentDecorationPluginKey =
 // Build decorations from anchors
 // ---------------------------------------------------------------------------
 
-function buildDecorations(
-  anchors: CommentAnchor[],
-  state: any,
-): DecorationSet {
+function buildDecorations(anchors: CommentAnchor[], state: any): DecorationSet {
   const syncState = ySyncPluginKey.getState(state);
   if (!syncState?.binding) return DecorationSet.empty;
 
@@ -56,7 +53,7 @@ function buildDecorations(
   const maxPos = state.doc.content.size;
 
   for (const anchor of anchors) {
-    if (anchor.deleted) continue;
+    if (anchor.deleted || anchor.resolved) continue;
 
     try {
       const from = relativePositionToAbsolutePosition(
@@ -76,13 +73,9 @@ function buildDecorations(
       if (from >= to) continue;
       if (from < 0 || to > maxPos) continue;
 
-      const className = anchor.resolved
-        ? 'inline-comment inline-comment--resolved'
-        : 'inline-comment inline-comment--unresolved';
-
       decorations.push(
         Decoration.inline(from, to, {
-          class: className,
+          class: 'inline-comment inline-comment--unresolved',
           'data-comment-id': anchor.id,
         }),
       );
