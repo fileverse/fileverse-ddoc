@@ -486,12 +486,13 @@ const ThreadFloatingCard = ({
   const setCommentDrawerOpen = useCommentStore((s) => s.setCommentDrawerOpen);
   const username = useCommentStore((s) => s.username);
   const deleteComment = useCommentStore((s) => s.deleteComment);
+  const isDDocOwner = useCommentStore((s) => s.isDDocOwner);
   const handleInput = useCommentStore((s) => s.handleInput);
   const [replyText, setReplyText] = useState('');
   const [isDeleteOverlayVisible, setIsDeleteOverlayVisible] = useState(false);
 
-  // const canManageThread =
-  //   Boolean(comment?.username && comment.username === username) || isDDocOwner;
+  const isCommentOwner =
+    Boolean(comment?.username && comment.username === username) || isDDocOwner;
   const canReply = !comment?.resolved && Boolean(comment);
 
   const onReplySubmit = () => {
@@ -554,6 +555,7 @@ const ThreadFloatingCard = ({
           isDropdown
           onResolve={resolveComment}
           onRequestDelete={handleDeleteOverlayOpen}
+          isCommentOwner={isCommentOwner}
           isDisabled={Boolean(
             comment &&
               !Object.prototype.hasOwnProperty.call(comment, 'commentIndex'),

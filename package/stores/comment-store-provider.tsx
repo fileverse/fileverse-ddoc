@@ -289,10 +289,6 @@ export const CommentStoreProvider = ({
 
     let pruneTimer: ReturnType<typeof setTimeout> | null = null;
     const handleTransaction = () => {
-      // Run comment activation check on transactions too (e.g. after
-      // unsetCommentActive dispatches a transaction from click-outside)
-      updateEditorState();
-
       if (pruneTimer) return;
       pruneTimer = setTimeout(() => {
         pruneTimer = null;
