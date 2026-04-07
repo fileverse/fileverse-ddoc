@@ -883,9 +883,7 @@ export const useEditorToolbar = ({
       onClick: async (name?: string) => {
         if (editor) {
           const editorContent = editor.getJSON();
-          const title = extractTitleFromContent(
-            editorContent as unknown as { content: JSONContent },
-          );
+          const title = extractTitleFromContent(editorContent);
           const fileName = name || title || 'Untitled';
           const generateDownloadUrl = await editor.commands.exportOdtFile({
             title: fileName,

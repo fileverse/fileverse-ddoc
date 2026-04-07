@@ -10,6 +10,7 @@ import { extractTitleFromContent } from '../utils/extract-title-from-content';
 import { getTemporaryEditor } from '../utils/helpers';
 import { handleContentPrint } from '../utils/handle-print';
 import { htmlToOdt } from 'odf-kit';
+import { preprocessHtml } from '../extensions/odt-export';
 
 interface UseDdocExportArgs {
   editor: Editor | null;
@@ -281,8 +282,11 @@ const useDdocExport = ({
         }
 
         const combinedHtml = allTabHtml.join('\n');
-        const htmlDocument = `<html><head><title>${baseTitle}</title></head><body>${combinedHtml}</body></html>`;
-        const odtBytes = await htmlToOdt(htmlDocument);
+        const { html: cleanHtml } = preprocessHtml(combinedHtml);
+        const odtBytes = await htmlToOdt(
+          `<html><head><title>${baseTitle}</title></head><body>${cleanHtml}</body></html>`,
+          { metadata: { title: baseTitle } },
+        );
         const blob = new Blob([new Uint8Array(odtBytes)], {
           type: 'application/vnd.oasis.opendocument.text',
         });
