@@ -663,6 +663,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   white-space: nowrap;
   border-radius: 9999px 9999px 9999px 0;
   color: #363b3f;
+  animation: cursor-label-fade 2.5s ease-out forwards;
 }
 
 .custom-cursor__label {

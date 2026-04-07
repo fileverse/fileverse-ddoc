@@ -114,6 +114,8 @@ export interface SyncManagerConfig {
     updatedDocContent: Data['editorJSONData'],
     updateChunk: string,
   ) => void;
+  /** Origins to ignore in the ydoc update handler (e.g. IndexedDB provider) */
+  ignoredOrigins?: Array<{ current: unknown }>;
 }
 
 export enum ServerErrorCode {
