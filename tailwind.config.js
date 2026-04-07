@@ -1,6 +1,7 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   darkMode: ['class'],
+  safelist: ['theme-sepia'],
   content: ['./package/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {

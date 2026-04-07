@@ -524,7 +524,7 @@ export const getResizableMediaNodeView =
                 }}
                 autoFocus
                 className={cn(
-                  'bg-transparent color-text-secondary dark:!text-[#888888] resize-none !mt-2',
+                  'bg-transparent color-text-secondary resize-none !mt-2',
                   'placeholder-disabled',
                   {
                     'text-left': node.attrs.dataAlign === 'start',

@@ -1,10 +1,10 @@
 /* eslint-disable react-refresh/only-export-components */
 import React, { createContext, ReactNode, useContext, useMemo } from 'react';
-import { DocumentStyling } from '../types';
+import { DocumentStyling, ThemeKey } from '../types';
 
 interface EditorContextType {
   documentStyling?: DocumentStyling;
-  theme: 'light' | 'dark';
+  theme: ThemeKey;
   isFocusMode: boolean;
 }
 
@@ -21,7 +21,7 @@ export const useEditorContext = () => {
 export const EditorProvider: React.FC<{
   children: ReactNode;
   documentStyling?: DocumentStyling;
-  theme?: 'light' | 'dark';
+  theme?: ThemeKey;
   isFocusMode?: boolean;
 }> = ({ children, documentStyling, theme = 'light', isFocusMode = false }) => {
   const value = useMemo(
