@@ -57,10 +57,6 @@ const setFocusedFloatingCard = (
 ): CommentFloatingCard[] => {
   return floatingCards.map((floatingCard) => ({
     ...floatingCard,
-    isOpen:
-      floatingCard.floatingCardId === floatingCardId
-        ? true
-        : floatingCard.isOpen,
     isFocused: floatingCard.floatingCardId === floatingCardId,
   }));
 };
@@ -88,7 +84,6 @@ const upsertFloatingThreadCard = (
         ? {
             ...floatingCard,
             selectedText,
-            isOpen: true,
             isFocused: true,
           }
         : { ...floatingCard, isFocused: false },
@@ -107,7 +102,6 @@ const upsertFloatingThreadCard = (
       type: 'thread',
       commentId,
       selectedText,
-      isOpen: true,
       isFocused: true,
     },
   ];
@@ -661,7 +655,6 @@ export const createCommentStore = () =>
             selectedText: text,
             draftText: '',
             isAuthPending: false,
-            isOpen: true,
             isFocused: true,
           } satisfies CommentFloatingDraftCard,
         ],
@@ -831,7 +824,6 @@ export const createCommentStore = () =>
           type: 'thread' as const,
           commentId: newComment.id || '',
           selectedText: draftFloatingCard.selectedText,
-          isOpen: true,
           isFocused: true,
         };
         const replacementIndex = nextFloatingCards.findIndex(
@@ -1001,8 +993,8 @@ export const createCommentStore = () =>
         set({ floatingCards: nextFloatingCards });
       }
     },
-    // Mirror activeCommentId into floatingCards so selection changes reopen
-    // the matching desktop thread without scanning every open card.
+    // Mirror activeCommentId into floatingCards so selection changes restore
+    // the matching desktop thread without scanning every floating card.
     syncFloatingThreadCardWithActiveComment: () => {
       const { activeCommentId, isDesktopFloatingEnabled, tabComments } = get();
 

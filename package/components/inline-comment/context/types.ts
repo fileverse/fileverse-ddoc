@@ -7,7 +7,6 @@ import type { CommentAccountProps } from '../../../types';
 export interface CommentFloatingBaseCard {
   floatingCardId: string;
   selectedText: string;
-  isOpen: boolean;
   isFocused: boolean;
 }
 
