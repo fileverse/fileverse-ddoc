@@ -20,6 +20,7 @@ export interface CommentStoreProviderProps {
   children: React.ReactNode;
   editor: Editor | null;
   ydoc: Y.Doc;
+  isFocusMode?: boolean;
   setActiveCommentId: (id: string | null) => void;
   focusCommentWithActiveId: (id: string) => void;
   setInitialComments?: React.Dispatch<React.SetStateAction<IComment[]>>;
@@ -52,6 +53,7 @@ export const CommentStoreProvider = ({
   // External deps (ref-based)
   editor,
   ydoc,
+  isFocusMode = false,
   setActiveCommentId,
   focusCommentWithActiveId,
   setInitialComments,
@@ -80,7 +82,8 @@ export const CommentStoreProvider = ({
 }: CommentStoreProviderProps) => {
   const store = useMemo(() => createCommentStore(), []);
   const { isBelow1280px, isNativeMobile } = useResponsive();
-  const isDesktopFloatingEnabled = !isBelow1280px && !isNativeMobile;
+  const isDesktopFloatingEnabled =
+    !isBelow1280px && !isNativeMobile && !isFocusMode;
 
   // --- External deps ref — always current, never triggers re-renders ---
   const externalDepsRef = useRef<CommentExternalDeps>({
@@ -290,7 +293,9 @@ export const CommentStoreProvider = ({
         const currentActiveId = state.activeCommentId;
         if (currentActiveId !== decorationComment.id) {
           state.setActiveCommentId(decorationComment.id);
-          state.openFloatingThread(decorationComment.id);
+          if (isDesktopFloatingEnabled) {
+            state.openFloatingThread(decorationComment.id);
+          }
         }
       }
     };
@@ -318,7 +323,7 @@ export const CommentStoreProvider = ({
       editor.off('selectionUpdate', updateEditorState);
       editor.off('transaction', handleTransaction);
     };
-  }, [editor, store]);
+  }, [editor, isDesktopFloatingEnabled, store]);
 
   const commentsSectionRef = useRef<HTMLDivElement | null>(null);
   const replySectionRef = useRef<HTMLDivElement | null>(null);

@@ -726,9 +726,7 @@ const DdocEditor = forwardRef(
                   <div
                     className={cn(
                       'editor-main-lane flex-grow min-w-0 flex overflow-visible items-stretch',
-                      shouldScroll
-                        ? 'justify-start overflow-x-auto'
-                        : 'justify-center',
+                      shouldScroll ? 'justify-start' : 'justify-center',
                     )}
                     style={{
                       minHeight: isFocusMode
@@ -757,7 +755,7 @@ const DdocEditor = forwardRef(
                               !isNavbarVisible && !isPreviewMode,
                           },
                           isFocusMode && 'mt-[48px]',
-                          zoomLevel !== '1' && 'overflow-auto',
+                          // zoomLevel !== '1' && 'overflow-auto',
                         )}
                         style={{
                           ...(isMobile
@@ -980,7 +978,7 @@ const DdocEditor = forwardRef(
                               )}
                         </div>
                       </div>
-                      {editor && (
+                      {editor && !isFocusMode && (
                         <div className="comment-floating-slot absolute left-full top-0 ml-[12px] overflow-visible">
                           <CommentFloatingContainer
                             editor={editor}
@@ -1063,7 +1061,7 @@ const DdocEditor = forwardRef(
             )}
 
             <div>
-              {editor && isBelow1280px && (
+              {editor && isBelow1280px && !isFocusMode && (
                 <CommentBubbleCard
                   editor={editor}
                   activeCommentId={activeCommentId}
@@ -1130,6 +1128,7 @@ const DdocEditor = forwardRef(
             <CommentStoreProvider
               editor={editor ?? null}
               ydoc={ydoc}
+              isFocusMode={isFocusMode}
               username={username as string}
               setUsername={setUsername}
               activeCommentId={activeCommentId}
