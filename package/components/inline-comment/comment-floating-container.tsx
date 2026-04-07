@@ -5,73 +5,89 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { Avatar, Button, TextAreaFieldV2, cn } from '@fileverse/ui';
+import {
+  Avatar,
+  Button,
+  cn,
+  Divider,
+  TextAreaFieldV2,
+  TextField,
+} from '@fileverse/ui';
 import { Editor } from '@tiptap/react';
 import { useOnClickOutside } from 'usehooks-ts';
 import { CommentCard } from './comment-card';
 import { IComment } from '../../extensions/comment';
 import { useCommentStore } from '../../stores/comment-store';
 import {
-  CommentFloatingDraftItem,
-  CommentFloatingItem,
-  CommentFloatingThreadItem,
+  CommentFloatingCard,
+  CommentFloatingDraftCard,
+  CommentFloatingThreadCard,
 } from './context/types';
 import {
   FLOATING_COMMENT_CARD_GAP,
-  FloatingLayoutDirtyFlag,
+  FloatingCardLayoutInput,
+  FloatingLayoutInvalidationFlag,
   computeFloatingCommentLayout,
+  roundFloatingTranslateY,
 } from './comment-floating-layout';
 import { DeleteConfirmOverlay } from './delete-confirm-overlay';
 import EnsLogo from '../../assets/ens.svg';
-import { Divider, TextField } from '@fileverse/ui';
 
+// Run floating cards in one animation-frame pass.
+// First refresh anchors, then measure, then place cards, then update the DOM.
 type AnchorType = 'draft' | 'thread';
 
 interface CachedAnchorRect {
   top: number;
   height: number;
-  domVersion: number;
   scrollTop: number;
   containerTop: number;
 }
 
 interface AnchorEntry {
+  floatingCardId: string;
   anchorId: string;
   anchorType: AnchorType;
   elements: HTMLElement[];
-  pos: number | null;
-  domVersion: number;
-  domSignature: string;
+  pmPos: number | null;
+  anchorVersion: number;
   cachedRect: CachedAnchorRect | null;
-  lastPlacement: number | null;
+  lastSeenEditorRoot: HTMLElement | null;
+  missingSinceDocVersion: number | null;
+  missingSinceCycle: number | null;
 }
 
-interface RuntimeItemState {
-  itemId: string;
-  orderPos: number | null;
-  anchorDomVersion: number;
+// Keep anchor lookups separate from live card state.
+// This lets the floating comment column reuse editor queries and keep fast layout updates.
+interface FloatingCardRuntimeState {
+  floatingCardId: string;
+  anchorPosition: number | null;
+  anchorVersion: number;
   anchorTop: number | null;
   anchorHeight: number;
   height: number;
   isMeasured: boolean;
-  isGated: boolean;
+  isInViewport: boolean;
   translateY: number | null;
-  dirtyFlags: FloatingLayoutDirtyFlag;
+  lastCommittedTranslateY: number | null;
+  lastCommittedVisible: boolean;
+  needsTransformSync: boolean;
+  invalidationFlags: FloatingLayoutInvalidationFlag;
 }
 
 const FLOATING_VIEWPORT_BUFFER_MULTIPLIER = 1;
 const FLOATING_CARD_WIDTH = 300;
 
-const getAnchorIdentity = (item: CommentFloatingItem) => {
-  if (item.type === 'draft') {
+const getAnchorIdentity = (floatingCard: CommentFloatingCard) => {
+  if (floatingCard.type === 'draft') {
     return {
-      anchorId: item.draftId,
+      anchorId: floatingCard.draftId,
       anchorType: 'draft' as const,
     };
   }
 
   return {
-    anchorId: item.commentId,
+    anchorId: floatingCard.commentId,
     anchorType: 'thread' as const,
   };
 };
@@ -113,22 +129,6 @@ const getAnchorElements = ({
   );
 };
 
-const buildAnchorDomSignature = (elements: HTMLElement[]) => {
-  return elements
-    .map((element) => {
-      const childSignature = Array.from(element.childNodes)
-        .map((childNode) =>
-          childNode.nodeType === Node.TEXT_NODE
-            ? '#text'
-            : (childNode as Element).nodeName,
-        )
-        .join(',');
-
-      return `${element.tagName}:${childSignature}:${element.textContent ?? ''}`;
-    })
-    .join('|');
-};
-
 const getAnchorStartPos = (editor: Editor, elements: HTMLElement[]) => {
   let minPos: number | null = null;
 
@@ -152,66 +152,45 @@ const getEditorRoot = (editor: Editor): HTMLElement | null => {
   }
 };
 
-const collectRelevantAnchorIds = (node: Node, anchorIds: Set<string>) => {
-  if (node.nodeType === Node.TEXT_NODE) {
-    const anchorElement = node.parentElement?.closest<HTMLElement>(
-      '[data-comment-id], [data-draft-comment-id]',
-    );
-
-    if (anchorElement?.dataset.commentId) {
-      anchorIds.add(anchorElement.dataset.commentId);
-    }
-
-    if (anchorElement?.dataset.draftCommentId) {
-      anchorIds.add(anchorElement.dataset.draftCommentId);
-    }
-
-    return;
+const areAnchorElementsEqual = (
+  previousElements: HTMLElement[],
+  nextElements: HTMLElement[],
+) => {
+  if (previousElements.length !== nextElements.length) {
+    return false;
   }
 
-  if (!(node instanceof HTMLElement)) {
-    return;
-  }
-
-  if (node.dataset.commentId) {
-    anchorIds.add(node.dataset.commentId);
-  }
-
-  if (node.dataset.draftCommentId) {
-    anchorIds.add(node.dataset.draftCommentId);
-  }
-
-  node
-    .querySelectorAll<HTMLElement>('[data-comment-id], [data-draft-comment-id]')
-    .forEach((element) => {
-      if (element.dataset.commentId) {
-        anchorIds.add(element.dataset.commentId);
-      }
-
-      if (element.dataset.draftCommentId) {
-        anchorIds.add(element.dataset.draftCommentId);
-      }
-    });
+  return previousElements.every(
+    (element, index) => element === nextElements[index],
+  );
 };
 
-const collectRelevantAnchorIdsFromAttributeMutation = (
-  mutation: MutationRecord,
-  anchorIds: Set<string>,
-) => {
-  if (!(mutation.target instanceof HTMLElement)) {
-    return;
-  }
+const isAnchorEntryValid = (entry: AnchorEntry, editorRoot: HTMLElement) => {
+  return (
+    entry.lastSeenEditorRoot === editorRoot &&
+    entry.elements.length > 0 &&
+    entry.elements.every(
+      (element) => element.isConnected && editorRoot.contains(element),
+    )
+  );
+};
 
-  collectRelevantAnchorIds(mutation.target, anchorIds);
-
-  if (
-    mutation.type === 'attributes' &&
-    (mutation.attributeName === 'data-comment-id' ||
-      mutation.attributeName === 'data-draft-comment-id') &&
-    mutation.oldValue
-  ) {
-    anchorIds.add(mutation.oldValue);
-  }
+const projectCachedAnchorRect = ({
+  cachedRect,
+  scrollTop,
+  containerTop,
+}: {
+  cachedRect: CachedAnchorRect;
+  scrollTop: number;
+  containerTop: number;
+}) => {
+  return {
+    top:
+      cachedRect.top -
+      (scrollTop - cachedRect.scrollTop) +
+      (cachedRect.containerTop - containerTop),
+    height: cachedRect.height,
+  };
 };
 
 const getFirstIntersectingRect = ({
@@ -245,86 +224,65 @@ const compareOrderPosition = (aPos: number | null, bPos: number | null) => {
   return aPos - bPos;
 };
 
-const reconcileOrderedItemIds = ({
-  previousOrderedIds,
-  nextItems,
+// Sort by document position first.
+// Use previous order as the tie-breaker so equal anchors do not flicker between frames.
+const reconcileOrderedFloatingCardIds = ({
+  previousOrderedFloatingCardIds,
+  nextFloatingCards,
   getPos,
 }: {
-  previousOrderedIds: string[];
-  nextItems: CommentFloatingItem[];
-  getPos: (itemId: string) => number | null;
+  previousOrderedFloatingCardIds: string[];
+  nextFloatingCards: CommentFloatingCard[];
+  getPos: (floatingCardId: string) => number | null;
 }) => {
-  const nextItemIds = nextItems.map((item) => item.itemId);
-  const nextItemIdSet = new Set(nextItemIds);
-  const orderedIds = previousOrderedIds.filter((itemId) =>
-    nextItemIdSet.has(itemId),
+  const previousIndexById = new Map(
+    previousOrderedFloatingCardIds.map((floatingCardId, index) => [
+      floatingCardId,
+      index,
+    ]),
   );
+  const orderedFloatingCardIds = nextFloatingCards
+    .map((floatingCard) => floatingCard.floatingCardId)
+    .sort((a, b) => {
+      const positionComparison = compareOrderPosition(getPos(a), getPos(b));
 
-  const insertOrRepositionItem = (itemId: string) => {
-    if (!orderedIds.includes(itemId)) {
-      let insertIndex = orderedIds.length;
-
-      for (let index = 0; index < orderedIds.length; index += 1) {
-        const currentId = orderedIds[index];
-        if (compareOrderPosition(getPos(itemId), getPos(currentId)) < 0) {
-          insertIndex = index;
-          break;
-        }
+      if (positionComparison !== 0) {
+        return positionComparison;
       }
 
-      orderedIds.splice(insertIndex, 0, itemId);
-    }
+      const previousIndexComparison =
+        (previousIndexById.get(a) ?? Number.POSITIVE_INFINITY) -
+        (previousIndexById.get(b) ?? Number.POSITIVE_INFINITY);
 
-    let currentIndex = orderedIds.indexOf(itemId);
+      if (previousIndexComparison !== 0) {
+        return previousIndexComparison;
+      }
 
-    while (
-      currentIndex > 0 &&
-      compareOrderPosition(
-        getPos(orderedIds[currentIndex - 1]),
-        getPos(orderedIds[currentIndex]),
-      ) > 0
-    ) {
-      [orderedIds[currentIndex - 1], orderedIds[currentIndex]] = [
-        orderedIds[currentIndex],
-        orderedIds[currentIndex - 1],
-      ];
-      currentIndex -= 1;
-    }
-
-    while (
-      currentIndex < orderedIds.length - 1 &&
-      compareOrderPosition(
-        getPos(orderedIds[currentIndex]),
-        getPos(orderedIds[currentIndex + 1]),
-      ) > 0
-    ) {
-      [orderedIds[currentIndex], orderedIds[currentIndex + 1]] = [
-        orderedIds[currentIndex + 1],
-        orderedIds[currentIndex],
-      ];
-      currentIndex += 1;
-    }
-  };
-
-  nextItemIds.forEach(insertOrRepositionItem);
+      return a.localeCompare(b);
+    });
 
   let firstChangedIndex: number | null = null;
-  const maxLength = Math.max(previousOrderedIds.length, orderedIds.length);
+  const maxLength = Math.max(
+    previousOrderedFloatingCardIds.length,
+    orderedFloatingCardIds.length,
+  );
 
   for (let index = 0; index < maxLength; index += 1) {
-    if (previousOrderedIds[index] !== orderedIds[index]) {
+    if (
+      previousOrderedFloatingCardIds[index] !== orderedFloatingCardIds[index]
+    ) {
       firstChangedIndex = index;
       break;
     }
   }
 
   return {
-    orderedIds,
+    orderedFloatingCardIds,
     firstChangedIndex,
   };
 };
 
-const areItemIdListsEqual = (a: string[], b: string[]) => {
+const areFloatingCardIdListsEqual = (a: string[], b: string[]) => {
   if (a.length !== b.length) {
     return false;
   }
@@ -387,17 +345,17 @@ const FloatingAuthPrompt = () => {
 const FloatingCardShell = React.forwardRef<
   HTMLDivElement,
   {
-    itemId: string;
+    floatingCardId: string;
     isHidden: boolean;
     isFocused: boolean;
     onFocus: () => void;
     children: React.ReactNode;
   }
->(({ itemId, isHidden, isFocused, onFocus, children }, ref) => {
+>(({ floatingCardId, isHidden, isFocused, onFocus, children }, ref) => {
   return (
     <div
       ref={ref}
-      data-floating-comment-item={itemId}
+      data-floating-comment-card={floatingCardId}
       className={cn(
         'absolute left-0 top-0 w-[300px] rounded-[12px] border will-change-transform transition-[box-shadow,border-color] duration-150 ease-out',
         isFocused
@@ -423,12 +381,15 @@ const DraftFloatingCard = ({
   isHidden,
   registerCardNode,
 }: {
-  draft: CommentFloatingDraftItem;
+  draft: CommentFloatingDraftCard;
   isHidden: boolean;
-  registerCardNode: (itemId: string, node: HTMLDivElement | null) => void;
+  registerCardNode: (
+    floatingCardId: string,
+    node: HTMLDivElement | null,
+  ) => void;
 }) => {
   const cancelFloatingDraft = useCommentStore((s) => s.cancelFloatingDraft);
-  const focusFloatingItem = useCommentStore((s) => s.focusFloatingItem);
+  const focusFloatingCard = useCommentStore((s) => s.focusFloatingCard);
   const submitFloatingDraft = useCommentStore((s) => s.submitFloatingDraft);
   const updateFloatingDraftText = useCommentStore(
     (s) => s.updateFloatingDraftText,
@@ -459,12 +420,12 @@ const DraftFloatingCard = ({
     <FloatingCardShell
       ref={(node) => {
         draftCardRef.current = node;
-        registerCardNode(draft.itemId, node);
+        registerCardNode(draft.floatingCardId, node);
       }}
-      itemId={draft.itemId}
+      floatingCardId={draft.floatingCardId}
       isHidden={isHidden}
       isFocused={draft.isFocused}
-      onFocus={() => focusFloatingItem(draft.itemId)}
+      onFocus={() => focusFloatingCard(draft.floatingCardId)}
     >
       {!isConnected ? (
         <FloatingAuthPrompt />
@@ -529,14 +490,17 @@ const ThreadFloatingCard = ({
   isHidden,
   registerCardNode,
 }: {
-  thread: CommentFloatingThreadItem;
+  thread: CommentFloatingThreadCard;
   comment: IComment | undefined;
   tabName: string;
   isHidden: boolean;
-  registerCardNode: (itemId: string, node: HTMLDivElement | null) => void;
+  registerCardNode: (
+    floatingCardId: string,
+    node: HTMLDivElement | null,
+  ) => void;
 }) => {
-  const blurFloatingItem = useCommentStore((s) => s.blurFloatingItem);
-  const focusFloatingItem = useCommentStore((s) => s.focusFloatingItem);
+  const blurFloatingCard = useCommentStore((s) => s.blurFloatingCard);
+  const focusFloatingCard = useCommentStore((s) => s.focusFloatingCard);
   const handleAddReply = useCommentStore((s) => s.handleAddReply);
   const isConnected = useCommentStore((s) => s.isConnected);
   const resolveComment = useCommentStore((s) => s.resolveComment);
@@ -589,11 +553,11 @@ const ThreadFloatingCard = ({
 
   return (
     <FloatingCardShell
-      ref={(node) => registerCardNode(thread.itemId, node)}
-      itemId={thread.itemId}
+      ref={(node) => registerCardNode(thread.floatingCardId, node)}
+      floatingCardId={thread.floatingCardId}
       isHidden={isHidden}
       isFocused={thread.isFocused}
-      onFocus={() => focusFloatingItem(thread.itemId)}
+      onFocus={() => focusFloatingCard(thread.floatingCardId)}
     >
       <div className="flex flex-col gap-[8px]">
         <p className="text-helper-text-sm px-[12px] pt-[12px] h-[26px] max-w-[270px] truncate color-text-secondary">
@@ -619,9 +583,7 @@ const ThreadFloatingCard = ({
           version={comment?.version}
           emptyComment={!comment}
         />
-        {thread.isFocused && !isConnected && (
-          <FloatingAuthPrompt />
-        )}
+        {thread.isFocused && !isConnected && <FloatingAuthPrompt />}
         {thread.isFocused && isConnected && (
           <div className="group p-3 pt-0">
             <div className="border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
@@ -660,7 +622,7 @@ const ThreadFloatingCard = ({
                 className="w-20 min-w-20"
                 onClick={() => {
                   setReplyText('');
-                  blurFloatingItem(thread.itemId);
+                  blurFloatingCard(thread.floatingCardId);
                 }}
               >
                 <p className="text-body-sm-bold">Cancel</p>
@@ -699,252 +661,459 @@ export const CommentFloatingContainer = ({
   tabName: string;
   isHidden: boolean;
 }) => {
-  const blurFloatingItem = useCommentStore((s) => s.blurFloatingItem);
+  const blurFloatingCard = useCommentStore((s) => s.blurFloatingCard);
+  const closeFloatingCard = useCommentStore((s) => s.closeFloatingCard);
   const comments = useCommentStore((s) => s.tabComments);
-  const floatingItems = useCommentStore((s) => s.floatingItems);
+  const floatingCards = useCommentStore((s) => s.floatingCards);
   const isDesktopFloatingEnabled = useCommentStore(
     (s) => s.isDesktopFloatingEnabled,
   );
-  const railHostRef = useRef<HTMLDivElement | null>(null);
-  const registryRef = useRef<Map<string, AnchorEntry>>(new Map());
-  const runtimeRef = useRef<Map<string, RuntimeItemState>>(new Map());
-  const orderedItemIdsRef = useRef<string[]>([]);
-  const pendingRegistryAnchorIdsRef = useRef<Set<string>>(new Set());
-  const pendingRegistryRefreshAllRef = useRef(true);
-  const pendingHeightReadIdsRef = useRef<Set<string>>(new Set());
-  const rafIdRef = useRef<number | null>(null);
-  const scrollVersionRef = useRef(0);
-  const appliedScrollVersionRef = useRef(-1);
-  const containerOffsetVersionRef = useRef(0);
-  const appliedContainerOffsetVersionRef = useRef(-1);
+  const floatingCardListContainerRef = useRef<HTMLDivElement | null>(null); // Root element that holds all floating cards (used for positioning and measurements)
+  const anchorRegistryRef = useRef<Map<string, AnchorEntry>>(new Map()); // Cache of anchor lookups (DOM nodes + positions) so we don’t query the editor every frame
+  // Store live card state here so layout can move cards without causing React re-renders.
+  const floatingCardRuntimeStateRef = useRef<
+    Map<string, FloatingCardRuntimeState>
+  >(new Map());
+  const orderedFloatingCardIdsRef = useRef<string[]>([]); // Current sorted order of floating cards (top → bottom)
+  const anchorRefreshFloatingCardIdsRef = useRef<Set<string>>(new Set()); // Cards whose anchors need to be re-read from the editor
+  const pendingHeightReadFloatingCardIdsRef = useRef<Set<string>>(new Set()); // Cards whose DOM height needs to be measured
+  // Count scroll, document, and container changes here so we only do extra work when needed.
+  const versionRef = useRef({
+    scroll: 0,
+    appliedScroll: -1,
+    doc: 0,
+    appliedDoc: -1,
+    containerOffset: 0,
+    appliedContainerOffset: -1,
+  });
+  // Keep frame scheduling here so the floating comment column only runs once per frame.
+  const scheduleRef = useRef({
+    rafId: null as number | null,
+    cycle: 0,
+  });
+  // Store where layout computation should restart so one changed card does not force a full recalculation.
+  const layoutBoundaryRef = useRef({
+    recomputeFromIndex: 0,
+  });
+  // Remember the last top position of the floating comment column.
+  // This avoids extra work when the column has not actually moved.
   const lastContainerTopRef = useRef<number | null>(null);
-  const mountedItemIdsRef = useRef<string[]>([]);
-  const cardNodesRef = useRef<Map<string, HTMLDivElement>>(new Map());
-  const focusedCardRef = useRef<HTMLDivElement | null>(null);
-  const nodeToItemIdRef = useRef(new WeakMap<Element, string>());
+  // Remember the current editor root so a remount forces fresh anchor lookups.
+  const lastEditorRootRef = useRef<HTMLElement | null>(null);
+  // Remember the wrapper node we measured against so a remount refreshes saved positions.
+  const lastWrapperNodeRef = useRef<HTMLDivElement | null>(null);
+  // Keep track of mounted cards so React only renders cards near the visible area.
+  const mountedFloatingCardIdsRef = useRef<string[]>([]);
+  // Keep the latest open cards here so frame callbacks and editor listeners always read fresh data.
+  const openFloatingCardsRef = useRef<CommentFloatingCard[]>([]);
+  // Keep card DOM nodes here so layout computation, focus, and resize code can find them quickly.
+  const domRef = useRef({
+    cardNodes: new Map<string, HTMLDivElement>(),
+    focusedCard: null as HTMLDivElement | null,
+    nodeToFloatingCardId: new WeakMap<Element, string>(),
+  });
+  // Keep a normal React ref here because the outside-click hook needs one.
+  const focusedFloatingCardRef = useRef<HTMLDivElement | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
-  const dirtyStartIndexRef = useRef(0);
-  const [mountedItemIds, setMountedItemIds] = useState<string[]>([]);
+  const [mountedFloatingCardIds, setMountedFloatingCardIds] = useState<
+    string[]
+  >([]);
 
-  const openItems = useMemo(
-    () => floatingItems.filter((item) => item.isOpen),
-    [floatingItems],
+  const openFloatingCards = useMemo(
+    () => floatingCards.filter((floatingCard) => floatingCard.isOpen),
+    [floatingCards],
   );
 
-  const openItemMap = useMemo(
-    () => new Map(openItems.map((item) => [item.itemId, item])),
-    [openItems],
+  const openFloatingCardMap = useMemo(
+    () =>
+      new Map(
+        openFloatingCards.map((floatingCard) => [
+          floatingCard.floatingCardId,
+          floatingCard,
+        ]),
+      ),
+    [openFloatingCards],
   );
-  const focusedItemId = useMemo(
-    () => openItems.find((item) => item.isFocused)?.itemId ?? null,
-    [openItems],
+  const openFloatingCardIdsKey = useMemo(
+    () =>
+      openFloatingCards
+        .map((floatingCard) => floatingCard.floatingCardId)
+        .join('|'),
+    [openFloatingCards],
+  );
+  const focusedFloatingCardId = useMemo(
+    () =>
+      openFloatingCards.find((floatingCard) => floatingCard.isFocused)
+        ?.floatingCardId ?? null,
+    [openFloatingCards],
   );
 
-  const getRuntimeItem = useCallback((itemId: string) => {
-    const existingItem = runtimeRef.current.get(itemId);
+  openFloatingCardsRef.current = openFloatingCards;
 
-    if (existingItem) {
-      return existingItem;
+  const getFloatingCardRuntimeState = useCallback((floatingCardId: string) => {
+    const existingRuntimeState =
+      floatingCardRuntimeStateRef.current.get(floatingCardId);
+
+    if (existingRuntimeState) {
+      return existingRuntimeState;
     }
 
-    const nextItem: RuntimeItemState = {
-      itemId,
-      orderPos: null,
-      anchorDomVersion: -1,
+    const nextRuntimeState: FloatingCardRuntimeState = {
+      floatingCardId,
+      anchorPosition: null,
+      anchorVersion: -1,
       anchorTop: null,
       anchorHeight: 0,
       height: 0,
       isMeasured: false,
-      isGated: false,
+      isInViewport: false,
       translateY: null,
-      dirtyFlags: FloatingLayoutDirtyFlag.Anchor,
+      lastCommittedTranslateY: null,
+      lastCommittedVisible: false,
+      needsTransformSync: true,
+      invalidationFlags: FloatingLayoutInvalidationFlag.Anchor,
     };
 
-    runtimeRef.current.set(itemId, nextItem);
-    return nextItem;
+    floatingCardRuntimeStateRef.current.set(floatingCardId, nextRuntimeState);
+    return nextRuntimeState;
   }, []);
 
-  const markDirtyFromIndex = useCallback(
-    (startIndex: number, flag: FloatingLayoutDirtyFlag) => {
-      const clampedStartIndex = Math.max(0, startIndex);
-      dirtyStartIndexRef.current = Math.min(
-        dirtyStartIndexRef.current,
-        clampedStartIndex,
-      );
+  const markRecomputeFromIndex = useCallback((recomputeFromIndex: number) => {
+    layoutBoundaryRef.current.recomputeFromIndex = Math.min(
+      layoutBoundaryRef.current.recomputeFromIndex,
+      Math.max(0, recomputeFromIndex),
+    );
+  }, []);
 
-      for (
-        let index = clampedStartIndex;
-        index < orderedItemIdsRef.current.length;
-        index += 1
-      ) {
-        const runtimeItem = getRuntimeItem(orderedItemIdsRef.current[index]);
-        runtimeItem.dirtyFlags |= flag;
-      }
+  const markFloatingCardInvalidated = useCallback(
+    (floatingCardId: string, flag: FloatingLayoutInvalidationFlag) => {
+      getFloatingCardRuntimeState(floatingCardId).invalidationFlags |= flag;
     },
-    [getRuntimeItem],
+    [getFloatingCardRuntimeState],
   );
 
-  const schedulePipeline = useCallback(() => {
-    if (rafIdRef.current !== null) {
+  // Run one layout computation per frame.
+  // Read anchors and sizes first, then update card position and visibility.
+  const updateFloatingCardLayout = useCallback(() => {
+    if (scheduleRef.current.rafId !== null) {
       return;
     }
 
-    rafIdRef.current = window.requestAnimationFrame(() => {
-      rafIdRef.current = null;
+    scheduleRef.current.rafId = window.requestAnimationFrame(() => {
+      scheduleRef.current.rafId = null;
 
+      const openFloatingCardsSnapshot = openFloatingCardsRef.current;
       const editorRoot = getEditorRoot(editor);
       const scrollContainer = scrollContainerRef.current;
-      const railHost = railHostRef.current;
+      const floatingCardListContainer = floatingCardListContainerRef.current;
 
       if (
         !editorRoot ||
         !scrollContainer ||
-        !railHost ||
-        !openItems.length ||
+        !floatingCardListContainer ||
+        !openFloatingCardsSnapshot.length ||
         !isDesktopFloatingEnabled
       ) {
+        if (mountedFloatingCardIdsRef.current.length > 0) {
+          mountedFloatingCardIdsRef.current = [];
+          setMountedFloatingCardIds([]);
+        }
         return;
       }
 
-      const itemByAnchorId = new Map<string, CommentFloatingItem>();
-      openItems.forEach((item) => {
-        const { anchorId } = getAnchorIdentity(item);
-        itemByAnchorId.set(anchorId, item);
+      const currentCycle = ++scheduleRef.current.cycle;
+      const currentDocVersion = versionRef.current.doc;
+      let shouldScheduleFollowUp = false;
+      const nextRegistry = new Map(anchorRegistryRef.current);
+
+      const editorRootChanged =
+        lastEditorRootRef.current !== editorRoot ||
+        lastWrapperNodeRef.current !== editorWrapperRef.current;
+      if (editorRootChanged) {
+        lastEditorRootRef.current = editorRoot;
+        lastWrapperNodeRef.current = editorWrapperRef.current;
+        openFloatingCardsSnapshot.forEach((floatingCard) => {
+          anchorRefreshFloatingCardIdsRef.current.add(
+            floatingCard.floatingCardId,
+          );
+        });
+      }
+
+      const docVersionChanged =
+        versionRef.current.appliedDoc !== currentDocVersion;
+      if (docVersionChanged) {
+        openFloatingCardsSnapshot.forEach((floatingCard) => {
+          anchorRefreshFloatingCardIdsRef.current.add(
+            floatingCard.floatingCardId,
+          );
+        });
+      }
+      versionRef.current.appliedDoc = currentDocVersion;
+
+      const floatingCardIdsNeedingAnchorRefresh = new Set(
+        anchorRefreshFloatingCardIdsRef.current,
+      );
+      const openFloatingCardIdSet = new Set(
+        openFloatingCardsSnapshot.map(
+          (floatingCard) => floatingCard.floatingCardId,
+        ),
+      );
+      Array.from(nextRegistry.entries()).forEach(([anchorId, entry]) => {
+        if (!openFloatingCardIdSet.has(entry.floatingCardId)) {
+          nextRegistry.delete(anchorId);
+        }
       });
 
-      if (
-        pendingRegistryRefreshAllRef.current ||
-        pendingRegistryAnchorIdsRef.current.size > 0
-      ) {
-        const nextRegistry = new Map(registryRef.current);
-        const openAnchorIds = new Set(itemByAnchorId.keys());
+      const floatingCardIdsToClose = new Set<string>();
 
-        Array.from(nextRegistry.keys()).forEach((anchorId) => {
-          if (!openAnchorIds.has(anchorId)) {
-            nextRegistry.delete(anchorId);
-          }
+      openFloatingCardsSnapshot.forEach((floatingCard) => {
+        const floatingCardRuntimeState = getFloatingCardRuntimeState(
+          floatingCard.floatingCardId,
+        );
+        const { anchorId, anchorType } = getAnchorIdentity(floatingCard);
+        const previousEntry = nextRegistry.get(anchorId);
+        const shouldRefresh =
+          floatingCardIdsNeedingAnchorRefresh.has(
+            floatingCard.floatingCardId,
+          ) || !previousEntry;
+
+        if (!shouldRefresh) {
+          // Reuse the saved anchor order when this card did not change.
+          floatingCardRuntimeState.anchorPosition =
+            previousEntry?.pmPos ?? floatingCardRuntimeState.anchorPosition;
+          return;
+        }
+
+        const elements = getAnchorElements({
+          editorRoot,
+          anchorId,
+          anchorType,
         });
 
-        openItems.forEach((item) => {
-          const { anchorId, anchorType } = getAnchorIdentity(item);
+        if (!elements.length) {
+          const missingSinceDocVersion =
+            previousEntry?.missingSinceDocVersion ?? currentDocVersion;
+          const missingSinceCycle =
+            previousEntry?.missingSinceCycle ?? currentCycle;
+          const shouldClose =
+            previousEntry !== undefined &&
+            ((previousEntry.missingSinceCycle !== null &&
+              previousEntry.missingSinceCycle < currentCycle) ||
+              (previousEntry.missingSinceDocVersion !== null &&
+                previousEntry.missingSinceDocVersion < currentDocVersion));
 
-          if (
-            !pendingRegistryRefreshAllRef.current &&
-            nextRegistry.has(anchorId) &&
-            !pendingRegistryAnchorIdsRef.current.has(anchorId)
-          ) {
+          if (shouldClose) {
+            floatingCardIdsToClose.add(floatingCard.floatingCardId);
+            nextRegistry.delete(anchorId);
             return;
           }
 
-          const elements = getAnchorElements({
-            editorRoot,
+          // Keep the last known anchor for one more pass.
+          // The editor can briefly replace DOM nodes while it updates.
+          nextRegistry.set(anchorId, {
+            floatingCardId: floatingCard.floatingCardId,
             anchorId,
             anchorType,
+            elements: previousEntry?.elements ?? [],
+            pmPos: previousEntry?.pmPos ?? null,
+            anchorVersion: previousEntry?.anchorVersion ?? 0,
+            cachedRect: previousEntry?.cachedRect ?? null,
+            lastSeenEditorRoot: editorRoot,
+            missingSinceDocVersion,
+            missingSinceCycle,
           });
+          shouldScheduleFollowUp = true;
+          floatingCardRuntimeState.anchorPosition =
+            previousEntry?.pmPos ?? floatingCardRuntimeState.anchorPosition;
+          return;
+        }
 
-          if (!elements.length) {
-            nextRegistry.delete(anchorId);
-            return;
-          }
+        const pmPos = getAnchorStartPos(editor, elements);
+        const didChange =
+          !previousEntry ||
+          previousEntry.anchorType !== anchorType ||
+          previousEntry.pmPos !== pmPos ||
+          previousEntry.lastSeenEditorRoot !== editorRoot ||
+          !areAnchorElementsEqual(previousEntry.elements, elements);
+        const nextEntry: AnchorEntry = {
+          floatingCardId: floatingCard.floatingCardId,
+          anchorId,
+          anchorType,
+          elements,
+          pmPos,
+          anchorVersion: previousEntry
+            ? didChange
+              ? previousEntry.anchorVersion + 1
+              : previousEntry.anchorVersion
+            : 0,
+          cachedRect:
+            previousEntry && !didChange ? previousEntry.cachedRect : null,
+          lastSeenEditorRoot: editorRoot,
+          missingSinceDocVersion: null,
+          missingSinceCycle: null,
+        };
 
-          const previousEntry = nextRegistry.get(anchorId);
-          const domSignature = buildAnchorDomSignature(elements);
-          const pos = getAnchorStartPos(editor, elements);
-          const domChanged =
-            !previousEntry ||
-            previousEntry.domSignature !== domSignature ||
-            previousEntry.elements.length !== elements.length ||
-            previousEntry.elements.some(
-              (element, index) => element !== elements[index],
-            );
-          const nextEntry: AnchorEntry = {
-            anchorId,
-            anchorType,
-            elements,
-            pos,
-            domVersion: previousEntry
-              ? domChanged
-                ? previousEntry.domVersion + 1
-                : previousEntry.domVersion
-              : 0,
-            domSignature,
-            cachedRect:
-              previousEntry && !domChanged ? previousEntry.cachedRect : null,
-            lastPlacement: previousEntry?.lastPlacement ?? null,
-          };
+        nextRegistry.set(anchorId, nextEntry);
+        floatingCardRuntimeState.anchorPosition = pmPos;
 
-          nextRegistry.set(anchorId, nextEntry);
+        if (
+          didChange ||
+          floatingCardRuntimeState.anchorVersion !== nextEntry.anchorVersion
+        ) {
+          const currentIndex = orderedFloatingCardIdsRef.current.indexOf(
+            floatingCard.floatingCardId,
+          );
+          markFloatingCardInvalidated(
+            floatingCard.floatingCardId,
+            FloatingLayoutInvalidationFlag.Anchor,
+          );
+          markRecomputeFromIndex(currentIndex >= 0 ? currentIndex : 0);
+        }
+      });
 
-          const runtimeItem = getRuntimeItem(item.itemId);
-          const positionChanged = runtimeItem.orderPos !== nextEntry.pos;
-          runtimeItem.orderPos = nextEntry.pos;
+      anchorRefreshFloatingCardIdsRef.current.clear();
 
-          if (positionChanged || domChanged) {
-            const currentIndex = orderedItemIdsRef.current.indexOf(item.itemId);
-            markDirtyFromIndex(
-              currentIndex >= 0 ? currentIndex : 0,
-              FloatingLayoutDirtyFlag.Anchor,
-            );
-          }
+      const activeOpenFloatingCards = openFloatingCardsSnapshot.filter(
+        (floatingCard) =>
+          !floatingCardIdsToClose.has(floatingCard.floatingCardId),
+      );
+      const activeOpenFloatingCardMap = new Map(
+        activeOpenFloatingCards.map((floatingCard) => [
+          floatingCard.floatingCardId,
+          floatingCard,
+        ]),
+      );
+      const activeAnchorIds = new Set(
+        activeOpenFloatingCards.map(
+          (floatingCard) => getAnchorIdentity(floatingCard).anchorId,
+        ),
+      );
+      Array.from(nextRegistry.keys()).forEach((anchorId) => {
+        if (!activeAnchorIds.has(anchorId)) {
+          nextRegistry.delete(anchorId);
+        }
+      });
+      anchorRegistryRef.current = nextRegistry;
+
+      const { orderedFloatingCardIds, firstChangedIndex } =
+        reconcileOrderedFloatingCardIds({
+          previousOrderedFloatingCardIds:
+            orderedFloatingCardIdsRef.current.filter(
+              (floatingCardId) => !floatingCardIdsToClose.has(floatingCardId),
+            ),
+          nextFloatingCards: activeOpenFloatingCards,
+          getPos: (floatingCardId) =>
+            getFloatingCardRuntimeState(floatingCardId).anchorPosition,
         });
 
-        registryRef.current = nextRegistry;
-        pendingRegistryAnchorIdsRef.current.clear();
-        pendingRegistryRefreshAllRef.current = false;
+      orderedFloatingCardIdsRef.current = orderedFloatingCardIds;
 
-        const { orderedIds, firstChangedIndex } = reconcileOrderedItemIds({
-          previousOrderedIds: orderedItemIdsRef.current,
-          nextItems: openItems,
-          getPos: (itemId) => getRuntimeItem(itemId).orderPos,
-        });
-
-        orderedItemIdsRef.current = orderedIds;
-
-        if (firstChangedIndex !== null) {
-          markDirtyFromIndex(firstChangedIndex, FloatingLayoutDirtyFlag.Anchor);
+      if (firstChangedIndex !== null) {
+        // Mark the first moved card too.
+        // Without this, the layout code can stop early before later cards are updated.
+        markRecomputeFromIndex(firstChangedIndex);
+        const firstChangedFloatingCardId =
+          orderedFloatingCardIds[firstChangedIndex];
+        if (firstChangedFloatingCardId) {
+          markFloatingCardInvalidated(
+            firstChangedFloatingCardId,
+            FloatingLayoutInvalidationFlag.Anchor,
+          );
         }
       }
 
+      Array.from(floatingCardRuntimeStateRef.current.keys()).forEach(
+        (floatingCardId) => {
+          if (!activeOpenFloatingCardMap.has(floatingCardId)) {
+            floatingCardRuntimeStateRef.current.delete(floatingCardId);
+          }
+        },
+      );
+
       const scrollContainerRect = scrollContainer.getBoundingClientRect();
-      const railHostRect = railHost.getBoundingClientRect();
+      const floatingCardListContainerRect =
+        floatingCardListContainer.getBoundingClientRect();
 
       if (
         lastContainerTopRef.current === null ||
-        Math.abs(lastContainerTopRef.current - railHostRect.top) > 0.5
+        Math.abs(
+          lastContainerTopRef.current - floatingCardListContainerRect.top,
+        ) > 0.5
       ) {
-        lastContainerTopRef.current = railHostRect.top;
-        containerOffsetVersionRef.current += 1;
+        lastContainerTopRef.current = floatingCardListContainerRect.top;
+        versionRef.current.containerOffset += 1;
       }
 
       const viewportHeight = scrollContainerRect.height;
-      const viewportTop = scrollContainerRect.top - railHostRect.top;
+      const viewportTop =
+        scrollContainerRect.top - floatingCardListContainerRect.top;
       const viewportBottom = viewportTop + viewportHeight;
-      const viewportChanged =
-        appliedScrollVersionRef.current !== scrollVersionRef.current;
+      const scrollChanged =
+        versionRef.current.appliedScroll !== versionRef.current.scroll;
       const containerOffsetChanged =
-        appliedContainerOffsetVersionRef.current !==
-        containerOffsetVersionRef.current;
+        versionRef.current.appliedContainerOffset !==
+        versionRef.current.containerOffset;
 
-      orderedItemIdsRef.current.forEach((itemId, index) => {
-        const item = openItemMap.get(itemId);
-        if (!item) return;
-
-        const runtimeItem = getRuntimeItem(itemId);
-        const { anchorId } = getAnchorIdentity(item);
-        const anchorEntry = registryRef.current.get(anchorId);
-        const anchorChanged =
-          anchorEntry !== undefined &&
-          runtimeItem.anchorDomVersion !== anchorEntry.domVersion;
-
-        const shouldReadRect =
-          viewportChanged || containerOffsetChanged || anchorChanged;
-
-        if (anchorEntry?.cachedRect && !shouldReadRect) {
-          runtimeItem.anchorTop = anchorEntry.cachedRect.top;
-          runtimeItem.anchorHeight = anchorEntry.cachedRect.height;
+      orderedFloatingCardIdsRef.current.forEach((floatingCardId, index) => {
+        const floatingCard = activeOpenFloatingCardMap.get(floatingCardId);
+        if (!floatingCard) {
+          return;
         }
 
-        if (anchorEntry && shouldReadRect) {
+        const floatingCardRuntimeState =
+          getFloatingCardRuntimeState(floatingCardId);
+        const { anchorId } = getAnchorIdentity(floatingCard);
+        const anchorEntry = nextRegistry.get(anchorId);
+
+        if (!anchorEntry) {
+          if (floatingCardRuntimeState.isInViewport) {
+            floatingCardRuntimeState.isInViewport = false;
+            markFloatingCardInvalidated(
+              floatingCardId,
+              FloatingLayoutInvalidationFlag.Visibility,
+            );
+            markRecomputeFromIndex(index);
+          }
+          floatingCardRuntimeState.anchorTop = null;
+          floatingCardRuntimeState.anchorHeight = 0;
+          return;
+        }
+
+        let projectedRect = anchorEntry.cachedRect
+          ? projectCachedAnchorRect({
+              cachedRect: anchorEntry.cachedRect,
+              scrollTop: scrollContainer.scrollTop,
+              containerTop: floatingCardListContainerRect.top,
+            })
+          : null;
+
+        if (projectedRect) {
+          floatingCardRuntimeState.anchorTop = projectedRect.top;
+          floatingCardRuntimeState.anchorHeight = projectedRect.height;
+        }
+
+        const isProjectedInViewportBuffer =
+          projectedRect !== null &&
+          projectedRect.top >=
+            viewportTop -
+              viewportHeight * FLOATING_VIEWPORT_BUFFER_MULTIPLIER &&
+          projectedRect.top <=
+            viewportBottom +
+              viewportHeight * FLOATING_VIEWPORT_BUFFER_MULTIPLIER;
+        const anchorVersionChanged =
+          floatingCardRuntimeState.anchorVersion !== anchorEntry.anchorVersion;
+        const shouldReadRect =
+          !anchorEntry.cachedRect ||
+          floatingCardRuntimeState.isInViewport ||
+          isProjectedInViewportBuffer ||
+          anchorVersionChanged ||
+          !floatingCardRuntimeState.isMeasured ||
+          (containerOffsetChanged && isProjectedInViewportBuffer) ||
+          (scrollChanged && floatingCardRuntimeState.isInViewport);
+
+        // Only read fresh DOM positions when the saved position is no longer safe to trust.
+        // This avoids extra editor DOM work while the page is stable.
+        if (shouldReadRect && isAnchorEntryValid(anchorEntry, editorRoot)) {
           const rect = getFirstIntersectingRect({
             elements: anchorEntry.elements,
             viewportTop: scrollContainerRect.top,
@@ -952,204 +1121,443 @@ export const CommentFloatingContainer = ({
           });
 
           if (rect) {
-            const nextTop = rect.top - railHostRect.top;
-            runtimeItem.anchorTop = nextTop;
-            runtimeItem.anchorHeight = rect.height;
-            runtimeItem.anchorDomVersion = anchorEntry.domVersion;
+            const nextTop = rect.top - floatingCardListContainerRect.top;
+            floatingCardRuntimeState.anchorTop = nextTop;
+            floatingCardRuntimeState.anchorHeight = rect.height;
             anchorEntry.cachedRect = {
               top: nextTop,
               height: rect.height,
-              domVersion: anchorEntry.domVersion,
               scrollTop: scrollContainer.scrollTop,
-              containerTop: railHostRect.top,
+              containerTop: floatingCardListContainerRect.top,
             };
+            projectedRect = { top: nextTop, height: rect.height };
+          } else if (projectedRect) {
+            floatingCardRuntimeState.anchorTop = projectedRect.top;
+            floatingCardRuntimeState.anchorHeight = projectedRect.height;
           }
         }
+        floatingCardRuntimeState.anchorVersion = anchorEntry.anchorVersion;
 
         const nextIsGated =
-          runtimeItem.anchorTop !== null &&
-          runtimeItem.anchorTop >=
+          floatingCardRuntimeState.anchorTop !== null &&
+          floatingCardRuntimeState.anchorTop >=
             viewportTop -
               viewportHeight * FLOATING_VIEWPORT_BUFFER_MULTIPLIER &&
-          runtimeItem.anchorTop <=
+          floatingCardRuntimeState.anchorTop <=
             viewportBottom +
               viewportHeight * FLOATING_VIEWPORT_BUFFER_MULTIPLIER;
 
-        if (runtimeItem.isGated !== nextIsGated) {
-          runtimeItem.isGated = nextIsGated;
-          markDirtyFromIndex(index, FloatingLayoutDirtyFlag.Visibility);
+        if (floatingCardRuntimeState.isInViewport !== nextIsGated) {
+          const wasGated = floatingCardRuntimeState.isInViewport;
+          floatingCardRuntimeState.isInViewport = nextIsGated;
+          markFloatingCardInvalidated(
+            floatingCardId,
+            FloatingLayoutInvalidationFlag.Visibility,
+          );
+          markRecomputeFromIndex(index);
+          if (!wasGated && nextIsGated) {
+            floatingCardRuntimeState.needsTransformSync = true;
+            pendingHeightReadFloatingCardIdsRef.current.add(floatingCardId);
+            shouldScheduleFollowUp = true;
+          }
         }
       });
 
-      appliedScrollVersionRef.current = scrollVersionRef.current;
-      appliedContainerOffsetVersionRef.current =
-        containerOffsetVersionRef.current;
+      versionRef.current.appliedScroll = versionRef.current.scroll;
+      versionRef.current.appliedContainerOffset =
+        versionRef.current.containerOffset;
 
-      const nextMountedItemIds = orderedItemIdsRef.current.filter((itemId) => {
-        const runtimeItem = runtimeRef.current.get(itemId);
-        return Boolean(runtimeItem?.isGated);
-      });
+      const nextMountedFloatingCardIds =
+        orderedFloatingCardIdsRef.current.filter((floatingCardId) => {
+          const floatingCardRuntimeState =
+            floatingCardRuntimeStateRef.current.get(floatingCardId);
+          return Boolean(floatingCardRuntimeState?.isInViewport);
+        });
 
-      if (!areItemIdListsEqual(nextMountedItemIds, mountedItemIdsRef.current)) {
-        const previousMountedItemIds = new Set(mountedItemIdsRef.current);
-        mountedItemIdsRef.current = nextMountedItemIds;
-        setMountedItemIds(nextMountedItemIds);
+      if (
+        !areFloatingCardIdListsEqual(
+          nextMountedFloatingCardIds,
+          mountedFloatingCardIdsRef.current,
+        )
+      ) {
+        const previousMountedFloatingCardIds = new Set(
+          mountedFloatingCardIdsRef.current,
+        );
+        mountedFloatingCardIdsRef.current = nextMountedFloatingCardIds;
+        setMountedFloatingCardIds(nextMountedFloatingCardIds);
 
-        nextMountedItemIds.forEach((itemId) => {
-          if (!previousMountedItemIds.has(itemId)) {
-            pendingHeightReadIdsRef.current.add(itemId);
-            const mountedIndex = orderedItemIdsRef.current.indexOf(itemId);
-            markDirtyFromIndex(
-              mountedIndex >= 0 ? mountedIndex : 0,
-              FloatingLayoutDirtyFlag.Height,
+        nextMountedFloatingCardIds.forEach((floatingCardId) => {
+          if (!previousMountedFloatingCardIds.has(floatingCardId)) {
+            pendingHeightReadFloatingCardIdsRef.current.add(floatingCardId);
+            const mountedIndex =
+              orderedFloatingCardIdsRef.current.indexOf(floatingCardId);
+            markFloatingCardInvalidated(
+              floatingCardId,
+              FloatingLayoutInvalidationFlag.Height |
+                FloatingLayoutInvalidationFlag.Visibility,
             );
+            markRecomputeFromIndex(mountedIndex >= 0 ? mountedIndex : 0);
+            shouldScheduleFollowUp = true;
           }
         });
       }
 
-      pendingHeightReadIdsRef.current.forEach((itemId) => {
-        const node = cardNodesRef.current.get(itemId);
-        const runtimeItem = runtimeRef.current.get(itemId);
+      pendingHeightReadFloatingCardIdsRef.current.forEach((floatingCardId) => {
+        const node = domRef.current.cardNodes.get(floatingCardId);
+        const floatingCardRuntimeState =
+          floatingCardRuntimeStateRef.current.get(floatingCardId);
 
-        if (!node || !runtimeItem) {
+        if (!node || !floatingCardRuntimeState) {
           return;
         }
 
         const nextHeight = Math.round(node.offsetHeight);
 
-        if (nextHeight > 0 && runtimeItem.height !== nextHeight) {
-          runtimeItem.height = nextHeight;
-          runtimeItem.isMeasured = true;
-          const itemIndex = orderedItemIdsRef.current.indexOf(itemId);
-          markDirtyFromIndex(
-            itemIndex >= 0 ? itemIndex : 0,
-            FloatingLayoutDirtyFlag.Height,
+        if (
+          nextHeight > 0 &&
+          (!floatingCardRuntimeState.isMeasured ||
+            floatingCardRuntimeState.height !== nextHeight)
+        ) {
+          floatingCardRuntimeState.height = nextHeight;
+          floatingCardRuntimeState.isMeasured = true;
+          const floatingCardIndex =
+            orderedFloatingCardIdsRef.current.indexOf(floatingCardId);
+          markFloatingCardInvalidated(
+            floatingCardId,
+            FloatingLayoutInvalidationFlag.Height,
+          );
+          markRecomputeFromIndex(
+            floatingCardIndex >= 0 ? floatingCardIndex : 0,
           );
         }
       });
-      pendingHeightReadIdsRef.current.clear();
+      pendingHeightReadFloatingCardIdsRef.current.clear();
 
-      const dirtyStartIndex = Math.min(
-        dirtyStartIndexRef.current,
-        Math.max(orderedItemIdsRef.current.length - 1, 0),
+      // Find the last card that changed after all reads are done.
+      // We can only stop early after anchor, visibility, mount, and height updates settle.
+      const lastInvalidatedIndex = orderedFloatingCardIdsRef.current.reduce(
+        (maxIndex, floatingCardId, index) => {
+          const floatingCardRuntimeState =
+            floatingCardRuntimeStateRef.current.get(floatingCardId);
+          return floatingCardRuntimeState &&
+            floatingCardRuntimeState.invalidationFlags !==
+              FloatingLayoutInvalidationFlag.None
+            ? index
+            : maxIndex;
+        },
+        -1,
       );
-      const layoutItems = orderedItemIdsRef.current.map((itemId) => {
-        const runtimeItem = getRuntimeItem(itemId);
 
-        return {
-          itemId,
-          anchorTop: runtimeItem.anchorTop,
-          height: runtimeItem.height,
-          isVisible: runtimeItem.isGated,
-          isMeasured: runtimeItem.isMeasured,
-          previousTranslateY: runtimeItem.translateY,
-          dirtyFlags: runtimeItem.dirtyFlags,
-        };
-      });
+      const recomputeFromIndex = Math.min(
+        layoutBoundaryRef.current.recomputeFromIndex,
+        Math.max(orderedFloatingCardIdsRef.current.length - 1, 0),
+      );
+      const floatingCardLayoutInputs: FloatingCardLayoutInput[] =
+        orderedFloatingCardIdsRef.current.map((floatingCardId) => {
+          const floatingCardRuntimeState =
+            getFloatingCardRuntimeState(floatingCardId);
+
+          return {
+            floatingCardId,
+            anchorTop: floatingCardRuntimeState.anchorTop,
+            height: floatingCardRuntimeState.height,
+            isVisible: floatingCardRuntimeState.isInViewport,
+            isMeasured: floatingCardRuntimeState.isMeasured,
+            lastCommittedTranslateY:
+              floatingCardRuntimeState.lastCommittedTranslateY,
+            invalidationFlags: floatingCardRuntimeState.invalidationFlags,
+          };
+        });
       const layoutResult = computeFloatingCommentLayout({
-        items: layoutItems,
-        dirtyStartIndex,
+        floatingCards: floatingCardLayoutInputs,
+        recomputeStartIndex: recomputeFromIndex,
+        lastInvalidatedIndex,
         gap: FLOATING_COMMENT_CARD_GAP,
       });
 
-      orderedItemIdsRef.current.forEach((itemId, index) => {
-        const runtimeItem = runtimeRef.current.get(itemId);
-        const node = cardNodesRef.current.get(itemId);
-        const item = openItemMap.get(itemId);
+      // Resolve the final position first.
+      // Only move the card when its saved Y changed, but always check visibility again.
+      orderedFloatingCardIdsRef.current.forEach((floatingCardId, index) => {
+        const floatingCardRuntimeState =
+          floatingCardRuntimeStateRef.current.get(floatingCardId);
+        const node = domRef.current.cardNodes.get(floatingCardId);
+        const floatingCard = activeOpenFloatingCardMap.get(floatingCardId);
 
-        if (!runtimeItem || !node || !item) {
+        if (!floatingCardRuntimeState || !node || !floatingCard) {
           return;
         }
 
-        const placement = layoutResult.placements.get(itemId);
+        const placement = layoutResult.placements.get(floatingCardId) ?? {
+          translateY: floatingCardRuntimeState.translateY,
+          isVisible: floatingCardRuntimeState.lastCommittedVisible,
+        };
 
-        if (
-          placement?.translateY !== null &&
-          placement?.translateY !== undefined
-        ) {
-          runtimeItem.translateY = placement.translateY;
-          node.style.transform = `translateY(${Math.round(placement.translateY)}px)`;
+        // When layout computation stops early, later cards keep their saved position.
+        if (layoutResult.placements.has(floatingCardId)) {
+          floatingCardRuntimeState.translateY = placement.translateY;
+        }
+
+        const roundedTranslateY = roundFloatingTranslateY(placement.translateY);
+        const shouldWriteTransform =
+          (floatingCardRuntimeState.needsTransformSync &&
+            roundedTranslateY !== null) ||
+          roundedTranslateY !==
+            floatingCardRuntimeState.lastCommittedTranslateY;
+
+        // Handle movement and show/hide separately.
+        // A card that stays in place may still need to hide or show.
+        if (shouldWriteTransform && roundedTranslateY !== null) {
+          node.style.transform = `translateY(${roundedTranslateY}px)`;
+          floatingCardRuntimeState.lastCommittedTranslateY = roundedTranslateY;
+          floatingCardRuntimeState.needsTransformSync = false;
         }
 
         const shouldShow =
-          Boolean(placement?.isVisible) &&
-          runtimeItem.isMeasured &&
-          runtimeItem.anchorTop !== null &&
+          Boolean(placement.isVisible) &&
+          floatingCardRuntimeState.isMeasured &&
+          floatingCardRuntimeState.anchorTop !== null &&
           !isHidden;
 
-        node.style.visibility = shouldShow ? 'visible' : 'hidden';
-        node.style.opacity = shouldShow ? '1' : '0';
+        const shouldWriteVisibility =
+          shouldShow !== floatingCardRuntimeState.lastCommittedVisible ||
+          (floatingCardRuntimeState.invalidationFlags &
+            (FloatingLayoutInvalidationFlag.Visibility |
+              FloatingLayoutInvalidationFlag.Height)) !==
+            0;
 
-        const { anchorId } = getAnchorIdentity(item);
-        const anchorEntry = registryRef.current.get(anchorId);
-        if (anchorEntry) {
-          anchorEntry.lastPlacement = runtimeItem.translateY;
+        if (shouldWriteVisibility) {
+          node.style.visibility = shouldShow ? 'visible' : 'hidden';
+          node.style.opacity = shouldShow ? '1' : '0';
+          floatingCardRuntimeState.lastCommittedVisible = shouldShow;
         }
 
         if (index <= layoutResult.stopIndex) {
-          runtimeItem.dirtyFlags = FloatingLayoutDirtyFlag.None;
+          floatingCardRuntimeState.invalidationFlags =
+            FloatingLayoutInvalidationFlag.None;
         }
       });
 
-      dirtyStartIndexRef.current = orderedItemIdsRef.current.length;
+      layoutBoundaryRef.current.recomputeFromIndex =
+        orderedFloatingCardIdsRef.current.length;
+
+      if (floatingCardIdsToClose.size > 0) {
+        floatingCardIdsToClose.forEach((floatingCardId) => {
+          closeFloatingCard(floatingCardId);
+        });
+      }
+
+      if (shouldScheduleFollowUp && activeOpenFloatingCards.length > 0) {
+        updateFloatingCardLayout();
+      }
     });
   }, [
+    closeFloatingCard,
     editor,
-    getRuntimeItem,
+    editorWrapperRef,
+    getFloatingCardRuntimeState,
     isDesktopFloatingEnabled,
     isHidden,
-    markDirtyFromIndex,
-    openItemMap,
-    openItems,
+    markFloatingCardInvalidated,
+    markRecomputeFromIndex,
     scrollContainerRef,
   ]);
 
   const registerCardNode = useCallback(
-    (itemId: string, node: HTMLDivElement | null) => {
-      const previousNode = cardNodesRef.current.get(itemId);
+    (floatingCardId: string, node: HTMLDivElement | null) => {
+      const previousNode = domRef.current.cardNodes.get(floatingCardId);
 
       if (previousNode && resizeObserverRef.current) {
         resizeObserverRef.current.unobserve(previousNode);
       }
 
       if (!node) {
-        cardNodesRef.current.delete(itemId);
-        if (focusedCardRef.current === previousNode) {
-          focusedCardRef.current = null;
+        domRef.current.cardNodes.delete(floatingCardId);
+        if (domRef.current.focusedCard === previousNode) {
+          domRef.current.focusedCard = null;
+          focusedFloatingCardRef.current = null;
         }
         return;
       }
 
-      cardNodesRef.current.set(itemId, node);
-      if (itemId === focusedItemId) {
-        focusedCardRef.current = node;
+      domRef.current.cardNodes.set(floatingCardId, node);
+      if (floatingCardId === focusedFloatingCardId) {
+        domRef.current.focusedCard = node;
+        focusedFloatingCardRef.current = node;
       }
-      nodeToItemIdRef.current.set(node, itemId);
-      pendingHeightReadIdsRef.current.add(itemId);
+      domRef.current.nodeToFloatingCardId.set(node, floatingCardId);
+      if (previousNode !== node) {
+        const floatingCardRuntimeState =
+          getFloatingCardRuntimeState(floatingCardId);
+        floatingCardRuntimeState.needsTransformSync = true;
+        markFloatingCardInvalidated(
+          floatingCardId,
+          FloatingLayoutInvalidationFlag.Height |
+            FloatingLayoutInvalidationFlag.Visibility,
+        );
+        markRecomputeFromIndex(
+          Math.max(
+            orderedFloatingCardIdsRef.current.indexOf(floatingCardId),
+            0,
+          ),
+        );
+      }
+      pendingHeightReadFloatingCardIdsRef.current.add(floatingCardId);
       resizeObserverRef.current?.observe(node);
-      schedulePipeline();
+      updateFloatingCardLayout();
     },
-    [focusedItemId, schedulePipeline],
+    [
+      focusedFloatingCardId,
+      getFloatingCardRuntimeState,
+      markFloatingCardInvalidated,
+      markRecomputeFromIndex,
+      updateFloatingCardLayout,
+    ],
   );
 
   useEffect(() => {
-    focusedCardRef.current = focusedItemId
-      ? (cardNodesRef.current.get(focusedItemId) ?? null)
+    domRef.current.focusedCard = focusedFloatingCardId
+      ? (domRef.current.cardNodes.get(focusedFloatingCardId) ?? null)
       : null;
-  }, [focusedItemId, mountedItemIds]);
+    focusedFloatingCardRef.current = domRef.current.focusedCard;
+  }, [focusedFloatingCardId, mountedFloatingCardIds]);
 
   useOnClickOutside(
-    focusedCardRef,
+    focusedFloatingCardRef,
     () => {
-      if (!isDesktopFloatingEnabled || !focusedItemId) {
+      if (!isDesktopFloatingEnabled || !focusedFloatingCardId) {
         return;
       }
 
-      blurFloatingItem(focusedItemId);
+      blurFloatingCard(focusedFloatingCardId);
     },
     'mousedown',
     { capture: true },
   );
+
+  useEffect(() => {
+    if (!isDesktopFloatingEnabled) {
+      anchorRegistryRef.current.clear();
+      floatingCardRuntimeStateRef.current.clear();
+      orderedFloatingCardIdsRef.current = [];
+      anchorRefreshFloatingCardIdsRef.current.clear();
+      mountedFloatingCardIdsRef.current = [];
+      lastEditorRootRef.current = null;
+      lastWrapperNodeRef.current = null;
+      setMountedFloatingCardIds([]);
+      return;
+    }
+
+    const nextOpenFloatingCardIds = new Set(
+      openFloatingCardsRef.current.map(
+        (floatingCard) => floatingCard.floatingCardId,
+      ),
+    );
+    const nextMountedFloatingCardIds = mountedFloatingCardIdsRef.current.filter(
+      (floatingCardId) => nextOpenFloatingCardIds.has(floatingCardId),
+    );
+
+    if (
+      !areFloatingCardIdListsEqual(
+        nextMountedFloatingCardIds,
+        mountedFloatingCardIdsRef.current,
+      )
+    ) {
+      mountedFloatingCardIdsRef.current = nextMountedFloatingCardIds;
+      setMountedFloatingCardIds(nextMountedFloatingCardIds);
+    }
+
+    openFloatingCardsRef.current.forEach((floatingCard) => {
+      anchorRefreshFloatingCardIdsRef.current.add(floatingCard.floatingCardId);
+      markFloatingCardInvalidated(
+        floatingCard.floatingCardId,
+        FloatingLayoutInvalidationFlag.Anchor,
+      );
+    });
+    markRecomputeFromIndex(0);
+    updateFloatingCardLayout();
+  }, [
+    isDesktopFloatingEnabled,
+    markFloatingCardInvalidated,
+    markRecomputeFromIndex,
+    openFloatingCardIdsKey,
+    updateFloatingCardLayout,
+  ]);
+
+  useEffect(() => {
+    if (!isDesktopFloatingEnabled || !openFloatingCardsRef.current.length) {
+      return;
+    }
+
+    openFloatingCardsRef.current.forEach((floatingCard) => {
+      markFloatingCardInvalidated(
+        floatingCard.floatingCardId,
+        FloatingLayoutInvalidationFlag.Visibility,
+      );
+    });
+    markRecomputeFromIndex(0);
+    updateFloatingCardLayout();
+  }, [
+    isDesktopFloatingEnabled,
+    isHidden,
+    markFloatingCardInvalidated,
+    markRecomputeFromIndex,
+    updateFloatingCardLayout,
+  ]);
+
+  useEffect(() => {
+    if (!isDesktopFloatingEnabled) {
+      return;
+    }
+
+    const handleTransaction = ({
+      transaction,
+    }: {
+      transaction: { docChanged?: boolean };
+    }) => {
+      if (transaction.docChanged) {
+        versionRef.current.doc += 1;
+        openFloatingCardsRef.current.forEach((floatingCard) => {
+          anchorRefreshFloatingCardIdsRef.current.add(
+            floatingCard.floatingCardId,
+          );
+        });
+        updateFloatingCardLayout();
+        return;
+      }
+
+      const editorRoot = getEditorRoot(editor);
+      if (!editorRoot) {
+        return;
+      }
+
+      let didInvalidateMountedAnchor = false;
+      mountedFloatingCardIdsRef.current.forEach((floatingCardId) => {
+        const floatingCard = openFloatingCardsRef.current.find(
+          (currentFloatingCard) =>
+            currentFloatingCard.floatingCardId === floatingCardId,
+        );
+        if (!floatingCard) {
+          return;
+        }
+
+        const { anchorId } = getAnchorIdentity(floatingCard);
+        const anchorEntry = anchorRegistryRef.current.get(anchorId);
+        if (!anchorEntry || !isAnchorEntryValid(anchorEntry, editorRoot)) {
+          anchorRefreshFloatingCardIdsRef.current.add(floatingCardId);
+          didInvalidateMountedAnchor = true;
+        }
+      });
+
+      if (didInvalidateMountedAnchor) {
+        updateFloatingCardLayout();
+      }
+    };
+
+    editor.on('transaction', handleTransaction);
+    return () => {
+      editor.off('transaction', handleTransaction);
+    };
+  }, [editor, isDesktopFloatingEnabled, updateFloatingCardLayout]);
 
   useEffect(() => {
     if (!isDesktopFloatingEnabled) {
@@ -1158,21 +1566,23 @@ export const CommentFloatingContainer = ({
 
     const resizeObserver = new ResizeObserver((entries) => {
       entries.forEach((entry) => {
-        const itemId = nodeToItemIdRef.current.get(entry.target);
-        if (itemId) {
-          pendingHeightReadIdsRef.current.add(itemId);
+        const floatingCardId = domRef.current.nodeToFloatingCardId.get(
+          entry.target,
+        );
+        if (floatingCardId) {
+          pendingHeightReadFloatingCardIdsRef.current.add(floatingCardId);
         } else {
-          containerOffsetVersionRef.current += 1;
+          versionRef.current.containerOffset += 1;
         }
       });
 
-      schedulePipeline();
+      updateFloatingCardLayout();
     });
 
     resizeObserverRef.current = resizeObserver;
 
-    if (railHostRef.current) {
-      resizeObserver.observe(railHostRef.current);
+    if (floatingCardListContainerRef.current) {
+      resizeObserver.observe(floatingCardListContainerRef.current);
     }
 
     if (editorWrapperRef.current) {
@@ -1183,22 +1593,7 @@ export const CommentFloatingContainer = ({
       resizeObserver.disconnect();
       resizeObserverRef.current = null;
     };
-  }, [editorWrapperRef, isDesktopFloatingEnabled, schedulePipeline]);
-
-  useEffect(() => {
-    if (!isDesktopFloatingEnabled) {
-      return;
-    }
-
-    pendingRegistryRefreshAllRef.current = true;
-    dirtyStartIndexRef.current = 0;
-
-    runtimeRef.current.forEach((runtimeItem) => {
-      runtimeItem.dirtyFlags |= FloatingLayoutDirtyFlag.Anchor;
-    });
-
-    schedulePipeline();
-  }, [isDesktopFloatingEnabled, openItems, schedulePipeline]);
+  }, [editorWrapperRef, isDesktopFloatingEnabled, updateFloatingCardLayout]);
 
   useEffect(() => {
     if (!isDesktopFloatingEnabled) {
@@ -1212,8 +1607,8 @@ export const CommentFloatingContainer = ({
     }
 
     const onScroll = () => {
-      scrollVersionRef.current += 1;
-      schedulePipeline();
+      versionRef.current.scroll += 1;
+      updateFloatingCardLayout();
     };
 
     scrollContainer.addEventListener('scroll', onScroll, { passive: true });
@@ -1221,87 +1616,26 @@ export const CommentFloatingContainer = ({
     return () => {
       scrollContainer.removeEventListener('scroll', onScroll);
     };
-  }, [isDesktopFloatingEnabled, schedulePipeline, scrollContainerRef]);
+  }, [isDesktopFloatingEnabled, updateFloatingCardLayout, scrollContainerRef]);
 
   useEffect(() => {
-    if (!isDesktopFloatingEnabled) {
-      return;
-    }
-
-    let observer: MutationObserver | null = null;
-    let frameId: number | null = null;
-
-    const handleMutations = (mutations: MutationRecord[]) => {
-      const anchorIds = new Set<string>();
-
-      mutations.forEach((mutation) => {
-        collectRelevantAnchorIdsFromAttributeMutation(mutation, anchorIds);
-        mutation.addedNodes.forEach((node) =>
-          collectRelevantAnchorIds(node, anchorIds),
-        );
-        mutation.removedNodes.forEach((node) =>
-          collectRelevantAnchorIds(node, anchorIds),
-        );
-      });
-
-      if (!anchorIds.size) {
-        return;
-      }
-
-      anchorIds.forEach((anchorId) =>
-        pendingRegistryAnchorIdsRef.current.add(anchorId),
-      );
-      schedulePipeline();
-    };
-
-    const attachObserver = () => {
-      const editorRoot = getEditorRoot(editor);
-
-      if (!editorRoot) {
-        frameId = window.requestAnimationFrame(attachObserver);
-        return;
-      }
-
-      observer = new MutationObserver(handleMutations);
-      observer.observe(editorRoot, {
-        subtree: true,
-        childList: true,
-        attributes: true,
-        attributeOldValue: true,
-        attributeFilter: ['data-comment-id', 'data-draft-comment-id'],
-      });
-
-      pendingRegistryRefreshAllRef.current = true;
-      schedulePipeline();
-    };
-
-    attachObserver();
+    const scheduleState = scheduleRef.current;
 
     return () => {
-      if (frameId !== null) {
-        window.cancelAnimationFrame(frameId);
-      }
-
-      observer?.disconnect();
-    };
-  }, [editor, isDesktopFloatingEnabled, schedulePipeline]);
-
-  useEffect(() => {
-    return () => {
-      if (rafIdRef.current !== null) {
-        window.cancelAnimationFrame(rafIdRef.current);
-        rafIdRef.current = null;
+      if (scheduleState.rafId !== null) {
+        window.cancelAnimationFrame(scheduleState.rafId);
+        scheduleState.rafId = null;
       }
     };
   }, []);
 
-  if (!isDesktopFloatingEnabled || !openItems.length) {
+  if (!isDesktopFloatingEnabled || !openFloatingCards.length) {
     return null;
   }
 
   return (
     <div
-      ref={railHostRef}
+      ref={floatingCardListContainerRef}
       className={cn(
         'comment-floating-rail relative shrink-0',
         isHidden && 'pointer-events-none',
@@ -1312,30 +1646,32 @@ export const CommentFloatingContainer = ({
         minHeight: '100%',
       }}
     >
-      {mountedItemIds.map((itemId) => {
-        const item = openItemMap.get(itemId);
+      {mountedFloatingCardIds.map((floatingCardId) => {
+        const floatingCard = openFloatingCardMap.get(floatingCardId);
 
-        if (!item) {
+        if (!floatingCard) {
           return null;
         }
 
-        if (item.type === 'draft') {
+        if (floatingCard.type === 'draft') {
           return (
             <DraftFloatingCard
-              key={item.itemId}
-              draft={item}
+              key={floatingCard.floatingCardId}
+              draft={floatingCard}
               isHidden={isHidden}
               registerCardNode={registerCardNode}
             />
           );
         }
 
-        const comment = comments.find((entry) => entry.id === item.commentId);
+        const comment = comments.find(
+          (entry) => entry.id === floatingCard.commentId,
+        );
 
         return (
           <ThreadFloatingCard
-            key={item.itemId}
-            thread={item}
+            key={floatingCard.floatingCardId}
+            thread={floatingCard}
             comment={comment}
             tabName={tabName}
             isHidden={isHidden}

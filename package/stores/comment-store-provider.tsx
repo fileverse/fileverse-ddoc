@@ -220,16 +220,17 @@ export const CommentStoreProvider = ({
     store.getState().setIsDesktopFloatingEnabled(isDesktopFloatingEnabled);
   }, [isDesktopFloatingEnabled, store]);
 
+  // Clear floating cards on tab switch to prevent mismatched or outdated cards
   useEffect(() => {
-    store.getState().clearFloatingItems();
+    store.getState().clearFloatingCards();
   }, [activeTabId, store]);
 
   useEffect(() => {
-    store.getState().pruneFloatingItems();
-  }, [editor, initialComments, activeTabId, store]);
+    store.getState().removeInvalidFloatingCards();
+  }, [activeTabId, initialComments, store]);
 
   useEffect(() => {
-    store.getState().syncFloatingThreadWithActiveComment();
+    store.getState().syncFloatingThreadCardWithActiveComment();
   }, [
     activeCommentId,
     activeTabId,
@@ -250,6 +251,8 @@ export const CommentStoreProvider = ({
     let prevCommentActive = false;
     let prevCommentResolved = false;
 
+    // Watch editor selection here so landing on a live anchor opens the matching
+    // floating thread without waiting for a separate UI interaction.
     const updateEditorState = () => {
       const state = store.getState();
       const isMarkActive = editor.isActive('comment');
@@ -292,22 +295,19 @@ export const CommentStoreProvider = ({
       }
     };
 
-    let pruneTimer: ReturnType<typeof setTimeout> | null = null;
     const handleTransaction = ({
       transaction,
     }: {
-      transaction: { selectionSet: boolean };
+      transaction: { docChanged?: boolean; selectionSet: boolean };
     }) => {
-      // Re-check comment activation when selection changes via transaction
-      if (transaction.selectionSet) {
+      if (transaction.selectionSet || transaction.docChanged) {
         updateEditorState();
       }
-
-      if (pruneTimer) return;
-      pruneTimer = setTimeout(() => {
-        pruneTimer = null;
-        store.getState().pruneFloatingItems();
-      }, 200);
+      // Remove floating cards whose anchors are no longer in the document
+      // (e.g. draft range deleted, or comment removed/resolved)
+      if (transaction.docChanged) {
+        store.getState().removeInvalidFloatingCards();
+      }
     };
 
     updateEditorState();
@@ -317,7 +317,6 @@ export const CommentStoreProvider = ({
     return () => {
       editor.off('selectionUpdate', updateEditorState);
       editor.off('transaction', handleTransaction);
-      if (pruneTimer) clearTimeout(pruneTimer);
     };
   }, [editor, store]);
 

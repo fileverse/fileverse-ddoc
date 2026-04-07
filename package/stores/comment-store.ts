@@ -12,8 +12,8 @@ import { createStore, useStore } from 'zustand';
 import { fromUint8Array } from 'js-base64';
 import * as Y from 'yjs';
 import {
-  CommentFloatingDraftItem,
-  CommentFloatingItem,
+  CommentFloatingCard,
+  CommentFloatingDraftCard,
   EnsCache,
   InlineCommentData,
 } from '../components/inline-comment/context/types';
@@ -44,59 +44,66 @@ export interface CommentExternalDeps {
   commentAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
 }
 
-type FloatingItemsUpdater = React.SetStateAction<CommentFloatingItem[]>;
+type FloatingCardsUpdater = React.SetStateAction<CommentFloatingCard[]>;
 type InlineCommentDataUpdater =
   | Partial<InlineCommentData>
   | ((
       prev: InlineCommentData,
     ) => Partial<InlineCommentData> | InlineCommentData);
 
-const setFocusedFloatingItem = (
-  items: CommentFloatingItem[],
-  itemId: string,
-): CommentFloatingItem[] => {
-  return items.map((item) => ({
-    ...item,
-    isOpen: item.itemId === itemId ? true : item.isOpen,
-    isFocused: item.itemId === itemId,
+const setFocusedFloatingCard = (
+  floatingCards: CommentFloatingCard[],
+  floatingCardId: string,
+): CommentFloatingCard[] => {
+  return floatingCards.map((floatingCard) => ({
+    ...floatingCard,
+    isOpen:
+      floatingCard.floatingCardId === floatingCardId
+        ? true
+        : floatingCard.isOpen,
+    isFocused: floatingCard.floatingCardId === floatingCardId,
   }));
 };
 
-const upsertFloatingThread = (
-  items: CommentFloatingItem[],
+const upsertFloatingThreadCard = (
+  floatingCards: CommentFloatingCard[],
   {
     commentId,
     selectedText,
-    preferredItemId,
+    preferredFloatingCardId,
   }: {
     commentId: string;
     selectedText: string;
-    preferredItemId?: string;
+    preferredFloatingCardId?: string;
   },
-): CommentFloatingItem[] => {
-  const existingItem = items.find(
-    (item) => item.type === 'thread' && item.commentId === commentId,
+): CommentFloatingCard[] => {
+  const existingFloatingThreadCard = floatingCards.find(
+    (floatingCard) =>
+      floatingCard.type === 'thread' && floatingCard.commentId === commentId,
   );
 
-  if (existingItem) {
-    return items.map((item) =>
-      item.itemId === existingItem.itemId
+  if (existingFloatingThreadCard) {
+    return floatingCards.map((floatingCard) =>
+      floatingCard.floatingCardId === existingFloatingThreadCard.floatingCardId
         ? {
-            ...item,
+            ...floatingCard,
             selectedText,
             isOpen: true,
             isFocused: true,
           }
-        : { ...item, isFocused: false },
+        : { ...floatingCard, isFocused: false },
     );
   }
 
-  const nextItemId = preferredItemId ?? `thread:${commentId}`;
+  const nextFloatingCardId = preferredFloatingCardId ?? `thread:${commentId}`;
 
   return [
-    ...items.map((item) => ({ ...item, isFocused: false })),
+    ...floatingCards.map((floatingCard) => ({
+      ...floatingCard,
+      isFocused: false,
+    })),
     {
-      itemId: nextItemId,
+      floatingCardId: nextFloatingCardId,
       type: 'thread',
       commentId,
       selectedText,
@@ -106,11 +113,13 @@ const upsertFloatingThread = (
   ];
 };
 
-const resolveFloatingItemsUpdater = (
-  previousItems: CommentFloatingItem[],
-  nextItems: FloatingItemsUpdater,
+const resolveFloatingCardsUpdater = (
+  previousFloatingCards: CommentFloatingCard[],
+  nextFloatingCards: FloatingCardsUpdater,
 ) => {
-  return typeof nextItems === 'function' ? nextItems(previousItems) : nextItems;
+  return typeof nextFloatingCards === 'function'
+    ? nextFloatingCards(previousFloatingCards)
+    : nextFloatingCards;
 };
 
 function getExtDeps(get: () => CommentStoreState): CommentExternalDeps {
@@ -159,7 +168,7 @@ export interface CommentStoreState {
   isCommentOpen: boolean;
   isBubbleMenuSuppressed: boolean;
   inlineCommentData: InlineCommentData;
-  floatingItems: CommentFloatingItem[];
+  floatingCards: CommentFloatingCard[];
   isDesktopFloatingEnabled: boolean;
   ensCache: EnsCache;
   inProgressFetch: string[];
@@ -207,8 +216,8 @@ export interface CommentStoreState {
   setIsCommentOpen: (open: boolean) => void;
   setIsBubbleMenuSuppressed: (suppressed: boolean) => void;
   setInlineCommentData: (data: InlineCommentDataUpdater) => void;
-  setFloatingItems: (items: FloatingItemsUpdater) => void;
-  clearFloatingItems: () => void;
+  setFloatingCards: (floatingCards: FloatingCardsUpdater) => void;
+  clearFloatingCards: () => void;
   setIsDesktopFloatingEnabled: (enabled: boolean) => void;
   toggleResolved: () => void;
 
@@ -232,11 +241,11 @@ export interface CommentStoreState {
   cancelFloatingDraft: (draftId: string) => void;
   submitFloatingDraft: (draftId: string) => void;
   openFloatingThread: (commentId: string) => void;
-  closeFloatingItem: (itemId: string) => void;
-  blurFloatingItem: (itemId: string) => void;
-  focusFloatingItem: (itemId: string) => void;
-  pruneFloatingItems: () => void;
-  syncFloatingThreadWithActiveComment: () => void;
+  closeFloatingCard: (floatingCardId: string) => void;
+  blurFloatingCard: (floatingCardId: string) => void;
+  focusFloatingCard: (floatingCardId: string) => void;
+  removeInvalidFloatingCards: () => void;
+  syncFloatingThreadCardWithActiveComment: () => void;
   submitPendingFloatingDrafts: () => void;
   resolveComment: (commentId: string) => void;
   unresolveComment: (commentId: string) => void;
@@ -300,7 +309,7 @@ export const createCommentStore = () =>
       inlineCommentText: '',
       handleClick: false,
     },
-    floatingItems: [],
+    floatingCards: [],
     isDesktopFloatingEnabled: false,
     ensCache: (() => {
       try {
@@ -436,14 +445,14 @@ export const createCommentStore = () =>
           },
         };
       }),
-    setFloatingItems: (nextItems) =>
+    setFloatingCards: (nextFloatingCards) =>
       set((state) => ({
-        floatingItems: resolveFloatingItemsUpdater(
-          state.floatingItems,
-          nextItems,
+        floatingCards: resolveFloatingCardsUpdater(
+          state.floatingCards,
+          nextFloatingCards,
         ),
       })),
-    clearFloatingItems: () => set({ floatingItems: [] }),
+    clearFloatingCards: () => set({ floatingCards: [] }),
     setIsDesktopFloatingEnabled: (enabled) =>
       set({ isDesktopFloatingEnabled: enabled }),
     toggleResolved: () =>
@@ -493,11 +502,7 @@ export const createCommentStore = () =>
         return;
       }
 
-      get().handleAddReply(
-        targetCommentId,
-        reply,
-        onCommentReply ?? undefined,
-      );
+      get().handleAddReply(targetCommentId, reply, onCommentReply ?? undefined);
       set({ reply: '' });
     },
     handleCommentSubmit: () => {
@@ -599,6 +604,8 @@ export const createCommentStore = () =>
       onNewComment?.(newComment, meta);
       return newComment.id;
     },
+    // Store floatingCards here so the rail can reopen, focus, and submit drafts
+    // without re-deriving floating state from editor DOM on every frame.
     createFloatingDraft: () => {
       const { editor, onInlineComment } = getExtDeps(get);
       const { activeComment, isDesktopFloatingEnabled, isCommentActive } =
@@ -637,15 +644,18 @@ export const createCommentStore = () =>
         return null;
       }
 
-      const itemId = `draft:${draftId}`;
+      const floatingCardId = `draft:${draftId}`;
 
       set((state) => ({
         selectedText: text,
         isBubbleMenuSuppressed: true,
-        floatingItems: [
-          ...state.floatingItems.map((item) => ({ ...item, isFocused: false })),
+        floatingCards: [
+          ...state.floatingCards.map((floatingCard) => ({
+            ...floatingCard,
+            isFocused: false,
+          })),
           {
-            itemId,
+            floatingCardId,
             type: 'draft',
             draftId,
             selectedText: text,
@@ -653,7 +663,7 @@ export const createCommentStore = () =>
             isAuthPending: false,
             isOpen: true,
             isFocused: true,
-          } satisfies CommentFloatingDraftItem,
+          } satisfies CommentFloatingDraftCard,
         ],
       }));
 
@@ -662,32 +672,32 @@ export const createCommentStore = () =>
     },
     updateFloatingDraftText: (draftId, value) => {
       set((state) => ({
-        floatingItems: state.floatingItems.map((item) =>
-          item.type === 'draft' && item.draftId === draftId
+        floatingCards: state.floatingCards.map((floatingCard) =>
+          floatingCard.type === 'draft' && floatingCard.draftId === draftId
             ? {
-                ...item,
+                ...floatingCard,
                 draftText: value,
               }
-            : item,
+            : floatingCard,
         ),
       }));
     },
     cancelFloatingDraft: (draftId) => {
-      const draftItem = get().floatingItems.find(
-        (item): item is CommentFloatingDraftItem =>
-          item.type === 'draft' && item.draftId === draftId,
+      const draftFloatingCard = get().floatingCards.find(
+        (floatingCard): floatingCard is CommentFloatingDraftCard =>
+          floatingCard.type === 'draft' && floatingCard.draftId === draftId,
       );
 
-      if (!draftItem) {
+      if (!draftFloatingCard) {
         return;
       }
 
-      get().closeFloatingItem(draftItem.itemId);
+      get().closeFloatingCard(draftFloatingCard.floatingCardId);
     },
     submitFloatingDraft: (draftId) => {
       const {
         activeTabId,
-        floatingItems,
+        floatingCards,
         isConnected,
         setCommentDrawerOpen,
         username,
@@ -698,16 +708,16 @@ export const createCommentStore = () =>
         onNewComment,
         setActiveCommentId,
       } = getExtDeps(get);
-      const draftItem = floatingItems.find(
-        (item): item is CommentFloatingDraftItem =>
-          item.type === 'draft' && item.draftId === draftId,
+      const draftFloatingCard = floatingCards.find(
+        (floatingCard): floatingCard is CommentFloatingDraftCard =>
+          floatingCard.type === 'draft' && floatingCard.draftId === draftId,
       );
 
-      if (!draftItem) {
+      if (!draftFloatingCard) {
         return;
       }
 
-      const draftText = draftItem.draftText.trim();
+      const draftText = draftFloatingCard.draftText.trim();
 
       if (!draftText) {
         return;
@@ -715,14 +725,14 @@ export const createCommentStore = () =>
 
       if (!isConnected || !username) {
         set((state) => ({
-          floatingItems: state.floatingItems.map((item) =>
-            item.type === 'draft' && item.draftId === draftId
+          floatingCards: state.floatingCards.map((floatingCard) =>
+            floatingCard.type === 'draft' && floatingCard.draftId === draftId
               ? {
-                  ...item,
+                  ...floatingCard,
                   isAuthPending: true,
                   isFocused: true,
                 }
-              : { ...item, isFocused: false },
+              : { ...floatingCard, isFocused: false },
           ),
         }));
         setCommentDrawerOpen?.(true);
@@ -737,7 +747,7 @@ export const createCommentStore = () =>
         id: `comment-${uuid()}`,
         tabId: activeTabId,
         username,
-        selectedContent: draftItem.selectedText,
+        selectedContent: draftFloatingCard.selectedText,
         content: draftText,
         replies: [],
         createdAt: new Date(),
@@ -747,12 +757,12 @@ export const createCommentStore = () =>
       const { commentAnchorsRef } = getExtDeps(get);
       const draftRange = getDraftCommentRange(editor.state, draftId);
 
-      if (draftItem.selectedText && !draftRange) {
+      if (draftFloatingCard.selectedText && !draftRange) {
         set((state) => ({
-          floatingItems: state.floatingItems.map((item) =>
-            item.type === 'draft' && item.draftId === draftId
-              ? { ...item, isAuthPending: false }
-              : item,
+          floatingCards: state.floatingCards.map((floatingCard) =>
+            floatingCard.type === 'draft' && floatingCard.draftId === draftId
+              ? { ...floatingCard, isAuthPending: false }
+              : floatingCard,
           ),
         }));
         return;
@@ -807,43 +817,46 @@ export const createCommentStore = () =>
       onNewComment?.(newComment, meta);
 
       set((state) => {
-        const nextItems = state.floatingItems.filter(
-          (item) =>
+        const nextFloatingCards = state.floatingCards.filter(
+          (floatingCard) =>
             !(
-              item.itemId !== draftItem.itemId &&
-              item.type === 'thread' &&
-              item.commentId === newComment.id
+              floatingCard.floatingCardId !==
+                draftFloatingCard.floatingCardId &&
+              floatingCard.type === 'thread' &&
+              floatingCard.commentId === newComment.id
             ),
         );
-        const replacementThreadItem = {
-          itemId: draftItem.itemId,
+        const replacementThreadCard = {
+          floatingCardId: draftFloatingCard.floatingCardId,
           type: 'thread' as const,
           commentId: newComment.id || '',
-          selectedText: draftItem.selectedText,
+          selectedText: draftFloatingCard.selectedText,
           isOpen: true,
           isFocused: true,
         };
-        const replacementIndex = nextItems.findIndex(
-          (item) => item.itemId === draftItem.itemId,
+        const replacementIndex = nextFloatingCards.findIndex(
+          (floatingCard) =>
+            floatingCard.floatingCardId === draftFloatingCard.floatingCardId,
         );
 
         return {
-          floatingItems:
+          floatingCards:
             replacementIndex >= 0
-              ? nextItems.map((item) =>
-                  item.itemId === draftItem.itemId
-                    ? replacementThreadItem
+              ? nextFloatingCards.map((floatingCard) =>
+                  floatingCard.floatingCardId ===
+                  draftFloatingCard.floatingCardId
+                    ? replacementThreadCard
                     : {
-                        ...item,
+                        ...floatingCard,
                         isFocused: false,
                       },
                 )
               : [
-                  ...nextItems.map((item) => ({
-                    ...item,
+                  ...nextFloatingCards.map((floatingCard) => ({
+                    ...floatingCard,
                     isFocused: false,
                   })),
-                  replacementThreadItem,
+                  replacementThreadCard,
                 ],
         };
       });
@@ -860,7 +873,7 @@ export const createCommentStore = () =>
       }
 
       set((state) => ({
-        floatingItems: upsertFloatingThread(state.floatingItems, {
+        floatingCards: upsertFloatingThreadCard(state.floatingCards, {
           commentId,
           selectedText: commentToOpen.selectedContent || '',
         }),
@@ -868,40 +881,44 @@ export const createCommentStore = () =>
       setActiveCommentId(commentId);
       editor.commands.setCommentActive(commentId);
     },
-    closeFloatingItem: (itemId) => {
+    closeFloatingCard: (floatingCardId) => {
       const { editor, setActiveCommentId } = getExtDeps(get);
-      const { activeCommentId, floatingItems } = get();
-      const itemToClose = floatingItems.find((item) => item.itemId === itemId);
+      const { activeCommentId, floatingCards } = get();
+      const floatingCardToClose = floatingCards.find(
+        (floatingCard) => floatingCard.floatingCardId === floatingCardId,
+      );
 
-      if (!editor || !itemToClose) {
+      if (!editor || !floatingCardToClose) {
         return;
       }
 
-      if (itemToClose.type === 'draft') {
-        editor.commands.unsetDraftComment(itemToClose.draftId);
-      } else if (activeCommentId === itemToClose.commentId) {
+      if (floatingCardToClose.type === 'draft') {
+        editor.commands.unsetDraftComment(floatingCardToClose.draftId);
+      } else if (activeCommentId === floatingCardToClose.commentId) {
         setActiveCommentId(null);
         editor.commands.unsetCommentActive();
       }
 
       set((state) => ({
-        floatingItems: state.floatingItems.filter(
-          (item) => item.itemId !== itemId,
+        floatingCards: state.floatingCards.filter(
+          (floatingCard) => floatingCard.floatingCardId !== floatingCardId,
         ),
       }));
     },
-    blurFloatingItem: (itemId) => {
+    blurFloatingCard: (floatingCardId) => {
       const { editor } = getExtDeps(get);
-      const { activeCommentId, floatingItems } = get();
-      const itemToBlur = floatingItems.find((item) => item.itemId === itemId);
+      const { activeCommentId, floatingCards } = get();
+      const floatingCardToBlur = floatingCards.find(
+        (floatingCard) => floatingCard.floatingCardId === floatingCardId,
+      );
 
-      if (!editor || !itemToBlur) {
+      if (!editor || !floatingCardToBlur) {
         return;
       }
 
       if (
-        itemToBlur.type === 'thread' &&
-        activeCommentId === itemToBlur.commentId
+        floatingCardToBlur.type === 'thread' &&
+        activeCommentId === floatingCardToBlur.commentId
       ) {
         // Use store action directly — NOT the external dep.
         // External dep would queue a React state update that round-trips
@@ -912,71 +929,81 @@ export const createCommentStore = () =>
       }
 
       set((state) => ({
-        floatingItems: state.floatingItems.map((item) => ({
-          ...item,
+        floatingCards: state.floatingCards.map((floatingCard) => ({
+          ...floatingCard,
           isFocused: false,
         })),
       }));
     },
-    focusFloatingItem: (itemId) => {
+    focusFloatingCard: (floatingCardId) => {
       const { editor, setActiveCommentId } = getExtDeps(get);
-      const focusedItem = get().floatingItems.find(
-        (item) => item.itemId === itemId,
+      const focusedFloatingCard = get().floatingCards.find(
+        (floatingCard) => floatingCard.floatingCardId === floatingCardId,
       );
 
-      if (!editor || !focusedItem) {
+      if (!editor || !focusedFloatingCard) {
         return;
       }
 
       set((state) => ({
-        floatingItems: setFocusedFloatingItem(state.floatingItems, itemId),
+        floatingCards: setFocusedFloatingCard(
+          state.floatingCards,
+          floatingCardId,
+        ),
       }));
 
-      if (focusedItem.type === 'thread') {
-        setActiveCommentId(focusedItem.commentId);
-        editor.commands.setCommentActive(focusedItem.commentId);
+      if (focusedFloatingCard.type === 'thread') {
+        setActiveCommentId(focusedFloatingCard.commentId);
+        editor.commands.setCommentActive(focusedFloatingCard.commentId);
         return;
       }
 
       setActiveCommentId(null);
       editor.commands.unsetCommentActive();
     },
-    pruneFloatingItems: () => {
+    removeInvalidFloatingCards: () => {
       const { editor, setActiveCommentId } = getExtDeps(get);
-      const { activeCommentId, floatingItems, tabComments } = get();
+      const { activeCommentId, floatingCards, tabComments } = get();
 
-      if (!editor || !floatingItems.length) {
+      if (!editor || !floatingCards.length) {
         return;
       }
 
-      const nextItems = floatingItems.filter((item) => {
-        if (item.type === 'draft') {
-          return Boolean(getDraftCommentRange(editor.state, item.draftId));
+      const nextFloatingCards = floatingCards.filter((floatingCard) => {
+        if (floatingCard.type === 'draft') {
+          return Boolean(
+            getDraftCommentRange(editor.state, floatingCard.draftId),
+          );
         }
 
         const comment = tabComments.find(
-          (entry) => entry.id === item.commentId,
+          (entry) => entry.id === floatingCard.commentId,
         );
         return Boolean(comment && !comment.deleted && !comment.resolved);
       });
 
-      if (nextItems.length !== floatingItems.length) {
-        const removedActiveThread = floatingItems.find(
-          (item) =>
-            item.type === 'thread' &&
-            item.commentId === activeCommentId &&
-            !nextItems.some((nextItem) => nextItem.itemId === item.itemId),
+      if (nextFloatingCards.length !== floatingCards.length) {
+        const removedActiveThreadCard = floatingCards.find(
+          (floatingCard) =>
+            floatingCard.type === 'thread' &&
+            floatingCard.commentId === activeCommentId &&
+            !nextFloatingCards.some(
+              (nextFloatingCard) =>
+                nextFloatingCard.floatingCardId === floatingCard.floatingCardId,
+            ),
         );
 
-        if (removedActiveThread) {
+        if (removedActiveThreadCard) {
           setActiveCommentId(null);
           editor.commands.unsetCommentActive();
         }
 
-        set({ floatingItems: nextItems });
+        set({ floatingCards: nextFloatingCards });
       }
     },
-    syncFloatingThreadWithActiveComment: () => {
+    // Mirror activeCommentId into floatingCards so selection changes reopen
+    // the matching desktop thread without scanning every open card.
+    syncFloatingThreadCardWithActiveComment: () => {
       const { activeCommentId, isDesktopFloatingEnabled, tabComments } = get();
 
       if (!isDesktopFloatingEnabled || !activeCommentId) {
@@ -995,34 +1022,38 @@ export const createCommentStore = () =>
       }
 
       set((state) => ({
-        floatingItems: upsertFloatingThread(state.floatingItems, {
+        floatingCards: upsertFloatingThreadCard(state.floatingCards, {
           commentId: activeCommentId,
           selectedText: activeThread.selectedContent || '',
         }),
       }));
     },
     submitPendingFloatingDrafts: () => {
-      const { floatingItems, isConnected, isDesktopFloatingEnabled, username } =
+      const { floatingCards, isConnected, isDesktopFloatingEnabled, username } =
         get();
 
       if (!isDesktopFloatingEnabled || !isConnected || !username) {
         return;
       }
 
-      floatingItems
+      floatingCards
         .filter(
-          (item): item is CommentFloatingDraftItem =>
-            item.type === 'draft' &&
-            item.isAuthPending &&
-            Boolean(item.draftText.trim()),
+          (floatingCard): floatingCard is CommentFloatingDraftCard =>
+            floatingCard.type === 'draft' &&
+            floatingCard.isAuthPending &&
+            Boolean(floatingCard.draftText.trim()),
         )
-        .forEach((draftItem) => {
-          get().submitFloatingDraft(draftItem.draftId);
+        .forEach((draftFloatingCard) => {
+          get().submitFloatingDraft(draftFloatingCard.draftId);
         });
     },
     resolveComment: (commentId) => {
-      const { editor, onResolveComment, setActiveCommentId, commentAnchorsRef } =
-        getExtDeps(get);
+      const {
+        editor,
+        onResolveComment,
+        setActiveCommentId,
+        commentAnchorsRef,
+      } = getExtDeps(get);
 
       if (!editor) return;
 
@@ -1044,8 +1075,12 @@ export const createCommentStore = () =>
       }
 
       set((state) => ({
-        floatingItems: state.floatingItems.filter(
-          (item) => !(item.type === 'thread' && item.commentId === commentId),
+        floatingCards: state.floatingCards.filter(
+          (floatingCard) =>
+            !(
+              floatingCard.type === 'thread' &&
+              floatingCard.commentId === commentId
+            ),
         ),
       }));
 
@@ -1054,8 +1089,7 @@ export const createCommentStore = () =>
       }
     },
     unresolveComment: (commentId) => {
-      const { editor, onUnresolveComment, commentAnchorsRef } =
-        getExtDeps(get);
+      const { editor, onUnresolveComment, commentAnchorsRef } = getExtDeps(get);
 
       if (!editor) return;
 
@@ -1100,8 +1134,12 @@ export const createCommentStore = () =>
       }
 
       set((state) => ({
-        floatingItems: state.floatingItems.filter(
-          (item) => !(item.type === 'thread' && item.commentId === commentId),
+        floatingCards: state.floatingCards.filter(
+          (floatingCard) =>
+            !(
+              floatingCard.type === 'thread' &&
+              floatingCard.commentId === commentId
+            ),
         ),
       }));
 

@@ -4,28 +4,28 @@ import type { CommentStoreState } from '../../../stores/comment-store';
 import type { CommentStoreProviderProps } from '../../../stores/comment-store-provider';
 import type { CommentAccountProps } from '../../../types';
 
-export interface CommentFloatingBaseItem {
-  itemId: string;
+export interface CommentFloatingBaseCard {
+  floatingCardId: string;
   selectedText: string;
   isOpen: boolean;
   isFocused: boolean;
 }
 
-export interface CommentFloatingDraftItem extends CommentFloatingBaseItem {
+export interface CommentFloatingDraftCard extends CommentFloatingBaseCard {
   type: 'draft';
   draftId: string;
   draftText: string;
   isAuthPending: boolean;
 }
 
-export interface CommentFloatingThreadItem extends CommentFloatingBaseItem {
+export interface CommentFloatingThreadCard extends CommentFloatingBaseCard {
   type: 'thread';
   commentId: string;
 }
 
-export type CommentFloatingItem =
-  | CommentFloatingDraftItem
-  | CommentFloatingThreadItem;
+export type CommentFloatingCard =
+  | CommentFloatingDraftCard
+  | CommentFloatingThreadCard;
 
 export interface InlineCommentData {
   highlightedTextContent?: string;
@@ -49,9 +49,9 @@ export type CommentContextType = Pick<
   | 'activeComments'
   | 'activeTabId'
   | 'addComment'
-  | 'blurFloatingItem'
+  | 'blurFloatingCard'
   | 'cancelFloatingDraft'
-  | 'closeFloatingItem'
+  | 'closeFloatingCard'
   | 'comment'
   | 'connectViaUsername'
   | 'connectViaWallet'
@@ -59,9 +59,9 @@ export type CommentContextType = Pick<
   | 'deleteComment'
   | 'deleteReply'
   | 'ensCache'
-  | 'floatingItems'
+  | 'floatingCards'
   | 'focusCommentInEditor'
-  | 'focusFloatingItem'
+  | 'focusFloatingCard'
   | 'getEnsStatus'
   | 'handleAddReply'
   | 'handleCommentChange'
