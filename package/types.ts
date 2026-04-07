@@ -45,7 +45,17 @@ export type CommentMutationType = 'create' | 'resolve' | 'unresolve' | 'delete';
 
 export interface CommentMutationMeta {
   type: CommentMutationType;
-  updateChunk: string;
+  updateChunk?: string;
+  anchorFrom?: string;
+  anchorTo?: string;
+}
+
+export interface SerializedCommentAnchor {
+  id: string;
+  anchorFrom: string;
+  anchorTo: string;
+  resolved: boolean;
+  deleted: boolean;
 }
 
 export interface CommentAccountProps {
@@ -136,6 +146,7 @@ export interface DdocProps extends CommentAccountProps {
   commentDrawerOpen?: boolean;
   setCommentDrawerOpen?: React.Dispatch<SetStateAction<boolean>>;
   initialComments?: IComment[];
+  initialCommentAnchors?: SerializedCommentAnchor[];
   setInitialComments?: React.Dispatch<SetStateAction<IComment[]>>;
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
   onNewComment?: (newComment: IComment, meta?: CommentMutationMeta) => void;

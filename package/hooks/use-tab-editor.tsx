@@ -26,6 +26,10 @@ import { zoomService } from '../zoom-service';
 import { sanitizeContent } from '../utils/sanitize-content';
 import { CommentExtension as Comment } from '../extensions/comment';
 import {
+  CommentAnchor,
+  CommentDecorationExtension,
+} from '../extensions/comment/comment-decoration-plugin';
+import {
   createPageCounter,
   handleContentPrint,
   handlePrint,
@@ -185,7 +189,7 @@ export const useTabEditor = ({
   const hasAvailableModels = Boolean(activeModel && isAIAgentEnabled);
   const { tocItems, setTocItems, handleTocUpdate } = useTocState(activeTabId);
 
-  const { extensions } = useEditorExtension({
+  const { extensions, commentAnchorsRef } = useEditorExtension({
     ydoc,
     onError,
     ipfsImageUploadFn,
@@ -851,6 +855,7 @@ export const useTabEditor = ({
     setActiveCommentId,
     focusCommentWithActiveId,
     isContentLoading,
+    commentAnchorsRef,
   };
 };
 
@@ -1004,6 +1009,8 @@ const useEditorExtension = ({
     [isConnected, enableCollaboration, disableInlineComment],
   );
 
+  const commentAnchorsRef = useRef<CommentAnchor[]>([]);
+
   const commentExtension = useMemo(
     () =>
       Comment.configure({
@@ -1033,6 +1040,9 @@ const useEditorExtension = ({
       Collaboration.configure({
         document: ydoc,
         field: activeTabId,
+      }),
+      CommentDecorationExtension.configure({
+        getAnchors: () => commentAnchorsRef.current,
       }),
       ...(externalExtensions ? Object.values(externalExtensions) : []),
     ];
@@ -1096,7 +1106,7 @@ const useEditorExtension = ({
     ]);
   }, [activeModel, maxTokens, isAIAgentEnabled, createSlashCommand]);
 
-  return { extensions, setExtensions };
+  return { extensions, setExtensions, commentAnchorsRef };
 };
 
 interface UseCommentInteractionArgs {

@@ -1228,6 +1228,14 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   @apply bg-transparent;
 }
 
+.inline-comment--draft {
+  @apply bg-[#e5fbe7] cursor-pointer transition-all;
+
+  .dark & {
+    background-color: #15521d;
+  }
+}
+
 .highlight-comment-bg {
   background-color: #e5fbe7;
 
