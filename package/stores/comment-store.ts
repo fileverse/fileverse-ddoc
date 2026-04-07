@@ -891,7 +891,7 @@ export const createCommentStore = () =>
       }));
     },
     blurFloatingItem: (itemId) => {
-      const { editor, setActiveCommentId } = getExtDeps(get);
+      const { editor } = getExtDeps(get);
       const { activeCommentId, floatingItems } = get();
       const itemToBlur = floatingItems.find((item) => item.itemId === itemId);
 
@@ -903,7 +903,11 @@ export const createCommentStore = () =>
         itemToBlur.type === 'thread' &&
         activeCommentId === itemToBlur.commentId
       ) {
-        setActiveCommentId(null);
+        // Use store action directly — NOT the external dep.
+        // External dep would queue a React state update that round-trips
+        // back via useEffect, overwriting whatever updateEditorState sets
+        // when the user clicks on a different comment.
+        get().setActiveCommentId(null);
         editor.commands.unsetCommentActive();
       }
 
