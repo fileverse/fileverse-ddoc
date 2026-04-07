@@ -402,11 +402,7 @@ div[data-type='page-break']:hover .remove-page-break-icon {
 }
 
 .vertical-divider {
-  background-color: #e8ebec;
-}
-
-.dark .vertical-divider {
-  background-color: #404040;
+  background-color: hsl(var(--color-border-default));
 }
 
 @keyframes aiwriter-scale-in {
