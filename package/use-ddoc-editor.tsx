@@ -72,6 +72,7 @@ export const useDdocEditor = ({
       !isVersionMode &&
         !isPreviewMode &&
         rest.isDDocOwner &&
+        !collabEnabled &&
         // Wait for y-indexedDB sync before deciding whether an unsaved local doc
         // still needs a default tab, otherwise refresh keeps bootstrapping one.
         (!shouldWaitForIndexeddbBeforeCreatingDefaultTab ||
