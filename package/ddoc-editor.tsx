@@ -727,6 +727,7 @@ const DdocEditor = forwardRef(
                     className={cn(
                       'editor-main-lane flex-grow min-w-0 flex overflow-visible items-stretch',
                       shouldScroll ? 'justify-start' : 'justify-center',
+                      isMobile && 'w-full',
                     )}
                     style={{
                       minHeight: isFocusMode
@@ -734,7 +735,12 @@ const DdocEditor = forwardRef(
                         : `calc(100vh - 108px - ${footerHeight || '0px'})`,
                     }}
                   >
-                    <div className="editor-comment-layout relative shrink-0 overflow-visible">
+                    <div
+                      className={cn(
+                        'editor-comment-layout relative shrink-0 overflow-visible',
+                        isMobile && 'w-full',
+                      )}
+                    >
                       <div
                         id="editor-wrapper"
                         ref={editorWrapperRef}
@@ -1056,7 +1062,9 @@ const DdocEditor = forwardRef(
                 isNavbarVisible={isNavbarVisible}
                 isPresentationMode={isPresentationMode as boolean}
                 activeCommentId={activeCommentId}
+                activeTabId={activeTabId}
                 isPreviewMode={isPreviewMode}
+                tabs={tabs}
               />
             )}
 

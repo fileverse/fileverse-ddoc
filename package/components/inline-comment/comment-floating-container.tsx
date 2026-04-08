@@ -88,7 +88,7 @@ const FloatingCardShell = React.forwardRef<
       ref={ref}
       data-floating-comment-card={floatingCardId}
       className={cn(
-        'absolute left-0 top-0 w-[300px] rounded-[12px] border will-change-transform transition-[box-shadow,border-color] duration-150 ease-out',
+        'absolute left-0 top-0 w-[300px] pb-[12px] rounded-[12px] border will-change-transform transition-[box-shadow,border-color] duration-150 ease-out',
         isFocused
           ? 'shadow-elevation-3 color-bg-default color-border-default'
           : 'color-bg-secondary ',

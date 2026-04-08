@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
-import { Button, LucideIcon, cn } from '@fileverse/ui';
+import { cn } from '@fileverse/ui';
 import { CommentCard } from './comment-card';
 import { useCommentStore } from '../../stores/comment-store';
 import { useCommentRefs } from '../../stores/comment-store-provider';
@@ -11,19 +11,23 @@ import { EmptyComments } from './empty-comments';
 import { CommentReplyInput } from './comment-reply-input';
 import { CommentComposeInput } from './comment-compose-input';
 import { DeleteConfirmOverlay } from './delete-confirm-overlay';
+import { IComment } from '../../extensions/comment';
 
 export const CommentSection = ({
   activeCommentId,
   isNavbarVisible,
   isPresentationMode,
+  isMobile,
+  comments: commentsProp,
+  sectionLabel = 'Comments',
+  onCommentFocus,
 }: CommentSectionProps) => {
-  const comments = useCommentStore((s) => s.tabComments);
+  const tabComments = useCommentStore((s) => s.tabComments);
   const username = useCommentStore((s) => s.username);
   const setUsername = useCommentStore((s) => s.setUsername);
   const focusCommentInEditor = useCommentStore((s) => s.focusCommentInEditor);
   const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
   const openReplyId = useCommentStore((s) => s.openReplyId);
-  const showResolved = useCommentStore((s) => s.showResolved);
   const resolveComment = useCommentStore((s) => s.resolveComment);
   const unresolveComment = useCommentStore((s) => s.unresolveComment);
   const deleteComment = useCommentStore((s) => s.deleteComment);
@@ -34,18 +38,25 @@ export const CommentSection = ({
   const isDDocOwner = useCommentStore((s) => s.isDDocOwner);
   const { commentsSectionRef, replySectionRef } = useCommentRefs();
 
-  const _filteredComments = comments.filter((comment) => !comment.deleted);
-
-  const filteredComments = _filteredComments
-    .filter((comment) => (showResolved ? true : !comment.resolved))
+  const filteredComments = (commentsProp ?? tabComments)
+    .filter((comment) => !comment.deleted)
     .sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
 
-  const handleCommentClick = (commentId: string) => {
-    focusCommentInEditor(commentId);
-    if (openReplyId && openReplyId !== commentId) {
+  const handleCommentClick = (comment: IComment) => {
+    if (!comment.id) {
+      return;
+    }
+
+    if (onCommentFocus) {
+      onCommentFocus(comment.id, comment.tabId);
+    } else {
+      focusCommentInEditor(comment.id);
+    }
+
+    if (openReplyId && openReplyId !== comment.id) {
       setOpenReplyId(null);
     }
   };
@@ -86,7 +97,8 @@ export const CommentSection = ({
     <div
       data-testid="comment-section"
       className={cn(
-        'flex flex-col h-[100dvh] sm:h-[calc(100vh-40px)] xl:h-[calc(100vh-210px)] !color-bg-default !rounded-b-lg',
+        !isMobile &&
+          'flex flex-col h-[100dvh] sm:h-[calc(100vh-40px)] xl:h-[calc(100vh-310px)] !color-bg-default !rounded-b-lg',
         'pb-[3rem] sm:pb-0',
         !isNavbarVisible && 'xl:!h-[calc(100vh-150px)]',
         isPresentationMode && 'xl:!h-[86vh]',
@@ -99,6 +111,9 @@ export const CommentSection = ({
           ref={commentsSectionRef}
           className="flex flex-col overflow-y-auto flex-1"
         >
+          <p className="text-body-sm-bold color-text-secondary">
+            {sectionLabel} ({filteredComments.length})
+          </p>
           {filteredComments.map((comment) => (
             <SidebarCommentItem
               key={comment.id}
@@ -133,15 +148,14 @@ const SidebarCommentItem = ({
   onResolve,
   onUnresolve,
   onDelete,
-  onSetOpenReplyId,
 }: {
-  comment: any;
+  comment: IComment;
   activeCommentId: string | null;
   username: string | null;
   isDDocOwner: boolean;
   openReplyId: string | null;
   replySectionRef: React.RefObject<HTMLDivElement>;
-  onCommentClick: (id: string) => void;
+  onCommentClick: (comment: IComment) => void;
   onResolve: (id: string) => void;
   onUnresolve: (id: string) => void;
   onDelete: (id: string) => void;
@@ -153,11 +167,11 @@ const SidebarCommentItem = ({
     <div
       data-comment-id={comment.id}
       className={cn(
-        'relative flex flex-col w-full box-border transition-all border-b color-border-default hover:color-bg-default-hover last:border-b-0 py-3',
+        'relative flex flex-col w-full mt-[8px] box-border transition-all color-border-default hover:color-bg-default-hover last:border-b-0 rounded-[12px]',
         comment.id === activeCommentId && 'color-bg-default-selected',
         comment.replies?.length > 0 && 'gap-0',
       )}
-      onClick={() => onCommentClick(comment.id as string)}
+      onClick={() => onCommentClick(comment)}
     >
       <CommentCard
         id={comment.id}
@@ -167,6 +181,7 @@ const SidebarCommentItem = ({
         createdAt={comment.createdAt}
         comment={comment.content}
         replies={comment.replies}
+        isCommentDrawerContext={true}
         onResolve={onResolve}
         onUnresolve={onUnresolve}
         onRequestDelete={() => setIsDeleteOverlayVisible(true)}
@@ -181,35 +196,10 @@ const SidebarCommentItem = ({
 
       <div
         ref={replySectionRef}
-        className={cn(
-          'pr-6 pl-8 flex flex-col gap-2',
-          openReplyId === comment.id && 'ml-5 pl-4',
-          comment.resolved && 'hidden',
-        )}
+        className={cn('flex flex-col gap-2', comment.resolved && 'hidden')}
         onClick={(e) => e.stopPropagation()}
       >
-        {openReplyId !== comment.id ? (
-          <Button
-            onClick={(e) => {
-              e.stopPropagation();
-              onSetOpenReplyId(comment.id as string);
-            }}
-            className={cn(
-              'w-full flex items-center justify-start gap-2 mt-3 hover:!bg-transparent pl-6',
-              comment.replies?.length === 0 && 'hidden',
-            )}
-            variant="ghost"
-          >
-            <LucideIcon
-              name="MessageSquarePlus"
-              className="color-text-secondary"
-              size="sm"
-            />
-            <span className="text-xs font-medium">
-              Reply to this thread
-            </span>
-          </Button>
-        ) : (
+        {openReplyId === comment.id && (
           <CommentReplyInput
             commentId={comment.id as string}
             commentUsername={comment.username}

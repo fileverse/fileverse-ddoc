@@ -1,6 +1,5 @@
 import {
   Avatar,
-  ButtonGroup,
   cn,
   DynamicDropdown,
   IconButton,
@@ -111,7 +110,7 @@ const CommentReply = ({
   return (
     <div
       className={cn(
-        'flex group relative flex-col gap-2 p-[4px] last:pb-0',
+        'flex group relative flex-col gap-2 p-[4px]',
         isDeleteOverlayVisible && 'min-h-[100px]',
       )}
     >
@@ -196,6 +195,7 @@ export const CommentCard = ({
   isCommentOwner,
   version,
   emptyComment,
+  isCommentDrawerContext,
 }: CommentCardProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [showAllReplies, setShowAllReplies] = useState(false);
@@ -354,13 +354,19 @@ export const CommentCard = ({
       ref={commentsContainerRef}
       data-testid={id ? `comment-card-${id}` : 'comment-card'}
       className={cn(
-        'flex flex-col gap-[4px] px-3 group comment-card',
+        'flex flex-col gap-[4px] group comment-card',
         isResolved && 'opacity-70',
-        !isDropdown && '!px-6',
-        isDropdown && 'py-3 pt-0',
+        isCommentDrawerContext ? 'p-3 pb-0  mb-[4px]' : 'px-3',
       )}
     >
-      <div className="flex flex-col gap-[8px] p-[4px]">
+      <div
+        onClick={() => {
+          if (!isDisabled) {
+            setOpenReplyId(id as string);
+          }
+        }}
+        className="flex flex-col gap-[8px] p-[4px]"
+      >
         <div className="flex justify-between items-center">
           <UserDisplay username={username as string} createdAt={createdAt} />
           {version === '2' ? (
@@ -369,92 +375,73 @@ export const CommentCard = ({
               sideOffset={0}
               position="top"
             >
-              <ButtonGroup className="!space-x-0">
-                {!isDropdown && replies && replies.length === 0 && (
-                  <Tooltip
-                    text={!isDisabled ? 'Add reply' : ''}
-                    sideOffset={0}
-                    position="bottom"
-                  >
+              <div className="flex opacity-0 group-hover:opacity-100 gap-[4px]">
+                {isCommentOwner && !isResolved && (
+                  <Tooltip text="Mark as resolved" position="bottom">
                     <IconButton
                       variant={'ghost'}
-                      icon="MessageSquarePlus"
+                      icon="Check"
                       size="sm"
-                      disabled={isDisabled}
-                      className="opacity-0 group-hover:opacity-100  transition-opacity duration-300 disabled:bg-transparent"
-                      onClick={() => setOpenReplyId(id as string)}
+                      className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
+                      onClick={handleResolveClick}
                     />
                   </Tooltip>
                 )}
 
-                <div className="flex opacity-0 group-hover:opacity-100 gap-[4px]">
-                  {isCommentOwner && !isResolved && (
-                    <Tooltip text="Mark as resolved" position="bottom">
+                {isCommentOwner && (
+                  <DynamicDropdown
+                    key={`thread-actions-${id}`}
+                    align="end"
+                    sideOffset={4}
+                    anchorTrigger={
                       <IconButton
-                        variant={'ghost'}
-                        icon="Check"
+                        icon="EllipsisVertical"
+                        variant="ghost"
                         size="sm"
                         className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
-                        onClick={handleResolveClick}
                       />
-                    </Tooltip>
-                  )}
-
-                  {isCommentOwner && (
-                    <DynamicDropdown
-                      key={`thread-actions-${id}`}
-                      align="end"
-                      sideOffset={4}
-                      anchorTrigger={
-                        <IconButton
-                          icon="EllipsisVertical"
-                          variant="ghost"
-                          size="sm"
-                          className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
-                        />
-                      }
-                      content={
-                        <div
-                          ref={dropdownRef}
-                          className="flex flex-col p-2 w-40 shadow-elevation-3"
-                        >
-                          {isResolved ? (
-                            <button
-                              className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
-                              onClick={handleUnresolveClick}
-                            >
-                              <LucideIcon name="RotateCcw" size="sm" />
-                              <p className="text-body-sm color-text-default">
-                                Unresolve
-                              </p>
-                            </button>
-                          ) : (
-                            <button className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full">
-                              <LucideIcon name="Pencil" size="sm" />
-                              <p className="text-body-sm color-text-default">
-                                Edit
-                              </p>
-                            </button>
-                          )}
+                    }
+                    content={
+                      <div
+                        ref={dropdownRef}
+                        className="flex flex-col p-2 w-40 shadow-elevation-3"
+                      >
+                        {isResolved ? (
                           <button
-                            className="flex items-center h-[32px] color-text-danger text-sm font-medium gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
-                            onClick={handleRequestDeleteClick}
+                            className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
+                            onClick={handleUnresolveClick}
                           >
-                            <LucideIcon
-                              name="Trash2"
-                              size="sm"
-                              stroke="#FB3449"
-                            />
-                            <p className="text-body-sm color-text-danger">
-                              Delete
+                            <LucideIcon name="RotateCcw" size="sm" />
+                            <p className="text-body-sm color-text-default">
+                              Unresolve
                             </p>
                           </button>
-                        </div>
-                      }
-                    />
-                  )}
-                </div>
-              </ButtonGroup>
+                        ) : (
+                          <button className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full">
+                            <LucideIcon name="Pencil" size="sm" />
+                            <p className="text-body-sm color-text-default">
+                              Edit
+                            </p>
+                          </button>
+                        )}
+                        <button
+                          className="flex items-center h-[32px] color-text-danger text-sm font-medium gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
+                          onClick={handleRequestDeleteClick}
+                        >
+                          <LucideIcon
+                            name="Trash2"
+                            size="sm"
+                            stroke="#FB3449"
+                          />
+                          <p className="text-body-sm color-text-danger">
+                            Delete
+                          </p>
+                        </button>
+                      </div>
+                    }
+                  />
+                )}
+              </div>
             </Tooltip>
           ) : (
             <Tooltip text="Actions are not supported for old comments">
