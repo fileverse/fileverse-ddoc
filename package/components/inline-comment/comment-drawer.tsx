@@ -43,7 +43,7 @@ export const CommentDrawer = ({
   });
 
   const commentTypeOptions = [
-    { id: 'all', label: 'All' },
+    { id: 'all', label: 'All types' },
     { id: 'active', label: 'Active' },
     { id: 'resolved', label: 'Resolved' },
   ];
@@ -53,17 +53,23 @@ export const CommentDrawer = ({
       ? tabs
       : [{ id: DEFAULT_TAB_ID, name: DEFAULT_TAB_NAME, emoji: null }];
   const tabList = [
-    { id: ALL_TABS_OPTION_ID, label: 'All' },
+    { id: ALL_TABS_OPTION_ID, label: 'All tabs' },
     ...resolvedTabs.map((tabOption) => ({
       id: tabOption.id,
       label: tabOption.name,
     })),
   ];
+  const tabNameById = Object.fromEntries(
+    resolvedTabs.map((tabOption) => [tabOption.id, tabOption.name]),
+  );
   const [commentType, setCommentType] = useState('active');
   const [tab, setTab] = useState(activeTabId);
+  const selectedTabLabel =
+    tabList.find((tabOption) => tabOption.id === tab)?.label ??
+    DEFAULT_TAB_NAME;
 
   const filteredComments = comments.filter((comment) => {
-    const commentTabId = comment.tabId ?? DEFAULT_TAB_ID;
+    const commentTabId = comment.tabId || DEFAULT_TAB_ID;
     const matchesTab = tab === ALL_TABS_OPTION_ID || commentTabId === tab;
 
     if (!matchesTab || comment.deleted) {
@@ -93,7 +99,7 @@ export const CommentDrawer = ({
   };
 
   const handleCommentFocus = (commentId: string, commentTabId?: string) => {
-    const targetTabId = commentTabId ?? DEFAULT_TAB_ID;
+    const targetTabId = commentTabId || DEFAULT_TAB_ID;
 
     if (targetTabId !== activeTabId) {
       return;
@@ -226,7 +232,10 @@ export const CommentDrawer = ({
                 isNavbarVisible={isNavbarVisible}
                 isPresentationMode={isPresentationMode}
                 comments={filteredComments}
+                commentType={commentType as 'all' | 'active' | 'resolved'}
                 sectionLabel={sectionLabel}
+                tabNameById={tabNameById}
+                selectedTabLabel={selectedTabLabel}
                 onCommentFocus={handleCommentFocus}
               />
             </div>

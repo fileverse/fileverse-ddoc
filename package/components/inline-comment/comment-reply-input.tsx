@@ -1,8 +1,7 @@
 import { Avatar, TextAreaFieldV2, Button } from '@fileverse/ui';
 import { useCommentStore } from '../../stores/comment-store';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { EnsStatus } from './types';
-import { useResponsive } from '../../utils/responsive';
 
 interface CommentReplyInputProps {
   commentId: string;
@@ -24,7 +23,7 @@ export const CommentReplyInput = ({
   const username = useCommentStore((s) => s.username);
   const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
   const ensCache = useCommentStore((s) => s.ensCache);
-  const { isNativeMobile } = useResponsive();
+  const replyInputContainerRef = useRef<HTMLDivElement | null>(null);
 
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
     name: username as string,
@@ -35,8 +34,22 @@ export const CommentReplyInput = ({
     getEnsStatus(username as string, setEnsStatus);
   }, [username, ensCache]);
 
+  useEffect(() => {
+    const frameId = window.requestAnimationFrame(() => {
+      const focusTarget = replyInputContainerRef.current?.querySelector<
+        HTMLTextAreaElement | HTMLInputElement
+      >('textarea, input');
+
+      focusTarget?.focus({ preventScroll: true });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+    };
+  }, [commentId]);
+
   return (
-    <div className="group p-3 pt-0">
+    <div ref={replyInputContainerRef} className="group p-3 mt-[8px] pt-0">
       <div className="border flex px-[12px] color-bg-default py-[8px] gap-[8px] rounded-[4px]">
         <Avatar
           src={`https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
@@ -59,7 +72,7 @@ export const CommentReplyInput = ({
           id={commentId}
           onChange={handleReplyChange}
           onKeyDown={handleReplyKeyDown}
-          autoFocus={isNativeMobile}
+          autoFocus
         />
       </div>
       <div className="hidden items-center justify-end gap-2 pt-2 group-focus-within:flex">

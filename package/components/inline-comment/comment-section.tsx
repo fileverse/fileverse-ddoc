@@ -12,6 +12,7 @@ import { CommentReplyInput } from './comment-reply-input';
 import { CommentComposeInput } from './comment-compose-input';
 import { DeleteConfirmOverlay } from './delete-confirm-overlay';
 import { IComment } from '../../extensions/comment';
+import { DEFAULT_TAB_ID, DEFAULT_TAB_NAME } from '../tabs/utils/tab-utils';
 
 export const CommentSection = ({
   activeCommentId,
@@ -19,7 +20,9 @@ export const CommentSection = ({
   isPresentationMode,
   isMobile,
   comments: commentsProp,
-  sectionLabel = 'Comments',
+  commentType = 'active',
+  tabNameById,
+  selectedTabLabel,
   onCommentFocus,
 }: CommentSectionProps) => {
   const tabComments = useCommentStore((s) => s.tabComments);
@@ -44,6 +47,50 @@ export const CommentSection = ({
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
     );
+  const activeComments = filteredComments.filter(
+    (comment) => !comment.resolved,
+  );
+  const resolvedComments = filteredComments.filter(
+    (comment) => comment.resolved,
+  );
+
+  const getCommentTabName = (comment: IComment) =>
+    tabNameById?.[comment.tabId || DEFAULT_TAB_ID] ??
+    selectedTabLabel ??
+    DEFAULT_TAB_NAME;
+
+  const renderCommentList = (comments: IComment[], label?: string) => {
+    if (comments.length === 0) {
+      return null;
+    }
+
+    return (
+      <>
+        {label && (
+          <p className="text-body-sm-bold color-text-secondary">
+            {label} ({comments.length})
+          </p>
+        )}
+        {comments.map((comment) => (
+          <SidebarCommentItem
+            key={comment.id}
+            comment={comment}
+            tabName={getCommentTabName(comment)}
+            activeCommentId={activeCommentId}
+            username={username}
+            isDDocOwner={isDDocOwner}
+            openReplyId={openReplyId}
+            replySectionRef={replySectionRef}
+            onCommentClick={handleCommentClick}
+            onResolve={resolveComment}
+            onUnresolve={unresolveComment}
+            onDelete={deleteComment}
+            onSetOpenReplyId={setOpenReplyId}
+          />
+        ))}
+      </>
+    );
+  };
 
   const handleCommentClick = (comment: IComment) => {
     if (!comment.id) {
@@ -51,13 +98,9 @@ export const CommentSection = ({
     }
 
     if (onCommentFocus) {
-      onCommentFocus(comment.id, comment.tabId);
+      onCommentFocus(comment.id, comment.tabId || DEFAULT_TAB_ID);
     } else {
       focusCommentInEditor(comment.id);
-    }
-
-    if (openReplyId && openReplyId !== comment.id) {
-      setOpenReplyId(null);
     }
   };
 
@@ -111,25 +154,15 @@ export const CommentSection = ({
           ref={commentsSectionRef}
           className="flex flex-col overflow-y-auto flex-1"
         >
-          <p className="text-body-sm-bold color-text-secondary">
-            {sectionLabel} ({filteredComments.length})
-          </p>
-          {filteredComments.map((comment) => (
-            <SidebarCommentItem
-              key={comment.id}
-              comment={comment}
-              activeCommentId={activeCommentId}
-              username={username}
-              isDDocOwner={isDDocOwner}
-              openReplyId={openReplyId}
-              replySectionRef={replySectionRef}
-              onCommentClick={handleCommentClick}
-              onResolve={resolveComment}
-              onUnresolve={unresolveComment}
-              onDelete={deleteComment}
-              onSetOpenReplyId={setOpenReplyId}
-            />
-          ))}
+          {commentType === 'all' ? (
+            <>
+              {renderCommentList(activeComments, 'Active')}
+              <div className="mt-[16px]" />
+              {renderCommentList(resolvedComments, 'Resolved')}
+            </>
+          ) : (
+            renderCommentList(filteredComments)
+          )}
         </div>
       )}
       <CommentComposeInput />
@@ -139,6 +172,7 @@ export const CommentSection = ({
 
 const SidebarCommentItem = ({
   comment,
+  tabName,
   activeCommentId,
   username,
   isDDocOwner,
@@ -148,8 +182,10 @@ const SidebarCommentItem = ({
   onResolve,
   onUnresolve,
   onDelete,
+  onSetOpenReplyId,
 }: {
   comment: IComment;
+  tabName: string;
   activeCommentId: string | null;
   username: string | null;
   isDDocOwner: boolean;
@@ -163,16 +199,31 @@ const SidebarCommentItem = ({
 }) => {
   const [isDeleteOverlayVisible, setIsDeleteOverlayVisible] = useState(false);
 
+  const handleSidebarCommentClick = () => {
+    if (comment.resolved) {
+      onSetOpenReplyId(null);
+    } else if (comment.id) {
+      onSetOpenReplyId(comment.id);
+    }
+
+    onCommentClick(comment);
+  };
+
   return (
     <div
       data-comment-id={comment.id}
       className={cn(
-        'relative flex flex-col w-full mt-[8px] box-border transition-all color-border-default hover:color-bg-default-hover last:border-b-0 rounded-[12px]',
-        comment.id === activeCommentId && 'color-bg-default-selected',
+        'relative flex flex-col w-full mt-[8px] pb-[12px] box-border transition-all color-border-default rounded-[12px]',
+        comment.id === activeCommentId
+          ? 'color-bg-default border'
+          : 'hover:color-bg-default-hover ',
         comment.replies?.length > 0 && 'gap-0',
       )}
-      onClick={() => onCommentClick(comment)}
+      onClick={handleSidebarCommentClick}
     >
+      <p className="text-helper-text-sm px-[12px] pt-[12px] h-[26px] max-w-[270px] truncate color-text-secondary">
+        {tabName}
+      </p>
       <CommentCard
         id={comment.id}
         activeCommentId={activeCommentId as string}

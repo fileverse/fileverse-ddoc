@@ -356,7 +356,7 @@ export const CommentCard = ({
       className={cn(
         'flex flex-col gap-[4px] group comment-card',
         isResolved && 'opacity-70',
-        isCommentDrawerContext ? 'p-3 pb-0  mb-[4px]' : 'px-3',
+        isCommentDrawerContext ? 'p-3 pb-0' : 'px-3',
       )}
     >
       <div
@@ -365,7 +365,7 @@ export const CommentCard = ({
             setOpenReplyId(id as string);
           }
         }}
-        className="flex flex-col gap-[8px] p-[4px]"
+        className="flex flex-col gap-[8px]"
       >
         <div className="flex justify-between items-center">
           <UserDisplay username={username as string} createdAt={createdAt} />

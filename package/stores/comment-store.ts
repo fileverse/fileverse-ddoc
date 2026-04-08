@@ -323,7 +323,7 @@ export const createCommentStore = () =>
     _recomputeDerived: () => {
       const { initialComments, activeTabId, activeCommentId } = get();
       const tabComments = initialComments.filter(
-        (comment) => (comment.tabId ?? DEFAULT_TAB_ID) === activeTabId,
+        (comment) => (comment.tabId || DEFAULT_TAB_ID) === activeTabId,
       );
       const activeComments = tabComments.filter(
         (comment) =>
@@ -347,7 +347,7 @@ export const createCommentStore = () =>
       // Recompute in same tick — Zustand batches synchronous set() calls
       const { activeTabId, activeCommentId } = get();
       const tabComments = comments.filter(
-        (comment) => (comment.tabId ?? DEFAULT_TAB_ID) === activeTabId,
+        (comment) => (comment.tabId || DEFAULT_TAB_ID) === activeTabId,
       );
       const activeComments = tabComments.filter(
         (comment) =>
@@ -602,8 +602,12 @@ export const createCommentStore = () =>
     // without re-deriving floating state from editor DOM on every frame.
     createFloatingDraft: () => {
       const { editor, onInlineComment } = getExtDeps(get);
-      const { activeComment, isDesktopFloatingEnabled, isCommentActive } =
-        get();
+      const {
+        activeComment,
+        isDesktopFloatingEnabled,
+        isCommentActive,
+        setCommentDrawerOpen,
+      } = get();
 
       if (!editor) {
         return null;
@@ -630,6 +634,8 @@ export const createCommentStore = () =>
       if (from >= to || !text.trim()) {
         return null;
       }
+
+      setCommentDrawerOpen?.(false);
 
       const draftId = `draft-${uuid()}`;
       const didCreateDraft = editor.commands.setDraftComment(draftId);

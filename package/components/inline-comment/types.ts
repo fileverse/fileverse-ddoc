@@ -80,7 +80,10 @@ export interface CommentSectionProps {
   isPresentationMode?: boolean;
   isMobile?: boolean;
   comments?: IComment[];
+  commentType?: 'all' | 'active' | 'resolved';
   sectionLabel?: string;
+  tabNameById?: Record<string, string>;
+  selectedTabLabel?: string;
   onCommentFocus?: (commentId: string, tabId?: string) => void;
 }
 
