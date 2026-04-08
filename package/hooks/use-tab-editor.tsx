@@ -256,20 +256,13 @@ export const useTabEditor = ({
           const target = event.target as HTMLElement;
           const link = target.closest('a');
           if (link && link.href) {
-            // Fragment links (e.g. #heading=slug-uuid) should scroll
-            // within the document, not open in a new tab.
+            // Fragment links with heading= param should scroll within the document. Only check origin (not pathname) since the same doc has  different paths (i.e: shareable link vs owner link).
             const url = new URL(link.href, window.location.href);
-            const isSamePageFragment =
-              url.hash &&
-              url.origin === window.location.origin &&
-              url.pathname === window.location.pathname;
-
-            if (isSamePageFragment) {
+            if (url.hash && url.origin === window.location.origin) {
               const hash = decodeURIComponent(url.hash.slice(1));
               const params = new URLSearchParams(hash);
               const headingParam = params.get('heading');
               if (headingParam) {
-                event.preventDefault();
                 const id = headingParam.split('-').pop();
                 if (id) {
                   const allHeadings =
@@ -278,13 +271,16 @@ export const useTabEditor = ({
                     (el as HTMLElement).dataset.tocId?.includes(id),
                   );
                   if (element) {
+                    event.preventDefault();
                     element.scrollIntoView({
                       behavior: 'smooth',
                       block: 'nearest',
                     });
+                    return true;
                   }
                 }
-                return true;
+                // Heading not found in current doc — fall through to
+                // open in new tab (navigates to the other ddoc).
               }
             }
 
@@ -403,28 +399,26 @@ export const useTabEditor = ({
 
       try {
         const url = new URL(link.href, window.location.href);
-        if (
-          !url.hash ||
-          url.origin !== window.location.origin ||
-          url.pathname !== window.location.pathname
-        )
-          return;
+        if (!url.hash || url.origin !== window.location.origin) return;
 
         const hash = decodeURIComponent(url.hash.slice(1));
         const params = new URLSearchParams(hash);
         const headingParam = params.get('heading');
         if (!headingParam) return;
 
-        event.preventDefault();
-        event.stopPropagation();
-
         const id = headingParam.split('-').pop();
         if (id) {
           const el = Array.from(
             document.querySelectorAll('[data-toc-id]'),
           ).find((node) => (node as HTMLElement).dataset.tocId?.includes(id));
-          el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+          if (el) {
+            event.preventDefault();
+            event.stopPropagation();
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            return;
+          }
         }
+        // Heading not found in current doc — let browser navigate
       } catch {
         // invalid URL — let browser handle
       }
