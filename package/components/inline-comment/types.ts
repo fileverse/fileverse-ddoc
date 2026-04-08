@@ -84,6 +84,7 @@ export interface CommentSectionProps {
   sectionLabel?: string;
   tabNameById?: Record<string, string>;
   selectedTabLabel?: string;
+  showComposeInput?: boolean;
   onCommentFocus?: (commentId: string, tabId?: string) => void;
 }
 

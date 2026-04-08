@@ -23,6 +23,7 @@ export const CommentSection = ({
   commentType = 'active',
   tabNameById,
   selectedTabLabel,
+  showComposeInput = true,
   onCommentFocus,
 }: CommentSectionProps) => {
   const tabComments = useCommentStore((s) => s.tabComments);
@@ -140,9 +141,11 @@ export const CommentSection = ({
     <div
       data-testid="comment-section"
       className={cn(
+        (!isMobile || !showComposeInput) && 'flex flex-col',
         !isMobile &&
-          'flex flex-col h-[100dvh] sm:h-[calc(100vh-40px)] xl:h-[calc(100vh-310px)] !color-bg-default !rounded-b-lg',
-        'pb-[3rem] sm:pb-0',
+          'h-[100dvh] sm:h-[calc(100vh-40px)] xl:h-[calc(100vh-310px)] !color-bg-default !rounded-b-lg',
+        isMobile && !showComposeInput && 'h-full',
+        showComposeInput ? 'pb-[3rem] sm:pb-0' : 'pb-0',
         !isNavbarVisible && 'xl:!h-[calc(100vh-150px)]',
         isPresentationMode && 'xl:!h-[86vh]',
       )}
@@ -165,7 +168,7 @@ export const CommentSection = ({
           )}
         </div>
       )}
-      <CommentComposeInput />
+      {showComposeInput && <CommentComposeInput />}
     </div>
   );
 };

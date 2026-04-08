@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   DynamicDrawerV2,
   IconButton,
@@ -16,7 +16,6 @@ import { CommentSection } from './comment-section';
 import { useCommentStore } from '../../stores/comment-store';
 import { useResponsive } from '../../utils/responsive';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
-import { EmptyComments } from './empty-comments';
 import { DEFAULT_TAB_ID, DEFAULT_TAB_NAME } from '../tabs/utils/tab-utils';
 
 const ALL_TABS_OPTION_ID = '__all_tabs__';
@@ -32,11 +31,20 @@ export const CommentDrawer = ({
   tabs,
 }: CommentDrawerProps) => {
   const comments = useCommentStore((s) => s.initialComments);
+  const addComment = useCommentStore((s) => s.addComment);
   const focusCommentInEditor = useCommentStore((s) => s.focusCommentInEditor);
+  const handleInput = useCommentStore((s) => s.handleInput);
+  const isCommentOpen = useCommentStore((s) => s.isCommentOpen);
+  const openReplyId = useCommentStore((s) => s.openReplyId);
+  const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
+  const setIsCommentOpen = useCommentStore((s) => s.setIsCommentOpen);
+  const username = useCommentStore((s) => s.username);
   // const isConnected = useCommentStore((s) => s.isConnected);
   const { isBelow1280px } = useResponsive();
   const [isNewCommentOpen, setIsNewCommentOpen] = useState(false);
   const [replyText, setReplyText] = useState('');
+  const mobileDrawerRef = useRef<HTMLDivElement | null>(null);
+  const isCommentMobileFocused = isBelow1280px && Boolean(openReplyId);
 
   useEscapeKey(() => {
     onClose();
@@ -93,6 +101,20 @@ export const CommentDrawer = ({
       : commentType === 'all'
         ? 'All comments'
         : 'Active';
+  const mobileActiveComments = comments
+    .filter((comment) => !comment.deleted && !comment.resolved)
+    .sort(
+      (a, b) =>
+        new Date(b.createdAt || 0).getTime() -
+        new Date(a.createdAt || 0).getTime(),
+    );
+  const mobileFocusedCommentIndex = mobileActiveComments.findIndex(
+    (comment) => comment.id === openReplyId,
+  );
+  const canGoToPreviousMobileComment = mobileFocusedCommentIndex > 0;
+  const canGoToNextMobileComment =
+    mobileFocusedCommentIndex >= 0 &&
+    mobileFocusedCommentIndex < mobileActiveComments.length - 1;
 
   const handleTabChange = (nextTab: string) => {
     setTab(nextTab);
@@ -108,17 +130,89 @@ export const CommentDrawer = ({
     focusCommentInEditor(commentId);
   };
 
+  useEffect(() => {
+    if (isCommentOpen) {
+      setIsNewCommentOpen(true);
+    }
+  }, [isCommentOpen]);
+
+  useEffect(() => {
+    if (!isOpen && !isCommentOpen) {
+      setIsNewCommentOpen(false);
+      setReplyText('');
+    }
+  }, [isCommentOpen, isOpen]);
+
+  const closeNewComment = () => {
+    setIsNewCommentOpen(false);
+    setReplyText('');
+    setIsCommentOpen(false);
+  };
+
+  const handleCreateComment = () => {
+    if (!replyText.trim() || !username) {
+      return;
+    }
+
+    const createdCommentId = addComment(replyText.trim(), username);
+
+    if (!createdCommentId) {
+      return;
+    }
+
+    closeNewComment();
+  };
+
+  const focusMobileComment = (commentIndex: number) => {
+    const targetComment = mobileActiveComments[commentIndex];
+
+    if (!targetComment?.id) {
+      return;
+    }
+
+    setOpenReplyId(targetComment.id);
+    handleCommentFocus(targetComment.id, targetComment.tabId);
+
+    requestAnimationFrame(() => {
+      const commentElement =
+        mobileDrawerRef.current?.querySelector<HTMLElement>(
+          `[data-comment-id="${targetComment.id}"]`,
+        );
+
+      commentElement?.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+      });
+    });
+  };
+
+  const handlePreviousMobileComment = () => {
+    if (!canGoToPreviousMobileComment) {
+      return;
+    }
+
+    focusMobileComment(mobileFocusedCommentIndex - 1);
+  };
+
+  const handleNextMobileComment = () => {
+    if (!canGoToNextMobileComment) {
+      return;
+    }
+
+    focusMobileComment(mobileFocusedCommentIndex + 1);
+  };
+
   return (
-    <div data-testid="comment-drawer">
+    <div ref={mobileDrawerRef} data-testid="comment-drawer">
       {isBelow1280px ? (
         <div className={'fixed h-full flex items-end z-10 inset-0'}>
           {isNewCommentOpen ? (
-            <div className="p-4 w-full color-bg-secondary">
+            <div className="p-4 rounded-t-[12px] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] w-full color-bg-secondary">
               <div className="flex justify-between mb-[16px] items-center">
                 <h2 className="text-heading-sm">New Comment</h2>
                 <div className="flex gap-sm">
                   <IconButton
-                    onClick={() => setIsNewCommentOpen(false)}
+                    onClick={closeNewComment}
                     icon={'X'}
                     variant="ghost"
                     size="md"
@@ -136,48 +230,86 @@ export const CommentDrawer = ({
                   value={replyText}
                   autoFocus
                   onChange={(event) => setReplyText(event.target.value)}
-                  // onInput={(event) =>
-                  //   handleInput(event, event.currentTarget.value)
-                  // }
-                  // onKeyDown={(event) => {
-                  //   if (
-                  //     event.key === 'Enter' &&
-                  //     (!event.shiftKey || event.metaKey)
-                  //   ) {
-                  //     event.preventDefault();
-                  //     onReplySubmit();
-                  //   }
-                  // }}
-                  // style={{
-                  //   ...(!comment ? { height: '20px' } : {}),
-                  // }}
+                  onInput={(event) =>
+                    handleInput(event, event.currentTarget.value)
+                  }
+                  onKeyDown={(event) => {
+                    if (
+                      event.key === 'Enter' &&
+                      (!event.shiftKey || event.metaKey)
+                    ) {
+                      event.preventDefault();
+                      handleCreateComment();
+                    }
+                  }}
                   className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
-                  // placeholder={canReply ? 'Add a reply' : 'Thread resolved'}
-                  // disabled={!canReply}
+                  placeholder="Add a comment"
                 />
                 <IconButton
-                  onClick={() => setIsNewCommentOpen(false)}
+                  onClick={handleCreateComment}
                   icon={'SendHorizontal'}
                   variant="ghost"
+                  disabled={!replyText.trim() || !username}
                   className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
                 />
               </div>
             </div>
           ) : (
-            <div className="h-[456px] p-4 w-full color-bg-secondary">
-              <div className="flex justify-between items-center">
-                <h2 className="text-heading-sm">All Comments</h2>
-                <div className="flex gap-sm">
-                  <IconButton
-                    icon={'MessageSquarePlus'}
-                    onClick={() => setIsNewCommentOpen(true)}
-                    variant="ghost"
-                    size="md"
-                  />
+            <div className="h-[456px] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] rounded-t-[12px]  p-4 w-full color-bg-secondary flex flex-col">
+              {isCommentMobileFocused ? (
+                <div className="flex justify-between items-center">
+                  <h2 className="text-heading-sm">View all</h2>
+                  <div className="flex items-center gap-[8px]">
+                    <IconButton
+                      icon={'ChevronLeft'}
+                      variant={'ghost'}
+                      onClick={handlePreviousMobileComment}
+                      disabled={!canGoToPreviousMobileComment}
+                      className="!min-h-[30px] !h-[30px] !w-[30px] !min-w-[30px]"
+                    />
+                    <p className="text-heading-sm color-text-default">
+                      {mobileFocusedCommentIndex + 1} of{' '}
+                      {mobileActiveComments.length}
+                    </p>
+                    <IconButton
+                      icon={'ChevronRight'}
+                      variant={'ghost'}
+                      onClick={handleNextMobileComment}
+                      disabled={!canGoToNextMobileComment}
+                      className="!min-h-[30px] !h-[30px] !w-[30px] !min-w-[30px]"
+                    />
+                  </div>
+
                   <IconButton icon={'X'} variant="ghost" size="md" />
                 </div>
+              ) : (
+                <div className="flex justify-between items-center">
+                  <h2 className="text-heading-sm">All Comments</h2>
+                  <div className="flex gap-sm">
+                    <IconButton
+                      icon={'MessageSquarePlus'}
+                      onClick={() => setIsNewCommentOpen(true)}
+                      variant="ghost"
+                      size="md"
+                    />
+                    <IconButton icon={'X'} variant="ghost" size="md" />
+                  </div>
+                </div>
+              )}
+
+              <div className="mt-4 flex-1 overflow-hidden">
+                <CommentSection
+                  activeCommentId={activeCommentId}
+                  isNavbarVisible={isNavbarVisible}
+                  isPresentationMode={isPresentationMode}
+                  isMobile
+                  comments={comments}
+                  commentType="all"
+                  tabNameById={tabNameById}
+                  onCommentFocus={handleCommentFocus}
+                  showComposeInput={false}
+                />
               </div>
-              <EmptyComments />
             </div>
           )}
         </div>

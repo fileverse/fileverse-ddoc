@@ -318,20 +318,6 @@ export const CommentDropdown = ({
           Highlighted Comments ({activeComments.length})
         </p>
         <div className="relative flex items-center gap-1">
-          {/* <IconButton
-            icon="ChevronLeft"
-            variant="ghost"
-            onClick={onPrevComment}
-            disabled={activeCommentIndex <= 0}
-            className="disabled:!bg-transparent"
-          />
-          <IconButton
-            icon="ChevronRight"
-            variant="ghost"
-            onClick={onNextComment}
-            disabled={activeCommentIndex >= activeComments.length - 1}
-            className="disabled:!bg-transparent"
-          /> */}
           {(isDDocOwner || isCommentOwner) && !emptyComment && (
             <Tooltip
               text={isDisabled ? 'Available in a moment' : ''}
