@@ -256,6 +256,38 @@ export const useTabEditor = ({
           const target = event.target as HTMLElement;
           const link = target.closest('a');
           if (link && link.href) {
+            // Fragment links (e.g. #heading=slug-uuid) should scroll
+            // within the document, not open in a new tab.
+            const url = new URL(link.href, window.location.href);
+            const isSamePageFragment =
+              url.hash &&
+              url.origin === window.location.origin &&
+              url.pathname === window.location.pathname;
+
+            if (isSamePageFragment) {
+              const hash = decodeURIComponent(url.hash.slice(1));
+              const params = new URLSearchParams(hash);
+              const headingParam = params.get('heading');
+              if (headingParam) {
+                event.preventDefault();
+                const id = headingParam.split('-').pop();
+                if (id) {
+                  const allHeadings =
+                    document.querySelectorAll('[data-toc-id]');
+                  const element = Array.from(allHeadings).find((el) =>
+                    (el as HTMLElement).dataset.tocId?.includes(id),
+                  );
+                  if (element) {
+                    element.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'nearest',
+                    });
+                  }
+                }
+                return true;
+              }
+            }
+
             if (isPreviewMode) {
               return false;
             }
@@ -355,6 +387,52 @@ export const useTabEditor = ({
   useEffect(() => {
     editor?.setEditable(readyState);
   }, [editor, readyState]);
+
+  // In preview mode the editor is non-editable so the browser natively
+  // follows <a target="_blank">.  ProseMirror's handleClick pipeline
+  // bails out early when !view.editable, so we need a DOM-level capture
+  // listener to intercept fragment links and scroll instead.
+  useEffect(() => {
+    if (!isPreviewMode) return;
+
+    const handler = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest?.('#editor')) return;
+      const link = target.closest('a');
+      if (!link?.href) return;
+
+      try {
+        const url = new URL(link.href, window.location.href);
+        if (
+          !url.hash ||
+          url.origin !== window.location.origin ||
+          url.pathname !== window.location.pathname
+        )
+          return;
+
+        const hash = decodeURIComponent(url.hash.slice(1));
+        const params = new URLSearchParams(hash);
+        const headingParam = params.get('heading');
+        if (!headingParam) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const id = headingParam.split('-').pop();
+        if (id) {
+          const el = Array.from(
+            document.querySelectorAll('[data-toc-id]'),
+          ).find((node) => (node as HTMLElement).dataset.tocId?.includes(id));
+          el?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+      } catch {
+        // invalid URL — let browser handle
+      }
+    };
+
+    document.addEventListener('click', handler, true);
+    return () => document.removeEventListener('click', handler, true);
+  }, [isPreviewMode]);
 
   useEffect(() => {
     if (!isCollaborationEnabled) return;
