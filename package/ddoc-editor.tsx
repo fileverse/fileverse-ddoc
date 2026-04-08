@@ -732,7 +732,7 @@ const DdocEditor = forwardRef(
                     style={{
                       minHeight: isFocusMode
                         ? '100vh'
-                        : `calc(100vh - 108px - ${footerHeight || '0px'})`,
+                        : `calc(100dvh - 108px - ${footerHeight || '0px'})`,
                     }}
                   >
                     <div
@@ -1100,9 +1100,9 @@ const DdocEditor = forwardRef(
               ? '100vh'
               : !isPreviewMode
                 ? isNavbarVisible
-                  ? `calc(100vh - 108px - ${footerHeight || '0px'})`
-                  : `calc(100vh - 52px - ${footerHeight || '0px'})`
-                : `calc(100vh - 52px - ${footerHeight || '0px'})`,
+                  ? `calc(100dvh - 108px - ${footerHeight || '0px'})`
+                  : `calc(100dvh - 52px - ${footerHeight || '0px'})`
+                : `calc(100dvh - 52px - ${footerHeight || '0px'})`,
           }}
         >
           <div

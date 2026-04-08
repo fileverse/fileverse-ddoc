@@ -217,7 +217,12 @@ export const CommentDrawer = ({
   return (
     <div ref={mobileDrawerRef} data-testid="comment-drawer">
       {isBelow1280px ? (
-        <div className={'fixed h-full flex items-end z-10 inset-0'}>
+        <div
+          className={cn(
+            !isOpen && 'hidden',
+            'fixed h-full flex items-end z-10 inset-0',
+          )}
+        >
           {isNewCommentOpen ? (
             <div className="p-4 rounded-t-[12px] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] w-full color-bg-secondary">
               <div className="flex justify-between mb-[16px] items-center">
