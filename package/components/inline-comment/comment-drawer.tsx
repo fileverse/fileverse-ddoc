@@ -149,6 +149,18 @@ export const CommentDrawer = ({
     setIsCommentOpen(false);
   };
 
+  const handleCloseDrawer = () => {
+    setOpenReplyId(null);
+    setIsNewCommentOpen(false);
+    setReplyText('');
+    setIsCommentOpen(false);
+    onClose();
+  };
+
+  const handleViewAllComments = () => {
+    setOpenReplyId(null);
+  };
+
   const handleCreateComment = () => {
     if (!replyText.trim() || !username) {
       return;
@@ -212,7 +224,7 @@ export const CommentDrawer = ({
                 <h2 className="text-heading-sm">New Comment</h2>
                 <div className="flex gap-sm">
                   <IconButton
-                    onClick={closeNewComment}
+                    onClick={handleCloseDrawer}
                     icon={'X'}
                     variant="ghost"
                     size="md"
@@ -258,7 +270,13 @@ export const CommentDrawer = ({
             <div className="h-[456px] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] rounded-t-[12px]  p-4 w-full color-bg-secondary flex flex-col">
               {isCommentMobileFocused ? (
                 <div className="flex justify-between items-center">
-                  <h2 className="text-heading-sm">View all</h2>
+                  <button
+                    type="button"
+                    onClick={handleViewAllComments}
+                    className="text-heading-sm"
+                  >
+                    View all
+                  </button>
                   <div className="flex items-center gap-[8px]">
                     <IconButton
                       icon={'ChevronLeft'}
@@ -280,7 +298,12 @@ export const CommentDrawer = ({
                     />
                   </div>
 
-                  <IconButton icon={'X'} variant="ghost" size="md" />
+                  <IconButton
+                    icon={'X'}
+                    variant="ghost"
+                    size="md"
+                    onClick={handleCloseDrawer}
+                  />
                 </div>
               ) : (
                 <div className="flex justify-between items-center">
@@ -292,7 +315,12 @@ export const CommentDrawer = ({
                       variant="ghost"
                       size="md"
                     />
-                    <IconButton icon={'X'} variant="ghost" size="md" />
+                    <IconButton
+                      icon={'X'}
+                      variant="ghost"
+                      size="md"
+                      onClick={handleCloseDrawer}
+                    />
                   </div>
                 </div>
               )}

@@ -78,6 +78,7 @@ export const CommentSection = ({
             comment={comment}
             tabName={getCommentTabName(comment)}
             activeCommentId={activeCommentId}
+            isCommentMobileFocused={Boolean(isMobile && openReplyId)}
             username={username}
             isDDocOwner={isDDocOwner}
             openReplyId={openReplyId}
@@ -177,6 +178,7 @@ const SidebarCommentItem = ({
   comment,
   tabName,
   activeCommentId,
+  isCommentMobileFocused,
   username,
   isDDocOwner,
   openReplyId,
@@ -190,6 +192,7 @@ const SidebarCommentItem = ({
   comment: IComment;
   tabName: string;
   activeCommentId: string | null;
+  isCommentMobileFocused: boolean;
   username: string | null;
   isDDocOwner: boolean;
   openReplyId: string | null;
@@ -217,6 +220,7 @@ const SidebarCommentItem = ({
       data-comment-id={comment.id}
       className={cn(
         'relative flex flex-col w-full mt-[8px] pb-[12px] box-border transition-all color-border-default rounded-[12px]',
+        isCommentMobileFocused && openReplyId !== comment.id && 'hidden',
         comment.id === activeCommentId
           ? 'color-bg-default border'
           : 'hover:color-bg-default-hover ',
