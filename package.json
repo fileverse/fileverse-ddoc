@@ -120,7 +120,7 @@
     "@dnd-kit/sortable": ">=10.0.0",
     "@dnd-kit/utilities": ">=3.2.2",
     "@fileverse/crypto": ">=0.0.21",
-    "@fileverse/ui": "^5.0.1-sepia-4",
+    "@fileverse/ui": "^5.0.1-sepia-5",
     "framer-motion": ">=11.2.10",
     "frimousse": ">=0.3.0",
     "viem": ">=2.13.8"
