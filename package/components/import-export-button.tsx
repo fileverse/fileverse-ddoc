@@ -113,7 +113,7 @@ const ImportExportButton = ({
               isActive={fileExportsOpen}
               className={cn(
                 'color-text-default',
-                fileExportsOpen && 'dark:text-[#363B3F]',
+                fileExportsOpen && 'color-text-on-brand',
               )}
               onClick={() => {
                 setFileExportsOpen((prev) => !prev);

@@ -252,11 +252,7 @@
   }
 
   .custom-ens-button {
-    @apply bg-[#F0F6FF] hover:!bg-[#E0F0FF] w-full text-[#388CFB] h-10 gap-2 p-3;
-  }
-
-  .dark .custom-ens-button {
-    @apply color-button-default hover:!bg-[#5C5C5C];
+    @apply color-bg-default-hover hover:color-bg-secondary-hover w-full color-text-link h-10 gap-2 p-3;
   }
 }
 
@@ -378,35 +374,19 @@ div[data-type='page-break']:hover .remove-page-break-icon {
 }
 
 .custom-border {
-  border-color: #e8ebec;
-}
-
-.dark .custom-border {
-  border-color: rgba(255, 255, 255, 0.2);
+  border-color: hsl(var(--color-border-default));
 }
 
 .custom-border-bg {
-  background-color: #e8ebec;
-}
-
-.dark .custom-border-bg {
-  background-color: rgba(255, 255, 255, 0.2);
+  background-color: hsl(var(--color-border-default));
 }
 
 .mobile-util-btn-group {
-  background-color: #f8f9fa;
-}
-
-.dark .mobile-util-btn-group {
-  background-color: #1a1a1a;
+  background-color: hsl(var(--color-bg-secondary));
 }
 
 .vertical-divider {
-  background-color: #e8ebec;
-}
-
-.dark .vertical-divider {
-  background-color: #404040;
+  background-color: hsl(var(--color-border-default));
 }
 
 @keyframes aiwriter-scale-in {

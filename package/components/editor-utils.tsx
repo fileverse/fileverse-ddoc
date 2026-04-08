@@ -1118,7 +1118,7 @@ export const EditorFontFamily = ({
           className={cn(
             'flex w-full items-center space-x-2 rounded px-2 py-1 text-left text-sm color-text-default transition',
             editor.isActive('textStyle', { fontFamily: font.value })
-              ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
+              ? 'color-bg-brand xl:hover:brightness-90 color-text-on-brand'
               : 'hover:color-bg-default-hover',
           )}
         >
@@ -1152,7 +1152,7 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'left' })
-            ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
+            ? 'color-bg-brand xl:hover:brightness-90 color-text-on-brand'
             : 'hover:color-bg-default-hover',
         )}
       >
@@ -1167,7 +1167,7 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'center' })
-            ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
+            ? 'color-bg-brand xl:hover:brightness-90 color-text-on-brand'
             : 'hover:color-bg-default-hover',
         )}
       >
@@ -1182,7 +1182,7 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'right' })
-            ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
+            ? 'color-bg-brand xl:hover:brightness-90 color-text-on-brand'
             : 'hover:color-bg-default-hover',
         )}
       >
@@ -1197,7 +1197,7 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'justify' })
-            ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
+            ? 'color-bg-brand xl:hover:brightness-90 color-text-on-brand'
             : 'hover:color-bg-default-hover',
         )}
       >
@@ -1536,7 +1536,7 @@ export const ScriptsPopup = ({
             className={cn(
               'flex items-center justify-between w-full px-2 py-1 text-body-sm',
               option.isActive() &&
-                'color-bg-brand hover:!bg-[#B6A02E] dark:text-[#363B3F]',
+                'color-bg-brand hover:!bg-[#B6A02E] color-text-on-brand',
             )}
           >
             <div className="flex items-center gap-2">
@@ -1573,7 +1573,7 @@ export const TextColor = ({
       <div className="grid grid-cols-[repeat(15,_minmax(0,_1fr))] gap-0.5">
         {textColors.map((color) => {
           const contrastColor = getContrastColor(
-            theme === 'dark' ? color.dark : color.light,
+            (color as Record<string, string>)[theme] || color.light,
           );
           const tickColorClassName =
             contrastColor === '#000000' ? 'text-black' : 'text-white';
@@ -1693,7 +1693,7 @@ export const TextHeading = ({
           className={cn(
             'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm color-text-default transition',
             {
-              ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+              ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
                 heading.isActive(),
               ['hover:color-bg-default-hover']: !heading.isActive(),
             },
@@ -1745,7 +1745,7 @@ export const FontSizePicker = ({
           className={cn(
             'flex w-full items-center justify-center rounded px-2 py-1 text-center text-sm color-text-default transition',
             {
-              ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+              ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
                 currentSize === fontSize.value,
               ['hover:color-bg-default-hover']: currentSize !== fontSize.value,
             },
@@ -2144,7 +2144,7 @@ export const TextFormatingPopup = ({
                 className={cn(
                   'flex w-fit items-center font-medium space-x-2 rounded p-2 text-center text-sm color-text-default transition',
                   {
-                    ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+                    ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
                       heading.isActive(),
                     ['hover:color-bg-default-hover']: !heading.isActive(),
                   },
@@ -2163,7 +2163,7 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+                      ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
                         textAlignment.isActive(),
                       ['hover:color-bg-default-hover']:
                         !textAlignment.isActive(),
@@ -2182,7 +2182,7 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+                      ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
                         other.isActive(),
                       ['hover:color-bg-default-hover']: !other.isActive(),
                     },
@@ -2202,7 +2202,7 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+                      ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
                         textStyle.isActive(),
                       ['hover:color-bg-default-hover']: !textStyle.isActive(),
                     },
@@ -2220,7 +2220,7 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+                      ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
                         textStyle.isActive(),
                       ['hover:color-bg-default-hover']: !textStyle.isActive(),
                     },
@@ -2239,7 +2239,7 @@ export const TextFormatingPopup = ({
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                   {
-                    ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+                    ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
                       listStyle.isActive(),
                     ['hover:color-bg-default-hover']: !listStyle.isActive(),
                   },

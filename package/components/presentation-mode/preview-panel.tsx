@@ -2,7 +2,7 @@ import { cn } from '@fileverse/ui';
 import { useRef, useEffect } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
 import { useResponsive } from '../../utils/responsive';
-import { DdocProps } from '../../types';
+import { DdocProps, ThemeKey } from '../../types';
 import {
   getResponsiveThemeTextColor,
   getThemeStyle,
@@ -13,7 +13,7 @@ interface PreviewPanelProps {
   currentSlide: number;
   setCurrentSlide: (index: number) => void;
   documentStyling?: DdocProps['documentStyling'];
-  theme?: 'light' | 'dark';
+  theme?: ThemeKey;
 }
 
 export const PreviewPanel = ({
@@ -88,7 +88,7 @@ export const PreviewPanel = ({
             className={cn(
               'text-body-sm h-full w-[20px] pr-1 text-center',
               currentSlide === index
-                ? 'color-text-default dark:text-[#363B3F]'
+                ? 'color-text-on-brand'
                 : 'color-text-default',
             )}
           >
