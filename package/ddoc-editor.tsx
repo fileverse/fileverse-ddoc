@@ -828,6 +828,7 @@ const DdocEditor = forwardRef(
                                   username={username as string}
                                   walletAddress={walletAddress as string}
                                   onInlineComment={onInlineComment}
+                                  setCommentDrawerOpen={setCommentDrawerOpen}
                                   activeCommentId={activeCommentId}
                                   isCollabDocumentPublished={
                                     isCollabDocumentPublished
