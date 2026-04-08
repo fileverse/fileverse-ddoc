@@ -2,6 +2,7 @@ import { Avatar, TextAreaFieldV2, Button } from '@fileverse/ui';
 import { useCommentStore } from '../../stores/comment-store';
 import { useEffect, useRef, useState } from 'react';
 import { EnsStatus } from './types';
+import { useResponsive } from '../../utils/responsive';
 
 interface CommentReplyInputProps {
   commentId: string;
@@ -24,6 +25,7 @@ export const CommentReplyInput = ({
   const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
   const ensCache = useCommentStore((s) => s.ensCache);
   const replyInputContainerRef = useRef<HTMLDivElement | null>(null);
+  const { isBelow1280px } = useResponsive();
 
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
     name: username as string,
@@ -32,7 +34,7 @@ export const CommentReplyInput = ({
 
   useEffect(() => {
     getEnsStatus(username as string, setEnsStatus);
-  }, [username, ensCache]);
+  }, [username, ensCache, getEnsStatus]);
 
   useEffect(() => {
     const frameId = window.requestAnimationFrame(() => {
@@ -75,7 +77,13 @@ export const CommentReplyInput = ({
           autoFocus
         />
       </div>
-      <div className="hidden items-center justify-end gap-2 pt-2 group-focus-within:flex">
+      <div
+        className={
+          isBelow1280px
+            ? 'flex items-center justify-end gap-2 pt-2'
+            : 'hidden items-center justify-end gap-2 pt-2 group-focus-within:flex'
+        }
+      >
         <Button
           variant={'ghost'}
           className="w-20 min-w-20"
@@ -90,7 +98,10 @@ export const CommentReplyInput = ({
           data-testid="comment-reply-send"
           className="w-20 min-w-20"
           disabled={!reply.trim()}
-          onClick={handleReplySubmit}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleReplySubmit();
+          }}
         >
           Send
         </Button>

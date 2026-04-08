@@ -272,7 +272,7 @@ export const CommentDrawer = ({
               </div>
             </div>
           ) : (
-            <div className="h-[456px] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] rounded-t-[12px]  p-4 w-full color-bg-secondary flex flex-col">
+            <div className="h-[456px] max-h-[80dvh] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] rounded-t-[12px]  p-4 w-full color-bg-secondary flex flex-col">
               {isCommentMobileFocused ? (
                 <div className="flex justify-between items-center">
                   <button
