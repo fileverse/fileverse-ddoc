@@ -2,21 +2,17 @@ import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 
 /**
- * TypographyPersistence consolidates fontFamily and fontSize persistence logic
+ * TypographyPersistence consolidates text styling persistence logic
  * into a single extension with 2 plugins.
  *
- * Node-attr syncing (storedMarks → paragraph attrs) is handled directly by the
- * setFontFamily/unsetFontFamily/setFontSize/unsetFontSize commands rather than
- * via an appendTransaction plugin, because appendTransaction's setNodeMarkup
- * clears storedMarks and drops other textStyle attrs like color.
+ * It covers: fontFamily, fontSize, color, highlightColor, textAlign,
+ * lineHeight, isBold, isItalic, isUnderline, isStrike.
  *
  * Plugins:
  * 1. typographyInheritance — when a new paragraph is inserted next to a styled
- *    one, inherit fontFamily and fontSize in a single setNodeMarkup pass.
- *    Skips trailing-node paragraphs (they inherit from the previous sibling
- *    at creation time, but should not be overridden when the user clears them).
+ *    one, inherit all styles in a single setNodeMarkup pass.
  * 2. typographyStoredMarks — when selection moves into an empty styled
- *    paragraph, restore storedMarks for both fontFamily and fontSize at once.
+ *    paragraph, restore storedMarks for all mark-based styles.
  */
 export const TypographyPersistence = Extension.create({
   name: 'typographyPersistence',
@@ -24,8 +20,6 @@ export const TypographyPersistence = Extension.create({
   addProseMirrorPlugins() {
     return [
       // Plugin 1: Inheritance
-      // When a paragraph is newly inserted next to a styled paragraph, copy
-      // fontFamily and fontSize from the previous sibling in one pass.
       new Plugin({
         key: new PluginKey('typographyInheritance'),
         appendTransaction: (transactions, _oldState, newState) => {
@@ -61,10 +55,7 @@ export const TypographyPersistence = Extension.create({
 
                 newState.doc.nodesBetween(safeStart, safeEnd, (node, pos) => {
                   if (node.type.name !== 'paragraph') return;
-                  // Skip trailing node — user should be able to clear it
                   if (node.attrs.class === 'trailing-node') return;
-                  // Already has both — nothing to inherit
-                  if (node.attrs.fontFamily && node.attrs.fontSize) return;
 
                   const $pos = newState.doc.resolve(pos);
                   const indexBefore = $pos.index($pos.depth);
@@ -73,24 +64,40 @@ export const TypographyPersistence = Extension.create({
                   const prevNode = $pos.node($pos.depth).child(indexBefore - 1);
                   if (!prevNode || prevNode.type.name !== 'paragraph') return;
 
-                  const inheritFamily =
-                    !node.attrs.fontFamily && prevNode.attrs.fontFamily
-                      ? prevNode.attrs.fontFamily
-                      : node.attrs.fontFamily;
-                  const inheritSize =
-                    !node.attrs.fontSize && prevNode.attrs.fontSize
-                      ? prevNode.attrs.fontSize
-                      : node.attrs.fontSize;
+                  const nextAttrs = { ...node.attrs };
+                  let nodeModified = false;
 
-                  if (
-                    inheritFamily !== node.attrs.fontFamily ||
-                    inheritSize !== node.attrs.fontSize
-                  ) {
-                    tr.setNodeMarkup(pos, undefined, {
-                      ...node.attrs,
-                      fontFamily: inheritFamily,
-                      fontSize: inheritSize,
-                    });
+                  const inheritableAttrs = [
+                    { name: 'fontFamily', default: null },
+                    { name: 'fontSize', default: null },
+                    { name: 'color', default: null },
+                    { name: 'highlightColor', default: null },
+                    { name: 'textAlign', default: 'left' },
+                    { name: 'lineHeight', default: '138%' },
+                    { name: 'isBold', default: false },
+                    { name: 'isItalic', default: false },
+                    { name: 'isUnderline', default: false },
+                    { name: 'isStrike', default: false },
+                  ];
+
+                  inheritableAttrs.forEach((attr) => {
+                    const currentValue = node.attrs[attr.name];
+                    const prevValue = prevNode.attrs[attr.name];
+
+                    // Inherit if current is default and prev is non-default
+                    if (
+                      (currentValue === attr.default || !currentValue) &&
+                      prevValue !== attr.default &&
+                      prevValue !== null &&
+                      prevValue !== undefined
+                    ) {
+                      nextAttrs[attr.name] = prevValue;
+                      nodeModified = true;
+                    }
+                  });
+
+                  if (nodeModified) {
+                    tr.setNodeMarkup(pos, undefined, nextAttrs);
                     modified = true;
                   }
                 });
@@ -103,9 +110,6 @@ export const TypographyPersistence = Extension.create({
       }),
 
       // Plugin 2: StoredMarks restoration
-      // When cursor moves into an empty paragraph that has fontFamily or
-      // fontSize node attrs, restore both as storedMarks in one pass so the
-      // next typed character picks up the correct styling.
       new Plugin({
         key: new PluginKey('typographyStoredMarks'),
         appendTransaction: (transactions, _oldState, newState) => {
@@ -118,44 +122,94 @@ export const TypographyPersistence = Extension.create({
           const $pos = selection.$from;
           const node = $pos.node($pos.depth);
 
-          if (
-            node?.type.name === 'paragraph' &&
-            node.textContent === '' &&
-            (node.attrs.fontFamily || node.attrs.fontSize)
-          ) {
-            const markType = newState.schema.marks.textStyle;
-            if (!markType) return null;
-
+          if (node?.type.name === 'paragraph' && node.textContent === '') {
             const tr = newState.tr;
-            const existingMark =
-              tr.storedMarks?.find((m) => m.type === markType) ||
-              newState.storedMarks?.find((m) => m.type === markType);
+            let modified = false;
 
-            // Already up to date — skip
-            if (
-              existingMark &&
-              existingMark.attrs.fontFamily === node.attrs.fontFamily &&
-              existingMark.attrs.fontSize === node.attrs.fontSize
-            ) {
-              return null;
+            // Trigger restoration if any persisted style exists
+            const hasPersistedStyle =
+              node.attrs.fontFamily ||
+              node.attrs.fontSize ||
+              node.attrs.color ||
+              node.attrs.highlightColor ||
+              node.attrs.isBold ||
+              node.attrs.isItalic ||
+              node.attrs.isUnderline ||
+              node.attrs.isStrike;
+
+            if (!hasPersistedStyle) return null;
+
+            // 1. Handle textStyle mark (fontFamily, fontSize, color)
+            const textStyleMarkType = newState.schema.marks.textStyle;
+            if (textStyleMarkType) {
+              const currentStoredTextStyle = (
+                newState.storedMarks || $pos.marks()
+              ).find((m) => m.type === textStyleMarkType);
+              const baseAttrs = currentStoredTextStyle?.attrs ?? {};
+              const nextTextStyleAttrs = {
+                ...baseAttrs,
+                fontFamily:
+                  node.attrs.fontFamily || baseAttrs.fontFamily || null,
+                fontSize: node.attrs.fontSize || baseAttrs.fontSize || null,
+                color: node.attrs.color || baseAttrs.color || null,
+              };
+
+              if (
+                JSON.stringify(nextTextStyleAttrs) !== JSON.stringify(baseAttrs)
+              ) {
+                tr.addStoredMark(textStyleMarkType.create(nextTextStyleAttrs));
+                modified = true;
+              }
             }
 
-            // Preserve all existing textStyle attrs (color, data-original-color, etc.)
-            // when updating only fontFamily/fontSize — the else branch previously
-            // created a mark with only font attrs, dropping color.
-            const currentStoredTextStyle = newState.storedMarks?.find(
-              (m) => m.type === markType,
-            );
-            const baseAttrs =
-              existingMark?.attrs ?? currentStoredTextStyle?.attrs ?? {};
-            const attrs = {
-              ...baseAttrs,
-              fontFamily: node.attrs.fontFamily,
-              fontSize: node.attrs.fontSize,
-            };
+            // 2. Handle highlight mark
+            const highlightMarkType = newState.schema.marks.highlight;
+            if (highlightMarkType) {
+              const isHighlightActive = (
+                newState.storedMarks || $pos.marks()
+              ).find((m) => m.type === highlightMarkType);
+              if (node.attrs.highlightColor) {
+                if (
+                  isHighlightActive?.attrs.color !== node.attrs.highlightColor
+                ) {
+                  tr.addStoredMark(
+                    highlightMarkType.create({
+                      color: node.attrs.highlightColor,
+                    }),
+                  );
+                  modified = true;
+                }
+              } else if (isHighlightActive) {
+                tr.removeStoredMark(highlightMarkType);
+                modified = true;
+              }
+            }
 
-            tr.addStoredMark(markType.create(attrs));
-            return tr;
+            // 3. Handle boolean marks (bold, italic, underline, strike)
+            const booleanMarks = [
+              { attr: 'isBold', type: 'bold' },
+              { attr: 'isItalic', type: 'italic' },
+              { attr: 'isUnderline', type: 'underline' },
+              { attr: 'isStrike', type: 'strike' },
+            ];
+
+            booleanMarks.forEach((bm) => {
+              const markType = newState.schema.marks[bm.type];
+              if (markType) {
+                const isMarkActive = (
+                  newState.storedMarks || $pos.marks()
+                ).some((m) => m.type === markType);
+                if (node.attrs[bm.attr] && !isMarkActive) {
+                  tr.addStoredMark(markType.create());
+                  modified = true;
+                } else if (!node.attrs[bm.attr] && isMarkActive) {
+                  tr.removeStoredMark(markType);
+                  modified = true;
+                }
+              }
+            });
+
+            return modified ? tr : null;
           }
 
           return null;
