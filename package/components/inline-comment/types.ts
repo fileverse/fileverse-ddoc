@@ -86,6 +86,7 @@ export interface CommentSectionProps {
   selectedTabLabel?: string;
   showComposeInput?: boolean;
   onCommentFocus?: (commentId: string, tabId?: string) => void;
+  onReset?: () => void;
 }
 
 export interface UserDisplayProps {

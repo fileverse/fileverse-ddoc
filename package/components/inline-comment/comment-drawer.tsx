@@ -13,6 +13,7 @@ import {
 import cn from 'classnames';
 import { CommentDrawerProps } from './types';
 import { CommentSection } from './comment-section';
+import { DeleteConfirmOverlay } from './delete-confirm-overlay';
 import { useCommentStore } from '../../stores/comment-store';
 import { useResponsive } from '../../utils/responsive';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
@@ -42,11 +43,18 @@ export const CommentDrawer = ({
   // const isConnected = useCommentStore((s) => s.isConnected);
   const { isBelow1280px } = useResponsive();
   const [isNewCommentOpen, setIsNewCommentOpen] = useState(false);
+  const [isDiscardCommentOverlayVisible, setIsDiscardCommentOverlayVisible] =
+    useState(false);
   const [replyText, setReplyText] = useState('');
   const mobileDrawerRef = useRef<HTMLDivElement | null>(null);
   const isCommentMobileFocused = isBelow1280px && Boolean(openReplyId);
 
   useEscapeKey(() => {
+    if (isNewCommentOpen) {
+      setIsDiscardCommentOverlayVisible(true);
+      return;
+    }
+
     onClose();
   });
 
@@ -102,7 +110,7 @@ export const CommentDrawer = ({
         ? 'All comments'
         : 'Active';
   const mobileActiveComments = comments
-    .filter((comment) => !comment.deleted && !comment.resolved)
+    .filter((comment) => !comment.deleted)
     .sort(
       (a, b) =>
         new Date(b.createdAt || 0).getTime() -
@@ -139,19 +147,26 @@ export const CommentDrawer = ({
   useEffect(() => {
     if (!isOpen && !isCommentOpen) {
       setIsNewCommentOpen(false);
+      setIsDiscardCommentOverlayVisible(false);
       setReplyText('');
     }
   }, [isCommentOpen, isOpen]);
 
   const closeNewComment = () => {
     setIsNewCommentOpen(false);
+    setIsDiscardCommentOverlayVisible(false);
     setReplyText('');
     setIsCommentOpen(false);
+  };
+
+  const handleAttemptCloseNewComment = () => {
+    setIsDiscardCommentOverlayVisible(true);
   };
 
   const handleCloseDrawer = () => {
     setOpenReplyId(null);
     setIsNewCommentOpen(false);
+    setIsDiscardCommentOverlayVisible(false);
     setReplyText('');
     setIsCommentOpen(false);
     onClose();
@@ -229,7 +244,7 @@ export const CommentDrawer = ({
                 <h2 className="text-heading-sm">New Comment</h2>
                 <div className="flex gap-sm">
                   <IconButton
-                    onClick={handleCloseDrawer}
+                    onClick={handleAttemptCloseNewComment}
                     icon={'X'}
                     variant="ghost"
                     size="md"
@@ -270,6 +285,15 @@ export const CommentDrawer = ({
                   className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
                 />
               </div>
+              <DeleteConfirmOverlay
+                isVisible={isDiscardCommentOverlayVisible}
+                title="Discard comment"
+                heading="Discard comment"
+                description="This action will discard your comment."
+                confirmLabel="Discard"
+                onCancel={() => setIsDiscardCommentOverlayVisible(false)}
+                onConfirm={handleCloseDrawer}
+              />
             </div>
           ) : (
             <div className="h-[456px] max-h-[80dvh] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] rounded-t-[12px]  p-4 w-full color-bg-secondary flex flex-col">
@@ -402,6 +426,9 @@ export const CommentDrawer = ({
                 tabNameById={tabNameById}
                 selectedTabLabel={selectedTabLabel}
                 onCommentFocus={handleCommentFocus}
+                onReset={() => {
+                  setCommentType('all');
+                }}
               />
             </div>
           }

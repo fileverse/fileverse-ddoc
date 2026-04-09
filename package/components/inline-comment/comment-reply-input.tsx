@@ -1,4 +1,4 @@
-import { Avatar, TextAreaFieldV2, Button } from '@fileverse/ui';
+import { Avatar, TextAreaFieldV2, Button, IconButton, cn } from '@fileverse/ui';
 import { useCommentStore } from '../../stores/comment-store';
 import { useEffect, useRef, useState } from 'react';
 import { EnsStatus } from './types';
@@ -52,7 +52,12 @@ export const CommentReplyInput = ({
 
   return (
     <div ref={replyInputContainerRef} className="group p-3 mt-[8px] pt-0">
-      <div className="border flex px-[12px] color-bg-default py-[8px] gap-[8px] rounded-[4px]">
+      <div
+        className={cn(
+          'border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]',
+          isBelow1280px ? 'items-center justify-between ' : 'color-bg-default',
+        )}
+      >
         <Avatar
           src={`https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
             ensStatus.name || '',
@@ -76,11 +81,21 @@ export const CommentReplyInput = ({
           onKeyDown={handleReplyKeyDown}
           autoFocus
         />
+        <IconButton
+          onClick={() => handleReplySubmit()}
+          icon={'SendHorizontal'}
+          variant="ghost"
+          disabled={!reply.trim() || !username}
+          className={cn(
+            '!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]',
+            !isBelow1280px && 'hidden',
+          )}
+        />
       </div>
       <div
         className={
           isBelow1280px
-            ? 'flex items-center justify-end gap-2 pt-2'
+            ? 'hidden'
             : 'hidden items-center justify-end gap-2 pt-2 group-focus-within:flex'
         }
       >

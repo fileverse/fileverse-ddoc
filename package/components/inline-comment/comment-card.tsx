@@ -7,7 +7,7 @@ import {
   Skeleton,
   Tooltip,
 } from '@fileverse/ui';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
 import {
   CommentCardProps,
   CommentReplyProps,
@@ -24,6 +24,7 @@ import {
 } from '../../utils/helpers';
 import { Spinner } from '../../common/spinner';
 import { DeleteConfirmOverlay } from './delete-confirm-overlay';
+import { useResponsive } from '../../utils/responsive';
 
 const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
   const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
@@ -35,7 +36,7 @@ const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
 
   useEffect(() => {
     getEnsStatus(username, setEnsStatus);
-  }, [username, ensCache]);
+  }, [username, ensCache, getEnsStatus]);
 
   return (
     <div className="flex justify-start items-center gap-2">
@@ -201,9 +202,11 @@ export const CommentCard = ({
   const [showAllReplies, setShowAllReplies] = useState(false);
   const [isCommentExpanded, setIsCommentExpanded] = useState(false);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
+  const openReplyId = useCommentStore((s) => s.openReplyId);
   const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
   const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
   const ensCache = useCommentStore((s) => s.ensCache);
+  const { isBelow1280px } = useResponsive();
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
     name: username as string,
     isEns: false,
@@ -211,7 +214,7 @@ export const CommentCard = ({
 
   useEffect(() => {
     getEnsStatus(username as string, setEnsStatus);
-  }, [username, ensCache]);
+  }, [username, ensCache, getEnsStatus]);
 
   const removePopoverContent = () => {
     if (dropdownRef.current?.parentElement) {
@@ -239,7 +242,8 @@ export const CommentCard = ({
     }
   }, [isDropdown, activeCommentId, id, replies]);
 
-  const handleResolveClick = () => {
+  const handleResolveClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
     onResolve?.(id as string);
     removePopoverContent();
   };
@@ -253,6 +257,12 @@ export const CommentCard = ({
     onUnresolve?.(id as string);
     removePopoverContent();
   };
+  const isCommentMobileFocused = isBelow1280px && Boolean(openReplyId);
+  const shouldShowReplyThread = useMemo(
+    () => !isBelow1280px || isCommentMobileFocused,
+    [isBelow1280px, isCommentMobileFocused],
+  );
+  const replyThreadCount = shouldShowReplyThread ? 2 : 0;
 
   const renderReplies = useCallback(() => {
     if (!replies?.length) return null;
@@ -269,12 +279,21 @@ export const CommentCard = ({
       displayedReplies = displayedReplies.slice(-2);
     }
 
+    if (isResolved && isCommentMobileFocused) {
+      return (
+        <p className="text-helper-text-sm">{visibleReplies.length} replies</p>
+      );
+    }
+
     return (
       <div className="flex flex-col gap-0 relative">
         {visibleReplies.length > 3 && !showAllReplies && (
           <div
             onClick={() => setShowAllReplies(true)}
-            className="text-helper-text-sm color-text-secondary min-h-[28px] mb-[4px] hover:underline custom-border cursor-pointer flex items-center gap-2 px-[8px]"
+            className={cn(
+              'text-helper-text-sm color-text-secondary min-h-[28px] mb-[4px] hover:underline custom-border cursor-pointer flex items-center gap-2 px-[8px]',
+              !shouldShowReplyThread && 'justify-center mt-[4px]',
+            )}
           >
             <IconButton
               icon="ChevronDown"
@@ -301,24 +320,34 @@ export const CommentCard = ({
                 />
               ))}
             </div>
-            {visibleReplies.length - 2} more replies in this thread
+            {visibleReplies.length - replyThreadCount} more replies in this
+            thread
           </div>
         )}
 
-        {displayedReplies.map((reply, index) => (
-          <CommentReply
-            key={reply.id}
-            commentId={id as string}
-            replyId={reply.id || ''}
-            reply={reply.content || ''}
-            username={reply.username || ''}
-            createdAt={reply.createdAt || new Date()}
-            isLast={index === displayedReplies.length - 1}
-          />
-        ))}
+        {shouldShowReplyThread &&
+          displayedReplies.map((reply, index) => (
+            <CommentReply
+              key={reply.id}
+              commentId={id as string}
+              replyId={reply.id || ''}
+              reply={reply.content || ''}
+              username={reply.username || ''}
+              createdAt={reply.createdAt || new Date()}
+              isLast={index === displayedReplies.length - 1}
+            />
+          ))}
       </div>
     );
-  }, [replies, showAllReplies, ensStatus.isEns, id]);
+  }, [
+    replies,
+    showAllReplies,
+    ensStatus.isEns,
+    id,
+    shouldShowReplyThread,
+    replyThreadCount,
+    isCommentMobileFocused,
+  ]);
 
   if (emptyComment)
     return (
@@ -375,7 +404,12 @@ export const CommentCard = ({
               sideOffset={0}
               position="top"
             >
-              <div className="flex opacity-0 group-hover:opacity-100 gap-[4px]">
+              <div
+                className={cn(
+                  !isBelow1280px && 'opacity-0 group-hover:opacity-100',
+                  'flex  gap-[4px]',
+                )}
+              >
                 {isCommentOwner && !isResolved && (
                   <Tooltip text="Mark as resolved" position="bottom">
                     <IconButton
@@ -389,57 +423,60 @@ export const CommentCard = ({
                 )}
 
                 {isCommentOwner && (
-                  <DynamicDropdown
-                    key={`thread-actions-${id}`}
-                    align="end"
-                    sideOffset={4}
-                    anchorTrigger={
-                      <IconButton
-                        icon="EllipsisVertical"
-                        variant="ghost"
-                        size="sm"
-                        className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
-                      />
-                    }
-                    content={
-                      <div
-                        ref={dropdownRef}
-                        className="flex flex-col p-2 w-40 shadow-elevation-3"
-                      >
-                        {isResolved ? (
-                          <button
-                            className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
-                            onClick={handleUnresolveClick}
-                          >
-                            <LucideIcon name="RotateCcw" size="sm" />
-                            <p className="text-body-sm color-text-default">
-                              Unresolve
-                            </p>
-                          </button>
-                        ) : (
-                          <button className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full">
-                            <LucideIcon name="Pencil" size="sm" />
-                            <p className="text-body-sm color-text-default">
-                              Edit
-                            </p>
-                          </button>
-                        )}
-                        <button
-                          className="flex items-center h-[32px] color-text-danger text-sm font-medium gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
-                          onClick={handleRequestDeleteClick}
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <DynamicDropdown
+                      key={`thread-actions-${id}`}
+                      align="end"
+                      sideOffset={4}
+                      anchorTrigger={
+                        <IconButton
+                          icon="EllipsisVertical"
+                          variant="ghost"
+                          size="sm"
+                          className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
+                        />
+                      }
+                      content={
+                        <div
+                          ref={dropdownRef}
+                          className="flex flex-col p-2 w-40 shadow-elevation-3"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          <LucideIcon
-                            name="Trash2"
-                            size="sm"
-                            stroke="#FB3449"
-                          />
-                          <p className="text-body-sm color-text-danger">
-                            Delete
-                          </p>
-                        </button>
-                      </div>
-                    }
-                  />
+                          {isResolved ? (
+                            <button
+                              className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
+                              onClick={handleUnresolveClick}
+                            >
+                              <LucideIcon name="RotateCcw" size="sm" />
+                              <p className="text-body-sm color-text-default">
+                                Unresolve
+                              </p>
+                            </button>
+                          ) : (
+                            <button className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full">
+                              <LucideIcon name="Pencil" size="sm" />
+                              <p className="text-body-sm color-text-default">
+                                Edit
+                              </p>
+                            </button>
+                          )}
+                          <button
+                            className="flex items-center h-[32px] color-text-danger text-sm font-medium gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
+                            onClick={handleRequestDeleteClick}
+                          >
+                            <LucideIcon
+                              name="Trash2"
+                              size="sm"
+                              stroke="#FB3449"
+                            />
+                            <p className="text-body-sm color-text-danger">
+                              Delete
+                            </p>
+                          </button>
+                        </div>
+                      }
+                    />
+                  </div>
                 )}
               </div>
             </Tooltip>

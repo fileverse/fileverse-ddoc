@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
-import { cn } from '@fileverse/ui';
+import { cn, LucideIcon, Button } from '@fileverse/ui';
 import { CommentCard } from './comment-card';
 import { useCommentStore } from '../../stores/comment-store';
 import { useCommentRefs } from '../../stores/comment-store-provider';
@@ -13,6 +13,7 @@ import { CommentComposeInput } from './comment-compose-input';
 import { DeleteConfirmOverlay } from './delete-confirm-overlay';
 import { IComment } from '../../extensions/comment';
 import { DEFAULT_TAB_ID, DEFAULT_TAB_NAME } from '../tabs/utils/tab-utils';
+import { useResponsive } from '../../utils/responsive';
 
 export const CommentSection = ({
   activeCommentId,
@@ -25,6 +26,7 @@ export const CommentSection = ({
   selectedTabLabel,
   showComposeInput = true,
   onCommentFocus,
+  onReset,
 }: CommentSectionProps) => {
   const tabComments = useCommentStore((s) => s.tabComments);
   const username = useCommentStore((s) => s.username);
@@ -41,6 +43,14 @@ export const CommentSection = ({
   const connectViaUsername = useCommentStore((s) => s.connectViaUsername);
   const isDDocOwner = useCommentStore((s) => s.isDDocOwner);
   const { commentsSectionRef, replySectionRef } = useCommentRefs();
+  const { isBelow1280px } = useResponsive();
+  const isCommentMobileFocused = isMobile && Boolean(openReplyId);
+  const [reOpenLabelCommentId, setReOpenLabelCommentId] = useState<
+    string | null
+  >(null);
+  const [resolvedToastCommentId, setResolvedToastCommentId] = useState<
+    string | null
+  >(null);
 
   const filteredComments = (commentsProp ?? tabComments)
     .filter((comment) => !comment.deleted)
@@ -79,12 +89,23 @@ export const CommentSection = ({
             tabName={getCommentTabName(comment)}
             activeCommentId={activeCommentId}
             isCommentMobileFocused={Boolean(isMobile && openReplyId)}
+            showReOpenLabel={reOpenLabelCommentId === comment.id}
             username={username}
             isDDocOwner={isDDocOwner}
             openReplyId={openReplyId}
             replySectionRef={replySectionRef}
             onCommentClick={handleCommentClick}
-            onResolve={resolveComment}
+            onResolve={(commentId) => {
+              if (isCommentMobileFocused && openReplyId === commentId) {
+                setReOpenLabelCommentId(commentId);
+              }
+
+              if (isBelow1280px) {
+                setResolvedToastCommentId(commentId);
+              }
+
+              resolveComment(commentId);
+            }}
             onUnresolve={unresolveComment}
             onDelete={deleteComment}
             onSetOpenReplyId={setOpenReplyId}
@@ -125,6 +146,22 @@ export const CommentSection = ({
     }
   }, [activeCommentId, commentsSectionRef]);
 
+  useEffect(() => {
+    setReOpenLabelCommentId(null);
+  }, [isCommentMobileFocused]);
+
+  useEffect(() => {
+    if (!isBelow1280px || !resolvedToastCommentId) {
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setResolvedToastCommentId(null);
+    }, 3000);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [isBelow1280px, resolvedToastCommentId]);
+
   if (!isConnected) {
     return (
       <CommentUsername
@@ -152,7 +189,7 @@ export const CommentSection = ({
       )}
     >
       {filteredComments.length === 0 ? (
-        <EmptyComments />
+        <EmptyComments commentType={commentType} handleReset={onReset} />
       ) : (
         <div
           ref={commentsSectionRef}
@@ -160,9 +197,15 @@ export const CommentSection = ({
         >
           {commentType === 'all' ? (
             <>
-              {renderCommentList(activeComments, 'Active')}
-              <div className="mt-[16px]" />
-              {renderCommentList(resolvedComments, 'Resolved')}
+              {renderCommentList(
+                activeComments,
+                !isCommentMobileFocused && 'Active',
+              )}
+              <div className={cn(activeComments.length > 0 && 'mt-[16px]')} />
+              {renderCommentList(
+                resolvedComments,
+                !isCommentMobileFocused && 'Resolved',
+              )}
             </>
           ) : (
             renderCommentList(filteredComments)
@@ -170,6 +213,14 @@ export const CommentSection = ({
         </div>
       )}
       {showComposeInput && <CommentComposeInput />}
+      {isBelow1280px && resolvedToastCommentId && (
+        <MobileResolvedCommentToast
+          onUndo={() => {
+            unresolveComment(resolvedToastCommentId);
+            setResolvedToastCommentId(null);
+          }}
+        />
+      )}
     </div>
   );
 };
@@ -179,6 +230,7 @@ const SidebarCommentItem = ({
   tabName,
   activeCommentId,
   isCommentMobileFocused,
+  showReOpenLabel,
   username,
   isDDocOwner,
   openReplyId,
@@ -193,6 +245,7 @@ const SidebarCommentItem = ({
   tabName: string;
   activeCommentId: string | null;
   isCommentMobileFocused: boolean;
+  showReOpenLabel: boolean;
   username: string | null;
   isDDocOwner: boolean;
   openReplyId: string | null;
@@ -204,9 +257,10 @@ const SidebarCommentItem = ({
   onSetOpenReplyId: (id: string | null) => void;
 }) => {
   const [isDeleteOverlayVisible, setIsDeleteOverlayVisible] = useState(false);
+  const { isBelow1280px } = useResponsive();
 
   const handleSidebarCommentClick = () => {
-    if (comment.resolved) {
+    if (comment.resolved && !isBelow1280px) {
       onSetOpenReplyId(null);
     } else if (comment.id) {
       onSetOpenReplyId(comment.id);
@@ -225,9 +279,27 @@ const SidebarCommentItem = ({
           ? 'color-bg-default border'
           : 'hover:color-bg-default-hover ',
         comment.replies?.length > 0 && 'gap-0',
+        showReOpenLabel && comment.resolved
+          ? 'color-bg-default border color-border-default'
+          : isCommentMobileFocused &&
+              comment.resolved &&
+              'color-bg-default-hover',
       )}
       onClick={handleSidebarCommentClick}
     >
+      {showReOpenLabel && comment.resolved && (
+        <div className="w-full px-[16px] py-[8px] rounded-b-[4px] rounded-t-[12px] items-center flex justify-between color-bg-secondary">
+          <p className="color-text-secondary text-body-sm">Resolved comment</p>
+          <Button
+            onClick={() => onUnresolve(comment.id as string)}
+            variant={'ghost'}
+            className="flex w-[104px] gap-[8px]"
+          >
+            <LucideIcon className="w-[16px] h-[16px]" name={'RefreshCw'} />
+            <p className="text-body-sm-bold">Re-open</p>
+          </Button>
+        </div>
+      )}
       <p className="text-helper-text-sm px-[12px] pt-[12px] h-[26px] max-w-[270px] truncate color-text-secondary">
         {tabName}
       </p>
@@ -275,6 +347,30 @@ const SidebarCommentItem = ({
           onDelete(comment.id as string);
         }}
       />
+    </div>
+  );
+};
+
+const MobileResolvedCommentToast = ({ onUndo }: { onUndo: () => void }) => {
+  return (
+    <div className="fixed bottom-4 left-0 right-0 z-[999999] flex items-center justify-center">
+      <div className="flex h-[46px] items-center space-x-sm rounded-[8px] border color-button-default color-border-default">
+        <div className="mr-[8px] flex gap-[8px] pl-[12px]">
+          <LucideIcon
+            name={'Check'}
+            stroke="#FFFFFF"
+            className="h-[18px] w-[18px]"
+          />
+          <p className="text-heading-xsm text-white">Comment resolved</p>
+        </div>
+        <div className="mx-[4px] h-[16px] border-l border-[#404040]" />
+        <Button
+          onClick={onUndo}
+          className="!min-w-[51px] w-[51px] gap-xsm color-text-default text-body-sm-bold"
+        >
+          <p className="text-body-sm-bold">Undo</p>
+        </Button>
+      </div>
     </div>
   );
 };

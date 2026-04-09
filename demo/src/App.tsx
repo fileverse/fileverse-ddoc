@@ -134,7 +134,7 @@ function App() {
   const isMobile = useMediaQuery('(max-width: 768px)');
   const isMediaMax1280px = useMediaQuery('(max-width: 1280px)');
   const [selectedTags, setSelectedTags] = useState<TagType[]>([]);
-  const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(false);
+  const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(true);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [showTOC, setShowTOC] = useState<boolean>(false);
   const [collaborationId, setCollaborationId] = useState<string>('');
