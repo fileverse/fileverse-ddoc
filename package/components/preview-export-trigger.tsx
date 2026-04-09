@@ -20,6 +20,7 @@ interface PreviewModeExportTriggerProps {
   onPdfExport?: DdocProps['onPdfExport'];
   onHtmlExport?: DdocProps['onHtmlExport'];
   onTxtExport?: DdocProps['onTxtExport'];
+  onOdtExport?: DdocProps['onOdtExport'];
   ipfsImageFetchFn?: DdocProps['ipfsImageFetchFn'];
   onDocxImport?: DdocProps['onDocxImport'];
   fetchV1ImageFn?: DdocProps['fetchV1ImageFn'];
@@ -38,6 +39,7 @@ const PreviewModeExportTrigger = ({
   onPdfExport,
   onHtmlExport,
   onTxtExport,
+  onOdtExport,
   ipfsImageFetchFn,
   onDocxImport,
   fetchV1ImageFn,
@@ -55,6 +57,7 @@ const PreviewModeExportTrigger = ({
     onPdfExport,
     onHtmlExport,
     onTxtExport,
+    onOdtExport,
     ipfsImageFetchFn,
     onDocxImport,
     fetchV1ImageFn,

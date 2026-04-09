@@ -62,6 +62,7 @@ import Typography from '@tiptap/extension-typography';
 import MarkdownPasteHandler from './mardown-paste-handler';
 import HtmlExportExtension from './html-export';
 import TextExportExtension from './text-export';
+import OdtExportExtension from './odt-export';
 import { DocxFileHandler } from './docx/docx-import';
 import { MathExtension } from '@aarkue/tiptap-math-extension';
 import { Footnote } from './footnote/footnote';
@@ -315,6 +316,7 @@ export const defaultExtensions = ({
   MarkdownPasteHandler(ipfsImageUploadFn, ipfsImageFetchFn, undefined, onError),
   HtmlExportExtension(ipfsImageFetchFn, fetchV1ImageFn),
   TextExportExtension(),
+  OdtExportExtension(ipfsImageFetchFn, fetchV1ImageFn),
   Markdown.configure({
     tightListClass: 'tight',
     bulletListMarker: '-',
