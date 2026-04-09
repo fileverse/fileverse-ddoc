@@ -79,7 +79,7 @@ export const CommentDrawer = ({
     resolvedTabs.map((tabOption) => [tabOption.id, tabOption.name]),
   );
   const [commentType, setCommentType] = useState('active');
-  const [tab, setTab] = useState(activeTabId);
+  const [tab, setTab] = useState(ALL_TABS_OPTION_ID);
   const selectedTabLabel =
     tabList.find((tabOption) => tabOption.id === tab)?.label ??
     DEFAULT_TAB_NAME;
@@ -393,7 +393,7 @@ export const CommentDrawer = ({
               <div className="flex mb-[16px] gap-[8px]">
                 <Select value={commentType} onValueChange={setCommentType}>
                   <SelectTrigger className="w-[148px]">
-                    <SelectValue placeholder="All types" />
+                    <SelectValue placeholder="Active" />
                   </SelectTrigger>
                   <SelectContent>
                     {commentTypeOptions.map((option) => (

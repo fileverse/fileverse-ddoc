@@ -71,7 +71,7 @@ const EmptyComments = ({
         alt="empty comments"
       />
       <div className="text-heading-xsm mt-4">No comments yet</div>
-      {commentType === 'all ' ? (
+      {commentType === 'all' ? (
         <p className="text-body-sm color-text-secondary">
           Add a comment on the text or in this window
         </p>

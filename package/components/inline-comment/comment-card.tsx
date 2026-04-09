@@ -135,10 +135,10 @@ const CommentReply = ({
                 ref={dropdownRef}
                 className="flex flex-col p-2 w-40 shadow-elevation-3"
               >
-                <button className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full">
+                {/* <button className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full">
                   <LucideIcon name="Pencil" size="sm" />
                   <p className="text-body-sm color-text-default">Edit</p>
-                </button>
+                </button> */}
                 <button
                   className="flex items-center h-[32px] color-text-danger text-sm font-medium gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
                   onClick={handleRequestDeleteClick}
@@ -152,7 +152,7 @@ const CommentReply = ({
         </div>
       </div>
 
-      <div className="ml-3 pl-4 border-l custom-border ">
+      <div className="ml-[14px] pl-4 border-l custom-border ">
         <div className="text-body-sm flex flex-col gap-2 whitespace-pre-wrap break-words">
           {renderTextWithLinks(displayedComment)}
         </div>
@@ -287,11 +287,12 @@ export const CommentCard = ({
 
     return (
       <div className="flex flex-col gap-0 relative">
-        {visibleReplies.length > 3 && !showAllReplies && (
+        {((visibleReplies.length > 3 && !showAllReplies) ||
+          (!isCommentMobileFocused && visibleReplies.length <= 3)) && (
           <div
             onClick={() => setShowAllReplies(true)}
             className={cn(
-              'text-helper-text-sm color-text-secondary min-h-[28px] mb-[4px] hover:underline custom-border cursor-pointer flex items-center gap-2 px-[8px]',
+              'text-helper-text-sm color-text-secondary min-h-[28px] mb-[4px] hover:underline custom-border cursor-pointer flex items-center gap-2 pr-[8px] pl-[4px]',
               !shouldShowReplyThread && 'justify-center mt-[4px]',
             )}
           >
@@ -320,8 +321,8 @@ export const CommentCard = ({
                 />
               ))}
             </div>
-            {visibleReplies.length - replyThreadCount} more replies in this
-            thread
+            {visibleReplies.length - replyThreadCount}{' '}
+            {replyThreadCount > 0 && 'more'} replies in this thread
           </div>
         )}
 
@@ -442,7 +443,7 @@ export const CommentCard = ({
                           className="flex flex-col p-2 w-40 shadow-elevation-3"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          {isResolved ? (
+                          {isResolved && (
                             <button
                               className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
                               onClick={handleUnresolveClick}
@@ -450,13 +451,6 @@ export const CommentCard = ({
                               <LucideIcon name="RotateCcw" size="sm" />
                               <p className="text-body-sm color-text-default">
                                 Unresolve
-                              </p>
-                            </button>
-                          ) : (
-                            <button className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full">
-                              <LucideIcon name="Pencil" size="sm" />
-                              <p className="text-body-sm color-text-default">
-                                Edit
                               </p>
                             </button>
                           )}
@@ -496,9 +490,15 @@ export const CommentCard = ({
         </div>
         <div
           className={cn(
-            'flex flex-col gap-2 ml-3 pl-4 custom-border py-0',
+            'flex flex-col gap-2   pl-4 custom-border py-0',
             // (isFocused || (replies || []).length > 0) && 'pb-3',
-            (replies || []).length > 0 && 'border-l',
+            (
+              isBelow1280px
+                ? isCommentMobileFocused
+                : (replies || []).length > 0
+            )
+              ? 'border-l ml-[14px]'
+              : 'ml-[15px]',
           )}
         >
           {/* {selectedContent && (

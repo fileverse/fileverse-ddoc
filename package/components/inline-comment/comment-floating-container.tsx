@@ -232,6 +232,7 @@ const ThreadFloatingCard = ({
 }) => {
   const blurFloatingCard = useCommentStore((s) => s.blurFloatingCard);
   const focusFloatingCard = useCommentStore((s) => s.focusFloatingCard);
+  const focusCommentInEditor = useCommentStore((s) => s.focusCommentInEditor);
   const handleAddReply = useCommentStore((s) => s.handleAddReply);
   const isConnected = useCommentStore((s) => s.isConnected);
   const resolveComment = useCommentStore((s) => s.resolveComment);
@@ -246,6 +247,9 @@ const ThreadFloatingCard = ({
   const isCommentOwner =
     Boolean(comment?.username && comment.username === username) || isDDocOwner;
   const canReply = !comment?.resolved && Boolean(comment);
+  const hasUnsentReply = Boolean(replyText.trim());
+  const shouldShowReplyComposer =
+    isConnected && (thread.isFocused || hasUnsentReply);
 
   const onReplySubmit = () => {
     if (!thread.commentId || !replyText.trim()) {
@@ -282,13 +286,21 @@ const ThreadFloatingCard = ({
     deleteComment(thread.commentId);
   };
 
+  const handleThreadFocus = () => {
+    focusFloatingCard(thread.floatingCardId);
+
+    if (!thread.isFocused && thread.commentId) {
+      focusCommentInEditor(thread.commentId);
+    }
+  };
+
   return (
     <FloatingCardShell
       ref={(node) => registerCardNode(thread.floatingCardId, node)}
       floatingCardId={thread.floatingCardId}
       isHidden={isHidden}
       isFocused={thread.isFocused}
-      onFocus={() => focusFloatingCard(thread.floatingCardId)}
+      onFocus={handleThreadFocus}
     >
       <div className="flex flex-col gap-[8px]">
         <p className="text-helper-text-sm px-[12px] pt-[12px] h-[26px] max-w-[270px] truncate color-text-secondary">
@@ -315,7 +327,7 @@ const ThreadFloatingCard = ({
           emptyComment={!comment}
         />
         {thread.isFocused && !isConnected && <FloatingAuthPrompt />}
-        {thread.isFocused && isConnected && (
+        {shouldShowReplyComposer && (
           <div className="group p-3 pt-0">
             <div className="border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
               <Avatar
@@ -347,7 +359,12 @@ const ThreadFloatingCard = ({
                 disabled={!canReply}
               />
             </div>
-            <div className="hidden items-center justify-end gap-2 pt-2 group-focus-within:flex">
+            <div
+              className={cn(
+                'items-center justify-end gap-2 pt-2',
+                hasUnsentReply ? 'flex' : 'hidden group-focus-within:flex',
+              )}
+            >
               <Button
                 variant={'ghost'}
                 className="w-20 min-w-20"

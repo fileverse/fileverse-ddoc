@@ -586,6 +586,31 @@ export const useFloatingLayoutEngine = ({
   );
 
   useEffect(() => {
+    if (!isDesktopFloatingEnabled || !focusedFloatingCardId || isHidden) {
+      return;
+    }
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') {
+        return;
+      }
+
+      blurFloatingCard(focusedFloatingCardId);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [
+    blurFloatingCard,
+    focusedFloatingCardId,
+    isDesktopFloatingEnabled,
+    isHidden,
+  ]);
+
+  useEffect(() => {
     if (isDesktopFloatingEnabled) {
       return;
     }

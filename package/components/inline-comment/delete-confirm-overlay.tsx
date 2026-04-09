@@ -18,7 +18,7 @@ export const DeleteConfirmOverlay = ({
   onConfirm,
   className,
   heading = 'Delete comment',
-  description = 'Do you really want to delete this comment?',
+  description,
   confirmLabel = 'Delete',
 }: {
   isVisible: boolean;
@@ -31,6 +31,9 @@ export const DeleteConfirmOverlay = ({
   confirmLabel?: string;
 }) => {
   const isMobile = useMediaQuery('(max-width: 1000px)', { defaultValue: true });
+  const resolvedDescription =
+    description ?? 'Do you really want to delete this comment?';
+
   if (!isVisible) {
     return null;
   }
@@ -61,7 +64,7 @@ export const DeleteConfirmOverlay = ({
           </DialogTitle>
         </DialogHeader>
         <p className="text-body-sm px-[16px] color-text-default">
-          {description}
+          {resolvedDescription}
         </p>
 
         <DialogFooter className="bottom-space-md space-x-md mt-[16px]  w-full">
