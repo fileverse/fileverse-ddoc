@@ -285,10 +285,14 @@ export const CommentCard = ({
       );
     }
 
+    const shouldShowMinimizedReplies =
+      isBelow1280px && !isCommentMobileFocused
+        ? visibleReplies.length > 0
+        : visibleReplies.length > 3 && !showAllReplies;
+
     return (
       <div className="flex flex-col gap-0 relative">
-        {((visibleReplies.length > 3 && !showAllReplies) ||
-          (!isCommentMobileFocused && visibleReplies.length <= 3)) && (
+        {shouldShowMinimizedReplies && (
           <div
             onClick={() => setShowAllReplies(true)}
             className={cn(
