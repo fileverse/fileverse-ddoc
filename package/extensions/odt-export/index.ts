@@ -29,7 +29,10 @@ function htmlToXhtml(html: string): string {
 /**
  * Preprocess TipTap HTML for odf-kit compatibility:
  * - Convert task lists to standard lists with checkbox text prefixes
- * - Remove <img> tags (odf-kit v1 skips images)
+ * - Replace <img> tags with warning text (odf-kit v1 skips images)
+ * - Convert callouts (<aside>) to blockquotes
+ * - Convert Twitter embeds to links
+ * - Convert iframes (YouTube, SoundCloud, etc.) to links
  * - Strip TipTap-specific data attributes
  * - Convert void elements to self-closing XHTML for the XML parser
  */
@@ -78,6 +81,45 @@ export function preprocessHtml(html: string): { html: string } {
     const warning = doc.createElement('em');
     warning.textContent = '[Images are not supported in the export as of now.]';
     img.replaceWith(warning);
+  });
+
+  // Convert callouts (<aside data-type="callout">) to blockquotes
+  doc.querySelectorAll('aside[data-type="callout"]').forEach((aside) => {
+    const blockquote = doc.createElement('blockquote');
+    while (aside.firstChild) {
+      blockquote.appendChild(aside.firstChild);
+    }
+    aside.replaceWith(blockquote);
+  });
+
+  // Convert Twitter embeds (<div data-tweet-id="...">) to links
+  doc.querySelectorAll('div[data-tweet-id]').forEach((div) => {
+    const tweetId = div.getAttribute('data-tweet-id');
+    if (tweetId) {
+      const p = doc.createElement('p');
+      const link = doc.createElement('a');
+      link.href = `https://x.com/i/status/${tweetId}`;
+      link.textContent = `Tweet: https://x.com/i/status/${tweetId}`;
+      p.appendChild(link);
+      div.replaceWith(p);
+    } else {
+      div.remove();
+    }
+  });
+
+  // Convert iframes (YouTube, SoundCloud, etc.) to links
+  doc.querySelectorAll('iframe').forEach((iframe) => {
+    const src = iframe.getAttribute('src');
+    if (src) {
+      const p = doc.createElement('p');
+      const link = doc.createElement('a');
+      link.href = src;
+      link.textContent = src;
+      p.appendChild(link);
+      iframe.replaceWith(p);
+    } else {
+      iframe.remove();
+    }
   });
 
   // Strip remaining data attributes
