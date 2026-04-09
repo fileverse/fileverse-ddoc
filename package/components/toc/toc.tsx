@@ -23,7 +23,11 @@ export const ToCItem = memo(
     // Memoize the click handler to prevent recreating it on every render
     const [, copyToClipboard] = useCopyToClipboard();
     const [copyState, setCopyState] = useState<boolean | null>(null);
-    function handleCopyToClipboard(val: string) {
+    function handleCopyToClipboard(
+      ev: React.MouseEvent<HTMLButtonElement>,
+      val: string,
+    ) {
+      ev.stopPropagation();
       copyToClipboard(val)
         .then((success) => {
           if (success) {
@@ -125,7 +129,7 @@ export const ToCItem = memo(
                   ? 'max-[1280px]:visible'
                   : 'max-[1280px]:invisible',
               )}
-              onClick={() => handleCopyToClipboard(href)}
+              onClick={(ev) => handleCopyToClipboard(ev, href)}
             />
           </Tooltip>
         </a>

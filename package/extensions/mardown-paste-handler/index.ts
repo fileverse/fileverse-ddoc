@@ -402,13 +402,61 @@ const MarkdownPasteHandler = (
         new Plugin({
           props: {
             handlePaste: (view, event) => {
-              event.preventDefault();
-
               const clipboardData = event.clipboardData;
               if (!clipboardData) return false;
 
               // Get the Markdown content from the clipboard
               const copiedData = clipboardData.getData('text/plain');
+
+              // When a heading link URL is pasted without text selection,
+              // insert it as a named link using the heading's actual text.
+              const { empty } = view.state.selection;
+              if (empty && copiedData) {
+                try {
+                  const url = new URL(copiedData.trim());
+                  if (
+                    url.origin === window.location.origin &&
+                    url.hash
+                  ) {
+                    const hash = decodeURIComponent(url.hash.slice(1));
+                    const params = new URLSearchParams(hash);
+                    const headingParam = params.get('heading');
+                    if (headingParam) {
+                      const id = headingParam.split('-').pop();
+                      if (id) {
+                        const headingEl = Array.from(
+                          document.querySelectorAll('[data-toc-id]'),
+                        ).find((el) =>
+                          (el as HTMLElement).dataset.tocId?.includes(id),
+                        ) as HTMLElement | undefined;
+
+                        if (headingEl?.textContent) {
+                          event.preventDefault();
+                          this.editor
+                            .chain()
+                            .focus()
+                            .insertContent({
+                              type: 'text',
+                              text: headingEl.textContent,
+                              marks: [
+                                {
+                                  type: 'link',
+                                  attrs: { href: copiedData.trim() },
+                                },
+                              ],
+                            })
+                            .run();
+                          return true;
+                        }
+                      }
+                    }
+                  }
+                } catch {
+                  // not a URL — continue to normal paste
+                }
+              }
+
+              event.preventDefault();
 
               // Check if we're in a code block
               const { state } = view;
