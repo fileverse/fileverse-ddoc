@@ -55,6 +55,7 @@ type InlineCommentDataUpdater =
 type InlineDraftRecordMap = Record<string, InlineCommentDraft>;
 type CreateInlineDraftOptions = {
   location?: InlineDraftLocation;
+  tabId?: string;
   // Only the drawer's explicit "new comment" action may bypass text selection.
   // Do not reuse this for floating comments unless unanchored inline threads
   // become a deliberate product requirement.
@@ -256,10 +257,13 @@ export interface CommentStoreState {
   ) => void;
   handleReplyChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   handleCommentChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
-  handleCommentKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  handleCommentKeyDown: (
+    e: React.KeyboardEvent<HTMLTextAreaElement>,
+    tabId?: string,
+  ) => void;
   handleReplyKeyDown: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   handleReplySubmit: () => void;
-  handleCommentSubmit: () => void;
+  handleCommentSubmit: (tabId?: string) => void;
   handleInlineComment: () => void;
 
   // --- Comment operations ---
@@ -582,10 +586,10 @@ export const createCommentStore = () =>
         e.target.style.height = '40px';
       }
     },
-    handleCommentKeyDown: (e) => {
+    handleCommentKeyDown: (e, tabId) => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        get().handleCommentSubmit();
+        get().handleCommentSubmit(tabId);
       }
     },
     handleReplyKeyDown: (e) => {
@@ -606,9 +610,10 @@ export const createCommentStore = () =>
       get().handleAddReply(targetCommentId, reply, onCommentReply ?? undefined);
       set({ reply: '' });
     },
-    handleCommentSubmit: () => {
+    handleCommentSubmit: (tabId) => {
       const { comment, username, activeTabId, onComment } = get();
       const { onNewComment, setActiveCommentId } = getExtDeps(get);
+      const targetTabId = tabId ?? activeTabId;
 
       if (!comment.trim() || !username) {
         return;
@@ -616,7 +621,7 @@ export const createCommentStore = () =>
 
       const newComment: IComment = {
         id: `comment-${uuid()}`,
-        tabId: activeTabId,
+        tabId: targetTabId,
         username,
         selectedContent: '',
         content: comment,
@@ -661,11 +666,13 @@ export const createCommentStore = () =>
       const {
         isDesktopFloatingEnabled,
         activeDraftId,
+        activeTabId,
         inlineDrafts,
         setCommentDrawerOpen,
       } = get();
       const draftLocation =
         options?.location ?? (isDesktopFloatingEnabled ? 'floating' : 'drawer');
+      const draftTabId = options?.tabId ?? activeTabId;
       const allowEmptySelection =
         draftLocation === 'drawer' && Boolean(options?.allowEmptySelection);
 
@@ -694,6 +701,7 @@ export const createCommentStore = () =>
               : state.inlineDrafts,
             {
               draftId,
+              tabId: draftTabId,
               selectedText: '',
               text: '',
               location: 'drawer',
@@ -760,6 +768,7 @@ export const createCommentStore = () =>
             : state.inlineDrafts,
           {
             draftId,
+            tabId: draftTabId,
             selectedText: hasSelectionAnchor ? text : '',
             text: '',
             location: draftLocation,
@@ -901,7 +910,7 @@ export const createCommentStore = () =>
       // new-comment action and should persist as a plain tab-level comment.
       const newComment: IComment = {
         id: `comment-${uuid()}`,
-        tabId: activeTabId,
+        tabId: draft.tabId ?? activeTabId,
         username,
         selectedContent: draft.selectedText,
         content: draftText,

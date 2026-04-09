@@ -159,7 +159,10 @@ const CommentReply = ({
         {isCommentTruncated && (
           <button
             type="button"
-            onClick={() => setIsCommentExpanded((prev) => !prev)}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsCommentExpanded((prev) => !prev);
+            }}
             className="color-text-link text-left mt-[4px] cursor-pointer text-helper-text-sm"
           >
             {isCommentExpanded ? 'Show less' : 'Show more'}
@@ -187,6 +190,7 @@ export const CommentCard = ({
   onDelete: _onDelete,
   onRequestDelete,
   onUnresolve,
+  onFocusRequest,
   isResolved,
   isDropdown = false,
   activeCommentId,
@@ -196,6 +200,7 @@ export const CommentCard = ({
   isCommentOwner,
   version,
   emptyComment,
+  isFocused,
   isCommentDrawerContext,
 }: CommentCardProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -223,14 +228,19 @@ export const CommentCard = ({
       }
     }
   };
+  const shouldKeepDropdownExpanded = isDropdown && isFocused === undefined;
+  const isCardActive = Boolean(
+    isFocused || (!isDropdown && id === activeCommentId),
+  );
 
   useEffect(() => {
-    if (isDropdown) {
+    if (shouldKeepDropdownExpanded) {
       setShowAllReplies(true);
     }
 
-    if (id !== activeCommentId) {
+    if (!shouldKeepDropdownExpanded && !isCardActive) {
       setShowAllReplies(false);
+      setIsCommentExpanded(false);
     }
 
     if (commentsContainerRef.current && replies) {
@@ -239,7 +249,7 @@ export const CommentCard = ({
         behavior: 'smooth',
       });
     }
-  }, [isDropdown, activeCommentId, id, replies]);
+  }, [shouldKeepDropdownExpanded, isCardActive, replies]);
 
   const handleResolveClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
@@ -255,6 +265,21 @@ export const CommentCard = ({
   const handleUnresolveClick = () => {
     onUnresolve?.(id as string);
     removePopoverContent();
+  };
+  const focusCardIfNeeded = () => {
+    if (!isCardActive) {
+      onFocusRequest?.();
+    }
+  };
+  const handleCommentExpandClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
+    focusCardIfNeeded();
+    setIsCommentExpanded((prev) => !prev);
+  };
+  const handleReplyToggleClick = (e: React.MouseEvent<HTMLElement>) => {
+    e.stopPropagation();
+    focusCardIfNeeded();
+    setShowAllReplies((prev) => !prev);
   };
   const isCommentMobileFocused = isBelow1280px && Boolean(openReplyId);
   const shouldShowReplyThread = !isBelow1280px || isCommentMobileFocused;
@@ -305,11 +330,21 @@ export const CommentCard = ({
     isBelow1280px && !isCommentMobileFocused
       ? visibleReplies.length > 0
       : visibleReplies.length > 3 && !showAllReplies;
+  const shouldShowResolvedMobileReplyCount =
+    isResolved && isCommentMobileFocused && !showAllReplies;
+  const shouldShowReplyToggle =
+    shouldShowMinimizedReplies ||
+    (shouldShowReplyThread && visibleReplies.length > 3 && showAllReplies) ||
+    (isResolved && isCommentMobileFocused && showAllReplies);
+  const replyToggleLabel = showAllReplies
+    ? 'Hide replies'
+    : `${visibleReplies.length - replyThreadCount} ${replyThreadCount > 0 ? 'more ' : ''}replies in this thread`;
 
   return (
     <div
       ref={commentsContainerRef}
       data-testid={id ? `comment-card-${id}` : 'comment-card'}
+      onClick={focusCardIfNeeded}
       className={cn(
         'flex flex-col gap-[4px] group comment-card',
         isResolved && 'opacity-70',
@@ -450,7 +485,7 @@ export const CommentCard = ({
               {isCommentTruncated && (
                 <button
                   type="button"
-                  onClick={() => setIsCommentExpanded((prev) => !prev)}
+                  onClick={handleCommentExpandClick}
                   className="color-text-link mt-[4px] cursor-pointer text-helper-text-sm"
                 >
                   {isCommentExpanded ? 'Show less' : 'Show more'}
@@ -462,47 +497,54 @@ export const CommentCard = ({
       </div>
 
       {visibleReplies.length > 0 &&
-        (isResolved && isCommentMobileFocused ? (
-          // Mobile resolved threads collapse to a count so the drawer can keep
-          // the reopen state compact without rendering a hidden reply stack.
-          <p className="text-helper-text-sm">{visibleReplies.length} replies</p>
+        (shouldShowResolvedMobileReplyCount ? (
+          // Mobile resolved threads stay compact by default, but the count can
+          // still expand the thread on demand.
+          <button
+            type="button"
+            onClick={handleReplyToggleClick}
+            className="text-helper-text-sm color-text-secondary text-left hover:underline"
+          >
+            {visibleReplies.length} replies
+          </button>
         ) : (
           <div className="flex flex-col gap-0 relative">
-            {shouldShowMinimizedReplies && (
+            {shouldShowReplyToggle && (
               <div
-                onClick={() => setShowAllReplies(true)}
+                onClick={handleReplyToggleClick}
                 className={cn(
                   'text-helper-text-sm color-text-secondary min-h-[28px] mb-[4px] hover:underline custom-border cursor-pointer flex items-center gap-2 pr-[8px] pl-[4px]',
                   !shouldShowReplyThread && 'justify-center mt-[4px]',
                 )}
               >
                 <IconButton
-                  icon="ChevronDown"
+                  icon={showAllReplies ? 'ChevronUp' : 'ChevronDown'}
                   variant="ghost"
                   size="sm"
                   rounded
                   className="color-text-secondary border custom-border !min-w-[20px] !w-[20px] !h-[20px]"
-                  onClick={() => setShowAllReplies(true)}
+                  onClick={handleReplyToggleClick}
                 />
-                <div className="flex items-center -space-x-1">
-                  {visibleReplies.slice(0, 2).map((reply) => (
-                    <Avatar
-                      src={
-                        ensStatus.isEns
-                          ? EnsLogo
-                          : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-                              reply.username || '',
-                            )}`
-                      }
-                      size="sm"
-                      className="w-4 h-4 last:z-10 bg-transparent"
-                      bordered="border"
-                      key={reply.id}
-                    />
-                  ))}
-                </div>
-                {visibleReplies.length - replyThreadCount}{' '}
-                {replyThreadCount > 0 && 'more'} replies in this thread
+                {!showAllReplies && (
+                  <div className="flex items-center -space-x-1">
+                    {visibleReplies.slice(0, 2).map((reply) => (
+                      <Avatar
+                        src={
+                          ensStatus.isEns
+                            ? EnsLogo
+                            : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                                reply.username || '',
+                              )}`
+                        }
+                        size="sm"
+                        className="w-4 h-4 last:z-10 bg-transparent"
+                        bordered="border"
+                        key={reply.id}
+                      />
+                    ))}
+                  </div>
+                )}
+                {replyToggleLabel}
               </div>
             )}
 

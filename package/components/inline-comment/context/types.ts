@@ -14,6 +14,9 @@ export type InlineDraftLocation = 'drawer' | 'floating';
 
 export interface InlineCommentDraft {
   draftId: string;
+  // Capture the intended tab when the draft is created so later submission
+  // does not depend on whichever tab happens to be active then.
+  tabId: string;
   selectedText: string;
   text: string;
   // The UI location is tracked explicitly so open/close behavior can differ

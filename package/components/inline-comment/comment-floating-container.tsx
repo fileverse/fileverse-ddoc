@@ -317,6 +317,7 @@ const ThreadFloatingCard = ({
           comment={comment?.content}
           createdAt={comment?.createdAt}
           isFocused={thread.isFocused}
+          onFocusRequest={handleThreadFocus}
           replies={comment?.replies}
           isResolved={comment?.resolved}
           isDropdown

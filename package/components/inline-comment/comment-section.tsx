@@ -24,6 +24,7 @@ export const CommentSection = ({
   commentType = 'active',
   tabNameById,
   selectedTabLabel,
+  newCommentTabId,
   showNewCommentInput = true,
   onCommentFocus,
   onReset,
@@ -254,7 +255,9 @@ export const CommentSection = ({
         )}
       </div>
 
-      {showNewCommentInput && <CommentNewCommentInput />}
+      {showNewCommentInput && (
+        <CommentNewCommentInput tabId={newCommentTabId} />
+      )}
       {isBelow1280px && resolvedToastCommentId && (
         <MobileResolvedCommentToast
           onUndo={() => {
@@ -350,6 +353,8 @@ const SidebarCommentItem = ({
       <CommentCard
         id={comment.id}
         activeCommentId={activeCommentId as string}
+        isFocused={openReplyId === comment.id}
+        onFocusRequest={handleSidebarCommentClick}
         username={comment.username}
         selectedContent={comment.selectedContent}
         createdAt={comment.createdAt}

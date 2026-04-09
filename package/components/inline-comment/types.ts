@@ -46,6 +46,7 @@ export interface CommentCardProps extends IComment {
   onDelete?: (commentId: string) => void;
   onRequestDelete?: (commentId: string) => void;
   onUnresolve?: (commentId: string) => void;
+  onFocusRequest?: () => void;
   isResolved?: boolean;
   isDropdown?: boolean;
   activeCommentId?: string;
@@ -85,6 +86,7 @@ export interface CommentSectionProps {
   sectionLabel?: string;
   tabNameById?: Record<string, string>;
   selectedTabLabel?: string;
+  newCommentTabId?: string;
   showNewCommentInput?: boolean;
   onCommentFocus?: (commentId: string, tabId?: string) => void;
   onReset?: () => void;

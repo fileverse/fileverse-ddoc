@@ -4,7 +4,7 @@ import EnsLogo from '../../assets/ens.svg';
 import { useEffect, useState } from 'react';
 import { EnsStatus } from './types';
 
-export const CommentNewCommentInput = () => {
+export const CommentNewCommentInput = ({ tabId }: { tabId?: string }) => {
   const comment = useCommentStore((s) => s.comment);
   const username = useCommentStore((s) => s.username);
   const handleCommentChange = useCommentStore((s) => s.handleCommentChange);
@@ -40,7 +40,7 @@ export const CommentNewCommentInput = () => {
           data-testid="comment-section-input"
           value={comment}
           onChange={handleCommentChange}
-          onKeyDown={handleCommentKeyDown}
+          onKeyDown={(event) => handleCommentKeyDown(event, tabId)}
           style={{
             ...(!comment ? { height: '20px' } : {}),
           }}
@@ -53,7 +53,7 @@ export const CommentNewCommentInput = () => {
       <div className="flex px-4 items-center color-bg-default justify-end">
         <Button
           data-testid="comment-section-send"
-          onClick={handleCommentSubmit}
+          onClick={() => handleCommentSubmit(tabId)}
           className="px-4 py-2 w-20 min-w-20 h-9"
           disabled={!comment.trim() || !username}
         >

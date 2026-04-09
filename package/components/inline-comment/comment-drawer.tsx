@@ -97,6 +97,7 @@ export const CommentDrawer = ({
   );
   const [commentType, setCommentType] = useState('active');
   const [tab, setTab] = useState(ALL_TABS_OPTION_ID);
+  const selectedCommentTabId = tab === ALL_TABS_OPTION_ID ? activeTabId : tab;
   const selectedTabLabel =
     tabList.find((tabOption) => tabOption.id === tab)?.label ??
     DEFAULT_TAB_NAME;
@@ -220,6 +221,7 @@ export const CommentDrawer = ({
     createFloatingDraft({
       location: 'drawer',
       allowEmptySelection: true,
+      tabId: selectedCommentTabId,
     });
   };
 
@@ -379,6 +381,7 @@ export const CommentDrawer = ({
                   <h2 className="text-heading-sm">All Comments</h2>
                   <div className="flex gap-sm">
                     <IconButton
+                      disabled={!isConnected}
                       icon={'MessageSquarePlus'}
                       onClick={handleStartNewMobileComment}
                       variant="ghost"
@@ -480,6 +483,7 @@ export const CommentDrawer = ({
                 sectionLabel={sectionLabel}
                 tabNameById={tabNameById}
                 selectedTabLabel={selectedTabLabel}
+                newCommentTabId={selectedCommentTabId}
                 onCommentFocus={handleCommentFocus}
                 onReset={() => {
                   // Reset both filters so the empty state can always recover
