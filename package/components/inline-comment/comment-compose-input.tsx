@@ -25,7 +25,7 @@ export const CommentComposeInput = () => {
 
   return (
     <div className="flex flex-col gap-3 color-bg-default border-t color-border-default pt-[20px] rounded-b-lg">
-      <div className="border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
+      <div className="border mx-4 flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
         <Avatar
           src={
             ensStatus.isEns
@@ -50,7 +50,7 @@ export const CommentComposeInput = () => {
         />
       </div>
 
-      <div className="flex items-center color-bg-default justify-end">
+      <div className="flex px-4 items-center color-bg-default justify-end">
         <Button
           data-testid="comment-section-send"
           onClick={handleCommentSubmit}

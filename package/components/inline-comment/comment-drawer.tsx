@@ -385,12 +385,12 @@ export const CommentDrawer = ({
               : 'top-[4rem] h-[calc(100vh-90px)] xl:h-[calc(99vh-90px)]',
             isPresentationMode && 'h-[calc(100vh-5rem)] top-[4rem] !z-[60]',
           )}
-          headerClassName="border-b color-border-default !color-bg-default pb-[12px] !rounded-t-lg"
-          contentClassName="!rounded-lg !h-full select-text color-bg-default"
+          headerClassName="border-b color-border-default !color-bg-default px-4 pb-[12px] !rounded-t-lg"
+          contentClassName="!rounded-lg !px-0 !h-full select-text color-bg-default"
           title="Comments"
           content={
             <div className="pt-4">
-              <div className="flex mb-[16px] gap-[8px]">
+              <div className="flex mb-[16px] px-4 gap-[8px]">
                 <Select value={commentType} onValueChange={setCommentType}>
                   <SelectTrigger className="w-[148px]">
                     <SelectValue placeholder="Active" />

@@ -1,6 +1,6 @@
 import { Avatar, TextAreaFieldV2, Button, IconButton, cn } from '@fileverse/ui';
 import { useCommentStore } from '../../stores/comment-store';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { EnsStatus } from './types';
 import { useResponsive } from '../../utils/responsive';
 
@@ -24,8 +24,8 @@ export const CommentReplyInput = ({
   const username = useCommentStore((s) => s.username);
   const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
   const ensCache = useCommentStore((s) => s.ensCache);
-  const replyInputContainerRef = useRef<HTMLDivElement | null>(null);
   const { isBelow1280px } = useResponsive();
+  const hasUnsentReply = Boolean(reply.trim());
 
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
     name: username as string,
@@ -36,22 +36,8 @@ export const CommentReplyInput = ({
     getEnsStatus(username as string, setEnsStatus);
   }, [username, ensCache, getEnsStatus]);
 
-  useEffect(() => {
-    const frameId = window.requestAnimationFrame(() => {
-      const focusTarget = replyInputContainerRef.current?.querySelector<
-        HTMLTextAreaElement | HTMLInputElement
-      >('textarea, input');
-
-      focusTarget?.focus({ preventScroll: true });
-    });
-
-    return () => {
-      window.cancelAnimationFrame(frameId);
-    };
-  }, [commentId]);
-
   return (
-    <div ref={replyInputContainerRef} className="group p-3 mt-[8px] pt-0">
+    <div className="group p-3 mt-[8px] pt-0">
       <div
         className={cn(
           'border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]',
@@ -79,7 +65,6 @@ export const CommentReplyInput = ({
           id={commentId}
           onChange={handleReplyChange}
           onKeyDown={handleReplyKeyDown}
-          autoFocus
         />
         <IconButton
           onClick={() => handleReplySubmit()}
@@ -96,7 +81,10 @@ export const CommentReplyInput = ({
         className={
           isBelow1280px
             ? 'hidden'
-            : 'hidden items-center justify-end gap-2 pt-2 group-focus-within:flex'
+            : cn(
+                'items-center justify-end gap-2 pt-2',
+                hasUnsentReply ? 'flex' : 'hidden group-focus-within:flex',
+              )
         }
       >
         <Button

@@ -230,7 +230,6 @@ const ThreadFloatingCard = ({
     node: HTMLDivElement | null,
   ) => void;
 }) => {
-  const blurFloatingCard = useCommentStore((s) => s.blurFloatingCard);
   const focusFloatingCard = useCommentStore((s) => s.focusFloatingCard);
   const focusCommentInEditor = useCommentStore((s) => s.focusCommentInEditor);
   const handleAddReply = useCommentStore((s) => s.handleAddReply);
@@ -242,6 +241,7 @@ const ThreadFloatingCard = ({
   const isDDocOwner = useCommentStore((s) => s.isDDocOwner);
   const handleInput = useCommentStore((s) => s.handleInput);
   const [replyText, setReplyText] = useState('');
+  const [isReplyInputFocused, setIsReplyInputFocused] = useState(false);
   const [isDeleteOverlayVisible, setIsDeleteOverlayVisible] = useState(false);
 
   const isCommentOwner =
@@ -339,6 +339,8 @@ const ThreadFloatingCard = ({
               <TextAreaFieldV2
                 value={replyText}
                 onChange={(event) => setReplyText(event.target.value)}
+                onFocus={() => setIsReplyInputFocused(true)}
+                onBlur={() => setIsReplyInputFocused(false)}
                 onInput={(event) =>
                   handleInput(event, event.currentTarget.value)
                 }
@@ -362,15 +364,16 @@ const ThreadFloatingCard = ({
             <div
               className={cn(
                 'items-center justify-end gap-2 pt-2',
-                hasUnsentReply ? 'flex' : 'hidden group-focus-within:flex',
+                hasUnsentReply || isReplyInputFocused ? 'flex' : 'hidden',
               )}
             >
               <Button
                 variant={'ghost'}
                 className="w-20 min-w-20"
-                onClick={() => {
+                onClick={(event) => {
+                  event.stopPropagation();
                   setReplyText('');
-                  blurFloatingCard(thread.floatingCardId);
+                  setIsReplyInputFocused(false);
                 }}
               >
                 <p className="text-body-sm-bold">Cancel</p>

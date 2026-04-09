@@ -188,30 +188,33 @@ export const CommentSection = ({
         isPresentationMode && 'xl:!h-[86vh]',
       )}
     >
-      {filteredComments.length === 0 ? (
-        <EmptyComments commentType={commentType} handleReset={onReset} />
-      ) : (
-        <div
-          ref={commentsSectionRef}
-          className="flex flex-col overflow-y-auto flex-1"
-        >
-          {commentType === 'all' ? (
-            <>
-              {renderCommentList(
-                activeComments,
-                !isCommentMobileFocused && 'Active',
-              )}
-              <div className={cn(activeComments.length > 0 && 'mt-[16px]')} />
-              {renderCommentList(
-                resolvedComments,
-                !isCommentMobileFocused && 'Resolved',
-              )}
-            </>
-          ) : (
-            renderCommentList(filteredComments)
-          )}
-        </div>
-      )}
+      <div className={cn(!isBelow1280px && 'px-4', ' w-full h-full')}>
+        {filteredComments.length === 0 ? (
+          <EmptyComments commentType={commentType} handleReset={onReset} />
+        ) : (
+          <div
+            ref={commentsSectionRef}
+            className="flex flex-col overflow-y-auto flex-1"
+          >
+            {commentType === 'all' ? (
+              <>
+                {renderCommentList(
+                  activeComments,
+                  !isCommentMobileFocused && 'Active',
+                )}
+                <div className={cn(activeComments.length > 0 && 'mt-[16px]')} />
+                {renderCommentList(
+                  resolvedComments,
+                  !isCommentMobileFocused && 'Resolved',
+                )}
+              </>
+            ) : (
+              renderCommentList(filteredComments)
+            )}
+          </div>
+        )}
+      </div>
+
       {showComposeInput && <CommentComposeInput />}
       {isBelow1280px && resolvedToastCommentId && (
         <MobileResolvedCommentToast
