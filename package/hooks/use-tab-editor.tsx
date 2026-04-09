@@ -275,7 +275,7 @@ export const useTabEditor = ({
                     event.preventDefault();
                     element.scrollIntoView({
                       behavior: 'smooth',
-                      block: 'nearest',
+                      block: 'center',
                     });
                     return true;
                   }
@@ -415,7 +415,7 @@ export const useTabEditor = ({
           if (el) {
             event.preventDefault();
             event.stopPropagation();
-            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
             return;
           }
         }
