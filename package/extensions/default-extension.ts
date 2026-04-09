@@ -313,7 +313,7 @@ export const defaultExtensions = ({
     ipfsImageUploadFn,
     onError,
   }),
-  MarkdownPasteHandler(ipfsImageUploadFn, ipfsImageFetchFn),
+  MarkdownPasteHandler(ipfsImageUploadFn, ipfsImageFetchFn, undefined, onError),
   HtmlExportExtension(ipfsImageFetchFn, fetchV1ImageFn),
   TextExportExtension(),
   OdtExportExtension(ipfsImageFetchFn, fetchV1ImageFn),

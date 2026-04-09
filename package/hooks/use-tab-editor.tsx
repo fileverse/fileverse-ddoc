@@ -257,6 +257,34 @@ export const useTabEditor = ({
           const target = event.target as HTMLElement;
           const link = target.closest('a');
           if (link && link.href) {
+            // Fragment links with heading= param should scroll within the document. Only check origin (not pathname) since the same doc has  different paths (i.e: shareable link vs owner link).
+            const url = new URL(link.href, window.location.href);
+            if (url.hash && url.origin === window.location.origin) {
+              const hash = decodeURIComponent(url.hash.slice(1));
+              const params = new URLSearchParams(hash);
+              const headingParam = params.get('heading');
+              if (headingParam) {
+                const id = headingParam.split('-').pop();
+                if (id) {
+                  const allHeadings =
+                    document.querySelectorAll('[data-toc-id]');
+                  const element = Array.from(allHeadings).find((el) =>
+                    (el as HTMLElement).dataset.tocId?.includes(id),
+                  );
+                  if (element) {
+                    event.preventDefault();
+                    element.scrollIntoView({
+                      behavior: 'smooth',
+                      block: 'nearest',
+                    });
+                    return true;
+                  }
+                }
+                // Heading not found in current doc — fall through to
+                // open in new tab (navigates to the other ddoc).
+              }
+            }
+
             if (isPreviewMode) {
               return false;
             }
@@ -356,6 +384,50 @@ export const useTabEditor = ({
   useEffect(() => {
     editor?.setEditable(readyState);
   }, [editor, readyState]);
+
+  // In preview mode the editor is non-editable so the browser natively
+  // follows <a target="_blank">.  ProseMirror's handleClick pipeline
+  // bails out early when !view.editable, so we need a DOM-level capture
+  // listener to intercept fragment links and scroll instead.
+  useEffect(() => {
+    if (!isPreviewMode) return;
+
+    const handler = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (!target.closest?.('#editor')) return;
+      const link = target.closest('a');
+      if (!link?.href) return;
+
+      try {
+        const url = new URL(link.href, window.location.href);
+        if (!url.hash || url.origin !== window.location.origin) return;
+
+        const hash = decodeURIComponent(url.hash.slice(1));
+        const params = new URLSearchParams(hash);
+        const headingParam = params.get('heading');
+        if (!headingParam) return;
+
+        const id = headingParam.split('-').pop();
+        if (id) {
+          const el = Array.from(
+            document.querySelectorAll('[data-toc-id]'),
+          ).find((node) => (node as HTMLElement).dataset.tocId?.includes(id));
+          if (el) {
+            event.preventDefault();
+            event.stopPropagation();
+            el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            return;
+          }
+        }
+        // Heading not found in current doc — let browser navigate
+      } catch {
+        // invalid URL — let browser handle
+      }
+    };
+
+    document.addEventListener('click', handler, true);
+    return () => document.removeEventListener('click', handler, true);
+  }, [isPreviewMode]);
 
   useEffect(() => {
     if (!isCollaborationEnabled) return;
