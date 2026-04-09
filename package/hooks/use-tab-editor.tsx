@@ -17,7 +17,7 @@ import { AnyExtension, JSONContent, Editor, useEditor } from '@tiptap/react';
 import { getCursor } from '../utils/cursor';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from '../extensions/slash-command/slash-comand';
-import { EditorState, TextSelection } from '@tiptap/pm/state';
+import { EditorState, TextSelection, Plugin } from '@tiptap/pm/state';
 import customTextInputRules from '../extensions/customTextInputRules';
 import { PageBreak } from '../extensions/page-break/page-break';
 import { toUint8Array } from 'js-base64';
@@ -170,6 +170,7 @@ export const useTabEditor = ({
   ignoreCorruptedData,
   onCollaboratorChange,
   onConnect,
+  hasCollabContentInitialised,
   initialiseYjsIndexedDbProvider,
   externalExtensions,
   isContentLoading,
@@ -288,7 +289,7 @@ export const useTabEditor = ({
               return false;
             }
 
-            const isTwitter = link.textContent.match(TWITTER_REGEX);
+            const isTwitter = link?.textContent?.match(TWITTER_REGEX) ?? false;
 
             if (isTwitter) {
               if (isModifierPressed) {
@@ -430,8 +431,8 @@ export const useTabEditor = ({
 
   useEffect(() => {
     if (!isCollaborationEnabled) return;
-    setIsCollabContentLoading(!isReady);
-  }, [isCollaborationEnabled, isReady]);
+    setIsCollabContentLoading(!isReady && !hasCollabContentInitialised);
+  }, [isCollaborationEnabled, isReady, hasCollabContentInitialised]);
 
   // ----- Intitalise and handle content from consumer app -----
 
@@ -1073,7 +1074,7 @@ const useEditorExtension = ({
         ipfsImageUploadFn,
         slashCommandConfigRef,
       ),
-    [isConnected, enableCollaboration, disableInlineComment],
+    [onError, ipfsImageUploadFn],
   );
 
   const commentExtension = useMemo(
@@ -1133,14 +1134,6 @@ const useEditorExtension = ({
       setExtensions(buildExtensions());
     }
   }, [activeTabId]);
-
-  useEffect(() => {
-    if (!isConnected) return;
-    setExtensions((prev) => [
-      ...prev.filter((ext) => ext.name !== 'slash-command'),
-      createSlashCommand(),
-    ]);
-  }, [createSlashCommand]);
 
   useEffect(() => {
     if (!activeModel) return;
@@ -1290,8 +1283,52 @@ const useExtensionSyncWithCollaboration = ({
 
     awareness.setLocalStateField('user', user);
 
-    const plugin = yCursorPlugin(awareness, {
+    const originalPlugin = yCursorPlugin(awareness, {
       cursorBuilder: getCursor,
+    });
+    // Track last known cursor positions per client to avoid unnecessary
+    // decoration recreation (which causes cursor DOM flicker).
+    let lastCursorSnapshot = '';
+    const getCursorSnapshot = () => {
+      const parts: string[] = [];
+      awareness
+        .getStates()
+        .forEach((state: any, clientId: number) => {
+          if (clientId === awareness.clientID) return;
+          const cursor = state.cursor;
+          if (cursor) {
+            parts.push(`${clientId}:${JSON.stringify(cursor)}`);
+          }
+        });
+      return parts.sort().join('|');
+    };
+    // Patch apply: only recreate decorations when remote cursor positions
+    // actually changed. Content-only changes and awareness updates that
+    // don't affect cursor positions just remap existing decorations,
+    // preserving the cursor DOM and preventing flicker.
+    const plugin = new Plugin({
+      key: yCursorPluginKey,
+      state: {
+        init: originalPlugin.spec.state!.init,
+        apply(tr, prevState, oldState, newState) {
+          const yCursorState = tr.getMeta(yCursorPluginKey);
+          if (yCursorState && yCursorState.awarenessUpdated) {
+            const snapshot = getCursorSnapshot();
+            if (snapshot !== lastCursorSnapshot) {
+              lastCursorSnapshot = snapshot;
+              return originalPlugin.spec.state!.apply!(
+                tr,
+                prevState,
+                oldState,
+                newState,
+              );
+            }
+          }
+          return prevState.map(tr.mapping, tr.doc);
+        },
+      },
+      props: originalPlugin.spec.props,
+      view: originalPlugin.spec.view,
     });
     editor.registerPlugin(plugin);
 

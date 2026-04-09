@@ -602,7 +602,13 @@ export function getTabMetadata(
 export function getTabListFromNodes(
   tabNodes: Pick<TabsYdocNodes, 'order' | 'nameById' | 'emojiById'>,
 ): Tab[] {
+  const seen = new Set<string>();
   return getStringArrayValues(tabNodes.order)
+    .filter((tabId) => {
+      if (seen.has(tabId)) return false;
+      seen.add(tabId);
+      return true;
+    })
     .map((tabId) => {
       const tabMetadata = getTabMetadata(
         tabNodes as Pick<TabsYdocNodes, 'nameById' | 'emojiById'>,
