@@ -18,7 +18,6 @@ import { IEditorTool } from '../../hooks/use-visibility';
 import ToolbarButton from '../../common/toolbar-button';
 import { DynamicDropdown, cn, LucideIcon } from '@fileverse/ui';
 import { CommentDropdown } from '../inline-comment/comment-dropdown';
-import { createPortal } from 'react-dom';
 import { EditorBubbleMenuProps, BubbleMenuItem } from './types';
 import { useResponsive } from '../../utils/responsive';
 import { shouldShow } from './props';
@@ -44,7 +43,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     ipfsImageFetchFn,
     enableCollaboration,
     fetchV1ImageFn,
-    isCollabDocOwner,
   } = props;
   const editorStates = useEditorStates(editor as Editor);
   const currentSize = editor ? editorStates.currentSize : undefined;
@@ -66,9 +64,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const handleInlineComment = useCommentStore((s) => s.handleInlineComment);
   const isCommentActive = useCommentStore((s) => s.isCommentActive);
   const isCommentResolved = useCommentStore((s) => s.isCommentResolved);
-  const isBubbleMenuSuppressed = useCommentStore((s) => s.isBubbleMenuSuppressed);
-  const setIsBubbleMenuSuppressed = useCommentStore((s) => s.setIsBubbleMenuSuppressed);
-  const { portalRef, buttonRef } = useCommentRefs();
+  const isBubbleMenuSuppressed = useCommentStore(
+    (s) => s.isBubbleMenuSuppressed,
+  );
+  const setIsBubbleMenuSuppressed = useCommentStore(
+    (s) => s.setIsBubbleMenuSuppressed,
+  );
+  const { buttonRef } = useCommentRefs();
 
   useEffect(() => {
     if (!editor || !isBubbleMenuSuppressed) {
@@ -185,6 +187,11 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     }
   };
 
+  const handleMobileInlineComment = () => {
+    setCommentDrawerOpen?.(true);
+    handleInlineComment();
+  };
+
   const mobileCommentButton = (
     <React.Fragment>
       <ToolbarButton
@@ -198,25 +205,9 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
           disableInlineComment
         }
         isActive={isCommentActive}
-        onClick={handleInlineComment}
+        onClick={handleMobileInlineComment}
         classNames="disabled:!bg-transparent"
       />
-      {isCommentOpen &&
-        isCollabDocOwner &&
-        createPortal(
-          <div
-            ref={portalRef}
-            className={cn(
-              'fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/4 rounded-md border color-border-default color-bg-default shadow-elevation-3',
-            )}
-          >
-            {renderContent({
-              name: 'Comment',
-              initialComment: activeComment?.content || '',
-            })}
-          </div>,
-          document.body,
-        )}
     </React.Fragment>
   );
 
@@ -227,7 +218,11 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   return (
     <BubbleMenu
       editor={editor}
-      // appendTo={() => document.getElementById('editor-canvas')!}
+      appendTo={() =>
+        document.getElementById('editor-canvas') ??
+        editor.view.dom.parentElement ??
+        document.body
+      }
       options={{
         placement: 'top',
         flip: true,

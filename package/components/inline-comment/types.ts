@@ -2,6 +2,7 @@ import { BubbleMenuProps } from '@tiptap/react/menus';
 import { Editor } from '@tiptap/react';
 import { IComment } from '../../extensions/comment';
 import { SetStateAction } from 'react';
+import { Tab } from '../tabs/utils/tab-utils';
 
 export interface UseCommentActionsProps {
   editor: Editor;
@@ -33,7 +34,10 @@ export interface CommentDrawerProps {
   isNavbarVisible: boolean;
   isPresentationMode: boolean;
   activeCommentId: string | null;
+  activeTabId: string;
+  onTabChange?: (tabId: string) => void;
   isPreviewMode: boolean;
+  tabs: Tab[];
 }
 
 export interface CommentCardProps extends IComment {
@@ -50,6 +54,7 @@ export interface CommentCardProps extends IComment {
   version?: string;
   emptyComment?: boolean;
   isFocused?: boolean;
+  isCommentDrawerContext?: boolean;
 }
 
 export type CommentBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
@@ -74,6 +79,15 @@ export interface CommentSectionProps {
   activeCommentId: string | null;
   isNavbarVisible?: boolean;
   isPresentationMode?: boolean;
+  isMobile?: boolean;
+  comments?: IComment[];
+  commentType?: 'all' | 'active' | 'resolved';
+  sectionLabel?: string;
+  tabNameById?: Record<string, string>;
+  selectedTabLabel?: string;
+  showNewCommentInput?: boolean;
+  onCommentFocus?: (commentId: string, tabId?: string) => void;
+  onReset?: () => void;
 }
 
 export interface UserDisplayProps {

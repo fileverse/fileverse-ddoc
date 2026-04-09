@@ -1,16 +1,10 @@
-import {
-  Avatar,
-  TextAreaFieldV2,
-  Button,
-  LucideIcon,
-  Tooltip,
-} from '@fileverse/ui';
+import { Avatar, TextAreaFieldV2, Button } from '@fileverse/ui';
 import { useCommentStore } from '../../stores/comment-store';
 import EnsLogo from '../../assets/ens.svg';
 import { useEffect, useState } from 'react';
 import { EnsStatus } from './types';
 
-export const CommentComposeInput = () => {
+export const CommentNewCommentInput = () => {
   const comment = useCommentStore((s) => s.comment);
   const username = useCommentStore((s) => s.username);
   const handleCommentChange = useCommentStore((s) => s.handleCommentChange);
@@ -30,8 +24,8 @@ export const CommentComposeInput = () => {
   }, [username, ensCache]);
 
   return (
-    <div className="flex flex-col gap-3 color-bg-default border-t border-b color-border-default px-6 py-5 rounded-b-lg">
-      <div className="border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
+    <div className="flex flex-col gap-3 color-bg-default border-t color-border-default pt-[20px] rounded-b-lg">
+      <div className="border mx-4 flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
         <Avatar
           src={
             ensStatus.isEns
@@ -56,24 +50,7 @@ export const CommentComposeInput = () => {
         />
       </div>
 
-      <div className="flex items-center color-bg-default justify-between">
-        <Tooltip
-          text={
-            'End-to-end encrypted. Only you and selected recipients can access this document.'
-          }
-          beakAlignment={'start'}
-          className="max-w-[275px] w-fit text-helper-text-sm"
-        >
-          <div className="flex gap-2 py-1">
-            <LucideIcon
-              name="LockKeyhole"
-              className="color-icon-secondary w-[14px] h-[14px]"
-            />
-            <p className="text-helper-text-sm color-text-secondary">
-              Comments are End-to-end Encrypted
-            </p>
-          </div>
-        </Tooltip>
+      <div className="flex px-4 items-center color-bg-default justify-end">
         <Button
           data-testid="comment-section-send"
           onClick={handleCommentSubmit}

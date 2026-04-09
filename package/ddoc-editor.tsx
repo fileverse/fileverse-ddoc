@@ -726,17 +726,21 @@ const DdocEditor = forwardRef(
                   <div
                     className={cn(
                       'editor-main-lane flex-grow min-w-0 flex overflow-visible items-stretch',
-                      shouldScroll
-                        ? 'justify-start overflow-x-auto'
-                        : 'justify-center',
+                      shouldScroll ? 'justify-start' : 'justify-center',
+                      isMobile && 'w-full',
                     )}
                     style={{
                       minHeight: isFocusMode
                         ? '100vh'
-                        : `calc(100vh - 108px - ${footerHeight || '0px'})`,
+                        : `calc(100dvh - 108px - ${footerHeight || '0px'})`,
                     }}
                   >
-                    <div className="editor-comment-layout relative shrink-0 overflow-visible">
+                    <div
+                      className={cn(
+                        'editor-comment-layout relative shrink-0 overflow-visible',
+                        isMobile && 'w-full',
+                      )}
+                    >
                       <div
                         id="editor-wrapper"
                         ref={editorWrapperRef}
@@ -757,7 +761,7 @@ const DdocEditor = forwardRef(
                               !isNavbarVisible && !isPreviewMode,
                           },
                           isFocusMode && 'mt-[48px]',
-                          zoomLevel !== '1' && 'overflow-auto',
+                          // zoomLevel !== '1' && 'overflow-auto',
                         )}
                         style={{
                           ...(isMobile
@@ -824,6 +828,7 @@ const DdocEditor = forwardRef(
                                   username={username as string}
                                   walletAddress={walletAddress as string}
                                   onInlineComment={onInlineComment}
+                                  setCommentDrawerOpen={setCommentDrawerOpen}
                                   activeCommentId={activeCommentId}
                                   isCollabDocumentPublished={
                                     isCollabDocumentPublished
@@ -980,7 +985,7 @@ const DdocEditor = forwardRef(
                               )}
                         </div>
                       </div>
-                      {editor && (
+                      {editor && !isFocusMode && (
                         <div className="comment-floating-slot absolute left-full top-0 ml-[12px] overflow-visible">
                           <CommentFloatingContainer
                             editor={editor}
@@ -1058,12 +1063,15 @@ const DdocEditor = forwardRef(
                 isNavbarVisible={isNavbarVisible}
                 isPresentationMode={isPresentationMode as boolean}
                 activeCommentId={activeCommentId}
+                activeTabId={activeTabId}
+                onTabChange={setActiveTabId}
                 isPreviewMode={isPreviewMode}
+                tabs={tabs}
               />
             )}
 
             <div>
-              {editor && isBelow1280px && (
+              {editor && isBelow1280px && !isFocusMode && (
                 <CommentBubbleCard
                   editor={editor}
                   activeCommentId={activeCommentId}
@@ -1094,9 +1102,9 @@ const DdocEditor = forwardRef(
               ? '100vh'
               : !isPreviewMode
                 ? isNavbarVisible
-                  ? `calc(100vh - 108px - ${footerHeight || '0px'})`
-                  : `calc(100vh - 52px - ${footerHeight || '0px'})`
-                : `calc(100vh - 52px - ${footerHeight || '0px'})`,
+                  ? `calc(100dvh - 108px - ${footerHeight || '0px'})`
+                  : `calc(100dvh - 52px - ${footerHeight || '0px'})`
+                : `calc(100dvh - 52px - ${footerHeight || '0px'})`,
           }}
         >
           <div
@@ -1130,6 +1138,7 @@ const DdocEditor = forwardRef(
             <CommentStoreProvider
               editor={editor ?? null}
               ydoc={ydoc}
+              isFocusMode={isFocusMode}
               username={username as string}
               setUsername={setUsername}
               activeCommentId={activeCommentId}

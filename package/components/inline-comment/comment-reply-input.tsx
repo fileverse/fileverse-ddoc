@@ -1,12 +1,5 @@
-import {
-  Avatar,
-  ButtonGroup,
-  TextAreaFieldV2,
-  Button,
-  cn,
-} from '@fileverse/ui';
+import { Avatar, TextAreaFieldV2, Button, IconButton, cn } from '@fileverse/ui';
 import { useCommentStore } from '../../stores/comment-store';
-import EnsLogo from '../../assets/ens.svg';
 import { useEffect, useState } from 'react';
 import { EnsStatus } from './types';
 import { useResponsive } from '../../utils/responsive';
@@ -31,7 +24,8 @@ export const CommentReplyInput = ({
   const username = useCommentStore((s) => s.username);
   const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
   const ensCache = useCommentStore((s) => s.ensCache);
-  const { isNativeMobile } = useResponsive();
+  const { isBelow1280px } = useResponsive();
+  const hasUnsentReply = Boolean(reply.trim());
 
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
     name: username as string,
@@ -40,26 +34,27 @@ export const CommentReplyInput = ({
 
   useEffect(() => {
     getEnsStatus(username as string, setEnsStatus);
-  }, [username, ensCache]);
+  }, [username, ensCache, getEnsStatus]);
 
   return (
-    <div
-      className="pl-4 animate-in fade-in-5 flex flex-col gap-2 duration-300 mt-3"
-      onClick={(e) => e.stopPropagation()}
-    >
-      <div className="border color-bg-default flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
+    <div className="group p-3 mt-[8px] pt-0">
+      <div
+        className={cn(
+          'border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]',
+          isBelow1280px ? 'items-center justify-between ' : 'color-bg-default',
+        )}
+      >
         <Avatar
-          src={
-            ensStatus.isEns
-              ? EnsLogo
-              : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-                  ensStatus.name,
-                )}`
-          }
+          src={`https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+            ensStatus.name || '',
+          )}`}
           className="w-[16px] h-[16px]"
         />
         <TextAreaFieldV2
           data-testid="comment-reply-input"
+          value={reply}
+          onInput={(event) => handleInput(event, event.currentTarget.value)}
+          className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
           placeholder={
             replyCount === 0
               ? `Reply to @${commentUsername}`
@@ -67,41 +62,53 @@ export const CommentReplyInput = ({
                 ? `Add a reply`
                 : `Reply `
           }
-          value={reply}
-          style={{
-            ...(!reply ? { height: '20px' } : {}),
-          }}
-          className={cn(
-            'color-bg-default text-body-sm color-text-default max-h-[96px] !border-none !p-0 overflow-y-auto no-scrollbar whitespace-pre-wrap',
-            'color-bg-default',
-          )}
           id={commentId}
           onChange={handleReplyChange}
           onKeyDown={handleReplyKeyDown}
-          autoFocus={isNativeMobile}
-          onInput={(e) => handleInput(e, reply)}
+        />
+        <IconButton
+          onClick={() => handleReplySubmit()}
+          icon={'SendHorizontal'}
+          variant="ghost"
+          disabled={!reply.trim() || !username}
+          className={cn(
+            '!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]',
+            !isBelow1280px && 'hidden',
+          )}
         />
       </div>
-      <ButtonGroup className="w-full justify-end">
-          <Button
-            variant="ghost"
-            className="px-4 py-2 w-20 min-w-20 h-9"
-            onClick={(e) => {
-              e.stopPropagation();
-              setOpenReplyId(null);
-            }}
-          >
-            Cancel
-          </Button>
-          <Button
-            data-testid="comment-reply-send"
-            className="px-4 py-2 w-20 min-w-20 h-9"
-            disabled={!reply.trim()}
-            onClick={handleReplySubmit}
-          >
-            Reply
-          </Button>
-      </ButtonGroup>
+      <div
+        className={
+          isBelow1280px
+            ? 'hidden'
+            : cn(
+                'items-center justify-end gap-2 pt-2',
+                hasUnsentReply ? 'flex' : 'hidden group-focus-within:flex',
+              )
+        }
+      >
+        <Button
+          variant={'ghost'}
+          className="w-20 min-w-20"
+          onClick={(e) => {
+            e.stopPropagation();
+            setOpenReplyId(null);
+          }}
+        >
+          <p className="text-body-sm-bold">Cancel</p>
+        </Button>
+        <Button
+          data-testid="comment-reply-send"
+          className="w-20 min-w-20"
+          disabled={!reply.trim()}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleReplySubmit();
+          }}
+        >
+          Send
+        </Button>
+      </div>
     </div>
   );
 };

@@ -20,6 +20,7 @@ export interface CommentStoreProviderProps {
   children: React.ReactNode;
   editor: Editor | null;
   ydoc: Y.Doc;
+  isFocusMode?: boolean;
   setActiveCommentId: (id: string | null) => void;
   focusCommentWithActiveId: (id: string) => void;
   setInitialComments?: React.Dispatch<React.SetStateAction<IComment[]>>;
@@ -52,6 +53,7 @@ export const CommentStoreProvider = ({
   // External deps (ref-based)
   editor,
   ydoc,
+  isFocusMode = false,
   setActiveCommentId,
   focusCommentWithActiveId,
   setInitialComments,
@@ -80,7 +82,8 @@ export const CommentStoreProvider = ({
 }: CommentStoreProviderProps) => {
   const store = useMemo(() => createCommentStore(), []);
   const { isBelow1280px, isNativeMobile } = useResponsive();
-  const isDesktopFloatingEnabled = !isBelow1280px && !isNativeMobile;
+  const isDesktopFloatingEnabled =
+    !isBelow1280px && !isNativeMobile && !isFocusMode;
 
   // --- External deps ref — always current, never triggers re-renders ---
   const externalDepsRef = useRef<CommentExternalDeps>({
@@ -220,16 +223,19 @@ export const CommentStoreProvider = ({
     store.getState().setIsDesktopFloatingEnabled(isDesktopFloatingEnabled);
   }, [isDesktopFloatingEnabled, store]);
 
+  // Clear floating cards on tab switch to prevent mismatched or outdated cards
   useEffect(() => {
-    store.getState().clearFloatingItems();
+    store.getState().clearFloatingCards();
   }, [activeTabId, store]);
 
   useEffect(() => {
-    store.getState().pruneFloatingItems();
-  }, [editor, initialComments, activeTabId, store]);
+    // Semantic changes still prune invalid cards, but editor transactions no
+    // longer do. That keeps correctness without paying per-keystroke scan cost.
+    store.getState().removeInvalidFloatingCards();
+  }, [activeTabId, initialComments, store]);
 
   useEffect(() => {
-    store.getState().syncFloatingThreadWithActiveComment();
+    store.getState().syncFloatingThreadCardWithActiveComment();
   }, [
     activeCommentId,
     activeTabId,
@@ -240,7 +246,7 @@ export const CommentStoreProvider = ({
 
   useEffect(() => {
     store.getState().submitPendingFloatingDrafts();
-  }, [isConnected, isDesktopFloatingEnabled, store, username]);
+  }, [isConnected, store, username]);
 
   useEffect(() => {
     if (!editor) {
@@ -250,6 +256,8 @@ export const CommentStoreProvider = ({
     let prevCommentActive = false;
     let prevCommentResolved = false;
 
+    // Watch editor selection here so landing on a live anchor opens the matching
+    // floating thread without waiting for a separate UI interaction.
     const updateEditorState = () => {
       const state = store.getState();
       const isMarkActive = editor.isActive('comment');
@@ -287,27 +295,23 @@ export const CommentStoreProvider = ({
         const currentActiveId = state.activeCommentId;
         if (currentActiveId !== decorationComment.id) {
           state.setActiveCommentId(decorationComment.id);
-          state.openFloatingThread(decorationComment.id);
+          if (isDesktopFloatingEnabled) {
+            state.openFloatingThread(decorationComment.id);
+          }
         }
       }
     };
 
-    let pruneTimer: ReturnType<typeof setTimeout> | null = null;
     const handleTransaction = ({
       transaction,
     }: {
-      transaction: { selectionSet: boolean };
+      transaction: { docChanged?: boolean; selectionSet: boolean };
     }) => {
-      // Re-check comment activation when selection changes via transaction
-      if (transaction.selectionSet) {
+      // Keep the transaction listener focused on active-comment/editor sync.
+      // Floating-card pruning now belongs to semantic events and anchor loss handling.
+      if (transaction.selectionSet || transaction.docChanged) {
         updateEditorState();
       }
-
-      if (pruneTimer) return;
-      pruneTimer = setTimeout(() => {
-        pruneTimer = null;
-        store.getState().pruneFloatingItems();
-      }, 200);
     };
 
     updateEditorState();
@@ -317,9 +321,8 @@ export const CommentStoreProvider = ({
     return () => {
       editor.off('selectionUpdate', updateEditorState);
       editor.off('transaction', handleTransaction);
-      if (pruneTimer) clearTimeout(pruneTimer);
     };
-  }, [editor, store]);
+  }, [commentAnchorsRef, editor, isDesktopFloatingEnabled, store]);
 
   const commentsSectionRef = useRef<HTMLDivElement | null>(null);
   const replySectionRef = useRef<HTMLDivElement | null>(null);

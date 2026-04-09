@@ -1,6 +1,9 @@
+// Keep this function pure so the comment floating container can run it again safely.
+// Only recalculate what changed and stop once the remaining cards stay the same.
+
 export const FLOATING_COMMENT_CARD_GAP = 12;
 
-export const enum FloatingLayoutDirtyFlag {
+export const enum FloatingLayoutInvalidationFlag {
   None = 0,
   Anchor = 1 << 0,
   Viewport = 1 << 1,
@@ -8,14 +11,14 @@ export const enum FloatingLayoutDirtyFlag {
   Visibility = 1 << 3,
 }
 
-export interface FloatingLayoutItemInput {
-  itemId: string;
+export interface FloatingCardLayoutInput {
+  floatingCardId: string;
   anchorTop: number | null;
   height: number;
   isVisible: boolean;
   isMeasured: boolean;
-  previousTranslateY: number | null;
-  dirtyFlags: FloatingLayoutDirtyFlag;
+  lastCommittedTranslateY: number | null;
+  invalidationFlags: FloatingLayoutInvalidationFlag;
 }
 
 export interface FloatingLayoutResult {
@@ -29,13 +32,22 @@ export interface FloatingLayoutResult {
   stopIndex: number;
 }
 
+// Round before compare, save, and write so tiny pixel shifts do not cause extra work.
+export const roundFloatingTranslateY = (translateY: number | null) => {
+  return translateY === null ? null : Math.round(translateY);
+};
+
+// Start placing cards from the first changed card.
+// Stop once a card matches its saved position because the cards after it will match too.
 export const computeFloatingCommentLayout = ({
-  items,
-  dirtyStartIndex,
+  floatingCards,
+  recomputeStartIndex,
+  lastInvalidatedIndex,
   gap = FLOATING_COMMENT_CARD_GAP,
 }: {
-  items: FloatingLayoutItemInput[];
-  dirtyStartIndex: number;
+  floatingCards: FloatingCardLayoutInput[];
+  recomputeStartIndex: number;
+  lastInvalidatedIndex: number;
   gap?: number;
 }): FloatingLayoutResult => {
   const placements = new Map<
@@ -45,71 +57,65 @@ export const computeFloatingCommentLayout = ({
       isVisible: boolean;
     }
   >();
-
+  // Keep the bottom edge of the previous card so the next one stacks under it.
   let previousBottom: number | null = null;
 
-  for (let index = 0; index < items.length; index += 1) {
-    const item = items[index];
-    const previousTranslateY =
-      item.previousTranslateY ?? item.anchorTop ?? null;
-
+  for (let index = 0; index < floatingCards.length; index += 1) {
+    const floatingCard = floatingCards[index];
+    const lastCommittedTranslateY =
+      floatingCard.lastCommittedTranslateY ?? floatingCard.anchorTop ?? null;
+    // If the card cannot be shown, keep its last position but hide it.
     if (
-      !item.isVisible ||
-      !item.isMeasured ||
-      item.anchorTop === null ||
-      item.height <= 0
+      !floatingCard.isVisible ||
+      !floatingCard.isMeasured ||
+      floatingCard.anchorTop === null ||
+      floatingCard.height <= 0
     ) {
-      placements.set(item.itemId, {
-        translateY: previousTranslateY,
+      placements.set(floatingCard.floatingCardId, {
+        translateY: lastCommittedTranslateY,
         isVisible: false,
       });
       continue;
     }
+    // Before the restart point, keep the saved position.
+    if (index < recomputeStartIndex) {
+      const settledTranslateY =
+        lastCommittedTranslateY ?? floatingCard.anchorTop;
 
-    if (index < dirtyStartIndex) {
-      const settledTranslateY = previousTranslateY ?? item.anchorTop;
-
-      placements.set(item.itemId, {
+      placements.set(floatingCard.floatingCardId, {
         translateY: settledTranslateY,
         isVisible: true,
       });
-      previousBottom = settledTranslateY + item.height;
+      previousBottom = settledTranslateY + floatingCard.height;
       continue;
     }
-
+    // Put the card at its anchor or below the previous card, whichever is lower.
     const translateY = Math.max(
-      item.anchorTop,
-      previousBottom === null ? item.anchorTop : previousBottom + gap,
+      floatingCard.anchorTop,
+      previousBottom === null ? floatingCard.anchorTop : previousBottom + gap,
     );
 
-    placements.set(item.itemId, {
+    placements.set(floatingCard.floatingCardId, {
       translateY,
       isVisible: true,
     });
 
-    const hasOwnInvalidation = item.dirtyFlags !== FloatingLayoutDirtyFlag.None;
-    const previousPlacementChanged = previousTranslateY !== translateY;
+    const hasOwnInvalidation =
+      floatingCard.invalidationFlags !== FloatingLayoutInvalidationFlag.None;
+    const placementChanged =
+      roundFloatingTranslateY(translateY) !==
+      floatingCard.lastCommittedTranslateY;
 
-    previousBottom = translateY + item.height;
+    previousBottom = translateY + floatingCard.height;
 
-    if (!hasOwnInvalidation && !previousPlacementChanged) {
-      for (
-        let remainingIndex = index + 1;
-        remainingIndex < items.length;
-        remainingIndex += 1
-      ) {
-        const remainingItem = items[remainingIndex];
-        placements.set(remainingItem.itemId, {
-          translateY:
-            remainingItem.previousTranslateY ?? remainingItem.anchorTop,
-          isVisible:
-            remainingItem.isVisible &&
-            remainingItem.isMeasured &&
-            remainingItem.anchorTop !== null &&
-            remainingItem.height > 0,
-        });
-      }
-
+    // Stop once this card already matches its saved position.
+    // The container will keep using the saved positions for the cards after it.
+    if (
+      index >= recomputeStartIndex &&
+      index >= lastInvalidatedIndex &&
+      !hasOwnInvalidation &&
+      !placementChanged
+    ) {
       return {
         placements,
         stopIndex: index,
@@ -119,6 +125,6 @@ export const computeFloatingCommentLayout = ({
 
   return {
     placements,
-    stopIndex: items.length - 1,
+    stopIndex: floatingCards.length - 1,
   };
 };

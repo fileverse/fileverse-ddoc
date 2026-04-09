@@ -1,6 +1,5 @@
 import {
   Avatar,
-  ButtonGroup,
   cn,
   DynamicDropdown,
   IconButton,
@@ -8,7 +7,7 @@ import {
   Skeleton,
   Tooltip,
 } from '@fileverse/ui';
-import { useRef, useState, useEffect, useCallback } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import {
   CommentCardProps,
   CommentReplyProps,
@@ -25,6 +24,7 @@ import {
 } from '../../utils/helpers';
 import { Spinner } from '../../common/spinner';
 import { DeleteConfirmOverlay } from './delete-confirm-overlay';
+import { useResponsive } from '../../utils/responsive';
 
 const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
   const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
@@ -36,7 +36,7 @@ const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
 
   useEffect(() => {
     getEnsStatus(username, setEnsStatus);
-  }, [username, ensCache]);
+  }, [username, ensCache, getEnsStatus]);
 
   return (
     <div className="flex justify-start items-center gap-2">
@@ -111,7 +111,7 @@ const CommentReply = ({
   return (
     <div
       className={cn(
-        'flex group relative flex-col gap-2 p-[4px] last:pb-0',
+        'flex group relative flex-col gap-2 p-[4px]',
         isDeleteOverlayVisible && 'min-h-[100px]',
       )}
     >
@@ -135,10 +135,10 @@ const CommentReply = ({
                 ref={dropdownRef}
                 className="flex flex-col p-2 w-40 shadow-elevation-3"
               >
-                <button className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full">
+                {/* <button className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full">
                   <LucideIcon name="Pencil" size="sm" />
                   <p className="text-body-sm color-text-default">Edit</p>
-                </button>
+                </button> */}
                 <button
                   className="flex items-center h-[32px] color-text-danger text-sm font-medium gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
                   onClick={handleRequestDeleteClick}
@@ -152,7 +152,7 @@ const CommentReply = ({
         </div>
       </div>
 
-      <div className="ml-3 pl-4 border-l custom-border ">
+      <div className="ml-[14px] pl-4 border-l custom-border ">
         <div className="text-body-sm flex flex-col gap-2 whitespace-pre-wrap break-words">
           {renderTextWithLinks(displayedComment)}
         </div>
@@ -196,14 +196,16 @@ export const CommentCard = ({
   isCommentOwner,
   version,
   emptyComment,
+  isCommentDrawerContext,
 }: CommentCardProps) => {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const [showAllReplies, setShowAllReplies] = useState(false);
   const [isCommentExpanded, setIsCommentExpanded] = useState(false);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
-  const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
+  const openReplyId = useCommentStore((s) => s.openReplyId);
   const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
   const ensCache = useCommentStore((s) => s.ensCache);
+  const { isBelow1280px } = useResponsive();
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
     name: username as string,
     isEns: false,
@@ -211,7 +213,7 @@ export const CommentCard = ({
 
   useEffect(() => {
     getEnsStatus(username as string, setEnsStatus);
-  }, [username, ensCache]);
+  }, [username, ensCache, getEnsStatus]);
 
   const removePopoverContent = () => {
     if (dropdownRef.current?.parentElement) {
@@ -239,7 +241,8 @@ export const CommentCard = ({
     }
   }, [isDropdown, activeCommentId, id, replies]);
 
-  const handleResolveClick = () => {
+  const handleResolveClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation();
     onResolve?.(id as string);
     removePopoverContent();
   };
@@ -253,72 +256,9 @@ export const CommentCard = ({
     onUnresolve?.(id as string);
     removePopoverContent();
   };
-
-  const renderReplies = useCallback(() => {
-    if (!replies?.length) return null;
-
-    const visibleReplies = replies.filter((reply) => !reply.deleted);
-    if (!visibleReplies.length) return null;
-
-    let displayedReplies = [...visibleReplies].sort(
-      (a, b) =>
-        new Date(a.createdAt || new Date()).getTime() -
-        new Date(b.createdAt || new Date()).getTime(),
-    );
-    if (!showAllReplies && visibleReplies.length > 3) {
-      displayedReplies = displayedReplies.slice(-2);
-    }
-
-    return (
-      <div className="flex flex-col gap-0 relative">
-        {visibleReplies.length > 3 && !showAllReplies && (
-          <div
-            onClick={() => setShowAllReplies(true)}
-            className="text-helper-text-sm color-text-secondary min-h-[28px] mb-[4px] hover:underline custom-border cursor-pointer flex items-center gap-2 px-[8px]"
-          >
-            <IconButton
-              icon="ChevronDown"
-              variant="ghost"
-              size="sm"
-              rounded
-              className="color-text-secondary border custom-border !min-w-[20px] !w-[20px] !h-[20px]"
-              onClick={() => setShowAllReplies(true)}
-            />
-            <div className="flex items-center -space-x-1">
-              {visibleReplies.slice(0, 2).map((reply) => (
-                <Avatar
-                  src={
-                    ensStatus.isEns
-                      ? EnsLogo
-                      : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-                          reply.username || '',
-                        )}`
-                  }
-                  size="sm"
-                  className="w-4 h-4 last:z-10 bg-transparent"
-                  bordered="border"
-                  key={reply.id}
-                />
-              ))}
-            </div>
-            {visibleReplies.length - 2} more replies in this thread
-          </div>
-        )}
-
-        {displayedReplies.map((reply, index) => (
-          <CommentReply
-            key={reply.id}
-            commentId={id as string}
-            replyId={reply.id || ''}
-            reply={reply.content || ''}
-            username={reply.username || ''}
-            createdAt={reply.createdAt || new Date()}
-            isLast={index === displayedReplies.length - 1}
-          />
-        ))}
-      </div>
-    );
-  }, [replies, showAllReplies, ensStatus.isEns, id]);
+  const isCommentMobileFocused = isBelow1280px && Boolean(openReplyId);
+  const shouldShowReplyThread = !isBelow1280px || isCommentMobileFocused;
+  const replyThreadCount = shouldShowReplyThread ? 2 : 0;
 
   if (emptyComment)
     return (
@@ -348,19 +288,35 @@ export const CommentCard = ({
     comment && isCommentTruncated && !isCommentExpanded
       ? comment.slice(0, 70) + '...'
       : comment;
+  // Keep reply derivation inline here. The previous memoized helper hid stale
+  // dependencies around resolution and mobile focus state.
+  const visibleReplies = (replies || []).filter((reply) => !reply.deleted);
+  let displayedReplies = [...visibleReplies].sort(
+    (a, b) =>
+      new Date(a.createdAt || new Date()).getTime() -
+      new Date(b.createdAt || new Date()).getTime(),
+  );
+
+  if (!showAllReplies && visibleReplies.length > 3) {
+    displayedReplies = displayedReplies.slice(-2);
+  }
+
+  const shouldShowMinimizedReplies =
+    isBelow1280px && !isCommentMobileFocused
+      ? visibleReplies.length > 0
+      : visibleReplies.length > 3 && !showAllReplies;
 
   return (
     <div
       ref={commentsContainerRef}
       data-testid={id ? `comment-card-${id}` : 'comment-card'}
       className={cn(
-        'flex flex-col gap-[4px] px-3 group comment-card',
+        'flex flex-col gap-[4px] group comment-card',
         isResolved && 'opacity-70',
-        !isDropdown && '!px-6',
-        isDropdown && 'py-3 pt-0',
+        isCommentDrawerContext ? 'p-3 pb-0' : 'px-3',
       )}
     >
-      <div className="flex flex-col gap-[8px] p-[4px]">
+      <div className="flex flex-col gap-[8px]">
         <div className="flex justify-between items-center">
           <UserDisplay username={username as string} createdAt={createdAt} />
           {version === '2' ? (
@@ -369,38 +325,26 @@ export const CommentCard = ({
               sideOffset={0}
               position="top"
             >
-              <ButtonGroup className="!space-x-0">
-                {!isDropdown && replies && replies.length === 0 && (
-                  <Tooltip
-                    text={!isDisabled ? 'Add reply' : ''}
-                    sideOffset={0}
-                    position="bottom"
-                  >
+              <div
+                className={cn(
+                  !isBelow1280px && 'opacity-0 group-hover:opacity-100',
+                  'flex  gap-[4px]',
+                )}
+              >
+                {isCommentOwner && !isResolved && (
+                  <Tooltip text="Mark as resolved" position="bottom">
                     <IconButton
                       variant={'ghost'}
-                      icon="MessageSquarePlus"
+                      icon="Check"
                       size="sm"
-                      disabled={isDisabled}
-                      className="opacity-0 group-hover:opacity-100  transition-opacity duration-300 disabled:bg-transparent"
-                      onClick={() => setOpenReplyId(id as string)}
+                      className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
+                      onClick={handleResolveClick}
                     />
                   </Tooltip>
                 )}
 
-                <div className="flex opacity-0 group-hover:opacity-100 gap-[4px]">
-                  {isCommentOwner && !isResolved && (
-                    <Tooltip text="Mark as resolved" position="bottom">
-                      <IconButton
-                        variant={'ghost'}
-                        icon="Check"
-                        size="sm"
-                        className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
-                        onClick={handleResolveClick}
-                      />
-                    </Tooltip>
-                  )}
-
-                  {isCommentOwner && (
+                {isCommentOwner && (
+                  <div onClick={(e) => e.stopPropagation()}>
                     <DynamicDropdown
                       key={`thread-actions-${id}`}
                       align="end"
@@ -417,8 +361,9 @@ export const CommentCard = ({
                         <div
                           ref={dropdownRef}
                           className="flex flex-col p-2 w-40 shadow-elevation-3"
+                          onClick={(e) => e.stopPropagation()}
                         >
-                          {isResolved ? (
+                          {isResolved && (
                             <button
                               className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
                               onClick={handleUnresolveClick}
@@ -426,13 +371,6 @@ export const CommentCard = ({
                               <LucideIcon name="RotateCcw" size="sm" />
                               <p className="text-body-sm color-text-default">
                                 Unresolve
-                              </p>
-                            </button>
-                          ) : (
-                            <button className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full">
-                              <LucideIcon name="Pencil" size="sm" />
-                              <p className="text-body-sm color-text-default">
-                                Edit
                               </p>
                             </button>
                           )}
@@ -452,9 +390,9 @@ export const CommentCard = ({
                         </div>
                       }
                     />
-                  )}
-                </div>
-              </ButtonGroup>
+                  </div>
+                )}
+              </div>
             </Tooltip>
           ) : (
             <Tooltip text="Actions are not supported for old comments">
@@ -472,9 +410,15 @@ export const CommentCard = ({
         </div>
         <div
           className={cn(
-            'flex flex-col gap-2 ml-3 pl-4 custom-border py-0',
+            'flex flex-col gap-2   pl-4 custom-border py-0',
             // (isFocused || (replies || []).length > 0) && 'pb-3',
-            (replies || []).length > 0 && 'border-l',
+            (
+              isBelow1280px
+                ? isCommentMobileFocused
+                : (replies || []).length > 0
+            )
+              ? 'border-l ml-[14px]'
+              : 'ml-[15px]',
           )}
         >
           {/* {selectedContent && (
@@ -517,7 +461,65 @@ export const CommentCard = ({
         </div>
       </div>
 
-      {replies && renderReplies()}
+      {visibleReplies.length > 0 &&
+        (isResolved && isCommentMobileFocused ? (
+          // Mobile resolved threads collapse to a count so the drawer can keep
+          // the reopen state compact without rendering a hidden reply stack.
+          <p className="text-helper-text-sm">{visibleReplies.length} replies</p>
+        ) : (
+          <div className="flex flex-col gap-0 relative">
+            {shouldShowMinimizedReplies && (
+              <div
+                onClick={() => setShowAllReplies(true)}
+                className={cn(
+                  'text-helper-text-sm color-text-secondary min-h-[28px] mb-[4px] hover:underline custom-border cursor-pointer flex items-center gap-2 pr-[8px] pl-[4px]',
+                  !shouldShowReplyThread && 'justify-center mt-[4px]',
+                )}
+              >
+                <IconButton
+                  icon="ChevronDown"
+                  variant="ghost"
+                  size="sm"
+                  rounded
+                  className="color-text-secondary border custom-border !min-w-[20px] !w-[20px] !h-[20px]"
+                  onClick={() => setShowAllReplies(true)}
+                />
+                <div className="flex items-center -space-x-1">
+                  {visibleReplies.slice(0, 2).map((reply) => (
+                    <Avatar
+                      src={
+                        ensStatus.isEns
+                          ? EnsLogo
+                          : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                              reply.username || '',
+                            )}`
+                      }
+                      size="sm"
+                      className="w-4 h-4 last:z-10 bg-transparent"
+                      bordered="border"
+                      key={reply.id}
+                    />
+                  ))}
+                </div>
+                {visibleReplies.length - replyThreadCount}{' '}
+                {replyThreadCount > 0 && 'more'} replies in this thread
+              </div>
+            )}
+
+            {shouldShowReplyThread &&
+              displayedReplies.map((reply, index) => (
+                <CommentReply
+                  key={reply.id}
+                  commentId={id as string}
+                  replyId={reply.id || ''}
+                  reply={reply.content || ''}
+                  username={reply.username || ''}
+                  createdAt={reply.createdAt || new Date()}
+                  isLast={index === displayedReplies.length - 1}
+                />
+              ))}
+          </div>
+        ))}
     </div>
   );
 };
