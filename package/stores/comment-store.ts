@@ -163,6 +163,7 @@ export interface CommentStoreState {
   isBubbleMenuSuppressed: boolean;
   inlineCommentData: InlineCommentData;
   floatingCards: CommentFloatingCard[];
+  mobileDraftId: string | null;
   isDesktopFloatingEnabled: boolean;
   ensCache: EnsCache;
   inProgressFetch: string[];
@@ -304,6 +305,7 @@ export const createCommentStore = () =>
       handleClick: false,
     },
     floatingCards: [],
+    mobileDraftId: null,
     isDesktopFloatingEnabled: false,
     ensCache: (() => {
       try {
@@ -413,12 +415,19 @@ export const createCommentStore = () =>
     setOpenReplyId: (id) => set({ openReplyId: id }),
     setSelectedText: (text) => set({ selectedText: text }),
     setIsCommentOpen: (open) => {
+      const { mobileDraftId } = get();
       // Remove temporary highlight when closing comment dialog
       if (!open) {
         const { editor } = getExtDeps(get);
+        if (editor && mobileDraftId) {
+          editor.commands.unsetDraftComment(mobileDraftId);
+        }
         if (editor && editor.isActive('highlight')) {
           editor.chain().unsetHighlight().run();
         }
+
+        set({ isCommentOpen: open, mobileDraftId: null });
+        return;
       }
 
       set({ isCommentOpen: open });
@@ -535,7 +544,7 @@ export const createCommentStore = () =>
         focusCommentWithActiveId,
         commentAnchorsRef,
       } = getExtDeps(get);
-      const { username, activeTabId } = get();
+      const { username, activeTabId, mobileDraftId } = get();
 
       if (!editor) {
         return undefined;
@@ -543,7 +552,12 @@ export const createCommentStore = () =>
 
       const { state } = editor;
       const { from, to } = state.selection;
-      const selectedContent = state.doc.textBetween(from, to, ' ');
+      const mobileDraftRange = mobileDraftId
+        ? getDraftCommentRange(state, mobileDraftId)
+        : null;
+      const selectedContent = mobileDraftRange
+        ? state.doc.textBetween(mobileDraftRange.from, mobileDraftRange.to, ' ')
+        : state.doc.textBetween(from, to, ' ');
 
       const newComment: IComment = {
         id: `comment-${uuid()}`,
@@ -560,38 +574,78 @@ export const createCommentStore = () =>
         editor.chain().unsetHighlight().run();
       }
 
-      // Create decoration anchor — no mark for new comments
-      const decorationAnchor = createCommentAnchorFromSelection(editor);
+      let createdAnchor: {
+        anchorFrom: Y.RelativePosition;
+        anchorTo: Y.RelativePosition;
+      } | null = null;
 
-      if (newComment.selectedContent && !decorationAnchor) {
-        return undefined;
-      }
+      if (mobileDraftId) {
+        const draftRange = mobileDraftRange;
 
-      if (decorationAnchor && commentAnchorsRef) {
-        commentAnchorsRef.current = [
-          ...commentAnchorsRef.current,
-          {
-            id: newComment.id!,
-            anchorFrom: decorationAnchor.anchorFrom,
-            anchorTo: decorationAnchor.anchorTo,
-            resolved: false,
-            deleted: false,
-          },
-        ];
+        if (newComment.selectedContent && !draftRange) {
+          return undefined;
+        }
+
+        if (draftRange && commentAnchorsRef) {
+          const draftAnchor = createCommentAnchorFromEditor(
+            editor,
+            draftRange.from,
+            draftRange.to,
+          );
+
+          if (draftAnchor) {
+            createdAnchor = draftAnchor;
+            commentAnchorsRef.current = [
+              ...commentAnchorsRef.current,
+              {
+                id: newComment.id!,
+                anchorFrom: draftAnchor.anchorFrom,
+                anchorTo: draftAnchor.anchorTo,
+                resolved: false,
+                deleted: false,
+              },
+            ];
+          }
+        }
+
+        editor.commands.unsetDraftComment(mobileDraftId);
         triggerDecorationRebuild(editor);
+        set({ mobileDraftId: null });
+      } else {
+        // Create decoration anchor — no mark for new comments
+        const decorationAnchor = createCommentAnchorFromSelection(editor);
+
+        if (newComment.selectedContent && !decorationAnchor) {
+          return undefined;
+        }
+
+        if (decorationAnchor && commentAnchorsRef) {
+          createdAnchor = decorationAnchor;
+          commentAnchorsRef.current = [
+            ...commentAnchorsRef.current,
+            {
+              id: newComment.id!,
+              anchorFrom: decorationAnchor.anchorFrom,
+              anchorTo: decorationAnchor.anchorTo,
+              resolved: false,
+              deleted: false,
+            },
+          ];
+          triggerDecorationRebuild(editor);
+        }
       }
 
       setActiveCommentId(newComment.id || '');
       setTimeout(() => focusCommentWithActiveId(newComment.id || ''), 0);
 
-      const meta: CommentMutationMeta | undefined = decorationAnchor
+      const meta: CommentMutationMeta | undefined = createdAnchor
         ? {
             type: 'create',
             anchorFrom: fromUint8Array(
-              Y.encodeRelativePosition(decorationAnchor.anchorFrom),
+              Y.encodeRelativePosition(createdAnchor.anchorFrom),
             ),
             anchorTo: fromUint8Array(
-              Y.encodeRelativePosition(decorationAnchor.anchorTo),
+              Y.encodeRelativePosition(createdAnchor.anchorTo),
             ),
           }
         : undefined;
@@ -606,6 +660,7 @@ export const createCommentStore = () =>
         activeComment,
         isDesktopFloatingEnabled,
         isCommentActive,
+        mobileDraftId,
         setCommentDrawerOpen,
       } = get();
 
@@ -618,15 +673,31 @@ export const createCommentStore = () =>
       const text = state.doc.textBetween(from, to, ' ');
 
       if (!isDesktopFloatingEnabled) {
+        if (mobileDraftId) {
+          editor.commands.unsetDraftComment(mobileDraftId);
+        }
+
+        let nextMobileDraftId: string | null = null;
+
         if (isCommentActive) {
           if (activeComment) {
             set({ selectedText: activeComment.selectedContent || '' });
           }
         } else {
+          if (from < to && text.trim()) {
+            nextMobileDraftId = `draft-${uuid()}`;
+            const didCreateDraft =
+              editor.commands.setDraftComment(nextMobileDraftId);
+
+            if (!didCreateDraft) {
+              nextMobileDraftId = null;
+            }
+          }
+
           set({ selectedText: text });
         }
 
-        set({ isCommentOpen: true });
+        set({ isCommentOpen: true, mobileDraftId: nextMobileDraftId });
         onInlineComment?.();
         return null;
       }
