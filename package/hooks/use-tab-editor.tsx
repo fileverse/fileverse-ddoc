@@ -275,7 +275,7 @@ export const useTabEditor = ({
                     event.preventDefault();
                     element.scrollIntoView({
                       behavior: 'smooth',
-                      block: 'center',
+                      block: 'start',
                     });
                     return true;
                   }
@@ -941,7 +941,7 @@ const useActiveComment = () => {
 
     commentInput.scrollIntoView({
       behavior: 'smooth',
-      block: 'center',
+      block: 'start',
       inline: 'center',
     });
   }, []);
