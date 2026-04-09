@@ -73,8 +73,12 @@ export function preprocessHtml(html: string): { html: string } {
     ul.removeAttribute('data-type');
   });
 
-  // Remove <img> tags — odf-kit v1 skips images entirely
-  doc.querySelectorAll('img').forEach((img) => img.remove());
+  // Replace <img> tags with warning text — odf-kit v1 skips images entirely
+  doc.querySelectorAll('img').forEach((img) => {
+    const warning = doc.createElement('em');
+    warning.textContent = '[Images are not supported in the export as of now.]';
+    img.replaceWith(warning);
+  });
 
   // Strip remaining data attributes
   doc.querySelectorAll('[data-type]').forEach((el) => {
