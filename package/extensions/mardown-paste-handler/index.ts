@@ -393,6 +393,7 @@ const MarkdownPasteHandler = (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>,
   fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>,
+  onError?: (error: string) => void,
 ) =>
   Extension.create({
     name: 'markdownPasteHandler',
@@ -414,10 +415,7 @@ const MarkdownPasteHandler = (
               if (empty && copiedData) {
                 try {
                   const url = new URL(copiedData.trim());
-                  if (
-                    url.origin === window.location.origin &&
-                    url.hash
-                  ) {
+                  if (url.origin === window.location.origin && url.hash) {
                     const hash = decodeURIComponent(url.hash.slice(1));
                     const params = new URLSearchParams(hash);
                     const headingParam = params.get('heading');
@@ -449,6 +447,11 @@ const MarkdownPasteHandler = (
                           return true;
                         }
                       }
+                      // Heading param found but not in current doc —
+                      // it belongs to a different dDoc.
+                      onError?.(
+                        'This heading link belongs to a different document.',
+                      );
                     }
                   }
                 } catch {
@@ -532,7 +535,12 @@ const MarkdownPasteHandler = (
             return true;
           },
         exportMarkdownFile:
-          (props?: { title?: string; returnMDFile?: boolean; metadataFormat?: 'yaml' | 'reference-links'; metadata?: Record<string, string> }) =>
+          (props?: {
+            title?: string;
+            returnMDFile?: boolean;
+            metadataFormat?: 'yaml' | 'reference-links';
+            metadata?: Record<string, string>;
+          }) =>
           async ({ editor }: { editor: Editor }): Promise<string> => {
             const { showLoader, removeLoader } = inlineLoader(
               editor,
