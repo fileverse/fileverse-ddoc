@@ -74,7 +74,7 @@ const CommentReply = ({
   createdAt,
   // isLast,
 }: CommentReplyProps) => {
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  // const dropdownRef = useRef<HTMLDivElement>(null);
   const [isCommentExpanded, setIsCommentExpanded] = useState(false);
   const [isDeleteOverlayVisible, setIsDeleteOverlayVisible] = useState(false);
   const deleteReply = useCommentStore((s) => s.deleteReply);
@@ -85,19 +85,19 @@ const CommentReply = ({
       ? reply.slice(0, 70) + '...'
       : reply;
 
-  const removePopoverContent = () => {
-    if (dropdownRef.current?.parentElement) {
-      const popoverContent = dropdownRef.current.closest('[role="dialog"]');
-      if (popoverContent) {
-        popoverContent.remove();
-      }
-    }
-  };
+  // const removePopoverContent = () => {
+  //   if (dropdownRef.current?.parentElement) {
+  //     const popoverContent = dropdownRef.current.closest('[role="dialog"]');
+  //     if (popoverContent) {
+  //       popoverContent.remove();
+  //     }
+  //   }
+  // };
 
-  const handleRequestDeleteClick = () => {
-    setIsDeleteOverlayVisible(true);
-    removePopoverContent();
-  };
+  // const handleRequestDeleteClick = () => {
+  //   setIsDeleteOverlayVisible(true);
+  //   removePopoverContent();
+  // };
 
   const handleDeleteOverlayClose = () => {
     setIsDeleteOverlayVisible(false);
@@ -117,7 +117,7 @@ const CommentReply = ({
     >
       <div className="flex justify-between">
         <UserDisplay username={username} createdAt={createdAt} />
-        <div className=" opacity-0 group-hover:opacity-100">
+        {/* <div className=" opacity-0 group-hover:opacity-100">
           <DynamicDropdown
             key={`thread-actions-${createdAt.getTime()}`}
             align="end"
@@ -135,10 +135,10 @@ const CommentReply = ({
                 ref={dropdownRef}
                 className="flex flex-col p-2 w-40 shadow-elevation-3"
               >
-                {/* <button className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full">
+                <button className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full">
                   <LucideIcon name="Pencil" size="sm" />
                   <p className="text-body-sm color-text-default">Edit</p>
-                </button> */}
+                </button>
                 <button
                   className="flex items-center h-[32px] color-text-danger text-sm font-medium gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
                   onClick={handleRequestDeleteClick}
@@ -149,7 +149,7 @@ const CommentReply = ({
               </div>
             }
           />
-        </div>
+        </div> */}
       </div>
 
       <div className="ml-[13px] pl-[18px] border-l custom-border ">
@@ -272,12 +272,17 @@ export const CommentCard = ({
     }
   };
   const handleCommentExpandClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
+    if (isCommentMobileFocused || !isBelow1280px) {
+      e.stopPropagation();
+    }
     focusCardIfNeeded();
     setIsCommentExpanded((prev) => !prev);
   };
   const handleReplyToggleClick = (e: React.MouseEvent<HTMLElement>) => {
-    e.stopPropagation();
+    if (isCommentMobileFocused || !isBelow1280px) {
+      e.stopPropagation();
+    }
+
     focusCardIfNeeded();
     setShowAllReplies((prev) => !prev);
   };

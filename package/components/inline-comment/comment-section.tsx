@@ -33,6 +33,7 @@ export const CommentSection = ({
   const username = useCommentStore((s) => s.username);
   const setUsername = useCommentStore((s) => s.setUsername);
   const focusCommentInEditor = useCommentStore((s) => s.focusCommentInEditor);
+  const setActiveCommentId = useCommentStore((s) => s.setActiveCommentId);
   const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
   const openReplyId = useCommentStore((s) => s.openReplyId);
   const resolveComment = useCommentStore((s) => s.resolveComment);
@@ -79,7 +80,12 @@ export const CommentSection = ({
     return (
       <>
         {label && (
-          <p className="text-body-sm-bold color-text-secondary">
+          <p
+            className={cn(
+              'text-body-sm-bold color-text-secondary',
+              isBelow1280px && 'mb-[4px]',
+            )}
+          >
             {label} ({comments.length})
           </p>
         )}
@@ -150,6 +156,8 @@ export const CommentSection = ({
 
       if (nextFocusedComment) {
         handleCommentClick(nextFocusedComment);
+        // Ensure next comment becomes the active comment on mobile
+        setActiveCommentId(nextFocusedComment.id);
       }
     }
 
@@ -322,9 +330,10 @@ const SidebarCommentItem = ({
       className={cn(
         'relative flex border flex-col w-full mt-[8px] pb-[12px] box-border transition-all color-border-default rounded-[12px]',
         isCommentMobileFocused && openReplyId !== comment.id && 'hidden',
-        comment.id === activeCommentId && isCommentMobileFocused
+        comment.id === activeCommentId &&
+          (isCommentMobileFocused || !isBelow1280px)
           ? 'color-bg-default'
-          : 'hover:color-bg-default-hover ',
+          : 'hover:color-bg-default-hover bg-[#00000005] ',
         comment.replies?.length > 0 && 'gap-0',
         showReOpenLabel && comment.resolved
           ? 'color-bg-default color-border-default'
@@ -347,9 +356,15 @@ const SidebarCommentItem = ({
           </Button>
         </div>
       )}
-      <p className="text-helper-text-sm px-[12px] pt-[12px] h-[26px] max-w-[270px] truncate color-text-secondary">
-        {tabName}
-      </p>
+      <div className="px-[12px] pt-[12px] gap-[8px] items-center flex">
+        <p className="text-helper-text-sm  max-w-[270px] truncate color-text-secondary">
+          {tabName}
+        </p>
+        {/* <p className="text-helper-text-sm flex-1 grow truncate color-text-secondary">
+          {comment.selectedContent}
+        </p> */}
+      </div>
+
       <CommentCard
         id={comment.id}
         activeCommentId={activeCommentId as string}
