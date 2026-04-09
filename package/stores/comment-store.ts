@@ -552,12 +552,7 @@ export const createCommentStore = () =>
 
       const { state } = editor;
       const { from, to } = state.selection;
-      const mobileDraftRange = mobileDraftId
-        ? getDraftCommentRange(state, mobileDraftId)
-        : null;
-      const selectedContent = mobileDraftRange
-        ? state.doc.textBetween(mobileDraftRange.from, mobileDraftRange.to, ' ')
-        : state.doc.textBetween(from, to, ' ');
+      const selectedContent = state.doc.textBetween(from, to, ' ');
 
       const newComment: IComment = {
         id: `comment-${uuid()}`,
@@ -574,78 +569,43 @@ export const createCommentStore = () =>
         editor.chain().unsetHighlight().run();
       }
 
-      let createdAnchor: {
-        anchorFrom: Y.RelativePosition;
-        anchorTo: Y.RelativePosition;
-      } | null = null;
+      // Create decoration anchor — no mark for new comments
+      const decorationAnchor = createCommentAnchorFromSelection(editor);
+
+      if (newComment.selectedContent && !decorationAnchor) {
+        return undefined;
+      }
+
+      if (decorationAnchor && commentAnchorsRef) {
+        commentAnchorsRef.current = [
+          ...commentAnchorsRef.current,
+          {
+            id: newComment.id!,
+            anchorFrom: decorationAnchor.anchorFrom,
+            anchorTo: decorationAnchor.anchorTo,
+            resolved: false,
+            deleted: false,
+          },
+        ];
+        triggerDecorationRebuild(editor);
+      }
 
       if (mobileDraftId) {
-        const draftRange = mobileDraftRange;
-
-        if (newComment.selectedContent && !draftRange) {
-          return undefined;
-        }
-
-        if (draftRange && commentAnchorsRef) {
-          const draftAnchor = createCommentAnchorFromEditor(
-            editor,
-            draftRange.from,
-            draftRange.to,
-          );
-
-          if (draftAnchor) {
-            createdAnchor = draftAnchor;
-            commentAnchorsRef.current = [
-              ...commentAnchorsRef.current,
-              {
-                id: newComment.id!,
-                anchorFrom: draftAnchor.anchorFrom,
-                anchorTo: draftAnchor.anchorTo,
-                resolved: false,
-                deleted: false,
-              },
-            ];
-          }
-        }
-
         editor.commands.unsetDraftComment(mobileDraftId);
-        triggerDecorationRebuild(editor);
         set({ mobileDraftId: null });
-      } else {
-        // Create decoration anchor — no mark for new comments
-        const decorationAnchor = createCommentAnchorFromSelection(editor);
-
-        if (newComment.selectedContent && !decorationAnchor) {
-          return undefined;
-        }
-
-        if (decorationAnchor && commentAnchorsRef) {
-          createdAnchor = decorationAnchor;
-          commentAnchorsRef.current = [
-            ...commentAnchorsRef.current,
-            {
-              id: newComment.id!,
-              anchorFrom: decorationAnchor.anchorFrom,
-              anchorTo: decorationAnchor.anchorTo,
-              resolved: false,
-              deleted: false,
-            },
-          ];
-          triggerDecorationRebuild(editor);
-        }
       }
 
       setActiveCommentId(newComment.id || '');
       setTimeout(() => focusCommentWithActiveId(newComment.id || ''), 0);
 
-      const meta: CommentMutationMeta | undefined = createdAnchor
+      const meta: CommentMutationMeta | undefined = decorationAnchor
         ? {
             type: 'create',
             anchorFrom: fromUint8Array(
-              Y.encodeRelativePosition(createdAnchor.anchorFrom),
+              Y.encodeRelativePosition(decorationAnchor.anchorFrom),
             ),
             anchorTo: fromUint8Array(
-              Y.encodeRelativePosition(createdAnchor.anchorTo),
+              Y.encodeRelativePosition(decorationAnchor.anchorTo),
             ),
           }
         : undefined;
