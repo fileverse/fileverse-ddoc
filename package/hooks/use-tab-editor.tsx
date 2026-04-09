@@ -253,9 +253,13 @@ export const useTabEditor = ({
           // 1. Check for Modifier Keys (Ctrl or Cmd)
           const isModifierPressed = event.metaKey || event.ctrlKey;
           // 2. Check if the clicked element is a link
-          // Use 'target' safely cast to HTMLElement
-          const target = event.target as HTMLElement;
-          const link = target.closest('a');
+          // In Firefox, event.target can be a text node which lacks closest()
+          const node = event.target as Node;
+          const target =
+            node.nodeType === Node.TEXT_NODE
+              ? (node.parentElement as HTMLElement)
+              : (node as HTMLElement);
+          const link = target?.closest('a');
           if (link && link.href) {
             // Fragment links with heading= param should scroll within the document. Only check origin (not pathname) since the same doc has  different paths (i.e: shareable link vs owner link).
             const url = new URL(link.href, window.location.href);
@@ -264,6 +268,7 @@ export const useTabEditor = ({
               const params = new URLSearchParams(hash);
               const headingParam = params.get('heading');
               if (headingParam) {
+                event.preventDefault();
                 const id = headingParam.split('-').pop();
                 if (id) {
                   const allHeadings =
@@ -272,11 +277,23 @@ export const useTabEditor = ({
                     (el as HTMLElement).dataset.tocId?.includes(id),
                   );
                   if (element) {
-                    event.preventDefault();
-                    element.scrollIntoView({
-                      behavior: 'smooth',
-                      block: 'start',
+                    const scrollContainer = getEditorScrollContainer({
+                      targetElement: element as HTMLElement,
+                      editorRoot: view.dom as HTMLElement,
                     });
+                    if (scrollContainer) {
+                      requestAnimationFrame(() => {
+                        const containerRect =
+                          scrollContainer.getBoundingClientRect();
+                        const elementRect = (
+                          element as HTMLElement
+                        ).getBoundingClientRect();
+                        scrollContainer.scrollBy({
+                          top: elementRect.top - containerRect.top,
+                          behavior: 'smooth',
+                        });
+                      });
+                    }
                     return true;
                   }
                 }
@@ -393,8 +410,12 @@ export const useTabEditor = ({
     if (!isPreviewMode) return;
 
     const handler = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest?.('#editor')) return;
+      const node = event.target as Node;
+      const target =
+        node.nodeType === Node.TEXT_NODE
+          ? (node.parentElement as HTMLElement)
+          : (node as HTMLElement);
+      if (!target?.closest?.('#editor')) return;
       const link = target.closest('a');
       if (!link?.href) return;
 
@@ -415,7 +436,19 @@ export const useTabEditor = ({
           if (el) {
             event.preventDefault();
             event.stopPropagation();
-            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            const scrollContainer = getEditorScrollContainer({
+              targetElement: el as HTMLElement,
+            });
+            if (scrollContainer) {
+              requestAnimationFrame(() => {
+                const containerRect = scrollContainer.getBoundingClientRect();
+                const elementRect = (el as HTMLElement).getBoundingClientRect();
+                scrollContainer.scrollBy({
+                  top: elementRect.top - containerRect.top,
+                  behavior: 'smooth',
+                });
+              });
+            }
             return;
           }
         }
@@ -1291,15 +1324,13 @@ const useExtensionSyncWithCollaboration = ({
     let lastCursorSnapshot = '';
     const getCursorSnapshot = () => {
       const parts: string[] = [];
-      awareness
-        .getStates()
-        .forEach((state: any, clientId: number) => {
-          if (clientId === awareness.clientID) return;
-          const cursor = state.cursor;
-          if (cursor) {
-            parts.push(`${clientId}:${JSON.stringify(cursor)}`);
-          }
-        });
+      awareness.getStates().forEach((state: any, clientId: number) => {
+        if (clientId === awareness.clientID) return;
+        const cursor = state.cursor;
+        if (cursor) {
+          parts.push(`${clientId}:${JSON.stringify(cursor)}`);
+        }
+      });
       return parts.sort().join('|');
     };
     // Patch apply: only recreate decorations when remote cursor positions
