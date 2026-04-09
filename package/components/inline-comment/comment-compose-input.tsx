@@ -24,8 +24,8 @@ export const CommentNewCommentInput = ({ tabId }: { tabId?: string }) => {
   }, [username, ensCache]);
 
   return (
-    <div className="flex flex-col gap-3 color-bg-default border-t color-border-default pt-[20px] rounded-b-lg">
-      <div className="border mx-4 flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
+    <div className="flex flex-col gap-3 color-bg-secondary border-t color-border-default pt-[20px] rounded-b-lg">
+      <div className="border mx-4 flex px-[12px] color-bg-default py-[8px] gap-[8px] rounded-[4px]">
         <Avatar
           src={
             ensStatus.isEns
@@ -50,7 +50,7 @@ export const CommentNewCommentInput = ({ tabId }: { tabId?: string }) => {
         />
       </div>
 
-      <div className="flex px-4 items-center color-bg-default justify-end">
+      <div className="flex px-4 items-center color-bg-secondary justify-end">
         <Button
           data-testid="comment-section-send"
           onClick={() => handleCommentSubmit(tabId)}

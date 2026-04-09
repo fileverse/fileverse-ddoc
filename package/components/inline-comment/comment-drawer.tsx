@@ -436,7 +436,7 @@ export const CommentDrawer = ({
             isPresentationMode && 'h-[calc(100vh-5rem)] top-[4rem] !z-[60]',
           )}
           headerClassName="border-b color-border-default !color-bg-default px-4 pb-[12px] !rounded-t-lg"
-          contentClassName="!rounded-lg !px-0 !h-full select-text color-bg-default"
+          contentClassName="!rounded-lg !px-0 !h-full select-text color-bg-secondary"
           title="Comments"
           content={
             <div

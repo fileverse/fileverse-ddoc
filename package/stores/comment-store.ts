@@ -208,6 +208,7 @@ export interface CommentStoreState {
   ) => void;
 
   // --- Internal ---
+  _skipNextEditorStateUpdate: boolean;
   _recomputeDerived: () => void;
 
   // --- Synced data setters (called by provider useEffects) ---
@@ -361,6 +362,9 @@ export const createCommentStore = () =>
     // --- External deps ref ---
     _externalDepsRef: null,
     setExternalDepsRef: (ref) => set({ _externalDepsRef: ref }),
+
+    // --- Internal flags ---
+    _skipNextEditorStateUpdate: false,
 
     // --- Recompute derived state ---
     _recomputeDerived: () => {
@@ -629,6 +633,9 @@ export const createCommentStore = () =>
         createdAt: new Date(),
       };
 
+      // Set skip flag for unanchored comment before focusing it
+      set({ _skipNextEditorStateUpdate: true });
+
       onNewComment?.(newComment);
       setActiveCommentId(newComment.id || null);
       set({ comment: '' });
@@ -654,6 +661,9 @@ export const createCommentStore = () =>
         replies: [],
         createdAt: new Date(),
       };
+
+      // Set skip flag for unanchored comment before focusing it
+      set({ _skipNextEditorStateUpdate: true });
 
       setActiveCommentId(newComment.id || '');
       onNewComment?.(newComment);
@@ -963,6 +973,11 @@ export const createCommentStore = () =>
       if (editor && draft.selectedText) {
         editor.commands.unsetDraftComment(draftId);
         triggerDecorationRebuild(editor);
+      }
+
+      // If this is an unanchored comment (no selectedText), skip the next editor state update
+      if (!draft.selectedText) {
+        set({ _skipNextEditorStateUpdate: true });
       }
 
       get().setActiveCommentId(newComment.id || '');
@@ -1401,10 +1416,6 @@ export const createCommentStore = () =>
     focusCommentInEditor: (commentId) => {
       const { editor, setActiveCommentId } = getExtDeps(get);
 
-      if (!editor?.view?.dom) {
-        return;
-      }
-
       const foundComment = get()
         .getTabComments()
         .find((comment) => comment.id === commentId);
@@ -1414,6 +1425,10 @@ export const createCommentStore = () =>
       }
 
       if (foundComment.selectedContent) {
+        if (!editor?.view?.dom) {
+          return;
+        }
+
         const commentElement = editor.view.dom.querySelector<HTMLElement>(
           `[data-comment-id="${commentId}"]`,
         );
@@ -1430,6 +1445,8 @@ export const createCommentStore = () =>
             });
           });
         }
+      } else {
+        set({ _skipNextEditorStateUpdate: true });
       }
 
       setActiveCommentId(commentId);

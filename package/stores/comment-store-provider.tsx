@@ -260,9 +260,16 @@ export const CommentStoreProvider = ({
     // floating thread without waiting for a separate UI interaction.
     const updateEditorState = () => {
       const state = store.getState();
+
+      // Skip this update if we just focused an unanchored comment
+      if (state._skipNextEditorStateUpdate) {
+        state._skipNextEditorStateUpdate = false;
+        return;
+      }
       const isMarkActive = editor.isActive('comment');
       const markCommentId = isMarkActive
-        ? ((editor.getAttributes('comment').commentId as string | null) ?? null)
+        ? ((editor.getAttributes('comment')?.commentId as string | null) ??
+          null)
         : null;
       const cursorPos = editor.state.selection.from;
       const decorationComment = commentAnchorsRef
@@ -278,7 +285,7 @@ export const CommentStoreProvider = ({
         (decorationComment !== null && !decorationComment.resolved);
       const nextCommentResolved = nextCommentActive
         ? isMarkActive
-          ? (editor.getAttributes('comment').resolved ?? false)
+          ? (editor.getAttributes('comment')?.resolved ?? false)
           : false
         : false;
       const selectedCommentId = markCommentId || decorationComment?.id || null;
