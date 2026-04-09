@@ -4,7 +4,7 @@ import EnsLogo from '../../assets/ens.svg';
 import { useEffect, useState } from 'react';
 import { EnsStatus } from './types';
 
-export const CommentComposeInput = () => {
+export const CommentNewCommentInput = () => {
   const comment = useCommentStore((s) => s.comment);
   const username = useCommentStore((s) => s.username);
   const handleCommentChange = useCommentStore((s) => s.handleCommentChange);

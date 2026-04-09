@@ -9,7 +9,7 @@ import { CommentUsername } from './comment-username';
 import React, { useEffect, useState } from 'react';
 import { EmptyComments } from './empty-comments';
 import { CommentReplyInput } from './comment-reply-input';
-import { CommentComposeInput } from './comment-compose-input';
+import { CommentNewCommentInput } from './comment-compose-input';
 import { DeleteConfirmOverlay } from './delete-confirm-overlay';
 import { IComment } from '../../extensions/comment';
 import { DEFAULT_TAB_ID, DEFAULT_TAB_NAME } from '../tabs/utils/tab-utils';
@@ -24,7 +24,7 @@ export const CommentSection = ({
   commentType = 'active',
   tabNameById,
   selectedTabLabel,
-  showComposeInput = true,
+  showNewCommentInput = true,
   onCommentFocus,
   onReset,
 }: CommentSectionProps) => {
@@ -179,11 +179,11 @@ export const CommentSection = ({
     <div
       data-testid="comment-section"
       className={cn(
-        (!isMobile || !showComposeInput) && 'flex flex-col',
+        (!isMobile || !showNewCommentInput) && 'flex flex-col',
         !isMobile &&
           'h-[100dvh] sm:h-[calc(100vh-40px)] xl:h-[calc(100vh-310px)] !color-bg-default !rounded-b-lg',
-        isMobile && !showComposeInput && 'h-full',
-        showComposeInput ? 'pb-[3rem] sm:pb-0' : 'pb-0',
+        isMobile && !showNewCommentInput && 'h-full',
+        showNewCommentInput ? 'pb-[3rem] sm:pb-0' : 'pb-0',
         !isNavbarVisible && 'xl:!h-[calc(100vh-150px)]',
         isPresentationMode && 'xl:!h-[86vh]',
       )}
@@ -202,7 +202,13 @@ export const CommentSection = ({
                   activeComments,
                   !isCommentMobileFocused && 'Active',
                 )}
-                <div className={cn(activeComments.length > 0 && 'mt-[16px]')} />
+                <div
+                  className={cn(
+                    activeComments.length > 0 &&
+                      !isCommentMobileFocused &&
+                      'mt-[16px]',
+                  )}
+                />
                 {renderCommentList(
                   resolvedComments,
                   !isCommentMobileFocused && 'Resolved',
@@ -215,7 +221,7 @@ export const CommentSection = ({
         )}
       </div>
 
-      {showComposeInput && <CommentComposeInput />}
+      {showNewCommentInput && <CommentNewCommentInput />}
       {isBelow1280px && resolvedToastCommentId && (
         <MobileResolvedCommentToast
           onUndo={() => {
@@ -263,6 +269,8 @@ const SidebarCommentItem = ({
   const { isBelow1280px } = useResponsive();
 
   const handleSidebarCommentClick = () => {
+    // Keep drawer thread-open state owned by the list item. CommentCard stays
+    // presentational so selection does not get written twice through bubbling.
     if (comment.resolved && !isBelow1280px) {
       onSetOpenReplyId(null);
     } else if (comment.id) {

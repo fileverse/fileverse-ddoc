@@ -229,6 +229,8 @@ export const CommentStoreProvider = ({
   }, [activeTabId, store]);
 
   useEffect(() => {
+    // Semantic changes still prune invalid cards, but editor transactions no
+    // longer do. That keeps correctness without paying per-keystroke scan cost.
     store.getState().removeInvalidFloatingCards();
   }, [activeTabId, initialComments, store]);
 
@@ -244,7 +246,7 @@ export const CommentStoreProvider = ({
 
   useEffect(() => {
     store.getState().submitPendingFloatingDrafts();
-  }, [isConnected, isDesktopFloatingEnabled, store, username]);
+  }, [isConnected, store, username]);
 
   useEffect(() => {
     if (!editor) {
@@ -305,13 +307,10 @@ export const CommentStoreProvider = ({
     }: {
       transaction: { docChanged?: boolean; selectionSet: boolean };
     }) => {
+      // Keep the transaction listener focused on active-comment/editor sync.
+      // Floating-card pruning now belongs to semantic events and anchor loss handling.
       if (transaction.selectionSet || transaction.docChanged) {
         updateEditorState();
-      }
-      // Remove floating cards whose anchors are no longer in the document
-      // (e.g. draft range deleted, or comment removed/resolved)
-      if (transaction.docChanged) {
-        store.getState().removeInvalidFloatingCards();
       }
     };
 
@@ -323,7 +322,7 @@ export const CommentStoreProvider = ({
       editor.off('selectionUpdate', updateEditorState);
       editor.off('transaction', handleTransaction);
     };
-  }, [editor, isDesktopFloatingEnabled, store]);
+  }, [commentAnchorsRef, editor, isDesktopFloatingEnabled, store]);
 
   const commentsSectionRef = useRef<HTMLDivElement | null>(null);
   const replySectionRef = useRef<HTMLDivElement | null>(null);

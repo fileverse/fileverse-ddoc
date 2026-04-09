@@ -35,6 +35,7 @@ export interface CommentDrawerProps {
   isPresentationMode: boolean;
   activeCommentId: string | null;
   activeTabId: string;
+  onTabChange?: (tabId: string) => void;
   isPreviewMode: boolean;
   tabs: Tab[];
 }
@@ -84,7 +85,7 @@ export interface CommentSectionProps {
   sectionLabel?: string;
   tabNameById?: Record<string, string>;
   selectedTabLabel?: string;
-  showComposeInput?: boolean;
+  showNewCommentInput?: boolean;
   onCommentFocus?: (commentId: string, tabId?: string) => void;
   onReset?: () => void;
 }

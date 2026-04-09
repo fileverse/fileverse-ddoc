@@ -26,6 +26,7 @@ interface SyncAnchorsArgs {
     floatingCardId: string,
     flag: FloatingLayoutInvalidationFlag,
   ) => void;
+  markFloatingCardOrderDirty: () => void;
   markRecomputeFromIndex: (recomputeFromIndex: number) => void;
   getOrderedFloatingCardIndex: (floatingCardId: string) => number | null;
 }
@@ -83,6 +84,7 @@ export const useAnchorRegistry = (): UseAnchorRegistryResult => {
       floatingCards,
       getFloatingCardRuntimeState,
       markFloatingCardInvalidated,
+      markFloatingCardOrderDirty,
       markRecomputeFromIndex,
       getOrderedFloatingCardIndex,
     }: SyncAnchorsArgs): SyncAnchorsResult => {
@@ -209,6 +211,11 @@ export const useAnchorRegistry = (): UseAnchorRegistryResult => {
           didChange ||
           floatingCardRuntimeState.anchorVersion !== nextEntry.anchorVersion
         ) {
+          if (!previousEntry || previousEntry.pmPos !== pmPos) {
+            // Only position changes can affect stacking order, so this is the
+            // narrowest place to dirty ordering for the layout engine.
+            markFloatingCardOrderDirty();
+          }
           const currentIndex = getOrderedFloatingCardIndex(
             floatingCard.floatingCardId,
           );

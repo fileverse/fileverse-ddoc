@@ -1064,6 +1064,7 @@ const DdocEditor = forwardRef(
                 isPresentationMode={isPresentationMode as boolean}
                 activeCommentId={activeCommentId}
                 activeTabId={activeTabId}
+                onTabChange={setActiveTabId}
                 isPreviewMode={isPreviewMode}
                 tabs={tabs}
               />

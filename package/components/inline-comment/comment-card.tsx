@@ -7,7 +7,7 @@ import {
   Skeleton,
   Tooltip,
 } from '@fileverse/ui';
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
+import { useRef, useState, useEffect } from 'react';
 import {
   CommentCardProps,
   CommentReplyProps,
@@ -203,7 +203,6 @@ export const CommentCard = ({
   const [isCommentExpanded, setIsCommentExpanded] = useState(false);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
   const openReplyId = useCommentStore((s) => s.openReplyId);
-  const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
   const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
   const ensCache = useCommentStore((s) => s.ensCache);
   const { isBelow1280px } = useResponsive();
@@ -258,101 +257,8 @@ export const CommentCard = ({
     removePopoverContent();
   };
   const isCommentMobileFocused = isBelow1280px && Boolean(openReplyId);
-  const shouldShowReplyThread = useMemo(
-    () => !isBelow1280px || isCommentMobileFocused,
-    [isBelow1280px, isCommentMobileFocused],
-  );
+  const shouldShowReplyThread = !isBelow1280px || isCommentMobileFocused;
   const replyThreadCount = shouldShowReplyThread ? 2 : 0;
-
-  const renderReplies = useCallback(() => {
-    if (!replies?.length) return null;
-
-    const visibleReplies = replies.filter((reply) => !reply.deleted);
-    if (!visibleReplies.length) return null;
-
-    let displayedReplies = [...visibleReplies].sort(
-      (a, b) =>
-        new Date(a.createdAt || new Date()).getTime() -
-        new Date(b.createdAt || new Date()).getTime(),
-    );
-    if (!showAllReplies && visibleReplies.length > 3) {
-      displayedReplies = displayedReplies.slice(-2);
-    }
-
-    if (isResolved && isCommentMobileFocused) {
-      return (
-        <p className="text-helper-text-sm">{visibleReplies.length} replies</p>
-      );
-    }
-
-    const shouldShowMinimizedReplies =
-      isBelow1280px && !isCommentMobileFocused
-        ? visibleReplies.length > 0
-        : visibleReplies.length > 3 && !showAllReplies;
-
-    return (
-      <div className="flex flex-col gap-0 relative">
-        {shouldShowMinimizedReplies && (
-          <div
-            onClick={() => setShowAllReplies(true)}
-            className={cn(
-              'text-helper-text-sm color-text-secondary min-h-[28px] mb-[4px] hover:underline custom-border cursor-pointer flex items-center gap-2 pr-[8px] pl-[4px]',
-              !shouldShowReplyThread && 'justify-center mt-[4px]',
-            )}
-          >
-            <IconButton
-              icon="ChevronDown"
-              variant="ghost"
-              size="sm"
-              rounded
-              className="color-text-secondary border custom-border !min-w-[20px] !w-[20px] !h-[20px]"
-              onClick={() => setShowAllReplies(true)}
-            />
-            <div className="flex items-center -space-x-1">
-              {visibleReplies.slice(0, 2).map((reply) => (
-                <Avatar
-                  src={
-                    ensStatus.isEns
-                      ? EnsLogo
-                      : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-                          reply.username || '',
-                        )}`
-                  }
-                  size="sm"
-                  className="w-4 h-4 last:z-10 bg-transparent"
-                  bordered="border"
-                  key={reply.id}
-                />
-              ))}
-            </div>
-            {visibleReplies.length - replyThreadCount}{' '}
-            {replyThreadCount > 0 && 'more'} replies in this thread
-          </div>
-        )}
-
-        {shouldShowReplyThread &&
-          displayedReplies.map((reply, index) => (
-            <CommentReply
-              key={reply.id}
-              commentId={id as string}
-              replyId={reply.id || ''}
-              reply={reply.content || ''}
-              username={reply.username || ''}
-              createdAt={reply.createdAt || new Date()}
-              isLast={index === displayedReplies.length - 1}
-            />
-          ))}
-      </div>
-    );
-  }, [
-    replies,
-    showAllReplies,
-    ensStatus.isEns,
-    id,
-    shouldShowReplyThread,
-    replyThreadCount,
-    isCommentMobileFocused,
-  ]);
 
   if (emptyComment)
     return (
@@ -382,6 +288,23 @@ export const CommentCard = ({
     comment && isCommentTruncated && !isCommentExpanded
       ? comment.slice(0, 70) + '...'
       : comment;
+  // Keep reply derivation inline here. The previous memoized helper hid stale
+  // dependencies around resolution and mobile focus state.
+  const visibleReplies = (replies || []).filter((reply) => !reply.deleted);
+  let displayedReplies = [...visibleReplies].sort(
+    (a, b) =>
+      new Date(a.createdAt || new Date()).getTime() -
+      new Date(b.createdAt || new Date()).getTime(),
+  );
+
+  if (!showAllReplies && visibleReplies.length > 3) {
+    displayedReplies = displayedReplies.slice(-2);
+  }
+
+  const shouldShowMinimizedReplies =
+    isBelow1280px && !isCommentMobileFocused
+      ? visibleReplies.length > 0
+      : visibleReplies.length > 3 && !showAllReplies;
 
   return (
     <div
@@ -393,14 +316,7 @@ export const CommentCard = ({
         isCommentDrawerContext ? 'p-3 pb-0' : 'px-3',
       )}
     >
-      <div
-        onClick={() => {
-          if (!isDisabled) {
-            setOpenReplyId(id as string);
-          }
-        }}
-        className="flex flex-col gap-[8px]"
-      >
+      <div className="flex flex-col gap-[8px]">
         <div className="flex justify-between items-center">
           <UserDisplay username={username as string} createdAt={createdAt} />
           {version === '2' ? (
@@ -545,7 +461,65 @@ export const CommentCard = ({
         </div>
       </div>
 
-      {replies && renderReplies()}
+      {visibleReplies.length > 0 &&
+        (isResolved && isCommentMobileFocused ? (
+          // Mobile resolved threads collapse to a count so the drawer can keep
+          // the reopen state compact without rendering a hidden reply stack.
+          <p className="text-helper-text-sm">{visibleReplies.length} replies</p>
+        ) : (
+          <div className="flex flex-col gap-0 relative">
+            {shouldShowMinimizedReplies && (
+              <div
+                onClick={() => setShowAllReplies(true)}
+                className={cn(
+                  'text-helper-text-sm color-text-secondary min-h-[28px] mb-[4px] hover:underline custom-border cursor-pointer flex items-center gap-2 pr-[8px] pl-[4px]',
+                  !shouldShowReplyThread && 'justify-center mt-[4px]',
+                )}
+              >
+                <IconButton
+                  icon="ChevronDown"
+                  variant="ghost"
+                  size="sm"
+                  rounded
+                  className="color-text-secondary border custom-border !min-w-[20px] !w-[20px] !h-[20px]"
+                  onClick={() => setShowAllReplies(true)}
+                />
+                <div className="flex items-center -space-x-1">
+                  {visibleReplies.slice(0, 2).map((reply) => (
+                    <Avatar
+                      src={
+                        ensStatus.isEns
+                          ? EnsLogo
+                          : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                              reply.username || '',
+                            )}`
+                      }
+                      size="sm"
+                      className="w-4 h-4 last:z-10 bg-transparent"
+                      bordered="border"
+                      key={reply.id}
+                    />
+                  ))}
+                </div>
+                {visibleReplies.length - replyThreadCount}{' '}
+                {replyThreadCount > 0 && 'more'} replies in this thread
+              </div>
+            )}
+
+            {shouldShowReplyThread &&
+              displayedReplies.map((reply, index) => (
+                <CommentReply
+                  key={reply.id}
+                  commentId={id as string}
+                  replyId={reply.id || ''}
+                  reply={reply.content || ''}
+                  username={reply.username || ''}
+                  createdAt={reply.createdAt || new Date()}
+                  isLast={index === displayedReplies.length - 1}
+                />
+              ))}
+          </div>
+        ))}
     </div>
   );
 };

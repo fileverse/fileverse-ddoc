@@ -10,11 +10,21 @@ export interface CommentFloatingBaseCard {
   isFocused: boolean;
 }
 
+export type InlineDraftLocation = 'drawer' | 'floating';
+
+export interface InlineCommentDraft {
+  draftId: string;
+  selectedText: string;
+  text: string;
+  // The UI location is tracked explicitly so open/close behavior can differ
+  // without splitting draft semantics between mobile and desktop code paths.
+  location: InlineDraftLocation;
+  isAuthPending: boolean;
+}
+
 export interface CommentFloatingDraftCard extends CommentFloatingBaseCard {
   type: 'draft';
   draftId: string;
-  draftText: string;
-  isAuthPending: boolean;
 }
 
 export interface CommentFloatingThreadCard extends CommentFloatingBaseCard {

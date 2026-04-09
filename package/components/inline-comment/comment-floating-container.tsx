@@ -119,18 +119,17 @@ const DraftFloatingCard = ({
     node: HTMLDivElement | null,
   ) => void;
 }) => {
-  const cancelFloatingDraft = useCommentStore((s) => s.cancelFloatingDraft);
+  const cancelInlineDraft = useCommentStore((s) => s.cancelInlineDraft);
   const focusFloatingCard = useCommentStore((s) => s.focusFloatingCard);
-  const submitFloatingDraft = useCommentStore((s) => s.submitFloatingDraft);
-  const updateFloatingDraftText = useCommentStore(
-    (s) => s.updateFloatingDraftText,
-  );
+  const submitInlineDraft = useCommentStore((s) => s.submitInlineDraft);
+  const updateInlineDraftText = useCommentStore((s) => s.updateInlineDraftText);
+  const draftState = useCommentStore((s) => s.inlineDrafts[draft.draftId]);
   const username = useCommentStore((s) => s.username);
   const isConnected = useCommentStore((s) => s.isConnected);
   const draftCardRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
-    if (!draft.isFocused || isHidden) {
+    if (!draftState || !draft.isFocused || isHidden) {
       return;
     }
 
@@ -145,7 +144,11 @@ const DraftFloatingCard = ({
     return () => {
       window.cancelAnimationFrame(frameId);
     };
-  }, [draft.isFocused, isHidden]);
+  }, [draft.isFocused, draftState, isHidden]);
+
+  if (!draftState) {
+    return null;
+  }
 
   return (
     <FloatingCardShell
@@ -174,9 +177,10 @@ const DraftFloatingCard = ({
           <div className="flex flex-col gap-3 p-3 pt-0">
             <div className="border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
               <TextAreaFieldV2
-                value={draft.draftText}
+                value={draftState.text}
                 onChange={(event) =>
-                  updateFloatingDraftText(draft.draftId, event.target.value)
+                  // Floating comments and the drawer both edit the same draft record.
+                  updateInlineDraftText(draft.draftId, event.target.value)
                 }
                 onKeyDown={(event) => {
                   if (
@@ -184,7 +188,7 @@ const DraftFloatingCard = ({
                     (!event.shiftKey || event.metaKey)
                   ) {
                     event.preventDefault();
-                    submitFloatingDraft(draft.draftId);
+                    submitInlineDraft(draft.draftId);
                   }
                 }}
                 className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
@@ -195,14 +199,14 @@ const DraftFloatingCard = ({
               <Button
                 variant="ghost"
                 className="!w-[80px] !min-w-[80px]"
-                onClick={() => cancelFloatingDraft(draft.draftId)}
+                onClick={() => cancelInlineDraft(draft.draftId)}
               >
                 Cancel
               </Button>
               <Button
                 className="w-20 min-w-20"
-                disabled={!draft.draftText.trim()}
-                onClick={() => submitFloatingDraft(draft.draftId)}
+                disabled={!draftState.text.trim()}
+                onClick={() => submitInlineDraft(draft.draftId)}
               >
                 Send
               </Button>
@@ -433,7 +437,7 @@ export const CommentFloatingContainer = ({
     <div
       ref={floatingCardListContainerRef}
       className={cn(
-        'comment-floating-rail relative shrink-0',
+        'comment-floating-comments relative shrink-0',
         isHidden && 'pointer-events-none',
       )}
       data-floating-comment-hidden={isHidden ? 'true' : 'false'}

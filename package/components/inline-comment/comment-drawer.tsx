@@ -28,29 +28,43 @@ export const CommentDrawer = ({
   isPresentationMode,
   activeCommentId,
   activeTabId,
+  onTabChange,
   isPreviewMode,
   tabs,
 }: CommentDrawerProps) => {
   const comments = useCommentStore((s) => s.initialComments);
-  const addComment = useCommentStore((s) => s.addComment);
+  const activeDraftId = useCommentStore((s) => s.activeDraftId);
+  const activeDraft = useCommentStore((s) =>
+    s.activeDraftId ? (s.inlineDrafts[s.activeDraftId] ?? null) : null,
+  );
+  const createFloatingDraft = useCommentStore((s) => s.createFloatingDraft);
   const focusCommentInEditor = useCommentStore((s) => s.focusCommentInEditor);
   const handleInput = useCommentStore((s) => s.handleInput);
   const isCommentOpen = useCommentStore((s) => s.isCommentOpen);
   const openReplyId = useCommentStore((s) => s.openReplyId);
   const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
   const setIsCommentOpen = useCommentStore((s) => s.setIsCommentOpen);
-  const username = useCommentStore((s) => s.username);
-  // const isConnected = useCommentStore((s) => s.isConnected);
+  const submitInlineDraft = useCommentStore((s) => s.submitInlineDraft);
+  const updateInlineDraftText = useCommentStore((s) => s.updateInlineDraftText);
   const { isBelow1280px } = useResponsive();
-  const [isNewCommentOpen, setIsNewCommentOpen] = useState(false);
   const [isDiscardCommentOverlayVisible, setIsDiscardCommentOverlayVisible] =
     useState(false);
-  const [replyText, setReplyText] = useState('');
+  const [pendingCommentFocus, setPendingCommentFocus] = useState<{
+    commentId: string;
+    tabId: string;
+  } | null>(null);
   const mobileDrawerRef = useRef<HTMLDivElement | null>(null);
   const isCommentMobileFocused = isBelow1280px && Boolean(openReplyId);
+  // Drawer new-comment state is derived from shared draft state so mobile and desktop
+  // follow the same draft lifecycle instead of shadowing it with local UI state.
+  const isInlineDraftOpen =
+    isCommentOpen &&
+    activeDraft !== null &&
+    activeDraftId !== null &&
+    activeDraft.location === 'drawer';
 
   useEscapeKey(() => {
-    if (isNewCommentOpen) {
+    if (isInlineDraftOpen) {
       setIsDiscardCommentOverlayVisible(true);
       return;
     }
@@ -132,6 +146,10 @@ export const CommentDrawer = ({
     const targetTabId = commentTabId || DEFAULT_TAB_ID;
 
     if (targetTabId !== activeTabId) {
+      // Cross-tab thread clicks should not silently no-op. Switch tabs first,
+      // then replay the requested focus once the target tab is active.
+      setPendingCommentFocus({ commentId, tabId: targetTabId });
+      onTabChange?.(targetTabId);
       return;
     }
 
@@ -139,25 +157,33 @@ export const CommentDrawer = ({
   };
 
   useEffect(() => {
-    if (isCommentOpen) {
-      setIsNewCommentOpen(true);
+    if (!isOpen && !isInlineDraftOpen) {
+      setIsDiscardCommentOverlayVisible(false);
     }
-  }, [isCommentOpen]);
+  }, [isInlineDraftOpen, isOpen]);
 
   useEffect(() => {
-    if (!isOpen && !isCommentOpen) {
-      setIsNewCommentOpen(false);
-      setIsDiscardCommentOverlayVisible(false);
-      setReplyText('');
+    if (
+      !pendingCommentFocus ||
+      pendingCommentFocus.tabId !== activeTabId ||
+      !comments.some(
+        (comment) =>
+          comment.id === pendingCommentFocus.commentId &&
+          (comment.tabId || DEFAULT_TAB_ID) === activeTabId,
+      )
+    ) {
+      return;
     }
-  }, [isCommentOpen, isOpen]);
 
-  const closeNewComment = () => {
-    setIsNewCommentOpen(false);
-    setIsDiscardCommentOverlayVisible(false);
-    setReplyText('');
-    setIsCommentOpen(false);
-  };
+    const frameId = window.requestAnimationFrame(() => {
+      // Wait a frame so the tab switch can mount the matching comment nodes
+      // before trying to focus/scroll them in the editor.
+      focusCommentInEditor(pendingCommentFocus.commentId);
+      setPendingCommentFocus(null);
+    });
+
+    return () => window.cancelAnimationFrame(frameId);
+  }, [activeTabId, comments, focusCommentInEditor, pendingCommentFocus]);
 
   const handleAttemptCloseNewComment = () => {
     setIsDiscardCommentOverlayVisible(true);
@@ -165,9 +191,8 @@ export const CommentDrawer = ({
 
   const handleCloseDrawer = () => {
     setOpenReplyId(null);
-    setIsNewCommentOpen(false);
     setIsDiscardCommentOverlayVisible(false);
-    setReplyText('');
+    setPendingCommentFocus(null);
     setIsCommentOpen(false);
     onClose();
   };
@@ -177,17 +202,12 @@ export const CommentDrawer = ({
   };
 
   const handleCreateComment = () => {
-    if (!replyText.trim() || !username) {
+    if (!activeDraftId) {
       return;
     }
 
-    const createdCommentId = addComment(replyText.trim(), username);
-
-    if (!createdCommentId) {
-      return;
-    }
-
-    closeNewComment();
+    // Submit the shared draft record instead of reading live editor selection.
+    submitInlineDraft(activeDraftId);
   };
 
   const focusMobileComment = (commentIndex: number) => {
@@ -238,7 +258,7 @@ export const CommentDrawer = ({
             'fixed h-full flex items-end z-10 inset-0',
           )}
         >
-          {isNewCommentOpen ? (
+          {isInlineDraftOpen ? (
             <div className="p-4 rounded-t-[12px] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] w-full color-bg-secondary">
               <div className="flex justify-between mb-[16px] items-center">
                 <h2 className="text-heading-sm">New Comment</h2>
@@ -259,9 +279,13 @@ export const CommentDrawer = ({
                   className="w-[16px] h-[16px]"
                 />
                 <TextAreaFieldV2
-                  value={replyText}
+                  value={activeDraft?.text || ''}
                   autoFocus
-                  onChange={(event) => setReplyText(event.target.value)}
+                  onChange={(event) => {
+                    if (activeDraftId) {
+                      updateInlineDraftText(activeDraftId, event.target.value);
+                    }
+                  }}
                   onInput={(event) =>
                     handleInput(event, event.currentTarget.value)
                   }
@@ -281,7 +305,7 @@ export const CommentDrawer = ({
                   onClick={handleCreateComment}
                   icon={'SendHorizontal'}
                   variant="ghost"
-                  disabled={!replyText.trim() || !username}
+                  disabled={!activeDraft?.text.trim()}
                   className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
                 />
               </div>
@@ -340,7 +364,7 @@ export const CommentDrawer = ({
                   <div className="flex gap-sm">
                     <IconButton
                       icon={'MessageSquarePlus'}
-                      onClick={() => setIsNewCommentOpen(true)}
+                      onClick={() => createFloatingDraft()}
                       variant="ghost"
                       size="md"
                     />
@@ -354,7 +378,7 @@ export const CommentDrawer = ({
                 </div>
               )}
 
-              <div className="mt-4 flex-1 overflow-hidden">
+              <div className="flex-1 mt-4 overflow-hidden">
                 <CommentSection
                   activeCommentId={activeCommentId}
                   isNavbarVisible={isNavbarVisible}
@@ -364,7 +388,7 @@ export const CommentDrawer = ({
                   commentType="all"
                   tabNameById={tabNameById}
                   onCommentFocus={handleCommentFocus}
-                  showComposeInput={false}
+                  showNewCommentInput={false}
                 />
               </div>
             </div>
@@ -427,7 +451,10 @@ export const CommentDrawer = ({
                 selectedTabLabel={selectedTabLabel}
                 onCommentFocus={handleCommentFocus}
                 onReset={() => {
+                  // Reset both filters so the empty state can always recover
+                  // to the full drawer list instead of staying tab-scoped.
                   setCommentType('all');
+                  setTab(ALL_TABS_OPTION_ID);
                 }}
               />
             </div>

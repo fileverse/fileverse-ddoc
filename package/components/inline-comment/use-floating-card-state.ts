@@ -20,6 +20,7 @@ interface SyncMountedFloatingCardIdsResult {
 export interface UseFloatingCardStateResult {
   floatingCardStateRef: MutableRefObject<Map<string, FloatingCardRuntimeState>>;
   orderedFloatingCardIdsRef: MutableRefObject<string[]>;
+  orderDirtyRef: MutableRefObject<boolean>;
   heightMeasurementQueueRef: MutableRefObject<Set<string>>;
   layoutBoundaryRef: MutableRefObject<{ recomputeFromIndex: number }>;
   mountedFloatingCardIdsRef: MutableRefObject<string[]>;
@@ -33,6 +34,7 @@ export interface UseFloatingCardStateResult {
     floatingCardId: string,
     flag: FloatingLayoutInvalidationFlag,
   ) => void;
+  markFloatingCardOrderDirty: () => void;
   reconcileFloatingCardOrder: (nextFloatingCards: CommentFloatingCard[]) => {
     orderedFloatingCardIds: string[];
     firstChangedIndex: number | null;
@@ -54,6 +56,7 @@ export const useFloatingCardState = (): UseFloatingCardStateResult => {
   );
   const orderedFloatingCardIdsRef = useRef<string[]>([]);
   const orderedFloatingCardIndexRef = useRef<Map<string, number>>(new Map());
+  const orderDirtyRef = useRef(true);
   const heightMeasurementQueueRef = useRef<Set<string>>(new Set());
   const layoutBoundaryRef = useRef({
     recomputeFromIndex: 0, // When something changes, layout restarts from recomputeFromIndex instead of from the top.
@@ -109,8 +112,33 @@ export const useFloatingCardState = (): UseFloatingCardStateResult => {
     [getFloatingCardRuntimeState],
   );
 
+  const markFloatingCardOrderDirty = useCallback(() => {
+    // Ordering only changes when card membership or anchor positions change.
+    // Keeping this explicit avoids a full sort on every layout cycle.
+    orderDirtyRef.current = true;
+  }, []);
+
   const reconcileFloatingCardOrder = useCallback(
     (nextFloatingCards: CommentFloatingCard[]) => {
+      const nextFloatingCardIds = nextFloatingCards.map(
+        (floatingCard) => floatingCard.floatingCardId,
+      );
+
+      if (
+        !orderDirtyRef.current &&
+        areFloatingCardIdListsEqual(
+          nextFloatingCardIds,
+          orderedFloatingCardIdsRef.current,
+        )
+      ) {
+        // Reuse the last known order in the steady state. The layout loop still
+        // runs, but order reconciliation drops out of the hot path.
+        return {
+          orderedFloatingCardIds: orderedFloatingCardIdsRef.current,
+          firstChangedIndex: null,
+        };
+      }
+
       // If two cards point to the same place, keep their older order stable.
       const nextOrderedFloatingCardIds = reconcileOrderedFloatingCardIds({
         previousOrderedFloatingCardIds: orderedFloatingCardIdsRef.current,
@@ -126,6 +154,7 @@ export const useFloatingCardState = (): UseFloatingCardStateResult => {
           (floatingCardId, index) => [floatingCardId, index],
         ),
       );
+      orderDirtyRef.current = false;
 
       return nextOrderedFloatingCardIds;
     },
@@ -208,6 +237,7 @@ export const useFloatingCardState = (): UseFloatingCardStateResult => {
     floatingCardStateRef.current.clear();
     orderedFloatingCardIdsRef.current = [];
     orderedFloatingCardIndexRef.current.clear();
+    orderDirtyRef.current = true;
     heightMeasurementQueueRef.current.clear();
     layoutBoundaryRef.current.recomputeFromIndex = 0;
     mountedFloatingCardIdsRef.current = [];
@@ -217,6 +247,7 @@ export const useFloatingCardState = (): UseFloatingCardStateResult => {
   return {
     floatingCardStateRef,
     orderedFloatingCardIdsRef,
+    orderDirtyRef,
     heightMeasurementQueueRef,
     layoutBoundaryRef,
     mountedFloatingCardIdsRef,
@@ -225,6 +256,7 @@ export const useFloatingCardState = (): UseFloatingCardStateResult => {
     getOrderedFloatingCardIndex,
     markRecomputeFromIndex,
     markFloatingCardInvalidated,
+    markFloatingCardOrderDirty,
     reconcileFloatingCardOrder,
     pruneFloatingCardRuntimeState,
     syncMountedFloatingCardIds,

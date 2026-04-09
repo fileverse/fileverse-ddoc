@@ -73,6 +73,7 @@ export const useFloatingLayoutEngine = ({
     heightMeasurementQueueRef,
     layoutBoundaryRef,
     markFloatingCardInvalidated,
+    markFloatingCardOrderDirty,
     markRecomputeFromIndex,
     mountedFloatingCardIdsRef,
     orderedFloatingCardIdsRef,
@@ -151,6 +152,8 @@ export const useFloatingLayoutEngine = ({
         layoutVersionRef.current.appliedDoc !== currentDocVersion;
 
       if (docVersionChanged) {
+        // Content edits can invalidate any draft/thread anchor, but they do not
+        // imply a reorder by themselves. Anchor refresh will decide that later.
         queueAnchorRefreshForCards(floatingCardsSnapshot);
       }
 
@@ -176,6 +179,7 @@ export const useFloatingLayoutEngine = ({
         floatingCards: floatingCardsSnapshot,
         getFloatingCardRuntimeState,
         markFloatingCardInvalidated,
+        markFloatingCardOrderDirty,
         markRecomputeFromIndex,
         getOrderedFloatingCardIndex,
       });
@@ -499,6 +503,7 @@ export const useFloatingLayoutEngine = ({
     isHidden,
     layoutBoundaryRef,
     markFloatingCardInvalidated,
+    markFloatingCardOrderDirty,
     markRecomputeFromIndex,
     mountedFloatingCardIdsRef,
     orderedFloatingCardIdsRef,
@@ -653,6 +658,8 @@ export const useFloatingLayoutEngine = ({
 
     syncMountedFloatingCardIds(nextMountedFloatingCardIds);
     queueAnchorRefreshForCards(floatingCardsRef.current);
+    // Card add/remove is one of the few events that can change relative order.
+    markFloatingCardOrderDirty();
     floatingCardsRef.current.forEach((floatingCard) => {
       markFloatingCardInvalidated(
         floatingCard.floatingCardId,
@@ -665,6 +672,7 @@ export const useFloatingLayoutEngine = ({
     floatingCardIdsKey,
     isDesktopFloatingEnabled,
     markFloatingCardInvalidated,
+    markFloatingCardOrderDirty,
     markRecomputeFromIndex,
     mountedFloatingCardIdsRef,
     queueAnchorRefreshForCards,

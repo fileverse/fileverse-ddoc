@@ -8,63 +8,46 @@ import {
   IconButton,
   LucideIcon,
   TextAreaFieldV2,
-  TextField,
   Tooltip,
-  Divider,
 } from '@fileverse/ui';
 import { CommentCard } from './comment-card';
 import { CommentDropdownProps } from './types';
 import { useCommentStore } from '../../stores/comment-store';
 import { useCommentRefs } from '../../stores/comment-store-provider';
-import EnsLogo from '../../assets/ens.svg';
 
 export const CommentDropdown = ({
   activeCommentId,
-  initialComment = '',
   isBubbleMenu = false,
-  selectedContent,
   isDisabled,
   isCommentOwner,
 }: CommentDropdownProps) => {
-  const [comment, setComment] = useState(initialComment);
   const [reply, setReply] = useState('');
   const [isDropdownOpen, setIsDropdownOpen] = useState(true);
-  const [showReplyView, setShowReplyView] = useState(!!activeCommentId);
   const commentsContainerRef = useRef<HTMLDivElement>(null);
-  const [hideCommentDropdown, setHideCommentDropdown] = useState(false);
 
-  const inlineCommentData = useCommentStore((s) => s.inlineCommentData);
-  const setInlineCommentData = useCommentStore((s) => s.setInlineCommentData);
-  const addComment = useCommentStore((s) => s.addComment);
-  const comments = useCommentStore((s) => s.tabComments);
+  const activeDraftId = useCommentStore((s) => s.activeDraftId);
+  const activeDraft = useCommentStore((s) =>
+    s.activeDraftId ? (s.inlineDrafts[s.activeDraftId] ?? null) : null,
+  );
   const activeComments = useCommentStore((s) => s.activeComments);
-  const username = useCommentStore((s) => s.username);
   const activeComment = useCommentStore((s) => s.activeComment);
   const selectedText = useCommentStore((s) => s.selectedText);
-  const handleInput = useCommentStore((s) => s.handleInput);
   const isCommentActive = useCommentStore((s) => s.isCommentActive);
   const handleAddReply = useCommentStore((s) => s.handleAddReply);
   const resolveComment = useCommentStore((s) => s.resolveComment);
   const unresolveComment = useCommentStore((s) => s.unresolveComment);
   const deleteComment = useCommentStore((s) => s.deleteComment);
   const isDDocOwner = useCommentStore((s) => s.isDDocOwner);
-  const onComment = useCommentStore((s) => s.onComment);
   const isConnected = useCommentStore((s) => s.isConnected);
   const setCommentDrawerOpen = useCommentStore((s) => s.setCommentDrawerOpen);
-  const isLoading = useCommentStore((s) => s.isLoading);
-  const connectViaUsername = useCommentStore((s) => s.connectViaUsername);
-  const connectViaWallet = useCommentStore((s) => s.connectViaWallet);
-  const setUsername = useCommentStore((s) => s.setUsername);
+  const submitInlineDraft = useCommentStore((s) => s.submitInlineDraft);
+  const updateInlineDraftText = useCommentStore((s) => s.updateInlineDraftText);
   const { dropdownRef } = useCommentRefs();
 
   const emptyComment =
     !activeComment?.content &&
     !activeComment?.username &&
     !activeComment?.createdAt;
-
-  const handleCommentChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setComment(e.target.value);
-  };
 
   const handleReplyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
@@ -90,35 +73,15 @@ export const CommentDropdown = ({
     }, 0);
   };
 
-  const handleClick = async () => {
-    // First check if user is connected and has username
-    if (!isConnected || !username) {
-      // Store the comment text temporarily
-      const pendingComment = comment.trim();
-
-      // Open auth drawer
-      setCommentDrawerOpen(true);
-
-      // Store the pending comment data for after auth
-      setInlineCommentData((prev) => ({
-        ...prev,
-        inlineCommentText: pendingComment,
-        handleClick: true,
-      }));
-
-      setHideCommentDropdown(true);
+  const handleClick = () => {
+    if (!activeDraftId || !activeDraft?.text.trim()) {
       return;
     }
 
-    // If we reach here, user is authenticated
-    if (comment.trim()) {
-      addComment(comment, username);
-      setShowReplyView(true);
-      onComment?.();
-      // Clear the comment after adding
-      setComment('');
-      setHideCommentDropdown(true); // Hide the dropdown after sending
-    }
+    // Bubble-menu submit should reuse the same draft path as the drawer and
+    // the floating comments.
+    submitInlineDraft(activeDraftId);
+    handleCancel();
   };
 
   const handleReplySubmit = () => {
@@ -136,7 +99,7 @@ export const CommentDropdown = ({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
-      if (!showReplyView && isBubbleMenu) {
+      if (Boolean(activeCommentId) && isBubbleMenu) {
         handleReplySubmit();
       } else {
         handleClick();
@@ -153,16 +116,6 @@ export const CommentDropdown = ({
   };
 
   useEffect(() => {
-    if (activeCommentId) {
-      if (activeComment) {
-        setComment(activeComment.content || '');
-      } else {
-        setShowReplyView(false);
-      }
-    }
-  }, [activeComment, activeCommentId, comments]);
-
-  useEffect(() => {
     if (commentsContainerRef.current && activeComment?.replies) {
       commentsContainerRef.current.scrollTo({
         top: commentsContainerRef.current.scrollHeight,
@@ -171,120 +124,18 @@ export const CommentDropdown = ({
     }
   }, [activeComment?.replies]);
 
-  useEffect(() => {
-    if (
-      isConnected &&
-      username &&
-      inlineCommentData.handleClick &&
-      inlineCommentData.inlineCommentText
-    ) {
-      // Clear the stored comment data without adding a new comment
-      setInlineCommentData((prev) => ({
-        ...prev,
-        inlineCommentText: '',
-        handleClick: false,
-      }));
-
-      // Add the comment only if it wasn't already added
-      if (!hideCommentDropdown) {
-        addComment(inlineCommentData.inlineCommentText, username);
-        setShowReplyView(true);
-        onComment?.();
-      }
-
-      setComment('');
-      setHideCommentDropdown(true);
-    }
-  }, [
-    isConnected,
-    username,
-    inlineCommentData.handleClick,
-    inlineCommentData.inlineCommentText,
-  ]);
-
-  const renderAuthView = () => (
-    <div className="flex flex-col color-bg-secondary rounded-md">
-      <p className="inline-flex gap-2 border-b color-border-default text-heading-xsm p-3">
-        What would you like to be identified with
-      </p>
-      <div className="flex flex-col gap-2 p-3">
-        <div className="flex flex-col gap-3">
-          <TextField
-            type="text"
-            value={username!}
-            onChange={(e) => setUsername?.(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && username) {
-                connectViaUsername?.(username);
-                setInlineCommentData((prev) => ({
-                  ...prev,
-                  handleClick: true,
-                }));
-              }
-            }}
-            className="font-normal"
-            placeholder="Enter a name"
-          />
-          <Button
-            onClick={() => {
-              connectViaUsername?.(username!);
-              setInlineCommentData((prev) => ({
-                ...prev,
-                handleClick: true,
-              }));
-            }}
-            disabled={!username || isLoading}
-            isLoading={isLoading}
-            className="w-full"
-          >
-            Join
-          </Button>
-        </div>
-
-        <div className="text-[12px] text-gray-400 flex items-center my-3">
-          <Divider
-            direction="horizontal"
-            size="md"
-            className="flex-grow md:!mr-4"
-          />
-          or join with your&nbsp;
-          <span className="font-semibold">.eth&nbsp;</span> domain
-          <Divider
-            direction="horizontal"
-            size="md"
-            className="flex-grow md:!ml-4"
-          />
-        </div>
-
-        <div className="text-center">
-          <Button
-            onClick={
-              !isConnected &&
-              (() => {
-                connectViaWallet();
-                setInlineCommentData((prev) => ({
-                  ...prev,
-                  handleClick: true,
-                }));
-              })
-            }
-            disabled={isLoading}
-            className="custom-ens-button"
-          >
-            <img alt="ens-logo" src={EnsLogo} />{' '}
-            {isLoading ? 'Connecting with ENS ...' : 'Continue with ENS'}
-          </Button>
-        </div>
-      </div>
-    </div>
-  );
-
   const renderInitialView = () => (
     <div className="p-3 flex flex-col gap-2 color-bg-secondary rounded-md">
       <TextAreaFieldV2
         data-testid="comment-dropdown-input"
-        value={comment}
-        onChange={handleCommentChange}
+        value={activeDraft?.text || ''}
+        onChange={(event) => {
+          if (activeDraftId) {
+            // Keep draft text in the shared store so auth handoff and location
+            // changes do not lose inline new-comment state.
+            updateInlineDraftText(activeDraftId, event.target.value);
+          }
+        }}
         onKeyDown={handleKeyDown}
         className="color-bg-default w-full text-body-sm color-text-default min-h-[40px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
         placeholder="Type your comment"
@@ -303,7 +154,7 @@ export const CommentDropdown = ({
           data-testid="comment-dropdown-send"
           onClick={handleClick}
           className="px-4 py-2 w-20 min-w-20 h-9 font-medium text-sm"
-          disabled={!comment.trim()}
+          disabled={!activeDraft?.text.trim()}
         >
           Send
         </Button>
@@ -403,7 +254,7 @@ export const CommentDropdown = ({
         <CommentCard
           username={activeComment?.username}
           selectedContent={activeComment?.selectedContent || selectedText}
-          comment={activeComment?.content || comment}
+          comment={activeComment?.content}
           createdAt={activeComment?.createdAt}
           replies={activeComment?.replies}
           isResolved={activeComment?.resolved}
