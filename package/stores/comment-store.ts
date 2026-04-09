@@ -53,6 +53,13 @@ type InlineCommentDataUpdater =
     ) => Partial<InlineCommentData> | InlineCommentData);
 
 type InlineDraftRecordMap = Record<string, InlineCommentDraft>;
+type CreateInlineDraftOptions = {
+  location?: InlineDraftLocation;
+  // Only the drawer's explicit "new comment" action may bypass text selection.
+  // Do not reuse this for floating comments unless unanchored inline threads
+  // become a deliberate product requirement.
+  allowEmptySelection?: boolean;
+};
 
 const setFocusedFloatingCard = (
   floatingCards: CommentFloatingCard[],
@@ -257,7 +264,7 @@ export interface CommentStoreState {
 
   // --- Comment operations ---
   addComment: (content?: string, usernameProp?: string) => string | undefined;
-  createFloatingDraft: () => string | null;
+  createFloatingDraft: (options?: CreateInlineDraftOptions) => string | null;
   updateInlineDraftText: (draftId: string, value: string) => void;
   cancelInlineDraft: (draftId: string) => void;
   submitInlineDraft: (draftId: string) => void;
@@ -377,7 +384,7 @@ export const createCommentStore = () =>
     setInitialComments: (comments) => {
       set({ initialComments: comments });
       // Recompute in same tick — Zustand batches synchronous set() calls
-      const { activeTabId, activeCommentId } = get();
+      const { activeTabId, activeCommentId, openReplyId } = get();
       const tabComments = comments.filter(
         (comment) => (comment.tabId || DEFAULT_TAB_ID) === activeTabId,
       );
@@ -393,8 +400,22 @@ export const createCommentStore = () =>
       const activeCommentIndex = activeComments.findIndex(
         (comment) => comment.id === activeCommentId,
       );
+      // `openReplyId` drives the mobile focused-thread mode. Only deleted
+      // comments should clear it here; resolved comments must retain focus so
+      // the drawer stays in the active thread view.
+      const nextOpenReplyId = comments.some(
+        (comment) => comment.id === openReplyId && !comment.deleted,
+      )
+        ? openReplyId
+        : null;
 
-      set({ tabComments, activeComments, activeComment, activeCommentIndex });
+      set({
+        tabComments,
+        activeComments,
+        activeComment,
+        activeCommentIndex,
+        openReplyId: nextOpenReplyId,
+      });
     },
     setUsername: (username) => {
       const previousUsername = get().username;
@@ -481,7 +502,13 @@ export const createCommentStore = () =>
         // Only drawer-owned drafts should be dismissed here. Desktop new
         // comments stay alive because they belong to the floating comments,
         // not the drawer.
-        if (editor && activeDraft?.location === 'drawer') {
+        // Unanchored drawer drafts never created a draft mark in the editor,
+        // so only anchored drafts should try to unset one here.
+        if (
+          editor &&
+          activeDraft?.location === 'drawer' &&
+          activeDraft.selectedText
+        ) {
           editor.commands.unsetDraftComment(activeDraft.draftId);
         }
         if (editor && editor.isActive('highlight')) {
@@ -629,7 +656,7 @@ export const createCommentStore = () =>
     },
     // Store floatingCards here so the floating comments can reopen, focus, and
     // submit drafts without re-deriving floating state from editor DOM on every frame.
-    createFloatingDraft: () => {
+    createFloatingDraft: (options) => {
       const { editor, onInlineComment } = getExtDeps(get);
       const {
         isDesktopFloatingEnabled,
@@ -637,29 +664,69 @@ export const createCommentStore = () =>
         inlineDrafts,
         setCommentDrawerOpen,
       } = get();
+      const draftLocation =
+        options?.location ?? (isDesktopFloatingEnabled ? 'floating' : 'drawer');
+      const allowEmptySelection =
+        draftLocation === 'drawer' && Boolean(options?.allowEmptySelection);
 
       if (!editor) {
-        return null;
+        if (!allowEmptySelection) {
+          return null;
+        }
+
+        // Preserve the drawer's top-level comment affordance even when the editor
+        // is unavailable. This branch must stay unanchored: selectedText remains
+        // empty so submit does not attempt to create anchor metadata later.
+        const draftId = `draft-${uuid()}`;
+        const existingDrawerDraftId =
+          activeDraftId && inlineDrafts[activeDraftId]?.location === 'drawer'
+            ? activeDraftId
+            : null;
+
+        set((state) => ({
+          selectedText: '',
+          isBubbleMenuSuppressed: true,
+          activeDraftId: draftId,
+          isCommentOpen: true,
+          inlineDrafts: upsertInlineDraft(
+            existingDrawerDraftId
+              ? removeInlineDraft(state.inlineDrafts, existingDrawerDraftId)
+              : state.inlineDrafts,
+            {
+              draftId,
+              selectedText: '',
+              text: '',
+              location: 'drawer',
+              isAuthPending: false,
+            },
+          ),
+        }));
+
+        onInlineComment?.();
+        return draftId;
       }
 
       const { state } = editor;
       const { from, to } = state.selection;
       const text = state.doc.textBetween(from, to, ' ');
-      const draftLocation: InlineDraftLocation = isDesktopFloatingEnabled
-        ? 'floating'
-        : 'drawer';
+      const hasSelectionAnchor = from < to && Boolean(text.trim());
 
-      if (from >= to || !text.trim()) {
+      // Keep the selection requirement for anchored inline comments. The drawer
+      // button is the only path allowed to create an unanchored draft.
+      if (!hasSelectionAnchor && !allowEmptySelection) {
         return null;
       }
 
-      // Capture the anchor immediately when the new comment opens. Submission should
-      // resolve against this tracked draft range, never against live selection.
       const draftId = `draft-${uuid()}`;
-      const didCreateDraft = editor.commands.setDraftComment(draftId);
 
-      if (!didCreateDraft) {
-        return null;
+      if (hasSelectionAnchor) {
+        // Capture the anchor immediately when the new comment opens. Submission should
+        // resolve against this tracked draft range, never against live selection.
+        const didCreateDraft = editor.commands.setDraftComment(draftId);
+
+        if (!didCreateDraft) {
+          return null;
+        }
       }
 
       const existingDrawerDraftId =
@@ -672,7 +739,9 @@ export const createCommentStore = () =>
       if (existingDrawerDraftId && existingDrawerDraftId !== draftId) {
         // Mobile keeps only one active inline draft so the drawer stays the
         // single source of truth for where the new comment opens.
-        editor.commands.unsetDraftComment(existingDrawerDraftId);
+        if (inlineDrafts[existingDrawerDraftId]?.selectedText) {
+          editor.commands.unsetDraftComment(existingDrawerDraftId);
+        }
       }
 
       if (draftLocation === 'floating') {
@@ -680,7 +749,7 @@ export const createCommentStore = () =>
       }
 
       set((state) => ({
-        selectedText: text,
+        selectedText: hasSelectionAnchor ? text : '',
         isBubbleMenuSuppressed: true,
         activeDraftId:
           draftLocation === 'drawer' ? draftId : state.activeDraftId,
@@ -691,7 +760,7 @@ export const createCommentStore = () =>
             : state.inlineDrafts,
           {
             draftId,
-            selectedText: text,
+            selectedText: hasSelectionAnchor ? text : '',
             text: '',
             location: draftLocation,
             isAuthPending: false,
@@ -754,7 +823,7 @@ export const createCommentStore = () =>
         return;
       }
 
-      if (editor) {
+      if (editor && draft.selectedText) {
         editor.commands.unsetDraftComment(draftId);
       }
 
@@ -821,13 +890,15 @@ export const createCommentStore = () =>
         return;
       }
 
-      if (!editor) {
+      if (!editor && draft.selectedText) {
         return;
       }
 
       // Submission resolves from the stored draft anchor. That keeps mobile
       // and desktop consistent even if editor selection moved after the new
       // comment opened.
+      // When selectedText is empty, this draft came from the drawer's unanchored
+      // new-comment action and should persist as a plain tab-level comment.
       const newComment: IComment = {
         id: `comment-${uuid()}`,
         tabId: activeTabId,
@@ -838,7 +909,9 @@ export const createCommentStore = () =>
         createdAt: new Date(),
       };
 
-      const draftRange = getDraftCommentRange(editor.state, draftId);
+      const draftRange = editor
+        ? getDraftCommentRange(editor.state, draftId)
+        : null;
 
       if (draft.selectedText && !draftRange) {
         // If the tracked anchor was deleted, fail closed instead of attaching
@@ -857,7 +930,7 @@ export const createCommentStore = () =>
         anchorTo: Y.RelativePosition;
       } | null = null;
 
-      if (draftRange && commentAnchorsRef) {
+      if (editor && draftRange && commentAnchorsRef) {
         const anchor = createCommentAnchorFromEditor(
           editor,
           draftRange.from,
@@ -878,12 +951,16 @@ export const createCommentStore = () =>
         }
       }
 
-      editor.commands.unsetDraftComment(draftId);
-      triggerDecorationRebuild(editor);
+      if (editor && draft.selectedText) {
+        editor.commands.unsetDraftComment(draftId);
+        triggerDecorationRebuild(editor);
+      }
 
       get().setActiveCommentId(newComment.id || '');
       setActiveCommentId(newComment.id || '');
-      setTimeout(() => focusCommentWithActiveId(newComment.id || ''), 0);
+      if (editor) {
+        setTimeout(() => focusCommentWithActiveId(newComment.id || ''), 0);
+      }
 
       const meta: CommentMutationMeta | undefined = createdAnchor
         ? {

@@ -107,7 +107,7 @@ export const CommentSection = ({
               resolveComment(commentId);
             }}
             onUnresolve={unresolveComment}
-            onDelete={deleteComment}
+            onDelete={handleDeleteComment}
             onSetOpenReplyId={setOpenReplyId}
           />
         ))}
@@ -125,6 +125,34 @@ export const CommentSection = ({
     } else {
       focusCommentInEditor(comment.id);
     }
+  };
+
+  const handleDeleteComment = (commentId: string) => {
+    if (isMobile && openReplyId === commentId) {
+      const currentIndex = filteredComments.findIndex(
+        (comment) => comment.id === commentId,
+      );
+      const remainingComments = filteredComments.filter(
+        (comment) => comment.id !== commentId,
+      );
+      const nextFocusedComment =
+        currentIndex >= 0
+          ? remainingComments[
+              Math.min(currentIndex, remainingComments.length - 1)
+            ]
+          : remainingComments[0];
+
+      // Delete-only behavior: stay in mobile thread mode by hopping to the next
+      // remaining comment. Resolve/unresolve intentionally keep the current
+      // `openReplyId` so the focused thread stays open.
+      setOpenReplyId(nextFocusedComment?.id ?? null);
+
+      if (nextFocusedComment) {
+        handleCommentClick(nextFocusedComment);
+      }
+    }
+
+    deleteComment(commentId);
   };
 
   useEffect(() => {
@@ -188,7 +216,12 @@ export const CommentSection = ({
         isPresentationMode && 'xl:!h-[86vh]',
       )}
     >
-      <div className={cn(!isBelow1280px && 'px-4', ' w-full h-full')}>
+      <div
+        className={cn(
+          !isBelow1280px && 'px-4',
+          ' w-full overflow-y-auto h-full',
+        )}
+      >
         {filteredComments.length === 0 ? (
           <EmptyComments commentType={commentType} handleReset={onReset} />
         ) : (

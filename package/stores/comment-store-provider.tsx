@@ -261,6 +261,9 @@ export const CommentStoreProvider = ({
     const updateEditorState = () => {
       const state = store.getState();
       const isMarkActive = editor.isActive('comment');
+      const markCommentId = isMarkActive
+        ? ((editor.getAttributes('comment').commentId as string | null) ?? null)
+        : null;
       const cursorPos = editor.state.selection.from;
       const decorationComment = commentAnchorsRef
         ? getCommentAtPosition(
@@ -278,6 +281,7 @@ export const CommentStoreProvider = ({
           ? (editor.getAttributes('comment').resolved ?? false)
           : false
         : false;
+      const selectedCommentId = markCommentId || decorationComment?.id || null;
 
       // Only update store when values actually change
       if (nextCommentActive !== prevCommentActive) {
@@ -289,15 +293,29 @@ export const CommentStoreProvider = ({
         state.setIsCommentResolved(nextCommentResolved);
       }
 
+      if (selectedCommentId) {
+        // Treat mark-based and decoration-based activations the same here so
+        // mobile highlight taps always route into a concrete drawer thread.
+        if (state.activeCommentId !== selectedCommentId) {
+          state.setActiveCommentId(selectedCommentId);
+        }
+
+        // Keep the mobile behavior explicit: editor interaction should reopen
+        // the drawer for the selected thread instead of relying on stale UI state.
+        if (!isDesktopFloatingEnabled) {
+          state.setOpenReplyId(selectedCommentId);
+          state.setCommentDrawerOpen?.(true);
+        }
+      }
+
       // For decoration-based comments, trigger activation flow
       // Skip resolved — they shouldn't block new comments or open popups
       if (decorationComment && !isMarkActive && !decorationComment.resolved) {
-        const currentActiveId = state.activeCommentId;
-        if (currentActiveId !== decorationComment.id) {
-          state.setActiveCommentId(decorationComment.id);
-          if (isDesktopFloatingEnabled) {
-            state.openFloatingThread(decorationComment.id);
-          }
+        if (activeCommentId !== decorationComment.id) {
+          setActiveCommentId(decorationComment.id);
+        }
+        if (isDesktopFloatingEnabled) {
+          state.openFloatingThread(decorationComment.id);
         }
       }
     };
@@ -322,16 +340,34 @@ export const CommentStoreProvider = ({
       editor.off('selectionUpdate', updateEditorState);
       editor.off('transaction', handleTransaction);
     };
-  }, [commentAnchorsRef, editor, isDesktopFloatingEnabled, store]);
+  }, [
+    activeCommentId,
+    commentAnchorsRef,
+    editor,
+    isDesktopFloatingEnabled,
+    setActiveCommentId,
+    store,
+  ]);
 
   const commentsSectionRef = useRef<HTMLDivElement | null>(null);
   const replySectionRef = useRef<HTMLDivElement | null>(null);
   const portalRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const mobileDraftRef = useRef<HTMLDivElement | null>(null);
 
-  useOnClickOutside([portalRef, buttonRef, dropdownRef], () => {
+  useOnClickOutside([portalRef, buttonRef, dropdownRef, mobileDraftRef], () => {
     const state = store.getState();
+    const activeDraft = state.activeDraftId
+      ? (state.inlineDrafts[state.activeDraftId] ?? null)
+      : null;
+
+    // Mobile drawer drafts own their own close/discard flow. Do not let generic
+    // outside interactions collapse them, and do not let dialog/overlay clicks
+    // mutate the draft state behind the discard confirmation UI.
+    if (activeDraft?.location === 'drawer' && state.isCommentOpen) {
+      return;
+    }
 
     if (state.isCommentOpen) {
       state.setIsBubbleMenuSuppressed(true);
@@ -348,6 +384,7 @@ export const CommentStoreProvider = ({
           portalRef,
           buttonRef,
           dropdownRef,
+          mobileDraftRef,
         }}
       >
         {children}
@@ -364,6 +401,7 @@ interface CommentRefsContextType {
   portalRef: React.RefObject<HTMLDivElement>;
   buttonRef: React.RefObject<HTMLDivElement>;
   dropdownRef: React.RefObject<HTMLDivElement>;
+  mobileDraftRef: React.RefObject<HTMLDivElement>;
 }
 
 const CommentRefsContext = React.createContext<CommentRefsContextType | null>(

@@ -152,7 +152,7 @@ const CommentReply = ({
         </div>
       </div>
 
-      <div className="ml-[14px] pl-4 border-l custom-border ">
+      <div className="ml-[13px] pl-[18px] border-l custom-border ">
         <div className="text-body-sm flex flex-col gap-2 whitespace-pre-wrap break-words">
           {renderTextWithLinks(displayedComment)}
         </div>
@@ -410,14 +410,14 @@ export const CommentCard = ({
         </div>
         <div
           className={cn(
-            'flex flex-col gap-2   pl-4 custom-border py-0',
+            'flex flex-col gap-2   pl-[18px] custom-border py-0',
             // (isFocused || (replies || []).length > 0) && 'pb-3',
             (
               isBelow1280px
                 ? isCommentMobileFocused
                 : (replies || []).length > 0
             )
-              ? 'border-l ml-[14px]'
+              ? 'border-l ml-[13px]'
               : 'ml-[15px]',
           )}
         >

@@ -18,6 +18,7 @@ import { useCommentStore } from '../../stores/comment-store';
 import { useResponsive } from '../../utils/responsive';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
 import { DEFAULT_TAB_ID, DEFAULT_TAB_NAME } from '../tabs/utils/tab-utils';
+import { useCommentRefs } from '../../stores/comment-store-provider';
 
 const ALL_TABS_OPTION_ID = '__all_tabs__';
 
@@ -33,6 +34,7 @@ export const CommentDrawer = ({
   tabs,
 }: CommentDrawerProps) => {
   const comments = useCommentStore((s) => s.initialComments);
+  const isConnected = useCommentStore((s) => s.isConnected);
   const activeDraftId = useCommentStore((s) => s.activeDraftId);
   const activeDraft = useCommentStore((s) =>
     s.activeDraftId ? (s.inlineDrafts[s.activeDraftId] ?? null) : null,
@@ -54,6 +56,7 @@ export const CommentDrawer = ({
     tabId: string;
   } | null>(null);
   const mobileDrawerRef = useRef<HTMLDivElement | null>(null);
+  const { mobileDraftRef } = useCommentRefs();
   const isCommentMobileFocused = isBelow1280px && Boolean(openReplyId);
   // Drawer new-comment state is derived from shared draft state so mobile and desktop
   // follow the same draft lifecycle instead of shadowing it with local UI state.
@@ -210,6 +213,16 @@ export const CommentDrawer = ({
     submitInlineDraft(activeDraftId);
   };
 
+  const handleStartNewMobileComment = () => {
+    // The mobile drawer supports top-level comments
+    // Keep this drawer-scoped so floating inline comments remain
+    // anchored to an explicit editor range.
+    createFloatingDraft({
+      location: 'drawer',
+      allowEmptySelection: true,
+    });
+  };
+
   const focusMobileComment = (commentIndex: number) => {
     const targetComment = mobileActiveComments[commentIndex];
 
@@ -259,7 +272,10 @@ export const CommentDrawer = ({
           )}
         >
           {isInlineDraftOpen ? (
-            <div className="p-4 rounded-t-[12px] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] w-full color-bg-secondary">
+            <div
+              ref={mobileDraftRef}
+              className="p-4 rounded-t-[12px] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] w-full color-bg-secondary"
+            >
               <div className="flex justify-between mb-[16px] items-center">
                 <h2 className="text-heading-sm">New Comment</h2>
                 <div className="flex gap-sm">
@@ -364,7 +380,7 @@ export const CommentDrawer = ({
                   <div className="flex gap-sm">
                     <IconButton
                       icon={'MessageSquarePlus'}
-                      onClick={() => createFloatingDraft()}
+                      onClick={handleStartNewMobileComment}
                       variant="ghost"
                       size="md"
                     />
@@ -378,7 +394,14 @@ export const CommentDrawer = ({
                 </div>
               )}
 
-              <div className="flex-1 mt-4 overflow-hidden">
+              <div
+                className={cn(
+                  'mt-4 overflow-hidden',
+                  !isConnected
+                    ? 'flex items-center justify-center h-full'
+                    : 'flex-1',
+                )}
+              >
                 <CommentSection
                   activeCommentId={activeCommentId}
                   isNavbarVisible={isNavbarVisible}
@@ -413,33 +436,41 @@ export const CommentDrawer = ({
           contentClassName="!rounded-lg !px-0 !h-full select-text color-bg-default"
           title="Comments"
           content={
-            <div className="pt-4">
-              <div className="flex mb-[16px] px-4 gap-[8px]">
-                <Select value={commentType} onValueChange={setCommentType}>
-                  <SelectTrigger className="w-[148px]">
-                    <SelectValue placeholder="Active" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {commentTypeOptions.map((option) => (
-                      <SelectItem key={option.id} value={option.id}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={tab} onValueChange={handleTabChange}>
-                  <SelectTrigger className="w-[148px]">
-                    <SelectValue placeholder="All tabs" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {tabList.map((option) => (
-                      <SelectItem key={option.id} value={option.id}>
-                        {option.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
+            <div
+              className={cn(
+                'pt-4',
+                !isConnected && 'flex items-center h-[77dvh]',
+              )}
+            >
+              {isConnected && (
+                <div className="flex mb-[16px] px-4 gap-[8px]">
+                  <Select value={commentType} onValueChange={setCommentType}>
+                    <SelectTrigger className="w-[148px]">
+                      <SelectValue placeholder="Active" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {commentTypeOptions.map((option) => (
+                        <SelectItem key={option.id} value={option.id}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Select value={tab} onValueChange={handleTabChange}>
+                    <SelectTrigger className="w-[148px]">
+                      <SelectValue placeholder="All tabs" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {tabList.map((option) => (
+                        <SelectItem key={option.id} value={option.id}>
+                          {option.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
               <CommentSection
                 activeCommentId={activeCommentId}
                 isNavbarVisible={isNavbarVisible}
