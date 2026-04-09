@@ -37,6 +37,8 @@ export const useYjsSetup = ({
     ? collaboration.on
     : undefined;
 
+  const yjsIndexeddbProviderRef = useRef<IndexeddbPersistence | null>(null);
+
   const {
     connect,
     isReady,
@@ -50,9 +52,8 @@ export const useYjsSetup = ({
     services,
     callbacks,
     onLocalUpdate: onChange,
+    ignoredOrigins: [yjsIndexeddbProviderRef],
   });
-
-  const yjsIndexeddbProviderRef = useRef<IndexeddbPersistence | null>(null);
 
   const initialiseYjsIndexedDbProvider = useCallback(async () => {
     const provider = yjsIndexeddbProviderRef.current;
