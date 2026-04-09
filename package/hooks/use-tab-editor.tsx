@@ -415,7 +415,7 @@ export const useTabEditor = ({
           if (el) {
             event.preventDefault();
             event.stopPropagation();
-            el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            el.scrollIntoView({ behavior: 'smooth', block: 'start' });
             return;
           }
         }
