@@ -43,6 +43,7 @@ import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { getTemporaryEditor } from '../utils/helpers';
 import { extractTitleFromContent } from '../utils/extract-title-from-content';
 import { getContrastColor } from '../utils/color-utils';
+import { parseHeadingLink } from '../utils/heading-link';
 
 export interface IEditorToolElement {
   icon: any;
@@ -1311,7 +1312,7 @@ export const LinkPopup = ({
   setIsLinkPopupOpen?: Dispatch<SetStateAction<boolean>>;
   onError?: (errorString: string) => void;
 }) => {
-  const [url, setUrl] = useState(editor.getAttributes('link').href);
+  const [url, setUrl] = useState<string>(editor.getAttributes('link').href);
   const apply = useCallback(() => {
     // empty
     if (url === '' || url === undefined) {
@@ -1346,6 +1347,10 @@ export const LinkPopup = ({
 
     setToolVisibility(IEditorTool.NONE);
     if (bubbleMenu && setIsLinkPopupOpen) setIsLinkPopupOpen(false);
+    const parsed = parseHeadingLink(finalUrl);
+    if (parsed && !parsed.headingEl) {
+      onError?.('This heading link belongs to a different document.');
+    }
   }, [url, editor, bubbleMenu, setIsLinkPopupOpen, onError, setToolVisibility]);
   return (
     <div

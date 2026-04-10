@@ -95,6 +95,7 @@ import { Emoji } from './emoji/emoji';
 const lowlight = createLowlight(common);
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { type ToCItemType } from '../components/toc/types';
+import { parseHeadingLink } from '../utils/heading-link';
 
 const ExtendedSubscript = Subscript.extend({
   addProseMirrorPlugins() {
@@ -177,7 +178,19 @@ export const defaultExtensions = ({
       },
     },
     link: {
-      shouldAutoLink: (url) => /^https?:\/\//.test(url),
+      shouldAutoLink: (url) => {
+        if (!/^https?:\/\//.test(url)) return false;
+
+        // Side-effect: when a heading link URL is pasted and the
+        // referenced heading does not exist in the current document,
+        // the link belongs to a different dDoc — dispatch a warning.
+        const parsed = parseHeadingLink(url);
+        if (parsed && !parsed.headingEl) {
+          onError?.('This heading link belongs to a different document.');
+        }
+
+        return true;
+      },
       autolink: true,
       openOnClick: false,
       HTMLAttributes: {
@@ -313,7 +326,7 @@ export const defaultExtensions = ({
     ipfsImageUploadFn,
     onError,
   }),
-  MarkdownPasteHandler(ipfsImageUploadFn, ipfsImageFetchFn, undefined, onError),
+  MarkdownPasteHandler(ipfsImageUploadFn, ipfsImageFetchFn),
   HtmlExportExtension(ipfsImageFetchFn, fetchV1ImageFn),
   TextExportExtension(),
   OdtExportExtension(ipfsImageFetchFn, fetchV1ImageFn),
