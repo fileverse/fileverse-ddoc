@@ -43,7 +43,8 @@ export function preprocessHtml(html: string): { html: string } {
     'text/html',
   );
 
-  // Convert task list items: <li data-type="taskItem"> → standard <li> with checkbox prefix
+  // Convert task list items: <li data-type="taskItem"> → standard <li> with checkbox prefix.
+  // Checked items get their content wrapped in <s> so odf-kit renders strikethrough.
   const taskItems = doc.querySelectorAll('li[data-type="taskItem"]');
   taskItems.forEach((li) => {
     const checkbox = li.querySelector('input[type="checkbox"]');
@@ -63,7 +64,25 @@ export function preprocessHtml(html: string): { html: string } {
       contentDiv.remove();
     }
 
-    // Prepend the checkbox character
+    // For checked items, wrap direct text/inline children in <s> for strikethrough.
+    // Skip nested <ul> (child task lists) so nested items stay readable.
+    if (isChecked) {
+      const toWrap: Node[] = [];
+      li.childNodes.forEach((child) => {
+        if (child.nodeType === 1 && (child as Element).tagName === 'UL') {
+          return;
+        }
+        toWrap.push(child);
+      });
+      if (toWrap.length > 0) {
+        const s = doc.createElement('s');
+        toWrap.forEach((node) => s.appendChild(node));
+        // Insert the <s> at the position where the first wrapped node was
+        li.insertBefore(s, li.firstChild);
+      }
+    }
+
+    // Prepend the checkbox character (outside the <s> so the box isn't struck)
     li.insertBefore(doc.createTextNode(prefix), li.firstChild);
 
     li.removeAttribute('data-type');
