@@ -61,7 +61,7 @@ export function preprocessHtml(html: string): { html: string } {
   taskItems.forEach((li) => {
     const checkbox = li.querySelector('input[type="checkbox"]');
     const isChecked = checkbox?.hasAttribute('checked') ?? false;
-    // const prefix = isChecked ? '☑ ' : '☐ ';
+    const prefix = isChecked ? '☑ ' : '☐ ';
 
     // Remove the label/checkbox elements
     const label = li.querySelector('label');
@@ -95,7 +95,7 @@ export function preprocessHtml(html: string): { html: string } {
     }
 
     // Prepend the checkbox character (outside the <s> so the box isn't struck)
-    // li.insertBefore(doc.createTextNode(prefix), li.firstChild);
+    li.insertBefore(doc.createTextNode(prefix), li.firstChild);
 
     li.removeAttribute('data-type');
     li.removeAttribute('data-checked');
