@@ -77,11 +77,7 @@ export function preprocessHtml(html: string): { html: string } {
   });
 
   // Replace <img> tags with warning text — odf-kit v1 skips images entirely
-  doc.querySelectorAll('img').forEach((img) => {
-    const warning = doc.createElement('em');
-    warning.textContent = '[Images are not supported in the export as of now.]';
-    img.replaceWith(warning);
-  });
+  doc.querySelectorAll('img').forEach((img) => img.remove());
 
   // Convert callouts (<aside data-type="callout">) to blockquotes
   doc.querySelectorAll('aside[data-type="callout"]').forEach((aside) => {

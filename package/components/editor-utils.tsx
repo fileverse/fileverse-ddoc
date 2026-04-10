@@ -880,6 +880,7 @@ export const useEditorToolbar = ({
     {
       icon: 'FileText',
       title: 'OpenDocument (.odt)',
+      subtitle: 'Image support is coming soon',
       onClick: async (name?: string) => {
         if (editor) {
           const editorContent = editor.getJSON();
