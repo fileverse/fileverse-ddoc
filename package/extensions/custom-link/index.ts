@@ -52,6 +52,11 @@ export const CustomLink = Link.extend<CustomLinkOptions>({
       },
     });
 
-    return [...parentPlugins, foreignHeadingDetector];
+    // Detector must run BEFORE the parent Link pasteHandler: when a
+    // URL is pasted over a non-empty selection, the parent handler
+    // returns `true` after wrapping the selection, which would
+    // short-circuit any downstream `handlePaste` hooks. Returning
+    // `false` from the detector lets the parent still run normally.
+    return [foreignHeadingDetector, ...parentPlugins];
   },
 });
