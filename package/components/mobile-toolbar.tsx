@@ -14,6 +14,7 @@ import ToolbarButton from '../common/toolbar-button';
 import { AnimatePresence } from 'framer-motion';
 import { fadeInTransition, slideUpTransition } from './motion-div';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
+import { parseHeadingLink } from '../utils/heading-link';
 
 const MobileToolbar = ({
   editor,
@@ -75,8 +76,8 @@ const MobileToolbar = ({
       /^(https?:\/\/)?([\w-]+(\.[\w-]+)+\.?(:\d+)?(\/\S*)?|\w+@[\w.-]+\.\w+)$/i;
     if (finalUrl && !urlPattern.test(finalUrl)) {
       setIsUrlValid(false);
-      if (onError) onError('Invalid URL');
-      return;
+      // if (onError) onError('Invalid URL');
+      // return;
     }
 
     const { from, to } = editor.state.selection;
@@ -108,6 +109,10 @@ const MobileToolbar = ({
     setIsUrlValid(true);
     setIsTextValid(true);
     setToolVisibility(IEditorTool.NONE);
+    const parsed = parseHeadingLink(url);
+    if (parsed && !parsed.headingEl) {
+      onError?.('This heading link belongs to a different document.');
+    }
   };
 
   const getSelectedLink = () => {

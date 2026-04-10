@@ -95,6 +95,7 @@ import { Emoji } from './emoji/emoji';
 const lowlight = createLowlight(common);
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { type ToCItemType } from '../components/toc/types';
+import { CustomLink } from './custom-link';
 
 const ExtendedSubscript = Subscript.extend({
   addProseMirrorPlugins() {
@@ -176,16 +177,7 @@ export const defaultExtensions = ({
         class: 'select-text pointer-events-auto',
       },
     },
-    link: {
-      shouldAutoLink: (url) => /^https?:\/\//.test(url),
-      autolink: true,
-      openOnClick: false,
-      HTMLAttributes: {
-        class: 'custom-text-link',
-        rel: 'noopener noreferrer',
-        target: '_blank',
-      },
-    },
+    link: false,
     paragraph: {
       HTMLAttributes: {
         class: 'select-text pointer-events-auto transition-all',
@@ -251,10 +243,17 @@ export const defaultExtensions = ({
     types: ['heading', 'paragraph'],
   }),
   HorizontalRule,
-  // Link.extend({
-  //   exitable: true,
-  //   inclusive: false,
-  // }),
+  CustomLink.configure({
+    shouldAutoLink: (url) => /^https?:\/\//.test(url),
+    autolink: true,
+    openOnClick: false,
+    HTMLAttributes: {
+      class: 'custom-text-link',
+      rel: 'noopener noreferrer',
+      target: '_blank',
+    },
+    onForeignHeadingLink: onError,
+  }),
   Placeholder.configure({
     placeholder: () => '',
     includeChildren: true,
@@ -313,7 +312,7 @@ export const defaultExtensions = ({
     ipfsImageUploadFn,
     onError,
   }),
-  MarkdownPasteHandler(ipfsImageUploadFn, ipfsImageFetchFn, undefined, onError),
+  MarkdownPasteHandler(ipfsImageUploadFn, ipfsImageFetchFn),
   HtmlExportExtension(ipfsImageFetchFn, fetchV1ImageFn),
   TextExportExtension(),
   OdtExportExtension(ipfsImageFetchFn, fetchV1ImageFn),
