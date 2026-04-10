@@ -260,12 +260,6 @@ export const CommentStoreProvider = ({
     // floating thread without waiting for a separate UI interaction.
     const updateEditorState = () => {
       const state = store.getState();
-
-      // Skip this update if we just focused an unanchored comment
-      if (state._skipNextEditorStateUpdate) {
-        state._skipNextEditorStateUpdate = false;
-        return;
-      }
       const isMarkActive = editor.isActive('comment');
       const markCommentId = isMarkActive
         ? ((editor.getAttributes('comment')?.commentId as string | null) ??
@@ -318,7 +312,7 @@ export const CommentStoreProvider = ({
       // For decoration-based comments, trigger activation flow
       // Skip resolved — they shouldn't block new comments or open popups
       if (decorationComment && !isMarkActive && !decorationComment.resolved) {
-        if (activeCommentId !== decorationComment.id) {
+        if (state.activeCommentId !== decorationComment.id) {
           setActiveCommentId(decorationComment.id);
         }
         if (isDesktopFloatingEnabled) {
@@ -339,6 +333,8 @@ export const CommentStoreProvider = ({
       }
     };
 
+    // Keep this effect subscribed to editor-driven changes only. Re-running it
+    // for sidebar/thread focus changes lets stale editor selection win again.
     updateEditorState();
     editor.on('selectionUpdate', updateEditorState);
     editor.on('transaction', handleTransaction);
@@ -348,7 +344,6 @@ export const CommentStoreProvider = ({
       editor.off('transaction', handleTransaction);
     };
   }, [
-    activeCommentId,
     commentAnchorsRef,
     editor,
     isDesktopFloatingEnabled,

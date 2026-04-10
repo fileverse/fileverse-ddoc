@@ -9,7 +9,7 @@ import { CommentUsername } from './comment-username';
 import React, { useEffect, useState } from 'react';
 import { EmptyComments } from './empty-comments';
 import { CommentReplyInput } from './comment-reply-input';
-import { CommentNewCommentInput } from './comment-compose-input';
+import { CommentInputField } from './comment-input-field';
 import { DeleteConfirmOverlay } from './delete-confirm-overlay';
 import { IComment } from '../../extensions/comment';
 import { DEFAULT_TAB_ID, DEFAULT_TAB_NAME } from '../tabs/utils/tab-utils';
@@ -218,11 +218,11 @@ export const CommentSection = ({
       className={cn(
         (!isMobile || !showNewCommentInput) && 'flex flex-col',
         !isMobile &&
-          'h-[100dvh] sm:h-[calc(100vh-40px)] xl:h-[calc(100vh-310px)] color-bg-secondary !rounded-b-lg',
+          'h-[100dvh] sm:h-[calc(100dvh-40px)] xl:h-[calc(100dvh-310px)] color-bg-secondary !rounded-b-lg',
         isMobile && !showNewCommentInput && 'h-full',
         showNewCommentInput ? 'pb-[3rem] sm:pb-0' : 'pb-0',
-        !isNavbarVisible && 'xl:!h-[calc(100vh-150px)]',
-        isPresentationMode && 'xl:!h-[86vh]',
+        !isNavbarVisible && 'xl:!h-[calc(100dvh-242px)]',
+        isPresentationMode && 'xl:!h-[86dvh]',
       )}
     >
       <div
@@ -263,9 +263,7 @@ export const CommentSection = ({
         )}
       </div>
 
-      {showNewCommentInput && (
-        <CommentNewCommentInput tabId={newCommentTabId} />
-      )}
+      {showNewCommentInput && <CommentInputField tabId={newCommentTabId} />}
       {isBelow1280px && resolvedToastCommentId && (
         <MobileResolvedCommentToast
           onUndo={() => {

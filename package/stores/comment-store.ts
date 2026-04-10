@@ -4,12 +4,14 @@ import React from 'react';
 import {
   CommentAnchor,
   createCommentAnchorFromEditor,
+  getCommentAnchorRange,
   triggerDecorationRebuild,
 } from '../extensions/comment/comment-decoration-plugin';
 import uuid from 'react-uuid';
 import { createStore, useStore } from 'zustand';
 import { fromUint8Array } from 'js-base64';
 import * as Y from 'yjs';
+import { TextSelection } from '@tiptap/pm/state';
 import {
   CommentFloatingCard,
   CommentFloatingDraftCard,
@@ -23,6 +25,7 @@ import { DEFAULT_TAB_ID } from '../components/tabs/utils/tab-utils';
 import { getDraftCommentRange, IComment } from '../extensions/comment';
 import { CommentMutationMeta, CommentMutationType } from '../types';
 import { getAddressName } from '../utils/getAddressName';
+import { getEditorScrollContainer } from '../utils/get-editor-scroll-container';
 
 export interface CommentExternalDeps {
   editor: Editor | null;
@@ -208,7 +211,6 @@ export interface CommentStoreState {
   ) => void;
 
   // --- Internal ---
-  _skipNextEditorStateUpdate: boolean;
   _recomputeDerived: () => void;
 
   // --- Synced data setters (called by provider useEffects) ---
@@ -362,9 +364,6 @@ export const createCommentStore = () =>
     // --- External deps ref ---
     _externalDepsRef: null,
     setExternalDepsRef: (ref) => set({ _externalDepsRef: ref }),
-
-    // --- Internal flags ---
-    _skipNextEditorStateUpdate: false,
 
     // --- Recompute derived state ---
     _recomputeDerived: () => {
@@ -633,9 +632,6 @@ export const createCommentStore = () =>
         createdAt: new Date(),
       };
 
-      // Set skip flag for unanchored comment before focusing it
-      set({ _skipNextEditorStateUpdate: true });
-
       onNewComment?.(newComment);
       setActiveCommentId(newComment.id || null);
       set({ comment: '' });
@@ -661,9 +657,6 @@ export const createCommentStore = () =>
         replies: [],
         createdAt: new Date(),
       };
-
-      // Set skip flag for unanchored comment before focusing it
-      set({ _skipNextEditorStateUpdate: true });
 
       setActiveCommentId(newComment.id || '');
       onNewComment?.(newComment);
@@ -973,11 +966,6 @@ export const createCommentStore = () =>
       if (editor && draft.selectedText) {
         editor.commands.unsetDraftComment(draftId);
         triggerDecorationRebuild(editor);
-      }
-
-      // If this is an unanchored comment (no selectedText), skip the next editor state update
-      if (!draft.selectedText) {
-        set({ _skipNextEditorStateUpdate: true });
       }
 
       get().setActiveCommentId(newComment.id || '');
@@ -1414,7 +1402,7 @@ export const createCommentStore = () =>
       callback?.(activeCommentId, newReply);
     },
     focusCommentInEditor: (commentId) => {
-      const { editor, setActiveCommentId } = getExtDeps(get);
+      const { editor, setActiveCommentId, commentAnchorsRef } = getExtDeps(get);
 
       const foundComment = get()
         .getTabComments()
@@ -1429,24 +1417,86 @@ export const createCommentStore = () =>
           return;
         }
 
-        const commentElement = editor.view.dom.querySelector<HTMLElement>(
-          `[data-comment-id="${commentId}"]`,
-        );
+        const anchorRange = commentAnchorsRef
+          ? getCommentAnchorRange(
+              editor,
+              commentId,
+              () => commentAnchorsRef.current,
+            )
+          : null;
+        // Prefer the persisted anchor range over DOM-derived offsets. The DOM
+        // fallback is only for older or partially-hydrated comments that do not
+        // yet have a resolvable anchor record.
+        const selectionRange =
+          anchorRange ??
+          (() => {
+            const commentElement = editor.view.dom.querySelector<HTMLElement>(
+              `[data-comment-id="${commentId}"]`,
+            );
 
-        if (commentElement) {
-          const from = editor.view.posAtDOM(commentElement, 0);
-          const to = from + (commentElement.textContent?.length ?? 0);
-          editor.commands.setTextSelection({ from, to });
+            if (!commentElement) {
+              return null;
+            }
 
+            const from = editor.view.posAtDOM(commentElement, 0);
+            return {
+              from,
+              to: from + (commentElement.textContent?.length ?? 0),
+            };
+          })();
+
+        if (selectionRange) {
+          const tr = editor.state.tr.setSelection(
+            TextSelection.create(
+              editor.state.doc,
+              selectionRange.from,
+              selectionRange.to,
+            ),
+          );
+          editor.view.dispatch(tr);
+          editor.commands.focus(undefined, { scrollIntoView: false });
+        }
+
+        editor.commands.setCommentActive(commentId);
+
+        if (selectionRange) {
+          // Keep the nested requestAnimationFrame. Tiptap focus already defers
+          // its own view.focus() by one frame, and collapsing this to a single
+          // frame reintroduces the scroll snap-back where focus wins after the
+          // manual scroll.
           requestAnimationFrame(() => {
-            commentElement.scrollIntoView({
-              behavior: 'smooth',
-              block: 'center',
+            requestAnimationFrame(() => {
+              const editorRoot = editor.view.dom as HTMLElement;
+              const scrollContainer = getEditorScrollContainer({
+                targetElement: editorRoot,
+                editorRoot,
+              });
+
+              if (!scrollContainer) {
+                return;
+              }
+
+              const containerRect = scrollContainer.getBoundingClientRect();
+              const startRect = editor.view.coordsAtPos(selectionRange.from);
+              const endRect = editor.view.coordsAtPos(
+                Math.max(selectionRange.from, selectionRange.to - 1),
+              );
+              const targetTop = Math.min(startRect.top, endRect.top);
+              const targetBottom = Math.max(startRect.bottom, endRect.bottom);
+              const targetHeight = Math.max(1, targetBottom - targetTop);
+
+              scrollContainer.scrollTo({
+                top:
+                  scrollContainer.scrollTop +
+                  targetTop -
+                  containerRect.top -
+                  containerRect.height / 2 +
+                  targetHeight / 2,
+                behavior: 'smooth',
+              });
             });
           });
         }
-      } else {
-        set({ _skipNextEditorStateUpdate: true });
       }
 
       setActiveCommentId(commentId);

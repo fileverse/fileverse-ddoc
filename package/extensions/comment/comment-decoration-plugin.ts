@@ -6,7 +6,7 @@
  * Yjs RelativePositions — they survive text edits automatically.
  */
 
-import { Extension } from '@tiptap/core';
+import { Extension, type Editor } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import {
@@ -246,4 +246,50 @@ export function getCommentAtPosition(
     }
   }
   return null;
+}
+
+export function getCommentAnchorRange(
+  editor: Editor,
+  commentId: string,
+  getAnchors: () => CommentAnchor[],
+): { from: number; to: number } | null {
+  const state = editor.state;
+  const syncState = ySyncPluginKey.getState(state);
+  if (!syncState?.binding) return null;
+
+  const { doc, type, binding } = syncState;
+  const anchor = getAnchors().find(
+    (entry) => entry.id === commentId && !entry.deleted,
+  );
+
+  if (!anchor) {
+    return null;
+  }
+
+  try {
+    const from = relativePositionToAbsolutePosition(
+      doc,
+      type,
+      anchor.anchorFrom,
+      binding.mapping,
+    );
+    const to = relativePositionToAbsolutePosition(
+      doc,
+      type,
+      anchor.anchorTo,
+      binding.mapping,
+    );
+
+    if (from === null || to === null || from >= to) {
+      return null;
+    }
+
+    if (from < 0 || to > state.doc.content.size) {
+      return null;
+    }
+
+    return { from, to };
+  } catch {
+    return null;
+  }
 }

@@ -1,8 +1,9 @@
 import { Avatar, TextAreaFieldV2, Button, IconButton, cn } from '@fileverse/ui';
 import { useCommentStore } from '../../stores/comment-store';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { EnsStatus } from './types';
 import { useResponsive } from '../../utils/responsive';
+import { resizeInlineCommentTextarea } from './resize-inline-comment-textarea';
 
 interface CommentReplyInputProps {
   commentId: string;
@@ -19,13 +20,13 @@ export const CommentReplyInput = ({
   const handleReplyChange = useCommentStore((s) => s.handleReplyChange);
   const handleReplyKeyDown = useCommentStore((s) => s.handleReplyKeyDown);
   const handleReplySubmit = useCommentStore((s) => s.handleReplySubmit);
-  const handleInput = useCommentStore((s) => s.handleInput);
   const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
   const username = useCommentStore((s) => s.username);
   const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
   const ensCache = useCommentStore((s) => s.ensCache);
   const { isBelow1280px } = useResponsive();
   const hasUnsentReply = Boolean(reply.trim());
+  const replyInputRef = useRef<HTMLTextAreaElement | null>(null);
 
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
     name: username as string,
@@ -35,6 +36,14 @@ export const CommentReplyInput = ({
   useEffect(() => {
     getEnsStatus(username as string, setEnsStatus);
   }, [username, ensCache, getEnsStatus]);
+
+  useEffect(() => {
+    if (!replyInputRef.current) {
+      return;
+    }
+
+    resizeInlineCommentTextarea(replyInputRef.current);
+  }, [reply]);
 
   return (
     <div className="group p-3 mt-[8px] pt-0">
@@ -51,9 +60,10 @@ export const CommentReplyInput = ({
           className="w-[16px] h-[16px]"
         />
         <TextAreaFieldV2
+          ref={replyInputRef}
           data-testid="comment-reply-input"
           value={reply}
-          onInput={(event) => handleInput(event, event.currentTarget.value)}
+          onInput={(event) => resizeInlineCommentTextarea(event.currentTarget)}
           className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
           placeholder={
             replyCount === 0
@@ -63,7 +73,10 @@ export const CommentReplyInput = ({
                 : `Reply `
           }
           id={commentId}
-          onChange={handleReplyChange}
+          onChange={(event) => {
+            handleReplyChange(event);
+            resizeInlineCommentTextarea(event.currentTarget);
+          }}
           onKeyDown={handleReplyKeyDown}
         />
         <IconButton

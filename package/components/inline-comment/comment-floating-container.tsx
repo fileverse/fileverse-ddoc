@@ -17,6 +17,7 @@ import {
 } from './context/types';
 import { DeleteConfirmOverlay } from './delete-confirm-overlay';
 import { useCommentListContainer } from './use-comment-list-container';
+import { resizeInlineCommentTextarea } from './resize-inline-comment-textarea';
 import EnsLogo from '../../assets/ens.svg';
 
 const FLOATING_CARD_WIDTH = 300;
@@ -127,6 +128,7 @@ const DraftFloatingCard = ({
   const username = useCommentStore((s) => s.username);
   const isConnected = useCommentStore((s) => s.isConnected);
   const draftCardRef = useRef<HTMLDivElement | null>(null);
+  const draftTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   useEffect(() => {
     if (!draftState || !draft.isFocused || isHidden) {
@@ -145,6 +147,14 @@ const DraftFloatingCard = ({
       window.cancelAnimationFrame(frameId);
     };
   }, [draft.isFocused, draftState, isHidden]);
+
+  useEffect(() => {
+    if (!draftTextareaRef.current) {
+      return;
+    }
+
+    resizeInlineCommentTextarea(draftTextareaRef.current);
+  }, [draftState?.text]);
 
   if (!draftState) {
     return null;
@@ -177,10 +187,15 @@ const DraftFloatingCard = ({
           <div className="flex flex-col gap-3 p-3 pt-0">
             <div className="border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
               <TextAreaFieldV2
+                ref={draftTextareaRef}
                 value={draftState.text}
-                onChange={(event) =>
+                onChange={(event) => {
                   // Floating comments and the drawer both edit the same draft record.
-                  updateInlineDraftText(draft.draftId, event.target.value)
+                  updateInlineDraftText(draft.draftId, event.target.value);
+                  resizeInlineCommentTextarea(event.currentTarget);
+                }}
+                onInput={(event) =>
+                  resizeInlineCommentTextarea(event.currentTarget)
                 }
                 onKeyDown={(event) => {
                   if (
@@ -243,10 +258,10 @@ const ThreadFloatingCard = ({
   const username = useCommentStore((s) => s.username);
   const deleteComment = useCommentStore((s) => s.deleteComment);
   const isDDocOwner = useCommentStore((s) => s.isDDocOwner);
-  const handleInput = useCommentStore((s) => s.handleInput);
   const [replyText, setReplyText] = useState('');
   const [isReplyInputFocused, setIsReplyInputFocused] = useState(false);
   const [isDeleteOverlayVisible, setIsDeleteOverlayVisible] = useState(false);
+  const replyTextareaRef = useRef<HTMLTextAreaElement | null>(null);
 
   const isCommentOwner =
     Boolean(comment?.username && comment.username === username) || isDDocOwner;
@@ -298,6 +313,14 @@ const ThreadFloatingCard = ({
     }
   };
 
+  useEffect(() => {
+    if (!replyTextareaRef.current) {
+      return;
+    }
+
+    resizeInlineCommentTextarea(replyTextareaRef.current);
+  }, [replyText]);
+
   return (
     <FloatingCardShell
       ref={(node) => registerCardNode(thread.floatingCardId, node)}
@@ -342,12 +365,16 @@ const ThreadFloatingCard = ({
                 className="w-[16px] h-[16px]"
               />
               <TextAreaFieldV2
+                ref={replyTextareaRef}
                 value={replyText}
-                onChange={(event) => setReplyText(event.target.value)}
+                onChange={(event) => {
+                  setReplyText(event.target.value);
+                  resizeInlineCommentTextarea(event.currentTarget);
+                }}
                 onFocus={() => setIsReplyInputFocused(true)}
                 onBlur={() => setIsReplyInputFocused(false)}
                 onInput={(event) =>
-                  handleInput(event, event.currentTarget.value)
+                  resizeInlineCommentTextarea(event.currentTarget)
                 }
                 onKeyDown={(event) => {
                   if (
@@ -357,9 +384,6 @@ const ThreadFloatingCard = ({
                     event.preventDefault();
                     onReplySubmit();
                   }
-                }}
-                style={{
-                  ...(!comment ? { height: '20px' } : {}),
                 }}
                 className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
                 placeholder={canReply ? 'Add a reply' : 'Thread resolved'}

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 import { BubbleMenu } from '@tiptap/react/menus';
-import React, { useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { NodeSelector } from './node-selector';
 import {
   LinkPopup,
@@ -28,6 +28,7 @@ import { Editor } from '@tiptap/react';
 
 const MemoizedFontSizePicker = React.memo(FontSizePicker);
 const MemoizedLineHeightPicker = React.memo(LineHeightPicker);
+const BUBBLE_MENU_Z_INDEX = '61';
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const {
@@ -87,6 +88,10 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       editor.off('selectionUpdate', handleSelectionUpdate);
     };
   }, [editor, isBubbleMenuSuppressed, setIsBubbleMenuSuppressed]);
+
+  const handleBubbleMenuRef = useCallback((node: HTMLDivElement | null) => {
+    node?.style.setProperty('z-index', BUBBLE_MENU_Z_INDEX);
+  }, []);
 
   const items: BubbleMenuItem[] = useMemo(() => {
     return [
@@ -217,6 +222,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
 
   return (
     <BubbleMenu
+      ref={handleBubbleMenuRef}
       editor={editor}
       appendTo={
         isBelow1280px

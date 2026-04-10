@@ -1,18 +1,19 @@
 import { Avatar, TextAreaFieldV2, Button } from '@fileverse/ui';
 import { useCommentStore } from '../../stores/comment-store';
 import EnsLogo from '../../assets/ens.svg';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { EnsStatus } from './types';
+import { resizeInlineCommentTextarea } from './resize-inline-comment-textarea';
 
-export const CommentNewCommentInput = ({ tabId }: { tabId?: string }) => {
+export const CommentInputField = ({ tabId }: { tabId?: string }) => {
   const comment = useCommentStore((s) => s.comment);
   const username = useCommentStore((s) => s.username);
   const handleCommentChange = useCommentStore((s) => s.handleCommentChange);
   const handleCommentKeyDown = useCommentStore((s) => s.handleCommentKeyDown);
   const handleCommentSubmit = useCommentStore((s) => s.handleCommentSubmit);
-  const handleInput = useCommentStore((s) => s.handleInput);
   const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
   const ensCache = useCommentStore((s) => s.ensCache);
+  const commentInputRef = useRef<HTMLTextAreaElement | null>(null);
 
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
     name: username as string,
@@ -22,6 +23,14 @@ export const CommentNewCommentInput = ({ tabId }: { tabId?: string }) => {
   useEffect(() => {
     getEnsStatus(username as string, setEnsStatus);
   }, [username, ensCache]);
+
+  useEffect(() => {
+    if (!commentInputRef.current) {
+      return;
+    }
+
+    resizeInlineCommentTextarea(commentInputRef.current, 96);
+  }, [comment]);
 
   return (
     <div className="flex flex-col gap-3 color-bg-secondary border-t color-border-default pt-[20px] rounded-b-lg">
@@ -37,16 +46,19 @@ export const CommentNewCommentInput = ({ tabId }: { tabId?: string }) => {
           className="w-[16px] h-[16px]"
         />
         <TextAreaFieldV2
+          ref={commentInputRef}
           data-testid="comment-section-input"
           value={comment}
-          onChange={handleCommentChange}
-          onKeyDown={(event) => handleCommentKeyDown(event, tabId)}
-          style={{
-            ...(!comment ? { height: '20px' } : {}),
+          onChange={(event) => {
+            handleCommentChange(event);
+            resizeInlineCommentTextarea(event.currentTarget, 96);
           }}
+          onKeyDown={(event) => handleCommentKeyDown(event, tabId)}
           className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[96px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
           placeholder="Add a comment"
-          onInput={(e) => handleInput(e, comment)}
+          onInput={(event) =>
+            resizeInlineCommentTextarea(event.currentTarget, 96)
+          }
         />
       </div>
 
