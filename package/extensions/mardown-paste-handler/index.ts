@@ -22,6 +22,7 @@ import {
   isValidBase64Image,
 } from '../../utils/image-compression';
 import { markdownHtmlGuardPlugin } from './mark-down-html-guard-plugin';
+import { parseHeadingLink } from '../../utils/heading-link';
 
 // Initialize MarkdownIt for converting Markdown back to HTML with footnote support.
 const markdownIt = new MarkdownIt({ html: true })
@@ -393,7 +394,6 @@ const MarkdownPasteHandler = (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>,
   fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>,
-  onError?: (error: string) => void,
 ) =>
   Extension.create({
     name: 'markdownPasteHandler',
@@ -413,49 +413,25 @@ const MarkdownPasteHandler = (
               // insert it as a named link using the heading's actual text.
               const { empty } = view.state.selection;
               if (empty && copiedData) {
-                try {
-                  const url = new URL(copiedData.trim());
-                  if (url.origin === window.location.origin && url.hash) {
-                    const hash = decodeURIComponent(url.hash.slice(1));
-                    const params = new URLSearchParams(hash);
-                    const headingParam = params.get('heading');
-                    if (headingParam) {
-                      const id = headingParam.split('-').pop();
-                      if (id) {
-                        const headingEl = Array.from(
-                          document.querySelectorAll('[data-toc-id]'),
-                        ).find((el) =>
-                          (el as HTMLElement).dataset.tocId?.includes(id),
-                        ) as HTMLElement | undefined;
-
-                        if (headingEl?.textContent) {
-                          event.preventDefault();
-                          this.editor
-                            .chain()
-                            .focus()
-                            .insertContent({
-                              type: 'text',
-                              text: headingEl.textContent,
-                              marks: [
-                                {
-                                  type: 'link',
-                                  attrs: { href: copiedData.trim() },
-                                },
-                              ],
-                            })
-                            .run();
-                          return true;
-                        }
-                      }
-                      // Heading param found but not in current doc —
-                      // it belongs to a different dDoc.
-                      onError?.(
-                        'This heading link belongs to a different document.',
-                      );
-                    }
-                  }
-                } catch {
-                  // not a URL — continue to normal paste
+                const trimmed = copiedData.trim();
+                const parsed = parseHeadingLink(trimmed);
+                if (parsed?.headingEl?.textContent) {
+                  event.preventDefault();
+                  this.editor
+                    .chain()
+                    .focus()
+                    .insertContent({
+                      type: 'text',
+                      text: parsed.headingEl.textContent,
+                      marks: [
+                        {
+                          type: 'link',
+                          attrs: { href: trimmed },
+                        },
+                      ],
+                    })
+                    .run();
+                  return true;
                 }
               }
 
