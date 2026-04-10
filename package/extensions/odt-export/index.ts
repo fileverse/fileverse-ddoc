@@ -5,6 +5,18 @@ import { IpfsImageFetchPayload } from '../../types';
 import { getTemporaryEditor } from '../../utils/helpers';
 import { searchForSecureImageNodeAndEmbedImageContent } from '../mardown-paste-handler';
 import { htmlToOdt } from 'odf-kit';
+import { textColors } from '../../utils/colors';
+
+// Build a lookup from `--color-editor-<name>` → hex (light theme). The editor
+// stores colors as `var(--color-editor-xxx)`, which LibreOffice and Word don't
+// understand — so we need to resolve them to concrete hex values before export.
+const EDITOR_COLOR_VAR_MAP: Record<string, string> = textColors.reduce(
+  (acc, c) => {
+    acc[`--color-editor-${c.name}`] = c.light;
+    return acc;
+  },
+  {} as Record<string, string>,
+);
 
 // Define the command type
 declare module '@tiptap/core' {
@@ -49,7 +61,7 @@ export function preprocessHtml(html: string): { html: string } {
   taskItems.forEach((li) => {
     const checkbox = li.querySelector('input[type="checkbox"]');
     const isChecked = checkbox?.hasAttribute('checked') ?? false;
-    const prefix = isChecked ? '☑ ' : '☐ ';
+    // const prefix = isChecked ? '☑ ' : '☐ ';
 
     // Remove the label/checkbox elements
     const label = li.querySelector('label');
@@ -83,7 +95,7 @@ export function preprocessHtml(html: string): { html: string } {
     }
 
     // Prepend the checkbox character (outside the <s> so the box isn't struck)
-    li.insertBefore(doc.createTextNode(prefix), li.firstChild);
+    // li.insertBefore(doc.createTextNode(prefix), li.firstChild);
 
     li.removeAttribute('data-type');
     li.removeAttribute('data-checked');
@@ -97,6 +109,36 @@ export function preprocessHtml(html: string): { html: string } {
 
   // Replace <img> tags with warning text — odf-kit v1 skips images entirely
   doc.querySelectorAll('img').forEach((img) => img.remove());
+
+  // Remove <colgroup> elements — odf-kit doesn't support them and they
+  // corrupt the XML parser's stack, breaking all downstream content
+  doc.querySelectorAll('colgroup').forEach((colgroup) => colgroup.remove());
+
+  // Resolve editor color CSS variables to hex values in inline styles.
+  // The editor stores colors as `var(--color-editor-xxx)`, which LibreOffice
+  // and Word don't understand — they silently drop the color. Substitute
+  // the concrete hex value from the `textColors` palette.
+  const resolveEditorColorVars = (value: string): string =>
+    value.replace(
+      /var\((--color-editor-[^,)\s]+)(?:\s*,\s*([^)]+))?\)/g,
+      (match, name, fallback) => {
+        const hex = EDITOR_COLOR_VAR_MAP[name as string];
+        if (hex) return hex;
+        return fallback ? fallback.trim() : match;
+      },
+    );
+  doc
+    .querySelectorAll<HTMLElement>('[style*="var(--color-editor-"]')
+    .forEach((el) => {
+      const style = el.getAttribute('style');
+      if (!style) return;
+      el.setAttribute('style', resolveEditorColorVars(style));
+    });
+  // Strip data-original-color — may still hold the unresolved var() value
+  // and it's not used by odf-kit anyway.
+  doc
+    .querySelectorAll('[data-original-color]')
+    .forEach((el) => el.removeAttribute('data-original-color'));
 
   // Convert callouts (<aside data-type="callout">) to blockquotes
   doc.querySelectorAll('aside[data-type="callout"]').forEach((aside) => {
