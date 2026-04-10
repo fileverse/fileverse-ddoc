@@ -249,6 +249,7 @@ export const useExportHeadlessEditorContent = (
       {
         icon: 'FileText',
         title: 'OpenDocument (.odt)',
+        subtitle: 'Image support is coming soon',
         onClick: async (name?: string) => {
           const tempEditor = createTempEditorForActiveTab();
           if (!tempEditor) return;

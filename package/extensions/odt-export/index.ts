@@ -5,6 +5,18 @@ import { IpfsImageFetchPayload } from '../../types';
 import { getTemporaryEditor } from '../../utils/helpers';
 import { searchForSecureImageNodeAndEmbedImageContent } from '../mardown-paste-handler';
 import { htmlToOdt } from 'odf-kit';
+import { textColors } from '../../utils/colors';
+
+// Build a lookup from `--color-editor-<name>` → hex (light theme). The editor
+// stores colors as `var(--color-editor-xxx)`, which LibreOffice and Word don't
+// understand — so we need to resolve them to concrete hex values before export.
+const EDITOR_COLOR_VAR_MAP: Record<string, string> = textColors.reduce(
+  (acc, c) => {
+    acc[`--color-editor-${c.name}`] = c.light;
+    return acc;
+  },
+  {} as Record<string, string>,
+);
 
 // Define the command type
 declare module '@tiptap/core' {
@@ -43,7 +55,8 @@ export function preprocessHtml(html: string): { html: string } {
     'text/html',
   );
 
-  // Convert task list items: <li data-type="taskItem"> → standard <li> with checkbox prefix
+  // Convert task list items: <li data-type="taskItem"> → standard <li> with checkbox prefix.
+  // Checked items get their content wrapped in <s> so odf-kit renders strikethrough.
   const taskItems = doc.querySelectorAll('li[data-type="taskItem"]');
   taskItems.forEach((li) => {
     const checkbox = li.querySelector('input[type="checkbox"]');
@@ -63,7 +76,25 @@ export function preprocessHtml(html: string): { html: string } {
       contentDiv.remove();
     }
 
-    // Prepend the checkbox character
+    // For checked items, wrap direct text/inline children in <s> for strikethrough.
+    // Skip nested <ul> (child task lists) so nested items stay readable.
+    if (isChecked) {
+      const toWrap: Node[] = [];
+      li.childNodes.forEach((child) => {
+        if (child.nodeType === 1 && (child as Element).tagName === 'UL') {
+          return;
+        }
+        toWrap.push(child);
+      });
+      if (toWrap.length > 0) {
+        const s = doc.createElement('s');
+        toWrap.forEach((node) => s.appendChild(node));
+        // Insert the <s> at the position where the first wrapped node was
+        li.insertBefore(s, li.firstChild);
+      }
+    }
+
+    // Prepend the checkbox character (outside the <s> so the box isn't struck)
     li.insertBefore(doc.createTextNode(prefix), li.firstChild);
 
     li.removeAttribute('data-type');
@@ -77,11 +108,37 @@ export function preprocessHtml(html: string): { html: string } {
   });
 
   // Replace <img> tags with warning text — odf-kit v1 skips images entirely
-  doc.querySelectorAll('img').forEach((img) => {
-    const warning = doc.createElement('em');
-    warning.textContent = '[Images are not supported in the export as of now.]';
-    img.replaceWith(warning);
-  });
+  doc.querySelectorAll('img').forEach((img) => img.remove());
+
+  // Remove <colgroup> elements — odf-kit doesn't support them and they
+  // corrupt the XML parser's stack, breaking all downstream content
+  doc.querySelectorAll('colgroup').forEach((colgroup) => colgroup.remove());
+
+  // Resolve editor color CSS variables to hex values in inline styles.
+  // The editor stores colors as `var(--color-editor-xxx)`, which LibreOffice
+  // and Word don't understand — they silently drop the color. Substitute
+  // the concrete hex value from the `textColors` palette.
+  const resolveEditorColorVars = (value: string): string =>
+    value.replace(
+      /var\((--color-editor-[^,)\s]+)(?:\s*,\s*([^)]+))?\)/g,
+      (match, name, fallback) => {
+        const hex = EDITOR_COLOR_VAR_MAP[name as string];
+        if (hex) return hex;
+        return fallback ? fallback.trim() : match;
+      },
+    );
+  doc
+    .querySelectorAll<HTMLElement>('[style*="var(--color-editor-"]')
+    .forEach((el) => {
+      const style = el.getAttribute('style');
+      if (!style) return;
+      el.setAttribute('style', resolveEditorColorVars(style));
+    });
+  // Strip data-original-color — may still hold the unresolved var() value
+  // and it's not used by odf-kit anyway.
+  doc
+    .querySelectorAll('[data-original-color]')
+    .forEach((el) => el.removeAttribute('data-original-color'));
 
   // Convert callouts (<aside data-type="callout">) to blockquotes
   doc.querySelectorAll('aside[data-type="callout"]').forEach((aside) => {
