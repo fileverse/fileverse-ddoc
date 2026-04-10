@@ -656,7 +656,7 @@ const DdocEditor = forwardRef(
             )}
             <div
               className={cn(
-                !isMobile && 'flex-[1_1_263px]',
+                !isMobile && 'flex-[1_0_263px]',
                 !isPreviewMode &&
                   !isFocusMode &&
                   isNavbarVisible &&
@@ -960,7 +960,7 @@ const DdocEditor = forwardRef(
               </div>
               <div
                 className={cn(
-                  !isMobile && 'flex-[1_1_263px]',
+                  !isMobile && 'flex-[1_0_263px]',
                   !isPreviewMode &&
                     !isFocusMode &&
                     isNavbarVisible &&
