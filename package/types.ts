@@ -43,11 +43,16 @@ export type InlineCommentData = {
 
 export type CommentMutationType = 'create' | 'resolve' | 'unresolve' | 'delete';
 
+export type SuggestionType = 'add' | 'replace' | 'delete';
+
 export interface CommentMutationMeta {
   type: CommentMutationType;
   updateChunk?: string;
   anchorFrom?: string;
   anchorTo?: string;
+  suggestionType?: SuggestionType;
+  originalContent?: string;
+  suggestedContent?: string;
 }
 
 export interface SerializedCommentAnchor {
@@ -56,6 +61,10 @@ export interface SerializedCommentAnchor {
   anchorTo: string;
   resolved: boolean;
   deleted: boolean;
+  isSuggestion?: boolean;
+  suggestionType?: SuggestionType;
+  originalContent?: string;
+  suggestedContent?: string;
 }
 
 export interface CommentAccountProps {
@@ -182,6 +191,7 @@ export interface DdocProps extends CommentAccountProps {
   editorCanvasClassNames?: string;
   isCommentSectionOpen?: boolean;
   isPreviewMode: boolean;
+  viewerMode?: 'suggest' | 'view-only';
   ensResolutionUrl?: string;
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   enableIndexeddbSync?: boolean;

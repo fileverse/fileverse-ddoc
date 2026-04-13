@@ -58,6 +58,7 @@ const DdocEditor = forwardRef(
   (
     {
       isPreviewMode = false,
+      viewerMode,
       initialContent,
       collaboration,
       username,
@@ -264,6 +265,7 @@ const DdocEditor = forwardRef(
       enableIndexeddbSync,
       ddocId,
       isPreviewMode,
+      viewerMode,
       initialContent,
       collaboration,
       walletAddress,
@@ -301,6 +303,7 @@ const DdocEditor = forwardRef(
       isAIAgentEnabled,
       isDDocOwner,
       tabConfig,
+      onNewComment,
       ...rest,
     });
     const currentTabName = useMemo(
@@ -874,6 +877,9 @@ const DdocEditor = forwardRef(
                                 <div>
                                   <EditingProvider
                                     isPreviewMode={isPreviewMode}
+                                    isSuggestionMode={
+                                      isPreviewMode && viewerMode === 'suggest'
+                                    }
                                     isCollaboratorsDoc={
                                       collaboration?.enabled === true &&
                                       !collaboration.connection.isOwner

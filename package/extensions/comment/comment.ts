@@ -3,6 +3,7 @@ import { CommandProps, Mark, mergeAttributes, Range } from '@tiptap/core';
 import { Mark as PMMark } from '@tiptap/pm/model';
 import { Plugin, PluginKey, type EditorState } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
+import { SuggestionType } from '../../types';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -153,6 +154,10 @@ export interface IComment {
   deleted?: boolean;
   commentIndex?: number;
   version?: string;
+  isSuggestion?: boolean;
+  suggestionType?: SuggestionType;
+  originalContent?: string;
+  suggestedContent?: string;
 }
 
 export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({

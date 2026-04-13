@@ -3,6 +3,7 @@ import { createContext, useContext } from 'react';
 import React from 'react';
 import {
   CommentAnchor,
+  applyAcceptedSuggestion,
   createCommentAnchorFromEditor,
   getCommentAnchorRange,
   triggerDecorationRebuild,
@@ -288,6 +289,7 @@ export interface CommentStoreState {
   resolveComment: (commentId: string) => void;
   unresolveComment: (commentId: string) => void;
   deleteComment: (commentId: string) => void;
+  acceptSuggestion: (commentId: string) => void;
   deleteReply: (commentId: string, replyId: string) => void;
   handleAddReply: (
     activeCommentId: string,
@@ -1351,6 +1353,47 @@ export const createCommentStore = () =>
         );
         onDeleteComment?.(commentId, mutationMeta);
       }
+
+      set((state) => ({
+        floatingCards: state.floatingCards.filter(
+          (floatingCard) =>
+            !(
+              floatingCard.type === 'thread' &&
+              floatingCard.commentId === commentId
+            ),
+        ),
+      }));
+
+      if (get().activeCommentId === commentId) {
+        setActiveCommentId(null);
+      }
+    },
+    acceptSuggestion: (commentId) => {
+      const { editor, onResolveComment, setActiveCommentId, commentAnchorsRef } =
+        getExtDeps(get);
+
+      if (!editor) return;
+
+      const anchor = commentAnchorsRef?.current.find(
+        (a) => a.id === commentId && a.isSuggestion,
+      );
+
+      if (!anchor || !commentAnchorsRef) return;
+
+      const applied = applyAcceptedSuggestion(editor, anchor);
+      if (!applied) return;
+
+      commentAnchorsRef.current = commentAnchorsRef.current.filter(
+        (a) => a.id !== commentId,
+      );
+      triggerDecorationRebuild(editor);
+
+      onResolveComment?.(commentId, {
+        type: 'resolve',
+        suggestionType: anchor.suggestionType,
+        originalContent: anchor.originalContent,
+        suggestedContent: anchor.suggestedContent,
+      });
 
       set((state) => ({
         floatingCards: state.floatingCards.filter(

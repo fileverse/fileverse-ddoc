@@ -20,15 +20,20 @@ import SlashCommand from '../extensions/slash-command/slash-comand';
 import { EditorState, TextSelection } from '@tiptap/pm/state';
 import customTextInputRules from '../extensions/customTextInputRules';
 import { PageBreak } from '../extensions/page-break/page-break';
-import { toUint8Array } from 'js-base64';
+import { toUint8Array, fromUint8Array } from 'js-base64';
 import { isJSONString } from '../utils/isJsonString';
 import { zoomService } from '../zoom-service';
 import { sanitizeContent } from '../utils/sanitize-content';
-import { CommentExtension as Comment } from '../extensions/comment';
+import { CommentExtension as Comment, IComment } from '../extensions/comment';
+import { CommentMutationMeta } from '../types';
 import {
   CommentAnchor,
   CommentDecorationExtension,
 } from '../extensions/comment/comment-decoration-plugin';
+import {
+  SuggestionTrackingExtension,
+  SuggestionReadyData,
+} from '../extensions/suggestion/suggestion-tracking-extension';
 import {
   createPageCounter,
   handleContentPrint,
@@ -101,6 +106,7 @@ interface UseTabEditorArgs {
   hasTabState?: boolean;
   versionId?: string;
   isPreviewMode?: boolean;
+  viewerMode?: DdocProps['viewerMode'];
   initialContent: DdocProps['initialContent'];
   collaboration?: CollaborationProps;
   isReady?: boolean;
@@ -137,6 +143,7 @@ interface UseTabEditorArgs {
   activeTabId: string;
   theme?: 'dark' | 'light';
   editorRef?: MutableRefObject<Editor | null>;
+  onNewComment?: DdocProps['onNewComment'];
 }
 
 export const useTabEditor = ({
@@ -145,6 +152,7 @@ export const useTabEditor = ({
   hasTabState,
   versionId,
   isPreviewMode,
+  viewerMode,
   initialContent,
   collaboration,
   isReady,
@@ -180,6 +188,7 @@ export const useTabEditor = ({
   activeTabId,
   theme,
   editorRef,
+  onNewComment,
 }: UseTabEditorArgs) => {
   const collabEnabled = collaboration?.enabled === true;
   const connection = collabEnabled ? collaboration.connection : null;
@@ -188,6 +197,8 @@ export const useTabEditor = ({
 
   const hasAvailableModels = Boolean(activeModel && isAIAgentEnabled);
   const { tocItems, setTocItems, handleTocUpdate } = useTocState(activeTabId);
+
+  const isSuggestionMode = !!(isPreviewMode && viewerMode === 'suggest');
 
   const { extensions, commentAnchorsRef } = useEditorExtension({
     ydoc,
@@ -213,6 +224,8 @@ export const useTabEditor = ({
     onTocUpdate: handleTocUpdate,
     externalExtensions,
     activeTabId,
+    isSuggestionMode,
+    onNewComment,
   });
 
   const { handleCommentInteraction, handleCommentClick } =
@@ -349,12 +362,13 @@ export const useTabEditor = ({
   // updates into the ydoc).  All other collab states (connecting, ready,
   // reconnecting, terminating) keep the editor editable so there is no
   // scroll-jump on start or flicker on stop.
+
   const readyState = useMemo(() => {
-    if (isPreviewMode) return false;
+    if (isPreviewMode && !isSuggestionMode) return false;
     if (!isCollaborationEnabled) return true;
     if (isSyncing) return false;
     return true;
-  }, [isPreviewMode, isCollaborationEnabled, isSyncing]);
+  }, [isPreviewMode, isSuggestionMode, isCollaborationEnabled, isSyncing]);
 
   useEffect(() => {
     editor?.setEditable(readyState);
@@ -964,6 +978,8 @@ interface UseExtensionStackArgs {
   onTocUpdate: (data: ToCItemType[], isCreate: boolean | undefined) => void;
   externalExtensions?: Record<string, AnyExtension>;
   activeTabId: string;
+  isSuggestionMode?: boolean;
+  onNewComment?: DdocProps['onNewComment'];
 }
 
 const useEditorExtension = ({
@@ -985,6 +1001,8 @@ const useEditorExtension = ({
   onTocUpdate,
   externalExtensions,
   activeTabId,
+  isSuggestionMode = false,
+  onNewComment,
 }: UseExtensionStackArgs) => {
   const slashCommandConfigRef = useRef({
     isConnected,
@@ -1010,6 +1028,58 @@ const useEditorExtension = ({
   );
 
   const commentAnchorsRef = useRef<CommentAnchor[]>([]);
+
+  // Keep a stable ref to isSuggestionMode so the extension closure always
+  // reads the latest value without needing to rebuild extensions.
+  const isSuggestionModeRef = useRef(isSuggestionMode);
+  isSuggestionModeRef.current = isSuggestionMode;
+
+  // Keep a stable ref to onNewComment so the callback always reads the latest
+  // version without needing extension rebuilds.
+  const onNewCommentRef = useRef(onNewComment);
+  onNewCommentRef.current = onNewComment;
+
+  // Called on every keystroke — upserts the live anchor so the decoration
+  // rebuilds immediately while the user is still typing.
+  const onLiveSuggestionRef = useRef<((anchor: CommentAnchor) => void) | null>(null);
+  onLiveSuggestionRef.current = (anchor: CommentAnchor) => {
+    commentAnchorsRef.current = [
+      ...commentAnchorsRef.current.filter((a) => a.id !== anchor.id),
+      anchor,
+    ];
+  };
+
+  // Called once when typing stops (cursor moves away / blur) — only for
+  // persistence. The anchor is already in commentAnchorsRef at this point.
+  const onSuggestionReadyRef = useRef<((data: SuggestionReadyData) => void) | null>(null);
+  onSuggestionReadyRef.current = (data: SuggestionReadyData) => {
+    if (!onNewCommentRef.current) return;
+
+    const newComment: IComment = {
+      id: data.suggestionId,
+      tabId: activeTabId,
+      selectedContent: data.originalContent,
+      content: '',
+      isSuggestion: true,
+      suggestionType: data.suggestionType,
+      originalContent: data.originalContent,
+      suggestedContent: data.suggestedContent,
+      resolved: false,
+      deleted: false,
+      createdAt: new Date(),
+    };
+
+    const meta: CommentMutationMeta = {
+      type: 'create',
+      anchorFrom: fromUint8Array(Y.encodeRelativePosition(data.anchorFrom)),
+      anchorTo: fromUint8Array(Y.encodeRelativePosition(data.anchorTo)),
+      suggestionType: data.suggestionType,
+      originalContent: data.originalContent,
+      suggestedContent: data.suggestedContent,
+    };
+
+    onNewCommentRef.current(newComment, meta);
+  };
 
   const commentExtension = useMemo(
     () =>
@@ -1043,6 +1113,11 @@ const useEditorExtension = ({
       }),
       CommentDecorationExtension.configure({
         getAnchors: () => commentAnchorsRef.current,
+      }),
+      SuggestionTrackingExtension.configure({
+        getIsSuggestionMode: () => isSuggestionModeRef.current,
+        onLiveSuggestion: (anchor) => onLiveSuggestionRef.current?.(anchor),
+        onSuggestionReady: (data) => onSuggestionReadyRef.current?.(data),
       }),
       ...(externalExtensions ? Object.values(externalExtensions) : []),
     ];

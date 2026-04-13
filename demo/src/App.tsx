@@ -23,6 +23,8 @@ import {
   DocumentStyling,
   CollaborationProps,
   CollabState,
+  SerializedCommentAnchor,
+  CommentMutationMeta,
 } from '../../package/types';
 import {
   getKeyFromURLParams,
@@ -175,6 +177,9 @@ function App() {
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [disableInlineComment, setDisableInlineComment] = useState(false);
+  const [isDDocOwner, setIsDDocOwner] = useState(true);
+  const [viewerMode, setViewerMode] = useState<'suggest' | 'view-only' | undefined>(undefined);
+  const [initialCommentAnchors, setInitialCommentAnchors] = useState<SerializedCommentAnchor[]>([]);
 
   const searchParams = new URLSearchParams(window.location.search);
   const paramCollaborationId = searchParams.get('collaborationId');
@@ -246,11 +251,33 @@ function App() {
       }),
     );
   };
-  const handleNewComment = (comment: IComment) => {
+  const handleNewComment = (comment: IComment, meta?: CommentMutationMeta) => {
     setInitialComment((prev) => [
       ...prev,
       { ...comment, commentIndex: prev.length, version: '2' },
     ]);
+
+    // If the new comment is a suggestion, also register its serialised anchor
+    // so the decoration system can resolve it after the next render.
+    if (
+      comment.isSuggestion &&
+      comment.id &&
+      meta?.anchorFrom &&
+      meta?.anchorTo
+    ) {
+      const anchor: SerializedCommentAnchor = {
+        id: comment.id,
+        anchorFrom: meta.anchorFrom,
+        anchorTo: meta.anchorTo,
+        resolved: false,
+        deleted: false,
+        isSuggestion: true,
+        suggestionType: meta.suggestionType,
+        originalContent: meta.originalContent,
+        suggestedContent: meta.suggestedContent,
+      };
+      setInitialCommentAnchors((prev) => [...prev, anchor]);
+    }
   };
   const handleResolveComment = (commentId: string) => {
     setInitialComment(
@@ -436,6 +463,41 @@ function App() {
                   </Button>
                   <Button
                     variant={'ghost'}
+                    onClick={() => {
+                      if (isDDocOwner) {
+                        setIsDDocOwner(false);
+                        setIsPreviewMode(true);
+                        setViewerMode('suggest');
+                      } else {
+                        setIsDDocOwner(true);
+                        setIsPreviewMode(false);
+                        setViewerMode(undefined);
+                      }
+                    }}
+                    className="flex justify-start gap-2"
+                  >
+                    <LucideIcon name={isDDocOwner ? 'Crown' : 'User'} size="sm" />
+                    {isDDocOwner ? 'Owner' : 'Viewer'}
+                  </Button>
+                  {!isDDocOwner && (
+                    <Button
+                      variant={'ghost'}
+                      onClick={() =>
+                        setViewerMode((v) =>
+                          v === 'suggest' ? 'view-only' : 'suggest',
+                        )
+                      }
+                      className="flex justify-start gap-2"
+                    >
+                      <LucideIcon
+                        name={viewerMode === 'suggest' ? 'PenLine' : 'Eye'}
+                        size="sm"
+                      />
+                      {viewerMode === 'suggest' ? 'Suggest' : 'View-only'}
+                    </Button>
+                  )}
+                  <Button
+                    variant={'ghost'}
                     onClick={() => {}}
                     className="flex justify-start gap-2"
                   >
@@ -461,6 +523,36 @@ function App() {
                 size="md"
                 onClick={() => setIsPreviewMode(!isPreviewMode)}
               />
+              <IconButton
+                variant={'ghost'}
+                icon={isDDocOwner ? 'Crown' : 'User'}
+                size="md"
+                title={isDDocOwner ? 'Owner mode' : 'Viewer mode'}
+                onClick={() => {
+                  if (isDDocOwner) {
+                    setIsDDocOwner(false);
+                    setIsPreviewMode(true);
+                    setViewerMode('suggest');
+                  } else {
+                    setIsDDocOwner(true);
+                    setIsPreviewMode(false);
+                    setViewerMode(undefined);
+                  }
+                }}
+              />
+              {!isDDocOwner && (
+                <IconButton
+                  variant={'ghost'}
+                  icon={viewerMode === 'suggest' ? 'PenLine' : 'Eye'}
+                  size="md"
+                  title={viewerMode === 'suggest' ? 'Suggest mode' : 'View-only mode'}
+                  onClick={() =>
+                    setViewerMode((v) =>
+                      v === 'suggest' ? 'view-only' : 'suggest',
+                    )
+                  }
+                />
+              )}
               <IconButton
                 variant={'ghost'}
                 icon="Presentation"
@@ -718,7 +810,9 @@ function App() {
         }}
         onCollaboratorChange={onCollaboratorChange}
         documentStyling={documentStyling}
-        isDDocOwner={true}
+        isDDocOwner={isDDocOwner}
+        viewerMode={isDDocOwner ? undefined : viewerMode}
+        initialCommentAnchors={initialCommentAnchors}
         setCharacterCount={setCharacterCount}
         setWordCount={setWordCount}
         setPageCount={setPageCount}
