@@ -35,6 +35,18 @@ interface UseFloatingLayoutEngineProps {
   floatingCardState: UseFloatingCardStateResult;
 }
 
+const isFloatingUiInteractionTarget = (target: EventTarget | null) => {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+
+  return Boolean(
+    target.closest(
+      '[data-inline-comment-actions-menu], [data-radix-popper-content-wrapper], [data-floating-ui-portal], [role="dialog"]',
+    ),
+  );
+};
+
 export interface UseFloatingLayoutEngineResult {
   floatingCardListContainerRef: RefObject<HTMLDivElement>;
   registerCardNode: (
@@ -579,8 +591,12 @@ export const useFloatingLayoutEngine = ({
 
   useOnClickOutside(
     focusedFloatingCardRef,
-    () => {
+    (event) => {
       if (!isDesktopFloatingEnabled || !focusedFloatingCardId) {
+        return;
+      }
+
+      if (isFloatingUiInteractionTarget(event.target)) {
         return;
       }
 

@@ -10,7 +10,7 @@ export const FloatingAuthPrompt = () => {
   const [name, setName] = useState('');
 
   return (
-    <div className="p-3 pt-0 flex flex-col gap-2">
+    <div className="p-3 flex pb-0 flex-col gap-2">
       <div className="flex gap-2">
         <TextField
           type="text"

@@ -1,10 +1,10 @@
 import { cn } from '@fileverse/ui';
 import { useCommentStore } from '../../../stores/comment-store';
 import { useCommentListContainer } from '../use-comment-list-container';
-import { FLOATING_CARD_WIDTH } from './constants';
 import { DraftFloatingCard } from './draft-floating-card';
 import { ThreadFloatingCard } from './thread-floating-card';
 import type { CommentFloatingContainerProps } from './types';
+import { FLOATING_CARD_WIDTH } from '../constants';
 
 export const CommentFloatingContainer = ({
   editor,

@@ -297,6 +297,7 @@ export const CommentCard = (props: CommentCardProps) => {
                       content={
                         <div
                           ref={dropdownRef}
+                          data-inline-comment-actions-menu
                           className="flex flex-col p-2 w-40 shadow-elevation-3"
                           onClick={(e) => e.stopPropagation()}
                         >

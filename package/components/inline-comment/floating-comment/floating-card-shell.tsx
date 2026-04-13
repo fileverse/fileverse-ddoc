@@ -1,8 +1,19 @@
 import { cn } from '@fileverse/ui';
 import { forwardRef } from 'react';
 import type { FloatingCardShellProps } from './types';
+import { FLOATING_CARD_WIDTH } from '../constants';
 
-export const FLOATING_CARD_WIDTH = 300;
+const isInteractiveFloatingCardTarget = (target: EventTarget | null) => {
+  if (!(target instanceof Element)) {
+    return false;
+  }
+
+  return Boolean(
+    target.closest(
+      'button, [role="button"], a, [data-inline-comment-actions-menu], [data-radix-popper-content-wrapper]',
+    ),
+  );
+};
 
 export const FloatingCardShell = forwardRef<
   HTMLDivElement,
@@ -24,7 +35,13 @@ export const FloatingCardShell = forwardRef<
         visibility: isHidden ? 'hidden' : 'visible',
         opacity: isHidden ? 0 : 1,
       }}
-      onMouseDown={onFocus}
+      onMouseDown={(event) => {
+        if (isInteractiveFloatingCardTarget(event.target)) {
+          return;
+        }
+
+        onFocus();
+      }}
     >
       {children}
     </div>

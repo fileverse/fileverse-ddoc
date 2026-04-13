@@ -510,7 +510,8 @@ const DdocEditor = forwardRef(
         {},
       );
     }, [initialComments]);
-    const baseWidth = documentStyling?.orientation === 'landscape' ? 1190 : 850;
+    const isLandscapeMode = documentStyling?.orientation === 'landscape';
+    const baseWidth = isLandscapeMode ? 1190 : 850;
 
     const zoom = Number(zoomLevel);
     const scaledWidth = baseWidth * zoom;
@@ -714,7 +715,10 @@ const DdocEditor = forwardRef(
             <div
               ref={editorScrollContainerRef}
               data-editor-scroll-container="true"
-              className={cn('flex w-full overflow-auto')}
+              className={cn(
+                'flex w-full overflow-auto',
+                isLandscapeMode && 'mx-[24px]',
+              )}
             >
               <div className="w-full h-full">
                 <div
@@ -761,7 +765,6 @@ const DdocEditor = forwardRef(
                               !isNavbarVisible && !isPreviewMode,
                           },
                           isFocusMode && 'mt-[48px]',
-                          // zoomLevel !== '1' && 'overflow-auto',
                         )}
                         style={{
                           ...(isMobile
