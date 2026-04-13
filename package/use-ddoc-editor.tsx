@@ -7,6 +7,7 @@ import { Editor } from '@tiptap/react';
 
 export const useDdocEditor = ({
   isPreviewMode,
+  viewerMode,
   initialContent,
   versionHistoryState,
   collaboration,
@@ -39,6 +40,7 @@ export const useDdocEditor = ({
   onIndexedDbError,
   disableInlineComment,
   initialCommentAnchors,
+  onNewComment,
   ...rest
 }: Partial<DdocProps> & { isFocusMode?: boolean }) => {
   const [isContentLoading, setIsContentLoading] = useState(true);
@@ -95,6 +97,7 @@ export const useDdocEditor = ({
   const tabEditor = useTabEditor({
     ydoc: yjsSetup.ydoc,
     isPreviewMode,
+    viewerMode,
     initialContent: ddocContent,
     collaboration,
     versionId: versionHistoryState?.versionId,
@@ -136,6 +139,7 @@ export const useDdocEditor = ({
     theme,
     editorRef,
     initialCommentAnchors,
+    onNewComment,
   });
 
   const isOwner = collabEnabled ? collaboration.connection.isOwner : true;

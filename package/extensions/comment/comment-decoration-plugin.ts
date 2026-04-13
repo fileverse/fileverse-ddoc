@@ -21,6 +21,7 @@ import {
   relativePositionToAbsolutePosition,
 } from '@tiptap/y-tiptap';
 import * as Y from 'yjs';
+import { SuggestionType } from '../../types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -32,6 +33,10 @@ export interface CommentAnchor {
   anchorTo: Y.RelativePosition;
   resolved: boolean;
   deleted: boolean;
+  isSuggestion?: boolean;
+  suggestionType?: SuggestionType;
+  originalContent?: string;
+  suggestedContent?: string;
 }
 
 interface CommentDecorationPluginState {
@@ -613,4 +618,62 @@ export function getCommentAnchorRange(
   }
 
   return resolveCommentAnchorRangeInState(anchor, editor.state);
+}
+
+/**
+ * Apply the accepted suggestion's change to the document.
+ * Called by the store's acceptSuggestion action before resolving on-chain.
+ * Returns false if the anchor can't be resolved or the suggestion type is unknown.
+ */
+export function applyAcceptedSuggestion(
+  editor: Editor,
+  anchor: CommentAnchor,
+): boolean {
+  if (!anchor.isSuggestion) return false;
+
+  const state = editor.state;
+  const syncState = ySyncPluginKey.getState(state);
+  if (!syncState?.binding) return false;
+
+  const { doc, type, binding } = syncState;
+
+  try {
+    const from = relativePositionToAbsolutePosition(
+      doc,
+      type,
+      anchor.anchorFrom,
+      binding.mapping,
+    );
+    const to = relativePositionToAbsolutePosition(
+      doc,
+      type,
+      anchor.anchorTo,
+      binding.mapping,
+    );
+
+    if (from === null || to === null) return false;
+    if (from < 0 || to > state.doc.content.size) return false;
+
+    const { suggestionType, suggestedContent } = anchor;
+    const { tr } = state;
+
+    if (suggestionType === 'add') {
+      if (!suggestedContent) return false;
+      tr.insertText(suggestedContent, from);
+    } else if (suggestionType === 'delete') {
+      if (from >= to) return false;
+      tr.delete(from, to);
+    } else if (suggestionType === 'replace') {
+      if (from >= to || !suggestedContent) return false;
+      // insertText with a range replaces from..to with the new text
+      tr.insertText(suggestedContent, from, to);
+    } else {
+      return false;
+    }
+
+    editor.view.dispatch(tr);
+    return true;
+  } catch {
+    return false;
+  }
 }

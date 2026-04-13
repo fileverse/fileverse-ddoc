@@ -1176,6 +1176,25 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   }
 }
 
+// Suggestion mode decorations
+.suggestion-delete {
+  @apply line-through cursor-pointer transition-all;
+  color: #EF4444;
+
+  .dark & {
+    color: #F87171;
+  }
+}
+
+.suggestion-add {
+  @apply underline cursor-pointer;
+  color: #16A34A;
+
+  .dark & {
+    color: #4ADE80;
+  }
+}
+
 // Hide inline comments visually when disabled
 .hide-inline-comments .inline-comment {
   background-color: transparent !important;

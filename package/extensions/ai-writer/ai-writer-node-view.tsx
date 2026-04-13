@@ -25,6 +25,7 @@ import {
 } from '@fileverse/ui';
 import styles from './ai-writer-node-view.module.scss';
 import { useResponsive } from '../../utils/responsive';
+import { useEditingContext } from '../../hooks/use-editing-context';
 import { TextSelection } from 'prosemirror-state';
 import { SuperchargedTableExtensions } from '../supercharged-table/supercharged-table-kit';
 import { ModelOption, WindowWithModelContext, ModelService } from './types';
@@ -54,7 +55,8 @@ export const AIWriterNodeView = memo(
     const textareaRef = useRef<HTMLTextAreaElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const selectContentRef = useRef<HTMLDivElement>(null);
-    const isPreviewMode = !parentEditor.isEditable;
+    const { isSuggestionMode } = useEditingContext();
+    const isPreviewMode = !parentEditor.isEditable || !!isSuggestionMode;
     // Add platform detection
     const { isWindows } = useResponsive();
     const shortcutKey = isWindows ? 'Ctrl' : 'Cmd';

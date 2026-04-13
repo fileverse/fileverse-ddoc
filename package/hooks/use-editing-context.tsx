@@ -6,6 +6,7 @@ type EditingContextType = {
   isPreviewMode: boolean;
   isPresentationMode?: boolean;
   isCollaboratorsDoc?: boolean;
+  isSuggestionMode?: boolean;
 };
 
 // Create a Context
@@ -13,6 +14,7 @@ const EditingContext = createContext<EditingContextType>({
   isPreviewMode: false,
   isPresentationMode: false,
   isCollaboratorsDoc: false,
+  isSuggestionMode: false,
 });
 
 // Create a Hook to use this Context
@@ -31,6 +33,7 @@ type EditingProviderProps = {
   isPresentationMode?: boolean;
   isCollaboratorsDoc?: boolean;
   isPreviewEditor?: boolean;
+  isSuggestionMode?: boolean;
 };
 
 // Create a Provider Component
@@ -40,6 +43,7 @@ export const EditingProvider: React.FC<EditingProviderProps> = ({
   isPresentationMode,
   isCollaboratorsDoc,
   isPreviewEditor,
+  isSuggestionMode,
 }) => {
   const value = useMemo(
     () => ({
@@ -47,8 +51,15 @@ export const EditingProvider: React.FC<EditingProviderProps> = ({
       isPresentationMode,
       isCollaboratorsDoc,
       isPreviewEditor,
+      isSuggestionMode,
     }),
-    [isPreviewMode, isPresentationMode, isCollaboratorsDoc, isPreviewEditor],
+    [
+      isPreviewMode,
+      isPresentationMode,
+      isCollaboratorsDoc,
+      isPreviewEditor,
+      isSuggestionMode,
+    ],
   );
   return (
     <EditingContext.Provider value={value}>{children}</EditingContext.Provider>

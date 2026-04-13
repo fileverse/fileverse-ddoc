@@ -3,6 +3,7 @@ import { createContext, useContext } from 'react';
 import React from 'react';
 import {
   CommentAnchor,
+  applyAcceptedSuggestion,
   createCommentAnchorFromEditor,
   resolveCommentAnchorRangeInState,
   triggerDecorationRebuild,
@@ -600,6 +601,7 @@ export interface CommentStoreState {
     commentId: string,
     options?: { skipExternalCallback?: boolean },
   ) => void;
+  acceptSuggestion: (commentId: string) => void;
   deleteReply: (commentId: string, replyId: string) => void;
   requestEditComment: (commentId: string) => void;
   requestEditReply: (commentId: string, replyId: string) => void;
@@ -2064,6 +2066,47 @@ export const createCommentStore = () =>
             state.pendingPrehydrationFloatingThreadIds,
             [commentId],
           ),
+      }));
+
+      if (get().activeCommentId === commentId) {
+        setActiveCommentId(null);
+      }
+    },
+    acceptSuggestion: (commentId) => {
+      const { editor, onResolveComment, setActiveCommentId, commentAnchorsRef } =
+        getExtDeps(get);
+
+      if (!editor) return;
+
+      const anchor = commentAnchorsRef?.current.find(
+        (a) => a.id === commentId && a.isSuggestion,
+      );
+
+      if (!anchor || !commentAnchorsRef) return;
+
+      const applied = applyAcceptedSuggestion(editor, anchor);
+      if (!applied) return;
+
+      commentAnchorsRef.current = commentAnchorsRef.current.filter(
+        (a) => a.id !== commentId,
+      );
+      triggerDecorationRebuild(editor);
+
+      onResolveComment?.(commentId, {
+        type: 'resolve',
+        suggestionType: anchor.suggestionType,
+        originalContent: anchor.originalContent,
+        suggestedContent: anchor.suggestedContent,
+      });
+
+      set((state) => ({
+        floatingCards: state.floatingCards.filter(
+          (floatingCard) =>
+            !(
+              floatingCard.type === 'thread' &&
+              floatingCard.commentId === commentId
+            ),
+        ),
       }));
 
       if (get().activeCommentId === commentId) {
