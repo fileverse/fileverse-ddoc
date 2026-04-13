@@ -7,7 +7,7 @@ import {
   Skeleton,
   Tooltip,
 } from '@fileverse/ui';
-import { useRef, useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   CommentCardProps,
   CommentReplyProps,
@@ -24,7 +24,7 @@ import {
 } from '../../utils/helpers';
 import { Spinner } from '../../common/spinner';
 import { DeleteConfirmOverlay } from './delete-confirm-overlay';
-import { useResponsive } from '../../utils/responsive';
+import { useCommentCard } from './use-comment-card';
 
 const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
   const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
@@ -179,116 +179,46 @@ const CommentReply = ({
   );
 };
 
-export const CommentCard = ({
-  username,
-  // selectedContent,
-  comment,
-  createdAt,
-  replies,
-  onResolve,
+export const CommentCard = (props: CommentCardProps) => {
+  const {
+    username,
+    // selectedContent,
+    comment,
+    createdAt,
+    isResolved,
+    version,
+    emptyComment,
+    id,
+    isDisabled,
+    isCommentOwner,
+    isCommentDrawerContext,
+    isDropdown,
+  } = props;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  onDelete: _onDelete,
-  onRequestDelete,
-  onUnresolve,
-  onFocusRequest,
-  isResolved,
-  isDropdown = false,
-  activeCommentId,
-  id,
-  isDisabled = false,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  isCommentOwner,
-  version,
-  emptyComment,
-  isFocused,
-  isCommentDrawerContext,
-}: CommentCardProps) => {
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [showAllReplies, setShowAllReplies] = useState(false);
-  const [isCommentExpanded, setIsCommentExpanded] = useState(false);
-  const commentsContainerRef = useRef<HTMLDivElement>(null);
-  const openReplyId = useCommentStore((s) => s.openReplyId);
-  const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
-  const ensCache = useCommentStore((s) => s.ensCache);
-  const { isBelow1280px } = useResponsive();
-  const [ensStatus, setEnsStatus] = useState<EnsStatus>({
-    name: username as string,
-    isEns: false,
-  });
-
-  useEffect(() => {
-    getEnsStatus(username as string, setEnsStatus);
-  }, [username, ensCache, getEnsStatus]);
-
-  const removePopoverContent = () => {
-    if (dropdownRef.current?.parentElement) {
-      const popoverContent = dropdownRef.current.closest('[role="dialog"]');
-      if (popoverContent) {
-        popoverContent.remove();
-      }
-    }
-  };
-  const shouldKeepDropdownExpanded = isDropdown && isFocused === undefined;
-  const isCardActive = Boolean(
-    isFocused || (!isDropdown && id === activeCommentId),
-  );
-
-  useEffect(() => {
-    if (shouldKeepDropdownExpanded) {
-      setShowAllReplies(true);
-    }
-
-    if (!shouldKeepDropdownExpanded && !isCardActive) {
-      setShowAllReplies(false);
-      setIsCommentExpanded(false);
-    }
-
-    if (commentsContainerRef.current && replies) {
-      commentsContainerRef.current.scrollTo({
-        top: commentsContainerRef.current.scrollHeight,
-        behavior: 'smooth',
-      });
-    }
-  }, [shouldKeepDropdownExpanded, isCardActive, replies]);
-
-  const handleResolveClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    onResolve?.(id as string);
-    removePopoverContent();
-  };
-
-  const handleRequestDeleteClick = () => {
-    onRequestDelete?.(id as string);
-    removePopoverContent();
-  };
-
-  const handleUnresolveClick = () => {
-    onUnresolve?.(id as string);
-    removePopoverContent();
-  };
-  const focusCardIfNeeded = () => {
-    if (!isCardActive) {
-      onFocusRequest?.();
-    }
-  };
-  const handleCommentExpandClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (isCommentMobileFocused || !isBelow1280px) {
-      e.stopPropagation();
-    }
-    focusCardIfNeeded();
-    setIsCommentExpanded((prev) => !prev);
-  };
-  const handleReplyToggleClick = (e: React.MouseEvent<HTMLElement>) => {
-    if (isCommentMobileFocused || !isBelow1280px) {
-      e.stopPropagation();
-    }
-
-    focusCardIfNeeded();
-    setShowAllReplies((prev) => !prev);
-  };
-  const isCommentMobileFocused = isBelow1280px && Boolean(openReplyId);
-  const shouldShowReplyThread = !isBelow1280px || isCommentMobileFocused;
-  const replyThreadCount = shouldShowReplyThread ? 2 : 0;
+  const { onDelete: _onDelete } = props;
+  const {
+    commentsContainerRef,
+    displayedComment,
+    displayedReplies,
+    dropdownRef,
+    ensStatus,
+    focusCardIfNeeded,
+    handleCommentExpandClick,
+    handleReplyToggleClick,
+    handleRequestDeleteClick,
+    handleResolveClick,
+    handleUnresolveClick,
+    isBelow1280px,
+    isCommentExpanded,
+    isCommentMobileFocused,
+    isCommentTruncated,
+    replyToggleLabel,
+    shouldShowReplyThread,
+    shouldShowReplyToggle,
+    shouldShowResolvedMobileReplyCount,
+    showAllReplies,
+    visibleReplies,
+  } = useCommentCard(props);
 
   if (emptyComment)
     return (
@@ -311,39 +241,6 @@ export const CommentCard = ({
         </div>
       </div>
     );
-
-  const isCommentTruncated = Boolean(comment && comment.length > 70);
-
-  const displayedComment =
-    comment && isCommentTruncated && !isCommentExpanded
-      ? comment.slice(0, 70) + '...'
-      : comment;
-  // Keep reply derivation inline here. The previous memoized helper hid stale
-  // dependencies around resolution and mobile focus state.
-  const visibleReplies = (replies || []).filter((reply) => !reply.deleted);
-  let displayedReplies = [...visibleReplies].sort(
-    (a, b) =>
-      new Date(a.createdAt || new Date()).getTime() -
-      new Date(b.createdAt || new Date()).getTime(),
-  );
-
-  if (!showAllReplies && visibleReplies.length > 3) {
-    displayedReplies = displayedReplies.slice(-2);
-  }
-
-  const shouldShowMinimizedReplies =
-    isBelow1280px && !isCommentMobileFocused
-      ? visibleReplies.length > 0
-      : visibleReplies.length > 3 && !showAllReplies;
-  const shouldShowResolvedMobileReplyCount =
-    isResolved && isCommentMobileFocused && !showAllReplies;
-  const shouldShowReplyToggle =
-    shouldShowMinimizedReplies ||
-    (shouldShowReplyThread && visibleReplies.length > 3 && showAllReplies) ||
-    (isResolved && isCommentMobileFocused && showAllReplies);
-  const replyToggleLabel = showAllReplies
-    ? 'Hide replies'
-    : `${visibleReplies.length - replyThreadCount} ${replyThreadCount > 0 ? 'more ' : ''}replies in this thread`;
 
   return (
     <div
@@ -451,37 +348,11 @@ export const CommentCard = ({
         <div
           className={cn(
             'flex flex-col gap-2   pl-[18px] custom-border py-0',
-            // (isFocused || (replies || []).length > 0) && 'pb-3',
-            (
-              isBelow1280px
-                ? isCommentMobileFocused
-                : (replies || []).length > 0
-            )
+            (isBelow1280px ? isCommentMobileFocused : visibleReplies.length > 0)
               ? 'border-l ml-[13px]'
               : 'ml-[15px]',
           )}
         >
-          {/* {selectedContent && (
-          <div className="highlight-comment-bg p-1 rounded-lg">
-            <div className="relative">
-              <span
-                className={cn('text-body-sm italic block break-all', {
-                  'line-clamp-2': !isExpanded && selectedContent.length > 70,
-                })}
-              >
-                "{selectedContent}"
-              </span>
-              {selectedContent.length > 70 && (
-                <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className="text-helper-text-sm pt-1 color-text-secondary hover:underline"
-                >
-                  {isExpanded ? 'Show less' : 'Show more'}
-                </button>
-              )}
-            </div>
-          </div>
-        )} */}
           {comment && (
             <div>
               <div className="text-body-sm whitespace-pre-wrap break-words">

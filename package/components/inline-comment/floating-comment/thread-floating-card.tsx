@@ -1,0 +1,203 @@
+import { Avatar, Button, cn, TextAreaFieldV2 } from '@fileverse/ui';
+import { useEffect, useRef, useState } from 'react';
+import { useCommentStore } from '../../../stores/comment-store';
+import { CommentCard } from '../comment-card';
+import { DeleteConfirmOverlay } from '../delete-confirm-overlay';
+import { resizeInlineCommentTextarea } from '../resize-inline-comment-textarea';
+import { FloatingAuthPrompt } from './floating-auth-prompt';
+import { FloatingCardShell } from './floating-card-shell';
+import type { ThreadFloatingCardProps } from './types';
+
+export const ThreadFloatingCard = ({
+  thread,
+  comment,
+  tabName,
+  isHidden,
+  registerCardNode,
+}: ThreadFloatingCardProps) => {
+  const focusFloatingCard = useCommentStore((s) => s.focusFloatingCard);
+  const focusCommentInEditor = useCommentStore((s) => s.focusCommentInEditor);
+  const isConnected = useCommentStore((s) => s.isConnected);
+  const resolveComment = useCommentStore((s) => s.resolveComment);
+
+  const username = useCommentStore((s) => s.username);
+  const deleteComment = useCommentStore((s) => s.deleteComment);
+  const isDDocOwner = useCommentStore((s) => s.isDDocOwner);
+  const [isDeleteOverlayVisible, setIsDeleteOverlayVisible] = useState(false);
+
+  const isCommentOwner =
+    Boolean(comment?.username && comment.username === username) || isDDocOwner;
+
+  const handleDeleteOverlayOpen = () => {
+    if (!thread.commentId) {
+      return;
+    }
+
+    setIsDeleteOverlayVisible(true);
+  };
+
+  const handleDeleteOverlayClose = () => {
+    setIsDeleteOverlayVisible(false);
+  };
+
+  const handleConfirmDelete = () => {
+    if (!thread.commentId) {
+      return;
+    }
+
+    setIsDeleteOverlayVisible(false);
+    deleteComment(thread.commentId);
+  };
+
+  const handleThreadFocus = () => {
+    focusFloatingCard(thread.floatingCardId);
+
+    if (!thread.isFocused && thread.commentId) {
+      focusCommentInEditor(thread.commentId);
+    }
+  };
+
+  return (
+    <FloatingCardShell
+      ref={(node) => registerCardNode(thread.floatingCardId, node)}
+      floatingCardId={thread.floatingCardId}
+      isHidden={isHidden}
+      isFocused={thread.isFocused}
+      onFocus={handleThreadFocus}
+    >
+      <div className="flex flex-col gap-[8px]">
+        <p className="text-helper-text-sm px-[12px] pt-[12px] h-[26px] max-w-[270px] truncate color-text-secondary">
+          {tabName}
+        </p>
+        <CommentCard
+          id={comment?.id}
+          username={comment?.username}
+          selectedContent={comment?.selectedContent || thread.selectedText}
+          comment={comment?.content}
+          createdAt={comment?.createdAt}
+          isFocused={thread.isFocused}
+          onFocusRequest={handleThreadFocus}
+          replies={comment?.replies}
+          isResolved={comment?.resolved}
+          isDropdown
+          onResolve={resolveComment}
+          onRequestDelete={handleDeleteOverlayOpen}
+          isCommentOwner={isCommentOwner}
+          isDisabled={Boolean(
+            comment &&
+              !Object.prototype.hasOwnProperty.call(comment, 'commentIndex'),
+          )}
+          version={comment?.version}
+          emptyComment={!comment}
+        />
+        {thread.isFocused && !isConnected && <FloatingAuthPrompt />}
+        <InputField comment={comment} thread={thread} />
+        <DeleteConfirmOverlay
+          isVisible={isDeleteOverlayVisible}
+          title="Delete this comment thread ?"
+          onCancel={handleDeleteOverlayClose}
+          onConfirm={handleConfirmDelete}
+        />
+      </div>
+    </FloatingCardShell>
+  );
+};
+
+const InputField = ({
+  comment,
+  thread,
+}: {
+  comment: ThreadFloatingCardProps['comment'];
+  thread: ThreadFloatingCardProps['thread'];
+}) => {
+  const username = useCommentStore((s) => s.username);
+  const [isReplyInputFocused, setIsReplyInputFocused] = useState(false);
+  const canReply = !comment?.resolved && Boolean(comment);
+  const setCommentDrawerOpen = useCommentStore((s) => s.setCommentDrawerOpen);
+  const handleAddReply = useCommentStore((s) => s.handleAddReply);
+  const replyTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const [replyText, setReplyText] = useState('');
+  const isConnected = useCommentStore((s) => s.isConnected);
+  const onReplySubmit = () => {
+    if (!thread.commentId || !replyText.trim()) {
+      return;
+    }
+
+    if (!isConnected) {
+      setCommentDrawerOpen?.(true);
+      return;
+    }
+
+    handleAddReply(thread.commentId, replyText);
+    setReplyText('');
+  };
+  const hasUnsentReply = Boolean(replyText.trim());
+  const shouldShowReplyInputField =
+    isConnected && (thread.isFocused || hasUnsentReply);
+
+  useEffect(() => {
+    if (!replyTextareaRef.current) {
+      return;
+    }
+
+    resizeInlineCommentTextarea(replyTextareaRef.current);
+  }, [replyText]);
+  if (!shouldShowReplyInputField) return;
+  return (
+    <div className="group p-3 pt-0">
+      <div className="border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
+        <Avatar
+          src={`https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+            username || '',
+          )}`}
+          className="w-[16px] h-[16px]"
+        />
+        <TextAreaFieldV2
+          ref={replyTextareaRef}
+          value={replyText}
+          onChange={(event) => {
+            setReplyText(event.target.value);
+            resizeInlineCommentTextarea(event.currentTarget);
+          }}
+          onFocus={() => setIsReplyInputFocused(true)}
+          onBlur={() => setIsReplyInputFocused(false)}
+          onInput={(event) => resizeInlineCommentTextarea(event.currentTarget)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && (!event.shiftKey || event.metaKey)) {
+              event.preventDefault();
+              onReplySubmit();
+            }
+          }}
+          className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
+          placeholder={canReply ? 'Add a reply' : 'Thread resolved'}
+          disabled={!canReply}
+        />
+      </div>
+      <div
+        className={cn(
+          'items-center justify-end gap-2 pt-2',
+          hasUnsentReply || isReplyInputFocused ? 'flex' : 'hidden',
+        )}
+      >
+        <Button
+          variant="ghost"
+          className="w-20 min-w-20"
+          onClick={(event) => {
+            event.stopPropagation();
+            setReplyText('');
+            setIsReplyInputFocused(false);
+          }}
+        >
+          <p className="text-body-sm-bold">Cancel</p>
+        </Button>
+        <Button
+          className="w-20 min-w-20"
+          disabled={!canReply || !replyText.trim()}
+          onClick={onReplySubmit}
+        >
+          Send
+        </Button>
+      </div>
+    </div>
+  );
+};
