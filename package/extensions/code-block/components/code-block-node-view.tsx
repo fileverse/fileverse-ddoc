@@ -45,7 +45,20 @@ const LANGUAGE_GROUPS = [
       { label: 'Python', value: 'python' },
       { label: 'Bash', value: 'bash' },
       { label: 'Ruby', value: 'ruby' },
+      { label: 'PHP', value: 'php' },
     ],
+  },
+  {
+    label: 'Data',
+    options: [
+      { label: 'SQL', value: 'sql' },
+      { label: 'YAML', value: 'yaml' },
+      { label: 'XML', value: 'xml' },
+    ],
+  },
+  {
+    label: 'Build',
+    options: [{ label: 'Makefile', value: 'makefile' }],
   },
   {
     label: 'JVM',
