@@ -1,4 +1,5 @@
 import Color, { ColorInstance } from 'color';
+import { ThemeKey } from '../types';
 
 export const colors = [
   { color: '#000000', code: 'bg-[#000000]' },
@@ -637,7 +638,7 @@ function darkenBy(color: ColorInstance, ratio: number) {
 
 export const getResponsiveColor = (
   color?: string,
-  theme: 'light' | 'dark' = 'light',
+  theme: ThemeKey = 'light',
 ) => {
   if (!color) return;
   try {

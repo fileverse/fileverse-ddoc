@@ -9,7 +9,7 @@ import {
   MutableRefObject,
   SetStateAction,
 } from 'react';
-import { DdocProps, DdocEditorProps } from '../types';
+import { DdocProps, DdocEditorProps, ThemeKey } from '../types';
 import * as Y from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration';
 import { defaultExtensions } from '../extensions/default-extension';
@@ -131,7 +131,7 @@ interface UseTabEditorArgs {
   externalExtensions?: Record<string, AnyExtension>;
   isContentLoading?: boolean;
   activeTabId: string;
-  theme?: 'dark' | 'light';
+  theme?: ThemeKey;
   editorRef?: MutableRefObject<Editor | null>;
 }
 

@@ -372,7 +372,9 @@ function App() {
           </div>
           <Tag
             icon="BadgeCheck"
-            className="h-6 rounded !border !color-border-default color-text-secondary text-[12px] font-normal hidden xl:flex"
+            variant="transparent"
+            className="h-6 rounded border color-border-default color-text-secondary text-[12px] font-normal hidden xl:flex"
+            style={{ backgroundColor: 'hsl(var(--color-bg-secondary))' }}
           >
             {lastSavedAt ? 'Saved' : 'Not saved yet'}
           </Tag>

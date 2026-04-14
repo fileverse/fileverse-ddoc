@@ -190,7 +190,7 @@ export const DocumentMobileTabPanel = ({
         label: 'Delete',
         icon: 'Trash2' as const,
         textClassName: 'color-text-danger',
-        iconStroke: '#FB3449',
+        iconStroke: 'hsl(var(--color-icon-danger))',
         onSelect: () => {
           if (!activeTab || !deleteTab || !canDeleteTab) return;
           setPendingDeleteTab(activeTab);
