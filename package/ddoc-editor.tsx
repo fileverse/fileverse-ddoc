@@ -144,7 +144,14 @@ const DdocEditor = forwardRef(
     }: DdocProps,
     ref,
   ) => {
-    const { isFocusMode, toggleFocusMode } = useFocusMode({ onFocusMode });
+    const { isFocusMode, toggleFocusMode } = useFocusMode({
+      onFocusMode: (value) => {
+        if (commentDrawerOpen) {
+          setCommentDrawerOpen?.(false);
+        }
+        onFocusMode?.(value);
+      },
+    });
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const exportTriggerRef = useRef<

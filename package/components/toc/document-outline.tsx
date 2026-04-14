@@ -72,6 +72,7 @@ export const DocumentOutline = ({
       isVersionHistoryMode={isVersionHistoryMode}
       tabConfig={tabConfig}
       isConnected={isConnected}
+      isFocusMode={isFocusMode}
     />
   ) : (
     <DocumentMobileTabPanel
