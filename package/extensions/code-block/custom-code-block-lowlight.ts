@@ -181,6 +181,68 @@ export const CustomCodeBlockLowlight = CodeBlockLowlight.extend({
           return true;
         });
       },
+      Enter: () => {
+        if (!this.editor.isActive('codeBlock')) return false;
+        const editor = this.editor;
+        const { state } = editor;
+        const { selection } = state;
+        const { $from, empty } = selection;
+
+        if (!empty || $from.parent.type.name !== 'codeBlock') return false;
+
+        const isAtEnd = $from.parentOffset === $from.parent.nodeSize - 2;
+        const endsWithDoubleNewline = $from.parent.textContent.endsWith('\n\n');
+
+        // Triple-enter exit: delete the two trailing newlines and create a
+        // new dBlock after the enclosing dBlock.
+        if (isAtEnd && endsWithDoubleNewline) {
+          return editor
+            .chain()
+            .command(({ tr, dispatch }) => {
+              if (dispatch) {
+                tr.delete($from.pos - 2, $from.pos);
+              }
+              return true;
+            })
+            .command(({ tr, state, dispatch }) => {
+              const { $from } = state.selection;
+              // Find the enclosing dBlock (codeBlock's parent).
+              let dBlockDepth = -1;
+              for (let d = $from.depth; d >= 0; d--) {
+                if ($from.node(d).type.name === 'dBlock') {
+                  dBlockDepth = d;
+                  break;
+                }
+              }
+              if (dBlockDepth === -1) return false;
+
+              const dBlockEnd = $from.after(dBlockDepth);
+              const dBlockType = state.schema.nodes.dBlock;
+              const paragraphType = state.schema.nodes.paragraph;
+              if (!dBlockType || !paragraphType) return false;
+
+              const newDBlock = dBlockType.create(
+                null,
+                paragraphType.create(),
+              );
+
+              if (dispatch) {
+                tr.insert(dBlockEnd, newDBlock);
+                // Cursor at start of the new paragraph (dBlockEnd + 2:
+                // +1 enters dBlock, +1 enters paragraph).
+                tr.setSelection(
+                  TextSelection.create(tr.doc, dBlockEnd + 2),
+                );
+              }
+              return true;
+            })
+            .focus()
+            .run();
+        }
+
+        // Default: insert a single newline inside the code block.
+        return editor.commands.newlineInCode();
+      },
       Backspace: () => {
         if (!this.editor.isActive('codeBlock')) return false;
         return this.editor.commands.command(({ tr, state }) => {
