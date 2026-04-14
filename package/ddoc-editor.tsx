@@ -111,6 +111,7 @@ const DdocEditor = forwardRef(
       initialComments = [],
       initialCommentAnchors,
       onNewComment,
+      onEditComment,
       onCommentReply,
       setInitialComments,
       onSlidesShare,
@@ -1158,6 +1159,7 @@ const DdocEditor = forwardRef(
               initialComments={initialComments}
               setInitialComments={setInitialComments}
               onNewComment={onNewComment}
+              onEditComment={onEditComment}
               onCommentReply={onCommentReply}
               onResolveComment={onResolveComment}
               onUnresolveComment={onUnresolveComment}

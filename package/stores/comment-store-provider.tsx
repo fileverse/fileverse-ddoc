@@ -1,10 +1,15 @@
+/* eslint-disable react-refresh/only-export-components */
 import React, { useEffect, useMemo, useRef } from 'react';
-import { Editor } from '@tiptap/react';
+import { combineTransactionSteps, Editor } from '@tiptap/core';
+import { EditorState, Transaction } from '@tiptap/pm/state';
+import { fromUint8Array } from 'js-base64';
 import { useOnClickOutside } from 'usehooks-ts';
 import * as Y from 'yjs';
 import { IComment } from '../extensions/comment';
 import {
+  analyzeCommentAnchorTransactionChanges,
   CommentAnchor,
+  type CommentAnchorTransactionChange,
   getCommentAtPosition,
   triggerDecorationRebuild,
 } from '../extensions/comment/comment-decoration-plugin';
@@ -25,6 +30,7 @@ export interface CommentStoreProviderProps {
   focusCommentWithActiveId: (id: string) => void;
   setInitialComments?: React.Dispatch<React.SetStateAction<IComment[]>>;
   onNewComment?: (comment: IComment, meta?: CommentMutationMeta) => void;
+  onEditComment?: (commentId: string, meta?: CommentMutationMeta) => void;
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
   onResolveComment?: (commentId: string, meta?: CommentMutationMeta) => void;
   onUnresolveComment?: (commentId: string, meta?: CommentMutationMeta) => void;
@@ -58,6 +64,7 @@ export const CommentStoreProvider = ({
   focusCommentWithActiveId,
   setInitialComments,
   onNewComment,
+  onEditComment,
   onCommentReply,
   onResolveComment,
   onUnresolveComment,
@@ -85,7 +92,15 @@ export const CommentStoreProvider = ({
   const isDesktopFloatingEnabled =
     !isBelow1280px && !isNativeMobile && !isFocusMode;
 
+  // Capture pre-transaction editor state for anchor analysis.
+  // Updated just before each doc-changing transaction via 'beforeTransaction'.
+  // Consumed in 'transaction' handler to analyze anchor mutation status.
+  const preTransactionStateRef = useRef<EditorState | null>(null);
+
   // --- External deps ref — always current, never triggers re-renders ---
+  // Store callback pointers in a ref so transaction handlers don't need
+  // dependency array changes. This keeps them focused on editor changes, not prop updates.
+  // Update ref on every render — no set(), no re-render loop.
   const externalDepsRef = useRef<CommentExternalDeps>({
     editor,
     ydoc,
@@ -94,6 +109,7 @@ export const CommentStoreProvider = ({
     setInitialComments,
     setUsername: setUsernameProp,
     onNewComment,
+    onEditComment,
     onCommentReply,
     onResolveComment,
     onUnresolveComment,
@@ -116,6 +132,7 @@ export const CommentStoreProvider = ({
     setInitialComments,
     setUsername: setUsernameProp,
     onNewComment,
+    onEditComment,
     onCommentReply,
     onResolveComment,
     onUnresolveComment,
@@ -146,7 +163,10 @@ export const CommentStoreProvider = ({
     if (!initialCommentAnchors || !commentAnchorsRef) return;
 
     const key = initialCommentAnchors
-      .map((a) => `${a.id}:${a.resolved}:${a.deleted}`)
+      .map(
+        (a) =>
+          `${a.id}:${a.anchorFrom}:${a.anchorTo}:${a.resolved}:${a.deleted}`,
+      )
       .join(',');
     if (key === prevAnchorKeyRef.current) return;
     prevAnchorKeyRef.current = key;
@@ -321,13 +341,164 @@ export const CommentStoreProvider = ({
       }
     };
 
-    const handleTransaction = ({
+    const handleBeforeTransaction = ({
       transaction,
     }: {
-      transaction: { docChanged?: boolean; selectionSet: boolean };
+      transaction: Transaction;
     }) => {
-      // Keep the transaction listener focused on active-comment/editor sync.
-      // Floating-card pruning now belongs to semantic events and anchor loss handling.
+      if (!transaction.docChanged) {
+        return;
+      }
+
+      // Capture editor state BEFORE transaction applies.
+      // Used in handleTransaction to analyze how anchors changed.
+      preTransactionStateRef.current = editor.state;
+    };
+
+    const handleTransaction = ({
+      transaction,
+      appendedTransactions = [],
+    }: {
+      transaction: Transaction;
+      appendedTransactions?: Transaction[];
+    }) => {
+      if (transaction.docChanged) {
+        const oldState = preTransactionStateRef.current;
+        preTransactionStateRef.current = null;
+
+        // Transaction analysis and persistence orchestration.
+        // This is the main flow for persisting anchor edits and deletions.
+        if (commentAnchorsRef && oldState) {
+          // Analyze only active (not deleted/resolved) anchors.
+          // Resolved and deleted anchors have no visual representation and don't need updates.
+          const activeAnchors = commentAnchorsRef.current.filter(
+            (anchor) => !anchor.deleted && !anchor.resolved,
+          );
+
+          if (activeAnchors.length > 0) {
+            // Combine transaction and appended steps into a single transform.
+            // Multi-step transactions (e.g., IME input, paste-over-selection) must be
+            // analyzed as a unified change, not individually.
+            const combinedTransform = combineTransactionSteps(
+              transaction.before,
+              [transaction, ...appendedTransactions],
+            );
+
+            // Analyze anchor changes using the pure helper from comment-decoration-plugin.
+            // Returns an array classifying each anchor as: unchanged, edited, or deleted.
+            const anchorChanges = analyzeCommentAnchorTransactionChanges(
+              activeAnchors,
+              oldState,
+              editor.state,
+              combinedTransform,
+            );
+
+            // Separate edited and deleted anchors for batch processing.
+            const editedChanges = anchorChanges.filter(
+              (
+                change,
+              ): change is Extract<
+                CommentAnchorTransactionChange,
+                { type: 'edited' }
+              > => change.type === 'edited',
+            );
+            const deletedChanges = anchorChanges.filter(
+              (
+                change,
+              ): change is Extract<
+                CommentAnchorTransactionChange,
+                { type: 'deleted' }
+              > => change.type === 'deleted',
+            );
+
+            // Process edited anchors first.
+            // This keeps the anchor ref stable before removal (deleted processing).
+            if (editedChanges.length > 0) {
+              // Build a map for quick lookup during ref update.
+              const editedAnchorById = new Map(
+                editedChanges.map((change) => [change.id, change]),
+              );
+
+              // Build payload for each edited anchor.
+              // Payload includes new quoted text (selected content) and relative positions.
+              const editPayloads = editedChanges.map((change) => ({
+                commentId: change.id,
+                selectedContent: editor.state.doc.textBetween(
+                  change.from,
+                  change.to,
+                  ' ',
+                ),
+                mutationMeta: {
+                  type: 'edit' as const,
+                  anchorFrom: fromUint8Array(
+                    Y.encodeRelativePosition(change.anchorFrom),
+                  ),
+                  anchorTo: fromUint8Array(
+                    Y.encodeRelativePosition(change.anchorTo),
+                  ),
+                  selectedContent: editor.state.doc.textBetween(
+                    change.from,
+                    change.to,
+                    ' ',
+                  ),
+                } satisfies CommentMutationMeta,
+              }));
+
+              // Batch-update commentAnchorsRef with new relative positions.
+              // This ensures decoration rebuilds use the updated anchors.
+              commentAnchorsRef.current = commentAnchorsRef.current.map(
+                (anchor) => {
+                  const editedAnchor = editedAnchorById.get(anchor.id);
+
+                  if (!editedAnchor) {
+                    return anchor;
+                  }
+
+                  return {
+                    ...anchor,
+                    anchorFrom: editedAnchor.anchorFrom,
+                    anchorTo: editedAnchor.anchorTo,
+                  };
+                },
+              );
+
+              // Update local comment state with new selected content.
+              // This keeps thread content in sync immediately, before consumer rehydration.
+              store.getState().applyCommentAnchorEdits(
+                editPayloads.map(({ commentId, selectedContent }) => ({
+                  commentId,
+                  selectedContent,
+                })),
+              );
+
+              // Trigger decoration rebuild if no deletions follow.
+              // If deletions exist, rebuild once after deletion cleanup to avoid double repaints.
+              if (deletedChanges.length === 0) {
+                triggerDecorationRebuild(editor);
+              }
+
+              // Fire persistence callbacks for edited anchors.
+              // Consumer uses these to update persisted anchor data (e.g., in DB).
+              editPayloads.forEach(({ commentId, mutationMeta }) => {
+                externalDepsRef.current.onEditComment?.(
+                  commentId,
+                  mutationMeta,
+                );
+              });
+            }
+
+            // Process deleted anchors after edits.
+            // Deletions route through store.deleteComment() to ensure consistent cleanup:
+            // anchor removal, active-comment state reset, floating-card removal, and onDeleteComment callback.
+            deletedChanges.forEach((change) => {
+              store.getState().deleteComment(change.id);
+            });
+          }
+        }
+      }
+
+      // Sync active comment state based on cursor position.
+      // This enables auto-opening floating threads when user lands on an existing anchor.
       if (transaction.selectionSet || transaction.docChanged) {
         updateEditorState();
       }
@@ -335,11 +506,22 @@ export const CommentStoreProvider = ({
 
     // Keep this effect subscribed to editor-driven changes only. Re-running it
     // for sidebar/thread focus changes lets stale editor selection win again.
+    // Subscription lifecycle:
+    // - updateEditorState called immediately to establish initial active comment
+    // - beforeTransaction captures pre-state once per doc change
+    // - transaction analyzes and persists anchor changes
+    // - selectionUpdate + (re)selection tracking keeps floating threads in sync
+    //
+    // Dependency array intentionally excludes activeCommentId, store setters, etc.
+    // to keep this subscription stable and focused on editor changes only.
     updateEditorState();
+    editor.on('beforeTransaction', handleBeforeTransaction);
     editor.on('selectionUpdate', updateEditorState);
     editor.on('transaction', handleTransaction);
 
     return () => {
+      preTransactionStateRef.current = null;
+      editor.off('beforeTransaction', handleBeforeTransaction);
       editor.off('selectionUpdate', updateEditorState);
       editor.off('transaction', handleTransaction);
     };

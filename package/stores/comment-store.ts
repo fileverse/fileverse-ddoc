@@ -35,6 +35,7 @@ export interface CommentExternalDeps {
   setInitialComments?: React.Dispatch<React.SetStateAction<IComment[]>>;
   setUsername?: React.Dispatch<React.SetStateAction<string>>;
   onNewComment?: (comment: IComment, meta?: CommentMutationMeta) => void;
+  onEditComment?: (commentId: string, meta?: CommentMutationMeta) => void;
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
   onResolveComment?: (commentId: string, meta?: CommentMutationMeta) => void;
   onUnresolveComment?: (commentId: string, meta?: CommentMutationMeta) => void;
@@ -285,6 +286,15 @@ export interface CommentStoreState {
   removeInvalidFloatingCards: () => void;
   syncFloatingThreadCardWithActiveComment: () => void;
   submitPendingFloatingDrafts: () => void;
+  /**
+   * Apply anchor edits to local comment state.
+   * Called after transaction analysis identifies edited anchors.
+   * Updates selectedContent for each affected comment
+   * so thread display stays in sync immediately, before consumer rehydration.
+   */
+  applyCommentAnchorEdits: (
+    edits: Array<{ commentId: string; selectedContent: string }>,
+  ) => void;
   resolveComment: (commentId: string) => void;
   unresolveComment: (commentId: string) => void;
   deleteComment: (commentId: string) => void;
@@ -1266,6 +1276,72 @@ export const createCommentStore = () =>
           get().submitInlineDraft(draft.draftId);
         });
     },
+    applyCommentAnchorEdits: (edits) => {
+      // Batch-update selected content for edited anchors.
+      // This is called after transaction analysis, BEFORE persistence callbacks.
+      // Ensures local UI reflects anchor edits immediately, even if persistence is async.
+      if (edits.length === 0) {
+        return;
+      }
+
+      const nextSelectedContentById = new Map(
+        edits.map((edit) => [edit.commentId, edit.selectedContent]),
+      );
+      const nextComments = get().initialComments.map((comment) => {
+        const nextSelectedContent = nextSelectedContentById.get(
+          comment.id || '',
+        );
+
+        if (nextSelectedContent === undefined) {
+          return comment;
+        }
+
+        return {
+          ...comment,
+          selectedContent: nextSelectedContent,
+        };
+      });
+
+      get().setInitialComments(nextComments);
+
+      getExtDeps(get).setInitialComments?.((previousComments) =>
+        previousComments.map((comment) => {
+          const nextSelectedContent = nextSelectedContentById.get(
+            comment.id || '',
+          );
+
+          if (nextSelectedContent === undefined) {
+            return comment;
+          }
+
+          return {
+            ...comment,
+            selectedContent: nextSelectedContent,
+          };
+        }),
+      );
+
+      set((state) => ({
+        floatingCards: state.floatingCards.map((floatingCard) => {
+          if (floatingCard.type !== 'thread') {
+            return floatingCard;
+          }
+
+          const nextSelectedContent = nextSelectedContentById.get(
+            floatingCard.commentId,
+          );
+
+          if (nextSelectedContent === undefined) {
+            return floatingCard;
+          }
+
+          return {
+            ...floatingCard,
+            selectedText: nextSelectedContent,
+          };
+        }),
+      }));
+    },
     resolveComment: (commentId) => {
       const {
         editor,
@@ -1330,8 +1406,13 @@ export const createCommentStore = () =>
       }
     },
     deleteComment: (commentId) => {
-      const { editor, onDeleteComment, setActiveCommentId, commentAnchorsRef } =
-        getExtDeps(get);
+      const {
+        editor,
+        onDeleteComment,
+        setActiveCommentId,
+        commentAnchorsRef,
+        setInitialComments,
+      } = getExtDeps(get);
 
       if (!editor) return;
 
@@ -1340,6 +1421,17 @@ export const createCommentStore = () =>
       );
 
       if (isDecoration && commentAnchorsRef) {
+        const nextComments = get().initialComments.map((comment) =>
+          comment.id === commentId ? { ...comment, deleted: true } : comment,
+        );
+
+        get().setInitialComments(nextComments);
+        setInitialComments?.((previousComments) =>
+          previousComments.map((comment) =>
+            comment.id === commentId ? { ...comment, deleted: true } : comment,
+          ),
+        );
+
         commentAnchorsRef.current = commentAnchorsRef.current.filter(
           (a) => a.id !== commentId,
         );

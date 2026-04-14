@@ -41,13 +41,19 @@ export type InlineCommentData = {
   handleClick: boolean;
 };
 
-export type CommentMutationType = 'create' | 'resolve' | 'unresolve' | 'delete';
+export type CommentMutationType =
+  | 'create'
+  | 'edit'
+  | 'resolve'
+  | 'unresolve'
+  | 'delete';
 
 export interface CommentMutationMeta {
   type: CommentMutationType;
   updateChunk?: string;
   anchorFrom?: string;
   anchorTo?: string;
+  selectedContent?: string;
 }
 
 export interface SerializedCommentAnchor {
@@ -150,6 +156,7 @@ export interface DdocProps extends CommentAccountProps {
   setInitialComments?: React.Dispatch<SetStateAction<IComment[]>>;
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
   onNewComment?: (newComment: IComment, meta?: CommentMutationMeta) => void;
+  onEditComment?: (activeCommentId: string, meta?: CommentMutationMeta) => void;
   onResolveComment?: (
     activeCommentId: string,
     meta?: CommentMutationMeta,
