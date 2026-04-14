@@ -9,6 +9,8 @@ import { stripFrontmatter } from '../extensions/mardown-paste-handler';
 import { extractTitleFromContent } from '../utils/extract-title-from-content';
 import { getTemporaryEditor } from '../utils/helpers';
 import { handleContentPrint } from '../utils/handle-print';
+import { htmlToOdt } from 'odf-kit';
+import { preprocessHtml } from '../extensions/odt-export';
 
 interface UseDdocExportArgs {
   editor: Editor | null;
@@ -44,6 +46,7 @@ const useDdocExport = ({
     if (title.includes('(.md)')) return 'md';
     if (title.includes('(.html)')) return 'html';
     if (title.includes('(.txt)')) return 'txt';
+    if (title.includes('(.odt)')) return 'odt';
     return '';
   }, []);
 
@@ -260,6 +263,56 @@ const useDdocExport = ({
     [createTempEditorForTab, editor, getTitle, tabs, ydoc],
   );
 
+  const exportAllTabsAsOdt = useCallback(
+    async (name?: string) => {
+      if (!editor || !ydoc || tabs.length === 0) return;
+      const baseTitle = name || getTitle();
+      const tempEditors: Editor[] = [];
+      try {
+        const allTabHtml: string[] = [];
+
+        for (const tab of tabs) {
+          const tempEditor = createTempEditorForTab(tab.id);
+          if (!tempEditor) continue;
+          tempEditors.push(tempEditor);
+          const tabTitle = normalizeTabTitle(tab.name);
+          allTabHtml.push(
+            `<h1>${escapeHtml(tabTitle)}</h1>\n${tempEditor.getHTML()}`,
+          );
+        }
+
+        const combinedHtml = allTabHtml.join('\n');
+        const { html: cleanHtml } = preprocessHtml(combinedHtml);
+        const odtBytes = await htmlToOdt(
+          `<html><head><title>${baseTitle}</title></head><body>${cleanHtml}</body></html>`,
+          { metadata: { title: baseTitle } },
+        );
+        const blob = new Blob([new Uint8Array(odtBytes)], {
+          type: 'application/vnd.oasis.opendocument.text',
+        });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `${baseTitle}.odt`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      } finally {
+        tempEditors.forEach((tempEditor) => tempEditor.destroy());
+      }
+    },
+    [
+      createTempEditorForTab,
+      editor,
+      escapeHtml,
+      getTitle,
+      normalizeTabTitle,
+      tabs,
+      ydoc,
+    ],
+  );
+
   const runExport = useCallback(
     async ({
       format,
@@ -290,6 +343,10 @@ const useDdocExport = ({
           await exportAllTabsAsText(name);
           return;
         }
+        if (format === 'odt') {
+          await exportAllTabsAsOdt(name);
+          return;
+        }
         return;
       }
 
@@ -299,6 +356,7 @@ const useDdocExport = ({
       editor,
       exportAllTabsAsHtml,
       exportAllTabsAsMarkdown,
+      exportAllTabsAsOdt,
       exportAllTabsAsPdf,
       exportAllTabsAsText,
       triggerSingleTabExport,

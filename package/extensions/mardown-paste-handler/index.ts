@@ -22,6 +22,7 @@ import {
   isValidBase64Image,
 } from '../../utils/image-compression';
 import { markdownHtmlGuardPlugin } from './mark-down-html-guard-plugin';
+import { parseHeadingLink } from '../../utils/heading-link';
 
 // Initialize MarkdownIt for converting Markdown back to HTML with footnote support.
 const markdownIt = new MarkdownIt({ html: true })
@@ -402,13 +403,39 @@ const MarkdownPasteHandler = (
         new Plugin({
           props: {
             handlePaste: (view, event) => {
-              event.preventDefault();
-
               const clipboardData = event.clipboardData;
               if (!clipboardData) return false;
 
               // Get the Markdown content from the clipboard
               const copiedData = clipboardData.getData('text/plain');
+
+              // When a heading link URL is pasted without text selection,
+              // insert it as a named link using the heading's actual text.
+              const { empty } = view.state.selection;
+              if (empty && copiedData) {
+                const trimmed = copiedData.trim();
+                const parsed = parseHeadingLink(trimmed);
+                if (parsed?.headingEl?.textContent) {
+                  event.preventDefault();
+                  this.editor
+                    .chain()
+                    .focus()
+                    .insertContent({
+                      type: 'text',
+                      text: parsed.headingEl.textContent,
+                      marks: [
+                        {
+                          type: 'link',
+                          attrs: { href: trimmed },
+                        },
+                      ],
+                    })
+                    .run();
+                  return true;
+                }
+              }
+
+              event.preventDefault();
 
               // Check if we're in a code block
               const { state } = view;
@@ -484,7 +511,12 @@ const MarkdownPasteHandler = (
             return true;
           },
         exportMarkdownFile:
-          (props?: { title?: string; returnMDFile?: boolean; metadataFormat?: 'yaml' | 'reference-links'; metadata?: Record<string, string> }) =>
+          (props?: {
+            title?: string;
+            returnMDFile?: boolean;
+            metadataFormat?: 'yaml' | 'reference-links';
+            metadata?: Record<string, string>;
+          }) =>
           async ({ editor }: { editor: Editor }): Promise<string> => {
             const { showLoader, removeLoader } = inlineLoader(
               editor,

@@ -21,7 +21,7 @@ import {
   UseHeadlessEditorProps,
 } from './use-headless-editor';
 
-export type HeadlessEditorExportFormat = 'pdf' | 'md' | 'html' | 'txt';
+export type HeadlessEditorExportFormat = 'pdf' | 'md' | 'html' | 'txt' | 'odt';
 
 export interface HeadlessEditorExportOption {
   content: string;
@@ -43,6 +43,7 @@ const HEADLESS_EXPORT_FORMATS: HeadlessEditorExportFormat[] = [
   'md',
   'html',
   'txt',
+  'odt',
 ];
 
 const isSupportedFormat = (
@@ -238,6 +239,34 @@ export const useExportHeadlessEditorContent = (
               });
             if (generateDownloadUrl) {
               triggerUrlDownload(generateDownloadUrl, `${fileName}.md`);
+            }
+          } finally {
+            tempEditor.destroy();
+          }
+        },
+        isActive: false,
+      },
+      {
+        icon: 'FileText',
+        title: 'OpenDocument (.odt)',
+        subtitle: 'Image support is coming soon',
+        onClick: async (name?: string) => {
+          const tempEditor = createTempEditorForActiveTab();
+          if (!tempEditor) return;
+
+          try {
+            const fileName =
+              name ||
+              ddocExportSession.exportName ||
+              extractTabTitle(tempEditor.getJSON()) ||
+              'Untitled';
+            const generateDownloadUrl = await tempEditor.commands.exportOdtFile(
+              {
+                title: fileName,
+              },
+            );
+            if (generateDownloadUrl) {
+              triggerUrlDownload(generateDownloadUrl, `${fileName}.odt`);
             }
           } finally {
             tempEditor.destroy();

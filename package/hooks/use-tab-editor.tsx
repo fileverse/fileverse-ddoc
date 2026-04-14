@@ -17,7 +17,7 @@ import { AnyExtension, JSONContent, Editor, useEditor } from '@tiptap/react';
 import { getCursor } from '../utils/cursor';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from '../extensions/slash-command/slash-comand';
-import { EditorState, TextSelection } from '@tiptap/pm/state';
+import { EditorState, TextSelection, Plugin } from '@tiptap/pm/state';
 import customTextInputRules from '../extensions/customTextInputRules';
 import { PageBreak } from '../extensions/page-break/page-break';
 import { toUint8Array } from 'js-base64';
@@ -170,6 +170,7 @@ export const useTabEditor = ({
   ignoreCorruptedData,
   onCollaboratorChange,
   onConnect,
+  hasCollabContentInitialised,
   initialiseYjsIndexedDbProvider,
   externalExtensions,
   isContentLoading,
@@ -252,15 +253,60 @@ export const useTabEditor = ({
           // 1. Check for Modifier Keys (Ctrl or Cmd)
           const isModifierPressed = event.metaKey || event.ctrlKey;
           // 2. Check if the clicked element is a link
-          // Use 'target' safely cast to HTMLElement
-          const target = event.target as HTMLElement;
-          const link = target.closest('a');
+          // In Firefox, event.target can be a text node which lacks closest()
+          const node = event.target as Node;
+          const target =
+            node.nodeType === Node.TEXT_NODE
+              ? (node.parentElement as HTMLElement)
+              : (node as HTMLElement);
+          const link = target?.closest('a');
           if (link && link.href) {
+            // Fragment links with heading= param should scroll within the document. Only check origin (not pathname) since the same doc has  different paths (i.e: shareable link vs owner link).
+            const url = new URL(link.href, window.location.href);
+            if (url.hash && url.origin === window.location.origin) {
+              const hash = decodeURIComponent(url.hash.slice(1));
+              const params = new URLSearchParams(hash);
+              const headingParam = params.get('heading');
+              if (headingParam) {
+                event.preventDefault();
+                const id = headingParam.split('-').pop();
+                if (id) {
+                  const allHeadings =
+                    document.querySelectorAll('[data-toc-id]');
+                  const element = Array.from(allHeadings).find((el) =>
+                    (el as HTMLElement).dataset.tocId?.includes(id),
+                  );
+                  if (element) {
+                    const scrollContainer = getEditorScrollContainer({
+                      targetElement: element as HTMLElement,
+                      editorRoot: view.dom as HTMLElement,
+                    });
+                    if (scrollContainer) {
+                      requestAnimationFrame(() => {
+                        const containerRect =
+                          scrollContainer.getBoundingClientRect();
+                        const elementRect = (
+                          element as HTMLElement
+                        ).getBoundingClientRect();
+                        scrollContainer.scrollBy({
+                          top: elementRect.top - containerRect.top,
+                          behavior: 'smooth',
+                        });
+                      });
+                    }
+                    return true;
+                  }
+                }
+                // Heading not found in current doc — fall through to
+                // open in new tab (navigates to the other ddoc).
+              }
+            }
+
             if (isPreviewMode) {
               return false;
             }
 
-            const isTwitter = link.textContent.match(TWITTER_REGEX);
+            const isTwitter = link?.textContent?.match(TWITTER_REGEX) ?? false;
 
             if (isTwitter) {
               if (isModifierPressed) {
@@ -356,10 +402,70 @@ export const useTabEditor = ({
     editor?.setEditable(readyState);
   }, [editor, readyState]);
 
+  // In preview mode the editor is non-editable so the browser natively
+  // follows <a target="_blank">.  ProseMirror's handleClick pipeline
+  // bails out early when !view.editable, so we need a DOM-level capture
+  // listener to intercept fragment links and scroll instead.
+  useEffect(() => {
+    if (!isPreviewMode) return;
+
+    const handler = (event: MouseEvent) => {
+      const node = event.target as Node;
+      const target =
+        node.nodeType === Node.TEXT_NODE
+          ? (node.parentElement as HTMLElement)
+          : (node as HTMLElement);
+      if (!target?.closest?.('#editor')) return;
+      const link = target.closest('a');
+      if (!link?.href) return;
+
+      try {
+        const url = new URL(link.href, window.location.href);
+        if (!url.hash || url.origin !== window.location.origin) return;
+
+        const hash = decodeURIComponent(url.hash.slice(1));
+        const params = new URLSearchParams(hash);
+        const headingParam = params.get('heading');
+        if (!headingParam) return;
+
+        const id = headingParam.split('-').pop();
+        if (id) {
+          const el = Array.from(
+            document.querySelectorAll('[data-toc-id]'),
+          ).find((node) => (node as HTMLElement).dataset.tocId?.includes(id));
+          if (el) {
+            event.preventDefault();
+            event.stopPropagation();
+            const scrollContainer = getEditorScrollContainer({
+              targetElement: el as HTMLElement,
+            });
+            if (scrollContainer) {
+              requestAnimationFrame(() => {
+                const containerRect = scrollContainer.getBoundingClientRect();
+                const elementRect = (el as HTMLElement).getBoundingClientRect();
+                scrollContainer.scrollBy({
+                  top: elementRect.top - containerRect.top,
+                  behavior: 'smooth',
+                });
+              });
+            }
+            return;
+          }
+        }
+        // Heading not found in current doc — let browser navigate
+      } catch {
+        // invalid URL — let browser handle
+      }
+    };
+
+    document.addEventListener('click', handler, true);
+    return () => document.removeEventListener('click', handler, true);
+  }, [isPreviewMode]);
+
   useEffect(() => {
     if (!isCollaborationEnabled) return;
-    setIsCollabContentLoading(!isReady);
-  }, [isCollaborationEnabled, isReady]);
+    setIsCollabContentLoading(!isReady && !hasCollabContentInitialised);
+  }, [isCollaborationEnabled, isReady, hasCollabContentInitialised]);
 
   // ----- Intitalise and handle content from consumer app -----
 
@@ -868,7 +974,7 @@ const useActiveComment = () => {
 
     commentInput.scrollIntoView({
       behavior: 'smooth',
-      block: 'center',
+      block: 'start',
       inline: 'center',
     });
   }, []);
@@ -1001,7 +1107,7 @@ const useEditorExtension = ({
         ipfsImageUploadFn,
         slashCommandConfigRef,
       ),
-    [isConnected, enableCollaboration, disableInlineComment],
+    [onError, ipfsImageUploadFn],
   );
 
   const commentExtension = useMemo(
@@ -1061,14 +1167,6 @@ const useEditorExtension = ({
       setExtensions(buildExtensions());
     }
   }, [activeTabId]);
-
-  useEffect(() => {
-    if (!isConnected) return;
-    setExtensions((prev) => [
-      ...prev.filter((ext) => ext.name !== 'slash-command'),
-      createSlashCommand(),
-    ]);
-  }, [createSlashCommand]);
 
   useEffect(() => {
     if (!activeModel) return;
@@ -1218,8 +1316,50 @@ const useExtensionSyncWithCollaboration = ({
 
     awareness.setLocalStateField('user', user);
 
-    const plugin = yCursorPlugin(awareness, {
+    const originalPlugin = yCursorPlugin(awareness, {
       cursorBuilder: getCursor,
+    });
+    // Track last known cursor positions per client to avoid unnecessary
+    // decoration recreation (which causes cursor DOM flicker).
+    let lastCursorSnapshot = '';
+    const getCursorSnapshot = () => {
+      const parts: string[] = [];
+      awareness.getStates().forEach((state: any, clientId: number) => {
+        if (clientId === awareness.clientID) return;
+        const cursor = state.cursor;
+        if (cursor) {
+          parts.push(`${clientId}:${JSON.stringify(cursor)}`);
+        }
+      });
+      return parts.sort().join('|');
+    };
+    // Patch apply: only recreate decorations when remote cursor positions
+    // actually changed. Content-only changes and awareness updates that
+    // don't affect cursor positions just remap existing decorations,
+    // preserving the cursor DOM and preventing flicker.
+    const plugin = new Plugin({
+      key: yCursorPluginKey,
+      state: {
+        init: originalPlugin.spec.state!.init,
+        apply(tr, prevState, oldState, newState) {
+          const yCursorState = tr.getMeta(yCursorPluginKey);
+          if (yCursorState && yCursorState.awarenessUpdated) {
+            const snapshot = getCursorSnapshot();
+            if (snapshot !== lastCursorSnapshot) {
+              lastCursorSnapshot = snapshot;
+              return originalPlugin.spec.state!.apply!(
+                tr,
+                prevState,
+                oldState,
+                newState,
+              );
+            }
+          }
+          return prevState.map(tr.mapping, tr.doc);
+        },
+      },
+      props: originalPlugin.spec.props,
+      view: originalPlugin.spec.view,
     });
     editor.registerPlugin(plugin);
 

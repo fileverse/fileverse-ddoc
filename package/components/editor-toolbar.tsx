@@ -51,6 +51,7 @@ const TiptapToolBar = ({
   onPdfExport,
   onHtmlExport,
   onTxtExport,
+  onOdtExport,
   onDocxImport,
   isLoading,
   ipfsImageFetchFn,
@@ -73,6 +74,7 @@ const TiptapToolBar = ({
   onPdfExport?: () => void;
   onHtmlExport?: () => void;
   onTxtExport?: () => void;
+  onOdtExport?: () => void;
   onDocxImport?: () => void;
   isLoading: boolean;
   fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
@@ -105,6 +107,7 @@ const TiptapToolBar = ({
     onPdfExport,
     onHtmlExport,
     onTxtExport,
+    onOdtExport,
     ipfsImageFetchFn,
     onDocxImport,
     fetchV1ImageFn,

@@ -36,7 +36,9 @@ export const useSyncManager = (config: SyncManagerConfig) => {
     if (!isConnected || !config.ydoc) return;
 
     const updateHandler = (update: Uint8Array, origin: any) => {
-      if (origin === 'self' || !manager.isConnected) return;
+      if (origin === 'self' || origin === 'remote' || !manager.isConnected) return;
+      // Skip origins from external providers (e.g. y-indexeddb)
+      if (config.ignoredOrigins?.some((ref) => ref.current === origin)) return;
       manager.enqueueLocalUpdate(update);
     };
 

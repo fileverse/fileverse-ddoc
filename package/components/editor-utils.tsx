@@ -43,6 +43,7 @@ import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { getTemporaryEditor } from '../utils/helpers';
 import { extractTitleFromContent } from '../utils/extract-title-from-content';
 import { getContrastColor } from '../utils/color-utils';
+import { parseHeadingLink } from '../utils/heading-link';
 
 export interface IEditorToolElement {
   icon: any;
@@ -200,6 +201,7 @@ export const useEditorToolbar = ({
   onPdfExport,
   onHtmlExport,
   onTxtExport,
+  onOdtExport,
   ipfsImageFetchFn,
   onDocxImport,
   fetchV1ImageFn,
@@ -212,6 +214,7 @@ export const useEditorToolbar = ({
   onPdfExport?: () => void;
   onHtmlExport?: () => void;
   onTxtExport?: () => void;
+  onOdtExport?: () => void;
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
@@ -875,6 +878,33 @@ export const useEditorToolbar = ({
       },
       isActive: false,
     },
+    {
+      icon: 'FileText',
+      title: 'OpenDocument (.odt)',
+      subtitle: 'Image support is coming soon',
+      onClick: async (name?: string) => {
+        if (editor) {
+          const editorContent = editor.getJSON();
+          const title = extractTitleFromContent(editorContent);
+          const fileName = name || title || 'Untitled';
+          const generateDownloadUrl = await editor.commands.exportOdtFile({
+            title: fileName,
+          });
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${fileName}.odt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onOdtExport?.();
+      },
+      isActive: false,
+    },
   ];
 
   const bottomToolbar: Array<IEditorToolElement | null> = [
@@ -1283,7 +1313,7 @@ export const LinkPopup = ({
   setIsLinkPopupOpen?: Dispatch<SetStateAction<boolean>>;
   onError?: (errorString: string) => void;
 }) => {
-  const [url, setUrl] = useState(editor.getAttributes('link').href);
+  const [url, setUrl] = useState<string>(editor.getAttributes('link').href);
   const apply = useCallback(() => {
     // empty
     if (url === '' || url === undefined) {
@@ -1318,6 +1348,10 @@ export const LinkPopup = ({
 
     setToolVisibility(IEditorTool.NONE);
     if (bubbleMenu && setIsLinkPopupOpen) setIsLinkPopupOpen(false);
+    const parsed = parseHeadingLink(finalUrl);
+    if (parsed && !parsed.headingEl) {
+      onError?.('This heading link belongs to a different document.');
+    }
   }, [url, editor, bubbleMenu, setIsLinkPopupOpen, onError, setToolVisibility]);
   return (
     <div

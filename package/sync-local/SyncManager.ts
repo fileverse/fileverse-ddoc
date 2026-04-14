@@ -26,6 +26,7 @@ import {
 } from './collabStateMachine';
 
 const MAX_RETRIES = 3;
+const COMMIT_THRESHOLD = 100;
 
 export class SyncManager {
   // --- State machine ---
@@ -42,6 +43,9 @@ export class SyncManager {
   private uncommittedUpdatesIdList: string[] = [];
   private contentTobeAppliedQueue: Array<{ data: string; id?: string }> = [];
   private isProcessing = false;
+  private flushTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly FLUSH_INTERVAL_MS = 50;
+  private readonly MAX_QUEUE_SIZE = 5;
   private _awarenessUpdateHandler:
     | ((
       changes: {
@@ -223,11 +227,13 @@ export class SyncManager {
 
   async disconnect(): Promise<void> {
     if (this._status === 'idle' || this._status === 'terminated') return;
+    await this.awaitFlush();
     await this.disconnectInternal();
   }
 
   async terminateSession(): Promise<void> {
     if (this._status === 'idle') return;
+    await this.awaitFlush();
 
     try {
       if (this._awareness) {
@@ -255,12 +261,82 @@ export class SyncManager {
 
   enqueueLocalUpdate(update: Uint8Array): void {
     this.updateQueue.push(update);
-    if (this._status === 'ready' && !this.isProcessing) {
-      this.processUpdateQueue();
+    if (this._status !== 'ready' || this.isProcessing) return;
+
+    // Flush immediately if queue is full
+    if (this.updateQueue.length >= this.MAX_QUEUE_SIZE) {
+      this.flushUpdates();
+      return;
     }
+
+    // Start/reset flush timer to batch rapid updates
+    if (this.flushTimer) clearTimeout(this.flushTimer);
+    this.flushTimer = setTimeout(
+      () => this.flushUpdates(),
+      this.FLUSH_INTERVAL_MS,
+    );
+  }
+
+  private flushUpdates(): void {
+    if (this.flushTimer) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
+    this.sendUpdateBatch();
+  }
+
+  private async awaitFlush(): Promise<void> {
+    if (this.flushTimer) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
+    this.sendUpdateBatch();
+  }
+
+  /**
+   * Fire-and-forget: merge all queued updates, encrypt, and emit via Socket.IO
+   * without awaiting the server ACK. The server broadcasts to peers immediately
+   * (before MongoDB write), so content reaches observers in near-real-time.
+   * ACK callback handles updateId tracking and auto-commit asynchronously.
+   */
+  private sendUpdateBatch(): void {
+    if (this.updateQueue.length === 0 || !this.roomKey || !this.isConnected) {
+      return;
+    }
+
+    const updates = this.updateQueue;
+    this.updateQueue = [];
+
+    const merged = Y.mergeUpdates(updates);
+    const encrypted = cryptoUtils.encryptData(this.roomKeyBytes!, merged);
+
+    this.socketClient
+      ?.sendUpdate({ update: encrypted })
+      .then((response) => {
+        if (!response?.status) {
+          console.error(
+            'SyncManager: server rejected update',
+            response?.error,
+          );
+          return;
+        }
+        const updateId = response?.data?.id;
+        if (updateId) {
+          this.uncommittedUpdatesIdList.push(updateId);
+        }
+        if (this.isOwner && this.uncommittedUpdatesIdList.length >= COMMIT_THRESHOLD) {
+          this.processCommit().catch((err) => {
+            console.error('SyncManager: auto-commit failed', err);
+          });
+        }
+      })
+      .catch((err) => {
+        console.error('SyncManager: update send failed', err);
+      });
   }
 
   forceCleanup(): void {
+    this.flushUpdates();
     // Broadcast awareness removal BEFORE tearing down handler/socket
     if (this._awareness) {
       removeAwarenessStates(this._awareness, [this.ydoc.clientID], 'cleanup');
@@ -509,11 +585,8 @@ export class SyncManager {
         await this.socketClient?.getUncommittedChanges();
       const encryptedUpdates = uncommittedChanges?.data?.history;
       const uncommittedChangesId: string[] = [];
-      let unbroadcastedUpdate: string | null = null;
-
       if (initialUpdate) {
         updates.push(toUint8Array(initialUpdate));
-        unbroadcastedUpdate = initialUpdate;
       }
       if (decryptedCommit) updates.push(decryptedCommit);
 
@@ -546,14 +619,23 @@ export class SyncManager {
 
       this.uncommittedUpdatesIdList = uncommittedChangesId;
 
+      // Broadcast the POST-sync state so peers receive any local-only
+      // items (e.g. tab metadata created by syncTabState with a new
+      // clientID after refresh).  The pre-sync initialUpdate would be
+      // stale — it lacks the server content that was just merged in,
+      // causing peers to miss parent items for subsequent typing ops.
+      const postSyncUpdate = fromUint8Array(
+        Y.encodeStateAsUpdate(this.ydoc),
+      );
+
       // Owner: commit local contents if enough uncommitted updates
       if (this.isOwner) {
         await this.commitLocalContents(
           uncommittedChangesId,
-          unbroadcastedUpdate,
+          postSyncUpdate,
         );
       } else {
-        await this.broadcastLocalContents(unbroadcastedUpdate);
+        await this.broadcastLocalContents(postSyncUpdate);
       }
     }, 'syncLatestCommit');
   }
@@ -591,7 +673,7 @@ export class SyncManager {
     ids: string[],
     unbroadcastedUpdate: string | null,
   ): Promise<void> {
-    if (ids.length >= 10) {
+    if (ids.length >= COMMIT_THRESHOLD) {
       if (typeof this.servicesRef?.commitToStorage !== 'function') {
         console.debug(
           'SyncManager: no commit function provided, skipping commit',
@@ -679,7 +761,7 @@ export class SyncManager {
         await this.processNextUpdate();
 
         // If owner and enough uncommitted updates, commit
-        if (this.isOwner && this.uncommittedUpdatesIdList.length >= 10) {
+        if (this.isOwner && this.uncommittedUpdatesIdList.length >= COMMIT_THRESHOLD) {
           await this.processCommit();
         }
       }
@@ -688,7 +770,7 @@ export class SyncManager {
       if (
         this.isConnected &&
         this.isOwner &&
-        this.uncommittedUpdatesIdList.length >= 10
+        this.uncommittedUpdatesIdList.length >= COMMIT_THRESHOLD
       ) {
         await this.processCommit();
       }
@@ -758,7 +840,7 @@ export class SyncManager {
       return;
     }
 
-    if (this.uncommittedUpdatesIdList.length < 10) return;
+    if (this.uncommittedUpdatesIdList.length < COMMIT_THRESHOLD) return;
 
     const updates = [...this.uncommittedUpdatesIdList];
 
@@ -823,7 +905,7 @@ export class SyncManager {
 
     if (this.isOwner && !this.isProcessing && this.isReady) {
       // Check if we need to commit
-      if (this.uncommittedUpdatesIdList.length >= 10) {
+      if (this.uncommittedUpdatesIdList.length >= COMMIT_THRESHOLD) {
         this.processUpdateQueue().catch((err) => {
           console.error('SyncManager: processUpdateQueue failed', err);
         });
@@ -841,8 +923,9 @@ export class SyncManager {
       console.warn('SyncManager: failed to decrypt update, skipping', err);
       return;
     }
+
     try {
-      Y.applyUpdate(this.ydoc, update, 'self');
+      Y.applyUpdate(this.ydoc, update, 'remote');
     } catch (err) {
       console.error(
         'SyncManager: failed to apply remote Yjs update, skipping',
@@ -897,7 +980,7 @@ export class SyncManager {
     const mergedContents = Y.mergeUpdates(decryptedContents);
 
     try {
-      Y.applyUpdate(this.ydoc, mergedContents);
+      Y.applyUpdate(this.ydoc, mergedContents, 'remote');
     } catch (err) {
       console.error(
         'SyncManager: failed to apply queued remote contents, skipping',
@@ -963,6 +1046,10 @@ export class SyncManager {
   }
 
   private resetInternalState(): void {
+    if (this.flushTimer) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
     this.socketClient = null;
     this.uncommittedUpdatesIdList = [];
     this.updateQueue = [];

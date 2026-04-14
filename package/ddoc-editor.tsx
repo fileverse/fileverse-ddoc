@@ -96,6 +96,7 @@ const DdocEditor = forwardRef(
       onPdfExport,
       onHtmlExport,
       onTxtExport,
+      onOdtExport,
       onDocxImport,
       editorCanvasClassNames,
       sharedSlidesLink,
@@ -593,6 +594,7 @@ const DdocEditor = forwardRef(
                     onPdfExport={onPdfExport}
                     onHtmlExport={onHtmlExport}
                     onTxtExport={onTxtExport}
+                    onOdtExport={onOdtExport}
                     onDocxImport={onDocxImport}
                     isLoading={!editor || isContentLoading}
                     ipfsImageFetchFn={ipfsImageFetchFn}
@@ -623,6 +625,7 @@ const DdocEditor = forwardRef(
                 onPdfExport={onPdfExport}
                 onHtmlExport={onHtmlExport}
                 onTxtExport={onTxtExport}
+                onOdtExport={onOdtExport}
                 ipfsImageFetchFn={ipfsImageFetchFn}
                 onDocxImport={onDocxImport}
                 fetchV1ImageFn={fetchV1ImageFn}
@@ -653,7 +656,7 @@ const DdocEditor = forwardRef(
             )}
             <div
               className={cn(
-                !isMobile && 'flex-[1_1_263px]',
+                !isMobile && 'flex-[1_0_263px]',
                 !isPreviewMode &&
                   !isFocusMode &&
                   isNavbarVisible &&
@@ -957,7 +960,7 @@ const DdocEditor = forwardRef(
               </div>
               <div
                 className={cn(
-                  !isMobile && 'flex-[1_1_263px]',
+                  !isMobile && 'flex-[1_0_263px]',
                   !isPreviewMode &&
                     !isFocusMode &&
                     isNavbarVisible &&

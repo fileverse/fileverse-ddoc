@@ -86,7 +86,7 @@ export const FullScreenToolbar = ({
         />
       </Tooltip>
 
-      <Tooltip text="Exist focus mode">
+      <Tooltip text="Exit focus mode">
         <IconButton
           icon={'Minimize'}
           size="sm"
