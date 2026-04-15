@@ -19,6 +19,7 @@ import { useResponsive } from '../../utils/responsive';
 import { useEscapeKey } from '../../hooks/useEscapeKey';
 import { DEFAULT_TAB_ID, DEFAULT_TAB_NAME } from '../tabs/utils/tab-utils';
 import { useCommentRefs } from '../../stores/comment-store-provider';
+import { resizeInlineCommentTextarea } from './resize-inline-comment-textarea';
 
 const ALL_TABS_OPTION_ID = '__all_tabs__';
 
@@ -41,7 +42,6 @@ export const CommentDrawer = ({
   );
   const createFloatingDraft = useCommentStore((s) => s.createFloatingDraft);
   const focusCommentInEditor = useCommentStore((s) => s.focusCommentInEditor);
-  const handleInput = useCommentStore((s) => s.handleInput);
   const isCommentOpen = useCommentStore((s) => s.isCommentOpen);
   const openReplyId = useCommentStore((s) => s.openReplyId);
   const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
@@ -56,6 +56,7 @@ export const CommentDrawer = ({
     tabId: string;
   } | null>(null);
   const mobileDrawerRef = useRef<HTMLDivElement | null>(null);
+  const mobileDraftTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const { mobileDraftRef } = useCommentRefs();
   const isCommentMobileFocused = isBelow1280px && Boolean(openReplyId);
   // Drawer new-comment state is derived from shared draft state so mobile and desktop
@@ -64,7 +65,10 @@ export const CommentDrawer = ({
     isCommentOpen &&
     activeDraft !== null &&
     activeDraftId !== null &&
-    activeDraft.location === 'drawer';
+    activeDraft.location === 'drawer' &&
+    // Auth-pending drafts intentionally fall back to the non-draft drawer route so
+    // mobile can show the auth screen without discarding the tracked draft.
+    !activeDraft.isAuthPending;
 
   useEscapeKey(() => {
     if (isInlineDraftOpen) {
@@ -272,6 +276,7 @@ export const CommentDrawer = ({
             !isOpen && 'hidden',
             'fixed h-full flex items-end z-10 inset-0',
           )}
+          data-comment-drawer-mobile-input
         >
           {isInlineDraftOpen ? (
             <div
@@ -297,15 +302,18 @@ export const CommentDrawer = ({
                   className="w-[16px] h-[16px]"
                 />
                 <TextAreaFieldV2
+                  ref={mobileDraftTextareaRef}
                   value={activeDraft?.text || ''}
                   autoFocus
                   onChange={(event) => {
                     if (activeDraftId) {
                       updateInlineDraftText(activeDraftId, event.target.value);
                     }
+
+                    resizeInlineCommentTextarea(event.currentTarget);
                   }}
                   onInput={(event) =>
-                    handleInput(event, event.currentTarget.value)
+                    resizeInlineCommentTextarea(event.currentTarget)
                   }
                   onKeyDown={(event) => {
                     if (

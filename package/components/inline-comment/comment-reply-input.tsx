@@ -1,9 +1,10 @@
 import { Avatar, TextAreaFieldV2, Button, IconButton, cn } from '@fileverse/ui';
 import { useCommentStore } from '../../stores/comment-store';
-import { useEffect, useRef, useState } from 'react';
-import { EnsStatus } from './types';
+import { useEffect, useRef } from 'react';
 import { useResponsive } from '../../utils/responsive';
 import { resizeInlineCommentTextarea } from './resize-inline-comment-textarea';
+import { useEnsStatus } from './use-ens-status';
+import EnsLogo from '../../assets/ens.svg';
 
 interface CommentReplyInputProps {
   commentId: string;
@@ -13,29 +14,47 @@ interface CommentReplyInputProps {
 
 export const CommentReplyInput = ({
   commentId,
-  commentUsername,
   replyCount,
 }: CommentReplyInputProps) => {
   const reply = useCommentStore((s) => s.reply);
+  const replyEditTarget = useCommentStore((s) => s.replyEditTarget);
+  const editRequest = useCommentStore((s) => s.editRequest);
+  const clearEditRequest = useCommentStore((s) => s.clearEditRequest);
+  const setReply = useCommentStore((s) => s.setReply);
+  const setReplyEditTarget = useCommentStore((s) => s.setReplyEditTarget);
+  const cancelReplyEdit = useCommentStore((s) => s.cancelReplyEdit);
   const handleReplyChange = useCommentStore((s) => s.handleReplyChange);
   const handleReplyKeyDown = useCommentStore((s) => s.handleReplyKeyDown);
   const handleReplySubmit = useCommentStore((s) => s.handleReplySubmit);
   const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
   const username = useCommentStore((s) => s.username);
-  const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
-  const ensCache = useCommentStore((s) => s.ensCache);
   const { isBelow1280px } = useResponsive();
   const hasUnsentReply = Boolean(reply.trim());
+  const isEditing = Boolean(replyEditTarget);
+  const isSendDisabled = Boolean(
+    !reply.trim() ||
+      !username ||
+      (isEditing &&
+        reply.trim() === (replyEditTarget?.originalText ?? '').trim()),
+  );
   const replyInputRef = useRef<HTMLTextAreaElement | null>(null);
-
-  const [ensStatus, setEnsStatus] = useState<EnsStatus>({
-    name: username as string,
-    isEns: false,
-  });
+  const ensStatus = useEnsStatus(username);
 
   useEffect(() => {
-    getEnsStatus(username as string, setEnsStatus);
-  }, [username, ensCache, getEnsStatus]);
+    if (!editRequest || editRequest.commentId !== commentId) {
+      return;
+    }
+
+    setReply(editRequest.text);
+    setReplyEditTarget({
+      kind: editRequest.kind,
+      commentId: editRequest.commentId,
+      replyId: editRequest.replyId,
+      originalText: editRequest.text,
+    });
+    clearEditRequest(editRequest.requestId);
+    replyInputRef.current?.focus();
+  }, [clearEditRequest, commentId, editRequest, setReply, setReplyEditTarget]);
 
   useEffect(() => {
     if (!replyInputRef.current) {
@@ -54,9 +73,13 @@ export const CommentReplyInput = ({
         )}
       >
         <Avatar
-          src={`https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-            ensStatus.name || '',
-          )}`}
+          src={
+            ensStatus.isEns
+              ? EnsLogo
+              : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                  ensStatus.name || '',
+                )}`
+          }
           className="w-[16px] h-[16px]"
         />
         <TextAreaFieldV2
@@ -67,7 +90,7 @@ export const CommentReplyInput = ({
           className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
           placeholder={
             replyCount === 0
-              ? `Reply to @${commentUsername}`
+              ? `Reply to @${ensStatus.name}`
               : replyCount >= 2
                 ? `Add a reply`
                 : `Reply `
@@ -83,7 +106,7 @@ export const CommentReplyInput = ({
           onClick={() => handleReplySubmit()}
           icon={'SendHorizontal'}
           variant="ghost"
-          disabled={!reply.trim() || !username}
+          disabled={isSendDisabled}
           className={cn(
             '!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]',
             !isBelow1280px && 'hidden',
@@ -106,6 +129,8 @@ export const CommentReplyInput = ({
           onClick={(e) => {
             e.stopPropagation();
             setOpenReplyId(null);
+            setReply('');
+            cancelReplyEdit();
           }}
         >
           <p className="text-body-sm-bold">Cancel</p>
@@ -113,7 +138,7 @@ export const CommentReplyInput = ({
         <Button
           data-testid="comment-reply-send"
           className="w-20 min-w-20"
-          disabled={!reply.trim()}
+          disabled={isSendDisabled}
           onClick={(e) => {
             e.stopPropagation();
             handleReplySubmit();

@@ -34,6 +34,14 @@ export const CommentDropdown = ({
   const selectedText = useCommentStore((s) => s.selectedText);
   const isCommentActive = useCommentStore((s) => s.isCommentActive);
   const handleAddReply = useCommentStore((s) => s.handleAddReply);
+  const editRequest = useCommentStore((s) => s.editRequest);
+  const clearEditRequest = useCommentStore((s) => s.clearEditRequest);
+  const replyEditTarget = useCommentStore((s) => s.replyEditTarget);
+  const setReplyEditTarget = useCommentStore((s) => s.setReplyEditTarget);
+  const cancelReplyEdit = useCommentStore((s) => s.cancelReplyEdit);
+  const editCompletion = useCommentStore((s) => s.editCompletion);
+  const editCommentContent = useCommentStore((s) => s.editCommentContent);
+  const editReplyContent = useCommentStore((s) => s.editReplyContent);
   const resolveComment = useCommentStore((s) => s.resolveComment);
   const unresolveComment = useCommentStore((s) => s.unresolveComment);
   const deleteComment = useCommentStore((s) => s.deleteComment);
@@ -48,6 +56,14 @@ export const CommentDropdown = ({
     !activeComment?.content &&
     !activeComment?.username &&
     !activeComment?.createdAt;
+  const isEditingThisThread = replyEditTarget?.commentId === activeCommentId;
+  const isSendDisabled = Boolean(
+    isDisabled ||
+      activeComment?.resolved ||
+      !reply.trim() ||
+      (isEditingThisThread &&
+        reply.trim() === (replyEditTarget?.originalText ?? '').trim()),
+  );
 
   const handleReplyChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = e.target.value;
@@ -91,6 +107,22 @@ export const CommentDropdown = ({
     }
 
     if (reply.trim() && activeCommentId) {
+      if (replyEditTarget?.commentId === activeCommentId) {
+        if (replyEditTarget.kind === 'comment') {
+          editCommentContent(replyEditTarget.commentId, reply);
+        } else if (replyEditTarget.replyId) {
+          editReplyContent(
+            replyEditTarget.commentId,
+            replyEditTarget.replyId,
+            reply,
+          );
+        }
+
+        setReply('');
+        cancelReplyEdit();
+        return;
+      }
+
       handleAddReply(activeCommentId, reply);
       setReply('');
     }
@@ -123,6 +155,43 @@ export const CommentDropdown = ({
       });
     }
   }, [activeComment?.replies]);
+
+  useEffect(() => {
+    setReply('');
+    cancelReplyEdit();
+  }, [activeCommentId, cancelReplyEdit]);
+
+  useEffect(() => {
+    if (!editRequest || !activeCommentId) {
+      return;
+    }
+
+    if (editRequest.commentId !== activeCommentId) {
+      return;
+    }
+
+    setReply(editRequest.text);
+    setReplyEditTarget({
+      kind: editRequest.kind,
+      commentId: editRequest.commentId,
+      replyId: editRequest.replyId,
+      originalText: editRequest.text,
+    });
+    clearEditRequest(editRequest.requestId);
+  }, [activeCommentId, clearEditRequest, editRequest, setReplyEditTarget]);
+
+  useEffect(() => {
+    if (!editCompletion || !activeCommentId) {
+      return;
+    }
+
+    if (editCompletion.commentId !== activeCommentId) {
+      return;
+    }
+
+    setReply('');
+    cancelReplyEdit();
+  }, [activeCommentId, cancelReplyEdit, editCompletion]);
 
   const renderInitialView = () => (
     <div className="p-3 flex flex-col gap-2 color-bg-secondary rounded-md">
@@ -289,7 +358,7 @@ export const CommentDropdown = ({
           <Button
             onClick={handleReplySubmit}
             className="px-4 py-2 w-20 min-w-20 h-9"
-            disabled={activeComment?.resolved || !reply.trim()}
+            disabled={isSendDisabled}
           >
             Send
           </Button>

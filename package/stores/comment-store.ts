@@ -36,6 +36,12 @@ export interface CommentExternalDeps {
   setInitialComments?: React.Dispatch<React.SetStateAction<IComment[]>>;
   setUsername?: React.Dispatch<React.SetStateAction<string>>;
   onNewComment?: (comment: IComment, meta?: CommentMutationMeta) => void;
+  onEditComment?: (commentId: string, meta?: CommentMutationMeta) => void;
+  onEditReply?: (
+    commentId: string,
+    replyId: string,
+    meta?: CommentMutationMeta,
+  ) => void;
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
   onResolveComment?: (commentId: string, meta?: CommentMutationMeta) => void;
   onUnresolveComment?: (commentId: string, meta?: CommentMutationMeta) => void;
@@ -64,6 +70,35 @@ type CreateInlineDraftOptions = {
   // Do not reuse this for floating comments unless unanchored inline threads
   // become a deliberate product requirement.
   allowEmptySelection?: boolean;
+};
+
+type CommentEditRequest = {
+  requestId: string;
+  kind: 'comment' | 'reply';
+  commentId: string;
+  replyId?: string;
+  text: string;
+};
+
+type ReplyEditTarget = {
+  // Represents an active edit session (used by the drawer reply input).
+  // When set, "Send" should edit the target rather than create a new reply.
+  kind: 'comment' | 'reply';
+  commentId: string;
+  replyId?: string;
+  // Captures the original text at the time edit mode started.
+  // UIs use this to disable "Send" when the user hasn’t changed anything.
+  originalText: string;
+};
+
+type CommentEditCompletion = {
+  // Broadcast-only signal to clear local edit drafts in other mounted UIs.
+  // Drawer uses shared store state, but floating/bubble inputs keep local state
+  // and must be nudged when an edit is submitted elsewhere.
+  nonce: number;
+  kind: 'comment' | 'reply';
+  commentId: string;
+  replyId?: string;
 };
 
 const setFocusedFloatingCard = (
@@ -152,6 +187,22 @@ const removeInlineDraft = (
   return nextDrafts;
 };
 
+const findCommentById = (comments: IComment[], commentId: string) =>
+  comments.find((comment) => comment.id === commentId) ?? null;
+
+const findReplyById = (
+  comments: IComment[],
+  commentId: string,
+  replyId: string,
+) => {
+  const comment = findCommentById(comments, commentId);
+  if (!comment) {
+    return null;
+  }
+
+  return (comment.replies || []).find((reply) => reply.id === replyId) ?? null;
+};
+
 function getExtDeps(get: () => CommentStoreState): CommentExternalDeps {
   const ref = get()._externalDepsRef;
   return (
@@ -204,6 +255,9 @@ export interface CommentStoreState {
   isDesktopFloatingEnabled: boolean;
   ensCache: EnsCache;
   inProgressFetch: string[];
+  editRequest: CommentEditRequest | null;
+  replyEditTarget: ReplyEditTarget | null;
+  editCompletion: CommentEditCompletion | null;
 
   // --- Ref for external deps (set once by provider) ---
   _externalDepsRef: React.RefObject<CommentExternalDeps | null> | null;
@@ -253,6 +307,9 @@ export interface CommentStoreState {
   setActiveDraftId: (draftId: string | null) => void;
   setIsDesktopFloatingEnabled: (enabled: boolean) => void;
   toggleResolved: () => void;
+  clearEditRequest: (requestId: string) => void;
+  setReplyEditTarget: (target: ReplyEditTarget | null) => void;
+  cancelReplyEdit: () => void;
 
   // --- Handlers ---
   handleInput: (
@@ -286,11 +343,33 @@ export interface CommentStoreState {
   removeInvalidFloatingCards: () => void;
   syncFloatingThreadCardWithActiveComment: () => void;
   submitPendingFloatingDrafts: () => void;
+  /**
+   * Apply anchor edits to local comment state.
+   * Called after transaction analysis identifies edited anchors.
+   * Updates selectedContent for each affected comment
+   * so thread display stays in sync immediately, before consumer rehydration.
+   */
+  applyCommentAnchorEdits: (
+    edits: Array<{ commentId: string; selectedContent: string }>,
+  ) => void;
   resolveComment: (commentId: string) => void;
   unresolveComment: (commentId: string) => void;
-  deleteComment: (commentId: string) => void;
+  // `skipExternalCallback` is for provider-driven auto-deletes, where the provider
+  // is responsible for firing `onDeleteComment` and the store should only do local cleanup.
+  deleteComment: (
+    commentId: string,
+    options?: { skipExternalCallback?: boolean },
+  ) => void;
   acceptSuggestion: (commentId: string) => void;
   deleteReply: (commentId: string, replyId: string) => void;
+  requestEditComment: (commentId: string) => void;
+  requestEditReply: (commentId: string, replyId: string) => void;
+  editCommentContent: (commentId: string, content: string) => void;
+  editReplyContent: (
+    commentId: string,
+    replyId: string,
+    content: string,
+  ) => void;
   handleAddReply: (
     activeCommentId: string,
     replyContent: string,
@@ -362,6 +441,13 @@ export const createCommentStore = () =>
       }
     })(),
     inProgressFetch: [],
+    editRequest: null,
+    // This is the edit "mode" state for the drawer reply input (shared store).
+    // Floating + bubble inputs maintain local text, so they mirror this state
+    // when an edit starts and clear on edit completion.
+    replyEditTarget: null,
+    // One-way event to help local-state inputs reset when an edit finishes.
+    editCompletion: null,
 
     // --- External deps ref ---
     _externalDepsRef: null,
@@ -567,6 +653,14 @@ export const createCommentStore = () =>
       set({ isDesktopFloatingEnabled: enabled }),
     toggleResolved: () =>
       set((state) => ({ showResolved: !state.showResolved })),
+    clearEditRequest: (requestId) =>
+      set((state) =>
+        // Consume editRequest only once. Multiple UIs might be mounted, but
+        // we want the first eligible input to claim the edit prefill.
+        state.editRequest?.requestId === requestId ? { editRequest: null } : {},
+      ),
+    setReplyEditTarget: (target) => set({ replyEditTarget: target }),
+    cancelReplyEdit: () => set({ replyEditTarget: null }),
 
     // --- Handlers ---
     handleInput: (e, contentValue) => {
@@ -605,13 +699,30 @@ export const createCommentStore = () =>
     },
     handleReplySubmit: () => {
       const { activeCommentId, openReplyId, reply } = get();
-      const { onCommentReply } = getExtDeps(get);
       const targetCommentId = openReplyId || activeCommentId;
 
       if (!targetCommentId || !reply.trim()) {
         return;
       }
 
+      const { replyEditTarget } = get();
+
+      if (replyEditTarget) {
+        if (replyEditTarget.kind === 'comment') {
+          get().editCommentContent(replyEditTarget.commentId, reply);
+        } else if (replyEditTarget.replyId) {
+          get().editReplyContent(
+            replyEditTarget.commentId,
+            replyEditTarget.replyId,
+            reply,
+          );
+        }
+
+        set({ reply: '', replyEditTarget: null });
+        return;
+      }
+
+      const { onCommentReply } = getExtDeps(get);
       get().handleAddReply(targetCommentId, reply, onCommentReply ?? undefined);
       set({ reply: '' });
     },
@@ -1268,6 +1379,72 @@ export const createCommentStore = () =>
           get().submitInlineDraft(draft.draftId);
         });
     },
+    applyCommentAnchorEdits: (edits) => {
+      // Batch-update selected content for edited anchors.
+      // This is called after transaction analysis, BEFORE persistence callbacks.
+      // Ensures local UI reflects anchor edits immediately, even if persistence is async.
+      if (edits.length === 0) {
+        return;
+      }
+
+      const nextSelectedContentById = new Map(
+        edits.map((edit) => [edit.commentId, edit.selectedContent]),
+      );
+      const nextComments = get().initialComments.map((comment) => {
+        const nextSelectedContent = nextSelectedContentById.get(
+          comment.id || '',
+        );
+
+        if (nextSelectedContent === undefined) {
+          return comment;
+        }
+
+        return {
+          ...comment,
+          selectedContent: nextSelectedContent,
+        };
+      });
+
+      get().setInitialComments(nextComments);
+
+      getExtDeps(get).setInitialComments?.((previousComments) =>
+        previousComments.map((comment) => {
+          const nextSelectedContent = nextSelectedContentById.get(
+            comment.id || '',
+          );
+
+          if (nextSelectedContent === undefined) {
+            return comment;
+          }
+
+          return {
+            ...comment,
+            selectedContent: nextSelectedContent,
+          };
+        }),
+      );
+
+      set((state) => ({
+        floatingCards: state.floatingCards.map((floatingCard) => {
+          if (floatingCard.type !== 'thread') {
+            return floatingCard;
+          }
+
+          const nextSelectedContent = nextSelectedContentById.get(
+            floatingCard.commentId,
+          );
+
+          if (nextSelectedContent === undefined) {
+            return floatingCard;
+          }
+
+          return {
+            ...floatingCard,
+            selectedText: nextSelectedContent,
+          };
+        }),
+      }));
+    },
     resolveComment: (commentId) => {
       const {
         editor,
@@ -1331,9 +1508,14 @@ export const createCommentStore = () =>
         onUnresolveComment?.(commentId, mutationMeta);
       }
     },
-    deleteComment: (commentId) => {
-      const { editor, onDeleteComment, setActiveCommentId, commentAnchorsRef } =
-        getExtDeps(get);
+    deleteComment: (commentId, options) => {
+      const {
+        editor,
+        onDeleteComment,
+        setActiveCommentId,
+        commentAnchorsRef,
+        setInitialComments,
+      } = getExtDeps(get);
 
       if (!editor) return;
 
@@ -1342,16 +1524,38 @@ export const createCommentStore = () =>
       );
 
       if (isDecoration && commentAnchorsRef) {
+        const nextComments = get().initialComments.map((comment) =>
+          comment.id === commentId ? { ...comment, deleted: true } : comment,
+        );
+        const mutationMeta = {
+          type: 'delete' as const,
+        } satisfies CommentMutationMeta;
+
+        get().setInitialComments(nextComments);
+        setInitialComments?.((previousComments) =>
+          previousComments.map((comment) =>
+            comment.id === commentId ? { ...comment, deleted: true } : comment,
+          ),
+        );
+
         commentAnchorsRef.current = commentAnchorsRef.current.filter(
           (a) => a.id !== commentId,
         );
+
+        // Fire persistence callback before forcing a decoration rebuild.
+        // `triggerDecorationRebuild()` dispatches a transaction; we don't want a
+        // nested dispatch to interfere with consumer-side delete persistence.
+        if (!options?.skipExternalCallback) {
+          onDeleteComment?.(commentId, mutationMeta);
+        }
         triggerDecorationRebuild(editor);
-        onDeleteComment?.(commentId);
       } else {
         const mutationMeta = get().createMutationMeta('delete', () =>
           editor.commands.unsetComment(commentId),
         );
-        onDeleteComment?.(commentId, mutationMeta);
+        if (!options?.skipExternalCallback) {
+          onDeleteComment?.(commentId, mutationMeta);
+        }
       }
 
       set((state) => ({
@@ -1424,6 +1628,143 @@ export const createCommentStore = () =>
           };
         }),
       );
+    },
+    requestEditComment: (commentId) => {
+      const comment = findCommentById(get().initialComments, commentId);
+      if (!comment) {
+        return;
+      }
+
+      set({
+        // Fire-and-forget signal: whichever UI owns the active thread input
+        // should prefill its textarea and enter edit mode.
+        editRequest: {
+          requestId: `edit-${uuid()}`,
+          kind: 'comment',
+          commentId,
+          text: comment.content || '',
+        },
+      });
+    },
+    requestEditReply: (commentId, replyId) => {
+      const reply = findReplyById(get().initialComments, commentId, replyId);
+      if (!reply) {
+        return;
+      }
+
+      set({
+        editRequest: {
+          requestId: `edit-${uuid()}`,
+          kind: 'reply',
+          commentId,
+          replyId,
+          text: reply.content || '',
+        },
+      });
+    },
+    editCommentContent: (commentId, content) => {
+      if (!content.trim()) {
+        return;
+      }
+
+      const { onEditComment, setInitialComments } = getExtDeps(get);
+      const currentComments = get().initialComments;
+      const existingComment = findCommentById(currentComments, commentId);
+
+      if (!existingComment) {
+        return;
+      }
+
+      const nextComments = currentComments.map((comment) =>
+        comment.id === commentId ? { ...comment, content } : comment,
+      );
+
+      const mutationMeta = {
+        type: 'edit' as const,
+        content,
+      } satisfies CommentMutationMeta;
+
+      // Optimistic local update: keep the UI in sync immediately.
+      get().setInitialComments(nextComments);
+      setInitialComments?.(nextComments);
+
+      // External persistence hook for consumers (e.g. API/DB sync).
+      onEditComment?.(commentId, mutationMeta);
+      const activeEdit = get().replyEditTarget;
+      if (
+        activeEdit &&
+        activeEdit.kind === 'comment' &&
+        activeEdit.commentId === commentId
+      ) {
+        // If the drawer is currently editing this comment, clear its shared
+        // input state so we don't keep "editing mode" active after submit.
+        set({ reply: '', replyEditTarget: null });
+      }
+      set((state) => ({
+        // Notify local-state inputs (floating / drawer) to clear their drafts.
+        editCompletion: {
+          nonce: (state.editCompletion?.nonce ?? 0) + 1,
+          kind: 'comment',
+          commentId,
+        },
+      }));
+    },
+    editReplyContent: (commentId, replyId, content) => {
+      if (!content.trim()) {
+        return;
+      }
+
+      const { onEditReply, setInitialComments } = getExtDeps(get);
+      const currentComments = get().initialComments;
+      const existingReply = findReplyById(currentComments, commentId, replyId);
+
+      if (!existingReply) {
+        return;
+      }
+
+      const nextComments = currentComments.map((comment) => {
+        if (comment.id !== commentId) {
+          return comment;
+        }
+
+        return {
+          ...comment,
+          replies: (comment.replies || []).map((reply) =>
+            reply.id === replyId ? { ...reply, content } : reply,
+          ),
+        };
+      });
+
+      const mutationMeta = {
+        type: 'edit' as const,
+        content,
+      } satisfies CommentMutationMeta;
+
+      // Optimistic local update: keep the UI in sync immediately.
+      get().setInitialComments(nextComments);
+      setInitialComments?.(nextComments);
+
+      // External persistence hook for consumers (e.g. API/DB sync).
+      onEditReply?.(commentId, replyId, mutationMeta);
+      const activeEdit = get().replyEditTarget;
+      if (
+        activeEdit &&
+        activeEdit.kind === 'reply' &&
+        activeEdit.commentId === commentId &&
+        activeEdit.replyId === replyId
+      ) {
+        // Clear drawer shared edit state on successful submit.
+        set({ reply: '', replyEditTarget: null });
+      }
+      set((state) => ({
+        // Notify local-state inputs (floating / drawer) to clear their drafts.
+        editCompletion: {
+          nonce: (state.editCompletion?.nonce ?? 0) + 1,
+          kind: 'reply',
+          commentId,
+          replyId,
+        },
+      }));
     },
     handleAddReply: (activeCommentId, replyContent, replyCallback) => {
       if (!replyContent.trim()) {

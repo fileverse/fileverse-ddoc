@@ -1024,7 +1024,7 @@ const useEditorExtension = ({
         ipfsImageUploadFn,
         slashCommandConfigRef,
       ),
-    [isConnected, enableCollaboration, disableInlineComment],
+    [],
   );
 
   const commentAnchorsRef = useRef<CommentAnchor[]>([]);
@@ -1146,14 +1146,6 @@ const useEditorExtension = ({
       setExtensions(buildExtensions());
     }
   }, [activeTabId]);
-
-  useEffect(() => {
-    if (!isConnected) return;
-    setExtensions((prev) => [
-      ...prev.filter((ext) => ext.name !== 'slash-command'),
-      createSlashCommand(),
-    ]);
-  }, [createSlashCommand]);
 
   useEffect(() => {
     if (!activeModel) return;

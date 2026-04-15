@@ -112,6 +112,8 @@ const DdocEditor = forwardRef(
       initialComments = [],
       initialCommentAnchors,
       onNewComment,
+      onEditComment,
+      onEditReply,
       onCommentReply,
       setInitialComments,
       onSlidesShare,
@@ -145,7 +147,14 @@ const DdocEditor = forwardRef(
     }: DdocProps,
     ref,
   ) => {
-    const { isFocusMode, toggleFocusMode } = useFocusMode({ onFocusMode });
+    const { isFocusMode, toggleFocusMode } = useFocusMode({
+      onFocusMode: (value) => {
+        if (commentDrawerOpen) {
+          setCommentDrawerOpen?.(false);
+        }
+        onFocusMode?.(value);
+      },
+    });
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const exportTriggerRef = useRef<
@@ -513,7 +522,8 @@ const DdocEditor = forwardRef(
         {},
       );
     }, [initialComments]);
-    const baseWidth = documentStyling?.orientation === 'landscape' ? 1190 : 850;
+    const isLandscapeMode = documentStyling?.orientation === 'landscape';
+    const baseWidth = isLandscapeMode ? 1190 : 850;
 
     const zoom = Number(zoomLevel);
     const scaledWidth = baseWidth * zoom;
@@ -717,7 +727,10 @@ const DdocEditor = forwardRef(
             <div
               ref={editorScrollContainerRef}
               data-editor-scroll-container="true"
-              className={cn('flex w-full overflow-auto')}
+              className={cn(
+                'flex w-full overflow-auto',
+                isLandscapeMode && 'mx-[24px]',
+              )}
             >
               <div className="w-full h-full">
                 <div
@@ -764,7 +777,6 @@ const DdocEditor = forwardRef(
                               !isNavbarVisible && !isPreviewMode,
                           },
                           isFocusMode && 'mt-[48px]',
-                          // zoomLevel !== '1' && 'overflow-auto',
                         )}
                         style={{
                           ...(isMobile
@@ -1154,6 +1166,8 @@ const DdocEditor = forwardRef(
               initialComments={initialComments}
               setInitialComments={setInitialComments}
               onNewComment={onNewComment}
+              onEditComment={onEditComment}
+              onEditReply={onEditReply}
               onCommentReply={onCommentReply}
               onResolveComment={onResolveComment}
               onUnresolveComment={onUnresolveComment}

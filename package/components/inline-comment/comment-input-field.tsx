@@ -1,9 +1,9 @@
 import { Avatar, TextAreaFieldV2, Button } from '@fileverse/ui';
 import { useCommentStore } from '../../stores/comment-store';
 import EnsLogo from '../../assets/ens.svg';
-import { useEffect, useRef, useState } from 'react';
-import { EnsStatus } from './types';
+import { useEffect, useRef } from 'react';
 import { resizeInlineCommentTextarea } from './resize-inline-comment-textarea';
+import { useEnsStatus } from './use-ens-status';
 
 export const CommentInputField = ({ tabId }: { tabId?: string }) => {
   const comment = useCommentStore((s) => s.comment);
@@ -11,18 +11,8 @@ export const CommentInputField = ({ tabId }: { tabId?: string }) => {
   const handleCommentChange = useCommentStore((s) => s.handleCommentChange);
   const handleCommentKeyDown = useCommentStore((s) => s.handleCommentKeyDown);
   const handleCommentSubmit = useCommentStore((s) => s.handleCommentSubmit);
-  const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
-  const ensCache = useCommentStore((s) => s.ensCache);
   const commentInputRef = useRef<HTMLTextAreaElement | null>(null);
-
-  const [ensStatus, setEnsStatus] = useState<EnsStatus>({
-    name: username as string,
-    isEns: false,
-  });
-
-  useEffect(() => {
-    getEnsStatus(username as string, setEnsStatus);
-  }, [username, ensCache]);
+  const ensStatus = useEnsStatus(username);
 
   useEffect(() => {
     if (!commentInputRef.current) {

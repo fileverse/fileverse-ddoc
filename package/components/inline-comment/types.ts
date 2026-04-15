@@ -56,6 +56,7 @@ export interface CommentCardProps extends IComment {
   emptyComment?: boolean;
   isFocused?: boolean;
   isCommentDrawerContext?: boolean;
+  isSuggestion?: boolean;
 }
 
 export type CommentBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
@@ -69,6 +70,8 @@ export interface CommentReplyProps {
   username: string;
   createdAt: Date;
   isLast: boolean;
+  isThreadResolved?: boolean;
+  isCommentDrawerContext?: boolean;
 }
 
 export interface EnsStatus {
