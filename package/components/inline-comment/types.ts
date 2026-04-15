@@ -69,6 +69,8 @@ export interface CommentReplyProps {
   username: string;
   createdAt: Date;
   isLast: boolean;
+  isThreadResolved?: boolean;
+  isCommentDrawerContext?: boolean;
 }
 
 export interface EnsStatus {

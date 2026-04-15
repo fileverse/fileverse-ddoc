@@ -17,6 +17,12 @@ export const CommentReplyInput = ({
   replyCount,
 }: CommentReplyInputProps) => {
   const reply = useCommentStore((s) => s.reply);
+  const replyEditTarget = useCommentStore((s) => s.replyEditTarget);
+  const editRequest = useCommentStore((s) => s.editRequest);
+  const clearEditRequest = useCommentStore((s) => s.clearEditRequest);
+  const setReply = useCommentStore((s) => s.setReply);
+  const setReplyEditTarget = useCommentStore((s) => s.setReplyEditTarget);
+  const cancelReplyEdit = useCommentStore((s) => s.cancelReplyEdit);
   const handleReplyChange = useCommentStore((s) => s.handleReplyChange);
   const handleReplyKeyDown = useCommentStore((s) => s.handleReplyKeyDown);
   const handleReplySubmit = useCommentStore((s) => s.handleReplySubmit);
@@ -26,6 +32,13 @@ export const CommentReplyInput = ({
   const ensCache = useCommentStore((s) => s.ensCache);
   const { isBelow1280px } = useResponsive();
   const hasUnsentReply = Boolean(reply.trim());
+  const isEditing = Boolean(replyEditTarget);
+  const isSendDisabled = Boolean(
+    !reply.trim() ||
+      !username ||
+      (isEditing &&
+        reply.trim() === (replyEditTarget?.originalText ?? '').trim()),
+  );
   const replyInputRef = useRef<HTMLTextAreaElement | null>(null);
 
   const [ensStatus, setEnsStatus] = useState<EnsStatus>({
@@ -36,6 +49,22 @@ export const CommentReplyInput = ({
   useEffect(() => {
     getEnsStatus(username as string, setEnsStatus);
   }, [username, ensCache, getEnsStatus]);
+
+  useEffect(() => {
+    if (!editRequest || editRequest.commentId !== commentId) {
+      return;
+    }
+
+    setReply(editRequest.text);
+    setReplyEditTarget({
+      kind: editRequest.kind,
+      commentId: editRequest.commentId,
+      replyId: editRequest.replyId,
+      originalText: editRequest.text,
+    });
+    clearEditRequest(editRequest.requestId);
+    replyInputRef.current?.focus();
+  }, [clearEditRequest, commentId, editRequest, setReply, setReplyEditTarget]);
 
   useEffect(() => {
     if (!replyInputRef.current) {
@@ -83,7 +112,7 @@ export const CommentReplyInput = ({
           onClick={() => handleReplySubmit()}
           icon={'SendHorizontal'}
           variant="ghost"
-          disabled={!reply.trim() || !username}
+          disabled={isSendDisabled}
           className={cn(
             '!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]',
             !isBelow1280px && 'hidden',
@@ -106,6 +135,8 @@ export const CommentReplyInput = ({
           onClick={(e) => {
             e.stopPropagation();
             setOpenReplyId(null);
+            setReply('');
+            cancelReplyEdit();
           }}
         >
           <p className="text-body-sm-bold">Cancel</p>
@@ -113,7 +144,7 @@ export const CommentReplyInput = ({
         <Button
           data-testid="comment-reply-send"
           className="w-20 min-w-20"
-          disabled={!reply.trim()}
+          disabled={isSendDisabled}
           onClick={(e) => {
             e.stopPropagation();
             handleReplySubmit();

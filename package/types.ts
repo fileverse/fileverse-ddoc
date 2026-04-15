@@ -54,6 +54,7 @@ export interface CommentMutationMeta {
   anchorFrom?: string;
   anchorTo?: string;
   selectedContent?: string;
+  content?: string;
 }
 
 export interface SerializedCommentAnchor {
@@ -157,6 +158,11 @@ export interface DdocProps extends CommentAccountProps {
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
   onNewComment?: (newComment: IComment, meta?: CommentMutationMeta) => void;
   onEditComment?: (activeCommentId: string, meta?: CommentMutationMeta) => void;
+  onEditReply?: (
+    activeCommentId: string,
+    replyId: string,
+    meta?: CommentMutationMeta,
+  ) => void;
   onResolveComment?: (
     activeCommentId: string,
     meta?: CommentMutationMeta,

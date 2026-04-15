@@ -14,6 +14,7 @@ export const useCommentCard = ({
   onFocusRequest,
   isResolved,
   isDropdown = false,
+  isCommentDrawerContext,
   activeCommentId,
   id,
   isFocused,
@@ -23,6 +24,9 @@ export const useCommentCard = ({
   const [showAllReplies, setShowAllReplies] = useState(false);
   const [isCommentExpanded, setIsCommentExpanded] = useState(false);
   const openReplyId = useCommentStore((s) => s.openReplyId);
+  const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
+  const requestEditComment = useCommentStore((s) => s.requestEditComment);
+  const currentUsername = useCommentStore((s) => s.username);
   const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
   const ensCache = useCommentStore((s) => s.ensCache);
   const { isBelow1280px } = useResponsive();
@@ -83,6 +87,27 @@ export const useCommentCard = ({
 
   const handleRequestDeleteClick = () => {
     onRequestDelete?.(id as string);
+    removePopoverContent();
+  };
+
+  const handleRequestEditClick = () => {
+    if (!id) {
+      return;
+    }
+
+    const isStrictOwner = Boolean(
+      currentUsername && username && username === currentUsername,
+    );
+
+    if (!isStrictOwner) {
+      return;
+    }
+
+    if (isCommentDrawerContext) {
+      setOpenReplyId(id);
+    }
+
+    requestEditComment(id);
     removePopoverContent();
   };
 
@@ -159,6 +184,7 @@ export const useCommentCard = ({
     focusCardIfNeeded,
     handleCommentExpandClick,
     handleReplyToggleClick,
+    handleRequestEditClick,
     handleRequestDeleteClick,
     handleResolveClick,
     handleUnresolveClick,

@@ -31,6 +31,11 @@ export interface CommentStoreProviderProps {
   setInitialComments?: React.Dispatch<React.SetStateAction<IComment[]>>;
   onNewComment?: (comment: IComment, meta?: CommentMutationMeta) => void;
   onEditComment?: (commentId: string, meta?: CommentMutationMeta) => void;
+  onEditReply?: (
+    commentId: string,
+    replyId: string,
+    meta?: CommentMutationMeta,
+  ) => void;
   onCommentReply?: (activeCommentId: string, reply: IComment) => void;
   onResolveComment?: (commentId: string, meta?: CommentMutationMeta) => void;
   onUnresolveComment?: (commentId: string, meta?: CommentMutationMeta) => void;
@@ -65,6 +70,7 @@ export const CommentStoreProvider = ({
   setInitialComments,
   onNewComment,
   onEditComment,
+  onEditReply,
   onCommentReply,
   onResolveComment,
   onUnresolveComment,
@@ -110,6 +116,7 @@ export const CommentStoreProvider = ({
     setUsername: setUsernameProp,
     onNewComment,
     onEditComment,
+    onEditReply,
     onCommentReply,
     onResolveComment,
     onUnresolveComment,
@@ -133,6 +140,7 @@ export const CommentStoreProvider = ({
     setUsername: setUsernameProp,
     onNewComment,
     onEditComment,
+    onEditReply,
     onCommentReply,
     onResolveComment,
     onUnresolveComment,

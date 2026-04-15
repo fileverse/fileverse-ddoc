@@ -115,6 +115,14 @@ const InputField = ({
   const canReply = !comment?.resolved && Boolean(comment);
   const setCommentDrawerOpen = useCommentStore((s) => s.setCommentDrawerOpen);
   const handleAddReply = useCommentStore((s) => s.handleAddReply);
+  const editRequest = useCommentStore((s) => s.editRequest);
+  const clearEditRequest = useCommentStore((s) => s.clearEditRequest);
+  const replyEditTarget = useCommentStore((s) => s.replyEditTarget);
+  const setReplyEditTarget = useCommentStore((s) => s.setReplyEditTarget);
+  const cancelReplyEdit = useCommentStore((s) => s.cancelReplyEdit);
+  const editCompletion = useCommentStore((s) => s.editCompletion);
+  const editCommentContent = useCommentStore((s) => s.editCommentContent);
+  const editReplyContent = useCommentStore((s) => s.editReplyContent);
   const replyTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [replyText, setReplyText] = useState('');
   const isConnected = useCommentStore((s) => s.isConnected);
@@ -128,10 +136,33 @@ const InputField = ({
       return;
     }
 
+    if (replyEditTarget?.commentId === thread.commentId) {
+      if (replyEditTarget.kind === 'comment') {
+        editCommentContent(replyEditTarget.commentId, replyText);
+      } else if (replyEditTarget.replyId) {
+        editReplyContent(
+          replyEditTarget.commentId,
+          replyEditTarget.replyId,
+          replyText,
+        );
+      }
+
+      setReplyText('');
+      cancelReplyEdit();
+      return;
+    }
+
     handleAddReply(thread.commentId, replyText);
     setReplyText('');
   };
   const hasUnsentReply = Boolean(replyText.trim());
+  const isEditingThisThread = replyEditTarget?.commentId === thread.commentId;
+  const isSendDisabled = Boolean(
+    !canReply ||
+      !replyText.trim() ||
+      (isEditingThisThread &&
+        replyText.trim() === (replyEditTarget?.originalText ?? '').trim()),
+  );
   const shouldShowReplyInputField =
     isConnected && (thread.isFocused || hasUnsentReply);
 
@@ -142,6 +173,40 @@ const InputField = ({
 
     resizeInlineCommentTextarea(replyTextareaRef.current);
   }, [replyText]);
+
+  useEffect(() => {
+    if (!editRequest || !thread.commentId) {
+      return;
+    }
+
+    if (editRequest.commentId !== thread.commentId) {
+      return;
+    }
+
+    setReplyText(editRequest.text);
+    setReplyEditTarget({
+      kind: editRequest.kind,
+      commentId: editRequest.commentId,
+      replyId: editRequest.replyId,
+      originalText: editRequest.text,
+    });
+    clearEditRequest(editRequest.requestId);
+    replyTextareaRef.current?.focus();
+  }, [clearEditRequest, editRequest, setReplyEditTarget, thread.commentId]);
+
+  useEffect(() => {
+    if (!editCompletion || !thread.commentId) {
+      return;
+    }
+
+    if (editCompletion.commentId !== thread.commentId) {
+      return;
+    }
+
+    setReplyText('');
+    cancelReplyEdit();
+  }, [cancelReplyEdit, editCompletion, thread.commentId]);
+
   if (!shouldShowReplyInputField) return;
   return (
     <div className="group p-3 pt-0">
@@ -186,13 +251,14 @@ const InputField = ({
             event.stopPropagation();
             setReplyText('');
             setIsReplyInputFocused(false);
+            cancelReplyEdit();
           }}
         >
           <p className="text-body-sm-bold">Cancel</p>
         </Button>
         <Button
           className="w-20 min-w-20"
-          disabled={!canReply || !replyText.trim()}
+          disabled={isSendDisabled}
           onClick={onReplySubmit}
         >
           Send
