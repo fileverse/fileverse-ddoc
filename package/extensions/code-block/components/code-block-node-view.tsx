@@ -24,8 +24,19 @@ const LANGUAGE_GROUPS = [
       { label: 'CSS', value: 'css' },
       { label: 'JavaScript', value: 'js' },
       { label: 'TypeScript', value: 'ts' },
+      { label: 'JSX', value: 'jsx' },
+      { label: 'TSX', value: 'tsx' },
       { label: 'JSON', value: 'json' },
       { label: 'Markdown', value: 'md' },
+    ],
+  },
+  {
+    label: 'Systems',
+    options: [
+      { label: 'C', value: 'c' },
+      { label: 'C++', value: 'cpp' },
+      { label: 'Rust', value: 'rust' },
+      { label: 'Go', value: 'go' },
     ],
   },
   {
@@ -33,6 +44,34 @@ const LANGUAGE_GROUPS = [
     options: [
       { label: 'Python', value: 'python' },
       { label: 'Bash', value: 'bash' },
+      { label: 'Ruby', value: 'ruby' },
+      { label: 'PHP', value: 'php' },
+    ],
+  },
+  {
+    label: 'Data',
+    options: [
+      { label: 'SQL', value: 'sql' },
+      { label: 'YAML', value: 'yaml' },
+      { label: 'XML', value: 'xml' },
+    ],
+  },
+  {
+    label: 'Build',
+    options: [{ label: 'Makefile', value: 'makefile' }],
+  },
+  {
+    label: 'JVM',
+    options: [
+      { label: 'Java', value: 'java' },
+      { label: 'Kotlin', value: 'kotlin' },
+    ],
+  },
+  {
+    label: 'Apple',
+    options: [
+      { label: 'Swift', value: 'swift' },
+      { label: 'Objective-C', value: 'objectivec' },
     ],
   },
   {
@@ -153,10 +192,7 @@ export default function CodeBlockNodeView({
                   <span className="w-1"></span>
                 </Tooltip>
               </SelectTrigger>
-              <SelectContent
-                className="min-w-fit max-h-none"
-                showScrollButtons={false}
-              >
+              <SelectContent className="min-w-fit" showScrollButtons={false}>
                 {LANGUAGE_GROUPS.map((group) => (
                   <SelectGroup key={group.label}>
                     <SelectLabel>{group.label}</SelectLabel>
