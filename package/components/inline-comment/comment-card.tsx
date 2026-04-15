@@ -7,13 +7,8 @@ import {
   Skeleton,
   Tooltip,
 } from '@fileverse/ui';
-import { useEffect, useState } from 'react';
-import {
-  CommentCardProps,
-  CommentReplyProps,
-  EnsStatus,
-  UserDisplayProps,
-} from './types';
+import { useState } from 'react';
+import { CommentCardProps, CommentReplyProps, UserDisplayProps } from './types';
 import { useCommentStore } from '../../stores/comment-store';
 import EnsLogo from '../../assets/ens.svg';
 import verifiedMark from '../../assets/ens-check.svg';
@@ -25,18 +20,10 @@ import {
 import { Spinner } from '../../common/spinner';
 import { DeleteConfirmOverlay } from './delete-confirm-overlay';
 import { useCommentCard } from './use-comment-card';
+import { useEnsStatus } from './use-ens-status';
 
 const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
-  const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
-  const ensCache = useCommentStore((s) => s.ensCache);
-  const [ensStatus, setEnsStatus] = useState<EnsStatus>({
-    name: username,
-    isEns: false,
-  });
-
-  useEffect(() => {
-    getEnsStatus(username, setEnsStatus);
-  }, [username, ensCache, getEnsStatus]);
+  const ensStatus = useEnsStatus(username);
 
   return (
     <div className="flex justify-start items-center gap-2">

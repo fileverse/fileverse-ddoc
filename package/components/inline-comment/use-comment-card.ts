@@ -2,7 +2,8 @@ import { MouseEvent, useEffect, useRef, useState } from 'react';
 import { IComment } from '../../extensions/comment';
 import { useCommentStore } from '../../stores/comment-store';
 import { useResponsive } from '../../utils/responsive';
-import { CommentCardProps, EnsStatus } from './types';
+import { CommentCardProps } from './types';
+import { useEnsStatus } from './use-ens-status';
 
 export const useCommentCard = ({
   username,
@@ -27,25 +28,8 @@ export const useCommentCard = ({
   const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
   const requestEditComment = useCommentStore((s) => s.requestEditComment);
   const currentUsername = useCommentStore((s) => s.username);
-  const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
-  const ensCache = useCommentStore((s) => s.ensCache);
   const { isBelow1280px } = useResponsive();
-  const [ensStatus, setEnsStatus] = useState<EnsStatus>({
-    name: username as string,
-    isEns: false,
-  });
-
-  useEffect(() => {
-    if (!username) {
-      setEnsStatus({
-        name: '',
-        isEns: false,
-      });
-      return;
-    }
-
-    getEnsStatus(username, setEnsStatus);
-  }, [username, ensCache, getEnsStatus]);
+  const ensStatus = useEnsStatus(username);
 
   const removePopoverContent = () => {
     if (dropdownRef.current?.parentElement) {

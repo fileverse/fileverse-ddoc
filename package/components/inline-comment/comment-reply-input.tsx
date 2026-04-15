@@ -1,9 +1,10 @@
 import { Avatar, TextAreaFieldV2, Button, IconButton, cn } from '@fileverse/ui';
 import { useCommentStore } from '../../stores/comment-store';
-import { useEffect, useRef, useState } from 'react';
-import { EnsStatus } from './types';
+import { useEffect, useRef } from 'react';
 import { useResponsive } from '../../utils/responsive';
 import { resizeInlineCommentTextarea } from './resize-inline-comment-textarea';
+import { useEnsStatus } from './use-ens-status';
+import EnsLogo from '../../assets/ens.svg';
 
 interface CommentReplyInputProps {
   commentId: string;
@@ -13,7 +14,6 @@ interface CommentReplyInputProps {
 
 export const CommentReplyInput = ({
   commentId,
-  commentUsername,
   replyCount,
 }: CommentReplyInputProps) => {
   const reply = useCommentStore((s) => s.reply);
@@ -28,8 +28,6 @@ export const CommentReplyInput = ({
   const handleReplySubmit = useCommentStore((s) => s.handleReplySubmit);
   const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
   const username = useCommentStore((s) => s.username);
-  const getEnsStatus = useCommentStore((s) => s.getEnsStatus);
-  const ensCache = useCommentStore((s) => s.ensCache);
   const { isBelow1280px } = useResponsive();
   const hasUnsentReply = Boolean(reply.trim());
   const isEditing = Boolean(replyEditTarget);
@@ -40,15 +38,7 @@ export const CommentReplyInput = ({
         reply.trim() === (replyEditTarget?.originalText ?? '').trim()),
   );
   const replyInputRef = useRef<HTMLTextAreaElement | null>(null);
-
-  const [ensStatus, setEnsStatus] = useState<EnsStatus>({
-    name: username as string,
-    isEns: false,
-  });
-
-  useEffect(() => {
-    getEnsStatus(username as string, setEnsStatus);
-  }, [username, ensCache, getEnsStatus]);
+  const ensStatus = useEnsStatus(username);
 
   useEffect(() => {
     if (!editRequest || editRequest.commentId !== commentId) {
@@ -83,9 +73,13 @@ export const CommentReplyInput = ({
         )}
       >
         <Avatar
-          src={`https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-            ensStatus.name || '',
-          )}`}
+          src={
+            ensStatus.isEns
+              ? EnsLogo
+              : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                  ensStatus.name || '',
+                )}`
+          }
           className="w-[16px] h-[16px]"
         />
         <TextAreaFieldV2
@@ -96,7 +90,7 @@ export const CommentReplyInput = ({
           className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
           placeholder={
             replyCount === 0
-              ? `Reply to @${commentUsername}`
+              ? `Reply to @${ensStatus.name}`
               : replyCount >= 2
                 ? `Add a reply`
                 : `Reply `

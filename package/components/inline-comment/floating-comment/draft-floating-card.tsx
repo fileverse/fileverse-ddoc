@@ -6,6 +6,10 @@ import { FloatingAuthPrompt } from './floating-auth-prompt';
 import { FloatingCardShell } from './floating-card-shell';
 import type { DraftFloatingCardProps } from './types';
 import { InlineCommentDraft } from '../context/types';
+import { nameFormatter } from '../../../utils/helpers';
+import verifiedMark from '../../../assets/ens-check.svg';
+import EnsLogo from '../../../assets/ens.svg';
+import { useEnsStatus } from '../use-ens-status';
 
 export const DraftFloatingCard = ({
   draft,
@@ -17,6 +21,7 @@ export const DraftFloatingCard = ({
   const username = useCommentStore((s) => s.username);
   const isConnected = useCommentStore((s) => s.isConnected);
   const draftCardRef = useRef<HTMLDivElement | null>(null);
+  const ensStatus = useEnsStatus(username);
 
   useEffect(() => {
     if (!draftState || !draft.isFocused || isHidden) {
@@ -55,14 +60,29 @@ export const DraftFloatingCard = ({
         <FloatingAuthPrompt />
       ) : (
         <>
-          <div className="flex items-center gap-2 color-border-default px-3 py-2">
+          <div className="flex justify-start items-center gap-2 color-border-default px-3 py-2">
             <Avatar
-              src={`https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-                username || '',
-              )}`}
-              className="w-[24px] h-[24px]"
+              src={
+                ensStatus.isEns
+                  ? EnsLogo
+                  : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                      ensStatus.name,
+                    )}`
+              }
+              size="sm"
+              className="min-w-6"
             />
-            <p className="text-body-sm-bold">{username}</p>
+
+            <span className="text-body-sm-bold inline-flex items-center gap-1 whitespace-nowrap">
+              {nameFormatter(ensStatus.name)}
+              {ensStatus.isEns && (
+                <img
+                  src={verifiedMark}
+                  alt="verified"
+                  className="w-3.5 h-3.5"
+                />
+              )}
+            </span>
           </div>
           <InputField draftState={draftState} draft={draft} />
         </>
