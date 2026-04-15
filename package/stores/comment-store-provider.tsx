@@ -488,10 +488,22 @@ export const CommentStoreProvider = ({
             }
 
             // Process deleted anchors after edits.
-            // Deletions route through store.deleteComment() to ensure consistent cleanup:
-            // anchor removal, active-comment state reset, floating-card removal, and onDeleteComment callback.
+            // Provider fires the external delete callback directly via `externalDepsRef`
+            // then routes local cleanup through store.deleteComment(). Keeping the
+            // callback in the provider avoids coupling it to nested editor dispatches
+            // (e.g., forced decoration rebuilds) inside the store.
             deletedChanges.forEach((change) => {
-              store.getState().deleteComment(change.id);
+              const mutationMeta = {
+                type: 'delete' as const,
+              } satisfies CommentMutationMeta;
+
+              externalDepsRef.current.onDeleteComment?.(
+                change.id,
+                mutationMeta,
+              );
+              store
+                .getState()
+                .deleteComment(change.id, { skipExternalCallback: true });
             });
           }
         }

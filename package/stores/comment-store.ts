@@ -297,7 +297,12 @@ export interface CommentStoreState {
   ) => void;
   resolveComment: (commentId: string) => void;
   unresolveComment: (commentId: string) => void;
-  deleteComment: (commentId: string) => void;
+  // `skipExternalCallback` is for provider-driven auto-deletes, where the provider
+  // is responsible for firing `onDeleteComment` and the store should only do local cleanup.
+  deleteComment: (
+    commentId: string,
+    options?: { skipExternalCallback?: boolean },
+  ) => void;
   deleteReply: (commentId: string, replyId: string) => void;
   handleAddReply: (
     activeCommentId: string,
@@ -1405,7 +1410,7 @@ export const createCommentStore = () =>
         onUnresolveComment?.(commentId, mutationMeta);
       }
     },
-    deleteComment: (commentId) => {
+    deleteComment: (commentId, options) => {
       const {
         editor,
         onDeleteComment,
@@ -1424,6 +1429,9 @@ export const createCommentStore = () =>
         const nextComments = get().initialComments.map((comment) =>
           comment.id === commentId ? { ...comment, deleted: true } : comment,
         );
+        const mutationMeta = {
+          type: 'delete' as const,
+        } satisfies CommentMutationMeta;
 
         get().setInitialComments(nextComments);
         setInitialComments?.((previousComments) =>
@@ -1435,13 +1443,21 @@ export const createCommentStore = () =>
         commentAnchorsRef.current = commentAnchorsRef.current.filter(
           (a) => a.id !== commentId,
         );
+
+        // Fire persistence callback before forcing a decoration rebuild.
+        // `triggerDecorationRebuild()` dispatches a transaction; we don't want a
+        // nested dispatch to interfere with consumer-side delete persistence.
+        if (!options?.skipExternalCallback) {
+          onDeleteComment?.(commentId, mutationMeta);
+        }
         triggerDecorationRebuild(editor);
-        onDeleteComment?.(commentId);
       } else {
         const mutationMeta = get().createMutationMeta('delete', () =>
           editor.commands.unsetComment(commentId),
         );
-        onDeleteComment?.(commentId, mutationMeta);
+        if (!options?.skipExternalCallback) {
+          onDeleteComment?.(commentId, mutationMeta);
+        }
       }
 
       set((state) => ({

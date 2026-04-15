@@ -114,8 +114,8 @@ function resolveCommentAnchorRangeFromRenderedDecorations(
 ): CommentAnchorRange | null {
   const pluginState = commentDecorationPluginKey.getState(state);
   const matchingDecorations =
-    pluginState?.decorations.find(undefined, undefined, (decoration) => {
-      return decoration.spec.commentId === commentId;
+    pluginState?.decorations.find(undefined, undefined, (spec) => {
+      return spec?.commentId === commentId;
     }) ?? [];
 
   if (matchingDecorations.length === 0) {
@@ -141,8 +141,12 @@ function resolveCommentAnchorRangeForAnalysis(
   state: EditorState,
 ): CommentAnchorRange | null {
   return (
-    resolveCommentAnchorRangeInState(anchor, state) ??
-    resolveCommentAnchorRangeFromRenderedDecorations(anchor.id, state)
+    // For pre-transaction analysis, trust the rendered highlight snapshot first.
+    // The sync plugin's Yjs mapping objects are live and can drift relative to
+    // an old EditorState, while the old decoration set still reflects what the
+    // user actually saw highlighted before the edit.
+    resolveCommentAnchorRangeFromRenderedDecorations(anchor.id, state) ??
+    resolveCommentAnchorRangeInState(anchor, state)
   );
 }
 
@@ -258,29 +262,20 @@ function doChangedRangesCoverWholeAnchor(
 }
 
 function mapAnchorRangeThroughTransform(
-  doc: EditorState['doc'],
   range: CommentAnchorRange,
   transform: Transform,
   mappedDoc: EditorState['doc'],
 ): CommentAnchorRange | null {
-  // Map an old absolute range through the combined transaction transform
-  // to find its new position in the post-transaction state.
-  // This is used to track partial edits (insertions, deletions that don't span the full anchor).
-  const mappedDecorationSet = DecorationSet.create(doc, [
-    Decoration.inline(range.from, range.to, {}, { anchor: true }),
-  ]).map(transform.mapping, mappedDoc);
-  const mappedDecorations = mappedDecorationSet.find();
+  // Map boundaries directly with opposite association so deletes shrink the
+  // anchor instead of letting decoration mapping absorb nearby text.
+  const from = transform.mapping.map(range.from, 1);
+  const to = transform.mapping.map(range.to, -1);
 
-  if (mappedDecorations.length === 0) {
+  if (from >= to) {
     return null;
   }
 
-  const from = Math.min(
-    ...mappedDecorations.map((decoration) => decoration.from),
-  );
-  const to = Math.max(...mappedDecorations.map((decoration) => decoration.to));
-
-  if (from >= to) {
+  if (from < 0 || to > mappedDoc.content.size) {
     return null;
   }
 
@@ -355,7 +350,6 @@ export function analyzeCommentAnchorTransactionChanges(
 
     // Map the old anchor range through the transform to find new position.
     const mappedRange = mapAnchorRangeThroughTransform(
-      oldState.doc,
       oldRange,
       transform,
       newState.doc,
