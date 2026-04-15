@@ -38,6 +38,9 @@ interface UseTabManagerArgs {
   createDefaultTabIfMissing: boolean;
   shouldSyncActiveTab: boolean;
   defaultTabId?: string;
+  // Viewers should land on the first tab instead of inheriting whatever the
+  // owner last persisted into Yjs tabState.activeTabId. Opt-in per caller.
+  preferFirstTabOnInit?: boolean;
   onVersionHistoryActiveTabChange?: (tabId: string | null) => void;
   getEditor?: () => Editor | null;
   flushPendingUpdate?: () => void;
@@ -55,6 +58,7 @@ export const useTabManager = ({
   createDefaultTabIfMissing,
   shouldSyncActiveTab,
   defaultTabId,
+  preferFirstTabOnInit,
   onVersionHistoryActiveTabChange,
   flushPendingUpdate,
   getEditor,
@@ -123,7 +127,10 @@ export const useTabManager = ({
   ]);
 
   const [activeTabId, _setActiveTabId] = useState(
-    defaultTabId || initialTabState.activeTabId,
+    defaultTabId ||
+    (preferFirstTabOnInit
+      ? (initialTabState.tabList[0]?.id ?? initialTabState.activeTabId)
+      : initialTabState.activeTabId),
   );
   const [tabs, setTabs] = useState<Tab[]>(initialTabState.tabList);
   const hasTabState = useMemo(() => tabs.length > 0, [tabs]);
@@ -141,8 +148,14 @@ export const useTabManager = ({
       const newActiveId = defaultTabId || initialTabState.activeTabId;
       activeTabIdRef.current = newActiveId;
       _setActiveTabId(newActiveId);
+    } else if (preferFirstTabOnInit && !defaultTabId) {
+      const firstTabId = initialTabState.tabList[0]?.id;
+      if (firstTabId) {
+        activeTabIdRef.current = firstTabId;
+        _setActiveTabId(firstTabId);
+      }
     }
-  }, [initialTabState, shouldSyncActiveTab, defaultTabId]);
+  }, [initialTabState, shouldSyncActiveTab, defaultTabId, preferFirstTabOnInit]);
   const {
     applyRename,
     undo: undoTabMetadataChange,
@@ -163,9 +176,13 @@ export const useTabManager = ({
       }
 
       const tabNodes = getTabsYdocNodes(ydoc);
+      // 'self' origin prevents onChange from firing in use-yjs-setup.ts,
+      // which would otherwise persist the full Yjs state to IndexedDB and
+      // trick the onchain-sync publish loop into seeing "changed" content
+      // on every tab switch even without any real edits.
       ydoc.transact(() => {
         tabNodes.tabState.set('activeTabId', id);
-      });
+      }, 'self');
       _setActiveTabId(id);
     },
     [activeTabId, ydoc, shouldSyncActiveTab, isInitialContentResolved],
