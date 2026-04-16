@@ -600,6 +600,7 @@ const TiptapToolBar = ({
               size="sm"
               variant="ghost"
               onClick={toggleFocusMode}
+              id="focus-mode-button"
             />
           </Tooltip>
           {isLoading
