@@ -66,9 +66,14 @@ export const ThreadFloatingCard = ({
       onFocus={handleThreadFocus}
     >
       <div className="flex flex-col gap-[8px]">
-        <p className="text-helper-text-sm px-[12px] pt-[12px] h-[26px] max-w-[270px] truncate color-text-secondary">
-          {tabName}
-        </p>
+        <div className="w-full px-[12px] gap-[8px] pt-[12px] flex">
+          <p className="text-helper-text-sm  h-[26px] color-text-secondary">
+            {tabName}
+          </p>
+          <p className="text-helper-text-sm h-[26px] truncate color-text-secondary">
+            {comment?.selectedContent || thread.selectedText}
+          </p>
+        </div>
         <CommentCard
           id={comment?.id}
           username={comment?.username}

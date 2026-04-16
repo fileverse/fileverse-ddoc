@@ -60,15 +60,15 @@ const CommentReply = ({
   username,
   createdAt,
   isThreadResolved,
-  isCommentDrawerContext,
+  // isCommentDrawerContext,
   // isLast,
 }: CommentReplyProps) => {
   // const dropdownRef = useRef<HTMLDivElement>(null);
   const [isCommentExpanded, setIsCommentExpanded] = useState(false);
   const [isDeleteOverlayVisible, setIsDeleteOverlayVisible] = useState(false);
   const deleteReply = useCommentStore((s) => s.deleteReply);
-  const requestEditReply = useCommentStore((s) => s.requestEditReply);
-  const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
+  // const requestEditReply = useCommentStore((s) => s.requestEditReply);
+  // const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
   const currentUsername = useCommentStore((s) => s.username);
   const isDDocOwner = useCommentStore((s) => s.isDDocOwner);
   const isCommentTruncated = Boolean(reply && reply.length > 70);
@@ -106,17 +106,17 @@ const CommentReply = ({
     deleteReply(commentId, replyId);
   };
 
-  const handleRequestEditReply = () => {
-    if (!canEditReply) {
-      return;
-    }
+  // const handleRequestEditReply = () => {
+  //   if (!canEditReply) {
+  //     return;
+  //   }
 
-    if (isCommentDrawerContext) {
-      setOpenReplyId(commentId);
-    }
+  //   if (isCommentDrawerContext) {
+  //     setOpenReplyId(commentId);
+  //   }
 
-    requestEditReply(commentId, replyId);
-  };
+  //   requestEditReply(commentId, replyId);
+  // };
 
   return (
     <div
@@ -146,7 +146,7 @@ const CommentReply = ({
               }
               content={
                 <div className="flex flex-col p-2 w-40 shadow-elevation-3">
-                  {canEditReply && (
+                  {/* {canEditReply && (
                     <button
                       className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
                       onClick={handleRequestEditReply}
@@ -154,7 +154,7 @@ const CommentReply = ({
                       <LucideIcon name="Pencil" size="sm" />
                       <p className="text-body-sm color-text-default">Edit</p>
                     </button>
-                  )}
+                  )} */}
                   {canDeleteReply && (
                     <button
                       className="flex items-center h-[32px] color-text-danger text-sm font-medium gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
@@ -224,7 +224,7 @@ export const CommentCard = (props: CommentCardProps) => {
     focusCardIfNeeded,
     handleCommentExpandClick,
     handleReplyToggleClick,
-    handleRequestEditClick,
+    // handleRequestEditClick,
     handleRequestDeleteClick,
     handleResolveClick,
     handleUnresolveClick,
@@ -239,10 +239,10 @@ export const CommentCard = (props: CommentCardProps) => {
     showAllReplies,
     visibleReplies,
   } = useCommentCard(props);
-  const currentUsername = useCommentStore((s) => s.username);
-  const isStrictCommentOwner = Boolean(
-    currentUsername && username && username === currentUsername,
-  );
+  // const currentUsername = useCommentStore((s) => s.username);
+  // const isStrictCommentOwner = Boolean(
+  //   currentUsername && username && username === currentUsername,
+  // );
 
   if (emptyComment)
     return (
@@ -336,7 +336,7 @@ export const CommentCard = (props: CommentCardProps) => {
                               </p>
                             </button>
                           )}
-                          {!isResolved &&
+                          {/* {!isResolved &&
                             !isDisabled &&
                             isStrictCommentOwner && (
                               <button
@@ -348,7 +348,7 @@ export const CommentCard = (props: CommentCardProps) => {
                                   Edit
                                 </p>
                               </button>
-                            )}
+                            )} */}
                           <button
                             className="flex items-center h-[32px] color-text-danger text-sm font-medium gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
                             onClick={handleRequestDeleteClick}

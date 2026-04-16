@@ -355,12 +355,10 @@ const SidebarCommentItem = ({
         </div>
       )}
       <div className="px-[12px] pt-[12px] gap-[8px] items-center flex">
-        <p className="text-helper-text-sm  max-w-[270px] truncate color-text-secondary">
-          {tabName}
-        </p>
-        {/* <p className="text-helper-text-sm flex-1 grow truncate color-text-secondary">
+        <p className="text-helper-text-sm color-text-secondary">{tabName}</p>
+        <p className="text-helper-text-sm flex-1 grow truncate color-text-secondary">
           {comment.selectedContent}
-        </p> */}
+        </p>
       </div>
 
       <CommentCard
