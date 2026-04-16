@@ -516,29 +516,29 @@ div[data-type='page-break']:hover .remove-page-break-icon {
 }
 
 @media (min-width: 1281px) and (max-width: 1680px) {
-  #editor-canvas:has(
+  /* Only force left alignment when floating comment is visible AND zoom >= 100% */
+  .editor-main-lane:has(
       .comment-floating-comments[data-floating-comment-hidden='false']
-    )
-    .editor-main-lane {
+    ):not([data-zoom-below-100='true']) {
     justify-content: flex-start;
   }
 
-  #editor-canvas:has(
+  .editor-main-lane:has(
       .comment-floating-comments[data-floating-comment-hidden='false']
-    )
+    ):not([data-zoom-below-100='true'])
     .editor-left-rail.editor-left-rail-has-outline {
     flex: 0 1 182px;
     min-width: 0;
     max-width: 182px;
   }
 
-  #editor-canvas:has(
+  .editor-main-lane:has(
       .comment-floating-comments[data-floating-comment-hidden='false']
-    )
+    ):not([data-zoom-below-100='true'])
     .editor-left-rail:not(.editor-left-rail-has-outline),
-  #editor-canvas:has(
+  .editor-main-lane:has(
       .comment-floating-comments[data-floating-comment-hidden='false']
-    )
+    ):not([data-zoom-below-100='true'])
     .editor-right-rail {
     flex: 0 1 0;
     min-width: 0;

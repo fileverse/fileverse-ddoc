@@ -415,7 +415,10 @@ const SidebarCommentItem = ({
 
 const MobileResolvedCommentToast = ({ onUndo }: { onUndo: () => void }) => {
   return (
-    <div className="fixed bottom-4 left-0 right-0 z-[999999] flex items-center justify-center">
+    <div
+      className="fixed bottom-4 left-0 right-0 z-[999999] flex items-center justify-center"
+      data-mobile-resolved-comment-toast
+    >
       <div className="flex h-[46px] items-center space-x-sm rounded-[8px] border color-button-default color-border-default">
         <div className="mr-[8px] flex gap-[8px] pl-[12px]">
           <LucideIcon

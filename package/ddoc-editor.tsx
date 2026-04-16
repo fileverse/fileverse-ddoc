@@ -745,6 +745,7 @@ const DdocEditor = forwardRef(
                       shouldScroll ? 'justify-start' : 'justify-center',
                       isMobile && 'w-full',
                     )}
+                    data-zoom-below-100={zoom < 1 ? 'true' : 'false'}
                     style={{
                       minHeight: isFocusMode
                         ? '100vh'
