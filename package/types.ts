@@ -66,7 +66,12 @@ export interface CustomModel {
   systemPrompt: string;
 }
 
-export type ThemeKey = 'light' | 'dark' | 'theme-sepia' | 'theme-pink';
+export type ThemeKey =
+  | 'light'
+  | 'dark'
+  | 'theme-sepia'
+  | 'theme-pink'
+  | 'theme-green';
 
 export interface ThemeVariantValue {
   light: string;
