@@ -1798,7 +1798,9 @@ export const createCommentStore = () =>
           editor.commands.focus(undefined, { scrollIntoView: false });
         }
 
-        editor.commands.setCommentActive(commentId);
+        if (selectionRange) {
+          editor.commands.setCommentActive(commentId);
+        }
 
         if (selectionRange) {
           // Keep the nested requestAnimationFrame. Tiptap focus already defers

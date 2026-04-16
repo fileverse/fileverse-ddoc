@@ -64,7 +64,7 @@ export const commentDecorationPluginKey =
 // Anchor helpers
 // ---------------------------------------------------------------------------
 
-function resolveCommentAnchorRangeInState(
+export function resolveCommentAnchorRangeInState(
   anchor: Pick<CommentAnchor, 'anchorFrom' | 'anchorTo'>,
   state: EditorState,
 ): CommentAnchorRange | null {

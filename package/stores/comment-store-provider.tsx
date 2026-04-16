@@ -1,5 +1,11 @@
 /* eslint-disable react-refresh/only-export-components */
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { combineTransactionSteps, Editor } from '@tiptap/core';
 import { EditorState, Transaction } from '@tiptap/pm/state';
 import { fromUint8Array } from 'js-base64';
@@ -12,6 +18,7 @@ import {
   type CommentAnchorTransactionChange,
   getCommentAtPosition,
   triggerDecorationRebuild,
+  resolveCommentAnchorRangeInState,
 } from '../extensions/comment/comment-decoration-plugin';
 import { CommentMutationMeta, SerializedCommentAnchor } from '../types';
 import { useResponsive } from '../utils/responsive';
@@ -102,6 +109,32 @@ export const CommentStoreProvider = ({
   // Updated just before each doc-changing transaction via 'beforeTransaction'.
   // Consumed in 'transaction' handler to analyze anchor mutation status.
   const preTransactionStateRef = useRef<EditorState | null>(null);
+
+  // Track anchors removed due to text deletion so undo can restore them.
+  const removedAnchorsRef = useRef<Map<string, CommentAnchor>>(new Map());
+  const [activeCommentAnchorIds, setActiveCommentAnchorIds] = useState<
+    Set<string>
+  >(() => new Set());
+  const activeCommentAnchorIdsKeyRef = useRef('');
+
+  const refreshCommentAnchorState = useCallback(() => {
+    const activeAnchorIds =
+      editor && commentAnchorsRef
+        ? commentAnchorsRef.current
+            .filter(
+              (anchor) =>
+                !anchor.deleted &&
+                Boolean(resolveCommentAnchorRangeInState(anchor, editor.state)),
+            )
+            .map((anchor) => anchor.id)
+        : [];
+    const nextKey = activeAnchorIds.join(',');
+
+    if (nextKey !== activeCommentAnchorIdsKeyRef.current) {
+      activeCommentAnchorIdsKeyRef.current = nextKey;
+      setActiveCommentAnchorIds(new Set(activeAnchorIds));
+    }
+  }, [commentAnchorsRef, editor]);
 
   // --- External deps ref — always current, never triggers re-renders ---
   // Store callback pointers in a ref so transaction handlers don't need
@@ -203,8 +236,14 @@ export const CommentStoreProvider = ({
 
     if (editor) {
       triggerDecorationRebuild(editor);
+      refreshCommentAnchorState();
     }
-  }, [initialCommentAnchors, commentAnchorsRef, editor]);
+  }, [
+    initialCommentAnchors,
+    commentAnchorsRef,
+    editor,
+    refreshCommentAnchorState,
+  ]);
 
   useEffect(() => {
     store.getState().setUsername(username);
@@ -373,6 +412,40 @@ export const CommentStoreProvider = ({
       if (transaction.docChanged) {
         const oldState = preTransactionStateRef.current;
         preTransactionStateRef.current = null;
+        let shouldRebuildDecorations = false;
+        let didRestoreRemovedAnchors = false;
+
+        const restoreRemovedAnchors = () => {
+          if (!commentAnchorsRef || removedAnchorsRef.current.size === 0) {
+            return false;
+          }
+
+          const restoredAnchors: CommentAnchor[] = [];
+
+          removedAnchorsRef.current.forEach((removedAnchor, commentId) => {
+            if (resolveCommentAnchorRangeInState(removedAnchor, editor.state)) {
+              restoredAnchors.push(removedAnchor);
+              removedAnchorsRef.current.delete(commentId);
+            }
+          });
+
+          if (restoredAnchors.length === 0) {
+            return false;
+          }
+
+          const existingAnchorIds = new Set(
+            commentAnchorsRef.current.map((anchor) => anchor.id),
+          );
+
+          commentAnchorsRef.current = [
+            ...commentAnchorsRef.current,
+            ...restoredAnchors.filter(
+              (anchor) => !existingAnchorIds.has(anchor.id),
+            ),
+          ];
+          shouldRebuildDecorations = true;
+          return true;
+        };
 
         // Transaction analysis and persistence orchestration.
         // This is the main flow for persisting anchor edits and deletions.
@@ -478,12 +551,7 @@ export const CommentStoreProvider = ({
                   selectedContent,
                 })),
               );
-
-              // Trigger decoration rebuild if no deletions follow.
-              // If deletions exist, rebuild once after deletion cleanup to avoid double repaints.
-              if (deletedChanges.length === 0) {
-                triggerDecorationRebuild(editor);
-              }
+              shouldRebuildDecorations = true;
 
               // Fire persistence callbacks for edited anchors.
               // Consumer uses these to update persisted anchor data (e.g., in DB).
@@ -495,25 +563,56 @@ export const CommentStoreProvider = ({
               });
             }
 
-            // Process deleted anchors after edits.
-            // Provider fires the external delete callback directly via `externalDepsRef`
-            // then routes local cleanup through store.deleteComment(). Keeping the
-            // callback in the provider avoids coupling it to nested editor dispatches
-            // (e.g., forced decoration rebuilds) inside the store.
-            deletedChanges.forEach((change) => {
-              const mutationMeta = {
-                type: 'delete' as const,
-              } satisfies CommentMutationMeta;
+            didRestoreRemovedAnchors = restoreRemovedAnchors();
 
-              externalDepsRef.current.onDeleteComment?.(
-                change.id,
-                mutationMeta,
+            // Process deleted anchors after edits.
+            // When highlighted text is deleted (either by current user or collaborators),
+            // we remove the anchor so it's no longer tracked by decorations.
+            // This is runtime-only - no persistence of deletion state.
+            // The UI will detect this at render time by checking if the anchor still exists.
+            //
+            // Handles scenarios naturally:
+            // 1. Current user deletes highlighted text → detected via editor transaction
+            // 2. Collaborator deletes text → detected via Yjs sync transaction
+            // 3. Edited text is detected as "edited change", not "deleted change"
+            const shouldIgnoreDeletedChanges =
+              didRestoreRemovedAnchors &&
+              deletedChanges.length === activeAnchors.length;
+
+            if (deletedChanges.length > 0 && !shouldIgnoreDeletedChanges) {
+              const deletedCommentIds = deletedChanges.map(
+                (change) => change.id,
               );
-              store
-                .getState()
-                .deleteComment(change.id, { skipExternalCallback: true });
-            });
+              const deletedCommentIdSet = new Set(deletedCommentIds);
+
+              // Remove anchors from the ref so they're no longer tracked by decorations.
+              commentAnchorsRef.current = commentAnchorsRef.current.filter(
+                (anchor) => {
+                  if (!deletedCommentIdSet.has(anchor.id)) {
+                    return true;
+                  }
+
+                  removedAnchorsRef.current.set(anchor.id, anchor);
+                  return false;
+                },
+              );
+
+              shouldRebuildDecorations = true;
+            }
           }
+        }
+
+        // Bound undo restoration to document-changing transactions only.
+        if (!didRestoreRemovedAnchors) {
+          didRestoreRemovedAnchors = restoreRemovedAnchors();
+        }
+
+        if (shouldRebuildDecorations) {
+          triggerDecorationRebuild(editor);
+        }
+
+        if (commentAnchorsRef) {
+          refreshCommentAnchorState();
         }
       }
 
@@ -549,6 +648,7 @@ export const CommentStoreProvider = ({
     commentAnchorsRef,
     editor,
     isDesktopFloatingEnabled,
+    refreshCommentAnchorState,
     setActiveCommentId,
     store,
   ]);
@@ -579,6 +679,11 @@ export const CommentStoreProvider = ({
     }
   });
 
+  const commentAnchorsContextValue = useMemo<CommentAnchorsContextType>(
+    () => ({ activeCommentAnchorIds }),
+    [activeCommentAnchorIds],
+  );
+
   return (
     <CommentStoreContext.Provider value={store}>
       <CommentRefsContext.Provider
@@ -591,7 +696,9 @@ export const CommentStoreProvider = ({
           mobileDraftRef,
         }}
       >
-        {children}
+        <CommentAnchorsContext.Provider value={commentAnchorsContextValue}>
+          {children}
+        </CommentAnchorsContext.Provider>
       </CommentRefsContext.Provider>
     </CommentStoreContext.Provider>
   );
@@ -617,6 +724,27 @@ export const useCommentRefs = () => {
 
   if (!ctx) {
     throw new Error('useCommentRefs must be used within CommentStoreProvider');
+  }
+
+  return ctx;
+};
+
+// --- Anchors context ---
+
+interface CommentAnchorsContextType {
+  activeCommentAnchorIds: Set<string>;
+}
+
+const CommentAnchorsContext =
+  React.createContext<CommentAnchorsContextType | null>(null);
+
+export const useCommentAnchors = () => {
+  const ctx = React.useContext(CommentAnchorsContext);
+
+  if (!ctx) {
+    throw new Error(
+      'useCommentAnchors must be used within CommentStoreProvider',
+    );
   }
 
   return ctx;

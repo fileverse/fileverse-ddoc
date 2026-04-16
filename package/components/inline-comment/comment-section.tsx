@@ -14,6 +14,7 @@ import { DeleteConfirmOverlay } from './delete-confirm-overlay';
 import { IComment } from '../../extensions/comment';
 import { DEFAULT_TAB_ID, DEFAULT_TAB_NAME } from '../tabs/utils/tab-utils';
 import { useResponsive } from '../../utils/responsive';
+import { useIsSelectedContentDeleted } from '../inline-comment/use-is-selected-content-deleted';
 
 export const CommentSection = ({
   activeCommentId,
@@ -309,6 +310,10 @@ const SidebarCommentItem = ({
 }) => {
   const [isDeleteOverlayVisible, setIsDeleteOverlayVisible] = useState(false);
   const { isBelow1280px } = useResponsive();
+  const selectedContentDeleted = useIsSelectedContentDeleted(
+    comment.id,
+    comment.selectedContent,
+  );
 
   const handleSidebarCommentClick = () => {
     // Keep drawer thread-open state owned by the list item. CommentCard stays
@@ -355,10 +360,22 @@ const SidebarCommentItem = ({
         </div>
       )}
       <div className="px-[12px] pt-[12px] gap-[8px] items-center flex">
-        <p className="text-helper-text-sm color-text-secondary">{tabName}</p>
-        <p className="text-helper-text-sm flex-1 grow truncate color-text-secondary">
-          {comment.selectedContent}
-        </p>
+        <>
+          {selectedContentDeleted ? (
+            <p className="text-helper-text-sm font-[500] color-text-default">
+              Original content deleted
+            </p>
+          ) : (
+            <>
+              <p className="text-helper-text-sm color-text-secondary">
+                {tabName}
+              </p>
+              <p className="text-helper-text-sm flex-1 grow truncate color-text-secondary">
+                {comment.selectedContent}
+              </p>
+            </>
+          )}
+        </>
       </div>
 
       <CommentCard
