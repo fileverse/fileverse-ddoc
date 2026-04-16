@@ -293,7 +293,8 @@ export const useEditorToolbar = ({
             const selectedText = state.doc.textBetween(from, to, ' ');
 
             if (selectedText) {
-              const isDarkTheme = localStorage.getItem('theme') === 'dark';
+              const storedTheme = localStorage.getItem('theme');
+              const isDarkTheme = storedTheme === 'dark' || storedTheme === 'theme-green';
               editor
                 .chain()
                 .setHighlight({
