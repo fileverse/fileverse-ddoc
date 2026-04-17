@@ -462,9 +462,67 @@ function buildDecorations(
       continue;
     }
 
+    // 'add' suggestions: cursor-based, anchorFrom === anchorTo.
+    // resolveCommentAnchorRangeInState rejects from >= to, so use point
+    // resolution and render a single widget. side: -1 positions the widget
+    // visually before the caret at the same document position — gives the
+    // Google-Docs-style "cursor advances through the proposed text" feel.
+    if (anchor.isSuggestion && anchor.suggestionType === 'add') {
+      if (!anchor.suggestedContent) continue;
+      const insertPoint = resolveCommentAnchorPointInState(anchor, state);
+      if (insertPoint === null) continue;
+      decorations.push(
+        Decoration.widget(
+          insertPoint,
+          createSuggestionWidget(anchor.suggestedContent, anchor.id),
+          {
+            side: -1,
+            key: `suggestion-insert-${anchor.id}`,
+            destroy: (node) => (node as HTMLElement).remove(),
+          },
+        ),
+      );
+      continue;
+    }
+
     const range = resolveCommentAnchorRangeInState(anchor, state);
 
     if (!range) {
+      continue;
+    }
+
+    // Suggestion branch: render strikethrough (Delete/Replace) and/or widget
+    // (Replace's proposed text). Skip the regular comment decoration that
+    // follows — suggestions don't get the inline-comment background.
+    if (anchor.isSuggestion) {
+      const { suggestionType, suggestedContent } = anchor;
+
+      if (
+        (suggestionType === 'delete' || suggestionType === 'replace') &&
+        range.from < range.to
+      ) {
+        decorations.push(
+          Decoration.inline(range.from, range.to, {
+            class: 'suggestion-delete',
+            'data-suggestion-id': anchor.id,
+          }),
+        );
+      }
+
+      if (suggestionType === 'replace' && suggestedContent) {
+        decorations.push(
+          Decoration.widget(
+            range.to,
+            createSuggestionWidget(suggestedContent, anchor.id),
+            {
+              side: -1,
+              key: `suggestion-insert-${anchor.id}`,
+              destroy: (node) => (node as HTMLElement).remove(),
+            },
+          ),
+        );
+      }
+
       continue;
     }
 
