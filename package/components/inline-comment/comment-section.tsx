@@ -29,6 +29,7 @@ export const CommentSection = ({
   showNewCommentInput = true,
   onCommentFocus,
   onReset,
+  isCollaborationEnabled,
 }: CommentSectionProps) => {
   const tabComments = useCommentStore((s) => s.tabComments);
   const username = useCommentStore((s) => s.username);
@@ -117,6 +118,7 @@ export const CommentSection = ({
             onUnresolve={unresolveComment}
             onDelete={handleDeleteComment}
             onSetOpenReplyId={setOpenReplyId}
+            isCollaborationEnabled={isCollaborationEnabled}
           />
         ))}
       </>
@@ -200,7 +202,7 @@ export const CommentSection = ({
     return () => window.clearTimeout(timeoutId);
   }, [isBelow1280px, resolvedToastCommentId]);
 
-  if (!isConnected) {
+  if (!isConnected && !isCollaborationEnabled) {
     return (
       <CommentUsername
         connectViaWallet={connectViaWallet}
@@ -264,7 +266,12 @@ export const CommentSection = ({
         )}
       </div>
 
-      {showNewCommentInput && <CommentInputField tabId={newCommentTabId} />}
+      {showNewCommentInput && (
+        <CommentInputField
+          tabId={newCommentTabId}
+          isCollaborationEnabled={isCollaborationEnabled}
+        />
+      )}
       {isBelow1280px && resolvedToastCommentId && (
         <MobileResolvedCommentToast
           onUndo={() => {
@@ -292,6 +299,7 @@ const SidebarCommentItem = ({
   onUnresolve,
   onDelete,
   onSetOpenReplyId,
+  isCollaborationEnabled,
 }: {
   comment: IComment;
   tabName: string;
@@ -307,12 +315,14 @@ const SidebarCommentItem = ({
   onUnresolve: (id: string) => void;
   onDelete: (id: string) => void;
   onSetOpenReplyId: (id: string | null) => void;
+  isCollaborationEnabled: boolean;
 }) => {
   const [isDeleteOverlayVisible, setIsDeleteOverlayVisible] = useState(false);
   const { isBelow1280px } = useResponsive();
   const selectedContentDeleted = useIsSelectedContentDeleted(
     comment.id,
     comment.selectedContent,
+    comment.tabId,
   );
 
   const handleSidebarCommentClick = () => {
@@ -411,6 +421,7 @@ const SidebarCommentItem = ({
             commentId={comment.id as string}
             commentUsername={comment.username}
             replyCount={comment.replies?.length ?? 0}
+            isCollaborationEnabled={isCollaborationEnabled}
           />
         )}
       </div>

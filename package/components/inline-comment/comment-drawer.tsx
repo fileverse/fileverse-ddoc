@@ -33,6 +33,7 @@ export const CommentDrawer = ({
   onTabChange,
   isPreviewMode,
   tabs,
+  isCollaborationEnabled,
 }: CommentDrawerProps) => {
   const comments = useCommentStore((s) => s.initialComments);
   const isConnected = useCommentStore((s) => s.isConnected);
@@ -186,12 +187,19 @@ export const CommentDrawer = ({
     const frameId = window.requestAnimationFrame(() => {
       // Wait a frame so the tab switch can mount the matching comment nodes
       // before trying to focus/scroll them in the editor.
+      setOpenReplyId(pendingCommentFocus.commentId);
       focusCommentInEditor(pendingCommentFocus.commentId);
       setPendingCommentFocus(null);
     });
 
     return () => window.cancelAnimationFrame(frameId);
-  }, [activeTabId, comments, focusCommentInEditor, pendingCommentFocus]);
+  }, [
+    activeTabId,
+    comments,
+    focusCommentInEditor,
+    pendingCommentFocus,
+    setOpenReplyId,
+  ]);
 
   const handleAttemptCloseNewComment = () => {
     setIsDiscardCommentOverlayVisible(true);
@@ -389,7 +397,7 @@ export const CommentDrawer = ({
                   <h2 className="text-heading-sm">All Comments</h2>
                   <div className="flex gap-sm">
                     <IconButton
-                      disabled={!isConnected}
+                      disabled={!isConnected || isCollaborationEnabled}
                       icon={'MessageSquarePlus'}
                       onClick={handleStartNewMobileComment}
                       variant="ghost"
@@ -423,6 +431,7 @@ export const CommentDrawer = ({
                   tabNameById={tabNameById}
                   onCommentFocus={handleCommentFocus}
                   showNewCommentInput={false}
+                  isCollaborationEnabled={isCollaborationEnabled}
                 />
               </div>
             </div>
@@ -450,10 +459,10 @@ export const CommentDrawer = ({
             <div
               className={cn(
                 'pt-4',
-                !isConnected && 'flex items-center h-[77dvh]',
+                !isConnected && isPreviewMode && 'flex items-center h-[77dvh]',
               )}
             >
-              {isConnected && (
+              {(isConnected || isCollaborationEnabled) && (
                 <div className="flex mb-[16px] px-4 gap-[8px]">
                   <Select value={commentType} onValueChange={setCommentType}>
                     <SelectTrigger className="w-[148px]">
@@ -481,7 +490,6 @@ export const CommentDrawer = ({
                   </Select>
                 </div>
               )}
-
               <CommentSection
                 activeCommentId={activeCommentId}
                 isNavbarVisible={isNavbarVisible}
@@ -499,6 +507,7 @@ export const CommentDrawer = ({
                   setCommentType('all');
                   setTab(ALL_TABS_OPTION_ID);
                 }}
+                isCollaborationEnabled={isCollaborationEnabled}
               />
             </div>
           }

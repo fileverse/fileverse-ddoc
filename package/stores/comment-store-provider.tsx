@@ -115,6 +115,9 @@ export const CommentStoreProvider = ({
   const [activeCommentAnchorIds, setActiveCommentAnchorIds] = useState<
     Set<string>
   >(() => new Set());
+  const [activeCommentAnchorIdsTabId, setActiveCommentAnchorIdsTabId] =
+    useState<string | null>(activeTabId);
+  const activeCommentAnchorIdsTabIdRef = useRef<string | null>(activeTabId);
   const activeCommentAnchorIdsKeyRef = useRef('');
 
   const refreshCommentAnchorState = useCallback(() => {
@@ -128,13 +131,18 @@ export const CommentStoreProvider = ({
             )
             .map((anchor) => anchor.id)
         : [];
-    const nextKey = activeAnchorIds.join(',');
+    const nextKey = `${activeTabId}:${activeAnchorIds.join(',')}`;
+    const shouldUpdate =
+      nextKey !== activeCommentAnchorIdsKeyRef.current ||
+      activeCommentAnchorIdsTabIdRef.current !== activeTabId;
 
-    if (nextKey !== activeCommentAnchorIdsKeyRef.current) {
+    if (shouldUpdate) {
       activeCommentAnchorIdsKeyRef.current = nextKey;
       setActiveCommentAnchorIds(new Set(activeAnchorIds));
+      activeCommentAnchorIdsTabIdRef.current = activeTabId;
+      setActiveCommentAnchorIdsTabId(activeTabId);
     }
-  }, [commentAnchorsRef, editor]);
+  }, [activeTabId, commentAnchorsRef, editor]);
 
   // --- External deps ref — always current, never triggers re-renders ---
   // Store callback pointers in a ref so transaction handlers don't need
@@ -161,6 +169,7 @@ export const CommentStoreProvider = ({
     connectViaUsername,
     ensResolutionUrl,
     commentAnchorsRef,
+    refreshCommentAnchorState,
   });
 
   // Update ref on every render — no set(), no re-render loop
@@ -185,6 +194,7 @@ export const CommentStoreProvider = ({
     connectViaUsername,
     ensResolutionUrl,
     commentAnchorsRef,
+    refreshCommentAnchorState,
   };
 
   // Inject ref into store once
@@ -256,6 +266,25 @@ export const CommentStoreProvider = ({
   useEffect(() => {
     store.getState().setActiveTabId(activeTabId);
   }, [activeTabId, store]);
+
+  useEffect(() => {
+    activeCommentAnchorIdsTabIdRef.current = null;
+    setActiveCommentAnchorIdsTabId(null);
+
+    let secondFrameId: number | null = null;
+    const frameId = window.requestAnimationFrame(() => {
+      secondFrameId = window.requestAnimationFrame(() => {
+        refreshCommentAnchorState();
+      });
+    });
+
+    return () => {
+      window.cancelAnimationFrame(frameId);
+      if (secondFrameId !== null) {
+        window.cancelAnimationFrame(secondFrameId);
+      }
+    };
+  }, [activeTabId, refreshCommentAnchorState]);
 
   useEffect(() => {
     store.getState().setIsConnected(isConnected);
@@ -680,8 +709,8 @@ export const CommentStoreProvider = ({
   });
 
   const commentAnchorsContextValue = useMemo<CommentAnchorsContextType>(
-    () => ({ activeCommentAnchorIds }),
-    [activeCommentAnchorIds],
+    () => ({ activeCommentAnchorIds, activeCommentAnchorIdsTabId }),
+    [activeCommentAnchorIds, activeCommentAnchorIdsTabId],
   );
 
   return (
@@ -733,6 +762,7 @@ export const useCommentRefs = () => {
 
 interface CommentAnchorsContextType {
   activeCommentAnchorIds: Set<string>;
+  activeCommentAnchorIdsTabId: string | null;
 }
 
 const CommentAnchorsContext =

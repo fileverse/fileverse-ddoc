@@ -52,6 +52,7 @@ export interface CommentExternalDeps {
   connectViaUsername?: (username: string) => Promise<void>;
   ensResolutionUrl: string;
   commentAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
+  refreshCommentAnchorState?: () => void;
 }
 
 type FloatingCardsUpdater = React.SetStateAction<CommentFloatingCard[]>;
@@ -211,6 +212,7 @@ function getExtDeps(get: () => CommentStoreState): CommentExternalDeps {
       setActiveCommentId: () => {},
       focusCommentWithActiveId: () => {},
       ensResolutionUrl: '',
+      refreshCommentAnchorState: () => {},
     }
   );
 }
@@ -974,6 +976,7 @@ export const createCommentStore = () =>
         onNewComment,
         setActiveCommentId,
         commentAnchorsRef,
+        refreshCommentAnchorState,
       } = getExtDeps(get);
       const draft = inlineDrafts[draftId];
 
@@ -1077,6 +1080,7 @@ export const createCommentStore = () =>
       if (editor && draft.selectedText) {
         editor.commands.unsetDraftComment(draftId);
         triggerDecorationRebuild(editor);
+        refreshCommentAnchorState?.();
       }
 
       get().setActiveCommentId(newComment.id || '');

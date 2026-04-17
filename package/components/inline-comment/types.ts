@@ -38,6 +38,7 @@ export interface CommentDrawerProps {
   onTabChange?: (tabId: string) => void;
   isPreviewMode: boolean;
   tabs: Tab[];
+  isCollaborationEnabled: boolean;
 }
 
 export interface CommentCardProps extends IComment {
@@ -92,6 +93,7 @@ export interface CommentSectionProps {
   showNewCommentInput?: boolean;
   onCommentFocus?: (commentId: string, tabId?: string) => void;
   onReset?: () => void;
+  isCollaborationEnabled: boolean;
 }
 
 export interface UserDisplayProps {

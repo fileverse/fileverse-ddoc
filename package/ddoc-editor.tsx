@@ -1006,6 +1006,7 @@ const DdocEditor = forwardRef(
                             scrollContainerRef={editorScrollContainerRef}
                             tabName={currentTabName}
                             isHidden={Boolean(commentDrawerOpen)}
+                            isCollaborationEnabled={collaboration?.enabled}
                           />
                         </div>
                       )}
@@ -1080,6 +1081,7 @@ const DdocEditor = forwardRef(
                 onTabChange={setActiveTabId}
                 isPreviewMode={isPreviewMode}
                 tabs={tabs}
+                isCollaborationEnabled={collaboration?.enabled || false}
               />
             )}
 
