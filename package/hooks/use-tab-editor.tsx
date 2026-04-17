@@ -241,7 +241,7 @@ export const useTabEditor = ({
 
   const isSuggestionMode = !!(isPreviewMode && viewerMode === 'suggest');
 
-  const { extensions, commentAnchorsRef } = useEditorExtension({
+  const { extensions, commentAnchorsRef, draftAnchorsRef } = useEditorExtension({
     ydoc,
     onError,
     ipfsImageUploadFn,
@@ -1039,6 +1039,7 @@ export const useTabEditor = ({
     focusCommentWithActiveId,
     isContentLoading,
     commentAnchorsRef,
+    draftAnchorsRef,
   };
 };
 
@@ -1211,6 +1212,10 @@ const useEditorExtension = ({
   // Seed persisted anchors before editor creation so the decoration plugin can
   // render the initial highlight set on first paint.
   const commentAnchorsRef = useRef<CommentAnchor[]>(initialCommentAnchorState);
+  // Derived anchors for in-progress suggestion drafts. Maintained by the
+  // store's draft actions — decoration layer reads this alongside
+  // commentAnchorsRef so drafts and submitted suggestions render identically.
+  const draftAnchorsRef = useRef<CommentAnchor[]>([]);
   const activeCommentIdRef = useRef<string | null>(activeCommentId);
 
   useEffect(() => {
@@ -1300,7 +1305,10 @@ const useEditorExtension = ({
         field: activeTabId,
       }),
       CommentDecorationExtension.configure({
-        getAnchors: () => commentAnchorsRef.current,
+        getAnchors: () => [
+          ...commentAnchorsRef.current,
+          ...draftAnchorsRef.current,
+        ],
         getActiveCommentId: () => activeCommentIdRef.current,
       }),
       SuggestionTrackingExtension.configure({
@@ -1362,7 +1370,7 @@ const useEditorExtension = ({
     ]);
   }, [activeModel, maxTokens, isAIAgentEnabled, createSlashCommand]);
 
-  return { extensions, setExtensions, commentAnchorsRef };
+  return { extensions, setExtensions, commentAnchorsRef, draftAnchorsRef };
 };
 
 interface UseCommentInteractionArgs {

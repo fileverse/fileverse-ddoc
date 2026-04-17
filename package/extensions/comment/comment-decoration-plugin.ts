@@ -642,6 +642,31 @@ export function createCommentAnchorFromEditor(
   return createCommentAnchorFromRangeInState(editor.state, from, to);
 }
 
+/**
+ * Create a point anchor (anchorFrom === anchorTo) at a single doc position.
+ * Used by the suggestion-mode draft flow when the viewer places a cursor
+ * without selecting text — createCommentAnchorFromEditor rejects from >= to
+ * since an empty range is invalid for regular comments.
+ */
+export function createCommentAnchorPointFromEditor(
+  editor: Editor,
+  pos: number,
+): CommentAnchorRelativeRange | null {
+  const syncState = ySyncPluginKey.getState(editor.state);
+  if (!syncState?.binding) return null;
+  const { type, binding } = syncState;
+  try {
+    const relPos = absolutePositionToRelativePosition(
+      pos,
+      type,
+      binding.mapping,
+    );
+    return { anchorFrom: relPos, anchorTo: relPos };
+  } catch {
+    return null;
+  }
+}
+
 export function createCommentAnchorFromSelection(
   editor: Editor,
 ): CommentAnchorRelativeRange | null {

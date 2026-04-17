@@ -64,6 +64,7 @@ export interface CommentStoreProviderProps {
   connectViaUsername?: (username: string) => Promise<void>;
   ensResolutionUrl: string;
   commentAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
+  draftAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
   initialCommentAnchors?: SerializedCommentAnchor[];
   // Synced data — go into store via useEffect
   initialComments: IComment[];
@@ -99,6 +100,7 @@ export const CommentStoreProvider = ({
   connectViaUsername,
   ensResolutionUrl,
   commentAnchorsRef,
+  draftAnchorsRef,
   initialCommentAnchors,
   setUsername: setUsernameProp,
   // Synced data (useEffect-based)
@@ -235,6 +237,7 @@ export const CommentStoreProvider = ({
     ensResolutionUrl,
     commentAnchorsRef,
     refreshCommentAnchorState,
+    draftAnchorsRef,
   });
 
   // Update ref on every render — no set(), no re-render loop
@@ -260,6 +263,7 @@ export const CommentStoreProvider = ({
     ensResolutionUrl,
     commentAnchorsRef,
     refreshCommentAnchorState,
+    draftAnchorsRef,
   };
 
   // Inject ref into store once

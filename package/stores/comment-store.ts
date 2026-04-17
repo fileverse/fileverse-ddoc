@@ -5,21 +5,27 @@ import {
   CommentAnchor,
   applyAcceptedSuggestion,
   createCommentAnchorFromEditor,
+  createCommentAnchorPointFromEditor,
+  getCommentAnchorRange,
+  resolveCommentAnchorPointInState,
   resolveCommentAnchorRangeInState,
   triggerDecorationRebuild,
 } from '../extensions/comment/comment-decoration-plugin';
+import { SuggestionType } from '../types';
 import uuid from 'react-uuid';
 import { createStore, useStore } from 'zustand';
 import { fromUint8Array } from 'js-base64';
 import * as Y from 'yjs';
-import { TextSelection } from '@tiptap/pm/state';
+import { EditorState, TextSelection } from '@tiptap/pm/state';
 import {
   CommentFloatingCard,
   CommentFloatingDraftCard,
+  CommentFloatingThreadCard,
   EnsCache,
   InlineCommentData,
   InlineCommentDraft,
   InlineDraftLocation,
+  SuggestionFloatingDraftCard,
 } from '../components/inline-comment/context/types';
 import { EnsStatus } from '../components/inline-comment/types';
 import { DEFAULT_TAB_ID } from '../components/tabs/utils/tab-utils';
@@ -57,6 +63,76 @@ export interface CommentExternalDeps {
   ensResolutionUrl: string;
   commentAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
   refreshCommentAnchorState?: () => void;
+  /**
+   * Derived anchor list for in-progress suggestion drafts. Maintained by the
+   * store (not the consumer) — draft actions upsert into this ref whenever
+   * state.drafts changes. The decoration extension reads this ref alongside
+   * commentAnchorsRef to render both layers identically.
+   */
+  draftAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
+}
+
+/**
+ * A suggestion draft is the viewer's in-progress proposed edit — kept local
+ * until Submit. Drafts live in memory only (lost on refresh). Derived into
+ * a CommentAnchor for decoration rendering via deriveDraftAnchor(). The
+ * suggestion type ('add' | 'delete' | 'replace') is not stored; it is derived
+ * at use time from hadDeletion + insertedText.
+ */
+export interface DraftSuggestion {
+  id: string;
+  anchorFrom: Y.RelativePosition;
+  anchorTo: Y.RelativePosition;
+  /** The text that was selected at draft creation (for Delete/Replace strikethrough). */
+  originalContent: string;
+  /** Accumulated text the viewer has typed. Empty for a pure Delete draft. */
+  insertedText: string;
+  /** Per-keystroke history for undo — each entry is one typed character. */
+  keystrokes: string[];
+  /** True when the draft was created via select+delete or select+type. */
+  hadDeletion: boolean;
+}
+
+function deriveDraftSuggestionType(draft: DraftSuggestion): SuggestionType {
+  if (draft.hadDeletion) {
+    return draft.insertedText.length > 0 ? 'replace' : 'delete';
+  }
+  return 'add';
+}
+
+function deriveDraftAnchor(draft: DraftSuggestion): CommentAnchor {
+  return {
+    id: draft.id,
+    anchorFrom: draft.anchorFrom,
+    anchorTo: draft.anchorTo,
+    resolved: false,
+    deleted: false,
+    isSuggestion: true,
+    suggestionType: deriveDraftSuggestionType(draft),
+    originalContent: draft.originalContent,
+    suggestedContent: draft.insertedText,
+  };
+}
+
+function findDraftAtEditorCursor(
+  drafts: Record<string, DraftSuggestion>,
+  state: EditorState,
+): DraftSuggestion | null {
+  const { from, to } = state.selection;
+  for (const draft of Object.values(drafts)) {
+    if (draft.hadDeletion) {
+      // Delete / Replace draft: cursor must be within [anchorFrom, anchorTo]
+      const range = resolveCommentAnchorRangeInState(draft, state);
+      if (!range) continue;
+      if (from >= range.from && to <= range.to) return draft;
+    } else {
+      // Add draft: point anchor — cursor must be exactly at the anchor point
+      const point = resolveCommentAnchorPointInState(draft, state);
+      if (point === null) continue;
+      if (from === to && from === point) return draft;
+    }
+  }
+  return null;
 }
 
 type FloatingCardsUpdater = React.SetStateAction<CommentFloatingCard[]>;
@@ -488,6 +564,8 @@ export interface CommentStoreState {
   // Tracks just-created floating threads that already have a local anchor but
   // have not been rehydrated into canonical comment props yet.
   pendingPrehydrationFloatingThreadIds: string[];
+  /** In-progress suggestion drafts — keyed by suggestionId. Viewer-local, lost on refresh. */
+  drafts: Record<string, DraftSuggestion>;
   inlineDrafts: InlineDraftRecordMap;
   activeDraftId: string | null;
   isDesktopFloatingEnabled: boolean;
@@ -602,6 +680,34 @@ export interface CommentStoreState {
     options?: { skipExternalCallback?: boolean },
   ) => void;
   acceptSuggestion: (commentId: string) => void;
+
+  // --- Suggestion draft operations (Phase 2 — viewer-local drafts) ---
+  /**
+   * Append typed characters to the draft at the current cursor position.
+   * Creates a new Add draft if no draft exists at the cursor.
+   */
+  appendToDraftAtCursor: (text: string) => void;
+  /**
+   * Create a Delete (or pending Replace) draft from a selection range.
+   * Captures originalContent, leaves insertedText empty; type becomes 'replace'
+   * as soon as the viewer types.
+   */
+  startDeleteDraft: (from: number, to: number) => void;
+  /**
+   * Undo the last keystroke in the draft at the current cursor position.
+   * When the draft has no keystrokes left, it is discarded.
+   * For a pure Delete draft (no keystrokes ever), calling this discards.
+   */
+  undoLastKeystrokeInActiveDraft: () => void;
+  /** Drop a draft entirely — removes the inline overlay and draft card. */
+  discardDraft: (suggestionId: string) => void;
+  /**
+   * Promote a draft to a submitted suggestion. Pushes the anchor into
+   * commentAnchorsRef, calls onNewComment, removes the draft, and swaps the
+   * suggestion-draft floating card for a thread card (same floatingCardId).
+   */
+  submitDraft: (suggestionId: string) => void;
+
   deleteReply: (commentId: string, replyId: string) => void;
   requestEditComment: (commentId: string) => void;
   requestEditReply: (commentId: string, replyId: string) => void;
@@ -674,6 +780,7 @@ export const createCommentStore = () =>
     },
     floatingCards: [],
     pendingPrehydrationFloatingThreadIds: [],
+    drafts: {},
     inlineDrafts: {},
     activeDraftId: null,
     isDesktopFloatingEnabled: false,
@@ -2117,6 +2224,256 @@ export const createCommentStore = () =>
         setActiveCommentId(null);
       }
     },
+
+    // --- Suggestion draft operations ---------------------------------------
+
+    appendToDraftAtCursor: (text) => {
+      const deps = getExtDeps(get);
+      const { editor, draftAnchorsRef } = deps;
+      if (!editor) return;
+
+      const currentDrafts = get().drafts;
+      const activeDraft = findDraftAtEditorCursor(currentDrafts, editor.state);
+
+      let nextDrafts: Record<string, DraftSuggestion>;
+      let nextCards = get().floatingCards;
+
+      if (activeDraft) {
+        const extended: DraftSuggestion = {
+          ...activeDraft,
+          insertedText: activeDraft.insertedText + text,
+          keystrokes: [...activeDraft.keystrokes, text],
+        };
+        nextDrafts = { ...currentDrafts, [activeDraft.id]: extended };
+        // Mirror the updated insertedText on the floating card for the diff preview.
+        nextCards = nextCards.map((c) =>
+          c.type === 'suggestion-draft' && c.suggestionId === activeDraft.id
+            ? { ...c, insertedText: extended.insertedText }
+            : c,
+        );
+      } else {
+        const { from } = editor.state.selection;
+        const anchorPoint = createCommentAnchorPointFromEditor(editor, from);
+        if (!anchorPoint) return;
+
+        const id = `suggestion-${uuid()}`;
+        const newDraft: DraftSuggestion = {
+          id,
+          anchorFrom: anchorPoint.anchorFrom,
+          anchorTo: anchorPoint.anchorTo,
+          originalContent: '',
+          insertedText: text,
+          keystrokes: [text],
+          hadDeletion: false,
+        };
+        nextDrafts = { ...currentDrafts, [id]: newDraft };
+
+        const newCard: SuggestionFloatingDraftCard = {
+          type: 'suggestion-draft',
+          floatingCardId: `suggestion-draft:${id}`,
+          suggestionId: id,
+          selectedText: '',
+          insertedText: text,
+          isFocused: true,
+        };
+        nextCards = [
+          ...nextCards.map((c) => ({ ...c, isFocused: false })),
+          newCard,
+        ];
+      }
+
+      set({ drafts: nextDrafts, floatingCards: nextCards });
+      if (draftAnchorsRef) {
+        draftAnchorsRef.current =
+          Object.values(nextDrafts).map(deriveDraftAnchor);
+      }
+      triggerDecorationRebuild(editor);
+    },
+
+    startDeleteDraft: (from, to) => {
+      const deps = getExtDeps(get);
+      const { editor, draftAnchorsRef } = deps;
+      if (!editor) return;
+      if (from >= to) return;
+
+      const anchorRange = createCommentAnchorFromEditor(editor, from, to);
+      if (!anchorRange) return;
+
+      const originalContent = editor.state.doc.textBetween(from, to, '\n');
+
+      const id = `suggestion-${uuid()}`;
+      const newDraft: DraftSuggestion = {
+        id,
+        anchorFrom: anchorRange.anchorFrom,
+        anchorTo: anchorRange.anchorTo,
+        originalContent,
+        insertedText: '',
+        keystrokes: [],
+        hadDeletion: true,
+      };
+
+      const newCard: SuggestionFloatingDraftCard = {
+        type: 'suggestion-draft',
+        floatingCardId: `suggestion-draft:${id}`,
+        suggestionId: id,
+        selectedText: originalContent,
+        insertedText: '',
+        isFocused: true,
+      };
+
+      const nextDrafts = { ...get().drafts, [id]: newDraft };
+      const nextCards = [
+        ...get().floatingCards.map((c) => ({ ...c, isFocused: false })),
+        newCard,
+      ];
+
+      set({ drafts: nextDrafts, floatingCards: nextCards });
+      if (draftAnchorsRef) {
+        draftAnchorsRef.current =
+          Object.values(nextDrafts).map(deriveDraftAnchor);
+      }
+
+      // Collapse the selection to `to` so the caret renders at the end of the
+      // strikethrough, matching Google Docs behavior.
+      const tr = editor.state.tr.setSelection(
+        TextSelection.near(editor.state.doc.resolve(to)),
+      );
+      editor.view.dispatch(tr);
+
+      triggerDecorationRebuild(editor);
+    },
+
+    undoLastKeystrokeInActiveDraft: () => {
+      const deps = getExtDeps(get);
+      const { editor, draftAnchorsRef } = deps;
+      if (!editor) return;
+
+      const activeDraft = findDraftAtEditorCursor(get().drafts, editor.state);
+      if (!activeDraft) return;
+
+      const nextKeystrokes = activeDraft.keystrokes.slice(0, -1);
+      const nextInsertedText = nextKeystrokes.join('');
+
+      // When no keystrokes remain (pure Add / Replace undone to empty, or
+      // pure Delete with no keystrokes ever), discard the draft.
+      if (nextKeystrokes.length === 0) {
+        get().discardDraft(activeDraft.id);
+        return;
+      }
+
+      const updated: DraftSuggestion = {
+        ...activeDraft,
+        keystrokes: nextKeystrokes,
+        insertedText: nextInsertedText,
+      };
+      const nextDrafts = { ...get().drafts, [activeDraft.id]: updated };
+      const nextCards = get().floatingCards.map((c) =>
+        c.type === 'suggestion-draft' && c.suggestionId === activeDraft.id
+          ? { ...c, insertedText: nextInsertedText }
+          : c,
+      );
+
+      set({ drafts: nextDrafts, floatingCards: nextCards });
+      if (draftAnchorsRef) {
+        draftAnchorsRef.current =
+          Object.values(nextDrafts).map(deriveDraftAnchor);
+      }
+      triggerDecorationRebuild(editor);
+    },
+
+    discardDraft: (suggestionId) => {
+      const deps = getExtDeps(get);
+      const { editor, draftAnchorsRef } = deps;
+
+      const currentDrafts = get().drafts;
+      if (!currentDrafts[suggestionId]) return;
+
+      const nextDrafts = { ...currentDrafts };
+      delete nextDrafts[suggestionId];
+
+      const nextCards = get().floatingCards.filter(
+        (c) => !(c.type === 'suggestion-draft' && c.suggestionId === suggestionId),
+      );
+
+      set({ drafts: nextDrafts, floatingCards: nextCards });
+      if (draftAnchorsRef) {
+        draftAnchorsRef.current =
+          Object.values(nextDrafts).map(deriveDraftAnchor);
+      }
+      if (editor) triggerDecorationRebuild(editor);
+    },
+
+    submitDraft: (suggestionId) => {
+      const deps = getExtDeps(get);
+      const { editor, commentAnchorsRef, draftAnchorsRef, onNewComment } = deps;
+      if (!editor || !commentAnchorsRef) return;
+
+      const draft = get().drafts[suggestionId];
+      if (!draft) return;
+
+      const suggestionType = deriveDraftSuggestionType(draft);
+
+      // Promote draft anchor into commentAnchorsRef so the decoration layer
+      // reads it from the "submitted" source henceforth.
+      const submittedAnchor: CommentAnchor = deriveDraftAnchor(draft);
+      commentAnchorsRef.current = [
+        ...commentAnchorsRef.current,
+        submittedAnchor,
+      ];
+
+      // Remove from drafts and swap the floating card — same floatingCardId so
+      // the card stays in place and the contents transition without remounting.
+      const nextDrafts = { ...get().drafts };
+      delete nextDrafts[suggestionId];
+
+      const nextCards = get().floatingCards.map((c) => {
+        if (c.type !== 'suggestion-draft' || c.suggestionId !== suggestionId) {
+          return c;
+        }
+        const threadCard: CommentFloatingThreadCard = {
+          type: 'thread',
+          floatingCardId: c.floatingCardId,
+          commentId: draft.id,
+          selectedText: draft.originalContent,
+          isFocused: c.isFocused,
+        };
+        return threadCard;
+      });
+
+      set({ drafts: nextDrafts, floatingCards: nextCards });
+      if (draftAnchorsRef) {
+        draftAnchorsRef.current =
+          Object.values(nextDrafts).map(deriveDraftAnchor);
+      }
+      triggerDecorationRebuild(editor);
+
+      // Build IComment + meta and hand off to the consumer pipeline.
+      const newComment: IComment = {
+        id: draft.id,
+        tabId: get().activeTabId,
+        selectedContent: draft.originalContent,
+        content: '',
+        isSuggestion: true,
+        suggestionType,
+        originalContent: draft.originalContent,
+        suggestedContent: draft.insertedText,
+        resolved: false,
+        deleted: false,
+        createdAt: new Date(),
+      };
+
+      const meta: CommentMutationMeta = {
+        type: 'create',
+        anchorFrom: fromUint8Array(Y.encodeRelativePosition(draft.anchorFrom)),
+        anchorTo: fromUint8Array(Y.encodeRelativePosition(draft.anchorTo)),
+        suggestionType,
+        originalContent: draft.originalContent,
+        suggestedContent: draft.insertedText,
+      };
+
+      onNewComment?.(newComment, meta);
+    },
+
     deleteReply: (commentId, replyId) => {
       getExtDeps(get).setInitialComments?.((previousComments) =>
         previousComments.map((comment) => {
