@@ -17,10 +17,8 @@ export const SuggestionDraftFloatingCard = ({
   registerCardNode,
 }: SuggestionDraftFloatingCardProps) => {
   const focusFloatingCard = useCommentStore((s) => s.focusFloatingCard);
-  // TODO(phase-4): wire Submit → store.submitDraft, Discard → store.discardDraft
-  // once the new draft-model store actions land.
-  const submitSuggestionDraft = (_id: string) => {};
-  const discardSuggestionDraft = (_id: string) => {};
+  const submitDraft = useCommentStore((s) => s.submitDraft);
+  const discardDraft = useCommentStore((s) => s.discardDraft);
 
   const hasOriginal = Boolean(card.selectedText);
   const hasInserted = Boolean(card.insertedText);
@@ -59,14 +57,14 @@ export const SuggestionDraftFloatingCard = ({
           <Button
             variant="ghost"
             className="!w-[80px] !min-w-[80px]"
-            onClick={() => discardSuggestionDraft(card.suggestionId)}
+            onClick={() => discardDraft(card.suggestionId)}
           >
             Discard
           </Button>
           <Button
             className="w-20 min-w-20"
             disabled={!canSubmit}
-            onClick={() => submitSuggestionDraft(card.suggestionId)}
+            onClick={() => submitDraft(card.suggestionId)}
           >
             Submit
           </Button>
