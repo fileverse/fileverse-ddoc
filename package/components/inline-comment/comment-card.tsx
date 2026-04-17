@@ -60,15 +60,15 @@ const CommentReply = ({
   username,
   createdAt,
   isThreadResolved,
-  isCommentDrawerContext,
+  // isCommentDrawerContext,
   // isLast,
 }: CommentReplyProps) => {
   // const dropdownRef = useRef<HTMLDivElement>(null);
   const [isCommentExpanded, setIsCommentExpanded] = useState(false);
   const [isDeleteOverlayVisible, setIsDeleteOverlayVisible] = useState(false);
   const deleteReply = useCommentStore((s) => s.deleteReply);
-  const requestEditReply = useCommentStore((s) => s.requestEditReply);
-  const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
+  // const requestEditReply = useCommentStore((s) => s.requestEditReply);
+  // const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
   const currentUsername = useCommentStore((s) => s.username);
   const isDDocOwner = useCommentStore((s) => s.isDDocOwner);
   const isCommentTruncated = Boolean(reply && reply.length > 70);
@@ -106,17 +106,17 @@ const CommentReply = ({
     deleteReply(commentId, replyId);
   };
 
-  const handleRequestEditReply = () => {
-    if (!canEditReply) {
-      return;
-    }
+  // const handleRequestEditReply = () => {
+  //   if (!canEditReply) {
+  //     return;
+  //   }
 
-    if (isCommentDrawerContext) {
-      setOpenReplyId(commentId);
-    }
+  //   if (isCommentDrawerContext) {
+  //     setOpenReplyId(commentId);
+  //   }
 
-    requestEditReply(commentId, replyId);
-  };
+  //   requestEditReply(commentId, replyId);
+  // };
 
   return (
     <div
@@ -146,7 +146,7 @@ const CommentReply = ({
               }
               content={
                 <div className="flex flex-col p-2 w-40 shadow-elevation-3">
-                  {canEditReply && (
+                  {/* {canEditReply && (
                     <button
                       className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
                       onClick={handleRequestEditReply}
@@ -154,7 +154,7 @@ const CommentReply = ({
                       <LucideIcon name="Pencil" size="sm" />
                       <p className="text-body-sm color-text-default">Edit</p>
                     </button>
-                  )}
+                  )} */}
                   {canDeleteReply && (
                     <button
                       className="flex items-center h-[32px] color-text-danger text-sm font-medium gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
@@ -214,7 +214,7 @@ export const CommentCard = (props: CommentCardProps) => {
     isDropdown,
   } = props;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { onDelete: _onDelete, isSuggestion } = props;
+  const { onDelete: _onDelete } = props;
   const {
     commentsContainerRef,
     displayedComment,
@@ -224,7 +224,7 @@ export const CommentCard = (props: CommentCardProps) => {
     focusCardIfNeeded,
     handleCommentExpandClick,
     handleReplyToggleClick,
-    handleRequestEditClick,
+    // handleRequestEditClick,
     handleRequestDeleteClick,
     handleResolveClick,
     handleUnresolveClick,
@@ -239,30 +239,11 @@ export const CommentCard = (props: CommentCardProps) => {
     showAllReplies,
     visibleReplies,
   } = useCommentCard(props);
-  const currentUsername = useCommentStore((s) => s.username);
-  const isStrictCommentOwner = Boolean(
-    currentUsername && username && username === currentUsername,
-  );
+  // const currentUsername = useCommentStore((s) => s.username);
+  // const isStrictCommentOwner = Boolean(
+  //   currentUsername && username && username === currentUsername,
+  // );
 
-  // Suggestion-specific store selectors
-  const isDDocOwner = useCommentStore((s) => s.isDDocOwner);
-  const acceptSuggestion = useCommentStore((s) => s.acceptSuggestion);
-  const deleteComment = useCommentStore((s) => s.deleteComment);
-
-  const handleAcceptClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    acceptSuggestion(id as string);
-  };
-
-  const handleRejectClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    deleteComment(id as string);
-  };
-
-  const handleWithdrawClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    deleteComment(id as string);
-  };
   if (emptyComment)
     return (
       <div
@@ -311,120 +292,80 @@ export const CommentCard = (props: CommentCardProps) => {
                   'flex  gap-[4px]',
                 )}
               >
-                {isSuggestion ? (
-                  <>
-                    {isDDocOwner && (
-                      <>
-                        <Tooltip text="Reject suggestion" position="bottom">
-                          <IconButton
-                            variant="ghost"
-                            icon="X"
-                            size="sm"
-                            className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
-                            onClick={handleRejectClick}
-                          />
-                        </Tooltip>
-                        <Tooltip text="Accept suggestion" position="bottom">
-                          <IconButton
-                            variant="ghost"
-                            icon="Check"
-                            size="sm"
-                            className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
-                            onClick={handleAcceptClick}
-                          />
-                        </Tooltip>
-                      </>
-                    )}
-                    {!isDDocOwner && isCommentOwner && (
-                      <Tooltip text="Withdraw suggestion" position="bottom">
-                        <IconButton
-                          variant="ghost"
-                          icon="Undo2"
-                          size="sm"
-                          className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
-                          onClick={handleWithdrawClick}
-                        />
-                      </Tooltip>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    {isCommentOwner && !isResolved && (
-                      <Tooltip text="Mark as resolved" position="bottom">
-                        <IconButton
-                          variant={'ghost'}
-                          icon="Check"
-                          size="sm"
-                          className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
-                          onClick={handleResolveClick}
-                        />
-                      </Tooltip>
-                    )}
+                {isCommentOwner && !isResolved && (
+                  <Tooltip text="Mark as resolved" position="bottom">
+                    <IconButton
+                      variant={'ghost'}
+                      icon="Check"
+                      size="sm"
+                      className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
+                      onClick={handleResolveClick}
+                    />
+                  </Tooltip>
+                )}
 
-                    {isCommentOwner && (
-                      <div onClick={(e) => e.stopPropagation()}>
-                        <DynamicDropdown
-                          key={`thread-actions-${id}`}
-                          align="end"
-                          sideOffset={4}
-                          anchorTrigger={
-                            <IconButton
-                              icon="EllipsisVertical"
-                              variant="ghost"
-                              size="sm"
-                              className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
-                            />
-                          }
-                          content={
-                            <div
-                              ref={dropdownRef}
-                              data-inline-comment-actions-menu
-                              className="flex flex-col p-2 w-40 shadow-elevation-3"
-                              onClick={(e) => e.stopPropagation()}
+                {isCommentOwner && (
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <DynamicDropdown
+                      key={`thread-actions-${id}`}
+                      align="end"
+                      sideOffset={4}
+                      anchorTrigger={
+                        <IconButton
+                          icon="EllipsisVertical"
+                          variant="ghost"
+                          size="sm"
+                          className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
+                        />
+                      }
+                      content={
+                        <div
+                          ref={dropdownRef}
+                          data-inline-comment-actions-menu
+                          className="flex flex-col p-2 w-40 shadow-elevation-3"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {isResolved && (
+                            <button
+                              className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
+                              onClick={handleUnresolveClick}
                             >
-                              {isResolved && (
-                                <button
-                                  className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
-                                  onClick={handleUnresolveClick}
-                                >
-                                  <LucideIcon name="RotateCcw" size="sm" />
-                                  <p className="text-body-sm color-text-default">
-                                    Unresolve
-                                  </p>
-                                </button>
-                              )}
-                              {!isResolved &&
-                                !isDisabled &&
-                                isStrictCommentOwner && (
-                                  <button
-                                    className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
-                                    onClick={handleRequestEditClick}
-                                  >
-                                    <LucideIcon name="Pencil" size="sm" />
-                                    <p className="text-body-sm color-text-default">
-                                      Edit
-                                    </p>
-                                  </button>
-                                )}
+                              <LucideIcon name="RotateCcw" size="sm" />
+                              <p className="text-body-sm color-text-default">
+                                Unresolve
+                              </p>
+                            </button>
+                          )}
+                          {/* {!isResolved &&
+                            !isDisabled &&
+                            isStrictCommentOwner && (
                               <button
-                                className="flex items-center h-[32px] color-text-danger text-sm font-medium gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
-                                onClick={handleRequestDeleteClick}
+                                className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
+                                onClick={handleRequestEditClick}
                               >
-                                <LucideIcon
-                                  name="Trash2"
-                                  size="sm"
-                                  stroke="#FB3449"
-                                />
-                                <p className="text-body-sm color-text-danger">
-                                  Delete
+                                <LucideIcon name="Pencil" size="sm" />
+                                <p className="text-body-sm color-text-default">
+                                  Edit
                                 </p>
                               </button>
-                            </div>
-                          }
-                        />
-                      </div>
-                    )}
-                  </>
+                            )} */}
+                          <button
+                            className="flex items-center h-[32px] color-text-danger text-sm font-medium gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
+                            onClick={handleRequestDeleteClick}
+                          >
+                            <LucideIcon
+                              name="Trash2"
+                              size="sm"
+                              stroke="#FB3449"
+                            />
+                            <p className="text-body-sm color-text-danger">
+                              Delete
+                            </p>
+                          </button>
+                        </div>
+                      }
+                    />
+                  </div>
                 )}
               </div>
             </Tooltip>
