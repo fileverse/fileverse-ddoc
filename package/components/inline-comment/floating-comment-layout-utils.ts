@@ -5,7 +5,7 @@ import {
 } from './comment-floating-layout';
 import type { CommentFloatingCard } from './context/types';
 
-export type AnchorType = 'draft' | 'thread';
+export type AnchorType = 'draft' | 'thread' | 'suggestion-draft';
 
 export interface CachedAnchorRect {
   top: number;
@@ -53,6 +53,13 @@ export const getAnchorIdentity = (floatingCard: CommentFloatingCard) => {
     };
   }
 
+  if (floatingCard.type === 'suggestion-draft') {
+    return {
+      anchorId: floatingCard.suggestionId,
+      anchorType: 'suggestion-draft' as const,
+    };
+  }
+
   return {
     anchorId: floatingCard.commentId,
     anchorType: 'thread' as const,
@@ -74,8 +81,9 @@ const getAnchorSelector = ({
   anchorId: string;
   anchorType: AnchorType;
 }) => {
-  const attribute =
-    anchorType === 'draft' ? 'data-draft-comment-id' : 'data-comment-id';
+  let attribute = 'data-comment-id';
+  if (anchorType === 'draft') attribute = 'data-draft-comment-id';
+  if (anchorType === 'suggestion-draft') attribute = 'data-suggestion-id';
 
   return `[${attribute}="${escapeSelectorValue(anchorId)}"]`;
 };

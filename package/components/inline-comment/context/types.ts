@@ -35,9 +35,17 @@ export interface CommentFloatingThreadCard extends CommentFloatingBaseCard {
   commentId: string;
 }
 
+export interface SuggestionFloatingDraftCard extends CommentFloatingBaseCard {
+  type: 'suggestion-draft';
+  suggestionId: string;
+  /** Accumulated inserted text from the live suggestion context. */
+  insertedText: string;
+}
+
 export type CommentFloatingCard =
   | CommentFloatingDraftCard
-  | CommentFloatingThreadCard;
+  | CommentFloatingThreadCard
+  | SuggestionFloatingDraftCard;
 
 export interface InlineCommentData {
   highlightedTextContent?: string;

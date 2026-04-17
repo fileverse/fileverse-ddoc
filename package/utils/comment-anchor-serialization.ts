@@ -27,7 +27,7 @@ export const deserializeCommentAnchors = (
   return anchors
     .map((anchor) => {
       try {
-        return {
+        const base: CommentAnchor = {
           id: anchor.id,
           anchorFrom: Y.decodeRelativePosition(
             Uint8Array.from(atob(anchor.anchorFrom), (char) =>
@@ -42,6 +42,18 @@ export const deserializeCommentAnchors = (
           resolved: anchor.resolved,
           deleted: anchor.deleted,
         };
+
+        // Preserve suggestion metadata so suggestion decorations render
+        // correctly after reload (cache schema for suggestions evolves;
+        // package can't render them without these fields).
+        if (anchor.isSuggestion) {
+          base.isSuggestion = true;
+          base.suggestionType = anchor.suggestionType;
+          base.originalContent = anchor.originalContent;
+          base.suggestedContent = anchor.suggestedContent;
+        }
+
+        return base;
       } catch {
         return null;
       }

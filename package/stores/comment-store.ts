@@ -1479,7 +1479,11 @@ export const createCommentStore = () =>
 
       if (floatingCardToClose.type === 'draft') {
         editor?.commands.unsetDraftComment(floatingCardToClose.draftId);
-      } else if (editor && activeCommentId === floatingCardToClose.commentId) {
+      } else if (
+        floatingCardToClose.type === 'thread' &&
+        editor &&
+        activeCommentId === floatingCardToClose.commentId
+      ) {
         setActiveCommentId(null);
         editor.commands.unsetCommentActive();
       }

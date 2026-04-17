@@ -113,6 +113,33 @@ export function resolveCommentAnchorRangeInState(
   }
 }
 
+/**
+ * Resolve anchorFrom to a single absolute position.
+ * Used for 'add' suggestion anchors where anchorFrom === anchorTo (cursor,
+ * no initial selection) — resolveCommentAnchorRangeInState rejects from >= to,
+ * so we need a separate path that allows a point position.
+ */
+export function resolveCommentAnchorPointInState(
+  anchor: Pick<CommentAnchor, 'anchorFrom'>,
+  state: EditorState,
+): number | null {
+  const syncState = ySyncPluginKey.getState(state);
+  if (!syncState?.binding) return null;
+  const { doc, type, binding } = syncState;
+  try {
+    const pos = relativePositionToAbsolutePosition(
+      doc,
+      type,
+      anchor.anchorFrom,
+      binding.mapping,
+    );
+    if (pos === null || pos < 0 || pos > state.doc.content.size) return null;
+    return pos;
+  } catch {
+    return null;
+  }
+}
+
 function resolveCommentAnchorRangeFromRenderedDecorations(
   commentId: string,
   state: EditorState,
@@ -402,6 +429,15 @@ export function analyzeCommentAnchorTransactionChanges(
 // ---------------------------------------------------------------------------
 // Build decorations from anchors
 // ---------------------------------------------------------------------------
+
+function createSuggestionWidget(text: string, commentId: string): HTMLElement {
+  const span = document.createElement('span');
+  span.className = 'suggestion-add';
+  span.textContent = text;
+  span.dataset.suggestionId = commentId;
+  return span;
+}
+
 
 function buildDecorations(
   anchors: CommentAnchor[],
