@@ -328,6 +328,12 @@ export interface CommentStoreState {
   floatingCards: CommentFloatingCard[];
   /** In-progress suggestion drafts — keyed by suggestionId. Viewer-local, lost on refresh. */
   drafts: Record<string, DraftSuggestion>;
+  /**
+   * Suggestion IDs submitted from this session. Used to show the withdraw (X)
+   * action for viewers even when they don't have a persistent username set.
+   * Session-local, lost on refresh.
+   */
+  mySubmittedSuggestionIds: Set<string>;
   inlineDrafts: InlineDraftRecordMap;
   activeDraftId: string | null;
   isDesktopFloatingEnabled: boolean;
@@ -536,6 +542,7 @@ export const createCommentStore = () =>
     },
     floatingCards: [],
     drafts: {},
+    mySubmittedSuggestionIds: new Set<string>(),
     inlineDrafts: {},
     activeDraftId: null,
     isDesktopFloatingEnabled: false,
@@ -584,10 +591,35 @@ export const createCommentStore = () =>
 
     // --- Synced data setters (batch with derived recomputation to avoid double set) ---
     setInitialComments: (comments) => {
-      set({ initialComments: comments });
+      // Consumers persist comments through a cache schema that does not yet
+      // store suggestion metadata (isSuggestion, suggestionType, originalContent,
+      // suggestedContent). When the cache round-trips a suggestion back through
+      // setInitialComments, those fields would be lost, flipping the UI from
+      // SuggestionThreadFloatingCard to the generic ThreadFloatingCard. Merge
+      // the local suggestion metadata back in for comments we already know are
+      // suggestions in the current store.
+      const previousById = new Map(
+        get().initialComments.map((comment) => [comment.id, comment]),
+      );
+      const merged = comments.map((comment) => {
+        const previous = comment.id ? previousById.get(comment.id) : undefined;
+        if (!previous?.isSuggestion) {
+          return comment;
+        }
+        return {
+          ...comment,
+          isSuggestion: true,
+          suggestionType: comment.suggestionType ?? previous.suggestionType,
+          originalContent: comment.originalContent ?? previous.originalContent,
+          suggestedContent:
+            comment.suggestedContent ?? previous.suggestedContent,
+        };
+      });
+
+      set({ initialComments: merged });
       // Recompute in same tick — Zustand batches synchronous set() calls
       const { activeTabId, activeCommentId, openReplyId } = get();
-      const tabComments = comments.filter(
+      const tabComments = merged.filter(
         (comment) => (comment.tabId || DEFAULT_TAB_ID) === activeTabId,
       );
       const activeComments = tabComments.filter(
@@ -605,7 +637,7 @@ export const createCommentStore = () =>
       // `openReplyId` drives the mobile focused-thread mode. Only deleted
       // comments should clear it here; resolved comments must retain focus so
       // the drawer stays in the active thread view.
-      const nextOpenReplyId = comments.some(
+      const nextOpenReplyId = merged.some(
         (comment) => comment.id === openReplyId && !comment.deleted,
       )
         ? openReplyId
@@ -1280,7 +1312,13 @@ export const createCommentStore = () =>
           comment.id === commentId && !comment.deleted && !comment.resolved,
       );
 
-      if (!editor || !commentToOpen?.selectedContent) {
+      if (!editor || !commentToOpen) {
+        return;
+      }
+
+      // Add suggestions have empty selectedContent (point anchor), so the old
+      // `!commentToOpen.selectedContent` guard would incorrectly bail out here.
+      if (!commentToOpen.isSuggestion && !commentToOpen.selectedContent) {
         return;
       }
 
@@ -1945,19 +1983,16 @@ export const createCommentStore = () =>
         return threadCard;
       });
 
-      set({ drafts: nextDrafts, floatingCards: nextCards });
-      if (draftAnchorsRef) {
-        draftAnchorsRef.current =
-          Object.values(nextDrafts).map(deriveDraftAnchor);
-      }
-      triggerDecorationRebuild(editor);
-
-      // Build IComment + meta and hand off to the consumer pipeline.
+      // Build IComment now so we can pre-populate local state and avoid a
+      // "Loading encrypted comments" flash while the consumer round-trips
+      // the new comment back through onNewComment → setInitialComments.
       const newComment: IComment = {
         id: draft.id,
         tabId: get().activeTabId,
+        username: get().username ?? undefined,
         selectedContent: draft.originalContent,
         content: '',
+        replies: [],
         isSuggestion: true,
         suggestionType,
         originalContent: draft.originalContent,
@@ -1966,6 +2001,25 @@ export const createCommentStore = () =>
         deleted: false,
         createdAt: new Date(),
       };
+
+      const nextMySubmitted = new Set(get().mySubmittedSuggestionIds);
+      nextMySubmitted.add(draft.id);
+
+      set({
+        drafts: nextDrafts,
+        floatingCards: nextCards,
+        mySubmittedSuggestionIds: nextMySubmitted,
+      });
+      if (draftAnchorsRef) {
+        draftAnchorsRef.current =
+          Object.values(nextDrafts).map(deriveDraftAnchor);
+      }
+      // Pre-populate initialComments / tabComments so the thread card renders
+      // with real data on the very next paint. Consumer's subsequent round-trip
+      // via onNewComment replaces this list harmlessly (same content + any
+      // extra metadata like commentIndex).
+      get().setInitialComments([...get().initialComments, newComment]);
+      triggerDecorationRebuild(editor);
 
       const meta: CommentMutationMeta = {
         type: 'create',

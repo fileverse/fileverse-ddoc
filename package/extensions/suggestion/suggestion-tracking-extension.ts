@@ -17,6 +17,7 @@
 
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
+import { ReplaceStep } from '@tiptap/pm/transform';
 import * as Y from 'yjs';
 import { SuggestionType } from '../../types';
 import type { CommentAnchor } from '../comment/comment-decoration-plugin';
@@ -126,6 +127,89 @@ export const SuggestionTrackingExtension =
         new Plugin({
           key: suggestionTrackingPluginKey,
 
+          // Safety net: some deletion paths (double-click word select +
+          // Backspace, IME delete, beforeinput-driven deletions) bypass
+          // handleKeyDown and handleDOMEvents entirely. filterTransaction
+          // catches EVERY transaction before dispatch — if one is about to
+          // modify the doc while in suggest mode, we cancel it and schedule
+          // the matching draft action.
+          filterTransaction(tr, state) {
+            const opts = getOptions();
+            if (!opts.getIsSuggestionMode()) return true;
+            if (!tr.docChanged) return true;
+            if (tr.getMeta(suggestionTrackingPluginKey)) return true;
+            if (tr.getMeta('y-sync$')) return true;
+
+            // Pre-transaction selection tells us whether the user had a
+            // range selected. Without a selection, a deletion is "bare
+            // backspace in active draft" — we shrink the draft instead of
+            // creating a Delete suggestion.
+            const hadSelection = state.selection.from < state.selection.to;
+
+            // Classify the transaction by inspecting its steps:
+            //   - deletedRange: a pure text-range deletion
+            //   - insertedText: pure text content being inserted
+            //   - hasStructuralChange: boundaries / node splits / non-ReplaceSteps
+            // Enter, Tab, paste-with-structure, drag, etc. produce structural
+            // changes — we block those silently (no draft action).
+            let deletedRange: { from: number; to: number } | null = null;
+            let insertedText = '';
+            let hasStructuralChange = false;
+
+            for (const step of tr.steps) {
+              if (!(step instanceof ReplaceStep)) {
+                hasStructuralChange = true;
+                continue;
+              }
+              if (step.slice.openStart > 0 || step.slice.openEnd > 0) {
+                hasStructuralChange = true;
+              }
+              if (step.from < step.to) {
+                deletedRange = { from: step.from, to: step.to };
+              }
+              if (step.slice.size > 0) {
+                insertedText += step.slice.content.textBetween(
+                  0,
+                  step.slice.content.size,
+                  '',
+                );
+              }
+            }
+
+            // Structural changes (Enter, Tab, paste-with-blocks, node splits)
+            // are blocked silently per spec ("blocked gestures simply do nothing").
+            if (hasStructuralChange) {
+              return false;
+            }
+
+            // Pure text change: translate to a draft action.
+            if (deletedRange || insertedText) {
+              setTimeout(() => {
+                if (deletedRange && insertedText) {
+                  opts.onReplaceTyping(
+                    deletedRange.from,
+                    deletedRange.to,
+                    insertedText,
+                  );
+                } else if (deletedRange && hadSelection) {
+                  // User selected text and pressed Backspace/Delete
+                  opts.onDeleteSelection(deletedRange.from, deletedRange.to);
+                } else if (deletedRange) {
+                  // Bare backspace (no user selection) inside an active draft
+                  // → shrink the active draft instead of creating a 1-char
+                  // Delete suggestion. Silent no-op if no active draft.
+                  opts.onUndo();
+                } else if (insertedText) {
+                  opts.onTextInput(insertedText);
+                }
+              }, 0);
+            }
+
+            // Always block any doc-changing transaction in suggest mode — the
+            // document is only modified on owner Accept.
+            return false;
+          },
+
           props: {
             // ----- Text input ------------------------------------------------
             // Fires for ordinary typing (including post-composition IME commit).
@@ -151,10 +235,17 @@ export const SuggestionTrackingExtension =
 
               const { from, to } = view.state.selection;
 
-              // Backspace / Delete: Delete draft from selection, else no-op
+              // Backspace / Delete:
+              //   - with selection → Delete draft
+              //   - without selection → treat as undo of the active draft's
+              //     last keystroke (feels like Google Docs while typing).
+              //     When no draft is at the cursor, this is a silent no-op
+              //     per spec.
               if (event.key === 'Backspace' || event.key === 'Delete') {
                 if (from < to) {
                   opts.onDeleteSelection(from, to);
+                } else {
+                  opts.onUndo();
                 }
                 return true;
               }
@@ -200,6 +291,50 @@ export const SuggestionTrackingExtension =
             },
             handleDrop(_view, _event) {
               return getOptions().getIsSuggestionMode();
+            },
+
+            // ----- DOM beforeinput — catches deletion paths that bypass
+            // handleKeyDown (browser-native selection + Backspace on some
+            // browsers fires only beforeinput, not keydown).
+            handleDOMEvents: {
+              beforeinput: (view, event) => {
+                const opts = getOptions();
+                if (!opts.getIsSuggestionMode()) return false;
+
+                const inputType = event.inputType;
+
+                // Selection deletion: capture selection before browser mutates
+                if (
+                  inputType === 'deleteContentBackward' ||
+                  inputType === 'deleteContentForward' ||
+                  inputType === 'deleteWordBackward' ||
+                  inputType === 'deleteWordForward' ||
+                  inputType === 'deleteByCut' ||
+                  inputType === 'deleteByDrag'
+                ) {
+                  event.preventDefault();
+                  const { from, to } = view.state.selection;
+                  if (from < to) {
+                    opts.onDeleteSelection(from, to);
+                  }
+                  return true;
+                }
+
+                // Paste / drop routes through beforeinput too on some browsers
+                if (
+                  inputType === 'insertFromPaste' ||
+                  inputType === 'insertFromPasteAsQuotation' ||
+                  inputType === 'insertFromDrop' ||
+                  inputType === 'insertReplacementText'
+                ) {
+                  event.preventDefault();
+                  return true;
+                }
+
+                // insertText / insertCompositionText — let handleTextInput
+                // deal with it. Return false so PM continues processing.
+                return false;
+              },
             },
           },
         }),

@@ -434,7 +434,10 @@ function createSuggestionWidget(text: string, commentId: string): HTMLElement {
   const span = document.createElement('span');
   span.className = 'suggestion-add';
   span.textContent = text;
+  // Both attributes so the layout engine can locate this widget as either a
+  // suggestion-draft anchor (before submit) or a thread anchor (after submit).
   span.dataset.suggestionId = commentId;
+  span.dataset.commentId = commentId;
   return span;
 }
 
@@ -465,6 +468,8 @@ function buildDecorations(
     // resolution and render a single widget. side: -1 positions the widget
     // visually before the caret at the same document position — gives the
     // Google-Docs-style "cursor advances through the proposed text" feel.
+    // Key includes the content so PM redraws when the draft's suggestedContent
+    // changes (typing / backspace during an Add draft).
     if (anchor.isSuggestion && anchor.suggestionType === 'add') {
       if (!anchor.suggestedContent) continue;
       const insertPoint = resolveCommentAnchorPointInState(anchor, state);
@@ -475,7 +480,7 @@ function buildDecorations(
           createSuggestionWidget(anchor.suggestedContent, anchor.id),
           {
             side: -1,
-            key: `suggestion-insert-${anchor.id}`,
+            key: `suggestion-insert-${anchor.id}-${anchor.suggestedContent}`,
             destroy: (node) => (node as HTMLElement).remove(),
           },
         ),
@@ -489,7 +494,9 @@ function buildDecorations(
     if (anchor.isSuggestion) {
       const { suggestionType, suggestedContent } = anchor;
 
-      // Delete / Replace: strikethrough on the original text range
+      // Delete / Replace: strikethrough on the original text range.
+      // Include both data-suggestion-id (for draft anchor lookup) and
+      // data-comment-id (for submitted thread anchor lookup).
       if (
         (suggestionType === 'delete' || suggestionType === 'replace') &&
         range.from < range.to
@@ -498,11 +505,14 @@ function buildDecorations(
           Decoration.inline(range.from, range.to, {
             class: 'suggestion-delete',
             'data-suggestion-id': anchor.id,
+            'data-comment-id': anchor.id,
           }),
         );
       }
 
-      // Replace: widget showing the proposed content after the struck-through range
+      // Replace: widget showing the proposed content after the struck-through range.
+      // Key includes the content so PM redraws when the draft's suggestedContent
+      // changes (typing / backspace during a Replace draft).
       if (suggestionType === 'replace' && suggestedContent) {
         decorations.push(
           Decoration.widget(
@@ -510,7 +520,7 @@ function buildDecorations(
             createSuggestionWidget(suggestedContent, anchor.id),
             {
               side: -1,
-              key: `suggestion-insert-${anchor.id}`,
+              key: `suggestion-insert-${anchor.id}-${suggestedContent}`,
               destroy: (node) => (node as HTMLElement).remove(),
             },
           ),
@@ -679,6 +689,19 @@ export function getCommentAtPosition(
 
   for (const anchor of anchors) {
     if (anchor.deleted) {
+      continue;
+    }
+
+    // Add suggestions are point-anchored (anchorFrom === anchorTo); range
+    // resolution rejects them. Match if the cursor sits at the insert point
+    // or anywhere inside the widget's proposed content length.
+    if (anchor.isSuggestion && anchor.suggestionType === 'add') {
+      const point = resolveCommentAnchorPointInState(anchor, editor.state);
+      if (point === null) continue;
+      const widgetEnd = point + (anchor.suggestedContent?.length ?? 0);
+      if (pos >= point && pos <= widgetEnd) {
+        return anchor;
+      }
       continue;
     }
 

@@ -1,4 +1,4 @@
-import { Button } from '@fileverse/ui';
+import { Button, IconButton } from '@fileverse/ui';
 import { useCommentStore } from '../../../stores/comment-store';
 import { FloatingCardShell } from './floating-card-shell';
 import type { SuggestionDraftFloatingCardProps } from './types';
@@ -7,9 +7,9 @@ import type { SuggestionDraftFloatingCardProps } from './types';
  * SuggestionDraftFloatingCard
  *
  * Shown while a viewer is composing a suggestion (in suggestion mode).
- * Displays the original text (strikethrough) and the inserted text (green),
- * matching the inline decorations already visible in the editor.
- * Submit finalizes the suggestion; Discard undoes the edits.
+ * Uses the same one-line diff format as the submitted thread card
+ * (Add: "X" / Delete: "X" / Replace: "X" with "Y") plus a Submit action
+ * and a Discard (X) button.
  */
 export const SuggestionDraftFloatingCard = ({
   card,
@@ -24,6 +24,14 @@ export const SuggestionDraftFloatingCard = ({
   const hasInserted = Boolean(card.insertedText);
   const canSubmit = hasOriginal || hasInserted;
 
+  const suggestionType: 'add' | 'delete' | 'replace' | null = hasOriginal
+    ? hasInserted
+      ? 'replace'
+      : 'delete'
+    : hasInserted
+      ? 'add'
+      : null;
+
   return (
     <FloatingCardShell
       ref={(node) => registerCardNode(card.floatingCardId, node)}
@@ -33,38 +41,53 @@ export const SuggestionDraftFloatingCard = ({
       onFocus={() => focusFloatingCard(card.floatingCardId)}
     >
       <div className="flex flex-col gap-2 p-3">
-        <p className="text-body-xs-bold color-text-secondary uppercase tracking-wide">
-          Suggestion
-        </p>
-
-        {/* Content preview — mirrors what the inline decorations show */}
-        <div className="rounded-[4px] border color-border-default px-3 py-2 text-body-sm space-y-1">
-          {hasOriginal && (
-            <span className="line-through color-text-secondary">
-              {card.selectedText}
-            </span>
-          )}
-          {hasOriginal && hasInserted && <span> → </span>}
-          {hasInserted && (
-            <span className="text-[#22c55e]">{card.insertedText}</span>
-          )}
-          {!hasOriginal && !hasInserted && (
-            <span className="color-text-secondary italic">No changes yet</span>
-          )}
+        <div className="flex items-start gap-2">
+          <div className="flex-1">
+            {suggestionType === 'add' && (
+              <p className="text-body-sm">
+                <span className="font-semibold">Add:</span>{' '}
+                <span>&ldquo;{card.insertedText}&rdquo;</span>
+              </p>
+            )}
+            {suggestionType === 'delete' && (
+              <p className="text-body-sm">
+                <span className="font-semibold">Delete:</span>{' '}
+                <span className="line-through">
+                  &ldquo;{card.selectedText}&rdquo;
+                </span>
+              </p>
+            )}
+            {suggestionType === 'replace' && (
+              <p className="text-body-sm">
+                <span className="font-semibold">Replace:</span>{' '}
+                <span className="line-through">
+                  &ldquo;{card.selectedText}&rdquo;
+                </span>{' '}
+                <span className="font-semibold">with</span>{' '}
+                <span>&ldquo;{card.insertedText}&rdquo;</span>
+              </p>
+            )}
+            {!suggestionType && (
+              <p className="text-body-sm color-text-secondary italic">
+                Start typing to suggest a change
+              </p>
+            )}
+          </div>
+          <IconButton
+            icon="X"
+            variant="ghost"
+            size="sm"
+            onClick={() => discardDraft(card.suggestionId)}
+            title="Discard suggestion"
+          />
         </div>
 
-        <div className="flex items-center justify-end gap-2">
+        <div className="flex items-center justify-end">
           <Button
-            variant="ghost"
-            className="!w-[80px] !min-w-[80px]"
-            onClick={() => discardDraft(card.suggestionId)}
-          >
-            Discard
-          </Button>
-          <Button
-            className="w-20 min-w-20"
+            size="sm"
             disabled={!canSubmit}
             onClick={() => submitDraft(card.suggestionId)}
+            className="!min-w-[80px]"
           >
             Submit
           </Button>
