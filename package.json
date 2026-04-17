@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "3.1.7",
+  "version": "3.1.7-comment-re-arch-2",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
@@ -114,7 +114,8 @@
     "y-prosemirror": "^1.2.5",
     "y-protocols": "^1.0.6",
     "y-webrtc": "^10.3.0",
-    "yjs": "^13.6.15"
+    "yjs": "^13.6.15",
+    "zustand": "^5.0.12"
   },
   "peerDependencies": {
     "@dnd-kit/core": ">=6.3.1",
