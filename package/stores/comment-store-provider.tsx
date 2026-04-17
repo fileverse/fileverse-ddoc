@@ -11,6 +11,8 @@ import {
   CommentAnchor,
   type CommentAnchorTransactionChange,
   getCommentAtPosition,
+  resolveCommentAnchorPointInState,
+  resolveCommentAnchorRangeInState,
   triggerDecorationRebuild,
 } from '../extensions/comment/comment-decoration-plugin';
 import { CommentMutationMeta, SerializedCommentAnchor } from '../types';
@@ -183,6 +185,30 @@ export const CommentStoreProvider = ({
       }
     };
   }, [store, storeApiRef]);
+
+  // Silently discard drafts whose Yjs anchors can no longer be resolved —
+  // this happens when the owner deletes the surrounding text while a viewer
+  // has an in-progress draft anchored to it. Per the spec, the draft is
+  // lost with no warning.
+  useEffect(() => {
+    if (!editor) return;
+    const handler = ({ transaction }: { transaction: Transaction }) => {
+      if (!transaction.docChanged) return;
+      const state = store.getState();
+      for (const draft of Object.values(state.drafts)) {
+        const resolved = draft.hadDeletion
+          ? resolveCommentAnchorRangeInState(draft, editor.state)
+          : resolveCommentAnchorPointInState(draft, editor.state);
+        if (resolved === null) {
+          state.discardDraft(draft.id);
+        }
+      }
+    };
+    editor.on('transaction', handler);
+    return () => {
+      editor.off('transaction', handler);
+    };
+  }, [editor, store]);
 
   // --- Sync data props into store (only when values change) ---
   useEffect(() => {
