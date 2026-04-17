@@ -1,13 +1,6 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
-import {
-  Avatar,
-  ButtonGroup,
-  LucideIcon,
-  TextAreaFieldV2,
-  Button,
-  cn,
-} from '@fileverse/ui';
+import { LucideIcon, Button, cn } from '@fileverse/ui';
 import { CommentCard } from './comment-card';
 import { useCommentStore } from '../../stores/comment-store';
 import { useCommentRefs } from '../../stores/comment-store-provider';
