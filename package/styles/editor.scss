@@ -4,6 +4,13 @@
   color: inherit;
   font-family: inherit;
 
+  // Suppress all empty-line placeholder hints in suggestion mode.
+  // Slash commands don't fire in suggest mode (text input is intercepted),
+  // so "Type / to browse options" is misleading there.
+  &[data-suggestion-mode='true'] .is-empty::before {
+    content: none !important;
+  }
+
   .is-empty::before {
     @apply float-left h-0 pointer-events-none w-full;
   }
@@ -1180,18 +1187,22 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
 .suggestion-delete {
   @apply line-through cursor-pointer transition-all;
   color: #EF4444;
+  background-color: #FEE2E2;
 
   .dark & {
     color: #F87171;
+    background-color: #450A0A;
   }
 }
 
 .suggestion-add {
   @apply underline cursor-pointer;
   color: #16A34A;
+  background-color: #DCFCE7;
 
   .dark & {
     color: #4ADE80;
+    background-color: #052E16;
   }
 }
 

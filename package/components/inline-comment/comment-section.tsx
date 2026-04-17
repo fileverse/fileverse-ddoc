@@ -57,7 +57,7 @@ export const CommentSection = ({
   >(null);
 
   const filteredComments = (commentsProp ?? tabComments)
-    .filter((comment) => !comment.deleted)
+    .filter((comment) => !comment.deleted && !comment.isSuggestion)
     .sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),

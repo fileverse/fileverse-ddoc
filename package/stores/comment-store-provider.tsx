@@ -24,6 +24,7 @@ import {
   resolveCommentAnchorRangeForAnalysis,
 } from '../extensions/comment/comment-decoration-plugin';
 import { CommentMutationMeta, SerializedCommentAnchor } from '../types';
+import type { CommentFloatingThreadCard } from '../components/inline-comment/context/types';
 import { useResponsive } from '../utils/responsive';
 import {
   deserializeCommentAnchors,
@@ -293,6 +294,53 @@ export const CommentStoreProvider = ({
       }
     };
   }, [store, storeApiRef]);
+
+  // Auto-spawn a floating thread card for every unresolved submitted
+  // suggestion. Regular comments open on click; suggestions are always
+  // visible per the product spec ("Suggestion should always be visible on
+  // viewer/owner mode if they are not accepted/rejected/resolved").
+  useEffect(() => {
+    const pendingSuggestions = initialComments.filter(
+      (c): c is IComment & { id: string } =>
+        Boolean(
+          c.isSuggestion &&
+            !c.resolved &&
+            !c.deleted &&
+            c.id &&
+            c.tabId === activeTabId,
+        ),
+    );
+    if (pendingSuggestions.length === 0) return;
+
+    const state = store.getState();
+    const existingThreadIds = new Set(
+      state.floatingCards
+        .filter((c): c is CommentFloatingThreadCard => c.type === 'thread')
+        .map((c) => c.commentId),
+    );
+
+    const toAdd = pendingSuggestions.filter(
+      (c) => !existingThreadIds.has(c.id),
+    );
+    if (toAdd.length === 0) return;
+
+    // Inline card creation — openFloatingThread guards on non-empty
+    // selectedContent which Add suggestions don't have.
+    store.setState((current) => ({
+      floatingCards: [
+        ...current.floatingCards,
+        ...toAdd.map(
+          (c): CommentFloatingThreadCard => ({
+            type: 'thread',
+            floatingCardId: `suggestion-thread:${c.id}`,
+            commentId: c.id,
+            selectedText: c.selectedContent ?? '',
+            isFocused: false,
+          }),
+        ),
+      ],
+    }));
+  }, [initialComments, activeTabId, store]);
 
   // Silently discard drafts whose Yjs anchors can no longer be resolved —
   // this happens when the owner deletes the surrounding text while a viewer

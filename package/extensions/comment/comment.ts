@@ -221,8 +221,15 @@ const getCommentNodesById = (editorDom: HTMLElement, commentId: string) => {
       ? CSS.escape(commentId)
       : commentId.replace(/"/g, '\\"');
 
+  // Exclude suggestion decorations: they share `data-comment-id` so the
+  // layout engine can locate them after submit, but applying the
+  // comment-active styling here would (a) add a green bg that masks the
+  // suggestion's red strikethrough / green widget text and (b) mutate
+  // widget DOM that ProseMirror owns, causing the widget to re-render
+  // and visually drop on click-away. Suggestion decorations always carry
+  // `data-suggestion-id`, so we use that as the exclusion marker.
   return editorDom.querySelectorAll<HTMLElement>(
-    `[data-comment-id="${safeId}"]`,
+    `[data-comment-id="${safeId}"]:not([data-suggestion-id])`,
   );
 };
 

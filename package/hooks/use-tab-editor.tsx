@@ -419,6 +419,20 @@ export const useTabEditor = ({
     }
   }, [editor]);
 
+  // Toggle a data attribute on the editor root so CSS can suppress the
+  // "Type / to browse options" placeholder (and others) in suggestion mode.
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    // editor.view is lazily attached — guard against accessing before mount
+    const dom = editor.view?.dom;
+    if (!dom) return;
+    if (isSuggestionMode) {
+      dom.setAttribute('data-suggestion-mode', 'true');
+    } else {
+      dom.removeAttribute('data-suggestion-mode');
+    }
+  }, [editor, isSuggestionMode]);
+
   // Fix for TableOfContents not updating in Tiptap v3
   const tocDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
