@@ -20,20 +20,17 @@ import SlashCommand from '../extensions/slash-command/slash-comand';
 import { EditorState, TextSelection } from '@tiptap/pm/state';
 import customTextInputRules from '../extensions/customTextInputRules';
 import { PageBreak } from '../extensions/page-break/page-break';
-import { toUint8Array, fromUint8Array } from 'js-base64';
+import { toUint8Array } from 'js-base64';
 import { isJSONString } from '../utils/isJsonString';
 import { zoomService } from '../zoom-service';
 import { sanitizeContent } from '../utils/sanitize-content';
-import { CommentExtension as Comment, IComment } from '../extensions/comment';
-import { CommentMutationMeta } from '../types';
+import { CommentExtension as Comment } from '../extensions/comment';
 import {
   CommentAnchor,
   CommentDecorationExtension,
 } from '../extensions/comment/comment-decoration-plugin';
-import {
-  SuggestionTrackingExtension,
-  SuggestionReadyData,
-} from '../extensions/suggestion/suggestion-tracking-extension';
+import { SuggestionTrackingExtension } from '../extensions/suggestion/suggestion-tracking-extension';
+import type { createCommentStore } from '../stores/comment-store';
 import {
   createPageCounter,
   handleContentPrint,
@@ -143,7 +140,6 @@ interface UseTabEditorArgs {
   activeTabId: string;
   theme?: 'dark' | 'light';
   editorRef?: MutableRefObject<Editor | null>;
-  onNewComment?: DdocProps['onNewComment'];
 }
 
 export const useTabEditor = ({
@@ -188,7 +184,6 @@ export const useTabEditor = ({
   activeTabId,
   theme,
   editorRef,
-  onNewComment,
 }: UseTabEditorArgs) => {
   const collabEnabled = collaboration?.enabled === true;
   const connection = collabEnabled ? collaboration.connection : null;
@@ -200,7 +195,7 @@ export const useTabEditor = ({
 
   const isSuggestionMode = !!(isPreviewMode && viewerMode === 'suggest');
 
-  const { extensions, commentAnchorsRef, draftAnchorsRef } = useEditorExtension({
+  const { extensions, commentAnchorsRef, draftAnchorsRef, storeApiRef } = useEditorExtension({
     ydoc,
     onError,
     ipfsImageUploadFn,
@@ -225,7 +220,6 @@ export const useTabEditor = ({
     externalExtensions,
     activeTabId,
     isSuggestionMode,
-    onNewComment,
   });
 
   const { handleCommentInteraction, handleCommentClick } =
@@ -871,6 +865,7 @@ export const useTabEditor = ({
     isContentLoading,
     commentAnchorsRef,
     draftAnchorsRef,
+    storeApiRef,
   };
 };
 
@@ -980,7 +975,6 @@ interface UseExtensionStackArgs {
   externalExtensions?: Record<string, AnyExtension>;
   activeTabId: string;
   isSuggestionMode?: boolean;
-  onNewComment?: DdocProps['onNewComment'];
 }
 
 const useEditorExtension = ({
@@ -1003,7 +997,6 @@ const useEditorExtension = ({
   externalExtensions,
   activeTabId,
   isSuggestionMode = false,
-  onNewComment,
 }: UseExtensionStackArgs) => {
   const slashCommandConfigRef = useRef({
     isConnected,
@@ -1039,52 +1032,13 @@ const useEditorExtension = ({
   const isSuggestionModeRef = useRef(isSuggestionMode);
   isSuggestionModeRef.current = isSuggestionMode;
 
-  // Keep a stable ref to onNewComment so the callback always reads the latest
-  // version without needing extension rebuilds.
-  const onNewCommentRef = useRef(onNewComment);
-  onNewCommentRef.current = onNewComment;
-
-  // Called on every keystroke — upserts the live anchor so the decoration
-  // rebuilds immediately while the user is still typing.
-  const onLiveSuggestionRef = useRef<((anchor: CommentAnchor) => void) | null>(null);
-  onLiveSuggestionRef.current = (anchor: CommentAnchor) => {
-    commentAnchorsRef.current = [
-      ...commentAnchorsRef.current.filter((a) => a.id !== anchor.id),
-      anchor,
-    ];
-  };
-
-  // Called once when typing stops (cursor moves away / blur) — only for
-  // persistence. The anchor is already in commentAnchorsRef at this point.
-  const onSuggestionReadyRef = useRef<((data: SuggestionReadyData) => void) | null>(null);
-  onSuggestionReadyRef.current = (data: SuggestionReadyData) => {
-    if (!onNewCommentRef.current) return;
-
-    const newComment: IComment = {
-      id: data.suggestionId,
-      tabId: activeTabId,
-      selectedContent: data.originalContent,
-      content: '',
-      isSuggestion: true,
-      suggestionType: data.suggestionType,
-      originalContent: data.originalContent,
-      suggestedContent: data.suggestedContent,
-      resolved: false,
-      deleted: false,
-      createdAt: new Date(),
-    };
-
-    const meta: CommentMutationMeta = {
-      type: 'create',
-      anchorFrom: fromUint8Array(Y.encodeRelativePosition(data.anchorFrom)),
-      anchorTo: fromUint8Array(Y.encodeRelativePosition(data.anchorTo)),
-      suggestionType: data.suggestionType,
-      originalContent: data.originalContent,
-      suggestedContent: data.suggestedContent,
-    };
-
-    onNewCommentRef.current(newComment, meta);
-  };
+  // Stable ref to the Zustand store API. The CommentStoreProvider populates
+  // this once it creates the store; the SuggestionTrackingExtension reads it
+  // lazily inside its event handlers so draft actions route to the store
+  // without rebuilding the editor.
+  const storeApiRef = useRef<ReturnType<typeof createCommentStore> | null>(
+    null,
+  );
 
   const commentExtension = useMemo(
     () =>
@@ -1124,8 +1078,18 @@ const useEditorExtension = ({
       }),
       SuggestionTrackingExtension.configure({
         getIsSuggestionMode: () => isSuggestionModeRef.current,
-        onLiveSuggestion: (anchor) => onLiveSuggestionRef.current?.(anchor),
-        onSuggestionReady: (data) => onSuggestionReadyRef.current?.(data),
+        onTextInput: (text) =>
+          storeApiRef.current?.getState().appendToDraftAtCursor(text),
+        onReplaceTyping: (from, to, text) => {
+          const state = storeApiRef.current?.getState();
+          if (!state) return;
+          state.startDeleteDraft(from, to);
+          state.appendToDraftAtCursor(text);
+        },
+        onDeleteSelection: (from, to) =>
+          storeApiRef.current?.getState().startDeleteDraft(from, to),
+        onUndo: () =>
+          storeApiRef.current?.getState().undoLastKeystrokeInActiveDraft(),
       }),
       ...(externalExtensions ? Object.values(externalExtensions) : []),
     ];
@@ -1181,7 +1145,13 @@ const useEditorExtension = ({
     ]);
   }, [activeModel, maxTokens, isAIAgentEnabled, createSlashCommand]);
 
-  return { extensions, setExtensions, commentAnchorsRef, draftAnchorsRef };
+  return {
+    extensions,
+    setExtensions,
+    commentAnchorsRef,
+    draftAnchorsRef,
+    storeApiRef,
+  };
 };
 
 interface UseCommentInteractionArgs {

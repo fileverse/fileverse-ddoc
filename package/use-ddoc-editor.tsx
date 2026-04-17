@@ -131,7 +131,6 @@ export const useDdocEditor = ({
     isVersionMode,
     theme,
     editorRef,
-    onNewComment,
   });
 
   const isOwner = collabEnabled ? collaboration.connection.isOwner : true;

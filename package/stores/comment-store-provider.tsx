@@ -48,6 +48,12 @@ export interface CommentStoreProviderProps {
   ensResolutionUrl: string;
   commentAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
   draftAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
+  /**
+   * Ref populated by the provider with the Zustand store instance.
+   * SuggestionTrackingExtension reads this inside event handlers to route
+   * keystrokes into draft actions without rebuilding the editor.
+   */
+  storeApiRef?: React.MutableRefObject<ReturnType<typeof createCommentStore> | null>;
   initialCommentAnchors?: SerializedCommentAnchor[];
   // Synced data — go into store via useEffect
   initialComments: IComment[];
@@ -84,6 +90,7 @@ export const CommentStoreProvider = ({
   ensResolutionUrl,
   commentAnchorsRef,
   draftAnchorsRef,
+  storeApiRef,
   initialCommentAnchors,
   setUsername: setUsernameProp,
   // Synced data (useEffect-based)
@@ -162,6 +169,20 @@ export const CommentStoreProvider = ({
   useEffect(() => {
     store.getState().setExternalDepsRef(externalDepsRef);
   }, [store]);
+
+  // Publish the store instance to the SuggestionTrackingExtension via the
+  // caller-provided ref. The extension reads this ref lazily on every
+  // keystroke, so as long as it's populated before the viewer types, drafts
+  // route correctly.
+  useEffect(() => {
+    if (!storeApiRef) return;
+    storeApiRef.current = store;
+    return () => {
+      if (storeApiRef.current === store) {
+        storeApiRef.current = null;
+      }
+    };
+  }, [store, storeApiRef]);
 
   // --- Sync data props into store (only when values change) ---
   useEffect(() => {
