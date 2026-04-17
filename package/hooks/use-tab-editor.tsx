@@ -200,7 +200,7 @@ export const useTabEditor = ({
 
   const isSuggestionMode = !!(isPreviewMode && viewerMode === 'suggest');
 
-  const { extensions, commentAnchorsRef } = useEditorExtension({
+  const { extensions, commentAnchorsRef, draftAnchorsRef } = useEditorExtension({
     ydoc,
     onError,
     ipfsImageUploadFn,
@@ -870,6 +870,7 @@ export const useTabEditor = ({
     focusCommentWithActiveId,
     isContentLoading,
     commentAnchorsRef,
+    draftAnchorsRef,
   };
 };
 
@@ -1028,6 +1029,10 @@ const useEditorExtension = ({
   );
 
   const commentAnchorsRef = useRef<CommentAnchor[]>([]);
+  // Derived anchors for in-progress suggestion drafts. Maintained by the
+  // store's draft actions — decoration layer reads this alongside
+  // commentAnchorsRef so drafts and submitted suggestions render identically.
+  const draftAnchorsRef = useRef<CommentAnchor[]>([]);
 
   // Keep a stable ref to isSuggestionMode so the extension closure always
   // reads the latest value without needing to rebuild extensions.
@@ -1112,7 +1117,10 @@ const useEditorExtension = ({
         field: activeTabId,
       }),
       CommentDecorationExtension.configure({
-        getAnchors: () => commentAnchorsRef.current,
+        getAnchors: () => [
+          ...commentAnchorsRef.current,
+          ...draftAnchorsRef.current,
+        ],
       }),
       SuggestionTrackingExtension.configure({
         getIsSuggestionMode: () => isSuggestionModeRef.current,
@@ -1173,7 +1181,7 @@ const useEditorExtension = ({
     ]);
   }, [activeModel, maxTokens, isAIAgentEnabled, createSlashCommand]);
 
-  return { extensions, setExtensions, commentAnchorsRef };
+  return { extensions, setExtensions, commentAnchorsRef, draftAnchorsRef };
 };
 
 interface UseCommentInteractionArgs {

@@ -267,6 +267,7 @@ const DdocEditor = forwardRef(
       orderTab,
       deleteTab,
       commentAnchorsRef,
+      draftAnchorsRef,
     } = useDdocEditor({
       documentStyling,
       ipfsImageFetchFn,
@@ -1183,6 +1184,7 @@ const DdocEditor = forwardRef(
               onComment={onComment}
               setCommentDrawerOpen={setCommentDrawerOpen}
               commentAnchorsRef={commentAnchorsRef}
+              draftAnchorsRef={draftAnchorsRef}
               initialCommentAnchors={initialCommentAnchors}
             >
               {renderComp()}
