@@ -182,7 +182,7 @@ export const CommentStoreProvider = ({
     const deserialized: CommentAnchor[] = initialCommentAnchors
       .map((a) => {
         try {
-          return {
+          const base: CommentAnchor = {
             id: a.id,
             anchorFrom: Y.decodeRelativePosition(
               Uint8Array.from(atob(a.anchorFrom), (c) => c.charCodeAt(0)),
@@ -193,6 +193,16 @@ export const CommentStoreProvider = ({
             resolved: a.resolved,
             deleted: a.deleted,
           };
+
+          // Preserve suggestion metadata so decorations render correctly after reload.
+          if (a.isSuggestion) {
+            base.isSuggestion = true;
+            base.suggestionType = a.suggestionType;
+            base.originalContent = a.originalContent;
+            base.suggestedContent = a.suggestedContent;
+          }
+
+          return base;
         } catch {
           return null;
         }

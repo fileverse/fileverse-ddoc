@@ -4,6 +4,7 @@ import type { IComment } from '../../../extensions/comment';
 import type {
   CommentFloatingDraftCard,
   CommentFloatingThreadCard,
+  SuggestionFloatingDraftCard,
 } from '../context/types';
 
 export type RegisterCardNode = (
@@ -37,6 +38,12 @@ export interface ThreadFloatingCardProps {
   thread: CommentFloatingThreadCard;
   comment: IComment | undefined;
   tabName: string;
+  isHidden: boolean;
+  registerCardNode: RegisterCardNode;
+}
+
+export interface SuggestionDraftFloatingCardProps {
+  card: SuggestionFloatingDraftCard;
   isHidden: boolean;
   registerCardNode: RegisterCardNode;
 }

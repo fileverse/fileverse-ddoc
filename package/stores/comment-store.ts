@@ -1199,7 +1199,11 @@ export const createCommentStore = () =>
 
       if (floatingCardToClose.type === 'draft') {
         editor?.commands.unsetDraftComment(floatingCardToClose.draftId);
-      } else if (editor && activeCommentId === floatingCardToClose.commentId) {
+      } else if (
+        floatingCardToClose.type === 'thread' &&
+        editor &&
+        activeCommentId === floatingCardToClose.commentId
+      ) {
         setActiveCommentId(null);
         editor.commands.unsetCommentActive();
       }
@@ -1295,6 +1299,11 @@ export const createCommentStore = () =>
           }
 
           return isValid;
+        }
+
+        if (floatingCard.type === 'suggestion-draft') {
+          // Suggestion drafts are managed by the draft-model actions; preserve here.
+          return true;
         }
 
         const comment = tabComments.find(

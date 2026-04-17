@@ -2,6 +2,7 @@ import { cn } from '@fileverse/ui';
 import { useCommentStore } from '../../../stores/comment-store';
 import { useCommentListContainer } from '../use-comment-list-container';
 import { DraftFloatingCard } from './draft-floating-card';
+import { SuggestionDraftFloatingCard } from './suggestion-draft-floating-card';
 import { ThreadFloatingCard } from './thread-floating-card';
 import type { CommentFloatingContainerProps } from './types';
 import { FLOATING_CARD_WIDTH } from '../constants';
@@ -49,6 +50,17 @@ export const CommentFloatingContainer = ({
             <DraftFloatingCard
               key={floatingCard.floatingCardId}
               draft={floatingCard}
+              isHidden={isHidden}
+              registerCardNode={registerCardNode}
+            />
+          );
+        }
+
+        if (floatingCard.type === 'suggestion-draft') {
+          return (
+            <SuggestionDraftFloatingCard
+              key={floatingCard.floatingCardId}
+              card={floatingCard}
               isHidden={isHidden}
               registerCardNode={registerCardNode}
             />
