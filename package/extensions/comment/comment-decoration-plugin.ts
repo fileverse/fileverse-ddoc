@@ -460,6 +460,29 @@ function buildDecorations(
     // Skip resolved non-suggestion anchors; resolved suggestions stay visible until accepted/rejected.
     if (anchor.resolved && !anchor.isSuggestion) continue;
 
+    // 'add' suggestions: cursor-based, anchorFrom === anchorTo.
+    // resolveCommentAnchorRangeInState rejects from >= to, so use point
+    // resolution and render a single widget. side: -1 positions the widget
+    // visually before the caret at the same document position — gives the
+    // Google-Docs-style "cursor advances through the proposed text" feel.
+    if (anchor.isSuggestion && anchor.suggestionType === 'add') {
+      if (!anchor.suggestedContent) continue;
+      const insertPoint = resolveCommentAnchorPointInState(anchor, state);
+      if (insertPoint === null) continue;
+      decorations.push(
+        Decoration.widget(
+          insertPoint,
+          createSuggestionWidget(anchor.suggestedContent, anchor.id),
+          {
+            side: -1,
+            key: `suggestion-insert-${anchor.id}`,
+            destroy: (node) => (node as HTMLElement).remove(),
+          },
+        ),
+      );
+      continue;
+    }
+
     const range = resolveCommentAnchorRangeInState(anchor, state);
     if (!range) continue;
 
@@ -479,18 +502,14 @@ function buildDecorations(
         );
       }
 
-      // Add / Replace: widget showing the proposed content
-      if (
-        (suggestionType === 'add' || suggestionType === 'replace') &&
-        suggestedContent
-      ) {
-        const insertPos = suggestionType === 'add' ? range.from : range.to;
+      // Replace: widget showing the proposed content after the struck-through range
+      if (suggestionType === 'replace' && suggestedContent) {
         decorations.push(
           Decoration.widget(
-            insertPos,
+            range.to,
             createSuggestionWidget(suggestedContent, anchor.id),
             {
-              side: 1,
+              side: -1,
               key: `suggestion-insert-${anchor.id}`,
               destroy: (node) => (node as HTMLElement).remove(),
             },
