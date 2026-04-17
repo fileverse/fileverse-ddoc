@@ -8,8 +8,11 @@ export function useIsSelectedContentDeleted(
   selectedContent: string | undefined,
   commentTabId: string | undefined,
 ): boolean {
-  const { activeCommentAnchorIds, activeCommentAnchorIdsTabId } =
-    useCommentAnchors();
+  const {
+    activeCommentAnchorIds,
+    activeCommentAnchorIdsTabId,
+    hasRenderedCommentAnchor,
+  } = useCommentAnchors();
   const activeTabId = useCommentStore((s) => s.activeTabId);
 
   return useMemo(() => {
@@ -25,13 +28,18 @@ export function useIsSelectedContentDeleted(
       return false;
     }
 
-    return !activeCommentAnchorIds.has(commentId);
+    if (activeCommentAnchorIds.has(commentId)) {
+      return false;
+    }
+
+    return !hasRenderedCommentAnchor(commentId);
   }, [
     activeCommentAnchorIds,
     activeCommentAnchorIdsTabId,
     activeTabId,
     commentId,
     commentTabId,
+    hasRenderedCommentAnchor,
     selectedContent,
   ]);
 }

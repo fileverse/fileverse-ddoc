@@ -708,9 +708,35 @@ export const CommentStoreProvider = ({
     }
   });
 
+  const hasRenderedCommentAnchor = useCallback(
+    (commentId: string) => {
+      if (!editor?.view?.dom) {
+        return false;
+      }
+
+      const safeCommentId =
+        typeof CSS !== 'undefined' && CSS.escape
+          ? CSS.escape(commentId)
+          : commentId.replace(/"/g, '\\"');
+
+      return Boolean(
+        editor.view.dom.querySelector(`[data-comment-id="${safeCommentId}"]`),
+      );
+    },
+    [editor],
+  );
+
   const commentAnchorsContextValue = useMemo<CommentAnchorsContextType>(
-    () => ({ activeCommentAnchorIds, activeCommentAnchorIdsTabId }),
-    [activeCommentAnchorIds, activeCommentAnchorIdsTabId],
+    () => ({
+      activeCommentAnchorIds,
+      activeCommentAnchorIdsTabId,
+      hasRenderedCommentAnchor,
+    }),
+    [
+      activeCommentAnchorIds,
+      activeCommentAnchorIdsTabId,
+      hasRenderedCommentAnchor,
+    ],
   );
 
   return (
@@ -763,6 +789,7 @@ export const useCommentRefs = () => {
 interface CommentAnchorsContextType {
   activeCommentAnchorIds: Set<string>;
   activeCommentAnchorIdsTabId: string | null;
+  hasRenderedCommentAnchor: (commentId: string) => boolean;
 }
 
 const CommentAnchorsContext =
