@@ -1,11 +1,13 @@
 import {
   cn,
+  IconButton,
+  Tooltip,
   // IconButton
 } from '@fileverse/ui';
 import { TextSelection } from '@tiptap/pm/state';
 import { useState, useMemo, useCallback, memo, useRef, useEffect } from 'react';
 import { ToCProps, ToCItemProps, ToCItemType } from './types';
-import { useMediaQuery } from 'usehooks-ts';
+import { useCopyToClipboard, useMediaQuery } from 'usehooks-ts';
 import { headingToSlug } from '../../utils/heading-to-slug';
 import { getEditorScrollContainer } from '../../utils/get-editor-scroll-container';
 
@@ -19,6 +21,27 @@ export const ToCItem = memo(
     // onItemRemove,
   }: ToCItemProps) => {
     // Memoize the click handler to prevent recreating it on every render
+    const [, copyToClipboard] = useCopyToClipboard();
+    const [copyState, setCopyState] = useState<boolean | null>(null);
+    function handleCopyToClipboard(
+      ev: React.MouseEvent<HTMLButtonElement>,
+      val: string,
+    ) {
+      ev.stopPropagation();
+      copyToClipboard(val)
+        .then((success) => {
+          if (success) {
+            setCopyState(true);
+          } else {
+            setCopyState(false);
+          }
+        })
+        .finally(() =>
+          setTimeout(() => {
+            setCopyState(null);
+          }, 500),
+        );
+    }
     const handleClick = useCallback(
       (e: React.MouseEvent) => {
         e.preventDefault();
@@ -89,19 +112,26 @@ export const ToCItem = memo(
           href={href}
           onClick={handleClick}
           data-item-index={item.itemIndex}
-          className="flex items-center justify-between pl-2 gap-1 h-[36px] transition-all no-underline w-full group"
+          className="flex items-center justify-between pl-2 gap-1 h-[36px] transition-all no-underline w-full group/toc-item"
         >
           <span className="truncate">{item.textContent}</span>
-          {/* <IconButton
-            icon="X"
-            size="sm"
-            variant="ghost"
-            className={cn(
-              '!bg-transparent group-hover:opacity-100 opacity-0 transition-all color-text-secondary',
-              item.isActive ? 'max-[1280px]:visible' : 'max-[1280px]:invisible',
-            )}
-            onClick={(e) => onItemRemove(e, item.id)}
-          /> */}
+          <Tooltip
+            text={copyState ? 'Heading link copied' : 'Copy heading link'}
+            position={'right'}
+          >
+            <IconButton
+              icon={copyState ? 'Check' : 'Clipboard'}
+              size="sm"
+              variant="ghost"
+              className={cn(
+                '!bg-transparent group-hover/toc-item:opacity-100 opacity-0 transition-all color-text-secondary active:scale-75',
+                item.isActive
+                  ? 'max-[1280px]:visible'
+                  : 'max-[1280px]:invisible',
+              )}
+              onClick={(ev) => handleCopyToClipboard(ev, href)}
+            />
+          </Tooltip>
         </a>
       </div>
     );

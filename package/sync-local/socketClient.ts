@@ -457,6 +457,11 @@ export class SocketClient {
         config.onError(error);
       });
 
+      this._socket.on('ping', (data) => {
+        console.log('SocketAPI: ping event', data);
+        this._socket?.emit('pong', { message: 'pong' });
+      });
+
       this._socket.on('disconnect', () => {
         console.error('SocketAPI: socket disconnected');
         this._webSocketStatus = SocketStatusEnum.CLOSED;

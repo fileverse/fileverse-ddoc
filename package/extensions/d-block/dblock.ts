@@ -381,12 +381,9 @@ export const DBlock = Node.create<DBlockOptions>({
 
           try {
             if (currentActiveNodeType === 'codeBlock') {
-              return editor
-                .chain()
-                .newlineInCode()
-                .setMark('textStyle', attrs)
-                .focus()
-                .run();
+              // Defer to CustomCodeBlockLowlight's Enter handler, which
+              // implements single-newline insertion and triple-Enter exit.
+              return false;
             }
 
             if (

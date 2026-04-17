@@ -43,6 +43,7 @@ import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { getTemporaryEditor } from '../utils/helpers';
 import { extractTitleFromContent } from '../utils/extract-title-from-content';
 import { getContrastColor } from '../utils/color-utils';
+import { parseHeadingLink } from '../utils/heading-link';
 
 export interface IEditorToolElement {
   icon: any;
@@ -200,6 +201,7 @@ export const useEditorToolbar = ({
   onPdfExport,
   onHtmlExport,
   onTxtExport,
+  onOdtExport,
   ipfsImageFetchFn,
   onDocxImport,
   fetchV1ImageFn,
@@ -212,6 +214,7 @@ export const useEditorToolbar = ({
   onPdfExport?: () => void;
   onHtmlExport?: () => void;
   onTxtExport?: () => void;
+  onOdtExport?: () => void;
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
@@ -290,7 +293,8 @@ export const useEditorToolbar = ({
             const selectedText = state.doc.textBetween(from, to, ' ');
 
             if (selectedText) {
-              const isDarkTheme = localStorage.getItem('theme') === 'dark';
+              const storedTheme = localStorage.getItem('theme');
+              const isDarkTheme = storedTheme === 'dark' || storedTheme === 'theme-green';
               editor
                 .chain()
                 .setHighlight({
@@ -875,6 +879,33 @@ export const useEditorToolbar = ({
       },
       isActive: false,
     },
+    {
+      icon: 'FileText',
+      title: 'OpenDocument (.odt)',
+      subtitle: 'Image support is coming soon',
+      onClick: async (name?: string) => {
+        if (editor) {
+          const editorContent = editor.getJSON();
+          const title = extractTitleFromContent(editorContent);
+          const fileName = name || title || 'Untitled';
+          const generateDownloadUrl = await editor.commands.exportOdtFile({
+            title: fileName,
+          });
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${fileName}.odt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onOdtExport?.();
+      },
+      isActive: false,
+    },
   ];
 
   const bottomToolbar: Array<IEditorToolElement | null> = [
@@ -1118,7 +1149,7 @@ export const EditorFontFamily = ({
           className={cn(
             'flex w-full items-center space-x-2 rounded px-2 py-1 text-left text-sm color-text-default transition',
             editor.isActive('textStyle', { fontFamily: font.value })
-              ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
+              ? 'color-bg-brand xl:hover:brightness-90 color-text-on-brand'
               : 'hover:color-bg-default-hover',
           )}
         >
@@ -1152,7 +1183,7 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'left' })
-            ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
+            ? 'color-bg-brand xl:hover:brightness-90 color-text-on-brand'
             : 'hover:color-bg-default-hover',
         )}
       >
@@ -1167,7 +1198,7 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'center' })
-            ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
+            ? 'color-bg-brand xl:hover:brightness-90 color-text-on-brand'
             : 'hover:color-bg-default-hover',
         )}
       >
@@ -1182,7 +1213,7 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'right' })
-            ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
+            ? 'color-bg-brand xl:hover:brightness-90 color-text-on-brand'
             : 'hover:color-bg-default-hover',
         )}
       >
@@ -1197,7 +1228,7 @@ export const EditorAlignment = ({
         className={cn(
           'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
           editor.isActive({ textAlign: 'justify' })
-            ? 'color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]'
+            ? 'color-bg-brand xl:hover:brightness-90 color-text-on-brand'
             : 'hover:color-bg-default-hover',
         )}
       >
@@ -1283,7 +1314,7 @@ export const LinkPopup = ({
   setIsLinkPopupOpen?: Dispatch<SetStateAction<boolean>>;
   onError?: (errorString: string) => void;
 }) => {
-  const [url, setUrl] = useState(editor.getAttributes('link').href);
+  const [url, setUrl] = useState<string>(editor.getAttributes('link').href);
   const apply = useCallback(() => {
     // empty
     if (url === '' || url === undefined) {
@@ -1318,6 +1349,10 @@ export const LinkPopup = ({
 
     setToolVisibility(IEditorTool.NONE);
     if (bubbleMenu && setIsLinkPopupOpen) setIsLinkPopupOpen(false);
+    const parsed = parseHeadingLink(finalUrl);
+    if (parsed && !parsed.headingEl) {
+      onError?.('This heading link belongs to a different document.');
+    }
   }, [url, editor, bubbleMenu, setIsLinkPopupOpen, onError, setToolVisibility]);
   return (
     <div
@@ -1536,7 +1571,7 @@ export const ScriptsPopup = ({
             className={cn(
               'flex items-center justify-between w-full px-2 py-1 text-body-sm',
               option.isActive() &&
-                'color-bg-brand hover:!bg-[#B6A02E] dark:text-[#363B3F]',
+                'color-bg-brand hover:!bg-[#B6A02E] color-text-on-brand',
             )}
           >
             <div className="flex items-center gap-2">
@@ -1573,7 +1608,7 @@ export const TextColor = ({
       <div className="grid grid-cols-[repeat(15,_minmax(0,_1fr))] gap-0.5">
         {textColors.map((color) => {
           const contrastColor = getContrastColor(
-            theme === 'dark' ? color.dark : color.light,
+            (color as Record<string, string>)[theme] || color.light,
           );
           const tickColorClassName =
             contrastColor === '#000000' ? 'text-black' : 'text-white';
@@ -1693,7 +1728,7 @@ export const TextHeading = ({
           className={cn(
             'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm color-text-default transition',
             {
-              ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+              ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
                 heading.isActive(),
               ['hover:color-bg-default-hover']: !heading.isActive(),
             },
@@ -1745,7 +1780,7 @@ export const FontSizePicker = ({
           className={cn(
             'flex w-full items-center justify-center rounded px-2 py-1 text-center text-sm color-text-default transition',
             {
-              ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+              ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
                 currentSize === fontSize.value,
               ['hover:color-bg-default-hover']: currentSize !== fontSize.value,
             },
@@ -2144,7 +2179,7 @@ export const TextFormatingPopup = ({
                 className={cn(
                   'flex w-fit items-center font-medium space-x-2 rounded p-2 text-center text-sm color-text-default transition',
                   {
-                    ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+                    ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
                       heading.isActive(),
                     ['hover:color-bg-default-hover']: !heading.isActive(),
                   },
@@ -2163,7 +2198,7 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+                      ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
                         textAlignment.isActive(),
                       ['hover:color-bg-default-hover']:
                         !textAlignment.isActive(),
@@ -2182,7 +2217,7 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+                      ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
                         other.isActive(),
                       ['hover:color-bg-default-hover']: !other.isActive(),
                     },
@@ -2202,7 +2237,7 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+                      ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
                         textStyle.isActive(),
                       ['hover:color-bg-default-hover']: !textStyle.isActive(),
                     },
@@ -2220,7 +2255,7 @@ export const TextFormatingPopup = ({
                   className={cn(
                     'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                     {
-                      ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+                      ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
                         textStyle.isActive(),
                       ['hover:color-bg-default-hover']: !textStyle.isActive(),
                     },
@@ -2239,7 +2274,7 @@ export const TextFormatingPopup = ({
                 className={cn(
                   'flex items-center space-x-2 rounded px-4 py-1 color-text-default transition h-9',
                   {
-                    ['color-bg-brand xl:hover:brightness-90 dark:text-[#363B3F]']:
+                    ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
                       listStyle.isActive(),
                     ['hover:color-bg-default-hover']: !listStyle.isActive(),
                   },

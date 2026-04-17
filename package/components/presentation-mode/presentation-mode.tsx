@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import copy from 'copy-to-clipboard';
 import { convertMarkdownToHTML } from '../../utils/md-to-html';
 import { useResponsive } from '../../utils/responsive';
-import { IpfsImageFetchPayload, DdocProps } from '../../types';
+import { IpfsImageFetchPayload, DdocProps, ThemeKey } from '../../types';
 import { EXTENSIONS_WITH_DUPLICATE_WARNINGS } from '../../utils/helpers';
 import {
   getResponsiveThemeTextColor,
@@ -45,7 +45,7 @@ interface PresentationModeProps {
   ) => Promise<{ url: string; file: File }>;
   documentStyling?: DdocProps['documentStyling'];
   fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
-  theme?: 'light' | 'dark';
+  theme?: ThemeKey;
 }
 
 const SlideContent = ({
@@ -65,7 +65,7 @@ const SlideContent = ({
   onTouchEnd: () => void;
   isFullscreen: boolean;
   documentStyling?: DdocProps['documentStyling'];
-  theme?: 'light' | 'dark';
+  theme?: ThemeKey;
 }) => {
   const isSoloImage = (html: string): boolean => {
     const parser = new DOMParser();

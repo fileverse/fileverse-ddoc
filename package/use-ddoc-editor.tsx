@@ -72,6 +72,7 @@ export const useDdocEditor = ({
       !isVersionMode &&
         !isPreviewMode &&
         rest.isDDocOwner &&
+        !collabEnabled &&
         // Wait for y-indexedDB sync before deciding whether an unsaved local doc
         // still needs a default tab, otherwise refresh keeps bootstrapping one.
         (!shouldWaitForIndexeddbBeforeCreatingDefaultTab ||
@@ -81,6 +82,9 @@ export const useDdocEditor = ({
     shouldSyncActiveTab: Boolean(
       !isVersionMode && !isPreviewMode && !collabEnabled && rest.isDDocOwner,
     ),
+    // Viewers (non-owners) should land on the first tab, not whatever the
+    // owner last selected, since active-tab is persisted in the shared Yjs doc.
+    preferFirstTabOnInit: !rest.isDDocOwner,
     onVersionHistoryActiveTabChange: versionHistoryState?.onActiveTabChange,
     getEditor: () => editorRef.current,
     flushPendingUpdate: yjsSetup.flushPendingUpdate,

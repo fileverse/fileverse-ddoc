@@ -634,7 +634,7 @@ export const NodeSelector = ({ editor, elementRef }: NodeSelectorProps) => {
               className={cn(
                 'flex items-center justify-between rounded-sm px-2 py-1 text-body-sm hover:color-bg-default-hover transition-all',
                 {
-                  'color-bg-brand hover:color-bg-brand-hover dark:text-[#363B3F]':
+                  'color-bg-brand hover:color-bg-brand-hover color-text-on-brand':
                     item.isActive(),
                 },
               )}

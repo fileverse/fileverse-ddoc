@@ -62,6 +62,7 @@ import Typography from '@tiptap/extension-typography';
 import MarkdownPasteHandler from './mardown-paste-handler';
 import HtmlExportExtension from './html-export';
 import TextExportExtension from './text-export';
+import OdtExportExtension from './odt-export';
 import { DocxFileHandler } from './docx/docx-import';
 import { MathExtension } from '@aarkue/tiptap-math-extension';
 import { Footnote } from './footnote/footnote';
@@ -94,6 +95,7 @@ import { Emoji } from './emoji/emoji';
 const lowlight = createLowlight(common);
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { type ToCItemType } from '../components/toc/types';
+import { CustomLink } from './custom-link';
 
 const ExtendedSubscript = Subscript.extend({
   addProseMirrorPlugins() {
@@ -175,16 +177,7 @@ export const defaultExtensions = ({
         class: 'select-text pointer-events-auto',
       },
     },
-    link: {
-      shouldAutoLink: (url) => /^https?:\/\//.test(url),
-      autolink: true,
-      openOnClick: false,
-      HTMLAttributes: {
-        class: 'custom-text-link',
-        rel: 'noopener noreferrer',
-        target: '_blank',
-      },
-    },
+    link: false,
     paragraph: {
       HTMLAttributes: {
         class: 'select-text pointer-events-auto transition-all',
@@ -250,10 +243,17 @@ export const defaultExtensions = ({
     types: ['heading', 'paragraph'],
   }),
   HorizontalRule,
-  // Link.extend({
-  //   exitable: true,
-  //   inclusive: false,
-  // }),
+  CustomLink.configure({
+    shouldAutoLink: (url) => /^https?:\/\//.test(url),
+    autolink: true,
+    openOnClick: false,
+    HTMLAttributes: {
+      class: 'custom-text-link',
+      rel: 'noopener noreferrer',
+      target: '_blank',
+    },
+    onForeignHeadingLink: onError,
+  }),
   Placeholder.configure({
     placeholder: () => '',
     includeChildren: true,
@@ -315,6 +315,7 @@ export const defaultExtensions = ({
   MarkdownPasteHandler(ipfsImageUploadFn, ipfsImageFetchFn),
   HtmlExportExtension(ipfsImageFetchFn, fetchV1ImageFn),
   TextExportExtension(),
+  OdtExportExtension(ipfsImageFetchFn, fetchV1ImageFn),
   Markdown.configure({
     tightListClass: 'tight',
     bulletListMarker: '-',

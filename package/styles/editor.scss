@@ -159,16 +159,12 @@
     th {
       min-width: 10rem;
       max-width: 10rem;
-      border: 1px solid #e8ebec;
+      border: 1px solid hsla(var(--color-border-default));
       padding: 3px 5px;
       vertical-align: top;
 
       > * {
         margin-bottom: 0;
-      }
-
-      .dark & {
-        border-color: hsla(var(--color-border-default));
       }
 
       p {
@@ -185,11 +181,7 @@
     th {
       font-weight: bold;
       text-align: left;
-      background-color: #f8f9fa;
-
-      .dark & {
-        background-color: hsla(var(--color-bg-secondary));
-      }
+      background-color: hsla(var(--color-bg-secondary));
     }
 
     .selectedCell:after {
@@ -225,27 +217,15 @@
   }
 
   .code-block-bg {
-    background-color: #f8f9fa;
-
-    .dark & {
-      background-color: #1e1e1e;
-    }
+    background-color: hsla(var(--color-bg-secondary));
   }
 
   .custom-text-link {
     @apply hover:underline transition-colors cursor-pointer select-text pointer-events-auto;
-    color: #5c0aff;
+    color: hsla(var(--color-text-link));
 
     &:visited {
-      color: #3d03af;
-    }
-
-    .dark & {
-      color: #b6a6ff;
-
-      &:visited {
-        color: #9373ff;
-      }
+      color: hsla(var(--color-text-link));
     }
   }
 
@@ -353,16 +333,10 @@
 
     &.ProseMirror-selectednode {
       background-color: hsla(var(--color-bg-default-selected));
-      .dark & {
-        background-color: transparent;
-      }
     }
 
     &:hover:not(&.ProseMirror-selectednode) {
       background-color: hsla(var(--color-bg-default-selected));
-      .dark & {
-        background-color: transparent;
-      }
     }
 
     hr {
@@ -468,22 +442,14 @@
 }
 .ProseMirror code {
   background-color: rgba(97, 97, 97, 0.1);
-  color: #616161;
-
-  .dark & {
-    color: hsla(var(--color-text-default));
-  }
+  color: hsla(var(--color-text-secondary));
 }
 .ProseMirror pre {
   background-color: transparent;
-  color: #000;
+  color: hsla(var(--color-text-default));
   font-family: 'JetBrainsMono', monospace;
   padding: 0.75rem;
   border-radius: 0.5rem;
-
-  .dark & {
-    color: hsla(var(--color-text-default));
-  }
 }
 .ProseMirror pre code {
   color: inherit;
@@ -541,10 +507,8 @@ ul[data-type='taskList'] li > label input[type='checkbox'] {
     background-color: hsla(var(--color-bg-default-hover));
   }
 
-  .dark & {
-    background-color: hsla(var(--color-bg-default));
-    border-color: #e7e7e7;
-  }
+  background-color: hsla(var(--color-bg-default));
+  border-color: hsla(var(--color-border-active));
 }
 
 ul[data-type='taskList'] li > label input[type='checkbox']::before {
@@ -553,31 +517,18 @@ ul[data-type='taskList'] li > label input[type='checkbox']::before {
   height: 10px;
   transform: scale(0);
   transition: 120ms transform ease-in-out;
-  box-shadow: inset 1em 1em #363b3f;
+  box-shadow: inset 1em 1em hsla(var(--color-bg-default-inverse));
   transform-origin: center;
   clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-
-  .dark & {
-    box-shadow: inset 1em 1em #e7e7e7;
-  }
 }
 
 ul[data-type='taskList'] li > label input[type='checkbox']:checked {
-  background-color: #363b3f;
-  border-color: #363b3f;
+  background-color: hsla(var(--color-bg-default-inverse));
+  border-color: hsla(var(--color-bg-default-inverse));
 
   &::before {
     transform: scale(1);
-    box-shadow: inset 1em 1em #e7e7e7;
-  }
-
-  .dark & {
-    background-color: #e7e7e7;
-    border-color: #e7e7e7;
-
-    &::before {
-      box-shadow: inset 1em 1em #2e2e2e;
-    }
+    box-shadow: inset 1em 1em hsla(var(--color-bg-default));
   }
 }
 
@@ -612,6 +563,12 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   top: -2em;
   user-select: none;
   white-space: nowrap;
+  animation: cursor-label-fade 2.5s ease-out forwards;
+}
+
+@keyframes cursor-label-fade {
+  0%, 80% { opacity: 1; }
+  100% { opacity: 0; }
 }
 
 /* Give a remote user a caret */
@@ -657,6 +614,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   white-space: nowrap;
   border-radius: 9999px 9999px 9999px 0;
   color: #363b3f;
+  animation: cursor-label-fade 2.5s ease-out forwards;
 }
 
 .custom-cursor__label {
@@ -857,37 +815,25 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
 
       th,
       td {
-        border: 1px solid hsla(195, 10%, 92%, 1);
+        border: 1px solid hsla(var(--color-border-default));
         padding: 8px;
         text-align: left;
 
         p {
           font-size: 20px;
         }
-
-        .dark & {
-          border-color: hsla(var(--color-border-default));
-        }
       }
 
       th {
         font-weight: 700;
-        background-color: #f8f9fa;
-
-        .dark & {
-          background-color: hsla(var(--color-bg-secondary));
-        }
+        background-color: hsla(var(--color-bg-secondary));
       }
     }
 
     pre {
-      border: 1px solid hsla(195, 10%, 92%, 1);
+      border: 1px solid hsla(var(--color-border-default));
       padding: 1rem;
       border-radius: 0.5rem;
-
-      .dark & {
-        border-color: hsla(var(--color-border-default));
-      }
     }
 
     code {
@@ -1082,13 +1028,9 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
     // Inline code
     code {
       font-size: min(1.5vw, 18px);
-      background: #f6f8fa;
+      background: hsla(var(--color-bg-tertiary));
       padding: 2px 6px;
       border-radius: 4px;
-
-      .dark & {
-        background: hsla(var(--color-bg-tertiary));
-      }
     }
 
     // Images
@@ -1112,12 +1054,8 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
       th,
       td {
         padding: 12px;
-        border: 1px solid #e0e0e0;
+        border: 1px solid hsla(var(--color-border-default));
         font-size: min(1.5vw, 23.04px) !important;
-
-        .dark & {
-          border-color: hsla(var(--color-border-default));
-        }
       }
 
       th {
@@ -1303,10 +1241,10 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
 .autocomplete-tab-button {
   font-size: 10px;
   padding: 2px 6px;
-  border: 1px solid #e8ebec;
+  border: 1px solid hsla(var(--color-border-default));
   border-radius: 4px;
-  background-color: #e8ebec;
-  color: #77818a;
+  background-color: hsla(var(--color-bg-tertiary));
+  color: hsla(var(--color-text-secondary));
   opacity: 0.8;
   pointer-events: none;
   user-select: none;
@@ -1314,11 +1252,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   font-weight: 500;
   line-height: 1;
 
-  .dark & {
-    background-color: #404040;
-    border-color: #404040;
-    color: #888888;
-  }
 }
 
 .has-available-models p.is-empty::before {

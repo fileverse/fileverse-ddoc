@@ -1,6 +1,7 @@
 import emptyComments from '../../assets/empty-comment.svg';
 import darkEmptyComments from '../../assets/dark-empty-comment.svg';
 import { useEffect, useState } from 'react';
+import { ThemeKey } from '../../types';
 
 const EmptyComments = ({
   commentType,
@@ -12,9 +13,9 @@ const EmptyComments = ({
   const [theme, setTheme] = useState('light');
 
   // Function to get theme from localStorage
-  const getThemeFromLS = () => {
+  const getThemeFromLS = (): ThemeKey => {
     const storedTheme = localStorage.getItem('theme');
-    return storedTheme ? (storedTheme as 'light' | 'dark') : 'light';
+    return storedTheme ? (storedTheme as ThemeKey) : 'light';
   };
 
   useEffect(() => {
@@ -24,7 +25,7 @@ const EmptyComments = ({
     // Listen for storage events to update theme when it changes in other tabs/components
     const handleStorageChange = (event: StorageEvent) => {
       if (event.key === 'theme' && event.newValue) {
-        setTheme(event.newValue as 'light' | 'dark');
+        setTheme(event.newValue as ThemeKey);
       }
     };
 

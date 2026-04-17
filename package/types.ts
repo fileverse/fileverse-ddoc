@@ -83,9 +83,18 @@ export interface CustomModel {
   systemPrompt: string;
 }
 
+export type ThemeKey =
+  | 'light'
+  | 'dark'
+  | 'theme-sepia'
+  | 'theme-pink'
+  | 'theme-green';
+
 export interface ThemeVariantValue {
   light: string;
   dark: string;
+  sepia?: string;
+  [key: string]: string | undefined;
 }
 
 export type DocumentStylingValue = string | ThemeVariantValue;
@@ -187,7 +196,7 @@ export interface DdocProps extends CommentAccountProps {
   setInlineCommentData?: React.Dispatch<
     React.SetStateAction<InlineCommentData>
   >;
-  theme?: 'dark' | 'light';
+  theme?: ThemeKey;
   zoomLevel: string;
   setZoomLevel: React.Dispatch<SetStateAction<string>>;
   isNavbarVisible: boolean;
@@ -231,6 +240,7 @@ export interface DdocProps extends CommentAccountProps {
   onPdfExport?: () => void;
   onHtmlExport?: () => void;
   onTxtExport?: () => void;
+  onOdtExport?: () => void;
   onDocxImport?: () => void;
   sharedSlidesLink?: string;
   documentName?: string;

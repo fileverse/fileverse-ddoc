@@ -240,7 +240,7 @@ export const TabItem = ({
         onSelect: () => onDelete?.(),
         visible: Boolean(onDelete),
         textClassName: 'color-text-danger',
-        iconStroke: '#FB3449',
+        iconStroke: 'hsl(var(--color-icon-danger))',
       },
     ],
   ];
