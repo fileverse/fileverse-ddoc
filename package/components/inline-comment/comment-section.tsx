@@ -230,7 +230,7 @@ export const CommentSection = ({
     >
       <div
         className={cn(
-          !isBelow1280px && 'px-4',
+          !isBelow1280px && 'px-4 pb-4',
           ' w-full overflow-y-auto h-full',
         )}
       >

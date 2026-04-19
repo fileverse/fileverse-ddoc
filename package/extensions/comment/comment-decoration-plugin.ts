@@ -136,7 +136,7 @@ function resolveCommentAnchorRangeFromRenderedDecorations(
   return { from, to };
 }
 
-function resolveCommentAnchorRangeForAnalysis(
+export function resolveCommentAnchorRangeForAnalysis(
   anchor: Pick<CommentAnchor, 'id' | 'anchorFrom' | 'anchorTo'>,
   state: EditorState,
 ): CommentAnchorRange | null {

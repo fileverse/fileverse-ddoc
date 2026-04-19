@@ -19,6 +19,7 @@ import {
   getCommentAtPosition,
   triggerDecorationRebuild,
   resolveCommentAnchorRangeInState,
+  resolveCommentAnchorRangeForAnalysis,
 } from '../extensions/comment/comment-decoration-plugin';
 import { CommentMutationMeta, SerializedCommentAnchor } from '../types';
 import { useResponsive } from '../utils/responsive';
@@ -479,10 +480,16 @@ export const CommentStoreProvider = ({
         // Transaction analysis and persistence orchestration.
         // This is the main flow for persisting anchor edits and deletions.
         if (commentAnchorsRef && oldState) {
-          // Analyze only active (not deleted/resolved) anchors.
-          // Resolved and deleted anchors have no visual representation and don't need updates.
+          // Analyze only active anchors that belong to the currently rendered tab.
+          // `commentAnchorsRef` can contain anchors from other tabs, but this
+          // transaction only mutates the active Yjs fragment. Keeping off-tab
+          // anchors out of this batch prevents tab B comments from changing tab
+          // A undo/delete decisions.
           const activeAnchors = commentAnchorsRef.current.filter(
-            (anchor) => !anchor.deleted && !anchor.resolved,
+            (anchor) =>
+              !anchor.deleted &&
+              !anchor.resolved &&
+              resolveCommentAnchorRangeForAnalysis(anchor, oldState) !== null,
           );
 
           if (activeAnchors.length > 0) {
@@ -604,12 +611,35 @@ export const CommentStoreProvider = ({
             // 1. Current user deletes highlighted text → detected via editor transaction
             // 2. Collaborator deletes text → detected via Yjs sync transaction
             // 3. Edited text is detected as "edited change", not "deleted change"
-            const shouldIgnoreDeletedChanges =
-              didRestoreRemovedAnchors &&
-              deletedChanges.length === activeAnchors.length;
+            const currentAnchorById =
+              didRestoreRemovedAnchors && deletedChanges.length > 0
+                ? new Map(
+                    commentAnchorsRef.current.map((anchor) => [
+                      anchor.id,
+                      anchor,
+                    ]),
+                  )
+                : null;
+            const deletedChangesToApply = didRestoreRemovedAnchors
+              ? deletedChanges.filter((change) => {
+                  const currentAnchor = currentAnchorById?.get(change.id);
 
-            if (deletedChanges.length > 0 && !shouldIgnoreDeletedChanges) {
-              const deletedCommentIds = deletedChanges.map(
+                  // Undo can restore one removed anchor and still make the
+                  // broad history mapping report neighboring anchors as
+                  // deleted. A valid post-transaction range means the highlight
+                  // still exists, so do not remove it from the runtime anchor
+                  // set. Truly deleted anchors resolve to null and are removed.
+                  return currentAnchor
+                    ? !resolveCommentAnchorRangeInState(
+                        currentAnchor,
+                        editor.state,
+                      )
+                    : true;
+                })
+              : deletedChanges;
+
+            if (deletedChangesToApply.length > 0) {
+              const deletedCommentIds = deletedChangesToApply.map(
                 (change) => change.id,
               );
               const deletedCommentIdSet = new Set(deletedCommentIds);

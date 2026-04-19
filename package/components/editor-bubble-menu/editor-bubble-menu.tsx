@@ -207,7 +207,8 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         disabled={
           isCommentResolved ||
           !isCollabDocumentPublished ||
-          disableInlineComment
+          disableInlineComment ||
+          enableCollaboration
         }
         isActive={isCommentActive}
         onClick={handleMobileInlineComment}
