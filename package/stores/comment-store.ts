@@ -833,7 +833,8 @@ export const createCommentStore = () =>
       const { state } = editor;
       const { from, to } = state.selection;
       const text = state.doc.textBetween(from, to, ' ');
-      const hasSelectionAnchor = from < to && Boolean(text.trim());
+      const hasSelectionAnchor =
+        !allowEmptySelection && from < to && Boolean(text.trim());
 
       // Keep the selection requirement for anchored inline comments. The drawer
       // button is the only path allowed to create an unanchored draft.

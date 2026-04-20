@@ -355,7 +355,7 @@ export const CommentStoreProvider = ({
 
     // Watch editor selection here so landing on a live anchor opens the matching
     // floating thread without waiting for a separate UI interaction.
-    const updateEditorState = () => {
+    const updateEditorState = (transaction?: Transaction) => {
       const state = store.getState();
       const isMarkActive = editor.isActive('comment');
       const markCommentId = isMarkActive
@@ -380,6 +380,15 @@ export const CommentStoreProvider = ({
           : false
         : false;
       const selectedCommentId = markCommentId || decorationComment?.id || null;
+      // Drawer navigation can intentionally focus an unanchored mobile thread while
+      // the editor cursor still sits inside the previous highlighted comment.
+      // In that case, ignore stale non-pointer selection events unless the editor
+      // already matches the open thread.
+      const shouldSyncEditorSelectedThread =
+        !selectedCommentId ||
+        isDesktopFloatingEnabled ||
+        state.openReplyId === selectedCommentId ||
+        Boolean(transaction?.getMeta('pointer'));
 
       // Only update store when values actually change
       if (nextCommentActive !== prevCommentActive) {
@@ -391,7 +400,7 @@ export const CommentStoreProvider = ({
         state.setIsCommentResolved(nextCommentResolved);
       }
 
-      if (selectedCommentId) {
+      if (selectedCommentId && shouldSyncEditorSelectedThread) {
         // Treat mark-based and decoration-based activations the same here so
         // mobile highlight taps always route into a concrete drawer thread.
         if (state.activeCommentId !== selectedCommentId) {
@@ -408,7 +417,12 @@ export const CommentStoreProvider = ({
 
       // For decoration-based comments, trigger activation flow
       // Skip resolved — they shouldn't block new comments or open popups
-      if (decorationComment && !isMarkActive && !decorationComment.resolved) {
+      if (
+        decorationComment &&
+        !isMarkActive &&
+        !decorationComment.resolved &&
+        shouldSyncEditorSelectedThread
+      ) {
         if (state.activeCommentId !== decorationComment.id) {
           setActiveCommentId(decorationComment.id);
         }
@@ -678,8 +692,15 @@ export const CommentStoreProvider = ({
       // Sync active comment state based on cursor position.
       // This enables auto-opening floating threads when user lands on an existing anchor.
       if (transaction.selectionSet || transaction.docChanged) {
-        updateEditorState();
+        updateEditorState(transaction);
       }
+    };
+    const handleSelectionUpdate = ({
+      transaction,
+    }: {
+      transaction: Transaction;
+    }) => {
+      updateEditorState(transaction);
     };
 
     // Keep this effect subscribed to editor-driven changes only. Re-running it
@@ -694,13 +715,13 @@ export const CommentStoreProvider = ({
     // to keep this subscription stable and focused on editor changes only.
     updateEditorState();
     editor.on('beforeTransaction', handleBeforeTransaction);
-    editor.on('selectionUpdate', updateEditorState);
+    editor.on('selectionUpdate', handleSelectionUpdate);
     editor.on('transaction', handleTransaction);
 
     return () => {
       preTransactionStateRef.current = null;
       editor.off('beforeTransaction', handleBeforeTransaction);
-      editor.off('selectionUpdate', updateEditorState);
+      editor.off('selectionUpdate', handleSelectionUpdate);
       editor.off('transaction', handleTransaction);
     };
   }, [

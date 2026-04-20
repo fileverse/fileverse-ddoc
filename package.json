@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "3.1.7-comment-re-arch-4",
+  "version": "3.1.7-comment-re-arch-5",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
