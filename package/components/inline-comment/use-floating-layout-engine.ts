@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useRef } from 'react';
 import type { RefObject } from 'react';
 import type { Editor } from '@tiptap/react';
+import type { Transaction } from '@tiptap/pm/state';
 import { useOnClickOutside } from 'usehooks-ts';
+import { commentDecorationPluginKey } from '../../extensions/comment/comment-decoration-plugin';
 import {
   FLOATING_COMMENT_CARD_GAP,
   FloatingLayoutInvalidationFlag,
@@ -100,11 +102,18 @@ export const useFloatingLayoutEngine = ({
   const floatingCardMapRef = useRef<Map<string, CommentFloatingCard>>(
     new Map(),
   );
+  const focusedFloatingCardIdRef = useRef<string | null>(null);
   const domRegistryRef = useRef({
     cardNodes: new Map<string, HTMLDivElement>(),
     nodeToFloatingCardId: new WeakMap<Element, string>(),
   });
   const focusedFloatingCardRef = useRef<HTMLDivElement | null>(null);
+  const previousFocusedFloatingCardIdRef = useRef<string | null>(null);
+  // Preserve the last focused stack across blur or focus transfer until the
+  // next focused card gets one full focused-layout recompute. Without this,
+  // cards that were laid out relative to the old focused thread can keep stale
+  // positions until some unrelated invalidation forces a wider pass.
+  const pendingFullFocusedPassRef = useRef(false);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const lastContainerTopRef = useRef<number | null>(null);
   // Small counters that tell the layout loop what changed since last time.
@@ -123,6 +132,7 @@ export const useFloatingLayoutEngine = ({
   });
 
   floatingCardsRef.current = floatingCards;
+  focusedFloatingCardIdRef.current = focusedFloatingCardId;
   floatingCardMapRef.current = new Map(
     floatingCards.map((floatingCard) => [
       floatingCard.floatingCardId,
@@ -153,6 +163,13 @@ export const useFloatingLayoutEngine = ({
         if (mountedFloatingCardIdsRef.current.length > 0) {
           syncMountedFloatingCardIds([]);
         }
+        return;
+      }
+
+      if (
+        pendingFullFocusedPassRef.current &&
+        !focusedFloatingCardIdRef.current
+      ) {
         return;
       }
 
@@ -414,15 +431,22 @@ export const useFloatingLayoutEngine = ({
       heightMeasurementQueueRef.current.clear();
 
       // First calculate positions, then apply them below.
+      let firstInvalidatedIndex = Number.POSITIVE_INFINITY;
       const lastInvalidatedIndex = orderedFloatingCardIdsRef.current.reduce(
         (maxIndex, floatingCardId, index) => {
           const floatingCardRuntimeState =
             floatingCardStateRef.current.get(floatingCardId);
-          return floatingCardRuntimeState &&
-            floatingCardRuntimeState.invalidationFlags !==
+
+          if (
+            !floatingCardRuntimeState ||
+            floatingCardRuntimeState.invalidationFlags ===
               FloatingLayoutInvalidationFlag.None
-            ? index
-            : maxIndex;
+          ) {
+            return maxIndex;
+          }
+
+          firstInvalidatedIndex = Math.min(firstInvalidatedIndex, index);
+          return index;
         },
         -1,
       );
@@ -430,12 +454,26 @@ export const useFloatingLayoutEngine = ({
         layoutBoundaryRef.current.recomputeFromIndex,
         Math.max(orderedFloatingCardIdsRef.current.length - 1, 0),
       );
+      const shouldForceFullFocusedPass =
+        Boolean(focusedFloatingCardIdRef.current) &&
+        pendingFullFocusedPassRef.current &&
+        orderedFloatingCardIdsRef.current.length > 0;
       const layoutResult = computeFloatingCommentLayout({
         floatingCards: getFloatingCardLayoutInputs(),
         recomputeStartIndex: recomputeFromIndex,
-        lastInvalidatedIndex,
+        firstInvalidatedIndex: shouldForceFullFocusedPass
+          ? 0
+          : firstInvalidatedIndex,
+        lastInvalidatedIndex: shouldForceFullFocusedPass
+          ? orderedFloatingCardIdsRef.current.length - 1
+          : lastInvalidatedIndex,
         gap: FLOATING_COMMENT_CARD_GAP,
+        focusedFloatingCardId: focusedFloatingCardIdRef.current,
       });
+
+      if (shouldForceFullFocusedPass && layoutResult.usedFocusedLayout) {
+        pendingFullFocusedPassRef.current = false;
+      }
 
       orderedFloatingCardIdsRef.current.forEach((floatingCardId) => {
         const floatingCardRuntimeState =
@@ -589,6 +627,53 @@ export const useFloatingLayoutEngine = ({
       : null;
   }, [focusedFloatingCardId, mountedFloatingCardIds]);
 
+  useEffect(() => {
+    if (!isDesktopFloatingEnabled) {
+      return;
+    }
+
+    const previousFocusedFloatingCardId =
+      previousFocusedFloatingCardIdRef.current;
+    previousFocusedFloatingCardIdRef.current = focusedFloatingCardId;
+
+    if (previousFocusedFloatingCardId === focusedFloatingCardId) {
+      return;
+    }
+
+    const didClearFocusedThread =
+      previousFocusedFloatingCardId !== null && focusedFloatingCardId === null;
+    const didTransferFocusedThread =
+      previousFocusedFloatingCardId !== null &&
+      focusedFloatingCardId !== null &&
+      previousFocusedFloatingCardId !== focusedFloatingCardId;
+
+    if (didClearFocusedThread || didTransferFocusedThread) {
+      pendingFullFocusedPassRef.current = true;
+    }
+
+    if (!focusedFloatingCardId) {
+      return;
+    }
+
+    const focusedFloatingCardIndex = getOrderedFloatingCardIndex(
+      focusedFloatingCardId,
+    );
+
+    markFloatingCardInvalidated(
+      focusedFloatingCardId,
+      FloatingLayoutInvalidationFlag.Anchor,
+    );
+    markRecomputeFromIndex(focusedFloatingCardIndex ?? 0);
+    updateLayout();
+  }, [
+    focusedFloatingCardId,
+    getOrderedFloatingCardIndex,
+    isDesktopFloatingEnabled,
+    markFloatingCardInvalidated,
+    markRecomputeFromIndex,
+    updateLayout,
+  ]);
+
   useOnClickOutside(
     focusedFloatingCardRef,
     (event) => {
@@ -654,6 +739,8 @@ export const useFloatingLayoutEngine = ({
     };
     lastContainerTopRef.current = null;
     focusedFloatingCardRef.current = null;
+    previousFocusedFloatingCardIdRef.current = null;
+    pendingFullFocusedPassRef.current = false;
     resetAnchorRegistry();
     resetFloatingCardState();
   }, [isDesktopFloatingEnabled, resetAnchorRegistry, resetFloatingCardState]);
@@ -671,11 +758,28 @@ export const useFloatingLayoutEngine = ({
     const nextMountedFloatingCardIds = mountedFloatingCardIdsRef.current.filter(
       (floatingCardId) => nextFloatingCardIds.has(floatingCardId),
     );
+    const shouldDeferMembershipReflow =
+      pendingFullFocusedPassRef.current && !focusedFloatingCardIdRef.current;
 
     syncMountedFloatingCardIds(nextMountedFloatingCardIds);
     queueAnchorRefreshForCards(floatingCardsRef.current);
     // Card add/remove is one of the few events that can change relative order.
     markFloatingCardOrderDirty();
+
+    if (
+      shouldDeferMembershipReflow &&
+      nextMountedFloatingCardIds.length === 0
+    ) {
+      // Tab switches replace the card set under us. If no mounted cards survive,
+      // there is no focused stack left to preserve, so let the next tab start
+      // from its regular unfocused layout immediately.
+      pendingFullFocusedPassRef.current = false;
+    }
+
+    if (shouldDeferMembershipReflow) {
+      return;
+    }
+
     floatingCardsRef.current.forEach((floatingCard) => {
       markFloatingCardInvalidated(
         floatingCard.floatingCardId,
@@ -722,14 +826,18 @@ export const useFloatingLayoutEngine = ({
       return;
     }
 
-    // Content edits refresh all anchors.
-    // Smaller editor changes only recheck cards that are already on screen.
+    // Content edits and explicit comment decoration rebuilds can change any
+    // anchor DOM node, including cards not mounted yet.
     const handleTransaction = ({
       transaction,
     }: {
-      transaction: { docChanged?: boolean };
+      transaction: Transaction;
     }) => {
-      if (transaction.docChanged) {
+      const didRebuildCommentDecorations = Boolean(
+        transaction.getMeta(commentDecorationPluginKey),
+      );
+
+      if (transaction.docChanged || didRebuildCommentDecorations) {
         layoutVersionRef.current.doc += 1;
         updateLayout();
         return;
@@ -779,7 +887,6 @@ export const useFloatingLayoutEngine = ({
     isDesktopFloatingEnabled,
     mountedFloatingCardIdsRef,
     queueAnchorRefresh,
-    queueAnchorRefreshForCards,
     updateLayout,
   ]);
 

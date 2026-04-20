@@ -162,7 +162,10 @@ export const CommentDrawer = ({
       return;
     }
 
-    focusCommentInEditor(commentId);
+    focusCommentInEditor(
+      commentId,
+      isBelow1280px ? undefined : { source: 'explicit-ui' },
+    );
   };
 
   useEffect(() => {
@@ -188,7 +191,10 @@ export const CommentDrawer = ({
       // Wait a frame so the tab switch can mount the matching comment nodes
       // before trying to focus/scroll them in the editor.
       setOpenReplyId(pendingCommentFocus.commentId);
-      focusCommentInEditor(pendingCommentFocus.commentId);
+      focusCommentInEditor(
+        pendingCommentFocus.commentId,
+        isBelow1280px ? undefined : { source: 'explicit-ui' },
+      );
       setPendingCommentFocus(null);
     });
 
@@ -197,6 +203,7 @@ export const CommentDrawer = ({
     activeTabId,
     comments,
     focusCommentInEditor,
+    isBelow1280px,
     pendingCommentFocus,
     setOpenReplyId,
   ]);
@@ -369,7 +376,6 @@ export const CommentDrawer = ({
                       icon={'ChevronLeft'}
                       variant={'ghost'}
                       onClick={handlePreviousMobileComment}
-                      disabled={!canGoToPreviousMobileComment}
                       className="!min-h-[30px] !h-[30px] !w-[30px] !min-w-[30px]"
                     />
                     <p className="text-heading-sm color-text-default">
@@ -380,7 +386,6 @@ export const CommentDrawer = ({
                       icon={'ChevronRight'}
                       variant={'ghost'}
                       onClick={handleNextMobileComment}
-                      disabled={!canGoToNextMobileComment}
                       className="!min-h-[30px] !h-[30px] !w-[30px] !min-w-[30px]"
                     />
                   </div>
@@ -453,7 +458,7 @@ export const CommentDrawer = ({
             isPresentationMode && 'h-[calc(100vh-5rem)] top-[4rem] !z-[60]',
           )}
           headerClassName="border-b color-border-default !color-bg-default px-4 pb-[12px] !rounded-t-lg"
-          contentClassName="!rounded-lg !px-0 !h-full select-text"
+          contentClassName="!rounded-lg !px-0 !h-full !pb-5 select-text"
           title="Comments"
           content={
             <div

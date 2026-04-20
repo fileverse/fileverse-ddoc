@@ -5,6 +5,7 @@ import {
   CommentAnchor,
   createCommentAnchorFromEditor,
   getCommentAnchorRange,
+  resolveCommentAnchorRangeInState,
   triggerDecorationRebuild,
 } from '../extensions/comment/comment-decoration-plugin';
 import uuid from 'react-uuid';
@@ -101,6 +102,20 @@ type CommentEditCompletion = {
   replyId?: string;
 };
 
+type FocusCommentInEditorOptions = {
+  source?: 'explicit-ui' | 'passive';
+};
+
+type ReconcileFloatingThreadsForActiveTabOptions = {
+  hydrationReady: boolean;
+};
+
+// Marks editor transactions that came from an explicit thread jump in the UI
+// (drawer, sidebar, or similar) rather than passive cursor movement. The
+// provider reads this so the clicked thread can take ownership immediately,
+// even if the selection update reaches the store before pointer heuristics do.
+export const EXPLICIT_COMMENT_FOCUS_META = 'inlineCommentExplicitFocus';
+
 const setFocusedFloatingCard = (
   floatingCards: CommentFloatingCard[],
   floatingCardId: string,
@@ -166,6 +181,89 @@ const resolveFloatingCardsUpdater = (
     : nextFloatingCards;
 };
 
+const getCommentAnchorSelector = (commentId: string) => {
+  const safeCommentId =
+    typeof CSS !== 'undefined' && CSS.escape
+      ? CSS.escape(commentId)
+      : commentId.replace(/"/g, '\\"');
+
+  return `[data-comment-id="${safeCommentId}"]`;
+};
+
+const hasValidHydratedThreadAnchor = ({
+  comment,
+  decorationAnchorById,
+  commentAnchorsRef,
+  editor,
+}: {
+  comment: IComment;
+  decorationAnchorById?: Map<string, CommentAnchor>;
+  commentAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
+  editor: Editor;
+}) => {
+  const commentId = comment.id;
+
+  if (!commentId || !comment.selectedContent || editor.isDestroyed) {
+    return false;
+  }
+
+  if (commentAnchorsRef) {
+    const decorationAnchor =
+      decorationAnchorById?.get(commentId) ??
+      commentAnchorsRef.current.find((anchor) => anchor.id === commentId);
+
+    if (decorationAnchor) {
+      if (decorationAnchor.deleted || decorationAnchor.resolved) {
+        return false;
+      }
+
+      const anchorRange = resolveCommentAnchorRangeInState(
+        decorationAnchor,
+        editor.state,
+      );
+
+      return Boolean(anchorRange && anchorRange.from < anchorRange.to);
+    }
+  }
+
+  return Boolean(
+    editor.view?.dom.querySelector(getCommentAnchorSelector(commentId)),
+  );
+};
+
+const areFloatingCardsEqual = (
+  left: CommentFloatingCard[],
+  right: CommentFloatingCard[],
+) => {
+  if (left.length !== right.length) {
+    return false;
+  }
+
+  return left.every((leftCard, index) => {
+    const rightCard = right[index];
+
+    if (
+      !rightCard ||
+      leftCard.floatingCardId !== rightCard.floatingCardId ||
+      leftCard.type !== rightCard.type ||
+      leftCard.selectedText !== rightCard.selectedText ||
+      leftCard.isFocused !== rightCard.isFocused
+    ) {
+      return false;
+    }
+
+    if (leftCard.type === 'draft') {
+      return (
+        rightCard.type === 'draft' && leftCard.draftId === rightCard.draftId
+      );
+    }
+
+    return (
+      rightCard.type === 'thread' && leftCard.commentId === rightCard.commentId
+    );
+  });
+};
+
 const upsertInlineDraft = (
   drafts: InlineDraftRecordMap,
   draft: InlineCommentDraft,
@@ -189,6 +287,40 @@ const removeInlineDraft = (
 
 const findCommentById = (comments: IComment[], commentId: string) =>
   comments.find((comment) => comment.id === commentId) ?? null;
+
+const isFloatingThreadCard = (
+  floatingCard: CommentFloatingCard,
+): floatingCard is Extract<CommentFloatingCard, { type: 'thread' }> => {
+  return floatingCard.type === 'thread';
+};
+
+const hasFloatingThreadCard = (
+  floatingCards: CommentFloatingCard[],
+  commentId: string | null,
+) => {
+  if (!commentId) {
+    return false;
+  }
+
+  return floatingCards.some(
+    (floatingCard) =>
+      isFloatingThreadCard(floatingCard) &&
+      floatingCard.commentId === commentId,
+  );
+};
+
+const getFocusedFloatingThreadCommentId = (
+  floatingCards: CommentFloatingCard[],
+) => {
+  const focusedFloatingThreadCard = floatingCards.find(
+    (
+      floatingCard,
+    ): floatingCard is Extract<CommentFloatingCard, { type: 'thread' }> =>
+      isFloatingThreadCard(floatingCard) && floatingCard.isFocused,
+  );
+
+  return focusedFloatingThreadCard?.commentId ?? null;
+};
 
 const findReplyById = (
   comments: IComment[],
@@ -341,7 +473,10 @@ export interface CommentStoreState {
   closeFloatingCard: (floatingCardId: string) => void;
   blurFloatingCard: (floatingCardId: string) => void;
   focusFloatingCard: (floatingCardId: string) => void;
-  removeInvalidFloatingCards: () => void;
+  removeInvalidFloatingDrafts: () => void;
+  reconcileFloatingThreadsForActiveTab: (
+    options: ReconcileFloatingThreadsForActiveTabOptions,
+  ) => void;
   syncFloatingThreadCardWithActiveComment: () => void;
   submitPendingFloatingDrafts: () => void;
   /**
@@ -375,7 +510,10 @@ export interface CommentStoreState {
     replyContent: string,
     replyCallback?: (activeCommentId: string, reply: IComment) => void,
   ) => void;
-  focusCommentInEditor: (commentId: string) => void;
+  focusCommentInEditor: (
+    commentId: string,
+    options?: FocusCommentInEditorOptions,
+  ) => void;
   onPrevComment: () => void;
   onNextComment: () => void;
   getEnsStatus: (
@@ -1278,72 +1416,194 @@ export const createCommentStore = () =>
       setActiveCommentId(null);
       editor.commands.unsetCommentActive();
     },
-    removeInvalidFloatingCards: () => {
-      const { editor, setActiveCommentId } = getExtDeps(get);
-      const { activeCommentId, floatingCards, tabComments } = get();
+    removeInvalidFloatingDrafts: () => {
+      const { editor } = getExtDeps(get);
+      const { floatingCards } = get();
 
-      if (!floatingCards.length) {
+      if (
+        !floatingCards.some((floatingCard) => floatingCard.type === 'draft')
+      ) {
         return;
       }
 
       const removedDraftIds = new Set<string>();
       const nextFloatingCards = floatingCards.filter((floatingCard) => {
-        if (floatingCard.type === 'draft') {
-          const isValid = Boolean(
-            editor && getDraftCommentRange(editor.state, floatingCard.draftId),
-          );
-
-          if (!isValid) {
-            removedDraftIds.add(floatingCard.draftId);
-          }
-
-          return isValid;
+        if (floatingCard.type !== 'draft') {
+          return true;
         }
 
-        const comment = tabComments.find(
-          (entry) => entry.id === floatingCard.commentId,
+        const isValid = Boolean(
+          editor && getDraftCommentRange(editor.state, floatingCard.draftId),
         );
-        return Boolean(comment && !comment.deleted && !comment.resolved);
+
+        if (!isValid) {
+          removedDraftIds.add(floatingCard.draftId);
+        }
+
+        return isValid;
       });
 
-      if (nextFloatingCards.length !== floatingCards.length) {
-        const removedActiveThreadCard = floatingCards.find(
-          (floatingCard) =>
-            floatingCard.type === 'thread' &&
-            floatingCard.commentId === activeCommentId &&
-            !nextFloatingCards.some(
-              (nextFloatingCard) =>
-                nextFloatingCard.floatingCardId === floatingCard.floatingCardId,
-            ),
-        );
+      if (nextFloatingCards.length === floatingCards.length) {
+        return;
+      }
 
-        if (removedActiveThreadCard && editor) {
-          setActiveCommentId(null);
-          editor.commands.unsetCommentActive();
-        }
+      set((state) => {
+        let nextInlineDrafts = state.inlineDrafts;
 
-        set((state) => {
-          let nextInlineDrafts = state.inlineDrafts;
+        removedDraftIds.forEach((draftId) => {
+          nextInlineDrafts = removeInlineDraft(nextInlineDrafts, draftId);
+        });
 
-          removedDraftIds.forEach((draftId) => {
-            nextInlineDrafts = removeInlineDraft(nextInlineDrafts, draftId);
-          });
+        return {
+          activeDraftId:
+            state.activeDraftId && removedDraftIds.has(state.activeDraftId)
+              ? null
+              : state.activeDraftId,
+          inlineDrafts: nextInlineDrafts,
+          floatingCards: nextFloatingCards,
+        };
+      });
+    },
+    reconcileFloatingThreadsForActiveTab: ({ hydrationReady }) => {
+      const { editor, commentAnchorsRef, setActiveCommentId } = getExtDeps(get);
+      const {
+        activeCommentId,
+        activeTabId,
+        floatingCards,
+        isDesktopFloatingEnabled,
+        tabComments,
+      } = get();
+      const validThreadCommentById = new Map<string, IComment>();
 
-          return {
-            activeDraftId:
-              state.activeDraftId && removedDraftIds.has(state.activeDraftId)
-                ? null
-                : state.activeDraftId,
-            inlineDrafts: nextInlineDrafts,
-            floatingCards: nextFloatingCards,
-          };
+      if (
+        hydrationReady &&
+        isDesktopFloatingEnabled &&
+        editor &&
+        !editor.isDestroyed
+      ) {
+        const decorationAnchorById = commentAnchorsRef
+          ? new Map(
+              commentAnchorsRef.current.map((anchor) => [anchor.id, anchor]),
+            )
+          : undefined;
+
+        tabComments.forEach((comment) => {
+          const commentId = comment.id;
+
+          if (!commentId) {
+            return;
+          }
+
+          if ((comment.tabId || DEFAULT_TAB_ID) !== activeTabId) {
+            return;
+          }
+
+          if (comment.deleted || comment.resolved || !comment.selectedContent) {
+            return;
+          }
+
+          if (
+            !hasValidHydratedThreadAnchor({
+              comment,
+              decorationAnchorById,
+              commentAnchorsRef,
+              editor,
+            })
+          ) {
+            return;
+          }
+
+          validThreadCommentById.set(commentId, comment);
         });
       }
+
+      const focusedThreadCommentId =
+        getFocusedFloatingThreadCommentId(floatingCards);
+      const nextFocusedThreadCommentId =
+        (focusedThreadCommentId &&
+        validThreadCommentById.has(focusedThreadCommentId)
+          ? focusedThreadCommentId
+          : null) ??
+        (activeCommentId && validThreadCommentById.has(activeCommentId)
+          ? activeCommentId
+          : null);
+      const didRemoveFocusedThread = Boolean(
+        focusedThreadCommentId &&
+          !validThreadCommentById.has(focusedThreadCommentId),
+      );
+      const didRemoveActiveThread = Boolean(
+        activeCommentId &&
+          hasFloatingThreadCard(floatingCards, activeCommentId) &&
+          !validThreadCommentById.has(activeCommentId),
+      );
+      const includedThreadCommentIds = new Set<string>();
+      const nextFloatingCards: CommentFloatingCard[] = [];
+
+      floatingCards.forEach((floatingCard) => {
+        if (floatingCard.type === 'draft') {
+          nextFloatingCards.push(floatingCard);
+          return;
+        }
+
+        const comment = validThreadCommentById.get(floatingCard.commentId);
+
+        if (!comment) {
+          return;
+        }
+
+        includedThreadCommentIds.add(floatingCard.commentId);
+
+        const selectedText = comment.selectedContent || '';
+        const isFocused = floatingCard.commentId === nextFocusedThreadCommentId;
+
+        nextFloatingCards.push(
+          floatingCard.selectedText === selectedText &&
+            floatingCard.isFocused === isFocused
+            ? floatingCard
+            : {
+                ...floatingCard,
+                selectedText,
+                isFocused,
+              },
+        );
+      });
+
+      validThreadCommentById.forEach((comment, commentId) => {
+        if (includedThreadCommentIds.has(commentId)) {
+          return;
+        }
+
+        nextFloatingCards.push({
+          floatingCardId: `thread:${commentId}`,
+          type: 'thread',
+          commentId,
+          selectedText: comment.selectedContent || '',
+          isFocused: commentId === nextFocusedThreadCommentId,
+        });
+      });
+
+      if (areFloatingCardsEqual(floatingCards, nextFloatingCards)) {
+        return;
+      }
+
+      if (
+        !nextFocusedThreadCommentId &&
+        (didRemoveFocusedThread || didRemoveActiveThread)
+      ) {
+        // Mirror the cleanup locally and externally in the same branch so a
+        // reconciled-away thread cannot leave stale active-comment state behind.
+        get().setActiveCommentId(null);
+        setActiveCommentId(null);
+        editor?.commands.unsetCommentActive();
+      }
+
+      set({ floatingCards: nextFloatingCards });
     },
-    // Mirror activeCommentId into floatingCards so selection changes restore
-    // the matching desktop thread without scanning every floating card.
+    // keep active-comment syncing narrow so a simple external focus
+    // change does not force a full thread-anchor reconcile.
     syncFloatingThreadCardWithActiveComment: () => {
       const { activeCommentId, isDesktopFloatingEnabled, tabComments } = get();
+      const { editor, commentAnchorsRef } = getExtDeps(get);
 
       if (!isDesktopFloatingEnabled || !activeCommentId) {
         return;
@@ -1356,7 +1616,15 @@ export const createCommentStore = () =>
           !comment.resolved,
       );
 
-      if (!activeThread?.selectedContent) {
+      if (
+        !activeThread?.selectedContent ||
+        !editor ||
+        !hasValidHydratedThreadAnchor({
+          comment: activeThread,
+          commentAnchorsRef,
+          editor,
+        })
+      ) {
         return;
       }
 
@@ -1747,7 +2015,7 @@ export const createCommentStore = () =>
       const callback = replyCallback ?? onCommentReply;
       callback?.(activeCommentId, newReply);
     },
-    focusCommentInEditor: (commentId) => {
+    focusCommentInEditor: (commentId, options) => {
       const { editor, setActiveCommentId, commentAnchorsRef } = getExtDeps(get);
 
       const foundComment = get()
@@ -1799,6 +2067,13 @@ export const createCommentStore = () =>
               selectionRange.to,
             ),
           );
+
+          if (options?.source === 'explicit-ui') {
+            // Stamp the selection transaction itself so downstream selection
+            // listeners can tell this came from an intentional UI thread jump.
+            tr.setMeta(EXPLICIT_COMMENT_FOCUS_META, { commentId });
+          }
+
           editor.view.dispatch(tr);
         }
 

@@ -1,7 +1,7 @@
 // Keep this function pure so the comment floating container can run it again safely.
 // Only recalculate what changed and stop once the remaining cards stay the same.
 
-export const FLOATING_COMMENT_CARD_GAP = 12;
+export const FLOATING_COMMENT_CARD_GAP = 8;
 
 export const enum FloatingLayoutInvalidationFlag {
   None = 0,
@@ -30,11 +30,156 @@ export interface FloatingLayoutResult {
     }
   >;
   stopIndex: number;
+  usedFocusedLayout: boolean;
 }
+
+const NO_INVALIDATED_INDEX = Number.POSITIVE_INFINITY;
+
+type PlaceableFloatingCardLayoutInput = FloatingCardLayoutInput & {
+  anchorTop: number;
+};
+
+const canPlaceFloatingCard = (
+  floatingCard: FloatingCardLayoutInput,
+): floatingCard is PlaceableFloatingCardLayoutInput => {
+  return (
+    floatingCard.isVisible &&
+    floatingCard.isMeasured &&
+    floatingCard.anchorTop !== null &&
+    floatingCard.height > 0
+  );
+};
 
 // Round before compare, save, and write so tiny pixel shifts do not cause extra work.
 export const roundFloatingTranslateY = (translateY: number | null) => {
   return translateY === null ? null : Math.round(translateY);
+};
+
+const getLastCommittedTranslateY = (floatingCard: FloatingCardLayoutInput) => {
+  return floatingCard.lastCommittedTranslateY ?? floatingCard.anchorTop ?? null;
+};
+
+const hasFloatingCardInvalidation = (floatingCard: FloatingCardLayoutInput) => {
+  return floatingCard.invalidationFlags !== FloatingLayoutInvalidationFlag.None;
+};
+
+const didTranslateYChange = (
+  floatingCard: FloatingCardLayoutInput,
+  translateY: number,
+) => {
+  return (
+    roundFloatingTranslateY(translateY) !== floatingCard.lastCommittedTranslateY
+  );
+};
+
+const setHiddenPlacement = (
+  placements: FloatingLayoutResult['placements'],
+  floatingCard: FloatingCardLayoutInput,
+) => {
+  placements.set(floatingCard.floatingCardId, {
+    translateY: getLastCommittedTranslateY(floatingCard),
+    isVisible: false,
+  });
+};
+
+const computeFocusedFloatingCommentLayout = ({
+  floatingCards,
+  focusedFloatingCardId,
+  firstInvalidatedIndex,
+  lastInvalidatedIndex,
+  gap,
+}: {
+  floatingCards: FloatingCardLayoutInput[];
+  focusedFloatingCardId: string;
+  firstInvalidatedIndex: number;
+  lastInvalidatedIndex: number;
+  gap: number;
+}): FloatingLayoutResult | null => {
+  const focusedIndex = floatingCards.findIndex(
+    (floatingCard) => floatingCard.floatingCardId === focusedFloatingCardId,
+  );
+  const focusedFloatingCard =
+    focusedIndex >= 0 ? floatingCards[focusedIndex] : null;
+
+  if (!focusedFloatingCard || !canPlaceFloatingCard(focusedFloatingCard)) {
+    return null;
+  }
+
+  const placements: FloatingLayoutResult['placements'] = new Map();
+  const focusedTranslateY = focusedFloatingCard.anchorTop;
+
+  placements.set(focusedFloatingCard.floatingCardId, {
+    translateY: focusedTranslateY,
+    isVisible: true,
+  });
+
+  // Keep the active card fixed at its anchor. Resolve away from that focus,
+  // and only stop a side after both conditions hold: the local placement is
+  // stable and every invalidated card on that side has been visited.
+  let nextTop = focusedTranslateY;
+
+  for (let index = focusedIndex - 1; index >= 0; index -= 1) {
+    const floatingCard = floatingCards[index];
+
+    if (!canPlaceFloatingCard(floatingCard)) {
+      setHiddenPlacement(placements, floatingCard);
+      continue;
+    }
+
+    const translateY = Math.min(
+      floatingCard.anchorTop,
+      nextTop - gap - floatingCard.height,
+    );
+
+    placements.set(floatingCard.floatingCardId, {
+      translateY,
+      isVisible: true,
+    });
+    nextTop = translateY;
+
+    if (
+      index <= firstInvalidatedIndex &&
+      !hasFloatingCardInvalidation(floatingCard) &&
+      !didTranslateYChange(floatingCard, translateY)
+    ) {
+      break;
+    }
+  }
+
+  let previousBottom = focusedTranslateY + focusedFloatingCard.height;
+  let stopIndex = focusedIndex;
+
+  for (let index = focusedIndex + 1; index < floatingCards.length; index += 1) {
+    const floatingCard = floatingCards[index];
+    stopIndex = index;
+
+    if (!canPlaceFloatingCard(floatingCard)) {
+      setHiddenPlacement(placements, floatingCard);
+      continue;
+    }
+
+    const translateY = Math.max(floatingCard.anchorTop, previousBottom + gap);
+
+    placements.set(floatingCard.floatingCardId, {
+      translateY,
+      isVisible: true,
+    });
+    previousBottom = translateY + floatingCard.height;
+
+    if (
+      index >= lastInvalidatedIndex &&
+      !hasFloatingCardInvalidation(floatingCard) &&
+      !didTranslateYChange(floatingCard, translateY)
+    ) {
+      break;
+    }
+  }
+
+  return {
+    placements,
+    stopIndex,
+    usedFocusedLayout: true,
+  };
 };
 
 // Start placing cards from the first changed card.
@@ -42,14 +187,32 @@ export const roundFloatingTranslateY = (translateY: number | null) => {
 export const computeFloatingCommentLayout = ({
   floatingCards,
   recomputeStartIndex,
+  firstInvalidatedIndex = NO_INVALIDATED_INDEX,
   lastInvalidatedIndex,
   gap = FLOATING_COMMENT_CARD_GAP,
+  focusedFloatingCardId,
 }: {
   floatingCards: FloatingCardLayoutInput[];
   recomputeStartIndex: number;
+  firstInvalidatedIndex?: number;
   lastInvalidatedIndex: number;
   gap?: number;
+  focusedFloatingCardId?: string | null;
 }): FloatingLayoutResult => {
+  if (focusedFloatingCardId) {
+    const focusedLayout = computeFocusedFloatingCommentLayout({
+      floatingCards,
+      focusedFloatingCardId,
+      firstInvalidatedIndex,
+      lastInvalidatedIndex,
+      gap,
+    });
+
+    if (focusedLayout) {
+      return focusedLayout;
+    }
+  }
+
   const placements = new Map<
     string,
     {
@@ -62,25 +225,15 @@ export const computeFloatingCommentLayout = ({
 
   for (let index = 0; index < floatingCards.length; index += 1) {
     const floatingCard = floatingCards[index];
-    const lastCommittedTranslateY =
-      floatingCard.lastCommittedTranslateY ?? floatingCard.anchorTop ?? null;
     // If the card cannot be shown, keep its last position but hide it.
-    if (
-      !floatingCard.isVisible ||
-      !floatingCard.isMeasured ||
-      floatingCard.anchorTop === null ||
-      floatingCard.height <= 0
-    ) {
-      placements.set(floatingCard.floatingCardId, {
-        translateY: lastCommittedTranslateY,
-        isVisible: false,
-      });
+    if (!canPlaceFloatingCard(floatingCard)) {
+      setHiddenPlacement(placements, floatingCard);
       continue;
     }
     // Before the restart point, keep the saved position.
     if (index < recomputeStartIndex) {
       const settledTranslateY =
-        lastCommittedTranslateY ?? floatingCard.anchorTop;
+        getLastCommittedTranslateY(floatingCard) ?? floatingCard.anchorTop;
 
       placements.set(floatingCard.floatingCardId, {
         translateY: settledTranslateY,
@@ -100,11 +253,8 @@ export const computeFloatingCommentLayout = ({
       isVisible: true,
     });
 
-    const hasOwnInvalidation =
-      floatingCard.invalidationFlags !== FloatingLayoutInvalidationFlag.None;
-    const placementChanged =
-      roundFloatingTranslateY(translateY) !==
-      floatingCard.lastCommittedTranslateY;
+    const hasOwnInvalidation = hasFloatingCardInvalidation(floatingCard);
+    const placementChanged = didTranslateYChange(floatingCard, translateY);
 
     previousBottom = translateY + floatingCard.height;
 
@@ -119,6 +269,7 @@ export const computeFloatingCommentLayout = ({
       return {
         placements,
         stopIndex: index,
+        usedFocusedLayout: false,
       };
     }
   }
@@ -126,5 +277,6 @@ export const computeFloatingCommentLayout = ({
   return {
     placements,
     stopIndex: floatingCards.length - 1,
+    usedFocusedLayout: false,
   };
 };

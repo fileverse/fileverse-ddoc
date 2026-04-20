@@ -109,10 +109,14 @@ export const CommentReplyInput = ({
           disabled={isCollaborationEnabled}
         />
         <IconButton
-          onClick={() => handleReplySubmit()}
+          onClick={() => {
+            if (isSendDisabled || isCollaborationEnabled) {
+              return;
+            }
+            handleReplySubmit();
+          }}
           icon={'SendHorizontal'}
           variant="ghost"
-          disabled={isSendDisabled || isCollaborationEnabled}
           className={cn(
             '!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]',
             !isBelow1280px && 'hidden',

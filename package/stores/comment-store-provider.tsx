@@ -27,6 +27,7 @@ import {
   CommentExternalDeps,
   CommentStoreContext,
   createCommentStore,
+  EXPLICIT_COMMENT_FOCUS_META,
 } from './comment-store';
 
 export interface CommentStoreProviderProps {
@@ -261,8 +262,27 @@ export const CommentStoreProvider = ({
   }, [username, store]);
 
   useEffect(() => {
+    const state = store.getState();
+    const focusedFloatingThread = isDesktopFloatingEnabled
+      ? state.floatingCards.find(
+          (floatingCard) =>
+            floatingCard.type === 'thread' && floatingCard.isFocused,
+        )
+      : null;
+    const focusedFloatingThreadId =
+      focusedFloatingThread?.type === 'thread'
+        ? focusedFloatingThread.commentId
+        : null;
+    const uiOwnedActiveCommentId = isDesktopFloatingEnabled
+      ? focusedFloatingThreadId
+      : state.openReplyId;
+
+    if (uiOwnedActiveCommentId && activeCommentId !== uiOwnedActiveCommentId) {
+      return;
+    }
+
     store.getState().setActiveCommentId(activeCommentId);
-  }, [activeCommentId, store]);
+  }, [activeCommentId, isDesktopFloatingEnabled, store]);
 
   useEffect(() => {
     store.getState().setActiveTabId(activeTabId);
@@ -320,26 +340,32 @@ export const CommentStoreProvider = ({
     store.getState().setIsDesktopFloatingEnabled(isDesktopFloatingEnabled);
   }, [isDesktopFloatingEnabled, store]);
 
-  // Clear floating cards on tab switch to prevent mismatched or outdated cards
   useEffect(() => {
-    store.getState().clearFloatingCards();
-  }, [activeTabId, store]);
+    const hydrationReady = Boolean(
+      isDesktopFloatingEnabled &&
+        editor &&
+        activeCommentAnchorIdsTabId === activeTabId,
+    );
 
-  useEffect(() => {
-    // Semantic changes still prune invalid cards, but editor transactions no
-    // longer do. That keeps correctness without paying per-keystroke scan cost.
-    store.getState().removeInvalidFloatingCards();
-  }, [activeTabId, initialComments, store]);
-
-  useEffect(() => {
-    store.getState().syncFloatingThreadCardWithActiveComment();
+    // keep the expensive thread-anchor reconcile tied to
+    // structural changes, not simple active-comment churn.
+    store.getState().reconcileFloatingThreadsForActiveTab({ hydrationReady });
   }, [
-    activeCommentId,
+    activeCommentAnchorIds,
+    activeCommentAnchorIdsTabId,
     activeTabId,
+    editor,
     initialComments,
     isDesktopFloatingEnabled,
     store,
   ]);
+
+  useEffect(() => {
+    // Semantic changes still prune invalid floating drafts, but editor
+    // transactions no longer do. That keeps correctness without paying
+    // per-keystroke scan cost.
+    store.getState().removeInvalidFloatingDrafts();
+  }, [activeTabId, initialComments, store]);
 
   useEffect(() => {
     store.getState().submitPendingFloatingDrafts();
@@ -380,15 +406,46 @@ export const CommentStoreProvider = ({
           : false
         : false;
       const selectedCommentId = markCommentId || decorationComment?.id || null;
-      // Drawer navigation can intentionally focus an unanchored mobile thread while
-      // the editor cursor still sits inside the previous highlighted comment.
-      // In that case, ignore stale non-pointer selection events unless the editor
-      // already matches the open thread.
+      // This meta means the selection came from an explicit thread click in
+      // the UI, so prefer that thread even if the editor selection is still
+      // settling and would otherwise look like passive drift.
+      const isExplicitUiThreadSync = Boolean(
+        transaction?.getMeta(EXPLICIT_COMMENT_FOCUS_META),
+      );
+      const focusedFloatingThread = isDesktopFloatingEnabled
+        ? state.floatingCards.find(
+            (floatingCard) =>
+              floatingCard.type === 'thread' && floatingCard.isFocused,
+          )
+        : null;
+      const focusedFloatingThreadId =
+        focusedFloatingThread?.type === 'thread'
+          ? focusedFloatingThread.commentId
+          : null;
+      // Preserve UI-owned thread focus during non-pointer selection drift.
+      // Mobile drawers own focus through openReplyId; desktop floating threads
+      // own it while a thread card remains focused.
+      // Explicit drawer/sidebar navigation is the exception: treat it like a
+      // pointer action so the clicked thread can always take ownership.
+      // Layman: if the user clicked a thread in the UI, trust that click even
+      // if the editor selection is still catching up to it.
       const shouldSyncEditorSelectedThread =
         !selectedCommentId ||
-        isDesktopFloatingEnabled ||
-        state.openReplyId === selectedCommentId ||
-        Boolean(transaction?.getMeta('pointer'));
+        (!isDesktopFloatingEnabled
+          ? state.openReplyId === selectedCommentId
+          : !focusedFloatingThreadId ||
+            focusedFloatingThreadId === selectedCommentId) ||
+        Boolean(transaction?.getMeta('pointer')) ||
+        isExplicitUiThreadSync;
+      const shouldOpenDesktopThreadFromSelection = Boolean(
+        selectedCommentId &&
+          shouldSyncEditorSelectedThread &&
+          isDesktopFloatingEnabled &&
+          (isExplicitUiThreadSync ||
+            (decorationComment &&
+              !isMarkActive &&
+              !decorationComment.resolved)),
+      );
 
       // Only update store when values actually change
       if (nextCommentActive !== prevCommentActive) {
@@ -415,20 +472,12 @@ export const CommentStoreProvider = ({
         }
       }
 
-      // For decoration-based comments, trigger activation flow
-      // Skip resolved — they shouldn't block new comments or open popups
-      if (
-        decorationComment &&
-        !isMarkActive &&
-        !decorationComment.resolved &&
-        shouldSyncEditorSelectedThread
-      ) {
-        if (state.activeCommentId !== decorationComment.id) {
-          setActiveCommentId(decorationComment.id);
+      if (shouldOpenDesktopThreadFromSelection && selectedCommentId) {
+        if (!isExplicitUiThreadSync) {
+          setActiveCommentId(selectedCommentId);
         }
-        if (isDesktopFloatingEnabled) {
-          state.openFloatingThread(decorationComment.id);
-        }
+
+        state.openFloatingThread(selectedCommentId);
       }
     };
 

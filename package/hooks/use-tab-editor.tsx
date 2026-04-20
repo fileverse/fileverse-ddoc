@@ -95,6 +95,20 @@ const cancelIdleTask = (task: ScheduledIdleTask) => {
   window.clearTimeout(task.handle);
 };
 
+const getInlineCommentEventTarget = (
+  target: EventTarget | null,
+): Element | null => {
+  if (!(target instanceof Node)) {
+    return null;
+  }
+
+  if (target.nodeType === Node.TEXT_NODE) {
+    return target.parentElement;
+  }
+
+  return target instanceof Element ? target : null;
+};
+
 interface UseTabEditorArgs {
   ydoc: Y.Doc;
   isVersionMode?: boolean;
@@ -206,7 +220,7 @@ export const useTabEditor = ({
     isAIAgentEnabled,
     hasAvailableModels,
     onCommentActivated: (commentId) => {
-      setActiveCommentId(commentId);
+      setActiveCommentId(commentId || null);
       if (commentId) {
         setTimeout(() => focusCommentWithActiveId(commentId));
       }
@@ -258,13 +272,10 @@ export const useTabEditor = ({
           const isModifierPressed = event.metaKey || event.ctrlKey;
           // 2. Check if the clicked element is a link
           // In Firefox, event.target can be a text node which lacks closest()
-          const node = event.target as Node;
-          const target =
-            node.nodeType === Node.TEXT_NODE
-              ? (node.parentElement as HTMLElement)
-              : (node as HTMLElement);
-          const link = target?.closest('a');
-          if (link && link.href) {
+          const target = getInlineCommentEventTarget(event.target);
+
+          const link = target?.closest<HTMLAnchorElement>('a');
+          if (link?.href) {
             // Fragment links with heading= param should scroll within the document. Only check origin (not pathname) since the same doc has  different paths (i.e: shareable link vs owner link).
             const url = new URL(link.href, window.location.href);
             if (url.hash && url.origin === window.location.origin) {
@@ -414,13 +425,9 @@ export const useTabEditor = ({
     if (!isPreviewMode) return;
 
     const handler = (event: MouseEvent) => {
-      const node = event.target as Node;
-      const target =
-        node.nodeType === Node.TEXT_NODE
-          ? (node.parentElement as HTMLElement)
-          : (node as HTMLElement);
+      const target = getInlineCommentEventTarget(event.target);
       if (!target?.closest?.('#editor')) return;
-      const link = target.closest('a');
+      const link = target.closest<HTMLAnchorElement>('a');
       if (!link?.href) return;
 
       try {
@@ -1066,7 +1073,7 @@ interface UseExtensionStackArgs {
   maxTokens?: number;
   isAIAgentEnabled?: boolean;
   hasAvailableModels: boolean;
-  onCommentActivated: (commentId: string | null) => void;
+  onCommentActivated: (commentId: string) => void;
   onTocUpdate: (data: ToCItemType[], isCreate: boolean | undefined) => void;
   externalExtensions?: Record<string, AnyExtension>;
   activeTabId: string;
