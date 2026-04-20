@@ -60,7 +60,7 @@ export const DraftFloatingCard = ({
         <FloatingAuthPrompt />
       ) : (
         <>
-          <div className="flex justify-start items-center gap-2 color-border-default px-3 py-2">
+          <div className="flex justify-start items-center gap-2 color-border-default px-3 pb-2 pt-3">
             <Avatar
               src={
                 ensStatus.isEns
@@ -74,7 +74,9 @@ export const DraftFloatingCard = ({
             />
 
             <span className="text-body-sm-bold inline-flex items-center gap-1 whitespace-nowrap">
-              {nameFormatter(ensStatus.name)}
+              <p className="truncate max-w-[100px]">
+                {nameFormatter(ensStatus.name)}
+              </p>
               {ensStatus.isEns && (
                 <img
                   src={verifiedMark}
@@ -112,7 +114,7 @@ const InputField = ({
     resizeInlineCommentTextarea(draftTextareaRef.current);
   }, [draftState?.text]);
   return (
-    <div className="flex flex-col gap-3 p-3 pt-0">
+    <div className="flex flex-col gap-3 p-3 pb-0 pt-0">
       <div className="border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]">
         <TextAreaFieldV2
           ref={draftTextareaRef}

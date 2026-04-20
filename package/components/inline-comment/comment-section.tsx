@@ -221,11 +221,12 @@ export const CommentSection = ({
       className={cn(
         (!isMobile || !showNewCommentInput) && 'flex flex-col',
         !isMobile &&
-          'h-[100dvh] sm:h-[calc(100dvh-40px)] xl:h-[calc(100dvh-310px)] color-bg-secondary !rounded-b-lg',
+          'h-[100dvh] sm:h-[calc(100dvh-40px)] xl:h-[calc(100dvh-310px)]  !rounded-b-lg',
         isMobile && !showNewCommentInput && 'h-full',
         showNewCommentInput ? 'pb-[3rem] sm:pb-0' : 'pb-0',
         !isNavbarVisible && 'xl:!h-[calc(100dvh-242px)]',
         isPresentationMode && 'xl:!h-[86dvh]',
+        isMobile ? 'color-bg-secondary' : 'color-bg-default',
       )}
     >
       <div
@@ -341,11 +342,11 @@ const SidebarCommentItem = ({
     <div
       data-comment-id={comment.id}
       className={cn(
-        'relative flex border flex-col w-full mt-[8px] pb-[12px] box-border transition-all color-border-default rounded-[12px]',
+        'relative flex  flex-col w-full mt-[8px] pb-[12px] box-border transition-all color-border-default rounded-[12px]',
         isCommentMobileFocused && openReplyId !== comment.id && 'hidden',
         comment.id === activeCommentId &&
           (isCommentMobileFocused || !isBelow1280px)
-          ? 'color-bg-default'
+          ? 'color-bg-default border'
           : 'hover:color-bg-default-hover bg-[#00000005] ',
         comment.replies?.length > 0 && 'gap-0',
         showReOpenLabel && comment.resolved

@@ -67,11 +67,11 @@ export const ThreadFloatingCard = ({
       onFocus={handleThreadFocus}
     >
       <div className="flex flex-col gap-[8px]">
-        <div className="w-full px-[12px] gap-[8px] pt-[12px] flex">
-          <p className="text-helper-text-sm  h-[26px] color-text-secondary">
+        <div className="w-full px-[12px] items-center gap-[8px] pt-[12px] flex">
+          <p className="text-helper-text-sm shrink-0 color-text-secondary">
             {tabName}
           </p>
-          <p className="text-helper-text-sm h-[26px] truncate color-text-secondary">
+          <p className="text-helper-text-sm truncate color-text-secondary">
             {comment?.selectedContent || thread.selectedText}
           </p>
         </div>
@@ -223,7 +223,7 @@ const InputField = ({
 
   if (!shouldShowReplyInputField && !isCollaborationEnabled) return;
   return (
-    <div className="group p-3 pt-0">
+    <div className="group p-3 pt-0 pb-0">
       <div
         className={cn(
           'border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]',

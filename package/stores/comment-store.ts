@@ -1800,18 +1800,16 @@ export const createCommentStore = () =>
             ),
           );
           editor.view.dispatch(tr);
-          editor.commands.focus(undefined, { scrollIntoView: false });
         }
 
         if (selectionRange) {
+          set({ isBubbleMenuSuppressed: true });
           editor.commands.setCommentActive(commentId);
         }
 
         if (selectionRange) {
-          // Keep the nested requestAnimationFrame. Tiptap focus already defers
-          // its own view.focus() by one frame, and collapsing this to a single
-          // frame reintroduces the scroll snap-back where focus wins after the
-          // manual scroll.
+          // Keep the nested requestAnimationFrame so the editor selection and
+          // active comment styling settle before measuring scroll coordinates.
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
               const editorRoot = editor.view.dom as HTMLElement;

@@ -67,7 +67,7 @@ export const CommentReplyInput = ({
   }, [reply]);
 
   return (
-    <div className="group p-3 mt-[8px] pt-0">
+    <div className="group p-3 mt-[8px] pt-0 pb-0">
       <div
         className={cn(
           'border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]',

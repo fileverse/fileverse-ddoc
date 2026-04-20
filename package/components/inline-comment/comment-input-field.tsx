@@ -29,7 +29,7 @@ export const CommentInputField = ({
   }, [comment]);
 
   return (
-    <div className="flex flex-col gap-3 color-bg-secondary border-t color-border-default pt-[20px] rounded-b-lg">
+    <div className="flex flex-col gap-3 color-bg-default  border-t color-border-default pt-[20px] rounded-b-lg">
       <div
         className={cn(
           'border mx-4 flex px-[12px] color-bg-default py-[8px] gap-[8px] rounded-[4px]',
@@ -68,7 +68,7 @@ export const CommentInputField = ({
         />
       </div>
 
-      <div className="flex px-4 items-center color-bg-secondary justify-end">
+      <div className="flex px-4 items-center color-bg-default justify-end">
         <Button
           data-testid="comment-section-send"
           onClick={() => handleCommentSubmit(tabId)}

@@ -1,7 +1,8 @@
 import { Editor, JSONContent } from '@tiptap/core';
+import { isHex } from 'viem';
 
 export const nameFormatter = (username: string) => {
-  if (!username) return username;
+  if (!username || !isHex(username)) return username;
 
   if (username.length > 20) {
     return username.slice(0, 5) + '...' + username.slice(username.length - 5);
@@ -69,8 +70,6 @@ export const dateFormatter = (date: Date | string | number) => {
             hour12: true,
           })
           .toUpperCase()}
-        <span>&#8226;</span>
-        Today
       </>
     );
   }

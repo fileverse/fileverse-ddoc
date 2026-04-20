@@ -1,6 +1,10 @@
 import { Editor } from '@tiptap/core';
 
 export const shouldShow = ({ editor }: { editor: Editor }) => {
+  if (!editor.isFocused) {
+    return false;
+  }
+
   // Check if selection is within editor canvas and not in comment drawer
   const selection = window.getSelection();
   const commentCards = document.querySelectorAll('.comment-card');

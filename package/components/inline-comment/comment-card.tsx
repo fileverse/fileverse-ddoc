@@ -39,12 +39,17 @@ const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
         className="min-w-6"
       />
       <div className="flex items-center gap-[8px] flex-wrap">
-        <span className="text-body-sm-bold inline-flex items-center gap-1 whitespace-nowrap">
-          {nameFormatter(ensStatus.name)}
-          {ensStatus.isEns && (
-            <img src={verifiedMark} alt="verified" className="w-3.5 h-3.5" />
-          )}
-        </span>
+        <Tooltip text={ensStatus.name}>
+          <span className="text-body-sm-bold flex items-center gap-1 whitespace-nowrap">
+            <p className="truncate max-w-[100px]">
+              {nameFormatter(ensStatus.name)}
+            </p>
+            {ensStatus.isEns && (
+              <img src={verifiedMark} alt="verified" className="w-3.5 h-3.5" />
+            )}
+          </span>
+        </Tooltip>
+
         <span className="text-helper-text-sm color-text-secondary inline-flex items-center gap-1 whitespace-nowrap">
           {createdAt && dateFormatter(createdAt)}
         </span>
@@ -293,7 +298,10 @@ export const CommentCard = (props: CommentCardProps) => {
                 )}
               >
                 {isCommentOwner && !isResolved && (
-                  <Tooltip text="Mark as resolved" position="bottom">
+                  <Tooltip
+                    text={!isDisabled && 'Mark as resolved'}
+                    position="bottom"
+                  >
                     <IconButton
                       variant={'ghost'}
                       icon="Check"
