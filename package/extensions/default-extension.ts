@@ -81,6 +81,7 @@ import {
   CharacterCount,
 } from '@tiptap/extensions';
 import { ResizableMedia } from './resizable-media';
+import { MediaCaption } from './resizable-media/media-caption';
 import LinkPreview from './link-preview/link-preview';
 import { Callout } from './callout/callout';
 import { FontSize } from './font-size';
@@ -287,6 +288,7 @@ export const defaultExtensions = ({
     width: 3,
     color: '#d1d5db',
   }),
+  MediaCaption,
   ResizableMedia.configure({
     onError: onError,
     ipfsImageUploadFn,

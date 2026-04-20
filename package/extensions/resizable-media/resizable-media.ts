@@ -74,6 +74,8 @@ export const ResizableMedia = Node.create<MediaOptions>({
 
   group: 'block',
 
+  content: 'mediaCaption?',
+
   draggable: true,
 
   addAttributes() {
@@ -113,12 +115,6 @@ export const ResizableMedia = Node.create<MediaOptions>({
       iv: { default: null },
       privateKey: { default: null },
       authTag: { default: null },
-      caption: { default: null },
-      showCaptionInput: { default: false },
-      // TODO: For figure caption later
-      // caption: {
-      //   default: null,
-      // },
     };
   },
 
@@ -126,6 +122,26 @@ export const ResizableMedia = Node.create<MediaOptions>({
 
   parseHTML() {
     return [
+      {
+        tag: 'div[data-type="resizable-media"]',
+        getAttrs: (el) => {
+          const img = (el as HTMLElement).querySelector('img');
+          const video = (el as HTMLElement).querySelector('video');
+          if (img) {
+            return {
+              src: img.getAttribute('src'),
+              'media-type': 'img',
+            };
+          }
+          if (video) {
+            return {
+              src: video.getAttribute('src'),
+              'media-type': 'video',
+            };
+          }
+          return {};
+        },
+      },
       {
         tag: 'img',
         getAttrs: (el) => ({
@@ -146,34 +162,22 @@ export const ResizableMedia = Node.create<MediaOptions>({
   renderHTML({ HTMLAttributes }) {
     const { 'media-type': mediaType } = HTMLAttributes;
 
-    if (mediaType === 'img') {
-      return [
-        'img',
-        mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
-      ];
-    }
-    if (mediaType === 'secure-img') {
-      return [
-        'img',
-        mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
-      ];
-    }
-    if (mediaType === 'video') {
-      return [
-        'video',
-        { controls: 'true', style: 'width: 100%', ...HTMLAttributes },
-        ['source', HTMLAttributes],
-      ];
-    }
-
     if (!mediaType)
       console.error(
         'TiptapMediaExtension-renderHTML method: Media Type not set, going default with image',
       );
 
+    // The content hole (0) must be the only child of its parent.
+    // Since ReactNodeViewRenderer handles all visual rendering,
+    // renderHTML only needs to provide a valid container with the content hole.
     return [
-      'img',
-      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
+      'div',
+      mergeAttributes(
+        { 'data-type': 'resizable-media' },
+        this.options.HTMLAttributes,
+        HTMLAttributes,
+      ),
+      0,
     ];
   },
 

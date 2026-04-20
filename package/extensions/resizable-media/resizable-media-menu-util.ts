@@ -1,21 +1,24 @@
 /* @unocss-include */
-// import { IconAlignCenter, IconAlignLeft, IconAlignRight, IconFloatLeft, IconFloatRight, IconDelete } from '~/assets'
-import { Attrs } from '@tiptap/pm/model';
+import { Attrs, Node as ProseMirrorNode } from '@tiptap/pm/model';
+import { Editor } from '@tiptap/core';
+
 interface ResizableMediaAttributes {
   dataAlign: string;
   dataFloat: null | string;
-  showCaptionInput?: boolean;
-  caption?: string;
 }
 
 type UpdateAttributes = (attrs: Partial<ResizableMediaAttributes>) => void;
-type Action = (updateAttributes: UpdateAttributes) => void;
+type Action = (
+  updateAttributes: UpdateAttributes,
+  editor?: Editor,
+  getPos?: (() => number | undefined) | boolean,
+) => void;
 
 interface ResizableMediaAction {
   tooltip: string;
   icon?: string;
   action?: Action;
-  isActive?: (attrs: Attrs) => boolean;
+  isActive?: (attrs: Attrs, node?: ProseMirrorNode) => boolean;
   delete?: (d: () => void) => void;
 }
 
@@ -53,8 +56,38 @@ export const resizableMediaActions: ResizableMediaAction[] = [
   {
     tooltip: 'Add Caption',
     icon: 'Captions',
-    action: (updateAttributes) => updateAttributes({ showCaptionInput: true }),
-    isActive: (attrs) => attrs.showCaptionInput === true,
+    action: (_updateAttributes, editor, getPos) => {
+      if (!editor || typeof getPos !== 'function') return;
+      const pos = getPos();
+      if (pos === undefined) return;
+      const node = editor.state.doc.nodeAt(pos);
+      if (!node) return;
+
+      // Toggle: if caption already exists, remove it
+      if (node.content.childCount > 0) {
+        const captionPos =
+          pos + node.nodeSize - node.content.lastChild!.nodeSize - 1;
+        editor
+          .chain()
+          .deleteRange({
+            from: captionPos,
+            to: captionPos + node.content.lastChild!.nodeSize,
+          })
+          .run();
+        return;
+      }
+
+      // Insert a mediaCaption node at the end of the resizableMedia node
+      const insertPos = pos + node.nodeSize - 1;
+      editor
+        .chain()
+        .insertContentAt(insertPos, {
+          type: 'mediaCaption',
+        })
+        .focus(insertPos + 1)
+        .run();
+    },
+    isActive: (_attrs, node) => (node?.content.childCount ?? 0) > 0,
   },
   {
     tooltip: 'Delete',

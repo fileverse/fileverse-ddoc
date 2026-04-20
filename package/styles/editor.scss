@@ -85,23 +85,19 @@
       @apply justify-end;
     }
 
-    .caption-input-container {
-      @apply relative;
+    .media-caption {
+      @apply w-full px-3 text-xs font-normal mt-1 outline-none;
+      color: var(--text-secondary, #6b7280);
 
-      textarea {
-        @apply w-full px-3 !text-xs font-normal border-0 outline-none mt-1;
+      &:empty::before {
+        content: 'Add a caption';
+        color: var(--text-disabled, #9ca3af);
+        pointer-events: none;
+      }
 
-        &::placeholder {
-          @apply text-gray-400;
-        }
-
-        &:focus {
-          @apply outline-none border-0 ring-0;
-        }
-
-        &:hover {
-          @apply outline-none border-0;
-        }
+      a {
+        @apply underline;
+        color: var(--text-link, #3b82f6);
       }
     }
 
@@ -567,8 +563,13 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
 }
 
 @keyframes cursor-label-fade {
-  0%, 80% { opacity: 1; }
-  100% { opacity: 0; }
+  0%,
+  80% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
 }
 
 /* Give a remote user a caret */
@@ -1243,7 +1244,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   font-style: normal !important;
   font-weight: 500;
   line-height: 1;
-
 }
 
 .has-available-models p.is-empty::before {
