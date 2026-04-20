@@ -115,6 +115,13 @@ export const ResizableMedia = Node.create<MediaOptions>({
       iv: { default: null },
       privateKey: { default: null },
       authTag: { default: null },
+      // Legacy attribute — kept so Yjs-encoded docs that still carry a
+      // caption string survive the Yjs → ProseMirror sync. The node view
+      // migrates it to a mediaCaption child node on mount, then clears it.
+      caption: {
+        default: null,
+        rendered: false,
+      },
     };
   },
 
@@ -215,6 +222,36 @@ export const ResizableMedia = Node.create<MediaOptions>({
           });
         },
     };
+  },
+
+  onCreate({ editor }) {
+    const { tr } = editor.state;
+    let migrated = false;
+
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name !== 'resizableMedia') return;
+      if (!node.attrs.caption || node.content.childCount > 0) return;
+
+      const captionNode = editor.schema.nodes.mediaCaption.create(
+        null,
+        node.attrs.caption ? editor.schema.text(node.attrs.caption) : undefined,
+      );
+
+      // Insert mediaCaption before the closing of resizableMedia
+      const insertPos = pos + node.nodeSize - 1;
+      tr.insert(insertPos, captionNode);
+      // Clear the legacy attribute
+      tr.setNodeMarkup(tr.mapping.map(pos), undefined, {
+        ...node.attrs,
+        caption: null,
+      });
+
+      migrated = true;
+    });
+
+    if (migrated) {
+      editor.view.dispatch(tr);
+    }
   },
 
   addNodeView() {

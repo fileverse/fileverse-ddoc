@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { JSONContent } from '@tiptap/core';
-import { migrateMediaCaptions } from './migrate-media-captions';
 
 const createInvalidContentBlock = (node: any): JSONContent => ({
   type: 'dBlock',
@@ -54,5 +53,5 @@ export const sanitizeContent = ({
     })
     .filter((node): node is JSONContent => node !== null);
 
-  return migrateMediaCaptions(sanitizedContent);
+  return sanitizedContent;
 };
