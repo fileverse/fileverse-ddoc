@@ -16,6 +16,14 @@ const migrateNode = (node: JSONContent): JSONContent => {
     return node;
   }
 
+  // DEBUG: log what we see for resizableMedia nodes
+  console.log('[migrate-media-captions] Found resizableMedia node:', {
+    hasCaption: 'caption' in (node.attrs || {}),
+    captionValue: node.attrs?.caption,
+    hasContent: !!(node.content && node.content.length > 0),
+    allAttrKeys: Object.keys(node.attrs || {}),
+  });
+
   const { caption, ...restAttrs } = node.attrs || {};
 
   // Already has content (new format) — just clean up old attrs
@@ -25,9 +33,13 @@ const migrateNode = (node: JSONContent): JSONContent => {
 
   // No old caption to migrate
   if (!caption) {
+    console.log(
+      '[migrate-media-captions] No caption found, skipping migration',
+    );
     return { ...node, attrs: restAttrs };
   }
 
+  console.log('[migrate-media-captions] Migrating caption:', caption);
   // Migrate: convert caption string to mediaCaption child node
   return {
     ...node,
@@ -42,6 +54,12 @@ const migrateNode = (node: JSONContent): JSONContent => {
 };
 
 export const migrateMediaCaptions = (doc: JSONContent): JSONContent => {
+  console.log(
+    '[migrate-media-captions] Called with doc type:',
+    doc?.type,
+    'content length:',
+    doc?.content?.length,
+  );
   if (!doc || !doc.content) return doc;
   return { ...doc, content: doc.content.map(migrateNode) };
 };
