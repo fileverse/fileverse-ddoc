@@ -435,7 +435,7 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
 
         <div
           className={cn(
-            'node-view-content w-full relative self-center',
+            'node-view-content w-full relative self-center group/collision',
             {
               'is-table max-w-full lg:max-w-[90%]': isTable,
               'invalid-content': node.attrs?.isCorrupted,
