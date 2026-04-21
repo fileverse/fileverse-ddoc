@@ -28,6 +28,7 @@ import { CommentExtension as Comment } from '../extensions/comment';
 import {
   CommentAnchor,
   CommentDecorationExtension,
+  triggerDecorationRebuild,
 } from '../extensions/comment/comment-decoration-plugin';
 import {
   createPageCounter,
@@ -107,6 +108,18 @@ const getInlineCommentEventTarget = (
   }
 
   return target instanceof Element ? target : null;
+};
+
+const hasVisibleFloatingCommentCard = () => {
+  if (typeof document === 'undefined') {
+    return false;
+  }
+
+  return Boolean(
+    document.querySelector(
+      '[data-floating-comment-hidden="false"] [data-floating-comment-card]',
+    ),
+  );
 };
 
 interface UseTabEditorArgs {
@@ -219,6 +232,7 @@ export const useTabEditor = ({
     maxTokens,
     isAIAgentEnabled,
     hasAvailableModels,
+    activeCommentId,
     onCommentActivated: (commentId) => {
       setActiveCommentId(commentId || null);
       if (commentId) {
@@ -264,7 +278,17 @@ export const useTabEditor = ({
             }
           },
           blur: () => {
-            editor?.commands.unsetCommentActive();
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                // Let focus transfer settle before clearing active comment
+                // state; clicks into floating thread UI blur the editor first.
+                if (hasVisibleFloatingCommentCard()) {
+                  return;
+                }
+
+                editor?.commands.unsetCommentActive();
+              });
+            });
           },
         },
         handleClick: (view, pos, event) => {
@@ -957,6 +981,23 @@ export const useTabEditor = ({
 
   useDarkModeStyleCleanup(editor, initialContent, false);
 
+  const previousActiveDecorationCommentIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+
+    if (previousActiveDecorationCommentIdRef.current === activeCommentId) {
+      return;
+    }
+
+    previousActiveDecorationCommentIdRef.current = activeCommentId;
+    // Active-thread styling also lives in the decoration layer, so rebuild
+    // when React-owned activeCommentId changes outside doc transactions.
+    triggerDecorationRebuild(editor);
+  }, [activeCommentId, editor]);
+
   return {
     editor,
     ref,
@@ -1073,6 +1114,7 @@ interface UseExtensionStackArgs {
   maxTokens?: number;
   isAIAgentEnabled?: boolean;
   hasAvailableModels: boolean;
+  activeCommentId: string | null;
   onCommentActivated: (commentId: string) => void;
   onTocUpdate: (data: ToCItemType[], isCreate: boolean | undefined) => void;
   externalExtensions?: Record<string, AnyExtension>;
@@ -1094,6 +1136,7 @@ const useEditorExtension = ({
   maxTokens,
   isAIAgentEnabled,
   hasAvailableModels,
+  activeCommentId,
   onCommentActivated,
   onTocUpdate,
   externalExtensions,
@@ -1123,6 +1166,11 @@ const useEditorExtension = ({
   );
 
   const commentAnchorsRef = useRef<CommentAnchor[]>([]);
+  const activeCommentIdRef = useRef<string | null>(activeCommentId);
+
+  useEffect(() => {
+    activeCommentIdRef.current = activeCommentId;
+  }, [activeCommentId]);
 
   const commentExtension = useMemo(
     () =>
@@ -1156,6 +1204,7 @@ const useEditorExtension = ({
       }),
       CommentDecorationExtension.configure({
         getAnchors: () => commentAnchorsRef.current,
+        getActiveCommentId: () => activeCommentIdRef.current,
       }),
       ...(externalExtensions ? Object.values(externalExtensions) : []),
     ];

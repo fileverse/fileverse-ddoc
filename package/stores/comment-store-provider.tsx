@@ -454,14 +454,61 @@ export const CommentStoreProvider = ({
         ? ((editor.getAttributes('comment')?.commentId as string | null) ??
           null)
         : null;
-      const cursorPos = editor.state.selection.from;
-      const decorationComment = commentAnchorsRef
-        ? getCommentAtPosition(
+      const selectionFrom = editor.state.selection.from;
+      const selectionTo = editor.state.selection.to;
+      const maxProbePos = editor.state.doc.content.size;
+      let decorationComment: CommentAnchor | null = null;
+
+      if (commentAnchorsRef) {
+        const exactProbePositions = Array.from(
+          new Set(
+            [selectionFrom, selectionTo].filter(
+              (pos): pos is number => pos >= 0 && pos <= maxProbePos,
+            ),
+          ),
+        );
+
+        for (const probePos of exactProbePositions) {
+          const matchedComment = getCommentAtPosition(
             editor,
-            cursorPos,
+            probePos,
             () => commentAnchorsRef.current,
-          )
-        : null;
+          );
+
+          if (matchedComment) {
+            decorationComment = matchedComment;
+            break;
+          }
+        }
+
+        if (!decorationComment && transaction?.getMeta('pointer')) {
+          // Pointer clicks can resolve just outside the decorated range even
+          // though the user clearly targeted the highlighted comment text.
+          const fallbackProbePositions = Array.from(
+            new Set(
+              [
+                selectionFrom - 1,
+                selectionFrom + 1,
+                selectionTo - 1,
+                selectionTo + 1,
+              ].filter((pos): pos is number => pos >= 0 && pos <= maxProbePos),
+            ),
+          );
+
+          for (const probePos of fallbackProbePositions) {
+            const matchedComment = getCommentAtPosition(
+              editor,
+              probePos,
+              () => commentAnchorsRef.current,
+            );
+
+            if (matchedComment) {
+              decorationComment = matchedComment;
+              break;
+            }
+          }
+        }
+      }
 
       const nextCommentActive =
         isMarkActive ||

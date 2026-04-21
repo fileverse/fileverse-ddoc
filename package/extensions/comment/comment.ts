@@ -342,14 +342,21 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
       const editorDom = this.editor?.view?.dom as HTMLElement | undefined;
       if (!editorDom) return;
 
+      const previousNodes = previousCommentId
+        ? Array.from(getCommentNodesById(editorDom, previousCommentId))
+        : [];
+      const nextNodes = nextCommentId
+        ? Array.from(getCommentNodesById(editorDom, nextCommentId))
+        : [];
+
       if (previousCommentId) {
-        getCommentNodesById(editorDom, previousCommentId).forEach((node) => {
+        previousNodes.forEach((node) => {
           setCommentNodeVisualState(node, false);
         });
       }
 
       if (nextCommentId) {
-        getCommentNodesById(editorDom, nextCommentId).forEach((node) => {
+        nextNodes.forEach((node) => {
           setCommentNodeVisualState(node, true);
         });
       }
@@ -484,8 +491,8 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
           return true;
         },
       setCommentActive: (commentId: string) => () => {
-        if (!commentId) return false;
         const previousActiveCommentId = this.storage.activeCommentId;
+        if (!commentId) return false;
         if (previousActiveCommentId === commentId) return true;
         this.storage.activeCommentId = commentId;
         // Update UI classes in-place so "active comment" does not create doc updates.

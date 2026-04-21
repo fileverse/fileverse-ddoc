@@ -401,6 +401,7 @@ export function analyzeCommentAnchorTransactionChanges(
 function buildDecorations(
   anchors: CommentAnchor[],
   state: EditorState,
+  activeCommentId: string | null,
 ): DecorationSet {
   // Build a new set of decorations from the current anchor list.
   // This is called:
@@ -426,6 +427,11 @@ function buildDecorations(
       continue;
     }
 
+    // Decoration state does not inherit the active-thread class that the mark
+    // DOM toggles in editable mode, so mirror activeCommentId here to keep
+    // preview and editable highlights visually aligned.
+    const isActive = anchor.id === activeCommentId;
+
     // Create an inline decoration at the anchor's current range.
     // The CSS class triggers visual styling; commentId enables click-to-activate-thread.
     decorations.push(
@@ -433,10 +439,13 @@ function buildDecorations(
         range.from,
         range.to,
         {
-          class: 'inline-comment inline-comment--unresolved',
+          class: isActive
+            ? 'inline-comment inline-comment--active'
+            : 'inline-comment inline-comment--unresolved',
           'data-comment-id': anchor.id,
+          'data-active': isActive ? 'true' : 'false',
         },
-        { commentId: anchor.id },
+        { commentId: anchor.id, active: isActive },
       ),
     );
   }
@@ -450,6 +459,7 @@ function buildDecorations(
 
 export interface CommentDecorationOptions {
   getAnchors: () => CommentAnchor[];
+  getActiveCommentId: () => string | null;
 }
 
 export const CommentDecorationExtension =
@@ -459,11 +469,12 @@ export const CommentDecorationExtension =
     addOptions() {
       return {
         getAnchors: () => [],
+        getActiveCommentId: () => null,
       };
     },
 
     addProseMirrorPlugins() {
-      const { getAnchors } = this.options;
+      const { getAnchors, getActiveCommentId } = this.options;
 
       return [
         new Plugin({
@@ -473,7 +484,11 @@ export const CommentDecorationExtension =
             init(_, editorState) {
               // Build decorations on plugin init.
               return {
-                decorations: buildDecorations(getAnchors(), editorState),
+                decorations: buildDecorations(
+                  getAnchors(),
+                  editorState,
+                  getActiveCommentId(),
+                ),
               };
             },
             apply(tr, pluginState, _oldState, newState) {
@@ -484,7 +499,11 @@ export const CommentDecorationExtension =
               // to preserve visual highlights during non-doc changes (e.g., selection moves).
               if (tr.docChanged || tr.getMeta(commentDecorationPluginKey)) {
                 return {
-                  decorations: buildDecorations(getAnchors(), newState),
+                  decorations: buildDecorations(
+                    getAnchors(),
+                    newState,
+                    getActiveCommentId(),
+                  ),
                 };
               }
 

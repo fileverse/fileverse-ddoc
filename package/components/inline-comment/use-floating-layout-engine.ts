@@ -49,6 +49,36 @@ const isFloatingUiInteractionTarget = (target: EventTarget | null) => {
   );
 };
 
+const getInteractionTargetElement = (target: EventTarget | null) => {
+  if (!(target instanceof Node)) {
+    return null;
+  }
+
+  if (target.nodeType === Node.TEXT_NODE) {
+    return target.parentElement;
+  }
+
+  return target instanceof Element ? target : null;
+};
+
+const isEditorCommentInteractionTarget = (
+  target: EventTarget | null,
+  editorRoot: HTMLElement | null,
+) => {
+  const targetElement = getInteractionTargetElement(target);
+
+  if (!targetElement || !editorRoot) {
+    return false;
+  }
+
+  return Boolean(
+    editorRoot.contains(targetElement) &&
+      targetElement.closest(
+        '[data-comment-id], [data-draft-comment-id], .inline-comment, mark[data-color="yellow"]',
+      ),
+  );
+};
+
 export interface UseFloatingLayoutEngineResult {
   floatingCardListContainerRef: RefObject<HTMLDivElement>;
   registerCardNode: (
@@ -685,6 +715,13 @@ export const useFloatingLayoutEngine = ({
         return;
       }
 
+      const editorRoot = getEditorRoot(editor);
+
+      // Clicking the anchored text should not blur the focused floating thread;
+      // selection syncing will decide whether focus stays put or transfers.
+      if (isEditorCommentInteractionTarget(event.target, editorRoot)) {
+        return;
+      }
       blurFloatingCard(focusedFloatingCardId);
     },
     'mousedown',
