@@ -52,6 +52,11 @@ export interface MarkWithRange {
   range: Range;
 }
 
+export interface CommentMarkMatch {
+  commentId: string;
+  resolved: boolean;
+}
+
 export interface CommentOptions {
   HTMLAttributes: Record<string, any>;
   onCommentActivated: (commentId: string) => void;
@@ -137,6 +142,166 @@ export const getDraftCommentRange = (state: EditorState, draftId: string) => {
   return getDraftCommentState(state)?.drafts.get(draftId) ?? null;
 };
 
+const getCommentMarkMatchFromMarks = (
+  commentMarkType: PMMark['type'] | undefined,
+  marks?: readonly PMMark[] | null,
+): CommentMarkMatch | null => {
+  if (!commentMarkType || !marks?.length) {
+    return null;
+  }
+
+  const commentMark = marks.find((mark) => mark.type === commentMarkType);
+
+  if (!commentMark?.attrs.commentId) {
+    return null;
+  }
+
+  return {
+    commentId: commentMark.attrs.commentId,
+    resolved: Boolean(commentMark.attrs.resolved),
+  };
+};
+
+export const getCommentMarkAtPosition = (
+  state: EditorState,
+  pos: number,
+): CommentMarkMatch | null => {
+  const commentMarkType = state.schema.marks.comment;
+
+  if (!commentMarkType) {
+    return null;
+  }
+
+  const safePos = Math.max(0, Math.min(pos, state.doc.content.size));
+  const $pos = state.doc.resolve(safePos);
+
+  return (
+    getCommentMarkMatchFromMarks(commentMarkType, $pos.marks()) ??
+    getCommentMarkMatchFromMarks(commentMarkType, $pos.nodeBefore?.marks) ??
+    getCommentMarkMatchFromMarks(commentMarkType, $pos.nodeAfter?.marks)
+  );
+};
+
+export const getCommentMarkRange = (
+  state: EditorState,
+  commentId: string,
+): Range | null => {
+  if (!commentId) {
+    return null;
+  }
+
+  let from: number | null = null;
+  let to: number | null = null;
+
+  state.doc.descendants((node, pos) => {
+    const commentMark = node.marks.find(
+      (mark) =>
+        mark.type.name === 'comment' && mark.attrs.commentId === commentId,
+    );
+
+    if (!commentMark) {
+      return;
+    }
+
+    from = from === null ? pos : Math.min(from, pos);
+    to = to === null ? pos + node.nodeSize : Math.max(to, pos + node.nodeSize);
+  });
+
+  if (from === null || to === null || from >= to) {
+    return null;
+  }
+
+  return { from, to };
+};
+
+const getCommentNodesById = (editorDom: HTMLElement, commentId: string) => {
+  const safeId =
+    typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
+      ? CSS.escape(commentId)
+      : commentId.replace(/"/g, '\\"');
+
+  return editorDom.querySelectorAll<HTMLElement>(
+    `[data-comment-id="${safeId}"]`,
+  );
+};
+
+const setCommentNodeVisualState = (node: HTMLElement, isActive: boolean) => {
+  const isResolved = node.dataset.resolved === 'true';
+
+  node.setAttribute('data-active', isActive ? 'true' : 'false');
+
+  node.classList.toggle('inline-comment--active', isActive);
+  node.classList.toggle('inline-comment--resolved', !isActive && isResolved);
+  node.classList.toggle('inline-comment--unresolved', !isActive && !isResolved);
+};
+
+const refreshActiveCommentClassInDOM = (
+  editorDom: HTMLElement | undefined,
+  activeCommentId: string | null,
+) => {
+  if (!editorDom) return;
+
+  const activeNodes = Array.from(
+    editorDom.querySelectorAll<HTMLElement>(
+      '[data-comment-id].inline-comment--active',
+    ),
+  );
+
+  activeNodes.forEach((node) => {
+    if (node.dataset.commentId !== activeCommentId) {
+      setCommentNodeVisualState(node, false);
+    }
+  });
+
+  if (!activeCommentId) {
+    return;
+  }
+
+  Array.from(getCommentNodesById(editorDom, activeCommentId)).forEach(
+    (node) => {
+      setCommentNodeVisualState(node, true);
+    },
+  );
+};
+
+const syncActiveCommentClassInDOM = (
+  editorDom: HTMLElement | undefined,
+  previousCommentId: string | null,
+  nextCommentId: string | null,
+) => {
+  if (!editorDom) return;
+
+  if (previousCommentId === nextCommentId) {
+    if (!nextCommentId) {
+      return;
+    }
+
+    // ProseMirror can redraw the active marked span without changing the
+    // active id, so same-id non-null updates still need a DOM refresh.
+    refreshActiveCommentClassInDOM(editorDom, nextCommentId);
+    return;
+  }
+
+  const previousNodes = previousCommentId
+    ? Array.from(getCommentNodesById(editorDom, previousCommentId))
+    : [];
+  const nextNodes = nextCommentId
+    ? Array.from(getCommentNodesById(editorDom, nextCommentId))
+    : [];
+
+  if (previousCommentId) {
+    previousNodes.forEach((node) => {
+      setCommentNodeVisualState(node, false);
+    });
+  }
+
+  if (nextCommentId) {
+    nextNodes.forEach((node) => {
+      setCommentNodeVisualState(node, true);
+    });
+  }
+};
+
 export interface IComment {
   id?: string;
   tabId?: string;
@@ -208,23 +373,30 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
   },
 
   onSelectionUpdate() {
+    const previousActiveCommentId = this.storage.activeCommentId;
     const { $from } = this.editor.state.selection;
-
     const marks = $from.marks();
+    const commentMark = this.editor.schema.marks.comment;
+    const activeCommentMark = marks.find((mark) => mark.type === commentMark);
+    const nextActiveCommentId =
+      activeCommentMark?.attrs.commentId?.trim() || null;
 
-    if (!marks.length) {
-      this.storage.activeCommentId = null;
-      this.options.onCommentActivated(this.storage.activeCommentId || '');
+    this.storage.activeCommentId = nextActiveCommentId;
+    this.options.onCommentActivated(nextActiveCommentId || '');
+
+    if (!previousActiveCommentId && !nextActiveCommentId) {
       return;
     }
 
-    const commentMark = this.editor.schema.marks.comment;
-
-    const activeCommentMark = marks.find((mark) => mark.type === commentMark);
-
-    this.storage.activeCommentId = activeCommentMark?.attrs.commentId || null;
-
-    this.options.onCommentActivated(this.storage.activeCommentId || '');
+    requestAnimationFrame(() => {
+      // Active styling lives outside persisted mark attrs, so selection-driven
+      // DOM redraws must re-apply the active class after the redraw completes.
+      syncActiveCommentClassInDOM(
+        this.editor?.view?.dom as HTMLElement | undefined,
+        previousActiveCommentId,
+        nextActiveCommentId,
+      );
+    });
   },
 
   addStorage() {
@@ -302,65 +474,6 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
   },
 
   addCommands() {
-    const getCommentNodesById = (editorDom: HTMLElement, commentId: string) => {
-      const safeId =
-        typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
-          ? CSS.escape(commentId)
-          : commentId.replace(/"/g, '\\"');
-
-      return editorDom.querySelectorAll<HTMLElement>(
-        `[data-comment-id="${safeId}"]`,
-      );
-    };
-
-    const setCommentNodeVisualState = (
-      node: HTMLElement,
-      isActive: boolean,
-    ) => {
-      const isResolved = node.dataset.resolved === 'true';
-
-      node.setAttribute('data-active', isActive ? 'true' : 'false');
-
-      node.classList.toggle('inline-comment--active', isActive);
-      node.classList.toggle(
-        'inline-comment--resolved',
-        !isActive && isResolved,
-      );
-      node.classList.toggle(
-        'inline-comment--unresolved',
-        !isActive && !isResolved,
-      );
-    };
-
-    // Update only the affected comment ids, not the whole document.
-    const syncActiveCommentClassInDOM = (
-      previousCommentId: string | null,
-      nextCommentId: string | null,
-    ) => {
-      if (previousCommentId === nextCommentId) return;
-
-      const editorDom = this.editor?.view?.dom as HTMLElement | undefined;
-      if (!editorDom) return;
-
-      const previousNodes = previousCommentId
-        ? Array.from(getCommentNodesById(editorDom, previousCommentId))
-        : [];
-      const nextNodes = nextCommentId
-        ? Array.from(getCommentNodesById(editorDom, nextCommentId))
-        : [];
-
-      if (previousCommentId) {
-        previousNodes.forEach((node) => {
-          setCommentNodeVisualState(node, false);
-        });
-      }
-
-      if (nextCommentId) {
-        nextNodes.forEach((node) => {
-          setCommentNodeVisualState(node, true);
-        });
-      }
-    };
     return {
       setComment:
         (commentId: string) =>
@@ -493,18 +606,24 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
       setCommentActive: (commentId: string) => () => {
         const previousActiveCommentId = this.storage.activeCommentId;
         if (!commentId) return false;
-        if (previousActiveCommentId === commentId) return true;
         this.storage.activeCommentId = commentId;
         // Update UI classes in-place so "active comment" does not create doc updates.
-        syncActiveCommentClassInDOM(previousActiveCommentId, commentId);
+        syncActiveCommentClassInDOM(
+          this.editor?.view?.dom as HTMLElement | undefined,
+          previousActiveCommentId,
+          commentId,
+        );
         return true;
       },
       unsetCommentActive: () => () => {
         const previousActiveCommentId = this.storage.activeCommentId;
-        if (!previousActiveCommentId) return true;
         this.storage.activeCommentId = null;
         // Reset active styling without touching persisted mark attributes.
-        syncActiveCommentClassInDOM(previousActiveCommentId, null);
+        syncActiveCommentClassInDOM(
+          this.editor?.view?.dom as HTMLElement | undefined,
+          previousActiveCommentId,
+          null,
+        );
         return true;
       },
       setDraftComment:

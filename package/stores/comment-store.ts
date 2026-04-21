@@ -1443,7 +1443,8 @@ export const createCommentStore = () =>
     },
     openFloatingThread: (commentId) => {
       const { editor, setActiveCommentId } = getExtDeps(get);
-      const commentToOpen = get().tabComments.find(
+      const state = get();
+      const commentToOpen = state.tabComments.find(
         (comment) =>
           comment.id === commentId && !comment.deleted && !comment.resolved,
       );
@@ -1452,12 +1453,14 @@ export const createCommentStore = () =>
         return;
       }
 
-      set((state) => ({
-        floatingCards: upsertFloatingThreadCard(state.floatingCards, {
-          commentId,
-          selectedText: commentToOpen.selectedContent || '',
-        }),
-      }));
+      const nextFloatingCards = upsertFloatingThreadCard(state.floatingCards, {
+        commentId,
+        selectedText: commentToOpen.selectedContent || '',
+      });
+
+      set({
+        floatingCards: nextFloatingCards,
+      });
       setActiveCommentId(commentId);
       editor.commands.setCommentActive(commentId);
     },
@@ -1783,11 +1786,12 @@ export const createCommentStore = () =>
           isFocused: commentId === nextFocusedThreadCommentId,
         });
       });
+      const didFloatingCardsChange = !areFloatingCardsEqual(
+        floatingCards,
+        nextFloatingCards,
+      );
 
-      if (
-        areFloatingCardsEqual(floatingCards, nextFloatingCards) &&
-        !didPendingPrehydrationIdsChange
-      ) {
+      if (!didFloatingCardsChange && !didPendingPrehydrationIdsChange) {
         return;
       }
 

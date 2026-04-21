@@ -11,7 +11,7 @@ import { EditorState, Transaction } from '@tiptap/pm/state';
 import { fromUint8Array } from 'js-base64';
 import { useOnClickOutside } from 'usehooks-ts';
 import * as Y from 'yjs';
-import { IComment } from '../extensions/comment';
+import { getCommentMarkAtPosition, IComment } from '../extensions/comment';
 import {
   analyzeCommentAnchorTransactionChanges,
   CommentAnchor,
@@ -438,52 +438,27 @@ export const CommentStoreProvider = ({
     const updateEditorState = (transaction?: Transaction) => {
       const state = store.getState();
       const isMarkActive = editor.isActive('comment');
-      const markCommentId = isMarkActive
-        ? ((editor.getAttributes('comment')?.commentId as string | null) ??
-          null)
+      const activeMarkComment = isMarkActive
+        ? {
+            commentId:
+              (editor.getAttributes('comment')?.commentId as string | null) ??
+              null,
+            resolved: Boolean(editor.getAttributes('comment')?.resolved),
+          }
         : null;
       const selectionFrom = editor.state.selection.from;
       const selectionTo = editor.state.selection.to;
       const maxProbePos = editor.state.doc.content.size;
       let decorationComment: CommentAnchor | null = null;
-
-      if (commentAnchorsRef) {
-        const exactProbePositions = Array.from(
-          new Set(
-            [selectionFrom, selectionTo].filter(
-              (pos): pos is number => pos >= 0 && pos <= maxProbePos,
-            ),
-          ),
-        );
-
-        for (const probePos of exactProbePositions) {
-          const matchedComment = getCommentAtPosition(
-            editor,
-            probePos,
-            () => commentAnchorsRef.current,
-          );
-
-          if (matchedComment) {
-            decorationComment = matchedComment;
-            break;
+      let markComment = activeMarkComment;
+      const pointerSelectionMeta = Boolean(transaction?.getMeta('pointer'));
+      const probeForComments = (probePositions: number[]) => {
+        for (const probePos of probePositions) {
+          if (!markComment) {
+            markComment = getCommentMarkAtPosition(editor.state, probePos);
           }
-        }
 
-        if (!decorationComment && transaction?.getMeta('pointer')) {
-          // Pointer clicks can resolve just outside the decorated range even
-          // though the user clearly targeted the highlighted comment text.
-          const fallbackProbePositions = Array.from(
-            new Set(
-              [
-                selectionFrom - 1,
-                selectionFrom + 1,
-                selectionTo - 1,
-                selectionTo + 1,
-              ].filter((pos): pos is number => pos >= 0 && pos <= maxProbePos),
-            ),
-          );
-
-          for (const probePos of fallbackProbePositions) {
+          if (!decorationComment && commentAnchorsRef) {
             const matchedComment = getCommentAtPosition(
               editor,
               probePos,
@@ -492,21 +467,60 @@ export const CommentStoreProvider = ({
 
             if (matchedComment) {
               decorationComment = matchedComment;
-              break;
             }
           }
+
+          if (markComment && decorationComment) {
+            break;
+          }
         }
+      };
+
+      const exactProbePositions = Array.from(
+        new Set(
+          [selectionFrom, selectionTo].filter(
+            (pos): pos is number => pos >= 0 && pos <= maxProbePos,
+          ),
+        ),
+      );
+
+      probeForComments(exactProbePositions);
+
+      if ((!markComment || !decorationComment) && pointerSelectionMeta) {
+        // Pointer clicks can resolve just outside the decorated or marked range
+        // even though the user clearly targeted the highlighted comment text.
+        const fallbackProbePositions = Array.from(
+          new Set(
+            [
+              selectionFrom - 1,
+              selectionFrom + 1,
+              selectionTo - 1,
+              selectionTo + 1,
+            ].filter((pos): pos is number => pos >= 0 && pos <= maxProbePos),
+          ),
+        );
+
+        probeForComments(fallbackProbePositions);
       }
 
-      const nextCommentActive =
-        isMarkActive ||
-        (decorationComment !== null && !decorationComment.resolved);
-      const nextCommentResolved = nextCommentActive
-        ? isMarkActive
-          ? (editor.getAttributes('comment')?.resolved ?? false)
-          : false
-        : false;
-      const selectedCommentId = markCommentId || decorationComment?.id || null;
+      const selectedDecorationComment =
+        decorationComment as CommentAnchor | null;
+      const selectedMarkCommentId = markComment?.commentId ?? null;
+      const selectedCommentId =
+        selectedMarkCommentId ?? selectedDecorationComment?.id ?? null;
+      const selectedCommentResolved =
+        (selectedMarkCommentId ? markComment?.resolved : undefined) ??
+        selectedDecorationComment?.resolved ??
+        false;
+      const isUnresolvedMarkComment = Boolean(
+        selectedMarkCommentId && !selectedCommentResolved,
+      );
+      const isOpenableDecorationComment = Boolean(
+        selectedDecorationComment && !selectedDecorationComment.resolved,
+      );
+      const nextCommentActive = Boolean(selectedCommentId);
+      const nextCommentResolved =
+        Boolean(selectedCommentId) && selectedCommentResolved;
       // This meta means the selection came from an explicit thread click in
       // the UI, so prefer that thread even if the editor selection is still
       // settling and would otherwise look like passive drift.
@@ -536,7 +550,7 @@ export const CommentStoreProvider = ({
           ? state.openReplyId === selectedCommentId
           : !focusedFloatingThreadId ||
             focusedFloatingThreadId === selectedCommentId) ||
-        Boolean(transaction?.getMeta('pointer')) ||
+        pointerSelectionMeta ||
         isExplicitUiThreadSync;
       // Focus mode should still allow the editor selection to move, but plain
       // canvas clicks must not wake the thread UI back up unless the sync came
@@ -544,26 +558,29 @@ export const CommentStoreProvider = ({
       const shouldIgnoreFocusModePointerSelection = Boolean(
         isFocusMode &&
           selectedCommentId &&
-          transaction?.getMeta('pointer') &&
+          pointerSelectionMeta &&
           !isExplicitUiThreadSync,
       );
+      // Legacy mark comments bypass the decoration anchor layer, so selection
+      // state must reflect any mark hit while desktop thread opening remains
+      // limited to unresolved comments.
       const shouldOpenDesktopThreadFromSelection = Boolean(
         selectedCommentId &&
           !shouldIgnoreFocusModePointerSelection &&
           shouldSyncEditorSelectedThread &&
           isDesktopFloatingEnabled &&
-          (isExplicitUiThreadSync ||
-            (decorationComment &&
-              !isMarkActive &&
-              !decorationComment.resolved)),
+          (isUnresolvedMarkComment || isOpenableDecorationComment),
       );
+      const didCommentActiveChange = nextCommentActive !== prevCommentActive;
+      const didCommentResolvedChange =
+        nextCommentResolved !== prevCommentResolved;
 
       // Only update store when values actually change
-      if (nextCommentActive !== prevCommentActive) {
+      if (didCommentActiveChange) {
         prevCommentActive = nextCommentActive;
         state.setIsCommentActive(nextCommentActive);
       }
-      if (nextCommentResolved !== prevCommentResolved) {
+      if (didCommentResolvedChange) {
         prevCommentResolved = nextCommentResolved;
         state.setIsCommentResolved(nextCommentResolved);
       }
@@ -578,8 +595,7 @@ export const CommentStoreProvider = ({
         const shouldScrollSelectedCommentIntoView =
           !isDesktopFloatingEnabled &&
           Boolean(
-            transaction?.getMeta('pointer') ||
-              state.openReplyId !== selectedCommentId,
+            pointerSelectionMeta || state.openReplyId !== selectedCommentId,
           );
 
         if (state.activeCommentId !== selectedCommentId) {

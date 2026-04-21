@@ -1,5 +1,6 @@
 import type { MutableRefObject } from 'react';
 import type { Editor } from '@tiptap/react';
+import { getCommentMarkRange } from '../extensions/comment';
 import {
   CommentAnchor,
   getCommentAnchorRange,
@@ -110,6 +111,14 @@ export const resolveCommentSelectionRange = ({
 
   if (anchorRange) {
     return anchorRange;
+  }
+
+  // Legacy mark comments do not have decoration anchors, so prefer the full
+  // mark range before falling back to a single DOM node position.
+  const markRange = getCommentMarkRange(editor.state, commentId);
+
+  if (markRange) {
+    return markRange;
   }
 
   const commentElement = editor.view.dom.querySelector<HTMLElement>(
