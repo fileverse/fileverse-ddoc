@@ -20,7 +20,11 @@ import { DynamicDropdown, cn, LucideIcon } from '@fileverse/ui';
 import { CommentDropdown } from '../inline-comment/comment-dropdown';
 import { EditorBubbleMenuProps, BubbleMenuItem } from './types';
 import { useResponsive } from '../../utils/responsive';
-import { shouldShow } from './props';
+import {
+  isSelectionInsideEditor,
+  shouldShow,
+  shouldShowIgnoringFocus,
+} from './props';
 import { useCommentStore } from '../../stores/comment-store';
 import { useCommentRefs } from '../../stores/comment-store-provider';
 import { useEditorStates } from '../../hooks/use-editor-states';
@@ -92,6 +96,25 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const handleBubbleMenuRef = useCallback((node: HTMLDivElement | null) => {
     node?.style.setProperty('z-index', BUBBLE_MENU_Z_INDEX);
   }, []);
+
+  // Mobile text selection can survive an editor blur, so retry the same
+  // visibility checks without the focus requirement when selection stays in-editor.
+  const handleBubbleMenuShouldShow = useCallback(
+    ({ editor }: { editor: Editor }) => {
+      if (shouldShow({ editor })) {
+        return true;
+      }
+
+      // Mobile native selection can blur the editor while keeping a valid
+      // in-editor text selection alive, so ignore focus for that case only.
+      return (
+        isNativeMobile &&
+        isSelectionInsideEditor(editor) &&
+        shouldShowIgnoringFocus(editor)
+      );
+    },
+    [isNativeMobile],
+  );
 
   const items: BubbleMenuItem[] = useMemo(() => {
     return [
@@ -238,7 +261,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         flip: true,
         shift: true,
       }}
-      shouldShow={shouldShow}
+      shouldShow={handleBubbleMenuShouldShow}
       className={cn(
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border color-bg-default items-center shadow-elevation-3',
         isCommentOpen ||

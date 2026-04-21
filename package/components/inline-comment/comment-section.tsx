@@ -354,6 +354,7 @@ const SidebarCommentItem = ({
           : isCommentMobileFocused &&
               comment.resolved &&
               'color-bg-default-hover',
+        isCommentMobileFocused && comment.resolved && 'border',
       )}
       onClick={handleSidebarCommentClick}
     >

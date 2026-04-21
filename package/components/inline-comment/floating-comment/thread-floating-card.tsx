@@ -177,8 +177,9 @@ const InputField = ({
       (isEditingThisThread &&
         replyText.trim() === (replyEditTarget?.originalText ?? '').trim()),
   );
-  const shouldShowReplyInputField =
-    isConnected && (thread.isFocused || hasUnsentReply);
+  const shouldShowReplyInputField = isCollaborationEnabled
+    ? thread.isFocused
+    : isConnected && (thread.isFocused || hasUnsentReply);
 
   useEffect(() => {
     if (!replyTextareaRef.current) {
@@ -221,7 +222,7 @@ const InputField = ({
     cancelReplyEdit();
   }, [cancelReplyEdit, editCompletion, thread.commentId]);
 
-  if (!shouldShowReplyInputField && !isCollaborationEnabled) return;
+  if (!shouldShowReplyInputField) return;
   return (
     <div className="group p-3 pt-0 pb-0">
       <div
