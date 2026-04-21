@@ -134,6 +134,7 @@ interface UseTabEditorArgs {
   isSyncing?: boolean;
   awareness?: any;
   disableInlineComment?: boolean;
+  isFocusMode?: boolean;
   onCommentInteraction?: DdocProps['onCommentInteraction'];
   onError?: DdocProps['onError'];
   ipfsImageUploadFn?: DdocProps['ipfsImageUploadFn'];
@@ -178,6 +179,7 @@ export const useTabEditor = ({
   isSyncing,
   awareness,
   disableInlineComment,
+  isFocusMode,
   onCommentInteraction,
   onError,
   ipfsImageUploadFn,
@@ -246,6 +248,7 @@ export const useTabEditor = ({
 
   const { handleCommentInteraction, handleCommentClick } =
     useCommentInteraction({
+      isFocusMode,
       onCommentInteraction,
     });
   const isInitialEditorCreation = useRef(true);
@@ -1264,12 +1267,28 @@ const useEditorExtension = ({
 };
 
 interface UseCommentInteractionArgs {
+  isFocusMode?: boolean;
   onCommentInteraction?: DdocProps['onCommentInteraction'];
 }
 
 const useCommentInteraction = ({
+  isFocusMode = false,
   onCommentInteraction,
 }: UseCommentInteractionArgs) => {
+  // `useEditor` is initialized with explicit deps, so these DOM handlers won't
+  // be refreshed just because focus mode toggles. Keep the latest values in
+  // refs so comment behavior updates without rebuilding the editor instance.
+  const isFocusModeRef = useRef(isFocusMode);
+  const onCommentInteractionRef = useRef(onCommentInteraction);
+
+  useEffect(() => {
+    isFocusModeRef.current = isFocusMode;
+  }, [isFocusMode]);
+
+  useEffect(() => {
+    onCommentInteractionRef.current = onCommentInteraction;
+  }, [onCommentInteraction]);
+
   const isHighlightedYellow = useCallback(
     (state: EditorState, from: number, to: number) => {
       let highlighted = false;
@@ -1291,6 +1310,10 @@ const useCommentInteraction = ({
 
   const handleCommentInteraction = useCallback(
     (view: EditorView, event: MouseEvent) => {
+      if (isFocusModeRef.current) {
+        return false;
+      }
+
       const target = event.target as HTMLElement | null;
 
       if (
@@ -1298,13 +1321,13 @@ const useCommentInteraction = ({
         target.nodeName !== 'MARK' ||
         target.dataset.color !== 'yellow'
       ) {
-        return;
+        return false;
       }
 
       const highlightedText = target.textContent;
       const pos = view.posAtCoords({ left: event.clientX, top: event.clientY });
 
-      if (!pos) return;
+      if (!pos) return false;
 
       const { state } = view;
       let from = pos.pos;
@@ -1321,7 +1344,7 @@ const useCommentInteraction = ({
         }
       });
 
-      if (from === to) return;
+      if (from === to) return false;
 
       const data = {
         text: highlightedText,
@@ -1329,9 +1352,11 @@ const useCommentInteraction = ({
         to,
         isHighlightedYellow: isHighlightedYellow(state, from, to),
       };
-      onCommentInteraction?.(data);
+      onCommentInteractionRef.current?.(data);
+
+      return false;
     },
-    [isHighlightedYellow, onCommentInteraction],
+    [isHighlightedYellow],
   );
 
   const handleCommentClick = useCallback(

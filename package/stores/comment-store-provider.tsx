@@ -550,8 +550,18 @@ export const CommentStoreProvider = ({
             focusedFloatingThreadId === selectedCommentId) ||
         Boolean(transaction?.getMeta('pointer')) ||
         isExplicitUiThreadSync;
+      // Focus mode should still allow the editor selection to move, but plain
+      // canvas clicks must not wake the thread UI back up unless the sync came
+      // from an explicit thread navigation action.
+      const shouldIgnoreFocusModePointerSelection = Boolean(
+        isFocusMode &&
+          selectedCommentId &&
+          transaction?.getMeta('pointer') &&
+          !isExplicitUiThreadSync,
+      );
       const shouldOpenDesktopThreadFromSelection = Boolean(
         selectedCommentId &&
+          !shouldIgnoreFocusModePointerSelection &&
           shouldSyncEditorSelectedThread &&
           isDesktopFloatingEnabled &&
           (isExplicitUiThreadSync ||
@@ -570,7 +580,11 @@ export const CommentStoreProvider = ({
         state.setIsCommentResolved(nextCommentResolved);
       }
 
-      if (selectedCommentId && shouldSyncEditorSelectedThread) {
+      if (
+        selectedCommentId &&
+        shouldSyncEditorSelectedThread &&
+        !shouldIgnoreFocusModePointerSelection
+      ) {
         // Treat mark-based and decoration-based activations the same here so
         // mobile highlight taps always route into a concrete drawer thread.
         const shouldScrollSelectedCommentIntoView =
@@ -901,6 +915,7 @@ export const CommentStoreProvider = ({
     commentAnchorsRef,
     editor,
     isDesktopFloatingEnabled,
+    isFocusMode,
     refreshCommentAnchorState,
     scheduleMobileCommentScroll,
     setActiveCommentId,
