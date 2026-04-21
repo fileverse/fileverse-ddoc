@@ -192,6 +192,69 @@ const getCommentAnchorSelector = (commentId: string) => {
   return `[data-comment-id="${safeCommentId}"]`;
 };
 
+const getHydratedThreadDecorationAnchor = ({
+  commentId,
+  decorationAnchorById,
+  commentAnchorsRef,
+}: {
+  commentId: string;
+  decorationAnchorById?: Map<string, CommentAnchor>;
+  commentAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
+}) => {
+  if (!commentId || !commentAnchorsRef) {
+    return null;
+  }
+
+  return (
+    decorationAnchorById?.get(commentId) ??
+    commentAnchorsRef.current.find((anchor) => anchor.id === commentId) ??
+    null
+  );
+};
+
+const hasResolvableCommentAnchor = ({
+  anchor,
+  editor,
+}: {
+  anchor: CommentAnchor;
+  editor: Editor;
+}) => {
+  const anchorRange = resolveCommentAnchorRangeInState(anchor, editor.state);
+
+  return Boolean(anchorRange && anchorRange.from < anchorRange.to);
+};
+
+const hasValidPendingPrehydrationFloatingThreadAnchor = ({
+  commentId,
+  decorationAnchorById,
+  commentAnchorsRef,
+  editor,
+}: {
+  commentId: string;
+  decorationAnchorById?: Map<string, CommentAnchor>;
+  commentAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
+  editor: Editor;
+}) => {
+  if (!commentId || editor.isDestroyed) {
+    return false;
+  }
+
+  // Pending prehydration threads must prove they still own a live decoration
+  // anchor.
+  const decorationAnchor = getHydratedThreadDecorationAnchor({
+    commentId,
+    decorationAnchorById,
+    commentAnchorsRef,
+  });
+
+  return Boolean(
+    decorationAnchor &&
+      !decorationAnchor.deleted &&
+      !decorationAnchor.resolved &&
+      hasResolvableCommentAnchor({ anchor: decorationAnchor, editor }),
+  );
+};
+
 const hasValidHydratedThreadAnchor = ({
   comment,
   decorationAnchorById,
@@ -210,27 +273,63 @@ const hasValidHydratedThreadAnchor = ({
   }
 
   if (commentAnchorsRef) {
-    const decorationAnchor =
-      decorationAnchorById?.get(commentId) ??
-      commentAnchorsRef.current.find((anchor) => anchor.id === commentId);
+    const decorationAnchor = getHydratedThreadDecorationAnchor({
+      commentId,
+      decorationAnchorById,
+      commentAnchorsRef,
+    });
 
     if (decorationAnchor) {
       if (decorationAnchor.deleted || decorationAnchor.resolved) {
         return false;
       }
 
-      const anchorRange = resolveCommentAnchorRangeInState(
-        decorationAnchor,
-        editor.state,
-      );
-
-      return Boolean(anchorRange && anchorRange.from < anchorRange.to);
+      return hasResolvableCommentAnchor({
+        anchor: decorationAnchor,
+        editor,
+      });
     }
   }
 
   return Boolean(
     editor.view?.dom.querySelector(getCommentAnchorSelector(commentId)),
   );
+};
+
+const addPendingPrehydrationFloatingThreadId = (
+  pendingCommentIds: string[],
+  commentId: string | null | undefined,
+) => {
+  if (!commentId || pendingCommentIds.includes(commentId)) {
+    return pendingCommentIds;
+  }
+
+  return [...pendingCommentIds, commentId];
+};
+
+const removePendingPrehydrationFloatingThreadIds = (
+  pendingCommentIds: string[],
+  commentIdsToRemove: Iterable<string>,
+) => {
+  const idsToRemove = new Set<string>();
+
+  for (const commentId of commentIdsToRemove) {
+    if (commentId) {
+      idsToRemove.add(commentId);
+    }
+  }
+
+  if (!idsToRemove.size) {
+    return pendingCommentIds;
+  }
+
+  const nextPendingCommentIds = pendingCommentIds.filter(
+    (commentId) => !idsToRemove.has(commentId),
+  );
+
+  return nextPendingCommentIds.length === pendingCommentIds.length
+    ? pendingCommentIds
+    : nextPendingCommentIds;
 };
 
 const areFloatingCardsEqual = (
@@ -385,6 +484,9 @@ export interface CommentStoreState {
   isBubbleMenuSuppressed: boolean;
   inlineCommentData: InlineCommentData;
   floatingCards: CommentFloatingCard[];
+  // Tracks just-created floating threads that already have a local anchor but
+  // have not been rehydrated into canonical comment props yet.
+  pendingPrehydrationFloatingThreadIds: string[];
   inlineDrafts: InlineDraftRecordMap;
   activeDraftId: string | null;
   isDesktopFloatingEnabled: boolean;
@@ -569,6 +671,7 @@ export const createCommentStore = () =>
       handleClick: false,
     },
     floatingCards: [],
+    pendingPrehydrationFloatingThreadIds: [],
     inlineDrafts: {},
     activeDraftId: null,
     isDesktopFloatingEnabled: false,
@@ -619,7 +722,12 @@ export const createCommentStore = () =>
     setInitialComments: (comments) => {
       set({ initialComments: comments });
       // Recompute in same tick — Zustand batches synchronous set() calls
-      const { activeTabId, activeCommentId, openReplyId } = get();
+      const {
+        activeTabId,
+        activeCommentId,
+        openReplyId,
+        pendingPrehydrationFloatingThreadIds,
+      } = get();
       const tabComments = comments.filter(
         (comment) => (comment.tabId || DEFAULT_TAB_ID) === activeTabId,
       );
@@ -643,6 +751,9 @@ export const createCommentStore = () =>
       )
         ? openReplyId
         : null;
+      const incomingCommentIds = comments.flatMap((comment) =>
+        comment.id ? [comment.id] : [],
+      );
 
       set({
         tabComments,
@@ -650,6 +761,13 @@ export const createCommentStore = () =>
         activeComment,
         activeCommentIndex,
         openReplyId: nextOpenReplyId,
+        // External comment rehydration is the handoff point. Once the comment
+        // arrives through props, stop treating it as a local preserve exception.
+        pendingPrehydrationFloatingThreadIds:
+          removePendingPrehydrationFloatingThreadIds(
+            pendingPrehydrationFloatingThreadIds,
+            incomingCommentIds,
+          ),
       });
     },
     setUsername: (username) => {
@@ -694,13 +812,18 @@ export const createCommentStore = () =>
         }
       }
 
-      set({
+      set((state) => ({
         activeTabId: tabId,
         inlineDrafts: activeTabId === tabId ? inlineDrafts : {},
         activeDraftId: activeTabId === tabId ? activeDraftId : null,
         isCommentOpen: activeTabId === tabId ? isCommentOpen : false,
         openReplyId: activeTabId === tabId ? openReplyId : null,
-      });
+        // The prehydration exception is scoped to the tab that created it.
+        pendingPrehydrationFloatingThreadIds:
+          activeTabId === tabId
+            ? state.pendingPrehydrationFloatingThreadIds
+            : [],
+      }));
       get()._recomputeDerived();
     },
     setIsConnected: (connected) => set({ isConnected: connected }),
@@ -1266,6 +1389,26 @@ export const createCommentStore = () =>
           (floatingCard) =>
             floatingCard.type === 'draft' && floatingCard.draftId === draftId,
         );
+        const nextResolvedFloatingCards =
+          replacementThreadCard && replacementIndex >= 0
+            ? nextFloatingCards.map((floatingCard) =>
+                floatingCard.type === 'draft' &&
+                floatingCard.draftId === draftId
+                  ? replacementThreadCard
+                  : {
+                      ...floatingCard,
+                      isFocused: false,
+                    },
+              )
+            : replacementThreadCard
+              ? [
+                  ...nextFloatingCards.map((floatingCard) => ({
+                    ...floatingCard,
+                    isFocused: false,
+                  })),
+                  replacementThreadCard,
+                ]
+              : nextFloatingCards;
 
         return {
           activeDraftId:
@@ -1277,26 +1420,15 @@ export const createCommentStore = () =>
           inlineDrafts: removeInlineDraft(state.inlineDrafts, draftId),
           // Replace the draft card in place so the floating comments keep the same visual
           // identity instead of closing and reopening as a separate thread card.
-          floatingCards:
-            replacementThreadCard && replacementIndex >= 0
-              ? nextFloatingCards.map((floatingCard) =>
-                  floatingCard.type === 'draft' &&
-                  floatingCard.draftId === draftId
-                    ? replacementThreadCard
-                    : {
-                        ...floatingCard,
-                        isFocused: false,
-                      },
-                )
-              : replacementThreadCard
-                ? [
-                    ...nextFloatingCards.map((floatingCard) => ({
-                      ...floatingCard,
-                      isFocused: false,
-                    })),
-                    replacementThreadCard,
-                  ]
-                : nextFloatingCards,
+          floatingCards: nextResolvedFloatingCards,
+          // Mark this thread as locally created so reconcile can preserve it
+          // only until consumer-owned comments catch up.
+          pendingPrehydrationFloatingThreadIds: replacementThreadCard
+            ? addPendingPrehydrationFloatingThreadId(
+                state.pendingPrehydrationFloatingThreadIds,
+                newComment.id,
+              )
+            : state.pendingPrehydrationFloatingThreadIds,
         };
       });
     },
@@ -1473,9 +1605,33 @@ export const createCommentStore = () =>
         activeTabId,
         floatingCards,
         isDesktopFloatingEnabled,
+        pendingPrehydrationFloatingThreadIds,
         tabComments,
       } = get();
       const validThreadCommentById = new Map<string, IComment>();
+      const pendingPrehydrationFloatingThreadIdSet = new Set(
+        pendingPrehydrationFloatingThreadIds,
+      );
+      const pendingPrehydrationThreadIdsToClear = new Set<string>();
+      const tabCommentIdSet = new Set(
+        tabComments.flatMap((comment) => (comment.id ? [comment.id] : [])),
+      );
+      const focusedFloatingThreadCard = floatingCards.find(
+        (
+          floatingCard,
+        ): floatingCard is Extract<CommentFloatingCard, { type: 'thread' }> =>
+          isFloatingThreadCard(floatingCard) && floatingCard.isFocused,
+      );
+      const decorationAnchorById =
+        hydrationReady &&
+        isDesktopFloatingEnabled &&
+        editor &&
+        !editor.isDestroyed &&
+        commentAnchorsRef
+          ? new Map(
+              commentAnchorsRef.current.map((anchor) => [anchor.id, anchor]),
+            )
+          : undefined;
 
       if (
         hydrationReady &&
@@ -1483,12 +1639,6 @@ export const createCommentStore = () =>
         editor &&
         !editor.isDestroyed
       ) {
-        const decorationAnchorById = commentAnchorsRef
-          ? new Map(
-              commentAnchorsRef.current.map((anchor) => [anchor.id, anchor]),
-            )
-          : undefined;
-
         tabComments.forEach((comment) => {
           const commentId = comment.id;
 
@@ -1517,7 +1667,57 @@ export const createCommentStore = () =>
 
           validThreadCommentById.set(commentId, comment);
         });
+
+        pendingPrehydrationFloatingThreadIds.forEach((commentId) => {
+          // Pending ids expire as soon as they hydrate or lose the unresolved
+          // decoration anchor that proves the thread is still valid.
+          if (tabCommentIdSet.has(commentId)) {
+            pendingPrehydrationThreadIdsToClear.add(commentId);
+            return;
+          }
+
+          if (
+            !hasValidPendingPrehydrationFloatingThreadAnchor({
+              commentId,
+              decorationAnchorById,
+              commentAnchorsRef,
+              editor,
+            })
+          ) {
+            pendingPrehydrationThreadIdsToClear.add(commentId);
+          }
+        });
+
+        // Preserve only just-created floating threads whose canonical comment
+        // object has not rehydrated yet. Resolved/deleted threads and any
+        // generic focused card fallback must still reconcile away normally.
+        if (
+          focusedFloatingThreadCard &&
+          pendingPrehydrationFloatingThreadIdSet.has(
+            focusedFloatingThreadCard.commentId,
+          ) &&
+          !tabCommentIdSet.has(focusedFloatingThreadCard.commentId) &&
+          !pendingPrehydrationThreadIdsToClear.has(
+            focusedFloatingThreadCard.commentId,
+          ) &&
+          !validThreadCommentById.has(focusedFloatingThreadCard.commentId)
+        ) {
+          validThreadCommentById.set(focusedFloatingThreadCard.commentId, {
+            id: focusedFloatingThreadCard.commentId,
+            tabId: activeTabId,
+            selectedContent: focusedFloatingThreadCard.selectedText,
+          });
+        }
       }
+
+      const nextPendingPrehydrationFloatingThreadIds =
+        removePendingPrehydrationFloatingThreadIds(
+          pendingPrehydrationFloatingThreadIds,
+          pendingPrehydrationThreadIdsToClear,
+        );
+      const didPendingPrehydrationIdsChange =
+        nextPendingPrehydrationFloatingThreadIds !==
+        pendingPrehydrationFloatingThreadIds;
 
       const focusedThreadCommentId =
         getFocusedFloatingThreadCommentId(floatingCards);
@@ -1584,7 +1784,10 @@ export const createCommentStore = () =>
         });
       });
 
-      if (areFloatingCardsEqual(floatingCards, nextFloatingCards)) {
+      if (
+        areFloatingCardsEqual(floatingCards, nextFloatingCards) &&
+        !didPendingPrehydrationIdsChange
+      ) {
         return;
       }
 
@@ -1599,7 +1802,11 @@ export const createCommentStore = () =>
         editor?.commands.unsetCommentActive();
       }
 
-      set({ floatingCards: nextFloatingCards });
+      set({
+        floatingCards: nextFloatingCards,
+        pendingPrehydrationFloatingThreadIds:
+          nextPendingPrehydrationFloatingThreadIds,
+      });
     },
     // keep active-comment syncing narrow so a simple external focus
     // change does not force a full thread-anchor reconcile.
@@ -1753,6 +1960,13 @@ export const createCommentStore = () =>
               floatingCard.commentId === commentId
             ),
         ),
+        // Local resolves can happen before props rehydrate, so remove the
+        // temporary preserve marker immediately.
+        pendingPrehydrationFloatingThreadIds:
+          removePendingPrehydrationFloatingThreadIds(
+            state.pendingPrehydrationFloatingThreadIds,
+            [commentId],
+          ),
       }));
 
       if (get().activeCommentId === commentId) {
@@ -1839,6 +2053,13 @@ export const createCommentStore = () =>
               floatingCard.commentId === commentId
             ),
         ),
+        // Deletes invalidate the prehydration exception immediately; reconcile
+        // must not preserve a thread whose local lifecycle already ended.
+        pendingPrehydrationFloatingThreadIds:
+          removePendingPrehydrationFloatingThreadIds(
+            state.pendingPrehydrationFloatingThreadIds,
+            [commentId],
+          ),
       }));
 
       if (get().activeCommentId === commentId) {
