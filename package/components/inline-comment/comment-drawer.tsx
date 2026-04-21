@@ -103,6 +103,8 @@ export const CommentDrawer = ({
   );
   const [commentType, setCommentType] = useState('active');
   const [tab, setTab] = useState(ALL_TABS_OPTION_ID);
+  const [isCommentTypeSelectOpen, setIsCommentTypeSelectOpen] = useState(false);
+  const [isTabSelectOpen, setIsTabSelectOpen] = useState(false);
   const selectedCommentTabId = tab === ALL_TABS_OPTION_ID ? activeTabId : tab;
   const selectedTabLabel =
     tabList.find((tabOption) => tabOption.id === tab)?.label ??
@@ -152,6 +154,22 @@ export const CommentDrawer = ({
     setTab(nextTab);
   };
 
+  const handleCommentTypeSelectOpenChange = (open: boolean) => {
+    setIsCommentTypeSelectOpen(open);
+
+    if (open) {
+      setIsTabSelectOpen(false);
+    }
+  };
+
+  const handleTabSelectOpenChange = (open: boolean) => {
+    setIsTabSelectOpen(open);
+
+    if (open) {
+      setIsCommentTypeSelectOpen(false);
+    }
+  };
+
   const handleCommentFocus = (commentId: string, commentTabId?: string) => {
     const targetTabId = commentTabId || DEFAULT_TAB_ID;
 
@@ -172,6 +190,8 @@ export const CommentDrawer = ({
   useEffect(() => {
     if (!isOpen && !isInlineDraftOpen) {
       setIsDiscardCommentOverlayVisible(false);
+      setIsCommentTypeSelectOpen(false);
+      setIsTabSelectOpen(false);
     }
   }, [isInlineDraftOpen, isOpen]);
 
@@ -494,7 +514,12 @@ export const CommentDrawer = ({
             >
               {(isConnected || isCollaborationEnabled) && (
                 <div className="flex mb-[16px] px-4 gap-[8px]">
-                  <Select value={commentType} onValueChange={setCommentType}>
+                  <Select
+                    value={commentType}
+                    open={isCommentTypeSelectOpen}
+                    onOpenChange={handleCommentTypeSelectOpenChange}
+                    onValueChange={setCommentType}
+                  >
                     <SelectTrigger className="w-[148px]">
                       <SelectValue placeholder="Active" />
                     </SelectTrigger>
@@ -506,7 +531,12 @@ export const CommentDrawer = ({
                       ))}
                     </SelectContent>
                   </Select>
-                  <Select value={tab} onValueChange={handleTabChange}>
+                  <Select
+                    value={tab}
+                    open={isTabSelectOpen}
+                    onOpenChange={handleTabSelectOpenChange}
+                    onValueChange={handleTabChange}
+                  >
                     <SelectTrigger className="w-[148px]">
                       <SelectValue placeholder="All tabs" />
                     </SelectTrigger>
