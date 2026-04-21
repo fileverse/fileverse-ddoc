@@ -44,7 +44,11 @@ export const useHeadlessEditor = (props?: UseHeadlessEditorProps) => {
       ...getOptionalExtensions(),
     ];
     // @ts-ignore
-    const editor = new Editor({ extensions, autofocus: false });
+    const editor = new Editor({
+      extensions,
+      textDirection: 'auto',
+      autofocus: false,
+    });
     return { editor, ydoc };
   };
 

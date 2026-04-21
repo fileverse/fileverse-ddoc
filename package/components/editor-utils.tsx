@@ -294,7 +294,8 @@ export const useEditorToolbar = ({
 
             if (selectedText) {
               const storedTheme = localStorage.getItem('theme');
-              const isDarkTheme = storedTheme === 'dark' || storedTheme === 'theme-green';
+              const isDarkTheme =
+                storedTheme === 'dark' || storedTheme === 'theme-green';
               editor
                 .chain()
                 .setHighlight({
@@ -727,6 +728,23 @@ export const useEditorToolbar = ({
           .focus()
           .insertTable({ rows: 3, cols: 2, withHeaderRow: true })
           .run(),
+      isActive: false,
+      group: 'More',
+      notVisible: 1560,
+    },
+    null,
+    {
+      icon: 'PilcrowRight',
+      title: 'Set text direction to left-to-right',
+      onClick: () => editor?.commands.setTextDirection('ltr'),
+      isActive: false,
+      group: 'More',
+      notVisible: 1560,
+    },
+    {
+      icon: 'PilcrowLeft',
+      title: 'Set text direction to right-to-left',
+      onClick: () => editor?.commands.setTextDirection('rtl'),
       isActive: false,
       group: 'More',
       notVisible: 1560,

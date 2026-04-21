@@ -333,6 +333,7 @@ export const useTabEditor = ({
           spellCheck: 'true',
         },
       },
+      textDirection: 'auto',
       autofocus:
         unFocused || !isInitialEditorCreation.current ? false : 'start',
       immediatelyRender: false,
