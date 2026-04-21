@@ -9,7 +9,12 @@ import {
   MutableRefObject,
   SetStateAction,
 } from 'react';
-import { DdocProps, DdocEditorProps, ThemeKey } from '../types';
+import {
+  DdocProps,
+  DdocEditorProps,
+  SerializedCommentAnchor,
+  ThemeKey,
+} from '../types';
 import * as Y from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration';
 import { defaultExtensions } from '../extensions/default-extension';
@@ -46,6 +51,10 @@ import { useResponsive } from '../utils/responsive';
 import { yCursorPlugin, yCursorPluginKey } from '@tiptap/y-tiptap';
 import { getResponsiveColor } from '../utils/colors';
 import { getEditorScrollContainer } from '../utils/get-editor-scroll-container';
+import {
+  deserializeCommentAnchors,
+  getSerializedCommentAnchorsKey,
+} from '../utils/comment-anchor-serialization';
 import {
   CollabConnectionConfig,
   CollaborationProps,
@@ -165,6 +174,7 @@ interface UseTabEditorArgs {
   activeTabId: string;
   theme?: ThemeKey;
   editorRef?: MutableRefObject<Editor | null>;
+  initialCommentAnchors?: SerializedCommentAnchor[];
 }
 
 export const useTabEditor = ({
@@ -210,6 +220,7 @@ export const useTabEditor = ({
   activeTabId,
   theme,
   editorRef,
+  initialCommentAnchors,
 }: UseTabEditorArgs) => {
   const collabEnabled = collaboration?.enabled === true;
   const connection = collabEnabled ? collaboration.connection : null;
@@ -244,6 +255,7 @@ export const useTabEditor = ({
     onTocUpdate: handleTocUpdate,
     externalExtensions,
     activeTabId,
+    initialCommentAnchors,
   });
 
   const { handleCommentInteraction, handleCommentClick } =
@@ -1122,6 +1134,7 @@ interface UseExtensionStackArgs {
   onTocUpdate: (data: ToCItemType[], isCreate: boolean | undefined) => void;
   externalExtensions?: Record<string, AnyExtension>;
   activeTabId: string;
+  initialCommentAnchors?: SerializedCommentAnchor[];
 }
 
 const useEditorExtension = ({
@@ -1144,6 +1157,7 @@ const useEditorExtension = ({
   onTocUpdate,
   externalExtensions,
   activeTabId,
+  initialCommentAnchors,
 }: UseExtensionStackArgs) => {
   const slashCommandConfigRef = useRef({
     isConnected,
@@ -1168,7 +1182,17 @@ const useEditorExtension = ({
     [],
   );
 
-  const commentAnchorsRef = useRef<CommentAnchor[]>([]);
+  const initialCommentAnchorsKey = useMemo(
+    () => getSerializedCommentAnchorsKey(initialCommentAnchors),
+    [initialCommentAnchors],
+  );
+  const initialCommentAnchorState = useMemo(
+    () => deserializeCommentAnchors(initialCommentAnchors),
+    [initialCommentAnchorsKey],
+  );
+  // Seed persisted anchors before editor creation so the decoration plugin can
+  // render the initial highlight set on first paint.
+  const commentAnchorsRef = useRef<CommentAnchor[]>(initialCommentAnchorState);
   const activeCommentIdRef = useRef<string | null>(activeCommentId);
 
   useEffect(() => {

@@ -292,6 +292,7 @@ const DdocEditor = forwardRef(
       setIsCommentSectionOpen,
       setInlineCommentData,
       inlineCommentData,
+      initialCommentAnchors,
       theme,
       zoomLevel,
       setZoomLevel,

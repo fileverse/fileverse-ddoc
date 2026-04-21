@@ -24,6 +24,10 @@ import {
 import { CommentMutationMeta, SerializedCommentAnchor } from '../types';
 import { useResponsive } from '../utils/responsive';
 import {
+  deserializeCommentAnchors,
+  getSerializedCommentAnchorsKey,
+} from '../utils/comment-anchor-serialization';
+import {
   resolveCommentSelectionRange,
   scrollCommentSelectionRangeIntoView,
 } from '../utils/comment-scroll-into-view';
@@ -268,42 +272,25 @@ export const CommentStoreProvider = ({
     store.getState().setInitialComments(initialComments);
   }, [initialComments, store]);
 
-  // Deserialize consumer-provided anchors into commentAnchorsRef.
-  // Trigger rebuild only when anchors actually change, not on editor init.
-  const prevAnchorKeyRef = useRef<string | null>(null);
+  const serializedInitialCommentAnchorsKey = useMemo(
+    () => getSerializedCommentAnchorsKey(initialCommentAnchors),
+    [initialCommentAnchors],
+  );
+  // Keep editor-owned anchors in sync if the consumer later replaces the
+  // serialized anchors after mount. Initial seeding happens before editor init.
+  const prevAnchorKeyRef = useRef<string | null>(
+    commentAnchorsRef?.current.length
+      ? serializedInitialCommentAnchorsKey
+      : null,
+  );
   useEffect(() => {
-    if (!initialCommentAnchors || !commentAnchorsRef) return;
+    if (!commentAnchorsRef) return;
+    if (serializedInitialCommentAnchorsKey === prevAnchorKeyRef.current) return;
 
-    const key = initialCommentAnchors
-      .map(
-        (a) =>
-          `${a.id}:${a.anchorFrom}:${a.anchorTo}:${a.resolved}:${a.deleted}`,
-      )
-      .join(',');
-    if (key === prevAnchorKeyRef.current) return;
-    prevAnchorKeyRef.current = key;
-
-    const deserialized: CommentAnchor[] = initialCommentAnchors
-      .map((a) => {
-        try {
-          return {
-            id: a.id,
-            anchorFrom: Y.decodeRelativePosition(
-              Uint8Array.from(atob(a.anchorFrom), (c) => c.charCodeAt(0)),
-            ),
-            anchorTo: Y.decodeRelativePosition(
-              Uint8Array.from(atob(a.anchorTo), (c) => c.charCodeAt(0)),
-            ),
-            resolved: a.resolved,
-            deleted: a.deleted,
-          };
-        } catch {
-          return null;
-        }
-      })
-      .filter((a): a is CommentAnchor => a !== null);
-
-    commentAnchorsRef.current = deserialized;
+    prevAnchorKeyRef.current = serializedInitialCommentAnchorsKey;
+    commentAnchorsRef.current = deserializeCommentAnchors(
+      initialCommentAnchors,
+    );
 
     if (editor) {
       triggerDecorationRebuild(editor);
@@ -311,6 +298,7 @@ export const CommentStoreProvider = ({
     }
   }, [
     initialCommentAnchors,
+    serializedInitialCommentAnchorsKey,
     commentAnchorsRef,
     editor,
     refreshCommentAnchorState,

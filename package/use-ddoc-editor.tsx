@@ -38,6 +38,7 @@ export const useDdocEditor = ({
   isAIAgentEnabled,
   onIndexedDbError,
   disableInlineComment,
+  initialCommentAnchors,
   ...rest
 }: Partial<DdocProps> & { isFocusMode?: boolean }) => {
   const [isContentLoading, setIsContentLoading] = useState(true);
@@ -134,6 +135,7 @@ export const useDdocEditor = ({
     isVersionMode,
     theme,
     editorRef,
+    initialCommentAnchors,
   });
 
   const isOwner = collabEnabled ? collaboration.connection.isOwner : true;
