@@ -24,6 +24,10 @@ import {
 import { CommentMutationMeta, SerializedCommentAnchor } from '../types';
 import { useResponsive } from '../utils/responsive';
 import {
+  resolveCommentSelectionRange,
+  scrollCommentSelectionRangeIntoView,
+} from '../utils/comment-scroll-into-view';
+import {
   CommentExternalDeps,
   CommentStoreContext,
   createCommentStore,
@@ -121,6 +125,61 @@ export const CommentStoreProvider = ({
     useState<string | null>(activeTabId);
   const activeCommentAnchorIdsTabIdRef = useRef<string | null>(activeTabId);
   const activeCommentAnchorIdsKeyRef = useRef('');
+  const pendingMobileCommentScrollFrameRef = useRef<number | null>(null);
+  const pendingMobileCommentScrollSecondFrameRef = useRef<number | null>(null);
+
+  const cancelPendingMobileCommentScroll = useCallback(() => {
+    if (pendingMobileCommentScrollFrameRef.current !== null) {
+      window.cancelAnimationFrame(pendingMobileCommentScrollFrameRef.current);
+      pendingMobileCommentScrollFrameRef.current = null;
+    }
+
+    if (pendingMobileCommentScrollSecondFrameRef.current !== null) {
+      window.cancelAnimationFrame(
+        pendingMobileCommentScrollSecondFrameRef.current,
+      );
+      pendingMobileCommentScrollSecondFrameRef.current = null;
+    }
+  }, []);
+
+  const scheduleMobileCommentScroll = useCallback(
+    (commentId: string) => {
+      if (!editor) {
+        return;
+      }
+
+      cancelPendingMobileCommentScroll();
+
+      pendingMobileCommentScrollFrameRef.current = window.requestAnimationFrame(
+        () => {
+          pendingMobileCommentScrollFrameRef.current = null;
+
+          pendingMobileCommentScrollSecondFrameRef.current =
+            window.requestAnimationFrame(() => {
+              pendingMobileCommentScrollSecondFrameRef.current = null;
+
+              // Wait until the drawer and active-highlight styles have settled
+              // before measuring how much room remains above the mobile sheet.
+              const selectionRange = resolveCommentSelectionRange({
+                editor,
+                commentId,
+                commentAnchorsRef,
+              });
+
+              if (!selectionRange) {
+                return;
+              }
+
+              scrollCommentSelectionRangeIntoView({
+                editor,
+                selectionRange,
+              });
+            });
+        },
+      );
+    },
+    [cancelPendingMobileCommentScroll, commentAnchorsRef, editor],
+  );
 
   const refreshCommentAnchorState = useCallback(() => {
     const activeAnchorIds =
@@ -340,6 +399,13 @@ export const CommentStoreProvider = ({
     store.getState().setIsDesktopFloatingEnabled(isDesktopFloatingEnabled);
   }, [isDesktopFloatingEnabled, store]);
 
+  useEffect(
+    () => () => {
+      cancelPendingMobileCommentScroll();
+    },
+    [cancelPendingMobileCommentScroll],
+  );
+
   useEffect(() => {
     const hydrationReady = Boolean(
       isDesktopFloatingEnabled &&
@@ -460,6 +526,13 @@ export const CommentStoreProvider = ({
       if (selectedCommentId && shouldSyncEditorSelectedThread) {
         // Treat mark-based and decoration-based activations the same here so
         // mobile highlight taps always route into a concrete drawer thread.
+        const shouldScrollSelectedCommentIntoView =
+          !isDesktopFloatingEnabled &&
+          Boolean(
+            transaction?.getMeta('pointer') ||
+              state.openReplyId !== selectedCommentId,
+          );
+
         if (state.activeCommentId !== selectedCommentId) {
           state.setActiveCommentId(selectedCommentId);
         }
@@ -469,6 +542,10 @@ export const CommentStoreProvider = ({
         if (!isDesktopFloatingEnabled) {
           state.setOpenReplyId(selectedCommentId);
           state.setCommentDrawerOpen?.(true);
+
+          if (shouldScrollSelectedCommentIntoView) {
+            scheduleMobileCommentScroll(selectedCommentId);
+          }
         }
       }
 
@@ -778,6 +855,7 @@ export const CommentStoreProvider = ({
     editor,
     isDesktopFloatingEnabled,
     refreshCommentAnchorState,
+    scheduleMobileCommentScroll,
     setActiveCommentId,
     store,
   ]);

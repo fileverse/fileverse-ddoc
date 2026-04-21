@@ -20,6 +20,7 @@ import { useEscapeKey } from '../../hooks/useEscapeKey';
 import { DEFAULT_TAB_ID, DEFAULT_TAB_NAME } from '../tabs/utils/tab-utils';
 import { useCommentRefs } from '../../stores/comment-store-provider';
 import { resizeInlineCommentTextarea } from './resize-inline-comment-textarea';
+import { clearMobileCommentDrawerCanvasOffset } from '../../utils/comment-scroll-into-view';
 
 const ALL_TABS_OPTION_ID = '__all_tabs__';
 
@@ -175,6 +176,26 @@ export const CommentDrawer = ({
   }, [isInlineDraftOpen, isOpen]);
 
   useEffect(() => {
+    // Keep the canvas lift scoped to the one state that actually needs it:
+    // a focused mobile thread with the drawer sheet covering the viewport.
+    if (
+      isBelow1280px &&
+      isOpen &&
+      isCommentMobileFocused &&
+      !isInlineDraftOpen
+    ) {
+      return () => {
+        clearMobileCommentDrawerCanvasOffset();
+      };
+    }
+
+    clearMobileCommentDrawerCanvasOffset();
+    return () => {
+      clearMobileCommentDrawerCanvasOffset();
+    };
+  }, [isBelow1280px, isCommentMobileFocused, isInlineDraftOpen, isOpen]);
+
+  useEffect(() => {
     if (
       !pendingCommentFocus ||
       pendingCommentFocus.tabId !== activeTabId ||
@@ -296,6 +317,7 @@ export const CommentDrawer = ({
           {isInlineDraftOpen ? (
             <div
               ref={mobileDraftRef}
+              data-mobile-comment-drawer-sheet
               className="p-4 rounded-t-[12px] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] w-full color-bg-secondary"
             >
               <div className="flex justify-between mb-[16px] items-center">
@@ -361,7 +383,10 @@ export const CommentDrawer = ({
               />
             </div>
           ) : (
-            <div className="h-[456px] max-h-[80dvh] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] rounded-t-[12px]  p-4 w-full color-bg-secondary flex flex-col">
+            <div
+              data-mobile-comment-drawer-sheet
+              className="h-[456px] max-h-[80dvh] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] rounded-t-[12px]  p-4 w-full color-bg-secondary flex flex-col"
+            >
               {isCommentMobileFocused ? (
                 <div className="flex justify-between items-center">
                   <button

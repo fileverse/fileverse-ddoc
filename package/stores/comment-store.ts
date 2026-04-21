@@ -4,7 +4,6 @@ import React from 'react';
 import {
   CommentAnchor,
   createCommentAnchorFromEditor,
-  getCommentAnchorRange,
   resolveCommentAnchorRangeInState,
   triggerDecorationRebuild,
 } from '../extensions/comment/comment-decoration-plugin';
@@ -26,7 +25,10 @@ import { DEFAULT_TAB_ID } from '../components/tabs/utils/tab-utils';
 import { getDraftCommentRange, IComment } from '../extensions/comment';
 import { CommentMutationMeta, CommentMutationType } from '../types';
 import { getAddressName } from '../utils/getAddressName';
-import { getEditorScrollContainer } from '../utils/get-editor-scroll-container';
+import {
+  resolveCommentSelectionRange,
+  scrollCommentSelectionRangeIntoView,
+} from '../utils/comment-scroll-into-view';
 
 export interface CommentExternalDeps {
   editor: Editor | null;
@@ -2031,33 +2033,11 @@ export const createCommentStore = () =>
           return;
         }
 
-        const anchorRange = commentAnchorsRef
-          ? getCommentAnchorRange(
-              editor,
-              commentId,
-              () => commentAnchorsRef.current,
-            )
-          : null;
-        // Prefer the persisted anchor range over DOM-derived offsets. The DOM
-        // fallback is only for older or partially-hydrated comments that do not
-        // yet have a resolvable anchor record.
-        const selectionRange =
-          anchorRange ??
-          (() => {
-            const commentElement = editor.view.dom.querySelector<HTMLElement>(
-              `[data-comment-id="${commentId}"]`,
-            );
-
-            if (!commentElement) {
-              return null;
-            }
-
-            const from = editor.view.posAtDOM(commentElement, 0);
-            return {
-              from,
-              to: from + (commentElement.textContent?.length ?? 0),
-            };
-          })();
+        const selectionRange = resolveCommentSelectionRange({
+          editor,
+          commentId,
+          commentAnchorsRef,
+        });
 
         if (selectionRange) {
           const tr = editor.state.tr.setSelection(
@@ -2087,33 +2067,9 @@ export const createCommentStore = () =>
           // active comment styling settle before measuring scroll coordinates.
           requestAnimationFrame(() => {
             requestAnimationFrame(() => {
-              const editorRoot = editor.view.dom as HTMLElement;
-              const scrollContainer = getEditorScrollContainer({
-                targetElement: editorRoot,
-                editorRoot,
-              });
-
-              if (!scrollContainer) {
-                return;
-              }
-
-              const containerRect = scrollContainer.getBoundingClientRect();
-              const startRect = editor.view.coordsAtPos(selectionRange.from);
-              const endRect = editor.view.coordsAtPos(
-                Math.max(selectionRange.from, selectionRange.to - 1),
-              );
-              const targetTop = Math.min(startRect.top, endRect.top);
-              const targetBottom = Math.max(startRect.bottom, endRect.bottom);
-              const targetHeight = Math.max(1, targetBottom - targetTop);
-
-              scrollContainer.scrollTo({
-                top:
-                  scrollContainer.scrollTop +
-                  targetTop -
-                  containerRect.top -
-                  containerRect.height / 2 +
-                  targetHeight / 2,
-                behavior: 'smooth',
+              scrollCommentSelectionRangeIntoView({
+                editor,
+                selectionRange,
               });
             });
           });

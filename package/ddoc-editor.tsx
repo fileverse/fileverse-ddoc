@@ -757,6 +757,16 @@ const DdocEditor = forwardRef(
                         'editor-comment-layout relative shrink-0 overflow-visible',
                         isMobile && 'w-full',
                       )}
+                      // Visual-only lift for the mobile focused-thread case.
+                      // The actual scroll position still lives on the container.
+                      style={
+                        isBelow1280px
+                          ? {
+                              transform:
+                                'translateY(var(--mobile-comment-drawer-canvas-offset, 0px))',
+                            }
+                          : undefined
+                      }
                     >
                       <div
                         id="editor-wrapper"
