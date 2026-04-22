@@ -179,6 +179,37 @@ function App() {
   const [disableInlineComment, setDisableInlineComment] = useState(false);
   const [isDDocOwner, setIsDDocOwner] = useState(true);
   const [viewerMode, setViewerMode] = useState<'suggest' | 'view-only' | undefined>(undefined);
+
+  // Single mode picker for the demo navbar — cycles
+  // Owner → Viewer/Suggest → Viewer/View-only → Owner.
+  const cycleMode = () => {
+    if (isDDocOwner) {
+      setIsDDocOwner(false);
+      setIsPreviewMode(true);
+      setViewerMode('suggest');
+    } else if (viewerMode === 'suggest') {
+      setViewerMode('view-only');
+    } else {
+      setIsDDocOwner(true);
+      setIsPreviewMode(false);
+      setViewerMode(undefined);
+    }
+  };
+  const modeIcon = isDDocOwner
+    ? 'Crown'
+    : viewerMode === 'suggest'
+      ? 'PenLine'
+      : 'Eye';
+  const modeLabel = isDDocOwner
+    ? 'Owner'
+    : viewerMode === 'suggest'
+      ? 'Suggest'
+      : 'View-only';
+  const nextModeLabel = isDDocOwner
+    ? 'Suggest'
+    : viewerMode === 'suggest'
+      ? 'View-only'
+      : 'Owner';
   const [initialCommentAnchors, setInitialCommentAnchors] = useState<SerializedCommentAnchor[]>([]);
 
   const searchParams = new URLSearchParams(window.location.search);
@@ -414,12 +445,6 @@ function App() {
           </div>
         </div>
         <div className="flex gap-2">
-          <IconButton
-            variant={'ghost'}
-            icon={disableInlineComment ? 'EyeOff' : 'Eye'}
-            size="md"
-            onClick={() => setDisableInlineComment(!disableInlineComment)}
-          />
           <ThemeToggle />
 
           {isMediaMax1280px ? (
@@ -454,50 +479,25 @@ function App() {
                   </Button>
                   <Button
                     variant={'ghost'}
-                    onClick={() => setIsPreviewMode(!isPreviewMode)}
+                    onClick={cycleMode}
                     className="flex justify-start gap-2"
                   >
-                    <LucideIcon
-                      name={isPreviewMode ? 'Pencil' : 'PencilOff'}
-                      size="sm"
-                    />
-                    {isPreviewMode ? 'Edit' : 'Preview'}
+                    <LucideIcon name={modeIcon} size="sm" />
+                    {modeLabel}
                   </Button>
                   <Button
                     variant={'ghost'}
-                    onClick={() => {
-                      if (isDDocOwner) {
-                        setIsDDocOwner(false);
-                        setIsPreviewMode(true);
-                        setViewerMode('suggest');
-                      } else {
-                        setIsDDocOwner(true);
-                        setIsPreviewMode(false);
-                        setViewerMode(undefined);
-                      }
-                    }}
+                    onClick={() => setDisableInlineComment((v) => !v)}
                     className="flex justify-start gap-2"
                   >
-                    <LucideIcon name={isDDocOwner ? 'Crown' : 'User'} size="sm" />
-                    {isDDocOwner ? 'Owner' : 'Viewer'}
+                    <LucideIcon
+                      name={disableInlineComment ? 'EyeOff' : 'Eye'}
+                      size="sm"
+                    />
+                    {disableInlineComment
+                      ? 'Show inline comments'
+                      : 'Hide inline comments'}
                   </Button>
-                  {!isDDocOwner && (
-                    <Button
-                      variant={'ghost'}
-                      onClick={() =>
-                        setViewerMode((v) =>
-                          v === 'suggest' ? 'view-only' : 'suggest',
-                        )
-                      }
-                      className="flex justify-start gap-2"
-                    >
-                      <LucideIcon
-                        name={viewerMode === 'suggest' ? 'PenLine' : 'Eye'}
-                        size="sm"
-                      />
-                      {viewerMode === 'suggest' ? 'Suggest' : 'View-only'}
-                    </Button>
-                  )}
                   <Button
                     variant={'ghost'}
                     onClick={() => {}}
@@ -521,40 +521,11 @@ function App() {
             <>
               <IconButton
                 variant={'ghost'}
-                icon={isPreviewMode ? 'PencilOff' : 'Pencil'}
+                icon={modeIcon}
                 size="md"
-                onClick={() => setIsPreviewMode(!isPreviewMode)}
+                title={`${modeLabel} mode — click to switch to ${nextModeLabel}`}
+                onClick={cycleMode}
               />
-              <IconButton
-                variant={'ghost'}
-                icon={isDDocOwner ? 'Crown' : 'User'}
-                size="md"
-                title={isDDocOwner ? 'Owner mode' : 'Viewer mode'}
-                onClick={() => {
-                  if (isDDocOwner) {
-                    setIsDDocOwner(false);
-                    setIsPreviewMode(true);
-                    setViewerMode('suggest');
-                  } else {
-                    setIsDDocOwner(true);
-                    setIsPreviewMode(false);
-                    setViewerMode(undefined);
-                  }
-                }}
-              />
-              {!isDDocOwner && (
-                <IconButton
-                  variant={'ghost'}
-                  icon={viewerMode === 'suggest' ? 'PenLine' : 'Eye'}
-                  size="md"
-                  title={viewerMode === 'suggest' ? 'Suggest mode' : 'View-only mode'}
-                  onClick={() =>
-                    setViewerMode((v) =>
-                      v === 'suggest' ? 'view-only' : 'suggest',
-                    )
-                  }
-                />
-              )}
               <IconButton
                 variant={'ghost'}
                 icon="Presentation"
