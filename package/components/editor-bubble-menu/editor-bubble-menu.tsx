@@ -105,15 +105,15 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         return true;
       }
 
-      // Mobile native selection can blur the editor while keeping a valid
-      // in-editor text selection alive, so ignore focus for that case only.
+      // Mobile native selection and preview-mode selection can both survive an
+      // editor blur, so ignore focus when the selection still belongs to the editor.
       return (
-        isNativeMobile &&
+        (isNativeMobile || isPreviewMode) &&
         isSelectionInsideEditor(editor) &&
         shouldShowIgnoringFocus(editor)
       );
     },
-    [isNativeMobile],
+    [isNativeMobile, isPreviewMode],
   );
 
   const items: BubbleMenuItem[] = useMemo(() => {
