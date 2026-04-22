@@ -373,6 +373,13 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
   },
 
   onSelectionUpdate() {
+    if (!this.editor.isEditable) {
+      // Read-only views activate comments through the decoration/store path,
+      // not via live mark selection. Let that path own active styling so this
+      // legacy mark sync cannot clear the active decoration class back to null.
+      return;
+    }
+
     const previousActiveCommentId = this.storage.activeCommentId;
     const { $from } = this.editor.state.selection;
     const marks = $from.marks();
