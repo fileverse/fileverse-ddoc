@@ -24,10 +24,10 @@ export const FloatingCardShell = forwardRef<
       ref={ref}
       data-floating-comment-card={floatingCardId}
       className={cn(
-        'absolute left-0 top-0 pb-[12px] rounded-[12px] will-change-transform transition-[box-shadow,border-color] duration-150 ease-out',
+        'absolute left-0 top-0 pb-[12px] border rounded-[12px] will-change-transform transition-[box-shadow,border-color] duration-150 ease-out',
         isFocused
-          ? 'shadow-elevation-3 color-bg-default border color-border-default'
-          : 'hover:color-bg-default-hover hover:border bg-[#00000005] ',
+          ? 'shadow-elevation-3 color-bg-default  color-border-default'
+          : 'hover:color-bg-default-hover border-transparent hover:color-border-default   bg-[#00000005] ',
       )}
       style={{
         width: FLOATING_CARD_WIDTH,

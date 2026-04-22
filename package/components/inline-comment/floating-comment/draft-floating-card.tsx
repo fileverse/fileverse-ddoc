@@ -74,7 +74,7 @@ export const DraftFloatingCard = ({
             />
 
             <span className="text-body-sm-bold inline-flex items-center gap-1 whitespace-nowrap">
-              <p className="truncate max-w-[100px]">
+              <p className="truncate max-w-[230px]">
                 {nameFormatter(ensStatus.name)}
               </p>
               {ensStatus.isEns && (
