@@ -32,7 +32,7 @@ import { useMediaQuery } from 'usehooks-ts';
 import { colors, textColors } from '../utils/colors';
 import { validateImageExtension } from '../utils/check-image-type';
 import { handleContentPrint } from '../utils/handle-print';
-import { useComments } from '../components/inline-comment/context/comment-context';
+import { useCommentRefs } from '../stores/comment-store-provider';
 import {
   convertListToParagraphs,
   convertToList,
@@ -233,7 +233,7 @@ export const useEditorToolbar = ({
     initialFormattingState,
   );
 
-  const { buttonRef } = useComments();
+  const { buttonRef } = useCommentRefs();
 
   useEffect(() => {
     if (!editor) return;

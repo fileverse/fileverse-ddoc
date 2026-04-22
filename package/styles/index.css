@@ -495,3 +495,34 @@ div[data-type='page-break']:hover .remove-page-break-icon {
   display: inline !important;
   line-height: inherit !important;
 }
+
+@media (min-width: 1281px) and (max-width: 1680px) {
+  /* Only force left alignment when floating comment is visible AND zoom >= 100% */
+  .editor-main-lane:has(
+      .comment-floating-comments[data-floating-comment-hidden='false']
+    ):not([data-zoom-below-100='true']) {
+    justify-content: flex-start;
+  }
+
+  .editor-main-lane:has(
+      .comment-floating-comments[data-floating-comment-hidden='false']
+    ):not([data-zoom-below-100='true'])
+    .editor-left-rail.editor-left-rail-has-outline {
+    flex: 0 1 182px;
+    min-width: 0;
+    max-width: 182px;
+  }
+
+  .editor-main-lane:has(
+      .comment-floating-comments[data-floating-comment-hidden='false']
+    ):not([data-zoom-below-100='true'])
+    .editor-left-rail:not(.editor-left-rail-has-outline),
+  .editor-main-lane:has(
+      .comment-floating-comments[data-floating-comment-hidden='false']
+    ):not([data-zoom-below-100='true'])
+    .editor-right-rail {
+    flex: 0 1 0;
+    min-width: 0;
+    max-width: 0;
+  }
+}
