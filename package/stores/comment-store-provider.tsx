@@ -346,17 +346,37 @@ export const CommentStoreProvider = ({
   // this happens when the owner deletes the surrounding text while a viewer
   // has an in-progress draft anchored to it. Per the spec, the draft is
   // lost with no warning.
+  //
+  // Also refreshes `originalContent` on Delete/Replace drafts whose anchor
+  // still resolves but now covers different text (owner edited inside the
+  // anchored range), so the draft card's diff summary stays accurate.
   useEffect(() => {
     if (!editor) return;
     const handler = ({ transaction }: { transaction: Transaction }) => {
       if (!transaction.docChanged) return;
       const state = store.getState();
       for (const draft of Object.values(state.drafts)) {
-        const resolved = draft.hadDeletion
-          ? resolveCommentAnchorRangeInState(draft, editor.state)
-          : resolveCommentAnchorPointInState(draft, editor.state);
-        if (resolved === null) {
+        if (!draft.hadDeletion) {
+          const point = resolveCommentAnchorPointInState(draft, editor.state);
+          if (point === null) {
+            state.discardDraft(draft.id);
+          }
+          continue;
+        }
+
+        const range = resolveCommentAnchorRangeInState(draft, editor.state);
+        if (range === null) {
           state.discardDraft(draft.id);
+          continue;
+        }
+
+        const currentText = editor.state.doc.textBetween(
+          range.from,
+          range.to,
+          '\n',
+        );
+        if (currentText !== draft.originalContent) {
+          state.refreshDraftOriginalContent(draft.id, currentText);
         }
       }
     };

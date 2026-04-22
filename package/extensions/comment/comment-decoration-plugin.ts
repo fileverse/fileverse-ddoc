@@ -460,10 +460,15 @@ function buildDecorations(
   const decorations: Decoration[] = [];
 
   for (const anchor of anchors) {
-    // Skip resolved and deleted anchors; they have no visual representation.
-    if (anchor.deleted || anchor.resolved) {
-      continue;
-    }
+    // Skip deleted anchors entirely.
+    if (anchor.deleted) continue;
+    // Skip resolved anchors. For regular comments this is an explicit resolve.
+    // For suggestions, `resolved: true` arrives only via Accept — at which
+    // point the doc already contains the accepted text (applyAcceptedSuggestion
+    // dispatched the edit). Rendering the strikethrough/widget against the
+    // post-accept doc would put the decoration over the wrong range, so drop
+    // it everywhere.
+    if (anchor.resolved) continue;
 
     // 'add' suggestions: cursor-based, anchorFrom === anchorTo.
     // resolveCommentAnchorRangeInState rejects from >= to, so use point

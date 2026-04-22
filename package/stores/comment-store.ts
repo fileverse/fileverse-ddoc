@@ -708,6 +708,16 @@ export interface CommentStoreState {
   /** Drop a draft entirely — removes the inline overlay and draft card. */
   discardDraft: (suggestionId: string) => void;
   /**
+   * Refresh the `originalContent` (and the suggestion-draft card's selectedText)
+   * for a Delete/Replace draft whose anchored range still resolves but now
+   * covers different text — happens when the owner edits within the anchored
+   * range while the viewer's draft is open.
+   */
+  refreshDraftOriginalContent: (
+    suggestionId: string,
+    currentText: string,
+  ) => void;
+  /**
    * Promote a draft to a submitted suggestion. Pushes the anchor into
    * commentAnchorsRef, calls onNewComment, removes the draft, and swaps the
    * suggestion-draft floating card for a thread card (same floatingCardId).
@@ -843,6 +853,13 @@ export const createCommentStore = () =>
       // SuggestionThreadFloatingCard to the generic ThreadFloatingCard. Merge
       // the local suggestion metadata back in for comments we already know are
       // suggestions in the current store.
+      //
+      // `deleted` / `resolved` are also merged monotonically (once locally true,
+      // stay true): if the viewer withdraws a suggestion whose create-comment
+      // cache write hadn't completed yet, the consumer's async delete write
+      // silently no-ops, and the subsequent `addCommentToCacheV2` writes the
+      // comment back as `deleted: false`. Without this guard, the next
+      // userMessages round-trip un-deletes the withdrawn suggestion locally.
       const previousById = new Map(
         get().initialComments.map((comment) => [comment.id, comment]),
       );
@@ -858,6 +875,8 @@ export const createCommentStore = () =>
           originalContent: comment.originalContent ?? previous.originalContent,
           suggestedContent:
             comment.suggestedContent ?? previous.suggestedContent,
+          deleted: comment.deleted || previous.deleted || false,
+          resolved: comment.resolved || previous.resolved || false,
         };
       });
 
@@ -2439,6 +2458,32 @@ export const createCommentStore = () =>
           Object.values(nextDrafts).map(deriveDraftAnchor);
       }
       if (editor) triggerDecorationRebuild(editor);
+    },
+
+    refreshDraftOriginalContent: (suggestionId, currentText) => {
+      const deps = getExtDeps(get);
+      const { draftAnchorsRef } = deps;
+      const currentDrafts = get().drafts;
+      const draft = currentDrafts[suggestionId];
+      if (!draft) return;
+      if (draft.originalContent === currentText) return;
+
+      const nextDraft: DraftSuggestion = {
+        ...draft,
+        originalContent: currentText,
+      };
+      const nextDrafts = { ...currentDrafts, [suggestionId]: nextDraft };
+      const nextCards = get().floatingCards.map((c) =>
+        c.type === 'suggestion-draft' && c.suggestionId === suggestionId
+          ? { ...c, selectedText: currentText }
+          : c,
+      );
+
+      set({ drafts: nextDrafts, floatingCards: nextCards });
+      if (draftAnchorsRef) {
+        draftAnchorsRef.current =
+          Object.values(nextDrafts).map(deriveDraftAnchor);
+      }
     },
 
     submitDraft: (suggestionId) => {
