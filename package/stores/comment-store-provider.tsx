@@ -19,9 +19,8 @@ import {
   getCommentAtPosition,
   resolveCommentAnchorPointInState,
   resolveCommentAnchorRangeInState,
-  triggerDecorationRebuild,
-  resolveCommentAnchorRangeInState,
   resolveCommentAnchorRangeForAnalysis,
+  triggerDecorationRebuild,
 } from '../extensions/comment/comment-decoration-plugin';
 import { CommentMutationMeta, SerializedCommentAnchor } from '../types';
 import type { CommentFloatingThreadCard } from '../components/inline-comment/context/types';

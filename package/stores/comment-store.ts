@@ -6,7 +6,6 @@ import {
   applyAcceptedSuggestion,
   createCommentAnchorFromEditor,
   createCommentAnchorPointFromEditor,
-  getCommentAnchorRange,
   resolveCommentAnchorPointInState,
   resolveCommentAnchorRangeInState,
   triggerDecorationRebuild,
@@ -433,6 +432,13 @@ const areFloatingCardsEqual = (
     if (leftCard.type === 'draft') {
       return (
         rightCard.type === 'draft' && leftCard.draftId === rightCard.draftId
+      );
+    }
+
+    if (leftCard.type === 'suggestion-draft') {
+      return (
+        rightCard.type === 'suggestion-draft' &&
+        leftCard.suggestionId === rightCard.suggestionId
       );
     }
 
@@ -1916,6 +1922,12 @@ export const createCommentStore = () =>
 
       floatingCards.forEach((floatingCard) => {
         if (floatingCard.type === 'draft') {
+          nextFloatingCards.push(floatingCard);
+          return;
+        }
+
+        if (floatingCard.type === 'suggestion-draft') {
+          // Suggestion drafts are managed by the draft-model actions; preserve here.
           nextFloatingCards.push(floatingCard);
           return;
         }

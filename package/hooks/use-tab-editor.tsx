@@ -178,7 +178,6 @@ interface UseTabEditorArgs {
   theme?: ThemeKey;
   editorRef?: MutableRefObject<Editor | null>;
   initialCommentAnchors?: SerializedCommentAnchor[];
-  onNewComment?: DdocProps['onNewComment'];
 }
 
 export const useTabEditor = ({
@@ -226,7 +225,6 @@ export const useTabEditor = ({
   theme,
   editorRef,
   initialCommentAnchors,
-  onNewComment,
 }: UseTabEditorArgs) => {
   const collabEnabled = collaboration?.enabled === true;
   const connection = collabEnabled ? collaboration.connection : null;
