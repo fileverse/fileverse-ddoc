@@ -1147,19 +1147,13 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
 }
 
 .inline-comment--active {
-  @apply bg-[#88ED92] cursor-pointer transition-all;
-
-  .dark & {
-    background-color: #177e23;
-  }
+  background-color: hsl(var(--color-inline-comment-active));
+  @apply cursor-pointer transition-all;
 }
 
 .inline-comment--unresolved {
-  @apply bg-[#DDFBDF] cursor-pointer transition-all;
-
-  .dark & {
-    background-color: #15521d;
-  }
+  background-color: hsl(var(--color-inline-comment));
+  @apply cursor-pointer transition-all;
 }
 
 .inline-comment--resolved {

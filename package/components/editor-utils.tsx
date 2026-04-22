@@ -293,12 +293,10 @@ export const useEditorToolbar = ({
             const selectedText = state.doc.textBetween(from, to, ' ');
 
             if (selectedText) {
-              const storedTheme = localStorage.getItem('theme');
-              const isDarkTheme = storedTheme === 'dark' || storedTheme === 'theme-green';
               editor
                 .chain()
                 .setHighlight({
-                  color: isDarkTheme ? '#15521d' : '#DDFBDF',
+                  color: 'var(--color-inline-comment)',
                 })
                 .run();
 
