@@ -2298,8 +2298,17 @@ export const createCommentStore = () =>
 
     appendToDraftAtCursor: (text) => {
       const deps = getExtDeps(get);
-      const { editor, draftAnchorsRef } = deps;
+      const { editor, draftAnchorsRef, setCommentDrawerOpen } = deps;
       if (!editor) return;
+
+      // Mirror the comment flow: until the viewer joins (sets a username /
+      // connects), surface the join drawer instead of starting a draft. The
+      // first keystroke triggers the prompt; once joined, subsequent keystrokes
+      // create the draft normally.
+      if (!get().isConnected) {
+        setCommentDrawerOpen?.(true);
+        return;
+      }
 
       const currentDrafts = get().drafts;
       const activeDraft = findDraftAtEditorCursor(currentDrafts, editor.state);
@@ -2361,9 +2370,15 @@ export const createCommentStore = () =>
 
     startDeleteDraft: (from, to) => {
       const deps = getExtDeps(get);
-      const { editor, draftAnchorsRef } = deps;
+      const { editor, draftAnchorsRef, setCommentDrawerOpen } = deps;
       if (!editor) return;
       if (from >= to) return;
+
+      // Same join gate as appendToDraftAtCursor — see Bug 2 reasoning there.
+      if (!get().isConnected) {
+        setCommentDrawerOpen?.(true);
+        return;
+      }
 
       const anchorRange = createCommentAnchorFromEditor(editor, from, to);
       if (!anchorRange) return;

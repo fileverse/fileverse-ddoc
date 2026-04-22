@@ -21,6 +21,50 @@ import { Spinner } from '../../common/spinner';
 import { DeleteConfirmOverlay } from './delete-confirm-overlay';
 import { useCommentCard } from './use-comment-card';
 import { useEnsStatus } from './use-ens-status';
+import { SuggestionType } from '../../types';
+
+interface SuggestionDiffSummaryProps {
+  suggestionType?: SuggestionType;
+  originalContent?: string;
+  suggestedContent?: string;
+}
+
+// One-line diff summary used in the sidebar entry for suggestion comments.
+// Mirrors the format used by SuggestionThreadFloatingCard so suggestion
+// representation stays consistent across surfaces.
+const SuggestionDiffSummary = ({
+  suggestionType,
+  originalContent = '',
+  suggestedContent = '',
+}: SuggestionDiffSummaryProps) => {
+  if (suggestionType === 'add') {
+    return (
+      <p className="text-body-sm">
+        <span className="font-semibold">Add:</span>{' '}
+        <span>&ldquo;{suggestedContent}&rdquo;</span>
+      </p>
+    );
+  }
+  if (suggestionType === 'delete') {
+    return (
+      <p className="text-body-sm">
+        <span className="font-semibold">Delete:</span>{' '}
+        <span className="line-through">&ldquo;{originalContent}&rdquo;</span>
+      </p>
+    );
+  }
+  if (suggestionType === 'replace') {
+    return (
+      <p className="text-body-sm">
+        <span className="font-semibold">Replace:</span>{' '}
+        <span className="line-through">&ldquo;{originalContent}&rdquo;</span>{' '}
+        <span className="font-semibold">with</span>{' '}
+        <span>&ldquo;{suggestedContent}&rdquo;</span>
+      </p>
+    );
+  }
+  return null;
+};
 
 const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
   const ensStatus = useEnsStatus(username);
@@ -217,6 +261,10 @@ export const CommentCard = (props: CommentCardProps) => {
     isCommentOwner,
     isCommentDrawerContext,
     isDropdown,
+    isSuggestion,
+    suggestionType,
+    originalContent,
+    suggestedContent,
   } = props;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { onDelete: _onDelete } = props;
@@ -399,21 +447,29 @@ export const CommentCard = (props: CommentCardProps) => {
               : 'ml-[15px]',
           )}
         >
-          {comment && (
-            <div>
-              <div className="text-body-sm whitespace-pre-wrap break-words">
-                {renderTextWithLinks(displayedComment || '')}
+          {isSuggestion ? (
+            <SuggestionDiffSummary
+              suggestionType={suggestionType}
+              originalContent={originalContent}
+              suggestedContent={suggestedContent}
+            />
+          ) : (
+            comment && (
+              <div>
+                <div className="text-body-sm whitespace-pre-wrap break-words">
+                  {renderTextWithLinks(displayedComment || '')}
+                </div>
+                {isCommentTruncated && (
+                  <button
+                    type="button"
+                    onClick={handleCommentExpandClick}
+                    className="color-text-link mt-[4px] cursor-pointer text-helper-text-sm"
+                  >
+                    {isCommentExpanded ? 'Show less' : 'Show more'}
+                  </button>
+                )}
               </div>
-              {isCommentTruncated && (
-                <button
-                  type="button"
-                  onClick={handleCommentExpandClick}
-                  className="color-text-link mt-[4px] cursor-pointer text-helper-text-sm"
-                >
-                  {isCommentExpanded ? 'Show less' : 'Show more'}
-                </button>
-              )}
-            </div>
+            )
           )}
         </div>
       </div>

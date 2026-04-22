@@ -57,7 +57,7 @@ export const CommentSection = ({
   >(null);
 
   const filteredComments = (commentsProp ?? tabComments)
-    .filter((comment) => !comment.deleted && !comment.isSuggestion)
+    .filter((comment) => !comment.deleted)
     .sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
@@ -408,8 +408,15 @@ const SidebarCommentItem = ({
         isDisabled={comment && !Object.hasOwn(comment, 'commentIndex')}
         isCommentOwner={comment.username === username || isDDocOwner}
         version={comment.version}
+        isSuggestion={comment.isSuggestion}
+        suggestionType={comment.suggestionType}
+        originalContent={comment.originalContent}
+        suggestedContent={comment.suggestedContent}
         emptyComment={
-          !comment.content && !comment.username && !comment.createdAt
+          !comment.content &&
+          !comment.username &&
+          !comment.createdAt &&
+          !comment.isSuggestion
         }
       />
 
