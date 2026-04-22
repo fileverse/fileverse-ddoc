@@ -24,6 +24,7 @@ import {
 } from '../extensions/comment/comment-decoration-plugin';
 import { CommentMutationMeta, SerializedCommentAnchor } from '../types';
 import type { CommentFloatingThreadCard } from '../components/inline-comment/context/types';
+import { DEFAULT_TAB_ID } from '../components/tabs/utils/tab-utils';
 import { useResponsive } from '../utils/responsive';
 import {
   deserializeCommentAnchors,
@@ -306,7 +307,11 @@ export const CommentStoreProvider = ({
             !c.resolved &&
             !c.deleted &&
             c.id &&
-            c.tabId === activeTabId,
+            // Match tabComments derivation: missing tabId is treated as the
+            // default tab. Without this normalization, suggestions submitted
+            // in single-tab docs (where tabId can be undefined) silently
+            // miss the auto-spawn.
+            (c.tabId || DEFAULT_TAB_ID) === activeTabId,
         ),
     );
     if (pendingSuggestions.length === 0) return;
@@ -765,6 +770,19 @@ export const CommentStoreProvider = ({
       if (transaction.docChanged) {
         const oldState = preTransactionStateRef.current;
         preTransactionStateRef.current = null;
+
+        // Suggestion mode (and any other extension that returns false from
+        // filterTransaction) cancels the transaction before it's applied.
+        // The TipTap 'transaction' event still fires with the *attempted*
+        // transform, so without this guard the anchor-deletion analysis
+        // sees the would-be deletion and prunes the anchor — wiping a
+        // working inline comment when the viewer types over it in
+        // suggest mode. If the editor state's doc didn't actually move,
+        // the transaction was filtered; nothing to analyze.
+        if (oldState && oldState.doc === editor.state.doc) {
+          return;
+        }
+
         let shouldRebuildDecorations = false;
         let didRestoreRemovedAnchors = false;
 

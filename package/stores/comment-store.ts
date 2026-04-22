@@ -295,6 +295,13 @@ const hasResolvableCommentAnchor = ({
   anchor: CommentAnchor;
   editor: Editor;
 }) => {
+  // Add suggestions are point anchors (anchorFrom === anchorTo); range
+  // resolution rejects them. Use point resolution as the validity check
+  // for that case so the auto-spawned thread card isn't reconciled away.
+  if (anchor.isSuggestion && anchor.suggestionType === 'add') {
+    return resolveCommentAnchorPointInState(anchor, editor.state) !== null;
+  }
+
   const anchorRange = resolveCommentAnchorRangeInState(anchor, editor.state);
 
   return Boolean(anchorRange && anchorRange.from < anchorRange.to);
@@ -344,7 +351,15 @@ const hasValidHydratedThreadAnchor = ({
 }) => {
   const commentId = comment.id;
 
-  if (!commentId || !comment.selectedContent || editor.isDestroyed) {
+  if (!commentId || editor.isDestroyed) {
+    return false;
+  }
+
+  // Regular comments require selectedContent (the highlighted text to anchor
+  // to). Suggestions don't always have selectedContent — Add suggestions are
+  // point-anchored. Validity is determined by the anchor's resolvability,
+  // not by selectedContent.
+  if (!comment.isSuggestion && !comment.selectedContent) {
     return false;
   }
 
@@ -1829,7 +1844,17 @@ export const createCommentStore = () =>
             return;
           }
 
-          if (comment.deleted || comment.resolved || !comment.selectedContent) {
+          if (comment.deleted || comment.resolved) {
+            return;
+          }
+
+          // Regular comments require selectedContent (the highlighted text).
+          // Add suggestions are point-anchored and have no selectedContent —
+          // letting that gate filter them out makes the auto-spawned thread
+          // card disappear on every reconcile (sidebar toggle, live update,
+          // etc.). Suggestions are always allowed; their visibility is
+          // controlled by isSuggestion / accepted state instead.
+          if (!comment.isSuggestion && !comment.selectedContent) {
             return;
           }
 
@@ -2298,17 +2323,13 @@ export const createCommentStore = () =>
 
     appendToDraftAtCursor: (text) => {
       const deps = getExtDeps(get);
-      const { editor, draftAnchorsRef, setCommentDrawerOpen } = deps;
+      const { editor, draftAnchorsRef } = deps;
       if (!editor) return;
 
-      // Mirror the comment flow: until the viewer joins (sets a username /
-      // connects), surface the join drawer instead of starting a draft. The
-      // first keystroke triggers the prompt; once joined, subsequent keystrokes
-      // create the draft normally.
-      if (!get().isConnected) {
-        setCommentDrawerOpen?.(true);
-        return;
-      }
+      // The draft is created regardless of connection state. When !isConnected,
+      // SuggestionDraftFloatingCard renders FloatingAuthPrompt inside (same
+      // pattern as inline comments). The typed character is preserved as the
+      // first keystroke so the user keeps what they typed once they join.
 
       const currentDrafts = get().drafts;
       const activeDraft = findDraftAtEditorCursor(currentDrafts, editor.state);
@@ -2370,15 +2391,11 @@ export const createCommentStore = () =>
 
     startDeleteDraft: (from, to) => {
       const deps = getExtDeps(get);
-      const { editor, draftAnchorsRef, setCommentDrawerOpen } = deps;
+      const { editor, draftAnchorsRef } = deps;
       if (!editor) return;
       if (from >= to) return;
 
-      // Same join gate as appendToDraftAtCursor — see Bug 2 reasoning there.
-      if (!get().isConnected) {
-        setCommentDrawerOpen?.(true);
-        return;
-      }
+      // Draft is created regardless of connection state — see appendToDraftAtCursor.
 
       const anchorRange = createCommentAnchorFromEditor(editor, from, to);
       if (!anchorRange) return;

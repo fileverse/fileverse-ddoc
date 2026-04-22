@@ -288,24 +288,26 @@ function App() {
       { ...comment, commentIndex: prev.length, version: '2' },
     ]);
 
-    // If the new comment is a suggestion, also register its serialised anchor
-    // so the decoration system can resolve it after the next render.
-    if (
-      comment.isSuggestion &&
-      comment.id &&
-      meta?.anchorFrom &&
-      meta?.anchorTo
-    ) {
+    // Register the serialized anchor for every new comment that came in with
+    // anchor positions (both regular comments and suggestions). The package's
+    // initialCommentAnchors useEffect resets `commentAnchorsRef.current` to
+    // whatever this prop holds whenever it changes — if a regular comment
+    // isn't included here, a subsequent suggestion submit (which DOES
+    // re-set this state) wipes the regular comment's anchor and its
+    // decoration disappears.
+    if (comment.id && meta?.anchorFrom && meta?.anchorTo) {
       const anchor: SerializedCommentAnchor = {
         id: comment.id,
         anchorFrom: meta.anchorFrom,
         anchorTo: meta.anchorTo,
         resolved: false,
         deleted: false,
-        isSuggestion: true,
-        suggestionType: meta.suggestionType,
-        originalContent: meta.originalContent,
-        suggestedContent: meta.suggestedContent,
+        ...(comment.isSuggestion && {
+          isSuggestion: true,
+          suggestionType: meta.suggestionType,
+          originalContent: meta.originalContent,
+          suggestedContent: meta.suggestedContent,
+        }),
       };
       setInitialCommentAnchors((prev) => [...prev, anchor]);
     }

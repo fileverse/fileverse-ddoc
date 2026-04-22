@@ -1,6 +1,7 @@
 import { Button, IconButton } from '@fileverse/ui';
 import { useCommentStore } from '../../../stores/comment-store';
 import { FloatingCardShell } from './floating-card-shell';
+import { FloatingAuthPrompt } from './floating-auth-prompt';
 import type { SuggestionDraftFloatingCardProps } from './types';
 
 /**
@@ -10,6 +11,12 @@ import type { SuggestionDraftFloatingCardProps } from './types';
  * Uses the same one-line diff format as the submitted thread card
  * (Add: "X" / Delete: "X" / Replace: "X" with "Y") plus a Submit action
  * and a Discard (X) button.
+ *
+ * When the viewer hasn't joined yet (no username / wallet), the card
+ * renders FloatingAuthPrompt inside — same pattern as the inline-comment
+ * draft card. The first keystroke that triggered this card is preserved
+ * as the draft's first character; once the viewer joins, the card
+ * transitions to the normal diff/Submit UI without losing what they typed.
  */
 export const SuggestionDraftFloatingCard = ({
   card,
@@ -19,6 +26,7 @@ export const SuggestionDraftFloatingCard = ({
   const focusFloatingCard = useCommentStore((s) => s.focusFloatingCard);
   const submitDraft = useCommentStore((s) => s.submitDraft);
   const discardDraft = useCommentStore((s) => s.discardDraft);
+  const isConnected = useCommentStore((s) => s.isConnected);
 
   const hasOriginal = Boolean(card.selectedText);
   const hasInserted = Boolean(card.insertedText);
@@ -40,7 +48,10 @@ export const SuggestionDraftFloatingCard = ({
       isFocused={card.isFocused}
       onFocus={() => focusFloatingCard(card.floatingCardId)}
     >
-      <div className="flex flex-col gap-2 p-3">
+      {!isConnected ? (
+        <FloatingAuthPrompt />
+      ) : (
+        <div className="flex flex-col gap-2 p-3">
         <div className="flex items-start gap-2">
           <div className="flex-1">
             {suggestionType === 'add' && (
@@ -92,7 +103,8 @@ export const SuggestionDraftFloatingCard = ({
             Submit
           </Button>
         </div>
-      </div>
+        </div>
+      )}
     </FloatingCardShell>
   );
 };

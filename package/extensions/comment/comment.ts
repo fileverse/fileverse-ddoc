@@ -215,6 +215,21 @@ export const getCommentMarkRange = (
   return { from, to };
 };
 
+// TipTap's `editor.view` proxy throws when accessed before mount (the proxy
+// itself is truthy, so `?.view?.dom` doesn't help). The active-class sync
+// commands fire from store actions that may run during mount races; swallow
+// the throw and treat it as "DOM not ready yet, nothing to sync".
+const getEditorDomSafely = (
+  editor: { view?: { dom?: unknown } } | null | undefined,
+): HTMLElement | undefined => {
+  if (!editor) return undefined;
+  try {
+    return editor.view?.dom as HTMLElement | undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 const getCommentNodesById = (editorDom: HTMLElement, commentId: string) => {
   const safeId =
     typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
@@ -628,7 +643,7 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
         this.storage.activeCommentId = commentId;
         // Update UI classes in-place so "active comment" does not create doc updates.
         syncActiveCommentClassInDOM(
-          this.editor?.view?.dom as HTMLElement | undefined,
+          getEditorDomSafely(this.editor),
           previousActiveCommentId,
           commentId,
         );
@@ -639,7 +654,7 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
         this.storage.activeCommentId = null;
         // Reset active styling without touching persisted mark attributes.
         syncActiveCommentClassInDOM(
-          this.editor?.view?.dom as HTMLElement | undefined,
+          getEditorDomSafely(this.editor),
           previousActiveCommentId,
           null,
         );

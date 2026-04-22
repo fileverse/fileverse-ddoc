@@ -1184,25 +1184,31 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
 }
 
 // Suggestion mode decorations
+// Suggestion styling: light tinted background + decoration. Text color
+// stays default so the doc text reads naturally; the colored decoration
+// (line-through / underline) carries the semantic. The bg differentiates
+// from inline-comment highlights via hue.
 .suggestion-delete {
-  @apply line-through cursor-pointer transition-all;
-  color: #EF4444;
+  @apply cursor-pointer transition-all;
   background-color: #FEE2E2;
+  text-decoration: line-through;
+  text-decoration-color: #EF4444;
+  text-decoration-thickness: 1.5px;
 
   .dark & {
-    color: #F87171;
     background-color: #450A0A;
+    text-decoration-color: #F87171;
   }
 }
 
 .suggestion-add {
-  @apply underline cursor-pointer;
-  color: #16A34A;
+  @apply cursor-pointer;
   background-color: #DCFCE7;
+  color: #16A34A;
 
   .dark & {
-    color: #4ADE80;
     background-color: #052E16;
+    color: #4ADE80;
   }
 }
 

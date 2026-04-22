@@ -804,24 +804,35 @@ export function applyAcceptedSuggestion(
     if (from < 0 || to > state.doc.content.size) return false;
 
     const { suggestionType, suggestedContent } = anchor;
-    const { tr } = state;
 
-    if (suggestionType === 'add') {
-      if (!suggestedContent) return false;
-      tr.insertText(suggestedContent, from);
-    } else if (suggestionType === 'delete') {
-      if (from >= to) return false;
-      tr.delete(from, to);
-    } else if (suggestionType === 'replace') {
-      if (from >= to || !suggestedContent) return false;
-      // insertText with a range replaces from..to with the new text
-      tr.insertText(suggestedContent, from, to);
-    } else {
-      return false;
-    }
-
-    editor.view.dispatch(tr);
-    return true;
+    // Route through TipTap's command pipeline (chain → command → run) instead
+    // of calling editor.view.dispatch(tr) directly. The pipeline guarantees
+    // the transaction emits the editor's `update` event, which the consumer's
+    // y-prosemirror sync + onChange handler depend on for autosave / publish-
+    // dirty detection. A direct view.dispatch can skip that path in some
+    // setups, leaving the doc visibly changed but unpersisted.
+    return editor
+      .chain()
+      .command(({ tr }) => {
+        if (suggestionType === 'add') {
+          if (!suggestedContent) return false;
+          tr.insertText(suggestedContent, from);
+          return true;
+        }
+        if (suggestionType === 'delete') {
+          if (from >= to) return false;
+          tr.delete(from, to);
+          return true;
+        }
+        if (suggestionType === 'replace') {
+          if (from >= to || !suggestedContent) return false;
+          // insertText with a range replaces from..to with the new text
+          tr.insertText(suggestedContent, from, to);
+          return true;
+        }
+        return false;
+      })
+      .run();
   } catch {
     return false;
   }
