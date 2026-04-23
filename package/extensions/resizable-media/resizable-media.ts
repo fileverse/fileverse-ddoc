@@ -166,7 +166,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
     ];
   },
 
-  renderHTML({ HTMLAttributes }) {
+  renderHTML({ node, HTMLAttributes }) {
     const { 'media-type': mediaType } = HTMLAttributes;
 
     if (!mediaType)
@@ -174,18 +174,49 @@ export const ResizableMedia = Node.create<MediaOptions>({
         'TiptapMediaExtension-renderHTML method: Media Type not set, going default with image',
       );
 
-    // The content hole (0) must be the only child of its parent.
-    // Since ReactNodeViewRenderer handles all visual rendering,
-    // renderHTML only needs to provide a valid container with the content hole.
-    return [
-      'div',
-      mergeAttributes(
-        { 'data-type': 'resizable-media' },
-        this.options.HTMLAttributes,
-        HTMLAttributes,
-      ),
-      0,
-    ];
+    const wrapperAttrs = mergeAttributes(
+      { 'data-type': 'resizable-media' },
+      this.options.HTMLAttributes,
+      HTMLAttributes,
+    );
+
+    let mediaEl: any;
+    if (mediaType === 'video') {
+      mediaEl = [
+        'video',
+        { controls: 'true', style: 'width: 100%', ...HTMLAttributes },
+        ['source', HTMLAttributes],
+      ];
+    } else if (mediaType === 'iframe') {
+      mediaEl = ['iframe', HTMLAttributes];
+    } else {
+      mediaEl = ['img', HTMLAttributes];
+    }
+
+    // When a mediaCaption child exists, emit it via a content hole (0) nested
+    // in its own wrapper so the hole remains the only child of its parent.
+    if (node.content.childCount > 0) {
+      return [
+        'div',
+        wrapperAttrs,
+        mediaEl,
+        ['div', { 'data-type': 'media-caption-wrapper' }, 0],
+      ];
+    }
+
+    // Legacy caption (attr only, no child) — render as static text so PDF/MD/
+    // HTML exports include it without requiring the user to migrate first.
+    const legacyCaption = node.attrs.caption;
+    if (legacyCaption) {
+      return [
+        'div',
+        wrapperAttrs,
+        mediaEl,
+        ['div', { class: 'media-caption' }, legacyCaption],
+      ];
+    }
+
+    return ['div', wrapperAttrs, mediaEl];
   },
 
   addCommands() {
