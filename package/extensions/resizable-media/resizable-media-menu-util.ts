@@ -63,7 +63,7 @@ export const resizableMediaActions: ResizableMediaAction[] = [
       const node = editor.state.doc.nodeAt(pos);
       if (!node) return;
 
-      // Toggle: if caption already exists, remove it
+      // Toggle off: child caption exists -> remove it (and any legacy attr).
       if (node.content.childCount > 0) {
         const captionPos =
           pos + node.nodeSize - node.content.lastChild!.nodeSize - 1;
@@ -73,11 +73,46 @@ export const resizableMediaActions: ResizableMediaAction[] = [
             from: captionPos,
             to: captionPos + node.content.lastChild!.nodeSize,
           })
+          .command(({ tr }) => {
+            const current = tr.doc.nodeAt(pos);
+            if (current?.attrs.caption) {
+              tr.setNodeMarkup(pos, undefined, {
+                ...current.attrs,
+                caption: null,
+              });
+            }
+            return true;
+          })
           .run();
         return;
       }
 
-      // Insert a mediaCaption node at the end of the resizableMedia node
+      // Legacy caption on attr but no child -> migrate the existing text so
+      // it's preserved and becomes editable (supports links).
+      const legacyCaption = node.attrs.caption;
+      if (legacyCaption) {
+        editor
+          .chain()
+          .insertContentAt(pos + 1, {
+            type: 'mediaCaption',
+            content: [{ type: 'text', text: legacyCaption }],
+          })
+          .command(({ tr }) => {
+            const current = tr.doc.nodeAt(pos);
+            if (current) {
+              tr.setNodeMarkup(pos, undefined, {
+                ...current.attrs,
+                caption: null,
+              });
+            }
+            return true;
+          })
+          .focus(pos + 2 + legacyCaption.length)
+          .run();
+        return;
+      }
+
+      // No caption yet -> insert an empty mediaCaption child and focus it.
       const insertPos = pos + node.nodeSize - 1;
       editor
         .chain()
@@ -87,7 +122,8 @@ export const resizableMediaActions: ResizableMediaAction[] = [
         .focus(insertPos + 1)
         .run();
     },
-    isActive: (_attrs, node) => (node?.content.childCount ?? 0) > 0,
+    isActive: (attrs, node) =>
+      (node?.content.childCount ?? 0) > 0 || !!attrs.caption,
   },
   {
     tooltip: 'Delete',

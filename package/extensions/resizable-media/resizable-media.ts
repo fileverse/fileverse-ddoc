@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { mergeAttributes, Node, nodeInputRule } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
-import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { getResizableMediaNodeView } from './resizable-media-node-view';
 import { getMediaPasteDropPlugin } from './media-paste-drop-plugin';
 import UploadImagesPlugin from '../../utils/upload-images';
@@ -296,39 +295,6 @@ export const ResizableMedia = Node.create<MediaOptions>({
       ),
       UploadImagesPlugin(),
       InlineLoaderPlugin(),
-      // Migrates legacy `caption` attribute → `mediaCaption` child node.
-      // Runs on every doc-changing transaction so it catches captions that
-      // arrive asynchronously via Yjs sync, not just at editor init.
-      new Plugin({
-        key: new PluginKey('resizableMediaCaptionMigration'),
-        appendTransaction: (transactions, _oldState, newState) => {
-          if (!transactions.some((tr) => tr.docChanged)) return null;
-
-          const tr = newState.tr;
-          let migrated = false;
-
-          newState.doc.descendants((node, pos) => {
-            if (node.type.name !== 'resizableMedia') return;
-            if (!node.attrs.caption || node.content.childCount > 0) return;
-
-            const captionNode = newState.schema.nodes.mediaCaption.create(
-              null,
-              newState.schema.text(node.attrs.caption),
-            );
-
-            const insertPos = pos + node.nodeSize - 1;
-            tr.insert(insertPos, captionNode);
-            tr.setNodeMarkup(tr.mapping.map(pos), undefined, {
-              ...node.attrs,
-              caption: null,
-            });
-
-            migrated = true;
-          });
-
-          return migrated ? tr : null;
-        },
-      }),
     ];
   },
 });

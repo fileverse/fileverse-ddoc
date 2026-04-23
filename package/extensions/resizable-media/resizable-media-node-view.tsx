@@ -123,6 +123,38 @@ export const getResizableMediaNodeView =
       mediaSetupOnLoad();
     }, []);
 
+    // Converts the legacy `caption` string attribute into an editable
+    // `mediaCaption` child node. Called on user interaction (click on the
+    // legacy caption, or the Add Caption toolbar action). Never called
+    // during load — that caused structural conflicts with Yjs
+    // reconciliation and wiped the parent nodes.
+    const migrateLegacyCaption = () => {
+      if (!editor.isEditable) return;
+      const caption = node.attrs.caption;
+      if (!caption || node.content.childCount > 0) return;
+      const pos = getPos();
+      if (pos === undefined) return;
+
+      editor
+        .chain()
+        .insertContentAt(pos + 1, {
+          type: 'mediaCaption',
+          content: [{ type: 'text', text: caption }],
+        })
+        .command(({ tr }) => {
+          const current = tr.doc.nodeAt(pos);
+          if (current) {
+            tr.setNodeMarkup(pos, undefined, {
+              ...current.attrs,
+              caption: null,
+            });
+          }
+          return true;
+        })
+        .focus(pos + 2 + caption.length)
+        .run();
+    };
+
     const limitWidthOrHeight = (
       { width, height }: WidthAndHeight,
       opts: { isSoundcloud?: boolean } = {},
@@ -494,7 +526,7 @@ export const getResizableMediaNodeView =
             )}
           </div>
 
-          {node.content.childCount > 0 && (
+          {node.content.childCount > 0 ? (
             <NodeViewContent
               as="div"
               className={cn('media-caption', {
@@ -503,7 +535,19 @@ export const getResizableMediaNodeView =
                 'text-right': node.attrs.dataAlign === 'end',
               })}
             />
-          )}
+          ) : node.attrs.caption ? (
+            <div
+              contentEditable={false}
+              className={cn('media-caption media-caption-legacy', {
+                'text-left': node.attrs.dataAlign === 'start',
+                'text-center': node.attrs.dataAlign === 'center',
+                'text-right': node.attrs.dataAlign === 'end',
+              })}
+              onClick={migrateLegacyCaption}
+            >
+              {node.attrs.caption}
+            </div>
+          ) : null}
 
           {!isPreviewMode && (
             <span
