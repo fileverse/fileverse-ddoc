@@ -31,7 +31,6 @@ export const SuggestionThreadFloatingCard = ({
   const focusCommentInEditor = useCommentStore((s) => s.focusCommentInEditor);
   const isDDocOwner = useCommentStore((s) => s.isDDocOwner);
   const currentUsername = useCommentStore((s) => s.username);
-  const mySubmittedIds = useCommentStore((s) => s.mySubmittedSuggestionIds);
   const acceptSuggestion = useCommentStore((s) => s.acceptSuggestion);
   const deleteComment = useCommentStore((s) => s.deleteComment);
 
@@ -44,12 +43,12 @@ export const SuggestionThreadFloatingCard = ({
     }
   };
 
-  // Authored by this viewer if either the stored username matches or the
-  // session-local "submitted by me" set has the id (covers viewers without
-  // a persistent username).
-  const isAuthor =
-    Boolean(comment.username && comment.username === currentUsername) ||
-    (comment.id ? mySubmittedIds.has(comment.id) : false);
+  // Same author check used by regular comments (comment-card.tsx). Consumer
+  // persists the username (incl. random-account names from FloatingAuthPrompt)
+  // in localStorage and restores it on reload, so this carries across reloads.
+  const isAuthor = Boolean(
+    currentUsername && comment.username && comment.username === currentUsername,
+  );
   const canAcceptReject = isDDocOwner;
   const canWithdraw = !isDDocOwner && isAuthor;
 

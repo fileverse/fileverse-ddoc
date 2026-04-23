@@ -587,12 +587,6 @@ export interface CommentStoreState {
   pendingPrehydrationFloatingThreadIds: string[];
   /** In-progress suggestion drafts — keyed by suggestionId. Viewer-local, lost on refresh. */
   drafts: Record<string, DraftSuggestion>;
-  /**
-   * Suggestion IDs submitted from this session. Used to show the withdraw (X)
-   * action for viewers even when they don't have a persistent username set.
-   * Session-local, lost on refresh.
-   */
-  mySubmittedSuggestionIds: Set<string>;
   inlineDrafts: InlineDraftRecordMap;
   activeDraftId: string | null;
   isDesktopFloatingEnabled: boolean;
@@ -818,7 +812,6 @@ export const createCommentStore = () =>
     floatingCards: [],
     pendingPrehydrationFloatingThreadIds: [],
     drafts: {},
-    mySubmittedSuggestionIds: new Set<string>(),
     inlineDrafts: {},
     activeDraftId: null,
     isDesktopFloatingEnabled: false,
@@ -2586,13 +2579,9 @@ export const createCommentStore = () =>
         createdAt: new Date(),
       };
 
-      const nextMySubmitted = new Set(get().mySubmittedSuggestionIds);
-      nextMySubmitted.add(draft.id);
-
       set({
         drafts: nextDrafts,
         floatingCards: nextCards,
-        mySubmittedSuggestionIds: nextMySubmitted,
       });
       if (draftAnchorsRef) {
         draftAnchorsRef.current =

@@ -805,34 +805,29 @@ export function applyAcceptedSuggestion(
 
     const { suggestionType, suggestedContent } = anchor;
 
-    // Route through TipTap's command pipeline (chain → command → run) instead
-    // of calling editor.view.dispatch(tr) directly. The pipeline guarantees
-    // the transaction emits the editor's `update` event, which the consumer's
-    // y-prosemirror sync + onChange handler depend on for autosave / publish-
-    // dirty detection. A direct view.dispatch can skip that path in some
-    // setups, leaving the doc visibly changed but unpersisted.
-    return editor
-      .chain()
-      .command(({ tr }) => {
-        if (suggestionType === 'add') {
-          if (!suggestedContent) return false;
-          tr.insertText(suggestedContent, from);
-          return true;
-        }
-        if (suggestionType === 'delete') {
-          if (from >= to) return false;
-          tr.delete(from, to);
-          return true;
-        }
-        if (suggestionType === 'replace') {
-          if (from >= to || !suggestedContent) return false;
-          // insertText with a range replaces from..to with the new text
-          tr.insertText(suggestedContent, from, to);
-          return true;
-        }
-        return false;
-      })
-      .run();
+    // Use TipTap's high-level commands (insertContentAt / deleteRange) — same
+    // pattern used elsewhere in the package (slash commands, dBlock, etc.).
+    // These wrap the y-prosemirror sync correctly so the doc change reaches
+    // Y.Doc → onChange → IndexedDB. Raw tr.insertText / tr.delete inside a
+    // chain().command() does NOT propagate to Y.Doc reliably, leaving the
+    // doc visibly changed but unpersisted.
+    if (suggestionType === 'add') {
+      if (!suggestedContent) return false;
+      return editor.commands.insertContentAt(from, suggestedContent);
+    }
+    if (suggestionType === 'delete') {
+      if (from >= to) return false;
+      return editor.commands.deleteRange({ from, to });
+    }
+    if (suggestionType === 'replace') {
+      if (from >= to || !suggestedContent) return false;
+      return editor
+        .chain()
+        .deleteRange({ from, to })
+        .insertContentAt(from, suggestedContent)
+        .run();
+    }
+    return false;
   } catch {
     return false;
   }
