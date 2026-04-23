@@ -4,6 +4,7 @@ import { getCommentMarkRange } from '../extensions/comment';
 import {
   CommentAnchor,
   getCommentAnchorRange,
+  resolveCommentAnchorPointInState,
 } from '../extensions/comment/comment-decoration-plugin';
 import { getEditorScrollContainer } from './get-editor-scroll-container';
 
@@ -105,12 +106,31 @@ export const resolveCommentSelectionRange = ({
   commentId: string;
   commentAnchorsRef?: MutableRefObject<CommentAnchor[]>;
 }): CommentSelectionRange | null => {
-  const anchorRange = commentAnchorsRef
-    ? getCommentAnchorRange(editor, commentId, () => commentAnchorsRef.current)
-    : null;
+  const anchor = commentAnchorsRef?.current.find(
+    (entry) => entry.id === commentId && !entry.deleted,
+  );
+  const anchorRange =
+    anchor && commentAnchorsRef
+      ? getCommentAnchorRange(
+          editor,
+          commentId,
+          () => commentAnchorsRef.current,
+        )
+      : null;
 
   if (anchorRange) {
     return anchorRange;
+  }
+
+  // Add suggestions are point anchors, so they do not resolve to a text range.
+  // Return a collapsed selection at the anchor so click-to-focus can still
+  // move the caret and scroll the editor to the suggestion location.
+  if (anchor?.isSuggestion && anchor.suggestionType === 'add') {
+    const point = resolveCommentAnchorPointInState(anchor, editor.state);
+
+    if (point !== null) {
+      return { from: point, to: point };
+    }
   }
 
   // Legacy mark comments do not have decoration anchors, so prefer the full

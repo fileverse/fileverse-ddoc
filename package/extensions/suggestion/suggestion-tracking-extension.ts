@@ -50,6 +50,21 @@ export interface SuggestionTrackingOptions {
   /** Viewer presses Backspace/Delete with a non-empty selection. */
   onDeleteSelection: (from: number, to: number) => void;
 
+  /**
+   * Viewer presses Backspace/Delete with a collapsed cursor.
+   * The consumer decides whether this should shrink an active draft or create
+   * a new one-character delete suggestion at the caret.
+   */
+  onDeleteAtCursor: (direction: 'backward' | 'forward') => void;
+
+  /**
+   * Browser attempted to delete a concrete range without an explicit
+   * user selection (for example, a beforeinput/IME path that bypassed
+   * keydown). Lets the consumer preserve "undo active draft" semantics
+   * while still creating delete drafts for normal text.
+   */
+  onDeleteRangeWithoutSelection: (from: number, to: number) => void;
+
   /** Viewer presses Cmd+Z (or Ctrl+Z). Shrinks the active draft by one keystroke. */
   onUndo: () => void;
 
@@ -114,6 +129,8 @@ export const SuggestionTrackingExtension =
         onTextInput: () => {},
         onReplaceTyping: () => {},
         onDeleteSelection: () => {},
+        onDeleteAtCursor: () => {},
+        onDeleteRangeWithoutSelection: () => {},
         onUndo: () => {},
         onLiveSuggestion: null,
         onSuggestionReady: null,
@@ -141,9 +158,9 @@ export const SuggestionTrackingExtension =
             if (tr.getMeta('y-sync$')) return true;
 
             // Pre-transaction selection tells us whether the user had a
-            // range selected. Without a selection, a deletion is "bare
-            // backspace in active draft" — we shrink the draft instead of
-            // creating a Delete suggestion.
+            // range selected. Without a selection, we still need the
+            // pre-change state so the consumer can decide between shrinking
+            // an active draft and creating a delete suggestion.
             const hadSelection = state.selection.from < state.selection.to;
 
             // Classify the transaction by inspecting its steps:
@@ -195,10 +212,13 @@ export const SuggestionTrackingExtension =
                   // User selected text and pressed Backspace/Delete
                   opts.onDeleteSelection(deletedRange.from, deletedRange.to);
                 } else if (deletedRange) {
-                  // Bare backspace (no user selection) inside an active draft
-                  // → shrink the active draft instead of creating a 1-char
-                  // Delete suggestion. Silent no-op if no active draft.
-                  opts.onUndo();
+                  // A browser path deleted a concrete range without an
+                  // explicit selection. Let the consumer decide whether to
+                  // undo an active draft or promote this into a delete draft.
+                  opts.onDeleteRangeWithoutSelection(
+                    deletedRange.from,
+                    deletedRange.to,
+                  );
                 } else if (insertedText) {
                   opts.onTextInput(insertedText);
                 }
@@ -237,15 +257,16 @@ export const SuggestionTrackingExtension =
 
               // Backspace / Delete:
               //   - with selection → Delete draft
-              //   - without selection → treat as undo of the active draft's
-              //     last keystroke (feels like Google Docs while typing).
-              //     When no draft is at the cursor, this is a silent no-op
-              //     per spec.
+              //   - without selection → consumer decides between shrinking
+              //     the active draft and creating a new delete suggestion at
+              //     the cursor.
               if (event.key === 'Backspace' || event.key === 'Delete') {
                 if (from < to) {
                   opts.onDeleteSelection(from, to);
                 } else {
-                  opts.onUndo();
+                  opts.onDeleteAtCursor(
+                    event.key === 'Backspace' ? 'backward' : 'forward',
+                  );
                 }
                 return true;
               }
@@ -312,12 +333,30 @@ export const SuggestionTrackingExtension =
                   inputType === 'deleteByCut' ||
                   inputType === 'deleteByDrag'
                 ) {
-                  event.preventDefault();
                   const { from, to } = view.state.selection;
                   if (from < to) {
+                    event.preventDefault();
                     opts.onDeleteSelection(from, to);
+                    return true;
                   }
-                  return true;
+
+                  // Simple collapsed-caret delete paths should behave the
+                  // same as keydown. Wider-range browser deletes (word/cut/
+                  // drag) fall through so filterTransaction can inspect the
+                  // actual deleted range and convert it into a draft.
+                  if (inputType === 'deleteContentBackward') {
+                    event.preventDefault();
+                    opts.onDeleteAtCursor('backward');
+                    return true;
+                  }
+
+                  if (inputType === 'deleteContentForward') {
+                    event.preventDefault();
+                    opts.onDeleteAtCursor('forward');
+                    return true;
+                  }
+
+                  return false;
                 }
 
                 // Paste / drop routes through beforeinput too on some browsers

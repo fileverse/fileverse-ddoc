@@ -92,6 +92,8 @@ export interface DraftSuggestion {
   hadDeletion: boolean;
 }
 
+type SuggestionDeleteDirection = 'backward' | 'forward';
+
 function deriveDraftSuggestionType(draft: DraftSuggestion): SuggestionType {
   if (draft.hadDeletion) {
     return draft.insertedText.length > 0 ? 'replace' : 'delete';
@@ -132,6 +134,113 @@ function findDraftAtEditorCursor(
     }
   }
   return null;
+}
+
+function resolveDeleteRangeAtCursor(
+  state: EditorState,
+  direction: SuggestionDeleteDirection,
+): { from: number; to: number } | null {
+  const { from, empty } = state.selection;
+  if (!empty) {
+    return null;
+  }
+
+  return resolveDeleteRangeAtPosition(state, from, direction);
+}
+
+function resolveDeleteRangeAtPosition(
+  state: EditorState,
+  position: number,
+  direction: SuggestionDeleteDirection,
+): { from: number; to: number } | null {
+  const rangeFrom = direction === 'backward' ? position - 1 : position;
+  const rangeTo = direction === 'backward' ? position : position + 1;
+
+  if (
+    rangeFrom < 0 ||
+    rangeTo > state.doc.content.size ||
+    rangeFrom >= rangeTo
+  ) {
+    return null;
+  }
+
+  // Only create delete drafts for real inline text. Structural deletions
+  // (block joins, node boundaries, etc.) stay blocked in suggestion mode.
+  const deletedText = state.doc.textBetween(rangeFrom, rangeTo, '', '');
+  if (!deletedText) {
+    return null;
+  }
+
+  return { from: rangeFrom, to: rangeTo };
+}
+
+function isPureDeleteDraft(draft: DraftSuggestion): boolean {
+  return draft.hadDeletion && draft.insertedText.length === 0;
+}
+
+type SuggestionDraftStateSetter = (state: {
+  drafts: Record<string, DraftSuggestion>;
+  floatingCards: CommentFloatingCard[];
+}) => void;
+
+function syncSuggestionDraftState(
+  setState: SuggestionDraftStateSetter,
+  nextDrafts: Record<string, DraftSuggestion>,
+  nextCards: CommentFloatingCard[],
+  draftAnchorsRef?: React.MutableRefObject<CommentAnchor[]>,
+) {
+  setState({ drafts: nextDrafts, floatingCards: nextCards });
+  if (draftAnchorsRef) {
+    draftAnchorsRef.current = Object.values(nextDrafts).map(deriveDraftAnchor);
+  }
+}
+
+function updateDeleteDraftRange({
+  setState,
+  drafts,
+  floatingCards,
+  activeDraft,
+  editor,
+  draftAnchorsRef,
+  from,
+  to,
+  collapseTo,
+}: {
+  setState: SuggestionDraftStateSetter;
+  drafts: Record<string, DraftSuggestion>;
+  floatingCards: CommentFloatingCard[];
+  activeDraft: DraftSuggestion;
+  editor: Editor;
+  draftAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
+  from: number;
+  to: number;
+  collapseTo: number;
+}): boolean {
+  const nextAnchorRange = createCommentAnchorFromEditor(editor, from, to);
+  if (!nextAnchorRange) return false;
+
+  const nextOriginalContent = editor.state.doc.textBetween(from, to, '\n');
+  const nextDraft: DraftSuggestion = {
+    ...activeDraft,
+    anchorFrom: nextAnchorRange.anchorFrom,
+    anchorTo: nextAnchorRange.anchorTo,
+    originalContent: nextOriginalContent,
+  };
+  const nextDrafts = { ...drafts, [activeDraft.id]: nextDraft };
+  const nextCards = floatingCards.map((card) =>
+    card.type === 'suggestion-draft' && card.suggestionId === activeDraft.id
+      ? { ...card, selectedText: nextOriginalContent }
+      : card,
+  );
+
+  syncSuggestionDraftState(setState, nextDrafts, nextCards, draftAnchorsRef);
+
+  const tr = editor.state.tr.setSelection(
+    TextSelection.near(editor.state.doc.resolve(collapseTo)),
+  );
+  editor.view.dispatch(tr);
+  triggerDecorationRebuild(editor);
+  return true;
 }
 
 type FloatingCardsUpdater = React.SetStateAction<CommentFloatingCard[]>;
@@ -713,7 +822,20 @@ export interface CommentStoreState {
    * Captures originalContent, leaves insertedText empty; type becomes 'replace'
    * as soon as the viewer types.
    */
-  startDeleteDraft: (from: number, to: number) => void;
+  startDeleteDraft: (from: number, to: number, collapseTo?: number) => void;
+  /**
+   * Convert a collapsed-caret Backspace/Delete into a delete draft when the
+   * caret is adjacent to text, or shrink the active draft if the caret is
+   * already inside one.
+   */
+  deleteAtCursorOrUndoActiveDraft: (
+    direction: SuggestionDeleteDirection,
+  ) => void;
+  /**
+   * Handle browser deletion paths that resolved to a concrete range even
+   * though the user had no explicit selection.
+   */
+  deleteRangeOrUndoActiveDraft: (from: number, to: number) => void;
   /**
    * Undo the last keystroke in the draft at the current cursor position.
    * When the draft has no keystrokes left, it is discarded.
@@ -953,6 +1075,7 @@ export const createCommentStore = () =>
       }
     },
     setActiveCommentId: (id) => {
+      const previousActiveCommentId = get().activeCommentId;
       set({ activeCommentId: id });
 
       const tabComments = get().tabComments;
@@ -963,6 +1086,13 @@ export const createCommentStore = () =>
       );
 
       set({ activeComment, activeCommentIndex });
+
+      if (previousActiveCommentId !== id) {
+        const { editor } = getExtDeps(get);
+        if (editor) {
+          triggerDecorationRebuild(editor);
+        }
+      }
     },
     setActiveTabId: (tabId) => {
       const {
@@ -1729,11 +1859,15 @@ export const createCommentStore = () =>
       }));
 
       if (focusedFloatingCard.type === 'thread') {
+        // Take local ownership immediately so suggestion decorations rebuild
+        // with the active state on the same click, then mirror externally.
+        get().setActiveCommentId(focusedFloatingCard.commentId);
         setActiveCommentId(focusedFloatingCard.commentId);
         editor.commands.setCommentActive(focusedFloatingCard.commentId);
         return;
       }
 
+      get().setActiveCommentId(null);
       setActiveCommentId(null);
       editor.commands.unsetCommentActive();
     },
@@ -2386,7 +2520,7 @@ export const createCommentStore = () =>
       triggerDecorationRebuild(editor);
     },
 
-    startDeleteDraft: (from, to) => {
+    startDeleteDraft: (from, to, collapseTo) => {
       const deps = getExtDeps(get);
       const { editor, draftAnchorsRef } = deps;
       if (!editor) return;
@@ -2425,20 +2559,112 @@ export const createCommentStore = () =>
         newCard,
       ];
 
-      set({ drafts: nextDrafts, floatingCards: nextCards });
-      if (draftAnchorsRef) {
-        draftAnchorsRef.current =
-          Object.values(nextDrafts).map(deriveDraftAnchor);
-      }
+      syncSuggestionDraftState(set, nextDrafts, nextCards, draftAnchorsRef);
 
-      // Collapse the selection to `to` so the caret renders at the end of the
-      // strikethrough, matching Google Docs behavior.
+      // Collapse the selection at the requested caret position so Backspace
+      // stays at the end of the deleted range while forward Delete remains at
+      // the start.
+      const nextCaretPos = collapseTo ?? to;
       const tr = editor.state.tr.setSelection(
-        TextSelection.near(editor.state.doc.resolve(to)),
+        TextSelection.near(editor.state.doc.resolve(nextCaretPos)),
       );
       editor.view.dispatch(tr);
 
       triggerDecorationRebuild(editor);
+    },
+
+    deleteAtCursorOrUndoActiveDraft: (direction) => {
+      const deps = getExtDeps(get);
+      const { editor, draftAnchorsRef } = deps;
+      if (!editor) return;
+
+      const activeDraft = findDraftAtEditorCursor(get().drafts, editor.state);
+      if (activeDraft) {
+        if (isPureDeleteDraft(activeDraft)) {
+          const activeRange = resolveCommentAnchorRangeInState(
+            activeDraft,
+            editor.state,
+          );
+          if (!activeRange) return;
+
+          const extensionRange = resolveDeleteRangeAtPosition(
+            editor.state,
+            direction === 'backward' ? activeRange.from : activeRange.to,
+            direction,
+          );
+          if (!extensionRange) return;
+
+          updateDeleteDraftRange({
+            setState: set,
+            drafts: get().drafts,
+            floatingCards: get().floatingCards,
+            activeDraft,
+            editor,
+            draftAnchorsRef,
+            from: Math.min(activeRange.from, extensionRange.from),
+            to: Math.max(activeRange.to, extensionRange.to),
+            collapseTo:
+              direction === 'backward' ? activeRange.to : activeRange.from,
+          });
+          return;
+        }
+
+        get().undoLastKeystrokeInActiveDraft();
+        return;
+      }
+
+      const deleteRange = resolveDeleteRangeAtCursor(editor.state, direction);
+      if (!deleteRange) return;
+
+      const collapseTo =
+        direction === 'forward' ? deleteRange.from : deleteRange.to;
+
+      get().startDeleteDraft(deleteRange.from, deleteRange.to, collapseTo);
+    },
+
+    deleteRangeOrUndoActiveDraft: (from, to) => {
+      const deps = getExtDeps(get);
+      const { editor, draftAnchorsRef } = deps;
+      if (!editor) return;
+      if (from >= to) return;
+
+      const activeDraft = findDraftAtEditorCursor(get().drafts, editor.state);
+      if (activeDraft) {
+        if (isPureDeleteDraft(activeDraft)) {
+          const activeRange = resolveCommentAnchorRangeInState(
+            activeDraft,
+            editor.state,
+          );
+          if (!activeRange) return;
+
+          updateDeleteDraftRange({
+            setState: set,
+            drafts: get().drafts,
+            floatingCards: get().floatingCards,
+            activeDraft,
+            editor,
+            draftAnchorsRef,
+            from: Math.min(activeRange.from, from),
+            to: Math.max(activeRange.to, to),
+            collapseTo:
+              editor.state.selection.empty &&
+              from === editor.state.selection.from
+                ? from
+                : to,
+          });
+          return;
+        }
+
+        get().undoLastKeystrokeInActiveDraft();
+        return;
+      }
+
+      const collapseTo =
+        editor.state.selection.empty && from === editor.state.selection.from
+          ? from
+          : to;
+
+      get().startDeleteDraft(from, to, collapseTo);
     },
 
     undoLastKeystrokeInActiveDraft: () => {
@@ -2794,11 +3020,7 @@ export const createCommentStore = () =>
         return;
       }
 
-      if (foundComment.selectedContent) {
-        if (!editor?.view?.dom) {
-          return;
-        }
-
+      if (editor?.view?.dom) {
         const selectionRange = resolveCommentSelectionRange({
           editor,
           commentId,
@@ -2807,11 +3029,15 @@ export const createCommentStore = () =>
 
         if (selectionRange) {
           const tr = editor.state.tr.setSelection(
-            TextSelection.create(
-              editor.state.doc,
-              selectionRange.from,
-              selectionRange.to,
-            ),
+            selectionRange.from === selectionRange.to
+              ? TextSelection.near(
+                  editor.state.doc.resolve(selectionRange.from),
+                )
+              : TextSelection.create(
+                  editor.state.doc,
+                  selectionRange.from,
+                  selectionRange.to,
+                ),
           );
 
           if (options?.source === 'explicit-ui') {
@@ -2821,14 +3047,9 @@ export const createCommentStore = () =>
           }
 
           editor.view.dispatch(tr);
-        }
-
-        if (selectionRange) {
           set({ isBubbleMenuSuppressed: true });
           editor.commands.setCommentActive(commentId);
-        }
 
-        if (selectionRange) {
           // Keep the nested requestAnimationFrame so the editor selection and
           // active comment styling settle before measuring scroll coordinates.
           requestAnimationFrame(() => {
@@ -2842,6 +3063,9 @@ export const createCommentStore = () =>
         }
       }
 
+      // Keep suggestion-widget active styling in sync immediately instead of
+      // waiting for the external activeCommentId round-trip.
+      get().setActiveCommentId(commentId);
       setActiveCommentId(commentId);
     },
     onPrevComment: () => {

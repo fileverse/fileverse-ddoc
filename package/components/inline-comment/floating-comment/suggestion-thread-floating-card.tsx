@@ -38,6 +38,7 @@ export const SuggestionThreadFloatingCard = ({
 
   const handleFocus = () => {
     focusFloatingCard(thread.floatingCardId);
+
     if (!thread.isFocused && thread.commentId) {
       focusCommentInEditor(thread.commentId);
     }
@@ -305,6 +306,9 @@ const ReplyField = ({
   const [replyText, setReplyText] = useState('');
   const replyTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const canReply = !comment.resolved && !comment.deleted;
+  const hasUnsentReply = Boolean(replyText.trim());
+  const shouldShowReplyField =
+    isConnected && (thread.isFocused || hasUnsentReply);
 
   useEffect(() => {
     if (replyTextareaRef.current) {
@@ -322,7 +326,7 @@ const ReplyField = ({
     setReplyText('');
   };
 
-  if (!canReply) return null;
+  if (!canReply || !shouldShowReplyField) return null;
 
   return (
     <div className={cn('flex items-start gap-2 pt-1')}>

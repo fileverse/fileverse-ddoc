@@ -1291,6 +1291,14 @@ const useEditorExtension = ({
         },
         onDeleteSelection: (from, to) =>
           storeApiRef.current?.getState().startDeleteDraft(from, to),
+        onDeleteAtCursor: (direction) =>
+          storeApiRef.current
+            ?.getState()
+            .deleteAtCursorOrUndoActiveDraft(direction),
+        onDeleteRangeWithoutSelection: (from, to) =>
+          storeApiRef.current
+            ?.getState()
+            .deleteRangeOrUndoActiveDraft(from, to),
         onUndo: () =>
           storeApiRef.current?.getState().undoLastKeystrokeInActiveDraft(),
       }),

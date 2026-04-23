@@ -1190,25 +1190,44 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
 // from inline-comment highlights via hue.
 .suggestion-delete {
   @apply cursor-pointer transition-all;
-  background-color: #FEE2E2;
+  background-color: rgba(251, 52, 73, 0.04);
   text-decoration: line-through;
-  text-decoration-color: #EF4444;
+  text-decoration-color: #FB3449;
   text-decoration-thickness: 1.5px;
 
+  &[data-active='true'],
+  &:hover {
+background-color: rgba(251, 52, 73, 0.08);
+  }
+
   .dark & {
-    background-color: #450A0A;
-    text-decoration-color: #F87171;
+        background-color: #450A0A;    text-decoration-color: #F87171;
+
+    &[data-active='true'],
+    &:hover {
+      background-color: rgb(248 113 113 / 0.08);
+    }
   }
 }
 
 .suggestion-add {
-  @apply cursor-pointer;
-  background-color: #DCFCE7;
-  color: #16A34A;
+  @apply cursor-pointer transition-all;
+background-color: rgba(0, 102, 7, 0.04);
+color: #006607;
+
+  &[data-active='true'],
+  &:hover {
+background-color: rgba(0, 102, 7, 0.08);
+  }
 
   .dark & {
-    background-color: #052E16;
-    color: #4ADE80;
+        background-color: #052E16;
+        color: #006607;
+
+    &[data-active='true'],
+    &:hover {
+      background-color: rgb(74 222 128 / 0.08);
+    }
   }
 }
 

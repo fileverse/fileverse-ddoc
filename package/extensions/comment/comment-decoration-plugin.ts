@@ -430,7 +430,11 @@ export function analyzeCommentAnchorTransactionChanges(
 // Build decorations from anchors
 // ---------------------------------------------------------------------------
 
-function createSuggestionWidget(text: string, commentId: string): HTMLElement {
+function createSuggestionWidget(
+  text: string,
+  commentId: string,
+  isActive: boolean,
+): HTMLElement {
   const span = document.createElement('span');
   span.className = 'suggestion-add';
   span.textContent = text;
@@ -438,9 +442,9 @@ function createSuggestionWidget(text: string, commentId: string): HTMLElement {
   // suggestion-draft anchor (before submit) or a thread anchor (after submit).
   span.dataset.suggestionId = commentId;
   span.dataset.commentId = commentId;
+  span.dataset.active = isActive ? 'true' : 'false';
   return span;
 }
-
 
 function buildDecorations(
   anchors: CommentAnchor[],
@@ -470,6 +474,8 @@ function buildDecorations(
     // it everywhere.
     if (anchor.resolved) continue;
 
+    const isActive = anchor.id === activeCommentId;
+
     // 'add' suggestions: cursor-based, anchorFrom === anchorTo.
     // resolveCommentAnchorRangeInState rejects from >= to, so use point
     // resolution and render a single widget. side: -1 positions the widget
@@ -484,10 +490,12 @@ function buildDecorations(
       decorations.push(
         Decoration.widget(
           insertPoint,
-          createSuggestionWidget(anchor.suggestedContent, anchor.id),
+          createSuggestionWidget(anchor.suggestedContent, anchor.id, isActive),
           {
             side: -1,
-            key: `suggestion-insert-${anchor.id}-${anchor.suggestedContent}`,
+            key: `suggestion-insert-${anchor.id}-${anchor.suggestedContent}-${
+              isActive ? 'active' : 'inactive'
+            }`,
             destroy: (node) => (node as HTMLElement).remove(),
           },
         ),
@@ -519,6 +527,7 @@ function buildDecorations(
             class: 'suggestion-delete',
             'data-suggestion-id': anchor.id,
             'data-comment-id': anchor.id,
+            'data-active': isActive ? 'true' : 'false',
           }),
         );
       }
@@ -530,10 +539,12 @@ function buildDecorations(
         decorations.push(
           Decoration.widget(
             range.to,
-            createSuggestionWidget(suggestedContent, anchor.id),
+            createSuggestionWidget(suggestedContent, anchor.id, isActive),
             {
               side: -1,
-              key: `suggestion-insert-${anchor.id}-${suggestedContent}`,
+              key: `suggestion-insert-${anchor.id}-${suggestedContent}-${
+                isActive ? 'active' : 'inactive'
+              }`,
               destroy: (node) => (node as HTMLElement).remove(),
             },
           ),
@@ -546,8 +557,6 @@ function buildDecorations(
     // Decoration state does not inherit the active-thread class that the mark
     // DOM toggles in editable mode, so mirror activeCommentId here to keep
     // preview and editable highlights visually aligned.
-    const isActive = anchor.id === activeCommentId;
-
     // Create an inline decoration at the anchor's current range.
     // The CSS class triggers visual styling; commentId enables click-to-activate-thread.
     decorations.push(
