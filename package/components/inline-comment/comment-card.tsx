@@ -1,6 +1,5 @@
 import {
   Avatar,
-  ButtonGroup,
   cn,
   DynamicDropdown,
   IconButton,
@@ -8,14 +7,9 @@ import {
   Skeleton,
   Tooltip,
 } from '@fileverse/ui';
-import { useRef, useState, useEffect, useCallback } from 'react';
-import {
-  CommentCardProps,
-  CommentReplyProps,
-  EnsStatus,
-  UserDisplayProps,
-} from './types';
-import { useComments } from './context/comment-context';
+import { useState } from 'react';
+import { CommentCardProps, CommentReplyProps, UserDisplayProps } from './types';
+import { useCommentStore } from '../../stores/comment-store';
 import EnsLogo from '../../assets/ens.svg';
 import verifiedMark from '../../assets/ens-check.svg';
 import {
@@ -24,17 +18,12 @@ import {
   renderTextWithLinks,
 } from '../../utils/helpers';
 import { Spinner } from '../../common/spinner';
+import { DeleteConfirmOverlay } from './delete-confirm-overlay';
+import { useCommentCard } from './use-comment-card';
+import { useEnsStatus } from './use-ens-status';
 
 const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
-  const { getEnsStatus, ensCache } = useComments();
-  const [ensStatus, setEnsStatus] = useState<EnsStatus>({
-    name: username,
-    isEns: false,
-  });
-
-  useEffect(() => {
-    getEnsStatus(username, setEnsStatus);
-  }, [username, ensCache]);
+  const ensStatus = useEnsStatus(username);
 
   return (
     <div className="flex justify-start items-center gap-2">
@@ -49,14 +38,19 @@ const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
         size="sm"
         className="min-w-6"
       />
-      <div className="flex gap-[8px]">
-        <span className="text-body-sm-bold inline-flex items-center gap-1">
-          {nameFormatter(ensStatus.name)}
-          {ensStatus.isEns && (
-            <img src={verifiedMark} alt="verified" className="w-3.5 h-3.5" />
-          )}
-        </span>
-        <span className="text-helper-text-sm color-text-secondary inline-flex items-center gap-1">
+      <div className="flex items-center gap-[8px] flex-wrap">
+        <Tooltip text={ensStatus.name}>
+          <span className="text-body-sm-bold flex items-center gap-1 whitespace-nowrap">
+            <p className="truncate max-w-[100px]">
+              {nameFormatter(ensStatus.name)}
+            </p>
+            {ensStatus.isEns && (
+              <img src={verifiedMark} alt="verified" className="w-3.5 h-3.5" />
+            )}
+          </span>
+        </Tooltip>
+
+        <span className="text-helper-text-sm color-text-secondary inline-flex items-center gap-1 whitespace-nowrap">
           {createdAt && dateFormatter(createdAt)}
         </span>
       </div>
@@ -65,169 +59,195 @@ const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
 };
 
 const CommentReply = ({
+  commentId,
+  replyId,
   reply,
   username,
   createdAt,
-  isLast,
+  isThreadResolved,
+  // isCommentDrawerContext,
+  // isLast,
 }: CommentReplyProps) => {
+  // const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isCommentExpanded, setIsCommentExpanded] = useState(false);
+  const [isDeleteOverlayVisible, setIsDeleteOverlayVisible] = useState(false);
+  const deleteReply = useCommentStore((s) => s.deleteReply);
+  // const requestEditReply = useCommentStore((s) => s.requestEditReply);
+  // const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
+  const currentUsername = useCommentStore((s) => s.username);
+  const isDDocOwner = useCommentStore((s) => s.isDDocOwner);
+  const isCommentTruncated = Boolean(reply && reply.length > 70);
+  const isReplyOwner = Boolean(
+    currentUsername && username && username === currentUsername,
+  );
+  const canEditReply = !isThreadResolved && isReplyOwner;
+  const canDeleteReply = isDDocOwner || isReplyOwner;
+
+  const displayedComment =
+    reply && isCommentTruncated && !isCommentExpanded
+      ? reply.slice(0, 70) + '...'
+      : reply;
+
+  // const removePopoverContent = () => {
+  //   if (dropdownRef.current?.parentElement) {
+  //     const popoverContent = dropdownRef.current.closest('[role="dialog"]');
+  //     if (popoverContent) {
+  //       popoverContent.remove();
+  //     }
+  //   }
+  // };
+
+  // const handleRequestDeleteClick = () => {
+  //   setIsDeleteOverlayVisible(true);
+  //   removePopoverContent();
+  // };
+
+  const handleDeleteOverlayClose = () => {
+    setIsDeleteOverlayVisible(false);
+  };
+
+  const handleDeleteReply = () => {
+    setIsDeleteOverlayVisible(false);
+    deleteReply(commentId, replyId);
+  };
+
+  // const handleRequestEditReply = () => {
+  //   if (!canEditReply) {
+  //     return;
+  //   }
+
+  //   if (isCommentDrawerContext) {
+  //     setOpenReplyId(commentId);
+  //   }
+
+  //   requestEditReply(commentId, replyId);
+  // };
+
   return (
-    <div className="flex flex-col gap-2 relative pl-4 pb-3 last:pb-0">
-      <div
-        className={cn('absolute left-0 top-0 h-full w-[1px] custom-border-bg', {
-          hidden: isLast,
-        })}
-      />
-      <div className="absolute left-0 top-0 w-4">
-        <div className="w-[10px] h-[20px] border-l border-b rounded-bl-lg custom-border" />
+    <div
+      className={cn(
+        'flex group relative flex-col gap-2 p-[4px]',
+        isDeleteOverlayVisible && 'min-h-[100px]',
+      )}
+    >
+      <div className="flex justify-between">
+        <UserDisplay username={username} createdAt={createdAt} />
+        {(canEditReply || canDeleteReply) && (
+          <div
+            className="opacity-0 group-hover:opacity-100"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <DynamicDropdown
+              key={`reply-actions-${replyId}`}
+              align="end"
+              sideOffset={4}
+              anchorTrigger={
+                <IconButton
+                  icon="EllipsisVertical"
+                  variant="ghost"
+                  size="sm"
+                  className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
+                />
+              }
+              content={
+                <div className="flex flex-col p-2 w-40 shadow-elevation-3">
+                  {/* {canEditReply && (
+                    <button
+                      className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
+                      onClick={handleRequestEditReply}
+                    >
+                      <LucideIcon name="Pencil" size="sm" />
+                      <p className="text-body-sm color-text-default">Edit</p>
+                    </button>
+                  )} */}
+                  {canDeleteReply && (
+                    <button
+                      className="flex items-center h-[32px] color-text-danger text-sm font-medium gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
+                      onClick={() => setIsDeleteOverlayVisible(true)}
+                    >
+                      <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
+                      <p className="text-body-sm color-text-danger">Delete</p>
+                    </button>
+                  )}
+                </div>
+              }
+            />
+          </div>
+        )}
       </div>
-      <UserDisplay username={username} createdAt={createdAt} />
-      <span className="text-body-sm flex flex-col gap-2 ml-3 pl-4 border-l custom-border whitespace-pre-wrap break-words">
-        {renderTextWithLinks(reply)}
-      </span>
+
+      <div className="ml-[13px] pl-[18px] border-l custom-border ">
+        <div className="text-body-sm flex flex-col gap-2 whitespace-pre-wrap break-words">
+          {renderTextWithLinks(displayedComment)}
+        </div>
+        {isCommentTruncated && (
+          <button
+            type="button"
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsCommentExpanded((prev) => !prev);
+            }}
+            className="color-text-link text-left mt-[4px] cursor-pointer text-helper-text-sm"
+          >
+            {isCommentExpanded ? 'Show less' : 'Show more'}
+          </button>
+        )}
+      </div>
+      <DeleteConfirmOverlay
+        isVisible={isDeleteOverlayVisible}
+        title="Delete this reply ?"
+        onCancel={handleDeleteOverlayClose}
+        onConfirm={handleDeleteReply}
+      />
     </div>
   );
 };
 
-export const CommentCard = ({
-  username,
-  selectedContent,
-  comment,
-  createdAt,
-  replies,
-  onResolve,
-  onDelete,
-  onUnresolve,
-  isResolved,
-  isDropdown = false,
-  activeCommentId,
-  id,
-  isDisabled = false,
-  isCommentOwner,
-  version,
-  emptyComment,
-}: CommentCardProps) => {
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const [isExpanded, setIsExpanded] = useState(false);
-  const [showAllReplies, setShowAllReplies] = useState(false);
-  const commentsContainerRef = useRef<HTMLDivElement>(null);
-  const { setOpenReplyId } = useComments();
-  const { getEnsStatus, ensCache } = useComments();
-  const [ensStatus, setEnsStatus] = useState<EnsStatus>({
-    name: username as string,
-    isEns: false,
-  });
-
-  useEffect(() => {
-    getEnsStatus(username as string, setEnsStatus);
-  }, [username, ensCache]);
-
-  useEffect(() => {
-    if (isDropdown) {
-      setShowAllReplies(true);
-    }
-
-    if (id !== activeCommentId) {
-      setShowAllReplies(false);
-    }
-
-    if (commentsContainerRef.current && replies) {
-      commentsContainerRef.current.scrollTo({
-        top: commentsContainerRef.current.scrollHeight,
-        behavior: 'smooth',
-      });
-    }
-  }, [isDropdown, activeCommentId, id, replies]);
-
-  const handleResolveClick = () => {
-    onResolve?.(id as string);
-    if (dropdownRef.current?.parentElement) {
-      const popoverContent = dropdownRef.current.closest('[role="dialog"]');
-      if (popoverContent) {
-        popoverContent.remove();
-      }
-    }
-  };
-
-  const handleDeleteClick = () => {
-    onDelete?.(id as string);
-    if (dropdownRef.current?.parentElement) {
-      const popoverContent = dropdownRef.current.closest('[role="dialog"]');
-      if (popoverContent) {
-        popoverContent.remove();
-      }
-    }
-  };
-
-  const handleUnresolveClick = () => {
-    onUnresolve?.(id as string);
-    if (dropdownRef.current?.parentElement) {
-      const popoverContent = dropdownRef.current.closest('[role="dialog"]');
-      if (popoverContent) {
-        popoverContent.remove();
-      }
-    }
-  };
-
-  const renderReplies = useCallback(() => {
-    if (!replies?.length) return null;
-
-    let displayedReplies = replies.sort(
-      (a, b) =>
-        new Date(a.createdAt || new Date()).getTime() -
-        new Date(b.createdAt || new Date()).getTime(),
-    );
-    if (!showAllReplies && replies.length > 3) {
-      displayedReplies = replies.slice(-2);
-    }
-
-    return (
-      <div className="flex flex-col gap-0 ml-3 relative">
-        {replies.length > 3 && !showAllReplies && (
-          <div
-            onClick={() => setShowAllReplies(true)}
-            className="text-helper-text-sm color-text-secondary hover:underline text-left pl-2 pb-3 border-l custom-border cursor-pointer flex items-center gap-1"
-          >
-            <IconButton
-              icon="ChevronDown"
-              variant="ghost"
-              size="sm"
-              rounded
-              className="color-text-secondary border custom-border scale-[0.8]"
-              onClick={() => setShowAllReplies(true)}
-            />
-            <div className="flex items-center -space-x-1">
-              {replies.slice(0, 2).map((reply) => (
-                <Avatar
-                  src={
-                    ensStatus.isEns
-                      ? EnsLogo
-                      : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-                          reply.username || '',
-                        )}`
-                  }
-                  size="sm"
-                  className="w-4 h-4 last:z-10 bg-transparent"
-                  bordered="border"
-                  key={reply.id}
-                />
-              ))}
-            </div>
-            {replies.length - 2} more replies in this thread
-          </div>
-        )}
-
-        {displayedReplies.map((reply, index) => (
-          <CommentReply
-            key={reply.id}
-            reply={reply.content || ''}
-            username={reply.username || ''}
-            createdAt={reply.createdAt || new Date()}
-            isLast={index === displayedReplies.length - 1}
-          />
-        ))}
-      </div>
-    );
-  }, [replies, showAllReplies]);
+export const CommentCard = (props: CommentCardProps) => {
+  const {
+    username,
+    // selectedContent,
+    comment,
+    createdAt,
+    isResolved,
+    version,
+    emptyComment,
+    id,
+    isDisabled,
+    isCommentOwner,
+    isCommentDrawerContext,
+    isDropdown,
+  } = props;
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const { onDelete: _onDelete } = props;
+  const {
+    commentsContainerRef,
+    displayedComment,
+    displayedReplies,
+    dropdownRef,
+    ensStatus,
+    focusCardIfNeeded,
+    handleCommentExpandClick,
+    handleReplyToggleClick,
+    // handleRequestEditClick,
+    handleRequestDeleteClick,
+    handleResolveClick,
+    handleUnresolveClick,
+    isBelow1280px,
+    isCommentExpanded,
+    isCommentMobileFocused,
+    isCommentTruncated,
+    replyToggleLabel,
+    shouldShowReplyThread,
+    shouldShowReplyToggle,
+    shouldShowResolvedMobileReplyCount,
+    showAllReplies,
+    visibleReplies,
+  } = useCommentCard(props);
+  // const currentUsername = useCommentStore((s) => s.username);
+  // const isStrictCommentOwner = Boolean(
+  //   currentUsername && username && username === currentUsername,
+  // );
 
   if (emptyComment)
     return (
@@ -255,143 +275,217 @@ export const CommentCard = ({
     <div
       ref={commentsContainerRef}
       data-testid={id ? `comment-card-${id}` : 'comment-card'}
+      onClick={focusCardIfNeeded}
       className={cn(
-        'flex flex-col gap-[4px] px-3 group comment-card',
+        'flex flex-col gap-[4px] group comment-card',
         isResolved && 'opacity-70',
-        !isDropdown && '!px-6',
-        isDropdown && 'py-3',
+        isCommentDrawerContext ? 'p-3 pb-0' : 'px-3',
       )}
     >
-      <div className="flex justify-between items-center">
-        <UserDisplay username={username as string} createdAt={createdAt} />
-        {version === '2' ? (
-          <Tooltip
-            text={isDisabled ? 'Available in a moment' : ''}
-            sideOffset={0}
-            position="top"
-          >
-            <ButtonGroup className="!space-x-0">
-              {!isDropdown && replies && replies.length === 0 && (
-                <Tooltip
-                  text={!isDisabled ? 'Add reply' : ''}
-                  sideOffset={0}
-                  position="bottom"
-                >
-                  <IconButton
-                    variant={'ghost'}
-                    icon="MessageSquarePlus"
-                    size="sm"
-                    disabled={isDisabled}
-                    className="opacity-0 group-hover:opacity-100  transition-opacity duration-300 disabled:bg-transparent"
-                    onClick={() => setOpenReplyId(id as string)}
-                  />
-                </Tooltip>
-              )}
-
-              <Tooltip
-                text={!isDisabled ? 'Coming soon' : ''}
-                sideOffset={0}
-                position="bottom"
+      <div className="flex flex-col gap-[8px]">
+        <div className="flex justify-between items-center">
+          <UserDisplay username={username as string} createdAt={createdAt} />
+          {version === '2' ? (
+            <Tooltip
+              text={isDisabled ? 'Available in a moment' : ''}
+              sideOffset={0}
+              position="top"
+            >
+              <div
+                className={cn(
+                  !isBelow1280px && 'opacity-0 group-hover:opacity-100',
+                  'flex  gap-[4px]',
+                )}
               >
-                <IconButton
-                  variant={'ghost'}
-                  icon="Smile"
-                  disabled
-                  size="sm"
-                  className="opacity-0 group-hover:opacity-100  transition-opacity duration-300 disabled:bg-transparent"
-                />
-              </Tooltip>
-
-              {!isDropdown && isCommentOwner && (
-                <DynamicDropdown
-                  key="comment-card-more-actions"
-                  align="end"
-                  sideOffset={4}
-                  anchorTrigger={
+                {isCommentOwner && !isResolved && (
+                  <Tooltip
+                    text={!isDisabled && 'Mark as resolved'}
+                    position="bottom"
+                  >
                     <IconButton
-                      icon={'Ellipsis'}
-                      variant="ghost"
-                      disabled={isDisabled}
+                      variant={'ghost'}
+                      icon="Check"
                       size="sm"
-                      className={cn(
-                        'opacity-0 group-hover:opacity-100  transition-opacity duration-300 disabled:bg-transparent',
-                      )}
+                      className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
+                      onClick={handleResolveClick}
                     />
-                  }
-                  content={
-                    <div
-                      ref={dropdownRef}
-                      className="flex flex-col gap-1 p-2 w-40 shadow-elevation-3"
-                    >
-                      <button
-                        className={cn(
-                          'flex items-center color-text-default text-sm font-medium gap-2 rounded p-2 transition-all hover:color-bg-default-hover w-full',
-                        )}
-                        onClick={
-                          isResolved ? handleUnresolveClick : handleResolveClick
-                        }
-                      >
-                        <LucideIcon name="CircleCheck" size="sm" />
-                        {isResolved ? 'Unresolve' : 'Resolve'}
-                      </button>
-                      <button
-                        className="flex items-center color-text-danger text-sm font-medium gap-2 rounded p-2 transition-all hover:color-bg-default-hover w-full"
-                        onClick={handleDeleteClick}
-                      >
-                        <LucideIcon name="Trash2" size="sm" />
-                        Delete
-                      </button>
-                    </div>
-                  }
-                />
-              )}
-            </ButtonGroup>
-          </Tooltip>
-        ) : (
-          <Tooltip text="Actions are not supported for old comments">
-            <IconButton
-              icon={'Info'}
-              variant="ghost"
-              disabled={true}
-              size="sm"
-              className={cn(
-                'opacity-0 group-hover:opacity-100  transition-opacity duration-300 disabled:bg-transparent',
-              )}
-            />
-          </Tooltip>
-        )}
-      </div>
-      <div className="flex flex-col gap-2 ml-3 pl-4 border-l custom-border py-0 pb-3">
-        {selectedContent && (
-          <div className="highlight-comment-bg p-1 rounded-lg">
-            <div className="relative">
-              <span
-                className={cn('text-body-sm italic block break-all', {
-                  'line-clamp-2': !isExpanded && selectedContent.length > 70,
-                })}
-              >
-                "{selectedContent}"
-              </span>
-              {selectedContent.length > 70 && (
+                  </Tooltip>
+                )}
+
+                {isCommentOwner && (
+                  <div onClick={(e) => e.stopPropagation()}>
+                    <DynamicDropdown
+                      key={`thread-actions-${id}`}
+                      align="end"
+                      sideOffset={4}
+                      anchorTrigger={
+                        <IconButton
+                          icon="EllipsisVertical"
+                          variant="ghost"
+                          size="sm"
+                          className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
+                        />
+                      }
+                      content={
+                        <div
+                          ref={dropdownRef}
+                          data-inline-comment-actions-menu
+                          className="flex flex-col p-2 w-40 shadow-elevation-3"
+                          onClick={(e) => e.stopPropagation()}
+                        >
+                          {isResolved && (
+                            <button
+                              className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
+                              onClick={handleUnresolveClick}
+                            >
+                              <LucideIcon name="RotateCcw" size="sm" />
+                              <p className="text-body-sm color-text-default">
+                                Unresolve
+                              </p>
+                            </button>
+                          )}
+                          {/* {!isResolved &&
+                            !isDisabled &&
+                            isStrictCommentOwner && (
+                              <button
+                                className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
+                                onClick={handleRequestEditClick}
+                              >
+                                <LucideIcon name="Pencil" size="sm" />
+                                <p className="text-body-sm color-text-default">
+                                  Edit
+                                </p>
+                              </button>
+                            )} */}
+                          <button
+                            className="flex items-center h-[32px] color-text-danger text-sm font-medium gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
+                            onClick={handleRequestDeleteClick}
+                          >
+                            <LucideIcon
+                              name="Trash2"
+                              size="sm"
+                              stroke="#FB3449"
+                            />
+                            <p className="text-body-sm color-text-danger">
+                              Delete
+                            </p>
+                          </button>
+                        </div>
+                      }
+                    />
+                  </div>
+                )}
+              </div>
+            </Tooltip>
+          ) : (
+            <Tooltip text="Actions are not supported for old comments">
+              <IconButton
+                icon={'Info'}
+                variant="ghost"
+                disabled={true}
+                size="sm"
+                className={cn(
+                  'opacity-0 group-hover:opacity-100  transition-opacity duration-300 disabled:bg-transparent',
+                )}
+              />
+            </Tooltip>
+          )}
+        </div>
+        <div
+          className={cn(
+            'flex flex-col gap-2   pl-[18px] custom-border py-0',
+            (isBelow1280px ? isCommentMobileFocused : visibleReplies.length > 0)
+              ? 'border-l ml-[13px]'
+              : 'ml-[15px]',
+          )}
+        >
+          {comment && (
+            <div>
+              <div className="text-body-sm whitespace-pre-wrap break-words">
+                {renderTextWithLinks(displayedComment || '')}
+              </div>
+              {isCommentTruncated && (
                 <button
-                  onClick={() => setIsExpanded(!isExpanded)}
-                  className="text-helper-text-sm pt-1 color-text-secondary hover:underline"
+                  type="button"
+                  onClick={handleCommentExpandClick}
+                  className="color-text-link mt-[4px] cursor-pointer text-helper-text-sm"
                 >
-                  {isExpanded ? 'Show less' : 'Show more'}
+                  {isCommentExpanded ? 'Show less' : 'Show more'}
                 </button>
               )}
             </div>
-          </div>
-        )}
-        {comment && (
-          <div>
-            <span className="text-body-sm whitespace-pre-wrap break-words">
-              {renderTextWithLinks(comment)}
-            </span>
-          </div>
-        )}
+          )}
+        </div>
       </div>
-      {replies && renderReplies()}
+
+      {visibleReplies.length > 0 &&
+        (shouldShowResolvedMobileReplyCount ? (
+          // Mobile resolved threads stay compact by default, but the count can
+          // still expand the thread on demand.
+          <button
+            type="button"
+            onClick={handleReplyToggleClick}
+            className="text-helper-text-sm color-text-secondary text-left hover:underline"
+          >
+            {visibleReplies.length} replies
+          </button>
+        ) : (
+          <div className="flex flex-col gap-0 relative">
+            {shouldShowReplyToggle && (
+              <div
+                onClick={handleReplyToggleClick}
+                className={cn(
+                  'text-helper-text-sm color-text-secondary min-h-[28px] mb-[4px] hover:underline custom-border cursor-pointer flex items-center gap-2 pr-[8px] pl-[4px]',
+                  !shouldShowReplyThread && 'justify-center mt-[4px]',
+                )}
+              >
+                <IconButton
+                  icon={showAllReplies ? 'ChevronUp' : 'ChevronDown'}
+                  variant="ghost"
+                  size="sm"
+                  rounded
+                  className="color-text-secondary border custom-border !min-w-[20px] !w-[20px] !h-[20px]"
+                  onClick={handleReplyToggleClick}
+                />
+                {!showAllReplies && (
+                  <div className="flex items-center -space-x-1">
+                    {visibleReplies.slice(0, 2).map((reply) => (
+                      <Avatar
+                        src={
+                          ensStatus.isEns
+                            ? EnsLogo
+                            : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                                reply.username || '',
+                              )}`
+                        }
+                        size="sm"
+                        className="w-4 h-4 last:z-10 bg-transparent"
+                        bordered="border"
+                        key={reply.id}
+                      />
+                    ))}
+                  </div>
+                )}
+                {replyToggleLabel}
+              </div>
+            )}
+
+            {shouldShowReplyThread &&
+              displayedReplies.map((reply, index) => (
+                <CommentReply
+                  key={reply.id}
+                  commentId={id as string}
+                  replyId={reply.id || ''}
+                  reply={reply.content || ''}
+                  username={reply.username || ''}
+                  createdAt={reply.createdAt || new Date()}
+                  isLast={index === displayedReplies.length - 1}
+                  isThreadResolved={isResolved}
+                  isCommentDrawerContext={isCommentDrawerContext}
+                />
+              ))}
+          </div>
+        ))}
     </div>
   );
 };

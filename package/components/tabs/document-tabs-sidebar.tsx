@@ -21,7 +21,6 @@ import { Editor } from '@tiptap/core';
 import * as Y from 'yjs';
 import { createPortal } from 'react-dom';
 import { ConfirmDeleteModal } from './confirm-delete-modal';
-import { useFocusMode } from '../../hooks/use-focus-mode';
 
 export interface DocumentTabsSidebarProps {
   tabs: Tab[];
@@ -50,6 +49,7 @@ export interface DocumentTabsSidebarProps {
   tabConfig?: DocumentOutlineProps['tabConfig'];
   deleteTab?: (tabId: string) => void;
   isConnected?: boolean;
+  isFocusMode?: boolean;
 }
 
 export const DocumentTabsSidebar = ({
@@ -85,6 +85,7 @@ export const TabSidebar = ({
   tabConfig,
   deleteTab,
   isConnected,
+  isFocusMode,
 }: DocumentTabsSidebarProps) => {
   const handleNameChange = (
     tabId: string,
@@ -169,8 +170,6 @@ export const TabSidebar = ({
   );
 
   const shouldExpand = !showTOC && isHovered;
-
-  const { isFocusMode } = useFocusMode();
 
   return (
     <>

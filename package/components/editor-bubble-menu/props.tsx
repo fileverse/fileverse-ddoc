@@ -1,10 +1,32 @@
 import { Editor } from '@tiptap/core';
 
-export const shouldShow = ({ editor }: { editor: Editor }) => {
-  // Check if selection is within editor canvas and not in comment drawer
+// Mobile selection handles can blur the editor while the native selection
+// still belongs to the editor content. Detect that case from the DOM selection.
+export const isSelectionInsideEditor = (editor: Editor) => {
+  const selection = window.getSelection();
+  const editorElement = editor.view?.dom;
+
+  if (!selection || !editorElement) {
+    return false;
+  }
+
+  return Boolean(
+    selection.anchorNode &&
+      selection.focusNode &&
+      editorElement.contains(selection.anchorNode) &&
+      editorElement.contains(selection.focusNode),
+  );
+};
+
+const shouldShowBubbleMenu = (editor: Editor, ignoreFocus = false) => {
+  if (!ignoreFocus && !editor.isFocused) {
+    return false;
+  }
+
   const selection = window.getSelection();
   const commentCards = document.querySelectorAll('.comment-card');
 
+  // Check if selection is within editor canvas and not in comment drawer
   if (selection) {
     for (const card of commentCards) {
       if (
@@ -20,7 +42,6 @@ export const shouldShow = ({ editor }: { editor: Editor }) => {
   const isImageSelected = editor.isActive('image');
   const isCodeBlockSelected = editor.isActive('codeBlock');
   const isHorizontalRule = editor.isActive('horizontalRule');
-
   const ignoreList = [
     'resizableMedia',
     'iframe',
@@ -46,5 +67,15 @@ export const shouldShow = ({ editor }: { editor: Editor }) => {
       });
     }
   });
+
   return !hasYellowHighlight;
 };
+
+export const shouldShow = ({ editor }: { editor: Editor }) => {
+  return shouldShowBubbleMenu(editor);
+};
+
+// Reuse the normal bubble-menu guards, but skip only the editor-focus gate for
+// the mobile native-selection fallback.
+export const shouldShowIgnoringFocus = (editor: Editor) =>
+  shouldShowBubbleMenu(editor, true);

@@ -3,8 +3,14 @@ import darkEmptyComments from '../../assets/dark-empty-comment.svg';
 import { useEffect, useState } from 'react';
 import { ThemeKey } from '../../types';
 
-const EmptyComments = () => {
-  const [theme, setTheme] = useState<ThemeKey>('light');
+const EmptyComments = ({
+  commentType,
+  handleReset,
+}: {
+  commentType: string;
+  handleReset?: () => void;
+}) => {
+  const [theme, setTheme] = useState('light');
 
   // Function to get theme from localStorage
   const getThemeFromLS = (): ThemeKey => {
@@ -66,9 +72,24 @@ const EmptyComments = () => {
         alt="empty comments"
       />
       <div className="text-heading-xsm mt-4">No comments yet</div>
-      <p className="text-body-sm color-text-secondary">
-        Add a comment on the text or in this window
-      </p>
+      {commentType === 'all' ? (
+        <p className="text-body-sm color-text-secondary">
+          Add a comment on the text or in this window
+        </p>
+      ) : (
+        <p className="text-body-sm color-text-secondary">
+          Try to{' '}
+          <span
+            onClick={() => {
+              handleReset?.();
+            }}
+            className="color-text-link cursor-pointer"
+          >
+            Reset
+          </span>{' '}
+          the filter parameters
+        </p>
+      )}
     </div>
   );
 };
