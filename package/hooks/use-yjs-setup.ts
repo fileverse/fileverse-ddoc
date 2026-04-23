@@ -87,6 +87,19 @@ export const useYjsSetup = ({
     null,
   );
 
+  // Stable ref to onChange so the ydoc handler closure (and any pending
+  // debounce) keep working when onChange's identity changes between renders.
+  // Without this, the useEffect below re-subscribes on every onChange change,
+  // and the cleanup clears any pending debounce — meaning a ydoc update
+  // followed by a parent re-render within 300ms silently loses its onChange
+  // call. (Specifically observed when accepting a suggestion: the consumer's
+  // handleResolveComment writes to Dexie within the debounce window, which
+  // triggers liveQuery re-renders that recreate onChange's identity.)
+  const onChangeRef = useRef(onChange);
+  useEffect(() => {
+    onChangeRef.current = onChange;
+  }, [onChange]);
+
   // Immediately flush any pending debounced onChange.
   // Call this after critical structural changes (tab create/delete/rename/reorder)
   // to ensure persistence happens before a potential page refresh.
@@ -95,8 +108,8 @@ export const useYjsSetup = ({
       clearTimeout(onChangeDebounceRef.current);
       onChangeDebounceRef.current = null;
     }
-    onChange?.(fromUint8Array(Y.encodeStateAsUpdate(ydoc)), '');
-  }, [ydoc, onChange]);
+    onChangeRef.current?.(fromUint8Array(Y.encodeStateAsUpdate(ydoc)), '');
+  }, [ydoc]);
 
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -114,7 +127,10 @@ export const useYjsSetup = ({
       }
       onChangeDebounceRef.current = setTimeout(() => {
         onChangeDebounceRef.current = null;
-        onChange?.(fromUint8Array(Y.encodeStateAsUpdate(ydoc)), chunk);
+        onChangeRef.current?.(
+          fromUint8Array(Y.encodeStateAsUpdate(ydoc)),
+          chunk,
+        );
       }, 300);
     };
     if (ydoc) {
@@ -122,11 +138,11 @@ export const useYjsSetup = ({
     }
     return () => {
       ydoc?.off('update', handler);
-      if (onChangeDebounceRef.current) {
-        clearTimeout(onChangeDebounceRef.current);
-      }
+      // Intentionally do NOT clear the pending debounce here. The ref-based
+      // handler is stable, so re-runs of this effect (which only happen on
+      // ydoc change — never in practice) shouldn't cancel in-flight saves.
     };
-  }, [onChange, ydoc]);
+  }, [ydoc]);
 
   return {
     ydoc,
