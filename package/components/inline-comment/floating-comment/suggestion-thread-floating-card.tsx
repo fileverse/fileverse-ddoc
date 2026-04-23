@@ -4,8 +4,11 @@ import { useCommentStore } from '../../../stores/comment-store';
 import EnsLogo from '../../../assets/ens.svg';
 import verifiedMark from '../../../assets/ens-check.svg';
 import { dateFormatter, nameFormatter } from '../../../utils/helpers';
+import { CommentRepliesThread } from '../comment-card';
+import { useCommentCard } from '../use-comment-card';
 import { useEnsStatus } from '../use-ens-status';
 import { resizeInlineCommentTextarea } from '../resize-inline-comment-textarea';
+import { FloatingAuthPrompt } from './floating-auth-prompt';
 import { FloatingCardShell } from './floating-card-shell';
 import type { ThreadFloatingCardProps } from './types';
 
@@ -71,7 +74,7 @@ export const SuggestionThreadFloatingCard = ({
       isFocused={thread.isFocused}
       onFocus={handleFocus}
     >
-      <div className="flex flex-col gap-2 p-3">
+      <div className="flex flex-col gap-2 p-3 pb-0">
         <Header
           username={comment.username}
           createdAt={comment.createdAt}
@@ -80,10 +83,15 @@ export const SuggestionThreadFloatingCard = ({
           onAccept={handleAccept}
           onReject={handleReject}
         />
+        <div className="ml-[32px]">
+          <DiffSummary comment={comment} />
+        </div>
 
-        <DiffSummary comment={comment} />
-
-        <RepliesList comment={comment} />
+        <RepliesThread
+          thread={thread}
+          comment={comment}
+          onFocusRequest={handleFocus}
+        />
 
         <ReplyField thread={thread} comment={comment} />
       </div>
@@ -220,70 +228,60 @@ const DiffSummary = ({
 };
 
 // ---------------------------------------------------------------------------
-// RepliesList — renders existing replies under the diff summary so users see
-// their reply show up after sending (the generic CommentCard's reply renderer
-// is coupled to its thread header, so we render a compact list inline here).
+// RepliesThread — reuses the same collapse/toggle rendering as CommentCard so
+// floating suggestion threads stay aligned with regular thread cards.
 // ---------------------------------------------------------------------------
 
-const RepliesList = ({
+const RepliesThread = ({
+  thread,
   comment,
+  onFocusRequest,
 }: {
+  thread: ThreadFloatingCardProps['thread'];
   comment: NonNullable<ThreadFloatingCardProps['comment']>;
+  onFocusRequest: () => void;
 }) => {
-  const replies = (comment.replies ?? []).filter((reply) => !reply.deleted);
-  if (replies.length === 0) return null;
+  const {
+    commentsContainerRef,
+    displayedReplies,
+    ensStatus,
+    handleReplyToggleClick,
+    replyToggleLabel,
+    shouldShowReplyThread,
+    shouldShowReplyToggle,
+    shouldShowResolvedMobileReplyCount,
+    showAllReplies,
+    visibleReplies,
+  } = useCommentCard({
+    id: comment.id,
+    username: comment.username,
+    comment: comment.content,
+    replies: comment.replies,
+    isResolved: comment.resolved,
+    isDropdown: true,
+    isFocused: thread.isFocused,
+    onFocusRequest,
+  });
+
+  if (visibleReplies.length === 0) {
+    return null;
+  }
 
   return (
-    <div className="flex flex-col gap-2 pt-1">
-      {replies.map((reply) => (
-        <ReplyRow
-          key={reply.id}
-          username={reply.username}
-          createdAt={reply.createdAt}
-          content={reply.content ?? ''}
-        />
-      ))}
-    </div>
-  );
-};
-
-const ReplyRow = ({
-  username,
-  createdAt,
-  content,
-}: {
-  username: string | undefined;
-  createdAt: Date | undefined;
-  content: string;
-}) => {
-  const ensStatus = useEnsStatus(username);
-
-  return (
-    <div className="flex items-start gap-2">
-      <Avatar
-        src={
-          ensStatus.isEns
-            ? EnsLogo
-            : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-                ensStatus.name,
-              )}`
-        }
-        size="sm"
-        className="min-w-6 mt-0.5"
+    <div ref={commentsContainerRef}>
+      <CommentRepliesThread
+        id={comment.id}
+        displayedReplies={displayedReplies}
+        ensStatus={ensStatus}
+        handleReplyToggleClick={handleReplyToggleClick}
+        isResolved={comment.resolved}
+        replyToggleLabel={replyToggleLabel}
+        shouldShowReplyThread={shouldShowReplyThread}
+        shouldShowReplyToggle={shouldShowReplyToggle}
+        shouldShowResolvedMobileReplyCount={shouldShowResolvedMobileReplyCount}
+        showAllReplies={showAllReplies}
+        visibleReplies={visibleReplies}
       />
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-body-sm-bold truncate">
-            {nameFormatter(ensStatus.name)}
-          </span>
-          <span className="text-helper-text-sm color-text-secondary whitespace-nowrap">
-            {createdAt && dateFormatter(createdAt)}
-          </span>
-        </div>
-        <p className="text-body-sm whitespace-pre-wrap break-words">
-          {content}
-        </p>
-      </div>
     </div>
   );
 };
@@ -304,11 +302,13 @@ const ReplyField = ({
   const handleAddReply = useCommentStore((s) => s.handleAddReply);
   const setCommentDrawerOpen = useCommentStore((s) => s.setCommentDrawerOpen);
   const [replyText, setReplyText] = useState('');
+  const [isReplyInputFocused, setIsReplyInputFocused] = useState(false);
   const replyTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const canReply = !comment.resolved && !comment.deleted;
   const hasUnsentReply = Boolean(replyText.trim());
   const shouldShowReplyField =
     isConnected && (thread.isFocused || hasUnsentReply);
+  const ensStatus = useEnsStatus(username);
 
   useEffect(() => {
     if (replyTextareaRef.current) {
@@ -324,36 +324,76 @@ const ReplyField = ({
     }
     handleAddReply(thread.commentId, replyText);
     setReplyText('');
+    setIsReplyInputFocused(false);
   };
 
-  if (!canReply || !shouldShowReplyField) return null;
+  if (!canReply) return null;
+
+  if (thread.isFocused && !isConnected) {
+    return <FloatingAuthPrompt />;
+  }
+
+  if (!shouldShowReplyField) return null;
 
   return (
-    <div className={cn('flex items-start gap-2 pt-1')}>
-      <Avatar
-        src={`https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-          username ?? 'anon',
-        )}`}
-        size="sm"
-        className="min-w-6 mt-1"
-      />
-      <div className="flex-1">
+    <div className="group">
+      <div className="border flex px-[12px] py-[8px] gap-[8px] rounded-[4px] color-bg-default">
+        <Avatar
+          src={
+            ensStatus.isEns
+              ? EnsLogo
+              : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                  ensStatus.name || '',
+                )}`
+          }
+          className="w-[16px] h-[16px]"
+        />
         <TextAreaFieldV2
           ref={replyTextareaRef}
           value={replyText}
-          onChange={(e) => setReplyText(e.target.value)}
-          placeholder="Reply"
-          className="resize-none"
+          onChange={(event) => {
+            setReplyText(event.target.value);
+            resizeInlineCommentTextarea(event.currentTarget);
+          }}
+          onFocus={() => setIsReplyInputFocused(true)}
+          onBlur={() => setIsReplyInputFocused(false)}
+          onInput={(event) => resizeInlineCommentTextarea(event.currentTarget)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' && (!event.shiftKey || event.metaKey)) {
+              event.preventDefault();
+              handleSubmit();
+            }
+          }}
+          className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
+          placeholder={canReply ? 'Add a reply' : 'Thread resolved'}
+          disabled={!canReply}
         />
       </div>
-      <Button
-        size="sm"
-        disabled={!replyText.trim()}
-        onClick={handleSubmit}
-        className="!min-w-[64px]"
+      <div
+        className={cn(
+          'items-center justify-end gap-2 pt-2',
+          hasUnsentReply || isReplyInputFocused ? 'flex' : 'hidden',
+        )}
       >
-        Send
-      </Button>
+        <Button
+          variant="ghost"
+          className="w-20 min-w-20"
+          onClick={(event) => {
+            event.stopPropagation();
+            setReplyText('');
+            setIsReplyInputFocused(false);
+          }}
+        >
+          <p className="text-body-sm-bold">Cancel</p>
+        </Button>
+        <Button
+          className="w-20 min-w-20"
+          disabled={!replyText.trim()}
+          onClick={handleSubmit}
+        >
+          Send
+        </Button>
+      </div>
     </div>
   );
 };

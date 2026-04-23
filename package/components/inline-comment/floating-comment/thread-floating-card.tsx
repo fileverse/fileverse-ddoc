@@ -99,11 +99,14 @@ export const ThreadFloatingCard = ({
         {thread.isFocused && !isConnected && !isCollaborationEnabled && (
           <FloatingAuthPrompt />
         )}
-        <InputField
-          comment={comment}
-          thread={thread}
-          isCollaborationEnabled={isCollaborationEnabled}
-        />
+        <div className="px-3">
+          <InputField
+            comment={comment}
+            thread={thread}
+            isCollaborationEnabled={isCollaborationEnabled}
+          />
+        </div>
+
         <DeleteConfirmOverlay
           isVisible={isDeleteOverlayVisible}
           title="Delete this comment thread ?"
@@ -224,7 +227,7 @@ const InputField = ({
 
   if (!shouldShowReplyInputField) return;
   return (
-    <div className="group p-3 pt-0 pb-0">
+    <div className="group">
       <div
         className={cn(
           'border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]',

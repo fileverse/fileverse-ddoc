@@ -1,8 +1,12 @@
-import { Button, IconButton } from '@fileverse/ui';
+import { Avatar, Button, IconButton } from '@fileverse/ui';
 import { useCommentStore } from '../../../stores/comment-store';
 import { FloatingCardShell } from './floating-card-shell';
 import { FloatingAuthPrompt } from './floating-auth-prompt';
 import type { SuggestionDraftFloatingCardProps } from './types';
+import { useEnsStatus } from '../use-ens-status';
+import EnsLogo from '../../../assets/ens.svg';
+import { dateFormatter, nameFormatter } from '../../../utils/helpers';
+import verifiedMark from '../../../assets/ens-check.svg';
 
 /**
  * SuggestionDraftFloatingCard
@@ -31,6 +35,8 @@ export const SuggestionDraftFloatingCard = ({
   const hasOriginal = Boolean(card.selectedText);
   const hasInserted = Boolean(card.insertedText);
   const canSubmit = hasOriginal || hasInserted;
+  const username = useCommentStore((s) => s.username);
+  const ensStatus = useEnsStatus(username);
 
   const suggestionType: 'add' | 'delete' | 'replace' | null = hasOriginal
     ? hasInserted
@@ -51,9 +57,44 @@ export const SuggestionDraftFloatingCard = ({
       {!isConnected ? (
         <FloatingAuthPrompt />
       ) : (
-        <div className="flex flex-col gap-2 p-3">
-        <div className="flex items-start gap-2">
-          <div className="flex-1">
+        <div className="flex flex-col gap-2 p-3 pb-0">
+          <div className="flex items-center gap-2">
+            <Avatar
+              src={
+                ensStatus.isEns
+                  ? EnsLogo
+                  : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                      ensStatus.name,
+                    )}`
+              }
+              size="sm"
+              className="min-w-6"
+            />
+            <span className="text-body-sm-bold inline-flex items-center gap-1 whitespace-nowrap">
+              {nameFormatter(ensStatus.name)}
+              {ensStatus.isEns && (
+                <img
+                  src={verifiedMark}
+                  alt="verified"
+                  className="w-3.5 h-3.5"
+                />
+              )}
+            </span>
+            <span className="text-helper-text-sm color-text-secondary whitespace-nowrap">
+              {dateFormatter(Date.now())}
+            </span>
+            <div className="ml-auto flex items-center gap-1">
+              <IconButton
+                icon="X"
+                variant="ghost"
+                size="sm"
+                onClick={() => discardDraft(card.suggestionId)}
+                title="Discard suggestion"
+              />
+            </div>
+          </div>
+
+          <div className="flex-1 ml-[32px]">
             {suggestionType === 'add' && (
               <p className="text-body-sm">
                 <span className="font-semibold">Add:</span>{' '}
@@ -84,25 +125,17 @@ export const SuggestionDraftFloatingCard = ({
               </p>
             )}
           </div>
-          <IconButton
-            icon="X"
-            variant="ghost"
-            size="sm"
-            onClick={() => discardDraft(card.suggestionId)}
-            title="Discard suggestion"
-          />
-        </div>
 
-        <div className="flex items-center justify-end">
-          <Button
-            size="sm"
-            disabled={!canSubmit}
-            onClick={() => submitDraft(card.suggestionId)}
-            className="!min-w-[80px]"
-          >
-            Submit
-          </Button>
-        </div>
+          <div className="flex items-center justify-end">
+            <Button
+              size="sm"
+              disabled={!canSubmit}
+              onClick={() => submitDraft(card.suggestionId)}
+              className="!min-w-[80px]"
+            >
+              Submit
+            </Button>
+          </div>
         </div>
       )}
     </FloatingCardShell>
