@@ -26,8 +26,8 @@ export const FloatingCardShell = forwardRef<
       className={cn(
         'absolute left-0 top-0 pb-[12px] border rounded-[12px] will-change-transform transition-[box-shadow,border-color] duration-150 ease-out',
         isFocused
-          ? 'shadow-elevation-3 color-bg-default  color-border-default'
-          : 'hover:color-bg-default-hover border-transparent hover:color-border-default   bg-[#00000005] ',
+          ? 'shadow-elevation-3 color-bg-default color-border-default'
+          : 'color-bg-transparent border-transparent hover:color-bg-default-hover hover:color-border-default',
       )}
       style={{
         width: FLOATING_CARD_WIDTH,
