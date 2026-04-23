@@ -805,26 +805,34 @@ export function applyAcceptedSuggestion(
 
     const { suggestionType, suggestedContent } = anchor;
 
-    // Use TipTap's high-level commands (insertContentAt / deleteRange) — same
-    // pattern used elsewhere in the package (slash commands, dBlock, etc.).
-    // These wrap the y-prosemirror sync correctly so the doc change reaches
-    // Y.Doc → onChange → IndexedDB. Raw tr.insertText / tr.delete inside a
-    // chain().command() does NOT propagate to Y.Doc reliably, leaving the
-    // doc visibly changed but unpersisted.
+    // Insert as an explicit text node (NOT a string). When passed a string,
+    // TipTap parses it as HTML via DOMParser, wrapping in <p>. Inserting a
+    // <p> mid-paragraph causes ProseMirror to silently no-op the step — the
+    // command returns true but tr.docChanged stays false, so y-prosemirror
+    // never syncs to Y.Doc and the consumer's onChange never fires.
+    // Passing { type: 'text', text } skips parsing and produces a real
+    // ReplaceStep that y-prosemirror picks up.
+    const textNode = (text: string) => ({ type: 'text', text });
+
     if (suggestionType === 'add') {
       if (!suggestedContent) return false;
-      return editor.commands.insertContentAt(from, suggestedContent);
+      return editor
+        .chain()
+        .focus()
+        .insertContentAt(from, textNode(suggestedContent))
+        .run();
     }
     if (suggestionType === 'delete') {
       if (from >= to) return false;
-      return editor.commands.deleteRange({ from, to });
+      return editor.chain().focus().deleteRange({ from, to }).run();
     }
     if (suggestionType === 'replace') {
       if (from >= to || !suggestedContent) return false;
       return editor
         .chain()
+        .focus()
         .deleteRange({ from, to })
-        .insertContentAt(from, suggestedContent)
+        .insertContentAt(from, textNode(suggestedContent))
         .run();
     }
     return false;

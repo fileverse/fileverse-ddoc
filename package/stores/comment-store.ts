@@ -2271,8 +2271,12 @@ export const createCommentStore = () =>
       }
     },
     acceptSuggestion: (commentId) => {
-      const { editor, onResolveComment, setActiveCommentId, commentAnchorsRef } =
-        getExtDeps(get);
+      const {
+        editor,
+        onResolveComment,
+        setActiveCommentId,
+        commentAnchorsRef,
+      } = getExtDeps(get);
 
       if (!editor) return;
 
@@ -2486,7 +2490,8 @@ export const createCommentStore = () =>
       delete nextDrafts[suggestionId];
 
       const nextCards = get().floatingCards.filter(
-        (c) => !(c.type === 'suggestion-draft' && c.suggestionId === suggestionId),
+        (c) =>
+          !(c.type === 'suggestion-draft' && c.suggestionId === suggestionId),
       );
 
       set({ drafts: nextDrafts, floatingCards: nextCards });
