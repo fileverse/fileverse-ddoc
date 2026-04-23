@@ -1028,7 +1028,10 @@ const DdocEditor = forwardRef(
                             editorWrapperRef={editorWrapperRef}
                             scrollContainerRef={editorScrollContainerRef}
                             tabName={currentTabName}
-                            isHidden={Boolean(commentDrawerOpen)}
+                            isHidden={
+                              Boolean(commentDrawerOpen) ||
+                              Boolean(disableInlineComment)
+                            }
                             isCollaborationEnabled={collaboration?.enabled}
                           />
                         </div>

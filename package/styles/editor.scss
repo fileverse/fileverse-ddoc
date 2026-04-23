@@ -1221,6 +1221,20 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   pointer-events: none !important;
 }
 
+// Suggestions: hide both Add (widget) and Delete/Replace (decoration) so the
+// View-only viewer sees the canonical doc text without proposed changes.
+.hide-inline-comments .suggestion-add {
+  display: none !important;
+}
+
+.hide-inline-comments .suggestion-delete {
+  background-color: transparent !important;
+  color: inherit !important;
+  text-decoration: none !important;
+  cursor: default !important;
+  pointer-events: none !important;
+}
+
 .custom-scrollbar {
   overflow-y: scroll;
   scrollbar-width: thin; /* Firefox */
