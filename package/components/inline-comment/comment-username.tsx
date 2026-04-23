@@ -5,7 +5,6 @@ import { CommentUsernameProps } from './context/types';
 const CommentUsername = ({
   username,
   setUsername,
-  isNavbarVisible,
   isConnected,
   connectViaUsername,
   connectViaWallet,
@@ -14,10 +13,7 @@ const CommentUsername = ({
   return (
     <div
       data-testid="comment-auth-modal"
-      className={cn(
-        'flex flex-col h-screen xl:!h-[80vh] !color-bg-default !rounded-b-lg',
-        !isNavbarVisible && 'xl:!h-[calc(100vh-150px)]',
-      )}
+      className={cn('flex flex-col !color-bg-default !rounded-b-lg')}
     >
       <div
         className={cn(

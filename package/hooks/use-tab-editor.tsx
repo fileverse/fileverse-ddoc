@@ -9,7 +9,12 @@ import {
   MutableRefObject,
   SetStateAction,
 } from 'react';
-import { DdocProps, DdocEditorProps, ThemeKey } from '../types';
+import {
+  DdocProps,
+  DdocEditorProps,
+  SerializedCommentAnchor,
+  ThemeKey,
+} from '../types';
 import * as Y from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration';
 import { defaultExtensions } from '../extensions/default-extension';
@@ -26,6 +31,11 @@ import { zoomService } from '../zoom-service';
 import { sanitizeContent } from '../utils/sanitize-content';
 import { CommentExtension as Comment } from '../extensions/comment';
 import {
+  CommentAnchor,
+  CommentDecorationExtension,
+  triggerDecorationRebuild,
+} from '../extensions/comment/comment-decoration-plugin';
+import {
   createPageCounter,
   handleContentPrint,
   handlePrint,
@@ -41,6 +51,10 @@ import { useResponsive } from '../utils/responsive';
 import { yCursorPlugin, yCursorPluginKey } from '@tiptap/y-tiptap';
 import { getResponsiveColor } from '../utils/colors';
 import { getEditorScrollContainer } from '../utils/get-editor-scroll-container';
+import {
+  deserializeCommentAnchors,
+  getSerializedCommentAnchorsKey,
+} from '../utils/comment-anchor-serialization';
 import {
   CollabConnectionConfig,
   CollaborationProps,
@@ -91,6 +105,32 @@ const cancelIdleTask = (task: ScheduledIdleTask) => {
   window.clearTimeout(task.handle);
 };
 
+const getInlineCommentEventTarget = (
+  target: EventTarget | null,
+): Element | null => {
+  if (!(target instanceof Node)) {
+    return null;
+  }
+
+  if (target.nodeType === Node.TEXT_NODE) {
+    return target.parentElement;
+  }
+
+  return target instanceof Element ? target : null;
+};
+
+const hasVisibleFloatingCommentCard = () => {
+  if (typeof document === 'undefined') {
+    return false;
+  }
+
+  return Boolean(
+    document.querySelector(
+      '[data-floating-comment-hidden="false"] [data-floating-comment-card]',
+    ),
+  );
+};
+
 interface UseTabEditorArgs {
   ydoc: Y.Doc;
   isVersionMode?: boolean;
@@ -103,6 +143,7 @@ interface UseTabEditorArgs {
   isSyncing?: boolean;
   awareness?: any;
   disableInlineComment?: boolean;
+  isFocusMode?: boolean;
   onCommentInteraction?: DdocProps['onCommentInteraction'];
   onError?: DdocProps['onError'];
   ipfsImageUploadFn?: DdocProps['ipfsImageUploadFn'];
@@ -133,6 +174,7 @@ interface UseTabEditorArgs {
   activeTabId: string;
   theme?: ThemeKey;
   editorRef?: MutableRefObject<Editor | null>;
+  initialCommentAnchors?: SerializedCommentAnchor[];
 }
 
 export const useTabEditor = ({
@@ -147,6 +189,7 @@ export const useTabEditor = ({
   isSyncing,
   awareness,
   disableInlineComment,
+  isFocusMode,
   onCommentInteraction,
   onError,
   ipfsImageUploadFn,
@@ -177,6 +220,7 @@ export const useTabEditor = ({
   activeTabId,
   theme,
   editorRef,
+  initialCommentAnchors,
 }: UseTabEditorArgs) => {
   const collabEnabled = collaboration?.enabled === true;
   const connection = collabEnabled ? collaboration.connection : null;
@@ -186,7 +230,7 @@ export const useTabEditor = ({
   const hasAvailableModels = Boolean(activeModel && isAIAgentEnabled);
   const { tocItems, setTocItems, handleTocUpdate } = useTocState(activeTabId);
 
-  const { extensions } = useEditorExtension({
+  const { extensions, commentAnchorsRef } = useEditorExtension({
     ydoc,
     onError,
     ipfsImageUploadFn,
@@ -201,8 +245,9 @@ export const useTabEditor = ({
     maxTokens,
     isAIAgentEnabled,
     hasAvailableModels,
+    activeCommentId,
     onCommentActivated: (commentId) => {
-      setActiveCommentId(commentId);
+      setActiveCommentId(commentId || null);
       if (commentId) {
         setTimeout(() => focusCommentWithActiveId(commentId));
       }
@@ -210,10 +255,12 @@ export const useTabEditor = ({
     onTocUpdate: handleTocUpdate,
     externalExtensions,
     activeTabId,
+    initialCommentAnchors,
   });
 
   const { handleCommentInteraction, handleCommentClick } =
     useCommentInteraction({
+      isFocusMode,
       onCommentInteraction,
     });
   const isInitialEditorCreation = useRef(true);
@@ -246,7 +293,17 @@ export const useTabEditor = ({
             }
           },
           blur: () => {
-            editor?.commands.unsetCommentActive();
+            requestAnimationFrame(() => {
+              requestAnimationFrame(() => {
+                // Let focus transfer settle before clearing active comment
+                // state; clicks into floating thread UI blur the editor first.
+                if (hasVisibleFloatingCommentCard()) {
+                  return;
+                }
+
+                editor?.commands.unsetCommentActive();
+              });
+            });
           },
         },
         handleClick: (view, pos, event) => {
@@ -254,13 +311,10 @@ export const useTabEditor = ({
           const isModifierPressed = event.metaKey || event.ctrlKey;
           // 2. Check if the clicked element is a link
           // In Firefox, event.target can be a text node which lacks closest()
-          const node = event.target as Node;
-          const target =
-            node.nodeType === Node.TEXT_NODE
-              ? (node.parentElement as HTMLElement)
-              : (node as HTMLElement);
-          const link = target?.closest('a');
-          if (link && link.href) {
+          const target = getInlineCommentEventTarget(event.target);
+
+          const link = target?.closest<HTMLAnchorElement>('a');
+          if (link?.href) {
             // Fragment links with heading= param should scroll within the document. Only check origin (not pathname) since the same doc has  different paths (i.e: shareable link vs owner link).
             const url = new URL(link.href, window.location.href);
             if (url.hash && url.origin === window.location.origin) {
@@ -410,13 +464,9 @@ export const useTabEditor = ({
     if (!isPreviewMode) return;
 
     const handler = (event: MouseEvent) => {
-      const node = event.target as Node;
-      const target =
-        node.nodeType === Node.TEXT_NODE
-          ? (node.parentElement as HTMLElement)
-          : (node as HTMLElement);
+      const target = getInlineCommentEventTarget(event.target);
       if (!target?.closest?.('#editor')) return;
-      const link = target.closest('a');
+      const link = target.closest<HTMLAnchorElement>('a');
       if (!link?.href) return;
 
       try {
@@ -946,6 +996,23 @@ export const useTabEditor = ({
 
   useDarkModeStyleCleanup(editor, initialContent, false);
 
+  const previousActiveDecorationCommentIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (!editor) {
+      return;
+    }
+
+    if (previousActiveDecorationCommentIdRef.current === activeCommentId) {
+      return;
+    }
+
+    previousActiveDecorationCommentIdRef.current = activeCommentId;
+    // Active-thread styling also lives in the decoration layer, so rebuild
+    // when React-owned activeCommentId changes outside doc transactions.
+    triggerDecorationRebuild(editor);
+  }, [activeCommentId, editor]);
+
   return {
     editor,
     ref,
@@ -957,6 +1024,7 @@ export const useTabEditor = ({
     setActiveCommentId,
     focusCommentWithActiveId,
     isContentLoading,
+    commentAnchorsRef,
   };
 };
 
@@ -1061,10 +1129,12 @@ interface UseExtensionStackArgs {
   maxTokens?: number;
   isAIAgentEnabled?: boolean;
   hasAvailableModels: boolean;
-  onCommentActivated: (commentId: string | null) => void;
+  activeCommentId: string | null;
+  onCommentActivated: (commentId: string) => void;
   onTocUpdate: (data: ToCItemType[], isCreate: boolean | undefined) => void;
   externalExtensions?: Record<string, AnyExtension>;
   activeTabId: string;
+  initialCommentAnchors?: SerializedCommentAnchor[];
 }
 
 const useEditorExtension = ({
@@ -1082,10 +1152,12 @@ const useEditorExtension = ({
   maxTokens,
   isAIAgentEnabled,
   hasAvailableModels,
+  activeCommentId,
   onCommentActivated,
   onTocUpdate,
   externalExtensions,
   activeTabId,
+  initialCommentAnchors,
 }: UseExtensionStackArgs) => {
   const slashCommandConfigRef = useRef({
     isConnected,
@@ -1107,8 +1179,25 @@ const useEditorExtension = ({
         ipfsImageUploadFn,
         slashCommandConfigRef,
       ),
-    [onError, ipfsImageUploadFn],
+    [],
   );
+
+  const initialCommentAnchorsKey = useMemo(
+    () => getSerializedCommentAnchorsKey(initialCommentAnchors),
+    [initialCommentAnchors],
+  );
+  const initialCommentAnchorState = useMemo(
+    () => deserializeCommentAnchors(initialCommentAnchors),
+    [initialCommentAnchorsKey],
+  );
+  // Seed persisted anchors before editor creation so the decoration plugin can
+  // render the initial highlight set on first paint.
+  const commentAnchorsRef = useRef<CommentAnchor[]>(initialCommentAnchorState);
+  const activeCommentIdRef = useRef<string | null>(activeCommentId);
+
+  useEffect(() => {
+    activeCommentIdRef.current = activeCommentId;
+  }, [activeCommentId]);
 
   const commentExtension = useMemo(
     () =>
@@ -1139,6 +1228,10 @@ const useEditorExtension = ({
       Collaboration.configure({
         document: ydoc,
         field: activeTabId,
+      }),
+      CommentDecorationExtension.configure({
+        getAnchors: () => commentAnchorsRef.current,
+        getActiveCommentId: () => activeCommentIdRef.current,
       }),
       ...(externalExtensions ? Object.values(externalExtensions) : []),
     ];
@@ -1194,16 +1287,32 @@ const useEditorExtension = ({
     ]);
   }, [activeModel, maxTokens, isAIAgentEnabled, createSlashCommand]);
 
-  return { extensions, setExtensions };
+  return { extensions, setExtensions, commentAnchorsRef };
 };
 
 interface UseCommentInteractionArgs {
+  isFocusMode?: boolean;
   onCommentInteraction?: DdocProps['onCommentInteraction'];
 }
 
 const useCommentInteraction = ({
+  isFocusMode = false,
   onCommentInteraction,
 }: UseCommentInteractionArgs) => {
+  // `useEditor` is initialized with explicit deps, so these DOM handlers won't
+  // be refreshed just because focus mode toggles. Keep the latest values in
+  // refs so comment behavior updates without rebuilding the editor instance.
+  const isFocusModeRef = useRef(isFocusMode);
+  const onCommentInteractionRef = useRef(onCommentInteraction);
+
+  useEffect(() => {
+    isFocusModeRef.current = isFocusMode;
+  }, [isFocusMode]);
+
+  useEffect(() => {
+    onCommentInteractionRef.current = onCommentInteraction;
+  }, [onCommentInteraction]);
+
   const isHighlightedYellow = useCallback(
     (state: EditorState, from: number, to: number) => {
       let highlighted = false;
@@ -1225,6 +1334,10 @@ const useCommentInteraction = ({
 
   const handleCommentInteraction = useCallback(
     (view: EditorView, event: MouseEvent) => {
+      if (isFocusModeRef.current) {
+        return false;
+      }
+
       const target = event.target as HTMLElement | null;
 
       if (
@@ -1232,13 +1345,13 @@ const useCommentInteraction = ({
         target.nodeName !== 'MARK' ||
         target.dataset.color !== 'yellow'
       ) {
-        return;
+        return false;
       }
 
       const highlightedText = target.textContent;
       const pos = view.posAtCoords({ left: event.clientX, top: event.clientY });
 
-      if (!pos) return;
+      if (!pos) return false;
 
       const { state } = view;
       let from = pos.pos;
@@ -1255,7 +1368,7 @@ const useCommentInteraction = ({
         }
       });
 
-      if (from === to) return;
+      if (from === to) return false;
 
       const data = {
         text: highlightedText,
@@ -1263,9 +1376,11 @@ const useCommentInteraction = ({
         to,
         isHighlightedYellow: isHighlightedYellow(state, from, to),
       };
-      onCommentInteraction?.(data);
+      onCommentInteractionRef.current?.(data);
+
+      return false;
     },
-    [isHighlightedYellow, onCommentInteraction],
+    [isHighlightedYellow],
   );
 
   const handleCommentClick = useCallback(

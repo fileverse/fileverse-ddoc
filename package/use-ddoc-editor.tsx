@@ -21,6 +21,7 @@ export const useDdocEditor = ({
   ddocId,
   enableIndexeddbSync,
   unFocused,
+  isFocusMode,
   theme,
   zoomLevel,
   onInvalidContentError,
@@ -37,8 +38,9 @@ export const useDdocEditor = ({
   isAIAgentEnabled,
   onIndexedDbError,
   disableInlineComment,
+  initialCommentAnchors,
   ...rest
-}: Partial<DdocProps>) => {
+}: Partial<DdocProps> & { isFocusMode?: boolean }) => {
   const [isContentLoading, setIsContentLoading] = useState(true);
   const [isCollabContentLoading, setIsCollabContentLoading] = useState(true);
   const editorRef = useRef<Editor | null>(null);
@@ -100,6 +102,7 @@ export const useDdocEditor = ({
     isSyncing: yjsSetup.isSyncing,
     awareness: yjsSetup.awareness,
     disableInlineComment,
+    isFocusMode,
     onCommentInteraction,
     onError,
     ipfsImageUploadFn,
@@ -132,6 +135,7 @@ export const useDdocEditor = ({
     isVersionMode,
     theme,
     editorRef,
+    initialCommentAnchors,
   });
 
   const isOwner = collabEnabled ? collaboration.connection.isOwner : true;

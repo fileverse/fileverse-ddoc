@@ -32,7 +32,7 @@ import { useMediaQuery } from 'usehooks-ts';
 import { colors, textColors } from '../utils/colors';
 import { validateImageExtension } from '../utils/check-image-type';
 import { handleContentPrint } from '../utils/handle-print';
-import { useComments } from '../components/inline-comment/context/comment-context';
+import { useCommentRefs } from '../stores/comment-store-provider';
 import {
   convertListToParagraphs,
   convertToList,
@@ -233,7 +233,7 @@ export const useEditorToolbar = ({
     initialFormattingState,
   );
 
-  const { buttonRef } = useComments();
+  const { buttonRef } = useCommentRefs();
 
   useEffect(() => {
     if (!editor) return;
@@ -293,12 +293,10 @@ export const useEditorToolbar = ({
             const selectedText = state.doc.textBetween(from, to, ' ');
 
             if (selectedText) {
-              const storedTheme = localStorage.getItem('theme');
-              const isDarkTheme = storedTheme === 'dark' || storedTheme === 'theme-green';
               editor
                 .chain()
                 .setHighlight({
-                  color: isDarkTheme ? '#15521d' : '#DDFBDF',
+                  color: 'var(--color-inline-comment)',
                 })
                 .run();
 

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
 // @ts-nocheck
 import { BubbleMenu } from '@tiptap/react/menus';
-import React, { useEffect, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo } from 'react';
 import { NodeSelector } from './node-selector';
 import {
   LinkPopup,
@@ -18,16 +18,21 @@ import { IEditorTool } from '../../hooks/use-visibility';
 import ToolbarButton from '../../common/toolbar-button';
 import { DynamicDropdown, cn, LucideIcon } from '@fileverse/ui';
 import { CommentDropdown } from '../inline-comment/comment-dropdown';
-import { createPortal } from 'react-dom';
 import { EditorBubbleMenuProps, BubbleMenuItem } from './types';
 import { useResponsive } from '../../utils/responsive';
-import { shouldShow } from './props';
-import { useComments } from '../inline-comment/context/comment-context';
+import {
+  isSelectionInsideEditor,
+  shouldShow,
+  shouldShowIgnoringFocus,
+} from './props';
+import { useCommentStore } from '../../stores/comment-store';
+import { useCommentRefs } from '../../stores/comment-store-provider';
 import { useEditorStates } from '../../hooks/use-editor-states';
 import { Editor } from '@tiptap/react';
 
 const MemoizedFontSizePicker = React.memo(FontSizePicker);
 const MemoizedLineHeightPicker = React.memo(LineHeightPicker);
+const BUBBLE_MENU_Z_INDEX = '61';
 
 export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const {
@@ -43,14 +48,14 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     ipfsImageFetchFn,
     enableCollaboration,
     fetchV1ImageFn,
-    isCollabDocOwner,
   } = props;
   const editorStates = useEditorStates(editor as Editor);
   const currentSize = editor ? editorStates.currentSize : undefined;
   const currentLineHeight = editor ? editorStates.currentLineHeight : undefined;
   const onSetFontSize = editor ? editorStates.onSetFontSize : () => {};
   const onSetLineHeight = editor ? editorStates.onSetLineHeight : () => {};
-  const { isNativeMobile } = useResponsive();
+  const { isBelow1280px, isNativeMobile } = useResponsive();
+  const shouldUseFloatingComments = !isBelow1280px && !isNativeMobile;
   const { toolRef, setToolVisibility, toolVisibility } = useEditorToolbar({
     editor: editor ?? null,
     onError,
@@ -59,17 +64,18 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     fetchV1ImageFn,
   });
 
-  const {
-    activeComment,
-    isCommentOpen,
-    handleInlineComment,
-    portalRef,
-    buttonRef,
-    isCommentActive,
-    isCommentResolved,
-    isBubbleMenuSuppressed,
-    setIsBubbleMenuSuppressed,
-  } = useComments();
+  const activeComment = useCommentStore((s) => s.activeComment);
+  const isCommentOpen = useCommentStore((s) => s.isCommentOpen);
+  const handleInlineComment = useCommentStore((s) => s.handleInlineComment);
+  const isCommentActive = useCommentStore((s) => s.isCommentActive);
+  const isCommentResolved = useCommentStore((s) => s.isCommentResolved);
+  const isBubbleMenuSuppressed = useCommentStore(
+    (s) => s.isBubbleMenuSuppressed,
+  );
+  const setIsBubbleMenuSuppressed = useCommentStore(
+    (s) => s.setIsBubbleMenuSuppressed,
+  );
+  const { buttonRef } = useCommentRefs();
 
   useEffect(() => {
     if (!editor || !isBubbleMenuSuppressed) {
@@ -86,6 +92,29 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       editor.off('selectionUpdate', handleSelectionUpdate);
     };
   }, [editor, isBubbleMenuSuppressed, setIsBubbleMenuSuppressed]);
+
+  const handleBubbleMenuRef = useCallback((node: HTMLDivElement | null) => {
+    node?.style.setProperty('z-index', BUBBLE_MENU_Z_INDEX);
+  }, []);
+
+  // Mobile text selection can survive an editor blur, so retry the same
+  // visibility checks without the focus requirement when selection stays in-editor.
+  const handleBubbleMenuShouldShow = useCallback(
+    ({ editor }: { editor: Editor }) => {
+      if (shouldShow({ editor })) {
+        return true;
+      }
+
+      // Mobile native selection and preview-mode selection can both survive an
+      // editor blur, so ignore focus when the selection still belongs to the editor.
+      return (
+        (isNativeMobile || isPreviewMode) &&
+        isSelectionInsideEditor(editor) &&
+        shouldShowIgnoringFocus(editor)
+      );
+    },
+    [isNativeMobile, isPreviewMode],
+  );
 
   const items: BubbleMenuItem[] = useMemo(() => {
     return [
@@ -186,6 +215,11 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     }
   };
 
+  const handleMobileInlineComment = () => {
+    setCommentDrawerOpen?.(true);
+    handleInlineComment();
+  };
+
   const mobileCommentButton = (
     <React.Fragment>
       <ToolbarButton
@@ -196,28 +230,13 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
         disabled={
           isCommentResolved ||
           !isCollabDocumentPublished ||
-          disableInlineComment
+          disableInlineComment ||
+          enableCollaboration
         }
         isActive={isCommentActive}
-        onClick={handleInlineComment}
+        onClick={handleMobileInlineComment}
         classNames="disabled:!bg-transparent"
       />
-      {isCommentOpen &&
-        isCollabDocOwner &&
-        createPortal(
-          <div
-            ref={portalRef}
-            className={cn(
-              'fixed z-50 top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/4 rounded-md border color-border-default color-bg-default shadow-elevation-3',
-            )}
-          >
-            {renderContent({
-              name: 'Comment',
-              initialComment: activeComment?.content || '',
-            })}
-          </div>,
-          document.body,
-        )}
     </React.Fragment>
   );
 
@@ -237,14 +256,22 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
 
   return (
     <BubbleMenu
+      ref={handleBubbleMenuRef}
       editor={editor}
-      // appendTo={() => document.getElementById('editor-canvas')!}
+      appendTo={
+        isBelow1280px
+          ? undefined
+          : () =>
+              document.getElementById('editor-canvas') ??
+              editor.view.dom.parentElement ??
+              document.body
+      }
       options={{
         placement: 'top',
         flip: true,
         shift: true,
       }}
-      shouldShow={shouldShow}
+      shouldShow={handleBubbleMenuShouldShow}
       className={cn(
         'flex gap-2 overflow-hidden rounded-lg min-w-fit w-full p-1 border color-bg-default items-center shadow-elevation-3',
         isCommentOpen ||
@@ -271,38 +298,56 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
       ) : (
         <React.Fragment>
           {isPreviewMode ? (
-            <DynamicDropdown
-              key="Comment"
-              side="bottom"
-              sideOffset={15}
-              alignOffset={-5}
-              align="end"
-              className="!z-[50] shadow-elevation-3"
-              anchorTrigger={
-                <ToolbarButton
-                  icon="MessageSquarePlus"
-                  variant="ghost"
-                  size="sm"
-                  tooltip={isCommentResolved ? 'Comment resolved' : ''}
-                  disabled={
-                    isCommentResolved ||
-                    !isCollabDocumentPublished ||
-                    disableInlineComment
-                  }
-                  isActive={isCommentActive}
-                  onClick={handleInlineComment}
-                  classNames="disabled:!bg-transparent"
-                />
-              }
-              content={
-                !isCommentActive
-                  ? renderContent({
-                      name: 'Comment',
-                      initialComment: activeComment?.content || '',
-                    })
-                  : null
-              }
-            />
+            shouldUseFloatingComments ? (
+              <ToolbarButton
+                ref={buttonRef}
+                icon="MessageSquarePlus"
+                variant="ghost"
+                size="sm"
+                tooltip={isCommentResolved ? 'Comment resolved' : ''}
+                disabled={
+                  isCommentResolved ||
+                  !isCollabDocumentPublished ||
+                  disableInlineComment
+                }
+                isActive={isCommentActive}
+                onClick={handleInlineComment}
+                classNames="disabled:!bg-transparent"
+              />
+            ) : (
+              <DynamicDropdown
+                key="Comment"
+                side="bottom"
+                sideOffset={15}
+                alignOffset={-5}
+                align="end"
+                className="!z-[50] shadow-elevation-3"
+                anchorTrigger={
+                  <ToolbarButton
+                    icon="MessageSquarePlus"
+                    variant="ghost"
+                    size="sm"
+                    tooltip={isCommentResolved ? 'Comment resolved' : ''}
+                    disabled={
+                      isCommentResolved ||
+                      !isCollabDocumentPublished ||
+                      disableInlineComment
+                    }
+                    isActive={isCommentActive}
+                    onClick={handleInlineComment}
+                    classNames="disabled:!bg-transparent"
+                  />
+                }
+                content={
+                  !isCommentActive
+                    ? renderContent({
+                        name: 'Comment',
+                        initialComment: activeComment?.content || '',
+                      })
+                    : null
+                }
+              />
+            )
           ) : isInMediaCaption ? (
             <React.Fragment>
               <DynamicDropdown
@@ -489,6 +534,35 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                 }
 
                 if (item.name === 'Comment') {
+                  if (shouldUseFloatingComments) {
+                    return (
+                      <ToolbarButton
+                        key="Comment"
+                        ref={buttonRef}
+                        data-testid="inline-comment-btn"
+                        icon="MessageSquarePlus"
+                        variant="ghost"
+                        size="sm"
+                        tooltip={
+                          enableCollaboration
+                            ? 'Comments are not available during real-time  collaboration'
+                            : isCommentResolved
+                              ? 'Comment resolved'
+                              : ''
+                        }
+                        disabled={
+                          isCommentResolved ||
+                          !isCollabDocumentPublished ||
+                          disableInlineComment ||
+                          enableCollaboration
+                        }
+                        isActive={isCommentActive}
+                        onClick={handleInlineComment}
+                        classNames="disabled:!bg-transparent"
+                      />
+                    );
+                  }
+
                   return (
                     <DynamicDropdown
                       key="Comment"
