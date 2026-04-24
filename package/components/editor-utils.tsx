@@ -195,6 +195,8 @@ const initialFormattingState = {
 export const useEditorToolbar = ({
   editor,
   onError,
+  isPresentationMode,
+  setIsPresentationMode,
   ipfsImageUploadFn,
   onMarkdownExport,
   onMarkdownImport,
@@ -207,6 +209,8 @@ export const useEditorToolbar = ({
   fetchV1ImageFn,
 }: {
   editor: Editor | null;
+  isPresentationMode?: boolean;
+  setIsPresentationMode?: () => void;
   onError?: (errorString: string) => void;
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   onMarkdownExport?: () => void;
@@ -743,6 +747,20 @@ export const useEditorToolbar = ({
       title: 'Set text direction to right-to-left',
       onClick: () => editor?.commands.setTextDirection('rtl'),
       isActive: editor?.isActive('paragraph', { dir: 'rtl' }) ?? false,
+      group: 'More',
+      notVisible: 1560,
+    },
+    null,
+    {
+      icon: 'Presentation',
+      title: 'Slides mode',
+      onClick: () => {
+        editor?.chain().focus().run(); // added editor focus and delegated the presentation mode setter to give the popover closing time.
+        setTimeout(() => {
+          setIsPresentationMode?.();
+        }, 50);
+      },
+      isActive: isPresentationMode ?? false,
       group: 'More',
       notVisible: 1560,
     },

@@ -437,6 +437,11 @@ const DdocEditor = forwardRef(
       }
     };
 
+    const handlePresentationModeHandler = () => {
+      setIsPresentationMode?.(true);
+      commentDrawerOpen && setCommentDrawerOpen?.(false);
+    };
+
     useEffect(() => {
       if (!editor) return;
       if (isNativeMobile) {
@@ -609,6 +614,8 @@ const DdocEditor = forwardRef(
               >
                 <div className="justify-center items-center grow relative color-text-default">
                   <EditorToolBar
+                    isPresentationMode={isPresentationMode}
+                    setIsPresentationMode={handlePresentationModeHandler}
                     onError={onError}
                     editor={editor}
                     zoomLevel={zoomLevel}

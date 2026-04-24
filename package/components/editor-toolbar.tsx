@@ -41,6 +41,8 @@ const MemoizedLineHeightPicker = React.memo(LineHeightPicker);
 const TiptapToolBar = ({
   editor,
   onError,
+  isPresentationMode,
+  setIsPresentationMode,
   zoomLevel,
   setZoomLevel,
   isNavbarVisible,
@@ -64,6 +66,8 @@ const TiptapToolBar = ({
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
+  isPresentationMode?: boolean;
+  setIsPresentationMode: () => void;
   zoomLevel: string;
   setZoomLevel: (zoom: string) => void;
   isNavbarVisible: boolean;
@@ -100,6 +104,8 @@ const TiptapToolBar = ({
     setFileExportsOpen,
   } = useEditorToolbar({
     editor,
+    isPresentationMode,
+    setIsPresentationMode,
     onError,
     ipfsImageUploadFn,
     onMarkdownExport,
