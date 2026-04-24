@@ -23,6 +23,8 @@ import {
   DocumentStyling,
   CollaborationProps,
   CollabState,
+  SerializedCommentAnchor,
+  CommentMutationMeta,
 } from '../../package/types';
 import {
   getKeyFromURLParams,
@@ -175,6 +177,40 @@ function App() {
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [disableInlineComment, setDisableInlineComment] = useState(false);
+  const [isDDocOwner, setIsDDocOwner] = useState(true);
+  const [viewerMode, setViewerMode] = useState<'suggest' | 'view-only' | undefined>(undefined);
+
+  // Single mode picker for the demo navbar — cycles
+  // Owner → Viewer/Suggest → Viewer/View-only → Owner.
+  const cycleMode = () => {
+    if (isDDocOwner) {
+      setIsDDocOwner(false);
+      setIsPreviewMode(true);
+      setViewerMode('suggest');
+    } else if (viewerMode === 'suggest') {
+      setViewerMode('view-only');
+    } else {
+      setIsDDocOwner(true);
+      setIsPreviewMode(false);
+      setViewerMode(undefined);
+    }
+  };
+  const modeIcon = isDDocOwner
+    ? 'Crown'
+    : viewerMode === 'suggest'
+      ? 'PenLine'
+      : 'Eye';
+  const modeLabel = isDDocOwner
+    ? 'Owner'
+    : viewerMode === 'suggest'
+      ? 'Suggest'
+      : 'View-only';
+  const nextModeLabel = isDDocOwner
+    ? 'Suggest'
+    : viewerMode === 'suggest'
+      ? 'View-only'
+      : 'Owner';
+  const [initialCommentAnchors, setInitialCommentAnchors] = useState<SerializedCommentAnchor[]>([]);
 
   const searchParams = new URLSearchParams(window.location.search);
   const paramCollaborationId = searchParams.get('collaborationId');
@@ -246,11 +282,35 @@ function App() {
       }),
     );
   };
-  const handleNewComment = (comment: IComment) => {
+  const handleNewComment = (comment: IComment, meta?: CommentMutationMeta) => {
     setInitialComment((prev) => [
       ...prev,
       { ...comment, commentIndex: prev.length, version: '2' },
     ]);
+
+    // Register the serialized anchor for every new comment that came in with
+    // anchor positions (both regular comments and suggestions). The package's
+    // initialCommentAnchors useEffect resets `commentAnchorsRef.current` to
+    // whatever this prop holds whenever it changes — if a regular comment
+    // isn't included here, a subsequent suggestion submit (which DOES
+    // re-set this state) wipes the regular comment's anchor and its
+    // decoration disappears.
+    if (comment.id && meta?.anchorFrom && meta?.anchorTo) {
+      const anchor: SerializedCommentAnchor = {
+        id: comment.id,
+        anchorFrom: meta.anchorFrom,
+        anchorTo: meta.anchorTo,
+        resolved: false,
+        deleted: false,
+        ...(comment.isSuggestion && {
+          isSuggestion: true,
+          suggestionType: meta.suggestionType,
+          originalContent: meta.originalContent,
+          suggestedContent: meta.suggestedContent,
+        }),
+      };
+      setInitialCommentAnchors((prev) => [...prev, anchor]);
+    }
   };
   const handleResolveComment = (commentId: string) => {
     setInitialComment(
@@ -387,12 +447,6 @@ function App() {
           </div>
         </div>
         <div className="flex gap-2">
-          <IconButton
-            variant={'ghost'}
-            icon={disableInlineComment ? 'EyeOff' : 'Eye'}
-            size="md"
-            onClick={() => setDisableInlineComment(!disableInlineComment)}
-          />
           <ThemeToggle />
 
           {isMediaMax1280px ? (
@@ -427,14 +481,24 @@ function App() {
                   </Button>
                   <Button
                     variant={'ghost'}
-                    onClick={() => setIsPreviewMode(!isPreviewMode)}
+                    onClick={cycleMode}
+                    className="flex justify-start gap-2"
+                  >
+                    <LucideIcon name={modeIcon} size="sm" />
+                    {modeLabel}
+                  </Button>
+                  <Button
+                    variant={'ghost'}
+                    onClick={() => setDisableInlineComment((v) => !v)}
                     className="flex justify-start gap-2"
                   >
                     <LucideIcon
-                      name={isPreviewMode ? 'Pencil' : 'PencilOff'}
+                      name={disableInlineComment ? 'EyeOff' : 'Eye'}
                       size="sm"
                     />
-                    {isPreviewMode ? 'Edit' : 'Preview'}
+                    {disableInlineComment
+                      ? 'Show inline comments'
+                      : 'Hide inline comments'}
                   </Button>
                   <Button
                     variant={'ghost'}
@@ -459,9 +523,10 @@ function App() {
             <>
               <IconButton
                 variant={'ghost'}
-                icon={isPreviewMode ? 'PencilOff' : 'Pencil'}
+                icon={modeIcon}
                 size="md"
-                onClick={() => setIsPreviewMode(!isPreviewMode)}
+                title={`${modeLabel} mode — click to switch to ${nextModeLabel}`}
+                onClick={cycleMode}
               />
               <IconButton
                 variant={'ghost'}
@@ -720,7 +785,9 @@ function App() {
         }}
         onCollaboratorChange={onCollaboratorChange}
         documentStyling={documentStyling}
-        isDDocOwner={true}
+        isDDocOwner={isDDocOwner}
+        viewerMode={isDDocOwner ? undefined : viewerMode}
+        initialCommentAnchors={initialCommentAnchors}
         setCharacterCount={setCharacterCount}
         setWordCount={setWordCount}
         setPageCount={setPageCount}

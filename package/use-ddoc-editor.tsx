@@ -7,6 +7,7 @@ import { Editor } from '@tiptap/react';
 
 export const useDdocEditor = ({
   isPreviewMode,
+  viewerMode,
   initialContent,
   versionHistoryState,
   collaboration,
@@ -95,6 +96,7 @@ export const useDdocEditor = ({
   const tabEditor = useTabEditor({
     ydoc: yjsSetup.ydoc,
     isPreviewMode,
+    viewerMode,
     initialContent: ddocContent,
     collaboration,
     versionId: versionHistoryState?.versionId,

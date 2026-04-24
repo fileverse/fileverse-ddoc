@@ -35,6 +35,8 @@ import {
   CommentDecorationExtension,
   triggerDecorationRebuild,
 } from '../extensions/comment/comment-decoration-plugin';
+import { SuggestionTrackingExtension } from '../extensions/suggestion/suggestion-tracking-extension';
+import type { createCommentStore } from '../stores/comment-store';
 import {
   createPageCounter,
   handleContentPrint,
@@ -137,6 +139,7 @@ interface UseTabEditorArgs {
   hasTabState?: boolean;
   versionId?: string;
   isPreviewMode?: boolean;
+  viewerMode?: DdocProps['viewerMode'];
   initialContent: DdocProps['initialContent'];
   collaboration?: CollaborationProps;
   isReady?: boolean;
@@ -183,6 +186,7 @@ export const useTabEditor = ({
   hasTabState,
   versionId,
   isPreviewMode,
+  viewerMode,
   initialContent,
   collaboration,
   isReady,
@@ -230,7 +234,9 @@ export const useTabEditor = ({
   const hasAvailableModels = Boolean(activeModel && isAIAgentEnabled);
   const { tocItems, setTocItems, handleTocUpdate } = useTocState(activeTabId);
 
-  const { extensions, commentAnchorsRef } = useEditorExtension({
+  const isSuggestionMode = !!(isPreviewMode && viewerMode === 'suggest');
+
+  const { extensions, commentAnchorsRef, draftAnchorsRef, storeApiRef } = useEditorExtension({
     ydoc,
     onError,
     ipfsImageUploadFn,
@@ -256,6 +262,7 @@ export const useTabEditor = ({
     externalExtensions,
     activeTabId,
     initialCommentAnchors,
+    isSuggestionMode,
   });
 
   const { handleCommentInteraction, handleCommentClick } =
@@ -411,6 +418,20 @@ export const useTabEditor = ({
     }
   }, [editor]);
 
+  // Toggle a data attribute on the editor root so CSS can suppress the
+  // "Type / to browse options" placeholder (and others) in suggestion mode.
+  useEffect(() => {
+    if (!editor || editor.isDestroyed) return;
+    // editor.view is lazily attached — guard against accessing before mount
+    const dom = editor.view?.dom;
+    if (!dom) return;
+    if (isSuggestionMode) {
+      dom.setAttribute('data-suggestion-mode', 'true');
+    } else {
+      dom.removeAttribute('data-suggestion-mode');
+    }
+  }, [editor, isSuggestionMode]);
+
   // Fix for TableOfContents not updating in Tiptap v3
   const tocDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -446,12 +467,13 @@ export const useTabEditor = ({
   // updates into the ydoc).  All other collab states (connecting, ready,
   // reconnecting, terminating) keep the editor editable so there is no
   // scroll-jump on start or flicker on stop.
+
   const readyState = useMemo(() => {
-    if (isPreviewMode) return false;
+    if (isPreviewMode && !isSuggestionMode) return false;
     if (!isCollaborationEnabled) return true;
     if (isSyncing) return false;
     return true;
-  }, [isPreviewMode, isCollaborationEnabled, isSyncing]);
+  }, [isPreviewMode, isSuggestionMode, isCollaborationEnabled, isSyncing]);
 
   useEffect(() => {
     editor?.setEditable(readyState);
@@ -1026,6 +1048,8 @@ export const useTabEditor = ({
     focusCommentWithActiveId,
     isContentLoading,
     commentAnchorsRef,
+    draftAnchorsRef,
+    storeApiRef,
   };
 };
 
@@ -1136,6 +1160,7 @@ interface UseExtensionStackArgs {
   externalExtensions?: Record<string, AnyExtension>;
   activeTabId: string;
   initialCommentAnchors?: SerializedCommentAnchor[];
+  isSuggestionMode?: boolean;
 }
 
 const useEditorExtension = ({
@@ -1159,6 +1184,7 @@ const useEditorExtension = ({
   externalExtensions,
   activeTabId,
   initialCommentAnchors,
+  isSuggestionMode = false,
 }: UseExtensionStackArgs) => {
   const slashCommandConfigRef = useRef({
     isConnected,
@@ -1194,11 +1220,28 @@ const useEditorExtension = ({
   // Seed persisted anchors before editor creation so the decoration plugin can
   // render the initial highlight set on first paint.
   const commentAnchorsRef = useRef<CommentAnchor[]>(initialCommentAnchorState);
+  // Derived anchors for in-progress suggestion drafts. Maintained by the
+  // store's draft actions — decoration layer reads this alongside
+  // commentAnchorsRef so drafts and submitted suggestions render identically.
+  const draftAnchorsRef = useRef<CommentAnchor[]>([]);
   const activeCommentIdRef = useRef<string | null>(activeCommentId);
 
   useEffect(() => {
     activeCommentIdRef.current = activeCommentId;
   }, [activeCommentId]);
+
+  // Keep a stable ref to isSuggestionMode so the extension closure always
+  // reads the latest value without needing to rebuild extensions.
+  const isSuggestionModeRef = useRef(isSuggestionMode);
+  isSuggestionModeRef.current = isSuggestionMode;
+
+  // Stable ref to the Zustand store API. The CommentStoreProvider populates
+  // this once it creates the store; the SuggestionTrackingExtension reads it
+  // lazily inside its event handlers so draft actions route to the store
+  // without rebuilding the editor.
+  const storeApiRef = useRef<ReturnType<typeof createCommentStore> | null>(
+    null,
+  );
 
   const commentExtension = useMemo(
     () =>
@@ -1231,8 +1274,34 @@ const useEditorExtension = ({
         field: activeTabId,
       }),
       CommentDecorationExtension.configure({
-        getAnchors: () => commentAnchorsRef.current,
+        getAnchors: () => [
+          ...commentAnchorsRef.current,
+          ...draftAnchorsRef.current,
+        ],
         getActiveCommentId: () => activeCommentIdRef.current,
+      }),
+      SuggestionTrackingExtension.configure({
+        getIsSuggestionMode: () => isSuggestionModeRef.current,
+        onTextInput: (text) =>
+          storeApiRef.current?.getState().appendToDraftAtCursor(text),
+        onReplaceTyping: (from, to, text) => {
+          const state = storeApiRef.current?.getState();
+          if (!state) return;
+          state.startDeleteDraft(from, to);
+          state.appendToDraftAtCursor(text);
+        },
+        onDeleteSelection: (from, to) =>
+          storeApiRef.current?.getState().startDeleteDraft(from, to),
+        onDeleteAtCursor: (direction) =>
+          storeApiRef.current
+            ?.getState()
+            .deleteAtCursorOrUndoActiveDraft(direction),
+        onDeleteRangeWithoutSelection: (from, to) =>
+          storeApiRef.current
+            ?.getState()
+            .deleteRangeOrUndoActiveDraft(from, to),
+        onUndo: () =>
+          storeApiRef.current?.getState().undoLastKeystrokeInActiveDraft(),
       }),
       ...(externalExtensions ? Object.values(externalExtensions) : []),
     ];
@@ -1288,7 +1357,13 @@ const useEditorExtension = ({
     ]);
   }, [activeModel, maxTokens, isAIAgentEnabled, createSlashCommand]);
 
-  return { extensions, setExtensions, commentAnchorsRef };
+  return {
+    extensions,
+    setExtensions,
+    commentAnchorsRef,
+    draftAnchorsRef,
+    storeApiRef,
+  };
 };
 
 interface UseCommentInteractionArgs {

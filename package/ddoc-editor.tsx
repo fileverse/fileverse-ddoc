@@ -58,6 +58,7 @@ const DdocEditor = forwardRef(
   (
     {
       isPreviewMode = false,
+      viewerMode,
       initialContent,
       collaboration,
       username,
@@ -268,6 +269,8 @@ const DdocEditor = forwardRef(
       orderTab,
       deleteTab,
       commentAnchorsRef,
+      draftAnchorsRef,
+      storeApiRef,
     } = useDdocEditor({
       documentStyling,
       ipfsImageFetchFn,
@@ -275,6 +278,7 @@ const DdocEditor = forwardRef(
       enableIndexeddbSync,
       ddocId,
       isPreviewMode,
+      viewerMode,
       initialContent,
       collaboration,
       walletAddress,
@@ -314,6 +318,7 @@ const DdocEditor = forwardRef(
       isAIAgentEnabled,
       isDDocOwner,
       tabConfig,
+      onNewComment,
       ...rest,
     });
     const currentTabName = useMemo(
@@ -903,6 +908,9 @@ const DdocEditor = forwardRef(
                                 <div>
                                   <EditingProvider
                                     isPreviewMode={isPreviewMode}
+                                    isSuggestionMode={
+                                      isPreviewMode && viewerMode === 'suggest'
+                                    }
                                     isCollaboratorsDoc={
                                       collaboration?.enabled === true &&
                                       !collaboration.connection.isOwner
@@ -1021,7 +1029,10 @@ const DdocEditor = forwardRef(
                             editorWrapperRef={editorWrapperRef}
                             scrollContainerRef={editorScrollContainerRef}
                             tabName={currentTabName}
-                            isHidden={Boolean(commentDrawerOpen)}
+                            isHidden={
+                              Boolean(commentDrawerOpen) ||
+                              Boolean(disableInlineComment)
+                            }
                             isCollaborationEnabled={collaboration?.enabled}
                           />
                         </div>
@@ -1196,6 +1207,8 @@ const DdocEditor = forwardRef(
               onComment={onComment}
               setCommentDrawerOpen={setCommentDrawerOpen}
               commentAnchorsRef={commentAnchorsRef}
+              draftAnchorsRef={draftAnchorsRef}
+              storeApiRef={storeApiRef}
               initialCommentAnchors={initialCommentAnchors}
             >
               {renderComp()}

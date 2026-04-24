@@ -8,8 +8,13 @@ import {
   Skeleton,
   Tooltip,
 } from '@fileverse/ui';
-import { useState } from 'react';
-import { CommentCardProps, CommentReplyProps, UserDisplayProps } from './types';
+import { useState, type MouseEvent } from 'react';
+import {
+  CommentCardProps,
+  CommentReplyProps,
+  EnsStatus,
+  UserDisplayProps,
+} from './types';
 import { useCommentStore } from '../../stores/comment-store';
 import EnsLogo from '../../assets/ens.svg';
 import verifiedMark from '../../assets/ens-check.svg';
@@ -22,6 +27,50 @@ import { Spinner } from '../../common/spinner';
 import { DeleteConfirmOverlay } from './delete-confirm-overlay';
 import { useCommentCard } from './use-comment-card';
 import { useEnsStatus } from './use-ens-status';
+import { SuggestionType } from '../../types';
+
+interface SuggestionDiffSummaryProps {
+  suggestionType?: SuggestionType;
+  originalContent?: string;
+  suggestedContent?: string;
+}
+
+// One-line diff summary used in the sidebar entry for suggestion comments.
+// Mirrors the format used by SuggestionThreadFloatingCard so suggestion
+// representation stays consistent across surfaces.
+const SuggestionDiffSummary = ({
+  suggestionType,
+  originalContent = '',
+  suggestedContent = '',
+}: SuggestionDiffSummaryProps) => {
+  if (suggestionType === 'add') {
+    return (
+      <p className="text-body-sm">
+        <span className="font-semibold">Add:</span>{' '}
+        <span>&ldquo;{suggestedContent}&rdquo;</span>
+      </p>
+    );
+  }
+  if (suggestionType === 'delete') {
+    return (
+      <p className="text-body-sm">
+        <span className="font-semibold">Delete:</span>{' '}
+        <span className="line-through">&ldquo;{originalContent}&rdquo;</span>
+      </p>
+    );
+  }
+  if (suggestionType === 'replace') {
+    return (
+      <p className="text-body-sm">
+        <span className="font-semibold">Replace:</span>{' '}
+        <span className="line-through">&ldquo;{originalContent}&rdquo;</span>{' '}
+        <span className="font-semibold">with</span>{' '}
+        <span>&ldquo;{suggestedContent}&rdquo;</span>
+      </p>
+    );
+  }
+  return null;
+};
 
 const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
   const ensStatus = useEnsStatus(username);
@@ -59,7 +108,7 @@ const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
   );
 };
 
-const CommentReply = ({
+export const CommentReply = ({
   commentId,
   replyId,
   reply,
@@ -206,6 +255,106 @@ const CommentReply = ({
   );
 };
 
+interface CommentRepliesThreadProps {
+  id?: string;
+  displayedReplies: CommentCardProps['replies'];
+  ensStatus: EnsStatus;
+  handleReplyToggleClick: (event: MouseEvent<HTMLElement>) => void;
+  isCommentDrawerContext?: boolean;
+  isResolved?: boolean;
+  replyToggleLabel: string;
+  shouldShowReplyThread: boolean;
+  shouldShowReplyToggle: boolean;
+  shouldShowResolvedMobileReplyCount: boolean;
+  showAllReplies: boolean;
+  visibleReplies: CommentCardProps['replies'];
+}
+
+export const CommentRepliesThread = ({
+  id,
+  displayedReplies,
+  ensStatus,
+  handleReplyToggleClick,
+  isCommentDrawerContext,
+  isResolved,
+  replyToggleLabel,
+  shouldShowReplyThread,
+  shouldShowReplyToggle,
+  shouldShowResolvedMobileReplyCount,
+  showAllReplies,
+  visibleReplies,
+}: CommentRepliesThreadProps) => {
+  if (!visibleReplies?.length) {
+    return null;
+  }
+
+  return shouldShowResolvedMobileReplyCount ? (
+    <button
+      type="button"
+      onClick={handleReplyToggleClick}
+      className="text-helper-text-sm color-text-secondary text-left hover:underline"
+    >
+      {visibleReplies.length} replies
+    </button>
+  ) : (
+    <div className="flex flex-col gap-0 relative">
+      {shouldShowReplyToggle && (
+        <div
+          onClick={handleReplyToggleClick}
+          className={cn(
+            'text-helper-text-sm color-text-secondary min-h-[28px] mb-[4px] hover:underline custom-border cursor-pointer flex items-center gap-2 pr-[8px] pl-[4px]',
+            !shouldShowReplyThread && 'justify-center mt-[4px]',
+          )}
+        >
+          <IconButton
+            icon={showAllReplies ? 'ChevronUp' : 'ChevronDown'}
+            variant="ghost"
+            size="sm"
+            rounded
+            className="color-text-secondary border custom-border !min-w-[20px] !w-[20px] !h-[20px]"
+            onClick={handleReplyToggleClick}
+          />
+          {!showAllReplies && (
+            <div className="flex items-center -space-x-1">
+              {visibleReplies.slice(0, 2).map((reply) => (
+                <Avatar
+                  src={
+                    ensStatus.isEns
+                      ? EnsLogo
+                      : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                          reply.username || '',
+                        )}`
+                  }
+                  size="sm"
+                  className="w-4 h-4 last:z-10 bg-transparent"
+                  bordered="border"
+                  key={reply.id}
+                />
+              ))}
+            </div>
+          )}
+          {replyToggleLabel}
+        </div>
+      )}
+
+      {shouldShowReplyThread &&
+        displayedReplies?.map((reply, index) => (
+          <CommentReply
+            key={reply.id}
+            commentId={id as string}
+            replyId={reply.id || ''}
+            reply={reply.content || ''}
+            username={reply.username || ''}
+            createdAt={reply.createdAt || new Date()}
+            isLast={index === displayedReplies.length - 1}
+            isThreadResolved={isResolved}
+            isCommentDrawerContext={isCommentDrawerContext}
+          />
+        ))}
+    </div>
+  );
+};
+
 export const CommentCard = (props: CommentCardProps) => {
   const {
     username,
@@ -218,8 +367,13 @@ export const CommentCard = (props: CommentCardProps) => {
     id,
     isDisabled,
     isCommentOwner,
+    canResolveComment,
     isCommentDrawerContext,
     isDropdown,
+    isSuggestion,
+    suggestionType,
+    originalContent,
+    suggestedContent,
   } = props;
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const { onDelete: _onDelete } = props;
@@ -251,6 +405,7 @@ export const CommentCard = (props: CommentCardProps) => {
   // const isStrictCommentOwner = Boolean(
   //   currentUsername && username && username === currentUsername,
   // );
+  const canShowResolveAction = canResolveComment ?? isCommentOwner;
 
   if (emptyComment)
     return (
@@ -300,9 +455,12 @@ export const CommentCard = (props: CommentCardProps) => {
                   'flex  gap-[4px]',
                 )}
               >
-                {isCommentOwner && !isResolved && (
+                {canShowResolveAction && !isResolved && (
                   <Tooltip
-                    text={!isDisabled && 'Mark as resolved'}
+                    text={
+                      !isDisabled &&
+                      (isSuggestion ? 'Accept suggestion' : 'Mark as resolved')
+                    }
                     position="bottom"
                   >
                     <IconButton
@@ -336,7 +494,7 @@ export const CommentCard = (props: CommentCardProps) => {
                           className="flex flex-col p-2 w-40 shadow-elevation-3"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          {isResolved && (
+                          {isResolved && !isSuggestion && (
                             <button
                               className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
                               onClick={handleUnresolveClick}
@@ -402,93 +560,47 @@ export const CommentCard = (props: CommentCardProps) => {
               : 'ml-[15px]',
           )}
         >
-          {comment && (
-            <div>
-              <div className="text-body-sm whitespace-pre-wrap break-words">
-                {renderTextWithLinks(displayedComment || '')}
+          {isSuggestion ? (
+            <SuggestionDiffSummary
+              suggestionType={suggestionType}
+              originalContent={originalContent}
+              suggestedContent={suggestedContent}
+            />
+          ) : (
+            comment && (
+              <div>
+                <div className="text-body-sm whitespace-pre-wrap break-words">
+                  {renderTextWithLinks(displayedComment || '')}
+                </div>
+                {isCommentTruncated && (
+                  <button
+                    type="button"
+                    onClick={handleCommentExpandClick}
+                    className="color-text-link mt-[4px] cursor-pointer text-helper-text-sm"
+                  >
+                    {isCommentExpanded ? 'Show less' : 'Show more'}
+                  </button>
+                )}
               </div>
-              {isCommentTruncated && (
-                <button
-                  type="button"
-                  onClick={handleCommentExpandClick}
-                  className="color-text-link mt-[4px] cursor-pointer text-helper-text-sm"
-                >
-                  {isCommentExpanded ? 'Show less' : 'Show more'}
-                </button>
-              )}
-            </div>
+            )
           )}
         </div>
       </div>
 
-      {visibleReplies.length > 0 &&
-        (shouldShowResolvedMobileReplyCount ? (
-          // Mobile resolved threads stay compact by default, but the count can
-          // still expand the thread on demand.
-          <button
-            type="button"
-            onClick={handleReplyToggleClick}
-            className="text-helper-text-sm color-text-secondary text-left hover:underline"
-          >
-            {visibleReplies.length} replies
-          </button>
-        ) : (
-          <div className="flex flex-col gap-0 relative">
-            {shouldShowReplyToggle && (
-              <div
-                onClick={handleReplyToggleClick}
-                className={cn(
-                  'text-helper-text-sm color-text-secondary min-h-[28px] mb-[4px] hover:underline custom-border cursor-pointer flex items-center gap-2 pr-[8px] pl-[4px]',
-                  !shouldShowReplyThread && 'justify-center mt-[4px]',
-                )}
-              >
-                <IconButton
-                  icon={showAllReplies ? 'ChevronUp' : 'ChevronDown'}
-                  variant="ghost"
-                  size="sm"
-                  rounded
-                  className="color-text-secondary border custom-border !min-w-[20px] !w-[20px] !h-[20px]"
-                  onClick={handleReplyToggleClick}
-                />
-                {!showAllReplies && (
-                  <div className="flex items-center -space-x-1">
-                    {visibleReplies.slice(0, 2).map((reply) => (
-                      <Avatar
-                        src={
-                          ensStatus.isEns
-                            ? EnsLogo
-                            : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-                                reply.username || '',
-                              )}`
-                        }
-                        size="sm"
-                        className="w-4 h-4 last:z-10 bg-transparent"
-                        bordered="border"
-                        key={reply.id}
-                      />
-                    ))}
-                  </div>
-                )}
-                {replyToggleLabel}
-              </div>
-            )}
-
-            {shouldShowReplyThread &&
-              displayedReplies.map((reply, index) => (
-                <CommentReply
-                  key={reply.id}
-                  commentId={id as string}
-                  replyId={reply.id || ''}
-                  reply={reply.content || ''}
-                  username={reply.username || ''}
-                  createdAt={reply.createdAt || new Date()}
-                  isLast={index === displayedReplies.length - 1}
-                  isThreadResolved={isResolved}
-                  isCommentDrawerContext={isCommentDrawerContext}
-                />
-              ))}
-          </div>
-        ))}
+      <CommentRepliesThread
+        id={id}
+        displayedReplies={displayedReplies}
+        ensStatus={ensStatus}
+        handleReplyToggleClick={handleReplyToggleClick}
+        isCommentDrawerContext={isCommentDrawerContext}
+        isResolved={isResolved}
+        replyToggleLabel={replyToggleLabel}
+        shouldShowReplyThread={shouldShowReplyThread}
+        shouldShowReplyToggle={shouldShowReplyToggle}
+        shouldShowResolvedMobileReplyCount={shouldShowResolvedMobileReplyCount}
+        showAllReplies={showAllReplies}
+        visibleReplies={visibleReplies}
+      />
     </div>
   );
 };

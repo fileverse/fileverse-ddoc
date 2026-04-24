@@ -17,11 +17,14 @@ import {
   CommentAnchor,
   type CommentAnchorTransactionChange,
   getCommentAtPosition,
-  triggerDecorationRebuild,
+  resolveCommentAnchorPointInState,
   resolveCommentAnchorRangeInState,
   resolveCommentAnchorRangeForAnalysis,
+  triggerDecorationRebuild,
 } from '../extensions/comment/comment-decoration-plugin';
 import { CommentMutationMeta, SerializedCommentAnchor } from '../types';
+import type { CommentFloatingThreadCard } from '../components/inline-comment/context/types';
+import { DEFAULT_TAB_ID } from '../components/tabs/utils/tab-utils';
 import { useResponsive } from '../utils/responsive';
 import {
   deserializeCommentAnchors,
@@ -65,6 +68,13 @@ export interface CommentStoreProviderProps {
   connectViaUsername?: (username: string) => Promise<void>;
   ensResolutionUrl: string;
   commentAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
+  draftAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
+  /**
+   * Ref populated by the provider with the Zustand store instance.
+   * SuggestionTrackingExtension reads this inside event handlers to route
+   * keystrokes into draft actions without rebuilding the editor.
+   */
+  storeApiRef?: React.MutableRefObject<ReturnType<typeof createCommentStore> | null>;
   initialCommentAnchors?: SerializedCommentAnchor[];
   // Synced data — go into store via useEffect
   initialComments: IComment[];
@@ -101,6 +111,8 @@ export const CommentStoreProvider = ({
   connectViaUsername,
   ensResolutionUrl,
   commentAnchorsRef,
+  draftAnchorsRef,
+  storeApiRef,
   initialCommentAnchors,
   setUsername: setUsernameProp,
   // Synced data (useEffect-based)
@@ -238,6 +250,7 @@ export const CommentStoreProvider = ({
     ensResolutionUrl,
     commentAnchorsRef,
     refreshCommentAnchorState,
+    draftAnchorsRef,
   });
 
   // Update ref on every render — no set(), no re-render loop
@@ -264,12 +277,122 @@ export const CommentStoreProvider = ({
     ensResolutionUrl,
     commentAnchorsRef,
     refreshCommentAnchorState,
+    draftAnchorsRef,
   };
 
   // Inject ref into store once
   useEffect(() => {
     store.getState().setExternalDepsRef(externalDepsRef);
   }, [store]);
+
+  // Publish the store instance to the SuggestionTrackingExtension via the
+  // caller-provided ref. The extension reads this ref lazily on every
+  // keystroke, so as long as it's populated before the viewer types, drafts
+  // route correctly.
+  useEffect(() => {
+    if (!storeApiRef) return;
+    storeApiRef.current = store;
+    return () => {
+      if (storeApiRef.current === store) {
+        storeApiRef.current = null;
+      }
+    };
+  }, [store, storeApiRef]);
+
+  // Auto-spawn a floating thread card for every unresolved submitted
+  // suggestion. Regular comments open on click; suggestions are always
+  // visible per the product spec ("Suggestion should always be visible on
+  // viewer/owner mode if they are not accepted/rejected/resolved").
+  useEffect(() => {
+    const pendingSuggestions = initialComments.filter(
+      (c): c is IComment & { id: string } =>
+        Boolean(
+          c.isSuggestion &&
+            !c.resolved &&
+            !c.deleted &&
+            c.id &&
+            // Match tabComments derivation: missing tabId is treated as the
+            // default tab. Without this normalization, suggestions submitted
+            // in single-tab docs (where tabId can be undefined) silently
+            // miss the auto-spawn.
+            (c.tabId || DEFAULT_TAB_ID) === activeTabId,
+        ),
+    );
+    if (pendingSuggestions.length === 0) return;
+
+    const state = store.getState();
+    const existingThreadIds = new Set(
+      state.floatingCards
+        .filter((c): c is CommentFloatingThreadCard => c.type === 'thread')
+        .map((c) => c.commentId),
+    );
+
+    const toAdd = pendingSuggestions.filter(
+      (c) => !existingThreadIds.has(c.id),
+    );
+    if (toAdd.length === 0) return;
+
+    // Inline card creation — openFloatingThread guards on non-empty
+    // selectedContent which Add suggestions don't have.
+    store.setState((current) => ({
+      floatingCards: [
+        ...current.floatingCards,
+        ...toAdd.map(
+          (c): CommentFloatingThreadCard => ({
+            type: 'thread',
+            floatingCardId: `suggestion-thread:${c.id}`,
+            commentId: c.id,
+            selectedText: c.selectedContent ?? '',
+            isFocused: false,
+          }),
+        ),
+      ],
+    }));
+  }, [initialComments, activeTabId, store]);
+
+  // Silently discard drafts whose Yjs anchors can no longer be resolved —
+  // this happens when the owner deletes the surrounding text while a viewer
+  // has an in-progress draft anchored to it. Per the spec, the draft is
+  // lost with no warning.
+  //
+  // Also refreshes `originalContent` on Delete/Replace drafts whose anchor
+  // still resolves but now covers different text (owner edited inside the
+  // anchored range), so the draft card's diff summary stays accurate.
+  useEffect(() => {
+    if (!editor) return;
+    const handler = ({ transaction }: { transaction: Transaction }) => {
+      if (!transaction.docChanged) return;
+      const state = store.getState();
+      for (const draft of Object.values(state.drafts)) {
+        if (!draft.hadDeletion) {
+          const point = resolveCommentAnchorPointInState(draft, editor.state);
+          if (point === null) {
+            state.discardDraft(draft.id);
+          }
+          continue;
+        }
+
+        const range = resolveCommentAnchorRangeInState(draft, editor.state);
+        if (range === null) {
+          state.discardDraft(draft.id);
+          continue;
+        }
+
+        const currentText = editor.state.doc.textBetween(
+          range.from,
+          range.to,
+          '\n',
+        );
+        if (currentText !== draft.originalContent) {
+          state.refreshDraftOriginalContent(draft.id, currentText);
+        }
+      }
+    };
+    editor.on('transaction', handler);
+    return () => {
+      editor.off('transaction', handler);
+    };
+  }, [editor, store]);
 
   // --- Sync data props into store (only when values change) ---
   useEffect(() => {
@@ -651,6 +774,19 @@ export const CommentStoreProvider = ({
       if (transaction.docChanged) {
         const oldState = preTransactionStateRef.current;
         preTransactionStateRef.current = null;
+
+        // Suggestion mode (and any other extension that returns false from
+        // filterTransaction) cancels the transaction before it's applied.
+        // The TipTap 'transaction' event still fires with the *attempted*
+        // transform, so without this guard the anchor-deletion analysis
+        // sees the would-be deletion and prunes the anchor — wiping a
+        // working inline comment when the viewer types over it in
+        // suggest mode. If the editor state's doc didn't actually move,
+        // the transaction was filtered; nothing to analyze.
+        if (oldState && oldState.doc === editor.state.doc) {
+          return;
+        }
+
         let shouldRebuildDecorations = false;
         let didRestoreRemovedAnchors = false;
 

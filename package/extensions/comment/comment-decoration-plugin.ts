@@ -21,6 +21,7 @@ import {
   relativePositionToAbsolutePosition,
 } from '@tiptap/y-tiptap';
 import * as Y from 'yjs';
+import { SuggestionType } from '../../types';
 
 // ---------------------------------------------------------------------------
 // Types
@@ -32,6 +33,10 @@ export interface CommentAnchor {
   anchorTo: Y.RelativePosition;
   resolved: boolean;
   deleted: boolean;
+  isSuggestion?: boolean;
+  suggestionType?: SuggestionType;
+  originalContent?: string;
+  suggestedContent?: string;
 }
 
 interface CommentDecorationPluginState {
@@ -104,6 +109,33 @@ export function resolveCommentAnchorRangeInState(
     return { from, to };
   } catch {
     // Gracefully handle resolution errors (e.g., corrupted positions)
+    return null;
+  }
+}
+
+/**
+ * Resolve anchorFrom to a single absolute position.
+ * Used for 'add' suggestion anchors where anchorFrom === anchorTo (cursor,
+ * no initial selection) — resolveCommentAnchorRangeInState rejects from >= to,
+ * so we need a separate path that allows a point position.
+ */
+export function resolveCommentAnchorPointInState(
+  anchor: Pick<CommentAnchor, 'anchorFrom'>,
+  state: EditorState,
+): number | null {
+  const syncState = ySyncPluginKey.getState(state);
+  if (!syncState?.binding) return null;
+  const { doc, type, binding } = syncState;
+  try {
+    const pos = relativePositionToAbsolutePosition(
+      doc,
+      type,
+      anchor.anchorFrom,
+      binding.mapping,
+    );
+    if (pos === null || pos < 0 || pos > state.doc.content.size) return null;
+    return pos;
+  } catch {
     return null;
   }
 }
@@ -398,6 +430,22 @@ export function analyzeCommentAnchorTransactionChanges(
 // Build decorations from anchors
 // ---------------------------------------------------------------------------
 
+function createSuggestionWidget(
+  text: string,
+  commentId: string,
+  isActive: boolean,
+): HTMLElement {
+  const span = document.createElement('span');
+  span.className = 'suggestion-add';
+  span.textContent = text;
+  // Both attributes so the layout engine can locate this widget as either a
+  // suggestion-draft anchor (before submit) or a thread anchor (after submit).
+  span.dataset.suggestionId = commentId;
+  span.dataset.commentId = commentId;
+  span.dataset.active = isActive ? 'true' : 'false';
+  return span;
+}
+
 function buildDecorations(
   anchors: CommentAnchor[],
   state: EditorState,
@@ -416,8 +464,42 @@ function buildDecorations(
   const decorations: Decoration[] = [];
 
   for (const anchor of anchors) {
-    // Skip resolved and deleted anchors; they have no visual representation.
-    if (anchor.deleted || anchor.resolved) {
+    // Skip deleted anchors entirely.
+    if (anchor.deleted) continue;
+    // Skip resolved anchors. For regular comments this is an explicit resolve.
+    // For suggestions, `resolved: true` arrives only via Accept — at which
+    // point the doc already contains the accepted text (applyAcceptedSuggestion
+    // dispatched the edit). Rendering the strikethrough/widget against the
+    // post-accept doc would put the decoration over the wrong range, so drop
+    // it everywhere.
+    if (anchor.resolved) continue;
+
+    const isActive = anchor.id === activeCommentId;
+
+    // 'add' suggestions: cursor-based, anchorFrom === anchorTo.
+    // resolveCommentAnchorRangeInState rejects from >= to, so use point
+    // resolution and render a single widget. side: -1 positions the widget
+    // visually before the caret at the same document position — gives the
+    // Google-Docs-style "cursor advances through the proposed text" feel.
+    // Key includes the content so PM redraws when the draft's suggestedContent
+    // changes (typing / backspace during an Add draft).
+    if (anchor.isSuggestion && anchor.suggestionType === 'add') {
+      if (!anchor.suggestedContent) continue;
+      const insertPoint = resolveCommentAnchorPointInState(anchor, state);
+      if (insertPoint === null) continue;
+      decorations.push(
+        Decoration.widget(
+          insertPoint,
+          createSuggestionWidget(anchor.suggestedContent, anchor.id, isActive),
+          {
+            side: -1,
+            key: `suggestion-insert-${anchor.id}-${anchor.suggestedContent}-${
+              isActive ? 'active' : 'inactive'
+            }`,
+            destroy: (node) => (node as HTMLElement).remove(),
+          },
+        ),
+      );
       continue;
     }
 
@@ -427,11 +509,54 @@ function buildDecorations(
       continue;
     }
 
+    // Suggestion branch: render strikethrough (Delete/Replace) and/or widget
+    // (Replace's proposed text). Skip the regular comment decoration that
+    // follows — suggestions don't get the inline-comment background.
+    if (anchor.isSuggestion) {
+      const { suggestionType, suggestedContent } = anchor;
+
+      // Delete / Replace: strikethrough on the original text range.
+      // Include both data-suggestion-id (for draft anchor lookup) and
+      // data-comment-id (for submitted thread anchor lookup).
+      if (
+        (suggestionType === 'delete' || suggestionType === 'replace') &&
+        range.from < range.to
+      ) {
+        decorations.push(
+          Decoration.inline(range.from, range.to, {
+            class: 'suggestion-delete',
+            'data-suggestion-id': anchor.id,
+            'data-comment-id': anchor.id,
+            'data-active': isActive ? 'true' : 'false',
+          }),
+        );
+      }
+
+      // Replace: widget showing the proposed content after the struck-through range.
+      // Key includes the content so PM redraws when the draft's suggestedContent
+      // changes (typing / backspace during a Replace draft).
+      if (suggestionType === 'replace' && suggestedContent) {
+        decorations.push(
+          Decoration.widget(
+            range.to,
+            createSuggestionWidget(suggestedContent, anchor.id, isActive),
+            {
+              side: -1,
+              key: `suggestion-insert-${anchor.id}-${suggestedContent}-${
+                isActive ? 'active' : 'inactive'
+              }`,
+              destroy: (node) => (node as HTMLElement).remove(),
+            },
+          ),
+        );
+      }
+
+      continue;
+    }
+
     // Decoration state does not inherit the active-thread class that the mark
     // DOM toggles in editable mode, so mirror activeCommentId here to keep
     // preview and editable highlights visually aligned.
-    const isActive = anchor.id === activeCommentId;
-
     // Create an inline decoration at the anchor's current range.
     // The CSS class triggers visual styling; commentId enables click-to-activate-thread.
     decorations.push(
@@ -543,6 +668,31 @@ export function createCommentAnchorFromEditor(
   return createCommentAnchorFromRangeInState(editor.state, from, to);
 }
 
+/**
+ * Create a point anchor (anchorFrom === anchorTo) at a single doc position.
+ * Used by the suggestion-mode draft flow when the viewer places a cursor
+ * without selecting text — createCommentAnchorFromEditor rejects from >= to
+ * since an empty range is invalid for regular comments.
+ */
+export function createCommentAnchorPointFromEditor(
+  editor: Editor,
+  pos: number,
+): CommentAnchorRelativeRange | null {
+  const syncState = ySyncPluginKey.getState(editor.state);
+  if (!syncState?.binding) return null;
+  const { type, binding } = syncState;
+  try {
+    const relPos = absolutePositionToRelativePosition(
+      pos,
+      type,
+      binding.mapping,
+    );
+    return { anchorFrom: relPos, anchorTo: relPos };
+  } catch {
+    return null;
+  }
+}
+
 export function createCommentAnchorFromSelection(
   editor: Editor,
 ): CommentAnchorRelativeRange | null {
@@ -584,6 +734,19 @@ export function getCommentAtPosition(
       continue;
     }
 
+    // Add suggestions are point-anchored (anchorFrom === anchorTo); range
+    // resolution rejects them. Match if the cursor sits at the insert point
+    // or anywhere inside the widget's proposed content length.
+    if (anchor.isSuggestion && anchor.suggestionType === 'add') {
+      const point = resolveCommentAnchorPointInState(anchor, editor.state);
+      if (point === null) continue;
+      const widgetEnd = point + (anchor.suggestedContent?.length ?? 0);
+      if (pos >= point && pos <= widgetEnd) {
+        return anchor;
+      }
+      continue;
+    }
+
     const range = resolveCommentAnchorRangeInState(anchor, editor.state);
 
     if (!range) {
@@ -613,4 +776,76 @@ export function getCommentAnchorRange(
   }
 
   return resolveCommentAnchorRangeInState(anchor, editor.state);
+}
+
+/**
+ * Apply the accepted suggestion's change to the document.
+ * Called by the store's acceptSuggestion action before resolving on-chain.
+ * Returns false if the anchor can't be resolved or the suggestion type is unknown.
+ */
+export function applyAcceptedSuggestion(
+  editor: Editor,
+  anchor: CommentAnchor,
+): boolean {
+  if (!anchor.isSuggestion) return false;
+
+  const state = editor.state;
+  const syncState = ySyncPluginKey.getState(state);
+  if (!syncState?.binding) return false;
+
+  const { doc, type, binding } = syncState;
+
+  try {
+    const from = relativePositionToAbsolutePosition(
+      doc,
+      type,
+      anchor.anchorFrom,
+      binding.mapping,
+    );
+    const to = relativePositionToAbsolutePosition(
+      doc,
+      type,
+      anchor.anchorTo,
+      binding.mapping,
+    );
+
+    if (from === null || to === null) return false;
+    if (from < 0 || to > state.doc.content.size) return false;
+
+    const { suggestionType, suggestedContent } = anchor;
+
+    // Insert as an explicit text node (NOT a string). When passed a string,
+    // TipTap parses it as HTML via DOMParser, wrapping in <p>. Inserting a
+    // <p> mid-paragraph causes ProseMirror to silently no-op the step — the
+    // command returns true but tr.docChanged stays false, so y-prosemirror
+    // never syncs to Y.Doc and the consumer's onChange never fires.
+    // Passing { type: 'text', text } skips parsing and produces a real
+    // ReplaceStep that y-prosemirror picks up.
+    const textNode = (text: string) => ({ type: 'text', text });
+
+    if (suggestionType === 'add') {
+      if (!suggestedContent) return false;
+      return editor
+        .chain()
+        .focus()
+        .insertContentAt(from, textNode(suggestedContent))
+        .run();
+    }
+    if (suggestionType === 'delete') {
+      if (from >= to) return false;
+      return editor.chain().focus().deleteRange({ from, to }).run();
+    }
+    if (suggestionType === 'replace') {
+      if (from >= to || !suggestedContent) return false;
+      return editor
+        .chain()
+        .focus()
+        .deleteRange({ from, to })
+        .insertContentAt(from, textNode(suggestedContent))
+        .run();
+    }
+    return false;
+  } catch {
+    return false;
+  }
 }
