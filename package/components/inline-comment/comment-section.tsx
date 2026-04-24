@@ -342,7 +342,7 @@ const SidebarCommentItem = ({
     <div
       data-comment-id={comment.id}
       className={cn(
-        'relative flex  flex-col w-full mt-[8px] pb-[12px] box-border transition-all color-border-default rounded-[12px]',
+        'relative flex cursor-pointer  flex-col w-full mt-[8px] pb-[12px] box-border transition-all color-border-default rounded-[12px]',
         isCommentMobileFocused && openReplyId !== comment.id && 'hidden',
         comment.id === activeCommentId &&
           (isCommentMobileFocused || !isBelow1280px)

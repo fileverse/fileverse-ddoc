@@ -22,7 +22,6 @@ export const DocumentOutlineTOCPanel = ({
   setItems,
   showTOC,
   setShowTOC,
-  isPreviewMode,
   orientation,
 }: DocumentOutlineTOCPanelProps) => {
   const isMediaMax1280px = useMediaQuery('(max-width:1280px)');
@@ -32,9 +31,8 @@ export const DocumentOutlineTOCPanel = ({
     return (
       <div
         className={cn(
-          'flex flex-col gap-4 items-start justify-start fixed left-4 z-20',
+          'flex flex-col gap-4 items-start px-3 justify-start z-20',
           (!hasToC || shouldHideToC) && 'hidden',
-          isPreviewMode ? 'top-[4rem]' : 'top-[7.3rem]',
         )}
       >
         <Tooltip

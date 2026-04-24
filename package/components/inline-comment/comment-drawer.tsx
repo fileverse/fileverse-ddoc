@@ -21,6 +21,8 @@ import { DEFAULT_TAB_ID, DEFAULT_TAB_NAME } from '../tabs/utils/tab-utils';
 import { useCommentRefs } from '../../stores/comment-store-provider';
 import { resizeInlineCommentTextarea } from './resize-inline-comment-textarea';
 import { clearMobileCommentDrawerCanvasOffset } from '../../utils/comment-scroll-into-view';
+import { useEnsStatus } from './use-ens-status';
+import EnsLogo from '../../assets/ens.svg';
 
 const ALL_TABS_OPTION_ID = '__all_tabs__';
 
@@ -61,6 +63,8 @@ export const CommentDrawer = ({
   const mobileDraftTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const { mobileDraftRef } = useCommentRefs();
   const isCommentMobileFocused = isBelow1280px && Boolean(openReplyId);
+  const username = useCommentStore((s) => s.username);
+  const ensStatus = useEnsStatus(username);
   // Drawer new-comment state is derived from shared draft state so mobile and desktop
   // follow the same draft lifecycle instead of shadowing it with local UI state.
   const isInlineDraftOpen =
@@ -353,9 +357,13 @@ export const CommentDrawer = ({
               </div>
               <div className="border flex px-[12px] items-center justify-between py-[8px] gap-[8px] rounded-[4px]">
                 <Avatar
-                  src={`https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-                    '',
-                  )}`}
+                  src={
+                    ensStatus.isEns
+                      ? EnsLogo
+                      : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                          ensStatus.name,
+                        )}`
+                  }
                   className="w-[16px] h-[16px]"
                 />
                 <TextAreaFieldV2

@@ -120,6 +120,7 @@ const DdocEditor = forwardRef(
       onResolveComment,
       onUnresolveComment,
       onDeleteComment,
+      onDeleteReply,
       theme,
       showTOC,
       setShowTOC,
@@ -1184,6 +1185,7 @@ const DdocEditor = forwardRef(
               onResolveComment={onResolveComment}
               onUnresolveComment={onUnresolveComment}
               onDeleteComment={onDeleteComment}
+              onDeleteReply={onDeleteReply}
               ensResolutionUrl={ensResolutionUrl as string}
               isConnected={isConnected}
               connectViaWallet={connectViaWallet}

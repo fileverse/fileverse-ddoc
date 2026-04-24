@@ -5,6 +5,7 @@ import { useResponsive } from '../../utils/responsive';
 import { resizeInlineCommentTextarea } from './resize-inline-comment-textarea';
 import { useEnsStatus } from './use-ens-status';
 import EnsLogo from '../../assets/ens.svg';
+import { nameFormatter } from '../../utils/helpers';
 
 interface CommentReplyInputProps {
   commentId: string;
@@ -95,7 +96,7 @@ export const CommentReplyInput = ({
             isCollaborationEnabled
               ? 'Cannot reply in collaboration mode'
               : replyCount === 0
-                ? `Reply to @${ensStatus.name}`
+                ? `Reply to @${nameFormatter(ensStatus.name)}`
                 : replyCount >= 2
                   ? `Add a reply`
                   : `Reply `

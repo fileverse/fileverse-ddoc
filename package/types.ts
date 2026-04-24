@@ -184,6 +184,7 @@ export interface DdocProps extends CommentAccountProps {
     activeCommentId: string,
     meta?: CommentMutationMeta,
   ) => void;
+  onDeleteReply?: (activeCommentId: string, replyId: string) => void;
   //Comments V2 Props
   showTOC?: boolean;
   setShowTOC?: React.Dispatch<SetStateAction<boolean>>;

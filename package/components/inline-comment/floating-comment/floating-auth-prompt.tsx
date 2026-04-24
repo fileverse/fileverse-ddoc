@@ -1,17 +1,21 @@
-import { Button, Divider, TextField } from '@fileverse/ui';
+import { Button, cn, TextField } from '@fileverse/ui';
 import { useState } from 'react';
-import EnsLogo from '../../../assets/ens.svg';
 import { useCommentStore } from '../../../stores/comment-store';
 
-export const FloatingAuthPrompt = () => {
+export const FloatingAuthPrompt = ({ isDraft }: { isDraft?: boolean }) => {
   const connectViaWallet = useCommentStore((s) => s.connectViaWallet);
   const connectViaUsername = useCommentStore((s) => s.connectViaUsername);
   const isLoading = useCommentStore((s) => s.isLoading);
   const [name, setName] = useState('');
 
   return (
-    <div className="p-3 flex pb-0 flex-col gap-2">
-      <div className="flex gap-2">
+    <div
+      className={cn(
+        'p-3 color-bg-secondary mx-[12px] rounded-[8px] flex flex-col gap-[12px]',
+        isDraft && 'mt-[12px]',
+      )}
+    >
+      <div className="flex flex-col gap-2">
         <TextField
           type="text"
           value={name}
@@ -22,35 +26,27 @@ export const FloatingAuthPrompt = () => {
             }
           }}
           className="font-normal text-body-sm"
-          placeholder="Enter a name"
+          placeholder="Add name to the comment"
         />
         <Button
           onClick={() => connectViaUsername?.(name)}
           disabled={!name || isLoading}
           isLoading={isLoading}
-          className="min-w-[60px]"
+          className="min-w-full text-body-sm-bold"
           size="sm"
         >
           Join
         </Button>
       </div>
-      <div className="text-[11px] text-gray-400 flex items-center">
-        <Divider direction="horizontal" size="sm" className="flex-grow" />
-        <span className="px-2 whitespace-nowrap">
-          or join with <span className="font-semibold">.eth</span>
+      <p className="text-helper-text-sm text-center color-text-secondary">
+        or use{' '}
+        <span
+          onClick={connectViaWallet ?? undefined}
+          className="color-text-link cursor-pointer"
+        >
+          your ENS
         </span>
-        <Divider direction="horizontal" size="sm" className="flex-grow" />
-      </div>
-      <Button
-        onClick={connectViaWallet ?? undefined}
-        disabled={isLoading}
-        variant="ghost"
-        size="sm"
-        className="w-full"
-      >
-        <img alt="ens-logo" src={EnsLogo} className="w-4 h-4 mr-1" />
-        {isLoading ? 'Connecting...' : 'Continue with ENS'}
-      </Button>
+      </p>
     </div>
   );
 };

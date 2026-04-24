@@ -57,6 +57,7 @@ export interface CommentStoreProviderProps {
   onResolveComment?: (commentId: string, meta?: CommentMutationMeta) => void;
   onUnresolveComment?: (commentId: string, meta?: CommentMutationMeta) => void;
   onDeleteComment?: (commentId: string, meta?: CommentMutationMeta) => void;
+  onDeleteReply?: (commentId: string, replyId: string) => void;
   onInlineComment?: () => void;
   onComment?: () => void;
   setCommentDrawerOpen?: (open: boolean) => void;
@@ -92,6 +93,7 @@ export const CommentStoreProvider = ({
   onResolveComment,
   onUnresolveComment,
   onDeleteComment,
+  onDeleteReply,
   onInlineComment,
   onComment,
   setCommentDrawerOpen,
@@ -227,6 +229,7 @@ export const CommentStoreProvider = ({
     onResolveComment,
     onUnresolveComment,
     onDeleteComment,
+    onDeleteReply,
     onInlineComment,
     onComment,
     setCommentDrawerOpen,
@@ -252,6 +255,7 @@ export const CommentStoreProvider = ({
     onResolveComment,
     onUnresolveComment,
     onDeleteComment,
+    onDeleteReply,
     onInlineComment,
     onComment,
     setCommentDrawerOpen,
