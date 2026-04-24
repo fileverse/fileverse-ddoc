@@ -76,8 +76,8 @@ const MobileToolbar = ({
       /^(https?:\/\/)?([\w-]+(\.[\w-]+)+\.?(:\d+)?(\/\S*)?|\w+@[\w.-]+\.\w+)$/i;
     if (finalUrl && !urlPattern.test(finalUrl)) {
       setIsUrlValid(false);
-      // if (onError) onError('Invalid URL');
-      // return;
+      if (onError) onError('Invalid URL');
+      return;
     }
 
     const { from, to } = editor.state.selection;
