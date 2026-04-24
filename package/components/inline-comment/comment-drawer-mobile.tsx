@@ -37,6 +37,7 @@ interface CommentDrawerMobileProps {
   onCommentFocus: (commentId: string, tabId?: string) => void;
   onCreateComment: () => void;
   onDiscardSuggestionDraft: () => void;
+  onFocusSuggestionDraft: () => void;
   onNextMobileComment: () => void;
   onPreviousMobileComment: () => void;
   onStartNewMobileComment: () => void;
@@ -75,6 +76,7 @@ export const CommentDrawerMobile = ({
   onCommentFocus,
   onCreateComment,
   onDiscardSuggestionDraft,
+  onFocusSuggestionDraft,
   onNextMobileComment,
   onPreviousMobileComment,
   onStartNewMobileComment,
@@ -100,6 +102,7 @@ export const CommentDrawerMobile = ({
         onAttemptClose={onAttemptCloseSuggestionDraft}
         onCancelDiscard={onCancelDiscardSuggestion}
         onConfirmDiscard={onDiscardSuggestionDraft}
+        onFocusSuggestionText={onFocusSuggestionDraft}
         onSubmit={onSubmitSuggestionDraft}
       />
     ) : isInlineDraftOpen ? (

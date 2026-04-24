@@ -26,6 +26,9 @@ export const CommentDrawer = ({
   const comments = useCommentStore((s) => s.initialComments);
   const isConnected = useCommentStore((s) => s.isConnected);
   const focusCommentInEditor = useCommentStore((s) => s.focusCommentInEditor);
+  const focusSuggestionDraftInEditor = useCommentStore(
+    (s) => s.focusSuggestionDraftInEditor,
+  );
   const isCommentOpen = useCommentStore((s) => s.isCommentOpen);
   const openReplyId = useCommentStore((s) => s.openReplyId);
   const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
@@ -156,6 +159,13 @@ export const CommentDrawer = ({
           onCommentFocus={handleCommentFocus}
           onCreateComment={handleCreateComment}
           onDiscardSuggestionDraft={handleDiscardSuggestionDraft}
+          onFocusSuggestionDraft={() => {
+            if (activeSuggestionDraftCard) {
+              focusSuggestionDraftInEditor(
+                activeSuggestionDraftCard.suggestionId,
+              );
+            }
+          }}
           onNextMobileComment={handleNextMobileComment}
           onPreviousMobileComment={handlePreviousMobileComment}
           onStartNewMobileComment={handleStartNewMobileComment}

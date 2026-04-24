@@ -879,6 +879,7 @@ export interface CommentStoreState {
     commentId: string,
     options?: FocusCommentInEditorOptions,
   ) => void;
+  focusSuggestionDraftInEditor: (suggestionId: string) => void;
   onPrevComment: () => void;
   onNextComment: () => void;
   getEnsStatus: (
@@ -3067,6 +3068,62 @@ export const createCommentStore = () =>
       // waiting for the external activeCommentId round-trip.
       get().setActiveCommentId(commentId);
       setActiveCommentId(commentId);
+    },
+    focusSuggestionDraftInEditor: (suggestionId) => {
+      const { editor, setActiveCommentId } = getExtDeps(get);
+      const draft = get().drafts[suggestionId];
+
+      if (!editor?.view?.dom || !draft) {
+        return;
+      }
+
+      const anchor = deriveDraftAnchor(draft);
+      const selectionRange =
+        anchor.suggestionType === 'add'
+          ? (() => {
+              const point = resolveCommentAnchorPointInState(
+                anchor,
+                editor.state,
+              );
+              return point === null ? null : { from: point, to: point };
+            })()
+          : resolveCommentAnchorRangeInState(anchor, editor.state);
+
+      if (!selectionRange) {
+        return;
+      }
+
+      const tr = editor.state.tr.setSelection(
+        selectionRange.from === selectionRange.to
+          ? TextSelection.near(editor.state.doc.resolve(selectionRange.from))
+          : TextSelection.create(
+              editor.state.doc,
+              selectionRange.from,
+              selectionRange.to,
+            ),
+      );
+
+      editor.view.dispatch(tr);
+      editor.view.focus();
+      set({ isBubbleMenuSuppressed: true });
+      get().setActiveCommentId(null);
+      setActiveCommentId(null);
+      editor.commands.unsetCommentActive();
+      set((state) => ({
+        floatingCards: setFocusedFloatingCard(
+          state.floatingCards,
+          `suggestion-draft:${suggestionId}`,
+        ),
+      }));
+
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollCommentSelectionRangeIntoView({
+            editor,
+            selectionRange,
+          });
+        });
+      });
     },
     onPrevComment: () => {
       const { editor } = getExtDeps(get);

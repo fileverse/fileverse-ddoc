@@ -15,6 +15,7 @@ interface MobileSuggestionDraftProps {
   onAttemptClose: () => void;
   onCancelDiscard: () => void;
   onConfirmDiscard: () => void;
+  onFocusSuggestionText: () => void;
   onSubmit: () => void;
 }
 
@@ -26,6 +27,7 @@ export const MobileSuggestionDraft = ({
   onAttemptClose,
   onCancelDiscard,
   onConfirmDiscard,
+  onFocusSuggestionText,
   onSubmit,
 }: MobileSuggestionDraftProps) => {
   const ensStatus = useEnsStatus(username);
@@ -44,6 +46,19 @@ export const MobileSuggestionDraft = ({
     <div
       data-mobile-comment-drawer-sheet
       className="p-4 rounded-t-[12px] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] w-full color-bg-secondary"
+      onClick={(event) => {
+        if (isDiscardSuggestionOverlayVisible) {
+          return;
+        }
+
+        const target = event.target as HTMLElement;
+
+        if (target.closest('button')) {
+          return;
+        }
+
+        onFocusSuggestionText();
+      }}
     >
       <div className="flex justify-between mb-[16px] items-center">
         <h2 className="text-heading-sm">New Suggestion</h2>
