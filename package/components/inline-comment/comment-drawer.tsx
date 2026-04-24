@@ -434,7 +434,7 @@ export const CommentDrawer = ({
               {!isConnected ? (
                 <FloatingAuthPrompt />
               ) : (
-                <div className="border flex flex-col px-[12px] py-[8px] gap-[12px] rounded-[4px] color-bg-default">
+                <div className="flex flex-col gap-[8px]">
                   <div className="flex items-center gap-2">
                     <Avatar
                       src={
@@ -464,7 +464,7 @@ export const CommentDrawer = ({
                     </span>
                   </div>
 
-                  <div className="text-body-sm color-text-default break-words">
+                  <div className="text-body-sm color-text-default ml-[32px] break-words">
                     {suggestionType === 'add' && (
                       <p>
                         <span className="font-semibold">Add:</span>{' '}
