@@ -7,6 +7,8 @@ import { resizeInlineCommentTextarea } from '../resize-inline-comment-textarea';
 import { FloatingAuthPrompt } from './floating-auth-prompt';
 import { FloatingCardShell } from './floating-card-shell';
 import type { ThreadFloatingCardProps } from './types';
+import { useEnsStatus } from '../use-ens-status';
+import EnsLogo from '../../../assets/ens.svg';
 
 export const ThreadFloatingCard = ({
   thread,
@@ -143,6 +145,7 @@ const InputField = ({
   const replyTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const [replyText, setReplyText] = useState('');
   const isConnected = useCommentStore((s) => s.isConnected);
+  const ensStatus = useEnsStatus(username);
   const onReplySubmit = () => {
     if (!thread.commentId || !replyText.trim()) {
       return;
@@ -235,9 +238,13 @@ const InputField = ({
         )}
       >
         <Avatar
-          src={`https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-            username || '',
-          )}`}
+          src={
+            ensStatus.isEns
+              ? EnsLogo
+              : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                  ensStatus.name,
+                )}`
+          }
           className="w-[16px] h-[16px]"
         />
         <TextAreaFieldV2

@@ -54,6 +54,7 @@ export interface CommentExternalDeps {
   onResolveComment?: (commentId: string, meta?: CommentMutationMeta) => void;
   onUnresolveComment?: (commentId: string, meta?: CommentMutationMeta) => void;
   onDeleteComment?: (commentId: string, meta?: CommentMutationMeta) => void;
+  onDeleteReply?: (commentId: string, replyId: string) => void;
   onInlineComment?: () => void;
   onComment?: () => void;
   setCommentDrawerOpen?: (open: boolean) => void;
@@ -2839,20 +2840,24 @@ export const createCommentStore = () =>
     },
 
     deleteReply: (commentId, replyId) => {
-      getExtDeps(get).setInitialComments?.((previousComments) =>
-        previousComments.map((comment) => {
-          if (comment.id !== commentId) {
-            return comment;
-          }
+      const { onDeleteReply, setInitialComments } = getExtDeps(get);
+      const currentComments = get().initialComments;
+      const nextComments = currentComments.map((comment) => {
+        if (comment.id !== commentId) {
+          return comment;
+        }
 
-          return {
-            ...comment,
-            replies: (comment.replies || []).map((reply) =>
-              reply.id === replyId ? { ...reply, deleted: true } : reply,
-            ),
-          };
-        }),
-      );
+        return {
+          ...comment,
+          replies: (comment.replies || []).map((reply) =>
+            reply.id === replyId ? { ...reply, deleted: true } : reply,
+          ),
+        };
+      });
+
+      get().setInitialComments(nextComments);
+      setInitialComments?.(nextComments);
+      onDeleteReply?.(commentId, replyId);
     },
     requestEditComment: (commentId) => {
       const comment = findCommentById(get().initialComments, commentId);

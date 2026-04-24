@@ -3,6 +3,9 @@ import { Avatar, IconButton, TextAreaFieldV2 } from '@fileverse/ui';
 import { DeleteConfirmOverlay } from './delete-confirm-overlay';
 import { resizeInlineCommentTextarea } from './resize-inline-comment-textarea';
 import type { InlineCommentDraft } from './context/types';
+import { useCommentStore } from '../../stores/comment-store';
+import { useEnsStatus } from './use-ens-status';
+import EnsLogo from '../../assets/ens.svg';
 
 interface MobileInlineCommentProps {
   activeDraft: InlineCommentDraft | null;
@@ -28,6 +31,8 @@ export const MobileInlineComment = ({
   onUpdateDraftText,
 }: MobileInlineCommentProps) => {
   const mobileDraftTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const username = useCommentStore((s) => s.username);
+  const ensStatus = useEnsStatus(username);
 
   return (
     <div
@@ -48,9 +53,13 @@ export const MobileInlineComment = ({
       </div>
       <div className="border flex px-[12px] items-center justify-between py-[8px] gap-[8px] rounded-[4px]">
         <Avatar
-          src={`https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
-            '',
-          )}`}
+          src={
+            ensStatus.isEns
+              ? EnsLogo
+              : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                  ensStatus.name,
+                )}`
+          }
           className="w-[16px] h-[16px]"
         />
         <TextAreaFieldV2

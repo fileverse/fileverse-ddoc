@@ -729,6 +729,23 @@ export const useEditorToolbar = ({
       group: 'More',
       notVisible: 1560,
     },
+    null,
+    {
+      icon: 'PilcrowRight',
+      title: 'Set text direction to left-to-right',
+      onClick: () => editor?.commands.setTextDirection('ltr'),
+      isActive: editor?.isActive('paragraph', { dir: 'ltr' }) ?? false,
+      group: 'More',
+      notVisible: 1560,
+    },
+    {
+      icon: 'PilcrowLeft',
+      title: 'Set text direction to right-to-left',
+      onClick: () => editor?.commands.setTextDirection('rtl'),
+      isActive: editor?.isActive('paragraph', { dir: 'rtl' }) ?? false,
+      group: 'More',
+      notVisible: 1560,
+    },
   ];
 
   const importOptions: Array<IEditorToolElement | null> = [

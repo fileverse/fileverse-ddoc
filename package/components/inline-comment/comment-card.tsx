@@ -4,6 +4,7 @@ import {
   DynamicDropdown,
   IconButton,
   LucideIcon,
+  PopoverClose,
   Skeleton,
   Tooltip,
 } from '@fileverse/ui';
@@ -210,13 +211,15 @@ export const CommentReply = ({
                     </button>
                   )} */}
                   {canDeleteReply && (
-                    <button
-                      className="flex items-center h-[32px] color-text-danger text-sm font-medium gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
-                      onClick={() => setIsDeleteOverlayVisible(true)}
-                    >
-                      <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
-                      <p className="text-body-sm color-text-danger">Delete</p>
-                    </button>
+                    <PopoverClose asChild>
+                      <button
+                        className="flex items-center h-[32px] color-text-danger text-sm font-medium gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
+                        onClick={() => setIsDeleteOverlayVisible(true)}
+                      >
+                        <LucideIcon name="Trash2" size="sm" stroke="#FB3449" />
+                        <p className="text-body-sm color-text-danger">Delete</p>
+                      </button>
+                    </PopoverClose>
                   )}
                 </div>
               }

@@ -74,6 +74,8 @@ export const ResizableMedia = Node.create<MediaOptions>({
 
   group: 'block',
 
+  content: 'mediaCaption?',
+
   draggable: true,
 
   addAttributes() {
@@ -113,12 +115,13 @@ export const ResizableMedia = Node.create<MediaOptions>({
       iv: { default: null },
       privateKey: { default: null },
       authTag: { default: null },
-      caption: { default: null },
-      showCaptionInput: { default: false },
-      // TODO: For figure caption later
-      // caption: {
-      //   default: null,
-      // },
+      // Legacy attribute — kept so Yjs-encoded docs that still carry a
+      // caption string survive the Yjs → ProseMirror sync. The node view
+      // migrates it to a mediaCaption child node on mount, then clears it.
+      caption: {
+        default: null,
+        rendered: false,
+      },
     };
   },
 
@@ -126,6 +129,26 @@ export const ResizableMedia = Node.create<MediaOptions>({
 
   parseHTML() {
     return [
+      {
+        tag: 'div[data-type="resizable-media"]',
+        getAttrs: (el) => {
+          const img = (el as HTMLElement).querySelector('img');
+          const video = (el as HTMLElement).querySelector('video');
+          if (img) {
+            return {
+              src: img.getAttribute('src'),
+              'media-type': 'img',
+            };
+          }
+          if (video) {
+            return {
+              src: video.getAttribute('src'),
+              'media-type': 'video',
+            };
+          }
+          return {};
+        },
+      },
       {
         tag: 'img',
         getAttrs: (el) => ({
@@ -143,38 +166,57 @@ export const ResizableMedia = Node.create<MediaOptions>({
     ];
   },
 
-  renderHTML({ HTMLAttributes }) {
+  renderHTML({ node, HTMLAttributes }) {
     const { 'media-type': mediaType } = HTMLAttributes;
-
-    if (mediaType === 'img') {
-      return [
-        'img',
-        mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
-      ];
-    }
-    if (mediaType === 'secure-img') {
-      return [
-        'img',
-        mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
-      ];
-    }
-    if (mediaType === 'video') {
-      return [
-        'video',
-        { controls: 'true', style: 'width: 100%', ...HTMLAttributes },
-        ['source', HTMLAttributes],
-      ];
-    }
 
     if (!mediaType)
       console.error(
         'TiptapMediaExtension-renderHTML method: Media Type not set, going default with image',
       );
 
-    return [
-      'img',
-      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
-    ];
+    const wrapperAttrs = mergeAttributes(
+      { 'data-type': 'resizable-media' },
+      this.options.HTMLAttributes,
+      HTMLAttributes,
+    );
+
+    let mediaEl: any;
+    if (mediaType === 'video') {
+      mediaEl = [
+        'video',
+        { controls: 'true', style: 'width: 100%', ...HTMLAttributes },
+        ['source', HTMLAttributes],
+      ];
+    } else if (mediaType === 'iframe') {
+      mediaEl = ['iframe', HTMLAttributes];
+    } else {
+      mediaEl = ['img', HTMLAttributes];
+    }
+
+    // When a mediaCaption child exists, emit it via a content hole (0) nested
+    // in its own wrapper so the hole remains the only child of its parent.
+    if (node.content.childCount > 0) {
+      return [
+        'div',
+        wrapperAttrs,
+        mediaEl,
+        ['div', { 'data-type': 'media-caption-wrapper' }, 0],
+      ];
+    }
+
+    // Legacy caption (attr only, no child) — render as static text so PDF/MD/
+    // HTML exports include it without requiring the user to migrate first.
+    const legacyCaption = node.attrs.caption;
+    if (legacyCaption) {
+      return [
+        'div',
+        wrapperAttrs,
+        mediaEl,
+        ['div', { class: 'media-caption' }, legacyCaption],
+      ];
+    }
+
+    return ['div', wrapperAttrs, mediaEl];
   },
 
   addCommands() {

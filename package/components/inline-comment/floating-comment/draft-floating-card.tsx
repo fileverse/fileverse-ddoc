@@ -57,7 +57,7 @@ export const DraftFloatingCard = ({
       onFocus={() => focusFloatingCard(draft.floatingCardId)}
     >
       {!isConnected ? (
-        <FloatingAuthPrompt />
+        <FloatingAuthPrompt isDraft={true} />
       ) : (
         <>
           <div className="flex justify-start items-center gap-2 color-border-default px-3 pb-2 pt-3">
