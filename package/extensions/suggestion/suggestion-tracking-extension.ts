@@ -18,6 +18,7 @@
 import { Extension } from '@tiptap/core';
 import { Plugin, PluginKey } from '@tiptap/pm/state';
 import { ReplaceStep } from '@tiptap/pm/transform';
+import type { EditorView } from '@tiptap/pm/view';
 import * as Y from 'yjs';
 import { SuggestionType } from '../../types';
 import type { CommentAnchor } from '../comment/comment-decoration-plugin';
@@ -113,6 +114,49 @@ function isRedoShortcut(event: KeyboardEvent): boolean {
 function isCutShortcut(event: KeyboardEvent): boolean {
   const isMod = event.metaKey || event.ctrlKey;
   return isMod && event.key.toLowerCase() === 'x';
+}
+
+function getBeforeInputTargetRange(
+  view: EditorView,
+  event: InputEvent,
+): { from: number; to: number } | null {
+  const ranges =
+    typeof event.getTargetRanges === 'function' ? event.getTargetRanges() : [];
+  const range = ranges[0];
+
+  if (!range) {
+    return null;
+  }
+
+  try {
+    const from = view.posAtDOM(range.startContainer, range.startOffset);
+    const to = view.posAtDOM(range.endContainer, range.endOffset);
+
+    return {
+      from: Math.min(from, to),
+      to: Math.max(from, to),
+    };
+  } catch {
+    return null;
+  }
+}
+
+function hasNonCollapsedDomSelection(view: EditorView): boolean {
+  const selection = window.getSelection();
+
+  if (!selection || selection.isCollapsed) {
+    return false;
+  }
+
+  const anchorNode = selection.anchorNode;
+  const focusNode = selection.focusNode;
+
+  return Boolean(
+    anchorNode &&
+      focusNode &&
+      view.dom.contains(anchorNode) &&
+      view.dom.contains(focusNode),
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -307,10 +351,10 @@ export const SuggestionTrackingExtension =
             },
 
             // ----- Paste / Drop — blocked in v1 -----------------------------
-            handlePaste(_view, _event) {
+            handlePaste() {
               return getOptions().getIsSuggestionMode();
             },
-            handleDrop(_view, _event) {
+            handleDrop() {
               return getOptions().getIsSuggestionMode();
             },
 
@@ -323,6 +367,10 @@ export const SuggestionTrackingExtension =
                 if (!opts.getIsSuggestionMode()) return false;
 
                 const inputType = event.inputType;
+                const targetRange = getBeforeInputTargetRange(view, event);
+                const hasTargetRange = Boolean(
+                  targetRange && targetRange.from < targetRange.to,
+                );
 
                 // Selection deletion: capture selection before browser mutates
                 if (
@@ -337,6 +385,19 @@ export const SuggestionTrackingExtension =
                   if (from < to) {
                     event.preventDefault();
                     opts.onDeleteSelection(from, to);
+                    return true;
+                  }
+
+                  if (targetRange && hasTargetRange) {
+                    event.preventDefault();
+                    if (hasNonCollapsedDomSelection(view)) {
+                      opts.onDeleteSelection(targetRange.from, targetRange.to);
+                    } else {
+                      opts.onDeleteRangeWithoutSelection(
+                        targetRange.from,
+                        targetRange.to,
+                      );
+                    }
                     return true;
                   }
 
@@ -357,6 +418,33 @@ export const SuggestionTrackingExtension =
                   }
 
                   return false;
+                }
+
+                if (inputType === 'insertText') {
+                  const text = event.data ?? '';
+                  if (!text) {
+                    return false;
+                  }
+
+                  const { from, to } = view.state.selection;
+                  event.preventDefault();
+
+                  if (from < to) {
+                    opts.onReplaceTyping(from, to, text);
+                    return true;
+                  }
+
+                  if (targetRange && hasTargetRange) {
+                    opts.onReplaceTyping(
+                      targetRange.from,
+                      targetRange.to,
+                      text,
+                    );
+                    return true;
+                  }
+
+                  opts.onTextInput(text);
+                  return true;
                 }
 
                 // Paste / drop routes through beforeinput too on some browsers

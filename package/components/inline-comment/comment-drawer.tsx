@@ -3,6 +3,7 @@ import {
   DynamicDrawerV2,
   IconButton,
   Avatar,
+  Button,
   TextAreaFieldV2,
   SelectTrigger,
   Select,
@@ -21,6 +22,12 @@ import { DEFAULT_TAB_ID, DEFAULT_TAB_NAME } from '../tabs/utils/tab-utils';
 import { useCommentRefs } from '../../stores/comment-store-provider';
 import { resizeInlineCommentTextarea } from './resize-inline-comment-textarea';
 import { clearMobileCommentDrawerCanvasOffset } from '../../utils/comment-scroll-into-view';
+import { FloatingAuthPrompt } from './floating-comment/floating-auth-prompt';
+import { useEnsStatus } from './use-ens-status';
+import EnsLogo from '../../assets/ens.svg';
+import { dateFormatter, nameFormatter } from '../../utils/helpers';
+import verifiedMark from '../../assets/ens-check.svg';
+import type { SuggestionFloatingDraftCard } from './context/types';
 
 const ALL_TABS_OPTION_ID = '__all_tabs__';
 
@@ -42,17 +49,37 @@ export const CommentDrawer = ({
   const activeDraft = useCommentStore((s) =>
     s.activeDraftId ? (s.inlineDrafts[s.activeDraftId] ?? null) : null,
   );
+  const activeSuggestionDraftCard = useCommentStore(
+    (s) =>
+      s.floatingCards.find(
+        (card): card is SuggestionFloatingDraftCard =>
+          card.type === 'suggestion-draft' && card.isFocused,
+      ) ??
+      s.floatingCards.find(
+        (card): card is SuggestionFloatingDraftCard =>
+          card.type === 'suggestion-draft',
+      ) ??
+      null,
+  );
   const createFloatingDraft = useCommentStore((s) => s.createFloatingDraft);
+  const discardDraft = useCommentStore((s) => s.discardDraft);
   const focusCommentInEditor = useCommentStore((s) => s.focusCommentInEditor);
   const isCommentOpen = useCommentStore((s) => s.isCommentOpen);
   const openReplyId = useCommentStore((s) => s.openReplyId);
   const setOpenReplyId = useCommentStore((s) => s.setOpenReplyId);
   const setIsCommentOpen = useCommentStore((s) => s.setIsCommentOpen);
+  const setCommentDrawerOpen = useCommentStore((s) => s.setCommentDrawerOpen);
+  const submitDraft = useCommentStore((s) => s.submitDraft);
   const submitInlineDraft = useCommentStore((s) => s.submitInlineDraft);
   const updateInlineDraftText = useCommentStore((s) => s.updateInlineDraftText);
+  const username = useCommentStore((s) => s.username);
   const { isBelow1280px } = useResponsive();
   const [isDiscardCommentOverlayVisible, setIsDiscardCommentOverlayVisible] =
     useState(false);
+  const [
+    isDiscardSuggestionOverlayVisible,
+    setIsDiscardSuggestionOverlayVisible,
+  ] = useState(false);
   const [pendingCommentFocus, setPendingCommentFocus] = useState<{
     commentId: string;
     tabId: string;
@@ -60,7 +87,10 @@ export const CommentDrawer = ({
   const mobileDrawerRef = useRef<HTMLDivElement | null>(null);
   const mobileDraftTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const { mobileDraftRef } = useCommentRefs();
+  const ensStatus = useEnsStatus(username);
   const isCommentMobileFocused = isBelow1280px && Boolean(openReplyId);
+  const isSuggestionDraftOpen = activeSuggestionDraftCard !== null;
+  const isMobileDrawerVisible = isOpen || isSuggestionDraftOpen;
   // Drawer new-comment state is derived from shared draft state so mobile and desktop
   // follow the same draft lifecycle instead of shadowing it with local UI state.
   const isInlineDraftOpen =
@@ -75,6 +105,11 @@ export const CommentDrawer = ({
   useEscapeKey(() => {
     if (isInlineDraftOpen) {
       setIsDiscardCommentOverlayVisible(true);
+      return;
+    }
+
+    if (isBelow1280px && activeSuggestionDraftCard) {
+      setIsDiscardSuggestionOverlayVisible(true);
       return;
     }
 
@@ -196,6 +231,12 @@ export const CommentDrawer = ({
   }, [isInlineDraftOpen, isOpen]);
 
   useEffect(() => {
+    if (!activeSuggestionDraftCard) {
+      setIsDiscardSuggestionOverlayVisible(false);
+    }
+  }, [activeSuggestionDraftCard]);
+
+  useEffect(() => {
     // Keep the canvas lift scoped to the one state that actually needs it:
     // a focused mobile thread with the drawer sheet covering the viewport.
     if (
@@ -253,9 +294,14 @@ export const CommentDrawer = ({
     setIsDiscardCommentOverlayVisible(true);
   };
 
+  const handleAttemptCloseSuggestionDraft = () => {
+    setIsDiscardSuggestionOverlayVisible(true);
+  };
+
   const handleCloseDrawer = () => {
     setOpenReplyId(null);
     setIsDiscardCommentOverlayVisible(false);
+    setIsDiscardSuggestionOverlayVisible(false);
     setPendingCommentFocus(null);
     setIsCommentOpen(false);
     onClose();
@@ -272,6 +318,26 @@ export const CommentDrawer = ({
 
     // Submit the shared draft record instead of reading live editor selection.
     submitInlineDraft(activeDraftId);
+  };
+
+  const handleSubmitSuggestionDraft = () => {
+    if (!activeSuggestionDraftCard) {
+      return;
+    }
+
+    setIsDiscardSuggestionOverlayVisible(false);
+    submitDraft(activeSuggestionDraftCard.suggestionId);
+    setOpenReplyId(null);
+    setCommentDrawerOpen?.(true);
+  };
+
+  const handleDiscardSuggestionDraft = () => {
+    if (!activeSuggestionDraftCard) {
+      return;
+    }
+
+    setIsDiscardSuggestionOverlayVisible(false);
+    discardDraft(activeSuggestionDraftCard.suggestionId);
   };
 
   const handleStartNewMobileComment = () => {
@@ -324,17 +390,139 @@ export const CommentDrawer = ({
     focusMobileComment(mobileFocusedCommentIndex + 1);
   };
 
+  const hasSuggestionOriginal = Boolean(
+    activeSuggestionDraftCard?.selectedText,
+  );
+  const hasSuggestionInserted = Boolean(
+    activeSuggestionDraftCard?.insertedText,
+  );
+  const canSubmitSuggestion = hasSuggestionOriginal || hasSuggestionInserted;
+  const suggestionType = hasSuggestionOriginal
+    ? hasSuggestionInserted
+      ? 'replace'
+      : 'delete'
+    : hasSuggestionInserted
+      ? 'add'
+      : null;
+
   return (
     <div ref={mobileDrawerRef} data-testid="comment-drawer">
       {isBelow1280px ? (
         <div
           className={cn(
-            !isOpen && 'hidden',
+            !isMobileDrawerVisible && 'hidden',
             'fixed h-full flex items-end z-10 inset-0',
           )}
           data-comment-drawer-mobile-input
         >
-          {isInlineDraftOpen ? (
+          {activeSuggestionDraftCard ? (
+            <div
+              data-mobile-comment-drawer-sheet
+              className="p-4 rounded-t-[12px] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] w-full color-bg-secondary"
+            >
+              <div className="flex justify-between mb-[16px] items-center">
+                <h2 className="text-heading-sm">New Suggestion</h2>
+                <div className="flex gap-sm">
+                  <IconButton
+                    onClick={handleAttemptCloseSuggestionDraft}
+                    icon={'X'}
+                    variant="ghost"
+                    size="md"
+                  />
+                </div>
+              </div>
+              {!isConnected ? (
+                <FloatingAuthPrompt />
+              ) : (
+                <div className="border flex flex-col px-[12px] py-[8px] gap-[12px] rounded-[4px] color-bg-default">
+                  <div className="flex items-center gap-2">
+                    <Avatar
+                      src={
+                        ensStatus.isEns
+                          ? EnsLogo
+                          : `https://api.dicebear.com/9.x/identicon/svg?seed=${encodeURIComponent(
+                              ensStatus.name,
+                            )}`
+                      }
+                      size="sm"
+                      className="min-w-6"
+                    />
+                    <span className="text-body-sm-bold inline-flex items-center gap-1 min-w-0">
+                      <span className="truncate">
+                        {nameFormatter(ensStatus.name)}
+                      </span>
+                      {ensStatus.isEns && (
+                        <img
+                          src={verifiedMark}
+                          alt="verified"
+                          className="w-3.5 h-3.5"
+                        />
+                      )}
+                    </span>
+                    <span className="text-helper-text-sm color-text-secondary whitespace-nowrap">
+                      {dateFormatter(Date.now())}
+                    </span>
+                  </div>
+
+                  <div className="text-body-sm color-text-default break-words">
+                    {suggestionType === 'add' && (
+                      <p>
+                        <span className="font-semibold">Add:</span>{' '}
+                        <span>
+                          &ldquo;{activeSuggestionDraftCard.insertedText}&rdquo;
+                        </span>
+                      </p>
+                    )}
+                    {suggestionType === 'delete' && (
+                      <p>
+                        <span className="font-semibold">Delete:</span>{' '}
+                        <span className="line-through">
+                          &ldquo;{activeSuggestionDraftCard.selectedText}&rdquo;
+                        </span>
+                      </p>
+                    )}
+                    {suggestionType === 'replace' && (
+                      <p>
+                        <span className="font-semibold">Replace:</span>{' '}
+                        <span className="line-through">
+                          &ldquo;{activeSuggestionDraftCard.selectedText}&rdquo;
+                        </span>{' '}
+                        <span className="font-semibold">with</span>{' '}
+                        <span>
+                          &ldquo;{activeSuggestionDraftCard.insertedText}&rdquo;
+                        </span>
+                      </p>
+                    )}
+                    {!suggestionType && (
+                      <p className="color-text-secondary italic">
+                        Start typing to suggest a change
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex items-center justify-end">
+                    <Button
+                      size="sm"
+                      disabled={!canSubmitSuggestion}
+                      onClick={handleSubmitSuggestionDraft}
+                      className="!min-w-[80px]"
+                    >
+                      Submit
+                    </Button>
+                  </div>
+                </div>
+              )}
+              <DeleteConfirmOverlay
+                isVisible={isDiscardSuggestionOverlayVisible}
+                title="Discard suggestion"
+                heading="Discard suggestion"
+                description="This action will discard your suggestion."
+                confirmLabel="Discard"
+                onCancel={() => setIsDiscardSuggestionOverlayVisible(false)}
+                onConfirm={handleDiscardSuggestionDraft}
+              />
+            </div>
+          ) : isInlineDraftOpen ? (
             <div
               ref={mobileDraftRef}
               data-mobile-comment-drawer-sheet
