@@ -41,6 +41,8 @@ export const MobileSuggestionDraft = ({
     : hasSuggestionInserted
       ? 'add'
       : null;
+  const interactiveSelector =
+    'button, input, textarea, select, [contenteditable="true"], [role="textbox"]';
 
   return (
     <div
@@ -53,7 +55,7 @@ export const MobileSuggestionDraft = ({
 
         const target = event.target as HTMLElement;
 
-        if (target.closest('button')) {
+        if (target.closest(interactiveSelector)) {
           return;
         }
 
