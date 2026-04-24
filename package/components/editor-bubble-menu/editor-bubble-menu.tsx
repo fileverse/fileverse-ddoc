@@ -240,6 +240,16 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     </React.Fragment>
   );
 
+  const isInMediaCaption = useMemo(() => {
+    if (!editor) return false;
+    const { $from } = editor.state.selection;
+    for (let d = $from.depth; d > 0; d--) {
+      if ($from.node(d).type.name === 'mediaCaption') return true;
+    }
+    return false;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editor, editor?.state.selection]);
+
   if (!editor) {
     return null;
   }
@@ -338,6 +348,30 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
                 }
               />
             )
+          ) : isInMediaCaption ? (
+            <React.Fragment>
+              <DynamicDropdown
+                sideOffset={15}
+                anchorTrigger={
+                  <ToolbarButton
+                    icon="Link"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setToolVisibility(IEditorTool.LINK_POPUP)}
+                  />
+                }
+                className="shadow-elevation-3"
+                content={
+                  <LinkPopup
+                    setToolVisibility={setToolVisibility}
+                    editor={editor}
+                    elementRef={toolRef}
+                    bubbleMenu={true}
+                    onError={onError}
+                  />
+                }
+              />
+            </React.Fragment>
           ) : (
             <React.Fragment>
               <NodeSelector editor={editor} elementRef={toolRef} />

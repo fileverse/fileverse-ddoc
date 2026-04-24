@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable react-hooks/exhaustive-deps */
 import { LegacyRef, useEffect, useRef, useState } from 'react';
-import { NodeViewWrapper, NodeViewProps } from '@tiptap/react';
+import { NodeViewWrapper, NodeViewContent, NodeViewProps } from '@tiptap/react';
 import { resizableMediaActions } from './resizable-media-menu-util';
 import cn from 'classnames';
 import { useEditingContext } from '../../hooks/use-editing-context';
@@ -21,7 +21,14 @@ export const getResizableMediaNodeView =
     ) => Promise<{ url: string; file: File }>,
     fetchV1ImageFn: (url: string) => Promise<ArrayBuffer | undefined>,
   ) =>
-  ({ node, updateAttributes, deleteNode, selected }: NodeViewProps) => {
+  ({
+    node,
+    updateAttributes,
+    deleteNode,
+    selected,
+    editor,
+    getPos,
+  }: NodeViewProps) => {
     const { isPreviewMode } = useEditingContext();
 
     const mediaType: 'img' | 'secure-img' | 'video' | 'iframe' =
@@ -60,7 +67,7 @@ export const getResizableMediaNodeView =
       const activeStates: Record<string, boolean> = {};
 
       resizableMediaActions.forEach(({ tooltip, isActive }) => {
-        activeStates[tooltip] = !!isActive?.(node.attrs);
+        activeStates[tooltip] = !!isActive?.(node.attrs, node);
       });
 
       setMediaActionActiveState(activeStates);
@@ -115,6 +122,38 @@ export const getResizableMediaNodeView =
     useEffect(() => {
       mediaSetupOnLoad();
     }, []);
+
+    // Converts the legacy `caption` string attribute into an editable
+    // `mediaCaption` child node. Called on user interaction (click on the
+    // legacy caption, or the Add Caption toolbar action). Never called
+    // during load — that caused structural conflicts with Yjs
+    // reconciliation and wiped the parent nodes.
+    const migrateLegacyCaption = () => {
+      if (!editor.isEditable) return;
+      const caption = node.attrs.caption;
+      if (!caption || node.content.childCount > 0) return;
+      const pos = getPos();
+      if (pos === undefined) return;
+
+      editor
+        .chain()
+        .insertContentAt(pos + 1, {
+          type: 'mediaCaption',
+          content: [{ type: 'text', text: caption }],
+        })
+        .command(({ tr }) => {
+          const current = tr.doc.nodeAt(pos);
+          if (current) {
+            tr.setNodeMarkup(pos, undefined, {
+              ...current.attrs,
+              caption: null,
+            });
+          }
+          return true;
+        })
+        .focus(pos + 2 + caption.length)
+        .run();
+    };
 
     const limitWidthOrHeight = (
       { width, height }: WidthAndHeight,
@@ -372,6 +411,7 @@ export const getResizableMediaNodeView =
           onTouchCancel={handleTouchEnd}
         >
           <div
+            contentEditable={false}
             className={cn(
               'relative',
               node.attrs.dataAlign === 'start' && 'self-start',
@@ -382,6 +422,12 @@ export const getResizableMediaNodeView =
                 ? 'border-[#5c0aff]'
                 : 'border-transparent',
             )}
+            onClick={() => {
+              if (isPreviewMode) return;
+              const pos = getPos();
+              if (pos === undefined) return;
+              editor.chain().setNodeSelection(pos).run();
+            }}
           >
             {mediaType === 'img' && (
               <img
@@ -403,7 +449,6 @@ export const getResizableMediaNodeView =
                   privateKey={node.attrs.privateKey}
                   fetchV1ImageFn={fetchV1ImageFn}
                   alt={node.attrs.alt}
-                  // caption={node.attrs.caption}
                   className="rounded-lg"
                   width={node.attrs.width}
                   height={node.attrs.height}
@@ -481,65 +526,28 @@ export const getResizableMediaNodeView =
             )}
           </div>
 
-          {node.attrs.showCaptionInput && (
-            <div className="caption-input-container">
-              <textarea
-                placeholder="Add a caption"
-                value={node.attrs.caption || ''}
-                onChange={(e) => {
-                  let newValue = e.target.value;
-                  if (newValue.length > 300) {
-                    newValue = newValue.substring(0, 300);
-                  }
-                  updateAttributes({ caption: newValue });
-
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = 'auto';
-                  target.style.height = `${target.scrollHeight}px`;
-                }}
-                onPaste={(e: React.ClipboardEvent<HTMLTextAreaElement>) => {
-                  e.preventDefault();
-                  const paste = e.clipboardData.getData('text');
-                  const currentText = e.currentTarget.value;
-                  const newText = (currentText + paste).substring(0, 300);
-                  updateAttributes({ caption: newText });
-
-                  const target = e.currentTarget;
-                  target.style.height = 'auto';
-                  target.style.height = `${target.scrollHeight}px`;
-                }}
-                onBlur={() => {
-                  if (!node.attrs.caption) {
-                    updateAttributes({ showCaptionInput: false });
-                  }
-                }}
-                onInput={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.height = 'auto';
-                  target.style.height = `${target.scrollHeight}px`;
-                }}
-                onFocus={(e) => {
-                  const target = e.target as HTMLTextAreaElement;
-                  target.style.fontSize = '16px';
-                }}
-                autoFocus
-                className={cn(
-                  'bg-transparent color-text-secondary resize-none !mt-2',
-                  'placeholder-disabled',
-                  {
-                    'text-left': node.attrs.dataAlign === 'start',
-                    'text-center': node.attrs.dataAlign === 'center',
-                    'text-right': node.attrs.dataAlign === 'end',
-                  },
-                )}
-                disabled={isPreviewMode}
-              />
+          {node.content.childCount > 0 ? (
+            <NodeViewContent
+              as="div"
+              className={cn('media-caption', {
+                'text-left': node.attrs.dataAlign === 'start',
+                'text-center': node.attrs.dataAlign === 'center',
+                'text-right': node.attrs.dataAlign === 'end',
+              })}
+            />
+          ) : node.attrs.caption ? (
+            <div
+              contentEditable={false}
+              className={cn('media-caption media-caption-legacy', {
+                'text-left': node.attrs.dataAlign === 'start',
+                'text-center': node.attrs.dataAlign === 'center',
+                'text-right': node.attrs.dataAlign === 'end',
+              })}
+              onClick={migrateLegacyCaption}
+            >
+              {node.attrs.caption}
             </div>
-          )}
-
-          {node.attrs.caption && !node.attrs.showCaptionInput && (
-            <div className="caption">{node.attrs.caption}</div>
-          )}
+          ) : null}
 
           {!isPreviewMode && (
             <span
@@ -563,7 +571,7 @@ export const getResizableMediaNodeView =
                       onClick={() =>
                         btn.tooltip === 'Delete'
                           ? deleteNode()
-                          : btn.action?.(updateAttributes)
+                          : btn.action?.(updateAttributes, editor, getPos)
                       }
                       icon={btn.icon as string}
                       classNames="min-w-6 aspect-square"
