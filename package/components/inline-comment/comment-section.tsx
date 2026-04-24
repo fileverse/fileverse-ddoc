@@ -41,6 +41,7 @@ export const CommentSection = ({
   const resolveComment = useCommentStore((s) => s.resolveComment);
   const unresolveComment = useCommentStore((s) => s.unresolveComment);
   const deleteComment = useCommentStore((s) => s.deleteComment);
+  const acceptSuggestion = useCommentStore((s) => s.acceptSuggestion);
   const isConnected = useCommentStore((s) => s.isConnected);
   const connectViaWallet = useCommentStore((s) => s.connectViaWallet);
   const isLoading = useCommentStore((s) => s.isLoading);
@@ -105,6 +106,11 @@ export const CommentSection = ({
             replySectionRef={replySectionRef}
             onCommentClick={handleCommentClick}
             onResolve={(commentId) => {
+              if (comment.isSuggestion) {
+                acceptSuggestion(commentId);
+                return;
+              }
+
               if (isCommentMobileFocused && openReplyId === commentId) {
                 setReOpenLabelCommentId(commentId);
               }
@@ -358,7 +364,7 @@ const SidebarCommentItem = ({
       )}
       onClick={handleSidebarCommentClick}
     >
-      {showReOpenLabel && comment.resolved && (
+      {showReOpenLabel && comment.resolved && !comment.isSuggestion && (
         <div className="w-full px-[16px] py-[8px] rounded-b-[4px] rounded-t-[12px] items-center flex justify-between color-bg-secondary">
           <p className="color-text-secondary text-body-sm">Resolved comment</p>
           <Button
@@ -407,6 +413,7 @@ const SidebarCommentItem = ({
         isResolved={comment.resolved}
         isDisabled={comment && !Object.hasOwn(comment, 'commentIndex')}
         isCommentOwner={comment.username === username || isDDocOwner}
+        canResolveComment={comment.isSuggestion ? isDDocOwner : undefined}
         version={comment.version}
         isSuggestion={comment.isSuggestion}
         suggestionType={comment.suggestionType}

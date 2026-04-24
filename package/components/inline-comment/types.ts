@@ -53,6 +53,7 @@ export interface CommentCardProps extends IComment {
   activeCommentId?: string;
   isDisabled?: boolean;
   isCommentOwner?: boolean;
+  canResolveComment?: boolean;
   version?: string;
   emptyComment?: boolean;
   isFocused?: boolean;

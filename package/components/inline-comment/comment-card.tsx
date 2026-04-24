@@ -364,6 +364,7 @@ export const CommentCard = (props: CommentCardProps) => {
     id,
     isDisabled,
     isCommentOwner,
+    canResolveComment,
     isCommentDrawerContext,
     isDropdown,
     isSuggestion,
@@ -401,6 +402,7 @@ export const CommentCard = (props: CommentCardProps) => {
   // const isStrictCommentOwner = Boolean(
   //   currentUsername && username && username === currentUsername,
   // );
+  const canShowResolveAction = canResolveComment ?? isCommentOwner;
 
   if (emptyComment)
     return (
@@ -450,9 +452,12 @@ export const CommentCard = (props: CommentCardProps) => {
                   'flex  gap-[4px]',
                 )}
               >
-                {isCommentOwner && !isResolved && (
+                {canShowResolveAction && !isResolved && (
                   <Tooltip
-                    text={!isDisabled && 'Mark as resolved'}
+                    text={
+                      !isDisabled &&
+                      (isSuggestion ? 'Accept suggestion' : 'Mark as resolved')
+                    }
                     position="bottom"
                   >
                     <IconButton
@@ -486,7 +491,7 @@ export const CommentCard = (props: CommentCardProps) => {
                           className="flex flex-col p-2 w-40 shadow-elevation-3"
                           onClick={(e) => e.stopPropagation()}
                         >
-                          {isResolved && (
+                          {isResolved && !isSuggestion && (
                             <button
                               className="flex items-center h-[32px] color-text-default gap-[12px] rounded p-2 transition-all hover:color-bg-default-hover w-full"
                               onClick={handleUnresolveClick}
