@@ -1006,7 +1006,8 @@ const DdocEditor = forwardRef(
                                         ref={editorContentRef}
                                         className={cn(
                                           'w-full h-auto',
-                                          isPreviewMode && 'preview-mode',
+                                          isPreviewMode &&
+                                            'preview-mode max-sm:!pb-40',
                                           activeModel !== undefined &&
                                             isAIAgentEnabled &&
                                             'has-available-models',
