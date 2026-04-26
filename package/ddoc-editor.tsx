@@ -616,6 +616,7 @@ const DdocEditor = forwardRef(
                   <EditorToolBar
                     isPresentationMode={isPresentationMode}
                     setIsPresentationMode={handlePresentationModeHandler}
+                    enableCollaboration={collaboration?.enabled}
                     onError={onError}
                     editor={editor}
                     zoomLevel={zoomLevel}

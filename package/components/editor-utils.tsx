@@ -197,6 +197,7 @@ export const useEditorToolbar = ({
   onError,
   isPresentationMode,
   setIsPresentationMode,
+  enableCollaboration,
   ipfsImageUploadFn,
   onMarkdownExport,
   onMarkdownImport,
@@ -211,6 +212,7 @@ export const useEditorToolbar = ({
   editor: Editor | null;
   isPresentationMode?: boolean;
   setIsPresentationMode?: () => void;
+  enableCollaboration?: boolean;
   onError?: (errorString: string) => void;
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   onMarkdownExport?: () => void;
@@ -753,14 +755,24 @@ export const useEditorToolbar = ({
     null,
     {
       icon: 'Presentation',
-      title: 'Slides mode',
+      title: enableCollaboration
+        ? 'Slides Mode is not supported during real-time collaboration'
+        : 'Slides mode',
       onClick: () => {
-        editor?.chain().focus().run(); // added editor focus and delegated the presentation mode setter to give the popover closing time.
+        if (enableCollaboration) return;
+        if (!editor) return;
+        if (editor.isEmpty) {
+          onError?.(
+            'Your document is empty. Add some content before starting presentation mode.',
+          );
+        }
+        editor.chain().focus().run(); // added editor focus and delegated the presentation mode setter to give the popover closing time.
         setTimeout(() => {
           setIsPresentationMode?.();
         }, 50);
       },
       isActive: isPresentationMode ?? false,
+      disabled: enableCollaboration,
       group: 'More',
       notVisible: 1560,
     },

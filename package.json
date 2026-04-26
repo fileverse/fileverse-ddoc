@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "3.2.6-slides-1",
+  "version": "3.2.6-slides-2",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
