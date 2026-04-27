@@ -65,6 +65,15 @@ export interface CommentStoreProviderProps {
   connectViaUsername?: (username: string) => Promise<void>;
   ensResolutionUrl: string;
   commentAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
+  draftAnchorsRef?: React.MutableRefObject<CommentAnchor[]>;
+  /**
+   * Ref populated by the provider with the Zustand store instance.
+   * SuggestionTrackingExtension reads this inside event handlers to route
+   * keystrokes into draft actions without rebuilding the editor.
+   */
+  storeApiRef?: React.MutableRefObject<ReturnType<
+    typeof createCommentStore
+  > | null>;
   initialCommentAnchors?: SerializedCommentAnchor[];
   // Synced data — go into store via useEffect
   initialComments: IComment[];
@@ -800,12 +809,12 @@ export const CommentStoreProvider = ({
 
               // Fire persistence callbacks for edited anchors.
               // Consumer uses these to update persisted anchor data (e.g., in DB).
-              editPayloads.forEach(({ commentId, mutationMeta }) => {
-                externalDepsRef.current.onEditComment?.(
-                  commentId,
-                  mutationMeta,
-                );
-              });
+              // editPayloads.forEach(({ commentId, mutationMeta }) => {
+              //   externalDepsRef.current.onEditComment?.(
+              //     commentId,
+              //     mutationMeta,
+              //   );
+              // });
             }
 
             didRestoreRemovedAnchors = restoreRemovedAnchors();
