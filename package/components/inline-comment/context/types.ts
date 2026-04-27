@@ -40,6 +40,8 @@ export interface SuggestionFloatingDraftCard extends CommentFloatingBaseCard {
   suggestionId: string;
   /** Accumulated inserted text from the live suggestion context. */
   insertedText: string;
+  /** Pasted link href for link suggestions. */
+  linkHref?: string;
 }
 
 export type CommentFloatingCard =

@@ -51,6 +51,9 @@ export interface SuggestionTrackingOptions {
   /** Viewer presses Backspace/Delete with a non-empty selection. */
   onDeleteSelection: (from: number, to: number) => void;
 
+  /** Viewer pastes a link over selected text. */
+  onPasteLink: (from: number, to: number, href: string) => void;
+
   /**
    * Viewer presses Backspace/Delete with a collapsed cursor.
    * The consumer decides whether this should shrink an active draft or create
@@ -159,6 +162,23 @@ function hasNonCollapsedDomSelection(view: EditorView): boolean {
   );
 }
 
+function normalizePastedHref(text: string): string | null {
+  const href = text.trim();
+  if (!href || /\s/.test(href) || href.includes('@')) {
+    return null;
+  }
+
+  const urlPattern = /^(https?:\/\/)?[\w-]+(\.[\w-]+)+\.?(:\d+)?(\/\S*)?$/i;
+
+  if (!urlPattern.test(href)) {
+    return null;
+  }
+
+  return href.startsWith('http://') || href.startsWith('https://')
+    ? href
+    : `https://${href}`;
+}
+
 // ---------------------------------------------------------------------------
 // Extension
 // ---------------------------------------------------------------------------
@@ -166,6 +186,7 @@ function hasNonCollapsedDomSelection(view: EditorView): boolean {
 export const SuggestionTrackingExtension =
   Extension.create<SuggestionTrackingOptions>({
     name: 'suggestionTracking',
+    priority: 1001,
 
     addOptions() {
       return {
@@ -173,6 +194,7 @@ export const SuggestionTrackingExtension =
         onTextInput: () => {},
         onReplaceTyping: () => {},
         onDeleteSelection: () => {},
+        onPasteLink: () => {},
         onDeleteAtCursor: () => {},
         onDeleteRangeWithoutSelection: () => {},
         onUndo: () => {},
@@ -350,9 +372,26 @@ export const SuggestionTrackingExtension =
               return false;
             },
 
-            // ----- Paste / Drop — blocked in v1 -----------------------------
-            handlePaste() {
-              return getOptions().getIsSuggestionMode();
+            // ----- Paste / Drop ---------------------------------------------
+            // In suggestion mode, regular paste is blocked so the document
+            // stays immutable. The one allowed paste gesture is select text +
+            // paste a URL, which creates a link suggestion over that range.
+            handlePaste(view, event) {
+              const opts = getOptions();
+              if (!opts.getIsSuggestionMode()) return false;
+
+              event.preventDefault();
+              const { from, to } = view.state.selection;
+              const pastedHref = normalizePastedHref(
+                event.clipboardData?.getData('text/plain') ?? '',
+              );
+
+              if (from < to && pastedHref) {
+                opts.onPasteLink(from, to, pastedHref);
+                return true;
+              }
+
+              return true;
             },
             handleDrop() {
               return getOptions().getIsSuggestionMode();
@@ -455,6 +494,17 @@ export const SuggestionTrackingExtension =
                   inputType === 'insertReplacementText'
                 ) {
                   event.preventDefault();
+                  const pastedHref = normalizePastedHref(
+                    (
+                      event as InputEvent & {
+                        dataTransfer?: DataTransfer | null;
+                      }
+                    ).dataTransfer?.getData('text/plain') ?? '',
+                  );
+                  const { from, to } = view.state.selection;
+                  if (from < to && pastedHref) {
+                    opts.onPasteLink(from, to, pastedHref);
+                  }
                   return true;
                 }
 

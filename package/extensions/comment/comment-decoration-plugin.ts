@@ -252,6 +252,16 @@ function getImpactingChangedRanges(
   );
 }
 
+// Mark/attribute-only steps have empty StepMaps. Tiptap still reports their
+// from/to as changed ranges, but they do not move or delete anchored text.
+function isPositionPreservingTransform(transform: Transform) {
+  return transform.mapping.maps.every((stepMap) => {
+    const ranges = (stepMap as unknown as { ranges?: readonly number[] })
+      .ranges;
+    return !ranges || ranges.length === 0;
+  });
+}
+
 function doChangedRangesCoverWholeAnchor(
   changedRanges: ChangedRange[],
   anchorRange: CommentAnchorRange,
@@ -321,15 +331,16 @@ function mapAnchorRangeThroughTransform(
  * whether each anchor remains unchanged, gets edited, or is deleted.
  *
  * Classification rules (in order):
- * 1. Skip deleted or resolved anchors → 'unchanged'
- * 2. If anchor has no old position → 'unchanged'
- * 3. If no changed ranges touch the anchor → 'unchanged'
- * 4. If any changed range fully covers the anchor → 'deleted' (full-span replacement)
- * 5. If combined changed ranges fully cover the anchor → 'deleted' (multi-step removal)
- * 6. If anchor maps through transform → check if position or content changed:
+ * 1. If the transform preserves positions → 'unchanged'
+ * 2. Skip deleted or resolved anchors → 'unchanged'
+ * 3. If anchor has no old position → 'unchanged'
+ * 4. If no changed ranges touch the anchor → 'unchanged'
+ * 5. If any changed range fully covers the anchor → 'deleted' (full-span replacement)
+ * 6. If combined changed ranges fully cover the anchor → 'deleted' (multi-step removal)
+ * 7. If anchor maps through transform → check if position or content changed:
  *    a. If both unchanged → 'unchanged'
  *    b. Otherwise → 'edited' (return new position and relative anchor)
- * 7. If mapping fails → 'deleted'
+ * 8. If mapping fails → 'deleted'
  */
 export function analyzeCommentAnchorTransactionChanges(
   anchors: CommentAnchor[],
@@ -337,6 +348,10 @@ export function analyzeCommentAnchorTransactionChanges(
   newState: EditorState,
   transform: Transform,
 ): CommentAnchorTransactionChange[] {
+  if (isPositionPreservingTransform(transform)) {
+    return anchors.map((anchor) => ({ id: anchor.id, type: 'unchanged' }));
+  }
+
   const changedRanges = getChangedRanges(transform);
 
   if (changedRanges.length === 0) {
@@ -514,6 +529,18 @@ function buildDecorations(
     // follows — suggestions don't get the inline-comment background.
     if (anchor.isSuggestion) {
       const { suggestionType, suggestedContent } = anchor;
+
+      // Link: purple text over the original selected range.
+      if (suggestionType === 'link' && range.from < range.to) {
+        decorations.push(
+          Decoration.inline(range.from, range.to, {
+            class: 'suggestion-link',
+            'data-suggestion-id': anchor.id,
+            'data-comment-id': anchor.id,
+            'data-active': isActive ? 'true' : 'false',
+          }),
+        );
+      }
 
       // Delete / Replace: strikethrough on the original text range.
       // Include both data-suggestion-id (for draft anchor lookup) and
@@ -842,6 +869,15 @@ export function applyAcceptedSuggestion(
         .focus()
         .deleteRange({ from, to })
         .insertContentAt(from, textNode(suggestedContent))
+        .run();
+    }
+    if (suggestionType === 'link') {
+      if (from >= to || !suggestedContent) return false;
+      return editor
+        .chain()
+        .focus()
+        .setTextSelection({ from, to })
+        .setLink({ href: suggestedContent })
         .run();
     }
     return false;

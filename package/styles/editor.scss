@@ -1232,6 +1232,19 @@ background-color: rgba(0, 102, 7, 0.08);
   }
 }
 
+.suggestion-link {
+  @apply cursor-pointer transition-all;
+  color: #5C0AFF;
+  background-color: rgba(92, 10, 255, 0.04);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+
+  &[data-active='true'],
+  &:hover {
+    background-color: rgba(92, 10, 255, 0.08);
+  }
+}
+
 // Hide inline comments visually when disabled
 .hide-inline-comments .inline-comment {
   background-color: transparent !important;
@@ -1251,6 +1264,13 @@ background-color: rgba(0, 102, 7, 0.08);
   background-color: transparent !important;
   color: inherit !important;
   text-decoration: none !important;
+  cursor: default !important;
+  pointer-events: none !important;
+}
+
+.hide-inline-comments .suggestion-link {
+  background-color: transparent !important;
+  color: inherit !important;
   cursor: default !important;
   pointer-events: none !important;
 }

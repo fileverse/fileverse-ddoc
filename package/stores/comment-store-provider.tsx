@@ -39,6 +39,7 @@ import {
   CommentStoreContext,
   createCommentStore,
   EXPLICIT_COMMENT_FOCUS_META,
+  isRangeDraft,
 } from './comment-store';
 
 export interface CommentStoreProviderProps {
@@ -74,7 +75,9 @@ export interface CommentStoreProviderProps {
    * SuggestionTrackingExtension reads this inside event handlers to route
    * keystrokes into draft actions without rebuilding the editor.
    */
-  storeApiRef?: React.MutableRefObject<ReturnType<typeof createCommentStore> | null>;
+  storeApiRef?: React.MutableRefObject<ReturnType<
+    typeof createCommentStore
+  > | null>;
   initialCommentAnchors?: SerializedCommentAnchor[];
   // Synced data — go into store via useEffect
   initialComments: IComment[];
@@ -355,16 +358,16 @@ export const CommentStoreProvider = ({
   // has an in-progress draft anchored to it. Per the spec, the draft is
   // lost with no warning.
   //
-  // Also refreshes `originalContent` on Delete/Replace drafts whose anchor
-  // still resolves but now covers different text (owner edited inside the
-  // anchored range), so the draft card's diff summary stays accurate.
+  // Also refreshes `originalContent` on range-backed drafts whose anchor still
+  // resolves but now covers different text (owner edited inside the anchored
+  // range), so the draft card's diff summary stays accurate.
   useEffect(() => {
     if (!editor) return;
     const handler = ({ transaction }: { transaction: Transaction }) => {
       if (!transaction.docChanged) return;
       const state = store.getState();
       for (const draft of Object.values(state.drafts)) {
-        if (!draft.hadDeletion) {
+        if (!isRangeDraft(draft)) {
           const point = resolveCommentAnchorPointInState(draft, editor.state);
           if (point === null) {
             state.discardDraft(draft.id);

@@ -75,9 +75,9 @@ export interface CommentExternalDeps {
 /**
  * A suggestion draft is the viewer's in-progress proposed edit — kept local
  * until Submit. Drafts live in memory only (lost on refresh). Derived into
- * a CommentAnchor for decoration rendering via deriveDraftAnchor(). The
- * suggestion type ('add' | 'delete' | 'replace') is not stored; it is derived
- * at use time from hadDeletion + insertedText.
+ * a CommentAnchor for decoration rendering via deriveDraftAnchor(). Most
+ * suggestion types are derived at use time from hadDeletion + insertedText;
+ * linkHref marks a link suggestion over the original selected text.
  */
 export interface DraftSuggestion {
   id: string;
@@ -91,11 +91,20 @@ export interface DraftSuggestion {
   keystrokes: string[];
   /** True when the draft was created via select+delete or select+type. */
   hadDeletion: boolean;
+  /** Pasted link href for a link suggestion. */
+  linkHref?: string;
 }
 
 type SuggestionDeleteDirection = 'backward' | 'forward';
 
+export function isRangeDraft(draft: DraftSuggestion): boolean {
+  return draft.hadDeletion || Boolean(draft.linkHref);
+}
+
 function deriveDraftSuggestionType(draft: DraftSuggestion): SuggestionType {
+  if (draft.linkHref) {
+    return 'link';
+  }
   if (draft.hadDeletion) {
     return draft.insertedText.length > 0 ? 'replace' : 'delete';
   }
@@ -112,7 +121,7 @@ function deriveDraftAnchor(draft: DraftSuggestion): CommentAnchor {
     isSuggestion: true,
     suggestionType: deriveDraftSuggestionType(draft),
     originalContent: draft.originalContent,
-    suggestedContent: draft.insertedText,
+    suggestedContent: draft.linkHref ?? draft.insertedText,
   };
 }
 
@@ -122,8 +131,8 @@ function findDraftAtEditorCursor(
 ): DraftSuggestion | null {
   const { from, to } = state.selection;
   for (const draft of Object.values(drafts)) {
-    if (draft.hadDeletion) {
-      // Delete / Replace draft: cursor must be within [anchorFrom, anchorTo]
+    if (isRangeDraft(draft)) {
+      // Delete / Replace / Link draft: cursor must be within [anchorFrom, anchorTo]
       const range = resolveCommentAnchorRangeInState(draft, state);
       if (!range) continue;
       if (from >= range.from && to <= range.to) return draft;
@@ -824,6 +833,11 @@ export interface CommentStoreState {
    * as soon as the viewer types.
    */
   startDeleteDraft: (from: number, to: number, collapseTo?: number) => void;
+  /**
+   * Create a link suggestion from a selected range and pasted href.
+   * The document stays unchanged until the owner accepts the suggestion.
+   */
+  startLinkDraft: (from: number, to: number, href: string) => void;
   /**
    * Convert a collapsed-caret Backspace/Delete into a delete draft when the
    * caret is adjacent to text, or shrink the active draft if the caret is
@@ -2575,6 +2589,50 @@ export const createCommentStore = () =>
       triggerDecorationRebuild(editor);
     },
 
+    startLinkDraft: (from, to, href) => {
+      const deps = getExtDeps(get);
+      const { editor, draftAnchorsRef } = deps;
+      if (!editor) return;
+      if (from >= to || !href) return;
+
+      const anchorRange = createCommentAnchorFromEditor(editor, from, to);
+      if (!anchorRange) return;
+
+      const originalContent = editor.state.doc.textBetween(from, to, '\n');
+      if (!originalContent) return;
+
+      const id = `suggestion-${uuid()}`;
+      const newDraft: DraftSuggestion = {
+        id,
+        anchorFrom: anchorRange.anchorFrom,
+        anchorTo: anchorRange.anchorTo,
+        originalContent,
+        insertedText: '',
+        keystrokes: [],
+        hadDeletion: false,
+        linkHref: href,
+      };
+
+      const newCard: SuggestionFloatingDraftCard = {
+        type: 'suggestion-draft',
+        floatingCardId: `suggestion-draft:${id}`,
+        suggestionId: id,
+        selectedText: originalContent,
+        insertedText: '',
+        linkHref: href,
+        isFocused: true,
+      };
+
+      const nextDrafts = { ...get().drafts, [id]: newDraft };
+      const nextCards = [
+        ...get().floatingCards.map((c) => ({ ...c, isFocused: false })),
+        newCard,
+      ];
+
+      syncSuggestionDraftState(set, nextDrafts, nextCards, draftAnchorsRef);
+      triggerDecorationRebuild(editor);
+    },
+
     deleteAtCursorOrUndoActiveDraft: (direction) => {
       const deps = getExtDeps(get);
       const { editor, draftAnchorsRef } = deps;
@@ -2764,11 +2822,35 @@ export const createCommentStore = () =>
       const draft = get().drafts[suggestionId];
       if (!draft) return;
 
-      const suggestionType = deriveDraftSuggestionType(draft);
+      let draftToSubmit = draft;
+
+      if (isRangeDraft(draft)) {
+        const currentRange = resolveCommentAnchorRangeInState(
+          draft,
+          editor.state,
+        );
+        if (!currentRange) return;
+
+        const currentOriginalContent = editor.state.doc.textBetween(
+          currentRange.from,
+          currentRange.to,
+          '\n',
+        );
+        if (!currentOriginalContent) return;
+
+        if (currentOriginalContent !== draft.originalContent) {
+          draftToSubmit = {
+            ...draft,
+            originalContent: currentOriginalContent,
+          };
+        }
+      }
+
+      const suggestionType = deriveDraftSuggestionType(draftToSubmit);
 
       // Promote draft anchor into commentAnchorsRef so the decoration layer
       // reads it from the "submitted" source henceforth.
-      const submittedAnchor: CommentAnchor = deriveDraftAnchor(draft);
+      const submittedAnchor: CommentAnchor = deriveDraftAnchor(draftToSubmit);
       commentAnchorsRef.current = [
         ...commentAnchorsRef.current,
         submittedAnchor,
@@ -2786,8 +2868,8 @@ export const createCommentStore = () =>
         const threadCard: CommentFloatingThreadCard = {
           type: 'thread',
           floatingCardId: c.floatingCardId,
-          commentId: draft.id,
-          selectedText: draft.originalContent,
+          commentId: draftToSubmit.id,
+          selectedText: draftToSubmit.originalContent,
           isFocused: c.isFocused,
         };
         return threadCard;
@@ -2797,16 +2879,16 @@ export const createCommentStore = () =>
       // "Loading encrypted comments" flash while the consumer round-trips
       // the new comment back through onNewComment → setInitialComments.
       const newComment: IComment = {
-        id: draft.id,
+        id: draftToSubmit.id,
         tabId: get().activeTabId,
         username: get().username ?? undefined,
-        selectedContent: draft.originalContent,
+        selectedContent: draftToSubmit.originalContent,
         content: '',
         replies: [],
         isSuggestion: true,
         suggestionType,
-        originalContent: draft.originalContent,
-        suggestedContent: draft.insertedText,
+        originalContent: draftToSubmit.originalContent,
+        suggestedContent: draftToSubmit.linkHref ?? draftToSubmit.insertedText,
         resolved: false,
         deleted: false,
         createdAt: new Date(),
@@ -2829,11 +2911,15 @@ export const createCommentStore = () =>
 
       const meta: CommentMutationMeta = {
         type: 'create',
-        anchorFrom: fromUint8Array(Y.encodeRelativePosition(draft.anchorFrom)),
-        anchorTo: fromUint8Array(Y.encodeRelativePosition(draft.anchorTo)),
+        anchorFrom: fromUint8Array(
+          Y.encodeRelativePosition(draftToSubmit.anchorFrom),
+        ),
+        anchorTo: fromUint8Array(
+          Y.encodeRelativePosition(draftToSubmit.anchorTo),
+        ),
         suggestionType,
-        originalContent: draft.originalContent,
-        suggestedContent: draft.insertedText,
+        originalContent: draftToSubmit.originalContent,
+        suggestedContent: draftToSubmit.linkHref ?? draftToSubmit.insertedText,
       };
 
       onNewComment?.(newComment, meta);

@@ -45,7 +45,7 @@ const SuggestionDiffSummary = ({
 }: SuggestionDiffSummaryProps) => {
   if (suggestionType === 'add') {
     return (
-      <p className="text-body-sm">
+      <p className="text-body-sm break-words">
         <span className="font-semibold">Add:</span>{' '}
         <span>&ldquo;{suggestedContent}&rdquo;</span>
       </p>
@@ -53,7 +53,7 @@ const SuggestionDiffSummary = ({
   }
   if (suggestionType === 'delete') {
     return (
-      <p className="text-body-sm">
+      <p className="text-body-sm break-words">
         <span className="font-semibold">Delete:</span>{' '}
         <span className="line-through">&ldquo;{originalContent}&rdquo;</span>
       </p>
@@ -61,11 +61,19 @@ const SuggestionDiffSummary = ({
   }
   if (suggestionType === 'replace') {
     return (
-      <p className="text-body-sm">
+      <p className="text-body-sm break-words">
         <span className="font-semibold">Replace:</span>{' '}
         <span className="line-through">&ldquo;{originalContent}&rdquo;</span>{' '}
         <span className="font-semibold">with</span>{' '}
         <span>&ldquo;{suggestedContent}&rdquo;</span>
+      </p>
+    );
+  }
+  if (suggestionType === 'link') {
+    return (
+      <p className="text-body-sm break-words">
+        <span className="font-semibold">Add link:</span>{' '}
+        <span>&quot;{suggestedContent}&quot;</span>
       </p>
     );
   }

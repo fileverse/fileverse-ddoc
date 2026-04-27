@@ -34,17 +34,20 @@ export const SuggestionDraftFloatingCard = ({
 
   const hasOriginal = Boolean(card.selectedText);
   const hasInserted = Boolean(card.insertedText);
-  const canSubmit = hasOriginal || hasInserted;
+  const hasLink = Boolean(card.linkHref);
+  const canSubmit = hasOriginal || hasInserted || hasLink;
   const username = useCommentStore((s) => s.username);
   const ensStatus = useEnsStatus(username);
 
-  const suggestionType: 'add' | 'delete' | 'replace' | null = hasOriginal
-    ? hasInserted
-      ? 'replace'
-      : 'delete'
-    : hasInserted
-      ? 'add'
-      : null;
+  const suggestionType: 'add' | 'delete' | 'replace' | 'link' | null = hasLink
+    ? 'link'
+    : hasOriginal
+      ? hasInserted
+        ? 'replace'
+        : 'delete'
+      : hasInserted
+        ? 'add'
+        : null;
 
   return (
     <FloatingCardShell
@@ -96,7 +99,7 @@ export const SuggestionDraftFloatingCard = ({
 
           <div className="flex-1 ml-[32px]">
             {suggestionType === 'add' && (
-              <p className="text-body-sm">
+              <p className="text-body-sm break-words">
                 <span className="font-semibold">Add:</span>{' '}
                 <span>&ldquo;{card.insertedText}&rdquo;</span>
               </p>
@@ -117,6 +120,12 @@ export const SuggestionDraftFloatingCard = ({
                 </span>{' '}
                 <span className="font-semibold">with</span>{' '}
                 <span>&ldquo;{card.insertedText}&rdquo;</span>
+              </p>
+            )}
+            {suggestionType === 'link' && (
+              <p className="text-body-sm">
+                <span className="font-semibold">Add link:</span>{' '}
+                <span>&quot;{card.linkHref}&quot;</span>
               </p>
             )}
             {!suggestionType && (

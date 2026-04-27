@@ -236,34 +236,35 @@ export const useTabEditor = ({
 
   const isSuggestionMode = !!(isPreviewMode && viewerMode === 'suggest');
 
-  const { extensions, commentAnchorsRef, draftAnchorsRef, storeApiRef } = useEditorExtension({
-    ydoc,
-    onError,
-    ipfsImageUploadFn,
-    metadataProxyUrl,
-    onCopyHeadingLink,
-    ipfsImageFetchFn,
-    fetchV1ImageFn,
-    enableCollaboration: collabEnabled,
-    disableInlineComment,
-    isConnected,
-    activeModel,
-    maxTokens,
-    isAIAgentEnabled,
-    hasAvailableModels,
-    activeCommentId,
-    onCommentActivated: (commentId) => {
-      setActiveCommentId(commentId || null);
-      if (commentId) {
-        setTimeout(() => focusCommentWithActiveId(commentId));
-      }
-    },
-    onTocUpdate: handleTocUpdate,
-    externalExtensions,
-    activeTabId,
-    initialCommentAnchors,
-    isSuggestionMode,
-  });
+  const { extensions, commentAnchorsRef, draftAnchorsRef, storeApiRef } =
+    useEditorExtension({
+      ydoc,
+      onError,
+      ipfsImageUploadFn,
+      metadataProxyUrl,
+      onCopyHeadingLink,
+      ipfsImageFetchFn,
+      fetchV1ImageFn,
+      enableCollaboration: collabEnabled,
+      disableInlineComment,
+      isConnected,
+      activeModel,
+      maxTokens,
+      isAIAgentEnabled,
+      hasAvailableModels,
+      activeCommentId,
+      onCommentActivated: (commentId) => {
+        setActiveCommentId(commentId || null);
+        if (commentId) {
+          setTimeout(() => focusCommentWithActiveId(commentId));
+        }
+      },
+      onTocUpdate: handleTocUpdate,
+      externalExtensions,
+      activeTabId,
+      initialCommentAnchors,
+      isSuggestionMode,
+    });
 
   const { handleCommentInteraction, handleCommentClick } =
     useCommentInteraction({
@@ -1292,6 +1293,8 @@ const useEditorExtension = ({
         },
         onDeleteSelection: (from, to) =>
           storeApiRef.current?.getState().startDeleteDraft(from, to),
+        onPasteLink: (from, to, href) =>
+          storeApiRef.current?.getState().startLinkDraft(from, to, href),
         onDeleteAtCursor: (direction) =>
           storeApiRef.current
             ?.getState()

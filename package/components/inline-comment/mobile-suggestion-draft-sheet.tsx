@@ -33,14 +33,18 @@ export const MobileSuggestionDraft = ({
   const ensStatus = useEnsStatus(username);
   const hasSuggestionOriginal = Boolean(activeSuggestionDraftCard.selectedText);
   const hasSuggestionInserted = Boolean(activeSuggestionDraftCard.insertedText);
-  const canSubmitSuggestion = hasSuggestionOriginal || hasSuggestionInserted;
-  const suggestionType = hasSuggestionOriginal
-    ? hasSuggestionInserted
-      ? 'replace'
-      : 'delete'
-    : hasSuggestionInserted
-      ? 'add'
-      : null;
+  const hasSuggestionLink = Boolean(activeSuggestionDraftCard.linkHref);
+  const canSubmitSuggestion =
+    hasSuggestionOriginal || hasSuggestionInserted || hasSuggestionLink;
+  const suggestionType = hasSuggestionLink
+    ? 'link'
+    : hasSuggestionOriginal
+      ? hasSuggestionInserted
+        ? 'replace'
+        : 'delete'
+      : hasSuggestionInserted
+        ? 'add'
+        : null;
   const interactiveSelector =
     'button, input, textarea, select, [contenteditable="true"], [role="textbox"]';
 
@@ -131,6 +135,12 @@ export const MobileSuggestionDraft = ({
                 <span>
                   &ldquo;{activeSuggestionDraftCard.insertedText}&rdquo;
                 </span>
+              </p>
+            )}
+            {suggestionType === 'link' && (
+              <p>
+                <span className="font-semibold">Add link:</span>{' '}
+                <span>&quot;{activeSuggestionDraftCard.linkHref}&quot;</span>
               </p>
             )}
             {!suggestionType && (

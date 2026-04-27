@@ -48,7 +48,7 @@ export type CommentMutationType =
   | 'unresolve'
   | 'delete';
 
-export type SuggestionType = 'add' | 'replace' | 'delete';
+export type SuggestionType = 'add' | 'replace' | 'delete' | 'link';
 
 export interface CommentMutationMeta {
   type: CommentMutationType;
