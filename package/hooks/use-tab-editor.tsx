@@ -271,6 +271,47 @@ export const useTabEditor = ({
       isFocusMode,
       onCommentInteraction,
     });
+  const isFocusModeRef = useRef(isFocusMode);
+
+  useEffect(() => {
+    isFocusModeRef.current = isFocusMode;
+  }, [isFocusMode]);
+
+  const focusSubmittedSuggestionFromEditorEvent = useCallback(
+    (view: EditorView, event: Event) => {
+      if (isFocusModeRef.current) {
+        return false;
+      }
+
+      const target = getInlineCommentEventTarget(event.target);
+      const suggestionNode = target?.closest<HTMLElement>(
+        '[data-suggestion-id][data-comment-id]',
+      );
+      const commentId =
+        suggestionNode?.dataset.commentId ??
+        suggestionNode?.dataset.suggestionId ??
+        null;
+
+      if (!commentId) {
+        return false;
+      }
+
+      const didFocus =
+        storeApiRef.current
+          ?.getState()
+          .focusSubmittedSuggestionFromEditor(commentId) ?? false;
+
+      if (!didFocus) {
+        return false;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      view.dom.blur();
+      return true;
+    },
+    [storeApiRef],
+  );
   const isInitialEditorCreation = useRef(true);
   const [slides, setSlides] = useState<string[]>([]);
   const memoizedExtensions = useMemo(() => extensions, [extensions]);
@@ -289,6 +330,8 @@ export const useTabEditor = ({
         },
         ...DdocEditorProps,
         handleDOMEvents: {
+          mousedown: focusSubmittedSuggestionFromEditorEvent,
+          click: focusSubmittedSuggestionFromEditorEvent,
           mouseover: handleCommentInteraction,
           keydown: (_view, event) => {
             // prevent default event listeners from firing when slash command is active

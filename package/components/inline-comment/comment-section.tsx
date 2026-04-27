@@ -388,9 +388,11 @@ const SidebarCommentItem = ({
               <p className="text-helper-text-sm color-text-secondary">
                 {tabName}
               </p>
-              <p className="text-helper-text-sm flex-1 grow truncate color-text-secondary">
-                {comment.selectedContent}
-              </p>
+              {!comment.isSuggestion && (
+                <p className="text-helper-text-sm flex-1 grow truncate color-text-secondary">
+                  {comment.selectedContent}
+                </p>
+              )}
             </>
           )}
         </>

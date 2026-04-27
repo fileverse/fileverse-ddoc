@@ -74,7 +74,7 @@ export const SuggestionThreadFloatingCard = ({
       isFocused={thread.isFocused}
       onFocus={handleFocus}
     >
-      <div className="flex flex-col gap-2 p-3 pb-0">
+      <div className="flex group flex-col gap-2 p-3 pb-0">
         <Header
           username={comment.username}
           createdAt={comment.createdAt}
@@ -144,7 +144,7 @@ const Header = ({
       <span className="text-helper-text-sm color-text-secondary whitespace-nowrap">
         {createdAt && dateFormatter(createdAt)}
       </span>
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ml-auto opacity-0 group-hover:opacity-100 items-center gap-1">
         {canAcceptReject && (
           <>
             <IconButton

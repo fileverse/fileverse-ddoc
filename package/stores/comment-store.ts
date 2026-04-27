@@ -793,6 +793,7 @@ export interface CommentStoreState {
   cancelFloatingDraft: (draftId: string) => void;
   submitFloatingDraft: (draftId: string) => void;
   openFloatingThread: (commentId: string) => void;
+  focusSubmittedSuggestionFromEditor: (commentId: string) => boolean;
   closeFloatingCard: (floatingCardId: string) => void;
   blurFloatingCard: (floatingCardId: string) => void;
   focusFloatingCard: (floatingCardId: string) => void;
@@ -1789,6 +1790,37 @@ export const createCommentStore = () =>
       });
       setActiveCommentId(commentId);
       editor.commands.setCommentActive(commentId);
+    },
+    focusSubmittedSuggestionFromEditor: (commentId) => {
+      const { editor, setActiveCommentId } = getExtDeps(get);
+      const state = get();
+      const suggestionToFocus = state.tabComments.find(
+        (comment) =>
+          comment.id === commentId &&
+          comment.isSuggestion &&
+          !comment.deleted &&
+          !comment.resolved,
+      );
+
+      if (!editor || !suggestionToFocus) {
+        return false;
+      }
+
+      if (state.isDesktopFloatingEnabled) {
+        state.setActiveCommentId(commentId);
+        setActiveCommentId(commentId);
+        state.openFloatingThread(commentId);
+        return true;
+      }
+
+      state.setActiveCommentId(commentId);
+      setActiveCommentId(commentId);
+      editor.commands.setCommentActive(commentId);
+      set({
+        openReplyId: commentId,
+      });
+      state.setCommentDrawerOpen?.(true);
+      return true;
     },
     closeFloatingCard: (floatingCardId) => {
       const { editor, setActiveCommentId } = getExtDeps(get);
