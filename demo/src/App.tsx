@@ -411,14 +411,6 @@ function App() {
                 <div className="flex flex-col gap-1 p-2 w-fit shadow-elevation-3 ">
                   <Button
                     variant={'ghost'}
-                    onClick={() => setIsPresentationMode(true)}
-                    className="flex justify-start gap-2"
-                  >
-                    <LucideIcon name="Presentation" size="sm" />
-                    Slides
-                  </Button>
-                  <Button
-                    variant={'ghost'}
                     onClick={() => setShowTOC(true)}
                     className="flex justify-start gap-2"
                   >
@@ -462,15 +454,6 @@ function App() {
                 icon={isPreviewMode ? 'PencilOff' : 'Pencil'}
                 size="md"
                 onClick={() => setIsPreviewMode(!isPreviewMode)}
-              />
-              <IconButton
-                variant={'ghost'}
-                icon="Presentation"
-                size="md"
-                onClick={() => {
-                  commentDrawerOpen && setCommentDrawerOpen(false);
-                  setIsPresentationMode(true);
-                }}
               />
               <IconButton
                 variant={'ghost'}

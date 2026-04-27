@@ -437,6 +437,11 @@ const DdocEditor = forwardRef(
       }
     };
 
+    const handlePresentationMode = () => {
+      setIsPresentationMode?.(true);
+      commentDrawerOpen && setCommentDrawerOpen?.(false);
+    };
+
     useEffect(() => {
       if (!editor) return;
       if (isNativeMobile) {
@@ -609,6 +614,9 @@ const DdocEditor = forwardRef(
               >
                 <div className="justify-center items-center grow relative color-text-default">
                   <EditorToolBar
+                    isPresentationMode={isPresentationMode}
+                    setIsPresentationMode={handlePresentationMode}
+                    enableCollaboration={collaboration?.enabled}
                     onError={onError}
                     editor={editor}
                     zoomLevel={zoomLevel}
@@ -999,7 +1007,8 @@ const DdocEditor = forwardRef(
                                         ref={editorContentRef}
                                         className={cn(
                                           'w-full h-auto',
-                                          isPreviewMode && 'preview-mode',
+                                          isPreviewMode &&
+                                            'preview-mode max-sm:!pb-40',
                                           activeModel !== undefined &&
                                             isAIAgentEnabled &&
                                             'has-available-models',
