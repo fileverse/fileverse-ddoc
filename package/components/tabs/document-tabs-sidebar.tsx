@@ -195,7 +195,7 @@ export const TabSidebar = ({
           <div
             data-testid="tab-sidebar"
             className={cn(
-              'flex flex-col items-start w-full h-full overflow-y-auto justify-start left-0 px-4',
+              'flex flex-col items-start w-full h-full justify-start left-0 px-4',
               // Keep landscape TOC responsive: it can shrink to 182px on tighter widths
               // and grow up to the original 263px when space allows.
               orientation === 'landscape'
@@ -279,7 +279,7 @@ export const TabSidebar = ({
                     )}
                   </div>
                 </div>
-                <div className="w-full min-h-0 flex-1">
+                <div className="w-full overflow-y-auto no-scrollbar space-y-1">
                   {tabs.map((tab, tabIndex) => (
                     <DdocTab
                       key={tab.id}
@@ -406,7 +406,7 @@ export const DdocTab = ({
 }) => {
   const canDeleteTab = tabCount > 1;
   return (
-    <div className="w-full flex mt-[8px] flex-col gap-[8px]">
+    <div className="w-full flex flex-col gap-2">
       <SortableTabItem
         key={tab.id}
         id={tab.id}
