@@ -437,7 +437,7 @@ const DdocEditor = forwardRef(
       }
     };
 
-    const handlePresentationModeHandler = () => {
+    const handlePresentationMode = () => {
       setIsPresentationMode?.(true);
       commentDrawerOpen && setCommentDrawerOpen?.(false);
     };
@@ -615,7 +615,7 @@ const DdocEditor = forwardRef(
                 <div className="justify-center items-center grow relative color-text-default">
                   <EditorToolBar
                     isPresentationMode={isPresentationMode}
-                    setIsPresentationMode={handlePresentationModeHandler}
+                    setIsPresentationMode={handlePresentationMode}
                     enableCollaboration={collaboration?.enabled}
                     onError={onError}
                     editor={editor}
