@@ -1,5 +1,5 @@
 import { Avatar, Button, IconButton, TextAreaFieldV2, cn } from '@fileverse/ui';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCommentStore } from '../../../stores/comment-store';
 import EnsLogo from '../../../assets/ens.svg';
 import verifiedMark from '../../../assets/ens-check.svg';
@@ -36,6 +36,12 @@ export const SuggestionThreadFloatingCard = ({
   const currentUsername = useCommentStore((s) => s.username);
   const acceptSuggestion = useCommentStore((s) => s.acceptSuggestion);
   const deleteComment = useCommentStore((s) => s.deleteComment);
+  const handleCardNode = useCallback(
+    (node: HTMLDivElement | null) => {
+      registerCardNode(thread.floatingCardId, node);
+    },
+    [registerCardNode, thread.floatingCardId],
+  );
 
   if (!comment) return null;
 
@@ -68,7 +74,7 @@ export const SuggestionThreadFloatingCard = ({
 
   return (
     <FloatingCardShell
-      ref={(node) => registerCardNode(thread.floatingCardId, node)}
+      ref={handleCardNode}
       floatingCardId={thread.floatingCardId}
       isHidden={isHidden}
       isFocused={thread.isFocused}
@@ -146,7 +152,7 @@ const Header = ({
       <span className="text-helper-text-sm color-text-secondary whitespace-nowrap">
         {createdAt && dateFormatter(createdAt)}
       </span>
-      <div className="ml-auto opacity-0 group-hover:opacity-100 items-center gap-1">
+      <div className="ml-auto opacity-0 group-hover:opacity-100 flex items-center gap-1">
         {canAcceptReject && (
           <>
             <IconButton

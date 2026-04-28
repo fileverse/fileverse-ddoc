@@ -1,5 +1,5 @@
 import { Avatar, Button, TextAreaFieldV2 } from '@fileverse/ui';
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { useCommentStore } from '../../../stores/comment-store';
 import { resizeInlineCommentTextarea } from '../resize-inline-comment-textarea';
 import { FloatingAuthPrompt } from './floating-auth-prompt';
@@ -22,6 +22,13 @@ export const DraftFloatingCard = ({
   const isConnected = useCommentStore((s) => s.isConnected);
   const draftCardRef = useRef<HTMLDivElement | null>(null);
   const ensStatus = useEnsStatus(username);
+  const handleCardNode = useCallback(
+    (node: HTMLDivElement | null) => {
+      draftCardRef.current = node;
+      registerCardNode(draft.floatingCardId, node);
+    },
+    [draft.floatingCardId, registerCardNode],
+  );
 
   useEffect(() => {
     if (!draftState || !draft.isFocused || isHidden) {
@@ -47,10 +54,7 @@ export const DraftFloatingCard = ({
 
   return (
     <FloatingCardShell
-      ref={(node) => {
-        draftCardRef.current = node;
-        registerCardNode(draft.floatingCardId, node);
-      }}
+      ref={handleCardNode}
       floatingCardId={draft.floatingCardId}
       isHidden={isHidden}
       isFocused={draft.isFocused}

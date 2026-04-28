@@ -1,4 +1,5 @@
 import { Avatar, Button, IconButton } from '@fileverse/ui';
+import { useCallback } from 'react';
 import { useCommentStore } from '../../../stores/comment-store';
 import { FloatingCardShell } from './floating-card-shell';
 import { FloatingAuthPrompt } from './floating-auth-prompt';
@@ -38,6 +39,12 @@ export const SuggestionDraftFloatingCard = ({
   const canSubmit = hasOriginal || hasInserted || hasLink;
   const username = useCommentStore((s) => s.username);
   const ensStatus = useEnsStatus(username);
+  const handleCardNode = useCallback(
+    (node: HTMLDivElement | null) => {
+      registerCardNode(card.floatingCardId, node);
+    },
+    [card.floatingCardId, registerCardNode],
+  );
 
   const suggestionType: 'add' | 'delete' | 'replace' | 'link' | null = hasLink
     ? 'link'
@@ -51,7 +58,7 @@ export const SuggestionDraftFloatingCard = ({
 
   return (
     <FloatingCardShell
-      ref={(node) => registerCardNode(card.floatingCardId, node)}
+      ref={handleCardNode}
       floatingCardId={card.floatingCardId}
       isHidden={isHidden}
       isFocused={card.isFocused}

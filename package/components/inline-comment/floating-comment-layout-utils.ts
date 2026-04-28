@@ -179,7 +179,7 @@ export const getRect = ({
   elements: HTMLElement[];
   viewportTop: number;
   viewportBottom: number;
-}) => {
+}): { top: number; height: number; intersectsViewport: boolean } | null => {
   const clientRects = elements.flatMap((element) =>
     Array.from(element.getClientRects()),
   );
@@ -188,11 +188,18 @@ export const getRect = ({
     return null;
   }
 
-  const intersectingRect = clientRects.find(
+  const intersectsViewport = clientRects.some(
     (rect) => rect.bottom >= viewportTop && rect.top <= viewportBottom,
   );
 
-  return intersectingRect ?? clientRects[0];
+  const top = Math.min(...clientRects.map((rect) => rect.top));
+  const bottom = Math.max(...clientRects.map((rect) => rect.bottom));
+
+  return {
+    top,
+    height: Math.max(1, bottom - top),
+    intersectsViewport,
+  };
 };
 
 const compareOrderPosition = (aPos: number | null, bPos: number | null) => {

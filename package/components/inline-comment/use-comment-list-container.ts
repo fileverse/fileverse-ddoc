@@ -64,11 +64,12 @@ export const useCommentListContainer = ({
         ),
     [mountedFloatingCardIds, floatingCardMap],
   );
+  const shouldRender = isDesktopFloatingEnabled && floatingCards.length > 0;
 
   return {
     floatingCardListContainerRef,
     mountedFloatingCards,
     registerCardNode,
-    shouldRender: isDesktopFloatingEnabled && floatingCards.length > 0,
+    shouldRender,
   };
 };

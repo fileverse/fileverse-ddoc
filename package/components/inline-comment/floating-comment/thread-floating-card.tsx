@@ -1,5 +1,5 @@
 import { Avatar, Button, cn, TextAreaFieldV2 } from '@fileverse/ui';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCommentStore } from '../../../stores/comment-store';
 import { CommentCard } from '../comment-card';
 import { DeleteConfirmOverlay } from '../delete-confirm-overlay';
@@ -59,10 +59,16 @@ export const ThreadFloatingCard = ({
       focusCommentInEditor(thread.commentId);
     }
   };
+  const handleCardNode = useCallback(
+    (node: HTMLDivElement | null) => {
+      registerCardNode(thread.floatingCardId, node);
+    },
+    [registerCardNode, thread.floatingCardId],
+  );
 
   return (
     <FloatingCardShell
-      ref={(node) => registerCardNode(thread.floatingCardId, node)}
+      ref={handleCardNode}
       floatingCardId={thread.floatingCardId}
       isHidden={isHidden}
       isFocused={thread.isFocused}

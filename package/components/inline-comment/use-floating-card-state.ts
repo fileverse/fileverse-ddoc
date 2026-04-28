@@ -107,7 +107,8 @@ export const useFloatingCardState = (): UseFloatingCardStateResult => {
 
   const markFloatingCardInvalidated = useCallback(
     (floatingCardId: string, flag: FloatingLayoutInvalidationFlag) => {
-      getFloatingCardRuntimeState(floatingCardId).invalidationFlags |= flag;
+      const runtimeState = getFloatingCardRuntimeState(floatingCardId);
+      runtimeState.invalidationFlags |= flag;
     },
     [getFloatingCardRuntimeState],
   );
@@ -227,11 +228,13 @@ export const useFloatingCardState = (): UseFloatingCardStateResult => {
     [],
   );
 
-  const getFloatingCardLayoutInputs = useCallback(() => {
-    return orderedFloatingCardIdsRef.current.map((floatingCardId) =>
-      toFloatingCardLayoutInput(getFloatingCardRuntimeState(floatingCardId)),
-    );
-  }, [getFloatingCardRuntimeState]);
+  const getFloatingCardLayoutInputs = useCallback(
+    () =>
+      orderedFloatingCardIdsRef.current.map((floatingCardId) =>
+        toFloatingCardLayoutInput(getFloatingCardRuntimeState(floatingCardId)),
+      ),
+    [getFloatingCardRuntimeState],
+  );
 
   const resetFloatingCardState = useCallback(() => {
     floatingCardStateRef.current.clear();

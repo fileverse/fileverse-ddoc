@@ -820,7 +820,6 @@ export const useFloatingLayoutEngine = ({
     markRecomputeFromIndex(focusedFloatingCardIndex ?? 0);
     updateLayout();
   }, [
-    mountedFloatingCardIds,
     focusedFloatingCardId,
     floatingCardStateRef,
     getOrderedFloatingCardIndex,
