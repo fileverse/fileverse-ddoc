@@ -84,6 +84,7 @@ export const CommentFloatingContainer = ({
               tabName={tabName}
               isHidden={isHidden}
               registerCardNode={registerCardNode}
+              isCollaborationEnabled={isCollaborationEnabled}
             />
           );
         }

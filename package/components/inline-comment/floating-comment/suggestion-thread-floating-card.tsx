@@ -29,6 +29,7 @@ export const SuggestionThreadFloatingCard = ({
   comment,
   isHidden,
   registerCardNode,
+  isCollaborationEnabled,
 }: ThreadFloatingCardProps) => {
   const focusFloatingCard = useCommentStore((s) => s.focusFloatingCard);
   const focusCommentInEditor = useCommentStore((s) => s.focusCommentInEditor);
@@ -99,7 +100,11 @@ export const SuggestionThreadFloatingCard = ({
           onFocusRequest={handleFocus}
         />
 
-        <ReplyField thread={thread} comment={comment} />
+        <ReplyField
+          thread={thread}
+          comment={comment}
+          isCollaborationEnabled={isCollaborationEnabled}
+        />
       </div>
     </FloatingCardShell>
   );
@@ -142,9 +147,7 @@ const Header = ({
         className="min-w-6"
       />
       <span className="text-body-sm-bold inline-flex items-center gap-1 whitespace-nowrap">
-        <p className="truncate max-w-[230px]">
-          {nameFormatter(ensStatus.name)}
-        </p>
+        <p className="truncate max-w-[86px]">{nameFormatter(ensStatus.name)}</p>
         {ensStatus.isEns && (
           <img src={verifiedMark} alt="verified" className="w-3.5 h-3.5" />
         )}
@@ -310,9 +313,11 @@ const RepliesThread = ({
 const ReplyField = ({
   thread,
   comment,
+  isCollaborationEnabled,
 }: {
   thread: ThreadFloatingCardProps['thread'];
   comment: NonNullable<ThreadFloatingCardProps['comment']>;
+  isCollaborationEnabled?: boolean;
 }) => {
   const username = useCommentStore((s) => s.username);
   const isConnected = useCommentStore((s) => s.isConnected);
@@ -323,8 +328,9 @@ const ReplyField = ({
   const replyTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const canReply = !comment.resolved && !comment.deleted;
   const hasUnsentReply = Boolean(replyText.trim());
-  const shouldShowReplyField =
-    isConnected && (thread.isFocused || hasUnsentReply);
+  const shouldShowReplyField = isCollaborationEnabled
+    ? thread.isFocused
+    : isConnected && (thread.isFocused || hasUnsentReply);
   const ensStatus = useEnsStatus(username);
 
   useEffect(() => {
@@ -334,6 +340,7 @@ const ReplyField = ({
   }, [replyText]);
 
   const handleSubmit = () => {
+    if (isCollaborationEnabled) return;
     if (!thread.commentId || !replyText.trim()) return;
     if (!isConnected) {
       setCommentDrawerOpen?.(true);
@@ -346,7 +353,7 @@ const ReplyField = ({
 
   if (!canReply) return null;
 
-  if (thread.isFocused && !isConnected) {
+  if (thread.isFocused && !isConnected && !isCollaborationEnabled) {
     return <FloatingAuthPrompt />;
   }
 
@@ -354,7 +361,12 @@ const ReplyField = ({
 
   return (
     <div className="group">
-      <div className="border flex px-[12px] py-[8px] gap-[8px] rounded-[4px] color-bg-default">
+      <div
+        className={cn(
+          'border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]',
+          isCollaborationEnabled ? 'color-bg-disabled' : 'color-bg-default',
+        )}
+      >
         <Avatar
           src={
             ensStatus.isEns
@@ -382,8 +394,14 @@ const ReplyField = ({
             }
           }}
           className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
-          placeholder={canReply ? 'Add a reply' : 'Thread resolved'}
-          disabled={!canReply}
+          placeholder={
+            isCollaborationEnabled
+              ? 'Cannot send reply in collaboration mode'
+              : canReply
+                ? 'Add a reply'
+                : 'Thread resolved'
+          }
+          disabled={!canReply || isCollaborationEnabled}
         />
       </div>
       <div
@@ -405,7 +423,7 @@ const ReplyField = ({
         </Button>
         <Button
           className="w-20 min-w-20"
-          disabled={!replyText.trim()}
+          disabled={!replyText.trim() || isCollaborationEnabled}
           onClick={handleSubmit}
         >
           Send

@@ -443,7 +443,7 @@ export const CommentCard = (props: CommentCardProps) => {
       data-testid={id ? `comment-card-${id}` : 'comment-card'}
       onClick={focusCardIfNeeded}
       className={cn(
-        'flex flex-col gap-[4px] group comment-card',
+        'flex flex-col gap-[4px] group/card comment-card',
         isResolved && 'opacity-70',
         isCommentDrawerContext ? 'p-3 pb-0' : 'px-3',
       )}
@@ -459,7 +459,7 @@ export const CommentCard = (props: CommentCardProps) => {
             >
               <div
                 className={cn(
-                  !isBelow1280px && 'opacity-0 group-hover:opacity-100',
+                  !isBelow1280px && 'opacity-0 group-hover/card:opacity-100',
                   'flex  gap-[4px]',
                 )}
               >
