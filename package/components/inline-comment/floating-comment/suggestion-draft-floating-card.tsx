@@ -58,7 +58,7 @@ export const SuggestionDraftFloatingCard = ({
       onFocus={() => focusFloatingCard(card.floatingCardId)}
     >
       {!isConnected ? (
-        <FloatingAuthPrompt />
+        <FloatingAuthPrompt isDraft={true} />
       ) : (
         <div className="flex flex-col gap-2 p-3 pb-0">
           <div className="flex items-center gap-2">
@@ -74,7 +74,10 @@ export const SuggestionDraftFloatingCard = ({
               className="min-w-6"
             />
             <span className="text-body-sm-bold inline-flex items-center gap-1 whitespace-nowrap">
-              {nameFormatter(ensStatus.name)}
+              <p className="truncate max-w-[230px]">
+                {nameFormatter(ensStatus.name)}
+              </p>
+
               {ensStatus.isEns && (
                 <img
                   src={verifiedMark}

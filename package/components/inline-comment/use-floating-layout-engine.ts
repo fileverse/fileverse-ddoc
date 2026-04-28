@@ -133,6 +133,10 @@ export const useFloatingLayoutEngine = ({
     new Map(),
   );
   const focusedFloatingCardIdRef = useRef<string | null>(null);
+  // DOM registry for mounted floating cards. The layout engine needs ID -> node
+  // access to measure heights and write transforms, while ResizeObserver needs
+  // node -> ID access to map height changes back to the right card.
+  // Keep both directions in sync through registerCardNode only.
   const domRegistryRef = useRef({
     cardNodes: new Map<string, HTMLDivElement>(),
     nodeToFloatingCardId: new WeakMap<Element, string>(),
@@ -613,7 +617,8 @@ export const useFloatingLayoutEngine = ({
         return;
       }
 
-      // Every floating card DOM node is registered here so layout can measure it, move it, and react to mount or unmount changes.
+      // Register the card before measuring or observing it so all layout paths
+      // use the same mounted-node source of truth.
       domRegistryRef.current.cardNodes.set(floatingCardId, node);
 
       if (floatingCardId === focusedFloatingCardId) {
@@ -677,11 +682,24 @@ export const useFloatingLayoutEngine = ({
       focusedFloatingCardId !== null &&
       previousFocusedFloatingCardId !== focusedFloatingCardId;
 
-    if (didClearFocusedThread || didTransferFocusedThread) {
+    if (didTransferFocusedThread) {
       pendingFullFocusedPassRef.current = true;
     }
 
     if (!focusedFloatingCardId) {
+      if (didClearFocusedThread) {
+        // Click-away exits focused layout. Force a full unfocused pass now so
+        // the card does not keep stale focused-stack transforms until refocus.
+        pendingFullFocusedPassRef.current = false;
+        floatingCardsRef.current.forEach((floatingCard) => {
+          markFloatingCardInvalidated(
+            floatingCard.floatingCardId,
+            FloatingLayoutInvalidationFlag.Anchor,
+          );
+        });
+        markRecomputeFromIndex(0);
+        updateLayout();
+      }
       return;
     }
 
@@ -962,6 +980,13 @@ export const useFloatingLayoutEngine = ({
     if (editorWrapperRef.current) {
       resizeObserver.observe(editorWrapperRef.current);
     }
+
+    // Ref callbacks may register cards before this effect creates the observer.
+    // Observe the current registry so consumer-driven content changes, like
+    // incoming replies, trigger the normal height-measurement path.
+    domRegistryRef.current.cardNodes.forEach((node) => {
+      resizeObserver.observe(node);
+    });
 
     return () => {
       resizeObserver.disconnect();

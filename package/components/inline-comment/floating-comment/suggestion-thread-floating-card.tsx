@@ -136,7 +136,9 @@ const Header = ({
         className="min-w-6"
       />
       <span className="text-body-sm-bold inline-flex items-center gap-1 whitespace-nowrap">
-        {nameFormatter(ensStatus.name)}
+        <p className="truncate max-w-[230px]">
+          {nameFormatter(ensStatus.name)}
+        </p>
         {ensStatus.isEns && (
           <img src={verifiedMark} alt="verified" className="w-3.5 h-3.5" />
         )}

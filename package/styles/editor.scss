@@ -1238,10 +1238,12 @@ background-color: rgba(0, 102, 7, 0.08);
   background-color: rgba(92, 10, 255, 0.04);
   text-decoration: underline;
   text-decoration-thickness: 2px;
+  text-decoration-color: rgba(92, 10, 255, 0.08);
 
   &[data-active='true'],
   &:hover {
     background-color: rgba(92, 10, 255, 0.08);
+    text-decoration-color: rgba(92, 10, 255, 0.14);
   }
 }
 
