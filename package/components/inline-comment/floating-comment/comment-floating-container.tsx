@@ -43,7 +43,7 @@ export const CommentFloatingContainer = ({
       data-floating-comment-hidden={isHidden ? 'true' : 'false'}
       style={{
         width: FLOATING_CARD_WIDTH,
-        minHeight: '100%',
+        minHeight: 'var(--floating-comment-container-min-height, 100%)',
       }}
     >
       {mountedFloatingCards.map((floatingCard) => {

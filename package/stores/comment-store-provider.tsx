@@ -42,6 +42,17 @@ import {
   isRangeDraft,
 } from './comment-store';
 
+const hasResolvableCommentAnchorInState = (
+  anchor: CommentAnchor,
+  state: EditorState,
+) => {
+  if (anchor.isSuggestion && anchor.suggestionType === 'add') {
+    return resolveCommentAnchorPointInState(anchor, state) !== null;
+  }
+
+  return resolveCommentAnchorRangeInState(anchor, state) !== null;
+};
+
 export interface CommentStoreProviderProps {
   children: React.ReactNode;
   editor: Editor | null;
@@ -209,7 +220,7 @@ export const CommentStoreProvider = ({
             .filter(
               (anchor) =>
                 !anchor.deleted &&
-                Boolean(resolveCommentAnchorRangeInState(anchor, editor.state)),
+                hasResolvableCommentAnchorInState(anchor, editor.state),
             )
             .map((anchor) => anchor.id)
         : [];
@@ -831,14 +842,22 @@ export const CommentStoreProvider = ({
           // Analyze only active anchors that belong to the currently rendered tab.
           // `commentAnchorsRef` can contain anchors from other tabs, but this
           // transaction only mutates the active Yjs fragment. Keeping off-tab
-          // anchors out of this batch prevents tab B comments from changing tab
-          // A undo/delete decisions.
-          const activeAnchors = commentAnchorsRef.current.filter(
-            (anchor) =>
-              !anchor.deleted &&
-              !anchor.resolved &&
-              resolveCommentAnchorRangeForAnalysis(anchor, oldState) !== null,
-          );
+          // range anchors out of this batch prevents tab B comments from changing
+          // tab A undo/delete decisions. Add suggestions are point anchors, so the
+          // analyzer performs the single point-resolution pass for them.
+          const activeAnchors = commentAnchorsRef.current.filter((anchor) => {
+            if (anchor.deleted || anchor.resolved) {
+              return false;
+            }
+
+            if (anchor.isSuggestion && anchor.suggestionType === 'add') {
+              return true;
+            }
+
+            return (
+              resolveCommentAnchorRangeForAnalysis(anchor, oldState) !== null
+            );
+          });
 
           if (activeAnchors.length > 0) {
             // Combine transaction and appended steps into a single transform.

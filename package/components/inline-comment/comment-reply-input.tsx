@@ -18,6 +18,7 @@ export const CommentReplyInput = ({
   commentId,
   replyCount,
   isCollaborationEnabled,
+  commentUsername,
 }: CommentReplyInputProps) => {
   const reply = useCommentStore((s) => s.reply);
   const replyEditTarget = useCommentStore((s) => s.replyEditTarget);
@@ -96,7 +97,7 @@ export const CommentReplyInput = ({
             isCollaborationEnabled
               ? 'Cannot reply in collaboration mode'
               : replyCount === 0
-                ? `Reply to @${nameFormatter(ensStatus.name)}`
+                ? `Reply to @${nameFormatter(commentUsername ?? 'comment')}`
                 : replyCount >= 2
                   ? `Add a reply`
                   : `Reply `

@@ -168,6 +168,23 @@ function resolveCommentAnchorRangeFromRenderedDecorations(
   return { from, to };
 }
 
+function resolveCommentAnchorPointFromRenderedDecorations(
+  commentId: string,
+  state: EditorState,
+): number | null {
+  const pluginState = commentDecorationPluginKey.getState(state);
+  const matchingDecorations =
+    pluginState?.decorations.find(undefined, undefined, (spec) => {
+      return spec?.commentId === commentId;
+    }) ?? [];
+
+  const pointDecoration = matchingDecorations.find(
+    (decoration) => decoration.from === decoration.to,
+  );
+
+  return pointDecoration?.from ?? null;
+}
+
 export function resolveCommentAnchorRangeForAnalysis(
   anchor: Pick<CommentAnchor, 'id' | 'anchorFrom' | 'anchorTo'>,
   state: EditorState,
@@ -179,6 +196,18 @@ export function resolveCommentAnchorRangeForAnalysis(
     // user actually saw highlighted before the edit.
     resolveCommentAnchorRangeFromRenderedDecorations(anchor.id, state) ??
     resolveCommentAnchorRangeInState(anchor, state)
+  );
+}
+
+export function resolveCommentAnchorPointForAnalysis(
+  anchor: Pick<CommentAnchor, 'id' | 'anchorFrom'>,
+  state: EditorState,
+): number | null {
+  return (
+    // Match range analysis: use the rendered pre-transaction widget first,
+    // because Yjs relative positions can resolve through live mappings.
+    resolveCommentAnchorPointFromRenderedDecorations(anchor.id, state) ??
+    resolveCommentAnchorPointInState(anchor, state)
   );
 }
 
@@ -303,6 +332,20 @@ function doChangedRangesCoverWholeAnchor(
   return coveredUntil >= anchorRange.to;
 }
 
+function doesChangedRangeDeletePointAnchor(
+  changedRange: ChangedRange,
+  point: number,
+) {
+  // Add suggestions are point anchors. If existing content is deleted across
+  // either side of that point, the insertion location no longer belongs to the
+  // original text context and should not reattach to neighboring content.
+  return (
+    changedRange.oldRange.to > changedRange.oldRange.from &&
+    changedRange.oldRange.from <= point &&
+    changedRange.oldRange.to >= point
+  );
+}
+
 function mapAnchorRangeThroughTransform(
   range: CommentAnchorRange,
   transform: Transform,
@@ -362,6 +405,20 @@ export function analyzeCommentAnchorTransactionChanges(
     // Skip anchors marked as deleted or resolved.
     if (anchor.deleted || anchor.resolved) {
       return { id: anchor.id, type: 'unchanged' };
+    }
+
+    if (anchor.isSuggestion && anchor.suggestionType === 'add') {
+      const oldPoint = resolveCommentAnchorPointForAnalysis(anchor, oldState);
+
+      if (oldPoint === null) {
+        return { id: anchor.id, type: 'unchanged' };
+      }
+
+      return changedRanges.some((changedRange) =>
+        doesChangedRangeDeletePointAnchor(changedRange, oldPoint),
+      )
+        ? { id: anchor.id, type: 'deleted' }
+        : { id: anchor.id, type: 'unchanged' };
     }
 
     // Resolve the anchor's old absolute range from pre-transaction state.
@@ -507,6 +564,9 @@ function buildDecorations(
           insertPoint,
           createSuggestionWidget(anchor.suggestedContent, anchor.id, isActive),
           {
+            commentId: anchor.id,
+            active: isActive,
+            suggestion: true,
             side: -1,
             key: `suggestion-insert-${anchor.id}-${anchor.suggestedContent}-${
               isActive ? 'active' : 'inactive'
@@ -533,12 +593,17 @@ function buildDecorations(
       // Link: purple text over the original selected range.
       if (suggestionType === 'link' && range.from < range.to) {
         decorations.push(
-          Decoration.inline(range.from, range.to, {
-            class: 'suggestion-link',
-            'data-suggestion-id': anchor.id,
-            'data-comment-id': anchor.id,
-            'data-active': isActive ? 'true' : 'false',
-          }),
+          Decoration.inline(
+            range.from,
+            range.to,
+            {
+              class: 'suggestion-link',
+              'data-suggestion-id': anchor.id,
+              'data-comment-id': anchor.id,
+              'data-active': isActive ? 'true' : 'false',
+            },
+            { commentId: anchor.id, active: isActive, suggestion: true },
+          ),
         );
       }
 
@@ -550,12 +615,17 @@ function buildDecorations(
         range.from < range.to
       ) {
         decorations.push(
-          Decoration.inline(range.from, range.to, {
-            class: 'suggestion-delete',
-            'data-suggestion-id': anchor.id,
-            'data-comment-id': anchor.id,
-            'data-active': isActive ? 'true' : 'false',
-          }),
+          Decoration.inline(
+            range.from,
+            range.to,
+            {
+              class: 'suggestion-delete',
+              'data-suggestion-id': anchor.id,
+              'data-comment-id': anchor.id,
+              'data-active': isActive ? 'true' : 'false',
+            },
+            { commentId: anchor.id, active: isActive, suggestion: true },
+          ),
         );
       }
 
@@ -568,6 +638,9 @@ function buildDecorations(
             range.to,
             createSuggestionWidget(suggestedContent, anchor.id, isActive),
             {
+              commentId: anchor.id,
+              active: isActive,
+              suggestion: true,
               side: -1,
               key: `suggestion-insert-${anchor.id}-${suggestedContent}-${
                 isActive ? 'active' : 'inactive'

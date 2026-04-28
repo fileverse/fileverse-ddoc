@@ -330,6 +330,7 @@ const SidebarCommentItem = ({
     comment.id,
     comment.selectedContent,
     comment.tabId,
+    Boolean(comment.isSuggestion),
   );
 
   const handleSidebarCommentClick = () => {

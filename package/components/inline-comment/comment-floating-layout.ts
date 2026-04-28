@@ -2,6 +2,7 @@
 // Only recalculate what changed and stop once the remaining cards stay the same.
 
 export const FLOATING_COMMENT_CARD_GAP = 8;
+export const FLOATING_COMMENT_BOTTOM_SPACE = 48;
 
 export const enum FloatingLayoutInvalidationFlag {
   None = 0,
@@ -82,6 +83,38 @@ const setHiddenPlacement = (
   });
 };
 
+const getReservedHiddenCardRange = (floatingCard: FloatingCardLayoutInput) => {
+  if (!floatingCard.isMeasured || floatingCard.height <= 0) {
+    return null;
+  }
+
+  const translateY = getLastCommittedTranslateY(floatingCard);
+
+  if (translateY === null) {
+    return null;
+  }
+
+  return {
+    top: translateY,
+    bottom: translateY + floatingCard.height,
+  };
+};
+
+const reserveHiddenCardBottom = (
+  previousBottom: number | null,
+  floatingCard: FloatingCardLayoutInput,
+) => {
+  const reservedRange = getReservedHiddenCardRange(floatingCard);
+
+  if (!reservedRange) {
+    return previousBottom;
+  }
+
+  return previousBottom === null
+    ? reservedRange.bottom
+    : Math.max(previousBottom, reservedRange.bottom);
+};
+
 const computeFocusedFloatingCommentLayout = ({
   floatingCards,
   focusedFloatingCardId,
@@ -123,6 +156,12 @@ const computeFocusedFloatingCommentLayout = ({
 
     if (!canPlaceFloatingCard(floatingCard)) {
       setHiddenPlacement(placements, floatingCard);
+      const reservedRange = getReservedHiddenCardRange(floatingCard);
+
+      if (reservedRange) {
+        nextTop = Math.min(nextTop, reservedRange.top);
+      }
+
       continue;
     }
 
@@ -155,6 +194,8 @@ const computeFocusedFloatingCommentLayout = ({
 
     if (!canPlaceFloatingCard(floatingCard)) {
       setHiddenPlacement(placements, floatingCard);
+      previousBottom =
+        reserveHiddenCardBottom(previousBottom, floatingCard) ?? previousBottom;
       continue;
     }
 
@@ -228,6 +269,7 @@ export const computeFloatingCommentLayout = ({
     // If the card cannot be shown, keep its last position but hide it.
     if (!canPlaceFloatingCard(floatingCard)) {
       setHiddenPlacement(placements, floatingCard);
+      previousBottom = reserveHiddenCardBottom(previousBottom, floatingCard);
       continue;
     }
     // Before the restart point, keep the saved position.
