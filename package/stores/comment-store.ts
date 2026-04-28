@@ -3015,7 +3015,7 @@ export const createCommentStore = () =>
         return;
       }
 
-      const { onEditComment, setInitialComments } = getExtDeps(get);
+      const { setInitialComments } = getExtDeps(get);
       const currentComments = get().initialComments;
       const existingComment = findCommentById(currentComments, commentId);
 
@@ -3027,17 +3027,17 @@ export const createCommentStore = () =>
         comment.id === commentId ? { ...comment, content } : comment,
       );
 
-      const mutationMeta = {
-        type: 'edit' as const,
-        content,
-      } satisfies CommentMutationMeta;
+      // const mutationMeta = {
+      //   type: 'edit' as const,
+      //   content,
+      // } satisfies CommentMutationMeta;
 
       // Optimistic local update: keep the UI in sync immediately.
       get().setInitialComments(nextComments);
       setInitialComments?.(nextComments);
 
       // External persistence hook for consumers (e.g. API/DB sync).
-      onEditComment?.(commentId, mutationMeta);
+      // onEditComment?.(commentId, mutationMeta);
       const activeEdit = get().replyEditTarget;
       if (
         activeEdit &&

@@ -958,12 +958,12 @@ export const CommentStoreProvider = ({
 
               // Fire persistence callbacks for edited anchors.
               // Consumer uses these to update persisted anchor data (e.g., in DB).
-              editPayloads.forEach(({ commentId, mutationMeta }) => {
-                externalDepsRef.current.onEditComment?.(
-                  commentId,
-                  mutationMeta,
-                );
-              });
+              // editPayloads.forEach(({ commentId, mutationMeta }) => {
+              //   externalDepsRef.current.onEditComment?.(
+              //     commentId,
+              //     mutationMeta,
+              //   );
+              // });
             }
 
             didRestoreRemovedAnchors = restoreRemovedAnchors();

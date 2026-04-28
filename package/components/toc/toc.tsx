@@ -422,7 +422,7 @@ export const ToC = memo(
     }
 
     return (
-      <div className="flex flex-col max-[1280px]:gap-2 gap-4 overflow-auto pl-[35px] no-scrollbar max-[1280px]:max-h-[168px] max-h-[calc(80vh-40px)] mb-3">
+      <div className="flex flex-col max-[1280px]:gap-2 gap-4 pl-[35px] mb-3">
         {processedItems.map((item, i) => (
           <ToCItem
             onItemClick={onItemClick}
