@@ -30,7 +30,7 @@ import { EnsStatus } from '../components/inline-comment/types';
 import { DEFAULT_TAB_ID } from '../components/tabs/utils/tab-utils';
 import { getDraftCommentRange, IComment } from '../extensions/comment';
 import { CommentMutationMeta, CommentMutationType } from '../types';
-import { getAddressName } from '../utils/getAddressName';
+import { getAddressName } from '@fileverse/crypto/ens';
 import {
   resolveCommentSelectionRange,
   scrollCommentSelectionRangeIntoView,
