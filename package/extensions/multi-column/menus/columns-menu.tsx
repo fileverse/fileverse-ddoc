@@ -6,18 +6,21 @@ import getRenderContainer from '../../../utils/get-render-container';
 import { Toolbar } from '../../../common/toolbar';
 import { MenuProps } from '../../../common/types';
 import ToolbarButton from '../../../common/toolbar-button';
+import { useEditingContext } from '../../../hooks/use-editing-context';
 
 export const ColumnsMenu = ({ editor, appendTo }: MenuProps) => {
+  const { isSuggestionMode } = useEditingContext();
+
   const getReferenceClientRect = useCallback(() => {
     const renderContainer = getRenderContainer(editor, 'columns');
     return renderContainer;
   }, [editor]);
 
   const shouldShow = useCallback(() => {
-    const isPreviewMode = !editor.isEditable;
+    const isPreviewMode = !editor.isEditable || !!isSuggestionMode;
     const isColumns = editor.isActive('columns');
     return isColumns && !isPreviewMode;
-  }, [editor]);
+  }, [editor, isSuggestionMode]);
 
   const onColumnLeft = useCallback(() => {
     editor.chain().focus().setLayout(ColumnLayout.AlignLeft).run();

@@ -4,6 +4,13 @@
   color: inherit;
   font-family: inherit;
 
+  // Suppress all empty-line placeholder hints in suggestion mode.
+  // Slash commands don't fire in suggest mode (text input is intercepted),
+  // so "Type / to browse options" is misleading there.
+  &[data-suggestion-mode='true'] .is-empty::before {
+    content: none !important;
+  }
+
   .is-empty::before {
     @apply float-left h-0 pointer-events-none w-full;
   }
@@ -1177,11 +1184,107 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   }
 }
 
+// Suggestion mode decorations
+// Suggestion styling: light tinted background + decoration. Text color
+// stays default so the doc text reads naturally; the colored decoration
+// (line-through / underline) carries the semantic. The bg differentiates
+// from inline-comment highlights via hue.
+.suggestion-delete {
+  @apply cursor-pointer transition-all;
+  background-color: rgba(251, 52, 73, 0.04);
+  text-decoration: line-through;
+  text-decoration-color: #FB3449;
+  text-decoration-thickness: 1.5px;
+
+  &[data-active='true'],
+  &:hover {
+background-color: rgba(251, 52, 73, 0.08);
+  }
+
+  .dark & {
+        background-color: #450A0A;    text-decoration-color: #F87171;
+
+    &[data-active='true'],
+    &:hover {
+      background-color: rgb(248 113 113 / 0.08);
+    }
+  }
+}
+
+.suggestion-add {
+  @apply cursor-pointer transition-all;
+  background-color: rgba(0, 102, 7, 0.04);
+  color: #006607;
+
+  &[data-active='true'],
+  &:hover {
+    background-color: rgba(0, 102, 7, 0.08);
+  }
+
+  .dark &,
+  .theme-green & {
+    color: #44FF00;
+    background-color: rgba(255, 255, 255, 0.04);
+
+    &[data-active='true'],
+    &:hover {
+      background-color: rgb(74 222 128 / 0.08);
+    }
+  }
+}
+
+.suggestion-link {
+  @apply cursor-pointer transition-all;
+  color: #5C0AFF;
+  background-color: rgba(92, 10, 255, 0.04);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-decoration-color: rgba(92, 10, 255, 0.08);
+
+  &[data-active='true'],
+  &:hover {
+    background-color: rgba(92, 10, 255, 0.08);
+    text-decoration-color: rgba(92, 10, 255, 0.14);
+  }
+
+  .dark &,
+  .theme-green & {
+    color: #5BC3EB;
+    text-decoration-color: rgba(91, 195, 235, 0.28);
+
+    &[data-active='true'],
+    &:hover {
+      text-decoration-color: rgba(91, 195, 235, 0.42);
+    }
+  }
+}
+
 // Hide inline comments visually when disabled
 .hide-inline-comments .inline-comment {
   background-color: transparent !important;
   color: inherit !important;
   border: none !important;
+  cursor: default !important;
+  pointer-events: none !important;
+}
+
+// Suggestions: hide both Add (widget) and Delete/Replace (decoration) so the
+// View-only viewer sees the canonical doc text without proposed changes.
+.hide-inline-comments .suggestion-add {
+  display: none !important;
+}
+
+.hide-inline-comments .suggestion-delete {
+  background-color: transparent !important;
+  color: inherit !important;
+  text-decoration: none !important;
+  cursor: default !important;
+  pointer-events: none !important;
+}
+
+.hide-inline-comments .suggestion-link {
+  background-color: transparent !important;
+  color: inherit !important;
   cursor: default !important;
   pointer-events: none !important;
 }
