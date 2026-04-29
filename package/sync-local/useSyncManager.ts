@@ -37,8 +37,16 @@ export const useSyncManager = (config: SyncManagerConfig) => {
 
     const updateHandler = (update: Uint8Array, origin: any) => {
       if (origin === 'self' || origin === 'remote' || !manager.isConnected) return;
-      // Skip origins from external providers (e.g. y-indexeddb)
-      if (config.ignoredOrigins?.some((ref) => ref.current === origin)) return;
+      // Skip origins from external providers (e.g. y-indexeddb).
+      // Guard against ref.current being null — otherwise a default-origin
+      // transact (origin === null) would collide with an uninitialised
+      // provider ref in collab mode and get filtered out.
+      if (
+        config.ignoredOrigins?.some(
+          (ref) => ref.current !== null && ref.current === origin,
+        )
+      )
+        return;
       manager.enqueueLocalUpdate(update);
     };
 
