@@ -5,6 +5,7 @@ import { FloatingCardShell } from './floating-card-shell';
 import { FloatingAuthPrompt } from './floating-auth-prompt';
 import type { SuggestionDraftFloatingCardProps } from './types';
 import { useEnsStatus } from '../use-ens-status';
+import { SuggestionDiffSummary } from '../suggestion-diff-summary';
 import EnsLogo from '../../../assets/ens.svg';
 import { dateFormatter, nameFormatter } from '../../../utils/helpers';
 import verifiedMark from '../../../assets/ens-check.svg';
@@ -108,41 +109,12 @@ export const SuggestionDraftFloatingCard = ({
           </div>
 
           <div className="flex-1 ml-[32px]">
-            {suggestionType === 'add' && (
-              <p className="text-body-sm break-words">
-                <span className="font-semibold">Add:</span>{' '}
-                <span>&ldquo;{card.insertedText}&rdquo;</span>
-              </p>
-            )}
-            {suggestionType === 'delete' && (
-              <p className="text-body-sm">
-                <span className="font-semibold">Delete:</span>{' '}
-                <span className="line-through">
-                  &ldquo;{card.selectedText}&rdquo;
-                </span>
-              </p>
-            )}
-            {suggestionType === 'replace' && (
-              <p className="text-body-sm">
-                <span className="font-semibold">Replace:</span>{' '}
-                <span className="line-through">
-                  &ldquo;{card.selectedText}&rdquo;
-                </span>{' '}
-                <span className="font-semibold">with</span>{' '}
-                <span>&ldquo;{card.insertedText}&rdquo;</span>
-              </p>
-            )}
-            {suggestionType === 'link' && (
-              <p className="text-body-sm break-words">
-                <span className="font-semibold">Add link:</span>{' '}
-                <span>&quot;{card.linkHref}&quot;</span>
-              </p>
-            )}
-            {!suggestionType && (
-              <p className="text-body-sm color-text-secondary italic">
-                Start typing to suggest a change
-              </p>
-            )}
+            <SuggestionDiffSummary
+              suggestionType={suggestionType}
+              originalContent={card.selectedText}
+              suggestedContent={card.linkHref ?? card.insertedText}
+              emptyText="Start typing to suggest a change"
+            />
           </div>
 
           <div className="flex items-center justify-end">

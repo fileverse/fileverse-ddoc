@@ -8,6 +8,7 @@ import { CommentRepliesThread } from '../comment-card';
 import { useCommentCard } from '../use-comment-card';
 import { useEnsStatus } from '../use-ens-status';
 import { resizeInlineCommentTextarea } from '../resize-inline-comment-textarea';
+import { SuggestionDiffSummary } from '../suggestion-diff-summary';
 import { FloatingAuthPrompt } from './floating-auth-prompt';
 import { FloatingCardShell } from './floating-card-shell';
 import type { ThreadFloatingCardProps } from './types';
@@ -91,7 +92,11 @@ export const SuggestionThreadFloatingCard = ({
           onReject={handleReject}
         />
         <div className="ml-[32px]">
-          <DiffSummary comment={comment} />
+          <SuggestionDiffSummary
+            suggestionType={comment.suggestionType}
+            originalContent={comment.originalContent}
+            suggestedContent={comment.suggestedContent}
+          />
         </div>
 
         <RepliesThread
@@ -186,65 +191,6 @@ const Header = ({
       </div>
     </div>
   );
-};
-
-// ---------------------------------------------------------------------------
-// DiffSummary — one-line suggestion description
-//   Add:     Add: "lorem"
-//   Delete:  Delete: "concepts"
-//   Replace: Replace: "concepts" with "lorem"
-// ---------------------------------------------------------------------------
-
-const DiffSummary = ({
-  comment,
-}: {
-  comment: NonNullable<ThreadFloatingCardProps['comment']>;
-}) => {
-  const {
-    suggestionType,
-    originalContent = '',
-    suggestedContent = '',
-  } = comment;
-
-  if (suggestionType === 'add') {
-    return (
-      <p className="text-body-sm break-words">
-        <span className="font-semibold">Add:</span>{' '}
-        <span>&ldquo;{suggestedContent}&rdquo;</span>
-      </p>
-    );
-  }
-
-  if (suggestionType === 'delete') {
-    return (
-      <p className="text-body-sm break-words">
-        <span className="font-semibold">Delete:</span>{' '}
-        <span className="line-through">&ldquo;{originalContent}&rdquo;</span>
-      </p>
-    );
-  }
-
-  if (suggestionType === 'replace') {
-    return (
-      <p className="text-body-sm break-words">
-        <span className="font-semibold">Replace:</span>{' '}
-        <span className="line-through">&ldquo;{originalContent}&rdquo;</span>{' '}
-        <span className="font-semibold">with</span>{' '}
-        <span>&ldquo;{suggestedContent}&rdquo;</span>
-      </p>
-    );
-  }
-
-  if (suggestionType === 'link') {
-    return (
-      <p className="text-body-sm break-words">
-        <span className="font-semibold">Add link:</span>{' '}
-        <span>&quot;{suggestedContent}&quot;</span>
-      </p>
-    );
-  }
-
-  return null;
 };
 
 // ---------------------------------------------------------------------------

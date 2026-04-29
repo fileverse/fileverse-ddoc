@@ -6,6 +6,7 @@ import EnsLogo from '../../assets/ens.svg';
 import verifiedMark from '../../assets/ens-check.svg';
 import { dateFormatter, nameFormatter } from '../../utils/helpers';
 import type { SuggestionFloatingDraftCard } from './context/types';
+import { SuggestionDiffSummary } from './suggestion-diff-summary';
 
 interface MobileSuggestionDraftProps {
   activeSuggestionDraftCard: SuggestionFloatingDraftCard;
@@ -109,45 +110,15 @@ export const MobileSuggestionDraft = ({
           </div>
 
           <div className="text-body-sm color-text-default ml-[32px] break-words">
-            {suggestionType === 'add' && (
-              <p>
-                <span className="font-semibold">Add:</span>{' '}
-                <span>
-                  &ldquo;{activeSuggestionDraftCard.insertedText}&rdquo;
-                </span>
-              </p>
-            )}
-            {suggestionType === 'delete' && (
-              <p>
-                <span className="font-semibold">Delete:</span>{' '}
-                <span className="line-through">
-                  &ldquo;{activeSuggestionDraftCard.selectedText}&rdquo;
-                </span>
-              </p>
-            )}
-            {suggestionType === 'replace' && (
-              <p>
-                <span className="font-semibold">Replace:</span>{' '}
-                <span className="line-through">
-                  &ldquo;{activeSuggestionDraftCard.selectedText}&rdquo;
-                </span>{' '}
-                <span className="font-semibold">with</span>{' '}
-                <span>
-                  &ldquo;{activeSuggestionDraftCard.insertedText}&rdquo;
-                </span>
-              </p>
-            )}
-            {suggestionType === 'link' && (
-              <p>
-                <span className="font-semibold">Add link:</span>{' '}
-                <span>&quot;{activeSuggestionDraftCard.linkHref}&quot;</span>
-              </p>
-            )}
-            {!suggestionType && (
-              <p className="color-text-secondary italic">
-                Start typing to suggest a change
-              </p>
-            )}
+            <SuggestionDiffSummary
+              suggestionType={suggestionType}
+              originalContent={activeSuggestionDraftCard.selectedText}
+              suggestedContent={
+                activeSuggestionDraftCard.linkHref ??
+                activeSuggestionDraftCard.insertedText
+              }
+              emptyText="Start typing to suggest a change"
+            />
           </div>
 
           <div className="flex items-center justify-end">

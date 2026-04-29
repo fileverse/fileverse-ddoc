@@ -27,58 +27,7 @@ import { Spinner } from '../../common/spinner';
 import { DeleteConfirmOverlay } from './delete-confirm-overlay';
 import { useCommentCard } from './use-comment-card';
 import { useEnsStatus } from './use-ens-status';
-import { SuggestionType } from '../../types';
-
-interface SuggestionDiffSummaryProps {
-  suggestionType?: SuggestionType;
-  originalContent?: string;
-  suggestedContent?: string;
-}
-
-// One-line diff summary used in the sidebar entry for suggestion comments.
-// Mirrors the format used by SuggestionThreadFloatingCard so suggestion
-// representation stays consistent across surfaces.
-const SuggestionDiffSummary = ({
-  suggestionType,
-  originalContent = '',
-  suggestedContent = '',
-}: SuggestionDiffSummaryProps) => {
-  if (suggestionType === 'add') {
-    return (
-      <p className="text-body-sm break-words">
-        <span className="font-semibold">Add:</span>{' '}
-        <span>&ldquo;{suggestedContent}&rdquo;</span>
-      </p>
-    );
-  }
-  if (suggestionType === 'delete') {
-    return (
-      <p className="text-body-sm break-words">
-        <span className="font-semibold">Delete:</span>{' '}
-        <span className="line-through">&ldquo;{originalContent}&rdquo;</span>
-      </p>
-    );
-  }
-  if (suggestionType === 'replace') {
-    return (
-      <p className="text-body-sm break-words">
-        <span className="font-semibold">Replace:</span>{' '}
-        <span className="line-through">&ldquo;{originalContent}&rdquo;</span>{' '}
-        <span className="font-semibold">with</span>{' '}
-        <span>&ldquo;{suggestedContent}&rdquo;</span>
-      </p>
-    );
-  }
-  if (suggestionType === 'link') {
-    return (
-      <p className="text-body-sm break-words">
-        <span className="font-semibold">Add link:</span>{' '}
-        <span>&quot;{suggestedContent}&quot;</span>
-      </p>
-    );
-  }
-  return null;
-};
+import { SuggestionDiffSummary } from './suggestion-diff-summary';
 
 const UserDisplay = ({ username, createdAt }: UserDisplayProps) => {
   const ensStatus = useEnsStatus(username);
