@@ -15,6 +15,7 @@ import {
 import { NodeViewWrapper, NodeViewContent, NodeViewProps } from '@tiptap/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useResponsive } from '../../../utils/responsive';
+import { useEditingContext } from '../../../hooks/use-editing-context';
 
 const LANGUAGE_GROUPS = [
   {
@@ -96,9 +97,10 @@ export default function CodeBlockNodeView({
 }: NodeViewProps) {
   const codeRef = useRef<HTMLDivElement>(null);
   const [copyIcon, setCopyIcon] = useState<'Copy' | 'Check'>('Copy');
+  const { isSuggestionMode } = useEditingContext();
   // Read attributes with sensible defaults
   const language = node.attrs.language || 'plaintext';
-  const isPreviewMode = !editor.isEditable;
+  const isPreviewMode = !editor.isEditable || !!isSuggestionMode;
   const lineNumbers = node.attrs.lineNumbers && !isPreviewMode;
   const wordWrap = node.attrs.wordWrap && !isPreviewMode;
   const tabSize = node.attrs.tabSize ?? 2;

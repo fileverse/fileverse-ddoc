@@ -5,6 +5,7 @@ import type { Transaction } from '@tiptap/pm/state';
 import { useOnClickOutside } from 'usehooks-ts';
 import { commentDecorationPluginKey } from '../../extensions/comment/comment-decoration-plugin';
 import {
+  FLOATING_COMMENT_BOTTOM_SPACE,
   FLOATING_COMMENT_CARD_GAP,
   FloatingLayoutInvalidationFlag,
   computeFloatingCommentLayout,
@@ -46,6 +47,30 @@ const isFloatingUiInteractionTarget = (target: EventTarget | null) => {
     target.closest(
       '[data-inline-comment-actions-menu], [data-radix-popper-content-wrapper], [data-floating-ui-portal], [role="dialog"]',
     ),
+  );
+};
+
+const FLOATING_COMMENT_CONTAINER_MIN_HEIGHT_PROPERTY =
+  '--floating-comment-container-min-height';
+
+const isVerticalRangeInViewportBuffer = ({
+  top,
+  bottom,
+  viewportTop,
+  viewportBottom,
+  viewportHeight,
+}: {
+  top: number;
+  bottom: number;
+  viewportTop: number;
+  viewportBottom: number;
+  viewportHeight: number;
+}) => {
+  const viewportBuffer = viewportHeight * FLOATING_VIEWPORT_BUFFER_MULTIPLIER;
+
+  return (
+    bottom >= viewportTop - viewportBuffer &&
+    top <= viewportBottom + viewportBuffer
   );
 };
 
@@ -133,6 +158,10 @@ export const useFloatingLayoutEngine = ({
     new Map(),
   );
   const focusedFloatingCardIdRef = useRef<string | null>(null);
+  // DOM registry for mounted floating cards. The layout engine needs ID -> node
+  // access to measure heights and write transforms, while ResizeObserver needs
+  // node -> ID access to map height changes back to the right card.
+  // Keep both directions in sync through registerCardNode only.
   const domRegistryRef = useRef({
     cardNodes: new Map<string, HTMLDivElement>(),
     nodeToFloatingCardId: new WeakMap<Element, string>(),
@@ -146,6 +175,8 @@ export const useFloatingLayoutEngine = ({
   const pendingFullFocusedPassRef = useRef(false);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
   const lastContainerTopRef = useRef<number | null>(null);
+  const lastContainerMinHeightElementRef = useRef<HTMLDivElement | null>(null);
+  const lastContainerMinHeightRef = useRef<number | null>(null);
   // Small counters that tell the layout loop what changed since last time.
   const layoutVersionRef = useRef({
     scroll: 0,
@@ -266,6 +297,22 @@ export const useFloatingLayoutEngine = ({
       const scrollContainerRect = scrollContainer.getBoundingClientRect();
       const floatingCardListContainerRect =
         floatingCardListContainer.getBoundingClientRect();
+      const editorWrapperRect =
+        editorWrapperRef.current?.getBoundingClientRect();
+      const editorWrapperBottom =
+        editorWrapperRect !== undefined
+          ? Math.max(
+              0,
+              editorWrapperRect.bottom - floatingCardListContainerRect.top,
+            )
+          : 0;
+
+      if (
+        lastContainerMinHeightElementRef.current !== floatingCardListContainer
+      ) {
+        lastContainerMinHeightElementRef.current = floatingCardListContainer;
+        lastContainerMinHeightRef.current = null;
+      }
 
       if (
         lastContainerTopRef.current === null ||
@@ -331,12 +378,13 @@ export const useFloatingLayoutEngine = ({
         // Read the DOM again when the card is near the viewport or changed.
         const isProjectedInViewportBuffer =
           projectedRect !== null &&
-          projectedRect.top >=
-            viewportTop -
-              viewportHeight * FLOATING_VIEWPORT_BUFFER_MULTIPLIER &&
-          projectedRect.top <=
-            viewportBottom +
-              viewportHeight * FLOATING_VIEWPORT_BUFFER_MULTIPLIER;
+          isVerticalRangeInViewportBuffer({
+            top: projectedRect.top,
+            bottom: projectedRect.top + projectedRect.height,
+            viewportTop,
+            viewportBottom,
+            viewportHeight,
+          });
         const anchorVersionChanged =
           floatingCardRuntimeState.anchorVersion !== anchorEntry.anchorVersion;
         const shouldReadRect =
@@ -374,14 +422,31 @@ export const useFloatingLayoutEngine = ({
 
         floatingCardRuntimeState.anchorVersion = anchorEntry.anchorVersion;
 
-        const nextIsGated =
+        const nextAnchorIsGated =
           floatingCardRuntimeState.anchorTop !== null &&
-          floatingCardRuntimeState.anchorTop >=
-            viewportTop -
-              viewportHeight * FLOATING_VIEWPORT_BUFFER_MULTIPLIER &&
-          floatingCardRuntimeState.anchorTop <=
-            viewportBottom +
-              viewportHeight * FLOATING_VIEWPORT_BUFFER_MULTIPLIER;
+          isVerticalRangeInViewportBuffer({
+            top: floatingCardRuntimeState.anchorTop,
+            bottom:
+              floatingCardRuntimeState.anchorTop +
+              Math.max(floatingCardRuntimeState.anchorHeight, 1),
+            viewportTop,
+            viewportBottom,
+            viewportHeight,
+          });
+        const floatingCardTop =
+          floatingCardRuntimeState.translateY ??
+          floatingCardRuntimeState.lastCommittedTranslateY;
+        const nextCardIsGated =
+          floatingCardRuntimeState.isMeasured &&
+          floatingCardTop !== null &&
+          isVerticalRangeInViewportBuffer({
+            top: floatingCardTop,
+            bottom: floatingCardTop + floatingCardRuntimeState.height,
+            viewportTop,
+            viewportBottom,
+            viewportHeight,
+          });
+        const nextIsGated = nextAnchorIsGated || nextCardIsGated;
 
         if (floatingCardRuntimeState.isInViewport !== nextIsGated) {
           const wasGated = floatingCardRuntimeState.isInViewport;
@@ -404,7 +469,10 @@ export const useFloatingLayoutEngine = ({
       layoutVersionRef.current.appliedContainerOffset =
         layoutVersionRef.current.containerOffset;
 
-      // Only mount cards inside the viewport buffer. Keeping the DOM smaller is  cheaper than rendering every card while still preserving runtime state.
+      // Only mount cards inside the viewport buffer. Keeping the DOM smaller is
+      // cheaper than rendering every card while still preserving runtime state.
+      // Tall cards stay mounted while their own measured range is near view,
+      // even after the anchor itself has scrolled out of the buffer.
       const nextMountedFloatingCardIds =
         orderedFloatingCardIdsRef.current.filter((floatingCardId) => {
           const floatingCardRuntimeState =
@@ -505,12 +573,14 @@ export const useFloatingLayoutEngine = ({
         pendingFullFocusedPassRef.current = false;
       }
 
+      let floatingCardStackBottom = 0;
+
       orderedFloatingCardIdsRef.current.forEach((floatingCardId) => {
         const floatingCardRuntimeState =
           floatingCardStateRef.current.get(floatingCardId);
         const node = domRegistryRef.current.cardNodes.get(floatingCardId);
 
-        if (!floatingCardRuntimeState || !node) {
+        if (!floatingCardRuntimeState) {
           return;
         }
 
@@ -518,6 +588,30 @@ export const useFloatingLayoutEngine = ({
           translateY: floatingCardRuntimeState.translateY,
           isVisible: floatingCardRuntimeState.lastCommittedVisible,
         };
+        const stackTranslateY =
+          placement.translateY ??
+          floatingCardRuntimeState.translateY ??
+          floatingCardRuntimeState.lastCommittedTranslateY;
+
+        if (
+          !isHidden &&
+          floatingCardRuntimeState.isMeasured &&
+          stackTranslateY !== null
+        ) {
+          const roundedStackTranslateY =
+            roundFloatingTranslateY(stackTranslateY);
+
+          if (roundedStackTranslateY !== null) {
+            floatingCardStackBottom = Math.max(
+              floatingCardStackBottom,
+              roundedStackTranslateY + floatingCardRuntimeState.height,
+            );
+          }
+        }
+
+        if (!node) {
+          return;
+        }
 
         if (layoutResult.placements.has(floatingCardId)) {
           floatingCardRuntimeState.translateY = placement.translateY;
@@ -554,6 +648,22 @@ export const useFloatingLayoutEngine = ({
           floatingCardRuntimeState.lastCommittedVisible = shouldShow;
         }
       });
+
+      const floatingCardStackExtent =
+        floatingCardStackBottom > 0
+          ? floatingCardStackBottom + FLOATING_COMMENT_BOTTOM_SPACE
+          : 0;
+      const nextContainerMinHeight = Math.ceil(
+        Math.max(editorWrapperBottom, floatingCardStackExtent),
+      );
+
+      if (lastContainerMinHeightRef.current !== nextContainerMinHeight) {
+        floatingCardListContainer.style.setProperty(
+          FLOATING_COMMENT_CONTAINER_MIN_HEIGHT_PROPERTY,
+          `${nextContainerMinHeight}px`,
+        );
+        lastContainerMinHeightRef.current = nextContainerMinHeight;
+      }
 
       clearInvalidationFlagsThroughIndex(layoutResult.stopIndex);
       layoutBoundaryRef.current.recomputeFromIndex =
@@ -613,7 +723,8 @@ export const useFloatingLayoutEngine = ({
         return;
       }
 
-      // Every floating card DOM node is registered here so layout can measure it, move it, and react to mount or unmount changes.
+      // Register the card before measuring or observing it so all layout paths
+      // use the same mounted-node source of truth.
       domRegistryRef.current.cardNodes.set(floatingCardId, node);
 
       if (floatingCardId === focusedFloatingCardId) {
@@ -677,11 +788,24 @@ export const useFloatingLayoutEngine = ({
       focusedFloatingCardId !== null &&
       previousFocusedFloatingCardId !== focusedFloatingCardId;
 
-    if (didClearFocusedThread || didTransferFocusedThread) {
+    if (didTransferFocusedThread) {
       pendingFullFocusedPassRef.current = true;
     }
 
     if (!focusedFloatingCardId) {
+      if (didClearFocusedThread) {
+        // Click-away exits focused layout. Force a full unfocused pass now so
+        // the card does not keep stale focused-stack transforms until refocus.
+        pendingFullFocusedPassRef.current = false;
+        floatingCardsRef.current.forEach((floatingCard) => {
+          markFloatingCardInvalidated(
+            floatingCard.floatingCardId,
+            FloatingLayoutInvalidationFlag.Anchor,
+          );
+        });
+        markRecomputeFromIndex(0);
+        updateLayout();
+      }
       return;
     }
 
@@ -696,7 +820,6 @@ export const useFloatingLayoutEngine = ({
     markRecomputeFromIndex(focusedFloatingCardIndex ?? 0);
     updateLayout();
   }, [
-    mountedFloatingCardIds,
     focusedFloatingCardId,
     floatingCardStateRef,
     getOrderedFloatingCardIndex,
@@ -778,6 +901,8 @@ export const useFloatingLayoutEngine = ({
       appliedContainerOffset: -1,
     };
     lastContainerTopRef.current = null;
+    lastContainerMinHeightElementRef.current = null;
+    lastContainerMinHeightRef.current = null;
     focusedFloatingCardRef.current = null;
     previousFocusedFloatingCardIdRef.current = null;
     pendingFullFocusedPassRef.current = false;
@@ -962,6 +1087,13 @@ export const useFloatingLayoutEngine = ({
     if (editorWrapperRef.current) {
       resizeObserver.observe(editorWrapperRef.current);
     }
+
+    // Ref callbacks may register cards before this effect creates the observer.
+    // Observe the current registry so consumer-driven content changes, like
+    // incoming replies, trigger the normal height-measurement path.
+    domRegistryRef.current.cardNodes.forEach((node) => {
+      resizeObserver.observe(node);
+    });
 
     return () => {
       resizeObserver.disconnect();

@@ -7,6 +7,7 @@ export function useIsSelectedContentDeleted(
   commentId: string | undefined,
   selectedContent: string | undefined,
   commentTabId: string | undefined,
+  isSuggestion = false,
 ): boolean {
   const {
     activeCommentAnchorIds,
@@ -16,7 +17,11 @@ export function useIsSelectedContentDeleted(
   const activeTabId = useCommentStore((s) => s.activeTabId);
 
   return useMemo(() => {
-    if (!selectedContent || !commentId) {
+    if (!commentId) {
+      return false;
+    }
+
+    if (!selectedContent && !isSuggestion) {
       return false;
     }
 
@@ -40,6 +45,7 @@ export function useIsSelectedContentDeleted(
     commentId,
     commentTabId,
     hasRenderedCommentAnchor,
+    isSuggestion,
     selectedContent,
   ]);
 }

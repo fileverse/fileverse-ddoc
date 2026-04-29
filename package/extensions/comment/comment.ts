@@ -3,6 +3,7 @@ import { CommandProps, Mark, mergeAttributes, Range } from '@tiptap/core';
 import { Mark as PMMark } from '@tiptap/pm/model';
 import { Plugin, PluginKey, type EditorState } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
+import { SuggestionType } from '../../types';
 
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
@@ -214,14 +215,36 @@ export const getCommentMarkRange = (
   return { from, to };
 };
 
+// TipTap's `editor.view` proxy throws when accessed before mount (the proxy
+// itself is truthy, so `?.view?.dom` doesn't help). The active-class sync
+// commands fire from store actions that may run during mount races; swallow
+// the throw and treat it as "DOM not ready yet, nothing to sync".
+const getEditorDomSafely = (
+  editor: { view?: { dom?: unknown } } | null | undefined,
+): HTMLElement | undefined => {
+  if (!editor) return undefined;
+  try {
+    return editor.view?.dom as HTMLElement | undefined;
+  } catch {
+    return undefined;
+  }
+};
+
 const getCommentNodesById = (editorDom: HTMLElement, commentId: string) => {
   const safeId =
     typeof CSS !== 'undefined' && typeof CSS.escape === 'function'
       ? CSS.escape(commentId)
       : commentId.replace(/"/g, '\\"');
 
+  // Exclude suggestion decorations: they share `data-comment-id` so the
+  // layout engine can locate them after submit, but applying the
+  // comment-active styling here would (a) add a green bg that masks the
+  // suggestion's red strikethrough / green widget text and (b) mutate
+  // widget DOM that ProseMirror owns, causing the widget to re-render
+  // and visually drop on click-away. Suggestion decorations always carry
+  // `data-suggestion-id`, so we use that as the exclusion marker.
   return editorDom.querySelectorAll<HTMLElement>(
-    `[data-comment-id="${safeId}"]`,
+    `[data-comment-id="${safeId}"]:not([data-suggestion-id])`,
   );
 };
 
@@ -318,6 +341,10 @@ export interface IComment {
   deleted?: boolean;
   commentIndex?: number;
   version?: string;
+  isSuggestion?: boolean;
+  suggestionType?: SuggestionType;
+  originalContent?: string;
+  suggestedContent?: string;
 }
 
 export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
@@ -616,7 +643,7 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
         this.storage.activeCommentId = commentId;
         // Update UI classes in-place so "active comment" does not create doc updates.
         syncActiveCommentClassInDOM(
-          this.editor?.view?.dom as HTMLElement | undefined,
+          getEditorDomSafely(this.editor),
           previousActiveCommentId,
           commentId,
         );
@@ -627,7 +654,7 @@ export const CommentExtension = Mark.create<CommentOptions, CommentStorage>({
         this.storage.activeCommentId = null;
         // Reset active styling without touching persisted mark attributes.
         syncActiveCommentClassInDOM(
-          this.editor?.view?.dom as HTMLElement | undefined,
+          getEditorDomSafely(this.editor),
           previousActiveCommentId,
           null,
         );

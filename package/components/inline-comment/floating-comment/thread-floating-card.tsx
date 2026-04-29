@@ -1,5 +1,5 @@
 import { Avatar, Button, cn, TextAreaFieldV2 } from '@fileverse/ui';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { useCommentStore } from '../../../stores/comment-store';
 import { CommentCard } from '../comment-card';
 import { DeleteConfirmOverlay } from '../delete-confirm-overlay';
@@ -59,10 +59,16 @@ export const ThreadFloatingCard = ({
       focusCommentInEditor(thread.commentId);
     }
   };
+  const handleCardNode = useCallback(
+    (node: HTMLDivElement | null) => {
+      registerCardNode(thread.floatingCardId, node);
+    },
+    [registerCardNode, thread.floatingCardId],
+  );
 
   return (
     <FloatingCardShell
-      ref={(node) => registerCardNode(thread.floatingCardId, node)}
+      ref={handleCardNode}
       floatingCardId={thread.floatingCardId}
       isHidden={isHidden}
       isFocused={thread.isFocused}
@@ -101,11 +107,14 @@ export const ThreadFloatingCard = ({
         {thread.isFocused && !isConnected && !isCollaborationEnabled && (
           <FloatingAuthPrompt />
         )}
-        <InputField
-          comment={comment}
-          thread={thread}
-          isCollaborationEnabled={isCollaborationEnabled}
-        />
+        <div className="px-3">
+          <InputField
+            comment={comment}
+            thread={thread}
+            isCollaborationEnabled={isCollaborationEnabled}
+          />
+        </div>
+
         <DeleteConfirmOverlay
           isVisible={isDeleteOverlayVisible}
           title="Delete this comment thread ?"
@@ -227,7 +236,7 @@ const InputField = ({
 
   if (!shouldShowReplyInputField) return;
   return (
-    <div className="group p-3 pt-0 pb-0">
+    <div className="group">
       <div
         className={cn(
           'border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]',

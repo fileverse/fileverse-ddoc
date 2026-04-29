@@ -41,6 +41,7 @@ export const CommentSection = ({
   const resolveComment = useCommentStore((s) => s.resolveComment);
   const unresolveComment = useCommentStore((s) => s.unresolveComment);
   const deleteComment = useCommentStore((s) => s.deleteComment);
+  const acceptSuggestion = useCommentStore((s) => s.acceptSuggestion);
   const isConnected = useCommentStore((s) => s.isConnected);
   const connectViaWallet = useCommentStore((s) => s.connectViaWallet);
   const isLoading = useCommentStore((s) => s.isLoading);
@@ -105,6 +106,11 @@ export const CommentSection = ({
             replySectionRef={replySectionRef}
             onCommentClick={handleCommentClick}
             onResolve={(commentId) => {
+              if (comment.isSuggestion) {
+                acceptSuggestion(commentId);
+                return;
+              }
+
               if (isCommentMobileFocused && openReplyId === commentId) {
                 setReOpenLabelCommentId(commentId);
               }
@@ -324,6 +330,7 @@ const SidebarCommentItem = ({
     comment.id,
     comment.selectedContent,
     comment.tabId,
+    Boolean(comment.isSuggestion),
   );
 
   const handleSidebarCommentClick = () => {
@@ -347,7 +354,7 @@ const SidebarCommentItem = ({
         comment.id === activeCommentId &&
           (isCommentMobileFocused || !isBelow1280px)
           ? 'color-bg-default border'
-          : 'hover:color-bg-default-hover bg-[#00000005] ',
+          : 'hover:color-bg-default-hover color-bg-transparent ',
         comment.replies?.length > 0 && 'gap-0',
         showReOpenLabel && comment.resolved
           ? 'color-bg-default color-border-default'
@@ -358,7 +365,7 @@ const SidebarCommentItem = ({
       )}
       onClick={handleSidebarCommentClick}
     >
-      {showReOpenLabel && comment.resolved && (
+      {showReOpenLabel && comment.resolved && !comment.isSuggestion && (
         <div className="w-full px-[16px] py-[8px] rounded-b-[4px] rounded-t-[12px] items-center flex justify-between color-bg-secondary">
           <p className="color-text-secondary text-body-sm">Resolved comment</p>
           <Button
@@ -382,9 +389,11 @@ const SidebarCommentItem = ({
               <p className="text-helper-text-sm color-text-secondary">
                 {tabName}
               </p>
-              <p className="text-helper-text-sm flex-1 grow truncate color-text-secondary">
-                {comment.selectedContent}
-              </p>
+              {!comment.isSuggestion && (
+                <p className="text-helper-text-sm flex-1 grow truncate color-text-secondary">
+                  {comment.selectedContent}
+                </p>
+              )}
             </>
           )}
         </>
@@ -407,9 +416,17 @@ const SidebarCommentItem = ({
         isResolved={comment.resolved}
         isDisabled={comment && !Object.hasOwn(comment, 'commentIndex')}
         isCommentOwner={comment.username === username || isDDocOwner}
+        canResolveComment={comment.isSuggestion ? isDDocOwner : undefined}
         version={comment.version}
+        isSuggestion={comment.isSuggestion}
+        suggestionType={comment.suggestionType}
+        originalContent={comment.originalContent}
+        suggestedContent={comment.suggestedContent}
         emptyComment={
-          !comment.content && !comment.username && !comment.createdAt
+          !comment.content &&
+          !comment.username &&
+          !comment.createdAt &&
+          !comment.isSuggestion
         }
       />
 
