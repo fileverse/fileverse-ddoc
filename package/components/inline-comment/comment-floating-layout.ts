@@ -3,6 +3,7 @@
 
 export const FLOATING_COMMENT_CARD_GAP = 8;
 export const FLOATING_COMMENT_BOTTOM_SPACE = 48;
+export const FLOATING_COMMENT_RIGHT_SPACE = 48;
 
 export const enum FloatingLayoutInvalidationFlag {
   None = 0,

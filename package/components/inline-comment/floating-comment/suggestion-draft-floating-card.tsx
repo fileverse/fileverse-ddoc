@@ -133,7 +133,7 @@ export const SuggestionDraftFloatingCard = ({
               </p>
             )}
             {suggestionType === 'link' && (
-              <p className="text-body-sm">
+              <p className="text-body-sm break-words">
                 <span className="font-semibold">Add link:</span>{' '}
                 <span>&quot;{card.linkHref}&quot;</span>
               </p>

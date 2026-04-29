@@ -7,6 +7,7 @@ import { SuggestionThreadFloatingCard } from './suggestion-thread-floating-card'
 import { ThreadFloatingCard } from './thread-floating-card';
 import type { CommentFloatingContainerProps } from './types';
 import { FLOATING_CARD_WIDTH } from '../constants';
+import { FLOATING_COMMENT_RIGHT_SPACE } from '../comment-floating-layout';
 
 export const CommentFloatingContainer = ({
   editor,
@@ -43,7 +44,9 @@ export const CommentFloatingContainer = ({
       data-floating-comment-hidden={isHidden ? 'true' : 'false'}
       style={{
         width: FLOATING_CARD_WIDTH,
+        boxSizing: 'content-box',
         minHeight: 'var(--floating-comment-container-min-height, 100%)',
+        paddingRight: isHidden ? 0 : FLOATING_COMMENT_RIGHT_SPACE,
       }}
     >
       {mountedFloatingCards.map((floatingCard) => {

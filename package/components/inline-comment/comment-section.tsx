@@ -354,7 +354,7 @@ const SidebarCommentItem = ({
         comment.id === activeCommentId &&
           (isCommentMobileFocused || !isBelow1280px)
           ? 'color-bg-default border'
-          : 'hover:color-bg-default-hover bg-[#00000005] ',
+          : 'hover:color-bg-default-hover color-bg-transparent ',
         comment.replies?.length > 0 && 'gap-0',
         showReOpenLabel && comment.resolved
           ? 'color-bg-default color-border-default'
