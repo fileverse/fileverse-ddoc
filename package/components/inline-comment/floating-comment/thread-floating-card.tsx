@@ -272,7 +272,7 @@ const InputField = ({
           className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
           placeholder={
             isCollaborationEnabled
-              ? 'Cannot send reply in collaboration mode'
+              ? 'Replies off in live collaboration (coming soon)'
               : canReply
                 ? 'Add a reply'
                 : 'Thread resolved'

@@ -95,7 +95,7 @@ export const CommentReplyInput = ({
           className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
           placeholder={
             isCollaborationEnabled
-              ? 'Cannot reply in collaboration mode'
+              ? 'Replies off in live collaboration (coming soon)'
               : replyCount === 0
                 ? `Reply to @${nameFormatter(commentUsername ?? 'comment')}`
                 : replyCount >= 2
