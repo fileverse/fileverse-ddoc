@@ -13,9 +13,10 @@ import {
   Button,
 } from '@fileverse/ui';
 import { NodeViewWrapper, NodeViewContent, NodeViewProps } from '@tiptap/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useReducer, useRef, useState } from 'react';
 import { useResponsive } from '../../../utils/responsive';
 import { useEditingContext } from '../../../hooks/use-editing-context';
+import { getMermaid } from '../lazy-mermaid';
 
 const LANGUAGE_GROUPS = [
   {
@@ -80,6 +81,10 @@ const LANGUAGE_GROUPS = [
     options: [{ label: 'Solidity', value: 'solidity' }],
   },
   {
+    label: 'Diagrams',
+    options: [{ label: 'Mermaid', value: 'mermaid' }],
+  },
+  {
     label: 'Other',
     options: [
       { label: 'Plain Text', value: 'plaintext' },
@@ -88,6 +93,24 @@ const LANGUAGE_GROUPS = [
   },
 ];
 const TAB_SIZES = [2, 4, 8];
+
+type MermaidState = {
+  view: 'source' | 'preview';
+  error: string | null;
+  svg: string;
+};
+type MermaidAction =
+  | { type: 'setView'; view: 'source' | 'preview' }
+  | { type: 'parsed' }
+  | { type: 'rendered'; svg: string }
+  | { type: 'failed'; error: string }
+  | { type: 'reset' };
+
+const initialMermaidState: MermaidState = {
+  view: 'source',
+  error: null,
+  svg: '',
+};
 
 export default function CodeBlockNodeView({
   node,
@@ -100,14 +123,120 @@ export default function CodeBlockNodeView({
   const { isSuggestionMode } = useEditingContext();
   // Read attributes with sensible defaults
   const language = node.attrs.language || 'plaintext';
+  const isMermaid = language === 'mermaid';
   const isPreviewMode = !editor.isEditable || !!isSuggestionMode;
-  const lineNumbers = node.attrs.lineNumbers && !isPreviewMode;
-  const wordWrap = node.attrs.wordWrap && !isPreviewMode;
+  const lineNumbers = node.attrs.lineNumbers && !isPreviewMode && !isMermaid;
+  const wordWrap = node.attrs.wordWrap && !isPreviewMode && !isMermaid;
   const tabSize = node.attrs.tabSize ?? 2;
   const shouldFocus = node.attrs.shouldFocus;
   const { isMobile } = useResponsive();
 
   const code = node.textContent || node.attrs.code || '';
+
+  const mermaidContainerRef = useRef<HTMLDivElement>(null);
+  const mermaidId = `mermaid-${useId().replace(/:/g, '')}`;
+
+  const [mermaidState, dispatchMermaid] = useReducer(
+    (state: MermaidState, action: MermaidAction): MermaidState => {
+      switch (action.type) {
+        case 'setView':
+          return state.view === action.view
+            ? state
+            : { ...state, view: action.view };
+        case 'parsed':
+          return state.error === null ? state : { ...state, error: null };
+        case 'rendered':
+          return { ...state, error: null, svg: action.svg };
+        case 'failed':
+          return state.error === action.error
+            ? state
+            : { ...state, error: action.error };
+        case 'reset':
+          return initialMermaidState;
+      }
+    },
+    initialMermaidState,
+  );
+
+  const {
+    view: mermaidView,
+    error: mermaidError,
+    svg: mermaidSvg,
+  } = mermaidState;
+  const showMermaidPreview =
+    isMermaid && (mermaidView === 'preview' || isPreviewMode);
+
+  // Cache last successful render to avoid re-rendering on toggle when source
+  // hasn't changed, and to render immediately on toggle without debounce.
+  const lastRenderedRef = useRef<{ source: string; svg: string }>({
+    source: '',
+    svg: '',
+  });
+  const prevViewRef = useRef(mermaidView);
+
+  useEffect(() => {
+    if (!isMermaid) return;
+    if (!code.trim()) {
+      if (mermaidError) dispatchMermaid({ type: 'parsed' });
+      return;
+    }
+
+    const isPreview = mermaidView === 'preview' || isPreviewMode;
+    const justToggledToPreview = isPreview && prevViewRef.current === 'source';
+    prevViewRef.current = mermaidView;
+
+    // Cache hit: previewing source we already rendered. No work, no flicker.
+    if (
+      isPreview &&
+      lastRenderedRef.current.source === code &&
+      lastRenderedRef.current.svg
+    ) {
+      if (mermaidSvg !== lastRenderedRef.current.svg) {
+        dispatchMermaid({ type: 'rendered', svg: lastRenderedRef.current.svg });
+      }
+      return;
+    }
+
+    // Render immediately when the user just clicked Preview; debounce edits.
+    const delay = justToggledToPreview ? 0 : 400;
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      try {
+        const mermaid = await getMermaid();
+        if (isPreview) {
+          const { svg } = await mermaid.render(mermaidId, code);
+          if (cancelled) return;
+          lastRenderedRef.current = { source: code, svg };
+          dispatchMermaid({ type: 'rendered', svg });
+        } else {
+          await mermaid.parse(code);
+          if (!cancelled) dispatchMermaid({ type: 'parsed' });
+        }
+      } catch (err) {
+        if (!cancelled) {
+          dispatchMermaid({
+            type: 'failed',
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+    }, delay);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+    // mermaidSvg/mermaidError are read but not deps — using them as deps would
+    // re-run after every dispatch. The reducer no-ops when nothing changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, isMermaid, mermaidView, isPreviewMode, mermaidId]);
+
+  useEffect(() => {
+    if (!isMermaid) {
+      lastRenderedRef.current = { source: '', svg: '' };
+      dispatchMermaid({ type: 'reset' });
+    }
+  }, [isMermaid]);
 
   const codeLines = useMemo(() => {
     const lines = code.split('\n');
@@ -247,65 +376,121 @@ export default function CodeBlockNodeView({
             </Tooltip>
             <div className="w-[1px] h-4 vertical-divider mx-1"></div>
 
-            <Tooltip text="Line numbers">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => updateAttributes({ lineNumbers: !lineNumbers })}
-                className={cn(
-                  'min-w-fit p-2',
-                  lineNumbers &&
-                    'color-bg-brand color-text-on-brand hover:bg-[hsla(var(--color-bg-brand-hover))]',
-                )}
-              >
-                <LucideIcon name="List" size="sm" />
-              </Button>
-            </Tooltip>
-            <div className="w-[1px] h-4 vertical-divider mx-1"></div>
-
-            <Tooltip text="Word wrap">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => updateAttributes({ wordWrap: !wordWrap })}
-                className={cn(
-                  'min-w-fit p-2',
-                  wordWrap &&
-                    'color-bg-brand color-text-on-brand hover:bg-[hsla(var(--color-bg-brand-hover))]',
-                )}
-              >
-                <LucideIcon name="WrapText" size="sm" />
-              </Button>
-            </Tooltip>
-            <div className="w-[1px] h-4 vertical-divider mx-1"></div>
-
-            <Select
-              value={String(tabSize)}
-              onValueChange={(value: string) =>
-                updateAttributes({ tabSize: Number(value) })
-              }
-            >
-              <SelectTrigger className="w-full text-helper-text-sm h-7 px-2 py-1 color-bg-secondary border-none">
-                <Tooltip text="Tab size">
-                  <span className="!hidden sm:!block">Tab: {tabSize}</span>
-                  <span className="!block sm:!hidden">{tabSize}</span>
-                </Tooltip>
-              </SelectTrigger>
-              <SelectContent
-                className="min-w-[60px] max-h-60 overflow-y-auto "
-                showScrollButtons={false}
-              >
-                {TAB_SIZES.map((size) => (
-                  <SelectItem
-                    key={size}
-                    value={String(size)}
-                    className="text-helper-text-sm"
+            {!isMermaid && (
+              <>
+                <Tooltip text="Line numbers">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      updateAttributes({ lineNumbers: !lineNumbers })
+                    }
+                    className={cn(
+                      'min-w-fit p-2',
+                      lineNumbers &&
+                        'color-bg-brand color-text-on-brand hover:bg-[hsla(var(--color-bg-brand-hover))]',
+                    )}
                   >
-                    {size}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+                    <LucideIcon name="List" size="sm" />
+                  </Button>
+                </Tooltip>
+                <div className="w-[1px] h-4 vertical-divider mx-1"></div>
+
+                <Tooltip text="Word wrap">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => updateAttributes({ wordWrap: !wordWrap })}
+                    className={cn(
+                      'min-w-fit p-2',
+                      wordWrap &&
+                        'color-bg-brand color-text-on-brand hover:bg-[hsla(var(--color-bg-brand-hover))]',
+                    )}
+                  >
+                    <LucideIcon name="WrapText" size="sm" />
+                  </Button>
+                </Tooltip>
+                <div className="w-[1px] h-4 vertical-divider mx-1"></div>
+
+                <Select
+                  value={String(tabSize)}
+                  onValueChange={(value: string) =>
+                    updateAttributes({ tabSize: Number(value) })
+                  }
+                >
+                  <SelectTrigger className="w-full text-helper-text-sm h-7 px-2 py-1 color-bg-secondary border-none">
+                    <Tooltip text="Tab size">
+                      <span className="!hidden sm:!block">Tab: {tabSize}</span>
+                      <span className="!block sm:!hidden">{tabSize}</span>
+                    </Tooltip>
+                  </SelectTrigger>
+                  <SelectContent
+                    className="min-w-[60px] max-h-60 overflow-y-auto "
+                    showScrollButtons={false}
+                  >
+                    {TAB_SIZES.map((size) => (
+                      <SelectItem
+                        key={size}
+                        value={String(size)}
+                        className="text-helper-text-sm"
+                      >
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </>
+            )}
+
+            {isMermaid && (
+              <div className="flex gap-1">
+                <Tooltip text="Source">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      dispatchMermaid({ type: 'setView', view: 'source' })
+                    }
+                    contentEditable="false"
+                    className={cn(
+                      'min-w-fit p-2',
+                      mermaidView === 'source' &&
+                        'color-bg-brand color-text-on-brand hover:bg-[hsla(var(--color-bg-brand-hover))]',
+                    )}
+                  >
+                    <LucideIcon name="Code" size="sm" />
+                  </Button>
+                </Tooltip>
+                {mermaidError ? (
+                  <Tooltip text={mermaidError}>
+                    <span
+                      className="flex p-2 size-8 cursor-not-allowed"
+                      contentEditable="false"
+                    >
+                      <LucideIcon name="TriangleAlert" size="sm" />
+                    </span>
+                  </Tooltip>
+                ) : (
+                  <Tooltip text="Preview">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      contentEditable="false"
+                      onClick={() =>
+                        dispatchMermaid({ type: 'setView', view: 'preview' })
+                      }
+                      className={cn(
+                        'min-w-fit p-2 h-auto',
+                        mermaidView === 'preview' &&
+                          'color-bg-brand color-text-on-brand hover:bg-[hsla(var(--color-bg-brand-hover))]',
+                      )}
+                    >
+                      <LucideIcon name="Eye" size="sm" />
+                    </Button>
+                  </Tooltip>
+                )}
+              </div>
+            )}
           </div>
 
           <Tooltip text="Delete code block">
@@ -358,6 +543,7 @@ export default function CodeBlockNodeView({
           <div
             className={cn(
               'flex flex-row gap-3',
+              showMermaidPreview && 'hidden',
               wordWrap
                 ? isMobile
                   ? 'w-[330px]'
@@ -389,6 +575,15 @@ export default function CodeBlockNodeView({
               onFocus={handleFocus}
             />
           </div>
+          {isMermaid && showMermaidPreview && (
+            <div
+              ref={mermaidContainerRef}
+              className="w-full px-4 py-2 flex items-center justify-center color-bg-default"
+              dangerouslySetInnerHTML={{
+                __html: mermaidSvg || '',
+              }}
+            />
+          )}
         </div>
       </pre>
     </NodeViewWrapper>
