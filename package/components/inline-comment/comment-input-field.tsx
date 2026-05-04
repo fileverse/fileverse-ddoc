@@ -59,7 +59,7 @@ export const CommentInputField = ({
           disabled={isCollaborationEnabled}
           placeholder={
             isCollaborationEnabled
-              ? 'Cannot add comment in collaboration mode'
+              ? 'Comments off in live collaboration (coming soon)'
               : 'Add a comment'
           }
           onInput={(event) =>
