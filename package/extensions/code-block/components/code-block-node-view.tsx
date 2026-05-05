@@ -492,15 +492,16 @@ export default function CodeBlockNodeView({
               </div>
             )}
           </div>
-
-          <Tooltip text="Delete code block">
-            <LucideIcon
-              name="Trash2"
-              size="sm"
-              className="mr-1"
-              onClick={() => deleteNode()}
-            />
-          </Tooltip>
+          {!isPreviewMode && (
+            <Tooltip text="Delete code block">
+              <LucideIcon
+                name="Trash2"
+                size="sm"
+                className="mr-1"
+                onClick={() => deleteNode()}
+              />
+            </Tooltip>
+          )}
         </div>
         <div
           className={cn(
