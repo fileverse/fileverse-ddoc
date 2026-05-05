@@ -163,8 +163,7 @@ export default function CodeBlockNodeView({
     error: mermaidError,
     svg: mermaidSvg,
   } = mermaidState;
-  const showMermaidPreview =
-    isMermaid && (mermaidView === 'preview' || isPreviewMode);
+  const showMermaidPreview = isMermaid && mermaidView === 'preview';
 
   // Cache last successful render to avoid re-rendering on toggle when source
   // hasn't changed, and to render immediately on toggle without debounce.
@@ -306,40 +305,47 @@ export default function CodeBlockNodeView({
         <div
           className={cn(
             'flex flex-row gap-2 items-center justify-between color-bg-secondary absolute top-0 left-0 z-10 rounded-t-lg w-full border-b color-border-default px-2 py-1',
-            isPreviewMode && 'hidden',
+            isPreviewMode && !isMermaid && 'hidden',
           )}
         >
           <div className="flex flex-row gap-0 items-center">
             {/* Language select */}
-            <Select
-              value={language}
-              onValueChange={(value: string) =>
-                updateAttributes({ language: value })
-              }
-            >
-              <SelectTrigger className="!min-w-24 text-helper-text-sm h-7 px-2 py-1 color-bg-secondary border-none">
-                <Tooltip text="Select language">
-                  <SelectValue placeholder="Select language" />
-                  <span className="w-1"></span>
-                </Tooltip>
-              </SelectTrigger>
-              <SelectContent className="min-w-fit" showScrollButtons={false}>
-                {LANGUAGE_GROUPS.map((group) => (
-                  <SelectGroup key={group.label}>
-                    <SelectLabel>{group.label}</SelectLabel>
-                    {group.options.map((opt) => (
-                      <SelectItem
-                        key={opt.value}
-                        value={opt.value}
-                        className="text-helper-text-sm"
-                      >
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
+            {isPreviewMode ? (
+              <span className="text-helper-text-sm px-2 py-1">
+                {language || '-'}
+              </span>
+            ) : (
+              <Select
+                value={language}
+                onValueChange={(value: string) =>
+                  updateAttributes({ language: value })
+                }
+              >
+                <SelectTrigger className="!min-w-24 text-helper-text-sm h-7 px-2 py-1 color-bg-secondary border-none">
+                  <Tooltip text="Select language">
+                    <SelectValue placeholder="Select language" />
+                    <span className="w-1"></span>
+                  </Tooltip>
+                </SelectTrigger>
+                <SelectContent className="min-w-fit" showScrollButtons={false}>
+                  {LANGUAGE_GROUPS.map((group) => (
+                    <SelectGroup key={group.label}>
+                      <SelectLabel>{group.label}</SelectLabel>
+                      {group.options.map((opt) => (
+                        <SelectItem
+                          key={opt.value}
+                          value={opt.value}
+                          className="text-helper-text-sm"
+                        >
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
             <div className="w-[1px] h-4 vertical-divider mx-1"></div>
 
             {/* Toolbar */}
@@ -506,7 +512,7 @@ export default function CodeBlockNodeView({
         <div
           className={cn(
             'absolute top-3 right-3 hidden z-10 color-bg-default',
-            isPreviewMode && 'flex',
+            isPreviewMode && !isMermaid && 'flex',
           )}
         >
           <Tooltip text="Copy code">
@@ -536,8 +542,8 @@ export default function CodeBlockNodeView({
         </div>
         <div
           className={cn(
-            'bg-transparent w-full p-0 font-mono select-text pointer-events-auto overflow-y-auto no-scrollbar max-w-[650px]',
-            !isPreviewMode && 'pt-8',
+            'bg-transparent w-full p-0 font-mono select-text pointer-events-auto overflow-auto no-scrollbar max-w-[650px]',
+            (!isPreviewMode || isMermaid) && 'pt-8',
             codeLines.length > 20 && 'max-h-[500px]',
           )}
         >
@@ -545,13 +551,7 @@ export default function CodeBlockNodeView({
             className={cn(
               'flex flex-row gap-3',
               showMermaidPreview && 'hidden',
-              wordWrap
-                ? isMobile
-                  ? 'w-[330px]'
-                  : 'w-[650px]'
-                : isMobile
-                  ? 'w-[720px]'
-                  : 'w-[720px]',
+              !wordWrap && 'w-max',
             )}
           >
             {lineNumbers && (
