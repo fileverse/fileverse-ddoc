@@ -11,6 +11,9 @@ import { useCopyToClipboard, useMediaQuery } from 'usehooks-ts';
 import { headingToSlug } from '../../utils/heading-to-slug';
 import { getEditorScrollContainer } from '../../utils/get-editor-scroll-container';
 
+const isValidToCItemId = (id: unknown): id is string =>
+  typeof id === 'string' && id.length > 0;
+
 // Memoize the ToC item to prevent unnecessary re-renders
 export const ToCItem = memo(
   ({
@@ -23,6 +26,8 @@ export const ToCItem = memo(
     // Memoize the click handler to prevent recreating it on every render
     const [, copyToClipboard] = useCopyToClipboard();
     const [copyState, setCopyState] = useState<boolean | null>(null);
+    const itemId = item.id;
+
     function handleCopyToClipboard(
       ev: React.MouseEvent<HTMLButtonElement>,
       val: string,
@@ -46,15 +51,21 @@ export const ToCItem = memo(
       (e: React.MouseEvent) => {
         e.preventDefault();
         e.stopPropagation();
-        onItemClick(e, item.id);
+        if (!isValidToCItemId(itemId)) return;
+        onItemClick(e, itemId);
       },
-      [onItemClick, item.id],
+      // Keep memoization tied to the primitive heading ID.
+      [onItemClick, itemId],
     );
 
     // Memoize the href generation
     const href = useMemo(() => {
+      if (!isValidToCItemId(itemId)) {
+        return globalThis.location.href;
+      }
+
       const heading = headingToSlug(item.textContent);
-      const uuid = item.id.replace(/-/g, '').substring(0, 8);
+      const uuid = itemId.replace(/-/g, '').substring(0, 8);
       const headingValue = `${heading}-${uuid}`;
 
       // Build the full URL with current location, preserving other hash params
@@ -71,7 +82,7 @@ export const ToCItem = memo(
       url.hash = hashParams.toString();
 
       return url.toString();
-    }, [item.id, item.textContent]);
+    }, [itemId, item.textContent]);
 
     // Memoize the className calculation with orientation-based widths
     const className = useMemo(() => {
@@ -166,7 +177,7 @@ export const ToC = memo(
     const processedItems = useMemo(() => {
       return items.map((item) => ({
         ...item,
-        isActive: item.id === activeId,
+        isActive: isValidToCItemId(item.id) && item.id === activeId,
       }));
     }, [items, activeId]);
 
@@ -290,7 +301,9 @@ export const ToC = memo(
 
             // Expand all items between current H1 and next H1
             if (isWithinCurrentH1) {
-              expandHeading(item.id);
+              if (isValidToCItemId(item.id)) {
+                expandHeading(item.id);
+              }
             }
           });
         } else {
@@ -303,7 +316,9 @@ export const ToC = memo(
           ) {
             const item = items[i];
             if (item.level < clickedLevel) {
-              expandHeading(item.id);
+              if (isValidToCItemId(item.id)) {
+                expandHeading(item.id);
+              }
               if (item.level === 1) break; // Stop at H1
             }
           }
@@ -398,13 +413,15 @@ export const ToC = memo(
 
           // Only update active item if we're removing the currently active item
           if (id === activeId && filtered.length > 0) {
-            // If we removed the last item, set the previous one active
-            if (removedIndex === prev.length - 1) {
-              onItemClick(e, filtered[filtered.length - 1].id);
-            }
-            // Otherwise set the next item active
-            else {
-              onItemClick(e, filtered[removedIndex]?.id);
+            const nextItem =
+              removedIndex === prev.length - 1
+                ? filtered[filtered.length - 1]
+                : filtered[removedIndex];
+
+            if (isValidToCItemId(nextItem?.id)) {
+              onItemClick(e, nextItem.id);
+            } else {
+              setActiveId(null);
             }
           } else if (filtered.length === 0) {
             setActiveId(null);
@@ -427,7 +444,11 @@ export const ToC = memo(
           <ToCItem
             onItemClick={onItemClick}
             onItemRemove={onItemRemove}
-            key={item.id}
+            key={
+              isValidToCItemId(item.id)
+                ? item.id
+                : `missing-toc-id-${i}-${item.itemIndex}`
+            }
             item={item}
             index={i + 1}
             orientation={orientation}
