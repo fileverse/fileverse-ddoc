@@ -484,8 +484,14 @@ export default function CodeBlockNodeView({
                         type: 'toggleView',
                       })
                     }
-                    onMouseDown={(e) => e.preventDefault()}
-                    onTouchStart={(e) => e.preventDefault()}
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.focus();
+                    }}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.focus();
+                    }}
                   />
                   <LucideIcon
                     name="Code"
