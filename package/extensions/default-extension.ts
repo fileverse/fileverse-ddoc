@@ -7,9 +7,11 @@ import TextAlign from '@tiptap/extension-text-align';
 import {
   getHierarchicalIndexes,
   TableOfContents,
+  type TableOfContentDataItem,
 } from '@tiptap/extension-table-of-contents';
 import Highlight from '@tiptap/extension-highlight';
 import { TextStyle } from '@tiptap/extension-text-style';
+import { v4 as uuidv4 } from 'uuid';
 
 const ExtendedTextStyle = TextStyle.extend({
   addAttributes() {
@@ -53,9 +55,9 @@ import { DBlock } from './d-block';
 import { SuperchargedTableExtensions } from './supercharged-table';
 import { Document } from './document';
 import { TrailingNode } from './trailing-node';
-import { NodeType } from '@tiptap/pm/model';
+import { type NodeType } from '@tiptap/pm/model';
 import { Plugin } from '@tiptap/pm/state';
-import { InputRule } from '@tiptap/core';
+import { type Editor, InputRule } from '@tiptap/core';
 import { actionButton } from './action-button';
 import { Markdown } from 'tiptap-markdown';
 import Typography from '@tiptap/extension-typography';
@@ -97,6 +99,117 @@ const lowlight = createLowlight(common);
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { type ToCItemType } from '../components/toc/types';
 import { CustomLink } from './custom-link';
+import { suggestionTrackingPluginKey } from './suggestion/suggestion-tracking-extension';
+
+const pendingTocIdRepairs = new WeakSet<Editor>();
+
+const isValidTocId = (id: unknown): id is string =>
+  typeof id === 'string' && id.length > 0;
+
+const isLinkSafeHeadingId = (id: unknown): id is string =>
+  isValidTocId(id) &&
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    id,
+  );
+
+const addIdCount = (counts: Map<string, number>, id: unknown) => {
+  if (!isValidTocId(id)) return;
+  counts.set(id, (counts.get(id) ?? 0) + 1);
+};
+
+const getHeadingIdCounts = (editor: Editor) => {
+  const counts = new Map<string, number>();
+
+  editor.state.doc.descendants((node) => {
+    if (node.type.name !== 'heading' || node.textContent.length === 0) {
+      return;
+    }
+
+    addIdCount(counts, node.attrs.id);
+    addIdCount(counts, node.attrs['data-toc-id']);
+  });
+
+  return counts;
+};
+
+const getRepairTocId = (idCounts: Map<string, number>) => {
+  let id = uuidv4();
+
+  while (idCounts.has(id)) {
+    id = uuidv4();
+  }
+
+  idCounts.set(id, 1);
+
+  return id;
+};
+
+const getSafeExistingTocId = (id: unknown, idCounts: Map<string, number>) => {
+  if (!isLinkSafeHeadingId(id) || idCounts.get(id) !== 1) {
+    return null;
+  }
+
+  return id;
+};
+
+const scheduleMissingTocIdRepair = (items: TableOfContentDataItem[]) => {
+  const editor = items.find((item) => item.editor)?.editor;
+
+  if (!editor || pendingTocIdRepairs.has(editor)) {
+    return;
+  }
+
+  pendingTocIdRepairs.add(editor);
+
+  queueMicrotask(() => {
+    pendingTocIdRepairs.delete(editor);
+
+    if (editor.isDestroyed) {
+      return;
+    }
+
+    const idCounts = getHeadingIdCounts(editor);
+    let tr = editor.state.tr;
+
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name !== 'heading' || node.textContent.length === 0) {
+        return;
+      }
+
+      if (isValidTocId(node.attrs['data-toc-id'])) {
+        return;
+      }
+
+      // Reuse a heading ID only when it is unique across both link-facing attrs.
+      const existingId = getSafeExistingTocId(node.attrs.id, idCounts);
+
+      if (existingId) {
+        tr = tr.setNodeMarkup(pos, undefined, {
+          ...node.attrs,
+          'data-toc-id': existingId,
+        });
+        return;
+      }
+
+      const id = getRepairTocId(idCounts);
+      tr = tr.setNodeMarkup(pos, undefined, {
+        ...node.attrs,
+        id,
+        'data-toc-id': id,
+      });
+    });
+
+    if (!tr.docChanged) {
+      return;
+    }
+
+    editor.view.dispatch(
+      tr
+        .setMeta('addToHistory', false)
+        .setMeta(suggestionTrackingPluginKey, true),
+    );
+  });
+};
 
 const ExtendedSubscript = Subscript.extend({
   addProseMirrorPlugins() {
@@ -221,7 +334,15 @@ export const defaultExtensions = ({
   TableOfContents.configure({
     getIndex: getHierarchicalIndexes,
     onUpdate: (data, isCreate) => {
-      const newData = data.map((item) => {
+      const invalidItems = data.filter((item) => !isValidTocId(item.id));
+      const validItems = data.filter((item) => isValidTocId(item.id));
+
+      if (invalidItems.length > 0) {
+        // Fallback for ToC IDs that reach onUpdate before TipTap repairs them.
+        scheduleMissingTocIdRepair(invalidItems);
+      }
+
+      const newData = validItems.map((item) => {
         return {
           id: item.id,
           level: item.level,
