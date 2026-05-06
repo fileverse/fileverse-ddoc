@@ -11,6 +11,7 @@ import {
   Tooltip,
   toast,
   Button,
+  Toggle,
 } from '@fileverse/ui';
 import { NodeViewWrapper, NodeViewContent, NodeViewProps } from '@tiptap/react';
 import { useEffect, useId, useMemo, useReducer, useRef, useState } from 'react';
@@ -100,6 +101,7 @@ type MermaidState = {
   svg: string;
 };
 type MermaidAction =
+  | { type: 'toggleView' }
   | { type: 'setView'; view: 'source' | 'preview' }
   | { type: 'parsed' }
   | { type: 'rendered'; svg: string }
@@ -139,6 +141,14 @@ export default function CodeBlockNodeView({
   const [mermaidState, dispatchMermaid] = useReducer(
     (state: MermaidState, action: MermaidAction): MermaidState => {
       switch (action.type) {
+        case 'toggleView': {
+          if (typeof state.error === 'string') {
+            return state;
+          }
+          return state.view === 'preview'
+            ? { ...state, view: 'source' }
+            : { ...state, view: 'preview' };
+        }
         case 'setView':
           return state.view === action.view
             ? state
@@ -307,6 +317,7 @@ export default function CodeBlockNodeView({
             'flex flex-row gap-2 items-center justify-between color-bg-secondary absolute top-0 left-0 z-10 rounded-t-lg w-full border-b color-border-default px-2 py-1',
             isPreviewMode && !isMermaid && 'hidden',
           )}
+          contentEditable="false"
         >
           <div className="flex flex-row gap-0 items-center">
             {/* Language select */}
@@ -349,12 +360,17 @@ export default function CodeBlockNodeView({
             <div className="w-[1px] h-4 vertical-divider mx-1"></div>
 
             {/* Toolbar */}
-            <Tooltip text="Copy code">
+            <Tooltip
+              text="Copy code"
+              onMouseDown={(e) => e.preventDefault()}
+              asTriggerChild={true}
+            >
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleCopyCode}
-                className="min-w-fit p-2 relative"
+                onMouseDown={(e) => e.preventDefault()}
+                className="min-w-fit p-2 relative select-none"
               >
                 <div className="relative w-4 h-4">
                   <LucideIcon
@@ -449,52 +465,47 @@ export default function CodeBlockNodeView({
             )}
 
             {isMermaid && (
-              <div className="flex gap-1">
-                <Tooltip text="Source">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() =>
-                      dispatchMermaid({ type: 'setView', view: 'source' })
+              <div className="flex gap-1 items-center">
+                <div className="grid grid-cols-2 grid-rows-1 shrink-0 items-center justify-items-center">
+                  <Toggle
+                    title={
+                      mermaidError
+                        ? ''
+                        : mermaidView === 'preview'
+                          ? 'Switch to source view'
+                          : 'Switch to preview'
                     }
+                    className="col-start-1 col-end-3 row-start-1 row-end-2 data-[state=checked]:bg-[hsl(var(--color-bg-disabled))] data-[state=checked]:hover:enabled:bg-[hsl(var(--color-bg-disabled))]"
                     contentEditable="false"
-                    className={cn(
-                      'min-w-fit p-2',
-                      mermaidView === 'source' &&
-                        'color-bg-brand color-text-on-brand hover:bg-[hsla(var(--color-bg-brand-hover))]',
-                    )}
-                  >
-                    <LucideIcon name="Code" size="sm" />
-                  </Button>
-                </Tooltip>
-                {mermaidError ? (
-                  <Tooltip text={mermaidError}>
-                    <span
-                      className="flex p-2 size-8 cursor-not-allowed"
-                      contentEditable="false"
-                    >
-                      <LucideIcon name="TriangleAlert" size="sm" />
-                    </span>
-                  </Tooltip>
-                ) : (
-                  <Tooltip text="Preview">
-                    <Button
-                      variant="ghost"
+                    checked={mermaidView === 'preview'}
+                    disabled={!!mermaidError}
+                    onCheckedChange={() =>
+                      dispatchMermaid({
+                        type: 'toggleView',
+                      })
+                    }
+                    onMouseDown={(e) => e.preventDefault()}
+                    onTouchStart={(e) => e.preventDefault()}
+                  />
+                  <LucideIcon
+                    name="Code"
+                    size={'sm'}
+                    className="col-start-1 col-end-2 row-start-1 row-end-2 pointer-events-none"
+                  />
+                  {mermaidError ? (
+                    <LucideIcon
+                      name="TriangleAlert"
                       size="sm"
-                      contentEditable="false"
-                      onClick={() =>
-                        dispatchMermaid({ type: 'setView', view: 'preview' })
-                      }
-                      className={cn(
-                        'min-w-fit p-2 h-auto',
-                        mermaidView === 'preview' &&
-                          'color-bg-brand color-text-on-brand hover:bg-[hsla(var(--color-bg-brand-hover))]',
-                      )}
-                    >
-                      <LucideIcon name="Eye" size="sm" />
-                    </Button>
-                  </Tooltip>
-                )}
+                      className="col-start-2 col-end-3 row-start-1 row-end-2 pointer-events-none"
+                    />
+                  ) : (
+                    <LucideIcon
+                      name="Eye"
+                      size={'sm'}
+                      className="col-start-2 col-end-3 row-start-1 row-end-2 pointer-events-none"
+                    />
+                  )}
+                </div>
               </div>
             )}
           </div>
@@ -543,10 +554,20 @@ export default function CodeBlockNodeView({
         <div
           className={cn(
             'bg-transparent w-full p-0 font-mono select-text pointer-events-auto overflow-auto no-scrollbar max-w-[650px]',
-            (!isPreviewMode || isMermaid) && 'pt-8',
+            (!isPreviewMode || isMermaid) && 'mt-8',
             codeLines.length > 20 && 'max-h-[500px]',
           )}
         >
+          {mermaidError && (
+            <div
+              contentEditable="false"
+              className="border-b color-border-default p-2"
+            >
+              <p className="color-text-danger text-helper-text-sm">
+                {mermaidError}
+              </p>
+            </div>
+          )}
           <div
             className={cn(
               'flex flex-row gap-3',
