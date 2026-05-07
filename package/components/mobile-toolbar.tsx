@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { TextFormatingPopup, useEditorToolbar } from './editor-utils';
 import { Editor } from '@tiptap/react';
 import { IEditorTool } from '../hooks/use-visibility';
@@ -53,7 +53,7 @@ const MobileToolbar = ({
   const [isTextValid, setIsTextValid] = useState(true);
   const [isUrlValid, setIsUrlValid] = useState(true);
 
-  const saveLink = () => {
+  const saveLink = useCallback(() => {
     if (!editor) return;
     if (
       (url === null || url === '') &&
@@ -113,9 +113,9 @@ const MobileToolbar = ({
     if (parsed && !parsed.headingEl) {
       onError?.('This heading link belongs to a different document.');
     }
-  };
+  }, [editor, linkText, onError, setToolVisibility, url]);
 
-  const getSelectedLink = () => {
+  const getSelectedLink = useCallback(() => {
     if (!editor) return { text: '', url: '' };
     const { from, to } = editor.state.selection;
     const selectedText = editor.state.doc.textBetween(from, to);
@@ -124,7 +124,7 @@ const MobileToolbar = ({
       text: selectedText || linkMark.text || '',
       url: linkMark.href || '',
     };
-  };
+  }, [editor]);
 
   useEffect(() => {
     if (!editor) return;
@@ -145,7 +145,7 @@ const MobileToolbar = ({
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [editor, toolVisibility]);
+  }, [editor, setToolVisibility, toolVisibility]);
 
   useEffect(() => {
     if (isKeyboardVisible) {
@@ -159,7 +159,12 @@ const MobileToolbar = ({
       setLinkText(text);
       setUrl(url);
     }
-  }, [toolVisibility, editor]);
+  }, [toolVisibility, editor, getSelectedLink]);
+
+  const handleNavbarVisibilityToggle = useCallback(
+    () => setIsNavbarVisible((prev) => !prev),
+    [setIsNavbarVisible],
+  );
 
   return (
     <Drawer>
@@ -237,7 +242,7 @@ const MobileToolbar = ({
           <LucideIcon
             size={'md'}
             name={isNavbarVisible ? 'ChevronUp' : 'ChevronDown'}
-            onClick={() => setIsNavbarVisible((prev) => !prev)}
+            onClick={handleNavbarVisibilityToggle}
           />
         </div>
       </div>
@@ -303,4 +308,7 @@ const MobileToolbar = ({
   );
 };
 
-export default MobileToolbar;
+const MemoizedMobileToolbar = React.memo(MobileToolbar);
+MemoizedMobileToolbar.displayName = 'MobileToolbar';
+
+export default MemoizedMobileToolbar;
