@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   EditorAlignment,
   EditorFontFamily,
@@ -124,10 +124,15 @@ const TiptapToolBar = ({
   });
 
   const editorStates = useEditorStates(editor as Editor);
+  const noopSetEditorValue = useCallback(() => {}, []);
   const currentSize = editor ? editorStates.currentSize : undefined;
-  const onSetFontSize = editor ? editorStates.onSetFontSize : () => {};
+  const onSetFontSize = editor
+    ? editorStates.onSetFontSize
+    : noopSetEditorValue;
   const currentLineHeight = editor ? editorStates.currentLineHeight : undefined;
-  const onSetLineHeight = editor ? editorStates.onSetLineHeight : () => {};
+  const onSetLineHeight = editor
+    ? editorStates.onSetLineHeight
+    : noopSetEditorValue;
 
   const isBelow1560px = useMediaQuery('(max-width: 1560px)');
   const isBelow1370px = useMediaQuery('(max-width: 1370px)');
@@ -137,15 +142,24 @@ const TiptapToolBar = ({
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [currentFont, setCurrentFont] = useState('Default');
-  const activeFont = fonts.find((f) => f.value === currentFont);
+  const activeFont = useMemo(
+    () => fonts.find((f) => f.value === currentFont),
+    [currentFont],
+  );
 
   useEffect(() => {
     if (!editor) return;
 
     const update = () => setCurrentFont(getCurrentFontFamily(editor));
-
-    editor.on('selectionUpdate', update);
-    editor.on('transaction', ({ transaction }) => {
+    const handleTransaction = ({
+      transaction,
+    }: {
+      transaction: {
+        selectionSet?: boolean;
+        storedMarksSet?: boolean;
+        docChanged?: boolean;
+      };
+    }) => {
       // Only refresh when selection or stored marks/doc changed
       if (
         transaction.selectionSet ||
@@ -154,68 +168,110 @@ const TiptapToolBar = ({
       ) {
         update();
       }
-    });
+    };
+
+    editor.on('selectionUpdate', update);
+    editor.on('transaction', handleTransaction);
 
     update();
 
     return () => {
       editor.off('selectionUpdate', update);
-      editor.off('transaction');
+      editor.off('transaction', handleTransaction);
     };
   }, [editor]);
 
-  const renderContent = (tool: {
-    title: string;
-    icon: LucideIconProps['name'];
-  }) => {
-    switch (tool.title) {
-      case 'Highlight':
-        return (
-          <TextHighlighter
-            setVisibility={setToolVisibility}
-            editor={editor as Editor}
-            elementRef={toolRef}
-          />
-        );
-      case 'Text Color':
-        return (
-          <TextColor
-            editor={editor}
-            setVisibility={setToolVisibility}
-            elementRef={toolRef}
-          />
-        );
-      case 'Alignment':
-        return (
-          <EditorAlignment
-            setToolVisibility={setToolVisibility}
-            editor={editor as Editor}
-            elementRef={toolRef}
-          />
-        );
-      case 'Link':
-        return (
-          <LinkPopup
-            setToolVisibility={setToolVisibility}
-            editor={editor as Editor}
-            elementRef={toolRef}
-            onError={onError}
-          />
-        );
-      case 'Line Height':
-        return (
-          <MemoizedLineHeightPicker
-            setVisibility={setToolVisibility}
-            editor={editor as Editor}
-            elementRef={toolRef}
-            currentLineHeight={currentLineHeight}
-            onSetLineHeight={onSetLineHeight}
-          />
-        );
+  const renderContent = useCallback(
+    (tool: { title: string; icon: LucideIconProps['name'] }) => {
+      switch (tool.title) {
+        case 'Highlight':
+          return (
+            <TextHighlighter
+              setVisibility={setToolVisibility}
+              editor={editor as Editor}
+              elementRef={toolRef}
+            />
+          );
+        case 'Text Color':
+          return (
+            <TextColor
+              editor={editor}
+              setVisibility={setToolVisibility}
+              elementRef={toolRef}
+            />
+          );
+        case 'Alignment':
+          return (
+            <EditorAlignment
+              setToolVisibility={setToolVisibility}
+              editor={editor as Editor}
+              elementRef={toolRef}
+            />
+          );
+        case 'Link':
+          return (
+            <LinkPopup
+              setToolVisibility={setToolVisibility}
+              editor={editor as Editor}
+              elementRef={toolRef}
+              onError={onError}
+            />
+          );
+        case 'Line Height':
+          return (
+            <MemoizedLineHeightPicker
+              setVisibility={setToolVisibility}
+              editor={editor as Editor}
+              elementRef={toolRef}
+              currentLineHeight={currentLineHeight}
+              onSetLineHeight={onSetLineHeight}
+            />
+          );
+        default:
+          return null;
+      }
+    },
+    [
+      currentLineHeight,
+      editor,
+      onError,
+      onSetLineHeight,
+      setToolVisibility,
+      toolRef,
+    ],
+  );
+
+  const toolbarBreakpoint = useMemo(() => {
+    switch (true) {
+      case isBelow1030px:
+        return 1030;
+      case isBelow1160px:
+        return 1160;
+      case isBelow1270px:
+        return 1270;
+      case isBelow1370px:
+        return 1370;
+      case isBelow1560px:
+        return 1560;
       default:
-        return null;
+        return 3120;
     }
-  };
+  }, [
+    isBelow1030px,
+    isBelow1160px,
+    isBelow1270px,
+    isBelow1370px,
+    isBelow1560px,
+  ]);
+  const handleZoomDropdownClose = useCallback(() => setDropdownOpen(false), []);
+  const handleZoomDropdownToggle = useCallback(() => {
+    setDropdownOpen((prev) => !prev);
+    setFileExportsOpen(false);
+  }, [setFileExportsOpen]);
+  const handleNavbarVisibilityToggle = useCallback(
+    () => setIsNavbarVisible((prev) => !prev),
+    [setIsNavbarVisible],
+  );
 
   return (
     <AnimatePresence mode="wait">
@@ -296,14 +352,11 @@ const TiptapToolBar = ({
                   sideOffset={8}
                   controlled={true}
                   isOpen={dropdownOpen}
-                  onClose={() => setDropdownOpen(false)}
+                  onClose={handleZoomDropdownClose}
                   anchorTrigger={
                     <button
                       className="bg-transparent hover:!color-bg-default-hover rounded p-2 h-[30px] flex items-center justify-center gap-2 w-[78px]"
-                      onClick={() => {
-                        setDropdownOpen((prev) => !prev);
-                        setFileExportsOpen(false);
-                      }}
+                      onClick={handleZoomDropdownToggle}
                     >
                       <span className="text-body-sm-bold line-clamp-1 w-fit">
                         {zoomLevels.find((z) => z.value === zoomLevel)?.title ||
@@ -453,27 +506,7 @@ const TiptapToolBar = ({
           {/* Toolbar Items */}
           <div className="flex gap-2 justify-center items-center">
             {toolbar.map((tool, index) => {
-              let breakpoint: number; //it is important to state the breakpoint in the ascending order.
-              switch (true) {
-                case isBelow1030px:
-                  breakpoint = 1030;
-                  break;
-                case isBelow1160px:
-                  breakpoint = 1160;
-                  break;
-                case isBelow1270px:
-                  breakpoint = 1270;
-                  break;
-                case isBelow1370px:
-                  breakpoint = 1370;
-                  break;
-                case isBelow1560px:
-                  breakpoint = 1560;
-                  break;
-                default:
-                  breakpoint = 3120;
-                  break;
-              }
+              const breakpoint = toolbarBreakpoint;
 
               if (!tool) {
                 if (
@@ -624,7 +657,7 @@ const TiptapToolBar = ({
                   size="sm"
                   variant="ghost"
                   icon={isNavbarVisible ? 'ChevronUp' : 'ChevronDown'}
-                  onClick={() => setIsNavbarVisible((prev) => !prev)}
+                  onClick={handleNavbarVisibilityToggle}
                 />,
                 'chevronUp',
               )}
@@ -634,4 +667,7 @@ const TiptapToolBar = ({
   );
 };
 
-export default TiptapToolBar;
+const MemoizedTiptapToolBar = React.memo(TiptapToolBar);
+MemoizedTiptapToolBar.displayName = 'TiptapToolBar';
+
+export default MemoizedTiptapToolBar;

@@ -1184,7 +1184,12 @@ const DdocEditor = forwardRef(
                 },
               )}
             >
-              {editor && renderNavbar?.({ editor: editor.getJSON() })}
+              {editor &&
+                renderNavbar?.({
+                  get editor() {
+                    return editor.getJSON();
+                  },
+                })}
             </nav>
             <CommentStoreProvider
               editor={editor ?? null}
