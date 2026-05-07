@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "3.3.5-mermaid-4",
+  "version": "3.3.7",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
@@ -126,6 +126,7 @@
     "framer-motion": ">=11.2.10",
     "frimousse": ">=0.3.0",
     "viem": ">=2.13.8",
+    "@fileverse/ens": "0.0.3",
     "mermaid": "11.14.0"
   },
   "devDependencies": {
