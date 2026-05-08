@@ -38,6 +38,7 @@ import {
   convertToList,
 } from './editor-bubble-menu/node-selector';
 import { searchForSecureImageNodeAndEmbedImageContent } from '../extensions/mardown-paste-handler';
+import { renderMermaidBlocks } from '../extensions/code-block/render-mermaid-html';
 import { inlineLoader } from '../utils/inline-loader';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { getTemporaryEditor } from '../utils/helpers';
@@ -830,7 +831,8 @@ export const useEditorToolbar = ({
               docWithEmbedImageContent.toJSON(),
             );
 
-            const inlineHtml = temporalEditor.getHTML();
+            const rawHtml = temporalEditor.getHTML();
+            const inlineHtml = await renderMermaidBlocks(rawHtml);
             handleContentPrint(inlineHtml);
             removeLoader(loader);
             temporalEditor.destroy();

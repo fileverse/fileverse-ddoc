@@ -6,6 +6,11 @@ import { getTemporaryEditor } from '../../utils/helpers';
 import { searchForSecureImageNodeAndEmbedImageContent } from '../mardown-paste-handler';
 import DOMPurify from 'dompurify';
 import { prettifyHtml } from '../../utils/prettify-html';
+import {
+  MERMAID_SVG_ATTRS,
+  MERMAID_SVG_TAGS,
+  renderMermaidBlocks,
+} from '../code-block/render-mermaid-html';
 
 // Define the command type
 declare module '@tiptap/core' {
@@ -51,7 +56,8 @@ const HtmlExportExtension = (
               docWithEmbedImageContent.toJSON(),
             );
 
-            const inlineHtml = temporalEditor.getHTML();
+            const rawHtml = temporalEditor.getHTML();
+            const inlineHtml = await renderMermaidBlocks(rawHtml);
 
             DOMPurify.addHook('afterSanitizeElements', (node: any) => {
               if (
@@ -94,8 +100,9 @@ const HtmlExportExtension = (
                 'th',
                 'thead',
                 'tfoot',
+                ...MERMAID_SVG_TAGS,
               ],
-              ALLOWED_ATTR: ['href'],
+              ALLOWED_ATTR: ['href', ...MERMAID_SVG_ATTRS],
               FORBID_ATTR: ['data-toc-id', 'data-tight'],
             });
 
