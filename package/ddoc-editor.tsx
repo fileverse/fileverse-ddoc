@@ -53,6 +53,7 @@ import {
 import { useFocusMode } from './hooks/use-focus-mode';
 import { FullScreenToolbar } from './components/fullscreen-toolbar';
 import { mergeTabAwareYjsUpdates } from './components/tabs/utils/tab-utils';
+import SearchReplace from './extensions/search-replace/components/search-replace-popover';
 
 const DdocEditor = forwardRef(
   (
@@ -1172,6 +1173,8 @@ const DdocEditor = forwardRef(
             )}
             style={!isFocusMode ? getBackgroundStyle() : undefined}
           >
+            <SearchReplace />
+
             <nav
               id="Navbar"
               className={cn(
