@@ -252,11 +252,18 @@ export const useEditorToolbar = ({
       });
     };
     updateMarkStates();
-    // Only update mark states on selection changes — not every transaction.
-    // Text input transactions don't change which marks are active at the cursor.
+    // Update on selection changes and when storedMarks change (e.g. toggling
+    // bold on an empty paragraph, or after sink/lift restructures the doc).
     editor.on('selectionUpdate', updateMarkStates);
+    const onTransaction = ({ transaction }: { transaction: any }) => {
+      if (transaction.storedMarksSet) {
+        updateMarkStates();
+      }
+    };
+    editor.on('transaction', onTransaction);
     return () => {
       editor.off('selectionUpdate', updateMarkStates);
+      editor.off('transaction', onTransaction);
     };
   }, [editor]);
 

@@ -150,20 +150,22 @@ export const DBlock = Node.create<DBlockOptions>({
           const node = $from.node(d);
 
           if (node.type.name === 'listItem') {
-            // Try to sink the list item
-            // If it's the first item, sinkListItem will return false and nothing happens
+            // Preserve active marks before sinking — sinkListItem restructures
+            // the document which clears storedMarks, causing formatting loss.
+            const marks = editor.state.storedMarks || selection.$from.marks();
             editor.commands.sinkListItem('listItem');
-
-            // Always return true to prevent browser Tab behavior
+            if (marks.length) {
+              editor.view.dispatch(editor.state.tr.setStoredMarks(marks));
+            }
             return true;
           }
 
           if (node.type.name === 'taskItem') {
-            // Try to sink the task item
-            // If it's the first item, sinkListItem will return false and nothing happens
+            const marks = editor.state.storedMarks || selection.$from.marks();
             editor.commands.sinkListItem('taskItem');
-
-            // Always return true to prevent browser Tab behavior
+            if (marks.length) {
+              editor.view.dispatch(editor.state.tr.setStoredMarks(marks));
+            }
             return true;
           }
         }
@@ -198,10 +200,20 @@ export const DBlock = Node.create<DBlockOptions>({
           const node = $from.node(d);
 
           if (node.type.name === 'listItem') {
-            return editor.commands.liftListItem('listItem');
+            const marks = editor.state.storedMarks || $from.marks();
+            const result = editor.commands.liftListItem('listItem');
+            if (marks.length) {
+              editor.view.dispatch(editor.state.tr.setStoredMarks(marks));
+            }
+            return result;
           }
           if (node.type.name === 'taskItem') {
-            return editor.commands.liftListItem('taskItem');
+            const marks = editor.state.storedMarks || $from.marks();
+            const result = editor.commands.liftListItem('taskItem');
+            if (marks.length) {
+              editor.view.dispatch(editor.state.tr.setStoredMarks(marks));
+            }
+            return result;
           }
         }
 
