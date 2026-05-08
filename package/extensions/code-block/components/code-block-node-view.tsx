@@ -247,6 +247,22 @@ export default function CodeBlockNodeView({
     }
   }, [isMermaid]);
 
+  useEffect(() => {
+    if (!isPreviewMode) return;
+    if (mermaidError) {
+      dispatchMermaid({
+        type: 'setView',
+        view: 'source',
+      });
+    } else {
+      dispatchMermaid({
+        type: 'setView',
+        view: 'preview',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPreviewMode, mermaidError]);
+
   const codeLines = useMemo(() => {
     const lines = code.split('\n');
     const processedLines: string[] = [];
@@ -310,11 +326,14 @@ export default function CodeBlockNodeView({
   return (
     <NodeViewWrapper className="w-full">
       <pre
-        className={cn('rounded-lg border color-border-default w-full relative')}
+        className={cn(
+          'rounded-lg overflow-clip border color-border-default w-full relative',
+          showMermaidPreview && '!bg-white !bg-clip-padding',
+        )}
       >
         <div
           className={cn(
-            'flex flex-row gap-2 items-center justify-between color-bg-secondary absolute top-0 left-0 z-10 rounded-t-lg w-full border-b color-border-default px-2 py-1',
+            'flex flex-row gap-2 items-center justify-between color-bg-secondary absolute top-0 left-0 z-10 w-full border-b color-border-default px-2 py-1',
             isPreviewMode && !isMermaid && 'hidden',
           )}
           contentEditable="false"
@@ -606,7 +625,7 @@ export default function CodeBlockNodeView({
           {isMermaid && showMermaidPreview && (
             <div
               ref={mermaidContainerRef}
-              className="w-full px-4 py-2 flex items-center justify-center color-bg-default"
+              className="w-full px-4 py-2 flex items-center justify-center"
               dangerouslySetInnerHTML={{
                 __html: mermaidSvg || '',
               }}
