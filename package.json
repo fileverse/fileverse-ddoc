@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "3.3.7-mermaid-1",
+  "version": "3.3.8",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
