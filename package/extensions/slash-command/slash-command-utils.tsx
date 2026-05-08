@@ -266,6 +266,20 @@ export const getSuggestionItems = ({
           .run(),
     },
     {
+      title: 'Plain text',
+      description: 'Create a plain text block',
+      searchTerms: ['plaintext', 'txt', 'plain', 'text'],
+      icon: <LucideIcon name="NotepadText" size={'md'} />,
+      image: '',
+      command: ({ editor, range }: CommandProps) =>
+        editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          .setCodeBlock({ language: 'plaintext' })
+          .run(),
+    },
+    {
       title: 'Table',
       description: 'Create a table.',
       searchTerms: ['table'],
