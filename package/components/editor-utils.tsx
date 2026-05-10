@@ -44,6 +44,7 @@ import { getTemporaryEditor } from '../utils/helpers';
 import { extractTitleFromContent } from '../utils/extract-title-from-content';
 import { getContrastColor } from '../utils/color-utils';
 import { parseHeadingLink } from '../utils/heading-link';
+import { useSearchReplaceStore } from '../stores/search-replace-store';
 
 export interface IEditorToolElement {
   icon: any;
@@ -241,6 +242,10 @@ export const useEditorToolbar = ({
 
   const { buttonRef } = useCommentRefs();
 
+  const { setShowReplacePopover, setSearchTerm } = useSearchReplaceStore(
+    (s) => s.actions,
+  );
+
   useEffect(() => {
     if (!editor) return;
     const updateMarkStates = () => {
@@ -266,7 +271,7 @@ export const useEditorToolbar = ({
     // Add keyboard shortcuts to the editor's keymap
     editor.setOptions({
       editorProps: {
-        handleKeyDown: (_, event) => {
+        handleKeyDown: (view, event) => {
           // Strikethrough shortcut (Ctrl + Shift + X for Windows/Linux | Cmd + Shift + X for Mac)
           if (
             (event.ctrlKey && event.shiftKey && event.code === 'KeyX') ||
@@ -372,6 +377,17 @@ export const useEditorToolbar = ({
             const prevIndex = Math.max(currentIndex - 1, 0);
             editor.chain().setLineHeight(lineHeights[prevIndex]).run();
             return true;
+          }
+
+          if (event.code === 'KeyF' && event.metaKey) {
+            event.preventDefault();
+            const { from, to } = view.state.selection;
+
+            const selectedText = view.state.doc.textBetween(from, to, ' ');
+            setShowReplacePopover(true);
+            setSearchTerm(selectedText);
+            editor.commands.setSearchTerm(selectedText);
+            editor.commands.resetIndex();
           }
           return false;
         },

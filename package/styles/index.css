@@ -474,6 +474,13 @@ div[data-type='page-break']:hover .remove-page-break-icon {
   padding: 0;
 }
 
+.search-result {
+  background-color: hsl(var(--color-inline-comment));
+  &.search-result-current {
+    background-color: hsl(var(--color-inline-comment-active));
+  }
+}
+
 .is-active {
   transition: transform 0.2s ease-in;
   animation: shift-toward-subtle 200ms forwards;

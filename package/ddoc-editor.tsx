@@ -1173,7 +1173,7 @@ const DdocEditor = forwardRef(
             )}
             style={!isFocusMode ? getBackgroundStyle() : undefined}
           >
-            <SearchReplace />
+            <SearchReplace editor={editor} />
 
             <nav
               id="Navbar"

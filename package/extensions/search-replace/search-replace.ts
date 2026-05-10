@@ -86,6 +86,12 @@ declare module '@tiptap/core' {
   }
 }
 
+declare module '@tiptap/core' {
+  interface Storage {
+    searchAndReplace: SearchAndReplaceStorage;
+  }
+}
+
 interface TextNodesWithPosition {
   text: string;
   pos: number;
