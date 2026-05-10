@@ -44,7 +44,7 @@ import { getTemporaryEditor } from '../utils/helpers';
 import { extractTitleFromContent } from '../utils/extract-title-from-content';
 import { getContrastColor } from '../utils/color-utils';
 import { parseHeadingLink } from '../utils/heading-link';
-import { useSearchReplaceStore } from '../stores/search-replace-store';
+import { setShowReplacePopoverWithData } from '../extensions/search-replace/utils';
 
 export interface IEditorToolElement {
   icon: any;
@@ -242,10 +242,6 @@ export const useEditorToolbar = ({
 
   const { buttonRef } = useCommentRefs();
 
-  const { setShowReplacePopover, setSearchTerm } = useSearchReplaceStore(
-    (s) => s.actions,
-  );
-
   useEffect(() => {
     if (!editor) return;
     const updateMarkStates = () => {
@@ -381,13 +377,7 @@ export const useEditorToolbar = ({
 
           if (event.code === 'KeyF' && event.metaKey) {
             event.preventDefault();
-            const { from, to } = view.state.selection;
-
-            const selectedText = view.state.doc.textBetween(from, to, ' ');
-            setShowReplacePopover(true);
-            setSearchTerm(selectedText);
-            editor.commands.setSearchTerm(selectedText);
-            editor.commands.resetIndex();
+            setShowReplacePopoverWithData(editor);
           }
           return false;
         },

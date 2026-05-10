@@ -11,12 +11,20 @@ import {
 import { useShallow } from 'zustand/shallow';
 import { useSearchReplaceStore } from '../../../../package/stores/search-replace-store';
 import { useEscapeKey } from '../../../hooks/useEscapeKey';
-import { useState } from 'react';
+import { useState, useEffect, useReducer } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 // import { useSearchReplace } from '../hooks/use-search-replace';
 import type { Editor } from '@tiptap/core';
 
 const SearchReplace = ({ editor }: { editor: Editor | null }) => {
+  const [, force] = useReducer((x) => x + 1, 0);
+  useEffect(() => {
+    if (!editor) return;
+    editor.on('transaction', force);
+    return () => {
+      editor.off('transaction', force);
+    };
+  }, [editor]);
   const [showReplace, setShowReplace] = useState(false);
   const { searchTerm, replaceTerm, showSearchReplacePopover } =
     useSearchReplaceStore(
@@ -30,12 +38,20 @@ const SearchReplace = ({ editor }: { editor: Editor | null }) => {
   const { setShowReplacePopover, setSearchTerm, setReplaceTerm } =
     useSearchReplaceStore((s) => s.actions);
 
-  useEscapeKey(() => setShowReplacePopover(false));
+  function hidePopover() {
+    if (editor) {
+      console.log('editor');
+      editor.commands.setSearchTerm('');
+    }
+    setShowReplacePopover(false);
+  }
+
+  useEscapeKey(hidePopover);
 
   const results = editor?.storage.searchAndReplace.results;
   const resultIndex = editor?.storage.searchAndReplace.resultIndex;
 
-  function toggleEscape() {
+  function toggleReplace() {
     setShowReplace((s) => !s);
   }
 
@@ -65,14 +81,26 @@ const SearchReplace = ({ editor }: { editor: Editor | null }) => {
     editor.commands.replaceAll();
   }
 
+  function gotoSelection() {
+    if (!editor) return;
+    const { results, resultIndex } = editor.storage.searchAndReplace;
+    const current = results[resultIndex];
+
+    if (!current) return;
+
+    editor.chain().focus().setTextSelection(current).scrollIntoView().run();
+  }
+
   function handleNext() {
     if (!editor) return;
     editor.commands.nextSearchResult();
+    gotoSelection();
   }
 
   function handlePrevious() {
     if (!editor) return;
     editor.commands.previousSearchResult();
+    gotoSelection();
   }
 
   return (
@@ -95,11 +123,11 @@ const SearchReplace = ({ editor }: { editor: Editor | null }) => {
               className="border-none p-0"
               onChange={handleSearchTerm}
             />
-            <span className="color-text-secondary text-sm">
-              {results
-                ? `${typeof resultIndex === 'number' ? resultIndex + 1 : '?'}/${results.length}`
-                : '-'}
-            </span>
+            {results && results.length > 0 && (
+              <span className="color-text-secondary text-sm">
+                {`${typeof resultIndex === 'number' ? resultIndex + 1 : '?'}/${results.length}`}
+              </span>
+            )}
             <div className="flex items-center">
               <div className="flex items-center">
                 <Tooltip text="Previous">
@@ -124,11 +152,11 @@ const SearchReplace = ({ editor }: { editor: Editor | null }) => {
                   icon={'Replace'}
                   variant={'ghost'}
                   size="sm"
-                  onClick={toggleEscape}
+                  onClick={toggleReplace}
                 />
               </Tooltip>
             </div>
-            <PopoverClose asChild onClick={() => setShowReplacePopover(false)}>
+            <PopoverClose asChild onClick={hidePopover}>
               <IconButton icon={'X'} variant={'ghost'} size="sm" />
             </PopoverClose>
           </div>
