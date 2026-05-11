@@ -19,7 +19,13 @@ import { scrollIntoView } from '../../../utils/get-editor-scroll-container';
 import { setShowReplacePopoverWithData } from '../utils';
 import { useEventListener } from 'usehooks-ts';
 
-const SearchReplace = ({ editor }: { editor: Editor | null }) => {
+const SearchReplace = ({
+  editor,
+  viewerMode,
+}: {
+  editor: Editor | null;
+  viewerMode?: 'suggest' | 'view-only';
+}) => {
   const [, force] = useReducer((x) => x + 1, 0);
   useEffect(() => {
     if (!editor) return;
@@ -49,7 +55,10 @@ const SearchReplace = ({ editor }: { editor: Editor | null }) => {
     setShowReplacePopover(false);
   }
 
-  const handleFindSearchOnKeydown = (ev: KeyboardEvent) => {
+  const handleSearchReplaceOnKeydown = (ev: KeyboardEvent) => {
+    if (viewerMode === 'suggest' || viewerMode == 'view-only') {
+      return;
+    }
     if (ev.code === 'KeyF' && ev.metaKey) {
       ev.preventDefault();
       if (editor) {
@@ -60,7 +69,7 @@ const SearchReplace = ({ editor }: { editor: Editor | null }) => {
   };
 
   //opens popover on cmd+f across the editor
-  useEventListener<'keydown'>('keydown', handleFindSearchOnKeydown);
+  useEventListener<'keydown'>('keydown', handleSearchReplaceOnKeydown);
 
   //closes popover on esc key
   useEscapeKey(hidePopover);
