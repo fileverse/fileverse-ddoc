@@ -8,6 +8,7 @@ import {
   Dispatch,
   MutableRefObject,
   SetStateAction,
+  useLayoutEffect,
 } from 'react';
 import {
   DdocProps,
@@ -18,11 +19,16 @@ import {
 import * as Y from 'yjs';
 import Collaboration from '@tiptap/extension-collaboration';
 import { defaultExtensions } from '../extensions/default-extension';
-import { AnyExtension, JSONContent, Editor, useEditor } from '@tiptap/react';
+import { AnyExtension, JSONContent, Editor } from '@tiptap/react';
 import { getCursor } from '../utils/cursor';
 import { EditorView } from '@tiptap/pm/view';
 import SlashCommand from '../extensions/slash-command/slash-comand';
-import { EditorState, TextSelection, Plugin } from '@tiptap/pm/state';
+import {
+  EditorState,
+  TextSelection,
+  Plugin,
+  type Transaction,
+} from '@tiptap/pm/state';
 import customTextInputRules from '../extensions/customTextInputRules';
 import { PageBreak } from '../extensions/page-break/page-break';
 import { toUint8Array } from 'js-base64';
@@ -45,7 +51,11 @@ import {
 import { isBlackOrWhiteShade } from '../utils/color-utils';
 import { AiAutocomplete } from '../extensions/ai-autocomplete/ai-autocomplete';
 import { AIWriter } from '../extensions/ai-writer';
-import { DBlock } from '../extensions/d-block/dblock';
+import { createDBlockExtension } from '../extensions/d-block/dblock';
+import {
+  DEFAULT_DBLOCK_RUNTIME_STATE,
+  type DBlockRuntimeStateRef,
+} from '../extensions/d-block/dblock-runtime';
 import { ToCItemType } from '../components/toc/types';
 import { TWITTER_REGEX } from '../constants/twitter';
 import { headingToSlug } from '../utils/heading-to-slug';
@@ -61,6 +71,8 @@ import {
   CollabConnectionConfig,
   CollaborationProps,
 } from '../sync-local/types';
+import { destroyEditorWithYSyncCleanup } from '../utils/y-prosemirror-cleanup';
+import { clearTableOfContentsStorage } from '../extensions/table-of-contents';
 
 const usercolors = [
   '#30bced',
@@ -72,6 +84,23 @@ const usercolors = [
   '#0ad7f2',
   '#1bff39',
 ];
+
+const TAB_EDITOR_CACHE_SIZE = 3;
+const LARGE_TAB_DBLOCK_THRESHOLD = 1000;
+const INACTIVE_LARGE_EDITOR_IDLE_EVICTION_MS = 90_000;
+
+export interface CachedTabEditorRenderEntry {
+  tabId: string;
+  editor: Editor;
+  isActive: boolean;
+}
+
+interface CachedTabEditorEntry {
+  tabId: string;
+  editor: Editor;
+  lastUsedAt: number;
+  idleEvictionTimer: number | null;
+}
 
 type ScheduledIdleTask = {
   kind: 'idle' | 'timeout';
@@ -105,6 +134,104 @@ const cancelIdleTask = (task: ScheduledIdleTask) => {
   }
 
   window.clearTimeout(task.handle);
+};
+
+const countTopLevelDBlocks = (editor: Editor) => {
+  let count = 0;
+  editor.state.doc.forEach((node) => {
+    if (node.type.name === 'dBlock') {
+      count += 1;
+    }
+  });
+  return count;
+};
+
+const isLargeDBlockDocument = (editor: Editor) =>
+  countTopLevelDBlocks(editor) > LARGE_TAB_DBLOCK_THRESHOLD;
+
+const getChangedRanges = (transaction: Transaction) => {
+  const ranges: Array<{ from: number; to: number }> = [];
+
+  transaction.mapping.maps.forEach((map) => {
+    map.forEach((_oldStart, _oldEnd, newStart, newEnd) => {
+      ranges.push({ from: newStart, to: newEnd });
+    });
+  });
+
+  return ranges;
+};
+
+const transactionTouchesHeading = (transaction: Transaction) => {
+  if (!transaction.docChanged) {
+    return false;
+  }
+
+  const ranges = getChangedRanges(transaction);
+  if (ranges.length === 0) {
+    return false;
+  }
+
+  const { doc } = transaction;
+  return ranges.some(({ from, to }) => {
+    const start = Math.max(0, Math.min(from - 2, doc.content.size));
+    const end = Math.max(start, Math.min(to + 2, doc.content.size));
+    let touchesHeading = false;
+
+    doc.nodesBetween(start, end, (node) => {
+      if (node.type.name === 'heading') {
+        touchesHeading = true;
+        return false;
+      }
+
+      return !touchesHeading;
+    });
+
+    return touchesHeading;
+  });
+};
+
+const isEditorViewInsideActiveRoot = (
+  view: EditorView,
+  activeEditor: Editor | null,
+) => activeEditor?.view === view && !activeEditor.isDestroyed;
+
+const setInactiveEditorDOMState = (editor: Editor, isInactive: boolean) => {
+  const dom = editor.view?.dom;
+  if (!dom) {
+    return;
+  }
+
+  if (isInactive) {
+    dom.setAttribute('data-ddoc-editor-inactive', 'true');
+    dom.setAttribute('tabindex', '-1');
+    return;
+  }
+
+  dom.removeAttribute('data-ddoc-editor-inactive');
+  dom.removeAttribute('tabindex');
+};
+
+const setEditorEditableState = (editor: Editor, editable: boolean) => {
+  if (editor.isDestroyed) {
+    return;
+  }
+
+  editor.options.editable = editable;
+  editor.view.editable = editable;
+  editor.view.dom.setAttribute('contenteditable', String(editable));
+};
+
+const blurEditorDOM = (editor: Editor) => {
+  const dom = editor.view?.dom;
+  if (!dom || typeof document === 'undefined') {
+    return;
+  }
+
+  if (document.activeElement && dom.contains(document.activeElement)) {
+    (document.activeElement as HTMLElement).blur();
+  }
+
+  dom.blur();
 };
 
 const getInlineCommentEventTarget = (
@@ -175,9 +302,11 @@ interface UseTabEditorArgs {
   externalExtensions?: Record<string, AnyExtension>;
   isContentLoading?: boolean;
   activeTabId: string;
+  tabIds?: string[];
   theme?: ThemeKey;
   editorRef?: MutableRefObject<Editor | null>;
   initialCommentAnchors?: SerializedCommentAnchor[];
+  dBlockRuntimeStateRef?: DBlockRuntimeStateRef;
 }
 
 export const useTabEditor = ({
@@ -222,21 +351,60 @@ export const useTabEditor = ({
   externalExtensions,
   isContentLoading,
   activeTabId,
+  tabIds,
   theme,
   editorRef,
   initialCommentAnchors,
+  dBlockRuntimeStateRef,
 }: UseTabEditorArgs) => {
   const collabEnabled = collaboration?.enabled === true;
   const connection = collabEnabled ? collaboration.connection : null;
   const { activeCommentId, setActiveCommentId, focusCommentWithActiveId } =
     useActiveComment();
 
+  const activeTabIdRef = useRef(activeTabId);
+  activeTabIdRef.current = activeTabId;
+  const activeEditorRef = useRef<Editor | null>(null);
   const hasAvailableModels = Boolean(activeModel && isAIAgentEnabled);
-  const { tocItems, setTocItems, handleTocUpdate } = useTocState(activeTabId);
+  const { tocItems, setTocItems, handleTocUpdateForTab } =
+    useTocState(activeTabId);
 
   const isSuggestionMode = !!(isPreviewMode && viewerMode === 'suggest');
+  const fallbackDBlockRuntimeStateRef = useRef(DEFAULT_DBLOCK_RUNTIME_STATE);
+  const resolvedDBlockRuntimeStateRef =
+    dBlockRuntimeStateRef ?? fallbackDBlockRuntimeStateRef;
+  const handleCommentActivatedForTab = useCallback(
+    (tabId: string, commentId: string) => {
+      if (activeTabIdRef.current !== tabId) {
+        return;
+      }
+      setActiveCommentId(commentId || null);
+      if (commentId) {
+        setTimeout(() => focusCommentWithActiveId(commentId));
+      }
+    },
+    [focusCommentWithActiveId, setActiveCommentId],
+  );
+  const handleTocUpdateForActiveTab = useCallback(
+    (
+      tabId: string,
+      data: ToCItemType[],
+      isCreate: boolean | undefined,
+    ) => {
+      if (activeTabIdRef.current !== tabId) {
+        return;
+      }
+      handleTocUpdateForTab(tabId, data, isCreate);
+    },
+    [handleTocUpdateForTab],
+  );
 
-  const { extensions, commentAnchorsRef, draftAnchorsRef, storeApiRef } =
+  const {
+    buildExtensionsForTab,
+    commentAnchorsRef,
+    draftAnchorsRef,
+    storeApiRef,
+  } =
     useEditorExtension({
       ydoc,
       onError,
@@ -253,17 +421,12 @@ export const useTabEditor = ({
       isAIAgentEnabled,
       hasAvailableModels,
       activeCommentId,
-      onCommentActivated: (commentId) => {
-        setActiveCommentId(commentId || null);
-        if (commentId) {
-          setTimeout(() => focusCommentWithActiveId(commentId));
-        }
-      },
-      onTocUpdate: handleTocUpdate,
+      onCommentActivated: handleCommentActivatedForTab,
+      onTocUpdateForTab: handleTocUpdateForActiveTab,
       externalExtensions,
-      activeTabId,
       initialCommentAnchors,
       isSuggestionMode,
+      dBlockRuntimeStateRef: resolvedDBlockRuntimeStateRef,
     });
 
   const { handleCommentInteraction, handleCommentClick } =
@@ -279,6 +442,10 @@ export const useTabEditor = ({
 
   const focusSubmittedSuggestionFromEditorEvent = useCallback(
     (view: EditorView, event: Event) => {
+      if (!isEditorViewInsideActiveRoot(view, activeEditorRef.current)) {
+        return false;
+      }
+
       if (isFocusModeRef.current) {
         return false;
       }
@@ -314,143 +481,398 @@ export const useTabEditor = ({
   );
   const isInitialEditorCreation = useRef(true);
   const [slides, setSlides] = useState<string[]>([]);
-  const memoizedExtensions = useMemo(() => extensions, [extensions]);
+  const [editor, setEditor] = useState<Editor | null>(null);
+  const [cachedEditorEntries, setCachedEditorEntries] = useState<
+    CachedTabEditorRenderEntry[]
+  >([]);
+  const cachedEditorsRef = useRef<Map<string, CachedTabEditorEntry>>(
+    new Map(),
+  );
+  const readyStateRef = useRef(true);
+  const isPreviewModeRef = useRef(isPreviewMode);
+  isPreviewModeRef.current = isPreviewMode;
+  const unFocusedRef = useRef(unFocused);
+  unFocusedRef.current = unFocused;
 
   useEffect(() => {
     if (!activeTabId) return;
     setActiveCommentId(null);
   }, [activeTabId, setActiveCommentId]);
 
-  const editor = useEditor(
-    {
-      extensions: memoizedExtensions,
-      editorProps: {
-        clipboardTextSerializer(content) {
-          return content.content.textBetween(0, content.content.size, '\n\n');
-        },
-        ...DdocEditorProps,
-        handleDOMEvents: {
-          mousedown: focusSubmittedSuggestionFromEditorEvent,
-          click: focusSubmittedSuggestionFromEditorEvent,
-          mouseover: handleCommentInteraction,
-          keydown: (_view, event) => {
-            // prevent default event listeners from firing when slash command is active
-            if (['ArrowUp', 'ArrowDown', 'Enter'].includes(event.key)) {
-              const slashCommand = document.querySelector('#slash-command');
-              const emojiList = document.querySelector('#emoji-list');
-              if (slashCommand || emojiList) {
-                return true;
-              }
-            }
+  const syncCachedEditorRenderEntries = useCallback(() => {
+    const currentActiveTabId = activeTabIdRef.current;
+    const entries = Array.from(cachedEditorsRef.current.values());
+
+    setCachedEditorEntries(
+      entries.map((entry) => ({
+        tabId: entry.tabId,
+        editor: entry.editor,
+        isActive: entry.tabId === currentActiveTabId,
+      })),
+    );
+  }, []);
+
+  const destroyCachedEditorEntry = useCallback(
+    (entry: CachedTabEditorEntry) => {
+      if (entry.idleEvictionTimer !== null) {
+        window.clearTimeout(entry.idleEvictionTimer);
+        entry.idleEvictionTimer = null;
+      }
+
+      clearTableOfContentsStorage(entry.editor);
+      destroyEditorWithYSyncCleanup(entry.editor);
+      clearTableOfContentsStorage(entry.editor);
+
+      if (activeEditorRef.current === entry.editor) {
+        activeEditorRef.current = null;
+      }
+      if (editorRef?.current === entry.editor) {
+        editorRef.current = null;
+      }
+    },
+    [editorRef],
+  );
+
+  const destroyAllCachedEditors = useCallback(() => {
+    cachedEditorsRef.current.forEach((entry) => {
+      destroyCachedEditorEntry(entry);
+    });
+    cachedEditorsRef.current.clear();
+    activeEditorRef.current = null;
+    setEditor(null);
+    syncCachedEditorRenderEntries();
+  }, [destroyCachedEditorEntry, syncCachedEditorRenderEntries]);
+
+  const applyCachedEditorActivity = useCallback(() => {
+    const currentActiveTabId = activeTabIdRef.current;
+
+    cachedEditorsRef.current.forEach((entry) => {
+      const isActive = entry.tabId === currentActiveTabId;
+      if (entry.editor.isDestroyed) {
+        return;
+      }
+
+      setInactiveEditorDOMState(entry.editor, !isActive);
+
+      if (isActive) {
+        setEditorEditableState(entry.editor, readyStateRef.current);
+        return;
+      }
+
+      setEditorEditableState(entry.editor, false);
+      blurEditorDOM(entry.editor);
+    });
+  }, []);
+
+  const scheduleInactiveLargeEditorEvictions = useCallback(() => {
+    if (typeof window === 'undefined') {
+      return;
+    }
+
+    const currentActiveTabId = activeTabIdRef.current;
+    cachedEditorsRef.current.forEach((entry) => {
+      if (entry.tabId === currentActiveTabId) {
+        if (entry.idleEvictionTimer !== null) {
+          window.clearTimeout(entry.idleEvictionTimer);
+          entry.idleEvictionTimer = null;
+        }
+        return;
+      }
+
+      if (entry.idleEvictionTimer !== null || !isLargeDBlockDocument(entry.editor)) {
+        return;
+      }
+
+      entry.idleEvictionTimer = window.setTimeout(() => {
+        entry.idleEvictionTimer = null;
+
+        if (activeTabIdRef.current === entry.tabId) {
+          return;
+        }
+
+        const currentEntry = cachedEditorsRef.current.get(entry.tabId);
+        if (currentEntry !== entry || !isLargeDBlockDocument(entry.editor)) {
+          return;
+        }
+
+        destroyCachedEditorEntry(entry);
+        cachedEditorsRef.current.delete(entry.tabId);
+        syncCachedEditorRenderEntries();
+      }, INACTIVE_LARGE_EDITOR_IDLE_EVICTION_MS);
+    });
+  }, [destroyCachedEditorEntry, syncCachedEditorRenderEntries]);
+
+  const enforceEditorCacheLimit = useCallback(() => {
+    const cache = cachedEditorsRef.current;
+    const overflow = cache.size - TAB_EDITOR_CACHE_SIZE;
+    if (overflow <= 0) {
+      scheduleInactiveLargeEditorEvictions();
+      return;
+    }
+
+    const currentActiveTabId = activeTabIdRef.current;
+    const evictionCandidates = Array.from(cache.values())
+      .filter((entry) => entry.tabId !== currentActiveTabId)
+      .sort((a, b) => a.lastUsedAt - b.lastUsedAt)
+      .slice(0, overflow);
+
+    evictionCandidates.forEach((entry) => {
+      destroyCachedEditorEntry(entry);
+      cache.delete(entry.tabId);
+    });
+
+    scheduleInactiveLargeEditorEvictions();
+  }, [destroyCachedEditorEntry, scheduleInactiveLargeEditorEvictions]);
+
+  const createEditorForTab = useCallback(
+    (tabId: string) => {
+      const shouldAutofocus =
+        !unFocusedRef.current &&
+        isInitialEditorCreation.current &&
+        activeTabIdRef.current === tabId;
+
+      const createdEditor = new Editor({
+        extensions: buildExtensionsForTab(tabId),
+        editorProps: {
+          clipboardTextSerializer(content) {
+            return content.content.textBetween(0, content.content.size, '\n\n');
           },
-          blur: () => {
-            requestAnimationFrame(() => {
+          ...DdocEditorProps,
+          handleDOMEvents: {
+            mousedown: focusSubmittedSuggestionFromEditorEvent,
+            click: focusSubmittedSuggestionFromEditorEvent,
+            mouseover: (view, event) => {
+              if (!isEditorViewInsideActiveRoot(view, activeEditorRef.current)) {
+                return false;
+              }
+              return handleCommentInteraction(view, event);
+            },
+            keydown: (view, event) => {
+              if (!isEditorViewInsideActiveRoot(view, activeEditorRef.current)) {
+                return false;
+              }
+              // prevent default event listeners from firing when slash command is active
+              if (['ArrowUp', 'ArrowDown', 'Enter'].includes(event.key)) {
+                const ownerDocument = view.dom.ownerDocument;
+                const slashCommand =
+                  ownerDocument.getElementById('slash-command');
+                const emojiList = ownerDocument.getElementById('emoji-list');
+                if (slashCommand || emojiList) {
+                  return true;
+                }
+              }
+              return false;
+            },
+            blur: (view) => {
+              if (!isEditorViewInsideActiveRoot(view, activeEditorRef.current)) {
+                return false;
+              }
               requestAnimationFrame(() => {
-                // Let focus transfer settle before clearing active comment
-                // state; clicks into floating thread UI blur the editor first.
-                if (hasVisibleFloatingCommentCard()) {
-                  return;
-                }
-
-                editor?.commands.unsetCommentActive();
-              });
-            });
-          },
-        },
-        handleClick: (view, pos, event) => {
-          // 1. Check for Modifier Keys (Ctrl or Cmd)
-          const isModifierPressed = event.metaKey || event.ctrlKey;
-          // 2. Check if the clicked element is a link
-          // In Firefox, event.target can be a text node which lacks closest()
-          const target = getInlineCommentEventTarget(event.target);
-
-          const link = target?.closest<HTMLAnchorElement>('a');
-          if (link?.href) {
-            // Fragment links with heading= param should scroll within the document. Only check origin (not pathname) since the same doc has  different paths (i.e: shareable link vs owner link).
-            const url = new URL(link.href, window.location.href);
-            if (url.hash && url.origin === window.location.origin) {
-              const hash = decodeURIComponent(url.hash.slice(1));
-              const params = new URLSearchParams(hash);
-              const headingParam = params.get('heading');
-              if (headingParam) {
-                event.preventDefault();
-                const id = headingParam.split('-').pop();
-                if (id) {
-                  const allHeadings =
-                    document.querySelectorAll('[data-toc-id]');
-                  const element = Array.from(allHeadings).find((el) =>
-                    (el as HTMLElement).dataset.tocId?.includes(id),
-                  );
-                  if (element) {
-                    const scrollContainer = getEditorScrollContainer({
-                      targetElement: element as HTMLElement,
-                      editorRoot: view.dom as HTMLElement,
-                    });
-                    if (scrollContainer) {
-                      requestAnimationFrame(() => {
-                        const containerRect =
-                          scrollContainer.getBoundingClientRect();
-                        const elementRect = (
-                          element as HTMLElement
-                        ).getBoundingClientRect();
-                        scrollContainer.scrollBy({
-                          top: elementRect.top - containerRect.top,
-                          behavior: 'smooth',
-                        });
-                      });
-                    }
-                    return true;
+                requestAnimationFrame(() => {
+                  // Let focus transfer settle before clearing active comment
+                  // state; clicks into floating thread UI blur the editor first.
+                  if (hasVisibleFloatingCommentCard()) {
+                    return;
                   }
-                }
-                // Heading not found in current doc — fall through to
-                // open in new tab (navigates to the other ddoc).
-              }
-            }
 
-            if (isPreviewMode) {
+                  activeEditorRef.current?.commands.unsetCommentActive();
+                });
+              });
+              return false;
+            },
+          },
+          handleClick: (view, pos, event) => {
+            if (!isEditorViewInsideActiveRoot(view, activeEditorRef.current)) {
               return false;
             }
+            // 1. Check for Modifier Keys (Ctrl or Cmd)
+            const isModifierPressed = event.metaKey || event.ctrlKey;
+            // 2. Check if the clicked element is a link
+            // In Firefox, event.target can be a text node which lacks closest()
+            const target = getInlineCommentEventTarget(event.target);
 
-            const isTwitter = link?.textContent?.match(TWITTER_REGEX) ?? false;
+            const link = target?.closest<HTMLAnchorElement>('a');
+            if (link?.href) {
+              // Fragment links with heading= param should scroll within the document. Only check origin (not pathname) since the same doc has  different paths (i.e: shareable link vs owner link).
+              const url = new URL(link.href, window.location.href);
+              if (url.hash && url.origin === window.location.origin) {
+                const hash = decodeURIComponent(url.hash.slice(1));
+                const params = new URLSearchParams(hash);
+                const headingParam = params.get('heading');
+                if (headingParam) {
+                  event.preventDefault();
+                  const id = headingParam.split('-').pop();
+                  if (id) {
+                    const allHeadings =
+                      view.dom.querySelectorAll('[data-toc-id]');
+                    const element = Array.from(allHeadings).find((el) =>
+                      (el as HTMLElement).dataset.tocId?.includes(id),
+                    );
+                    if (element) {
+                      const scrollContainer = getEditorScrollContainer({
+                        targetElement: element as HTMLElement,
+                        editorRoot: view.dom as HTMLElement,
+                      });
+                      if (scrollContainer) {
+                        requestAnimationFrame(() => {
+                          const containerRect =
+                            scrollContainer.getBoundingClientRect();
+                          const elementRect = (
+                            element as HTMLElement
+                          ).getBoundingClientRect();
+                          scrollContainer.scrollBy({
+                            top: elementRect.top - containerRect.top,
+                            behavior: 'smooth',
+                          });
+                        });
+                      }
+                      return true;
+                    }
+                  }
+                  // Heading not found in current doc — fall through to
+                  // open in new tab (navigates to the other ddoc).
+                }
+              }
 
-            if (isTwitter) {
-              if (isModifierPressed) {
+              if (isPreviewModeRef.current) {
+                return false;
+              }
+
+              const isTwitter =
+                link?.textContent?.match(TWITTER_REGEX) ?? false;
+
+              if (isTwitter) {
+                if (isModifierPressed) {
+                  event.preventDefault();
+                  window.open(link.href, '_blank');
+                  return true;
+                }
+              } else {
                 event.preventDefault();
                 window.open(link.href, '_blank');
                 return true;
               }
-            } else {
-              event.preventDefault();
-              window.open(link.href, '_blank');
-              return true;
             }
-          }
-          // --- COMMENT LOGIC ---
-          // If the Twitter logic didn't claim the event, delegate to handleCommentClick.
-          // We must return its result so Tiptap knows if the comment click was handled.
-          if (handleCommentClick) {
-            return handleCommentClick(view, pos, event);
-          }
+            // --- COMMENT LOGIC ---
+            // If the Twitter logic didn't claim the event, delegate to handleCommentClick.
+            // We must return its result so Tiptap knows if the comment click was handled.
+            if (handleCommentClick) {
+              return handleCommentClick(view, pos, event);
+            }
 
-          return false;
+            return false;
+          },
+          attributes: {
+            spellCheck: 'true',
+          },
         },
-        attributes: {
-          spellCheck: 'true',
-        },
-      },
-      textDirection: 'auto',
-      autofocus:
-        unFocused || !isInitialEditorCreation.current ? false : 'start',
-      immediatelyRender: false,
-      shouldRerenderOnTransaction: false,
+        textDirection: 'auto',
+        autofocus: shouldAutofocus ? 'start' : false,
+      });
+
+      isInitialEditorCreation.current = false;
+      return createdEditor;
     },
-    [memoizedExtensions, isPresentationMode, isPreviewMode],
+    [
+      buildExtensionsForTab,
+      focusSubmittedSuggestionFromEditorEvent,
+      handleCommentClick,
+      handleCommentInteraction,
+    ],
   );
 
+  const ensureCachedEditor = useCallback(
+    (tabId: string) => {
+      const cache = cachedEditorsRef.current;
+      let entry = cache.get(tabId);
+
+      if (!entry || entry.editor.isDestroyed) {
+        entry = {
+          tabId,
+          editor: createEditorForTab(tabId),
+          lastUsedAt: Date.now(),
+          idleEvictionTimer: null,
+        };
+        cache.set(tabId, entry);
+      }
+
+      entry.lastUsedAt = Date.now();
+      return entry;
+    },
+    [createEditorForTab],
+  );
+
+  const didInitializeCacheFactoryRef = useRef(false);
+
+  useLayoutEffect(() => {
+    if (!didInitializeCacheFactoryRef.current) {
+      didInitializeCacheFactoryRef.current = true;
+      return;
+    }
+
+    destroyAllCachedEditors();
+  }, [
+    buildExtensionsForTab,
+    destroyAllCachedEditors,
+    isPresentationMode,
+    isPreviewMode,
+    isVersionMode,
+  ]);
+
+  useLayoutEffect(() => {
+    if (!activeTabId) {
+      activeEditorRef.current = null;
+      setEditor(null);
+      applyCachedEditorActivity();
+      syncCachedEditorRenderEntries();
+      return;
+    }
+
+    const entry = ensureCachedEditor(activeTabId);
+    activeEditorRef.current = entry.editor;
+    setEditor(entry.editor);
+    applyCachedEditorActivity();
+    enforceEditorCacheLimit();
+    syncCachedEditorRenderEntries();
+  }, [
+    activeTabId,
+    applyCachedEditorActivity,
+    enforceEditorCacheLimit,
+    ensureCachedEditor,
+    syncCachedEditorRenderEntries,
+  ]);
+
+  const tabIdsKey = useMemo(() => (tabIds ?? []).join('|'), [tabIds]);
+
   useEffect(() => {
+    if (!tabIds || tabIds.length === 0) {
+      return;
+    }
+
+    const validTabIds = new Set(tabIds);
+    let changed = false;
+
+    cachedEditorsRef.current.forEach((entry, tabId) => {
+      if (validTabIds.has(tabId)) {
+        return;
+      }
+
+      destroyCachedEditorEntry(entry);
+      cachedEditorsRef.current.delete(tabId);
+      changed = true;
+    });
+
+    if (changed) {
+      syncCachedEditorRenderEntries();
+    }
+  }, [destroyCachedEditorEntry, syncCachedEditorRenderEntries, tabIds, tabIdsKey]);
+
+  useEffect(() => {
+    activeEditorRef.current = editor;
     if (!editorRef) return;
     editorRef.current = editor ?? null;
   }, [editor, editorRef]);
+
   const isCollaborationEnabled = useMemo(() => {
     return collabEnabled;
   }, [collabEnabled]);
@@ -476,35 +898,70 @@ export const useTabEditor = ({
     }
   }, [editor, isSuggestionMode]);
 
-  // Fix for TableOfContents not updating in Tiptap v3
+  // Fix for TableOfContents not updating in Tiptap v3, but keep the refresh
+  // scoped to heading transactions so paragraph typing does not churn ToC DOM.
   const tocDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tocIdleTaskRef = useRef<ScheduledIdleTask>(null);
+  const tocRefreshRequestIdRef = useRef(0);
+
+  const scheduleActiveTableOfContentsRefresh = useCallback(
+    (delayMs: number) => {
+      if (!editor || editor.isDestroyed) return;
+
+      if (tocDebounceRef.current) {
+        clearTimeout(tocDebounceRef.current);
+      }
+
+      tocDebounceRef.current = setTimeout(() => {
+        tocDebounceRef.current = null;
+        const requestId = ++tocRefreshRequestIdRef.current;
+        cancelIdleTask(tocIdleTaskRef.current);
+
+        tocIdleTaskRef.current = scheduleIdleTask(() => {
+          tocIdleTaskRef.current = null;
+          if (
+            requestId === tocRefreshRequestIdRef.current &&
+            activeEditorRef.current === editor &&
+            !editor.isDestroyed
+          ) {
+            editor.commands.updateTableOfContents();
+          }
+        });
+      }, delayMs);
+    },
+    [editor],
+  );
 
   useEffect(() => {
     if (!editor) return;
 
-    const handleUpdate = () => {
-      if (editor && !editor.isDestroyed) {
-        if (tocDebounceRef.current) {
-          clearTimeout(tocDebounceRef.current);
-        }
-        tocDebounceRef.current = setTimeout(() => {
-          tocDebounceRef.current = null;
-          if (!editor.isDestroyed) {
-            editor.commands.updateTableOfContents();
-          }
-        }, 300);
+    scheduleActiveTableOfContentsRefresh(0);
+
+    const handleTransaction = ({
+      transaction,
+    }: {
+      transaction: Transaction;
+    }) => {
+      if (
+        activeEditorRef.current === editor &&
+        transactionTouchesHeading(transaction)
+      ) {
+        scheduleActiveTableOfContentsRefresh(300);
       }
     };
 
-    editor.on('update', handleUpdate);
+    editor.on('transaction', handleTransaction);
 
     return () => {
-      editor.off('update', handleUpdate);
+      editor.off('transaction', handleTransaction);
       if (tocDebounceRef.current) {
         clearTimeout(tocDebounceRef.current);
       }
+      cancelIdleTask(tocIdleTaskRef.current);
+      tocIdleTaskRef.current = null;
+      tocRefreshRequestIdRef.current += 1;
     };
-  }, [editor]);
+  }, [editor, scheduleActiveTableOfContentsRefresh]);
 
   // Editor ready state handler
   // Editability is disabled only during active content sync (server merging
@@ -520,8 +977,9 @@ export const useTabEditor = ({
   }, [isPreviewMode, isSuggestionMode, isCollaborationEnabled, isSyncing]);
 
   useEffect(() => {
-    editor?.setEditable(readyState);
-  }, [editor, readyState]);
+    readyStateRef.current = readyState;
+    applyCachedEditorActivity();
+  }, [applyCachedEditorActivity, readyState]);
 
   // In preview mode the editor is non-editable so the browser natively
   // follows <a target="_blank">.  ProseMirror's handleClick pipeline
@@ -532,7 +990,10 @@ export const useTabEditor = ({
 
     const handler = (event: MouseEvent) => {
       const target = getInlineCommentEventTarget(event.target);
-      if (!target?.closest?.('#editor')) return;
+      const activeEditorRoot = activeEditorRef.current?.view.dom;
+      if (!activeEditorRoot || !target || !activeEditorRoot.contains(target)) {
+        return;
+      }
       const link = target.closest<HTMLAnchorElement>('a');
       if (!link?.href) return;
 
@@ -548,13 +1009,14 @@ export const useTabEditor = ({
         const id = headingParam.split('-').pop();
         if (id) {
           const el = Array.from(
-            document.querySelectorAll('[data-toc-id]'),
+            activeEditorRoot.querySelectorAll('[data-toc-id]'),
           ).find((node) => (node as HTMLElement).dataset.tocId?.includes(id));
           if (el) {
             event.preventDefault();
             event.stopPropagation();
             const scrollContainer = getEditorScrollContainer({
               targetElement: el as HTMLElement,
+              editorRoot: activeEditorRoot,
             });
             if (scrollContainer) {
               requestAnimationFrame(() => {
@@ -815,7 +1277,7 @@ export const useTabEditor = ({
       statsDebounceRef.current = setTimeout(() => {
         statsDebounceRef.current = null;
 
-        if (editor && !editor.isDestroyed) {
+        if (editor && activeEditorRef.current === editor && !editor.isDestroyed) {
           setCharacterCount?.(editor.storage.characterCount.characters() ?? 0);
           setWordCount?.(editor.storage.characterCount.words() ?? 0);
 
@@ -826,7 +1288,6 @@ export const useTabEditor = ({
               return;
             }
 
-            const html = editor.getHTML();
             const requestId = ++pageCountRequestIdRef.current;
             // Cancel the queued estimate before scheduling a new one, else
             // slower stale HTML can win after a newer edit.
@@ -835,12 +1296,22 @@ export const useTabEditor = ({
             // competes with input responsiveness.
             pageCountIdleTaskRef.current = scheduleIdleTask(() => {
               pageCountIdleTaskRef.current = null;
+              if (
+                requestId !== pageCountRequestIdRef.current ||
+                activeEditorRef.current !== editor ||
+                editor.isDestroyed
+              ) {
+                return;
+              }
+
+              const html = editor.getHTML();
 
               pageCounter
                 .getPageCount(html)
                 .then((pageCount) => {
                   if (
                     requestId === pageCountRequestIdRef.current &&
+                    activeEditorRef.current === editor &&
                     editor &&
                     !editor.isDestroyed
                   ) {
@@ -851,6 +1322,7 @@ export const useTabEditor = ({
                 .catch(() => {
                   if (
                     requestId === pageCountRequestIdRef.current &&
+                    activeEditorRef.current === editor &&
                     editor &&
                     !editor.isDestroyed
                   ) {
@@ -1055,11 +1527,9 @@ export const useTabEditor = ({
   // Destroy editor on unmount
   useEffect(() => {
     return () => {
-      if (editor) {
-        editor.destroy();
-      }
+      destroyAllCachedEditors();
     };
-  }, [editor]);
+  }, [destroyAllCachedEditors]);
 
   useDarkModeStyleCleanup(editor, initialContent, false);
 
@@ -1082,6 +1552,7 @@ export const useTabEditor = ({
 
   return {
     editor,
+    cachedEditorEntries,
     ref,
     slides,
     setSlides,
@@ -1138,15 +1609,15 @@ const useTocState = (activeTabId: string) => {
   useEffect(() => {
     activeTabRef.current = activeTabId;
     const cached = tabToTocCacheRef.current[activeTabId];
-    if (cached) {
-      setTocItems(cached);
-    }
+    setTocItems(cached ?? []);
   }, [activeTabId]);
 
-  const handleTocUpdate = useCallback(
-    (data: ToCItemType[], isCreate: boolean | undefined) => {
-      const targetTabId = activeTabId;
-
+  const handleTocUpdateForTab = useCallback(
+    (
+      targetTabId: string,
+      data: ToCItemType[],
+      isCreate: boolean | undefined,
+    ) => {
       const cacheUpdate = () => {
         tabToTocCacheRef.current = {
           ...tabToTocCacheRef.current,
@@ -1173,13 +1644,21 @@ const useTocState = (activeTabId: string) => {
         }, 100);
       });
     },
-    [activeTabId],
+    [],
   );
+
+  useEffect(() => {
+    return () => {
+      if (tocUpdateTimeoutRef.current) {
+        clearTimeout(tocUpdateTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     tocItems,
     setTocItems,
-    handleTocUpdate,
+    handleTocUpdateForTab,
   };
 };
 
@@ -1199,12 +1678,16 @@ interface UseExtensionStackArgs {
   isAIAgentEnabled?: boolean;
   hasAvailableModels: boolean;
   activeCommentId: string | null;
-  onCommentActivated: (commentId: string) => void;
-  onTocUpdate: (data: ToCItemType[], isCreate: boolean | undefined) => void;
+  onCommentActivated: (tabId: string, commentId: string) => void;
+  onTocUpdateForTab: (
+    tabId: string,
+    data: ToCItemType[],
+    isCreate: boolean | undefined,
+  ) => void;
   externalExtensions?: Record<string, AnyExtension>;
-  activeTabId: string;
   initialCommentAnchors?: SerializedCommentAnchor[];
   isSuggestionMode?: boolean;
+  dBlockRuntimeStateRef: DBlockRuntimeStateRef;
 }
 
 const useEditorExtension = ({
@@ -1220,16 +1703,25 @@ const useEditorExtension = ({
   isConnected,
   activeModel,
   maxTokens,
-  isAIAgentEnabled,
   hasAvailableModels,
   activeCommentId,
   onCommentActivated,
-  onTocUpdate,
+  onTocUpdateForTab,
   externalExtensions,
-  activeTabId,
   initialCommentAnchors,
   isSuggestionMode = false,
+  dBlockRuntimeStateRef,
 }: UseExtensionStackArgs) => {
+  const onErrorRef = useRef(onError);
+  onErrorRef.current = onError;
+  const onCopyHeadingLinkRef = useRef(onCopyHeadingLink);
+  onCopyHeadingLinkRef.current = onCopyHeadingLink;
+  const handleExtensionError = useCallback((error: string) => {
+    onErrorRef.current?.(error);
+  }, []);
+  const handleCopyHeadingLink = useCallback((link: string) => {
+    onCopyHeadingLinkRef.current?.(link);
+  }, []);
   const slashCommandConfigRef = useRef({
     isConnected,
     enableCollaboration,
@@ -1246,11 +1738,11 @@ const useEditorExtension = ({
   const createSlashCommand = useCallback(
     () =>
       SlashCommand(
-        (error: string) => onError?.(error),
+        handleExtensionError,
         ipfsImageUploadFn,
         slashCommandConfigRef,
       ),
-    [],
+    [handleExtensionError, ipfsImageUploadFn],
   );
 
   const initialCommentAnchorsKey = useMemo(
@@ -1287,125 +1779,124 @@ const useEditorExtension = ({
     null,
   );
 
-  const commentExtension = useMemo(
-    () =>
-      Comment.configure({
+  const buildExtensionsForTab = useCallback(
+    (tabId: string) => {
+      const tabCommentExtension = Comment.configure({
         HTMLAttributes: {
           class: 'inline-comment',
         },
-        onCommentActivated,
-      }),
-    [onCommentActivated],
+        onCommentActivated: (commentId: string) =>
+          onCommentActivated(tabId, commentId),
+      });
+
+      const coreExtensions: AnyExtension[] = [
+        ...defaultExtensions({
+          onError: handleExtensionError,
+          ipfsImageUploadFn,
+          metadataProxyUrl,
+          onCopyHeadingLink: handleCopyHeadingLink,
+          ipfsImageFetchFn,
+          fetchV1ImageFn,
+          onTocUpdate: (data, isCreate) =>
+            onTocUpdateForTab(tabId, data, isCreate),
+          hasAvailableModels,
+          dBlockRuntimeStateRef,
+        }),
+        createSlashCommand(),
+        customTextInputRules,
+        PageBreak,
+        tabCommentExtension,
+        Collaboration.configure({
+          document: ydoc,
+          field: tabId,
+        }),
+        CommentDecorationExtension.configure({
+          getAnchors: () => [
+            ...commentAnchorsRef.current,
+            ...draftAnchorsRef.current,
+          ],
+          getActiveCommentId: () => activeCommentIdRef.current,
+        }),
+        SuggestionTrackingExtension.configure({
+          getIsSuggestionMode: () => isSuggestionModeRef.current,
+          onTextInput: (text) =>
+            storeApiRef.current?.getState().appendToDraftAtCursor(text),
+          onReplaceTyping: (from, to, text) => {
+            const state = storeApiRef.current?.getState();
+            if (!state) return;
+            state.startDeleteDraft(from, to);
+            state.appendToDraftAtCursor(text);
+          },
+          onDeleteSelection: (from, to) =>
+            storeApiRef.current?.getState().startDeleteDraft(from, to),
+          onPasteLink: (from, to, href) =>
+            storeApiRef.current?.getState().startLinkDraft(from, to, href),
+          onDeleteAtCursor: (direction) =>
+            storeApiRef.current
+              ?.getState()
+              .deleteAtCursorOrUndoActiveDraft(direction),
+          onDeleteRangeWithoutSelection: (from, to) =>
+            storeApiRef.current
+              ?.getState()
+              .deleteRangeOrUndoActiveDraft(from, to),
+          onUndo: () =>
+            storeApiRef.current?.getState().undoLastKeystrokeInActiveDraft(),
+        }),
+        ...(externalExtensions
+          ? (Object.values(externalExtensions) as AnyExtension[])
+          : []),
+      ] as AnyExtension[];
+
+      if (!activeModel) {
+        return coreExtensions;
+      }
+
+      return [
+        ...coreExtensions.filter(
+          (ext) =>
+            ext.name !== 'aiAutocomplete' &&
+            ext.name !== 'aiWriter' &&
+            ext.name !== 'dBlock' &&
+            ext.name !== 'slash-command',
+        ),
+        AiAutocomplete.configure({
+          model: activeModel,
+          endpoint: activeModel.endpoint,
+          maxTokens: maxTokens,
+          temperature: 0.1,
+          tone: 'neutral',
+        }),
+        AIWriter,
+        createDBlockExtension({
+          hasAvailableModels,
+          ipfsImageUploadFn,
+          onCopyHeadingLink: handleCopyHeadingLink,
+          getRuntimeState: () => dBlockRuntimeStateRef.current,
+        }),
+        createSlashCommand(),
+      ] as AnyExtension[];
+    },
+    [
+      ipfsImageUploadFn,
+      metadataProxyUrl,
+      handleExtensionError,
+      handleCopyHeadingLink,
+      ipfsImageFetchFn,
+      fetchV1ImageFn,
+      onTocUpdateForTab,
+      hasAvailableModels,
+      dBlockRuntimeStateRef,
+      createSlashCommand,
+      ydoc,
+      externalExtensions,
+      activeModel,
+      maxTokens,
+      onCommentActivated,
+    ],
   );
 
-  const buildExtensions = useCallback(() => {
-    const coreExtensions = [
-      ...defaultExtensions({
-        onError: (error: string) => onError?.(error),
-        ipfsImageUploadFn,
-        metadataProxyUrl,
-        onCopyHeadingLink,
-        ipfsImageFetchFn,
-        fetchV1ImageFn,
-        onTocUpdate,
-      }),
-      createSlashCommand(),
-      customTextInputRules,
-      PageBreak,
-      commentExtension,
-      Collaboration.configure({
-        document: ydoc,
-        field: activeTabId,
-      }),
-      CommentDecorationExtension.configure({
-        getAnchors: () => [
-          ...commentAnchorsRef.current,
-          ...draftAnchorsRef.current,
-        ],
-        getActiveCommentId: () => activeCommentIdRef.current,
-      }),
-      SuggestionTrackingExtension.configure({
-        getIsSuggestionMode: () => isSuggestionModeRef.current,
-        onTextInput: (text) =>
-          storeApiRef.current?.getState().appendToDraftAtCursor(text),
-        onReplaceTyping: (from, to, text) => {
-          const state = storeApiRef.current?.getState();
-          if (!state) return;
-          state.startDeleteDraft(from, to);
-          state.appendToDraftAtCursor(text);
-        },
-        onDeleteSelection: (from, to) =>
-          storeApiRef.current?.getState().startDeleteDraft(from, to),
-        onPasteLink: (from, to, href) =>
-          storeApiRef.current?.getState().startLinkDraft(from, to, href),
-        onDeleteAtCursor: (direction) =>
-          storeApiRef.current
-            ?.getState()
-            .deleteAtCursorOrUndoActiveDraft(direction),
-        onDeleteRangeWithoutSelection: (from, to) =>
-          storeApiRef.current
-            ?.getState()
-            .deleteRangeOrUndoActiveDraft(from, to),
-        onUndo: () =>
-          storeApiRef.current?.getState().undoLastKeystrokeInActiveDraft(),
-      }),
-      ...(externalExtensions ? Object.values(externalExtensions) : []),
-    ];
-
-    return coreExtensions as unknown as AnyExtension[];
-  }, [
-    onError,
-    ipfsImageUploadFn,
-    metadataProxyUrl,
-    onCopyHeadingLink,
-    ipfsImageFetchFn,
-    fetchV1ImageFn,
-    onTocUpdate,
-    createSlashCommand,
-    commentExtension,
-    ydoc,
-    externalExtensions,
-    activeTabId,
-  ]);
-
-  const [extensions, setExtensions] =
-    useState<AnyExtension[]>(buildExtensions());
-
-  useEffect(() => {
-    if (activeTabId) {
-      setExtensions(buildExtensions());
-    }
-  }, [activeTabId]);
-
-  useEffect(() => {
-    if (!activeModel) return;
-
-    setExtensions((prev) => [
-      ...prev.filter(
-        (ext) =>
-          ext.name !== 'aiAutocomplete' &&
-          ext.name !== 'aiWriter' &&
-          ext.name !== 'dBlock' &&
-          ext.name !== 'slash-command',
-      ),
-      AiAutocomplete.configure({
-        model: activeModel,
-        endpoint: activeModel.endpoint,
-        maxTokens: maxTokens,
-        temperature: 0.1,
-        tone: 'neutral',
-      }),
-      AIWriter,
-      DBlock.configure({
-        hasAvailableModels,
-      }),
-      createSlashCommand(),
-    ]);
-  }, [activeModel, maxTokens, isAIAgentEnabled, createSlashCommand]);
-
   return {
-    extensions,
-    setExtensions,
+    buildExtensionsForTab,
     commentAnchorsRef,
     draftAnchorsRef,
     storeApiRef,
@@ -1543,7 +2034,7 @@ const useExtensionSyncWithCollaboration = ({
   // Register collaboration cursor plugin directly via editor.registerPlugin
   // instead of setExtensions, which would destroy and recreate the editor (causing scroll jump)
   useEffect(() => {
-    if (!editor || !awareness || !isReady) return;
+    if (!collabEnabled || !editor || !awareness || !isReady) return;
 
     const user = {
       name: session?.username || '',
@@ -1624,7 +2115,7 @@ const useExtensionSyncWithCollaboration = ({
       collaborationCleanupRef.current();
       collaborationCleanupRef.current = () => {};
     };
-  }, [editor, awareness, isReady]);
+  }, [collabEnabled, editor, awareness, isReady]);
 
   // Awareness update — separate effect watches session metadata (e.g. ENS resolution)
   useEffect(() => {

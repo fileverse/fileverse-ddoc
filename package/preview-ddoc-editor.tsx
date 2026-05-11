@@ -19,6 +19,7 @@ import { EditorProvider } from './context/editor-context';
 import { fadeInTransition, slideUpTransition } from './components/motion-div';
 import { PreviewContentLoader } from './components/preview-content-loader';
 import { DocumentOutline } from './components/toc/document-outline';
+import { DBlockToolbarProvider } from './extensions/d-block/dblock-toolbar';
 
 const PreviewDdocEditorContent = forwardRef(
   (
@@ -78,11 +79,13 @@ const PreviewDdocEditorContent = forwardRef(
       ref: editorRef,
       isContentLoading,
       ydoc,
+      dBlockRuntimeState,
       ...rest
     } = useDdocEditor({
       ipfsImageFetchFn,
       fetchV1ImageFn,
       isPreviewMode,
+      isPreviewEditor: true,
       initialContent,
       versionHistoryState,
       walletAddress,
@@ -263,11 +266,16 @@ const PreviewDdocEditorContent = forwardRef(
                         />
                       </div>
                     )}
-                    <EditorContent
+                    <DBlockToolbarProvider
                       editor={editor}
-                      id="editor"
-                      className={cn('w-full h-auto py-8', contentClassName)}
-                    />
+                      runtimeState={dBlockRuntimeState}
+                    >
+                      <EditorContent
+                        editor={editor}
+                        data-ddoc-editor-root="true"
+                        className={cn('w-full h-auto py-8', contentClassName)}
+                      />
+                    </DBlockToolbarProvider>
                   </EditingProvider>
                 </div>
               </EditorProvider>,

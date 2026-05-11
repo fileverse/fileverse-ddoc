@@ -3,52 +3,72 @@ import { Node } from '@tiptap/pm/model';
 import { NodeSelection } from '@tiptap/pm/state';
 import { Editor } from '@tiptap/react';
 import { useCallback } from 'react';
-import { expandHeadingContent } from '../extensions/d-block/use-heading-collapse';
+import { expandHeadingContent } from '../extensions/d-block/dblock-collapse';
 import { useAIWriterActiveState } from './use-ai-writer-active-state';
+
+export interface ResolvedContentItem {
+  editor: Editor;
+  node: Node;
+  pos: number;
+}
 
 const useContentItemActions = (
   editor: Editor,
-  currentNode: Node | null,
-  currentNodePos: number,
+  resolveCurrentBlock: () => ResolvedContentItem | null,
 ) => {
   const hasActiveAIWriter = useAIWriterActiveState(editor);
   const resetTextFormatting = useCallback(() => {
-    const chain = editor.chain();
+    const current = resolveCurrentBlock();
+    if (!current) {
+      return;
+    }
 
-    chain.setNodeSelection(currentNodePos).unsetAllMarks();
+    const chain = current.editor.chain();
 
-    if (currentNode?.type.name !== 'paragraph') {
+    chain.setNodeSelection(current.pos).unsetAllMarks();
+
+    if (current.node.type.name !== 'paragraph') {
       chain.setParagraph();
     }
 
     chain.run();
-  }, [editor, currentNodePos, currentNode?.type.name]);
+  }, [resolveCurrentBlock]);
 
   const duplicateNode = useCallback(() => {
     if (hasActiveAIWriter) {
       return;
     }
-    editor.commands.setNodeSelection(currentNodePos);
+    const current = resolveCurrentBlock();
+    if (!current) {
+      return;
+    }
 
-    const { $anchor } = editor.state.selection;
+    current.editor.commands.setNodeSelection(current.pos);
+
+    const { $anchor } = current.editor.state.selection;
     const selectedNode =
-      $anchor.node(1) || (editor.state.selection as NodeSelection).node;
+      $anchor.node(1) || (current.editor.state.selection as NodeSelection).node;
 
-    editor
+    current.editor
       .chain()
       .setMeta('hideDragHandle', true)
       .insertContentAt(
-        currentNodePos + (currentNode?.nodeSize || 0),
+        current.pos + current.node.nodeSize,
         selectedNode.toJSON(),
       )
       .run();
-  }, [editor, currentNodePos, currentNode?.nodeSize]);
+  }, [hasActiveAIWriter, resolveCurrentBlock]);
 
   const copyNodeToClipboard = useCallback(() => {
-    editor
+    const current = resolveCurrentBlock();
+    if (!current) {
+      return;
+    }
+
+    current.editor
       .chain()
       .setMeta('hideDragHandle', true)
-      .setNodeSelection(currentNodePos)
+      .setNodeSelection(current.pos)
       .run();
 
     document.execCommand('copy');
@@ -57,20 +77,25 @@ const useContentItemActions = (
       toastType: 'mini',
       variant: 'success',
     });
-  }, [editor, currentNodePos]);
+  }, [resolveCurrentBlock]);
 
   const deleteNode = useCallback(() => {
+    const current = resolveCurrentBlock();
+    if (!current) {
+      return;
+    }
+
     // First, check if we're deleting a heading and expand its content if needed
-    expandHeadingContent(editor, currentNodePos);
+    expandHeadingContent(current.editor, current.pos);
 
     // Then delete the node
-    editor
+    current.editor
       .chain()
       .setMeta('hideDragHandle', true)
-      .setNodeSelection(currentNodePos)
+      .setNodeSelection(current.pos)
       .deleteSelection()
       .run();
-  }, [editor, currentNodePos]);
+  }, [resolveCurrentBlock]);
 
   return {
     resetTextFormatting,

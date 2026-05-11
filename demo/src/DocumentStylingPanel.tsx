@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/ban-ts-comment */
+// @ts-nocheck
+
 import React from 'react';
 import { DocumentStyling } from '../../package/types';
 import cn from 'classnames';

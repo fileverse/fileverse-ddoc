@@ -343,6 +343,10 @@ li > ol > li > ol > li:before {
   word-break: break-word;
 }
 
+.d-block-hidden {
+  display: none !important;
+}
+
 .invalid-content {
   border: 1px solid #ea9999;
   padding: 10px;
@@ -479,7 +483,7 @@ div[data-type='page-break']:hover .remove-page-break-icon {
   animation: shift-toward-subtle 200ms forwards;
 }
 
-#editor {
+[data-ddoc-editor-root='true'] {
   position: relative;
   z-index: 1; /* make sure editor text stays above Grammarly background stuff */
 }

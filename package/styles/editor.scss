@@ -388,7 +388,7 @@
   width: 100%;
 }
 
-#editor {
+[data-ddoc-editor-root='true'] {
   padding-bottom: 4rem;
 }
 
