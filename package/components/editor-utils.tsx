@@ -268,7 +268,7 @@ export const useEditorToolbar = ({
     // Add keyboard shortcuts to the editor's keymap
     editor.setOptions({
       editorProps: {
-        handleKeyDown: (view, event) => {
+        handleKeyDown: (_, event) => {
           // Strikethrough shortcut (Ctrl + Shift + X for Windows/Linux | Cmd + Shift + X for Mac)
           if (
             (event.ctrlKey && event.shiftKey && event.code === 'KeyX') ||
@@ -755,6 +755,15 @@ export const useEditorToolbar = ({
       icon: 'PilcrowLeft',
       title: 'Set text direction to right-to-left',
       onClick: () => editor?.commands.setTextDirection('rtl'),
+      isActive: editor?.isActive('paragraph', { dir: 'rtl' }) ?? false,
+      group: 'More',
+      notVisible: 1560,
+    },
+    null,
+    {
+      icon: 'FileSearch',
+      title: 'Find/Replace',
+      onClick: () => (editor ? setShowReplacePopoverWithData(editor) : {}),
       isActive: editor?.isActive('paragraph', { dir: 'rtl' }) ?? false,
       group: 'More',
       notVisible: 1560,
