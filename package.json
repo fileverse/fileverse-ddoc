@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "3.3.7",
+  "version": "3.3.8",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
@@ -122,11 +122,12 @@
     "@dnd-kit/sortable": ">=10.0.0",
     "@dnd-kit/utilities": ">=3.2.2",
     "@fileverse/crypto": ">=0.0.21",
-    "@fileverse/ui": ">=5.1.7",
+    "@fileverse/ui": ">=5.1.8",
     "framer-motion": ">=11.2.10",
     "frimousse": ">=0.3.0",
     "viem": ">=2.13.8",
-    "@fileverse/ens": "0.0.3"
+    "@fileverse/ens": "0.0.3",
+    "mermaid": "11.14.0"
   },
   "devDependencies": {
     "@types/dompurify": "^3.0.5",

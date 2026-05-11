@@ -371,6 +371,14 @@
   }
 }
 
+[data-mode='focus'] {
+  :is(.ProseMirror, .ProseMirror-focused) {
+    p.is-empty:not(.is-editor-empty)::before {
+      content: none;
+    }
+  }
+}
+
 .table-wrapper,
 .is-table div {
   padding: 0px;
@@ -1193,16 +1201,17 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   @apply cursor-pointer transition-all;
   background-color: rgba(251, 52, 73, 0.04);
   text-decoration: line-through;
-  text-decoration-color: #FB3449;
+  text-decoration-color: #fb3449;
   text-decoration-thickness: 1.5px;
 
   &[data-active='true'],
   &:hover {
-background-color: rgba(251, 52, 73, 0.08);
+    background-color: rgba(251, 52, 73, 0.08);
   }
 
   .dark & {
-        background-color: #450A0A;    text-decoration-color: #F87171;
+    background-color: #450a0a;
+    text-decoration-color: #f87171;
 
     &[data-active='true'],
     &:hover {
@@ -1223,7 +1232,7 @@ background-color: rgba(251, 52, 73, 0.08);
 
   .dark &,
   .theme-green & {
-    color: #44FF00;
+    color: #44ff00;
     background-color: rgba(255, 255, 255, 0.04);
 
     &[data-active='true'],
@@ -1235,7 +1244,7 @@ background-color: rgba(251, 52, 73, 0.08);
 
 .suggestion-link {
   @apply cursor-pointer transition-all;
-  color: #5C0AFF;
+  color: #5c0aff;
   background-color: rgba(92, 10, 255, 0.04);
   text-decoration: underline;
   text-decoration-thickness: 2px;
@@ -1249,7 +1258,7 @@ background-color: rgba(251, 52, 73, 0.08);
 
   .dark &,
   .theme-green & {
-    color: #5BC3EB;
+    color: #5bc3eb;
     text-decoration-color: rgba(91, 195, 235, 0.28);
 
     &[data-active='true'],

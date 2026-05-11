@@ -817,6 +817,7 @@ const DdocEditor = forwardRef(
                           minHeight: '100%',
                           ...(!isFocusMode ? getCanvasStyle() || {} : {}),
                         }}
+                        data-mode={isFocusMode ? 'focus' : 'normal'}
                       >
                         {isMobile && isPreviewMode && (
                           <p className="text-center color-text-secondary text-helper-text-sm flex gap-2 items-center justify-center mt-3">

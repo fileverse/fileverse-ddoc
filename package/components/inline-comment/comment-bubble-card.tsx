@@ -134,7 +134,6 @@ export const CommentBubbleCard = ({
         initialComment={currentComment?.content}
         selectedContent={currentComment?.selectedContent}
         isDisabled={
-          /* @ts-expect-error ts */
           currentComment && !Object.hasOwn(currentComment, 'commentIndex')
         }
         isCommentOwner={currentComment?.username === username}
