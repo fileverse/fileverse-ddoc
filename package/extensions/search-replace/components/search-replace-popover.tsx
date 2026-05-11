@@ -228,20 +228,20 @@ const SearchReplace = ({ editor }: { editor: Editor | null }) => {
                 </div>
                 <div className="flex justify-end items-center gap-2">
                   <Button
-                    variant={'default'}
-                    size={'sm'}
-                    className="min-w-0"
-                    onClick={handleReplace}
-                  >
-                    Replace
-                  </Button>
-                  <Button
                     variant={'secondary'}
                     size={'sm'}
-                    className="min-w-0"
+                    className="min-w-0 text-body-sm-bold"
                     onClick={handleReplaceAll}
                   >
                     Replace All
+                  </Button>
+                  <Button
+                    variant={'default'}
+                    size={'sm'}
+                    className="min-w-0 text-body-sm-bold"
+                    onClick={handleReplace}
+                  >
+                    Replace
                   </Button>
                 </div>
               </motion.div>
