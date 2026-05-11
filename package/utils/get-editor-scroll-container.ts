@@ -64,3 +64,39 @@ export const getEditorScrollContainer = ({
 };
 
 export default getEditorScrollContainer;
+
+const scrollIntoView = ({
+  el,
+  editorRoot,
+  isNativeMobile,
+}: {
+  el: HTMLElement;
+  editorRoot?: HTMLElement | null;
+  isNativeMobile: boolean;
+}) => {
+  const scrollContainer = getEditorScrollContainer({
+    targetElement: el,
+    editorRoot,
+  });
+  if (scrollContainer) {
+    // Use requestAnimationFrame to ensure DOM updates are complete
+    requestAnimationFrame(() => {
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const elementRect = el.getBoundingClientRect();
+
+      // Calculate the scroll position to start the element at the top of the container
+      const scrollTop =
+        elementRect.top -
+        containerRect.top -
+        containerRect.height / (isNativeMobile ? 5 : 7) +
+        elementRect.height / (isNativeMobile ? 5 : 7);
+
+      scrollContainer.scrollBy({
+        top: scrollTop,
+        behavior: 'smooth',
+      });
+    });
+  }
+};
+
+export { scrollIntoView };

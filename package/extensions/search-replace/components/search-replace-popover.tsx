@@ -11,10 +11,11 @@ import {
 import { useShallow } from 'zustand/shallow';
 import { useSearchReplaceStore } from '../../../../package/stores/search-replace-store';
 import { useEscapeKey } from '../../../hooks/useEscapeKey';
-import { useState, useEffect, useReducer } from 'react';
+import { useState, useEffect, useReducer, useRef } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
 // import { useSearchReplace } from '../hooks/use-search-replace';
 import type { Editor } from '@tiptap/core';
+import { scrollIntoView } from '../../../utils/get-editor-scroll-container';
 
 const SearchReplace = ({ editor }: { editor: Editor | null }) => {
   const [, force] = useReducer((x) => x + 1, 0);
@@ -26,6 +27,7 @@ const SearchReplace = ({ editor }: { editor: Editor | null }) => {
     };
   }, [editor]);
   const [showReplace, setShowReplace] = useState(false);
+  const inputRef = useRef<HTMLInputElement>(null);
   const { searchTerm, replaceTerm, showSearchReplacePopover } =
     useSearchReplaceStore(
       useShallow((s) => ({
@@ -85,10 +87,17 @@ const SearchReplace = ({ editor }: { editor: Editor | null }) => {
     if (!editor) return;
     const { results, resultIndex } = editor.storage.searchAndReplace;
     const current = results[resultIndex];
-
     if (!current) return;
 
-    editor.chain().focus().setTextSelection(current).scrollIntoView().run();
+    const { node } = editor.view.domAtPos(current.from);
+
+    if (node instanceof HTMLElement) {
+      scrollIntoView({
+        el: node,
+        editorRoot: editor.view.dom as HTMLElement,
+        isNativeMobile: false,
+      });
+    }
   }
 
   function handleNext() {
@@ -101,6 +110,17 @@ const SearchReplace = ({ editor }: { editor: Editor | null }) => {
     if (!editor) return;
     editor.commands.previousSearchResult();
     gotoSelection();
+  }
+
+  function handleSearchInputKeydown(e: React.KeyboardEvent<HTMLInputElement>) {
+    if (e.code === 'Enter') {
+      if (e.shiftKey) {
+        handlePrevious();
+        return;
+      }
+      handleNext();
+    }
+    return;
   }
 
   return (
@@ -120,8 +140,10 @@ const SearchReplace = ({ editor }: { editor: Editor | null }) => {
             <TextField
               placeholder="Search text..."
               value={searchTerm}
+              ref={inputRef}
               className="border-none p-0"
               onChange={handleSearchTerm}
+              onKeyDown={handleSearchInputKeydown}
             />
             {results && results.length > 0 && (
               <span className="color-text-secondary text-sm">
