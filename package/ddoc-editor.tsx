@@ -10,6 +10,7 @@ import { useDdocEditor } from './use-ddoc-editor';
 import './styles/index.css';
 import {
   forwardRef,
+  useCallback,
   useEffect,
   useImperativeHandle,
   useMemo,
@@ -53,6 +54,7 @@ import {
 import { useFocusMode } from './hooks/use-focus-mode';
 import { FullScreenToolbar } from './components/fullscreen-toolbar';
 import { mergeTabAwareYjsUpdates } from './components/tabs/utils/tab-utils';
+import { DBlockToolbarProvider } from './extensions/d-block/dblock-toolbar';
 
 const DdocEditor = forwardRef(
   (
@@ -246,6 +248,7 @@ const DdocEditor = forwardRef(
 
     const {
       editor,
+      cachedEditorEntries,
       ref: editorRef,
       isContentLoading,
       ydoc,
@@ -271,6 +274,7 @@ const DdocEditor = forwardRef(
       commentAnchorsRef,
       draftAnchorsRef,
       storeApiRef,
+      dBlockRuntimeState,
     } = useDdocEditor({
       documentStyling,
       ipfsImageFetchFn,
@@ -555,6 +559,19 @@ const DdocEditor = forwardRef(
     // should editor overflow?
     const shouldScroll = scaledWidth > availableSpace;
     const editorContentRef = useRef<HTMLDivElement | null>(null);
+    const setActiveEditorContentRef = useCallback(
+      (node: HTMLDivElement | null, isActive: boolean) => {
+        if (isActive) {
+          editorContentRef.current = node;
+          return;
+        }
+
+        if (node && editorContentRef.current === node) {
+          editorContentRef.current = null;
+        }
+      },
+      [],
+    );
 
     const handleFocusModeMouseDown = (event: React.MouseEvent) => {
       if (!isFocusMode || !editor || event.button !== 0) return;
@@ -1008,23 +1025,73 @@ const DdocEditor = forwardRef(
                                         ) : null}
                                       </div>
                                     )}
-                                    <div className="grammarly-wrapper">
-                                      <EditorContent
-                                        editor={editor}
-                                        id="editor"
-                                        ref={editorContentRef}
-                                        className={cn(
-                                          'w-full h-auto',
-                                          isPreviewMode &&
-                                            'preview-mode max-sm:!pb-40',
-                                          activeModel !== undefined &&
-                                            isAIAgentEnabled &&
-                                            'has-available-models',
-                                          disableInlineComment &&
-                                            'hide-inline-comments',
-                                        )}
-                                      />
-                                    </div>
+                                    <DBlockToolbarProvider
+                                      editor={editor}
+                                      runtimeState={dBlockRuntimeState}
+                                    >
+                                      <div className="grammarly-wrapper">
+                                        {(cachedEditorEntries?.length
+                                          ? cachedEditorEntries
+                                          : editor
+                                            ? [
+                                                {
+                                                  tabId: activeTabId,
+                                                  editor,
+                                                  isActive: true,
+                                                },
+                                              ]
+                                            : []
+                                        ).map((entry) => (
+                                          <div
+                                            key={entry.tabId}
+                                            data-ddoc-editor-panel="true"
+                                            data-ddoc-editor-tab-id={
+                                              entry.tabId
+                                            }
+                                            aria-hidden={!entry.isActive}
+                                            style={{
+                                              position: entry.isActive
+                                                ? 'relative'
+                                                : 'absolute',
+                                              inset: entry.isActive
+                                                ? undefined
+                                                : 0,
+                                              width: '100%',
+                                              visibility: entry.isActive
+                                                ? 'visible'
+                                                : 'hidden',
+                                              pointerEvents: entry.isActive
+                                                ? undefined
+                                                : 'none',
+                                            }}
+                                          >
+                                            <EditorContent
+                                              editor={entry.editor}
+                                              data-ddoc-editor-root="true"
+                                              data-ddoc-editor-tab-id={
+                                                entry.tabId
+                                              }
+                                              ref={(node) =>
+                                                setActiveEditorContentRef(
+                                                  node,
+                                                  entry.isActive,
+                                                )
+                                              }
+                                              className={cn(
+                                                'w-full h-auto',
+                                                isPreviewMode &&
+                                                  'preview-mode max-sm:!pb-40',
+                                                activeModel !== undefined &&
+                                                  isAIAgentEnabled &&
+                                                  'has-available-models',
+                                                disableInlineComment &&
+                                                  'hide-inline-comments',
+                                              )}
+                                            />
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </DBlockToolbarProvider>
                                   </EditingProvider>
                                 </div>,
                                 'editor-transition',

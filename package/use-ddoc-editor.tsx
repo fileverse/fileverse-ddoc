@@ -1,9 +1,10 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { DdocProps } from './types';
 import { useTabEditor } from './hooks/use-tab-editor';
 import { useTabManager } from './hooks/use-tab-manager';
 import { useYjsSetup } from './hooks/use-yjs-setup';
 import { Editor } from '@tiptap/react';
+import type { DBlockRuntimeState } from './extensions/d-block/dblock-runtime';
 
 export const useDdocEditor = ({
   isPreviewMode,
@@ -40,8 +41,12 @@ export const useDdocEditor = ({
   onIndexedDbError,
   disableInlineComment,
   initialCommentAnchors,
+  isPreviewEditor = false,
   ...rest
-}: Partial<DdocProps> & { isFocusMode?: boolean }) => {
+}: Partial<DdocProps> & {
+  isFocusMode?: boolean;
+  isPreviewEditor?: boolean;
+}) => {
   const [isContentLoading, setIsContentLoading] = useState(true);
   const [isCollabContentLoading, setIsCollabContentLoading] = useState(true);
   const editorRef = useRef<Editor | null>(null);
@@ -49,6 +54,20 @@ export const useDdocEditor = ({
   const ddocContent = versionHistoryState?.content ?? initialContent;
 
   const collabEnabled = collaboration?.enabled === true;
+  const isCollaboratorsDoc = Boolean(
+    collabEnabled && !collaboration?.connection.isOwner,
+  );
+  const dBlockRuntimeState = useMemo<DBlockRuntimeState>(
+    () => ({
+      isPreviewMode: Boolean(isPreviewMode),
+      isPresentationMode: Boolean(isPresentationMode),
+      isPreviewEditor: Boolean(isPreviewEditor),
+      isCollaboratorsDoc,
+    }),
+    [isCollaboratorsDoc, isPresentationMode, isPreviewEditor, isPreviewMode],
+  );
+  const dBlockRuntimeStateRef = useRef(dBlockRuntimeState);
+  dBlockRuntimeStateRef.current = dBlockRuntimeState;
 
   const yjsSetup = useYjsSetup({
     onChange,
@@ -92,6 +111,10 @@ export const useDdocEditor = ({
     getEditor: () => editorRef.current,
     flushPendingUpdate: yjsSetup.flushPendingUpdate,
   });
+  const tabIds = useMemo(
+    () => tabManager.tabs.map((tab) => tab.id),
+    [tabManager.tabs],
+  );
 
   const tabEditor = useTabEditor({
     ydoc: yjsSetup.ydoc,
@@ -133,11 +156,13 @@ export const useDdocEditor = ({
     initialiseYjsIndexedDbProvider: yjsSetup.initialiseYjsIndexedDbProvider,
     externalExtensions,
     activeTabId: tabManager.activeTabId,
+    tabIds,
     hasTabState: tabManager.hasTabState,
     isVersionMode,
     theme,
     editorRef,
     initialCommentAnchors,
+    dBlockRuntimeStateRef,
   });
 
   const isOwner = collabEnabled ? collaboration.connection.isOwner : true;
@@ -156,6 +181,8 @@ export const useDdocEditor = ({
     isContentLoading: Boolean(aggregatedContentLoading),
     tabs: tabManager.tabs,
     hasTabState: tabManager.hasTabState,
+    dBlockRuntimeState,
+    dBlockRuntimeStateRef,
     isVersionMode,
     activeTabId: tabManager.activeTabId,
     setTabs: tabManager.setTabs,
