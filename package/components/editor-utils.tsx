@@ -376,10 +376,10 @@ export const useEditorToolbar = ({
             return true;
           }
 
-          if (event.code === 'KeyF' && event.metaKey) {
-            event.preventDefault();
-            setShowReplacePopoverWithData(editor);
-          }
+          // if (event.code === 'KeyF' && event.metaKey) {
+          //   event.preventDefault();
+          //   setShowReplacePopoverWithData(editor);
+          // }
           return false;
         },
       },

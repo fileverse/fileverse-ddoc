@@ -16,6 +16,8 @@ import { AnimatePresence, motion } from 'framer-motion';
 // import { useSearchReplace } from '../hooks/use-search-replace';
 import type { Editor } from '@tiptap/core';
 import { scrollIntoView } from '../../../utils/get-editor-scroll-container';
+import { setShowReplacePopoverWithData } from '../utils';
+import { useEventListener } from 'usehooks-ts';
 
 const SearchReplace = ({ editor }: { editor: Editor | null }) => {
   const [, force] = useReducer((x) => x + 1, 0);
@@ -47,6 +49,20 @@ const SearchReplace = ({ editor }: { editor: Editor | null }) => {
     setShowReplacePopover(false);
   }
 
+  const handleFindSearchOnKeydown = (ev: KeyboardEvent) => {
+    if (ev.code === 'KeyF' && ev.metaKey) {
+      ev.preventDefault();
+      if (editor) {
+        setShowReplacePopoverWithData(editor);
+      }
+    }
+    return;
+  };
+
+  //opens popover on cmd+f across the editor
+  useEventListener<'keydown'>('keydown', handleFindSearchOnKeydown);
+
+  //closes popover on esc key
   useEscapeKey(hidePopover);
 
   const results = editor?.storage.searchAndReplace.results;
