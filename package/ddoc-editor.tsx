@@ -818,7 +818,7 @@ const DdocEditor = forwardRef(
                         }}
                       >
                         {isMobile && isPreviewMode && (
-                          <p className="text-center color-text-secondary text-helper-text-sm flex gap-2 items-center justify-center mt-3">
+                          <p className="text-center color-text-secondary text-helper-text-sm flex gap-2 items-center justify-center mt-[28px]">
                             <LucideIcon
                               name={'LockKeyhole'}
                               className="w-[14px] h-[14px]"
@@ -1175,7 +1175,7 @@ const DdocEditor = forwardRef(
             <nav
               id="Navbar"
               className={cn(
-                'h-14 color-bg-default py-2 px-0 md:px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-[45] transition-all duration-300',
+                'min-h-14 color-bg-default py-2 px-0 md:px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-[45] transition-all duration-300',
                 {
                   'translate-y-0 opacity-100':
                     !isFocusMode && isNavbarVisible && !isPresentationMode,
