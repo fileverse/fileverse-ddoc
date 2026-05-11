@@ -42,7 +42,6 @@ const SearchReplace = ({ editor }: { editor: Editor | null }) => {
 
   function hidePopover() {
     if (editor) {
-      console.log('editor');
       editor.commands.setSearchTerm('');
     }
     setShowReplacePopover(false);
@@ -145,39 +144,49 @@ const SearchReplace = ({ editor }: { editor: Editor | null }) => {
               onChange={handleSearchTerm}
               onKeyDown={handleSearchInputKeydown}
             />
-            {results && results.length > 0 && (
-              <span className="color-text-secondary text-sm">
-                {`${typeof resultIndex === 'number' ? resultIndex + 1 : '?'}/${results.length}`}
-              </span>
+            {results && (
+              <>
+                {results.length > 0 ? (
+                  <span className="color-text-secondary text-sm">
+                    {`${typeof resultIndex === 'number' ? resultIndex + 1 : '?'}/${results.length}`}
+                  </span>
+                ) : (
+                  <span className="color-text-secondary text-xs shrink-0">
+                    No results found.
+                  </span>
+                )}
+              </>
             )}
-            <div className="flex items-center">
+            {results && results.length > 0 && (
               <div className="flex items-center">
-                <Tooltip text="Previous">
+                <div className="flex items-center">
+                  <Tooltip text="Previous">
+                    <IconButton
+                      icon={'ArrowUp'}
+                      variant={'ghost'}
+                      size="sm"
+                      onClick={handlePrevious}
+                    />
+                  </Tooltip>
+                  <Tooltip text="Next">
+                    <IconButton
+                      icon={'ArrowDown'}
+                      variant={'ghost'}
+                      size="sm"
+                      onClick={handleNext}
+                    />
+                  </Tooltip>
+                </div>
+                <Tooltip text="Replace">
                   <IconButton
-                    icon={'ArrowUp'}
+                    icon={'Replace'}
                     variant={'ghost'}
                     size="sm"
-                    onClick={handlePrevious}
-                  />
-                </Tooltip>
-                <Tooltip text="Next">
-                  <IconButton
-                    icon={'ArrowDown'}
-                    variant={'ghost'}
-                    size="sm"
-                    onClick={handleNext}
+                    onClick={toggleReplace}
                   />
                 </Tooltip>
               </div>
-              <Tooltip text="Replace">
-                <IconButton
-                  icon={'Replace'}
-                  variant={'ghost'}
-                  size="sm"
-                  onClick={toggleReplace}
-                />
-              </Tooltip>
-            </div>
+            )}
             <PopoverClose asChild onClick={hidePopover}>
               <IconButton icon={'X'} variant={'ghost'} size="sm" />
             </PopoverClose>
