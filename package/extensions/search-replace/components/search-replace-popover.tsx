@@ -11,7 +11,15 @@ import {
 import { useShallow } from 'zustand/shallow';
 import { useSearchReplaceStore } from '../../../../package/stores/search-replace-store';
 import { useEscapeKey } from '../../../hooks/useEscapeKey';
-import { useState, useEffect, useReducer, useRef } from 'react';
+import {
+  useState,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useCallback,
+} from 'react';
+import { debounce } from '../../../utils/debounce';
 import { AnimatePresence, motion } from 'framer-motion';
 // import { useSearchReplace } from '../hooks/use-search-replace';
 import type { Editor } from '@tiptap/core';
@@ -35,6 +43,7 @@ const SearchReplace = ({
     };
   }, [editor]);
   const [showReplace, setShowReplace] = useState(false);
+  const isNonOwner = typeof viewerMode !== 'undefined';
   const inputRef = useRef<HTMLInputElement>(null);
   const { searchTerm, replaceTerm, showSearchReplacePopover } =
     useSearchReplaceStore(
@@ -48,17 +57,49 @@ const SearchReplace = ({
   const { setShowReplacePopover, setSearchTerm, setReplaceTerm } =
     useSearchReplaceStore((s) => s.actions);
 
+  const gotoSelection = useCallback(
+    function gotoSelection() {
+      if (!editor) return;
+      const { results, resultIndex } = editor.storage.searchAndReplace;
+      const current = results[resultIndex];
+      if (!current) return;
+
+      const { node } = editor.view.domAtPos(current.from);
+
+      if (node instanceof HTMLElement) {
+        scrollIntoView({
+          el: node,
+          editorRoot: editor.view.dom as HTMLElement,
+          isNativeMobile: false,
+        });
+      }
+    },
+    [editor],
+  );
+
+  const pushSearchToEditor = useMemo(
+    () =>
+      debounce((value: string) => {
+        if (!editor) return;
+        editor.commands.setSearchTerm(value);
+        editor.commands.resetIndex();
+        gotoSelection();
+      }, 350),
+    [editor, gotoSelection],
+  );
+
   function hidePopover() {
+    pushSearchToEditor.cancel();
     if (editor) {
       editor.commands.setSearchTerm('');
+      editor.commands.setReplaceTerm('');
     }
+    setReplaceTerm('');
+    setShowReplace(false);
     setShowReplacePopover(false);
   }
 
   const handleSearchReplaceOnKeydown = (ev: KeyboardEvent) => {
-    if (viewerMode === 'suggest' || viewerMode == 'view-only') {
-      return;
-    }
     if (ev.code === 'KeyF' && ev.metaKey) {
       ev.preventDefault();
       if (editor) {
@@ -78,6 +119,9 @@ const SearchReplace = ({
   const resultIndex = editor?.storage.searchAndReplace.resultIndex;
 
   function toggleReplace() {
+    if (isNonOwner) {
+      setShowReplace(false);
+    }
     setShowReplace((s) => !s);
   }
 
@@ -85,8 +129,7 @@ const SearchReplace = ({
     if (!editor) return;
     const { value } = e.target;
     setSearchTerm(value);
-    editor.commands.setSearchTerm(value);
-    editor.commands.resetIndex();
+    pushSearchToEditor(value);
   }
 
   function handleReplaceTerm(e: React.ChangeEvent<HTMLInputElement>) {
@@ -99,39 +142,26 @@ const SearchReplace = ({
 
   function handleReplace() {
     if (!editor) return;
+    pushSearchToEditor.flush();
     editor.commands.replace();
   }
 
   function handleReplaceAll() {
     if (!editor) return;
+    pushSearchToEditor.flush();
     editor.commands.replaceAll();
-  }
-
-  function gotoSelection() {
-    if (!editor) return;
-    const { results, resultIndex } = editor.storage.searchAndReplace;
-    const current = results[resultIndex];
-    if (!current) return;
-
-    const { node } = editor.view.domAtPos(current.from);
-
-    if (node instanceof HTMLElement) {
-      scrollIntoView({
-        el: node,
-        editorRoot: editor.view.dom as HTMLElement,
-        isNativeMobile: false,
-      });
-    }
   }
 
   function handleNext() {
     if (!editor) return;
+    pushSearchToEditor.flush();
     editor.commands.nextSearchResult();
     gotoSelection();
   }
 
   function handlePrevious() {
     if (!editor) return;
+    pushSearchToEditor.flush();
     editor.commands.previousSearchResult();
     gotoSelection();
   }
@@ -207,6 +237,7 @@ const SearchReplace = ({
                     icon={'Replace'}
                     variant={'ghost'}
                     size="sm"
+                    disabled={isNonOwner}
                     onClick={toggleReplace}
                   />
                 </Tooltip>
@@ -218,7 +249,7 @@ const SearchReplace = ({
           </div>
           {/* Replace */}
           <AnimatePresence>
-            {showReplace && (
+            {showReplace && !isNonOwner && (
               <motion.div
                 className="space-y-2 overflow-clip"
                 key={'replace'}
