@@ -10,11 +10,9 @@ import {
 } from '@fileverse/ui';
 import { useShallow } from 'zustand/shallow';
 import { useSearchReplaceStore } from '../../../../package/stores/search-replace-store';
-import { useEscapeKey } from '../../../hooks/useEscapeKey';
 import { useState, useEffect, useMemo, useReducer, useCallback } from 'react';
 import { debounce } from '../../../utils/debounce';
 import { AnimatePresence, motion } from 'framer-motion';
-// import { useSearchReplace } from '../hooks/use-search-replace';
 import type { Editor } from '@tiptap/core';
 import { scrollIntoView } from '../../../utils/get-editor-scroll-container';
 import { setShowReplacePopoverWithData } from '../utils';
@@ -104,9 +102,6 @@ const SearchReplace = ({
   //opens popover on cmd+f across the editor
   useEventListener<'keydown'>('keydown', handleSearchReplaceOnKeydown);
 
-  //closes popover on esc key
-  useEscapeKey(hidePopover);
-
   const results = editor?.storage.searchAndReplace.results;
   const resultIndex = editor?.storage.searchAndReplace.resultIndex;
 
@@ -170,7 +165,7 @@ const SearchReplace = ({
   }
 
   return (
-    <Popover open={showSearchReplacePopover}>
+    <Popover open={showSearchReplacePopover} onOpenChange={hidePopover}>
       <PopoverAnchor className="absolute right-0" />
       <PopoverContent
         sideOffset={12}
@@ -178,6 +173,7 @@ const SearchReplace = ({
         align="start"
         side="left"
         arrowPadding={12}
+        container={document.querySelector<HTMLDivElement>('#editor-canvas')}
         className="pt-2 border-none bg-transparent"
       >
         <motion.div className="p-2 border color-border-default w-80 max-w-full rounded-lg space-y-2 color-bg-default">
@@ -223,15 +219,17 @@ const SearchReplace = ({
                     />
                   </Tooltip>
                 </div>
-                <Tooltip text="Replace">
-                  <IconButton
-                    icon={'Replace'}
-                    variant={'ghost'}
-                    size="sm"
-                    disabled={isNonOwner}
-                    onClick={toggleReplace}
-                  />
-                </Tooltip>
+                {!isNonOwner && (
+                  <Tooltip text="Replace">
+                    <IconButton
+                      icon={'Replace'}
+                      variant={'ghost'}
+                      size="sm"
+                      disabled={isNonOwner}
+                      onClick={toggleReplace}
+                    />
+                  </Tooltip>
+                )}
               </div>
             )}
             <PopoverClose asChild onClick={hidePopover}>
