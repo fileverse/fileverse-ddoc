@@ -1,12 +1,8 @@
 .ProseMirror {
-  // Inherit styles from parent EditorContent for customization
   background-color: inherit;
   color: inherit;
   font-family: inherit;
 
-  // Suppress all empty-line placeholder hints in suggestion mode.
-  // Slash commands don't fire in suggest mode (text input is intercepted),
-  // so "Type / to browse options" is misleading there.
   &[data-suggestion-mode='true'] .is-empty::before {
     content: none !important;
   }
@@ -217,7 +213,7 @@
   }
 
   .tableWrapper {
-    @apply overflow-x-scroll custom-scrollbar;
+    overflow-x: scroll;
   }
 
   table {
@@ -320,7 +316,7 @@
     line-height: 1.75rem;
     padding-top: 0.25rem;
     padding-bottom: 0.25rem;
-    transition-all: all;
+    transition-property: all;
     transition-duration: 300ms;
     transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
     height: fit-content;
@@ -390,8 +386,6 @@
     }
 
     &.layout-align-left {
-      // opposite of layout-align-right
-
       > *:first-child {
         grid-column: span 1 / span 1;
       }
@@ -409,10 +403,6 @@
       }
     }
 
-    &.layout-align-center {
-      // grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
-    }
-
     [data-type='column'] {
       overflow: hidden;
       border-radius: 0.25rem;
@@ -427,13 +417,6 @@
       &:hover,
       &:focus {
         border-color: hsla(var(--color-border-hover));
-      }
-
-      .preview-mode & {
-        &:hover,
-        &:focus {
-          border-color: transparent;
-        }
       }
 
       & > .node-dBlock {
@@ -518,7 +501,6 @@
 
 .resize-cursor {
   cursor: ew-resize;
-  cursor: col-resize;
 }
 
 .node-dBlock {
@@ -570,7 +552,6 @@
 .ProseMirror h1,
 .ProseMirror h2,
 .ProseMirror h3 {
-  // line-height: 1.2;
   font-weight: 600;
 }
 .ProseMirror h1 {
@@ -782,7 +763,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   line-height: normal;
   user-select: none;
   white-space: nowrap;
-  // border: 2px solid blue; /* Adjust the border color as needed */
   padding-right: 16px; /* Adjust padding to accommodate the badge */
   position: relative;
 }
@@ -1103,7 +1083,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
       -webkit-user-select: none;
     }
 
-    // Headings
     h1 {
       font-size: min(5vw, 64px);
       line-height: 1.2;
@@ -1141,7 +1120,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
       color: hsla(var(--color-text-link));
     }
 
-    // Text content
     p,
     ul,
     ol {
@@ -1160,7 +1138,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
       margin-top: 1rem;
     }
 
-    // Unordered lists
     ul:not([data-type='taskList']) {
       list-style-type: disc;
       padding-left: 2rem;
@@ -1182,7 +1159,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
       }
     }
 
-    // Ordered lists
     ol {
       list-style-type: decimal;
       padding-left: 2rem;
@@ -1209,13 +1185,12 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
 
     /* Apply strikethrough when the checkbox inside .task-list-item is checked */
     .task-list-item:has(input[type='checkbox']:checked) {
-      text-decoration: line-through;
       color: #a8a29e;
       text-decoration: line-through;
       text-decoration-thickness: 2px;
     }
 
-    // Nested lists
+    /* Nested lists */
     ul ul,
     ol ol,
     ul ol,
@@ -1224,11 +1199,10 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
       margin-bottom: 0.5rem;
     }
 
-    // Code blocks
+    /* Code blocks */
     pre {
       width: 80vw;
       margin: 2vh 0;
-      padding: 0.75rem 1rem;
       border-radius: 0.5rem;
       border: 1px solid hsla(195, 10%, 92%, 1);
       padding: 1rem;
@@ -1240,7 +1214,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
       }
     }
 
-    // Inline code
     code {
       font-size: min(1.5vw, 18px);
       background: hsla(var(--color-bg-tertiary));
@@ -1248,7 +1221,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
       border-radius: 4px;
     }
 
-    // Images
+    /* // Images */
     img {
       max-width: 80vw;
       max-height: 70vh;
@@ -1260,7 +1233,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
       display: block;
     }
 
-    // Tables
+    /* // Tables */
     table {
       width: 80vw;
       margin: 2vh auto;
@@ -1278,7 +1251,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
       }
     }
 
-    // Mobile adjustments
+    /* // Mobile adjustments */
     @media (max-width: 640px) {
       padding: 5vh 5vw;
 
@@ -1401,11 +1374,11 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   }
 }
 
-// Suggestion mode decorations
+/* // Suggestion mode decorations
 // Suggestion styling: light tinted background + decoration. Text color
 // stays default so the doc text reads naturally; the colored decoration
 // (line-through / underline) carries the semantic. The bg differentiates
-// from inline-comment highlights via hue.
+// from inline-comment highlights via hue. */
 .suggestion-delete {
   cursor: pointer;
   transition-property: all;
@@ -1486,7 +1459,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   }
 }
 
-// Hide inline comments visually when disabled
+/* // Hide inline comments visually when disabled */
 .hide-inline-comments .inline-comment {
   background-color: transparent !important;
   color: inherit !important;
@@ -1495,8 +1468,8 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   pointer-events: none !important;
 }
 
-// Suggestions: hide both Add (widget) and Delete/Replace (decoration) so the
-// View-only viewer sees the canonical doc text without proposed changes.
+/* // Suggestions: hide both Add (widget) and Delete/Replace (decoration) so the
+// View-only viewer sees the canonical doc text without proposed changes. */
 .hide-inline-comments .suggestion-add {
   display: none !important;
 }

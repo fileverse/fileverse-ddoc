@@ -23,7 +23,7 @@ import {
   cn,
   Checkbox,
 } from '@fileverse/ui';
-import styles from './ai-writer-node-view.module.scss';
+import styles from './ai-writer-node-view.module.css';
 import { useResponsive } from '../../utils/responsive';
 import { useEditingContext } from '../../hooks/use-editing-context';
 import { TextSelection } from 'prosemirror-state';
