@@ -11,14 +11,7 @@ import {
 import { useShallow } from 'zustand/shallow';
 import { useSearchReplaceStore } from '../../../../package/stores/search-replace-store';
 import { useEscapeKey } from '../../../hooks/useEscapeKey';
-import {
-  useState,
-  useEffect,
-  useMemo,
-  useReducer,
-  useRef,
-  useCallback,
-} from 'react';
+import { useState, useEffect, useMemo, useReducer, useCallback } from 'react';
 import { debounce } from '../../../utils/debounce';
 import { AnimatePresence, motion } from 'framer-motion';
 // import { useSearchReplace } from '../hooks/use-search-replace';
@@ -44,7 +37,6 @@ const SearchReplace = ({
   }, [editor]);
   const [showReplace, setShowReplace] = useState(false);
   const isNonOwner = typeof viewerMode !== 'undefined';
-  const inputRef = useRef<HTMLInputElement>(null);
   const { searchTerm, replaceTerm, showSearchReplacePopover } =
     useSearchReplaceStore(
       useShallow((s) => ({
@@ -194,7 +186,6 @@ const SearchReplace = ({
             <TextField
               placeholder="Search text..."
               value={searchTerm}
-              ref={inputRef}
               className="border-none p-0"
               onChange={handleSearchTerm}
               onKeyDown={handleSearchInputKeydown}
@@ -205,11 +196,11 @@ const SearchReplace = ({
                   <span className="color-text-secondary text-sm">
                     {`${typeof resultIndex === 'number' ? resultIndex + 1 : '?'}/${results.length}`}
                   </span>
-                ) : (
+                ) : searchTerm !== '' ? (
                   <span className="color-text-secondary text-xs shrink-0">
                     No results found.
                   </span>
-                )}
+                ) : null}
               </>
             )}
             {results && results.length > 0 && (
