@@ -1386,7 +1386,7 @@ export const LinkPopup = ({
 
     // Validate URL
     const urlPattern =
-      /^(https?:\/\/)?([\w-]+(\.[\w-]+)+\.?(:\d+)?(\/\S*)?|\w+@[\w.-]+\.\w+)$/i;
+      /^(https?:\/\/)?([\w-]+(\.[\w-]+)+\.?(:\d+)?(\/\S*)?|\w+@[\w.-]+\.\w+)\s*$/i;
 
     if (!urlPattern.test(url)) {
       if (onError && typeof onError === 'function') {
@@ -1400,6 +1400,7 @@ export const LinkPopup = ({
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       finalUrl = 'https://' + url;
     }
+    finalUrl = finalUrl.trim();
 
     // Update link
     editor
