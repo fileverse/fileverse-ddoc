@@ -45,6 +45,7 @@ import { getTemporaryEditor } from '../utils/helpers';
 import { extractTitleFromContent } from '../utils/extract-title-from-content';
 import { getContrastColor } from '../utils/color-utils';
 import { parseHeadingLink } from '../utils/heading-link';
+import { setShowReplacePopoverWithData } from '../extensions/search-replace/utils';
 
 export interface IEditorToolElement {
   icon: any;
@@ -749,6 +750,15 @@ export const useEditorToolbar = ({
       icon: 'PilcrowLeft',
       title: 'Set text direction to right-to-left',
       onClick: () => editor?.commands.setTextDirection('rtl'),
+      isActive: editor?.isActive('paragraph', { dir: 'rtl' }) ?? false,
+      group: 'More',
+      notVisible: 1560,
+    },
+    null,
+    {
+      icon: 'FileSearch',
+      title: 'Find/Replace',
+      onClick: () => (editor ? setShowReplacePopoverWithData(editor) : {}),
       isActive: editor?.isActive('paragraph', { dir: 'rtl' }) ?? false,
       group: 'More',
       notVisible: 1560,

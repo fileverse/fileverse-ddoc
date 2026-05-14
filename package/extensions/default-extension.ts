@@ -100,6 +100,7 @@ import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { type ToCItemType } from '../components/toc/types';
 import { CustomLink } from './custom-link';
 import { suggestionTrackingPluginKey } from './suggestion/suggestion-tracking-extension';
+import SearchAndReplace from './search-replace/search-replace';
 
 const pendingTocIdRepairs = new WeakSet<Editor>();
 
@@ -450,6 +451,7 @@ export const defaultExtensions = ({
     transformCopiedText: true,
   }),
   CharacterCount,
+  SearchAndReplace,
   MathExtension.configure({
     addInlineMath: true,
     evaluation: true,
