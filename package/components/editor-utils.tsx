@@ -375,11 +375,6 @@ export const useEditorToolbar = ({
             editor.chain().setLineHeight(lineHeights[prevIndex]).run();
             return true;
           }
-
-          // if (event.code === 'KeyF' && event.metaKey) {
-          //   event.preventDefault();
-          //   setShowReplacePopoverWithData(editor);
-          // }
           return false;
         },
       },
