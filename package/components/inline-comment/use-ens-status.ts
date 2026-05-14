@@ -10,7 +10,7 @@ export const useEnsStatus = (walletAddressOrName?: string | null) => {
 
   const [ensStatus, setEnsStatus] = useState<EnsStatus>(() => ({
     name: walletAddressOrName || 'Anonymous',
-    isEns: Boolean(walletAddressOrName?.endsWith('.eth')),
+    isEns: false,
   }));
 
   useEffect(() => {
@@ -21,11 +21,6 @@ export const useEnsStatus = (walletAddressOrName?: string | null) => {
 
     if (cachedEntry) {
       setEnsStatus({ ...cachedEntry });
-      return;
-    }
-
-    if (walletAddressOrName.endsWith('.eth')) {
-      setEnsStatus({ name: walletAddressOrName, isEns: true });
       return;
     }
 
