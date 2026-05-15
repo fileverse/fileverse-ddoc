@@ -23,6 +23,7 @@ import {
 } from '../../utils/image-compression';
 import { markdownHtmlGuardPlugin } from './mark-down-html-guard-plugin';
 import { parseHeadingLink } from '../../utils/heading-link';
+import { isAllowedEmbedSrc } from '../../utils/is-allowed-embed-src';
 
 // Initialize MarkdownIt for converting Markdown back to HTML with footnote support.
 const markdownIt = new MarkdownIt({ html: true })
@@ -436,6 +437,46 @@ const MarkdownPasteHandler = (
               }
 
               event.preventDefault();
+
+              // Pasted text containing a raw <iframe> tag: if its src is on
+              // the embed allowlist, insert as an embed; otherwise drop in
+              // as literal text. Else tiptap-markdown's `html: true` paste
+              // path either turns it into an HTML iframe with an arbitrary
+              // src (XSS) or our schema drops it (leaving nothing).
+              if (copiedData && /<iframe\b/i.test(copiedData)) {
+                const srcMatch = copiedData.match(
+                  /<iframe\b[^>]*\bsrc=(?:"([^"]*)"|'([^']*)')/i,
+                );
+                const src = srcMatch?.[1] ?? srcMatch?.[2];
+                if (isAllowedEmbedSrc(src)) {
+                  const widthMatch = copiedData.match(
+                    /\bwidth=(?:"([^"]*)"|'([^']*)')/i,
+                  );
+                  const heightMatch = copiedData.match(
+                    /\bheight=(?:"([^"]*)"|'([^']*)')/i,
+                  );
+                  const width = parseInt(
+                    widthMatch?.[1] ?? widthMatch?.[2] ?? '',
+                    10,
+                  );
+                  const height = parseInt(
+                    heightMatch?.[1] ?? heightMatch?.[2] ?? '',
+                    10,
+                  );
+                  this.editor
+                    .chain()
+                    .focus()
+                    .setIframe({
+                      src,
+                      width: Number.isFinite(width) ? width : 640,
+                      height: Number.isFinite(height) ? height : 360,
+                    })
+                    .run();
+                } else {
+                  view.dispatch(view.state.tr.insertText(copiedData));
+                }
+                return true;
+              }
 
               // Check if we're in a code block
               const { state } = view;
