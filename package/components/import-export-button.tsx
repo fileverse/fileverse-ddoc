@@ -129,11 +129,11 @@ const ImportExportButton = ({
             <Popover open={openExport} onOpenChange={setOpenExport}>
               <PopoverTrigger asChild>
                 <button
-                  onPointerEnter={() => {
+                  onMouseEnter={() => {
                     clearTimeout(exportTimeout);
                     setOpenExport(true);
                   }}
-                  onPointerLeave={() => {
+                  onMouseLeave={() => {
                     exportTimeout = setTimeout(() => setOpenExport(false), 300);
                   }}
                   className="appearance-none bg-transparent hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
@@ -150,11 +150,11 @@ const ImportExportButton = ({
                 side="right"
                 align="start"
                 sideOffset={10}
-                onPointerEnter={() => {
+                onMouseEnter={() => {
                   clearTimeout(exportTimeout);
                   setOpenExport(true);
                 }}
-                onPointerLeave={() => {
+                onMouseLeave={() => {
                   exportTimeout = setTimeout(() => setOpenExport(false), 300);
                 }}
                 className="w-[220px] rounded-lg p-2 flex flex-col gap-1 scroll-smooth color-bg-default shadow-elevation-3 transition-all color-text-default"
@@ -200,11 +200,11 @@ const ImportExportButton = ({
             <Popover open={openImport} onOpenChange={setOpenImport}>
               <PopoverTrigger asChild>
                 <button
-                  onPointerEnter={() => {
+                  onMouseEnter={() => {
                     clearTimeout(importTimeout);
                     setOpenImport(true);
                   }}
-                  onPointerLeave={() => {
+                  onMouseLeave={() => {
                     importTimeout = setTimeout(() => setOpenImport(false), 300);
                   }}
                   className="appearance-none bg-transparent hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
