@@ -101,6 +101,7 @@ const TiptapToolBar = ({
     toolbar,
     undoRedoTools,
     importOptions,
+    printHandler,
     exportOptions,
     fileExportsOpen,
     setFileExportsOpen,
@@ -234,6 +235,7 @@ const TiptapToolBar = ({
                   setFileExportsOpen={setFileExportsOpen}
                   exportOptions={exportOptions}
                   importOptions={importOptions}
+                  printHandler={printHandler}
                   setDropdownOpen={setDropdownOpen}
                   editor={editor}
                   tabs={tabs}

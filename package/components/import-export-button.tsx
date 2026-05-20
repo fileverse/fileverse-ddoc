@@ -21,6 +21,7 @@ const ImportExportButton = ({
   setFileExportsOpen,
   exportOptions,
   importOptions,
+  printHandler,
   setDropdownOpen,
   editor,
   tabs,
@@ -28,6 +29,7 @@ const ImportExportButton = ({
   onRegisterExportTrigger,
 }: {
   fileExportsOpen: boolean;
+  printHandler: () => void;
   setFileExportsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   exportOptions: (IEditorToolElement | null)[];
   importOptions: (IEditorToolElement | null)[];
@@ -252,6 +254,15 @@ const ImportExportButton = ({
                   ))}
               </PopoverContent>
             </Popover>
+
+            {/* Print */}
+            <button
+              className="appearance-none bg-transparent hover:color-bg-default-hover h-8 rounded gap-2 p-2 w-full text-left flex items-center justify-start transition text-body-sm"
+              onClick={printHandler}
+            >
+              <LucideIcon name={'Printer'} />
+              Print
+            </button>
           </div>
         }
       />

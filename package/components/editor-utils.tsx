@@ -965,6 +965,34 @@ export const useEditorToolbar = ({
     },
   ];
 
+  const printHandler = () => {
+    if (editor) {
+      const closeAndPrint = async () => {
+        const originalDoc = editor.state.doc;
+        const docWithEmbedImageContent =
+          await searchForSecureImageNodeAndEmbedImageContent(
+            originalDoc,
+            ipfsImageFetchFn,
+            fetchV1ImageFn,
+            true,
+          );
+
+        const temporalEditor = getTemporaryEditor(
+          editor,
+          docWithEmbedImageContent.toJSON(),
+        );
+
+        const rawHtml = temporalEditor.getHTML();
+        const inlineHtml = await renderMermaidBlocks(rawHtml);
+        handleContentPrint(inlineHtml);
+        temporalEditor.destroy();
+      };
+      setFileExportsOpen(false);
+      setTimeout(closeAndPrint, 200);
+      onPdfExport?.();
+    }
+  };
+
   const bottomToolbar: Array<IEditorToolElement | null> = [
     {
       icon: 'Undo',
@@ -1096,6 +1124,7 @@ export const useEditorToolbar = ({
     undoRedoTools,
     toolbar,
     exportOptions,
+    printHandler,
     importOptions,
     bottomToolbar,
     toolRef,

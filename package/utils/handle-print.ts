@@ -2,8 +2,8 @@ import renderMathInElement from 'katex/contrib/auto-render';
 
 const A4_HEIGHT_INCHES = 11.69;
 const A4_WIDTH_INCHES = 8.27;
-const PAGE_MARGIN_VERTICAL_INCHES = 0.25;
-const PAGE_MARGIN_HORIZONTAL_INCHES = 0.5;
+const PAGE_MARGIN_VERTICAL_INCHES = 0.83;
+const PAGE_MARGIN_HORIZONTAL_INCHES = 0.83;
 const CSS_DPI = 96;
 const CONTENT_PRINT_TITLE = 'Print Preview';
 const CONTENT_PRINT_MEASUREMENT_HOST_ID = 'content-print-measurement-host';

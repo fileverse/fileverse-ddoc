@@ -86,6 +86,7 @@
     "embla-carousel-react": "^8.1.5",
     "emojibase-data": "^16.0.3",
     "highlight.js": "^11.11.1",
+    "html2pdf.js": "^0.14.0",
     "js-base64": "^3.7.7",
     "katex": "^0.16.11",
     "lib0": "^0.2.95",
