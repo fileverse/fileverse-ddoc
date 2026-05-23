@@ -1,6 +1,17 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import { Editor } from '@tiptap/react';
+import { HEADING_COLLAPSE_TOGGLE_META } from '../suggestion/suggestion-tracking-extension';
+
+// Chain command that tags the in-flight transaction so the suggestion plugin's
+// filterTransaction lets it through even in suggest mode (collapse is UI state,
+// not a content edit).
+const tagCollapseToggle =
+  () =>
+  ({ tr }: { tr: import('@tiptap/pm/state').Transaction }) => {
+    tr.setMeta(HEADING_COLLAPSE_TOGGLE_META, true);
+    return true;
+  };
 
 // Fast lookup helpers to avoid using the expensive buildDocumentCache on every operation
 type HeadingLookupMap = Map<
@@ -349,6 +360,7 @@ export const useHeadingCollapse = ({
       .chain()
       .setNodeSelection(position)
       .updateAttributes('heading', { isCollapsed: !wasCollapsed })
+      .command(tagCollapseToggle())
       .run();
 
     // Handle children
@@ -364,6 +376,7 @@ export const useHeadingCollapse = ({
               .chain()
               .setNodeSelection(childHeading.position)
               .updateAttributes('heading', { isCollapsed: true })
+              .command(tagCollapseToggle())
               .run();
             collapseDescendants(childId);
           }
@@ -380,6 +393,7 @@ export const useHeadingCollapse = ({
               .chain()
               .setNodeSelection(childHeading.position)
               .updateAttributes('heading', { isCollapsed: true })
+              .command(tagCollapseToggle())
               .run();
             collapseDescendants(childId);
           }
@@ -397,6 +411,7 @@ export const useHeadingCollapse = ({
               .chain()
               .setNodeSelection(childHeading.position)
               .updateAttributes('heading', { isCollapsed: false })
+              .command(tagCollapseToggle())
               .run();
           }
         }
@@ -535,6 +550,7 @@ export const useHeadingCollapse = ({
           .chain()
           .setNodeSelection(position)
           .updateAttributes('heading', { isCollapsed: false })
+          .command(tagCollapseToggle())
           .run();
 
         // Recursively expand all descendant headings
@@ -550,6 +566,7 @@ export const useHeadingCollapse = ({
                   .chain()
                   .setNodeSelection(childHeading.position)
                   .updateAttributes('heading', { isCollapsed: false })
+                  .command(tagCollapseToggle())
                   .run();
                 // Recursively expand this child's descendants
                 expandDescendants(childId);
@@ -665,6 +682,7 @@ export const expandHeadingContent = (editor: Editor, nodePos: number) => {
       .chain()
       .setNodeSelection(nodePos)
       .updateAttributes('heading', { isCollapsed: false })
+      .command(tagCollapseToggle())
       .run();
 
     // Expand all child headings
@@ -687,6 +705,7 @@ export const expandHeadingContent = (editor: Editor, nodePos: number) => {
               .chain()
               .setNodeSelection(pos)
               .updateAttributes('heading', { isCollapsed: false })
+              .command(tagCollapseToggle())
               .run();
           }
         }
