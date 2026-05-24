@@ -25,6 +25,7 @@ export default defineConfig({
           '@fileverse/ui',
           'framer-motion',
           'frimousse',
+          'mermaid',
         ].includes(id) ||
         id.startsWith('@fileverse/crypto') ||
         id.startsWith('@dnd-kit/') ||

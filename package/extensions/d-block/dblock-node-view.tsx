@@ -84,12 +84,6 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
       return content[0].content.content[0]?.text;
     }, [node.content]);
 
-    const nodeContentLink = useMemo(() => {
-      const { content } = node.content as any;
-
-      return content[0].content.content[1]?.text;
-    }, [node.content]);
-
     const nodeTweetContentLink = useMemo(() => {
       const { content } = node.content as any;
 
@@ -114,13 +108,6 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
         // Handle image
         if (urlSrc && /\.(jpeg|jpg|gif|png)$/i.test(urlSrc)) {
           setMedia('img', urlSrc);
-          return;
-        }
-
-        // Handle iframe
-        if (nodeContentText.includes('<iframe')) {
-          const src = nodeContentLink;
-          setMedia('iframe', src);
           return;
         }
 

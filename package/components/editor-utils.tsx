@@ -6,11 +6,10 @@ import React, {
   SetStateAction,
   useCallback,
   useEffect,
-  useMemo,
   useState,
 } from 'react';
 import { IEditorTool, useEditorToolVisiibility } from '../hooks/use-visibility';
-import { Editor, JSONContent, useEditorState } from '@tiptap/react';
+import { Editor, JSONContent } from '@tiptap/react';
 import { startImageUpload } from '../utils/upload-images';
 import cn from 'classnames';
 import UtilsModal from './utils-modal';
@@ -39,12 +38,14 @@ import {
   convertToList,
 } from './editor-bubble-menu/node-selector';
 import { searchForSecureImageNodeAndEmbedImageContent } from '../extensions/mardown-paste-handler';
+import { renderMermaidBlocks } from '../extensions/code-block/render-mermaid-html';
 import { inlineLoader } from '../utils/inline-loader';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { getTemporaryEditor } from '../utils/helpers';
 import { extractTitleFromContent } from '../utils/extract-title-from-content';
 import { getContrastColor } from '../utils/color-utils';
 import { parseHeadingLink } from '../utils/heading-link';
+import { setShowReplacePopoverWithData } from '../extensions/search-replace/utils';
 
 export interface IEditorToolElement {
   icon: any;
@@ -193,61 +194,74 @@ const initialFormattingState = {
   isStrikethrough: false,
 };
 
-const LINE_HEIGHTS = ['120%', '138%', '180%', '240%', '300%', '360%'];
-
-type FormattingState = typeof initialFormattingState;
-
-const isSameFormattingState = (
-  previous: FormattingState,
-  next: FormattingState,
-) =>
-  previous.isBold === next.isBold &&
-  previous.isItalic === next.isItalic &&
-  previous.isUnderline === next.isUnderline &&
-  previous.isStrikethrough === next.isStrikethrough;
-
-const defaultToolbarState = {
-  isBulletList: false,
-  isOrderedList: false,
-  isTaskList: false,
-  isBlockquote: false,
-  isSuperscript: false,
-  isSubscript: false,
-  isLink: false,
-  isCode: false,
-  isCodeBlock: false,
-  isLtrParagraph: false,
-  isRtlParagraph: false,
-};
-
-type ToolbarState = typeof defaultToolbarState;
-
-const isSameToolbarState = (
-  previous: ToolbarState,
-  next: ToolbarState | null,
-) =>
-  Boolean(next) &&
-  previous.isBulletList === next?.isBulletList &&
-  previous.isOrderedList === next?.isOrderedList &&
-  previous.isTaskList === next?.isTaskList &&
-  previous.isBlockquote === next?.isBlockquote &&
-  previous.isSuperscript === next?.isSuperscript &&
-  previous.isSubscript === next?.isSubscript &&
-  previous.isLink === next?.isLink &&
-  previous.isCode === next?.isCode &&
-  previous.isCodeBlock === next?.isCodeBlock &&
-  previous.isLtrParagraph === next?.isLtrParagraph &&
-  previous.isRtlParagraph === next?.isRtlParagraph;
-
-const useEditorKeyboardShortcuts = ({
+export const useEditorToolbar = ({
   editor,
-  setToolVisibility,
-  buttonRef,
+  onError,
+  isPresentationMode,
+  setIsPresentationMode,
+  enableCollaboration,
+  ipfsImageUploadFn,
+  onMarkdownExport,
+  onMarkdownImport,
+  onPdfExport,
+  onHtmlExport,
+  onTxtExport,
+  onOdtExport,
+  ipfsImageFetchFn,
+  onDocxImport,
+  fetchV1ImageFn,
 }: {
   editor: Editor | null;
-  setToolVisibility: (tool: IEditorTool) => void;
-  buttonRef: React.RefObject<HTMLDivElement>;
+  isPresentationMode?: boolean;
+  setIsPresentationMode?: () => void;
+  enableCollaboration?: boolean;
+  onError?: (errorString: string) => void;
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
+  onMarkdownExport?: () => void;
+  onMarkdownImport?: () => void;
+  onPdfExport?: () => void;
+  onHtmlExport?: () => void;
+  onTxtExport?: () => void;
+  onOdtExport?: () => void;
+  ipfsImageFetchFn?: (
+    _data: IpfsImageFetchPayload,
+  ) => Promise<{ url: string; file: File }>;
+  onDocxImport?: () => void;
+  fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
+  isConnected?: boolean;
 }) => {
+  const {
+    ref: toolRef,
+    toolVisibility,
+    setToolVisibility,
+  } = useEditorToolVisiibility(IEditorTool.NONE);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [fileExportsOpen, setFileExportsOpen] = useState(false);
+  const [formattingState, setFormattingState] = useState(
+    initialFormattingState,
+  );
+
+  const { buttonRef } = useCommentRefs();
+
+  useEffect(() => {
+    if (!editor) return;
+    const updateMarkStates = () => {
+      setFormattingState({
+        isBold: editor.isActive('bold'),
+        isItalic: editor.isActive('italic'),
+        isUnderline: editor.isActive('underline'),
+        isStrikethrough: editor.isActive('strike'),
+      });
+    };
+    updateMarkStates();
+    // Only update mark states on selection changes — not every transaction.
+    // Text input transactions don't change which marks are active at the cursor.
+    editor.on('selectionUpdate', updateMarkStates);
+    return () => {
+      editor.off('selectionUpdate', updateMarkStates);
+    };
+  }, [editor]);
+
   useEffect(() => {
     if (!editor) return;
 
@@ -304,6 +318,14 @@ const useEditorKeyboardShortcuts = ({
           // Line height increase shortcut (Alt + Shift + ↑)
           if (event.altKey && event.shiftKey && event.key === 'ArrowUp') {
             event.preventDefault();
+            const lineHeights = [
+              '120%',
+              '138%',
+              '180%',
+              '240%',
+              '300%',
+              '360%',
+            ];
 
             // Get line height from current block node
             let currentLineHeight =
@@ -316,18 +338,26 @@ const useEditorKeyboardShortcuts = ({
             }
             currentLineHeight = currentLineHeight || '138%';
 
-            const currentIndex = LINE_HEIGHTS.indexOf(currentLineHeight);
+            const currentIndex = lineHeights.indexOf(currentLineHeight);
             const nextIndex = Math.min(
               currentIndex + 1,
-              LINE_HEIGHTS.length - 1,
+              lineHeights.length - 1,
             );
-            editor.chain().setLineHeight(LINE_HEIGHTS[nextIndex]).run();
+            editor.chain().setLineHeight(lineHeights[nextIndex]).run();
             return true;
           }
 
           // Line height decrease shortcut (Alt + Shift + ↓)
           if (event.altKey && event.shiftKey && event.key === 'ArrowDown') {
             event.preventDefault();
+            const lineHeights = [
+              '120%',
+              '138%',
+              '180%',
+              '240%',
+              '300%',
+              '360%',
+            ];
 
             // Get line height from current block node
             let currentLineHeight =
@@ -340,9 +370,9 @@ const useEditorKeyboardShortcuts = ({
             }
             currentLineHeight = currentLineHeight || '138%';
 
-            const currentIndex = LINE_HEIGHTS.indexOf(currentLineHeight);
+            const currentIndex = lineHeights.indexOf(currentLineHeight);
             const prevIndex = Math.max(currentIndex - 1, 0);
-            editor.chain().setLineHeight(LINE_HEIGHTS[prevIndex]).run();
+            editor.chain().setLineHeight(lineHeights[prevIndex]).run();
             return true;
           }
           return false;
@@ -359,214 +389,83 @@ const useEditorKeyboardShortcuts = ({
       }
     };
   }, [editor, setToolVisibility, buttonRef]);
-};
 
-export const useEditorToolbar = ({
-  editor,
-  onError,
-  isPresentationMode,
-  setIsPresentationMode,
-  enableCollaboration,
-  ipfsImageUploadFn,
-  onMarkdownExport,
-  onMarkdownImport,
-  onPdfExport,
-  onHtmlExport,
-  onTxtExport,
-  onOdtExport,
-  ipfsImageFetchFn,
-  onDocxImport,
-  fetchV1ImageFn,
-}: {
-  editor: Editor | null;
-  isPresentationMode?: boolean;
-  setIsPresentationMode?: () => void;
-  enableCollaboration?: boolean;
-  onError?: (errorString: string) => void;
-  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
-  onMarkdownExport?: () => void;
-  onMarkdownImport?: () => void;
-  onPdfExport?: () => void;
-  onHtmlExport?: () => void;
-  onTxtExport?: () => void;
-  onOdtExport?: () => void;
-  ipfsImageFetchFn?: (
-    _data: IpfsImageFetchPayload,
-  ) => Promise<{ url: string; file: File }>;
-  onDocxImport?: () => void;
-  fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
-  isConnected?: boolean;
-}) => {
-  const {
-    ref: toolRef,
-    toolVisibility,
-    setToolVisibility,
-  } = useEditorToolVisiibility(IEditorTool.NONE);
-  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
-  const [fileExportsOpen, setFileExportsOpen] = useState(false);
-  const [formattingState, setFormattingState] = useState(
-    initialFormattingState,
-  );
-
-  const { buttonRef } = useCommentRefs();
-  const undoRedoState = useEditorState({
-    editor,
-    selector: ({ editor }) => ({
-      canUndo: Boolean(editor?.can().undo()),
-      canRedo: Boolean(editor?.can().redo()),
-    }),
-    equalityFn: (previous, next) =>
-      previous.canUndo === next?.canUndo && previous.canRedo === next?.canRedo,
-  }) ?? { canUndo: false, canRedo: false };
-
-  const toolbarState =
-    useEditorState({
-      editor,
-      selector: ({ editor }) => ({
-        isBulletList: Boolean(editor?.isActive('bulletList')),
-        isOrderedList: Boolean(editor?.isActive('orderedList')),
-        isTaskList: Boolean(editor?.isActive('taskList')),
-        isBlockquote: Boolean(editor?.isActive('blockquote')),
-        isSuperscript: Boolean(editor?.isActive('superscript')),
-        isSubscript: Boolean(editor?.isActive('subscript')),
-        isLink: Boolean(editor?.isActive('link')),
-        isCode: Boolean(editor?.isActive('code')),
-        isCodeBlock: Boolean(editor?.isActive('codeBlock')),
-        isLtrParagraph: Boolean(editor?.isActive('paragraph', { dir: 'ltr' })),
-        isRtlParagraph: Boolean(editor?.isActive('paragraph', { dir: 'rtl' })),
-      }),
-      equalityFn: isSameToolbarState,
-    }) ?? defaultToolbarState;
-
-  useEditorKeyboardShortcuts({ editor, setToolVisibility, buttonRef });
-
-  useEffect(() => {
-    if (!editor) return;
-    const updateMarkStates = () => {
-      const nextFormattingState = {
-        isBold: editor.isActive('bold'),
-        isItalic: editor.isActive('italic'),
-        isUnderline: editor.isActive('underline'),
-        isStrikethrough: editor.isActive('strike'),
-      };
-      setFormattingState((previousFormattingState) =>
-        isSameFormattingState(previousFormattingState, nextFormattingState)
-          ? previousFormattingState
-          : nextFormattingState,
-      );
-    };
-    updateMarkStates();
-    // Only update mark states on selection changes — not every transaction.
-    // Text input transactions don't change which marks are active at the cursor.
-    editor.on('selectionUpdate', updateMarkStates);
-    return () => {
-      editor.off('selectionUpdate', updateMarkStates);
-    };
-  }, [editor]);
-
-  const undoRedoTools = useMemo<Array<IEditorToolElement | null>>(
-    () => [
-      {
-        icon: 'Undo',
-        title: 'Undo',
-        onClick: () => {
-          editor?.chain().undo().run();
-        },
-        isActive: undoRedoState.canUndo,
+  const undoRedoTools: Array<IEditorToolElement | null> = [
+    {
+      icon: 'Undo',
+      title: 'Undo',
+      onClick: () => {
+        editor?.chain().undo().run();
       },
-      {
-        icon: 'Redo',
-        title: 'Redo',
-        onClick: () => {
-          editor?.chain().redo().run();
-        },
-        isActive: undoRedoState.canRedo,
+      isActive: editor?.can().undo() || false,
+    },
+    {
+      icon: 'Redo',
+      title: 'Redo',
+      onClick: () => {
+        editor?.chain().redo().run();
       },
-      null,
-    ],
-    [editor, undoRedoState.canRedo, undoRedoState.canUndo],
-  );
-  const toolbar = useMemo<Array<IEditorToolElement | null>>(
-    () => [
-      {
-        icon: 'Baseline',
-        title: 'Text Color',
-        onClick: () => setToolVisibility(IEditorTool.TEXT_COLOR),
-        isActive: toolVisibility === IEditorTool.TEXT_COLOR,
-      },
-      {
-        icon: 'Highlighter',
-        title: 'Highlight',
-        onClick: () => setToolVisibility(IEditorTool.HIGHLIGHT),
-        isActive: toolVisibility === IEditorTool.HIGHLIGHT,
-      },
-      null,
-      {
-        icon: 'Bold',
-        title: 'Bold',
-        onClick: () => editor?.chain().focus().toggleBold().run(),
-        isActive: formattingState.isBold,
-      },
-      {
-        icon: 'Italic',
-        title: 'Italic',
-        onClick: () => editor?.chain().focus().toggleItalic().run(),
-        isActive: formattingState.isItalic,
-      },
-      {
-        icon: 'Underline',
-        title: 'Underlined',
-        onClick: () => editor?.chain().focus().toggleUnderline().run(),
-        isActive: formattingState.isUnderline,
-      },
-      {
-        icon: 'Strikethrough',
-        title: 'Strikethrough',
-        onClick: () => editor?.chain().focus().toggleStrike().run(),
-        isActive: formattingState.isStrikethrough,
-      },
-      null,
-      {
-        icon: 'List',
-        title: 'List',
-        onClick: () => {
-          if (!editor) return;
-          const { from, to, state, hasMultipleLists } =
-            checkActiveListsAndDBlocks(editor);
+      isActive: editor?.can().redo() || false,
+    },
+    null,
+  ];
+  const toolbar: Array<IEditorToolElement | null> = [
+    {
+      icon: 'Baseline',
+      title: 'Text Color',
+      onClick: () => setToolVisibility(IEditorTool.TEXT_COLOR),
+      isActive: toolVisibility === IEditorTool.TEXT_COLOR,
+    },
+    {
+      icon: 'Highlighter',
+      title: 'Highlight',
+      onClick: () => setToolVisibility(IEditorTool.HIGHLIGHT),
+      isActive: toolVisibility === IEditorTool.HIGHLIGHT,
+    },
+    null,
+    {
+      icon: 'Bold',
+      title: 'Bold',
+      onClick: () => editor?.chain().focus().toggleBold().run(),
+      isActive: formattingState.isBold,
+    },
+    {
+      icon: 'Italic',
+      title: 'Italic',
+      onClick: () => editor?.chain().focus().toggleItalic().run(),
+      isActive: formattingState.isItalic,
+    },
+    {
+      icon: 'Underline',
+      title: 'Underlined',
+      onClick: () => editor?.chain().focus().toggleUnderline().run(),
+      isActive: formattingState.isUnderline,
+    },
+    {
+      icon: 'Strikethrough',
+      title: 'Strikethrough',
+      onClick: () => editor?.chain().focus().toggleStrike().run(),
+      isActive: formattingState.isStrikethrough,
+    },
+    null,
+    {
+      icon: 'List',
+      title: 'List',
+      onClick: () => {
+        if (!editor) return;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
 
-          if (hasMultipleLists) {
-            return;
-          }
+        if (hasMultipleLists) {
+          return;
+        }
 
-          if (editor.isActive('bulletList')) {
-            const result = editor
-              .chain()
-              .focus()
-              .command((props) =>
-                convertListToParagraphs({ ...props, state, from, to }),
-              )
-              .setTextSelection({ from, to })
-              .focus()
-              .run();
-
-            setToolVisibility(IEditorTool.NONE);
-            return result;
-          }
-
+        if (editor.isActive('bulletList')) {
           const result = editor
             .chain()
             .focus()
             .command((props) =>
-              convertToList({
-                ...props,
-                state,
-                from,
-                to,
-                listConfig: {
-                  type: 'bulletList',
-                  itemType: 'listItem',
-                },
-              }),
+              convertListToParagraphs({ ...props, state, from, to }),
             )
             .setTextSelection({ from, to })
             .focus()
@@ -574,52 +473,52 @@ export const useEditorToolbar = ({
 
           setToolVisibility(IEditorTool.NONE);
           return result;
-        },
-        isActive: toolbarState.isBulletList,
-        group: 'More',
-        notVisible: 1030,
+        }
+
+        const result = editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'bulletList',
+                itemType: 'listItem',
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
+        setToolVisibility(IEditorTool.NONE);
+        return result;
       },
-      {
-        icon: 'ListOrdered',
-        title: 'Ordered List',
-        onClick: () => {
-          if (!editor) return;
-          const { from, to, state, hasMultipleLists } =
-            checkActiveListsAndDBlocks(editor);
+      isActive: editor?.isActive('bulletList') || false,
+      group: 'More',
+      notVisible: 1030,
+    },
+    {
+      icon: 'ListOrdered',
+      title: 'Ordered List',
+      onClick: () => {
+        if (!editor) return;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
 
-          if (hasMultipleLists) {
-            return;
-          }
+        if (hasMultipleLists) {
+          return;
+        }
 
-          if (editor.isActive('orderedList')) {
-            const result = editor
-              .chain()
-              .focus()
-              .command((props) =>
-                convertListToParagraphs({ ...props, state, from, to }),
-              )
-              .setTextSelection({ from, to })
-              .focus()
-              .run();
-
-            setToolVisibility(IEditorTool.NONE);
-            return result;
-          }
-
+        if (editor.isActive('orderedList')) {
           const result = editor
             .chain()
             .focus()
             .command((props) =>
-              convertToList({
-                ...props,
-                state,
-                from,
-                to,
-                listConfig: {
-                  type: 'orderedList',
-                  itemType: 'listItem',
-                },
-              }),
+              convertListToParagraphs({ ...props, state, from, to }),
             )
             .setTextSelection({ from, to })
             .focus()
@@ -627,53 +526,52 @@ export const useEditorToolbar = ({
 
           setToolVisibility(IEditorTool.NONE);
           return result;
-        },
-        isActive: toolbarState.isOrderedList,
-        group: 'More',
-        notVisible: 1030,
+        }
+
+        const result = editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'orderedList',
+                itemType: 'listItem',
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
+        setToolVisibility(IEditorTool.NONE);
+        return result;
       },
-      {
-        icon: 'ListChecks',
-        title: 'To-do List',
-        onClick: () => {
-          if (!editor) return;
-          const { from, to, state, hasMultipleLists } =
-            checkActiveListsAndDBlocks(editor);
+      isActive: editor?.isActive('orderedList') || false,
+      group: 'More',
+      notVisible: 1030,
+    },
+    {
+      icon: 'ListChecks',
+      title: 'To-do List',
+      onClick: () => {
+        if (!editor) return;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
 
-          if (hasMultipleLists) {
-            return;
-          }
+        if (hasMultipleLists) {
+          return;
+        }
 
-          if (editor.isActive('taskList')) {
-            const result = editor
-              .chain()
-              .focus()
-              .command((props) =>
-                convertListToParagraphs({ ...props, state, from, to }),
-              )
-              .setTextSelection({ from, to })
-              .focus()
-              .run();
-
-            setToolVisibility(IEditorTool.NONE);
-            return result;
-          }
-
+        if (editor.isActive('taskList')) {
           const result = editor
             .chain()
             .focus()
             .command((props) =>
-              convertToList({
-                ...props,
-                state,
-                from,
-                to,
-                listConfig: {
-                  type: 'taskList',
-                  itemType: 'taskItem',
-                  hasAttrs: true,
-                },
-              }),
+              convertListToParagraphs({ ...props, state, from, to }),
             )
             .setTextSelection({ from, to })
             .focus()
@@ -681,468 +579,447 @@ export const useEditorToolbar = ({
 
           setToolVisibility(IEditorTool.NONE);
           return result;
-        },
-        isActive: toolbarState.isTaskList,
-        group: 'More',
-        notVisible: 1160,
+        }
+
+        const result = editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'taskList',
+                itemType: 'taskItem',
+                hasAttrs: true,
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
+        setToolVisibility(IEditorTool.NONE);
+        return result;
       },
-      {
-        icon: 'AlignLeft',
-        title: 'Alignment',
-        onClick: () => setToolVisibility(IEditorTool.ALIGNMENT),
-        isActive: toolVisibility === IEditorTool.ALIGNMENT,
-        group: 'More',
-        notVisible: 1160,
+      isActive: editor?.isActive('taskList') || false,
+      group: 'More',
+      notVisible: 1160,
+    },
+    {
+      icon: 'AlignLeft',
+      title: 'Alignment',
+      onClick: () => setToolVisibility(IEditorTool.ALIGNMENT),
+      isActive: toolVisibility === IEditorTool.ALIGNMENT,
+      group: 'More',
+      notVisible: 1160,
+    },
+    {
+      icon: 'LineHeight',
+      title: 'Line Height',
+      onClick: () => setToolVisibility(IEditorTool.LINE_HEIGHT),
+      isActive: toolVisibility === IEditorTool.LINE_HEIGHT,
+      group: 'More',
+      notVisible: 1270,
+    },
+    {
+      icon: 'TextQuote',
+      title: 'Quote',
+      onClick: () => editor?.chain().focus().toggleBlockquote().run(),
+      isActive: editor?.isActive('blockquote') || false,
+      group: 'More',
+      notVisible: 1270,
+    },
+    null,
+    {
+      icon: 'Superscript',
+      title: 'Superscript',
+      onClick: () =>
+        editor?.chain().focus().unsetSubscript().toggleSuperscript().run(),
+      isActive: editor?.isActive('superscript') || false,
+      group: 'More',
+      notVisible: 1370,
+    },
+    {
+      icon: 'Subscript',
+      title: 'Subscript',
+      onClick: () => {
+        editor?.chain().focus().unsetSuperscript().toggleSubscript().run();
       },
-      {
-        icon: 'LineHeight',
-        title: 'Line Height',
-        onClick: () => setToolVisibility(IEditorTool.LINE_HEIGHT),
-        isActive: toolVisibility === IEditorTool.LINE_HEIGHT,
-        group: 'More',
-        notVisible: 1270,
+      isActive: editor?.isActive('subscript') || false,
+      group: 'More',
+      notVisible: 1370,
+    },
+    null,
+    {
+      icon: 'Link',
+      title: 'Link',
+      onClick: () => {
+        setToolVisibility(IEditorTool.LINK_POPUP);
       },
-      {
-        icon: 'TextQuote',
-        title: 'Quote',
-        onClick: () => editor?.chain().focus().toggleBlockquote().run(),
-        isActive: toolbarState.isBlockquote,
-        group: 'More',
-        notVisible: 1270,
-      },
-      null,
-      {
-        icon: 'Superscript',
-        title: 'Superscript',
-        onClick: () =>
-          editor?.chain().focus().unsetSubscript().toggleSuperscript().run(),
-        isActive: toolbarState.isSuperscript,
-        group: 'More',
-        notVisible: 1370,
-      },
-      {
-        icon: 'Subscript',
-        title: 'Subscript',
-        onClick: () => {
-          editor?.chain().focus().unsetSuperscript().toggleSubscript().run();
-        },
-        isActive: toolbarState.isSubscript,
-        group: 'More',
-        notVisible: 1370,
-      },
-      null,
-      {
-        icon: 'Link',
-        title: 'Link',
-        onClick: () => {
-          setToolVisibility(IEditorTool.LINK_POPUP);
-        },
-        isActive: toolbarState.isLink,
-        group: 'More',
-        notVisible: 1560,
-      },
-      {
-        icon: 'ImagePlus',
-        title: 'Upload Image',
-        onClick: () => {
-          if (!editor) return;
-          editor?.chain().focus().deleteRange(editor.state.selection).run();
-          const input = document.createElement('input');
-          input.type = 'file';
-          input.accept = 'image/png, image/jpeg, image/gif';
-          input.onchange = async () => {
-            if (input.files?.length) {
-              const file = input.files[0];
-              if (!validateImageExtension(file, onError)) {
-                return;
-              }
-              const size = file.size;
-              const imgConfig = ipfsImageUploadFn
-                ? IMG_UPLOAD_SETTINGS.Extended
-                : IMG_UPLOAD_SETTINGS.Base;
-              if (size > imgConfig.maxSize) {
-                if (onError && typeof onError === 'function') {
-                  onError(imgConfig.errorMsg);
-                }
-                return;
-              }
-              const pos = editor.view.state.selection.from;
-              startImageUpload(file, editor.view, pos, ipfsImageUploadFn);
+      isActive: editor?.isActive('link') || false,
+      group: 'More',
+      notVisible: 1560,
+    },
+    {
+      icon: 'ImagePlus',
+      title: 'Upload Image',
+      onClick: () => {
+        if (!editor) return;
+        editor?.chain().focus().deleteRange(editor.state.selection).run();
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/png, image/jpeg, image/gif';
+        input.onchange = async () => {
+          if (input.files?.length) {
+            const file = input.files[0];
+            if (!validateImageExtension(file, onError)) {
+              return;
             }
-          };
-          input.click();
-        },
-        isActive: false,
-        group: 'More',
-        notVisible: 1560,
-      },
-      {
-        icon: 'Code',
-        title: 'Code',
-        onClick: () => {
-          if (editor?.isActive('codeBlock')) {
-            editor?.chain().focus().toggleCodeBlock().run();
+            const size = file.size;
+            const imgConfig = ipfsImageUploadFn
+              ? IMG_UPLOAD_SETTINGS.Extended
+              : IMG_UPLOAD_SETTINGS.Base;
+            if (size > imgConfig.maxSize) {
+              if (onError && typeof onError === 'function') {
+                onError(imgConfig.errorMsg);
+              }
+              return;
+            }
+            const pos = editor.view.state.selection.from;
+            startImageUpload(file, editor.view, pos, ipfsImageUploadFn);
           }
-          editor?.chain().focus().toggleCode().run();
-        },
-        isActive: toolbarState.isCode,
-        group: 'More',
-        notVisible: 1560,
+        };
+        input.click();
       },
-      {
-        icon: 'Braces',
-        title: 'Code Block',
-        onClick: () => {
-          if (editor?.isActive('code')) {
-            editor?.chain().focus().toggleCode().run();
-          }
+      isActive: false,
+      group: 'More',
+      notVisible: 1560,
+    },
+    {
+      icon: 'Code',
+      title: 'Code',
+      onClick: () => {
+        if (editor?.isActive('codeBlock')) {
           editor?.chain().focus().toggleCodeBlock().run();
-        },
-        isActive: toolbarState.isCodeBlock,
-        group: 'More',
-        notVisible: 1560,
+        }
+        editor?.chain().focus().toggleCode().run();
       },
-      {
-        icon: 'Table',
-        title: 'Add table',
-        onClick: () =>
-          editor
-            ?.chain()
-            .focus()
-            .insertTable({ rows: 3, cols: 2, withHeaderRow: true })
-            .run(),
-        isActive: false,
-        group: 'More',
-        notVisible: 1560,
+      isActive: editor?.isActive('code') || false,
+      group: 'More',
+      notVisible: 1560,
+    },
+    {
+      icon: 'Braces',
+      title: 'Code Block',
+      onClick: () => {
+        if (editor?.isActive('code')) {
+          editor?.chain().focus().toggleCode().run();
+        }
+        editor?.chain().focus().toggleCodeBlock().run();
       },
-      null,
-      {
-        icon: 'PilcrowRight',
-        title: 'Set text direction to left-to-right',
-        onClick: () => editor?.commands.setTextDirection('ltr'),
-        isActive: toolbarState.isLtrParagraph,
-        group: 'More',
-        notVisible: 1560,
-      },
-      {
-        icon: 'PilcrowLeft',
-        title: 'Set text direction to right-to-left',
-        onClick: () => editor?.commands.setTextDirection('rtl'),
-        isActive: toolbarState.isRtlParagraph,
-        group: 'More',
-        notVisible: 1560,
-      },
-      null,
-      {
-        icon: 'Presentation',
-        title: enableCollaboration
-          ? 'Slides Mode is not supported during real-time collaboration'
-          : 'Slides mode',
-        onClick: () => {
-          if (enableCollaboration) return;
-          if (!editor) return;
-          if (editor.isEmpty) {
-            onError?.(
-              'Your document is empty. Add some content before starting presentation mode.',
-            );
-          }
-          editor.chain().focus().run(); // added editor focus and delegated the presentation mode setter to give the popover closing time.
-          setTimeout(() => {
-            setIsPresentationMode?.();
-          }, 50);
-        },
-        isActive: isPresentationMode ?? false,
-        disabled: enableCollaboration,
-        group: 'More',
-        notVisible: 1560,
-      },
-    ],
-    [
-      editor,
-      enableCollaboration,
-      formattingState,
-      toolbarState,
-      ipfsImageUploadFn,
-      isPresentationMode,
-      onError,
-      setIsPresentationMode,
-      setToolVisibility,
-      toolVisibility,
-    ],
-  );
-
-  const importOptions = useMemo<Array<IEditorToolElement | null>>(
-    () => [
-      {
-        icon: 'FileInput',
-        title: 'Markdown (.md)',
-        onClick: async () => {
-          await editor?.commands.uploadMarkdownFile(ipfsImageUploadFn, onError);
-          onMarkdownImport?.();
-        },
-        isActive: false,
-      },
-      {
-        icon: 'FileInput',
-        title: 'Microsoft Word (.docx)',
-        onClick: async () => {
-          await editor?.commands.uploadDocxFile(
-            ipfsImageUploadFn,
-            onError,
-            onDocxImport,
+      isActive: editor?.isActive('codeBlock') || false,
+      group: 'More',
+      notVisible: 1560,
+    },
+    {
+      icon: 'Table',
+      title: 'Add table',
+      onClick: () =>
+        editor
+          ?.chain()
+          .focus()
+          .insertTable({ rows: 3, cols: 2, withHeaderRow: true })
+          .run(),
+      isActive: false,
+      group: 'More',
+      notVisible: 1560,
+    },
+    null,
+    {
+      icon: 'PilcrowRight',
+      title: 'Set text direction to left-to-right',
+      onClick: () => editor?.commands.setTextDirection('ltr'),
+      isActive: editor?.isActive('paragraph', { dir: 'ltr' }) ?? false,
+      group: 'More',
+      notVisible: 1560,
+    },
+    {
+      icon: 'PilcrowLeft',
+      title: 'Set text direction to right-to-left',
+      onClick: () => editor?.commands.setTextDirection('rtl'),
+      isActive: editor?.isActive('paragraph', { dir: 'rtl' }) ?? false,
+      group: 'More',
+      notVisible: 1560,
+    },
+    null,
+    {
+      icon: 'FileSearch',
+      title: 'Find/Replace',
+      onClick: () => (editor ? setShowReplacePopoverWithData(editor) : {}),
+      isActive: editor?.isActive('paragraph', { dir: 'rtl' }) ?? false,
+      group: 'More',
+      notVisible: 1560,
+    },
+    null,
+    {
+      icon: 'Presentation',
+      title: enableCollaboration
+        ? 'Slides Mode is not supported during real-time collaboration'
+        : 'Slides mode',
+      onClick: () => {
+        if (enableCollaboration) return;
+        if (!editor) return;
+        if (editor.isEmpty) {
+          onError?.(
+            'Your document is empty. Add some content before starting presentation mode.',
           );
-        },
-        isActive: false,
-        isNew: true,
+        }
+        editor.chain().focus().run(); // added editor focus and delegated the presentation mode setter to give the popover closing time.
+        setTimeout(() => {
+          setIsPresentationMode?.();
+        }, 50);
       },
-    ],
-    [editor, ipfsImageUploadFn, onDocxImport, onError, onMarkdownImport],
-  );
+      isActive: isPresentationMode ?? false,
+      disabled: enableCollaboration,
+      group: 'More',
+      notVisible: 1560,
+    },
+  ];
 
-  const exportOptions = useMemo<Array<IEditorToolElement | null>>(
-    () => [
-      {
-        icon: 'FileExport',
-        title: 'PDF document (.pdf)',
-        onClick: () => {
-          if (editor) {
-            const closeAndPrint = async () => {
-              const { showLoader, removeLoader } = inlineLoader(
-                editor,
-                'Exporting PDF file ...',
+  const importOptions: Array<IEditorToolElement | null> = [
+    {
+      icon: 'FileInput',
+      title: 'Markdown (.md)',
+      onClick: async () => {
+        await editor?.commands.uploadMarkdownFile(ipfsImageUploadFn, onError);
+        onMarkdownImport?.();
+      },
+      isActive: false,
+    },
+    {
+      icon: 'FileInput',
+      title: 'Microsoft Word (.docx)',
+      onClick: async () => {
+        await editor?.commands.uploadDocxFile(
+          ipfsImageUploadFn,
+          onError,
+          onDocxImport,
+        );
+      },
+      isActive: false,
+      isNew: true,
+    },
+  ];
+
+  const exportOptions: Array<IEditorToolElement | null> = [
+    {
+      icon: 'FileExport',
+      title: 'PDF document (.pdf)',
+      onClick: () => {
+        if (editor) {
+          const closeAndPrint = async () => {
+            const { showLoader, removeLoader } = inlineLoader(
+              editor,
+              'Exporting PDF file ...',
+            );
+
+            const loader = showLoader();
+            const originalDoc = editor.state.doc;
+            const docWithEmbedImageContent =
+              await searchForSecureImageNodeAndEmbedImageContent(
+                originalDoc,
+                ipfsImageFetchFn,
+                fetchV1ImageFn,
+                true,
               );
 
-              const loader = showLoader();
-              const originalDoc = editor.state.doc;
-              const docWithEmbedImageContent =
-                await searchForSecureImageNodeAndEmbedImageContent(
-                  originalDoc,
-                  ipfsImageFetchFn,
-                  fetchV1ImageFn,
-                  true,
-                );
-
-              const temporalEditor = getTemporaryEditor(
-                editor,
-                docWithEmbedImageContent.toJSON(),
-              );
-
-              const inlineHtml = temporalEditor.getHTML();
-              handleContentPrint(inlineHtml);
-              removeLoader(loader);
-              temporalEditor.destroy();
-            };
-            setFileExportsOpen(false);
-            setTimeout(closeAndPrint, 200);
-            onPdfExport?.();
-          }
-        },
-        isActive: false,
-      },
-      {
-        icon: 'FileText',
-        title: 'Web page (.html)',
-        subtitle: 'AO3 compatible',
-        onClick: async (name?: string) => {
-          if (editor) {
-            const editorContent = editor.getJSON();
-            const title = extractTitleFromContent(
-              editorContent as unknown as { content: JSONContent },
+            const temporalEditor = getTemporaryEditor(
+              editor,
+              docWithEmbedImageContent.toJSON(),
             );
-            const fileName = name || title || 'Untitled';
-            const generateDownloadUrl = await editor.commands.exportHtmlFile({
-              title: fileName,
-            });
-            if (generateDownloadUrl) {
-              const url = generateDownloadUrl;
-              const link = document.createElement('a');
-              link.href = url;
-              link.download = `${fileName}.html`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              URL.revokeObjectURL(url);
-            }
-          }
-          onHtmlExport?.();
-        },
-        isActive: false,
-      },
-      {
-        icon: 'FileText',
-        title: 'Plain Text (.txt)',
-        onClick: async (name?: string) => {
-          if (editor) {
-            const editorContent = editor.getJSON();
-            const title = extractTitleFromContent(
-              editorContent as unknown as { content: JSONContent },
-            );
-            const fileName = name || title || 'Untitled';
-            const generateDownloadUrl = await editor.commands.exportTxtFile();
-            if (generateDownloadUrl) {
-              const url = generateDownloadUrl;
-              const link = document.createElement('a');
-              link.href = url;
-              link.download = `${fileName}.txt`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              URL.revokeObjectURL(url);
-            }
-          }
-          onTxtExport?.();
-        },
-        isActive: false,
-      },
-      {
-        icon: 'FileOutput',
-        title: 'Markdown (.md)',
-        onClick: async () => {
-          if (editor) {
-            const editorContent = editor?.getJSON();
-            const title = extractTitleFromContent(
-              editorContent as unknown as { content: JSONContent },
-            );
-            const generateDownloadUrl =
-              await editor.commands.exportMarkdownFile({
-                title: title || 'Untitled',
-              });
-            if (generateDownloadUrl) {
-              const url = generateDownloadUrl;
-              const link = document.createElement('a');
-              link.href = url;
-              link.download = `${title || 'Untitled'}.md`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              URL.revokeObjectURL(url);
-            }
-          }
-          onMarkdownExport?.();
-        },
-        isActive: false,
-      },
-      {
-        icon: 'FileText',
-        title: 'OpenDocument (.odt)',
-        subtitle: 'Image support is coming soon',
-        onClick: async (name?: string) => {
-          if (editor) {
-            const editorContent = editor.getJSON();
-            const title = extractTitleFromContent(editorContent);
-            const fileName = name || title || 'Untitled';
-            const generateDownloadUrl = await editor.commands.exportOdtFile({
-              title: fileName,
-            });
-            if (generateDownloadUrl) {
-              const url = generateDownloadUrl;
-              const link = document.createElement('a');
-              link.href = url;
-              link.download = `${fileName}.odt`;
-              document.body.appendChild(link);
-              link.click();
-              document.body.removeChild(link);
-              URL.revokeObjectURL(url);
-            }
-          }
-          onOdtExport?.();
-        },
-        isActive: false,
-      },
-    ],
-    [
-      editor,
-      fetchV1ImageFn,
-      ipfsImageFetchFn,
-      onHtmlExport,
-      onMarkdownExport,
-      onOdtExport,
-      onPdfExport,
-      onTxtExport,
-      setFileExportsOpen,
-    ],
-  );
 
-  const bottomToolbar = useMemo<Array<IEditorToolElement | null>>(
-    () => [
-      {
-        icon: 'Undo',
-        title: 'Undo',
-        onClick: () => {
-          editor?.chain().undo().run();
-        },
-        isActive: undoRedoState.canUndo,
+            const rawHtml = temporalEditor.getHTML();
+            const inlineHtml = await renderMermaidBlocks(rawHtml);
+            handleContentPrint(inlineHtml);
+            removeLoader(loader);
+            temporalEditor.destroy();
+          };
+          setFileExportsOpen(false);
+          setTimeout(closeAndPrint, 200);
+          onPdfExport?.();
+        }
       },
-      {
-        icon: 'Redo',
-        title: 'Redo',
-        onClick: () => {
-          editor?.chain().redo().run();
-        },
-        isActive: undoRedoState.canRedo,
-      },
-      null,
-      {
-        icon: 'Type',
-        title: 'Text formating',
-        onClick: () => setToolVisibility(IEditorTool.TEXT_FORMATING),
-        isActive: toolVisibility === IEditorTool.TEXT_FORMATING,
-      },
-      null,
-      {
-        icon: 'Table',
-        title: 'Add table',
-        onClick: () =>
-          editor
-            ?.chain()
-            .focus()
-            .insertTable({ rows: 3, cols: 2, withHeaderRow: true })
-            .run(),
-        isActive: false,
-      },
-      null,
-      {
-        icon: 'ListChecks',
-        title: 'To-do list',
-        onClick: () => {
-          if (!editor) return;
-          const { from, to, state, hasMultipleLists } =
-            checkActiveListsAndDBlocks(editor);
-
-          if (hasMultipleLists) {
-            return;
+      isActive: false,
+    },
+    {
+      icon: 'FileText',
+      title: 'Web page (.html)',
+      subtitle: 'AO3 compatible',
+      onClick: async (name?: string) => {
+        if (editor) {
+          const editorContent = editor.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const fileName = name || title || 'Untitled';
+          const generateDownloadUrl = await editor.commands.exportHtmlFile({
+            title: fileName,
+          });
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${fileName}.html`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
           }
-
-          if (editor.isActive('taskList')) {
-            const result = editor
-              .chain()
-              .focus()
-              .command((props) =>
-                convertListToParagraphs({ ...props, state, from, to }),
-              )
-              .setTextSelection({ from, to })
-              .focus()
-              .run();
-
-            setToolVisibility(IEditorTool.NONE);
-            return result;
+        }
+        onHtmlExport?.();
+      },
+      isActive: false,
+    },
+    {
+      icon: 'FileText',
+      title: 'Plain Text (.txt)',
+      onClick: async (name?: string) => {
+        if (editor) {
+          const editorContent = editor.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const fileName = name || title || 'Untitled';
+          const generateDownloadUrl = await editor.commands.exportTxtFile();
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${fileName}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
           }
+        }
+        onTxtExport?.();
+      },
+      isActive: false,
+    },
+    {
+      icon: 'FileOutput',
+      title: 'Markdown (.md)',
+      onClick: async () => {
+        if (editor) {
+          const editorContent = editor?.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const generateDownloadUrl = await editor.commands.exportMarkdownFile({
+            title: title || 'Untitled',
+          });
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${title || 'Untitled'}.md`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onMarkdownExport?.();
+      },
+      isActive: false,
+    },
+    {
+      icon: 'FileText',
+      title: 'OpenDocument (.odt)',
+      subtitle: 'Image support is coming soon',
+      onClick: async (name?: string) => {
+        if (editor) {
+          const editorContent = editor.getJSON();
+          const title = extractTitleFromContent(editorContent);
+          const fileName = name || title || 'Untitled';
+          const generateDownloadUrl = await editor.commands.exportOdtFile({
+            title: fileName,
+          });
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${fileName}.odt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onOdtExport?.();
+      },
+      isActive: false,
+    },
+  ];
 
+  const bottomToolbar: Array<IEditorToolElement | null> = [
+    {
+      icon: 'Undo',
+      title: 'Undo',
+      onClick: () => {
+        editor?.chain().undo().run();
+      },
+      isActive: editor?.can().undo() || false,
+    },
+    {
+      icon: 'Redo',
+      title: 'Redo',
+      onClick: () => {
+        editor?.chain().redo().run();
+      },
+      isActive: editor?.can().redo() || false,
+    },
+    null,
+    {
+      icon: 'Type',
+      title: 'Text formating',
+      onClick: () => setToolVisibility(IEditorTool.TEXT_FORMATING),
+      isActive: toolVisibility === IEditorTool.TEXT_FORMATING,
+    },
+    null,
+    {
+      icon: 'Table',
+      title: 'Add table',
+      onClick: () =>
+        editor
+          ?.chain()
+          .focus()
+          .insertTable({ rows: 3, cols: 2, withHeaderRow: true })
+          .run(),
+      isActive: false,
+    },
+    null,
+    {
+      icon: 'ListChecks',
+      title: 'To-do list',
+      onClick: () => {
+        if (!editor) return;
+        const { from, to, state, hasMultipleLists } =
+          checkActiveListsAndDBlocks(editor);
+
+        if (hasMultipleLists) {
+          return;
+        }
+
+        if (editor.isActive('taskList')) {
           const result = editor
             .chain()
             .focus()
             .command((props) =>
-              convertToList({
-                ...props,
-                state,
-                from,
-                to,
-                listConfig: {
-                  type: 'taskList',
-                  itemType: 'taskItem',
-                  hasAttrs: true,
-                },
-              }),
+              convertListToParagraphs({ ...props, state, from, to }),
             )
             .setTextSelection({ from, to })
             .focus()
@@ -1150,57 +1027,71 @@ export const useEditorToolbar = ({
 
           setToolVisibility(IEditorTool.NONE);
           return result;
-        },
-        isActive: false,
+        }
+
+        const result = editor
+          .chain()
+          .focus()
+          .command((props) =>
+            convertToList({
+              ...props,
+              state,
+              from,
+              to,
+              listConfig: {
+                type: 'taskList',
+                itemType: 'taskItem',
+                hasAttrs: true,
+              },
+            }),
+          )
+          .setTextSelection({ from, to })
+          .focus()
+          .run();
+
+        setToolVisibility(IEditorTool.NONE);
+        return result;
       },
-      null,
-      {
-        icon: 'ImagePlus',
-        title: 'Add image',
-        onClick: () => {
-          if (!editor) return;
-          editor?.chain().focus().deleteRange(editor.state.selection).run();
-          // upload image
-          const input = document.createElement('input');
-          input.type = 'file';
-          input.accept = 'image/png, image/jpeg, image/gif';
-          input.onchange = async () => {
-            if (input.files?.length) {
-              const file = input.files[0];
-              if (!validateImageExtension(file, onError)) {
-                return;
-              }
-              const size = file.size;
-
-              const imgConfig = ipfsImageUploadFn
-                ? IMG_UPLOAD_SETTINGS.Extended
-                : IMG_UPLOAD_SETTINGS.Base;
-
-              if (size > imgConfig.maxSize) {
-                if (onError && typeof onError === 'function') {
-                  onError(imgConfig.errorMsg);
-                }
-                return;
-              }
-              const pos = editor.view.state.selection.from;
-              startImageUpload(file, editor.view, pos, ipfsImageUploadFn);
+      isActive: false,
+    },
+    null,
+    {
+      icon: 'ImagePlus',
+      title: 'Add image',
+      onClick: () => {
+        if (!editor) return;
+        editor?.chain().focus().deleteRange(editor.state.selection).run();
+        // upload image
+        const input = document.createElement('input');
+        input.type = 'file';
+        input.accept = 'image/png, image/jpeg, image/gif';
+        input.onchange = async () => {
+          if (input.files?.length) {
+            const file = input.files[0];
+            if (!validateImageExtension(file, onError)) {
+              return;
             }
-          };
-          input.click();
-        },
-        isActive: false,
+            const size = file.size;
+
+            const imgConfig = ipfsImageUploadFn
+              ? IMG_UPLOAD_SETTINGS.Extended
+              : IMG_UPLOAD_SETTINGS.Base;
+
+            if (size > imgConfig.maxSize) {
+              if (onError && typeof onError === 'function') {
+                onError(imgConfig.errorMsg);
+              }
+              return;
+            }
+            const pos = editor.view.state.selection.from;
+            startImageUpload(file, editor.view, pos, ipfsImageUploadFn);
+          }
+        };
+        input.click();
       },
-    ],
-    [
-      editor,
-      ipfsImageUploadFn,
-      onError,
-      setToolVisibility,
-      toolVisibility,
-      undoRedoState.canRedo,
-      undoRedoState.canUndo,
-    ],
-  );
+      isActive: false,
+    },
+  ];
   return {
     undoRedoTools,
     toolbar,
@@ -1490,7 +1381,7 @@ export const LinkPopup = ({
 
     // Validate URL
     const urlPattern =
-      /^(https?:\/\/)?([\w-]+(\.[\w-]+)+\.?(:\d+)?(\/\S*)?|\w+@[\w.-]+\.\w+)$/i;
+      /^(https?:\/\/)?([\w-]+(\.[\w-]+)+\.?(:\d+)?(\/\S*)?|\w+@[\w.-]+\.\w+)\s*$/i;
 
     if (!urlPattern.test(url)) {
       if (onError && typeof onError === 'function') {
@@ -1504,6 +1395,7 @@ export const LinkPopup = ({
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
       finalUrl = 'https://' + url;
     }
+    finalUrl = finalUrl.trim();
 
     // Update link
     editor
@@ -1594,7 +1486,7 @@ export const InlineCommentPopup = ({
   };
 
   // Unset highlight when popup is closed without submitting
-  const handleClosePopup = useCallback(() => {
+  const handleClosePopup = () => {
     editor.chain().unsetHighlight().run();
     setComment('');
     setInlineCommentData({
@@ -1603,7 +1495,7 @@ export const InlineCommentPopup = ({
       handleClick: false,
     });
     setIsInlineCommentOpen(false);
-  }, [editor, setInlineCommentData, setIsInlineCommentOpen]);
+  };
 
   // Close popup if click is outside or ESC key is pressed
   useEffect(() => {
@@ -1626,7 +1518,7 @@ export const InlineCommentPopup = ({
       document.removeEventListener('mousedown', handleOutsideClick);
       document.removeEventListener('keydown', handleEscKey);
     };
-  }, [elementRef, handleClosePopup]);
+  }, [elementRef]);
 
   const handleClick = () => {
     if (comment.trim()) {

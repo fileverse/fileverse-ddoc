@@ -11,11 +11,13 @@ import {
   Tooltip,
   toast,
   Button,
+  Toggle,
 } from '@fileverse/ui';
 import { NodeViewWrapper, NodeViewContent, NodeViewProps } from '@tiptap/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useReducer, useRef, useState } from 'react';
 import { useResponsive } from '../../../utils/responsive';
 import { useEditingContext } from '../../../hooks/use-editing-context';
+import { getMermaid } from '../lazy-mermaid';
 
 const LANGUAGE_GROUPS = [
   {
@@ -80,6 +82,10 @@ const LANGUAGE_GROUPS = [
     options: [{ label: 'Solidity', value: 'solidity' }],
   },
   {
+    label: 'Diagrams',
+    options: [{ label: 'Mermaid', value: 'mermaid' }],
+  },
+  {
     label: 'Other',
     options: [
       { label: 'Plain Text', value: 'plaintext' },
@@ -88,6 +94,25 @@ const LANGUAGE_GROUPS = [
   },
 ];
 const TAB_SIZES = [2, 4, 8];
+
+type MermaidState = {
+  view: 'source' | 'preview';
+  error: string | null;
+  svg: string;
+};
+type MermaidAction =
+  | { type: 'toggleView' }
+  | { type: 'setView'; view: 'source' | 'preview' }
+  | { type: 'parsed' }
+  | { type: 'rendered'; svg: string }
+  | { type: 'failed'; error: string }
+  | { type: 'reset' };
+
+const initialMermaidState: MermaidState = {
+  view: 'source',
+  error: null,
+  svg: '',
+};
 
 export default function CodeBlockNodeView({
   node,
@@ -100,14 +125,143 @@ export default function CodeBlockNodeView({
   const { isSuggestionMode } = useEditingContext();
   // Read attributes with sensible defaults
   const language = node.attrs.language || 'plaintext';
+  const isMermaid = language === 'mermaid';
   const isPreviewMode = !editor.isEditable || !!isSuggestionMode;
-  const lineNumbers = node.attrs.lineNumbers && !isPreviewMode;
-  const wordWrap = node.attrs.wordWrap && !isPreviewMode;
+  const lineNumbers = node.attrs.lineNumbers && !isPreviewMode && !isMermaid;
+  const wordWrap = node.attrs.wordWrap && !isPreviewMode && !isMermaid;
   const tabSize = node.attrs.tabSize ?? 2;
   const shouldFocus = node.attrs.shouldFocus;
   const { isMobile } = useResponsive();
 
   const code = node.textContent || node.attrs.code || '';
+
+  const mermaidContainerRef = useRef<HTMLDivElement>(null);
+  const mermaidId = `mermaid-${useId().replace(/:/g, '')}`;
+
+  const [mermaidState, dispatchMermaid] = useReducer(
+    (state: MermaidState, action: MermaidAction): MermaidState => {
+      switch (action.type) {
+        case 'toggleView': {
+          if (typeof state.error === 'string') {
+            return state;
+          }
+          return state.view === 'preview'
+            ? { ...state, view: 'source' }
+            : { ...state, view: 'preview' };
+        }
+        case 'setView':
+          return state.view === action.view
+            ? state
+            : { ...state, view: action.view };
+        case 'parsed':
+          return state.error === null ? state : { ...state, error: null };
+        case 'rendered':
+          return { ...state, error: null, svg: action.svg };
+        case 'failed':
+          return state.error === action.error
+            ? state
+            : { ...state, error: action.error };
+        case 'reset':
+          return initialMermaidState;
+      }
+    },
+    initialMermaidState,
+  );
+
+  const {
+    view: mermaidView,
+    error: mermaidError,
+    svg: mermaidSvg,
+  } = mermaidState;
+  const showMermaidPreview = isMermaid && mermaidView === 'preview';
+
+  // Cache last successful render to avoid re-rendering on toggle when source
+  // hasn't changed, and to render immediately on toggle without debounce.
+  const lastRenderedRef = useRef<{ source: string; svg: string }>({
+    source: '',
+    svg: '',
+  });
+  const prevViewRef = useRef(mermaidView);
+
+  useEffect(() => {
+    if (!isMermaid) return;
+    if (!code.trim()) {
+      if (mermaidError) dispatchMermaid({ type: 'parsed' });
+      return;
+    }
+
+    const isPreview = mermaidView === 'preview' || isPreviewMode;
+    const justToggledToPreview = isPreview && prevViewRef.current === 'source';
+    prevViewRef.current = mermaidView;
+
+    // Cache hit: previewing source we already rendered. No work, no flicker.
+    if (
+      isPreview &&
+      lastRenderedRef.current.source === code &&
+      lastRenderedRef.current.svg
+    ) {
+      if (mermaidSvg !== lastRenderedRef.current.svg) {
+        dispatchMermaid({ type: 'rendered', svg: lastRenderedRef.current.svg });
+      }
+      return;
+    }
+
+    // Render immediately when the user just clicked Preview; debounce edits.
+    const delay = justToggledToPreview ? 0 : 400;
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      try {
+        const mermaid = await getMermaid();
+        if (isPreview) {
+          const { svg } = await mermaid.render(mermaidId, code);
+          if (cancelled) return;
+          lastRenderedRef.current = { source: code, svg };
+          dispatchMermaid({ type: 'rendered', svg });
+        } else {
+          await mermaid.parse(code);
+          if (!cancelled) dispatchMermaid({ type: 'parsed' });
+        }
+      } catch (err) {
+        if (!cancelled) {
+          dispatchMermaid({
+            type: 'failed',
+            error: err instanceof Error ? err.message : String(err),
+          });
+        }
+      }
+    }, delay);
+
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+    // mermaidSvg/mermaidError are read but not deps — using them as deps would
+    // re-run after every dispatch. The reducer no-ops when nothing changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [code, isMermaid, mermaidView, isPreviewMode, mermaidId]);
+
+  useEffect(() => {
+    if (!isMermaid) {
+      lastRenderedRef.current = { source: '', svg: '' };
+      dispatchMermaid({ type: 'reset' });
+    }
+  }, [isMermaid]);
+
+  useEffect(() => {
+    if (!isPreviewMode) return;
+    if (mermaidError) {
+      dispatchMermaid({
+        type: 'setView',
+        view: 'source',
+      });
+    } else {
+      dispatchMermaid({
+        type: 'setView',
+        view: 'preview',
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isPreviewMode, mermaidError]);
 
   const codeLines = useMemo(() => {
     const lines = code.split('\n');
@@ -172,54 +326,70 @@ export default function CodeBlockNodeView({
   return (
     <NodeViewWrapper className="w-full">
       <pre
-        className={cn('rounded-lg border color-border-default w-full relative')}
+        className={cn(
+          'rounded-lg overflow-clip border color-border-default w-full relative',
+          showMermaidPreview && '!bg-white !bg-clip-padding',
+        )}
       >
         <div
           className={cn(
-            'flex flex-row gap-2 items-center justify-between color-bg-secondary absolute top-0 left-0 z-10 rounded-t-lg w-full border-b color-border-default px-2 py-1',
-            isPreviewMode && 'hidden',
+            'flex flex-row gap-2 items-center justify-between color-bg-secondary absolute top-0 left-0 z-10 w-full border-b color-border-default px-2 py-1',
+            isPreviewMode && !isMermaid && 'hidden',
           )}
+          contentEditable="false"
         >
           <div className="flex flex-row gap-0 items-center">
             {/* Language select */}
-            <Select
-              value={language}
-              onValueChange={(value: string) =>
-                updateAttributes({ language: value })
-              }
-            >
-              <SelectTrigger className="!min-w-24 text-helper-text-sm h-7 px-2 py-1 color-bg-secondary border-none">
-                <Tooltip text="Select language">
-                  <SelectValue placeholder="Select language" />
-                  <span className="w-1"></span>
-                </Tooltip>
-              </SelectTrigger>
-              <SelectContent className="min-w-fit" showScrollButtons={false}>
-                {LANGUAGE_GROUPS.map((group) => (
-                  <SelectGroup key={group.label}>
-                    <SelectLabel>{group.label}</SelectLabel>
-                    {group.options.map((opt) => (
-                      <SelectItem
-                        key={opt.value}
-                        value={opt.value}
-                        className="text-helper-text-sm"
-                      >
-                        {opt.label}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                ))}
-              </SelectContent>
-            </Select>
+            {isPreviewMode ? (
+              <span className="text-helper-text-sm px-2 py-1">
+                {language || '-'}
+              </span>
+            ) : (
+              <Select
+                value={language}
+                onValueChange={(value: string) =>
+                  updateAttributes({ language: value })
+                }
+              >
+                <SelectTrigger className="!min-w-24 text-helper-text-sm h-7 px-2 py-1 color-bg-secondary border-none">
+                  <Tooltip text="Select language">
+                    <SelectValue placeholder="Select language" />
+                    <span className="w-1"></span>
+                  </Tooltip>
+                </SelectTrigger>
+                <SelectContent className="min-w-fit" showScrollButtons={false}>
+                  {LANGUAGE_GROUPS.map((group) => (
+                    <SelectGroup key={group.label}>
+                      <SelectLabel>{group.label}</SelectLabel>
+                      {group.options.map((opt) => (
+                        <SelectItem
+                          key={opt.value}
+                          value={opt.value}
+                          className="text-helper-text-sm"
+                        >
+                          {opt.label}
+                        </SelectItem>
+                      ))}
+                    </SelectGroup>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+
             <div className="w-[1px] h-4 vertical-divider mx-1"></div>
 
             {/* Toolbar */}
-            <Tooltip text="Copy code">
+            <Tooltip
+              text="Copy code"
+              onMouseDown={(e) => e.preventDefault()}
+              asTriggerChild={true}
+            >
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={handleCopyCode}
-                className="min-w-fit p-2 relative"
+                onMouseDown={(e) => e.preventDefault()}
+                className="min-w-fit p-2 relative select-none"
               >
                 <div className="relative w-4 h-4">
                   <LucideIcon
@@ -247,80 +417,138 @@ export default function CodeBlockNodeView({
             </Tooltip>
             <div className="w-[1px] h-4 vertical-divider mx-1"></div>
 
-            <Tooltip text="Line numbers">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => updateAttributes({ lineNumbers: !lineNumbers })}
-                className={cn(
-                  'min-w-fit p-2',
-                  lineNumbers &&
-                    'color-bg-brand color-text-on-brand hover:bg-[hsla(var(--color-bg-brand-hover))]',
-                )}
-              >
-                <LucideIcon name="List" size="sm" />
-              </Button>
-            </Tooltip>
-            <div className="w-[1px] h-4 vertical-divider mx-1"></div>
-
-            <Tooltip text="Word wrap">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => updateAttributes({ wordWrap: !wordWrap })}
-                className={cn(
-                  'min-w-fit p-2',
-                  wordWrap &&
-                    'color-bg-brand color-text-on-brand hover:bg-[hsla(var(--color-bg-brand-hover))]',
-                )}
-              >
-                <LucideIcon name="WrapText" size="sm" />
-              </Button>
-            </Tooltip>
-            <div className="w-[1px] h-4 vertical-divider mx-1"></div>
-
-            <Select
-              value={String(tabSize)}
-              onValueChange={(value: string) =>
-                updateAttributes({ tabSize: Number(value) })
-              }
-            >
-              <SelectTrigger className="w-full text-helper-text-sm h-7 px-2 py-1 color-bg-secondary border-none">
-                <Tooltip text="Tab size">
-                  <span className="!hidden sm:!block">Tab: {tabSize}</span>
-                  <span className="!block sm:!hidden">{tabSize}</span>
-                </Tooltip>
-              </SelectTrigger>
-              <SelectContent
-                className="min-w-[60px] max-h-60 overflow-y-auto "
-                showScrollButtons={false}
-              >
-                {TAB_SIZES.map((size) => (
-                  <SelectItem
-                    key={size}
-                    value={String(size)}
-                    className="text-helper-text-sm"
+            {!isMermaid && (
+              <>
+                <Tooltip text="Line numbers">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() =>
+                      updateAttributes({ lineNumbers: !lineNumbers })
+                    }
+                    className={cn(
+                      'min-w-fit p-2',
+                      lineNumbers &&
+                        'color-bg-brand color-text-on-brand hover:bg-[hsla(var(--color-bg-brand-hover))]',
+                    )}
                   >
-                    {size}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+                    <LucideIcon name="List" size="sm" />
+                  </Button>
+                </Tooltip>
+                <div className="w-[1px] h-4 vertical-divider mx-1"></div>
 
-          <Tooltip text="Delete code block">
-            <LucideIcon
-              name="Trash2"
-              size="sm"
-              className="mr-1"
-              onClick={() => deleteNode()}
-            />
-          </Tooltip>
+                <Tooltip text="Word wrap">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => updateAttributes({ wordWrap: !wordWrap })}
+                    className={cn(
+                      'min-w-fit p-2',
+                      wordWrap &&
+                        'color-bg-brand color-text-on-brand hover:bg-[hsla(var(--color-bg-brand-hover))]',
+                    )}
+                  >
+                    <LucideIcon name="WrapText" size="sm" />
+                  </Button>
+                </Tooltip>
+                <div className="w-[1px] h-4 vertical-divider mx-1"></div>
+
+                <Select
+                  value={String(tabSize)}
+                  onValueChange={(value: string) =>
+                    updateAttributes({ tabSize: Number(value) })
+                  }
+                >
+                  <SelectTrigger className="w-full text-helper-text-sm h-7 px-2 py-1 color-bg-secondary border-none">
+                    <Tooltip text="Tab size">
+                      <span className="!hidden sm:!block">Tab: {tabSize}</span>
+                      <span className="!block sm:!hidden">{tabSize}</span>
+                    </Tooltip>
+                  </SelectTrigger>
+                  <SelectContent
+                    className="min-w-[60px] max-h-60 overflow-y-auto "
+                    showScrollButtons={false}
+                  >
+                    {TAB_SIZES.map((size) => (
+                      <SelectItem
+                        key={size}
+                        value={String(size)}
+                        className="text-helper-text-sm"
+                      >
+                        {size}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </>
+            )}
+
+            {isMermaid && (
+              <div className="flex gap-1 items-center">
+                <div className="grid grid-cols-2 grid-rows-1 shrink-0 items-center justify-items-center">
+                  <Toggle
+                    title={
+                      mermaidError
+                        ? ''
+                        : mermaidView === 'preview'
+                          ? 'Switch to source view'
+                          : 'Switch to preview'
+                    }
+                    className="col-start-1 col-end-3 row-start-1 row-end-2 data-[state=checked]:bg-[hsl(var(--color-bg-disabled))] data-[state=checked]:hover:enabled:bg-[hsl(var(--color-bg-disabled))]"
+                    contentEditable="false"
+                    checked={mermaidView === 'preview'}
+                    disabled={!!mermaidError}
+                    onCheckedChange={() =>
+                      dispatchMermaid({
+                        type: 'toggleView',
+                      })
+                    }
+                    onMouseDown={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.focus();
+                    }}
+                    onTouchStart={(e) => {
+                      e.preventDefault();
+                      e.currentTarget.focus();
+                    }}
+                  />
+                  <LucideIcon
+                    name="Code"
+                    size={'sm'}
+                    className="col-start-1 col-end-2 row-start-1 row-end-2 pointer-events-none"
+                  />
+                  {mermaidError ? (
+                    <LucideIcon
+                      name="TriangleAlert"
+                      size="sm"
+                      className="col-start-2 col-end-3 row-start-1 row-end-2 pointer-events-none"
+                    />
+                  ) : (
+                    <LucideIcon
+                      name="Eye"
+                      size={'sm'}
+                      className="col-start-2 col-end-3 row-start-1 row-end-2 pointer-events-none"
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+          {!isPreviewMode && (
+            <Tooltip text="Delete code block">
+              <LucideIcon
+                name="Trash2"
+                size="sm"
+                className="mr-1"
+                onClick={() => deleteNode()}
+              />
+            </Tooltip>
+          )}
         </div>
         <div
           className={cn(
             'absolute top-3 right-3 hidden z-10 color-bg-default',
-            isPreviewMode && 'flex',
+            isPreviewMode && !isMermaid && 'flex',
           )}
         >
           <Tooltip text="Copy code">
@@ -350,21 +578,26 @@ export default function CodeBlockNodeView({
         </div>
         <div
           className={cn(
-            'bg-transparent w-full p-0 font-mono select-text pointer-events-auto overflow-y-auto no-scrollbar max-w-[650px]',
-            !isPreviewMode && 'pt-8',
+            'bg-transparent w-full p-0 font-mono select-text pointer-events-auto overflow-auto no-scrollbar max-w-[650px]',
+            (!isPreviewMode || isMermaid) && 'mt-8',
             codeLines.length > 20 && 'max-h-[500px]',
           )}
         >
+          {mermaidError && (
+            <div
+              contentEditable="false"
+              className="border-b color-border-default p-2"
+            >
+              <p className="color-text-danger text-helper-text-sm">
+                {mermaidError}
+              </p>
+            </div>
+          )}
           <div
             className={cn(
               'flex flex-row gap-3',
-              wordWrap
-                ? isMobile
-                  ? 'w-[330px]'
-                  : 'w-[650px]'
-                : isMobile
-                  ? 'w-[720px]'
-                  : 'w-[720px]',
+              showMermaidPreview && 'hidden',
+              !wordWrap && 'w-max',
             )}
           >
             {lineNumbers && (
@@ -389,6 +622,15 @@ export default function CodeBlockNodeView({
               onFocus={handleFocus}
             />
           </div>
+          {isMermaid && showMermaidPreview && (
+            <div
+              ref={mermaidContainerRef}
+              className="w-full px-4 py-2 flex items-center justify-center"
+              dangerouslySetInnerHTML={{
+                __html: mermaidSvg || '',
+              }}
+            />
+          )}
         </div>
       </pre>
     </NodeViewWrapper>

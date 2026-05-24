@@ -31,7 +31,7 @@ export const DocumentOutlineTOCPanel = ({
     return (
       <div
         className={cn(
-          'flex flex-col gap-4 items-start px-3 justify-start z-20',
+          'flex flex-col gap-4 items-start px-3 justify-start z-20 h-full pb-6',
           (!hasToC || shouldHideToC) && 'hidden',
         )}
       >
@@ -49,7 +49,7 @@ export const DocumentOutlineTOCPanel = ({
         </Tooltip>
         <div
           className={cn(
-            'table-of-contents animate-in fade-in slide-in-from-left-5',
+            'table-of-contents animate-in fade-in slide-in-from-left-5 overflow-y-auto h-full',
             showTOC ? 'block' : 'hidden',
           )}
         >

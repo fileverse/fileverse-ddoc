@@ -4,7 +4,7 @@ import { DdocProps } from './types';
 import { ColumnsMenu } from './extensions/multi-column/menus';
 import { EditingProvider } from './hooks/use-editing-context';
 import EditorToolBar from './components/editor-toolbar';
-import './styles/editor.scss';
+import './styles/editor.css';
 import 'tippy.js/animations/shift-toward-subtle.css';
 import { useDdocEditor } from './use-ddoc-editor';
 import './styles/index.css';
@@ -53,6 +53,7 @@ import {
 import { useFocusMode } from './hooks/use-focus-mode';
 import { FullScreenToolbar } from './components/fullscreen-toolbar';
 import { mergeTabAwareYjsUpdates } from './components/tabs/utils/tab-utils';
+import SearchReplace from './extensions/search-replace/components/search-replace-popover';
 
 const DdocEditor = forwardRef(
   (
@@ -816,6 +817,7 @@ const DdocEditor = forwardRef(
                           minHeight: '100%',
                           ...(!isFocusMode ? getCanvasStyle() || {} : {}),
                         }}
+                        data-mode={isFocusMode ? 'focus' : 'normal'}
                       >
                         {isMobile && isPreviewMode && (
                           <p className="text-center color-text-secondary text-helper-text-sm flex gap-2 items-center justify-center mt-[28px]">
@@ -1172,6 +1174,8 @@ const DdocEditor = forwardRef(
             )}
             style={!isFocusMode ? getBackgroundStyle() : undefined}
           >
+            <SearchReplace editor={editor} viewerMode={viewerMode} />
+
             <nav
               id="Navbar"
               className={cn(
