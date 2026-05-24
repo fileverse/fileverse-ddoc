@@ -252,6 +252,34 @@ export const getSuggestionItems = ({
         editor.chain().focus().deleteRange(range).toggleCodeBlock().run(),
     },
     {
+      title: 'Mermaid Diagram',
+      description: 'Author a diagram in Mermaid syntax.',
+      searchTerms: ['mermaid', 'diagram', 'flowchart', 'sequence', 'gantt'],
+      icon: <LucideIcon name="GitGraph" size={'md'} />,
+      image: '',
+      command: ({ editor, range }: CommandProps) =>
+        editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          .setCodeBlock({ language: 'mermaid' })
+          .run(),
+    },
+    {
+      title: 'Plain text',
+      description: 'Create a plain text block',
+      searchTerms: ['plaintext', 'txt', 'plain', 'text'],
+      icon: <LucideIcon name="NotepadText" size={'md'} />,
+      image: '',
+      command: ({ editor, range }: CommandProps) =>
+        editor
+          .chain()
+          .focus()
+          .deleteRange(range)
+          .setCodeBlock({ language: 'plaintext' })
+          .run(),
+    },
+    {
       title: 'Table',
       description: 'Create a table.',
       searchTerms: ['table'],

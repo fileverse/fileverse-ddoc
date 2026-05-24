@@ -3,6 +3,7 @@ import { Node, mergeAttributes } from '@tiptap/core';
 import { ReactNodeViewRenderer } from '@tiptap/react';
 import { getResizableMediaNodeView } from '../resizable-media/resizable-media-node-view';
 import { IpfsImageFetchPayload } from '../../types';
+import { isAllowedEmbedSrc } from '../../utils/is-allowed-embed-src';
 
 export interface IframeOptions {
   allowFullscreen: boolean;
@@ -103,6 +104,13 @@ export const Iframe = Node.create<IframeOptions>({
     return [
       {
         tag: 'iframe',
+        getAttrs: (el) => {
+          const src = (el as HTMLElement).getAttribute('src');
+          if (!isAllowedEmbedSrc(src)) return false;
+          const width = (el as HTMLElement).getAttribute('width');
+          const height = (el as HTMLElement).getAttribute('height');
+          return { src, width, height };
+        },
       },
     ];
   },
@@ -117,8 +125,9 @@ export const Iframe = Node.create<IframeOptions>({
   addCommands() {
     return {
       setIframe:
-        (options: { src: string }) =>
+        (options: { src: string; width?: number; height?: number }) =>
         ({ tr, dispatch }) => {
+          if (!isAllowedEmbedSrc(options.src)) return false;
           const { selection } = tr;
           const node = this.type.create(options);
 

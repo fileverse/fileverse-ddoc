@@ -38,6 +38,7 @@ export const getResizableMediaNodeView =
 
     const isSoundcloudIframe =
       mediaType === 'iframe' &&
+      URL.canParse(node.attrs.src) &&
       new URL(node.attrs.src).hostname === 'w.soundcloud.com';
 
     const [aspectRatio, setAspectRatio] = useState(0);

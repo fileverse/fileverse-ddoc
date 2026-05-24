@@ -88,6 +88,13 @@ export const suggestionTrackingPluginKey = new PluginKey<null>(
   'suggestionTracking',
 );
 
+/**
+ * Meta key set on transactions that toggle a heading's `isCollapsed` attribute.
+ * Such transactions are UI-state changes (folding/unfolding sections), not
+ * content edits — `filterTransaction` lets them through in suggest mode.
+ */
+export const HEADING_COLLAPSE_TOGGLE_META = 'heading-collapse-toggle';
+
 // ---------------------------------------------------------------------------
 // Keystroke classification helpers
 // ---------------------------------------------------------------------------
@@ -222,6 +229,9 @@ export const SuggestionTrackingExtension =
             if (!tr.docChanged) return true;
             if (tr.getMeta(suggestionTrackingPluginKey)) return true;
             if (tr.getMeta('y-sync$')) return true;
+            // Heading collapse is a UI-state attribute toggle, not a content
+            // edit — allow it through even in suggest mode.
+            if (tr.getMeta(HEADING_COLLAPSE_TOGGLE_META)) return true;
 
             // Pre-transaction selection tells us whether the user had a
             // range selected. Without a selection, we still need the

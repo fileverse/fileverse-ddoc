@@ -4,7 +4,7 @@ import { DdocProps } from './types';
 import { ColumnsMenu } from './extensions/multi-column/menus';
 import { EditingProvider } from './hooks/use-editing-context';
 import EditorToolBar from './components/editor-toolbar';
-import './styles/editor.scss';
+import './styles/editor.css';
 import 'tippy.js/animations/shift-toward-subtle.css';
 import { useDdocEditor } from './use-ddoc-editor';
 import './styles/index.css';
@@ -55,6 +55,7 @@ import { useFocusMode } from './hooks/use-focus-mode';
 import { FullScreenToolbar } from './components/fullscreen-toolbar';
 import { mergeTabAwareYjsUpdates } from './components/tabs/utils/tab-utils';
 import { DBlockToolbarProvider } from './extensions/d-block/dblock-toolbar';
+import SearchReplace from './extensions/search-replace/components/search-replace-popover';
 
 const DdocEditor = forwardRef(
   (
@@ -833,9 +834,10 @@ const DdocEditor = forwardRef(
                           minHeight: '100%',
                           ...(!isFocusMode ? getCanvasStyle() || {} : {}),
                         }}
+                        data-mode={isFocusMode ? 'focus' : 'normal'}
                       >
                         {isMobile && isPreviewMode && (
-                          <p className="text-center color-text-secondary text-helper-text-sm flex gap-2 items-center justify-center mt-3">
+                          <p className="text-center color-text-secondary text-helper-text-sm flex gap-2 items-center justify-center mt-[28px]">
                             <LucideIcon
                               name={'LockKeyhole'}
                               className="w-[14px] h-[14px]"
@@ -1239,10 +1241,12 @@ const DdocEditor = forwardRef(
             )}
             style={!isFocusMode ? getBackgroundStyle() : undefined}
           >
+            <SearchReplace editor={editor} viewerMode={viewerMode} />
+
             <nav
               id="Navbar"
               className={cn(
-                'h-14 color-bg-default py-2 px-0 md:px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-[45] transition-all duration-300',
+                'min-h-14 color-bg-default py-2 px-0 md:px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-[45] transition-all duration-300',
                 {
                   'translate-y-0 opacity-100':
                     !isFocusMode && isNavbarVisible && !isPresentationMode,

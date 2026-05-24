@@ -101,6 +101,7 @@ import type { DBlockRuntimeStateRef } from './d-block/dblock-runtime';
 import { CustomLink } from './custom-link';
 import { suggestionTrackingPluginKey } from './suggestion/suggestion-tracking-extension';
 import { DdocTableOfContents } from './table-of-contents';
+import SearchAndReplace from './search-replace/search-replace';
 
 const pendingTocIdRepairs = new WeakSet<Editor>();
 
@@ -459,6 +460,7 @@ export const defaultExtensions = ({
     transformCopiedText: true,
   }),
   CharacterCount,
+  SearchAndReplace,
   MathExtension.configure({
     addInlineMath: true,
     evaluation: true,
