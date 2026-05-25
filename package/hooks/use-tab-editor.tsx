@@ -87,7 +87,7 @@ const usercolors = [
 
 const TAB_EDITOR_CACHE_SIZE = 3;
 const LARGE_TAB_DBLOCK_THRESHOLD = 1000;
-const INACTIVE_LARGE_EDITOR_IDLE_EVICTION_MS = 90_000;
+const INACTIVE_LARGE_EDITOR_IDLE_EVICTION_MS = 10_000;
 
 export interface CachedTabEditorRenderEntry {
   tabId: string;
@@ -632,6 +632,25 @@ export const useTabEditor = ({
         activeTabIdRef.current === tabId;
 
       const createdEditor = new Editor({
+        onUpdate: ({ editor: updatedEditor }) => {
+          if (
+            updatedEditor.isDestroyed ||
+            activeTabIdRef.current === tabId
+          ) {
+            return;
+          }
+
+          const currentEntry = cachedEditorsRef.current.get(tabId);
+          if (
+            currentEntry?.editor !== updatedEditor ||
+            currentEntry.idleEvictionTimer !== null ||
+            !isLargeDBlockDocument(updatedEditor)
+          ) {
+            return;
+          }
+
+          scheduleInactiveLargeEditorEvictions();
+        },
         extensions: buildExtensionsForTab(tabId),
         editorProps: {
           clipboardTextSerializer(content) {

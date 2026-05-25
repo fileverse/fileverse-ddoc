@@ -1,7 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-nocheck
-import React, { useEffect, useMemo, useState, useCallback } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import {
   NodeViewWrapper,
   NodeViewProps,
@@ -33,12 +39,76 @@ import {
   CopyLinkTooltip,
 } from './components/tooltips';
 import { DBlockMenu } from './components/menu';
-import { useMediaQuery } from 'usehooks-ts';
+
+const BELOW_LARGE_SCREEN_QUERY = '(max-width: 1024px)';
+const belowLargeScreenSubscribers = new Set<() => void>();
+let belowLargeScreenQueryList: MediaQueryList | null = null;
+let belowLargeScreenListener: (() => void) | null = null;
+
+const getBelowLargeScreenQueryList = () => {
+  if (typeof window === 'undefined' || !window.matchMedia) {
+    return null;
+  }
+
+  belowLargeScreenQueryList ??= window.matchMedia(BELOW_LARGE_SCREEN_QUERY);
+  return belowLargeScreenQueryList;
+};
+
+const subscribeBelowLargeScreen = (callback: () => void) => {
+  const queryList = getBelowLargeScreenQueryList();
+
+  if (!queryList) {
+    return () => {};
+  }
+
+  belowLargeScreenSubscribers.add(callback);
+
+  if (!belowLargeScreenListener) {
+    belowLargeScreenListener = () => {
+      belowLargeScreenSubscribers.forEach((subscriber) => subscriber());
+    };
+
+    if (queryList.addEventListener) {
+      queryList.addEventListener('change', belowLargeScreenListener);
+    } else {
+      queryList.addListener(belowLargeScreenListener);
+    }
+  }
+
+  return () => {
+    belowLargeScreenSubscribers.delete(callback);
+
+    if (
+      belowLargeScreenSubscribers.size > 0 ||
+      !belowLargeScreenListener
+    ) {
+      return;
+    }
+
+    if (queryList.removeEventListener) {
+      queryList.removeEventListener('change', belowLargeScreenListener);
+    } else {
+      queryList.removeListener(belowLargeScreenListener);
+    }
+
+    belowLargeScreenListener = null;
+  };
+};
+
+const getBelowLargeScreenSnapshot = () =>
+  getBelowLargeScreenQueryList()?.matches ?? false;
+
+const useBelowLargeScreen = () =>
+  useSyncExternalStore(
+    subscribeBelowLargeScreen,
+    getBelowLargeScreenSnapshot,
+    () => false,
+  );
 
 export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
   ({ node, getPos, editor, deleteNode, ...props }) => {
     const onCopyHeadingLink = props.extension?.options?.onCopyHeadingLink;
-    const isBelowLargeScreen = useMediaQuery('(max-width: 1024px)');
+    const isBelowLargeScreen = useBelowLargeScreen();
     const [menuOpen, setMenuOpen] = useState<boolean>(false);
     const [isExpanded, setIsExpanded] = useState(false);
     const [visibleTemplateCount, setVisibleTemplateCount] = useState(2);
@@ -262,13 +332,46 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
       [getPos, editor, node.nodeSize],
     );
 
+    const isDocEmpty = useMemo(() => {
+      const { doc, selection } = editor.state;
+
+      if (doc.childCount > 1) return false;
+
+      const pos = getPos();
+      if (pos === undefined) return false;
+      const nodeAtPos = doc.nodeAt(pos);
+
+      if (!nodeAtPos || nodeAtPos.type.name !== 'dBlock') return false;
+
+      const isFirstDBlock = nodeAtPos === doc.firstChild;
+      const paragraphNode = nodeAtPos.content.firstChild;
+      const isParagraph = paragraphNode?.type.name === 'paragraph';
+
+      if (!isParagraph) return false;
+
+      const isFirstDBlockFocused =
+        selection.$anchor.pos >= pos &&
+        selection.$anchor.pos <= pos + nodeAtPos.nodeSize;
+
+      if (!isFirstDBlock || !isFirstDBlockFocused) return false;
+
+      let hasContent = false;
+      paragraphNode.content.forEach((child) => {
+        if ((child.isText && child.text?.trim()) || !child.isText) {
+          hasContent = true;
+        }
+      });
+
+      return !hasContent;
+    }, [getPos, editor.state]);
+
     const templateButtons = useMemo(
-      () => createTemplateButtons(addTemplate),
-      [addTemplate],
+      () => (isDocEmpty ? createTemplateButtons(addTemplate) : []),
+      [addTemplate, isDocEmpty],
     );
     const moreTemplates = useMemo(
-      () => createMoreTemplates(addTemplate),
-      [addTemplate],
+      () => (isDocEmpty ? createMoreTemplates(addTemplate) : []),
+      [addTemplate, isDocEmpty],
     );
 
     const toggleAllTemplates = useCallback(() => {
@@ -294,39 +397,6 @@ export const DBlockNodeView: React.FC<NodeViewProps> = React.memo(
         debouncedHandleSave();
       }
     }, [nodeContentText]);
-
-    const isDocEmpty = useMemo(() => {
-      const { doc, selection } = editor.state;
-      const pos = getPos();
-      if (pos === undefined) return false;
-      const nodeAtPos = doc.nodeAt(pos);
-
-      if (!nodeAtPos || nodeAtPos.type.name !== 'dBlock') return false;
-
-      const isFirstDBlock = nodeAtPos === doc.firstChild;
-      const paragraphNode = nodeAtPos.content.firstChild;
-      const isParagraph = paragraphNode?.type.name === 'paragraph';
-
-      if (!isParagraph) return false;
-
-      const isFirstDBlockFocused =
-        selection.$anchor.pos >= pos &&
-        selection.$anchor.pos <= pos + nodeAtPos.nodeSize;
-
-      if (!isFirstDBlock || !isFirstDBlockFocused) return false;
-
-      // 🔑 New check: if doc has more than one child, don’t show templates
-      if (doc.childCount > 1) return false;
-
-      let hasContent = false;
-      paragraphNode.content.forEach((child) => {
-        if ((child.isText && child.text?.trim()) || !child.isText) {
-          hasContent = true;
-        }
-      });
-
-      return !hasContent;
-    }, [getPos, editor.state]);
 
     if (isPresentationMode && isPreviewMode) {
       return (

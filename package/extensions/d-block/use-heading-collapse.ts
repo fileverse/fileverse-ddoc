@@ -518,7 +518,7 @@ export const useHeadingCollapse = ({
 
   // Add effect to handle auto-expansion on Enter at the end of a collapsed heading
   useEffect(() => {
-    if (!editor || !isHeading || !headingId) return;
+    if (!editor || !isHeading || !headingId || !isThisHeadingCollapsed) return;
     if (!editor.view?.dom) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
