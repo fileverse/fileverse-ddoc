@@ -5,16 +5,21 @@ import { NodeViewWrapper } from '@tiptap/react';
 import { EmbeddedTweet, Tweet } from 'react-tweet';
 
 // react-tweet's getEntities iterates over hashtags/user_mentions/urls/symbols
-// unconditionally — missing arrays throw "is not iterable". Default them to [].
-const EMPTY_ENTITIES = {
-  hashtags: [],
-  user_mentions: [],
-  urls: [],
-  symbols: [],
-};
+// unconditionally. Missing OR null arrays both throw "is not iterable" — coerce
+// each field to a real array. `media` is the only one react-tweet nil-checks
+// itself, but pass it through as an array too when present.
+const toArray = (v: any): any[] => (Array.isArray(v) ? v : []);
 
-const normalizeEntities = (entities: any) =>
-  entities ? { ...EMPTY_ENTITIES, ...entities } : EMPTY_ENTITIES;
+const normalizeEntities = (entities: any) => {
+  const e = entities ?? {};
+  return {
+    hashtags: toArray(e.hashtags),
+    user_mentions: toArray(e.user_mentions),
+    urls: toArray(e.urls),
+    symbols: toArray(e.symbols),
+    ...(e.media != null ? { media: toArray(e.media) } : {}),
+  };
+};
 
 const normalizeTweet = (tweet: any) => {
   if (!tweet) return tweet;
@@ -49,6 +54,7 @@ class TweetErrorBoundary extends Component<
 export const TweetComponentNodeView = ({ node, editor }: NodeViewProps) => {
   const [tweetData, setTweetData] = useState<any>(null);
   const [error, setError] = useState(false);
+  const [retryKey, setRetryKey] = useState(0);
 
   useEffect(() => {
     editor?.chain().focus();
@@ -73,19 +79,35 @@ export const TweetComponentNodeView = ({ node, editor }: NodeViewProps) => {
     };
 
     fetchTweetData();
-  }, [node.attrs.tweetId]);
+  }, [node.attrs.tweetId, retryKey]);
+
+  const handleRetry = () => {
+    setError(false);
+    setTweetData(null);
+    setRetryKey((k) => k + 1);
+  };
 
   const tweetUrl = `https://twitter.com/i/status/${node.attrs.tweetId}`;
 
   const linkFallback = (
-    <a
-      href={tweetUrl}
-      target="_blank"
-      rel="noopener noreferrer"
-      className="text-blue-600 hover:underline"
-    >
-      {tweetUrl}
-    </a>
+    <div className="flex flex-col items-center gap-2 text-center">
+      <span className="text-sm color-text-secondary">Failed to load tweet</span>
+      <a
+        href={tweetUrl}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-sm text-blue-600 hover:underline break-all"
+      >
+        {tweetUrl}
+      </a>
+      <button
+        type="button"
+        onClick={handleRetry}
+        className="text-sm px-3 py-1 rounded border color-border-default hover:color-bg-default-hover transition-colors"
+      >
+        Retry
+      </button>
+    </div>
   );
 
   return (
@@ -97,13 +119,13 @@ export const TweetComponentNodeView = ({ node, editor }: NodeViewProps) => {
         linkFallback
       ) : (
         <div className="w-full flex justify-center items-center min-h-[200px]">
-          {tweetData ? (
-            <TweetErrorBoundary fallback={linkFallback}>
+          <TweetErrorBoundary key={retryKey} fallback={linkFallback}>
+            {tweetData ? (
               <EmbeddedTweet tweet={tweetData} />
-            </TweetErrorBoundary>
-          ) : (
-            <Tweet id={node.attrs.tweetId} />
-          )}
+            ) : (
+              <Tweet id={node.attrs.tweetId} />
+            )}
+          </TweetErrorBoundary>
         </div>
       )}
     </NodeViewWrapper>
