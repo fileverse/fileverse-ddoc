@@ -9,7 +9,7 @@ import {
   Popover,
 } from '@fileverse/ui';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { IEditorToolElement } from './editor-utils';
+import { IEditorToolElement, useEditorToolbar } from './editor-utils';
 import { DdocExportModal } from './export-modal';
 import { Editor } from '@tiptap/react';
 import { Tab } from './tabs/utils/tab-utils';
@@ -21,7 +21,6 @@ const ImportExportButton = ({
   setFileExportsOpen,
   exportOptions,
   importOptions,
-  printHandler,
   setDropdownOpen,
   editor,
   tabs,
@@ -29,7 +28,6 @@ const ImportExportButton = ({
   onRegisterExportTrigger,
 }: {
   fileExportsOpen: boolean;
-  printHandler: () => void;
   setFileExportsOpen: React.Dispatch<React.SetStateAction<boolean>>;
   exportOptions: (IEditorToolElement | null)[];
   importOptions: (IEditorToolElement | null)[];
@@ -57,6 +55,8 @@ const ImportExportButton = ({
     ydoc,
     exportOptions,
   });
+
+  const { printHandler } = useEditorToolbar({ editor });
 
   const tabSelectOptions = useMemo(
     () => [
