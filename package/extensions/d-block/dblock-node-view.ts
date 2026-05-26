@@ -9,10 +9,7 @@ import {
 } from './dblock-collapse';
 import type { DBlockRuntimeState } from './dblock-runtime';
 import { getDBlockRuntimeState } from './dblock-runtime';
-import {
-  registerDBlockView,
-  trackDestroyedDBlockNodeViewRefs,
-} from './dblock-view-registry';
+import { registerDBlockView } from './dblock-view-registry';
 
 interface DBlockNodeViewOptions {
   editor: Editor;
@@ -170,13 +167,6 @@ export class DBlockNodeView implements NodeView {
   }
 
   destroy() {
-    trackDestroyedDBlockNodeViewRefs({
-      nodeView: this,
-      dom: this.dom,
-      gutterElement: this.gutterElement,
-      contentElement: this.contentElement,
-      contentDOM: this.contentDOM,
-    });
     this.unregister();
   }
 

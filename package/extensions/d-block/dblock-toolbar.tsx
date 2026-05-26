@@ -41,7 +41,6 @@ import {
 import {
   getDBlockViewFromElement,
   getDBlockViewFromEventTarget,
-  logDBlockLifecycleSnapshot,
   refreshRegisteredDBlockViews,
   type DBlockViewHandle,
 } from './dblock-view-registry';
@@ -430,16 +429,6 @@ export const DBlockToolbarProvider = ({
     editor.on('selectionUpdate', refreshToolbar);
 
     return () => {
-      const currentHandle = activeHandleRef.current;
-      logDBlockLifecycleSnapshot('toolbar-provider-cleanup', {
-        hasEditor: true,
-        editorDestroyed: editor.isDestroyed,
-        hasActiveHandle: Boolean(currentHandle),
-        activeHandleConnected: Boolean(currentHandle?.dom.isConnected),
-        activeHandleInEditor: Boolean(
-          currentHandle && editorDom.contains(currentHandle.dom),
-        ),
-      });
       editorDom.removeEventListener('pointerover', handlePointerOver);
       editorDom.removeEventListener('pointerout', handlePointerOut);
       editorDom.removeEventListener('focusin', handleFocusIn);
