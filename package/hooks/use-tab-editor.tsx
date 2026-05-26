@@ -821,6 +821,26 @@ export const useTabEditor = ({
     [createEditorForTab],
   );
 
+  const activateCachedEditor = useCallback(
+    (tabId: string) => {
+      const entry = ensureCachedEditor(tabId);
+      activeEditorRef.current = entry.editor;
+      setEditor((currentEditor) =>
+        currentEditor === entry.editor ? currentEditor : entry.editor,
+      );
+      applyCachedEditorActivity();
+      enforceEditorCacheLimit();
+      syncCachedEditorRenderEntries();
+      return entry.editor;
+    },
+    [
+      applyCachedEditorActivity,
+      enforceEditorCacheLimit,
+      ensureCachedEditor,
+      syncCachedEditorRenderEntries,
+    ],
+  );
+
   const didInitializeCacheFactoryRef = useRef(false);
 
   useLayoutEffect(() => {
@@ -829,8 +849,13 @@ export const useTabEditor = ({
       return;
     }
 
+    const currentActiveTabId = activeTabIdRef.current;
     destroyAllCachedEditors();
+    if (currentActiveTabId) {
+      activateCachedEditor(currentActiveTabId);
+    }
   }, [
+    activateCachedEditor,
     buildExtensionsForTab,
     destroyAllCachedEditors,
     isPresentationMode,
@@ -847,19 +872,29 @@ export const useTabEditor = ({
       return;
     }
 
-    const entry = ensureCachedEditor(activeTabId);
-    activeEditorRef.current = entry.editor;
-    setEditor(entry.editor);
-    applyCachedEditorActivity();
-    enforceEditorCacheLimit();
-    syncCachedEditorRenderEntries();
+    activateCachedEditor(activeTabId);
   }, [
     activeTabId,
+    activateCachedEditor,
     applyCachedEditorActivity,
-    enforceEditorCacheLimit,
-    ensureCachedEditor,
     syncCachedEditorRenderEntries,
   ]);
+
+  useLayoutEffect(() => {
+    if (!activeTabId) {
+      return;
+    }
+
+    const activeEntry = cachedEditorsRef.current.get(activeTabId);
+    const shouldRepair =
+      !activeEntry ||
+      activeEntry.editor.isDestroyed ||
+      Boolean(editor && (editor.isDestroyed || editor !== activeEntry.editor));
+
+    if (shouldRepair) {
+      activateCachedEditor(activeTabId);
+    }
+  }, [activeTabId, activateCachedEditor, editor]);
 
   const tabIdsKey = useMemo(() => (tabIds ?? []).join('|'), [tabIds]);
 
@@ -887,7 +922,11 @@ export const useTabEditor = ({
   }, [destroyCachedEditorEntry, syncCachedEditorRenderEntries, tabIds, tabIdsKey]);
 
   useEffect(() => {
-    activeEditorRef.current = editor;
+    if (editor && !editor.isDestroyed) {
+      activeEditorRef.current = editor;
+    } else if (!activeTabIdRef.current) {
+      activeEditorRef.current = null;
+    }
     if (!editorRef) return;
     editorRef.current = editor ?? null;
   }, [editor, editorRef]);
@@ -1148,9 +1187,25 @@ export const useTabEditor = ({
         setIsContentLoading(false);
         return;
       }
-      initialiseYjsIndexedDbProvider().finally(() => {
+
+      // IndexedDB persistence should not block first paint when initial
+      // content, or existing Yjs content, is already available.
+      const shouldWaitForIndexedDbBeforeShowingContent =
+        initialContent === undefined && editor.isEmpty;
+
+      if (!shouldWaitForIndexedDbBeforeShowingContent) {
         setIsContentLoading(false);
-      });
+      }
+
+      initialiseYjsIndexedDbProvider()
+        .catch(() => {
+          // Errors are reported by initialiseYjsIndexedDbProvider.
+        })
+        .finally(() => {
+          if (shouldWaitForIndexedDbBeforeShowingContent) {
+            setIsContentLoading(false);
+          }
+        });
     });
     initialContentSetRef.current = true;
   }, [
