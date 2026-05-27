@@ -9,8 +9,10 @@ import {
 } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { headingToSlug } from '../../utils/heading-to-slug';
+import { HEADING_COLLAPSE_TOGGLE_META } from '../suggestion/suggestion-tracking-extension';
 
 export const DBLOCK_HIDDEN_CLASS = 'd-block-hidden';
+const DBLOCK_COLLAPSE_META = 'dblock-collapse';
 
 export interface HeadingLookup {
   id: string;
@@ -28,6 +30,11 @@ export interface DBlockRenderMeta {
   isThisHeadingCollapsed: boolean;
   headingAlignment?: string;
   isTable: boolean;
+}
+
+interface DBlockCollapsePluginState {
+  decorations: DecorationSet;
+  structureSignature: string;
 }
 
 const getFirstChild = (node: ProseMirrorNode) => node.content.firstChild;
@@ -239,6 +246,11 @@ const setHeadingCollapsed = (
   return true;
 };
 
+const markCollapseTransaction = (tr: Transaction) => {
+  tr.setMeta(DBLOCK_COLLAPSE_META, true);
+  tr.setMeta(HEADING_COLLAPSE_TOGGLE_META, true);
+};
+
 const findHeadingAtSelectionEnd = (
   state: EditorState,
 ): { node: ProseMirrorNode; position: number } | null => {
@@ -374,7 +386,7 @@ export const buildToggleHeadingCollapseTransaction = (
     });
   }
 
-  tr.setMeta('dblock-collapse', true);
+  markCollapseTransaction(tr);
   return tr;
 };
 
@@ -431,7 +443,7 @@ export const expandHeadingContent = (editor: Editor, nodePos: number) => {
   }
 
   if (changed) {
-    tr.setMeta('dblock-collapse', true);
+    markCollapseTransaction(tr);
     editor.view.dispatch(tr);
   }
 
@@ -440,7 +452,7 @@ export const expandHeadingContent = (editor: Editor, nodePos: number) => {
 
 const buildExpandCollapsedHeadingAtSelectionTransaction = (
   state: EditorState,
-) => {
+): { transaction: Transaction; insertPos: number } | null => {
   const headingAtSelection = findHeadingAtSelectionEnd(state);
   if (!headingAtSelection) {
     return null;
@@ -479,13 +491,25 @@ const buildExpandCollapsedHeadingAtSelectionTransaction = (
     scanPos += nextNode.nodeSize;
   }
 
-  const nodeAtInsert = tr.doc.nodeAt(insertPos);
-  const trailingPos = getEmptyTrailingDBlockPosition(tr.doc);
+  markCollapseTransaction(tr);
+  return {
+    transaction: tr.scrollIntoView(),
+    insertPos,
+  };
+};
+
+const buildCollapsedHeadingEnterFollowUpTransaction = (
+  state: EditorState,
+  insertPos: number,
+) => {
+  const tr = state.tr;
+  const nodeAtInsert = state.doc.nodeAt(insertPos);
+  const trailingPos = getEmptyTrailingDBlockPosition(state.doc);
   const focusPos =
     isEmptyDBlock(nodeAtInsert) &&
-    insertPos + nodeAtInsert!.nodeSize >= tr.doc.content.size
+    insertPos + nodeAtInsert!.nodeSize >= state.doc.content.size
       ? insertPos + 2
-      : trailingPos !== null && insertPos >= tr.doc.content.size
+      : trailingPos !== null && insertPos >= state.doc.content.size
         ? trailingPos + 2
         : null;
 
@@ -499,7 +523,6 @@ const buildExpandCollapsedHeadingAtSelectionTransaction = (
     tr.setSelection(TextSelection.create(tr.doc, insertPos + 2));
   }
 
-  tr.setMeta('dblock-collapse', true);
   return tr.scrollIntoView();
 };
 
@@ -552,40 +575,142 @@ const buildHiddenDecorationSet = (doc: ProseMirrorNode) => {
   return DecorationSet.create(doc, decorations);
 };
 
-export const dBlockCollapsePluginKey = new PluginKey<DecorationSet>(
+const getDBlockCollapseStructureSignature = (doc: ProseMirrorNode) => {
+  const parts: string[] = [];
+
+  doc.forEach((node) => {
+    if (node.type.name !== 'dBlock') {
+      parts.push(node.type.name);
+      return;
+    }
+
+    const firstChild = getFirstChild(node);
+    if (firstChild?.type.name === 'heading') {
+      parts.push(
+        [
+          'heading',
+          firstChild.attrs.id ?? '',
+          firstChild.attrs.level ?? '',
+          firstChild.attrs.isCollapsed ? '1' : '0',
+        ].join(':'),
+      );
+      return;
+    }
+
+    parts.push(firstChild?.type.name ?? 'empty');
+  });
+
+  return parts.join('|');
+};
+
+const isTopLevelBoundaryPosition = (doc: ProseMirrorNode, position: number) => {
+  if (position < 0 || position > doc.content.size) {
+    return false;
+  }
+
+  return doc.resolve(position).depth === 0;
+};
+
+const transactionTouchesTopLevelStructure = (tr: Transaction) => {
+  let touchesTopLevelStructure = false;
+
+  tr.mapping.maps.forEach((stepMap, index) => {
+    if (touchesTopLevelStructure) {
+      return;
+    }
+
+    const oldDoc = tr.docs[index] ?? tr.before;
+    const newDoc = tr.docs[index + 1] ?? tr.doc;
+
+    stepMap.forEach((oldStart, oldEnd, newStart, newEnd) => {
+      if (touchesTopLevelStructure) {
+        return;
+      }
+
+      const deletedTopLevelContent =
+        oldStart !== oldEnd &&
+        (isTopLevelBoundaryPosition(oldDoc, oldStart) ||
+          isTopLevelBoundaryPosition(oldDoc, oldEnd));
+      const insertedTopLevelContent =
+        newStart !== newEnd &&
+        (isTopLevelBoundaryPosition(newDoc, newStart) ||
+          isTopLevelBoundaryPosition(newDoc, newEnd));
+
+      touchesTopLevelStructure =
+        deletedTopLevelContent || insertedTopLevelContent;
+    });
+  });
+
+  return touchesTopLevelStructure;
+};
+
+const buildCollapsePluginState = (
+  doc: ProseMirrorNode,
+): DBlockCollapsePluginState => ({
+  decorations: buildHiddenDecorationSet(doc),
+  structureSignature: getDBlockCollapseStructureSignature(doc),
+});
+
+export const dBlockCollapsePluginKey = new PluginKey<DBlockCollapsePluginState>(
   'dblock-collapse',
 );
 
 export const createDBlockCollapsePlugin = () =>
-  new Plugin<DecorationSet>({
+  new Plugin<DBlockCollapsePluginState>({
     key: dBlockCollapsePluginKey,
     state: {
-      init: (_config, state) => buildHiddenDecorationSet(state.doc),
-      apply: (tr, previousDecorations) => {
-        if (tr.docChanged) {
-          return buildHiddenDecorationSet(tr.doc);
+      init: (_config, state) => buildCollapsePluginState(state.doc),
+      apply: (tr, previousState) => {
+        if (!tr.docChanged) {
+          return {
+            ...previousState,
+            decorations: previousState.decorations.map(tr.mapping, tr.doc),
+          };
         }
 
-        return previousDecorations.map(tr.mapping, tr.doc);
+        const structureSignature = getDBlockCollapseStructureSignature(tr.doc);
+        if (
+          tr.getMeta(DBLOCK_COLLAPSE_META) ||
+          tr.getMeta(HEADING_COLLAPSE_TOGGLE_META) ||
+          structureSignature !== previousState.structureSignature ||
+          transactionTouchesTopLevelStructure(tr)
+        ) {
+          return {
+            decorations: buildHiddenDecorationSet(tr.doc),
+            structureSignature,
+          };
+        }
+
+        return {
+          structureSignature: previousState.structureSignature,
+          decorations: previousState.decorations.map(tr.mapping, tr.doc),
+        };
       },
     },
     props: {
       decorations: (state) =>
-        dBlockCollapsePluginKey.getState(state) ?? DecorationSet.empty,
+        dBlockCollapsePluginKey.getState(state)?.decorations ??
+        DecorationSet.empty,
       handleKeyDown: (view, event) => {
         if (event.key !== 'Enter') {
           return false;
         }
 
-        const tr = buildExpandCollapsedHeadingAtSelectionTransaction(
+        const expandResult = buildExpandCollapsedHeadingAtSelectionTransaction(
           view.state,
         );
-        if (!tr) {
+        if (!expandResult) {
           return false;
         }
 
         event.preventDefault();
-        view.dispatch(tr);
+        view.dispatch(expandResult.transaction);
+        const followUpTransaction =
+          buildCollapsedHeadingEnterFollowUpTransaction(
+            view.state,
+            expandResult.insertPos,
+          );
+        view.dispatch(followUpTransaction);
         return true;
       },
     },

@@ -8,7 +8,6 @@ import {
   Dispatch,
   MutableRefObject,
   SetStateAction,
-  useLayoutEffect,
 } from 'react';
 import {
   DdocProps,
@@ -22,6 +21,7 @@ import { defaultExtensions } from '../extensions/default-extension';
 import { AnyExtension, JSONContent, Editor } from '@tiptap/react';
 import { getCursor } from '../utils/cursor';
 import { EditorView } from '@tiptap/pm/view';
+import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import SlashCommand from '../extensions/slash-command/slash-comand';
 import {
   EditorState,
@@ -73,6 +73,7 @@ import {
 } from '../sync-local/types';
 import { destroyEditorWithYSyncCleanup } from '../utils/y-prosemirror-cleanup';
 import { clearTableOfContentsStorage } from '../extensions/table-of-contents';
+import { useTabEditorCache } from './use-tab-editor-cache';
 
 const usercolors = [
   '#30bced',
@@ -84,23 +85,6 @@ const usercolors = [
   '#0ad7f2',
   '#1bff39',
 ];
-
-const TAB_EDITOR_CACHE_SIZE = 3;
-const LARGE_TAB_DBLOCK_THRESHOLD = 1000;
-const INACTIVE_LARGE_EDITOR_IDLE_EVICTION_MS = 10_000;
-
-export interface CachedTabEditorRenderEntry {
-  tabId: string;
-  editor: Editor;
-  isActive: boolean;
-}
-
-interface CachedTabEditorEntry {
-  tabId: string;
-  editor: Editor;
-  lastUsedAt: number;
-  idleEvictionTimer: number | null;
-}
 
 type ScheduledIdleTask = {
   kind: 'idle' | 'timeout';
@@ -136,103 +120,10 @@ const cancelIdleTask = (task: ScheduledIdleTask) => {
   window.clearTimeout(task.handle);
 };
 
-const countTopLevelDBlocks = (editor: Editor) => {
-  let count = 0;
-  editor.state.doc.forEach((node) => {
-    if (node.type.name === 'dBlock') {
-      count += 1;
-    }
-  });
-  return count;
-};
-
-const isLargeDBlockDocument = (editor: Editor) =>
-  countTopLevelDBlocks(editor) > LARGE_TAB_DBLOCK_THRESHOLD;
-
-const getChangedRanges = (transaction: Transaction) => {
-  const ranges: Array<{ from: number; to: number }> = [];
-
-  transaction.mapping.maps.forEach((map) => {
-    map.forEach((_oldStart, _oldEnd, newStart, newEnd) => {
-      ranges.push({ from: newStart, to: newEnd });
-    });
-  });
-
-  return ranges;
-};
-
-const transactionTouchesHeading = (transaction: Transaction) => {
-  if (!transaction.docChanged) {
-    return false;
-  }
-
-  const ranges = getChangedRanges(transaction);
-  if (ranges.length === 0) {
-    return false;
-  }
-
-  const { doc } = transaction;
-  return ranges.some(({ from, to }) => {
-    const start = Math.max(0, Math.min(from - 2, doc.content.size));
-    const end = Math.max(start, Math.min(to + 2, doc.content.size));
-    let touchesHeading = false;
-
-    doc.nodesBetween(start, end, (node) => {
-      if (node.type.name === 'heading') {
-        touchesHeading = true;
-        return false;
-      }
-
-      return !touchesHeading;
-    });
-
-    return touchesHeading;
-  });
-};
-
 const isEditorViewInsideActiveRoot = (
   view: EditorView,
   activeEditor: Editor | null,
 ) => activeEditor?.view === view && !activeEditor.isDestroyed;
-
-const setInactiveEditorDOMState = (editor: Editor, isInactive: boolean) => {
-  const dom = editor.view?.dom;
-  if (!dom) {
-    return;
-  }
-
-  if (isInactive) {
-    dom.setAttribute('data-ddoc-editor-inactive', 'true');
-    dom.setAttribute('tabindex', '-1');
-    return;
-  }
-
-  dom.removeAttribute('data-ddoc-editor-inactive');
-  dom.removeAttribute('tabindex');
-};
-
-const setEditorEditableState = (editor: Editor, editable: boolean) => {
-  if (editor.isDestroyed) {
-    return;
-  }
-
-  editor.options.editable = editable;
-  editor.view.editable = editable;
-  editor.view.dom.setAttribute('contenteditable', String(editable));
-};
-
-const blurEditorDOM = (editor: Editor) => {
-  const dom = editor.view?.dom;
-  if (!dom || typeof document === 'undefined') {
-    return;
-  }
-
-  if (document.activeElement && dom.contains(document.activeElement)) {
-    (document.activeElement as HTMLElement).blur();
-  }
-
-  dom.blur();
-};
 
 const getInlineCommentEventTarget = (
   target: EventTarget | null,
@@ -258,6 +149,73 @@ const hasVisibleFloatingCommentCard = () => {
       '[data-floating-comment-hidden="false"] [data-floating-comment-card]',
     ),
   );
+};
+
+const getHeadingSignature = (doc: ProseMirrorNode) => {
+  const headings: string[] = [];
+
+  doc.descendants((node) => {
+    if (node.type.name !== 'heading') {
+      return true;
+    }
+
+    headings.push(
+      [node.attrs.id ?? '', node.attrs.level ?? '', node.textContent].join(':'),
+    );
+    return false;
+  });
+
+  return headings.join('|');
+};
+
+const rangeTouchesHeading = (
+  doc: ProseMirrorNode,
+  from: number,
+  to: number,
+) => {
+  const start = Math.max(0, Math.min(from - 2, doc.content.size));
+  const end = Math.max(start, Math.min(to + 2, doc.content.size));
+  let touchesHeading = false;
+
+  doc.nodesBetween(start, end, (node) => {
+    if (node.type.name === 'heading') {
+      touchesHeading = true;
+      return false;
+    }
+
+    return !touchesHeading;
+  });
+
+  return touchesHeading;
+};
+
+const transactionCouldTouchHeading = (transaction: Transaction) => {
+  if (!transaction.docChanged) {
+    return false;
+  }
+
+  let touchesHeading = false;
+
+  transaction.mapping.maps.forEach((map, index) => {
+    if (touchesHeading) {
+      return;
+    }
+
+    const beforeDoc = transaction.docs[index] ?? transaction.before;
+    const afterDoc = transaction.docs[index + 1] ?? transaction.doc;
+
+    map.forEach((oldStart, oldEnd, newStart, newEnd) => {
+      if (touchesHeading) {
+        return;
+      }
+
+      touchesHeading =
+        rangeTouchesHeading(beforeDoc, oldStart, oldEnd) ||
+        rangeTouchesHeading(afterDoc, newStart, newEnd);
+    });
+  });
+
+  return touchesHeading;
 };
 
 interface UseTabEditorArgs {
@@ -386,11 +344,7 @@ export const useTabEditor = ({
     [focusCommentWithActiveId, setActiveCommentId],
   );
   const handleTocUpdateForActiveTab = useCallback(
-    (
-      tabId: string,
-      data: ToCItemType[],
-      isCreate: boolean | undefined,
-    ) => {
+    (tabId: string, data: ToCItemType[], isCreate: boolean | undefined) => {
       if (activeTabIdRef.current !== tabId) {
         return;
       }
@@ -404,30 +358,29 @@ export const useTabEditor = ({
     commentAnchorsRef,
     draftAnchorsRef,
     storeApiRef,
-  } =
-    useEditorExtension({
-      ydoc,
-      onError,
-      ipfsImageUploadFn,
-      metadataProxyUrl,
-      onCopyHeadingLink,
-      ipfsImageFetchFn,
-      fetchV1ImageFn,
-      enableCollaboration: collabEnabled,
-      disableInlineComment,
-      isConnected,
-      activeModel,
-      maxTokens,
-      isAIAgentEnabled,
-      hasAvailableModels,
-      activeCommentId,
-      onCommentActivated: handleCommentActivatedForTab,
-      onTocUpdateForTab: handleTocUpdateForActiveTab,
-      externalExtensions,
-      initialCommentAnchors,
-      isSuggestionMode,
-      dBlockRuntimeStateRef: resolvedDBlockRuntimeStateRef,
-    });
+  } = useEditorExtension({
+    ydoc,
+    onError,
+    ipfsImageUploadFn,
+    metadataProxyUrl,
+    onCopyHeadingLink,
+    ipfsImageFetchFn,
+    fetchV1ImageFn,
+    enableCollaboration: collabEnabled,
+    disableInlineComment,
+    isConnected,
+    activeModel,
+    maxTokens,
+    isAIAgentEnabled,
+    hasAvailableModels,
+    activeCommentId,
+    onCommentActivated: handleCommentActivatedForTab,
+    onTocUpdateForTab: handleTocUpdateForActiveTab,
+    externalExtensions,
+    initialCommentAnchors,
+    isSuggestionMode,
+    dBlockRuntimeStateRef: resolvedDBlockRuntimeStateRef,
+  });
 
   const { handleCommentInteraction, handleCommentClick } =
     useCommentInteraction({
@@ -481,14 +434,6 @@ export const useTabEditor = ({
   );
   const isInitialEditorCreation = useRef(true);
   const [slides, setSlides] = useState<string[]>([]);
-  const [editor, setEditor] = useState<Editor | null>(null);
-  const [cachedEditorEntries, setCachedEditorEntries] = useState<
-    CachedTabEditorRenderEntry[]
-  >([]);
-  const cachedEditorsRef = useRef<Map<string, CachedTabEditorEntry>>(
-    new Map(),
-  );
-  const readyStateRef = useRef(true);
   const isPreviewModeRef = useRef(isPreviewMode);
   isPreviewModeRef.current = isPreviewMode;
   const unFocusedRef = useRef(unFocused);
@@ -499,131 +444,6 @@ export const useTabEditor = ({
     setActiveCommentId(null);
   }, [activeTabId, setActiveCommentId]);
 
-  const syncCachedEditorRenderEntries = useCallback(() => {
-    const currentActiveTabId = activeTabIdRef.current;
-    const entries = Array.from(cachedEditorsRef.current.values());
-
-    setCachedEditorEntries(
-      entries.map((entry) => ({
-        tabId: entry.tabId,
-        editor: entry.editor,
-        isActive: entry.tabId === currentActiveTabId,
-      })),
-    );
-  }, []);
-
-  const destroyCachedEditorEntry = useCallback(
-    (entry: CachedTabEditorEntry) => {
-      if (entry.idleEvictionTimer !== null) {
-        window.clearTimeout(entry.idleEvictionTimer);
-        entry.idleEvictionTimer = null;
-      }
-
-      clearTableOfContentsStorage(entry.editor);
-      destroyEditorWithYSyncCleanup(entry.editor);
-      clearTableOfContentsStorage(entry.editor);
-
-      if (activeEditorRef.current === entry.editor) {
-        activeEditorRef.current = null;
-      }
-      if (editorRef?.current === entry.editor) {
-        editorRef.current = null;
-      }
-    },
-    [editorRef],
-  );
-
-  const destroyAllCachedEditors = useCallback(() => {
-    cachedEditorsRef.current.forEach((entry) => {
-      destroyCachedEditorEntry(entry);
-    });
-    cachedEditorsRef.current.clear();
-    activeEditorRef.current = null;
-    setEditor(null);
-    syncCachedEditorRenderEntries();
-  }, [destroyCachedEditorEntry, syncCachedEditorRenderEntries]);
-
-  const applyCachedEditorActivity = useCallback(() => {
-    const currentActiveTabId = activeTabIdRef.current;
-
-    cachedEditorsRef.current.forEach((entry) => {
-      const isActive = entry.tabId === currentActiveTabId;
-      if (entry.editor.isDestroyed) {
-        return;
-      }
-
-      setInactiveEditorDOMState(entry.editor, !isActive);
-
-      if (isActive) {
-        setEditorEditableState(entry.editor, readyStateRef.current);
-        return;
-      }
-
-      setEditorEditableState(entry.editor, false);
-      blurEditorDOM(entry.editor);
-    });
-  }, []);
-
-  const scheduleInactiveLargeEditorEvictions = useCallback(() => {
-    if (typeof window === 'undefined') {
-      return;
-    }
-
-    const currentActiveTabId = activeTabIdRef.current;
-    cachedEditorsRef.current.forEach((entry) => {
-      if (entry.tabId === currentActiveTabId) {
-        if (entry.idleEvictionTimer !== null) {
-          window.clearTimeout(entry.idleEvictionTimer);
-          entry.idleEvictionTimer = null;
-        }
-        return;
-      }
-
-      if (entry.idleEvictionTimer !== null || !isLargeDBlockDocument(entry.editor)) {
-        return;
-      }
-
-      entry.idleEvictionTimer = window.setTimeout(() => {
-        entry.idleEvictionTimer = null;
-
-        if (activeTabIdRef.current === entry.tabId) {
-          return;
-        }
-
-        const currentEntry = cachedEditorsRef.current.get(entry.tabId);
-        if (currentEntry !== entry || !isLargeDBlockDocument(entry.editor)) {
-          return;
-        }
-
-        destroyCachedEditorEntry(entry);
-        cachedEditorsRef.current.delete(entry.tabId);
-        syncCachedEditorRenderEntries();
-      }, INACTIVE_LARGE_EDITOR_IDLE_EVICTION_MS);
-    });
-  }, [destroyCachedEditorEntry, syncCachedEditorRenderEntries]);
-
-  const enforceEditorCacheLimit = useCallback(() => {
-    const cache = cachedEditorsRef.current;
-    const overflow = cache.size - TAB_EDITOR_CACHE_SIZE;
-    if (overflow <= 0) {
-      scheduleInactiveLargeEditorEvictions();
-      return;
-    }
-
-    const currentActiveTabId = activeTabIdRef.current;
-    const evictionCandidates = Array.from(cache.values())
-      .filter((entry) => entry.tabId !== currentActiveTabId)
-      .sort((a, b) => a.lastUsedAt - b.lastUsedAt)
-      .slice(0, overflow);
-
-    evictionCandidates.forEach((entry) => {
-      destroyCachedEditorEntry(entry);
-      cache.delete(entry.tabId);
-    });
-
-    scheduleInactiveLargeEditorEvictions();
-  }, [destroyCachedEditorEntry, scheduleInactiveLargeEditorEvictions]);
-
   const createEditorForTab = useCallback(
     (tabId: string) => {
       const shouldAutofocus =
@@ -632,25 +452,6 @@ export const useTabEditor = ({
         activeTabIdRef.current === tabId;
 
       const createdEditor = new Editor({
-        onUpdate: ({ editor: updatedEditor }) => {
-          if (
-            updatedEditor.isDestroyed ||
-            activeTabIdRef.current === tabId
-          ) {
-            return;
-          }
-
-          const currentEntry = cachedEditorsRef.current.get(tabId);
-          if (
-            currentEntry?.editor !== updatedEditor ||
-            currentEntry.idleEvictionTimer !== null ||
-            !isLargeDBlockDocument(updatedEditor)
-          ) {
-            return;
-          }
-
-          scheduleInactiveLargeEditorEvictions();
-        },
         extensions: buildExtensionsForTab(tabId),
         editorProps: {
           clipboardTextSerializer(content) {
@@ -661,13 +462,17 @@ export const useTabEditor = ({
             mousedown: focusSubmittedSuggestionFromEditorEvent,
             click: focusSubmittedSuggestionFromEditorEvent,
             mouseover: (view, event) => {
-              if (!isEditorViewInsideActiveRoot(view, activeEditorRef.current)) {
+              if (
+                !isEditorViewInsideActiveRoot(view, activeEditorRef.current)
+              ) {
                 return false;
               }
               return handleCommentInteraction(view, event);
             },
             keydown: (view, event) => {
-              if (!isEditorViewInsideActiveRoot(view, activeEditorRef.current)) {
+              if (
+                !isEditorViewInsideActiveRoot(view, activeEditorRef.current)
+              ) {
                 return false;
               }
               // prevent default event listeners from firing when slash command is active
@@ -683,7 +488,9 @@ export const useTabEditor = ({
               return false;
             },
             blur: (view) => {
-              if (!isEditorViewInsideActiveRoot(view, activeEditorRef.current)) {
+              if (
+                !isEditorViewInsideActiveRoot(view, activeEditorRef.current)
+              ) {
                 return false;
               }
               requestAnimationFrame(() => {
@@ -800,140 +607,36 @@ export const useTabEditor = ({
     ],
   );
 
-  const ensureCachedEditor = useCallback(
-    (tabId: string) => {
-      const cache = cachedEditorsRef.current;
-      let entry = cache.get(tabId);
-
-      if (!entry || entry.editor.isDestroyed) {
-        entry = {
-          tabId,
-          editor: createEditorForTab(tabId),
-          lastUsedAt: Date.now(),
-          idleEvictionTimer: null,
-        };
-        cache.set(tabId, entry);
-      }
-
-      entry.lastUsedAt = Date.now();
-      return entry;
-    },
-    [createEditorForTab],
-  );
-
-  const activateCachedEditor = useCallback(
-    (tabId: string) => {
-      const entry = ensureCachedEditor(tabId);
-      activeEditorRef.current = entry.editor;
-      setEditor((currentEditor) =>
-        currentEditor === entry.editor ? currentEditor : entry.editor,
-      );
-      applyCachedEditorActivity();
-      enforceEditorCacheLimit();
-      syncCachedEditorRenderEntries();
-      return entry.editor;
-    },
-    [
-      applyCachedEditorActivity,
-      enforceEditorCacheLimit,
-      ensureCachedEditor,
-      syncCachedEditorRenderEntries,
-    ],
-  );
-
-  const didInitializeCacheFactoryRef = useRef(false);
-
-  useLayoutEffect(() => {
-    if (!didInitializeCacheFactoryRef.current) {
-      didInitializeCacheFactoryRef.current = true;
-      return;
-    }
-
-    const currentActiveTabId = activeTabIdRef.current;
-    destroyAllCachedEditors();
-    if (currentActiveTabId) {
-      activateCachedEditor(currentActiveTabId);
-    }
-  }, [
-    activateCachedEditor,
-    buildExtensionsForTab,
-    destroyAllCachedEditors,
-    isPresentationMode,
-    isPreviewMode,
-    isVersionMode,
-  ]);
-
-  useLayoutEffect(() => {
-    if (!activeTabId) {
-      activeEditorRef.current = null;
-      setEditor(null);
-      applyCachedEditorActivity();
-      syncCachedEditorRenderEntries();
-      return;
-    }
-
-    activateCachedEditor(activeTabId);
-  }, [
-    activeTabId,
-    activateCachedEditor,
-    applyCachedEditorActivity,
-    syncCachedEditorRenderEntries,
-  ]);
-
-  useLayoutEffect(() => {
-    if (!activeTabId) {
-      return;
-    }
-
-    const activeEntry = cachedEditorsRef.current.get(activeTabId);
-    const shouldRepair =
-      !activeEntry ||
-      activeEntry.editor.isDestroyed ||
-      Boolean(editor && (editor.isDestroyed || editor !== activeEntry.editor));
-
-    if (shouldRepair) {
-      activateCachedEditor(activeTabId);
-    }
-  }, [activeTabId, activateCachedEditor, editor]);
-
-  const tabIdsKey = useMemo(() => (tabIds ?? []).join('|'), [tabIds]);
-
-  useEffect(() => {
-    if (!tabIds || tabIds.length === 0) {
-      return;
-    }
-
-    const validTabIds = new Set(tabIds);
-    let changed = false;
-
-    cachedEditorsRef.current.forEach((entry, tabId) => {
-      if (validTabIds.has(tabId)) {
-        return;
-      }
-
-      destroyCachedEditorEntry(entry);
-      cachedEditorsRef.current.delete(tabId);
-      changed = true;
-    });
-
-    if (changed) {
-      syncCachedEditorRenderEntries();
-    }
-  }, [destroyCachedEditorEntry, syncCachedEditorRenderEntries, tabIds, tabIdsKey]);
-
-  useEffect(() => {
-    if (editor && !editor.isDestroyed) {
-      activeEditorRef.current = editor;
-    } else if (!activeTabIdRef.current) {
-      activeEditorRef.current = null;
-    }
-    if (!editorRef) return;
-    editorRef.current = editor ?? null;
-  }, [editor, editorRef]);
-
   const isCollaborationEnabled = useMemo(() => {
     return collabEnabled;
   }, [collabEnabled]);
+
+  // Editability is disabled only during active content sync (server merging
+  // updates into the ydoc). All other collab states keep the editor editable so
+  // there is no scroll-jump on start or flicker on stop.
+  const readyState = useMemo(() => {
+    if (isPreviewMode && !isSuggestionMode) return false;
+    if (!isCollaborationEnabled) return true;
+    if (isSyncing) return false;
+    return true;
+  }, [isPreviewMode, isSuggestionMode, isCollaborationEnabled, isSyncing]);
+
+  const destroyTabEditor = useCallback((targetEditor: Editor) => {
+    clearTableOfContentsStorage(targetEditor);
+    destroyEditorWithYSyncCleanup(targetEditor);
+    clearTableOfContentsStorage(targetEditor);
+  }, []);
+
+  const { editor, cachedEditorEntries } = useTabEditorCache({
+    activeTabId,
+    tabIds,
+    activeTabIdRef,
+    activeEditorRef,
+    editorRef,
+    readyState,
+    createEditorForTab,
+    destroyEditor: destroyTabEditor,
+  });
 
   // TODO: to see why this is necessary
   useEffect(() => {
@@ -961,6 +664,7 @@ export const useTabEditor = ({
   const tocDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const tocIdleTaskRef = useRef<ScheduledIdleTask>(null);
   const tocRefreshRequestIdRef = useRef(0);
+  const lastHeadingSignatureRef = useRef('');
 
   const scheduleActiveTableOfContentsRefresh = useCallback(
     (delayMs: number) => {
@@ -993,6 +697,7 @@ export const useTabEditor = ({
   useEffect(() => {
     if (!editor) return;
 
+    lastHeadingSignatureRef.current = getHeadingSignature(editor.state.doc);
     scheduleActiveTableOfContentsRefresh(0);
 
     const handleTransaction = ({
@@ -1001,9 +706,15 @@ export const useTabEditor = ({
       transaction: Transaction;
     }) => {
       if (
-        activeEditorRef.current === editor &&
-        transactionTouchesHeading(transaction)
+        activeEditorRef.current !== editor ||
+        !transactionCouldTouchHeading(transaction)
       ) {
+        return;
+      }
+
+      const headingSignature = getHeadingSignature(transaction.doc);
+      if (headingSignature !== lastHeadingSignatureRef.current) {
+        lastHeadingSignatureRef.current = headingSignature;
         scheduleActiveTableOfContentsRefresh(300);
       }
     };
@@ -1020,24 +731,6 @@ export const useTabEditor = ({
       tocRefreshRequestIdRef.current += 1;
     };
   }, [editor, scheduleActiveTableOfContentsRefresh]);
-
-  // Editor ready state handler
-  // Editability is disabled only during active content sync (server merging
-  // updates into the ydoc).  All other collab states (connecting, ready,
-  // reconnecting, terminating) keep the editor editable so there is no
-  // scroll-jump on start or flicker on stop.
-
-  const readyState = useMemo(() => {
-    if (isPreviewMode && !isSuggestionMode) return false;
-    if (!isCollaborationEnabled) return true;
-    if (isSyncing) return false;
-    return true;
-  }, [isPreviewMode, isSuggestionMode, isCollaborationEnabled, isSyncing]);
-
-  useEffect(() => {
-    readyStateRef.current = readyState;
-    applyCachedEditorActivity();
-  }, [applyCachedEditorActivity, readyState]);
 
   // In preview mode the editor is non-editable so the browser natively
   // follows <a target="_blank">.  ProseMirror's handleClick pipeline
@@ -1351,7 +1044,11 @@ export const useTabEditor = ({
       statsDebounceRef.current = setTimeout(() => {
         statsDebounceRef.current = null;
 
-        if (editor && activeEditorRef.current === editor && !editor.isDestroyed) {
+        if (
+          editor &&
+          activeEditorRef.current === editor &&
+          !editor.isDestroyed
+        ) {
           setCharacterCount?.(editor.storage.characterCount.characters() ?? 0);
           setWordCount?.(editor.storage.characterCount.words() ?? 0);
 
@@ -1597,13 +1294,6 @@ export const useTabEditor = ({
 
     return () => clearTimeout(timeoutId);
   }, [editor, initialContent, isContentLoading, theme]);
-
-  // Destroy editor on unmount
-  useEffect(() => {
-    return () => {
-      destroyAllCachedEditors();
-    };
-  }, [destroyAllCachedEditors]);
 
   useDarkModeStyleCleanup(editor, initialContent, false);
 
