@@ -16,7 +16,7 @@ const useContentItemActions = (
   editor: Editor,
   resolveCurrentBlock: () => ResolvedContentItem | null,
 ) => {
-  const hasActiveAIWriter = useAIWriterActiveState(editor);
+  const { hasAIWriter } = useAIWriterActiveState(editor);
   const resetTextFormatting = useCallback(() => {
     const current = resolveCurrentBlock();
     if (!current) {
@@ -35,7 +35,7 @@ const useContentItemActions = (
   }, [resolveCurrentBlock]);
 
   const duplicateNode = useCallback(() => {
-    if (hasActiveAIWriter) {
+    if (hasAIWriter) {
       return;
     }
     const current = resolveCurrentBlock();
@@ -57,7 +57,7 @@ const useContentItemActions = (
         selectedNode.toJSON(),
       )
       .run();
-  }, [hasActiveAIWriter, resolveCurrentBlock]);
+  }, [hasAIWriter, resolveCurrentBlock]);
 
   const copyNodeToClipboard = useCallback(() => {
     const current = resolveCurrentBlock();

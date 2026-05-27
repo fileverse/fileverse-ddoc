@@ -158,7 +158,7 @@ const DBlockToolbar = React.memo(
     };
 
     const buttonClassName = cn(
-      'd-block-button color-text-default hover:color-bg-default-hover aspect-square min-w-5',
+      'd-block-button color-text-default hover:color-bg-default-hover aspect-square h-5 w-5 shrink-0',
     );
 
     const shouldShowEditingControls =
@@ -179,7 +179,7 @@ const DBlockToolbar = React.memo(
     }
 
     return createPortal(
-      <div className="flex gap-[2px] w-full justify-end">
+      <div className="flex h-6 w-full items-center justify-end gap-[2px]">
         {shouldShowEditingControls ? (
           <>
             <AddBlockTooltip>
@@ -220,7 +220,7 @@ const DBlockToolbar = React.memo(
             <CopyLinkButton
               onClick={handleCopyHeadingLink}
               className={cn(
-                'd-block-button color-text-default color-bg-default-hover aspect-square w-6 h-6',
+                'd-block-button color-text-default color-bg-default-hover aspect-square h-6 w-6 shrink-0',
               )}
             />
           </CopyLinkTooltip>

@@ -95,7 +95,7 @@ export class DBlockNodeView implements NodeView {
 
     this.gutterElement = document.createElement('section');
     this.gutterElement.className =
-      'flex gap-[2px] min-w-5 lg:min-w-16 justify-end';
+      'flex h-0 lg:h-6 shrink-0 items-center gap-[2px] min-w-5 lg:min-w-16 justify-end';
     this.gutterElement.setAttribute('aria-label', 'left-menu');
     this.gutterElement.setAttribute('contenteditable', 'false');
     this.gutterElement.dataset.dblockGutter = 'true';
