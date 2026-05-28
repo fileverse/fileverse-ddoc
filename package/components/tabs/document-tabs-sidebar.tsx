@@ -436,19 +436,16 @@ export const DdocTab = ({
         isConnected={isConnected}
       />
 
-      <div
-        className={cn(
-          'table-of-contents animate-in fade-in slide-in-from-left-5',
-          showOutline && !isVersionHistoryMode ? 'block' : 'hidden',
-        )}
-      >
-        <MemorizedToC
-          editor={editor}
-          items={tocItem}
-          setItems={setTocItems}
-          orientation={orientation}
-        />
-      </div>
+      {showOutline && !isVersionHistoryMode ? (
+        <div className="table-of-contents animate-in fade-in slide-in-from-left-5">
+          <MemorizedToC
+            editor={editor}
+            items={tocItem}
+            setItems={setTocItems}
+            orientation={orientation}
+          />
+        </div>
+      ) : null}
     </div>
   );
 };

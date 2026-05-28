@@ -97,18 +97,22 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const { isPreviewMode } = useEditingContext();
   const tableCellOptionsButtonRef = useRef<HTMLLabelElement>(null);
-  const hoverTimeoutRef = useRef<number>();
+  const hoverTimeoutRef = useRef<ReturnType<typeof window.setTimeout> | null>(
+    null,
+  );
 
   const handleMouseEnter = () => {
-    if (hoverTimeoutRef.current) {
-      clearTimeout(hoverTimeoutRef.current);
+    if (hoverTimeoutRef.current !== null) {
+      window.clearTimeout(hoverTimeoutRef.current);
+      hoverTimeoutRef.current = null;
     }
     setIsHovered(true);
   };
 
   const handleMouseLeave = () => {
-    hoverTimeoutRef.current = setTimeout(() => {
+    hoverTimeoutRef.current = window.setTimeout(() => {
       setIsHovered(false);
+      hoverTimeoutRef.current = null;
     }, 100);
   };
 
@@ -125,8 +129,9 @@ export const TableCellNodeView: FC<NodeViewProps> = ({
 
   useEffect(() => {
     return () => {
-      if (hoverTimeoutRef.current) {
-        clearTimeout(hoverTimeoutRef.current);
+      if (hoverTimeoutRef.current !== null) {
+        window.clearTimeout(hoverTimeoutRef.current);
+        hoverTimeoutRef.current = null;
       }
     };
   }, []);

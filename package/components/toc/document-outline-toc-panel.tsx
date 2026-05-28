@@ -79,14 +79,16 @@ export const DocumentOutlineTOCPanel = ({
           <div className="flex justify-between items-center p-4">
             <h2 className="text-heading-sm-bold">Document outline</h2>
           </div>
-          <div className={cn('table-of-contents px-4')}>
-            <MemorizedToC
-              editor={editor}
-              items={items}
-              setItems={setItems}
-              orientation={orientation}
-            />
-          </div>
+          {showTOC ? (
+            <div className={cn('table-of-contents px-4')}>
+              <MemorizedToC
+                editor={editor}
+                items={items}
+                setItems={setItems}
+                orientation={orientation}
+              />
+            </div>
+          ) : null}
         </>
       }
     />

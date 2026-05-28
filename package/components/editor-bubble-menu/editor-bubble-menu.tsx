@@ -34,7 +34,7 @@ const MemoizedFontSizePicker = React.memo(FontSizePicker);
 const MemoizedLineHeightPicker = React.memo(LineHeightPicker);
 const BUBBLE_MENU_Z_INDEX = '61';
 
-export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
+const EditorBubbleMenuComponent = (props: EditorBubbleMenuProps) => {
   const {
     editor,
     zoomLevel,
@@ -53,6 +53,7 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
   const currentSize = editor ? editorStates.currentSize : undefined;
   const currentLineHeight = editor ? editorStates.currentLineHeight : undefined;
   const onSetFontSize = editor ? editorStates.onSetFontSize : () => {};
+
   const onSetLineHeight = editor ? editorStates.onSetLineHeight : () => {};
   const { isBelow1280px, isNativeMobile } = useResponsive();
   const shouldUseFloatingComments = !isBelow1280px && !isNativeMobile;
@@ -176,49 +177,60 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [editor, isCommentActive, setToolVisibility, toolVisibility]);
 
-  const renderContent = (item: { name: string; initialComment?: string }) => {
-    if (!editor) return null;
-    switch (item.name) {
-      case 'Alignment':
-        return (
-          <EditorAlignment
-            setToolVisibility={setToolVisibility}
-            editor={editor}
-            elementRef={toolRef}
-          />
-        );
-      case 'Link':
-        return (
-          <LinkPopup
-            setToolVisibility={setToolVisibility}
-            editor={editor}
-            elementRef={toolRef}
-            bubbleMenu={true}
-            onError={onError}
-          />
-        );
-      case 'Comment':
-        return (
-          <CommentDropdown
-            activeCommentId={activeCommentId ?? undefined}
-            setCommentDrawerOpen={setCommentDrawerOpen}
-            initialComment={item.initialComment}
-            isDisabled={
-              activeComment && !Object.hasOwn(activeComment, 'commentIndex')
-            }
-          />
-        );
-      case 'Scripts':
-        return <ScriptsPopup editor={editor} elementRef={toolRef} />;
-      default:
-        return null;
-    }
-  };
+  const renderContent = useCallback(
+    (item: { name: string; initialComment?: string }) => {
+      if (!editor) return null;
+      switch (item.name) {
+        case 'Alignment':
+          return (
+            <EditorAlignment
+              setToolVisibility={setToolVisibility}
+              editor={editor}
+              elementRef={toolRef}
+            />
+          );
+        case 'Link':
+          return (
+            <LinkPopup
+              setToolVisibility={setToolVisibility}
+              editor={editor}
+              elementRef={toolRef}
+              bubbleMenu={true}
+              onError={onError}
+            />
+          );
+        case 'Comment':
+          return (
+            <CommentDropdown
+              activeCommentId={activeCommentId ?? undefined}
+              setCommentDrawerOpen={setCommentDrawerOpen}
+              initialComment={item.initialComment}
+              isDisabled={
+                activeComment && !Object.hasOwn(activeComment, 'commentIndex')
+              }
+            />
+          );
+        case 'Scripts':
+          return <ScriptsPopup editor={editor} elementRef={toolRef} />;
+        default:
+          return null;
+      }
+    },
+    [
+      activeComment,
+      activeCommentId,
+      editor,
+      onError,
+      setCommentDrawerOpen,
+      setToolVisibility,
+      toolRef,
+    ],
+  );
 
-  const handleMobileInlineComment = () => {
+  const handleMobileInlineComment = useCallback(() => {
     setCommentDrawerOpen?.(true);
     handleInlineComment();
-  };
+  }, [handleInlineComment, setCommentDrawerOpen]);
 
   const mobileCommentButton = (
     <React.Fragment>
@@ -617,3 +629,6 @@ export const EditorBubbleMenu = (props: EditorBubbleMenuProps) => {
     </BubbleMenu>
   );
 };
+
+export const EditorBubbleMenu = React.memo(EditorBubbleMenuComponent);
+EditorBubbleMenu.displayName = 'EditorBubbleMenu';

@@ -1,5 +1,5 @@
 import React from 'react';
-import { DocumentStyling } from '../../package/types';
+import type { DocumentStyling, DocumentStylingValue } from '../../package/types';
 import cn from 'classnames';
 
 interface DocumentStylingPanelProps {
@@ -65,6 +65,22 @@ const TEXT_COLOR_PRESETS = [
   { name: 'Red', value: '#dc2626' },
 ];
 
+const HEX_COLOR_PATTERN = /^#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
+
+const isHexColor = (value: string | undefined): value is string =>
+  Boolean(value && HEX_COLOR_PATTERN.test(value));
+
+const getColorInputValue = (
+  value: DocumentStylingValue | undefined,
+  fallback: string,
+) => {
+  if (typeof value === 'string') {
+    return isHexColor(value) ? value : fallback;
+  }
+
+  return isHexColor(value?.light) ? value.light : fallback;
+};
+
 export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
   isOpen,
   onClose,
@@ -73,9 +89,9 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
 }) => {
   if (!isOpen) return null;
 
-  const currentStyling = documentStyling || {
+  const currentStyling: DocumentStyling = documentStyling || {
     background: '#f8f9fa',
-    canvasBackground: '#ffffff', 
+    canvasBackground: '#ffffff',
     textColor: '#000000',
     fontFamily: 'Inter',
   };
@@ -109,11 +125,10 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
           <div className="space-y-2">
             <input
               type="color"
-              value={
-                currentStyling.background?.includes('#')
-                  ? currentStyling.background
-                  : '#f8f9fa'
-              }
+              value={getColorInputValue(
+                currentStyling.background,
+                '#f8f9fa',
+              )}
               onChange={(e) => handleStylingUpdate({ background: e.target.value })}
               className="w-full h-10 rounded-lg border-2 border-slate-200 dark:border-slate-600 cursor-pointer"
             />
@@ -144,7 +159,10 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
           <div className="space-y-2">
             <input
               type="color"
-              value={currentStyling.canvasBackground || '#ffffff'}
+              value={getColorInputValue(
+                currentStyling.canvasBackground,
+                '#ffffff',
+              )}
               onChange={(e) =>
                 handleStylingUpdate({ canvasBackground: e.target.value })
               }
@@ -177,7 +195,7 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
           <div className="space-y-2">
             <input
               type="color"
-              value={currentStyling.textColor || '#000000'}
+              value={getColorInputValue(currentStyling.textColor, '#000000')}
               onChange={(e) => handleStylingUpdate({ textColor: e.target.value })}
               className="w-full h-10 rounded-lg border-2 border-slate-200 dark:border-slate-600 cursor-pointer"
             />

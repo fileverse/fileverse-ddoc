@@ -1094,6 +1094,24 @@ export const CommentStoreProvider = ({
   const buttonRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
   const mobileDraftRef = useRef<HTMLDivElement | null>(null);
+  const commentRefsContextValue = useMemo<CommentRefsContextType>(
+    () => ({
+      commentsSectionRef,
+      replySectionRef,
+      portalRef,
+      buttonRef,
+      dropdownRef,
+      mobileDraftRef,
+    }),
+    [
+      buttonRef,
+      commentsSectionRef,
+      dropdownRef,
+      mobileDraftRef,
+      portalRef,
+      replySectionRef,
+    ],
+  );
 
   useOnClickOutside([portalRef, buttonRef, dropdownRef, mobileDraftRef], () => {
     const state = store.getState();
@@ -1147,16 +1165,7 @@ export const CommentStoreProvider = ({
 
   return (
     <CommentStoreContext.Provider value={store}>
-      <CommentRefsContext.Provider
-        value={{
-          commentsSectionRef,
-          replySectionRef,
-          portalRef,
-          buttonRef,
-          dropdownRef,
-          mobileDraftRef,
-        }}
-      >
+      <CommentRefsContext.Provider value={commentRefsContextValue}>
         <CommentAnchorsContext.Provider value={commentAnchorsContextValue}>
           {children}
         </CommentAnchorsContext.Provider>

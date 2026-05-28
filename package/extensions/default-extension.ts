@@ -6,7 +6,6 @@ import FontFamily from '@tiptap/extension-font-family';
 import TextAlign from '@tiptap/extension-text-align';
 import {
   getHierarchicalIndexes,
-  TableOfContents,
   type TableOfContentDataItem,
 } from '@tiptap/extension-table-of-contents';
 import Highlight from '@tiptap/extension-highlight';
@@ -51,7 +50,7 @@ import { CollapsibleHeading } from './collapsible-heading';
 import { Color } from '@tiptap/extension-color';
 import { Iframe } from './iframe';
 import { EmbeddedTweet } from './twitter-embed';
-import { DBlock } from './d-block';
+import { createDBlockExtension } from './d-block';
 import { SuperchargedTableExtensions } from './supercharged-table';
 import { Document } from './document';
 import { TrailingNode } from './trailing-node';
@@ -98,8 +97,10 @@ import { Emoji } from './emoji/emoji';
 const lowlight = createLowlight(common);
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { type ToCItemType } from '../components/toc/types';
+import type { DBlockRuntimeStateRef } from './d-block/dblock-runtime';
 import { CustomLink } from './custom-link';
 import { suggestionTrackingPluginKey } from './suggestion/suggestion-tracking-extension';
+import { DdocTableOfContents } from './table-of-contents';
 import SearchAndReplace from './search-replace/search-replace';
 
 const pendingTocIdRepairs = new WeakSet<Editor>();
@@ -257,6 +258,8 @@ export const defaultExtensions = ({
   ipfsImageUploadFn,
   fetchV1ImageFn,
   onTocUpdate,
+  dBlockRuntimeStateRef,
+  hasAvailableModels = false,
 }: {
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
@@ -267,6 +270,8 @@ export const defaultExtensions = ({
   onCopyHeadingLink?: (link: string) => void;
   fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
   onTocUpdate?: (data: ToCItemType[], isCreate?: boolean) => void;
+  dBlockRuntimeStateRef?: DBlockRuntimeStateRef;
+  hasAvailableModels?: boolean;
 }) => [
   FontFamily,
   FontFamilyPersistence,
@@ -332,7 +337,7 @@ export const defaultExtensions = ({
       class: 'select-text pointer-events-auto',
     },
   }),
-  TableOfContents.configure({
+  DdocTableOfContents.configure({
     getIndex: getHierarchicalIndexes,
     onUpdate: (data, isCreate) => {
       const invalidItems = data.filter((item) => !isValidTocId(item.id));
@@ -418,9 +423,13 @@ export const defaultExtensions = ({
     fetchV1ImageFn,
   }),
   Gapcursor,
-  DBlock.configure({
+  createDBlockExtension({
     ipfsImageUploadFn,
     onCopyHeadingLink,
+    hasAvailableModels,
+    getRuntimeState: dBlockRuntimeStateRef
+      ? () => dBlockRuntimeStateRef.current
+      : undefined,
   }),
   TrailingNode,
   Document,

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
-import { Editor, JSONContent } from '@tiptap/react';
+import { AnyExtension, Editor, JSONContent } from '@tiptap/react';
 import { defaultExtensions } from '../extensions/default-extension';
 import customTextInputRules from '../extensions/customTextInputRules';
 import { PageBreak } from '../extensions/page-break';
@@ -42,8 +42,8 @@ export const useHeadlessEditor = (props?: UseHeadlessEditorProps) => {
       PageBreak,
       Collaboration.configure({ document: ydoc }),
       ...getOptionalExtensions(),
-    ];
-    // @ts-ignore
+    ] as unknown as AnyExtension[];
+
     const editor = new Editor({
       extensions,
       textDirection: 'auto',

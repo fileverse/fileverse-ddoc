@@ -1,16 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { Dispatch, Node, mergeAttributes } from '@tiptap/core';
-import { ReactNodeViewRenderer } from '@tiptap/react';
 import { DBlockNodeView } from './dblock-node-view';
 import { TextSelection, Transaction } from '@tiptap/pm/state';
 import { IpfsImageUploadResponse } from '../../types';
 import { Plugin, PluginKey } from 'prosemirror-state';
+import type { DBlockRuntimeState } from './dblock-runtime';
+import { createDBlockCollapsePlugin } from './dblock-collapse';
+import { createDBlockMediaConversionPlugin } from './dblock-media-plugin';
 
 export interface DBlockOptions {
   HTMLAttributes: Record<string, any>;
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   onCopyHeadingLink?: (link: string) => void;
   hasAvailableModels: boolean;
+  getRuntimeState?: () => DBlockRuntimeState;
 }
 
 declare module '@tiptap/core' {
@@ -57,6 +60,7 @@ export const DBlock = Node.create<DBlockOptions>({
       HTMLAttributes: {},
       onCopyHeadingLink: undefined,
       hasAvailableModels: false,
+      getRuntimeState: undefined,
     };
   },
 
@@ -978,14 +982,30 @@ export const DBlock = Node.create<DBlockOptions>({
   },
 
   addNodeView() {
-    return ReactNodeViewRenderer(DBlockNodeView as any);
+    return ({ node, editor, getPos, decorations, HTMLAttributes }) =>
+      new DBlockNodeView({
+        node,
+        editor,
+        getPos: getPos as () => number,
+        decorations,
+        HTMLAttributes,
+        getRuntimeState: this.options.getRuntimeState,
+        onCopyHeadingLink: this.options.onCopyHeadingLink,
+      });
   },
 
   addProseMirrorPlugins() {
+    const plugins = [
+      createDBlockCollapsePlugin(),
+      createDBlockMediaConversionPlugin(this.options.getRuntimeState),
+    ];
+
     if (!this.options.hasAvailableModels) {
-      return [];
+      return plugins;
     }
+
     return [
+      ...plugins,
       new Plugin({
         key: new PluginKey('dblock-aiwriter-space'),
         props: {
@@ -1047,3 +1067,6 @@ export const DBlock = Node.create<DBlockOptions>({
     ];
   },
 });
+
+export const createDBlockExtension = (options: Partial<DBlockOptions> = {}) =>
+  DBlock.configure(options);
