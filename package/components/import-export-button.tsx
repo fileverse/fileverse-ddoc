@@ -9,7 +9,7 @@ import {
   Popover,
 } from '@fileverse/ui';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { IEditorToolElement } from './editor-utils';
+import { IEditorToolElement, useEditorToolbar } from './editor-utils';
 import { DdocExportModal } from './export-modal';
 import { Editor } from '@tiptap/react';
 import { Tab } from './tabs/utils/tab-utils';
@@ -55,6 +55,8 @@ const ImportExportButton = ({
     ydoc,
     exportOptions,
   });
+
+  const { printHandler } = useEditorToolbar({ editor });
 
   const tabSelectOptions = useMemo(
     () => [
@@ -252,6 +254,15 @@ const ImportExportButton = ({
                   ))}
               </PopoverContent>
             </Popover>
+
+            {/* Print */}
+            <button
+              className="appearance-none bg-transparent hover:color-bg-default-hover h-8 rounded gap-2 p-2 w-full text-left flex items-center justify-start transition text-body-sm"
+              onClick={printHandler}
+            >
+              <LucideIcon name={'Printer'} />
+              Print
+            </button>
           </div>
         }
       />
