@@ -1246,7 +1246,7 @@ const DdocEditor = forwardRef(
             <nav
               id="Navbar"
               className={cn(
-                'min-h-14 color-bg-default py-2 px-0 md:px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-[45] transition-all duration-300',
+                'h-14 color-bg-default py-2 px-0 md:px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-[45] transition-all duration-300',
                 {
                   'translate-y-0 opacity-100':
                     !isFocusMode && isNavbarVisible && !isPresentationMode,
