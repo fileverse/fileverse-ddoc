@@ -56,6 +56,8 @@ import { FullScreenToolbar } from './components/fullscreen-toolbar';
 import { mergeTabAwareYjsUpdates } from './components/tabs/utils/tab-utils';
 import { DBlockToolbarProvider } from './extensions/d-block/dblock-toolbar';
 import SearchReplace from './extensions/search-replace/components/search-replace-popover';
+import { SplitViewLayout } from './components/split-view/split-view-layout';
+import { useMarkdownSync } from './hooks/use-markdown-sync';
 
 const DdocEditor = forwardRef(
   (
@@ -94,6 +96,8 @@ const DdocEditor = forwardRef(
       setZoomLevel,
       isPresentationMode,
       setIsPresentationMode,
+      isSplitView = false,
+      setIsSplitView,
       isNavbarVisible,
       setIsNavbarVisible,
       onComment,
@@ -332,6 +336,21 @@ const DdocEditor = forwardRef(
         DEFAULT_TAB_NAME,
       [activeTabId, tabs],
     );
+
+    // Split View (markdown left, read-only doc right). Disabled in preview.
+    const isSplitViewActive = Boolean(isSplitView) && !isPreviewMode;
+    const [showSplitTabsPanel, setShowSplitTabsPanel] = useState(false);
+    const {
+      markdown: splitViewMarkdown,
+      onMarkdownChange: onSplitViewMarkdownChange,
+      rightScrollRef: splitViewScrollRef,
+    } = useMarkdownSync({
+      editor,
+      isSplitView: isSplitViewActive,
+      isPreviewMode,
+      activeTabId,
+      ipfsImageUploadFn,
+    });
 
     useImperativeHandle(
       ref,
@@ -604,6 +623,60 @@ const DdocEditor = forwardRef(
       editor.commands.focus('end', { scrollIntoView: false });
     };
 
+    // Extracted so the formatting toolbar renders in BOTH normal and Split View
+    // modes (Split View bypasses the rest of renderComp but must keep the toolbar).
+    const editorToolbar = !isPreviewMode ? (
+      <div
+        id="toolbar"
+        className={cn(
+          'z-[45] hidden mobile:flex items-center justify-center w-full h-[52px] fixed left-0 color-bg-default border-b color-border-default transition-all duration-300 top-[3.5rem]',
+          {
+            'translate-y-0 opacity-100': !isFocusMode && isNavbarVisible,
+            'translate-y-[-108%] opacity-100': !isFocusMode && !isNavbarVisible,
+            'translate-y-[-108%] opacity-0 pointer-events-none': isFocusMode,
+          },
+        )}
+      >
+        <div className="justify-center items-center grow relative color-text-default">
+          <EditorToolBar
+            isPresentationMode={isPresentationMode}
+            setIsPresentationMode={handlePresentationMode}
+            enableCollaboration={collaboration?.enabled}
+            onError={onError}
+            editor={editor}
+            zoomLevel={zoomLevel}
+            setZoomLevel={setZoomLevel}
+            isNavbarVisible={isNavbarVisible}
+            setIsNavbarVisible={setIsNavbarVisible}
+            ipfsImageUploadFn={ipfsImageUploadFn}
+            onMarkdownExport={onMarkdownExport}
+            onMarkdownImport={onMarkdownImport}
+            onPdfExport={onPdfExport}
+            onHtmlExport={onHtmlExport}
+            onTxtExport={onTxtExport}
+            onOdtExport={onOdtExport}
+            onDocxImport={onDocxImport}
+            isLoading={!editor || isContentLoading}
+            ipfsImageFetchFn={ipfsImageFetchFn}
+            fetchV1ImageFn={fetchV1ImageFn}
+            isConnected={isConnected}
+            tabs={tabs}
+            ydoc={ydoc}
+            toggleFocusMode={toggleFocusMode}
+            isSplitView={isSplitView}
+            onToggleSplitView={
+              setIsSplitView
+                ? () => setIsSplitView((open) => !open)
+                : undefined
+            }
+            onRegisterExportTrigger={(trigger) => {
+              exportTriggerRef.current = trigger;
+            }}
+          />
+        </div>
+      </div>
+    ) : null;
+
     const renderComp = () => {
       return (
         <AnimatePresence>
@@ -620,54 +693,7 @@ const DdocEditor = forwardRef(
               />
             )}
 
-            {!isPreviewMode && (
-              <div
-                id="toolbar"
-                className={cn(
-                  'z-[45] hidden mobile:flex items-center justify-center w-full h-[52px] fixed left-0 color-bg-default border-b color-border-default transition-all duration-300 top-[3.5rem]',
-                  {
-                    'translate-y-0 opacity-100':
-                      !isFocusMode && isNavbarVisible,
-                    'translate-y-[-108%] opacity-100':
-                      !isFocusMode && !isNavbarVisible,
-                    'translate-y-[-108%] opacity-0 pointer-events-none':
-                      isFocusMode,
-                  },
-                )}
-              >
-                <div className="justify-center items-center grow relative color-text-default">
-                  <EditorToolBar
-                    isPresentationMode={isPresentationMode}
-                    setIsPresentationMode={handlePresentationMode}
-                    enableCollaboration={collaboration?.enabled}
-                    onError={onError}
-                    editor={editor}
-                    zoomLevel={zoomLevel}
-                    setZoomLevel={setZoomLevel}
-                    isNavbarVisible={isNavbarVisible}
-                    setIsNavbarVisible={setIsNavbarVisible}
-                    ipfsImageUploadFn={ipfsImageUploadFn}
-                    onMarkdownExport={onMarkdownExport}
-                    onMarkdownImport={onMarkdownImport}
-                    onPdfExport={onPdfExport}
-                    onHtmlExport={onHtmlExport}
-                    onTxtExport={onTxtExport}
-                    onOdtExport={onOdtExport}
-                    onDocxImport={onDocxImport}
-                    isLoading={!editor || isContentLoading}
-                    ipfsImageFetchFn={ipfsImageFetchFn}
-                    fetchV1ImageFn={fetchV1ImageFn}
-                    isConnected={isConnected}
-                    tabs={tabs}
-                    ydoc={ydoc}
-                    toggleFocusMode={toggleFocusMode}
-                    onRegisterExportTrigger={(trigger) => {
-                      exportTriggerRef.current = trigger;
-                    }}
-                  />
-                </div>
-              </div>
-            )}
+            {editorToolbar}
             {isPreviewMode && editor && (
               <PreviewModeExportTrigger
                 editor={editor}
@@ -1296,7 +1322,49 @@ const DdocEditor = forwardRef(
               storeApiRef={storeApiRef}
               initialCommentAnchors={initialCommentAnchors}
             >
-              {renderComp()}
+              {editor && isSplitViewActive ? (
+                <>
+                  {editorToolbar}
+                  <SplitViewLayout
+                  editor={editor}
+                  markdown={splitViewMarkdown}
+                  onMarkdownChange={onSplitViewMarkdownChange}
+                  rightScrollRef={splitViewScrollRef}
+                  showTabsPanel={showSplitTabsPanel}
+                  onToggleTabsPanel={() =>
+                    setShowSplitTabsPanel((open) => !open)
+                  }
+                  tabsPanel={
+                    <DocumentOutline
+                      editor={editor}
+                      hasToC={true}
+                      items={tocItems}
+                      setItems={setTocItems}
+                      showTOC={showTOC}
+                      setShowTOC={setShowTOC}
+                      isPreviewMode={false}
+                      orientation={documentStyling?.orientation}
+                      tabs={tabs}
+                      setTabs={setTabs}
+                      activeTabId={activeTabId}
+                      setActiveTabId={setActiveTabId}
+                      createTab={createTab}
+                      renameTab={renameTab}
+                      duplicateTab={duplicateTab}
+                      orderTab={orderTab}
+                      deleteTab={deleteTab}
+                      ydoc={ydoc}
+                      tabCommentCounts={tabCommentCounts}
+                      tabConfig={tabConfig}
+                      isConnected={isConnected}
+                      isFocusMode={isFocusMode}
+                    />
+                  }
+                  />
+                </>
+              ) : (
+                renderComp()
+              )}
             </CommentStoreProvider>
           </div>
         </div>

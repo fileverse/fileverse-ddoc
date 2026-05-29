@@ -335,6 +335,57 @@ turndownService.addRule('strikethrough', {
   },
 });
 
+// --- Inline styling fidelity ---------------------------------------------
+// Markdown has no native syntax for text color / font / size / highlight /
+// underline, but inline HTML is valid markdown and `markdownIt` runs with
+// html:true. We emit the styling as inline HTML on export so it round-trips:
+// on import, DOMPurify keeps `style`/`data-color` and the Color, FontFamily,
+// FontSize, Highlight and Underline extensions parse it back into marks.
+
+// Color / font-family / font-size live on a styled <span> (TextStyle marks).
+turndownService.addRule('inlineTextStyle', {
+  filter: (node) =>
+    node.nodeName === 'SPAN' &&
+    !!(
+      (node as HTMLElement).style?.color ||
+      (node as HTMLElement).style?.fontFamily ||
+      (node as HTMLElement).style?.fontSize
+    ),
+  replacement: function (content, node) {
+    const style = (node as HTMLElement).style;
+    const css = [
+      style.color && `color: ${style.color}`,
+      style.fontFamily && `font-family: ${style.fontFamily}`,
+      style.fontSize && `font-size: ${style.fontSize}`,
+    ]
+      .filter(Boolean)
+      .join('; ');
+    if (!css || !content) return content;
+    return `<span style="${css}">${content}</span>`;
+  },
+});
+
+// Highlight renders as <mark> (background color / data-color).
+turndownService.addRule('highlightMark', {
+  filter: 'mark',
+  replacement: function (content, node) {
+    if (!content) return content;
+    const el = node as HTMLElement;
+    const color = el.style?.backgroundColor || el.getAttribute('data-color');
+    return color
+      ? `<mark style="background-color: ${color}">${content}</mark>`
+      : `<mark>${content}</mark>`;
+  },
+});
+
+// Underline has no markdown syntax — keep it as <u>.
+turndownService.addRule('underline', {
+  filter: ['u'],
+  replacement: function (content) {
+    return content ? `<u>${content}</u>` : content;
+  },
+});
+
 // Custom rules for callout
 turndownService.addRule('callout', {
   filter: (node) =>
@@ -997,6 +1048,8 @@ export async function handleMarkdownContent(
   convertedHtml = DOMPurify.sanitize(convertedHtml, {
     ADD_TAGS: ['div'],
     ADD_ATTR: [
+      'style',
+      'data-color',
       'data-type',
       'data-page-break',
       'url',

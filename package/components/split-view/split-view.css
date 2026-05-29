@@ -1,0 +1,21 @@
+/* Split View — right (preview) pane.
+   Render the read-only doc cleanly like the Figma: no DBlock drag/insert
+   gutter, no centered max-width rails — just the document at 48px side padding. */
+
+[data-split-view-preview] [data-dblock-gutter] {
+  display: none !important;
+}
+
+[data-split-view-preview] [data-dblock-node-view] {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  justify-content: flex-start !important;
+}
+
+[data-split-view-preview] [data-dblock-content-shell] {
+  max-width: 100% !important;
+}
+
+[data-split-view-preview] .ProseMirror {
+  padding: 8px 48px 64px 48px;
+}
