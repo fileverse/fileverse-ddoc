@@ -24,6 +24,28 @@ const PLACEHOLDER = 'Jot down your ideas and grow them 💡';
 // listener can ignore them — only real user edits should reparse into the doc.
 const ProgrammaticUpdate = Annotation.define<boolean>();
 
+// A clipboard payload that is a single URL (one token, no internal whitespace).
+const SINGLE_URL = /^https?:\/\/\S+$/i;
+
+// Paste a URL → make it a clickable link instead of plain text: wrap a selection
+// as [text](url), or insert a bare URL as a markdown autolink <url>. Both render
+// as real links in the right pane. Non-URL pastes fall through to the default.
+const urlPasteHandler = EditorView.domEventHandlers({
+  paste(event, view) {
+    const pasted = event.clipboardData?.getData('text/plain')?.trim();
+    if (!pasted || !SINGLE_URL.test(pasted)) return false;
+    const { from, to } = view.state.selection.main;
+    const selected = view.state.sliceDoc(from, to);
+    const insert = selected ? `[${selected}](${pasted})` : `<${pasted}>`;
+    event.preventDefault();
+    view.dispatch({
+      changes: { from, to, insert },
+      selection: { anchor: from + insert.length },
+    });
+    return true;
+  },
+});
+
 // Matches the Figma left pane: monochrome (no syntax coloring — we intentionally
 // add no syntaxHighlighting extension), secondary-gray line numbers in a ~26px
 // gutter, subtle full-width active-line band, monospace ~14px / 1.7.
@@ -98,6 +120,7 @@ export default function MarkdownSourcePane({
             ...historyKeymap,
           ]),
           markdown(),
+          urlPasteHandler,
           placeholder(PLACEHOLDER),
           EditorView.lineWrapping,
           editorTheme,

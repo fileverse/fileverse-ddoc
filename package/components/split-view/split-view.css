@@ -6,14 +6,50 @@
   display: none !important;
 }
 
+/* Each dBlock is a flex row [gutter][content-shell] sized to the page width.
+   In Split View make it a plain full-width block so the content fills the pane. */
 [data-split-view-preview] [data-dblock-node-view] {
+  display: block !important;
+  width: 100% !important;
   padding-left: 0 !important;
   padding-right: 0 !important;
-  justify-content: flex-start !important;
 }
 
-[data-split-view-preview] [data-dblock-content-shell] {
+[data-split-view-preview] [data-dblock-content-shell],
+[data-split-view-preview] [data-node-view-content],
+[data-split-view-preview] .ProseMirror > * {
+  width: 100% !important;
   max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* The full-screen editor centers a fixed-width (~850px) "page" inside a flex
+   row. In Split View we want the document to FILL the pane instead. Force every
+   lane to full width and neutralize the flex centering / shrink-0 sizing that
+   otherwise pins the content to the page width and leaves dead space. */
+[data-split-view-preview] [data-editor-scroll-container],
+[data-split-view-preview] .editor-main-lane,
+[data-split-view-preview] .editor-comment-layout,
+[data-split-view-preview] #editor-wrapper,
+[data-split-view-preview] .ProseMirror {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
+/* Drop the flex layout so the fixed-width page isn't centered/pinned. */
+[data-split-view-preview] .editor-main-lane {
+  display: block !important;
+}
+
+/* Override shrink-0 so the content column grows to the pane width. */
+[data-split-view-preview] .editor-comment-layout {
+  flex: 1 1 auto !important;
+}
+
+/* Kill mx-auto centering of the page wrapper. */
+[data-split-view-preview] #editor-wrapper {
+  margin: 0 !important;
 }
 
 [data-split-view-preview] .ProseMirror {

@@ -794,15 +794,23 @@ const DdocEditor = forwardRef(
               ref={editorScrollContainerRef}
               data-editor-scroll-container="true"
               className={cn(
-                'flex w-full overflow-auto',
+                'flex w-full',
+                // In Split View the right-pane wrapper owns the scroll — let the
+                // editor content flow so there's only one scroller.
+                isSplitViewActive ? 'overflow-visible' : 'overflow-auto',
                 isLandscapeMode && 'mx-[24px]',
               )}
             >
-              <div className="w-full h-full">
+              {/* Split View: drop w-full — inside the flex scroll container it
+                  pins this to the fixed page width and leaves dead space; letting
+                  it size naturally lets the content fill the pane. */}
+              <div className={cn(isSplitViewActive ? 'h-full' : 'w-full h-full')}>
                 <div
                   className={cn(
                     'flex min-h-[100%] items-start',
-                    !isMobile && 'min-w-max',
+                    // Split View: wrap to the right pane's width (no min-w-max),
+                    // so there's no horizontal scroll.
+                    !isMobile && !isSplitViewActive && 'min-w-max',
                   )}
                 >
                   <div
@@ -815,7 +823,11 @@ const DdocEditor = forwardRef(
                     style={{
                       minHeight: isFocusMode
                         ? '100vh'
-                        : `calc(100dvh - 108px - ${footerHeight || '0px'})`,
+                        : // Split View: don't force viewport height — the content
+                          // flows inside the right pane's own scroll box.
+                          isSplitViewActive
+                          ? 'auto'
+                          : `calc(100dvh - 108px - ${footerHeight || '0px'})`,
                     }}
                   >
                     <div
@@ -842,17 +854,29 @@ const DdocEditor = forwardRef(
                           !documentStyling?.canvasBackground &&
                             !isFocusMode &&
                             'color-bg-default',
-                          !isPreviewMode &&
+                          !isSplitViewActive &&
+                            !isPreviewMode &&
                             !isFocusMode &&
                             (isNavbarVisible
                               ? '-mt-[1.5rem] md:!mt-[0.8rem] pt-0 md:pt-[5rem]'
                               : 'pt-0 md:pt-[1.5rem]'),
-                          isPreviewMode && 'md:!mt-[1rem] pt-0 md:!pt-[5rem]',
-                          { 'md:!mt-[0.7rem]': !isPreviewMode && !isFocusMode },
+                          !isSplitViewActive &&
+                            isPreviewMode &&
+                            'md:!mt-[1rem] pt-0 md:!pt-[5rem]',
+                          {
+                            'md:!mt-[0.7rem]':
+                              !isSplitViewActive &&
+                              !isPreviewMode &&
+                              !isFocusMode,
+                          },
                           {
                             '-mt-[1.5rem] md:!mt-[0.7rem]':
-                              !isNavbarVisible && !isPreviewMode,
+                              !isSplitViewActive &&
+                              !isNavbarVisible &&
+                              !isPreviewMode,
                           },
+                          // Split View: no full-screen top spacing.
+                          isSplitViewActive && 'mt-0 pt-0',
                           isFocusMode && 'mt-[48px]',
                         )}
                         style={{
@@ -865,6 +889,11 @@ const DdocEditor = forwardRef(
                           flexShrink: 0,
                           minHeight: '100%',
                           ...(!isFocusMode ? getCanvasStyle() || {} : {}),
+                          // Split View: fill the right pane instead of the
+                          // fixed page width (kept last so it wins).
+                          ...(isSplitViewActive
+                            ? { width: '100%', maxWidth: '100%' }
+                            : {}),
                         }}
                         data-mode={isFocusMode ? 'focus' : 'normal'}
                       >
@@ -893,12 +922,15 @@ const DdocEditor = forwardRef(
                           style={
                             isMobile
                               ? {}
-                              : {
-                                  width: `${baseWidth}px`,
-                                  transform: `scale(${zoom})`,
-                                  transformOrigin: 'top left',
-                                  height: `${100 / zoom}%`,
-                                }
+                              : isSplitViewActive
+                                ? // Split View: fill the pane, no page width / zoom.
+                                  { width: '100%' }
+                                : {
+                                    width: `${baseWidth}px`,
+                                    transform: `scale(${zoom})`,
+                                    transformOrigin: 'top left',
+                                    height: `${100 / zoom}%`,
+                                  }
                           }
                         >
                           <div>
@@ -1267,7 +1299,9 @@ const DdocEditor = forwardRef(
             id="editor-canvas"
             onMouseDown={handleFocusModeMouseDown}
             className={cn(
-              'h-[100%] flex w-full overflow-auto relative',
+              'h-[100%] flex w-full relative',
+              // Split View: the right-pane wrapper owns the scroll, not the canvas.
+              isSplitViewActive ? 'overflow-hidden' : 'overflow-auto',
               !isPreviewMode &&
                 !isFocusMode &&
                 !isSplitViewActive &&
@@ -1394,7 +1428,7 @@ const DdocEditor = forwardRef(
                         : {})}
                       className={cn(
                         isSplitViewActive
-                          ? 'absolute inset-0 overflow-auto'
+                          ? 'absolute inset-0 overflow-y-auto overflow-x-hidden'
                           : 'contents',
                       )}
                     >
