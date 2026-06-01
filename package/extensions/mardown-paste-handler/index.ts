@@ -915,6 +915,7 @@ export async function handleMarkdownContent(
   view: any,
   content: string,
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
+  options?: { breaks?: boolean },
 ) {
   // Remove YAML frontmatter before parsing
   let cleanMarkdown = stripFrontmatter(content);
@@ -935,8 +936,13 @@ export async function handleMarkdownContent(
     '$1\\*$2',
   );
 
-  // Convert Markdown to HTML
+  // Convert Markdown to HTML. `breaks` (single newline → <br>) is opt-in for
+  // Split View so a single Enter shows as a new line on the right;
+  // paste/import keep CommonMark semantics (single newline = space). Render is
+  // synchronous so toggling the shared instance and resetting is safe.
+  if (options?.breaks) markdownIt.set({ breaks: true });
   let convertedHtml = markdownIt.render(cleanMarkdown);
+  if (options?.breaks) markdownIt.set({ breaks: false });
 
   // Parse the HTML string into DOM nodes
   const parser = new DOMParser();

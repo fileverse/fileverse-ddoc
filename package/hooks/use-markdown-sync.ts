@@ -35,7 +35,7 @@ export const useMarkdownSync = ({
 }: UseMarkdownSyncArgs) => {
   const [markdown, setMarkdown] = useState('');
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  // Scroll container of the read-only right pane (owned by SplitViewLayout).
+  // Scroll container of the read-only right pane (attached in ddoc-editor).
   const rightScrollRef = useRef<HTMLDivElement | null>(null);
 
   // Seed markdown from the doc on entry; toggle editability around the session.
@@ -84,7 +84,11 @@ export const useMarkdownSync = ({
         // Select the whole doc so handleMarkdownContent's replaceSelection
         // becomes a full-document replace (reuses the existing MD pipeline).
         editor.commands.selectAll();
-        await handleMarkdownContent(editor.view, value, ipfsImageUploadFn);
+        // breaks: a single Enter in the markdown pane shows as a new line on
+        // the right, instead of CommonMark's "newline = space".
+        await handleMarkdownContent(editor.view, value, ipfsImageUploadFn, {
+          breaks: true,
+        });
       } catch (error) {
         console.error('Split View: failed to apply markdown', error);
       }

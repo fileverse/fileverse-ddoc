@@ -4,7 +4,7 @@ import { undo as cmUndo, redo as cmRedo } from '@codemirror/commands';
 
 /**
  * Markdown text operations for the Split View CodeMirror pane — the toolbar
- * routes formatting actions here when Split View is active (HackMD-style).
+ * routes formatting actions here when Split View is active.
  */
 
 /** Wrap each selected range with `before`/`after`; toggles off if already wrapped. */
@@ -121,7 +121,7 @@ export const insertBlock = (view: EditorView, block: string) => {
 };
 
 /**
- * Insert a markdown link inline (HackMD-style): the selection becomes the link
+ * Insert a markdown link inline: the selection becomes the link
  * text and the cursor lands on the URL placeholder so the user just types it.
  */
 export const insertLink = (view: EditorView, url?: string) => {

@@ -56,7 +56,8 @@ import { FullScreenToolbar } from './components/fullscreen-toolbar';
 import { mergeTabAwareYjsUpdates } from './components/tabs/utils/tab-utils';
 import { DBlockToolbarProvider } from './extensions/d-block/dblock-toolbar';
 import SearchReplace from './extensions/search-replace/components/search-replace-popover';
-import { SplitViewLayout } from './components/split-view/split-view-layout';
+import { SplitViewMarkdownPane } from './components/split-view/split-view-markdown-pane';
+import { SplitViewRightHeader } from './components/split-view/split-view-right-header';
 import { useMarkdownSync } from './hooks/use-markdown-sync';
 
 const DdocEditor = forwardRef(
@@ -563,6 +564,10 @@ const DdocEditor = forwardRef(
     const zoom = Number(zoomLevel);
     const scaledWidth = baseWidth * zoom;
     const shouldRenderDocumentOutline =
+      // Hidden in Split View — the right pane has its own tabs panel (the
+      // List button in the split header), so the editor's native left rail
+      // would just duplicate it.
+      !isSplitViewActive &&
       (tabs.length > 0 ||
         (tocItems.length > 0 && !rest.versionHistoryState?.enabled)) &&
       (!isFocusMode || showTOC);
@@ -693,7 +698,8 @@ const DdocEditor = forwardRef(
               />
             )}
 
-            {editorToolbar}
+            {/* Hidden in Split View — the markdown pane has its own toolbar. */}
+            {!isSplitViewActive && editorToolbar}
             {isPreviewMode && editor && (
               <PreviewModeExportTrigger
                 editor={editor}
@@ -1331,49 +1337,102 @@ const DdocEditor = forwardRef(
               storeApiRef={storeApiRef}
               initialCommentAnchors={initialCommentAnchors}
             >
-              {editor && isSplitViewActive ? (
-                <SplitViewLayout
-                  editor={editor}
-                  markdown={splitViewMarkdown}
-                  onMarkdownChange={onSplitViewMarkdownChange}
-                  rightScrollRef={splitViewScrollRef}
-                  showTabsPanel={showSplitTabsPanel}
-                  onToggleTabsPanel={() =>
-                    setShowSplitTabsPanel((open) => !open)
-                  }
-                  tabsPanel={
-                    <DocumentOutline
+              {/*
+                Split View keeps the REAL editor mounted in place — it is never
+                moved into a second <EditorContent>, which would orphan every
+                React node view (tables, images, embeds). `display: contents`
+                makes these wrappers invisible in normal mode (renderComp lays
+                out exactly as before) and turns them into the 2-pane split
+                layout when active, without changing renderComp's tree position.
+              */}
+              <div
+                className={cn(
+                  isSplitViewActive
+                    ? 'flex w-full h-full gap-2 p-4 color-bg-secondary overflow-hidden'
+                    : 'contents',
+                )}
+              >
+                {editor && isSplitViewActive && (
+                  <SplitViewMarkdownPane
+                    markdown={splitViewMarkdown}
+                    onMarkdownChange={onSplitViewMarkdownChange}
+                    onExitSplitView={() => setIsSplitView?.(false)}
+                    ipfsImageUploadFn={ipfsImageUploadFn}
+                    onError={onError}
+                  />
+                )}
+
+                {/* RIGHT pane (split) / passthrough (normal) — the real editor. */}
+                <div
+                  className={cn(
+                    isSplitViewActive
+                      ? 'flex-1 min-w-0 h-full flex flex-col color-bg-default rounded border color-border-default overflow-hidden relative'
+                      : 'contents',
+                  )}
+                >
+                  {editor && isSplitViewActive && (
+                    <SplitViewRightHeader
                       editor={editor}
-                      hasToC={true}
-                      items={tocItems}
-                      setItems={setTocItems}
-                      showTOC={showTOC}
-                      setShowTOC={setShowTOC}
-                      isPreviewMode={false}
-                      orientation={documentStyling?.orientation}
-                      tabs={tabs}
-                      setTabs={setTabs}
-                      activeTabId={activeTabId}
-                      setActiveTabId={setActiveTabId}
-                      createTab={createTab}
-                      renameTab={renameTab}
-                      duplicateTab={duplicateTab}
-                      orderTab={orderTab}
-                      deleteTab={deleteTab}
-                      ydoc={ydoc}
-                      tabCommentCounts={tabCommentCounts}
-                      tabConfig={tabConfig}
-                      isConnected={isConnected}
-                      isFocusMode={isFocusMode}
+                      showTabsPanel={showSplitTabsPanel}
+                      onToggleTabsPanel={() =>
+                        setShowSplitTabsPanel((open) => !open)
+                      }
                     />
-                  }
-                  onExitSplitView={() => setIsSplitView?.(false)}
-                  ipfsImageUploadFn={ipfsImageUploadFn}
-                  onError={onError}
-                />
-              ) : (
-                renderComp()
-              )}
+                  )}
+
+                  <div
+                    className={cn(
+                      isSplitViewActive
+                        ? 'flex-1 min-h-0 relative overflow-hidden'
+                        : 'contents',
+                    )}
+                  >
+                    <div
+                      ref={splitViewScrollRef}
+                      {...(isSplitViewActive
+                        ? { 'data-split-view-preview': 'true' }
+                        : {})}
+                      className={cn(
+                        isSplitViewActive
+                          ? 'absolute inset-0 overflow-auto'
+                          : 'contents',
+                      )}
+                    >
+                      {renderComp()}
+                    </div>
+
+                    {/* Document-tabs overlay (existing DocumentOutline). */}
+                    {editor && isSplitViewActive && showSplitTabsPanel && (
+                      <div className="absolute top-0 left-0 h-full w-[263px] z-20 color-bg-default border-r color-border-default shadow-elevation-3 overflow-y-auto">
+                        <DocumentOutline
+                          editor={editor}
+                          hasToC={true}
+                          items={tocItems}
+                          setItems={setTocItems}
+                          showTOC={showTOC}
+                          setShowTOC={setShowTOC}
+                          isPreviewMode={false}
+                          orientation={documentStyling?.orientation}
+                          tabs={tabs}
+                          setTabs={setTabs}
+                          activeTabId={activeTabId}
+                          setActiveTabId={setActiveTabId}
+                          createTab={createTab}
+                          renameTab={renameTab}
+                          duplicateTab={duplicateTab}
+                          orderTab={orderTab}
+                          deleteTab={deleteTab}
+                          ydoc={ydoc}
+                          tabCommentCounts={tabCommentCounts}
+                          tabConfig={tabConfig}
+                          isConnected={isConnected}
+                          isFocusMode={isFocusMode}
+                        />
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
             </CommentStoreProvider>
           </div>
         </div>

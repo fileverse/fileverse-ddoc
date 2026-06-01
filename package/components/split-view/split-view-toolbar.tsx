@@ -25,7 +25,7 @@ type Action = {
   upload?: boolean;
 };
 
-// A dedicated, HackMD-style markdown toolbar. Every button is natively a
+// A dedicated markdown toolbar. Every button is natively a
 // markdown command on the CodeMirror pane — no bridge, no ProseMirror.
 const GROUPS: Action[][] = [
   [
@@ -52,7 +52,7 @@ const GROUPS: Action[][] = [
     { icon: 'TextQuote', label: 'Quote', run: (v) => mdCommands.blockquote(v) },
   ],
   [
-    // HackMD-style: inserts [text](url) inline and selects `url` to type over.
+    // Inserts [text](url) inline and selects `url` to type over.
     { icon: 'Link', label: 'Link', run: (v) => mdCommands.link(v) },
     { icon: 'Image', label: 'Image', run: () => {}, upload: true },
     { icon: 'Braces', label: 'Code block', run: (v) => mdCommands.codeBlock(v) },
