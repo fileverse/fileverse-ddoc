@@ -14,6 +14,8 @@ import { markdown } from '@codemirror/lang-markdown';
 interface MarkdownSourcePaneProps {
   value: string;
   onChange: (value: string) => void;
+  /** Reports the CodeMirror view so the toolbar can issue markdown commands. */
+  onViewReady?: (view: EditorView | null) => void;
 }
 
 const PLACEHOLDER = 'Jot down your ideas and grow them 💡';
@@ -61,12 +63,15 @@ const editorTheme = EditorView.theme({
 export default function MarkdownSourcePane({
   value,
   onChange,
+  onViewReady,
 }: MarkdownSourcePaneProps) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
-  // Keep the latest onChange without re-creating the editor.
+  // Keep the latest callbacks without re-creating the editor.
   const onChangeRef = useRef(onChange);
   onChangeRef.current = onChange;
+  const onViewReadyRef = useRef(onViewReady);
+  onViewReadyRef.current = onViewReady;
 
   // Create the editor once on mount, destroy on unmount.
   useEffect(() => {
@@ -96,7 +101,9 @@ export default function MarkdownSourcePane({
     });
 
     viewRef.current = view;
+    onViewReadyRef.current?.(view);
     return () => {
+      onViewReadyRef.current?.(null);
       view.destroy();
       viewRef.current = null;
     };

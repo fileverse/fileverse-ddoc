@@ -344,6 +344,8 @@ const DdocEditor = forwardRef(
       markdown: splitViewMarkdown,
       onMarkdownChange: onSplitViewMarkdownChange,
       rightScrollRef: splitViewScrollRef,
+      markdownViewRef,
+      registerMarkdownView,
     } = useMarkdownSync({
       editor,
       isSplitView: isSplitViewActive,
@@ -669,6 +671,7 @@ const DdocEditor = forwardRef(
                 ? () => setIsSplitView((open) => !open)
                 : undefined
             }
+            getMarkdownView={() => markdownViewRef.current}
             onRegisterExportTrigger={(trigger) => {
               exportTriggerRef.current = trigger;
             }}
@@ -1360,6 +1363,7 @@ const DdocEditor = forwardRef(
                       isFocusMode={isFocusMode}
                     />
                   }
+                  onMarkdownViewReady={registerMarkdownView}
                   />
                 </>
               ) : (

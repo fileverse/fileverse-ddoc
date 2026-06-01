@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Editor } from '@tiptap/react';
+import type { EditorView } from '@codemirror/view';
 import { handleMarkdownContent } from '../extensions/mardown-paste-handler';
 import { IpfsImageUploadResponse } from '../types';
 
@@ -37,6 +38,11 @@ export const useMarkdownSync = ({
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Scroll container of the read-only right pane (owned by SplitViewLayout).
   const rightScrollRef = useRef<HTMLDivElement | null>(null);
+  // The CodeMirror view (left pane) — the toolbar issues markdown commands here.
+  const markdownViewRef = useRef<EditorView | null>(null);
+  const registerMarkdownView = useCallback((view: EditorView | null) => {
+    markdownViewRef.current = view;
+  }, []);
 
   // Seed markdown from the doc on entry; toggle editability around the session.
   useEffect(() => {
@@ -107,5 +113,11 @@ export const useMarkdownSync = ({
     [applyMarkdown, debounceMs],
   );
 
-  return { markdown, onMarkdownChange, rightScrollRef };
+  return {
+    markdown,
+    onMarkdownChange,
+    rightScrollRef,
+    markdownViewRef,
+    registerMarkdownView,
+  };
 };

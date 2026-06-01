@@ -1,5 +1,6 @@
 import { MutableRefObject, ReactNode, Suspense, lazy } from 'react';
 import { EditorContent, Editor } from '@tiptap/react';
+import type { EditorView } from '@codemirror/view';
 import { IconButton } from '@fileverse/ui';
 import './split-view.css';
 
@@ -18,6 +19,8 @@ interface SplitViewLayoutProps {
   onToggleTabsPanel: () => void;
   /** The existing <DocumentOutline> element, rendered inside the overlay. */
   tabsPanel: ReactNode;
+  /** Reports the CodeMirror view up so the toolbar can issue markdown commands. */
+  onMarkdownViewReady: (view: EditorView | null) => void;
 }
 
 /**
@@ -34,6 +37,7 @@ export const SplitViewLayout = ({
   showTabsPanel,
   onToggleTabsPanel,
   tabsPanel,
+  onMarkdownViewReady,
 }: SplitViewLayoutProps) => {
   const getDocTitle = () =>
     editor.state.doc.firstChild?.textContent?.trim().slice(0, 80) || 'Untitled';
@@ -73,7 +77,11 @@ export const SplitViewLayout = ({
             </div>
           }
         >
-          <MarkdownSourcePane value={markdown} onChange={onMarkdownChange} />
+          <MarkdownSourcePane
+            value={markdown}
+            onChange={onMarkdownChange}
+            onViewReady={onMarkdownViewReady}
+          />
         </Suspense>
       </div>
 
