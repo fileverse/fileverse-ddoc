@@ -38,6 +38,11 @@ export const EmbeddedTweet = Node.create<EmbeddedTweetOptions>({
     return {
       tweetId: {
         default: null,
+        parseHTML: (element) => element.getAttribute('data-tweet-id'),
+        renderHTML: (attributes) =>
+          attributes.tweetId
+            ? { 'data-tweet-id': attributes.tweetId }
+            : {},
       },
       align: {
         default: 'center',
@@ -53,10 +58,14 @@ export const EmbeddedTweet = Node.create<EmbeddedTweetOptions>({
     ];
   },
 
-  renderHTML({ HTMLAttributes }) {
+  renderHTML({ node, HTMLAttributes }) {
+    const id = node.attrs.tweetId;
+    // Include the tweet URL as text so the div isn't treated as a "blank" node
+    // (turndown drops empty divs before rules run) and so HTML export is useful.
     return [
       'div',
       mergeAttributes(this.options.HTMLAttributes, HTMLAttributes),
+      id ? `https://twitter.com/i/status/${id}` : '',
     ];
   },
 

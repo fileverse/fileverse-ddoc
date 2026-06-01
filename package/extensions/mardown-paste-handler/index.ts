@@ -222,6 +222,18 @@ turndownService.addRule('iframe', {
   },
 });
 
+// Twitter embeds are a <div data-tweet-id> — keep it as inline HTML so it
+// round-trips back into an embeddedTweet node (div survives DOMPurify).
+turndownService.addRule('embeddedTweet', {
+  filter: (node) =>
+    node.nodeName === 'DIV' &&
+    !!(node as HTMLElement).getAttribute('data-tweet-id'),
+  replacement: function (_content, node) {
+    const id = (node as HTMLElement).getAttribute('data-tweet-id');
+    return id ? `\n\n<div data-tweet-id="${id}"></div>\n\n` : '';
+  },
+});
+
 // Custom rule for superscript
 turndownService.addRule('superscript', {
   filter: 'sup',
@@ -1063,6 +1075,7 @@ export async function handleMarkdownContent(
     ADD_ATTR: [
       'style',
       'data-color',
+      'data-tweet-id',
       'data-type',
       'data-page-break',
       'url',
