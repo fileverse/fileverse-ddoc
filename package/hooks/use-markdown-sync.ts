@@ -51,6 +51,9 @@ export const useMarkdownSync = ({
       try {
         const md = await editor.commands.exportMarkdownFile({
           returnMDFile: true,
+          // Keep color/font/size/highlight/underline as inline HTML so they
+          // round-trip — otherwise they'd be flattened on the first edit.
+          includeStyles: true,
         });
         if (!cancelled && typeof md === 'string') {
           setMarkdown(md);

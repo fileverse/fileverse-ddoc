@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { EditorState } from '@codemirror/state';
+import { EditorState, Annotation } from '@codemirror/state';
 import {
   EditorView,
   lineNumbers,
@@ -19,6 +19,10 @@ interface MarkdownSourcePaneProps {
 }
 
 const PLACEHOLDER = 'Jot down your ideas and grow them 💡';
+
+// Marks programmatic doc updates (the seed / external value sync) so the change
+// listener can ignore them — only real user edits should reparse into the doc.
+const ProgrammaticUpdate = Annotation.define<boolean>();
 
 // Matches the Figma left pane: monochrome (no syntax coloring — we intentionally
 // add no syntaxHighlighting extension), secondary-gray line numbers in a ~26px
@@ -92,7 +96,12 @@ export default function MarkdownSourcePane({
           EditorView.lineWrapping,
           editorTheme,
           EditorView.updateListener.of((update) => {
-            if (update.docChanged) {
+            // Ignore programmatic updates (seed / value sync) — only user edits
+            // should reparse into the doc, so opening Split View is lossless.
+            const isProgrammatic = update.transactions.some((tr) =>
+              tr.annotation(ProgrammaticUpdate),
+            );
+            if (update.docChanged && !isProgrammatic) {
               onChangeRef.current(update.state.doc.toString());
             }
           }),
@@ -120,6 +129,7 @@ export default function MarkdownSourcePane({
     if (value === current) return;
     view.dispatch({
       changes: { from: 0, to: current.length, insert: value },
+      annotations: ProgrammaticUpdate.of(true),
     });
   }, [value]);
 
