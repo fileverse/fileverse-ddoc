@@ -10,6 +10,10 @@ import {
 } from '@codemirror/view';
 import { history, defaultKeymap, historyKeymap } from '@codemirror/commands';
 import { markdown } from '@codemirror/lang-markdown';
+import {
+  syntaxHighlighting,
+  defaultHighlightStyle,
+} from '@codemirror/language';
 
 interface MarkdownSourcePaneProps {
   value: string;
@@ -46,9 +50,8 @@ const urlPasteHandler = EditorView.domEventHandlers({
   },
 });
 
-// Matches the Figma left pane: monochrome (no syntax coloring — we intentionally
-// add no syntaxHighlighting extension), secondary-gray line numbers in a ~26px
-// gutter, subtle full-width active-line band, monospace ~14px / 1.7.
+// Left pane theme: secondary-gray line numbers in a ~26px gutter, subtle
+// full-width active-line band, monospace ~14px / 1.7.
 const editorTheme = EditorView.theme({
   '&': {
     height: '100%',
@@ -120,6 +123,7 @@ export default function MarkdownSourcePane({
             ...historyKeymap,
           ]),
           markdown(),
+          syntaxHighlighting(defaultHighlightStyle),
           urlPasteHandler,
           placeholder(PLACEHOLDER),
           EditorView.lineWrapping,
