@@ -114,7 +114,7 @@ export default function SplitViewToolbar({
   };
 
   return (
-    <div className="flex items-center px-2 py-1 border-b color-border-default shrink-0">
+    <div className="flex items-center px-2 py-2 border-b color-border-default shrink-0">
       <div className="flex items-center gap-0.5 overflow-x-auto no-scrollbar flex-1 min-w-0">
         {GROUPS.map((group, groupIndex) => (
           <div key={group[0].label} className="flex items-center gap-0.5">
