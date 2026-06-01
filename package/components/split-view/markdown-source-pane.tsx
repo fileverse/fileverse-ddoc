@@ -90,7 +90,13 @@ export default function MarkdownSourcePane({
           highlightActiveLine(),
           highlightActiveLineGutter(),
           history(),
-          keymap.of([...defaultKeymap, ...historyKeymap]),
+          // Swallow Ctrl/Cmd+S so it doesn't open the browser "Save page"
+          // dialog — there's no manual save in Split View (changes are live).
+          keymap.of([
+            { key: 'Mod-s', run: () => true, preventDefault: true },
+            ...defaultKeymap,
+            ...historyKeymap,
+          ]),
           markdown(),
           placeholder(PLACEHOLDER),
           EditorView.lineWrapping,
