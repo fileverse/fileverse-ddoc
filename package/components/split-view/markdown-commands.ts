@@ -102,13 +102,6 @@ export const setHeading = (view: EditorView, level: number) => {
   });
 };
 
-/** Strip any ATX heading marker from each selected line (→ normal text). */
-export const clearHeading = (view: EditorView) =>
-  eachSelectedLine(view, (text, from) => {
-    const match = /^#{1,6}\s/.exec(text);
-    return match ? { from, to: from + match[0].length, insert: '' } : null;
-  });
-
 /** Insert a block (code fence, hr, table) on its own paragraph at the cursor. */
 export const insertBlock = (view: EditorView, block: string) => {
   const { state } = view;
@@ -128,18 +121,17 @@ export const insertBlock = (view: EditorView, block: string) => {
 };
 
 /**
- * Insert a markdown link/image inline (HackMD-style): the selection becomes the
- * text/alt, and the cursor lands on the URL placeholder so the user just types
- * it. `marker` is '' for a link or '!' for an image.
+ * Insert a markdown link inline (HackMD-style): the selection becomes the link
+ * text and the cursor lands on the URL placeholder so the user just types it.
  */
-const insertLinkLike = (view: EditorView, marker: '' | '!', url?: string) => {
+export const insertLink = (view: EditorView, url?: string) => {
   const { state } = view;
   const tr = state.changeByRange((range) => {
-    const text = state.sliceDoc(range.from, range.to) || (marker ? 'alt' : 'text');
+    const text = state.sliceDoc(range.from, range.to) || 'text';
     const href = url ?? 'url';
-    const insert = `${marker}[${text}](${href})`;
+    const insert = `[${text}](${href})`;
     // Select the href so typing replaces the placeholder.
-    const hrefStart = range.from + marker.length + 1 + text.length + 2;
+    const hrefStart = range.from + 1 + text.length + 2;
     return {
       changes: { from: range.from, to: range.to, insert },
       range: EditorSelection.range(hrefStart, hrefStart + href.length),
@@ -148,12 +140,6 @@ const insertLinkLike = (view: EditorView, marker: '' | '!', url?: string) => {
   view.dispatch(state.update(tr, { scrollIntoView: true }));
   view.focus();
 };
-
-export const insertLink = (view: EditorView, url?: string) =>
-  insertLinkLike(view, '', url);
-
-export const insertImage = (view: EditorView) =>
-  insertLinkLike(view, '!');
 
 /**
  * Insert an uploaded secure image as inline HTML. Mirrors the attributes the
@@ -198,7 +184,6 @@ export const mdCommands = {
   inlineCode: (v: EditorView) => wrapSelection(v, '`'),
   underline: (v: EditorView) => wrapSelection(v, '<u>', '</u>'),
   heading: (v: EditorView, level: number) => setHeading(v, level),
-  paragraph: (v: EditorView) => clearHeading(v),
   bulletList: (v: EditorView) => toggleLinePrefix(v, '- '),
   orderedList: (v: EditorView) => toggleLinePrefix(v, '1. '),
   taskList: (v: EditorView) => toggleLinePrefix(v, '- [ ] '),
@@ -207,7 +192,6 @@ export const mdCommands = {
   horizontalRule: (v: EditorView) => insertBlock(v, '---'),
   table: (v: EditorView) => insertBlock(v, MARKDOWN_TABLE),
   link: (v: EditorView, url?: string) => insertLink(v, url),
-  image: (v: EditorView) => insertImage(v),
   undo: (v: EditorView) => {
     cmUndo(v);
     v.focus();
@@ -216,15 +200,9 @@ export const mdCommands = {
     cmRedo(v);
     v.focus();
   },
-  // Inline styling → inline HTML (round-trips via our turndown/DOMPurify rules).
-  textColor: (v: EditorView, color: string) =>
-    wrapSelection(v, `<span style="color: ${color}">`, '</span>'),
+  // Highlight → inline HTML (round-trips via our turndown/DOMPurify rules).
   highlight: (v: EditorView, color?: string) =>
     color
       ? wrapSelection(v, `<mark style="background-color: ${color}">`, '</mark>')
       : wrapSelection(v, '<mark>', '</mark>'),
-  fontFamily: (v: EditorView, family: string) =>
-    wrapSelection(v, `<span style="font-family: ${family}">`, '</span>'),
-  fontSize: (v: EditorView, size: string) =>
-    wrapSelection(v, `<span style="font-size: ${size}">`, '</span>'),
 };

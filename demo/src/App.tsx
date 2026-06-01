@@ -139,7 +139,7 @@ function App() {
   const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(false);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
   const [isSplitView, setIsSplitView] = useState(false);
-  const [showTOC, setShowTOC] = useState<boolean>(false);
+  const [showTOC, setShowTOC] = useState<boolean>(true);
   const [collaborationId, setCollaborationId] = useState<string>('');
   const [collabRoomKey, setCollabRoomKey] = useState<string>('');
 

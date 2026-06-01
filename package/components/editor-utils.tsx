@@ -426,33 +426,25 @@ export const useEditorToolbar = ({
     {
       icon: 'Bold',
       title: 'Bold',
-      onClick: () => {
-        editor?.chain().focus().toggleBold().run();
-      },
+      onClick: () => editor?.chain().focus().toggleBold().run(),
       isActive: formattingState.isBold,
     },
     {
       icon: 'Italic',
       title: 'Italic',
-      onClick: () => {
-        editor?.chain().focus().toggleItalic().run();
-      },
+      onClick: () => editor?.chain().focus().toggleItalic().run(),
       isActive: formattingState.isItalic,
     },
     {
       icon: 'Underline',
       title: 'Underlined',
-      onClick: () => {
-        editor?.chain().focus().toggleUnderline().run();
-      },
+      onClick: () => editor?.chain().focus().toggleUnderline().run(),
       isActive: formattingState.isUnderline,
     },
     {
       icon: 'Strikethrough',
       title: 'Strikethrough',
-      onClick: () => {
-        editor?.chain().focus().toggleStrike().run();
-      },
+      onClick: () => editor?.chain().focus().toggleStrike().run(),
       isActive: formattingState.isStrikethrough,
     },
     null,
@@ -635,9 +627,7 @@ export const useEditorToolbar = ({
     {
       icon: 'TextQuote',
       title: 'Quote',
-      onClick: () => {
-        editor?.chain().focus().toggleBlockquote().run();
-      },
+      onClick: () => editor?.chain().focus().toggleBlockquote().run(),
       isActive: editor?.isActive('blockquote') || false,
       group: 'More',
       notVisible: 1270,
@@ -737,13 +727,12 @@ export const useEditorToolbar = ({
     {
       icon: 'Table',
       title: 'Add table',
-      onClick: () => {
+      onClick: () =>
         editor
           ?.chain()
           .focus()
           .insertTable({ rows: 3, cols: 2, withHeaderRow: true })
-          .run();
-      },
+          .run(),
       isActive: false,
       group: 'More',
       notVisible: 1560,
@@ -920,60 +909,20 @@ export const useEditorToolbar = ({
       },
       isActive: false,
     },
+    // The actual export is dispatched by title via getOptionFormat →
+    // handleExport (see import-export-button / use-ddoc-export); onClick only
+    // fires the optional consumer notification.
     {
       icon: 'FileOutput',
       title: 'Markdown (.md)',
-      onClick: async () => {
-        if (editor) {
-          const editorContent = editor?.getJSON();
-          const title = extractTitleFromContent(
-            editorContent as unknown as { content: JSONContent },
-          );
-          const generateDownloadUrl = await editor.commands.exportMarkdownFile({
-            title: title || 'Untitled',
-          });
-          if (generateDownloadUrl) {
-            const url = generateDownloadUrl;
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${title || 'Untitled'}.md`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-          }
-        }
-        onMarkdownExport?.();
-      },
+      onClick: () => onMarkdownExport?.(),
       isActive: false,
     },
     {
       icon: 'FileOutput',
       title: 'Markdown with CSS (.md)',
       subtitle: 'Keeps colors, fonts & highlights',
-      onClick: async () => {
-        if (editor) {
-          const editorContent = editor?.getJSON();
-          const title = extractTitleFromContent(
-            editorContent as unknown as { content: JSONContent },
-          );
-          const generateDownloadUrl = await editor.commands.exportMarkdownFile({
-            title: title || 'Untitled',
-            includeStyles: true,
-          });
-          if (generateDownloadUrl) {
-            const url = generateDownloadUrl;
-            const link = document.createElement('a');
-            link.href = url;
-            link.download = `${title || 'Untitled'}.md`;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-          }
-        }
-        onMarkdownExport?.();
-      },
+      onClick: () => onMarkdownExport?.(),
       isActive: false,
     },
     {
@@ -1480,14 +1429,7 @@ export const LinkPopup = ({
     if (parsed && !parsed.headingEl) {
       onError?.('This heading link belongs to a different document.');
     }
-  }, [
-    url,
-    editor,
-    bubbleMenu,
-    setIsLinkPopupOpen,
-    onError,
-    setToolVisibility,
-  ]);
+  }, [url, editor, bubbleMenu, setIsLinkPopupOpen, onError, setToolVisibility]);
   return (
     <div
       ref={elementRef}
