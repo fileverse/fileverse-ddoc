@@ -21,9 +21,9 @@ interface UseMarkdownSyncArgs {
  *
  * On entering Split View we make the editor read-only and seed the markdown
  * text from the current doc. On every (debounced) markdown edit we reparse the
- * ENTIRE markdown and replace the ENTIRE doc — formatting loss is accepted
- * (see docs/SPLIT_VIEW_MARKDOWN_SPEC.md). The right-pane scroll position is
- * saved/restored around the rebuild so the preview doesn't jump.
+ * ENTIRE markdown and replace the ENTIRE doc — formatting loss is accepted.
+ * The right-pane scroll position is saved/restored around the rebuild so the
+ * preview doesn't jump.
  */
 export const useMarkdownSync = ({
   editor,

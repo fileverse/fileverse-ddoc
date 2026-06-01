@@ -39,7 +39,6 @@ interface SplitViewLayoutProps {
  * Split View layout (matches Figma): editable markdown source (left) +
  * read-only ddoc preview with a header bar (right). The header's List button
  * opens the "Document tabs" overlay (the existing DocumentOutline). Desktop-only.
- * See docs/SPLIT_VIEW_MARKDOWN_SPEC.md.
  */
 export const SplitViewLayout = ({
   editor,
