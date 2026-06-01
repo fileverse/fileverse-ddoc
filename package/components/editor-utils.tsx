@@ -909,20 +909,60 @@ export const useEditorToolbar = ({
       },
       isActive: false,
     },
-    // The actual export is dispatched by title via getOptionFormat →
-    // handleExport (see import-export-button / use-ddoc-export); onClick only
-    // fires the optional consumer notification.
     {
       icon: 'FileOutput',
       title: 'Markdown (.md)',
-      onClick: () => onMarkdownExport?.(),
+      onClick: async () => {
+        if (editor) {
+          const editorContent = editor?.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const generateDownloadUrl = await editor.commands.exportMarkdownFile({
+            title: title || 'Untitled',
+          });
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${title || 'Untitled'}.md`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onMarkdownExport?.();
+      },
       isActive: false,
     },
     {
       icon: 'FileOutput',
       title: 'Markdown with CSS (.md)',
       subtitle: 'Keeps colors, fonts & highlights',
-      onClick: () => onMarkdownExport?.(),
+      onClick: async () => {
+        if (editor) {
+          const editorContent = editor?.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const generateDownloadUrl = await editor.commands.exportMarkdownFile({
+            title: title || 'Untitled',
+            includeStyles: true,
+          });
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${title || 'Untitled'}.md`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onMarkdownExport?.();
+      },
       isActive: false,
     },
     {
