@@ -1,11 +1,20 @@
-import { MutableRefObject, ReactNode, Suspense, lazy } from 'react';
+import {
+  MutableRefObject,
+  ReactNode,
+  Suspense,
+  lazy,
+  useCallback,
+  useState,
+} from 'react';
 import { EditorContent, Editor } from '@tiptap/react';
 import type { EditorView } from '@codemirror/view';
 import { IconButton } from '@fileverse/ui';
+import { IpfsImageUploadResponse } from '../../types';
 import './split-view.css';
 
-// Lazy chunk: CodeMirror is only fetched/instantiated when Split View opens.
+// Lazy chunks: CodeMirror only loads/instantiates when Split View opens.
 const MarkdownSourcePane = lazy(() => import('./markdown-source-pane'));
+const SplitViewToolbar = lazy(() => import('./split-view-toolbar'));
 
 interface SplitViewLayoutProps {
   editor: Editor;
@@ -19,8 +28,11 @@ interface SplitViewLayoutProps {
   onToggleTabsPanel: () => void;
   /** The existing <DocumentOutline> element, rendered inside the overlay. */
   tabsPanel: ReactNode;
-  /** Reports the CodeMirror view up so the toolbar can issue markdown commands. */
-  onMarkdownViewReady: (view: EditorView | null) => void;
+  /** Exit Split View (back to the normal editor). */
+  onExitSplitView?: () => void;
+  /** Same uploader the editor uses — for the markdown toolbar's Image button. */
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
+  onError?: (error: string) => void;
 }
 
 /**
@@ -37,8 +49,16 @@ export const SplitViewLayout = ({
   showTabsPanel,
   onToggleTabsPanel,
   tabsPanel,
-  onMarkdownViewReady,
+  onExitSplitView,
+  ipfsImageUploadFn,
+  onError,
 }: SplitViewLayoutProps) => {
+  // Capture the CodeMirror view to drive the dedicated markdown toolbar.
+  const [mdView, setMdView] = useState<EditorView | null>(null);
+  const handleViewReady = useCallback((view: EditorView | null) => {
+    setMdView(view);
+  }, []);
+
   const getDocTitle = () =>
     editor.state.doc.firstChild?.textContent?.trim().slice(0, 80) || 'Untitled';
 
@@ -56,7 +76,10 @@ export const SplitViewLayout = ({
   // for fidelity (color/font/size/highlight/underline).
   const handleDownloadMarkdown = async () => {
     const title = getDocTitle();
-    const url = await editor.commands.exportMarkdownFile({ title });
+    const url = await editor.commands.exportMarkdownFile({
+      title,
+      includeStyles: true,
+    });
     if (typeof url === 'string') triggerDownload(url, `${title}.md`);
   };
 
@@ -68,21 +91,31 @@ export const SplitViewLayout = ({
 
   return (
     <div className="flex w-full h-full gap-2 p-4 overflow-hidden color-bg-secondary">
-      {/* LEFT — markdown source (CodeMirror, lazy-loaded) */}
-      <div className="flex-1 min-w-0 h-full color-bg-default rounded border color-border-default overflow-hidden">
-        <Suspense
-          fallback={
-            <div className="px-4 py-3 text-sm color-text-secondary">
-              Loading editor…
-            </div>
-          }
-        >
-          <MarkdownSourcePane
-            value={markdown}
-            onChange={onMarkdownChange}
-            onViewReady={onMarkdownViewReady}
+      {/* LEFT — dedicated markdown toolbar + CodeMirror source (lazy-loaded) */}
+      <div className="flex-1 min-w-0 h-full flex flex-col color-bg-default rounded border color-border-default overflow-hidden">
+        <Suspense fallback={null}>
+          <SplitViewToolbar
+            view={mdView}
+            onExit={onExitSplitView}
+            ipfsImageUploadFn={ipfsImageUploadFn}
+            onError={onError}
           />
         </Suspense>
+        <div className="flex-1 min-h-0 overflow-hidden">
+          <Suspense
+            fallback={
+              <div className="px-4 py-3 text-sm color-text-secondary">
+                Loading editor…
+              </div>
+            }
+          >
+            <MarkdownSourcePane
+              value={markdown}
+              onChange={onMarkdownChange}
+              onViewReady={handleViewReady}
+            />
+          </Suspense>
+        </div>
       </div>
 
       {/* RIGHT — read-only ddoc preview with header */}

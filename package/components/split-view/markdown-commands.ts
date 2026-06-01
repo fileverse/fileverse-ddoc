@@ -1,5 +1,6 @@
 import { EditorSelection, ChangeSpec } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
+import { undo as cmUndo, redo as cmRedo } from '@codemirror/commands';
 
 /**
  * Markdown text operations for the Split View CodeMirror pane — the toolbar
@@ -126,20 +127,65 @@ export const insertBlock = (view: EditorView, block: string) => {
   view.focus();
 };
 
-/** Insert a markdown link using the current selection as the link text. */
-export const insertLink = (view: EditorView, url: string) => {
+/**
+ * Insert a markdown link/image inline (HackMD-style): the selection becomes the
+ * text/alt, and the cursor lands on the URL placeholder so the user just types
+ * it. `marker` is '' for a link or '!' for an image.
+ */
+const insertLinkLike = (view: EditorView, marker: '' | '!', url?: string) => {
   const { state } = view;
   const tr = state.changeByRange((range) => {
-    const text = state.sliceDoc(range.from, range.to) || 'link';
-    const insert = `[${text}](${url})`;
+    const text = state.sliceDoc(range.from, range.to) || (marker ? 'alt' : 'text');
+    const href = url ?? 'url';
+    const insert = `${marker}[${text}](${href})`;
+    // Select the href so typing replaces the placeholder.
+    const hrefStart = range.from + marker.length + 1 + text.length + 2;
     return {
       changes: { from: range.from, to: range.to, insert },
-      range: EditorSelection.range(range.from, range.from + insert.length),
+      range: EditorSelection.range(hrefStart, hrefStart + href.length),
     };
   });
   view.dispatch(state.update(tr, { scrollIntoView: true }));
   view.focus();
 };
+
+export const insertLink = (view: EditorView, url?: string) =>
+  insertLinkLike(view, '', url);
+
+export const insertImage = (view: EditorView) =>
+  insertLinkLike(view, '!');
+
+/**
+ * Insert an uploaded secure image as inline HTML. Mirrors the attributes the
+ * markdown paste flow sets (media-type="secure-img" + IPFS/encryption attrs),
+ * so it parses back into a real secure-image node and round-trips.
+ */
+export const insertSecureImage = (
+  view: EditorView,
+  attrs: {
+    src: string;
+    ipfsUrl: string;
+    encryptionKey: string;
+    nonce: string;
+    ipfsHash: string;
+    authTag: string;
+    mimeType: string;
+  },
+) => {
+  const img =
+    `<img src="${attrs.src}" media-type="secure-img" ` +
+    `encryptionKey="${attrs.encryptionKey}" nonce="${attrs.nonce}" ` +
+    `ipfsUrl="${attrs.ipfsUrl}" ipfsHash="${attrs.ipfsHash}" version="2" ` +
+    `authTag="${attrs.authTag}" mimeType="${attrs.mimeType}" />`;
+  insertBlock(view, img);
+};
+
+/**
+ * Insert a base64-embedded image (media-type="img"). Mirrors the editor's
+ * no-uploader fallback in startImageUpload, so it renders + round-trips.
+ */
+export const insertEmbeddedImage = (view: EditorView, dataUrl: string) =>
+  insertBlock(view, `<img src="${dataUrl}" media-type="img" />`);
 
 const MARKDOWN_TABLE =
   '| Column 1 | Column 2 |\n| -------- | -------- |\n|          |          |';
@@ -160,7 +206,16 @@ export const mdCommands = {
   codeBlock: (v: EditorView) => insertBlock(v, '```\n\n```'),
   horizontalRule: (v: EditorView) => insertBlock(v, '---'),
   table: (v: EditorView) => insertBlock(v, MARKDOWN_TABLE),
-  link: (v: EditorView, url: string) => insertLink(v, url),
+  link: (v: EditorView, url?: string) => insertLink(v, url),
+  image: (v: EditorView) => insertImage(v),
+  undo: (v: EditorView) => {
+    cmUndo(v);
+    v.focus();
+  },
+  redo: (v: EditorView) => {
+    cmRedo(v);
+    v.focus();
+  },
   // Inline styling → inline HTML (round-trips via our turndown/DOMPurify rules).
   textColor: (v: EditorView, color: string) =>
     wrapSelection(v, `<span style="color: ${color}">`, '</span>'),

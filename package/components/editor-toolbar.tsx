@@ -13,8 +13,6 @@ import {
   useEditorToolbar,
 } from './editor-utils';
 import { Editor } from '@tiptap/react';
-// Type-only — erased at compile, so CodeMirror stays out of the main bundle.
-import type { EditorView as MarkdownView } from '@codemirror/view';
 import { IEditorTool } from '../hooks/use-visibility';
 import { useEditorStates } from '../hooks/use-editor-states';
 import {
@@ -68,7 +66,6 @@ const TiptapToolBar = ({
   toggleFocusMode,
   isSplitView,
   onToggleSplitView,
-  getMarkdownView,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -98,7 +95,6 @@ const TiptapToolBar = ({
   toggleFocusMode?: () => void;
   isSplitView?: boolean;
   onToggleSplitView?: () => void;
-  getMarkdownView?: () => MarkdownView | null;
   onRegisterExportTrigger?:
     | ((trigger: ((format?: string, name?: string) => void) | null) => void)
     | undefined;
@@ -112,7 +108,6 @@ const TiptapToolBar = ({
     exportOptions,
     fileExportsOpen,
     setFileExportsOpen,
-    runMarkdownCommand,
   } = useEditorToolbar({
     editor,
     isPresentationMode,
@@ -130,8 +125,6 @@ const TiptapToolBar = ({
     onDocxImport,
     fetchV1ImageFn,
     isConnected,
-    isSplitView,
-    getMarkdownView,
   });
 
   const editorStates = useEditorStates(editor as Editor);
@@ -472,7 +465,6 @@ const TiptapToolBar = ({
                       setVisibility={setToolVisibility}
                       editor={editor as Editor}
                       elementRef={toolRef}
-                      runMarkdownCommand={runMarkdownCommand}
                     />
                   }
                 />,

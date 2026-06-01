@@ -344,8 +344,6 @@ const DdocEditor = forwardRef(
       markdown: splitViewMarkdown,
       onMarkdownChange: onSplitViewMarkdownChange,
       rightScrollRef: splitViewScrollRef,
-      markdownViewRef,
-      registerMarkdownView,
     } = useMarkdownSync({
       editor,
       isSplitView: isSplitViewActive,
@@ -671,7 +669,6 @@ const DdocEditor = forwardRef(
                 ? () => setIsSplitView((open) => !open)
                 : undefined
             }
-            getMarkdownView={() => markdownViewRef.current}
             onRegisterExportTrigger={(trigger) => {
               exportTriggerRef.current = trigger;
             }}
@@ -1249,11 +1246,15 @@ const DdocEditor = forwardRef(
           style={{
             height: isFocusMode
               ? '100vh'
-              : !isPreviewMode
+              : isSplitViewActive
                 ? isNavbarVisible
-                  ? `calc(100dvh - 108px - ${footerHeight || '0px'})`
-                  : `calc(100dvh - 52px - ${footerHeight || '0px'})`
-                : `calc(100dvh - 52px - ${footerHeight || '0px'})`,
+                  ? `calc(100dvh - 56px - ${footerHeight || '0px'})`
+                  : `calc(100dvh - ${footerHeight || '0px'})`
+                : !isPreviewMode
+                  ? isNavbarVisible
+                    ? `calc(100dvh - 108px - ${footerHeight || '0px'})`
+                    : `calc(100dvh - 52px - ${footerHeight || '0px'})`
+                  : `calc(100dvh - 52px - ${footerHeight || '0px'})`,
           }}
         >
           <div
@@ -1263,7 +1264,12 @@ const DdocEditor = forwardRef(
               'h-[100%] flex w-full overflow-auto relative',
               !isPreviewMode &&
                 !isFocusMode &&
+                !isSplitViewActive &&
                 (isNavbarVisible ? 'mt-[6.7rem]' : 'mt-[3.3rem]'),
+              // Split View hides the rich toolbar, so only reserve the navbar.
+              isSplitViewActive &&
+                !isFocusMode &&
+                (isNavbarVisible ? 'mt-[3.5rem]' : 'mt-0'),
               isPreviewMode && !isFocusMode && 'mt-[3.5rem]',
               !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
               editorCanvasClassNames,
@@ -1326,9 +1332,7 @@ const DdocEditor = forwardRef(
               initialCommentAnchors={initialCommentAnchors}
             >
               {editor && isSplitViewActive ? (
-                <>
-                  {editorToolbar}
-                  <SplitViewLayout
+                <SplitViewLayout
                   editor={editor}
                   markdown={splitViewMarkdown}
                   onMarkdownChange={onSplitViewMarkdownChange}
@@ -1363,9 +1367,10 @@ const DdocEditor = forwardRef(
                       isFocusMode={isFocusMode}
                     />
                   }
-                  onMarkdownViewReady={registerMarkdownView}
-                  />
-                </>
+                  onExitSplitView={() => setIsSplitView?.(false)}
+                  ipfsImageUploadFn={ipfsImageUploadFn}
+                  onError={onError}
+                />
               ) : (
                 renderComp()
               )}

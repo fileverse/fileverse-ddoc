@@ -10,10 +10,6 @@ import React, {
 } from 'react';
 import { IEditorTool, useEditorToolVisiibility } from '../hooks/use-visibility';
 import { Editor, JSONContent } from '@tiptap/react';
-// Type-only imports — erased at compile so CodeMirror stays in its lazy chunk.
-import type { EditorView as MarkdownView } from '@codemirror/view';
-type MarkdownCommands =
-  typeof import('./split-view/markdown-commands')['mdCommands'];
 import { startImageUpload } from '../utils/upload-images';
 import cn from 'classnames';
 import UtilsModal from './utils-modal';
@@ -214,8 +210,6 @@ export const useEditorToolbar = ({
   ipfsImageFetchFn,
   onDocxImport,
   fetchV1ImageFn,
-  isSplitView,
-  getMarkdownView,
 }: {
   editor: Editor | null;
   isPresentationMode?: boolean;
@@ -235,22 +229,7 @@ export const useEditorToolbar = ({
   onDocxImport?: () => void;
   fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
   isConnected?: boolean;
-  isSplitView?: boolean;
-  getMarkdownView?: () => MarkdownView | null;
 }) => {
-  // In Split View, formatting routes to the CodeMirror markdown pane instead of
-  // the (read-only) ProseMirror editor. markdown-commands is dynamically
-  // imported so CodeMirror stays out of the main bundle.
-  const runMarkdownCommand = (
-    apply: (commands: MarkdownCommands, view: MarkdownView) => void,
-  ): boolean => {
-    const view = isSplitView ? getMarkdownView?.() : null;
-    if (!view) return false;
-    import('./split-view/markdown-commands').then(({ mdCommands }) =>
-      apply(mdCommands, view),
-    );
-    return true;
-  };
   const {
     ref: toolRef,
     toolVisibility,
@@ -448,7 +427,6 @@ export const useEditorToolbar = ({
       icon: 'Bold',
       title: 'Bold',
       onClick: () => {
-        if (runMarkdownCommand((c, v) => c.bold(v))) return;
         editor?.chain().focus().toggleBold().run();
       },
       isActive: formattingState.isBold,
@@ -457,7 +435,6 @@ export const useEditorToolbar = ({
       icon: 'Italic',
       title: 'Italic',
       onClick: () => {
-        if (runMarkdownCommand((c, v) => c.italic(v))) return;
         editor?.chain().focus().toggleItalic().run();
       },
       isActive: formattingState.isItalic,
@@ -466,7 +443,6 @@ export const useEditorToolbar = ({
       icon: 'Underline',
       title: 'Underlined',
       onClick: () => {
-        if (runMarkdownCommand((c, v) => c.underline(v))) return;
         editor?.chain().focus().toggleUnderline().run();
       },
       isActive: formattingState.isUnderline,
@@ -475,7 +451,6 @@ export const useEditorToolbar = ({
       icon: 'Strikethrough',
       title: 'Strikethrough',
       onClick: () => {
-        if (runMarkdownCommand((c, v) => c.strike(v))) return;
         editor?.chain().focus().toggleStrike().run();
       },
       isActive: formattingState.isStrikethrough,
@@ -485,7 +460,6 @@ export const useEditorToolbar = ({
       icon: 'List',
       title: 'List',
       onClick: () => {
-        if (runMarkdownCommand((c, v) => c.bulletList(v))) return;
         if (!editor) return;
         const { from, to, state, hasMultipleLists } =
           checkActiveListsAndDBlocks(editor);
@@ -539,7 +513,6 @@ export const useEditorToolbar = ({
       icon: 'ListOrdered',
       title: 'Ordered List',
       onClick: () => {
-        if (runMarkdownCommand((c, v) => c.orderedList(v))) return;
         if (!editor) return;
         const { from, to, state, hasMultipleLists } =
           checkActiveListsAndDBlocks(editor);
@@ -593,7 +566,6 @@ export const useEditorToolbar = ({
       icon: 'ListChecks',
       title: 'To-do List',
       onClick: () => {
-        if (runMarkdownCommand((c, v) => c.taskList(v))) return;
         if (!editor) return;
         const { from, to, state, hasMultipleLists } =
           checkActiveListsAndDBlocks(editor);
@@ -664,7 +636,6 @@ export const useEditorToolbar = ({
       icon: 'TextQuote',
       title: 'Quote',
       onClick: () => {
-        if (runMarkdownCommand((c, v) => c.blockquote(v))) return;
         editor?.chain().focus().toggleBlockquote().run();
       },
       isActive: editor?.isActive('blockquote') || false,
@@ -766,12 +737,13 @@ export const useEditorToolbar = ({
     {
       icon: 'Table',
       title: 'Add table',
-      onClick: () =>
+      onClick: () => {
         editor
           ?.chain()
           .focus()
           .insertTable({ rows: 3, cols: 2, withHeaderRow: true })
-          .run(),
+          .run();
+      },
       isActive: false,
       group: 'More',
       notVisible: 1560,
@@ -959,6 +931,35 @@ export const useEditorToolbar = ({
           );
           const generateDownloadUrl = await editor.commands.exportMarkdownFile({
             title: title || 'Untitled',
+          });
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${title || 'Untitled'}.md`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onMarkdownExport?.();
+      },
+      isActive: false,
+    },
+    {
+      icon: 'FileOutput',
+      title: 'Markdown with CSS (.md)',
+      subtitle: 'Keeps colors, fonts & highlights',
+      onClick: async () => {
+        if (editor) {
+          const editorContent = editor?.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const generateDownloadUrl = await editor.commands.exportMarkdownFile({
+            title: title || 'Untitled',
+            includeStyles: true,
           });
           if (generateDownloadUrl) {
             const url = generateDownloadUrl;
@@ -1173,7 +1174,6 @@ export const useEditorToolbar = ({
     setIsExportModalOpen,
     fileExportsOpen,
     setFileExportsOpen,
-    runMarkdownCommand,
   };
 };
 
@@ -1480,7 +1480,14 @@ export const LinkPopup = ({
     if (parsed && !parsed.headingEl) {
       onError?.('This heading link belongs to a different document.');
     }
-  }, [url, editor, bubbleMenu, setIsLinkPopupOpen, onError, setToolVisibility]);
+  }, [
+    url,
+    editor,
+    bubbleMenu,
+    setIsLinkPopupOpen,
+    onError,
+    setToolVisibility,
+  ]);
   return (
     <div
       ref={elementRef}
@@ -1791,14 +1798,10 @@ export const TextHeading = ({
   editor,
   setVisibility,
   elementRef,
-  runMarkdownCommand,
 }: {
   editor: Editor;
   elementRef: React.RefObject<HTMLDivElement>;
   setVisibility: Dispatch<SetStateAction<IEditorTool>>;
-  runMarkdownCommand?: (
-    apply: (commands: MarkdownCommands, view: MarkdownView) => void,
-  ) => boolean;
 }) => {
   const headings = [
     {
@@ -1807,7 +1810,6 @@ export const TextHeading = ({
       icon: 'Type',
       command: (editor: Editor) =>
         editor.chain().focus().toggleNode('paragraph', 'paragraph').run(),
-      md: (c: MarkdownCommands, v: MarkdownView) => c.paragraph(v),
       isActive: () =>
         editor.isActive('paragraph') &&
         !editor.isActive('bulletList') &&
@@ -1820,7 +1822,6 @@ export const TextHeading = ({
       command: (editor: Editor) => {
         editor.chain().focus().toggleHeading({ level: 1 }).run();
       },
-      md: (c: MarkdownCommands, v: MarkdownView) => c.heading(v, 1),
       isActive: () => editor.isActive('heading', { level: 1 }),
     },
     {
@@ -1830,7 +1831,6 @@ export const TextHeading = ({
       command: (editor: Editor) => {
         editor.chain().focus().toggleHeading({ level: 2 }).run();
       },
-      md: (c: MarkdownCommands, v: MarkdownView) => c.heading(v, 2),
       isActive: () => editor.isActive('heading', { level: 2 }),
     },
     {
@@ -1840,7 +1840,6 @@ export const TextHeading = ({
       command: (editor: Editor) => {
         editor.chain().focus().toggleHeading({ level: 3 }).run();
       },
-      md: (c: MarkdownCommands, v: MarkdownView) => c.heading(v, 3),
       isActive: () => editor.isActive('heading', { level: 3 }),
     },
   ];
@@ -1856,9 +1855,7 @@ export const TextHeading = ({
         <button
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => {
-            if (!runMarkdownCommand?.((c, v) => heading.md(c, v))) {
-              heading.command(editor);
-            }
+            heading.command(editor);
             setVisibility(IEditorTool.NONE);
           }}
           key={heading.title}

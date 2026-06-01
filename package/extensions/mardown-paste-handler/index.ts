@@ -342,9 +342,17 @@ turndownService.addRule('strikethrough', {
 // on import, DOMPurify keeps `style`/`data-color` and the Color, FontFamily,
 // FontSize, Highlight and Underline extensions parse it back into marks.
 
+// Opt-in: only emit inline styling for the "Markdown with CSS" export.
+// When false, these rules don't match → turndown drops the tags (clean .md).
+let emitInlineStyles = false;
+export const setMarkdownInlineStyles = (enabled: boolean) => {
+  emitInlineStyles = enabled;
+};
+
 // Color / font-family / font-size live on a styled <span> (TextStyle marks).
 turndownService.addRule('inlineTextStyle', {
   filter: (node) =>
+    emitInlineStyles &&
     node.nodeName === 'SPAN' &&
     !!(
       (node as HTMLElement).style?.color ||
@@ -367,7 +375,7 @@ turndownService.addRule('inlineTextStyle', {
 
 // Highlight renders as <mark> (background color / data-color).
 turndownService.addRule('highlightMark', {
-  filter: 'mark',
+  filter: (node) => emitInlineStyles && node.nodeName === 'MARK',
   replacement: function (content, node) {
     if (!content) return content;
     const el = node as HTMLElement;
@@ -380,7 +388,7 @@ turndownService.addRule('highlightMark', {
 
 // Underline has no markdown syntax — keep it as <u>.
 turndownService.addRule('underline', {
-  filter: ['u'],
+  filter: (node) => emitInlineStyles && node.nodeName === 'U',
   replacement: function (content) {
     return content ? `<u>${content}</u>` : content;
   },
@@ -435,6 +443,7 @@ declare module '@tiptap/core' {
         returnMDFile?: boolean;
         metadataFormat?: 'yaml' | 'reference-links';
         metadata?: Record<string, string>;
+        includeStyles?: boolean;
       }) => any;
     };
   }
@@ -608,6 +617,7 @@ const MarkdownPasteHandler = (
             returnMDFile?: boolean;
             metadataFormat?: 'yaml' | 'reference-links';
             metadata?: Record<string, string>;
+            includeStyles?: boolean;
           }) =>
           async ({ editor }: { editor: Editor }): Promise<string> => {
             const { showLoader, removeLoader } = inlineLoader(
@@ -633,7 +643,10 @@ const MarkdownPasteHandler = (
             );
 
             const inlineHtml = temporalEditor.getHTML();
+            // Emit inline-CSS styling only for the "Markdown with CSS" export.
+            setMarkdownInlineStyles(Boolean(props?.includeStyles));
             const markdown = turndownService.turndown(inlineHtml);
+            setMarkdownInlineStyles(false);
 
             const metadataEntries: Record<string, string> = {
               title: props?.title || 'Untitled',
