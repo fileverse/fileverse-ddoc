@@ -86,8 +86,11 @@ export const useMarkdownSync = ({
         editor.commands.selectAll();
         // breaks: a single Enter in the markdown pane shows as a new line on
         // the right, instead of CommonMark's "newline = space".
+        // embedTweets: a bare tweet URL re-embeds into a tweet (it's exported
+        // as a URL, not a raw <div data-tweet-id>), so tweets round-trip.
         await handleMarkdownContent(editor.view, value, ipfsImageUploadFn, {
           breaks: true,
+          embedTweets: true,
         });
       } catch (error) {
         console.error('Split View: failed to apply markdown', error);

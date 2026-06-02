@@ -24,6 +24,7 @@ import {
 import { markdownHtmlGuardPlugin } from './mark-down-html-guard-plugin';
 import { parseHeadingLink } from '../../utils/heading-link';
 import { isAllowedEmbedSrc } from '../../utils/is-allowed-embed-src';
+import { TWITTER_REGEX } from '../../constants/twitter';
 
 // Initialize MarkdownIt for converting Markdown back to HTML with footnote support.
 const markdownIt = new MarkdownIt({ html: true })
@@ -230,7 +231,10 @@ turndownService.addRule('embeddedTweet', {
     !!(node as HTMLElement).getAttribute('data-tweet-id'),
   replacement: function (_content, node) {
     const id = (node as HTMLElement).getAttribute('data-tweet-id');
-    return id ? `\n\n<div data-tweet-id="${id}"></div>\n\n` : '';
+    // Represent the tweet as its URL — portable and sensible in the exported
+    // .md (a raw <div data-tweet-id> means nothing outside this editor). Split
+    // View re-embeds a bare tweet URL on reparse, so it still round-trips.
+    return id ? `\n\nhttps://twitter.com/i/status/${id}\n\n` : '';
   },
 });
 
@@ -915,7 +919,7 @@ export async function handleMarkdownContent(
   view: any,
   content: string,
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
-  options?: { breaks?: boolean },
+  options?: { breaks?: boolean; embedTweets?: boolean },
 ) {
   // Remove YAML frontmatter before parsing
   let cleanMarkdown = stripFrontmatter(content);
@@ -1014,6 +1018,23 @@ export async function handleMarkdownContent(
 
     if (isTodoList) {
       list.setAttribute('data-type', 'taskList');
+    }
+  }
+
+  // Re-embed bare tweet URLs (opt-in, Split View): a paragraph that is just a
+  // tweet URL becomes a <div data-tweet-id> so it parses back into an
+  // embeddedTweet node — the inverse of how it's exported (see the turndown
+  // embeddedTweet rule). Named links like [text](tweet-url) are left alone.
+  if (options?.embedTweets) {
+    const tweetParas = Array.from(doc.getElementsByTagName('p'));
+    for (const p of tweetParas) {
+      const text = (p.textContent || '').trim();
+      const match = text.match(TWITTER_REGEX);
+      if (match && match[0] === text) {
+        const tweetDiv = doc.createElement('div');
+        tweetDiv.setAttribute('data-tweet-id', match[2]);
+        p.replaceWith(tweetDiv);
+      }
     }
   }
 
