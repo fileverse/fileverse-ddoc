@@ -1,5 +1,11 @@
+import { useEffect, useRef, useState } from 'react';
 import { EditorView } from '@codemirror/view';
-import { IconButton, Tooltip, LucideIconProps } from '@fileverse/ui';
+import {
+  IconButton,
+  Tooltip,
+  DynamicDropdown,
+  LucideIconProps,
+} from '@fileverse/ui';
 import {
   mdCommands,
   insertSecureImage,
@@ -61,6 +67,21 @@ const GROUPS: Action[][] = [
   ],
 ];
 
+// Groups 0–2 (undo/redo, headings, inline formatting) always stay inline; the
+// rest (lists, insert) collapse into the ⋯ menu when the pane is too narrow.
+const CORE_GROUP_COUNT = 3;
+const CORE_GROUPS = GROUPS.slice(0, CORE_GROUP_COUNT);
+const OVERFLOW_GROUPS = GROUPS.slice(CORE_GROUP_COUNT);
+
+// Compact buttons (icon unchanged, smaller container) per the design.
+const BTN_CLASS = '!h-6 !w-6 !min-w-0';
+
+// Below this available toolbar width, the overflow groups move into the ⋯ menu
+// (matches the Figma small-pane layout). Tunable.
+const COLLAPSE_BELOW_PX = 560;
+
+const Divider = () => <div className="w-[1px] h-4 vertical-divider mx-1" />;
+
 export default function SplitViewToolbar({
   view,
   onExit,
@@ -113,36 +134,85 @@ export default function SplitViewToolbar({
     action.run(editorView);
   };
 
+  // Collapse the overflow groups into the ⋯ menu when the toolbar is too narrow.
+  const groupsRef = useRef<HTMLDivElement>(null);
+  const [collapsed, setCollapsed] = useState(false);
+  useEffect(() => {
+    const el = groupsRef.current;
+    if (!el || typeof ResizeObserver === 'undefined') return;
+    const update = () => setCollapsed(el.clientWidth < COLLAPSE_BELOW_PX);
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
+  const renderButton = (action: Action) => (
+    <Tooltip key={action.label} text={action.label}>
+      <IconButton
+        variant="ghost"
+        size="sm"
+        className={BTN_CLASS}
+        icon={action.icon}
+        disabled={!view}
+        onClick={() => view && onAction(action, view)}
+      />
+    </Tooltip>
+  );
+
+  const renderGroup = (group: Action[], withDivider: boolean) => (
+    <div key={group[0].label} className="flex items-center gap-0.5">
+      {withDivider && <Divider />}
+      {group.map(renderButton)}
+    </div>
+  );
+
   return (
     <div className="flex items-center px-2 py-2 border-b color-border-default shrink-0">
-      <div className="flex items-center gap-0.5 overflow-x-auto no-scrollbar flex-1 min-w-0">
-        {GROUPS.map((group, groupIndex) => (
-          <div key={group[0].label} className="flex items-center gap-0.5">
-            {groupIndex > 0 && (
-              <div className="w-[1px] h-4 vertical-divider mx-1" />
-            )}
-            {group.map((action) => (
-              <Tooltip key={action.label} text={action.label}>
-                <IconButton
-                  variant="ghost"
-                  size="sm"
-                  icon={action.icon}
-                  disabled={!view}
-                  onClick={() => view && onAction(action, view)}
-                />
-              </Tooltip>
-            ))}
+      <div
+        ref={groupsRef}
+        className="flex items-center gap-0.5 flex-1 min-w-0 overflow-hidden"
+      >
+        {CORE_GROUPS.map((group, i) => renderGroup(group, i > 0))}
+
+        {collapsed ? (
+          <div className="flex items-center gap-0.5">
+            <Divider />
+            <DynamicDropdown
+              key="md-more-dropdown"
+              align="start"
+              sideOffset={8}
+              anchorTrigger={
+                <Tooltip text="More">
+                  <IconButton
+                    variant="ghost"
+                    size="sm"
+                    className={BTN_CLASS}
+                    icon="Ellipsis"
+                    disabled={!view}
+                  />
+                </Tooltip>
+              }
+              content={
+                <div className="flex items-center gap-0.5 p-1">
+                  {OVERFLOW_GROUPS.flat().map(renderButton)}
+                </div>
+              }
+            />
           </div>
-        ))}
+        ) : (
+          OVERFLOW_GROUPS.map((group) => renderGroup(group, true))
+        )}
       </div>
 
       {onExit && (
         <div className="flex items-center pl-1 shrink-0">
-          <div className="w-[1px] h-4 vertical-divider mx-1" />
+          <Divider />
           <Tooltip text="Back to editor">
             <IconButton
               variant="ghost"
               size="sm"
+              className={BTN_CLASS}
               icon="PenLine"
               onClick={onExit}
             />
