@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { EditorState, Annotation } from '@codemirror/state';
+import { EditorState, Annotation, RangeSetBuilder } from '@codemirror/state';
 import {
   EditorView,
   lineNumbers,
@@ -7,12 +7,17 @@ import {
   highlightActiveLineGutter,
   placeholder,
   keymap,
+  Decoration,
+  DecorationSet,
+  ViewPlugin,
+  ViewUpdate,
 } from '@codemirror/view';
 import { history, defaultKeymap, historyKeymap } from '@codemirror/commands';
 import { markdown } from '@codemirror/lang-markdown';
 import {
   syntaxHighlighting,
   defaultHighlightStyle,
+  syntaxTree,
 } from '@codemirror/language';
 
 interface MarkdownSourcePaneProps {
@@ -50,6 +55,43 @@ const urlPasteHandler = EditorView.domEventHandlers({
   },
 });
 
+// Color markdown links with the editor's text-link token (matches the doc's own
+// link color). We mark Link ([text](url)) and Autolink (<url>) nodes from the
+// markdown syntax tree — no extra dependency, the color comes from CSS below.
+const linkDecoration = Decoration.mark({ class: 'cm-md-link' });
+const LINK_NODES = new Set(['Link', 'Autolink']);
+
+const buildLinkDecorations = (view: EditorView): DecorationSet => {
+  const builder = new RangeSetBuilder<Decoration>();
+  for (const { from, to } of view.visibleRanges) {
+    syntaxTree(view.state).iterate({
+      from,
+      to,
+      enter: (node) => {
+        if (LINK_NODES.has(node.name) && node.to > node.from) {
+          builder.add(node.from, node.to, linkDecoration);
+        }
+      },
+    });
+  }
+  return builder.finish();
+};
+
+const linkColorPlugin = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet;
+    constructor(view: EditorView) {
+      this.decorations = buildLinkDecorations(view);
+    }
+    update(update: ViewUpdate) {
+      if (update.docChanged || update.viewportChanged) {
+        this.decorations = buildLinkDecorations(update.view);
+      }
+    }
+  },
+  { decorations: (v) => v.decorations },
+);
+
 // Left pane theme: secondary-gray line numbers in a ~26px gutter, subtle
 // full-width active-line band, monospace ~14px / 1.7.
 const editorTheme = EditorView.theme({
@@ -80,6 +122,11 @@ const editorTheme = EditorView.theme({
   '.cm-activeLineGutter': { backgroundColor: 'transparent' },
   '.cm-cursor, .cm-dropCursor': {
     borderLeftColor: 'hsl(var(--color-text-default))',
+  },
+  // Markdown links use the editor's text-link token (override the default
+  // syntax color, incl. the inner highlight spans).
+  '.cm-md-link, .cm-md-link span': {
+    color: 'hsla(var(--color-text-link)) !important',
   },
 });
 
@@ -124,6 +171,7 @@ export default function MarkdownSourcePane({
           ]),
           markdown(),
           syntaxHighlighting(defaultHighlightStyle),
+          linkColorPlugin,
           urlPasteHandler,
           placeholder(PLACEHOLDER),
           EditorView.lineWrapping,
