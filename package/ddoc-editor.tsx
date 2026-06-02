@@ -339,7 +339,16 @@ const DdocEditor = forwardRef(
     );
 
     // Split View (markdown left, read-only doc right). Disabled in preview.
-    const isSplitViewActive = Boolean(isSplitView) && !isPreviewMode;
+    // Desktop-only for v1: two side-by-side panes don't fit below the 960px
+    // `mobile` breakpoint (which also hides the toolbar that holds the toggle).
+    const canUseSplitView = useMediaQuery('(min-width: 960px)');
+    const isSplitViewActive =
+      Boolean(isSplitView) && !isPreviewMode && canUseSplitView;
+    // If the window shrinks below the breakpoint while in Split View, exit so
+    // the broken side-by-side layout never renders on mobile.
+    useEffect(() => {
+      if (!canUseSplitView && isSplitView) setIsSplitView?.(false);
+    }, [canUseSplitView, isSplitView, setIsSplitView]);
     const [showSplitTabsPanel, setShowSplitTabsPanel] = useState(false);
     const {
       markdown: splitViewMarkdown,
