@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "3.5.0",
+  "version": "3.5.1-split-view-patch.1",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
@@ -41,6 +41,7 @@
     "@aarkue/tiptap-math-extension": "^1.4.0",
     "@codemirror/commands": "^6.10.3",
     "@codemirror/lang-markdown": "^6.5.0",
+    "@codemirror/language": "^6.12.3",
     "@codemirror/state": "^6.6.0",
     "@codemirror/view": "^6.43.0",
     "@fileverse-dev/md2slides": "^0.0.8",

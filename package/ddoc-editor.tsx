@@ -679,9 +679,7 @@ const DdocEditor = forwardRef(
             toggleFocusMode={toggleFocusMode}
             isSplitView={isSplitView}
             onToggleSplitView={
-              setIsSplitView
-                ? () => setIsSplitView((open) => !open)
-                : undefined
+              setIsSplitView ? () => setIsSplitView((open) => !open) : undefined
             }
             onRegisterExportTrigger={(trigger) => {
               exportTriggerRef.current = trigger;
@@ -813,7 +811,9 @@ const DdocEditor = forwardRef(
               {/* Split View: drop w-full — inside the flex scroll container it
                   pins this to the fixed page width and leaves dead space; letting
                   it size naturally lets the content fill the pane. */}
-              <div className={cn(isSplitViewActive ? 'h-full' : 'w-full h-full')}>
+              <div
+                className={cn(isSplitViewActive ? 'h-full' : 'w-full h-full')}
+              >
                 <div
                   className={cn(
                     'flex min-h-[100%] items-start',

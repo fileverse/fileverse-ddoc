@@ -39,31 +39,79 @@ const GROUPS: Action[][] = [
     { icon: 'Redo', label: 'Redo', run: (v) => mdCommands.redo(v) },
   ],
   [
-    { icon: 'Heading1', label: 'Heading 1', run: (v) => mdCommands.heading(v, 1) },
-    { icon: 'Heading2', label: 'Heading 2', run: (v) => mdCommands.heading(v, 2) },
-    { icon: 'Heading3', label: 'Heading 3', run: (v) => mdCommands.heading(v, 3) },
+    {
+      icon: 'Heading1',
+      label: 'Heading 1',
+      run: (v) => mdCommands.heading(v, 1),
+    },
+    {
+      icon: 'Heading2',
+      label: 'Heading 2',
+      run: (v) => mdCommands.heading(v, 2),
+    },
+    {
+      icon: 'Heading3',
+      label: 'Heading 3',
+      run: (v) => mdCommands.heading(v, 3),
+    },
   ],
   [
     { icon: 'Bold', label: 'Bold', run: (v) => mdCommands.bold(v) },
     { icon: 'Italic', label: 'Italic', run: (v) => mdCommands.italic(v) },
-    { icon: 'Underline', label: 'Underline', run: (v) => mdCommands.underline(v) },
-    { icon: 'Strikethrough', label: 'Strikethrough', run: (v) => mdCommands.strike(v) },
-    { icon: 'Code', label: 'Inline code', run: (v) => mdCommands.inlineCode(v) },
-    { icon: 'Highlighter', label: 'Highlight', run: (v) => mdCommands.highlight(v) },
+    {
+      icon: 'Underline',
+      label: 'Underline',
+      run: (v) => mdCommands.underline(v),
+    },
+    {
+      icon: 'Strikethrough',
+      label: 'Strikethrough',
+      run: (v) => mdCommands.strike(v),
+    },
+    {
+      icon: 'Code',
+      label: 'Inline code',
+      run: (v) => mdCommands.inlineCode(v),
+    },
+    {
+      icon: 'Highlighter',
+      label: 'Highlight',
+      run: (v) => mdCommands.highlight(v),
+    },
   ],
   [
-    { icon: 'List', label: 'Bullet list', run: (v) => mdCommands.bulletList(v) },
-    { icon: 'ListOrdered', label: 'Numbered list', run: (v) => mdCommands.orderedList(v) },
-    { icon: 'ListChecks', label: 'To-do list', run: (v) => mdCommands.taskList(v) },
+    {
+      icon: 'List',
+      label: 'Bullet list',
+      run: (v) => mdCommands.bulletList(v),
+    },
+    {
+      icon: 'ListOrdered',
+      label: 'Numbered list',
+      run: (v) => mdCommands.orderedList(v),
+    },
+    {
+      icon: 'ListChecks',
+      label: 'To-do list',
+      run: (v) => mdCommands.taskList(v),
+    },
     { icon: 'TextQuote', label: 'Quote', run: (v) => mdCommands.blockquote(v) },
   ],
   [
     // Inserts [text](url) inline and selects `url` to type over.
     { icon: 'Link', label: 'Link', run: (v) => mdCommands.link(v) },
     { icon: 'Image', label: 'Image', run: () => {}, upload: true },
-    { icon: 'Braces', label: 'Code block', run: (v) => mdCommands.codeBlock(v) },
+    {
+      icon: 'Braces',
+      label: 'Code block',
+      run: (v) => mdCommands.codeBlock(v),
+    },
     { icon: 'Table', label: 'Table', run: (v) => mdCommands.table(v) },
-    { icon: 'Minus', label: 'Divider', run: (v) => mdCommands.horizontalRule(v) },
+    {
+      icon: 'Minus',
+      label: 'Divider',
+      run: (v) => mdCommands.horizontalRule(v),
+    },
   ],
 ];
 

@@ -40,9 +40,7 @@ export const EmbeddedTweet = Node.create<EmbeddedTweetOptions>({
         default: null,
         parseHTML: (element) => element.getAttribute('data-tweet-id'),
         renderHTML: (attributes) =>
-          attributes.tweetId
-            ? { 'data-tweet-id': attributes.tweetId }
-            : {},
+          attributes.tweetId ? { 'data-tweet-id': attributes.tweetId } : {},
       },
       align: {
         default: 'center',
