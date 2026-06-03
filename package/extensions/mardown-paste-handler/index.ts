@@ -919,7 +919,7 @@ export async function handleMarkdownContent(
   view: any,
   content: string,
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
-  options?: { breaks?: boolean; embedTweets?: boolean },
+  options?: { breaks?: boolean },
 ) {
   // Remove YAML frontmatter before parsing
   let cleanMarkdown = stripFrontmatter(content);
@@ -1021,20 +1021,19 @@ export async function handleMarkdownContent(
     }
   }
 
-  // Re-embed bare tweet URLs (opt-in, Split View): a paragraph that is just a
-  // tweet URL becomes a <div data-tweet-id> so it parses back into an
-  // embeddedTweet node — the inverse of how it's exported (see the turndown
-  // embeddedTweet rule). Named links like [text](tweet-url) are left alone.
-  if (options?.embedTweets) {
-    const tweetParas = Array.from(doc.getElementsByTagName('p'));
-    for (const p of tweetParas) {
-      const text = (p.textContent || '').trim();
-      const match = text.match(TWITTER_REGEX);
-      if (match && match[0] === text) {
-        const tweetDiv = doc.createElement('div');
-        tweetDiv.setAttribute('data-tweet-id', match[2]);
-        p.replaceWith(tweetDiv);
-      }
+  // Re-embed bare tweet URLs: a paragraph that is just a tweet URL becomes a
+  // <div data-tweet-id> so it parses back into an embeddedTweet node — the
+  // inverse of how it's exported (see the turndown embeddedTweet rule). So a
+  // tweet round-trips through markdown everywhere (paste/import/Split View).
+  // Named links like [text](tweet-url) are left alone.
+  const tweetParas = Array.from(doc.getElementsByTagName('p'));
+  for (const p of tweetParas) {
+    const text = (p.textContent || '').trim();
+    const match = text.match(TWITTER_REGEX);
+    if (match && match[0] === text) {
+      const tweetDiv = doc.createElement('div');
+      tweetDiv.setAttribute('data-tweet-id', match[2]);
+      p.replaceWith(tweetDiv);
     }
   }
 
