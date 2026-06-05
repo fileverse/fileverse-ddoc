@@ -59,6 +59,7 @@ import SearchReplace from './extensions/search-replace/components/search-replace
 import { SplitViewMarkdownPane } from './components/split-view/split-view-markdown-pane';
 import { SplitViewRightHeader } from './components/split-view/split-view-right-header';
 import { useMarkdownSync } from './hooks/use-markdown-sync';
+import { useSplitResize } from './hooks/use-split-resize';
 
 const DdocEditor = forwardRef(
   (
@@ -363,30 +364,13 @@ const DdocEditor = forwardRef(
       () => ({ ...dBlockRuntimeState, isSplitView: isSplitViewActive }),
       [dBlockRuntimeState, isSplitViewActive],
     );
-    // Resizable split: each pane's flex-grow is driven by this ratio (left-pane
-    // fraction); the divider drags it. Clamped so neither pane collapses.
-    const splitContainerRef = useRef<HTMLDivElement | null>(null);
-    const [splitRatio, setSplitRatio] = useState(0.5);
-    const handleSplitterDown = useCallback((e: React.MouseEvent) => {
-      e.preventDefault();
-      const container = splitContainerRef.current;
-      if (!container) return;
-      document.body.style.userSelect = 'none';
-      document.body.style.cursor = 'col-resize';
-      const onMove = (ev: MouseEvent) => {
-        const rect = container.getBoundingClientRect();
-        const ratio = (ev.clientX - rect.left) / rect.width;
-        setSplitRatio(Math.min(0.8, Math.max(0.2, ratio)));
-      };
-      const onUp = () => {
-        document.body.style.userSelect = '';
-        document.body.style.cursor = '';
-        document.removeEventListener('mousemove', onMove);
-        document.removeEventListener('mouseup', onUp);
-      };
-      document.addEventListener('mousemove', onMove);
-      document.addEventListener('mouseup', onUp);
-    }, []);
+    // Resizable split: each pane's flex-grow is driven by splitRatio (left-pane
+    // fraction); the divider drags it. See useSplitResize for drag teardown.
+    const {
+      containerRef: splitContainerRef,
+      leftRatio: splitRatio,
+      onSeparatorMouseDown: handleSplitterDown,
+    } = useSplitResize();
     const [showSplitTabsPanel, setShowSplitTabsPanel] = useState(false);
     const {
       markdown: splitViewMarkdown,
@@ -1455,6 +1439,9 @@ const DdocEditor = forwardRef(
                   <div
                     role="separator"
                     aria-orientation="vertical"
+                    aria-valuenow={Math.round(splitRatio * 100)}
+                    aria-valuemin={20}
+                    aria-valuemax={80}
                     onMouseDown={handleSplitterDown}
                     className="group flex w-2 shrink-0 cursor-col-resize items-center justify-center"
                   >
