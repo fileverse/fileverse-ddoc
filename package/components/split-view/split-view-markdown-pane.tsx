@@ -15,6 +15,8 @@ interface SplitViewMarkdownPaneProps {
   /** Same uploader the editor uses — for the markdown toolbar's Image button. */
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   onError?: (error: string) => void;
+  /** Sizing for the resizable split (flex-grow set by the draggable splitter). */
+  style?: React.CSSProperties;
 }
 
 /**
@@ -29,6 +31,7 @@ export const SplitViewMarkdownPane = ({
   onExitSplitView,
   ipfsImageUploadFn,
   onError,
+  style,
 }: SplitViewMarkdownPaneProps) => {
   // Capture the CodeMirror view to drive the dedicated markdown toolbar.
   const [mdView, setMdView] = useState<EditorView | null>(null);
@@ -37,7 +40,10 @@ export const SplitViewMarkdownPane = ({
   }, []);
 
   return (
-    <div className="flex-1 min-w-0 h-full flex flex-col color-bg-default rounded border color-border-default overflow-hidden">
+    <div
+      style={style}
+      className="flex-1 min-w-0 h-full flex flex-col color-bg-default rounded border color-border-default overflow-hidden"
+    >
       <Suspense fallback={null}>
         <SplitViewToolbar
           view={mdView}

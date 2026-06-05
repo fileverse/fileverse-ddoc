@@ -341,14 +341,52 @@ const DdocEditor = forwardRef(
     // Split View (markdown left, read-only doc right). Disabled in preview.
     // Desktop-only for v1: two side-by-side panes don't fit below the 960px
     // `mobile` breakpoint (which also hides the toolbar that holds the toggle).
+    // Disabled during collaboration: the markdown→doc sync is a one-way full-doc
+    // replace, so editing the left pane would clobber a collaborator's changes.
     const canUseSplitView = useMediaQuery('(min-width: 960px)');
+    const isCollabEnabled = Boolean(collaboration?.enabled);
     const isSplitViewActive =
-      Boolean(isSplitView) && !isPreviewMode && canUseSplitView;
-    // If the window shrinks below the breakpoint while in Split View, exit so
-    // the broken side-by-side layout never renders on mobile.
+      Boolean(isSplitView) &&
+      !isPreviewMode &&
+      canUseSplitView &&
+      !isCollabEnabled;
+    // Exit Split View if it becomes unavailable while open — the window shrank
+    // below the breakpoint, or a collaboration session started.
     useEffect(() => {
-      if (!canUseSplitView && isSplitView) setIsSplitView?.(false);
-    }, [canUseSplitView, isSplitView, setIsSplitView]);
+      if ((!canUseSplitView || isCollabEnabled) && isSplitView) {
+        setIsSplitView?.(false);
+      }
+    }, [canUseSplitView, isCollabEnabled, isSplitView, setIsSplitView]);
+    // The right pane is read-only in Split View — let the dBlock toolbar know so
+    // it hides editing affordances there (e.g. the empty-doc template picker).
+    const splitAwareDBlockRuntimeState = useMemo(
+      () => ({ ...dBlockRuntimeState, isSplitView: isSplitViewActive }),
+      [dBlockRuntimeState, isSplitViewActive],
+    );
+    // Resizable split: each pane's flex-grow is driven by this ratio (left-pane
+    // fraction); the divider drags it. Clamped so neither pane collapses.
+    const splitContainerRef = useRef<HTMLDivElement | null>(null);
+    const [splitRatio, setSplitRatio] = useState(0.5);
+    const handleSplitterDown = useCallback((e: React.MouseEvent) => {
+      e.preventDefault();
+      const container = splitContainerRef.current;
+      if (!container) return;
+      document.body.style.userSelect = 'none';
+      document.body.style.cursor = 'col-resize';
+      const onMove = (ev: MouseEvent) => {
+        const rect = container.getBoundingClientRect();
+        const ratio = (ev.clientX - rect.left) / rect.width;
+        setSplitRatio(Math.min(0.8, Math.max(0.2, ratio)));
+      };
+      const onUp = () => {
+        document.body.style.userSelect = '';
+        document.body.style.cursor = '';
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+      };
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    }, []);
     const [showSplitTabsPanel, setShowSplitTabsPanel] = useState(false);
     const {
       markdown: splitViewMarkdown,
@@ -679,7 +717,10 @@ const DdocEditor = forwardRef(
             toggleFocusMode={toggleFocusMode}
             isSplitView={isSplitView}
             onToggleSplitView={
-              setIsSplitView ? () => setIsSplitView((open) => !open) : undefined
+              // Hidden during collaboration — Split View is solo-only in v1.
+              setIsSplitView && !isCollabEnabled
+                ? () => setIsSplitView((open) => !open)
+                : undefined
             }
             onRegisterExportTrigger={(trigger) => {
               exportTriggerRef.current = trigger;
@@ -1102,7 +1143,9 @@ const DdocEditor = forwardRef(
                                     )}
                                     <DBlockToolbarProvider
                                       editor={editor}
-                                      runtimeState={dBlockRuntimeState}
+                                      runtimeState={
+                                        splitAwareDBlockRuntimeState
+                                      }
                                     >
                                       <div className="grammarly-wrapper">
                                         {(cachedEditorEntries?.length
@@ -1389,9 +1432,10 @@ const DdocEditor = forwardRef(
                 layout when active, without changing renderComp's tree position.
               */}
               <div
+                ref={splitContainerRef}
                 className={cn(
                   isSplitViewActive
-                    ? 'flex w-full h-full gap-2 p-4 color-bg-secondary overflow-hidden'
+                    ? 'flex w-full h-full p-4 color-bg-secondary overflow-hidden'
                     : 'contents',
                 )}
               >
@@ -1402,11 +1446,27 @@ const DdocEditor = forwardRef(
                     onExitSplitView={() => setIsSplitView?.(false)}
                     ipfsImageUploadFn={ipfsImageUploadFn}
                     onError={onError}
+                    style={{ flexGrow: splitRatio }}
                   />
+                )}
+
+                {/* Draggable divider to resize the two panes. */}
+                {editor && isSplitViewActive && (
+                  <div
+                    role="separator"
+                    aria-orientation="vertical"
+                    onMouseDown={handleSplitterDown}
+                    className="group flex w-2 shrink-0 cursor-col-resize items-center justify-center"
+                  >
+                    <div className="h-10 w-[3px] rounded-full color-bg-default-hover transition-colors group-hover:color-bg-brand" />
+                  </div>
                 )}
 
                 {/* RIGHT pane (split) / passthrough (normal) — the real editor. */}
                 <div
+                  style={
+                    isSplitViewActive ? { flexGrow: 1 - splitRatio } : undefined
+                  }
                   className={cn(
                     isSplitViewActive
                       ? 'flex-1 min-w-0 h-full flex flex-col color-bg-default rounded border color-border-default overflow-hidden relative'

@@ -241,6 +241,8 @@ const getTemplateTarget = (
     !editor ||
     runtimeState.isPreviewMode ||
     runtimeState.isCollaboratorsDoc ||
+    // Split View renders the doc read-only on the right — no template picker.
+    runtimeState.isSplitView ||
     editor.state.doc.childCount !== 1
   ) {
     return null;
