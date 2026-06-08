@@ -31,8 +31,20 @@ export const CustomCodeBlockLowlight =
       return {
         language: {
           default: 'plaintext',
-          parseHTML: (element) =>
-            element.getAttribute('data-language') || 'plaintext',
+          parseHTML: (element) => {
+            // ddoc's own HTML carries the language on the <pre>.
+            const dataLanguage = element.getAttribute('data-language');
+            if (dataLanguage) return dataLanguage;
+            // Markdown import (markdown-it) instead emits
+            // `<code class="language-x">` with no data-language. Read the class
+            // so fenced languages — notably `mermaid` — survive the markdown
+            // round-trip (paste, file import, Split View) instead of silently
+            // degrading to a plaintext code block.
+            const codeClass =
+              element.querySelector('code')?.getAttribute('class') || '';
+            const match = codeClass.match(/language-(\S+)/);
+            return match ? match[1] : 'plaintext';
+          },
           renderHTML: (attributes) => ({
             'data-language': attributes.language,
           }),
