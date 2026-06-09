@@ -30,8 +30,8 @@ export interface TabItemProps {
   onEmojiChange: (emoji: string) => void;
   onClick: () => void;
   isActive: boolean;
-  isEditing: boolean;
-  setIsEditing: React.Dispatch<React.SetStateAction<boolean>>;
+  isEditing?: boolean;
+  setIsEditing?: React.Dispatch<React.SetStateAction<boolean>>;
   onDuplicate?: (id: string) => void;
   dragHandleProps?: HTMLAttributes<HTMLDivElement>;
   hideContentMenu?: boolean;
@@ -162,7 +162,7 @@ export const TabItem = ({
 
   const startEditing = () => {
     originalTitleRef.current = title;
-    setIsEditing(true);
+    setIsEditing?.(true);
   };
 
   const commitTitle = () => {
@@ -177,12 +177,12 @@ export const TabItem = ({
   const stopEditing = () => {
     const nextTitle = commitTitle();
     onNameChange(nextTitle);
-    setIsEditing(false);
+    setIsEditing?.(false);
   };
 
   const cancelEditing = () => {
     setTitle(originalTitleRef.current);
-    setIsEditing(false);
+    setIsEditing?.(false);
   };
 
   const editMenuSections: TabContextMenuItem[][] = [
@@ -299,13 +299,13 @@ export const TabItem = ({
               skipBlurCommitRef.current = true;
               const nextTitle = commitTitle();
               onNameChange(nextTitle, _emoji);
-              setIsEditing(false);
+              setIsEditing?.(false);
               return;
             }
             onEmojiChange(_emoji);
           }}
           disableEmoji={Boolean(isPreviewMode || isVersionHistoryMode)}
-          isEditing={isEditing}
+          isEditing={isEditing ?? false}
           openPickerTrigger={openEmojiPickerTrigger}
         />
 
