@@ -1,6 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DdocEditor from '../../package/ddoc-editor';
+import type { FontDescriptor } from '../../package/types';
 import { JSONContent } from '@tiptap/react';
+
+const demoFonts: FontDescriptor[] = [
+  {
+    name: 'Poppins',
+    family: 'Poppins, sans-serif',
+    url: 'https://fonts.gstatic.com/s/poppins/v22/pxiEyp8kv8JHgFVrJJfecnFHGPc.woff2',
+  },
+  {
+    name: 'Inter',
+    family: 'Inter, sans-serif',
+    url: 'https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50ojIw2boKoduKmMEVuLyfMZg.woff2',
+  },
+];
 import {
   Button,
   Tag,
@@ -708,6 +722,7 @@ function App() {
       />
       <DdocEditor
         ref={editorRef}
+        fonts={demoFonts}
         collaboration={collaboration}
         username={username}
         setUsername={setUsername}

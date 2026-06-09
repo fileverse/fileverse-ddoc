@@ -148,6 +148,7 @@ const DdocEditor = forwardRef(
       isAIAgentEnabled,
       // Document styling object
       documentStyling,
+      fonts,
       ...rest
     }: DdocProps,
     ref,
@@ -324,6 +325,7 @@ const DdocEditor = forwardRef(
       isDDocOwner,
       tabConfig,
       onNewComment,
+      fonts,
       ...rest,
     });
     const currentTabName = useMemo(
@@ -664,6 +666,7 @@ const DdocEditor = forwardRef(
                     onRegisterExportTrigger={(trigger) => {
                       exportTriggerRef.current = trigger;
                     }}
+                    fonts={fonts}
                   />
                 </div>
               </div>

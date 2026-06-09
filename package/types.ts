@@ -150,6 +150,13 @@ export interface DocumentStyling {
   orientation?: 'portrait' | 'landscape';
 }
 export interface DdocProps extends CommentAccountProps {
+  /**
+   * Optional catalog of fonts available to the editor in addition to the
+   * package baseline (system fonts only). Each entry is loaded lazily via the
+   * CSS Font Loading API when first selected in the picker or when a document
+   * references its family.
+   */
+  fonts?: FontDescriptor[];
   tabConfig?: {
     onCopyTabLink?: (tabId: string) => void;
     defaultTabId?: string;
@@ -309,3 +316,22 @@ export interface IpfsImageFetchPayload {
   mimeType: string;
   authTag: string;
 }
+
+export type FontDescriptor = {
+  /** Display name in the picker, e.g. "Poppins" */
+  name: string;
+  /** CSS font-family stack stored in textStyle marks, e.g. "Poppins, sans-serif" */
+  family: string;
+  /**
+   * woff2 source(s).
+   *   - string: single file covering all weights (variable font).
+   *   - Record<number, string>: per-weight map, e.g. { 400: '/p-400.woff2', 700: '/p-700.woff2' }.
+   *   - omitted: pure system font, no loading.
+   */
+  url?: string | Record<number, string>;
+  /**
+   * SVG preview rendered in the picker. Any React node that renders an <svg>.
+   * Falls back to the font name in the default font when absent.
+   */
+  preview?: React.ReactNode;
+};

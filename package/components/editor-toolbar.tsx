@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  buildPickerEntries,
   EditorAlignment,
   EditorFontFamily,
-  fonts,
   FontSizePicker,
   getCurrentFontSize,
   LineHeightPicker,
@@ -28,7 +28,11 @@ import ToolbarButton from '../common/toolbar-button';
 import { useMediaQuery } from 'usehooks-ts';
 import { AnimatePresence } from 'framer-motion';
 import { fadeInTransition, slideUpTransition } from './motion-div';
-import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
+import {
+  FontDescriptor,
+  IpfsImageFetchPayload,
+  IpfsImageUploadResponse,
+} from '../types';
 import { ImportExportButton } from './import-export-button';
 import { getCurrentFontFamily } from '../utils/get-current-font-family';
 import EditorToolbarDropdown from './editor-toolbar-dropdown';
@@ -64,6 +68,7 @@ const TiptapToolBar = ({
   ydoc,
   onRegisterExportTrigger,
   toggleFocusMode,
+  fonts: consumerFonts,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -94,6 +99,7 @@ const TiptapToolBar = ({
   onRegisterExportTrigger?:
     | ((trigger: ((format?: string, name?: string) => void) | null) => void)
     | undefined;
+  fonts?: FontDescriptor[];
 }) => {
   const {
     toolRef,
@@ -142,9 +148,13 @@ const TiptapToolBar = ({
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [currentFont, setCurrentFont] = useState('Default');
+  const pickerEntries = useMemo(
+    () => buildPickerEntries(consumerFonts ?? []),
+    [consumerFonts],
+  );
   const activeFont = useMemo(
-    () => fonts.find((f) => f.value === currentFont),
-    [currentFont],
+    () => pickerEntries.find((f) => f.value === currentFont),
+    [pickerEntries, currentFont],
   );
 
   useEffect(() => {
@@ -422,6 +432,7 @@ const TiptapToolBar = ({
                       editor={editor as Editor}
                       elementRef={toolRef}
                       setToolVisibility={setToolVisibility}
+                      fonts={consumerFonts}
                     />
                   }
                 />,

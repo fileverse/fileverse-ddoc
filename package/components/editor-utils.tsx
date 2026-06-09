@@ -6,8 +6,12 @@ import React, {
   SetStateAction,
   useCallback,
   useEffect,
+  useMemo,
   useState,
 } from 'react';
+import { List, type RowComponentProps } from 'react-window';
+import { ensureLoaded } from '../utils/font-loader';
+import type { FontDescriptor } from '../types';
 import { IEditorTool, useEditorToolVisiibility } from '../hooks/use-visibility';
 import { Editor, JSONContent } from '@tiptap/react';
 import { startImageUpload } from '../utils/upload-images';
@@ -65,31 +69,24 @@ const fontStack = {
   'Comic Sans MS': 'Comic Sans MS, Comic Sans',
   Cursive: 'Cursive',
   Georgia: 'Georgia, serif',
-  'IBM Plex Sans': 'IBM Plex Sans, sans-serif',
-  'IBM Plex Serif': 'IBM Plex Serif, serif',
-  'IBM Plex Mono': 'IBM Plex Mono, monospace',
   Impact: 'Impact, Charcoal, sans-serif',
-  'Inclusive Sans': 'Inclusive Sans, sans-serif',
-  Inter: 'Inter, sans-serif',
-  'JetBrains Mono': 'JetBrains Mono, monospace',
-  Lato: 'Lato, sans-serif',
   'Lucida Grande': 'Lucida Sans Unicode, Lucida Grande, sans-serif',
   Monospace: 'monospace',
-  Oswald: 'Oswald, sans-serif',
   Palatino: 'Palatino Linotype, Book Antiqua, Palatino, serif',
-  'Playfair Display': 'Playfair Display, serif',
-  Poppins: 'Poppins, sans-serif',
-  'PT Sans Narrow': 'PT Sans Narrow, sans-serif',
-  REM: 'REM, sans-serif',
-  Roboto: 'Roboto, sans-serif',
   Serif: 'serif',
   'Times New Roman': 'Times New Roman, serif',
   'Trebuchet MS': 'Trebuchet MS, sans-serif',
   Verdana: 'Verdana, Geneva, sans-serif',
-  Volkhov: 'Volkhov, serif',
 };
 
-export const fonts = [
+type PickerEntry = {
+  title: string;
+  value: string;
+  command: (editor: Editor) => void;
+  preview?: React.ReactNode;
+};
+
+export const baselineFonts: PickerEntry[] = [
   {
     title: 'Default',
     value: 'default',
@@ -97,16 +94,34 @@ export const fonts = [
       editor.chain().focus().unsetFontFamily().run();
     },
   },
-  ...Object.entries(fontStack).map(([key, value]) => {
-    return {
-      title: key,
-      value: value,
-      command: (editor: Editor) => {
-        editor.chain().focus().setFontFamily(value).run();
-      },
-    };
-  }),
+  ...Object.entries(fontStack).map<PickerEntry>(([key, value]) => ({
+    title: key,
+    value,
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily(value).run();
+    },
+  })),
 ];
+
+/** @deprecated kept for backward import paths; prefer baselineFonts + consumer catalog */
+export const fonts = baselineFonts;
+
+export function buildPickerEntries(
+  consumerFonts: FontDescriptor[],
+): PickerEntry[] {
+  const consumerEntries: PickerEntry[] = consumerFonts.map((f) => ({
+    title: f.name,
+    value: f.family,
+    preview: f.preview,
+    command: (editor: Editor) => {
+      editor.chain().focus().setFontFamily(f.family).run();
+    },
+  }));
+  const byValue = new Map<string, PickerEntry>();
+  for (const e of baselineFonts) byValue.set(e.value, e);
+  for (const e of consumerEntries) byValue.set(e.value, e);
+  return [...byValue.values()];
+}
 
 export const FONT_SIZES = [
   8, 9, 10, 11, 12, 14, 16, 18, 24, 30, 32, 36, 48, 60, 72, 96,
@@ -1204,44 +1219,104 @@ export const TextHighlighter = ({
   );
 };
 
+const ROW_HEIGHT = 28;
+const MAX_VISIBLE_ROWS = 12;
+
+type FontRowSharedProps = {
+  entries: PickerEntry[];
+  editor: Editor;
+  setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
+  loadingValue: string | null;
+  setLoadingValue: Dispatch<SetStateAction<string | null>>;
+};
+
+const FontRow = ({
+  index,
+  style,
+  entries,
+  editor,
+  setToolVisibility,
+  loadingValue,
+  setLoadingValue,
+}: RowComponentProps<FontRowSharedProps>) => {
+  const font = entries[index];
+  const isActive = editor.isActive('textStyle', { fontFamily: font.value });
+  const isLoading = loadingValue === font.value;
+  return (
+    <button
+      style={style}
+      onMouseDown={(e) => e.preventDefault()}
+      onClick={async () => {
+        setLoadingValue(font.value);
+        try {
+          await ensureLoaded(font.value);
+          font.command(editor);
+          setToolVisibility(IEditorTool.NONE);
+        } finally {
+          setLoadingValue(null);
+        }
+      }}
+      className={cn(
+        'flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm color-text-default transition',
+        isActive
+          ? 'color-bg-brand xl:hover:brightness-90 color-text-on-brand'
+          : 'hover:color-bg-default-hover',
+      )}
+    >
+      {font.preview ?? (
+        <p className="font-medium" style={{ fontFamily: font.value }}>
+          {font.title}
+        </p>
+      )}
+      {isLoading && <span className="ml-auto text-xs opacity-60">…</span>}
+    </button>
+  );
+};
+
 export const EditorFontFamily = ({
   elementRef,
   editor,
   setToolVisibility,
+  fonts: consumerFonts = [],
 }: {
   elementRef: React.RefObject<HTMLDivElement>;
   editor: Editor;
   setToolVisibility: Dispatch<SetStateAction<IEditorTool>>;
+  fonts?: FontDescriptor[];
 }) => {
+  const entries = useMemo(
+    () => buildPickerEntries(consumerFonts),
+    [consumerFonts],
+  );
+  const [loadingValue, setLoadingValue] = useState<string | null>(null);
+
+  const visibleHeight = Math.min(entries.length, MAX_VISIBLE_ROWS) * ROW_HEIGHT;
+
   return (
     <div
       ref={elementRef}
       className={cn(
-        'z-50 h-auto w-48 color-bg-default px-1 py-2 shadow-elevation-1 transition-all rounded',
-        'max-h-[80vh] overflow-y-auto',
+        'z-50 w-48 color-bg-default px-1 py-2 shadow-elevation-1 transition-all rounded',
       )}
+      style={{
+        maxHeight: visibleHeight,
+        height: `calc(var(--radix-popover-content-available-height) - 3rem)`,
+        minHeight: '6rem',
+      }}
     >
-      {fonts.map((font) => (
-        <button
-          onMouseDown={(e) => e.preventDefault()}
-          onClick={() => {
-            font.command(editor);
-            setToolVisibility(IEditorTool.NONE);
-          }}
-          key={font.title}
-          style={{
-            fontFamily: font.title,
-          }}
-          className={cn(
-            'flex w-full items-center space-x-2 rounded px-2 py-1 text-left text-sm color-text-default transition',
-            editor.isActive('textStyle', { fontFamily: font.value })
-              ? 'color-bg-brand xl:hover:brightness-90 color-text-on-brand'
-              : 'hover:color-bg-default-hover',
-          )}
-        >
-          <p className="font-medium">{font.title}</p>
-        </button>
-      ))}
+      <List
+        rowComponent={FontRow}
+        rowCount={entries.length}
+        rowHeight={ROW_HEIGHT}
+        rowProps={{
+          entries,
+          editor,
+          setToolVisibility,
+          loadingValue,
+          setLoadingValue,
+        }}
+        style={{ height: '100%', width: '100%' }}
+      />
     </div>
   );
 };

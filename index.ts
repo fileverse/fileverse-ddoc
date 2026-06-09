@@ -27,3 +27,4 @@ export type {
 
 export type { CommentMutationMeta, SuggestionType } from './package/types';
 export type { IComment } from './package/extensions/comment/comment.ts';
+export type { FontDescriptor } from './package/types';
