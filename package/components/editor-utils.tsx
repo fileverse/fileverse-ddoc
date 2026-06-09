@@ -103,9 +103,6 @@ export const baselineFonts: PickerEntry[] = [
   })),
 ];
 
-/** @deprecated kept for backward import paths; prefer baselineFonts + consumer catalog */
-export const fonts = baselineFonts;
-
 export function buildPickerEntries(
   consumerFonts: FontDescriptor[],
 ): PickerEntry[] {
