@@ -1,8 +1,8 @@
-# Ddoc Editor
+# dDocs Editor
 
-[ddocs.new](http://ddocs.new/) is your onchain, privacy-first alternative to Google Docs. A self-sovereign note-taking and collaboration app that is peer-to-peer, end-to-end encrypted, and decentralized :yellow_heart:
+[ddocs.new](http://ddocs.new/) is your end-to-end encrypted alternative to Google Docs. It is a rich note-taking and document collaboration app that gives people complete sovereignty over their data  :yellow_heart:
 
-dDocs enables secure, real-time and asynchronous collaboration without compromising user privacy. It also comes with powerful features like Markdown and LaTeX support, dark mode, offline editing, and mobile browser optimization.
+dDocs enables secure, real-time collaboration as well as commenting, suggestion mode and granular access permissions without compromising people's privacy. It also comes with powerful features like Markdown, LaTeX and MermaidJS support, dark mode (& colours themes), offline editing, cross-device syncing, social recovery of data and CLI access.
 
 <img width="2308" height="1458" alt="image" src="https://github.com/user-attachments/assets/32875e2e-b30b-431b-bbb6-74ce96f21141" />
 
