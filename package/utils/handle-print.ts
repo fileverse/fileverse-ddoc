@@ -1,5 +1,5 @@
 import renderMathInElement from 'katex/contrib/auto-render';
-import { getRegisteredFonts } from './font-loader';
+import { getRegisteredFonts, primaryToken } from './font-loader';
 import type { FontDescriptor } from '../types';
 
 const A4_HEIGHT_INCHES = 11.69;
@@ -21,13 +21,16 @@ const buildRegisteredFontFaceCss = (): string => {
   const faces: string[] = [];
   for (const desc of getRegisteredFonts() as FontDescriptor[]) {
     if (!desc.url) continue;
+    // Derive the CSS face name from the family stack, not the cosmetic `name`,
+    // so the @font-face matches the styled content in the iframe.
+    const cssName = primaryToken(desc.family);
     const entries: Array<[number, string]> =
       typeof desc.url === 'string'
         ? [[400, desc.url]]
         : Object.entries(desc.url).map(([w, u]) => [Number(w), u]);
     for (const [weight, url] of entries) {
       faces.push(
-        `@font-face{font-family:'${desc.name}';src:url(${url}) format('woff2');font-weight:${weight};font-style:normal;font-display:swap;}`,
+        `@font-face{font-family:"${cssName}";src:url("${url}") format('woff2');font-weight:${weight};font-style:normal;font-display:swap;}`,
       );
     }
   }

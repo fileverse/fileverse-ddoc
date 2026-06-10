@@ -87,7 +87,6 @@ import LinkPreview from './link-preview/link-preview';
 import { Callout } from './callout/callout';
 import { FontSize } from './font-size';
 import { FontFamilyPersistence } from './font-family-persistence';
-import { FontAutoload } from './font-autoload';
 import { TypographyPersistence } from './typography-persistence';
 import { CustomCodeBlockLowlight } from './code-block/custom-code-block-lowlight';
 import { common, createLowlight } from 'lowlight';
@@ -276,7 +275,6 @@ export const defaultExtensions = ({
 }) => [
   FontFamily,
   FontFamilyPersistence,
-  FontAutoload,
   TypographyPersistence,
   StarterKit.configure({
     strike: {
