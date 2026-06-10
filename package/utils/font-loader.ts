@@ -14,6 +14,10 @@ export function registerFonts(fonts: FontDescriptor[]): void {
   for (const f of fonts) catalog.set(primaryToken(f.family), f);
 }
 
+export function getRegisteredFonts(): FontDescriptor[] {
+  return [...catalog.values()];
+}
+
 export function isLoaded(family: string): boolean {
   const desc = catalog.get(primaryToken(family));
   if (!desc?.url) return true;

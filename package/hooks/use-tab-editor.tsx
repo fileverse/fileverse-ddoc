@@ -74,28 +74,6 @@ import {
 import { destroyEditorWithYSyncCleanup } from '../utils/y-prosemirror-cleanup';
 import { clearTableOfContentsStorage } from '../extensions/table-of-contents';
 import { useTabEditorCache } from './use-tab-editor-cache';
-import { ensureLoaded } from '../utils/font-loader';
-
-const collectFontFamilies = (editor: Editor): Set<string> => {
-  const families = new Set<string>();
-  editor.state.doc.descendants((node) => {
-    if (node.attrs?.fontFamily) families.add(node.attrs.fontFamily);
-    for (const mark of node.marks) {
-      if (mark.type.name === 'textStyle' && mark.attrs?.fontFamily) {
-        families.add(mark.attrs.fontFamily);
-      }
-    }
-    return true;
-  });
-  return families;
-};
-
-const ensureFontsForEditor = (editor: Editor) => {
-  for (const family of collectFontFamilies(editor)) {
-    void ensureLoaded(family);
-  }
-};
-
 const usercolors = [
   '#30bced',
   '#6eeb83',
@@ -663,7 +641,6 @@ export const useTabEditor = ({
   useEffect(() => {
     if (editor) {
       isInitialEditorCreation.current = false;
-      ensureFontsForEditor(editor);
     }
   }, [editor]);
 
@@ -893,8 +870,6 @@ export const useTabEditor = ({
           );
         }
       }
-
-      ensureFontsForEditor(editor);
 
       if (zoomLevel) {
         zoomService.setZoom(zoomLevel);
