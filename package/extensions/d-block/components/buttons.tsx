@@ -30,72 +30,93 @@ export const ActionButton = React.memo(
 ActionButton.displayName = 'ActionButton';
 
 export const GripButton = React.memo(
-  ({
-    onClick,
-    className,
-  }: {
-    onClick: (event: React.MouseEvent<HTMLDivElement>) => void;
-    className: string;
-  }) => (
+  forwardRef<
+    HTMLDivElement,
+    {
+      onClick: (event: React.MouseEvent<HTMLDivElement>) => void;
+      className: string;
+    }
+  >(({ onClick, className, ...props }, ref) => (
     <div
+      ref={ref}
       className={className}
       contentEditable={false}
       draggable
       data-drag-handle
       onClick={onClick}
+      {...props}
     >
       <LucideIcon name="GripVertical" size="sm" />
     </div>
-  ),
+  )),
 );
+
+GripButton.displayName = 'GripButton';
 
 export const PlusButton = React.memo(
-  ({
-    onClick,
-    className,
-  }: {
-    onClick: (event: React.MouseEvent<HTMLDivElement>) => void;
-    className: string;
-  }) => (
-    <div className={className} contentEditable={false} onClick={onClick}>
+  forwardRef<
+    HTMLDivElement,
+    {
+      onClick: (event: React.MouseEvent<HTMLDivElement>) => void;
+      className: string;
+    }
+  >(({ onClick, className, ...props }, ref) => (
+    <div
+      className={className}
+      contentEditable={false}
+      onClick={onClick}
+      ref={ref}
+      {...props}
+    >
       <LucideIcon name="Plus" size="sm" />
     </div>
-  ),
+  )),
 );
 
+PlusButton.displayName = 'PlusButton';
+
 export const CollapseButton = React.memo(
-  ({
-    isCollapsed,
-    onToggle,
-    className,
-  }: {
-    isCollapsed: boolean;
-    onToggle: () => void;
-    className: string;
-  }) => (
+  forwardRef<
+    HTMLDivElement,
+    {
+      isCollapsed: boolean;
+      onToggle: () => void;
+      className: string;
+    }
+  >(({ isCollapsed, onToggle, className, ...props }, ref) => (
     <div
+      ref={ref}
       className={className}
       contentEditable={false}
       onClick={onToggle}
       data-test="collapse-button"
+      {...props}
     >
       <LucideIcon
         name={isCollapsed ? 'ChevronRight' : 'ChevronDown'}
         size="sm"
       />
     </div>
+  )),
+);
+
+CollapseButton.displayName = 'CollapseButton';
+
+export const CopyLinkButton = React.memo(
+  forwardRef<HTMLDivElement, { onClick: () => void; className: string }>(
+    ({ onClick, className, ...props }, ref) => (
+      <div
+        ref={ref}
+        className={cn(className)}
+        contentEditable={false}
+        onClick={onClick}
+        data-test="copy-heading-link-button"
+        {...props}
+      >
+        <LucideIcon name="Link" size="sm" />
+      </div>
+    ),
   ),
 );
 
-export const CopyLinkButton = React.memo(
-  ({ onClick, className }: { onClick: () => void; className: string }) => (
-    <div
-      className={cn(className)}
-      contentEditable={false}
-      onClick={onClick}
-      data-test="copy-heading-link-button"
-    >
-      <LucideIcon name="Link" size="sm" />
-    </div>
-  ),
-);
+CopyLinkButton.displayName = 'CopyLinkButton';
