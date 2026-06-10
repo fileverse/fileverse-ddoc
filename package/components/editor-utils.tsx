@@ -1250,7 +1250,11 @@ const FontRow = ({
           font.command(editor);
           setToolVisibility(IEditorTool.NONE);
         } finally {
-          setLoadingValue(null);
+          // Only clear if this row still owns the spinner — a later click on
+          // another font must not have its spinner cleared by our resolution.
+          setLoadingValue((current) =>
+            current === font.value ? null : current,
+          );
         }
       }}
       className={cn(
