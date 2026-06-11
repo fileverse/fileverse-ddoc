@@ -24,6 +24,7 @@ import {
 import { markdownHtmlGuardPlugin } from './mark-down-html-guard-plugin';
 import { parseHeadingLink } from '../../utils/heading-link';
 import { isAllowedEmbedSrc } from '../../utils/is-allowed-embed-src';
+import { TWITTER_REGEX } from '../../constants/twitter';
 
 // Initialize MarkdownIt for converting Markdown back to HTML with footnote support.
 const markdownIt = new MarkdownIt({ html: true })
@@ -213,12 +214,40 @@ turndownService.addRule('listItem', {
   },
 });
 
-// Custom rules for iframe
+// Custom rules for iframe — emit raw <iframe> HTML so embeds (YouTube/Vimeo
+// etc.) round-trip through markdown instead of degrading to a bare link.
+// markdown-it runs with html:true and the guard plugin allows <iframe>; on
+// import the Iframe extension's parseHTML re-validates src via
+// isAllowedEmbedSrc, so a disallowed src never becomes a node again.
 turndownService.addRule('iframe', {
   filter: ['iframe'],
   replacement: function (_content, node) {
-    const src = (node as HTMLElement).getAttribute('src');
-    return src ? `[${src}](${src})` : '';
+    const el = node as HTMLElement;
+    const src = el.getAttribute('src');
+    if (!src) return '';
+    if (!isAllowedEmbedSrc(src)) return `[${src}](${src})`;
+    const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    const width = el.getAttribute('width');
+    const height = el.getAttribute('height');
+    const size =
+      (width ? ` width="${esc(width)}"` : '') +
+      (height ? ` height="${esc(height)}"` : '');
+    return `\n\n<iframe src="${esc(src)}"${size}></iframe>\n\n`;
+  },
+});
+
+// Twitter embeds are a <div data-tweet-id> — keep it as inline HTML so it
+// round-trips back into an embeddedTweet node (div survives DOMPurify).
+turndownService.addRule('embeddedTweet', {
+  filter: (node) =>
+    node.nodeName === 'DIV' &&
+    !!(node as HTMLElement).getAttribute('data-tweet-id'),
+  replacement: function (_content, node) {
+    const id = (node as HTMLElement).getAttribute('data-tweet-id');
+    // Represent the tweet as its URL — portable and sensible in the exported
+    // .md (a raw <div data-tweet-id> means nothing outside this editor). Split
+    // View re-embeds a bare tweet URL on reparse, so it still round-trips.
+    return id ? `\n\nhttps://twitter.com/i/status/${id}\n\n` : '';
   },
 });
 
@@ -259,6 +288,30 @@ turndownService.addRule('mathExpression', {
     // Get the raw text content without escaping
     const textContent = (node as HTMLElement).textContent || '';
     return textContent;
+  },
+});
+
+// Math nodes serialize (via getHTML) as <span data-type="inlineMath"
+// data-latex="...">. In styles mode (Split View seed / "Markdown with CSS")
+// keep that span as raw HTML so the node round-trips losslessly — the
+// MathExtension's parseHTML reads it back via data-latex. Plain .md export
+// stays $latex$ text (no import-side reparse; markdown purity wins there).
+turndownService.addRule('inlineMathNode', {
+  filter: (node) =>
+    node.nodeName === 'SPAN' &&
+    (node as HTMLElement).getAttribute('data-type') === 'inlineMath',
+  replacement: function (_content, node) {
+    const el = node as HTMLElement;
+    const latex = el.getAttribute('data-latex') || '';
+    if (!latex) return '';
+    if (!emitInlineStyles) return `$${latex}$`;
+    const esc = (v: string) =>
+      v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const display = el.getAttribute('data-display');
+    const evaluate = el.getAttribute('data-evaluate');
+    return `<span data-type="inlineMath" data-latex="${esc(latex)}"${
+      display ? ` data-display="${esc(display)}"` : ''
+    }${evaluate ? ` data-evaluate="${esc(evaluate)}"` : ''}>$${esc(latex)}$</span>`;
   },
 });
 
@@ -335,6 +388,65 @@ turndownService.addRule('strikethrough', {
   },
 });
 
+// --- Inline styling fidelity ---------------------------------------------
+// Markdown has no native syntax for text color / font / size / highlight /
+// underline, but inline HTML is valid markdown and `markdownIt` runs with
+// html:true. We emit the styling as inline HTML on export so it round-trips:
+// on import, DOMPurify keeps `style`/`data-color` and the Color, FontFamily,
+// FontSize, Highlight and Underline extensions parse it back into marks.
+
+// Opt-in: only emit inline styling for the "Markdown with CSS" export.
+// When false, these rules don't match → turndown drops the tags (clean .md).
+let emitInlineStyles = false;
+export const setMarkdownInlineStyles = (enabled: boolean) => {
+  emitInlineStyles = enabled;
+};
+
+// Color / font-family / font-size live on a styled <span> (TextStyle marks).
+turndownService.addRule('inlineTextStyle', {
+  filter: (node) =>
+    emitInlineStyles &&
+    node.nodeName === 'SPAN' &&
+    !!(
+      (node as HTMLElement).style?.color ||
+      (node as HTMLElement).style?.fontFamily ||
+      (node as HTMLElement).style?.fontSize
+    ),
+  replacement: function (content, node) {
+    const style = (node as HTMLElement).style;
+    const css = [
+      style.color && `color: ${style.color}`,
+      style.fontFamily && `font-family: ${style.fontFamily}`,
+      style.fontSize && `font-size: ${style.fontSize}`,
+    ]
+      .filter(Boolean)
+      .join('; ');
+    if (!css || !content) return content;
+    return `<span style="${css}">${content}</span>`;
+  },
+});
+
+// Highlight renders as <mark> (background color / data-color).
+turndownService.addRule('highlightMark', {
+  filter: (node) => emitInlineStyles && node.nodeName === 'MARK',
+  replacement: function (content, node) {
+    if (!content) return content;
+    const el = node as HTMLElement;
+    const color = el.style?.backgroundColor || el.getAttribute('data-color');
+    return color
+      ? `<mark style="background-color: ${color}">${content}</mark>`
+      : `<mark>${content}</mark>`;
+  },
+});
+
+// Underline has no markdown syntax — keep it as <u>.
+turndownService.addRule('underline', {
+  filter: (node) => emitInlineStyles && node.nodeName === 'U',
+  replacement: function (content) {
+    return content ? `<u>${content}</u>` : content;
+  },
+});
+
 // Custom rules for callout
 turndownService.addRule('callout', {
   filter: (node) =>
@@ -384,6 +496,7 @@ declare module '@tiptap/core' {
         returnMDFile?: boolean;
         metadataFormat?: 'yaml' | 'reference-links';
         metadata?: Record<string, string>;
+        includeStyles?: boolean;
       }) => any;
     };
   }
@@ -557,6 +670,7 @@ const MarkdownPasteHandler = (
             returnMDFile?: boolean;
             metadataFormat?: 'yaml' | 'reference-links';
             metadata?: Record<string, string>;
+            includeStyles?: boolean;
           }) =>
           async ({ editor }: { editor: Editor }): Promise<string> => {
             const { showLoader, removeLoader } = inlineLoader(
@@ -565,67 +679,77 @@ const MarkdownPasteHandler = (
             );
 
             const loader = showLoader();
+            let temporalEditor: any = null;
 
-            const originalDoc: any = editor.state.doc;
+            // finally-cleanup: a throw anywhere here (image fetch, turndown)
+            // must not leave the inline loader stuck, the temp editor alive,
+            // or the styles flag flipped for later plain exports.
+            try {
+              const originalDoc: any = editor.state.doc;
 
-            const docWithEmbedImageContent: any =
-              await searchForSecureImageNodeAndEmbedImageContent(
-                originalDoc,
-                ipfsImageFetchFn,
-                fetchV1ImageFn,
-                true,
+              const docWithEmbedImageContent: any =
+                await searchForSecureImageNodeAndEmbedImageContent(
+                  originalDoc,
+                  ipfsImageFetchFn,
+                  fetchV1ImageFn,
+                  true,
+                );
+
+              temporalEditor = getTemporaryEditor(
+                editor,
+                docWithEmbedImageContent.toJSON(),
               );
 
-            const temporalEditor = getTemporaryEditor(
-              editor,
-              docWithEmbedImageContent.toJSON(),
-            );
+              const inlineHtml = temporalEditor.getHTML();
+              // Emit inline-CSS styling only for the "Markdown with CSS" export.
+              let markdown: string;
+              try {
+                setMarkdownInlineStyles(Boolean(props?.includeStyles));
+                markdown = turndownService.turndown(inlineHtml);
+              } finally {
+                setMarkdownInlineStyles(false);
+              }
 
-            const inlineHtml = temporalEditor.getHTML();
-            const markdown = turndownService.turndown(inlineHtml);
+              const metadataEntries: Record<string, string> = {
+                title: props?.title || 'Untitled',
+                date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+                ...props?.metadata,
+              };
 
-            const metadataEntries: Record<string, string> = {
-              title: props?.title || 'Untitled',
-              date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
-              ...props?.metadata,
-            };
+              let markdownWithMeta: string;
 
-            let markdownWithMeta: string;
+              if (props?.metadataFormat === 'reference-links') {
+                const refs = Object.entries(metadataEntries)
+                  .map(([key, value]) => `[${key}]: <> (${value})`)
+                  .join('\n');
+                markdownWithMeta = refs + '\n\n' + markdown;
+              } else {
+                const frontmatter =
+                  '---\n' +
+                  Object.entries(metadataEntries)
+                    .map(([key, value]) => {
+                      if (Array.isArray(value)) {
+                        return `${key}:\n${value.map((v: string) => `  - ${v}`).join('\n')}`;
+                      }
+                      return `${key}: ${value}`;
+                    })
+                    .join('\n') +
+                  '\n---\n\n';
+                markdownWithMeta = frontmatter + markdown;
+              }
 
-            if (props?.metadataFormat === 'reference-links') {
-              const refs = Object.entries(metadataEntries)
-                .map(([key, value]) => `[${key}]: <> (${value})`)
-                .join('\n');
-              markdownWithMeta = refs + '\n\n' + markdown;
-            } else {
-              const frontmatter =
-                '---\n' +
-                Object.entries(metadataEntries)
-                  .map(([key, value]) => {
-                    if (Array.isArray(value)) {
-                      return `${key}:\n${value.map((v: string) => `  - ${v}`).join('\n')}`;
-                    }
-                    return `${key}: ${value}`;
-                  })
-                  .join('\n') +
-                '\n---\n\n';
-              markdownWithMeta = frontmatter + markdown;
-            }
+              if (props?.returnMDFile) {
+                return markdownWithMeta;
+              }
 
-            if (props?.returnMDFile) {
-              temporalEditor.destroy();
+              const blob = new Blob([markdownWithMeta], {
+                type: 'text/markdown;charset=utf-8',
+              });
+              return URL.createObjectURL(blob);
+            } finally {
+              temporalEditor?.destroy();
               removeLoader(loader);
-              return markdownWithMeta;
             }
-
-            const blob = new Blob([markdownWithMeta], {
-              type: 'text/markdown;charset=utf-8',
-            });
-            const downloadUrl = URL.createObjectURL(blob);
-
-            temporalEditor.destroy();
-            removeLoader(loader);
-            return downloadUrl;
           },
       };
     },
@@ -839,6 +963,7 @@ export async function handleMarkdownContent(
   view: any,
   content: string,
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
+  options?: { breaks?: boolean },
 ) {
   // Remove YAML frontmatter before parsing
   let cleanMarkdown = stripFrontmatter(content);
@@ -859,8 +984,18 @@ export async function handleMarkdownContent(
     '$1\\*$2',
   );
 
-  // Convert Markdown to HTML
-  let convertedHtml = markdownIt.render(cleanMarkdown);
+  // Convert Markdown to HTML. `breaks` (single newline → <br>) is opt-in for
+  // Split View so a single Enter shows as a new line on the right;
+  // paste/import keep CommonMark semantics (single newline = space). The
+  // shared instance is reset in a finally so a throwing render can't leak
+  // breaks:true into every later paste/import in the session.
+  let convertedHtml: string;
+  try {
+    if (options?.breaks) markdownIt.set({ breaks: true });
+    convertedHtml = markdownIt.render(cleanMarkdown);
+  } finally {
+    if (options?.breaks) markdownIt.set({ breaks: false });
+  }
 
   // Parse the HTML string into DOM nodes
   const parser = new DOMParser();
@@ -935,6 +1070,22 @@ export async function handleMarkdownContent(
     }
   }
 
+  // Re-embed bare tweet URLs: a paragraph that is just a tweet URL becomes a
+  // <div data-tweet-id> so it parses back into an embeddedTweet node — the
+  // inverse of how it's exported (see the turndown embeddedTweet rule). So a
+  // tweet round-trips through markdown everywhere (paste/import/Split View).
+  // Named links like [text](tweet-url) are left alone.
+  const tweetParas = Array.from(doc.getElementsByTagName('p'));
+  for (const p of tweetParas) {
+    const text = (p.textContent || '').trim();
+    const match = text.match(TWITTER_REGEX);
+    if (match && match[0] === text) {
+      const tweetDiv = doc.createElement('div');
+      tweetDiv.setAttribute('data-tweet-id', match[2]);
+      p.replaceWith(tweetDiv);
+    }
+  }
+
   // Handle images
   const paragraphs = doc.getElementsByTagName('p');
   for (let i = paragraphs.length - 1; i >= 0; i--) {
@@ -993,10 +1144,14 @@ export async function handleMarkdownContent(
     '<sub data-type="sub">$1</sub>',
   );
 
-  // Sanitize the converted HTML
+  // Sanitize the converted HTML. iframe is allowed through here because the
+  // Iframe extension's parseHTML drops any src that fails isAllowedEmbedSrc.
   convertedHtml = DOMPurify.sanitize(convertedHtml, {
-    ADD_TAGS: ['div'],
+    ADD_TAGS: ['div', 'iframe'],
     ADD_ATTR: [
+      'style',
+      'data-color',
+      'data-tweet-id',
       'data-type',
       'data-page-break',
       'url',

@@ -937,6 +937,35 @@ export const useEditorToolbar = ({
       isActive: false,
     },
     {
+      icon: 'FileOutput',
+      title: 'Markdown with CSS (.md)',
+      subtitle: 'Keeps colors, fonts & highlights',
+      onClick: async () => {
+        if (editor) {
+          const editorContent = editor?.getJSON();
+          const title = extractTitleFromContent(
+            editorContent as unknown as { content: JSONContent },
+          );
+          const generateDownloadUrl = await editor.commands.exportMarkdownFile({
+            title: title || 'Untitled',
+            includeStyles: true,
+          });
+          if (generateDownloadUrl) {
+            const url = generateDownloadUrl;
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `${title || 'Untitled'}.md`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+          }
+        }
+        onMarkdownExport?.();
+      },
+      isActive: false,
+    },
+    {
       icon: 'FileText',
       title: 'OpenDocument (.odt)',
       subtitle: 'Image support is coming soon',
