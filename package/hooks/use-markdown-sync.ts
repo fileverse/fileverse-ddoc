@@ -61,25 +61,38 @@ export const useMarkdownSync = ({
   const onSeedErrorRef = useRef(onSeedError);
   onSeedErrorRef.current = onSeedError;
 
+  // Serialize applies: an apply can await image uploads, and two pipelines
+  // running at once could land out of order (older markdown overwriting
+  // newer). While one runs, only the LATEST queued value is kept.
+  const applyRunningRef = useRef(false);
+  const queuedApplyRef = useRef<string | null>(null);
+
   const applyMarkdown = useCallback(
     async (value: string) => {
       if (!editor || editor.isDestroyed) return;
+      if (applyRunningRef.current) {
+        queuedApplyRef.current = value;
+        return;
+      }
+      applyRunningRef.current = true;
 
       const scrollEl = rightScrollRef.current;
       const scrollTop = scrollEl?.scrollTop ?? 0;
 
       try {
-        // Select the whole doc so handleMarkdownContent's replaceSelection
-        // becomes a full-document replace (reuses the existing MD pipeline).
-        editor.commands.selectAll();
         // breaks: a single Enter in the markdown pane shows as a new line on
         // the right, instead of CommonMark's "newline = space". (Tweet URLs
         // re-embed automatically in handleMarkdownContent.)
+        // replaceAll: replace the whole doc by range, atomically — never via
+        // the live selection, which can move during an awaited image upload.
         await handleMarkdownContent(editor.view, value, ipfsImageUploadFn, {
           breaks: true,
+          replaceAll: true,
         });
       } catch (error) {
         console.error('Split View: failed to apply markdown', error);
+      } finally {
+        applyRunningRef.current = false;
       }
 
       // Restore scroll after the doc has re-rendered.
@@ -90,6 +103,12 @@ export const useMarkdownSync = ({
           }
         });
       });
+
+      if (queuedApplyRef.current !== null) {
+        const next = queuedApplyRef.current;
+        queuedApplyRef.current = null;
+        void applyMarkdownRef.current(next);
+      }
     },
     [editor, ipfsImageUploadFn],
   );
@@ -114,6 +133,9 @@ export const useMarkdownSync = ({
           // Keep color/font/size/highlight/underline as inline HTML so they
           // round-trip — otherwise they'd be flattened on the first edit.
           includeStyles: true,
+          // Keep secure images as attribute references (raw <img> HTML), not
+          // base64 — embedding would re-upload every image on every apply.
+          embedImages: false,
         });
         if (!cancelled && typeof md === 'string') {
           // The export prepends YAML frontmatter (title/date) for file
