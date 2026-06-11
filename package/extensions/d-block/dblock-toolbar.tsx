@@ -158,7 +158,7 @@ const DBlockToolbar = React.memo(
     };
 
     const buttonClassName = cn(
-      'd-block-button color-text-default hover:color-bg-default-hover aspect-square h-5 w-5 shrink-0',
+      'd-block-button color-text-default hover:color-bg-default-hover aspect-square h-5 w-5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity',
     );
 
     const shouldShowEditingControls =

@@ -30,6 +30,8 @@ export interface TabItemProps {
   onEmojiChange: (emoji: string) => void;
   onClick: () => void;
   isActive: boolean;
+  isEditing?: boolean;
+  setIsEditing?: React.Dispatch<React.SetStateAction<boolean>>;
   onDuplicate?: (id: string) => void;
   dragHandleProps?: HTMLAttributes<HTMLDivElement>;
   hideContentMenu?: boolean;
@@ -46,7 +48,8 @@ export interface TabItemProps {
   isConnected?: boolean;
 }
 
-interface SortableTabItemProps extends Omit<TabItemProps, 'dragHandleProps'> {
+interface SortableTabItemProps
+  extends Omit<TabItemProps, 'dragHandleProps' | 'isEditing' | 'setIsEditing'> {
   id: string;
 }
 
@@ -73,6 +76,8 @@ const menuItemClassName =
   'space-xsm gap-xsm hover:color-bg-default-hover cursor-pointer h-[30px] border-radius-sm flex items-center w-full';
 
 export const SortableTabItem = (props: SortableTabItemProps) => {
+  const [isEditing, setIsEditing] = useState(false);
+
   const {
     attributes,
     listeners,
@@ -80,7 +85,7 @@ export const SortableTabItem = (props: SortableTabItemProps) => {
     transform,
     transition,
     isDragging,
-  } = useSortable({ id: props.id });
+  } = useSortable({ id: props.id, disabled: isEditing });
 
   // Filter tabIndex keeping it makes the tab list a focus fallback when the editor blurs.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -96,6 +101,8 @@ export const SortableTabItem = (props: SortableTabItemProps) => {
       className={cn(isDragging && 'opacity-0', 'w-full')}
     >
       <TabItem
+        isEditing={isEditing}
+        setIsEditing={setIsEditing}
         {...props}
         dragHandleProps={{
           ...dragHandleAttributes,
@@ -107,6 +114,8 @@ export const SortableTabItem = (props: SortableTabItemProps) => {
 };
 
 export const TabItem = ({
+  isEditing,
+  setIsEditing,
   tabId,
   name,
   emoji,
@@ -130,7 +139,6 @@ export const TabItem = ({
   onDelete,
   isConnected = true,
 }: TabItemProps) => {
-  const [isEditing, setIsEditing] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [openEmojiPickerTrigger, setOpenEmojiPickerTrigger] = useState(0);
   const [title, setTitle] = useState(name);
@@ -154,7 +162,7 @@ export const TabItem = ({
 
   const startEditing = () => {
     originalTitleRef.current = title;
-    setIsEditing(true);
+    setIsEditing?.(true);
   };
 
   const commitTitle = () => {
@@ -169,12 +177,12 @@ export const TabItem = ({
   const stopEditing = () => {
     const nextTitle = commitTitle();
     onNameChange(nextTitle);
-    setIsEditing(false);
+    setIsEditing?.(false);
   };
 
   const cancelEditing = () => {
     setTitle(originalTitleRef.current);
-    setIsEditing(false);
+    setIsEditing?.(false);
   };
 
   const editMenuSections: TabContextMenuItem[][] = [
@@ -291,13 +299,13 @@ export const TabItem = ({
               skipBlurCommitRef.current = true;
               const nextTitle = commitTitle();
               onNameChange(nextTitle, _emoji);
-              setIsEditing(false);
+              setIsEditing?.(false);
               return;
             }
             onEmojiChange(_emoji);
           }}
           disableEmoji={Boolean(isPreviewMode || isVersionHistoryMode)}
-          isEditing={isEditing}
+          isEditing={isEditing ?? false}
           openPickerTrigger={openEmojiPickerTrigger}
         />
 
@@ -319,6 +327,7 @@ export const TabItem = ({
             autoFocus
             value={title}
             onChange={(e) => setTitle(e.target.value)}
+            onClick={(e) => e.stopPropagation()}
             onBlur={(e) => {
               if (skipBlurCommitRef.current) {
                 skipBlurCommitRef.current = false;

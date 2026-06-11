@@ -11,7 +11,7 @@ export const ButtonTooltip = React.memo(
     position?: 'bottom';
     children: React.ReactNode;
   }) => (
-    <Tooltip text={text} position={position}>
+    <Tooltip text={text} position={position} asTriggerChild>
       {children}
     </Tooltip>
   ),
