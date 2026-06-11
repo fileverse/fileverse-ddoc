@@ -236,6 +236,28 @@ turndownService.addRule('iframe', {
   },
 });
 
+// Video nodes have no markdown equivalent — without a rule they serialize to
+// NOTHING and one Split View edit deletes every video from the doc. Emit the
+// element back as raw HTML, carrying all attributes (src + the IPFS/encryption
+// attrs of secure uploads) so the resizable-media extension parses it back
+// into a complete video node. Presentation-only attributes are dropped.
+const VIDEO_SKIP_ATTRS = new Set(['controls', 'style', 'class', 'draggable']);
+turndownService.addRule('video', {
+  filter: ['video'],
+  replacement: function (_content, node) {
+    const el = node as HTMLElement;
+    if (!el.getAttribute('src') && !el.getAttribute('ipfsHash')) return '';
+    const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    const attrs = Array.from(el.attributes)
+      .filter((a) => !VIDEO_SKIP_ATTRS.has(a.name) && a.value)
+      .map((a) => `${a.name}="${esc(a.value)}"`)
+      .join(' ');
+    // Open tag alone on its line so CommonMark treats this as an HTML block
+    // (type 7) — `<video ...></video>` on one line would not qualify.
+    return `\n\n<video ${attrs}>\n</video>\n\n`;
+  },
+});
+
 // Twitter embeds are a <div data-tweet-id> — keep it as inline HTML so it
 // round-trips back into an embeddedTweet node (div survives DOMPurify).
 turndownService.addRule('embeddedTweet', {
@@ -380,6 +402,33 @@ turndownService.addRule('img', {
   },
 });
 
+// In styles mode (the Split View seed exports with embedImages:false), a
+// secure image is serialized as raw <img> HTML carrying its IPFS/encryption
+// attributes instead of being embedded as base64. The import path then
+// restores the node from the attributes with NO upload — embedding base64
+// would make every debounced Split View edit re-encrypt and re-upload every
+// image in the doc. Plain .md export still embeds base64 (self-contained
+// file), so this rule must not fire there: it requires a non-data src.
+// NOTE: added AFTER the generic 'img' rule on purpose — turndown checks the
+// most recently added rule first, and both match <img>.
+const IMG_SKIP_ATTRS = new Set(['style', 'class', 'draggable']);
+turndownService.addRule('secureImageRef', {
+  filter: (node) =>
+    emitInlineStyles &&
+    node.nodeName === 'IMG' &&
+    !!(node as HTMLElement).getAttribute('ipfsHash') &&
+    !((node as HTMLElement).getAttribute('src') || '').startsWith('data:'),
+  replacement: function (_content, node) {
+    const el = node as HTMLElement;
+    const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    const attrs = Array.from(el.attributes)
+      .filter((a) => !IMG_SKIP_ATTRS.has(a.name) && a.value)
+      .map((a) => `${a.name}="${esc(a.value)}"`)
+      .join(' ');
+    return `\n\n<img ${attrs} />\n\n`;
+  },
+});
+
 // Custom rules for strikethrough
 turndownService.addRule('strikethrough', {
   filter: 's',
@@ -497,6 +546,12 @@ declare module '@tiptap/core' {
         metadataFormat?: 'yaml' | 'reference-links';
         metadata?: Record<string, string>;
         includeStyles?: boolean;
+        /**
+         * Embed secure images as base64 data URLs (default true — makes the
+         * downloaded .md self-contained). Split View seeds with false so
+         * images stay as attribute references and are never re-uploaded.
+         */
+        embedImages?: boolean;
       }) => any;
     };
   }
@@ -671,6 +726,7 @@ const MarkdownPasteHandler = (
             metadataFormat?: 'yaml' | 'reference-links';
             metadata?: Record<string, string>;
             includeStyles?: boolean;
+            embedImages?: boolean;
           }) =>
           async ({ editor }: { editor: Editor }): Promise<string> => {
             const { showLoader, removeLoader } = inlineLoader(
@@ -687,13 +743,19 @@ const MarkdownPasteHandler = (
             try {
               const originalDoc: any = editor.state.doc;
 
+              // embedImages:false (Split View seed) keeps secure images as
+              // attribute references — no per-image IPFS fetch/decrypt, and
+              // the secureImageRef turndown rule serializes them as raw
+              // <img> HTML instead of base64.
               const docWithEmbedImageContent: any =
-                await searchForSecureImageNodeAndEmbedImageContent(
-                  originalDoc,
-                  ipfsImageFetchFn,
-                  fetchV1ImageFn,
-                  true,
-                );
+                props?.embedImages === false
+                  ? originalDoc
+                  : await searchForSecureImageNodeAndEmbedImageContent(
+                      originalDoc,
+                      ipfsImageFetchFn,
+                      fetchV1ImageFn,
+                      true,
+                    );
 
               temporalEditor = getTemporaryEditor(
                 editor,
@@ -927,10 +989,30 @@ function base64ToFile(base64Data: string, contentType: string): File {
   return new File([blob], 'image', { type: contentType });
 }
 
+type Base64UploadResult = {
+  ipfsUrl: string;
+  encryptionKey: string;
+  nonce: string;
+  downloadUrl: string;
+  ipfsHash: string;
+  authTag: string;
+};
+
+// Same-content uploads are deduped: Split View reparses the whole markdown on
+// every debounced edit, so without this an image pasted as base64 into the
+// markdown pane would be re-encrypted and re-uploaded to IPFS on every pause
+// in typing. Keyed by the full data URL; bounded FIFO so held base64 strings
+// can't grow without limit.
+const base64UploadCache = new Map<string, Base64UploadResult>();
+const BASE64_UPLOAD_CACHE_MAX = 20;
+
 async function uploadBase64ImageContent(
   base64Image: string,
   ipfsImageUploadFn: (file: File) => Promise<IpfsImageUploadResponse>,
 ) {
+  const cached = base64UploadCache.get(base64Image);
+  if (cached) return cached;
+
   // Remove the data URL prefix. e.g., "data:image/jpeg;base64,"
   const prefixMatch = base64Image.match(/^(data:(image\/[a-zA-Z]+);base64,)/);
   if (!prefixMatch) {
@@ -943,7 +1025,7 @@ async function uploadBase64ImageContent(
   const { encryptionKey, nonce, ipfsUrl, ipfsHash, authTag } =
     await ipfsImageUploadFn(file);
 
-  return {
+  const result: Base64UploadResult = {
     ipfsUrl,
     encryptionKey,
     nonce,
@@ -951,6 +1033,11 @@ async function uploadBase64ImageContent(
     ipfsHash,
     authTag,
   };
+  base64UploadCache.set(base64Image, result);
+  if (base64UploadCache.size > BASE64_UPLOAD_CACHE_MAX) {
+    base64UploadCache.delete(base64UploadCache.keys().next().value as string);
+  }
+  return result;
 }
 
 export const stripFrontmatter = (markdown: string): string => {
@@ -963,7 +1050,7 @@ export async function handleMarkdownContent(
   view: any,
   content: string,
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>,
-  options?: { breaks?: boolean },
+  options?: { breaks?: boolean; replaceAll?: boolean },
 ) {
   // Remove YAML frontmatter before parsing
   let cleanMarkdown = stripFrontmatter(content);
@@ -1145,9 +1232,10 @@ export async function handleMarkdownContent(
   );
 
   // Sanitize the converted HTML. iframe is allowed through here because the
-  // Iframe extension's parseHTML drops any src that fails isAllowedEmbedSrc.
+  // Iframe extension's parseHTML drops any src that fails isAllowedEmbedSrc;
+  // video is explicit so media round-trips don't depend on DOMPurify defaults.
   convertedHtml = DOMPurify.sanitize(convertedHtml, {
-    ADD_TAGS: ['div', 'iframe'],
+    ADD_TAGS: ['div', 'iframe', 'video'],
     ADD_ATTR: [
       'style',
       'data-color',
@@ -1167,6 +1255,9 @@ export async function handleMarkdownContent(
       'mimeType',
       'version',
       'authTag',
+      // Media alignment attrs (no data- prefix, so not auto-allowed).
+      'dataalign',
+      'datafloat',
     ],
   });
 
@@ -1196,9 +1287,17 @@ export async function handleMarkdownContent(
 
   const finalDoc = proseMirrorNodes.copy(Fragment.fromArray(newChildren));
 
-  // Insert the content and apply the transaction
+  // Insert the content and apply the transaction.
   const transaction = view.state.tr;
-  transaction.replaceSelectionWith(finalDoc, false);
+  if (options?.replaceAll) {
+    // Replace the WHOLE document, addressed by range — not by selection.
+    // Split View's apply can await image uploads above, and a selection
+    // change during that await (a click, a tab switch) must not turn the
+    // full-doc replace into an insert-at-cursor.
+    transaction.replaceWith(0, view.state.doc.content.size, finalDoc.content);
+  } else {
+    transaction.replaceSelectionWith(finalDoc, false);
+  }
   view.dispatch(transaction);
 }
 

@@ -736,7 +736,11 @@ const DdocEditor = forwardRef(
 
             {/* Hidden in Split View — the markdown pane has its own toolbar. */}
             {!isSplitViewActive && editorToolbar}
-            {isPreviewMode && editor && (
+            {/* The export trigger normally registers via the toolbar's
+                ImportExportButton. When that toolbar is unmounted (preview
+                mode, Split View), mount the hidden registrar instead so the
+                exportCurrentTabOrOpenExportModal ref keeps working. */}
+            {(isPreviewMode || isSplitViewActive) && editor && (
               <PreviewModeExportTrigger
                 editor={editor}
                 ydoc={ydoc}
