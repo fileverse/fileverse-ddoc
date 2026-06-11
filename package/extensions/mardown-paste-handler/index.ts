@@ -214,12 +214,25 @@ turndownService.addRule('listItem', {
   },
 });
 
-// Custom rules for iframe
+// Custom rules for iframe — emit raw <iframe> HTML so embeds (YouTube/Vimeo
+// etc.) round-trip through markdown instead of degrading to a bare link.
+// markdown-it runs with html:true and the guard plugin allows <iframe>; on
+// import the Iframe extension's parseHTML re-validates src via
+// isAllowedEmbedSrc, so a disallowed src never becomes a node again.
 turndownService.addRule('iframe', {
   filter: ['iframe'],
   replacement: function (_content, node) {
-    const src = (node as HTMLElement).getAttribute('src');
-    return src ? `[${src}](${src})` : '';
+    const el = node as HTMLElement;
+    const src = el.getAttribute('src');
+    if (!src) return '';
+    if (!isAllowedEmbedSrc(src)) return `[${src}](${src})`;
+    const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    const width = el.getAttribute('width');
+    const height = el.getAttribute('height');
+    const size =
+      (width ? ` width="${esc(width)}"` : '') +
+      (height ? ` height="${esc(height)}"` : '');
+    return `\n\n<iframe src="${esc(src)}"${size}></iframe>\n\n`;
   },
 });
 
@@ -275,6 +288,30 @@ turndownService.addRule('mathExpression', {
     // Get the raw text content without escaping
     const textContent = (node as HTMLElement).textContent || '';
     return textContent;
+  },
+});
+
+// Math nodes serialize (via getHTML) as <span data-type="inlineMath"
+// data-latex="...">. In styles mode (Split View seed / "Markdown with CSS")
+// keep that span as raw HTML so the node round-trips losslessly — the
+// MathExtension's parseHTML reads it back via data-latex. Plain .md export
+// stays $latex$ text (no import-side reparse; markdown purity wins there).
+turndownService.addRule('inlineMathNode', {
+  filter: (node) =>
+    node.nodeName === 'SPAN' &&
+    (node as HTMLElement).getAttribute('data-type') === 'inlineMath',
+  replacement: function (_content, node) {
+    const el = node as HTMLElement;
+    const latex = el.getAttribute('data-latex') || '';
+    if (!latex) return '';
+    if (!emitInlineStyles) return `$${latex}$`;
+    const esc = (v: string) =>
+      v.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+    const display = el.getAttribute('data-display');
+    const evaluate = el.getAttribute('data-evaluate');
+    return `<span data-type="inlineMath" data-latex="${esc(latex)}"${
+      display ? ` data-display="${esc(display)}"` : ''
+    }${evaluate ? ` data-evaluate="${esc(evaluate)}"` : ''}>$${esc(latex)}$</span>`;
   },
 });
 
@@ -642,70 +679,77 @@ const MarkdownPasteHandler = (
             );
 
             const loader = showLoader();
+            let temporalEditor: any = null;
 
-            const originalDoc: any = editor.state.doc;
+            // finally-cleanup: a throw anywhere here (image fetch, turndown)
+            // must not leave the inline loader stuck, the temp editor alive,
+            // or the styles flag flipped for later plain exports.
+            try {
+              const originalDoc: any = editor.state.doc;
 
-            const docWithEmbedImageContent: any =
-              await searchForSecureImageNodeAndEmbedImageContent(
-                originalDoc,
-                ipfsImageFetchFn,
-                fetchV1ImageFn,
-                true,
+              const docWithEmbedImageContent: any =
+                await searchForSecureImageNodeAndEmbedImageContent(
+                  originalDoc,
+                  ipfsImageFetchFn,
+                  fetchV1ImageFn,
+                  true,
+                );
+
+              temporalEditor = getTemporaryEditor(
+                editor,
+                docWithEmbedImageContent.toJSON(),
               );
 
-            const temporalEditor = getTemporaryEditor(
-              editor,
-              docWithEmbedImageContent.toJSON(),
-            );
+              const inlineHtml = temporalEditor.getHTML();
+              // Emit inline-CSS styling only for the "Markdown with CSS" export.
+              let markdown: string;
+              try {
+                setMarkdownInlineStyles(Boolean(props?.includeStyles));
+                markdown = turndownService.turndown(inlineHtml);
+              } finally {
+                setMarkdownInlineStyles(false);
+              }
 
-            const inlineHtml = temporalEditor.getHTML();
-            // Emit inline-CSS styling only for the "Markdown with CSS" export.
-            setMarkdownInlineStyles(Boolean(props?.includeStyles));
-            const markdown = turndownService.turndown(inlineHtml);
-            setMarkdownInlineStyles(false);
+              const metadataEntries: Record<string, string> = {
+                title: props?.title || 'Untitled',
+                date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
+                ...props?.metadata,
+              };
 
-            const metadataEntries: Record<string, string> = {
-              title: props?.title || 'Untitled',
-              date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
-              ...props?.metadata,
-            };
+              let markdownWithMeta: string;
 
-            let markdownWithMeta: string;
+              if (props?.metadataFormat === 'reference-links') {
+                const refs = Object.entries(metadataEntries)
+                  .map(([key, value]) => `[${key}]: <> (${value})`)
+                  .join('\n');
+                markdownWithMeta = refs + '\n\n' + markdown;
+              } else {
+                const frontmatter =
+                  '---\n' +
+                  Object.entries(metadataEntries)
+                    .map(([key, value]) => {
+                      if (Array.isArray(value)) {
+                        return `${key}:\n${value.map((v: string) => `  - ${v}`).join('\n')}`;
+                      }
+                      return `${key}: ${value}`;
+                    })
+                    .join('\n') +
+                  '\n---\n\n';
+                markdownWithMeta = frontmatter + markdown;
+              }
 
-            if (props?.metadataFormat === 'reference-links') {
-              const refs = Object.entries(metadataEntries)
-                .map(([key, value]) => `[${key}]: <> (${value})`)
-                .join('\n');
-              markdownWithMeta = refs + '\n\n' + markdown;
-            } else {
-              const frontmatter =
-                '---\n' +
-                Object.entries(metadataEntries)
-                  .map(([key, value]) => {
-                    if (Array.isArray(value)) {
-                      return `${key}:\n${value.map((v: string) => `  - ${v}`).join('\n')}`;
-                    }
-                    return `${key}: ${value}`;
-                  })
-                  .join('\n') +
-                '\n---\n\n';
-              markdownWithMeta = frontmatter + markdown;
-            }
+              if (props?.returnMDFile) {
+                return markdownWithMeta;
+              }
 
-            if (props?.returnMDFile) {
-              temporalEditor.destroy();
+              const blob = new Blob([markdownWithMeta], {
+                type: 'text/markdown;charset=utf-8',
+              });
+              return URL.createObjectURL(blob);
+            } finally {
+              temporalEditor?.destroy();
               removeLoader(loader);
-              return markdownWithMeta;
             }
-
-            const blob = new Blob([markdownWithMeta], {
-              type: 'text/markdown;charset=utf-8',
-            });
-            const downloadUrl = URL.createObjectURL(blob);
-
-            temporalEditor.destroy();
-            removeLoader(loader);
-            return downloadUrl;
           },
       };
     },
@@ -942,11 +986,16 @@ export async function handleMarkdownContent(
 
   // Convert Markdown to HTML. `breaks` (single newline → <br>) is opt-in for
   // Split View so a single Enter shows as a new line on the right;
-  // paste/import keep CommonMark semantics (single newline = space). Render is
-  // synchronous so toggling the shared instance and resetting is safe.
-  if (options?.breaks) markdownIt.set({ breaks: true });
-  let convertedHtml = markdownIt.render(cleanMarkdown);
-  if (options?.breaks) markdownIt.set({ breaks: false });
+  // paste/import keep CommonMark semantics (single newline = space). The
+  // shared instance is reset in a finally so a throwing render can't leak
+  // breaks:true into every later paste/import in the session.
+  let convertedHtml: string;
+  try {
+    if (options?.breaks) markdownIt.set({ breaks: true });
+    convertedHtml = markdownIt.render(cleanMarkdown);
+  } finally {
+    if (options?.breaks) markdownIt.set({ breaks: false });
+  }
 
   // Parse the HTML string into DOM nodes
   const parser = new DOMParser();
@@ -1095,9 +1144,10 @@ export async function handleMarkdownContent(
     '<sub data-type="sub">$1</sub>',
   );
 
-  // Sanitize the converted HTML
+  // Sanitize the converted HTML. iframe is allowed through here because the
+  // Iframe extension's parseHTML drops any src that fails isAllowedEmbedSrc.
   convertedHtml = DOMPurify.sanitize(convertedHtml, {
-    ADD_TAGS: ['div'],
+    ADD_TAGS: ['div', 'iframe'],
     ADD_ATTR: [
       'style',
       'data-color',

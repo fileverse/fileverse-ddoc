@@ -1,5 +1,10 @@
 import { useEffect, useRef } from 'react';
-import { EditorState, Annotation, RangeSetBuilder } from '@codemirror/state';
+import {
+  EditorState,
+  Annotation,
+  RangeSetBuilder,
+  Transaction,
+} from '@codemirror/state';
 import {
   EditorView,
   lineNumbers,
@@ -210,7 +215,13 @@ export default function MarkdownSourcePane({
     if (value === current) return;
     view.dispatch({
       changes: { from: 0, to: current.length, insert: value },
-      annotations: ProgrammaticUpdate.of(true),
+      // Keep the seed out of the undo history: its base state is the empty
+      // mount-time doc, so an undo would revert the pane to empty and the
+      // change listener would replace the whole document with nothing.
+      annotations: [
+        ProgrammaticUpdate.of(true),
+        Transaction.addToHistory.of(false),
+      ],
     });
   }, [value]);
 

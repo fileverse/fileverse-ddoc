@@ -382,6 +382,10 @@ const DdocEditor = forwardRef(
       isPreviewMode,
       activeTabId,
       ipfsImageUploadFn,
+      onSeedError: () => {
+        onError?.('Could not open Markdown view — please try again.');
+        setIsSplitView?.(false);
+      },
     });
 
     useImperativeHandle(
