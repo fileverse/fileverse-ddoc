@@ -68,6 +68,8 @@ const TiptapToolBar = ({
   ydoc,
   onRegisterExportTrigger,
   toggleFocusMode,
+  isSplitView,
+  onToggleSplitView,
   fonts: consumerFonts,
 }: {
   editor: Editor | null;
@@ -96,6 +98,8 @@ const TiptapToolBar = ({
   tabs: Tab[];
   ydoc: Y.Doc;
   toggleFocusMode?: () => void;
+  isSplitView?: boolean;
+  onToggleSplitView?: () => void;
   onRegisterExportTrigger?:
     | ((trigger: ((format?: string, name?: string) => void) | null) => void)
     | undefined;
@@ -649,6 +653,19 @@ const TiptapToolBar = ({
         </div>
         <div className="flex items-center gap-1">
           <div className="w-[1px] h-4 vertical-divider mx-2"></div>
+          {onToggleSplitView && (
+            <Tooltip text={isSplitView ? 'Back to editor' : 'Markdown view'}>
+              <IconButton
+                // Icon swaps to signal the action: split icon → enter markdown
+                // view; pencil → return to the normal editor.
+                icon={isSplitView ? 'PenLine' : 'SquareSplitHorizontal'}
+                size="sm"
+                variant="ghost"
+                onClick={onToggleSplitView}
+                id="split-view-button"
+              />
+            </Tooltip>
+          )}
           <Tooltip text="Enter focus mode">
             <IconButton
               icon={'Maximize'}

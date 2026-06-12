@@ -250,6 +250,9 @@ export interface DdocProps extends CommentAccountProps {
   unFocused?: boolean;
   isPresentationMode?: boolean;
   setIsPresentationMode?: React.Dispatch<SetStateAction<boolean>>;
+  /** Split View: edit markdown on the left, see the read-only ddoc render on the right. */
+  isSplitView?: boolean;
+  setIsSplitView?: React.Dispatch<SetStateAction<boolean>>;
   onComment?: () => void;
   onInlineComment?: () => void;
   onFocusMode?: (isFocusMode: boolean) => void;

@@ -69,6 +69,8 @@ export const useDdocEditor = ({
       isPresentationMode: Boolean(isPresentationMode),
       isPreviewEditor: Boolean(isPreviewEditor),
       isCollaboratorsDoc,
+      // Real value is merged in by ddoc-editor (which knows Split View state).
+      isSplitView: false,
     }),
     [isCollaboratorsDoc, isPresentationMode, isPreviewEditor, isPreviewMode],
   );

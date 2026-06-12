@@ -43,8 +43,8 @@ export const GripButton = React.memo(
       contentEditable={false}
       draggable
       data-drag-handle
-      onClick={onClick}
       {...props}
+      onClick={onClick}
     >
       <LucideIcon name="GripVertical" size="sm" />
     </div>
@@ -62,11 +62,11 @@ export const PlusButton = React.memo(
     }
   >(({ onClick, className, ...props }, ref) => (
     <div
+      ref={ref}
       className={className}
       contentEditable={false}
-      onClick={onClick}
-      ref={ref}
       {...props}
+      onClick={onClick}
     >
       <LucideIcon name="Plus" size="sm" />
     </div>
@@ -88,9 +88,9 @@ export const CollapseButton = React.memo(
       ref={ref}
       className={className}
       contentEditable={false}
-      onClick={onToggle}
       data-test="collapse-button"
       {...props}
+      onClick={onToggle}
     >
       <LucideIcon
         name={isCollapsed ? 'ChevronRight' : 'ChevronDown'}
@@ -109,9 +109,9 @@ export const CopyLinkButton = React.memo(
         ref={ref}
         className={cn(className)}
         contentEditable={false}
-        onClick={onClick}
         data-test="copy-heading-link-button"
         {...props}
+        onClick={onClick}
       >
         <LucideIcon name="Link" size="sm" />
       </div>

@@ -43,6 +43,8 @@ const useDdocExport = ({
 
   const getOptionFormat = useCallback((title: string) => {
     if (title.includes('(.pdf)')) return 'pdf';
+    // Check "with CSS" before "(.md)" — its title contains both.
+    if (title.includes('with CSS')) return 'md-css';
     if (title.includes('(.md)')) return 'md';
     if (title.includes('(.html)')) return 'html';
     if (title.includes('(.txt)')) return 'txt';
@@ -140,7 +142,7 @@ const useDdocExport = ({
   ]);
 
   const exportAllTabsAsMarkdown = useCallback(
-    async (name?: string) => {
+    async (name?: string, includeStyles?: boolean) => {
       if (!editor || !ydoc || tabs.length === 0) return;
       const baseTitle = name || getTitle();
       const tempEditors: Editor[] = [];
@@ -155,6 +157,7 @@ const useDdocExport = ({
           const markdown = await tempEditor.commands.exportMarkdownFile({
             title: tabTitle,
             returnMDFile: true,
+            includeStyles,
           });
           const tabMarkdown = stripFrontmatter(markdown).trim();
           allTabMd.push(`# ${tabTitle}\n\n${tabMarkdown}`.trim());
@@ -333,6 +336,10 @@ const useDdocExport = ({
         }
         if (format === 'md') {
           await exportAllTabsAsMarkdown(name);
+          return;
+        }
+        if (format === 'md-css') {
+          await exportAllTabsAsMarkdown(name, true);
           return;
         }
         if (format === 'html') {

@@ -152,7 +152,8 @@ function App() {
   const [selectedTags, setSelectedTags] = useState<TagType[]>([]);
   const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(false);
   const [isPresentationMode, setIsPresentationMode] = useState(false);
-  const [showTOC, setShowTOC] = useState<boolean>(false);
+  const [isSplitView, setIsSplitView] = useState(false);
+  const [showTOC, setShowTOC] = useState<boolean>(true);
   const [collaborationId, setCollaborationId] = useState<string>('');
   const [collabRoomKey, setCollabRoomKey] = useState<string>('');
 
@@ -753,6 +754,8 @@ function App() {
         setCommentDrawerOpen={setCommentDrawerOpen}
         isPresentationMode={isPresentationMode}
         setIsPresentationMode={setIsPresentationMode}
+        isSplitView={isSplitView}
+        setIsSplitView={setIsSplitView}
         zoomLevel={zoomLevel}
         setZoomLevel={setZoomLevel}
         isNavbarVisible={isNavbarVisible}
