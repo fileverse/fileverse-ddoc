@@ -54,5 +54,13 @@ export function getRegisteredFonts(): FontDescriptor[] {
  */
 export function ensureLoaded(family: string): Promise<unknown> {
   if (typeof document === 'undefined') return Promise.resolve();
-  return document.fonts.load(`16px ${family}`);
+  const cssName = primaryToken(family);
+  // Only catalog fonts have a downloadable face. "default" and system/baseline
+  // fonts have nothing to fetch, and passing their raw value (a reserved word
+  // or an unquoted multi-word stack) to FontFaceSet.load throws "Invalid font
+  // shorthand" in strict engines. Quote the single registered face name.
+  if (!cssName || !catalog.has(cssName)) return Promise.resolve();
+  // Swallow load failures (e.g. a 404 woff2) so a font click never surfaces an
+  // unhandled rejection — font-display: swap keeps text readable regardless.
+  return document.fonts.load(`16px "${cssName}"`).catch(() => {});
 }

@@ -12,7 +12,7 @@ const demoFonts: FontDescriptor[] = [
   {
     name: 'Inter',
     family: 'Inter, sans-serif',
-    url: 'https://fonts.gstatic.com/s/inter/v18/UcCO3FwrK3iLTeHuS_nVMrMxCp50ojIw2boKoduKmMEVuLyfMZg.woff2',
+    url: 'https://fonts.gstatic.com/s/inter/v20/UcCo3FwrK3iLTcviYwYZ8UA3.woff2',
   },
 ];
 import {
@@ -193,7 +193,9 @@ function App() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [disableInlineComment, setDisableInlineComment] = useState(false);
   const [isDDocOwner, setIsDDocOwner] = useState(true);
-  const [viewerMode, setViewerMode] = useState<'suggest' | 'view-only' | undefined>(undefined);
+  const [viewerMode, setViewerMode] = useState<
+    'suggest' | 'view-only' | undefined
+  >(undefined);
 
   // Single mode picker for the demo navbar — cycles
   // Owner → Viewer/Suggest → Viewer/View-only → Owner.
@@ -225,7 +227,9 @@ function App() {
     : viewerMode === 'suggest'
       ? 'View-only'
       : 'Owner';
-  const [initialCommentAnchors, setInitialCommentAnchors] = useState<SerializedCommentAnchor[]>([]);
+  const [initialCommentAnchors, setInitialCommentAnchors] = useState<
+    SerializedCommentAnchor[]
+  >([]);
 
   const searchParams = new URLSearchParams(window.location.search);
   const paramCollaborationId = searchParams.get('collaborationId');
