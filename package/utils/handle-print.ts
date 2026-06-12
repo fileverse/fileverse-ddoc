@@ -1,4 +1,6 @@
 import renderMathInElement from 'katex/contrib/auto-render';
+import { getRegisteredFonts, primaryToken } from './font-loader';
+import type { FontDescriptor } from '../types';
 
 const A4_HEIGHT_INCHES = 11.69;
 const A4_WIDTH_INCHES = 8.27;
@@ -8,8 +10,32 @@ const CSS_DPI = 96;
 const CONTENT_PRINT_TITLE = 'Print Preview';
 const CONTENT_PRINT_MEASUREMENT_HOST_ID = 'content-print-measurement-host';
 const CONTENT_PRINT_RESOURCE_TIMEOUT_MS = 5000;
-const INTER_FONT_STYLESHEET_URL =
-  'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap';
+
+/**
+ * Generates an @font-face block per registered font (and per weight, for
+ * per-weight URL maps) so the print iframe can resolve consumer-provided
+ * fonts. URLs come from the same catalog the editor uses; the iframe shares
+ * the parent origin so same-origin asset URLs resolve directly.
+ */
+const buildRegisteredFontFaceCss = (): string => {
+  const faces: string[] = [];
+  for (const desc of getRegisteredFonts() as FontDescriptor[]) {
+    if (!desc.url) continue;
+    // Derive the CSS face name from the family stack, not the cosmetic `name`,
+    // so the @font-face matches the styled content in the iframe.
+    const cssName = primaryToken(desc.family);
+    const entries: Array<[number, string]> =
+      typeof desc.url === 'string'
+        ? [[400, desc.url]]
+        : Object.entries(desc.url).map(([w, u]) => [Number(w), u]);
+    for (const [weight, url] of entries) {
+      faces.push(
+        `@font-face{font-family:"${cssName}";src:url("${url}") format('woff2');font-weight:${weight};font-style:normal;font-display:swap;}`,
+      );
+    }
+  }
+  return faces.join('');
+};
 const KATEX_STYLESHEET_URL =
   'https://cdn.jsdelivr.net/npm/katex@0.16.11/dist/katex.min.css';
 const KATEX_SCRIPT_URL =
@@ -319,10 +345,10 @@ const buildContentPrintHead = ({
   includeRemoteStylesheets?: boolean;
 }) => `
   <head>
+    <style>${buildRegisteredFontFaceCss()}</style>
     ${
       includeRemoteStylesheets
         ? `
-    <link href="${INTER_FONT_STYLESHEET_URL}" rel="stylesheet" />
     <link rel="stylesheet" href="${KATEX_STYLESHEET_URL}" />
     `
         : ''
@@ -623,7 +649,7 @@ export const handlePrint = (slides: string[]) => {
         <!DOCTYPE html>
         <html>
             <head>
-                <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+                <style>${buildRegisteredFontFaceCss()}</style>
                 <style>
                     @media print {
                         @page {

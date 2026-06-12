@@ -53,6 +53,7 @@ const PreviewDdocEditorContent = forwardRef(
       tabSectionContainer,
       documentStyling,
       theme,
+      fonts,
     }: DdocProps & { contentClassName?: string; isLoading?: boolean },
     ref,
   ) => {
@@ -102,6 +103,7 @@ const PreviewDdocEditorContent = forwardRef(
       ipfsImageUploadFn,
       unFocused,
       theme,
+      fonts,
     });
 
     useImperativeHandle(
