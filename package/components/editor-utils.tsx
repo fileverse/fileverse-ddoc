@@ -117,7 +117,14 @@ export function buildPickerEntries(
   const byValue = new Map<string, PickerEntry>();
   for (const e of baselineFonts) byValue.set(e.value, e);
   for (const e of consumerEntries) byValue.set(e.value, e);
-  return [...byValue.values()];
+
+  // Sort baseline + consumer fonts together A–Z by title, but keep "Default"
+  // pinned at the top since it's the unset action, not a font.
+  return [...byValue.values()].sort((a, b) => {
+    if (a.value === 'default') return -1;
+    if (b.value === 'default') return 1;
+    return a.title.localeCompare(b.title);
+  });
 }
 
 export const FONT_SIZES = [
