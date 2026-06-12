@@ -321,9 +321,17 @@ export interface IpfsImageFetchPayload {
 }
 
 export type FontDescriptor = {
-  /** Display name in the picker, e.g. "Poppins" */
+  /**
+   * Cosmetic display name shown in the picker, e.g. "Poppins". Does not affect
+   * font matching — the CSS face name is derived from the first token of
+   * `family`, so this can differ freely (e.g. "Poppins (Brand)").
+   */
   name: string;
-  /** CSS font-family stack stored in textStyle marks, e.g. "Poppins, sans-serif" */
+  /**
+   * CSS font-family stack stored in textStyle marks, e.g. "Poppins, sans-serif".
+   * Its first token is used as the registered face name, so it must match the
+   * family the woff2 in `url` provides.
+   */
   family: string;
   /**
    * woff2 source(s).
