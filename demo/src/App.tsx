@@ -1,6 +1,20 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import DdocEditor from '../../package/ddoc-editor';
+import type { FontDescriptor } from '../../package/types';
 import { JSONContent } from '@tiptap/react';
+
+const demoFonts: FontDescriptor[] = [
+  {
+    name: 'Poppins',
+    family: 'Poppins, sans-serif',
+    url: 'https://fonts.gstatic.com/s/poppins/v22/pxiEyp8kv8JHgFVrJJfecnFHGPc.woff2',
+  },
+  {
+    name: 'Inter',
+    family: 'Inter, sans-serif',
+    url: 'https://fonts.gstatic.com/s/inter/v20/UcCo3FwrK3iLTcviYwYZ8UA3.woff2',
+  },
+];
 import {
   Button,
   Tag,
@@ -179,7 +193,9 @@ function App() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   const [disableInlineComment, setDisableInlineComment] = useState(false);
   const [isDDocOwner, setIsDDocOwner] = useState(true);
-  const [viewerMode, setViewerMode] = useState<'suggest' | 'view-only' | undefined>(undefined);
+  const [viewerMode, setViewerMode] = useState<
+    'suggest' | 'view-only' | undefined
+  >(undefined);
 
   // Single mode picker for the demo navbar — cycles
   // Owner → Viewer/Suggest → Viewer/View-only → Owner.
@@ -211,7 +227,9 @@ function App() {
     : viewerMode === 'suggest'
       ? 'View-only'
       : 'Owner';
-  const [initialCommentAnchors, setInitialCommentAnchors] = useState<SerializedCommentAnchor[]>([]);
+  const [initialCommentAnchors, setInitialCommentAnchors] = useState<
+    SerializedCommentAnchor[]
+  >([]);
 
   const searchParams = new URLSearchParams(window.location.search);
   const paramCollaborationId = searchParams.get('collaborationId');
@@ -709,6 +727,7 @@ function App() {
       />
       <DdocEditor
         ref={editorRef}
+        fonts={demoFonts}
         collaboration={collaboration}
         username={username}
         setUsername={setUsername}

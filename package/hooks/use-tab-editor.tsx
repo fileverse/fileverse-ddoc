@@ -74,7 +74,6 @@ import {
 import { destroyEditorWithYSyncCleanup } from '../utils/y-prosemirror-cleanup';
 import { clearTableOfContentsStorage } from '../extensions/table-of-contents';
 import { useTabEditorCache } from './use-tab-editor-cache';
-
 const usercolors = [
   '#30bced',
   '#6eeb83',

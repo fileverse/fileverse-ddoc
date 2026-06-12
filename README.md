@@ -98,6 +98,7 @@ The `DdocProps` interface is a TypeScript interface that defines the properties 
 | `setIsPresentationMode` | `React.Dispatch<SetStateAction<boolean>>` | Function to toggle presentation mode   |
 | `sharedSlidesLink`      | `string`                                  | Link for shared presentation slides    |
 | `documentStyling`       | `DocumentStyling`                         | Custom styling for document appearance |
+| `fonts`                 | `FontDescriptor[]`                        | Consumer-provided font catalog (see Custom Fonts) |
 
 ## Document Styling
 
@@ -156,6 +157,57 @@ interface DocumentStyling {
 ```
 
 **Note:** Document styling works in both regular editor mode and presentation mode. In presentation mode, only `canvasBackground`, `textColor`, and `fontFamily` are applied to maintain clean slide appearance.
+
+## Custom Fonts
+
+The editor ships with a **system-font baseline only** (Arial, Calibri, Georgia, Times New Roman, etc.) and makes **no third-party font requests** — there is no Google Fonts `@import`. To offer additional fonts, pass a `fonts` catalog. Each font is self-hosted by your app and loaded **on demand** via the CSS Font Loading API: a font's `woff2` is fetched only when it's selected in the picker or when a document (including a remote collaborator's change) actually renders text in it.
+
+```typescript
+type FontDescriptor = {
+  /** Display name shown in the picker, e.g. "Poppins". */
+  name: string;
+  /** CSS font-family stack stored in the content, e.g. "Poppins, sans-serif". */
+  family: string;
+  /**
+   * woff2 source(s). Omit for a pure system font (no loading).
+   *   - string: a single file covering all weights (e.g. a variable font).
+   *   - Record<number, string>: a per-weight map, e.g. { 400: url400, 700: url700 }.
+   */
+  url?: string | Record<number, string>;
+  /**
+   * Optional SVG preview rendered in the picker. Any React node that renders an
+   * <svg>. Falls back to the font name in the default font when absent.
+   */
+  preview?: React.ReactNode;
+};
+```
+
+### Usage Example
+
+```tsx
+import { DdocEditor, FontDescriptor } from '@fileverse-dev/ddoc';
+// Self-host the woff2 files however your bundler prefers (e.g. @fontsource/*).
+import poppins400 from '@fontsource/poppins/files/poppins-latin-400-normal.woff2';
+import poppins700 from '@fontsource/poppins/files/poppins-latin-700-normal.woff2';
+
+const fonts: FontDescriptor[] = [
+  {
+    name: 'Poppins',
+    family: 'Poppins, sans-serif',
+    url: { 400: poppins400, 700: poppins700 },
+    preview: <PoppinsPreview />, // optional SVG
+  },
+];
+
+<DdocEditor fonts={fonts} /* ...other props */ />;
+```
+
+**Notes:**
+
+- The picker lists the system baseline and your catalog **together, sorted A–Z** (with **Default** pinned to the top).
+- The CSS face name is derived from the first token of `family`, so `name` is purely cosmetic and can differ (e.g. `name: 'Poppins (Brand)'`, `family: 'Poppins, sans-serif'`).
+- The catalog also drives PDF/print export, which emits `@font-face` rules for the registered fonts.
+- Host your `woff2` files **same-origin** so they resolve in both the editor and the print iframe.
 
 ## Comments & Collaboration Props
 
