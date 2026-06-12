@@ -245,6 +245,7 @@ interface UseTabEditorArgs {
   isAIAgentEnabled?: boolean;
   setCharacterCount?: DdocProps['setCharacterCount'];
   setWordCount?: DdocProps['setWordCount'];
+  setSelectedWordCount?: DdocProps['setSelectedWordCount'];
   setPageCount?: DdocProps['setPageCount'];
   setIsContentLoading: Dispatch<SetStateAction<boolean>>;
   setIsCollabContentLoading: Dispatch<SetStateAction<boolean>>;
@@ -294,6 +295,7 @@ export const useTabEditor = ({
   isAIAgentEnabled,
   setCharacterCount,
   setWordCount,
+  setSelectedWordCount,
   setPageCount,
   setIsContentLoading,
   setIsCollabContentLoading,
@@ -1034,7 +1036,34 @@ export const useTabEditor = ({
 
   useEffect(() => {
     if (!editor) return;
-    if (!setCharacterCount && !setWordCount && !setPageCount) return;
+    if (
+      !setCharacterCount &&
+      !setWordCount &&
+      !setSelectedWordCount &&
+      !setPageCount
+    )
+      return;
+
+    const updateSelectedWordCount = () => {
+      if (
+        !setSelectedWordCount ||
+        activeEditorRef.current !== editor ||
+        editor.isDestroyed
+      ) {
+        return;
+      }
+
+      const { from, to, empty } = editor.state.selection;
+      if (empty) {
+        setSelectedWordCount(0);
+        return;
+      }
+
+      // ' ' separators match Tiptap CharacterCount's default whitespace word counting
+      const text = editor.state.doc.textBetween(from, to, ' ', ' ');
+      const words = text.split(' ').filter((word) => word !== '').length;
+      setSelectedWordCount(words);
+    };
 
     const updateCounts = () => {
       if (statsDebounceRef.current) {
@@ -1112,10 +1141,13 @@ export const useTabEditor = ({
 
     // Initial count
     updateCounts();
+    updateSelectedWordCount();
     editor.on('update', updateCounts);
+    editor.on('selectionUpdate', updateSelectedWordCount);
 
     return () => {
       editor.off('update', updateCounts);
+      editor.off('selectionUpdate', updateSelectedWordCount);
       if (statsDebounceRef.current) {
         clearTimeout(statsDebounceRef.current);
       }
@@ -1123,7 +1155,14 @@ export const useTabEditor = ({
       pageCountIdleTaskRef.current = null;
       pageCountRequestIdRef.current += 1;
     };
-  }, [activeTabId, editor, setCharacterCount, setPageCount, setWordCount]);
+  }, [
+    activeTabId,
+    editor,
+    setCharacterCount,
+    setPageCount,
+    setWordCount,
+    setSelectedWordCount,
+  ]);
 
   // Print shortcut handler
   useEffect(() => {

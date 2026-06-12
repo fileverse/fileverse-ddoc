@@ -237,6 +237,7 @@ export interface DdocProps extends CommentAccountProps {
   onError?: (error: string) => void;
   setCharacterCount?: React.Dispatch<SetStateAction<number>>;
   setWordCount?: React.Dispatch<SetStateAction<number>>;
+  setSelectedWordCount?: React.Dispatch<SetStateAction<number>>;
   setPageCount?: React.Dispatch<SetStateAction<number>>;
   tags?: Array<{ name: string; color: string }>;
   className?: string;
