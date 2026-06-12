@@ -232,7 +232,7 @@ const DdocEditor = forwardRef(
     const btn_ref = useRef(null);
     const editorScrollContainerRef = useRef<HTMLDivElement | null>(null);
     const editorWrapperRef = useRef<HTMLDivElement | null>(null);
-    const { isBelow1280px, isNativeMobile, isIOS } = useResponsive();
+    const { isBelow1280px, isNativeMobile } = useResponsive();
 
     const [isHiddenTagsVisible, setIsHiddenTagsVisible] = useState(false);
     const tagsContainerRef = useRef(null);
@@ -888,6 +888,15 @@ const DdocEditor = forwardRef(
                           : undefined
                       }
                     >
+                      {isMobile && isPreviewMode && (
+                        <p className="text-center color-text-secondary text-helper-text-sm flex gap-2 items-center justify-center py-1.5">
+                          <LucideIcon
+                            name={'LockKeyhole'}
+                            className="w-[14px] h-[14px]"
+                          />
+                          <span>End-to-end Encrypted</span>
+                        </p>
+                      )}
                       <div
                         id="editor-wrapper"
                         ref={editorWrapperRef}
@@ -939,20 +948,10 @@ const DdocEditor = forwardRef(
                         }}
                         data-mode={isFocusMode ? 'focus' : 'normal'}
                       >
-                        {isMobile && isPreviewMode && (
-                          <p className="text-center color-text-secondary text-helper-text-sm flex gap-2 items-center justify-center mt-[28px]">
-                            <LucideIcon
-                              name={'LockKeyhole'}
-                              className="w-[14px] h-[14px]"
-                            />
-                            <span>End-to-end Encrypted</span>
-                          </p>
-                        )}
                         <div
                           ref={editorRef}
                           className={cn(
                             'w-full pt-8 md:pt-0',
-                            { 'custom-ios-padding': isIOS },
                             {
                               'color-bg-default':
                                 !documentStyling?.canvasBackground &&
