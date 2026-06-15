@@ -4,6 +4,7 @@ export interface DBlockRuntimeState {
   isPreviewEditor: boolean;
   isCollaboratorsDoc: boolean;
   isSplitView: boolean;
+  isFocusMode: boolean;
 }
 
 export const DEFAULT_DBLOCK_RUNTIME_STATE: DBlockRuntimeState = {
@@ -12,6 +13,7 @@ export const DEFAULT_DBLOCK_RUNTIME_STATE: DBlockRuntimeState = {
   isPreviewEditor: false,
   isCollaboratorsDoc: false,
   isSplitView: false,
+  isFocusMode: false,
 };
 
 export type DBlockRuntimeStateRef = {
