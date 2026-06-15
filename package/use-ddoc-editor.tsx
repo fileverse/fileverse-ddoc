@@ -70,10 +70,17 @@ export const useDdocEditor = ({
       isPresentationMode: Boolean(isPresentationMode),
       isPreviewEditor: Boolean(isPreviewEditor),
       isCollaboratorsDoc,
+      isFocusMode: Boolean(isFocusMode),
       // Real value is merged in by ddoc-editor (which knows Split View state).
       isSplitView: false,
     }),
-    [isCollaboratorsDoc, isPresentationMode, isPreviewEditor, isPreviewMode],
+    [
+      isCollaboratorsDoc,
+      isFocusMode,
+      isPresentationMode,
+      isPreviewEditor,
+      isPreviewMode,
+    ],
   );
   const dBlockRuntimeStateRef = useRef(dBlockRuntimeState);
   dBlockRuntimeStateRef.current = dBlockRuntimeState;

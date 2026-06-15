@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
 
 type UseFocusModeOptions = {
@@ -8,6 +8,13 @@ type UseFocusModeOptions = {
 export const useFocusMode = ({ onFocusMode }: UseFocusModeOptions = {}) => {
   const [isFocusMode, setisFocusMode] = useState(false);
   const isMobile = useMediaQuery('(max-width: 1024px)');
+
+  const toggleFocusMode = useCallback(async () => {
+    setisFocusMode((prev) => {
+      onFocusMode?.(!prev);
+      return !prev;
+    });
+  }, [onFocusMode]);
 
   useEffect(() => {
     const onKeyDown = (e: KeyboardEvent) => {
@@ -22,14 +29,7 @@ export const useFocusMode = ({ onFocusMode }: UseFocusModeOptions = {}) => {
     return () => {
       window.removeEventListener('keydown', onKeyDown);
     };
-  }, [isMobile]);
-
-  const toggleFocusMode = async () => {
-    setisFocusMode((prev) => {
-      onFocusMode?.(!prev);
-      return !prev;
-    });
-  };
+  }, [isMobile, toggleFocusMode]);
 
   return { isFocusMode, toggleFocusMode };
 };

@@ -490,7 +490,7 @@
 
 [data-mode='focus'] {
   :is(.ProseMirror, .ProseMirror-focused) {
-    p.is-empty:not(.is-editor-empty)::before {
+    p.is-empty::before {
       content: none;
     }
   }

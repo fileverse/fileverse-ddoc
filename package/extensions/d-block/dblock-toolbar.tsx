@@ -306,6 +306,7 @@ const DBlockTemplateOverlay = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [visibleTemplateCount, setVisibleTemplateCount] = useState(2);
+  const isFocusMode = runtimeState.isFocusMode;
   const target = useMemo(() => {
     void refreshKey;
     return getTemplateTarget(editor, runtimeState);
@@ -342,7 +343,7 @@ const DBlockTemplateOverlay = ({
     });
   }, [moreTemplates.length]);
 
-  if (!target) {
+  if (!target || isFocusMode) {
     return null;
   }
 
@@ -355,6 +356,7 @@ const DBlockTemplateOverlay = ({
       isExpanded,
       runtimeState.isCollaboratorsDoc,
       runtimeState.isPreviewMode,
+      isFocusMode,
     ),
     target.handle.contentElement,
   );

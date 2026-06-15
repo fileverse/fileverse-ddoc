@@ -585,6 +585,13 @@ const DdocEditor = forwardRef(
       }
     }, [editor, editorRef, isNativeMobile]);
 
+    // Entering focus mode should put the caret in the editor so the user can
+    // start typing immediately.
+    useEffect(() => {
+      if (!isFocusMode || !editor || editor.isDestroyed) return;
+      editor.commands.focus();
+    }, [isFocusMode, editor]);
+
     const isMobile = useMediaQuery('(max-width: 768px)');
     const tabCommentCounts = useMemo(() => {
       return (initialComments || []).reduce<Record<string, number>>(
