@@ -59,7 +59,19 @@ export function transition(
       return null;
 
     case 'syncing':
-      if (type === 'SYNC_COMPLETE') return { status: 'ready', context: { hasUnmergedPeerUpdates: false } };
+      if (type === 'SYNC_COMPLETE')
+        return { status: 'ready', context: { hasUnmergedPeerUpdates: false } };
+      // Socket drops can happen during initial/full sync; recover instead of ignoring the event.
+      if (type === 'SOCKET_DROPPED')
+        return {
+          status: 'reconnecting',
+          context: { reconnectAttempt: context.reconnectAttempt + 1 },
+        };
+      if (type === 'RECONNECTED')
+        return {
+          status: 'syncing',
+          context: { hasUnmergedPeerUpdates: false },
+        };
       if (type === 'SET_UNMERGED_UPDATES')
         return {
           status: 'syncing',
@@ -110,6 +122,11 @@ export function transition(
               recoverable: false,
             },
           },
+        };
+      if (type === 'ERROR')
+        return {
+          status: 'error',
+          context: { error: event.error, hasUnmergedPeerUpdates: false },
         };
       if (type === 'SOCKET_DROPPED')
         return {
