@@ -107,7 +107,7 @@ const ImportExportButton = ({
           setOpenImport(false);
         }}
         anchorTrigger={
-          <Tooltip text="Export/Import">
+          <Tooltip text="Export/Import" asTriggerChild>
             <IconButton
               icon="File"
               variant="ghost"

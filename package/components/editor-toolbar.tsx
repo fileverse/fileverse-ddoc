@@ -320,7 +320,7 @@ const TiptapToolBar = ({
             {undoRedoTools.map((tool, _index) => {
               if (tool) {
                 return (
-                  <Tooltip key={tool.title} text={tool.title}>
+                  <Tooltip key={tool.title} text={tool.title} asTriggerChild>
                     {isLoading
                       ? fadeInTransition(
                           <Skeleton
@@ -633,7 +633,7 @@ const TiptapToolBar = ({
               // Regular toolbar button
               return !isLoading
                 ? slideUpTransition(
-                    <Tooltip key={tool.title} text={tool.title}>
+                    <Tooltip key={tool.title} text={tool.title} asTriggerChild>
                       <ToolbarButton
                         icon={tool.icon}
                         onClick={tool.onClick}
@@ -654,7 +654,10 @@ const TiptapToolBar = ({
         <div className="flex items-center gap-1">
           <div className="w-[1px] h-4 vertical-divider mx-2"></div>
           {onToggleSplitView && (
-            <Tooltip text={isSplitView ? 'Back to editor' : 'Markdown view'}>
+            <Tooltip
+              text={isSplitView ? 'Back to editor' : 'Markdown view'}
+              asTriggerChild
+            >
               <IconButton
                 // Icon swaps to signal the action: split icon → enter markdown
                 // view; pencil → return to the normal editor.
@@ -666,7 +669,7 @@ const TiptapToolBar = ({
               />
             </Tooltip>
           )}
-          <Tooltip text="Enter focus mode">
+          <Tooltip text="Enter focus mode" asTriggerChild>
             <IconButton
               icon={'Maximize'}
               size="sm"
