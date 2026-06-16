@@ -150,6 +150,13 @@ export interface DocumentStyling {
   orientation?: 'portrait' | 'landscape';
 }
 export interface DdocProps extends CommentAccountProps {
+  /**
+   * Optional catalog of fonts available to the editor in addition to the
+   * package baseline (system fonts only). Each entry is loaded lazily via the
+   * CSS Font Loading API when first selected in the picker or when a document
+   * references its family.
+   */
+  fonts?: FontDescriptor[];
   tabConfig?: {
     onCopyTabLink?: (tabId: string) => void;
     defaultTabId?: string;
@@ -237,12 +244,16 @@ export interface DdocProps extends CommentAccountProps {
   onError?: (error: string) => void;
   setCharacterCount?: React.Dispatch<SetStateAction<number>>;
   setWordCount?: React.Dispatch<SetStateAction<number>>;
+  setSelectedWordCount?: React.Dispatch<SetStateAction<number>>;
   setPageCount?: React.Dispatch<SetStateAction<number>>;
   tags?: Array<{ name: string; color: string }>;
   className?: string;
   unFocused?: boolean;
   isPresentationMode?: boolean;
   setIsPresentationMode?: React.Dispatch<SetStateAction<boolean>>;
+  /** Split View: edit markdown on the left, see the read-only ddoc render on the right. */
+  isSplitView?: boolean;
+  setIsSplitView?: React.Dispatch<SetStateAction<boolean>>;
   onComment?: () => void;
   onInlineComment?: () => void;
   onFocusMode?: (isFocusMode: boolean) => void;
@@ -309,3 +320,30 @@ export interface IpfsImageFetchPayload {
   mimeType: string;
   authTag: string;
 }
+
+export type FontDescriptor = {
+  /**
+   * Cosmetic display name shown in the picker, e.g. "Poppins". Does not affect
+   * font matching — the CSS face name is derived from the first token of
+   * `family`, so this can differ freely (e.g. "Poppins (Brand)").
+   */
+  name: string;
+  /**
+   * CSS font-family stack stored in textStyle marks, e.g. "Poppins, sans-serif".
+   * Its first token is used as the registered face name, so it must match the
+   * family the woff2 in `url` provides.
+   */
+  family: string;
+  /**
+   * woff2 source(s).
+   *   - string: single file covering all weights (variable font).
+   *   - Record<number, string>: per-weight map, e.g. { 400: '/p-400.woff2', 700: '/p-700.woff2' }.
+   *   - omitted: pure system font, no loading.
+   */
+  url?: string | Record<number, string>;
+  /**
+   * SVG preview rendered in the picker. Any React node that renders an <svg>.
+   * Falls back to the font name in the default font when absent.
+   */
+  preview?: React.ReactNode;
+};

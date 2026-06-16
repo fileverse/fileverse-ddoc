@@ -1,10 +1,11 @@
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { DdocProps } from './types';
 import { useTabEditor } from './hooks/use-tab-editor';
 import { useTabManager } from './hooks/use-tab-manager';
 import { useYjsSetup } from './hooks/use-yjs-setup';
 import { Editor } from '@tiptap/react';
 import type { DBlockRuntimeState } from './extensions/d-block/dblock-runtime';
+import { registerFonts } from './utils/font-loader';
 
 export const useDdocEditor = ({
   isPreviewMode,
@@ -18,6 +19,7 @@ export const useDdocEditor = ({
   onError,
   setCharacterCount,
   setWordCount,
+  setSelectedWordCount,
   setPageCount,
   ipfsImageUploadFn,
   ddocId,
@@ -42,11 +44,16 @@ export const useDdocEditor = ({
   disableInlineComment,
   initialCommentAnchors,
   isPreviewEditor = false,
+  fonts,
   ...rest
 }: Partial<DdocProps> & {
   isFocusMode?: boolean;
   isPreviewEditor?: boolean;
 }) => {
+  useEffect(() => {
+    registerFonts(fonts ?? []);
+  }, [fonts]);
+
   const [isContentLoading, setIsContentLoading] = useState(true);
   const [isCollabContentLoading, setIsCollabContentLoading] = useState(true);
   const editorRef = useRef<Editor | null>(null);
@@ -63,8 +70,17 @@ export const useDdocEditor = ({
       isPresentationMode: Boolean(isPresentationMode),
       isPreviewEditor: Boolean(isPreviewEditor),
       isCollaboratorsDoc,
+      isFocusMode: Boolean(isFocusMode),
+      // Real value is merged in by ddoc-editor (which knows Split View state).
+      isSplitView: false,
     }),
-    [isCollaboratorsDoc, isPresentationMode, isPreviewEditor, isPreviewMode],
+    [
+      isCollaboratorsDoc,
+      isFocusMode,
+      isPresentationMode,
+      isPreviewEditor,
+      isPreviewMode,
+    ],
   );
   const dBlockRuntimeStateRef = useRef(dBlockRuntimeState);
   dBlockRuntimeStateRef.current = dBlockRuntimeState;
@@ -141,6 +157,7 @@ export const useDdocEditor = ({
     isAIAgentEnabled,
     setCharacterCount,
     setWordCount,
+    setSelectedWordCount,
     setPageCount,
     setIsContentLoading,
     setIsCollabContentLoading,

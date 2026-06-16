@@ -1,8 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
+  buildPickerEntries,
   EditorAlignment,
   EditorFontFamily,
-  fonts,
   FontSizePicker,
   getCurrentFontSize,
   LineHeightPicker,
@@ -28,7 +28,11 @@ import ToolbarButton from '../common/toolbar-button';
 import { useMediaQuery } from 'usehooks-ts';
 import { AnimatePresence } from 'framer-motion';
 import { fadeInTransition, slideUpTransition } from './motion-div';
-import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
+import {
+  FontDescriptor,
+  IpfsImageFetchPayload,
+  IpfsImageUploadResponse,
+} from '../types';
 import { ImportExportButton } from './import-export-button';
 import { getCurrentFontFamily } from '../utils/get-current-font-family';
 import EditorToolbarDropdown from './editor-toolbar-dropdown';
@@ -64,6 +68,9 @@ const TiptapToolBar = ({
   ydoc,
   onRegisterExportTrigger,
   toggleFocusMode,
+  isSplitView,
+  onToggleSplitView,
+  fonts: consumerFonts,
 }: {
   editor: Editor | null;
   onError?: (errorString: string) => void;
@@ -91,9 +98,12 @@ const TiptapToolBar = ({
   tabs: Tab[];
   ydoc: Y.Doc;
   toggleFocusMode?: () => void;
+  isSplitView?: boolean;
+  onToggleSplitView?: () => void;
   onRegisterExportTrigger?:
     | ((trigger: ((format?: string, name?: string) => void) | null) => void)
     | undefined;
+  fonts?: FontDescriptor[];
 }) => {
   const {
     toolRef,
@@ -142,9 +152,13 @@ const TiptapToolBar = ({
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [currentFont, setCurrentFont] = useState('Default');
+  const pickerEntries = useMemo(
+    () => buildPickerEntries(consumerFonts ?? []),
+    [consumerFonts],
+  );
   const activeFont = useMemo(
-    () => fonts.find((f) => f.value === currentFont),
-    [currentFont],
+    () => pickerEntries.find((f) => f.value === currentFont),
+    [pickerEntries, currentFont],
   );
 
   useEffect(() => {
@@ -422,6 +436,7 @@ const TiptapToolBar = ({
                       editor={editor as Editor}
                       elementRef={toolRef}
                       setToolVisibility={setToolVisibility}
+                      fonts={consumerFonts}
                     />
                   }
                 />,
@@ -638,6 +653,19 @@ const TiptapToolBar = ({
         </div>
         <div className="flex items-center gap-1">
           <div className="w-[1px] h-4 vertical-divider mx-2"></div>
+          {onToggleSplitView && (
+            <Tooltip text={isSplitView ? 'Back to editor' : 'Markdown view'}>
+              <IconButton
+                // Icon swaps to signal the action: split icon → enter markdown
+                // view; pencil → return to the normal editor.
+                icon={isSplitView ? 'PenLine' : 'SquareSplitHorizontal'}
+                size="sm"
+                variant="ghost"
+                onClick={onToggleSplitView}
+                id="split-view-button"
+              />
+            </Tooltip>
+          )}
           <Tooltip text="Enter focus mode">
             <IconButton
               icon={'Maximize'}

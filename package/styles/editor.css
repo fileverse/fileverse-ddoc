@@ -316,8 +316,9 @@
     line-height: 1;
     padding: 0;
     transition-property:
-      color, background-color, border-color, text-decoration-color, fill, stroke;
-    transition-duration: 300ms;
+      color, background-color, border-color, text-decoration-color, fill,
+      stroke, opacity;
+    transition-duration: 300ms, 300ms, 300ms, 300ms, 300ms, 300ms, 150ms;
     transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
     width: 1.25rem;
     height: 1.25rem;
@@ -489,7 +490,7 @@
 
 [data-mode='focus'] {
   :is(.ProseMirror, .ProseMirror-focused) {
-    p.is-empty:not(.is-editor-empty)::before {
+    p.is-empty::before {
       content: none;
     }
   }
@@ -1311,12 +1312,6 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
       top: 0;
       left: 0;
     }
-  }
-}
-
-.custom-ios-padding {
-  @supports (-webkit-touch-callout: none) {
-    margin-top: max(env(safe-area-inset-top), 24px);
   }
 }
 

@@ -158,7 +158,7 @@ const DBlockToolbar = React.memo(
     };
 
     const buttonClassName = cn(
-      'd-block-button color-text-default hover:color-bg-default-hover aspect-square h-5 w-5 shrink-0',
+      'd-block-button color-text-default hover:color-bg-default-hover aspect-square h-5 w-5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity',
     );
 
     const shouldShowEditingControls =
@@ -241,6 +241,8 @@ const getTemplateTarget = (
     !editor ||
     runtimeState.isPreviewMode ||
     runtimeState.isCollaboratorsDoc ||
+    // Split View renders the doc read-only on the right — no template picker.
+    runtimeState.isSplitView ||
     editor.state.doc.childCount !== 1
   ) {
     return null;
@@ -304,6 +306,7 @@ const DBlockTemplateOverlay = ({
 }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [visibleTemplateCount, setVisibleTemplateCount] = useState(2);
+  const isFocusMode = runtimeState.isFocusMode;
   const target = useMemo(() => {
     void refreshKey;
     return getTemplateTarget(editor, runtimeState);
@@ -340,7 +343,7 @@ const DBlockTemplateOverlay = ({
     });
   }, [moreTemplates.length]);
 
-  if (!target) {
+  if (!target || isFocusMode) {
     return null;
   }
 
@@ -353,6 +356,7 @@ const DBlockTemplateOverlay = ({
       isExpanded,
       runtimeState.isCollaboratorsDoc,
       runtimeState.isPreviewMode,
+      isFocusMode,
     ),
     target.handle.contentElement,
   );

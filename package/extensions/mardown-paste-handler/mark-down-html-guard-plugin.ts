@@ -72,6 +72,9 @@ const ALLOWED_HTML_TAGS = new Set([
   'tr',
   'u',
   'ul',
+  // Video round-trips through markdown as raw HTML (see the turndown 'video'
+  // rule) — without this the guard would escape it to text on import.
+  'video',
 ]);
 
 export function markdownHtmlGuardPlugin(md: MarkdownIt) {

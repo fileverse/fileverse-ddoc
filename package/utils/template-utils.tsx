@@ -113,8 +113,9 @@ const renderTemplateButtons = (
   isExpanded: boolean,
   isCollaboratorsDoc: boolean,
   isPreviewMode: boolean,
+  isFocusMode: boolean,
 ) => {
-  if (isCollaboratorsDoc || isPreviewMode) {
+  if (isCollaboratorsDoc || isPreviewMode || isFocusMode) {
     return null;
   }
   return (

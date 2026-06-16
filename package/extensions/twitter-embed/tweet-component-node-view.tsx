@@ -2,7 +2,7 @@
 import { Component, ReactNode, useEffect, useState } from 'react';
 import { NodeViewProps } from '@tiptap/core';
 import { NodeViewWrapper } from '@tiptap/react';
-import { EmbeddedTweet, Tweet } from 'react-tweet';
+import { EmbeddedTweet } from 'react-tweet';
 
 // react-tweet's getEntities iterates over hashtags/user_mentions/urls/symbols
 // unconditionally. Missing OR null arrays both throw "is not iterable" — coerce
@@ -123,7 +123,9 @@ export const TweetComponentNodeView = ({ node, editor }: NodeViewProps) => {
             {tweetData ? (
               <EmbeddedTweet tweet={tweetData} />
             ) : (
-              <Tweet id={node.attrs.tweetId} />
+              <span className="text-sm color-text-secondary">
+                Loading tweet…
+              </span>
             )}
           </TweetErrorBoundary>
         </div>
