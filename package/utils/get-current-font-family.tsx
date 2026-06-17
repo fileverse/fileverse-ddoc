@@ -28,7 +28,7 @@ export const getCurrentFontFamily = (editor: Editor | null) => {
   // 3) If range, use merged attributes across selection
   const customFontFamily = editor.getAttributes('textStyle')?.fontFamily;
   if (customFontFamily) return customFontFamily;
-  
+
   if (editor.isActive('paragraph')) {
     return editor.getAttributes('paragraph')?.fontFamily || 'Default';
   }

@@ -25,6 +25,7 @@ import {
 } from '../common/carousel';
 import {
   Button,
+  DropdownMenuItem,
   IconButton,
   LucideIcon,
   TextAreaFieldV2,
@@ -1276,8 +1277,11 @@ const FontRow = ({
   const isActive = editor.isActive('textStyle', { fontFamily: font.value });
   const isLoading = loadingValue === font.value;
   return (
-    <button
+    <DropdownMenuItem
       style={style}
+      // Keep the menu open while the font loads; we close it explicitly once
+      // the font has applied via setToolVisibility below.
+      onSelect={(e) => e.preventDefault()}
       onMouseDown={(e) => e.preventDefault()}
       onClick={async () => {
         setLoadingValue(font.value);
@@ -1306,7 +1310,7 @@ const FontRow = ({
         </p>
       )}
       {isLoading && <span className="ml-auto text-xs opacity-60">…</span>}
-    </button>
+    </DropdownMenuItem>
   );
 };
 
@@ -1337,7 +1341,7 @@ export const EditorFontFamily = ({
       )}
       style={{
         maxHeight: visibleHeight,
-        height: `calc(var(--radix-popover-content-available-height) - 3rem)`,
+        height: `calc(var(--radix-dropdown-menu-content-available-height) - 3rem)`,
         minHeight: '6rem',
       }}
     >

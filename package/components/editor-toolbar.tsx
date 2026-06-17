@@ -1,8 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
-  buildPickerEntries,
   EditorAlignment,
-  EditorFontFamily,
   FontSizePicker,
   getCurrentFontSize,
   LineHeightPicker,
@@ -21,7 +19,6 @@ import {
   IconButton,
   DynamicDropdown,
   LucideIconProps,
-  DynamicDropdownV2,
   Skeleton,
 } from '@fileverse/ui';
 import ToolbarButton from '../common/toolbar-button';
@@ -34,11 +31,11 @@ import {
   IpfsImageUploadResponse,
 } from '../types';
 import { ImportExportButton } from './import-export-button';
-import { getCurrentFontFamily } from '../utils/get-current-font-family';
 import EditorToolbarDropdown from './editor-toolbar-dropdown';
 import { Tab } from './tabs/utils/tab-utils';
 import * as Y from 'yjs';
-import { zoomLevels } from '../constants/zoom';
+import { ZoomLevelDropdown } from './editor-toolbar/zoom-level';
+import { FontFamilyDropdown } from './editor-toolbar/font-family';
 const MemoizedFontSizePicker = React.memo(FontSizePicker);
 const MemoizedLineHeightPicker = React.memo(LineHeightPicker);
 
@@ -150,51 +147,6 @@ const TiptapToolBar = ({
   const isBelow1160px = useMediaQuery('(max-width: 1160px)');
   const isBelow1030px = useMediaQuery('(max-width: 1030px)');
 
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [currentFont, setCurrentFont] = useState('Default');
-  const pickerEntries = useMemo(
-    () => buildPickerEntries(consumerFonts ?? []),
-    [consumerFonts],
-  );
-  const activeFont = useMemo(
-    () => pickerEntries.find((f) => f.value === currentFont),
-    [pickerEntries, currentFont],
-  );
-
-  useEffect(() => {
-    if (!editor) return;
-
-    const update = () => setCurrentFont(getCurrentFontFamily(editor));
-    const handleTransaction = ({
-      transaction,
-    }: {
-      transaction: {
-        selectionSet?: boolean;
-        storedMarksSet?: boolean;
-        docChanged?: boolean;
-      };
-    }) => {
-      // Only refresh when selection or stored marks/doc changed
-      if (
-        transaction.selectionSet ||
-        transaction.storedMarksSet ||
-        transaction.docChanged
-      ) {
-        update();
-      }
-    };
-
-    editor.on('selectionUpdate', update);
-    editor.on('transaction', handleTransaction);
-
-    update();
-
-    return () => {
-      editor.off('selectionUpdate', update);
-      editor.off('transaction', handleTransaction);
-    };
-  }, [editor]);
-
   const renderContent = useCallback(
     (tool: { title: string; icon: LucideIconProps['name'] }) => {
       switch (tool.title) {
@@ -277,11 +229,6 @@ const TiptapToolBar = ({
     isBelow1370px,
     isBelow1560px,
   ]);
-  const handleZoomDropdownClose = useCallback(() => setDropdownOpen(false), []);
-  const handleZoomDropdownToggle = useCallback(() => {
-    setDropdownOpen((prev) => !prev);
-    setFileExportsOpen(false);
-  }, [setFileExportsOpen]);
   const handleNavbarVisibilityToggle = useCallback(
     () => setIsNavbarVisible((prev) => !prev),
     [setIsNavbarVisible],
@@ -304,7 +251,6 @@ const TiptapToolBar = ({
                   setFileExportsOpen={setFileExportsOpen}
                   exportOptions={exportOptions}
                   importOptions={importOptions}
-                  setDropdownOpen={setDropdownOpen}
                   editor={editor}
                   tabs={tabs}
                   ydoc={ydoc}
@@ -360,41 +306,9 @@ const TiptapToolBar = ({
                 'zoom-skeleton-transition',
               )
             : slideUpTransition(
-                <DynamicDropdownV2
-                  key="zoom-levels"
-                  align="start"
-                  sideOffset={8}
-                  controlled={true}
-                  isOpen={dropdownOpen}
-                  onClose={handleZoomDropdownClose}
-                  anchorTrigger={
-                    <button
-                      className="bg-transparent hover:!color-bg-default-hover rounded p-2 h-[30px] flex items-center justify-center gap-2 w-[78px]"
-                      onClick={handleZoomDropdownToggle}
-                    >
-                      <span className="text-body-sm-bold line-clamp-1 w-fit">
-                        {zoomLevels.find((z) => z.value === zoomLevel)?.title ||
-                          '100%'}
-                      </span>
-                      <LucideIcon name="ChevronDown" size="sm" />
-                    </button>
-                  }
-                  content={
-                    <div className="zoom-level-options w-[110px] text-body-sm scroll-smooth color-bg-default px-1 py-2 shadow-elevation-3 transition-all rounded">
-                      {zoomLevels.map((zoom) => (
-                        <button
-                          key={zoom.title}
-                          className="hover:color-bg-default-hover h-8 rounded py-1 px-2 w-full text-left flex items-center space-x-2 text-sm color-text-default transition"
-                          onClick={() => {
-                            setZoomLevel(zoom.value);
-                            setDropdownOpen(false);
-                          }}
-                        >
-                          {zoom.title}
-                        </button>
-                      ))}
-                    </div>
-                  }
+                <ZoomLevelDropdown
+                  zoomLevel={zoomLevel}
+                  setZoomLevel={setZoomLevel}
                 />,
                 'zoom-dropdown-transition',
               )}
@@ -408,37 +322,9 @@ const TiptapToolBar = ({
                 'font-family-skeleton',
               )
             : slideUpTransition(
-                <DynamicDropdown
-                  key={IEditorTool.FONT_FAMILY}
-                  sideOffset={8}
-                  anchorTrigger={
-                    <button
-                      className="bg-transparent hover:!color-bg-default-hover rounded p-2 h-[30px] flex items-center justify-center gap-2 w-[85px]"
-                      onClick={() => setToolVisibility(IEditorTool.FONT_FAMILY)}
-                    >
-                      <span
-                        className="text-body-sm-bold line-clamp-1 break-all"
-                        style={{
-                          fontFamily: activeFont?.value,
-                        }}
-                      >
-                        {activeFont?.title || 'Default'}
-                      </span>
-                      <LucideIcon
-                        name="ChevronDown"
-                        size="sm"
-                        className="min-w-fit"
-                      />
-                    </button>
-                  }
-                  content={
-                    <EditorFontFamily
-                      editor={editor as Editor}
-                      elementRef={toolRef}
-                      setToolVisibility={setToolVisibility}
-                      fonts={consumerFonts}
-                    />
-                  }
+                <FontFamilyDropdown
+                  editor={editor as Editor}
+                  consumerFonts={consumerFonts}
                 />,
                 'font-dropdown-transiton',
               )}
