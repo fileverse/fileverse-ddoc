@@ -102,6 +102,7 @@ import { CustomLink } from './custom-link';
 import { suggestionTrackingPluginKey } from './suggestion/suggestion-tracking-extension';
 import { DdocTableOfContents } from './table-of-contents';
 import SearchAndReplace from './search-replace/search-replace';
+import { SuperscriptSubscriptControls } from './superscript-subscript-controls';
 
 const pendingTocIdRepairs = new WeakSet<Editor>();
 
@@ -482,6 +483,7 @@ export const defaultExtensions = ({
       class: 'subscript',
     },
   }),
+  SuperscriptSubscriptControls,
   LinkPreview.configure({
     metadataProxyUrl: metadataProxyUrl,
   }),
