@@ -668,7 +668,7 @@ const TiptapToolBar = ({
           )}
           <Tooltip text="Enter focus mode">
             <IconButton
-              icon={'Maximize'}
+              icon={'Focus'}
               size="sm"
               variant="ghost"
               onClick={toggleFocusMode}
