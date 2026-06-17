@@ -7,6 +7,13 @@ import {
   PopoverTrigger,
   PopoverContent,
   Popover,
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuSub,
+  DropdownMenuSubTrigger,
+  DropdownMenuSubContent,
+  DropdownMenuItem,
 } from '@fileverse/ui';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { IEditorToolElement, useEditorToolbar } from './editor-utils';
@@ -96,6 +103,104 @@ const ImportExportButton = ({
 
   return (
     <>
+      <DropdownMenu>
+        <Tooltip text="Export/Import" asTriggerChild>
+          <DropdownMenuTrigger asChild>
+            <IconButton
+              icon="File"
+              variant="ghost"
+              size="sm"
+              isActive={fileExportsOpen}
+              className={cn(
+                'color-text-default',
+                fileExportsOpen && 'color-text-on-brand',
+              )}
+              data-testid="export-import-dropdown"
+            />
+          </DropdownMenuTrigger>
+        </Tooltip>
+        <DropdownMenuContent className="w-[13.75rem] gap-1" align="start">
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <div className="flex items-center space-x-2">
+                <LucideIcon name="FileExport" className="w-5 h-5" />
+                <span className="text-body-sm">Export</span>
+              </div>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent sideOffset={10}>
+              {exportOptions
+                .filter((option) => option !== null)
+                .map((option, index) => (
+                  <DropdownMenuItem
+                    key={index}
+                    disabled={option?.disabled}
+                    onClick={() => {
+                      if (option?.disabled) return;
+                      const format = getOptionFormat(option.title);
+                      triggerExport(format || undefined);
+                    }}
+                    className={cn(
+                      'min-h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm',
+                      option?.disabled
+                        ? 'opacity-50 cursor-not-allowed'
+                        : 'hover:color-bg-default-hover',
+                    )}
+                    data-testid={`export-${option?.title?.match(/\(\.(\w+)\)/)?.[1] || option?.title?.toLowerCase().replace(/[^a-z]/g, '-')}`}
+                  >
+                    <div className="flex flex-col">
+                      <span className="text-body-sm">{option?.title}</span>
+                      {option?.subtitle && (
+                        <span className="text-xs leading-tight color-text-secondary">
+                          {option.subtitle}
+                        </span>
+                      )}
+                    </div>
+                    {option?.isNew && (
+                      <p className="max-h-[16px] flex items-center text-[8px] color-bg-brand text-black rounded p-1 font-semibold">
+                        NEW
+                      </p>
+                    )}
+                  </DropdownMenuItem>
+                ))}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger>
+              <div className="flex items-center space-x-2">
+                <LucideIcon name="FileImport" className="w-5 h-5" />
+                <span className="text-body-sm">Import</span>
+              </div>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent sideOffset={10}>
+              {importOptions
+                .filter((option) => option !== null)
+                .map((option, index) => (
+                  <DropdownMenuItem
+                    key={index}
+                    className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
+                    data-testid={`import-${option?.title?.match(/\(\.(\w+)\)/)?.[1] || option?.title?.toLowerCase().replace(/[^a-z]/g, '-')}`}
+                  >
+                    <span className="text-body-sm">{option?.title}</span>
+                    {option?.isNew && (
+                      <p className="max-h-[16px] flex items-center text-[8px] color-bg-brand text-black rounded p-1 font-semibold">
+                        NEW
+                      </p>
+                    )}
+                  </DropdownMenuItem>
+                ))}
+              <DropdownMenuItem>Email</DropdownMenuItem>
+              <DropdownMenuItem>Copy Link</DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          <DropdownMenuItem
+            className="appearance-none bg-transparent hover:color-bg-default-hover h-8 rounded gap-2 p-2 w-full text-left flex items-center justify-start transition text-body-sm"
+            onClick={printHandler}
+          >
+            <LucideIcon name={'Printer'} />
+            Print
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
       <DynamicDropdownV2
         key="Markdown"
         align="start"
