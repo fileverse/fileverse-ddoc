@@ -1863,15 +1863,7 @@ export const TextColor = ({
   );
 };
 
-export const TextHeading = ({
-  editor,
-  setVisibility,
-  elementRef,
-}: {
-  editor: Editor;
-  elementRef: React.RefObject<HTMLDivElement>;
-  setVisibility: Dispatch<SetStateAction<IEditorTool>>;
-}) => {
+export const TextHeading = ({ editor }: { editor: Editor }) => {
   const headings = [
     {
       title: 'Text',
@@ -1915,23 +1907,19 @@ export const TextHeading = ({
 
   return (
     <div
-      ref={elementRef}
       className={cn(
         'z-50 flex w-48 flex-col overflow-hidden rounded color-bg-default p-1 shadow-elevation-1',
       )}
     >
       {headings.map((heading) => (
-        <button
+        <DropdownMenuItem
           onMouseDown={(e) => e.preventDefault()}
-          onClick={() => {
-            heading.command(editor);
-            setVisibility(IEditorTool.NONE);
-          }}
+          onClick={() => heading.command(editor)}
           key={heading.title}
           className={cn(
             'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm color-text-default transition',
             {
-              ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
+              ['color-bg-brand xl:hover:brightness-90 color-text-on-brand data-[highlighted]:!color-bg-brand']:
                 heading.isActive(),
               ['hover:color-bg-default-hover']: !heading.isActive(),
             },
@@ -1944,7 +1932,7 @@ export const TextHeading = ({
             <p className="font-medium">{heading.title}</p>
             <p className="text-xs text-stone-500"> {heading.description} </p>
           </div>
-        </button>
+        </DropdownMenuItem>
       ))}
     </div>
   );
