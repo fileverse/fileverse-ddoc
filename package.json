@@ -130,7 +130,7 @@
     "@dnd-kit/utilities": ">=3.2.2",
     "@fileverse/crypto": ">=0.0.21",
     "@fileverse/ens": "0.0.3",
-    "@fileverse/ui": "5.1.8-dropdownmenu-2",
+    "@fileverse/ui": "5.1.8-dropdownmenu-4",
     "framer-motion": ">=11.2.10",
     "frimousse": ">=0.3.0",
     "mermaid": "11.14.0",
