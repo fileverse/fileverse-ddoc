@@ -851,8 +851,13 @@ const MarkdownPasteHandler = (
           },
         }),
         new InputRule({
-          find: /(\S*)\^([^\s^]+)\^/,
+          // Matches `^...^` allowing multiple digits and words (spaces) between
+          // the carets; the closing caret commits the superscript.
+          find: /(\S*)\^((?:[^^]|\\\^)+)\^$/,
           handler: ({ state, range, match }) => {
+            if (/^\s|\s$/.test(match[2])) {
+              return null;
+            }
             const { tr } = state;
             const start = range.from + match[1].length;
             const end = range.to;
