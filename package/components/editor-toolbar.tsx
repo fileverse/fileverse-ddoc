@@ -2,7 +2,14 @@ import React, { useCallback, useMemo } from 'react';
 import { useEditorToolbar } from './editor-utils';
 import { Editor } from '@tiptap/react';
 import { useEditorStates } from '../hooks/use-editor-states';
-import { Tooltip, IconButton, DynamicDropdown, Skeleton } from '@fileverse/ui';
+import {
+  Tooltip,
+  IconButton,
+  Skeleton,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from '@fileverse/ui';
 import ToolbarButton from '../common/toolbar-button';
 import { useMediaQuery } from 'usehooks-ts';
 import { AnimatePresence } from 'framer-motion';
@@ -317,21 +324,16 @@ const TiptapToolBar = ({
 
                 return !isLoading
                   ? slideUpTransition(
-                      <DynamicDropdown
-                        key="more-dropdown"
-                        align="end"
-                        sideOffset={8}
-                        anchorTrigger={
-                          <Tooltip text="More">
-                            <IconButton
-                              id="more-dropdown"
-                              icon="Ellipsis"
-                              variant="ghost"
-                              size="sm"
-                            />
-                          </Tooltip>
-                        }
-                        content={
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <IconButton
+                            id="more-dropdown"
+                            icon="Ellipsis"
+                            variant="ghost"
+                            size="sm"
+                          />
+                        </PopoverTrigger>
+                        <PopoverContent>
                           <div className="flex p-1 gap-1">
                             {toolbar
                               .filter(
@@ -400,8 +402,8 @@ const TiptapToolBar = ({
                                 );
                               })}
                           </div>
-                        }
-                      />,
+                        </PopoverContent>
+                      </Popover>,
                       tool.title,
                     )
                   : fadeInTransition(

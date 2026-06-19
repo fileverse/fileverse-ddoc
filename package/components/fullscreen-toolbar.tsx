@@ -76,6 +76,7 @@ export const FullScreenToolbar = ({
             : 'Show tabs and outlines sidebar'
         }
         position={'bottom'}
+        asTriggerChild
       >
         <IconButton
           icon={'List'}
