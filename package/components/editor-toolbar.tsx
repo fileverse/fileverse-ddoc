@@ -169,7 +169,17 @@ const TiptapToolBar = ({
 
   return (
     <AnimatePresence mode="wait">
-      <div className="w-full bg-transparent py-2 px-4 items-center h-9 flex justify-between relative">
+      <div
+        onKeyDown={(e) => {
+          // Escape from anywhere in the toolbar returns focus to the editor,
+          // letting keyboard users leave the toolbar's tabbing order.
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            editor.commands.focus();
+          }
+        }}
+        className="w-full bg-transparent py-2 px-4 items-center h-9 flex justify-between relative"
+      >
         <div className="flex h-9 items-center gap-1 justify-center">
           {/* Export/Import Dropdown */}
 

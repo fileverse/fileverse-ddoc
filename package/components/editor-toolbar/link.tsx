@@ -30,7 +30,16 @@ export const LinkPopover = ({
           disabled={tool.disabled}
         />
       </PopoverTrigger>
-      <PopoverContent className="p-0 b-0 w-auto" sideOffset={8}>
+      <PopoverContent
+        className="p-0 b-0 w-auto"
+        sideOffset={8}
+        onCloseAutoFocus={(e) => {
+          // Closing the link form (Enter, Escape, Apply, or outside-click)
+          // returns focus to the editor instead of the trigger button.
+          e.preventDefault();
+          editor.commands.focus();
+        }}
+      >
         <LinkPopup
           editor={editor}
           elementRef={contentRef}
