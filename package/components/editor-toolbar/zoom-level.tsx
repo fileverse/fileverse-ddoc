@@ -30,7 +30,7 @@ export const ZoomLevelDropdown = ({
         {zoomLevels.map((zoom) => (
           <DropdownMenuItem
             key={zoom.title}
-            className="hover:color-bg-default-hover h-8 rounded py-1 px-2 w-full text-left flex items-center space-x-2 text-sm color-text-default transition"
+            className="h-8 rounded py-1 px-2 w-full text-left space-x-2 text-sm color-text-default transition"
             onClick={() => {
               setZoomLevel(zoom.value);
             }}

@@ -1298,10 +1298,10 @@ const FontRow = ({
         }
       }}
       className={cn(
-        'flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm color-text-default transition',
+        'w-full gap-2 text-left',
         isActive
-          ? 'color-bg-brand xl:hover:brightness-90 color-text-on-brand'
-          : 'hover:color-bg-default-hover',
+          ? 'color-bg-brand xl:hover:brightness-90 color-text-on-brand data-[highlighted]:!color-bg-brand'
+          : '',
       )}
     >
       {font.preview ?? (
@@ -1916,14 +1916,7 @@ export const TextHeading = ({ editor }: { editor: Editor }) => {
           onMouseDown={(e) => e.preventDefault()}
           onClick={() => heading.command(editor)}
           key={heading.title}
-          className={cn(
-            'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm color-text-default transition',
-            {
-              ['color-bg-brand xl:hover:brightness-90 color-text-on-brand data-[highlighted]:!color-bg-brand']:
-                heading.isActive(),
-              ['hover:color-bg-default-hover']: !heading.isActive(),
-            },
-          )}
+          className={cn('gap-2', heading.isActive() && 'color-bg-brand')}
         >
           <div className="flex h-10 w-10 items-center justify-center rounded color-bg-default color-text-default">
             <LucideIcon name={heading.icon} size="md" />
