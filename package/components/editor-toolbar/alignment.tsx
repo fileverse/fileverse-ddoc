@@ -30,9 +30,8 @@ const AlignmentPicker = ({ editor }: { editor: Editor }) => {
           }}
           className={cn(
             'rounded w-8 h-8 p-1 flex justify-center items-center cursor-pointer transition',
-            editor.isActive({ textAlign: alignment.value })
-              ? 'color-bg-brand xl:hover:brightness-90 color-text-on-brand'
-              : 'hover:color-bg-default-hover data-[highlighted]:color-bg-default-hover',
+            editor.isActive({ textAlign: alignment.value }) &&
+              '!bg-[hsl(var(--color-bg-brand))]',
           )}
         >
           <LucideIcon name={alignment.icon} />

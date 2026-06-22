@@ -28,10 +28,8 @@ const LineHeightPicker = ({
           className={cn(
             'flex w-full items-center gap-2 rounded px-2 py-1 text-sm color-text-default transition min-w-[120px]',
             {
-              ['color-bg-default-hover']:
+              ['!bg-[hsl(var(--color-bg-brand))]']:
                 currentLineHeight === lineHeight.value,
-              ['hover:color-bg-default-hover']:
-                currentLineHeight !== lineHeight.value,
             },
           )}
         >

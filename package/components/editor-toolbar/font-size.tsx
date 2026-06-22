@@ -30,9 +30,8 @@ const FontSizePicker = ({
           className={cn(
             'flex w-full items-center justify-center rounded px-2 py-1 text-center text-sm color-text-default transition',
             {
-              ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
+              ['!bg-[hsl(var(--color-bg-brand))] color-text-on-brand']:
                 currentSize === fontSize.value,
-              ['hover:color-bg-default-hover']: currentSize !== fontSize.value,
             },
           )}
         >
