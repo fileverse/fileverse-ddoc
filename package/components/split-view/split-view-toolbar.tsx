@@ -16,8 +16,6 @@ import { IpfsImageUploadResponse } from '../../types';
 interface SplitViewToolbarProps {
   /** The CodeMirror view of the markdown pane (null until it mounts). */
   view: EditorView | null;
-  /** Exit Split View (back to the normal editor). */
-  onExit?: () => void;
   /** Same uploader the editor uses — for the Image button. */
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   onError?: (error: string) => void;
@@ -132,7 +130,6 @@ const Divider = () => <div className="w-[1px] h-4 vertical-divider mx-1" />;
 
 export default function SplitViewToolbar({
   view,
-  onExit,
   ipfsImageUploadFn,
   onError,
 }: SplitViewToolbarProps) {
@@ -252,21 +249,6 @@ export default function SplitViewToolbar({
           OVERFLOW_GROUPS.map((group) => renderGroup(group, true))
         )}
       </div>
-
-      {onExit && (
-        <div className="flex items-center pl-1 shrink-0">
-          <Divider />
-          <Tooltip text="Back to editor">
-            <IconButton
-              variant="ghost"
-              size="sm"
-              className={BTN_CLASS}
-              icon="PenLine"
-              onClick={onExit}
-            />
-          </Tooltip>
-        </div>
-      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { Editor } from '@tiptap/react';
-import { IconButton } from '@fileverse/ui';
+import { Divider, IconButton, Tooltip } from '@fileverse/ui';
 
 interface SplitViewRightHeaderProps {
   editor: Editor;
@@ -7,6 +7,9 @@ interface SplitViewRightHeaderProps {
   showTabsPanel: boolean;
   /** Toggle the Document-tabs overlay panel (the List button). */
   onToggleTabsPanel: () => void;
+
+  /** Exit Split View (back to the normal editor). */
+  onExitSplitView?: () => void;
 }
 
 const getDocTitle = (editor: Editor) =>
@@ -28,6 +31,7 @@ const triggerDownload = (url: string, filename: string) => {
  */
 export const SplitViewRightHeader = ({
   editor,
+  onExitSplitView,
   showTabsPanel,
   onToggleTabsPanel,
 }: SplitViewRightHeaderProps) => {
@@ -81,6 +85,17 @@ export const SplitViewRightHeader = ({
           title="Download HTML"
           onClick={handleDownloadHtml}
         />
+        <div className="flex items-center pl-1 shrink-0">
+          <Divider className="mr-1" direction="vertical" />
+          <Tooltip text="Back to editor" asTriggerChild>
+            <IconButton
+              variant="ghost"
+              size="sm"
+              icon="PenLine"
+              onClick={onExitSplitView}
+            />
+          </Tooltip>
+        </div>
       </div>
     </div>
   );
