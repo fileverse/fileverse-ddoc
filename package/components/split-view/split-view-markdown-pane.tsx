@@ -10,8 +10,6 @@ const SplitViewToolbar = lazy(() => import('./split-view-toolbar'));
 interface SplitViewMarkdownPaneProps {
   markdown: string;
   onMarkdownChange: (value: string) => void;
-  /** Exit Split View (back to the normal editor). */
-  onExitSplitView?: () => void;
   /** Same uploader the editor uses — for the markdown toolbar's Image button. */
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   onError?: (error: string) => void;
@@ -28,7 +26,6 @@ interface SplitViewMarkdownPaneProps {
 export const SplitViewMarkdownPane = ({
   markdown,
   onMarkdownChange,
-  onExitSplitView,
   ipfsImageUploadFn,
   onError,
   style,
@@ -47,7 +44,6 @@ export const SplitViewMarkdownPane = ({
       <Suspense fallback={null}>
         <SplitViewToolbar
           view={mdView}
-          onExit={onExitSplitView}
           ipfsImageUploadFn={ipfsImageUploadFn}
           onError={onError}
         />

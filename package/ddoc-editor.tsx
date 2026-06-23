@@ -1446,7 +1446,6 @@ const DdocEditor = forwardRef(
                   <SplitViewMarkdownPane
                     markdown={splitViewMarkdown}
                     onMarkdownChange={onSplitViewMarkdownChange}
-                    onExitSplitView={() => setIsSplitView?.(false)}
                     ipfsImageUploadFn={ipfsImageUploadFn}
                     onError={onError}
                     style={{ flexGrow: splitRatio }}
@@ -1482,6 +1481,7 @@ const DdocEditor = forwardRef(
                   {editor && isSplitViewActive && (
                     <SplitViewRightHeader
                       editor={editor}
+                      onExitSplitView={() => setIsSplitView?.(false)}
                       showTabsPanel={showSplitTabsPanel}
                       onToggleTabsPanel={() =>
                         setShowSplitTabsPanel((open) => !open)
