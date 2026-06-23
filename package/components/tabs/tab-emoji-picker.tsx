@@ -15,7 +15,6 @@ import {
   type EmojiPickerListRowProps,
   EmojiPicker as EmojiPickerPrimitive,
 } from 'frimousse';
-import { LoaderIcon, SearchIcon } from 'lucide-react';
 
 export const TabEmojiPicker = ({
   emoji,
@@ -231,7 +230,7 @@ export function EmojiPickerSearch({
       className={cn('flex h-9 items-center gap-2 border-b px-3', className)}
       data-slot="emoji-picker-search-wrapper"
     >
-      <SearchIcon className="size-4 shrink-0 opacity-50" />
+      <LucideIcon name={'Search'} className="size-4 shrink-0 opacity-50" />
       <EmojiPickerPrimitive.Search
         className="outline-hidden placeholder:text-muted-foreground flex h-10 w-full rounded-md bg-transparent py-3 text-sm disabled:cursor-not-allowed disabled:opacity-50 focus:outline-none focus:ring-0"
         data-slot="emoji-picker-search"
@@ -300,7 +299,7 @@ export function EmojiPickerContent({
         className="absolute inset-0 flex items-center justify-center text-muted-foreground"
         data-slot="emoji-picker-loading"
       >
-        <LoaderIcon className="size-4 animate-spin" />
+        <LucideIcon name={'Circle'} className="size-4 animate-spin" />
       </EmojiPickerPrimitive.Loading>
       <EmojiPickerPrimitive.Empty
         className="absolute inset-0 flex items-center justify-center text-muted-foreground text-sm"

@@ -16,7 +16,17 @@ const ToolbarButton = forwardRef<
   }
 >(
   (
-    { icon, isActive, onClick, tooltip, classNames, disabled, size, variant },
+    {
+      icon,
+      isActive,
+      onClick,
+      tooltip,
+      classNames,
+      disabled,
+      size,
+      variant,
+      ...props
+    },
     ref,
   ) => {
     const handleMouseDown = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -25,13 +35,14 @@ const ToolbarButton = forwardRef<
 
     if (tooltip)
       return (
-        <Tooltip text={tooltip}>
+        <Tooltip text={tooltip} asTriggerChild>
           <IconButton
             // @ts-ignore
             ref={ref}
             variant={variant}
             size={size || 'md'}
             icon={icon}
+            {...props}
             onClick={onClick}
             onMouseDown={handleMouseDown}
             isActive={isActive}
@@ -48,6 +59,7 @@ const ToolbarButton = forwardRef<
         variant="ghost"
         size={size || 'md'}
         icon={icon}
+        {...props}
         onClick={onClick}
         onMouseDown={handleMouseDown}
         isActive={isActive}

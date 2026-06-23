@@ -217,6 +217,7 @@ export const TabSidebar = ({
                   showTOC ? 'Hide tabs and outlines' : 'Show tabs and outlines'
                 }
                 position="right"
+                asTriggerChild
               >
                 <button
                   data-testid="tab-sidebar-toggle"

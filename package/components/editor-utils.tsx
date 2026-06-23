@@ -25,6 +25,7 @@ import {
 } from '../common/carousel';
 import {
   Button,
+  DropdownMenuItem,
   IconButton,
   LucideIcon,
   TextAreaFieldV2,
@@ -1276,8 +1277,11 @@ const FontRow = ({
   const isActive = editor.isActive('textStyle', { fontFamily: font.value });
   const isLoading = loadingValue === font.value;
   return (
-    <button
+    <DropdownMenuItem
       style={style}
+      // Keep the menu open while the font loads; we close it explicitly once
+      // the font has applied via setToolVisibility below.
+      onSelect={(e) => e.preventDefault()}
       onMouseDown={(e) => e.preventDefault()}
       onClick={async () => {
         setLoadingValue(font.value);
@@ -1294,10 +1298,8 @@ const FontRow = ({
         }
       }}
       className={cn(
-        'flex w-full items-center gap-2 rounded px-2 py-1 text-left text-sm color-text-default transition',
-        isActive
-          ? 'color-bg-brand xl:hover:brightness-90 color-text-on-brand'
-          : 'hover:color-bg-default-hover',
+        'w-full gap-2 text-left',
+        isActive && '!bg-[hsl(var(--color-bg-brand))] color-text-on-brand',
       )}
     >
       {font.preview ?? (
@@ -1306,7 +1308,7 @@ const FontRow = ({
         </p>
       )}
       {isLoading && <span className="ml-auto text-xs opacity-60">…</span>}
-    </button>
+    </DropdownMenuItem>
   );
 };
 
@@ -1337,7 +1339,7 @@ export const EditorFontFamily = ({
       )}
       style={{
         maxHeight: visibleHeight,
-        height: `calc(var(--radix-popover-content-available-height) - 3rem)`,
+        height: `calc(var(--radix-dropdown-menu-content-available-height) - 3rem)`,
         minHeight: '6rem',
       }}
     >
@@ -1859,15 +1861,7 @@ export const TextColor = ({
   );
 };
 
-export const TextHeading = ({
-  editor,
-  setVisibility,
-  elementRef,
-}: {
-  editor: Editor;
-  elementRef: React.RefObject<HTMLDivElement>;
-  setVisibility: Dispatch<SetStateAction<IEditorTool>>;
-}) => {
+export const TextHeading = ({ editor }: { editor: Editor }) => {
   const headings = [
     {
       title: 'Text',
@@ -1911,26 +1905,18 @@ export const TextHeading = ({
 
   return (
     <div
-      ref={elementRef}
       className={cn(
         'z-50 flex w-48 flex-col overflow-hidden rounded color-bg-default p-1 shadow-elevation-1',
       )}
     >
       {headings.map((heading) => (
-        <button
+        <DropdownMenuItem
           onMouseDown={(e) => e.preventDefault()}
-          onClick={() => {
-            heading.command(editor);
-            setVisibility(IEditorTool.NONE);
-          }}
+          onClick={() => heading.command(editor)}
           key={heading.title}
           className={cn(
-            'flex w-full items-center space-x-2 rounded-md px-2 py-1 text-left text-sm color-text-default transition',
-            {
-              ['color-bg-brand xl:hover:brightness-90 color-text-on-brand']:
-                heading.isActive(),
-              ['hover:color-bg-default-hover']: !heading.isActive(),
-            },
+            'gap-2',
+            heading.isActive() && '!bg-[hsl(var(--color-bg-brand))]',
           )}
         >
           <div className="flex h-10 w-10 items-center justify-center rounded color-bg-default color-text-default">
@@ -1940,7 +1926,7 @@ export const TextHeading = ({
             <p className="font-medium">{heading.title}</p>
             <p className="text-xs text-stone-500"> {heading.description} </p>
           </div>
-        </button>
+        </DropdownMenuItem>
       ))}
     </div>
   );
