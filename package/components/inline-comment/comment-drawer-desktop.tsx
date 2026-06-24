@@ -89,10 +89,7 @@ export const CommentDrawerDesktop = ({
     title="Comments"
     content={
       <div
-        className={cn(
-          'pt-4',
-          !isConnected && isPreviewMode && 'flex items-center h-[77dvh]',
-        )}
+        className={cn('pt-4', !isConnected && 'flex items-center h-[77dvh]')}
       >
         {(isConnected || isCollaborationEnabled) && (
           <div className="flex mb-[16px] px-4 gap-[8px]">
