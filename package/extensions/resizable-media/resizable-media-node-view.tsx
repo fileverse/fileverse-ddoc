@@ -422,7 +422,15 @@ export const getResizableMediaNodeView =
               isImageType && selected
                 ? 'border-[#5c0aff]'
                 : 'border-transparent',
+              // Round the backdrop to match the media's own rounded-lg so the
+              // background doesn't poke out behind a transparent image's corners.
+              node.attrs.backgroundColor && 'rounded-lg',
             )}
+            style={
+              node.attrs.backgroundColor
+                ? { backgroundColor: node.attrs.backgroundColor }
+                : undefined
+            }
             onClick={() => {
               if (isPreviewMode) return;
               const pos = getPos();
