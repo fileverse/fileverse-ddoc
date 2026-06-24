@@ -7,6 +7,13 @@ import UploadImagesPlugin from '../../utils/upload-images';
 import { InlineLoaderPlugin } from '../../utils/inline-loader';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../../types';
 
+// Background color of a media element, from an inline style or the
+// data-background-color round-trip attribute (whichever is present).
+const readBackgroundColor = (el: HTMLElement | null): string | null =>
+  el?.style?.backgroundColor ||
+  el?.getAttribute('data-background-color') ||
+  null;
+
 declare module '@tiptap/core' {
   interface Commands<ReturnType> {
     resizableMedia: {
@@ -104,6 +111,24 @@ export const ResizableMedia = Node.create<MediaOptions>({
       dataFloat: {
         default: null, // 'left' | 'right'
       },
+      // Backdrop behind the media — lets a transparent PNG stay visible on
+      // dark/colored themes. Read from an inline `background-color` (so it can
+      // be hand-authored in the Split View markdown) or `data-background-color`
+      // (how it round-trips), and re-emitted as both on render.
+      backgroundColor: {
+        default: null,
+        parseHTML: (element: HTMLElement) =>
+          element.style?.backgroundColor ||
+          element.getAttribute('data-background-color') ||
+          null,
+        renderHTML: (attributes: { backgroundColor?: string | null }) =>
+          attributes.backgroundColor
+            ? {
+                'data-background-color': attributes.backgroundColor,
+                style: `background-color: ${attributes.backgroundColor}`,
+              }
+            : {},
+      },
       ipfsHash: { default: null },
       mimeType: { default: null },
       encryptionKey: { default: null },
@@ -138,6 +163,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
             return {
               src: img.getAttribute('src'),
               'media-type': 'img',
+              backgroundColor: readBackgroundColor(img),
             };
           }
           if (video) {
@@ -154,6 +180,7 @@ export const ResizableMedia = Node.create<MediaOptions>({
         getAttrs: (el) => ({
           src: (el as HTMLImageElement).getAttribute('src'),
           'media-type': 'img',
+          backgroundColor: readBackgroundColor(el as HTMLElement),
         }),
       },
       {

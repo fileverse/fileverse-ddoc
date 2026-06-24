@@ -42,6 +42,23 @@
   display: block !important;
 }
 
+/* The scroll container nests the lane under a couple of generic flex / h-full
+   wrappers (between [data-editor-scroll-container] and .editor-main-lane) that
+   shrink-wrap to their content. That collapses the whole column to text width,
+   leaving block text-align (right / center) nothing to act on — aligned blocks
+   render at content width instead of across the pane. Make the scroll container
+   a plain block and force its wrapper chain to fill the pane so alignment has
+   room to render. */
+[data-split-view-preview] [data-editor-scroll-container] {
+  display: block !important;
+}
+[data-split-view-preview] [data-editor-scroll-container] > div,
+[data-split-view-preview] [data-editor-scroll-container] > div > div {
+  width: 100% !important;
+  max-width: 100% !important;
+  min-width: 0 !important;
+}
+
 /* Override shrink-0 so the content column grows to the pane width. */
 [data-split-view-preview] .editor-comment-layout {
   flex: 1 1 auto !important;
