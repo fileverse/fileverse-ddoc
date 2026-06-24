@@ -166,6 +166,7 @@ const ImportExportButton = ({
                     key={index}
                     className="hover:color-bg-default-hover h-8 rounded p-2 w-full text-left flex items-center justify-between transition text-body-sm"
                     data-testid={`import-${option?.title?.match(/\(\.(\w+)\)/)?.[1] || option?.title?.toLowerCase().replace(/[^a-z]/g, '-')}`}
+                    onClick={() => option.onClick()}
                   >
                     <span className="text-body-sm">{option?.title}</span>
                     {option?.isNew && (
