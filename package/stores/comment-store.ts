@@ -307,6 +307,23 @@ type ReconcileFloatingThreadsForActiveTabOptions = {
   hydrationReady: boolean;
 };
 
+// Add suggestions are point-anchored and have no selectedContent, but they
+// still need a thread card once submitted.
+const isOpenableThreadComment = (
+  comment: IComment | null | undefined,
+): comment is IComment & { id: string } =>
+  Boolean(
+    comment?.id &&
+      !comment.deleted &&
+      !comment.resolved &&
+      (comment.isSuggestion || Boolean(comment.selectedContent)),
+  );
+
+const findOpenableThreadComment = (comments: IComment[], commentId: string) =>
+  comments.find(
+    (comment) => comment.id === commentId && isOpenableThreadComment(comment),
+  ) ?? null;
+
 // Marks editor transactions that came from an explicit thread jump in the UI
 // (drawer, sidebar, or similar) rather than passive cursor movement. The
 // provider reads this so the clicked thread can take ownership immediately,
@@ -1765,18 +1782,12 @@ export const createCommentStore = () =>
     openFloatingThread: (commentId) => {
       const { editor, setActiveCommentId } = getExtDeps(get);
       const state = get();
-      const commentToOpen = state.tabComments.find(
-        (comment) =>
-          comment.id === commentId && !comment.deleted && !comment.resolved,
+      const commentToOpen = findOpenableThreadComment(
+        state.tabComments,
+        commentId,
       );
 
       if (!editor || !commentToOpen) {
-        return;
-      }
-
-      // Add suggestions have empty selectedContent (point anchor), so the old
-      // `!commentToOpen.selectedContent` guard would incorrectly bail out here.
-      if (!commentToOpen.isSuggestion && !commentToOpen.selectedContent) {
         return;
       }
 

@@ -54,6 +54,9 @@ export interface SuggestionTrackingOptions {
   /** Viewer pastes a link over selected text. */
   onPasteLink: (from: number, to: number, href: string) => void;
 
+  /** Viewer attempted an unsupported paste/drop in suggestion mode. */
+  onUnsupportedPaste?: () => void;
+
   /**
    * Viewer presses Backspace/Delete with a collapsed cursor.
    * The consumer decides whether this should shrink an active draft or create
@@ -186,6 +189,58 @@ function normalizePastedHref(text: string): string | null {
     : `https://${href}`;
 }
 
+function hasClipboardFile(dataTransfer: DataTransfer): boolean {
+  if (dataTransfer.files?.length) {
+    return true;
+  }
+
+  return Array.from(dataTransfer.items ?? []).some(
+    (item) => item.kind === 'file',
+  );
+}
+
+function getSingleLinePlainText(
+  dataTransfer: DataTransfer | null | undefined,
+): string | null {
+  // Suggestion paste v1 intentionally accepts only plain, single-line text.
+  // Files, multiline text, and rich clipboard payloads stay blocked so the
+  // immutable suggestion-mode document cannot be changed through PM fallback.
+  if (!dataTransfer || hasClipboardFile(dataTransfer)) {
+    return null;
+  }
+
+  const text = dataTransfer.getData('text/plain');
+
+  if (!text || text.trim().length === 0 || /[\r\n]/.test(text)) {
+    return null;
+  }
+
+  return text;
+}
+
+function routePlainTextPaste(
+  opts: SuggestionTrackingOptions,
+  from: number,
+  to: number,
+  text: string,
+) {
+  // Preserve the existing selected-text + URL gesture as a link suggestion;
+  // all other accepted plain text becomes add/replace suggestion content.
+  const pastedHref = normalizePastedHref(text);
+
+  if (from < to && pastedHref) {
+    opts.onPasteLink(from, to, pastedHref);
+    return;
+  }
+
+  if (from < to) {
+    opts.onReplaceTyping(from, to, text);
+    return;
+  }
+
+  opts.onTextInput(text);
+}
+
 // ---------------------------------------------------------------------------
 // Extension
 // ---------------------------------------------------------------------------
@@ -202,6 +257,7 @@ export const SuggestionTrackingExtension =
         onReplaceTyping: () => {},
         onDeleteSelection: () => {},
         onPasteLink: () => {},
+        onUnsupportedPaste: () => {},
         onDeleteAtCursor: () => {},
         onDeleteRangeWithoutSelection: () => {},
         onUndo: () => {},
@@ -383,28 +439,31 @@ export const SuggestionTrackingExtension =
             },
 
             // ----- Paste / Drop ---------------------------------------------
-            // In suggestion mode, regular paste is blocked so the document
-            // stays immutable. The one allowed paste gesture is select text +
-            // paste a URL, which creates a link suggestion over that range.
+            // In suggestion mode, plain single-line text paste is captured as
+            // a suggestion draft. The document still stays immutable.
             handlePaste(view, event) {
               const opts = getOptions();
               if (!opts.getIsSuggestionMode()) return false;
 
               event.preventDefault();
               const { from, to } = view.state.selection;
-              const pastedHref = normalizePastedHref(
-                event.clipboardData?.getData('text/plain') ?? '',
-              );
+              const pastedText = getSingleLinePlainText(event.clipboardData);
 
-              if (from < to && pastedHref) {
-                opts.onPasteLink(from, to, pastedHref);
-                return true;
+              if (pastedText) {
+                routePlainTextPaste(opts, from, to, pastedText);
+              } else {
+                opts.onUnsupportedPaste?.();
               }
 
               return true;
             },
-            handleDrop() {
-              return getOptions().getIsSuggestionMode();
+            handleDrop(_view, event) {
+              const opts = getOptions();
+              if (!opts.getIsSuggestionMode()) return false;
+
+              event.preventDefault();
+              opts.onUnsupportedPaste?.();
+              return true;
             },
 
             // ----- DOM beforeinput — catches deletion paths that bypass
@@ -496,25 +555,37 @@ export const SuggestionTrackingExtension =
                   return true;
                 }
 
-                // Paste / drop routes through beforeinput too on some browsers
+                // Paste routes through beforeinput too on some browsers.
+                if (inputType === 'insertFromPaste') {
+                  event.preventDefault();
+                  const pastedText = getSingleLinePlainText(
+                    (
+                      event as InputEvent & {
+                        dataTransfer?: DataTransfer | null;
+                      }
+                    ).dataTransfer,
+                  );
+                  const { from, to } = view.state.selection;
+                  if (pastedText) {
+                    routePlainTextPaste(
+                      opts,
+                      targetRange && hasTargetRange ? targetRange.from : from,
+                      targetRange && hasTargetRange ? targetRange.to : to,
+                      pastedText,
+                    );
+                  } else {
+                    opts.onUnsupportedPaste?.();
+                  }
+                  return true;
+                }
+
                 if (
-                  inputType === 'insertFromPaste' ||
                   inputType === 'insertFromPasteAsQuotation' ||
                   inputType === 'insertFromDrop' ||
                   inputType === 'insertReplacementText'
                 ) {
                   event.preventDefault();
-                  const pastedHref = normalizePastedHref(
-                    (
-                      event as InputEvent & {
-                        dataTransfer?: DataTransfer | null;
-                      }
-                    ).dataTransfer?.getData('text/plain') ?? '',
-                  );
-                  const { from, to } = view.state.selection;
-                  if (from < to && pastedHref) {
-                    opts.onPasteLink(from, to, pastedHref);
-                  }
+                  opts.onUnsupportedPaste?.();
                   return true;
                 }
 

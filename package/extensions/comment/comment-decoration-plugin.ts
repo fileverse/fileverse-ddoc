@@ -629,13 +629,13 @@ function buildDecorations(
         );
       }
 
-      // Replace: widget showing the proposed content after the struck-through range.
+      // Replace: widget showing the proposed content before the struck-through range.
       // Key includes the content so PM redraws when the draft's suggestedContent
       // changes (typing / backspace during a Replace draft).
       if (suggestionType === 'replace' && suggestedContent) {
         decorations.push(
           Decoration.widget(
-            range.to,
+            range.from,
             createSuggestionWidget(suggestedContent, anchor.id, isActive),
             {
               commentId: anchor.id,
