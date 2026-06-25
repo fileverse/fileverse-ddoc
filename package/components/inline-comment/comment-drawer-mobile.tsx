@@ -109,6 +109,7 @@ export const CommentDrawerMobile = ({
       <MobileInlineComment
         activeDraft={activeDraft}
         activeDraftId={activeDraftId}
+        isConnected={isConnected}
         isDiscardCommentOverlayVisible={isDiscardCommentOverlayVisible}
         mobileDraftRef={mobileDraftRef}
         onAttemptClose={onAttemptCloseNewComment}
