@@ -1043,45 +1043,6 @@ export const useEditorToolbar = ({
   };
 
   const bottomToolbar: Array<IEditorToolElement | null> = [
-    // {
-    //   icon: 'FileExport',
-    //   title: 'PDF document (.pdf)',
-    //   onClick: () => {
-    //     if (editor) {
-    //       const closeAndPrint = async () => {
-    //         const { showLoader, removeLoader } = inlineLoader(
-    //           editor,
-    //           'Exporting PDF file ...',
-    //         );
-
-    //         const loader = showLoader();
-    //         const originalDoc = editor.state.doc;
-    //         const docWithEmbedImageContent =
-    //           await searchForSecureImageNodeAndEmbedImageContent(
-    //             originalDoc,
-    //             ipfsImageFetchFn,
-    //             fetchV1ImageFn,
-    //             true,
-    //           );
-
-    //         const temporalEditor = getTemporaryEditor(
-    //           editor,
-    //           docWithEmbedImageContent.toJSON(),
-    //         );
-
-    //         const rawHtml = temporalEditor.getHTML();
-    //         const inlineHtml = await renderMermaidBlocks(rawHtml);
-    //         handleContentPrint(inlineHtml);
-    //         removeLoader(loader);
-    //         temporalEditor.destroy();
-    //       };
-    //       setFileExportsOpen(false);
-    //       setTimeout(closeAndPrint, 200);
-    //       onPdfExport?.();
-    //     }
-    //   },
-    //   isActive: false,
-    // },
     {
       icon: 'Undo',
       title: 'Undo',
