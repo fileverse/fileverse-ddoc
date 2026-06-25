@@ -7,6 +7,7 @@ import verifiedMark from '../../assets/ens-check.svg';
 import { dateFormatter, nameFormatter } from '../../utils/helpers';
 import type { SuggestionFloatingDraftCard } from './context/types';
 import { SuggestionDiffSummary } from './suggestion-diff-summary';
+import { useSuggestionAutoSubmitCountdown } from './use-suggestion-auto-submit-countdown';
 
 interface MobileSuggestionDraftProps {
   activeSuggestionDraftCard: SuggestionFloatingDraftCard;
@@ -37,6 +38,12 @@ export const MobileSuggestionDraft = ({
   const hasSuggestionLink = Boolean(activeSuggestionDraftCard.linkHref);
   const canSubmitSuggestion =
     hasSuggestionOriginal || hasSuggestionInserted || hasSuggestionLink;
+  const { submitLabel } = useSuggestionAutoSubmitCountdown({
+    suggestionId: activeSuggestionDraftCard.suggestionId,
+    canAutoSubmit:
+      isConnected && canSubmitSuggestion && !isDiscardSuggestionOverlayVisible,
+    onSubmit,
+  });
   const suggestionType = hasSuggestionLink
     ? 'link'
     : hasSuggestionOriginal
@@ -128,7 +135,7 @@ export const MobileSuggestionDraft = ({
               onClick={onSubmit}
               className="!min-w-[80px]"
             >
-              Submit
+              {submitLabel}
             </Button>
           </div>
         </div>

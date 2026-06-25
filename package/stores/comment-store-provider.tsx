@@ -578,6 +578,7 @@ export const CommentStoreProvider = ({
     // floating thread without waiting for a separate UI interaction.
     const updateEditorState = (transaction?: Transaction) => {
       const state = store.getState();
+      state.syncActiveSuggestionDraftAtCursor();
       const isMarkActive = editor.isActive('comment');
       const activeMarkComment = isMarkActive
         ? {
@@ -1055,6 +1056,16 @@ export const CommentStoreProvider = ({
     }) => {
       updateEditorState(transaction);
     };
+    const syncActiveSuggestionDraftAtCursor = () => {
+      store.getState().syncActiveSuggestionDraftAtCursor();
+    };
+    const clearActiveSuggestionDraftAtCursor = () => {
+      if (store.getState().activeSuggestionDraftIdAtCursor === null) {
+        return;
+      }
+
+      store.setState({ activeSuggestionDraftIdAtCursor: null });
+    };
 
     // Keep this effect subscribed to editor-driven changes only. Re-running it
     // for sidebar/thread focus changes lets stale editor selection win again.
@@ -1068,12 +1079,16 @@ export const CommentStoreProvider = ({
     // to keep this subscription stable and focused on editor changes only.
     updateEditorState();
     editor.on('beforeTransaction', handleBeforeTransaction);
+    editor.on('focus', syncActiveSuggestionDraftAtCursor);
+    editor.on('blur', clearActiveSuggestionDraftAtCursor);
     editor.on('selectionUpdate', handleSelectionUpdate);
     editor.on('transaction', handleTransaction);
 
     return () => {
       preTransactionStateRef.current = null;
       editor.off('beforeTransaction', handleBeforeTransaction);
+      editor.off('focus', syncActiveSuggestionDraftAtCursor);
+      editor.off('blur', clearActiveSuggestionDraftAtCursor);
       editor.off('selectionUpdate', handleSelectionUpdate);
       editor.off('transaction', handleTransaction);
     };
