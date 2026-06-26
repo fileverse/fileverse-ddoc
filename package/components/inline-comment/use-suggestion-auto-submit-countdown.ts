@@ -15,13 +15,11 @@ export const useSuggestionAutoSubmitCountdown = ({
   const activeSuggestionDraftIdAtCursor = useCommentStore(
     (state) => state.activeSuggestionDraftIdAtCursor,
   );
-  const shouldRunCountdown =
-    canAutoSubmit && activeSuggestionDraftIdAtCursor !== suggestionId;
   const { submitLabel } = useAutoSubmitCountdown({
     label: 'Submit',
     onSubmit,
     resetKey: suggestionId,
-    shouldRun: shouldRunCountdown,
+    shouldRun: canAutoSubmit && activeSuggestionDraftIdAtCursor !== suggestionId,
   });
 
   return {

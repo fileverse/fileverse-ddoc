@@ -6,6 +6,7 @@ import {
   applyAcceptedSuggestion,
   createCommentAnchorFromEditor,
   createCommentAnchorPointFromEditor,
+  hasResolvableCommentAnchorInState,
   resolveCommentAnchorPointInState,
   resolveCommentAnchorRangeInState,
   triggerDecorationRebuild,
@@ -205,9 +206,7 @@ function syncSuggestionDraftState(
     drafts: nextDrafts,
     floatingCards: nextCards,
     ...(activeSuggestionDraftIdAtCursor !== undefined
-      ? {
-          activeSuggestionDraftIdAtCursor,
-        }
+      ? { activeSuggestionDraftIdAtCursor }
       : {}),
   });
   if (draftAnchorsRef) {
@@ -223,15 +222,11 @@ function getSuggestionDraftIdAtFocusedEditorCursor(
     return null;
   }
 
-  let hasEditorFocus = false;
-
   try {
-    hasEditorFocus = Boolean(editor.view?.hasFocus());
+    if (!editor.view?.hasFocus()) {
+      return null;
+    }
   } catch {
-    return null;
-  }
-
-  if (!hasEditorFocus) {
     return null;
   }
 
@@ -346,23 +341,6 @@ type ReconcileFloatingThreadsForActiveTabOptions = {
   hydrationReady: boolean;
 };
 
-// Add suggestions are point-anchored and have no selectedContent, but they
-// still need a thread card once submitted.
-const isOpenableThreadComment = (
-  comment: IComment | null | undefined,
-): comment is IComment & { id: string } =>
-  Boolean(
-    comment?.id &&
-      !comment.deleted &&
-      !comment.resolved &&
-      (comment.isSuggestion || Boolean(comment.selectedContent)),
-  );
-
-const findOpenableThreadComment = (comments: IComment[], commentId: string) =>
-  comments.find(
-    (comment) => comment.id === commentId && isOpenableThreadComment(comment),
-  ) ?? null;
-
 // Marks editor transactions that came from an explicit thread jump in the UI
 // (drawer, sidebar, or similar) rather than passive cursor movement. The
 // provider reads this so the clicked thread can take ownership immediately,
@@ -463,25 +441,6 @@ const getHydratedThreadDecorationAnchor = ({
   );
 };
 
-const hasResolvableCommentAnchor = ({
-  anchor,
-  editor,
-}: {
-  anchor: CommentAnchor;
-  editor: Editor;
-}) => {
-  // Add suggestions are point anchors (anchorFrom === anchorTo); range
-  // resolution rejects them. Use point resolution as the validity check
-  // for that case so the auto-spawned thread card isn't reconciled away.
-  if (anchor.isSuggestion && anchor.suggestionType === 'add') {
-    return resolveCommentAnchorPointInState(anchor, editor.state) !== null;
-  }
-
-  const anchorRange = resolveCommentAnchorRangeInState(anchor, editor.state);
-
-  return Boolean(anchorRange && anchorRange.from < anchorRange.to);
-};
-
 const hasValidPendingPrehydrationFloatingThreadAnchor = ({
   commentId,
   decorationAnchorById,
@@ -509,7 +468,7 @@ const hasValidPendingPrehydrationFloatingThreadAnchor = ({
     decorationAnchor &&
       !decorationAnchor.deleted &&
       !decorationAnchor.resolved &&
-      hasResolvableCommentAnchor({ anchor: decorationAnchor, editor }),
+      hasResolvableCommentAnchorInState(decorationAnchor, editor.state),
   );
 };
 
@@ -550,10 +509,7 @@ const hasValidHydratedThreadAnchor = ({
         return false;
       }
 
-      return hasResolvableCommentAnchor({
-        anchor: decorationAnchor,
-        editor,
-      });
+      return hasResolvableCommentAnchorInState(decorationAnchor, editor.state);
     }
   }
 
@@ -1833,10 +1789,14 @@ export const createCommentStore = () =>
     openFloatingThread: (commentId) => {
       const { editor, setActiveCommentId } = getExtDeps(get);
       const state = get();
-      const commentToOpen = findOpenableThreadComment(
-        state.tabComments,
-        commentId,
-      );
+      const commentToOpen =
+        state.tabComments.find(
+          (comment) =>
+            comment.id === commentId &&
+            !comment.deleted &&
+            !comment.resolved &&
+            (comment.isSuggestion || Boolean(comment.selectedContent)),
+        ) ?? null;
 
       if (!editor || !commentToOpen) {
         return;
@@ -1966,11 +1926,6 @@ export const createCommentStore = () =>
           state.floatingCards,
           floatingCardId,
         ),
-        ...(focusedFloatingCard.type === 'suggestion-draft'
-          ? {
-              activeSuggestionDraftIdAtCursor: null,
-            }
-          : {}),
       }));
 
       if (focusedFloatingCard.type === 'thread') {
@@ -2890,15 +2845,13 @@ export const createCommentStore = () =>
           !(c.type === 'suggestion-draft' && c.suggestionId === suggestionId),
       );
 
-      const nextActiveSuggestionDraftIdAtCursor =
-        get().activeSuggestionDraftIdAtCursor === suggestionId
-          ? null
-          : get().activeSuggestionDraftIdAtCursor;
-
       set({
         drafts: nextDrafts,
         floatingCards: nextCards,
-        activeSuggestionDraftIdAtCursor: nextActiveSuggestionDraftIdAtCursor,
+        activeSuggestionDraftIdAtCursor:
+          get().activeSuggestionDraftIdAtCursor === suggestionId
+            ? null
+            : get().activeSuggestionDraftIdAtCursor,
       });
       if (draftAnchorsRef) {
         draftAnchorsRef.current =
@@ -2999,17 +2952,18 @@ export const createCommentStore = () =>
       delete nextDrafts[suggestionId];
 
       const nextCards = get().floatingCards.map((c) => {
-        if (c.type !== 'suggestion-draft' || c.suggestionId !== suggestionId) {
-          return c;
+        if (c.type === 'suggestion-draft' && c.suggestionId === suggestionId) {
+          const threadCard: CommentFloatingThreadCard = {
+            type: 'thread',
+            floatingCardId: c.floatingCardId,
+            commentId: draftToSubmit.id,
+            selectedText: draftToSubmit.originalContent,
+            isFocused: c.isFocused,
+          };
+          return threadCard;
         }
-        const threadCard: CommentFloatingThreadCard = {
-          type: 'thread',
-          floatingCardId: c.floatingCardId,
-          commentId: draftToSubmit.id,
-          selectedText: draftToSubmit.originalContent,
-          isFocused: c.isFocused,
-        };
-        return threadCard;
+
+        return c;
       });
 
       // Build IComment now so we can pre-populate local state and avoid a
@@ -3031,15 +2985,13 @@ export const createCommentStore = () =>
         createdAt: new Date(),
       };
 
-      const nextActiveSuggestionDraftIdAtCursor =
-        get().activeSuggestionDraftIdAtCursor === suggestionId
-          ? null
-          : get().activeSuggestionDraftIdAtCursor;
-
       set({
         drafts: nextDrafts,
         floatingCards: nextCards,
-        activeSuggestionDraftIdAtCursor: nextActiveSuggestionDraftIdAtCursor,
+        activeSuggestionDraftIdAtCursor:
+          get().activeSuggestionDraftIdAtCursor === suggestionId
+            ? null
+            : get().activeSuggestionDraftIdAtCursor,
       });
       if (draftAnchorsRef) {
         draftAnchorsRef.current =

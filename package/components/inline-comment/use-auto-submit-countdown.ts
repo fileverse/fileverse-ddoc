@@ -54,6 +54,6 @@ export const useAutoSubmitCountdown = ({
   }, [onSubmit, remainingSeconds, shouldRun]);
 
   return {
-    submitLabel: `${label} ( ${remainingSeconds} )`,
+    submitLabel: shouldRun ? `${label} (${remainingSeconds})` : label,
   };
 };

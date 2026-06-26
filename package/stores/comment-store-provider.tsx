@@ -17,6 +17,7 @@ import {
   CommentAnchor,
   type CommentAnchorTransactionChange,
   getCommentAtPosition,
+  hasResolvableCommentAnchorInState,
   resolveCommentAnchorPointInState,
   resolveCommentAnchorRangeInState,
   resolveCommentAnchorRangeForAnalysis,
@@ -41,17 +42,6 @@ import {
   EXPLICIT_COMMENT_FOCUS_META,
   isRangeDraft,
 } from './comment-store';
-
-const hasResolvableCommentAnchorInState = (
-  anchor: CommentAnchor,
-  state: EditorState,
-) => {
-  if (anchor.isSuggestion && anchor.suggestionType === 'add') {
-    return resolveCommentAnchorPointInState(anchor, state) !== null;
-  }
-
-  return resolveCommentAnchorRangeInState(anchor, state) !== null;
-};
 
 export interface CommentStoreProviderProps {
   children: React.ReactNode;
@@ -813,7 +803,7 @@ export const CommentStoreProvider = ({
           const restoredAnchors: CommentAnchor[] = [];
 
           removedAnchorsRef.current.forEach((removedAnchor, commentId) => {
-            if (resolveCommentAnchorRangeInState(removedAnchor, editor.state)) {
+            if (hasResolvableCommentAnchorInState(removedAnchor, editor.state)) {
               restoredAnchors.push(removedAnchor);
               removedAnchorsRef.current.delete(commentId);
             }
@@ -994,11 +984,11 @@ export const CommentStoreProvider = ({
 
                   // Undo can restore one removed anchor and still make the
                   // broad history mapping report neighboring anchors as
-                  // deleted. A valid post-transaction range means the highlight
+                  // deleted. A valid post-transaction anchor means the comment
                   // still exists, so do not remove it from the runtime anchor
                   // set. Truly deleted anchors resolve to null and are removed.
                   return currentAnchor
-                    ? !resolveCommentAnchorRangeInState(
+                    ? !hasResolvableCommentAnchorInState(
                         currentAnchor,
                         editor.state,
                       )
