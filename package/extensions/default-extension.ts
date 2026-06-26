@@ -464,7 +464,12 @@ export const defaultExtensions = ({
   SearchAndReplace,
   MathExtension.configure({
     addInlineMath: true,
-    evaluation: true,
+    // Math is notation here, not a calculator. With evaluation on, clicking a
+    // formula toggles an appended "=<result>", and the evaluator only handles
+    // plain arithmetic — so any symbolic math (\sum, \int, fractions, an
+    // empty-bound \sum_{123}^{}) shows "=Error" on click. Disable it so math
+    // just renders.
+    evaluation: false,
     delimiters: 'dollar',
     katexOptions: {
       throwOnError: false,
