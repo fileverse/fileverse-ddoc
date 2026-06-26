@@ -1,28 +1,14 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import {
-  buildPickerEntries,
-  EditorAlignment,
-  EditorFontFamily,
-  FontSizePicker,
-  getCurrentFontSize,
-  LineHeightPicker,
-  LinkPopup,
-  TextColor,
-  TextHeading,
-  TextHighlighter,
-  useEditorToolbar,
-} from './editor-utils';
+import React, { useCallback, useMemo } from 'react';
+import { useEditorToolbar } from './editor-utils';
 import { Editor } from '@tiptap/react';
-import { IEditorTool } from '../hooks/use-visibility';
 import { useEditorStates } from '../hooks/use-editor-states';
 import {
   Tooltip,
-  LucideIcon,
   IconButton,
-  DynamicDropdown,
-  LucideIconProps,
-  DynamicDropdownV2,
   Skeleton,
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
 } from '@fileverse/ui';
 import ToolbarButton from '../common/toolbar-button';
 import { useMediaQuery } from 'usehooks-ts';
@@ -34,13 +20,17 @@ import {
   IpfsImageUploadResponse,
 } from '../types';
 import { ImportExportButton } from './import-export-button';
-import { getCurrentFontFamily } from '../utils/get-current-font-family';
-import EditorToolbarDropdown from './editor-toolbar-dropdown';
 import { Tab } from './tabs/utils/tab-utils';
 import * as Y from 'yjs';
-import { zoomLevels } from '../constants/zoom';
-const MemoizedFontSizePicker = React.memo(FontSizePicker);
-const MemoizedLineHeightPicker = React.memo(LineHeightPicker);
+import { ZoomLevelDropdown } from './editor-toolbar/zoom-level';
+import { FontFamilyDropdown } from './editor-toolbar/font-family';
+import { HeadingDropdown } from './editor-toolbar/heading';
+import { FontSizeDropdown } from './editor-toolbar/font-size';
+import { LineHeightDropdown } from './editor-toolbar/line-height';
+import { HighlightDropdown } from './editor-toolbar/highlight';
+import { TextColorDropdown } from './editor-toolbar/text-color';
+import { AlignmentDropdown } from './editor-toolbar/alignment';
+import { LinkPopover } from './editor-toolbar/link';
 
 const TiptapToolBar = ({
   editor,
@@ -106,8 +96,6 @@ const TiptapToolBar = ({
   fonts?: FontDescriptor[];
 }) => {
   const {
-    toolRef,
-    setToolVisibility,
     toolbar,
     undoRedoTools,
     importOptions,
@@ -150,111 +138,6 @@ const TiptapToolBar = ({
   const isBelow1160px = useMediaQuery('(max-width: 1160px)');
   const isBelow1030px = useMediaQuery('(max-width: 1030px)');
 
-  const [dropdownOpen, setDropdownOpen] = useState(false);
-  const [currentFont, setCurrentFont] = useState('Default');
-  const pickerEntries = useMemo(
-    () => buildPickerEntries(consumerFonts ?? []),
-    [consumerFonts],
-  );
-  const activeFont = useMemo(
-    () => pickerEntries.find((f) => f.value === currentFont),
-    [pickerEntries, currentFont],
-  );
-
-  useEffect(() => {
-    if (!editor) return;
-
-    const update = () => setCurrentFont(getCurrentFontFamily(editor));
-    const handleTransaction = ({
-      transaction,
-    }: {
-      transaction: {
-        selectionSet?: boolean;
-        storedMarksSet?: boolean;
-        docChanged?: boolean;
-      };
-    }) => {
-      // Only refresh when selection or stored marks/doc changed
-      if (
-        transaction.selectionSet ||
-        transaction.storedMarksSet ||
-        transaction.docChanged
-      ) {
-        update();
-      }
-    };
-
-    editor.on('selectionUpdate', update);
-    editor.on('transaction', handleTransaction);
-
-    update();
-
-    return () => {
-      editor.off('selectionUpdate', update);
-      editor.off('transaction', handleTransaction);
-    };
-  }, [editor]);
-
-  const renderContent = useCallback(
-    (tool: { title: string; icon: LucideIconProps['name'] }) => {
-      switch (tool.title) {
-        case 'Highlight':
-          return (
-            <TextHighlighter
-              setVisibility={setToolVisibility}
-              editor={editor as Editor}
-              elementRef={toolRef}
-            />
-          );
-        case 'Text Color':
-          return (
-            <TextColor
-              editor={editor}
-              setVisibility={setToolVisibility}
-              elementRef={toolRef}
-            />
-          );
-        case 'Alignment':
-          return (
-            <EditorAlignment
-              setToolVisibility={setToolVisibility}
-              editor={editor as Editor}
-              elementRef={toolRef}
-            />
-          );
-        case 'Link':
-          return (
-            <LinkPopup
-              setToolVisibility={setToolVisibility}
-              editor={editor as Editor}
-              elementRef={toolRef}
-              onError={onError}
-            />
-          );
-        case 'Line Height':
-          return (
-            <MemoizedLineHeightPicker
-              setVisibility={setToolVisibility}
-              editor={editor as Editor}
-              elementRef={toolRef}
-              currentLineHeight={currentLineHeight}
-              onSetLineHeight={onSetLineHeight}
-            />
-          );
-        default:
-          return null;
-      }
-    },
-    [
-      currentLineHeight,
-      editor,
-      onError,
-      onSetLineHeight,
-      setToolVisibility,
-      toolRef,
-    ],
-  );
-
   const toolbarBreakpoint = useMemo(() => {
     switch (true) {
       case isBelow1030px:
@@ -277,19 +160,26 @@ const TiptapToolBar = ({
     isBelow1370px,
     isBelow1560px,
   ]);
-  const handleZoomDropdownClose = useCallback(() => setDropdownOpen(false), []);
-  const handleZoomDropdownToggle = useCallback(() => {
-    setDropdownOpen((prev) => !prev);
-    setFileExportsOpen(false);
-  }, [setFileExportsOpen]);
   const handleNavbarVisibilityToggle = useCallback(
     () => setIsNavbarVisible((prev) => !prev),
     [setIsNavbarVisible],
   );
 
+  if (!editor) return null;
+
   return (
     <AnimatePresence mode="wait">
-      <div className="w-full bg-transparent py-2 px-4 items-center h-9 flex justify-between relative">
+      <div
+        onKeyDown={(e) => {
+          // Escape from anywhere in the toolbar returns focus to the editor,
+          // letting keyboard users leave the toolbar's tabbing order.
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            editor.commands.focus();
+          }
+        }}
+        className="w-full bg-transparent py-2 px-4 items-center h-9 flex justify-between relative"
+      >
         <div className="flex h-9 items-center gap-1 justify-center">
           {/* Export/Import Dropdown */}
 
@@ -304,7 +194,6 @@ const TiptapToolBar = ({
                   setFileExportsOpen={setFileExportsOpen}
                   exportOptions={exportOptions}
                   importOptions={importOptions}
-                  setDropdownOpen={setDropdownOpen}
                   editor={editor}
                   tabs={tabs}
                   ydoc={ydoc}
@@ -320,7 +209,7 @@ const TiptapToolBar = ({
             {undoRedoTools.map((tool, _index) => {
               if (tool) {
                 return (
-                  <Tooltip key={tool.title} text={tool.title}>
+                  <Tooltip key={tool.title} text={tool.title} asTriggerChild>
                     {isLoading
                       ? fadeInTransition(
                           <Skeleton
@@ -360,41 +249,9 @@ const TiptapToolBar = ({
                 'zoom-skeleton-transition',
               )
             : slideUpTransition(
-                <DynamicDropdownV2
-                  key="zoom-levels"
-                  align="start"
-                  sideOffset={8}
-                  controlled={true}
-                  isOpen={dropdownOpen}
-                  onClose={handleZoomDropdownClose}
-                  anchorTrigger={
-                    <button
-                      className="bg-transparent hover:!color-bg-default-hover rounded p-2 h-[30px] flex items-center justify-center gap-2 w-[78px]"
-                      onClick={handleZoomDropdownToggle}
-                    >
-                      <span className="text-body-sm-bold line-clamp-1 w-fit">
-                        {zoomLevels.find((z) => z.value === zoomLevel)?.title ||
-                          '100%'}
-                      </span>
-                      <LucideIcon name="ChevronDown" size="sm" />
-                    </button>
-                  }
-                  content={
-                    <div className="zoom-level-options w-[110px] text-body-sm scroll-smooth color-bg-default px-1 py-2 shadow-elevation-3 transition-all rounded">
-                      {zoomLevels.map((zoom) => (
-                        <button
-                          key={zoom.title}
-                          className="hover:color-bg-default-hover h-8 rounded py-1 px-2 w-full text-left flex items-center space-x-2 text-sm color-text-default transition"
-                          onClick={() => {
-                            setZoomLevel(zoom.value);
-                            setDropdownOpen(false);
-                          }}
-                        >
-                          {zoom.title}
-                        </button>
-                      ))}
-                    </div>
-                  }
+                <ZoomLevelDropdown
+                  zoomLevel={zoomLevel}
+                  setZoomLevel={setZoomLevel}
                 />,
                 'zoom-dropdown-transition',
               )}
@@ -408,37 +265,9 @@ const TiptapToolBar = ({
                 'font-family-skeleton',
               )
             : slideUpTransition(
-                <DynamicDropdown
-                  key={IEditorTool.FONT_FAMILY}
-                  sideOffset={8}
-                  anchorTrigger={
-                    <button
-                      className="bg-transparent hover:!color-bg-default-hover rounded p-2 h-[30px] flex items-center justify-center gap-2 w-[85px]"
-                      onClick={() => setToolVisibility(IEditorTool.FONT_FAMILY)}
-                    >
-                      <span
-                        className="text-body-sm-bold line-clamp-1 break-all"
-                        style={{
-                          fontFamily: activeFont?.value,
-                        }}
-                      >
-                        {activeFont?.title || 'Default'}
-                      </span>
-                      <LucideIcon
-                        name="ChevronDown"
-                        size="sm"
-                        className="min-w-fit"
-                      />
-                    </button>
-                  }
-                  content={
-                    <EditorFontFamily
-                      editor={editor as Editor}
-                      elementRef={toolRef}
-                      setToolVisibility={setToolVisibility}
-                      fonts={consumerFonts}
-                    />
-                  }
+                <FontFamilyDropdown
+                  editor={editor}
+                  consumerFonts={consumerFonts}
                 />,
                 'font-dropdown-transiton',
               )}
@@ -451,34 +280,7 @@ const TiptapToolBar = ({
                 'heading-skeleton',
               )
             : slideUpTransition(
-                <DynamicDropdown
-                  key={IEditorTool.HEADING}
-                  sideOffset={8}
-                  anchorTrigger={
-                    <button
-                      className="bg-transparent hover:!color-bg-default-hover rounded gap-2 p-2 h-[30px] flex items-center justify-between w-[108px]"
-                      onClick={() => setToolVisibility(IEditorTool.HEADING)}
-                    >
-                      <span className="text-body-sm-bold line-clamp-1">
-                        {editor?.isActive('heading', { level: 1 }) &&
-                          'Heading 1'}
-                        {editor?.isActive('heading', { level: 2 }) &&
-                          'Heading 2'}
-                        {editor?.isActive('heading', { level: 3 }) &&
-                          'Heading 3'}
-                        {!editor?.isActive('heading') && 'Text'}
-                      </span>
-                      <LucideIcon name="ChevronDown" size="sm" />
-                    </button>
-                  }
-                  content={
-                    <TextHeading
-                      setVisibility={setToolVisibility}
-                      editor={editor as Editor}
-                      elementRef={toolRef}
-                    />
-                  }
-                />,
+                <HeadingDropdown editor={editor} />,
                 'heading-dropdown',
               )}
           <div className="w-[1px] h-4 vertical-divider mx-1"></div>
@@ -489,29 +291,10 @@ const TiptapToolBar = ({
                 'font-size-skeleton',
               )
             : slideUpTransition(
-                <DynamicDropdown
-                  key={IEditorTool.FONT_SIZE}
-                  sideOffset={8}
-                  anchorTrigger={
-                    <button
-                      className="bg-transparent hover:!color-bg-default-hover rounded gap-2 h-[30px] py-2 px-1 flex items-center justify-center w-[52px]"
-                      onClick={() => setToolVisibility(IEditorTool.FONT_SIZE)}
-                    >
-                      <span className="text-body-sm-bold line-clamp-1">
-                        {getCurrentFontSize(editor, currentSize as string)}
-                      </span>
-                      <LucideIcon name="ChevronDown" size="sm" />
-                    </button>
-                  }
-                  content={
-                    <MemoizedFontSizePicker
-                      setVisibility={setToolVisibility}
-                      editor={editor as Editor}
-                      elementRef={toolRef}
-                      currentSize={currentSize}
-                      onSetFontSize={onSetFontSize}
-                    />
-                  }
+                <FontSizeDropdown
+                  editor={editor}
+                  currentSize={currentSize}
+                  onSetFontSize={onSetFontSize}
                 />,
                 'font-size-dropdown',
               )}
@@ -551,21 +334,16 @@ const TiptapToolBar = ({
 
                 return !isLoading
                   ? slideUpTransition(
-                      <DynamicDropdown
-                        key="more-dropdown"
-                        align="end"
-                        sideOffset={8}
-                        anchorTrigger={
-                          <Tooltip text="More">
-                            <IconButton
-                              id="more-dropdown"
-                              icon="Ellipsis"
-                              variant="ghost"
-                              size="sm"
-                            />
-                          </Tooltip>
-                        }
-                        content={
+                      <Popover>
+                        <PopoverTrigger asChild>
+                          <IconButton
+                            id="more-dropdown"
+                            icon="Ellipsis"
+                            variant="ghost"
+                            size="sm"
+                          />
+                        </PopoverTrigger>
+                        <PopoverContent>
                           <div className="flex p-1 gap-1">
                             {toolbar
                               .filter(
@@ -575,19 +353,50 @@ const TiptapToolBar = ({
                               )
                               .map((moreTool) => {
                                 if (moreTool === null) return;
-                                if (
-                                  moreTool.title === 'Highlight' ||
-                                  moreTool.title === 'Text Color' ||
-                                  moreTool.title === 'Alignment' ||
-                                  moreTool.title === 'Line Height' ||
-                                  moreTool.title === 'Link'
-                                ) {
+                                if (moreTool.title === 'Line Height') {
                                   return (
-                                    <EditorToolbarDropdown
-                                      isLoading={isLoading}
-                                      renderContent={renderContent}
-                                      tool={moreTool}
+                                    <LineHeightDropdown
                                       key={moreTool.title}
+                                      tool={moreTool}
+                                      currentLineHeight={currentLineHeight}
+                                      onSetLineHeight={onSetLineHeight}
+                                    />
+                                  );
+                                }
+                                if (moreTool.title === 'Highlight') {
+                                  return (
+                                    <HighlightDropdown
+                                      key={moreTool.title}
+                                      tool={moreTool}
+                                      editor={editor}
+                                    />
+                                  );
+                                }
+                                if (moreTool.title === 'Text Color') {
+                                  return (
+                                    <TextColorDropdown
+                                      key={moreTool.title}
+                                      tool={moreTool}
+                                      editor={editor}
+                                    />
+                                  );
+                                }
+                                if (moreTool.title === 'Alignment') {
+                                  return (
+                                    <AlignmentDropdown
+                                      key={moreTool.title}
+                                      tool={moreTool}
+                                      editor={editor}
+                                    />
+                                  );
+                                }
+                                if (moreTool.title === 'Link') {
+                                  return (
+                                    <LinkPopover
+                                      key={moreTool.title}
+                                      tool={moreTool}
+                                      editor={editor}
+                                      onError={onError}
                                     />
                                   );
                                 }
@@ -603,8 +412,8 @@ const TiptapToolBar = ({
                                 );
                               })}
                           </div>
-                        }
-                      />,
+                        </PopoverContent>
+                      </Popover>,
                       tool.title,
                     )
                   : fadeInTransition(
@@ -613,27 +422,78 @@ const TiptapToolBar = ({
                     );
               }
 
-              if (
-                tool.title === 'Highlight' ||
-                tool.title === 'Text Color' ||
-                tool.title === 'Alignment' ||
-                tool.title === 'Line Height' ||
-                tool.title === 'Link'
-              ) {
-                return (
-                  <EditorToolbarDropdown
-                    isLoading={isLoading}
-                    renderContent={renderContent}
-                    tool={tool}
-                    key={tool.title}
-                  />
-                );
+              if (tool.title === 'Line Height') {
+                return !isLoading
+                  ? slideUpTransition(
+                      <LineHeightDropdown
+                        tool={tool}
+                        currentLineHeight={currentLineHeight}
+                        onSetLineHeight={onSetLineHeight}
+                      />,
+                      tool.title,
+                    )
+                  : fadeInTransition(
+                      <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
+                      tool.title + 'skeleton',
+                    );
+              }
+
+              if (tool.title === 'Highlight') {
+                return !isLoading
+                  ? slideUpTransition(
+                      <HighlightDropdown tool={tool} editor={editor} />,
+                      tool.title,
+                    )
+                  : fadeInTransition(
+                      <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
+                      tool.title + 'skeleton',
+                    );
+              }
+
+              if (tool.title === 'Text Color') {
+                return !isLoading
+                  ? slideUpTransition(
+                      <TextColorDropdown tool={tool} editor={editor} />,
+                      tool.title,
+                    )
+                  : fadeInTransition(
+                      <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
+                      tool.title + 'skeleton',
+                    );
+              }
+
+              if (tool.title === 'Alignment') {
+                return !isLoading
+                  ? slideUpTransition(
+                      <AlignmentDropdown tool={tool} editor={editor} />,
+                      tool.title,
+                    )
+                  : fadeInTransition(
+                      <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
+                      tool.title + 'skeleton',
+                    );
+              }
+
+              if (tool.title === 'Link') {
+                return !isLoading
+                  ? slideUpTransition(
+                      <LinkPopover
+                        tool={tool}
+                        editor={editor}
+                        onError={onError}
+                      />,
+                      tool.title,
+                    )
+                  : fadeInTransition(
+                      <Skeleton className={`w-[36px] h-[36px] rounded-sm`} />,
+                      tool.title + 'skeleton',
+                    );
               }
 
               // Regular toolbar button
               return !isLoading
                 ? slideUpTransition(
-                    <Tooltip key={tool.title} text={tool.title}>
+                    <Tooltip key={tool.title} text={tool.title} asTriggerChild>
                       <ToolbarButton
                         icon={tool.icon}
                         onClick={tool.onClick}
@@ -654,7 +514,10 @@ const TiptapToolBar = ({
         <div className="flex items-center gap-1">
           <div className="w-[1px] h-4 vertical-divider mx-2"></div>
           {onToggleSplitView && (
-            <Tooltip text={isSplitView ? 'Back to editor' : 'Markdown view'}>
+            <Tooltip
+              text={isSplitView ? 'Back to editor' : 'Markdown view'}
+              asTriggerChild
+            >
               <IconButton
                 // Icon swaps to signal the action: split icon → enter markdown
                 // view; pencil → return to the normal editor.
@@ -666,9 +529,9 @@ const TiptapToolBar = ({
               />
             </Tooltip>
           )}
-          <Tooltip text="Enter focus mode">
+          <Tooltip text="Enter focus mode" asTriggerChild>
             <IconButton
-              icon={'Maximize'}
+              icon={'Focus'}
               size="sm"
               variant="ghost"
               onClick={toggleFocusMode}

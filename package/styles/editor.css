@@ -15,9 +15,6 @@
   }
 
   &.ProseMirror-focused {
-    p.is-empty::before {
-      content: 'Type  /  to browse options';
-    }
     h1.is-empty::before {
       content: 'Heading 1';
     }
@@ -36,6 +33,10 @@
   & p.is-empty::before {
     content: 'Type  /  to browse options';
     font-family: system-ui;
+  }
+
+  > * + * p.is-empty::before {
+    content: none;
   }
 
   /* Callout block placeholder (non-focused fallback) */

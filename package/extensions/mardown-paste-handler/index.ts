@@ -62,6 +62,28 @@ turndownService.addRule('heading', {
   },
 });
 
+// Text alignment (TextAlign extension, on headings/paragraphs) has no markdown
+// representation, so in styles mode an aligned block is emitted as raw HTML
+// carrying the text-align style. The inner content stays HTML — CommonMark does
+// not parse markdown inside a block-level HTML element — and TipTap's TextAlign
+// reads `style.text-align` back on import. Plain .md export drops alignment
+// (markdown purity). Added after 'heading' so it wins for aligned headings;
+// non-aligned blocks fall through to '#'/paragraph handling. left/start = the
+// visual default, so treated as no alignment.
+turndownService.addRule('alignedBlock', {
+  filter: (node) => {
+    if (!emitInlineStyles) return false;
+    if (!['H1', 'H2', 'H3', 'P'].includes(node.nodeName)) return false;
+    const align = (node as HTMLElement).style?.textAlign;
+    return !!align && align !== 'left' && align !== 'start';
+  },
+  replacement: function (_content, node) {
+    const el = node as HTMLElement;
+    const tag = el.nodeName.toLowerCase();
+    return `\n\n<${tag} style="text-align: ${el.style.textAlign}">${el.innerHTML}</${tag}>\n\n`;
+  },
+});
+
 // Add this new rule after the other turndownService rules
 turndownService.addRule('taskListItem', {
   filter: (node) => {
@@ -402,22 +424,28 @@ turndownService.addRule('img', {
   },
 });
 
-// In styles mode (the Split View seed exports with embedImages:false), a
-// secure image is serialized as raw <img> HTML carrying its IPFS/encryption
-// attributes instead of being embedded as base64. The import path then
-// restores the node from the attributes with NO upload — embedding base64
-// would make every debounced Split View edit re-encrypt and re-upload every
-// image in the doc. Plain .md export still embeds base64 (self-contained
-// file), so this rule must not fire there: it requires a non-data src.
+// In styles mode (the Split View seed exports with embedImages:false), an
+// image that carries node state beyond its src — IPFS/encryption attributes,
+// or a background-color backdrop — is serialized as raw <img> HTML preserving
+// those attributes, instead of the lossy ![](src) markdown. The import path
+// restores the node from the attributes with NO upload. Plain .md export still
+// embeds base64 (self-contained file), so this rule must not fire there: it
+// requires a non-data src.
 // NOTE: added AFTER the generic 'img' rule on purpose — turndown checks the
-// most recently added rule first, and both match <img>.
+// most recently added rule first, and both match <img>. `style` is skipped
+// because the background-color also round-trips via data-background-color.
 const IMG_SKIP_ATTRS = new Set(['style', 'class', 'draggable']);
 turndownService.addRule('secureImageRef', {
-  filter: (node) =>
-    emitInlineStyles &&
-    node.nodeName === 'IMG' &&
-    !!(node as HTMLElement).getAttribute('ipfsHash') &&
-    !((node as HTMLElement).getAttribute('src') || '').startsWith('data:'),
+  filter: (node) => {
+    if (!emitInlineStyles || node.nodeName !== 'IMG') return false;
+    const el = node as HTMLElement;
+    if ((el.getAttribute('src') || '').startsWith('data:')) return false;
+    return (
+      !!el.getAttribute('ipfsHash') ||
+      !!el.getAttribute('data-background-color') ||
+      !!el.style?.backgroundColor
+    );
+  },
   replacement: function (_content, node) {
     const el = node as HTMLElement;
     const esc = (v: string) => v.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
@@ -851,8 +879,13 @@ const MarkdownPasteHandler = (
           },
         }),
         new InputRule({
-          find: /(\S*)\^([^\s^]+)\^/,
+          // Matches `^...^` allowing multiple digits and words (spaces) between
+          // the carets; the closing caret commits the superscript.
+          find: /(\S*)\^((?:[^^]|\\\^)+)\^$/,
           handler: ({ state, range, match }) => {
+            if (/^\s|\s$/.test(match[2])) {
+              return null;
+            }
             const { tr } = state;
             const start = range.from + match[1].length;
             const end = range.to;

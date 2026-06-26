@@ -1,5 +1,4 @@
-import EnsLogo from '../../assets/ens.svg';
-import { LucideIcon, Divider, TextField, Button, cn } from '@fileverse/ui';
+import { LucideIcon, TextField, Button, cn } from '@fileverse/ui';
 import { CommentUsernameProps } from './context/types';
 
 const CommentUsername = ({
@@ -53,31 +52,15 @@ const CommentUsername = ({
               </Button>
             </div>
 
-            <div className="text-[12px] text-gray-400 flex items-center my-3">
-              <Divider
-                direction="horizontal"
-                size="md"
-                className="flex-grow md:!mr-4"
-              />
-              or join with your&nbsp;
-              <span className="font-semibold">.eth&nbsp;</span> domain
-              <Divider
-                direction="horizontal"
-                size="md"
-                className="flex-grow md:!ml-4"
-              />
-            </div>
-
-            <div className="text-center">
-              <Button
-                data-testid="comment-ens-btn"
+            <div className="text-[12px] text-gray-400 flex justify-center items-center my-3">
+              or join with your
+              <span
                 onClick={isConnected ? () => null : connectViaWallet}
-                disabled={isLoading}
-                className="custom-ens-button"
+                className="font-semibold color-text-link mx-[4px] cursor-pointer"
               >
-                <img alt="ens-logo" src={EnsLogo} />{' '}
-                {isLoading ? 'Connecting with ENS ...' : 'Continue with ENS'}
-              </Button>
+                ENS
+              </span>
+              domain
             </div>
           </div>
         </div>

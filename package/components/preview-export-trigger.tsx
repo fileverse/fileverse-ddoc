@@ -46,7 +46,6 @@ const PreviewModeExportTrigger = ({
   isConnected,
 }: PreviewModeExportTriggerProps) => {
   const [fileExportsOpen, setFileExportsOpen] = useState(false);
-  const [, setDropdownOpen] = useState(false);
 
   const { exportOptions } = useEditorToolbar({
     editor,
@@ -71,7 +70,6 @@ const PreviewModeExportTrigger = ({
         setFileExportsOpen={setFileExportsOpen}
         exportOptions={exportOptions}
         importOptions={[]}
-        setDropdownOpen={setDropdownOpen}
         editor={editor}
         tabs={tabs}
         ydoc={ydoc}
