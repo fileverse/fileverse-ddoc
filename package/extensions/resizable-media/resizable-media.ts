@@ -156,6 +156,16 @@ export const ResizableMedia = Node.create<MediaOptions>({
     return [
       {
         tag: 'div[data-type="resizable-media"]',
+        // The wrapper's only ProseMirror content is the optional caption (see
+        // renderHTML's media-caption-wrapper hole). Point the parser at that
+        // wrapper so it doesn't descend into the <img>/<video>, which would
+        // otherwise re-match the bare 'img'/'video' rules below and produce a
+        // duplicate resizableMedia node on copy-paste. When no caption exists,
+        // return a detached empty element so nothing inside is parsed.
+        contentElement: (el) =>
+          (el as HTMLElement).querySelector(
+            '[data-type="media-caption-wrapper"]',
+          ) || document.createElement('div'),
         getAttrs: (el) => {
           const img = (el as HTMLElement).querySelector('img');
           const video = (el as HTMLElement).querySelector('video');
