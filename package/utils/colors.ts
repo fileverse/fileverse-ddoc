@@ -626,6 +626,25 @@ export const textColors = [
   },
 ];
 
+// Text colors are stored as `var(--color-editor-<name>)`, resolved by
+// theme-scoped CSS variables that only exist inside the editor. Substitute the
+// concrete light-theme hex so standalone exports (markdown, ODT) render outside it.
+const EDITOR_COLOR_VAR_HEX: Record<string, string> = textColors.reduce(
+  (acc, c) => {
+    acc[`--color-editor-${c.name}`] = c.light;
+    return acc;
+  },
+  {} as Record<string, string>,
+);
+
+export const resolveEditorColorVars = (value: string): string =>
+  value.replace(
+    /var\((--color-editor-[^,)\s]+)(?:\s*,\s*([^)]+))?\)/g,
+    (match, name, fallback) =>
+      EDITOR_COLOR_VAR_HEX[name as string] ??
+      (fallback ? (fallback as string).trim() : match),
+  );
+
 function lightenBy(color: ColorInstance, ratio: number) {
   const lightness = color.lightness();
   return color.lightness(lightness + (100 - lightness) * ratio).hex();
