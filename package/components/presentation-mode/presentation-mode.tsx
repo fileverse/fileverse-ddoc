@@ -166,6 +166,14 @@ export const PresentationMode = ({
           ![
             'collaboration',
             'aiAutocomplete',
+            // The presentation editor reuses the source editor's extension
+            // instances. In a shared/viewer context the editor is in suggestion
+            // mode, where suggestionTracking's filterTransaction blocks every
+            // doc-changing transaction — including the setContent that loads each
+            // slide. That left the active slide empty while the deck (rendered
+            // via dangerouslySetInnerHTML) still showed content. The presentation
+            // editor only renders slides read-only, so it never needs tracking.
+            'suggestionTracking',
             ...EXTENSIONS_WITH_DUPLICATE_WARNINGS,
           ].includes(b.name),
       ),
