@@ -1,9 +1,4 @@
 # dDocs Editor
-
-## About
-Open-source, end-to-end encrypted alternative to Google Docs.
-
-## Intro
 [ddocs.new](http://ddocs.new/) is your privacy-first, open-source alternative to Google Docs. A self-sovereign document editor for multiplayer collaboration that is end-to-end encrypted, decentralised, and requires no account to get started 💛
 
 
