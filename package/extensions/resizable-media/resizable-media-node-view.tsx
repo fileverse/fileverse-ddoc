@@ -403,7 +403,8 @@ export const getResizableMediaNodeView =
           draggable={isDragging}
           data-drag-handle={isDragging}
           className={cn(
-            'w-fit flex flex-col relative group transition-all ease-in-out p-2 pt-1 color-bg-secondary rounded-lg',
+            'w-fit flex flex-col relative group transition-all ease-in-out',
+            !isPreviewMode && 'p-2 pt-1 color-bg-secondary rounded-lg',
             isDragging && 'opacity-50',
           )}
           onTouchStart={handleTouchStart}
