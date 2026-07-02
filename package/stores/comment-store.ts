@@ -6,6 +6,7 @@ import {
   applyAcceptedSuggestion,
   createCommentAnchorFromEditor,
   createCommentAnchorPointFromEditor,
+  hasResolvableCommentAnchorInState,
   resolveCommentAnchorPointInState,
   resolveCommentAnchorRangeInState,
   triggerDecorationRebuild,
@@ -191,6 +192,7 @@ function isPureDeleteDraft(draft: DraftSuggestion): boolean {
 type SuggestionDraftStateSetter = (state: {
   drafts: Record<string, DraftSuggestion>;
   floatingCards: CommentFloatingCard[];
+  activeSuggestionDraftIdAtCursor?: string | null;
 }) => void;
 
 function syncSuggestionDraftState(
@@ -198,11 +200,37 @@ function syncSuggestionDraftState(
   nextDrafts: Record<string, DraftSuggestion>,
   nextCards: CommentFloatingCard[],
   draftAnchorsRef?: React.MutableRefObject<CommentAnchor[]>,
+  activeSuggestionDraftIdAtCursor?: string | null,
 ) {
-  setState({ drafts: nextDrafts, floatingCards: nextCards });
+  setState({
+    drafts: nextDrafts,
+    floatingCards: nextCards,
+    ...(activeSuggestionDraftIdAtCursor !== undefined
+      ? { activeSuggestionDraftIdAtCursor }
+      : {}),
+  });
   if (draftAnchorsRef) {
     draftAnchorsRef.current = Object.values(nextDrafts).map(deriveDraftAnchor);
   }
+}
+
+function getSuggestionDraftIdAtFocusedEditorCursor(
+  editor: Editor | null,
+  drafts: Record<string, DraftSuggestion>,
+): string | null {
+  if (!editor) {
+    return null;
+  }
+
+  try {
+    if (!editor.view?.hasFocus()) {
+      return null;
+    }
+  } catch {
+    return null;
+  }
+
+  return findDraftAtEditorCursor(drafts, editor.state)?.id ?? null;
 }
 
 function updateDeleteDraftRange({
@@ -243,7 +271,13 @@ function updateDeleteDraftRange({
       : card,
   );
 
-  syncSuggestionDraftState(setState, nextDrafts, nextCards, draftAnchorsRef);
+  syncSuggestionDraftState(
+    setState,
+    nextDrafts,
+    nextCards,
+    draftAnchorsRef,
+    activeDraft.id,
+  );
 
   const tr = editor.state.tr.setSelection(
     TextSelection.near(editor.state.doc.resolve(collapseTo)),
@@ -407,25 +441,6 @@ const getHydratedThreadDecorationAnchor = ({
   );
 };
 
-const hasResolvableCommentAnchor = ({
-  anchor,
-  editor,
-}: {
-  anchor: CommentAnchor;
-  editor: Editor;
-}) => {
-  // Add suggestions are point anchors (anchorFrom === anchorTo); range
-  // resolution rejects them. Use point resolution as the validity check
-  // for that case so the auto-spawned thread card isn't reconciled away.
-  if (anchor.isSuggestion && anchor.suggestionType === 'add') {
-    return resolveCommentAnchorPointInState(anchor, editor.state) !== null;
-  }
-
-  const anchorRange = resolveCommentAnchorRangeInState(anchor, editor.state);
-
-  return Boolean(anchorRange && anchorRange.from < anchorRange.to);
-};
-
 const hasValidPendingPrehydrationFloatingThreadAnchor = ({
   commentId,
   decorationAnchorById,
@@ -453,7 +468,7 @@ const hasValidPendingPrehydrationFloatingThreadAnchor = ({
     decorationAnchor &&
       !decorationAnchor.deleted &&
       !decorationAnchor.resolved &&
-      hasResolvableCommentAnchor({ anchor: decorationAnchor, editor }),
+      hasResolvableCommentAnchorInState(decorationAnchor, editor.state),
   );
 };
 
@@ -494,10 +509,7 @@ const hasValidHydratedThreadAnchor = ({
         return false;
       }
 
-      return hasResolvableCommentAnchor({
-        anchor: decorationAnchor,
-        editor,
-      });
+      return hasResolvableCommentAnchorInState(decorationAnchor, editor.state);
     }
   }
 
@@ -706,6 +718,8 @@ export interface CommentStoreState {
   pendingPrehydrationFloatingThreadIds: string[];
   /** In-progress suggestion drafts — keyed by suggestionId. Viewer-local, lost on refresh. */
   drafts: Record<string, DraftSuggestion>;
+  /** Suggestion draft currently under the focused editor cursor, if any. */
+  activeSuggestionDraftIdAtCursor: string | null;
   inlineDrafts: InlineDraftRecordMap;
   activeDraftId: string | null;
   isDesktopFloatingEnabled: boolean;
@@ -871,6 +885,11 @@ export interface CommentStoreState {
     currentText: string,
   ) => void;
   /**
+   * Sync the draft id under the current editor cursor. Each draft card uses
+   * this to decide whether its own auto-submit countdown should run.
+   */
+  syncActiveSuggestionDraftAtCursor: () => void;
+  /**
    * Promote a draft to a submitted suggestion. Pushes the anchor into
    * commentAnchorsRef, calls onNewComment, removes the draft, and swaps the
    * suggestion-draft floating card for a thread card (same floatingCardId).
@@ -951,6 +970,7 @@ export const createCommentStore = () =>
     floatingCards: [],
     pendingPrehydrationFloatingThreadIds: [],
     drafts: {},
+    activeSuggestionDraftIdAtCursor: null,
     inlineDrafts: {},
     activeDraftId: null,
     isDesktopFloatingEnabled: false,
@@ -1231,7 +1251,11 @@ export const createCommentStore = () =>
           nextFloatingCards,
         ),
       })),
-    clearFloatingCards: () => set({ floatingCards: [] }),
+    clearFloatingCards: () =>
+      set({
+        floatingCards: [],
+        activeSuggestionDraftIdAtCursor: null,
+      }),
     setActiveDraftId: (draftId) => set({ activeDraftId: draftId }),
     setIsDesktopFloatingEnabled: (enabled) =>
       set({ isDesktopFloatingEnabled: enabled }),
@@ -1765,18 +1789,16 @@ export const createCommentStore = () =>
     openFloatingThread: (commentId) => {
       const { editor, setActiveCommentId } = getExtDeps(get);
       const state = get();
-      const commentToOpen = state.tabComments.find(
-        (comment) =>
-          comment.id === commentId && !comment.deleted && !comment.resolved,
-      );
+      const commentToOpen =
+        state.tabComments.find(
+          (comment) =>
+            comment.id === commentId &&
+            !comment.deleted &&
+            !comment.resolved &&
+            (comment.isSuggestion || Boolean(comment.selectedContent)),
+        ) ?? null;
 
       if (!editor || !commentToOpen) {
-        return;
-      }
-
-      // Add suggestions have empty selectedContent (point anchor), so the old
-      // `!commentToOpen.selectedContent` guard would incorrectly bail out here.
-      if (!commentToOpen.isSuggestion && !commentToOpen.selectedContent) {
         return;
       }
 
@@ -2515,6 +2537,7 @@ export const createCommentStore = () =>
 
       let nextDrafts: Record<string, DraftSuggestion>;
       let nextCards = get().floatingCards;
+      let activeSuggestionDraftIdAtCursor: string;
 
       if (activeDraft) {
         const extended: DraftSuggestion = {
@@ -2529,6 +2552,7 @@ export const createCommentStore = () =>
             ? { ...c, insertedText: extended.insertedText }
             : c,
         );
+        activeSuggestionDraftIdAtCursor = activeDraft.id;
       } else {
         const { from } = editor.state.selection;
         const anchorPoint = createCommentAnchorPointFromEditor(editor, from);
@@ -2558,9 +2582,14 @@ export const createCommentStore = () =>
           ...nextCards.map((c) => ({ ...c, isFocused: false })),
           newCard,
         ];
+        activeSuggestionDraftIdAtCursor = id;
       }
 
-      set({ drafts: nextDrafts, floatingCards: nextCards });
+      set({
+        drafts: nextDrafts,
+        floatingCards: nextCards,
+        activeSuggestionDraftIdAtCursor,
+      });
       if (draftAnchorsRef) {
         draftAnchorsRef.current =
           Object.values(nextDrafts).map(deriveDraftAnchor);
@@ -2607,7 +2636,7 @@ export const createCommentStore = () =>
         newCard,
       ];
 
-      syncSuggestionDraftState(set, nextDrafts, nextCards, draftAnchorsRef);
+      syncSuggestionDraftState(set, nextDrafts, nextCards, draftAnchorsRef, id);
 
       // Collapse the selection at the requested caret position so Backspace
       // stays at the end of the deleted range while forward Delete remains at
@@ -2661,7 +2690,7 @@ export const createCommentStore = () =>
         newCard,
       ];
 
-      syncSuggestionDraftState(set, nextDrafts, nextCards, draftAnchorsRef);
+      syncSuggestionDraftState(set, nextDrafts, nextCards, draftAnchorsRef, id);
       triggerDecorationRebuild(editor);
     },
 
@@ -2789,7 +2818,11 @@ export const createCommentStore = () =>
           : c,
       );
 
-      set({ drafts: nextDrafts, floatingCards: nextCards });
+      set({
+        drafts: nextDrafts,
+        floatingCards: nextCards,
+        activeSuggestionDraftIdAtCursor: activeDraft.id,
+      });
       if (draftAnchorsRef) {
         draftAnchorsRef.current =
           Object.values(nextDrafts).map(deriveDraftAnchor);
@@ -2812,7 +2845,14 @@ export const createCommentStore = () =>
           !(c.type === 'suggestion-draft' && c.suggestionId === suggestionId),
       );
 
-      set({ drafts: nextDrafts, floatingCards: nextCards });
+      set({
+        drafts: nextDrafts,
+        floatingCards: nextCards,
+        activeSuggestionDraftIdAtCursor:
+          get().activeSuggestionDraftIdAtCursor === suggestionId
+            ? null
+            : get().activeSuggestionDraftIdAtCursor,
+      });
       if (draftAnchorsRef) {
         draftAnchorsRef.current =
           Object.values(nextDrafts).map(deriveDraftAnchor);
@@ -2844,6 +2884,24 @@ export const createCommentStore = () =>
         draftAnchorsRef.current =
           Object.values(nextDrafts).map(deriveDraftAnchor);
       }
+    },
+
+    syncActiveSuggestionDraftAtCursor: () => {
+      const { editor } = getExtDeps(get);
+      const nextSuggestionDraftIdAtCursor =
+        getSuggestionDraftIdAtFocusedEditorCursor(editor, get().drafts);
+      const currentState = get();
+
+      if (
+        currentState.activeSuggestionDraftIdAtCursor ===
+        nextSuggestionDraftIdAtCursor
+      ) {
+        return;
+      }
+
+      set({
+        activeSuggestionDraftIdAtCursor: nextSuggestionDraftIdAtCursor,
+      });
     },
 
     submitDraft: (suggestionId) => {
@@ -2894,17 +2952,18 @@ export const createCommentStore = () =>
       delete nextDrafts[suggestionId];
 
       const nextCards = get().floatingCards.map((c) => {
-        if (c.type !== 'suggestion-draft' || c.suggestionId !== suggestionId) {
-          return c;
+        if (c.type === 'suggestion-draft' && c.suggestionId === suggestionId) {
+          const threadCard: CommentFloatingThreadCard = {
+            type: 'thread',
+            floatingCardId: c.floatingCardId,
+            commentId: draftToSubmit.id,
+            selectedText: draftToSubmit.originalContent,
+            isFocused: c.isFocused,
+          };
+          return threadCard;
         }
-        const threadCard: CommentFloatingThreadCard = {
-          type: 'thread',
-          floatingCardId: c.floatingCardId,
-          commentId: draftToSubmit.id,
-          selectedText: draftToSubmit.originalContent,
-          isFocused: c.isFocused,
-        };
-        return threadCard;
+
+        return c;
       });
 
       // Build IComment now so we can pre-populate local state and avoid a
@@ -2929,6 +2988,10 @@ export const createCommentStore = () =>
       set({
         drafts: nextDrafts,
         floatingCards: nextCards,
+        activeSuggestionDraftIdAtCursor:
+          get().activeSuggestionDraftIdAtCursor === suggestionId
+            ? null
+            : get().activeSuggestionDraftIdAtCursor,
       });
       if (draftAnchorsRef) {
         draftAnchorsRef.current =
@@ -3237,6 +3300,7 @@ export const createCommentStore = () =>
           state.floatingCards,
           `suggestion-draft:${suggestionId}`,
         ),
+        activeSuggestionDraftIdAtCursor: suggestionId,
       }));
 
       requestAnimationFrame(() => {
