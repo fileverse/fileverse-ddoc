@@ -402,6 +402,14 @@ const DdocEditor = forwardRef(
       },
     });
 
+    // Mirror custom CSS into the markdown extension's storage so the
+    // exportMarkdownFile command can embed it as a <style> block (the export
+    // has no other access to documentStyling).
+    useEffect(() => {
+      const storage = editor?.storage?.markdownPasteHandler;
+      if (storage) storage.customCSS = documentStyling?.customCSS ?? '';
+    }, [editor, documentStyling?.customCSS]);
+
     useImperativeHandle(
       ref,
       () => ({
@@ -1373,6 +1381,18 @@ const DdocEditor = forwardRef(
                   : `calc(100dvh - 52px - ${footerHeight || '0px'})`,
           }}
         >
+          {/* Author's custom CSS escape hatch. The author writes bare selectors
+              (`h1 { … }`, `p { … }`); we wrap them in the content scope so CSS
+              nesting confines every rule to the document — it can't leak into
+              the toolbar or the host app's chrome. Applies live while editing,
+              in preview, and in the published view. */}
+          {documentStyling?.customCSS ? (
+            <style
+              dangerouslySetInnerHTML={{
+                __html: `.ProseMirror { ${documentStyling.customCSS} }`,
+              }}
+            />
+          ) : null}
           <div
             id="editor-canvas"
             onMouseDown={handleFocusModeMouseDown}

@@ -112,11 +112,29 @@ const HtmlExportExtension = (
               date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
             };
 
-            // Create a clean HTML document without any classes, IDs, or styles
+            // The document's custom CSS (author-supplied, bare selectors),
+            // injected AFTER sanitize (which runs on the body only) so the
+            // <style> block survives — making the HTML a self-contained, styled
+            // artifact.
+            const customCSS: string = (
+              editor.storage?.markdownPasteHandler?.customCSS || ''
+            ).trim();
+            // Scope to `body` (the export's document root) exactly as the editor
+            // scopes to `.ProseMirror`: bare declarations style the surface,
+            // nested selectors style the content. WITHOUT this wrapper a bare
+            // top-level declaration (e.g. `background: …`) is an invalid rule and
+            // the CSS parser swallows the following selectors into it, killing
+            // the whole block. Relies on native CSS nesting (modern browsers).
+            const styleTag = customCSS
+              ? `\n      <style>\n        body {\n${customCSS}\n        }\n      </style>`
+              : '';
+
+            // Create a clean HTML document (no classes/IDs); the only styling is
+            // the author's custom CSS, when present.
             const htmlContent = `
   <html>
     <head>
-      <title>${metadata.title}</title>
+      <title>${metadata.title}</title>${styleTag}
     </head>
     <body>
       ${cleanHtml}

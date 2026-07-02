@@ -575,6 +575,9 @@ turndownService.addRule('linkDefinition', {
 
 // Define the command type
 declare module '@tiptap/core' {
+  interface Storage {
+    markdownPasteHandler: { customCSS: string };
+  }
   interface Commands {
     uploadMarkdownFile: {
       uploadMarkdownFile: (
@@ -609,6 +612,13 @@ const MarkdownPasteHandler = (
 ) =>
   Extension.create({
     name: 'markdownPasteHandler',
+
+    // The document's custom CSS, mirrored here by ddoc-editor so the
+    // exportMarkdownFile command can embed it as a <style> block — the export
+    // has no other access to documentStyling.
+    addStorage() {
+      return { customCSS: '' as string };
+    },
 
     addProseMirrorPlugins() {
       return [
@@ -817,6 +827,28 @@ const MarkdownPasteHandler = (
               } finally {
                 setMarkdownInlineStyles(false);
                 setResolveColorVars(false);
+              }
+
+              // Enforce the invariant: exactly one <style> block, and only the
+              // canonical custom CSS. Strip any stray <style> the content may
+              // carry (e.g. an old doc polluted before the import-side fix),
+              // then, in "with styles" mode, prepend the single custom-CSS block
+              // so the downloaded .md is self-contained and never duplicated.
+              markdown = markdown.replace(
+                /<style\b[^>]*>[\s\S]*?<\/style>\s*/gi,
+                '',
+              );
+              const customCSS: string = (
+                editor.storage?.markdownPasteHandler?.customCSS || ''
+              ).trim();
+              if (props?.includeStyles && customCSS) {
+                // Scope to `body` (the rendered document's root) exactly as the
+                // editor scopes to `.ProseMirror`: bare declarations style the
+                // surface, nested selectors style the content. WITHOUT the
+                // wrapper a bare top-level declaration is an invalid rule and the
+                // CSS parser swallows the following selectors into it. Relies on
+                // native CSS nesting (modern browsers).
+                markdown = `<style>\nbody {\n${customCSS}\n}\n</style>\n\n${markdown}`;
               }
 
               const metadataEntries: Record<string, string> = {
@@ -1106,6 +1138,16 @@ export async function handleMarkdownContent(
 ) {
   // Remove YAML frontmatter before parsing
   let cleanMarkdown = stripFrontmatter(content);
+
+  // Custom CSS is styling, never document content. Strip every <style> block
+  // so it can't leak into the doc — DOMPurify is inconsistent (it drops a
+  // leading multi-line block but keeps an inline/single-line one), which is how
+  // a stray <style> ends up as a text node and re-exports as a duplicate. The
+  // canonical block is handled separately (Split View seed / export prepend).
+  cleanMarkdown = cleanMarkdown.replace(
+    /<style\b[^>]*>[\s\S]*?<\/style>/gi,
+    '',
+  );
 
   // Protect formulas from being interpreted as markdown by escaping asterisks
   // Only escape asterisks that are clearly part of math expressions (e.g., 4*6, [1,2]*[3,4])

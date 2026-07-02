@@ -279,6 +279,33 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
           </div>
         </div>
 
+        {/* Custom CSS */}
+        <div className="space-y-2">
+          <label
+            htmlFor="custom-css-input"
+            className="text-sm font-medium block text-slate-700 dark:text-slate-200"
+          >
+            Custom CSS
+          </label>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Target elements directly — e.g.{' '}
+            <code className="font-mono">h1</code>,{' '}
+            <code className="font-mono">p</code>,{' '}
+            <code className="font-mono">blockquote</code>. Scoped to the document
+            automatically.
+          </p>
+          <textarea
+            id="custom-css-input"
+            value={currentStyling.customCSS ?? ''}
+            onChange={(e) => handleStylingUpdate({ customCSS: e.target.value })}
+            spellCheck={false}
+            placeholder={
+              'h1 { letter-spacing: -0.02em }\np { line-height: 1.8 }'
+            }
+            className="w-full h-32 p-2 text-xs font-mono rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 resize-y focus:outline-none focus:border-blue-500"
+          />
+        </div>
+
         {/* Reset Button */}
         <div className="pt-4 border-t border-slate-200 dark:border-slate-600">
           <button
