@@ -43,18 +43,19 @@ export class SyncManager {
   private uncommittedUpdatesIdList: string[] = [];
   private contentTobeAppliedQueue: Array<{ data: string; id?: string }> = [];
   private isProcessing = false;
+  private syncId = 0;
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly FLUSH_INTERVAL_MS = 50;
   private readonly MAX_QUEUE_SIZE = 5;
   private _awarenessUpdateHandler:
     | ((
-      changes: {
-        added: number[];
-        updated: number[];
-        removed: number[];
-      },
-      origin: any,
-    ) => void)
+        changes: {
+          added: number[];
+          updated: number[];
+          removed: number[];
+        },
+        origin: any,
+      ) => void)
     | null = null;
 
   // --- Config (from constructor) ---
@@ -114,6 +115,21 @@ export class SyncManager {
   }
 
   // ─── State machine core ───
+
+  // reconnectAttempt is a user-facing retry count and may reset between cycles.
+  // syncId is monotonic, so async sync work cannot become current again
+  // after a later reconnect happens to reuse the same retry attempt number.
+  private beginSyncAttempt(): number {
+    this.syncId += 1;
+    return this.syncId;
+  }
+
+  // Async sync work can finish after a socket drop starts a newer reconnect sync.
+  // Keep the captured generation current before applying updates or moving to
+  // ready, so stale initial/reconnect syncs cannot finalize late.
+  private isCurrentSyncAttempt(syncId: number): boolean {
+    return this._status === 'syncing' && this.syncId === syncId;
+  }
 
   private send(event: CollabEvent): boolean {
     const result = transition(this._status, event, this._context);
@@ -191,15 +207,26 @@ export class SyncManager {
 
     this.send({ type: 'CONNECT' });
 
+    let syncId: number | null = null;
+
     try {
       await this.connectSocket();
       // After successful handshake, transition to syncing
       this.send({ type: 'AUTH_SUCCESS' });
+      syncId = this.beginSyncAttempt();
 
-      await this.syncLatestCommit(initialUpdate);
+      await this.syncLatestCommit(initialUpdate, syncId);
+
+      if (!this.isCurrentSyncAttempt(syncId)) {
+        return;
+      }
 
       // Yield to allow React to render the unmerged-updates toast
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      if (!this.isCurrentSyncAttempt(syncId)) {
+        return;
+      }
 
       // Verify socket is still alive after sync
       if (!this.socketClient?.isConnected) {
@@ -219,6 +246,9 @@ export class SyncManager {
         });
       }
     } catch (err) {
+      if (syncId !== null && !this.isCurrentSyncAttempt(syncId)) {
+        return;
+      }
       console.error('SyncManager: connect failed', err);
       const error = err instanceof Error ? err : new Error(String(err));
       this.handleConnectionError(error);
@@ -314,17 +344,17 @@ export class SyncManager {
       ?.sendUpdate({ update: encrypted })
       .then((response) => {
         if (!response?.status) {
-          console.error(
-            'SyncManager: server rejected update',
-            response?.error,
-          );
+          console.error('SyncManager: server rejected update', response?.error);
           return;
         }
         const updateId = response?.data?.id;
         if (updateId) {
           this.uncommittedUpdatesIdList.push(updateId);
         }
-        if (this.isOwner && this.uncommittedUpdatesIdList.length >= COMMIT_THRESHOLD) {
+        if (
+          this.isOwner &&
+          this.uncommittedUpdatesIdList.length >= COMMIT_THRESHOLD
+        ) {
           this.processCommit().catch((err) => {
             console.error('SyncManager: auto-commit failed', err);
           });
@@ -394,11 +424,18 @@ export class SyncManager {
   }
 
   private async handleReconnection(): Promise<void> {
-    try {
-      this.send({ type: 'RECONNECTED' });
+    const reconnected = this.send({ type: 'RECONNECTED' });
+    if (!reconnected) return;
 
+    const syncId = this.beginSyncAttempt();
+
+    try {
       const initialUpdate = fromUint8Array(Y.encodeStateAsUpdate(this.ydoc));
-      await this.syncLatestCommit(initialUpdate);
+      await this.syncLatestCommit(initialUpdate, syncId);
+
+      if (!this.isCurrentSyncAttempt(syncId)) {
+        return;
+      }
 
       if (!this.socketClient?.isConnected) {
         throw new Error('Socket disconnected during re-sync');
@@ -419,6 +456,9 @@ export class SyncManager {
         });
       }
     } catch (err) {
+      if (!this.isCurrentSyncAttempt(syncId)) {
+        return;
+      }
       console.error('SyncManager: reconnection handling failed', err);
       const error = err instanceof Error ? err : new Error(String(err));
       this.handleConnectionError(error);
@@ -460,7 +500,7 @@ export class SyncManager {
             this.disconnect();
           },
           onSocketDropped: () => {
-            if (this._status === 'ready') {
+            if (this._status === 'ready' || this._status === 'syncing') {
               this.send({ type: 'SOCKET_DROPPED' });
             }
           },
@@ -504,7 +544,7 @@ export class SyncManager {
           onReconnectFailed: () => {
             if (this._status === 'reconnecting') {
               this.send({ type: 'RETRY_EXHAUSTED' });
-            } else if (this._status === 'ready') {
+            } else if (this._status === 'ready' || this._status === 'syncing') {
               // Safety net: disconnect event was missed, go straight to error
               const error = createCollabError(
                 'CONNECTION_FAILED',
@@ -529,7 +569,8 @@ export class SyncManager {
               reject(e);
               return;
             }
-            // Socket error while connected — trigger reconnect flow
+            // Only real disconnects should recover syncing via onSocketDropped.
+            // Server errors can arrive while the socket stays connected.
             if (this._status === 'ready') {
               this.send({ type: 'SOCKET_DROPPED' });
             }
@@ -541,9 +582,16 @@ export class SyncManager {
     });
   }
 
-  private async syncLatestCommit(initialUpdate: string): Promise<void> {
+  private async syncLatestCommit(
+    initialUpdate: string,
+    syncId: number,
+  ): Promise<void> {
+    const syncStillCurrent = () => this.isCurrentSyncAttempt(syncId);
+
     await this.withRetry(async () => {
       const latestCommit = await this.socketClient?.fetchLatestCommit();
+      if (!syncStillCurrent()) return;
+
       const history = latestCommit?.data?.history?.[0];
       let decryptedCommit: Uint8Array | undefined;
 
@@ -565,6 +613,8 @@ export class SyncManager {
 
       if (history?.cid && this.servicesRef?.fetchFromStorage) {
         const content = await this.servicesRef.fetchFromStorage(history.cid);
+        if (!syncStillCurrent()) return;
+
         if (content?.data) {
           try {
             const decryptedContent = cryptoUtils.decryptData(
@@ -583,6 +633,8 @@ export class SyncManager {
 
       const uncommittedChanges =
         await this.socketClient?.getUncommittedChanges();
+      if (!syncStillCurrent()) return;
+
       const encryptedUpdates = uncommittedChanges?.data?.history;
       const uncommittedChangesId: string[] = [];
       if (initialUpdate) {
@@ -612,6 +664,11 @@ export class SyncManager {
         }
       }
 
+      // A socket drop can start a newer reconnect sync while this older sync is
+      // awaiting network calls. Bail before mutating Yjs state or broadcasting
+      // a stale post-sync snapshot.
+      if (!syncStillCurrent()) return;
+
       if (updates.length) {
         const mergedState = Y.mergeUpdates(updates);
         Y.applyUpdate(this.ydoc, mergedState, 'self');
@@ -624,18 +681,18 @@ export class SyncManager {
       // clientID after refresh).  The pre-sync initialUpdate would be
       // stale — it lacks the server content that was just merged in,
       // causing peers to miss parent items for subsequent typing ops.
-      const postSyncUpdate = fromUint8Array(
-        Y.encodeStateAsUpdate(this.ydoc),
-      );
+      const postSyncUpdate = fromUint8Array(Y.encodeStateAsUpdate(this.ydoc));
 
-      // Owner: commit local contents if enough uncommitted updates
+      if (!syncStillCurrent()) return;
+
       if (this.isOwner) {
         await this.commitLocalContents(
           uncommittedChangesId,
           postSyncUpdate,
+          syncId,
         );
       } else {
-        await this.broadcastLocalContents(postSyncUpdate);
+        await this.broadcastLocalContents(postSyncUpdate, syncId);
       }
     }, 'syncLatestCommit');
   }
@@ -672,7 +729,10 @@ export class SyncManager {
   private async commitLocalContents(
     ids: string[],
     unbroadcastedUpdate: string | null,
+    syncId: number,
   ): Promise<void> {
+    const syncStillCurrent = () => this.isCurrentSyncAttempt(syncId);
+
     if (ids.length >= COMMIT_THRESHOLD) {
       if (typeof this.servicesRef?.commitToStorage !== 'function') {
         console.debug(
@@ -685,6 +745,7 @@ export class SyncManager {
         );
         const file = objectToFile({ data: localContent }, 'commit');
         const ipfsHash = await this.servicesRef.commitToStorage(file);
+        if (!syncStillCurrent()) return;
 
         if (!ipfsHash) {
           throw new Error('Failed to upload commit to IPFS: no hash returned');
@@ -694,6 +755,7 @@ export class SyncManager {
           updates: ids,
           cid: ipfsHash,
         });
+        if (!syncStillCurrent()) return;
 
         if (!commitResponse?.status) {
           const errorMsg = commitResponse?.error || 'Server rejected commit';
@@ -706,48 +768,39 @@ export class SyncManager {
       }
     }
 
-    // Broadcast unbroadcasted update
-    if (unbroadcastedUpdate) {
-      const encryptedUpdate = cryptoUtils.encryptData(
-        this.roomKeyBytes!,
-        toUint8Array(unbroadcastedUpdate),
-      );
-      const response = await this.socketClient?.sendUpdate({
-        update: encryptedUpdate,
-      });
-
-      if (!response?.status) {
-        const errorMsg = response?.error || 'Server rejected update';
-        throw new Error(
-          `Failed to broadcast local contents: ${errorMsg}${response?.statusCode ? ` (${response.statusCode})` : ''}`,
-        );
-      }
-
-      const updateId = response?.data?.id;
-      if (updateId) {
-        this.uncommittedUpdatesIdList.push(updateId);
-      }
-    }
+    await this.broadcastLocalContents(unbroadcastedUpdate, syncId, true);
   }
 
   private async broadcastLocalContents(
     unbroadcastedUpdate: string | null,
+    syncId: number,
+    trackUpdateId = false,
   ): Promise<void> {
+    const syncStillCurrent = () => this.isCurrentSyncAttempt(syncId);
+
     if (!unbroadcastedUpdate) return;
 
     const updateToSend = cryptoUtils.encryptData(
       this.roomKeyBytes!,
       toUint8Array(unbroadcastedUpdate),
     );
+    if (!syncStillCurrent()) return;
+
     const response = await this.socketClient?.sendUpdate({
       update: updateToSend,
     });
+    if (!syncStillCurrent()) return;
 
     if (!response?.status) {
       const errorMsg = response?.error || 'Server rejected update';
       throw new Error(
         `Failed to broadcast local contents: ${errorMsg}${response?.statusCode ? ` (${response.statusCode})` : ''}`,
       );
+    }
+
+    const updateId = response?.data?.id;
+    if (trackUpdateId && updateId) {
+      this.uncommittedUpdatesIdList.push(updateId);
     }
   }
 
@@ -761,7 +814,10 @@ export class SyncManager {
         await this.processNextUpdate();
 
         // If owner and enough uncommitted updates, commit
-        if (this.isOwner && this.uncommittedUpdatesIdList.length >= COMMIT_THRESHOLD) {
+        if (
+          this.isOwner &&
+          this.uncommittedUpdatesIdList.length >= COMMIT_THRESHOLD
+        ) {
           await this.processCommit();
         }
       }

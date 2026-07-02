@@ -16,6 +16,7 @@ import { inlineLoader } from '../../utils/inline-loader';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../../types';
 import { isLikelyLatex } from '../../utils/is-likely-latex';
 import { getTemporaryEditor } from '../../utils/helpers';
+import { resolveEditorColorVars } from '../../utils/colors';
 import {
   compressImage,
   getCompressedBase64Image,
@@ -479,6 +480,15 @@ export const setMarkdownInlineStyles = (enabled: boolean) => {
   emitInlineStyles = enabled;
 };
 
+// Standalone exports (downloads, blog publish) resolve `var(--color-editor-*)`
+// to concrete hex so colors render outside the editor. The Split View seed
+// (embedImages:false) opts out: it round-trips back into the doc, where the var
+// must survive to stay theme-responsive.
+let resolveColorVarsForExport = false;
+export const setResolveColorVars = (enabled: boolean) => {
+  resolveColorVarsForExport = enabled;
+};
+
 // Color / font-family / font-size live on a styled <span> (TextStyle marks).
 turndownService.addRule('inlineTextStyle', {
   filter: (node) =>
@@ -492,7 +502,12 @@ turndownService.addRule('inlineTextStyle', {
   replacement: function (content, node) {
     const style = (node as HTMLElement).style;
     const css = [
-      style.color && `color: ${style.color}`,
+      style.color &&
+        `color: ${
+          resolveColorVarsForExport
+            ? resolveEditorColorVars(style.color)
+            : style.color
+        }`,
       style.fontFamily && `font-family: ${style.fontFamily}`,
       style.fontSize && `font-size: ${style.fontSize}`,
     ]
@@ -795,9 +810,13 @@ const MarkdownPasteHandler = (
               let markdown: string;
               try {
                 setMarkdownInlineStyles(Boolean(props?.includeStyles));
+                setResolveColorVars(
+                  Boolean(props?.includeStyles) && props?.embedImages !== false,
+                );
                 markdown = turndownService.turndown(inlineHtml);
               } finally {
                 setMarkdownInlineStyles(false);
+                setResolveColorVars(false);
               }
 
               const metadataEntries: Record<string, string> = {
