@@ -59,7 +59,7 @@ export const MobileSuggestionDraft = ({
   return (
     <div
       data-mobile-comment-drawer-sheet
-      className="p-4 rounded-t-[12px] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] w-full color-bg-secondary"
+      className="p-4 rounded-t-[12px] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] w-full color-bg-secondary pointer-events-auto"
       onClick={(event) => {
         if (isDiscardSuggestionOverlayVisible) {
           return;

@@ -90,6 +90,9 @@ export const CommentDrawerMobile = ({
     className={cn(
       !isMobileDrawerVisible && 'hidden',
       'fixed h-full flex items-end z-10 inset-0',
+      activeSuggestionDraftCard &&
+        !isDiscardSuggestionOverlayVisible &&
+        'pointer-events-none',
     )}
     data-comment-drawer-mobile-input
   >
