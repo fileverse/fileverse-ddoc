@@ -6,6 +6,7 @@ import { getTemporaryEditor } from '../../utils/helpers';
 import { searchForSecureImageNodeAndEmbedImageContent } from '../mardown-paste-handler';
 import DOMPurify from 'dompurify';
 import { prettifyHtml } from '../../utils/prettify-html';
+import { sanitizeCustomCss } from '../../utils/sanitize-css';
 import {
   MERMAID_SVG_ATTRS,
   MERMAID_SVG_TAGS,
@@ -112,21 +113,18 @@ const HtmlExportExtension = (
               date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
             };
 
-            // The document's custom CSS (author-supplied, bare selectors),
-            // injected AFTER sanitize (which runs on the body only) so the
-            // <style> block survives — making the HTML a self-contained, styled
-            // artifact.
-            const customCSS: string = (
-              editor.storage?.markdownPasteHandler?.customCSS || ''
-            ).trim();
-            // Scope to `body` (the export's document root) exactly as the editor
-            // scopes to `.ProseMirror`: bare declarations style the surface,
-            // nested selectors style the content. WITHOUT this wrapper a bare
-            // top-level declaration (e.g. `background: …`) is an invalid rule and
-            // the CSS parser swallows the following selectors into it, killing
-            // the whole block. Relies on native CSS nesting (modern browsers).
-            const styleTag = customCSS
-              ? `\n      <style>\n        body {\n${customCSS}\n        }\n      </style>`
+            // The document's custom CSS (author-supplied). sanitizeCustomCss
+            // scopes it to `body` (the export's document root, mirroring the
+            // editor's `.ProseMirror`) AND strips injection vectors — breakout,
+            // url()/@import exfiltration, position:fixed overlays. The returned
+            // string is already `body { … }`-wrapped and safe to embed. Injected
+            // AFTER DOMPurify (which sanitizes the body only), so it survives.
+            const styleTag = sanitizeCustomCss(
+              editor.storage?.markdownPasteHandler?.customCSS || '',
+              'body',
+            );
+            const styleBlock = styleTag
+              ? `\n      <style>\n${styleTag}\n      </style>`
               : '';
 
             // Create a clean HTML document (no classes/IDs); the only styling is
@@ -134,7 +132,7 @@ const HtmlExportExtension = (
             const htmlContent = `
   <html>
     <head>
-      <title>${metadata.title}</title>${styleTag}
+      <title>${metadata.title}</title>${styleBlock}
     </head>
     <body>
       ${cleanHtml}

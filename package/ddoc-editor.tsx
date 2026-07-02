@@ -52,6 +52,7 @@ import {
   getResponsiveThemeTextColor,
   getThemeStyle,
 } from './utils/document-styling';
+import { sanitizeCustomCss } from './utils/sanitize-css';
 import { useFocusMode } from './hooks/use-focus-mode';
 import { FullScreenToolbar } from './components/fullscreen-toolbar';
 import { mergeTabAwareYjsUpdates } from './components/tabs/utils/tab-utils';
@@ -409,6 +410,14 @@ const DdocEditor = forwardRef(
       const storage = editor?.storage?.markdownPasteHandler;
       if (storage) storage.customCSS = documentStyling?.customCSS ?? '';
     }, [editor, documentStyling?.customCSS]);
+
+    // Sanitize + scope the author's custom CSS before injecting it (it reaches
+    // viewers of published docs, so it's untrusted). Returns '' on SSR; the
+    // client re-renders with the sanitized rule after hydration.
+    const safeCustomCss = useMemo(
+      () => sanitizeCustomCss(documentStyling?.customCSS),
+      [documentStyling?.customCSS],
+    );
 
     useImperativeHandle(
       ref,
@@ -1382,16 +1391,14 @@ const DdocEditor = forwardRef(
           }}
         >
           {/* Author's custom CSS escape hatch. The author writes bare selectors
-              (`h1 { … }`, `p { … }`); we wrap them in the content scope so CSS
-              nesting confines every rule to the document — it can't leak into
-              the toolbar or the host app's chrome. Applies live while editing,
-              in preview, and in the published view. */}
-          {documentStyling?.customCSS ? (
-            <style
-              dangerouslySetInnerHTML={{
-                __html: `.ProseMirror { ${documentStyling.customCSS} }`,
-              }}
-            />
+              (`h1 { … }`, `p { … }`); sanitizeCustomCss scopes every rule to the
+              document (`.ProseMirror { … }`) AND strips injection vectors —
+              breakout via `}`, url()/@import exfiltration, position:fixed
+              overlays, expression()/behavior. Custom CSS reaches viewers of a
+              published doc, so it is treated as untrusted input, not a trusted
+              stylesheet. Applies live while editing, in preview, and published. */}
+          {safeCustomCss ? (
+            <style dangerouslySetInnerHTML={{ __html: safeCustomCss }} />
           ) : null}
           <div
             id="editor-canvas"
@@ -1500,6 +1507,7 @@ const DdocEditor = forwardRef(
                     onMarkdownChange={onSplitViewMarkdownChange}
                     ipfsImageUploadFn={ipfsImageUploadFn}
                     onError={onError}
+                    customCSS={documentStyling?.customCSS}
                     style={{ flexGrow: splitRatio }}
                   />
                 )}

@@ -15,6 +15,7 @@ import { toByteArray } from 'base64-js';
 import { inlineLoader } from '../../utils/inline-loader';
 import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../../types';
 import { isLikelyLatex } from '../../utils/is-likely-latex';
+import { sanitizeCustomCss } from '../../utils/sanitize-css';
 import { getTemporaryEditor } from '../../utils/helpers';
 import { resolveEditorColorVars } from '../../utils/colors';
 import {
@@ -838,17 +839,20 @@ const MarkdownPasteHandler = (
                 /<style\b[^>]*>[\s\S]*?<\/style>\s*/gi,
                 '',
               );
-              const customCSS: string = (
-                editor.storage?.markdownPasteHandler?.customCSS || ''
-              ).trim();
-              if (props?.includeStyles && customCSS) {
-                // Scope to `body` (the rendered document's root) exactly as the
-                // editor scopes to `.ProseMirror`: bare declarations style the
-                // surface, nested selectors style the content. WITHOUT the
-                // wrapper a bare top-level declaration is an invalid rule and the
-                // CSS parser swallows the following selectors into it. Relies on
-                // native CSS nesting (modern browsers).
-                markdown = `<style>\nbody {\n${customCSS}\n}\n</style>\n\n${markdown}`;
+              // sanitizeCustomCss scopes the author CSS to `body` (the rendered
+              // doc's root, mirroring the editor's `.ProseMirror`) AND strips
+              // injection vectors — breakout, url()/@import exfiltration,
+              // position:fixed overlays. The returned string is already
+              // `body { … }`-wrapped, so the downloaded .md is self-contained
+              // and safe to render on any html:true markdown renderer.
+              const safeCSS = props?.includeStyles
+                ? sanitizeCustomCss(
+                    editor.storage?.markdownPasteHandler?.customCSS || '',
+                    'body',
+                  )
+                : '';
+              if (safeCSS) {
+                markdown = `<style>\n${safeCSS}\n</style>\n\n${markdown}`;
               }
 
               const metadataEntries: Record<string, string> = {
