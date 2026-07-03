@@ -17,6 +17,7 @@ import {
   CommentAnchor,
   type CommentAnchorTransactionChange,
   getCommentAtPosition,
+  hasResolvableCommentAnchorInState,
   resolveCommentAnchorPointInState,
   resolveCommentAnchorRangeInState,
   resolveCommentAnchorRangeForAnalysis,
@@ -41,17 +42,6 @@ import {
   EXPLICIT_COMMENT_FOCUS_META,
   isRangeDraft,
 } from './comment-store';
-
-const hasResolvableCommentAnchorInState = (
-  anchor: CommentAnchor,
-  state: EditorState,
-) => {
-  if (anchor.isSuggestion && anchor.suggestionType === 'add') {
-    return resolveCommentAnchorPointInState(anchor, state) !== null;
-  }
-
-  return resolveCommentAnchorRangeInState(anchor, state) !== null;
-};
 
 export interface CommentStoreProviderProps {
   children: React.ReactNode;
@@ -578,6 +568,7 @@ export const CommentStoreProvider = ({
     // floating thread without waiting for a separate UI interaction.
     const updateEditorState = (transaction?: Transaction) => {
       const state = store.getState();
+      state.syncActiveSuggestionDraftAtCursor();
       const isMarkActive = editor.isActive('comment');
       const activeMarkComment = isMarkActive
         ? {
@@ -812,7 +803,7 @@ export const CommentStoreProvider = ({
           const restoredAnchors: CommentAnchor[] = [];
 
           removedAnchorsRef.current.forEach((removedAnchor, commentId) => {
-            if (resolveCommentAnchorRangeInState(removedAnchor, editor.state)) {
+            if (hasResolvableCommentAnchorInState(removedAnchor, editor.state)) {
               restoredAnchors.push(removedAnchor);
               removedAnchorsRef.current.delete(commentId);
             }
@@ -993,11 +984,11 @@ export const CommentStoreProvider = ({
 
                   // Undo can restore one removed anchor and still make the
                   // broad history mapping report neighboring anchors as
-                  // deleted. A valid post-transaction range means the highlight
+                  // deleted. A valid post-transaction anchor means the comment
                   // still exists, so do not remove it from the runtime anchor
                   // set. Truly deleted anchors resolve to null and are removed.
                   return currentAnchor
-                    ? !resolveCommentAnchorRangeInState(
+                    ? !hasResolvableCommentAnchorInState(
                         currentAnchor,
                         editor.state,
                       )
@@ -1055,6 +1046,16 @@ export const CommentStoreProvider = ({
     }) => {
       updateEditorState(transaction);
     };
+    const syncActiveSuggestionDraftAtCursor = () => {
+      store.getState().syncActiveSuggestionDraftAtCursor();
+    };
+    const clearActiveSuggestionDraftAtCursor = () => {
+      if (store.getState().activeSuggestionDraftIdAtCursor === null) {
+        return;
+      }
+
+      store.setState({ activeSuggestionDraftIdAtCursor: null });
+    };
 
     // Keep this effect subscribed to editor-driven changes only. Re-running it
     // for sidebar/thread focus changes lets stale editor selection win again.
@@ -1068,12 +1069,16 @@ export const CommentStoreProvider = ({
     // to keep this subscription stable and focused on editor changes only.
     updateEditorState();
     editor.on('beforeTransaction', handleBeforeTransaction);
+    editor.on('focus', syncActiveSuggestionDraftAtCursor);
+    editor.on('blur', clearActiveSuggestionDraftAtCursor);
     editor.on('selectionUpdate', handleSelectionUpdate);
     editor.on('transaction', handleTransaction);
 
     return () => {
       preTransactionStateRef.current = null;
       editor.off('beforeTransaction', handleBeforeTransaction);
+      editor.off('focus', syncActiveSuggestionDraftAtCursor);
+      editor.off('blur', clearActiveSuggestionDraftAtCursor);
       editor.off('selectionUpdate', handleSelectionUpdate);
       editor.off('transaction', handleTransaction);
     };

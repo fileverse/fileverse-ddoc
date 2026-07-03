@@ -140,6 +140,20 @@ export function resolveCommentAnchorPointInState(
   }
 }
 
+export function hasResolvableCommentAnchorInState(
+  anchor: Pick<
+    CommentAnchor,
+    'anchorFrom' | 'anchorTo' | 'isSuggestion' | 'suggestionType'
+  >,
+  state: EditorState,
+): boolean {
+  if (anchor.isSuggestion && anchor.suggestionType === 'add') {
+    return resolveCommentAnchorPointInState(anchor, state) !== null;
+  }
+
+  return resolveCommentAnchorRangeInState(anchor, state) !== null;
+}
+
 function resolveCommentAnchorRangeFromRenderedDecorations(
   commentId: string,
   state: EditorState,
@@ -173,8 +187,18 @@ function resolveCommentAnchorPointFromRenderedDecorations(
   state: EditorState,
 ): number | null {
   const pluginState = commentDecorationPluginKey.getState(state);
+  return resolveCommentAnchorPointFromDecorationSet(
+    commentId,
+    pluginState?.decorations,
+  );
+}
+
+function resolveCommentAnchorPointFromDecorationSet(
+  commentId: string,
+  decorations?: DecorationSet,
+): number | null {
   const matchingDecorations =
-    pluginState?.decorations.find(undefined, undefined, (spec) => {
+    decorations?.find(undefined, undefined, (spec) => {
       return spec?.commentId === commentId;
     }) ?? [];
 
@@ -518,10 +542,15 @@ function createSuggestionWidget(
   return span;
 }
 
+const createSuggestionWidgetRenderer =
+  (text: string, commentId: string, isActive: boolean) => () =>
+    createSuggestionWidget(text, commentId, isActive);
+
 function buildDecorations(
   anchors: CommentAnchor[],
   state: EditorState,
   activeCommentId: string | null,
+  previousDecorations?: DecorationSet | null,
 ): DecorationSet {
   // Build a new set of decorations from the current anchor list.
   // This is called:
@@ -534,7 +563,6 @@ function buildDecorations(
   }
 
   const decorations: Decoration[] = [];
-
   for (const anchor of anchors) {
     // Skip deleted anchors entirely.
     if (anchor.deleted) continue;
@@ -557,12 +585,21 @@ function buildDecorations(
     // changes (typing / backspace during an Add draft).
     if (anchor.isSuggestion && anchor.suggestionType === 'add') {
       if (!anchor.suggestedContent) continue;
-      const insertPoint = resolveCommentAnchorPointInState(anchor, state);
+      const directPoint = resolveCommentAnchorPointInState(anchor, state);
+      const fallbackPoint = resolveCommentAnchorPointFromDecorationSet(
+        anchor.id,
+        previousDecorations ?? undefined,
+      );
+      const insertPoint = directPoint ?? fallbackPoint;
       if (insertPoint === null) continue;
       decorations.push(
         Decoration.widget(
           insertPoint,
-          createSuggestionWidget(anchor.suggestedContent, anchor.id, isActive),
+          createSuggestionWidgetRenderer(
+            anchor.suggestedContent,
+            anchor.id,
+            isActive,
+          ),
           {
             commentId: anchor.id,
             active: isActive,
@@ -571,7 +608,6 @@ function buildDecorations(
             key: `suggestion-insert-${anchor.id}-${anchor.suggestedContent}-${
               isActive ? 'active' : 'inactive'
             }`,
-            destroy: (node) => (node as HTMLElement).remove(),
           },
         ),
       );
@@ -629,14 +665,18 @@ function buildDecorations(
         );
       }
 
-      // Replace: widget showing the proposed content after the struck-through range.
+      // Replace: widget showing the proposed content before the struck-through range.
       // Key includes the content so PM redraws when the draft's suggestedContent
       // changes (typing / backspace during a Replace draft).
       if (suggestionType === 'replace' && suggestedContent) {
         decorations.push(
           Decoration.widget(
-            range.to,
-            createSuggestionWidget(suggestedContent, anchor.id, isActive),
+            range.from,
+            createSuggestionWidgetRenderer(
+              suggestedContent,
+              anchor.id,
+              isActive,
+            ),
             {
               commentId: anchor.id,
               active: isActive,
@@ -645,7 +685,6 @@ function buildDecorations(
               key: `suggestion-insert-${anchor.id}-${suggestedContent}-${
                 isActive ? 'active' : 'inactive'
               }`,
-              destroy: (node) => (node as HTMLElement).remove(),
             },
           ),
         );
@@ -723,11 +762,16 @@ export const CommentDecorationExtension =
               // Otherwise, map existing decorations through the transaction's mapping
               // to preserve visual highlights during non-doc changes (e.g., selection moves).
               if (tr.docChanged || tr.getMeta(commentDecorationPluginKey)) {
+                const previousDecorations = tr.docChanged
+                  ? null
+                  : pluginState.decorations;
+
                 return {
                   decorations: buildDecorations(
                     getAnchors(),
                     newState,
                     getActiveCommentId(),
+                    previousDecorations,
                   ),
                 };
               }

@@ -14,6 +14,7 @@ import { CommentCard } from './comment-card';
 import { CommentDropdownProps } from './types';
 import { useCommentStore } from '../../stores/comment-store';
 import { useCommentRefs } from '../../stores/comment-store-provider';
+import { useCommentDraftAutoSubmitCountdown } from './use-comment-draft-auto-submit-countdown';
 
 export const CommentDropdown = ({
   activeCommentId,
@@ -99,6 +100,15 @@ export const CommentDropdown = ({
     submitInlineDraft(activeDraftId);
     handleCancel();
   };
+  const { handleDraftBlur, handleDraftFocus, submitLabel } =
+    useCommentDraftAutoSubmitCountdown({
+      draftId: activeDraftId,
+      canAutoSubmit:
+        isConnected &&
+        Boolean(activeDraftId) &&
+        Boolean(activeDraft?.text.trim()),
+      onSubmit: handleClick,
+    });
 
   const handleReplySubmit = () => {
     if (!isConnected) {
@@ -205,6 +215,8 @@ export const CommentDropdown = ({
             updateInlineDraftText(activeDraftId, event.target.value);
           }
         }}
+        onFocus={handleDraftFocus}
+        onBlur={handleDraftBlur}
         onKeyDown={handleKeyDown}
         className="color-bg-default w-full text-body-sm color-text-default min-h-[40px] overflow-y-auto no-scrollbar px-3 py-2 whitespace-pre-wrap"
         placeholder="Type your comment"
@@ -222,10 +234,10 @@ export const CommentDropdown = ({
         <Button
           data-testid="comment-dropdown-send"
           onClick={handleClick}
-          className="px-4 py-2 w-20 min-w-20 h-9 font-medium text-sm"
+          className="px-4 py-2 min-w-[96px] h-9 font-medium text-sm"
           disabled={!activeDraft?.text.trim()}
         >
-          Send
+          {submitLabel}
         </Button>
       </div>
     </div>
