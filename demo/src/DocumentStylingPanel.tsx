@@ -107,18 +107,15 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
   // vs "couldn't be applied" (a syntax error). Specific reasons stay available
   // in the diagnostics array for the future if needed.
   const cssDiagnostics = validateCustomCss(currentStyling.customCSS).diagnostics;
-  const cssIssue =
-    cssDiagnostics.length === 0
-      ? null
-      : cssDiagnostics.some((d) => d.level === 'error')
-        ? {
-            level: 'error' as const,
-            message: 'Some CSS couldn’t be applied — check your syntax.',
-          }
-        : {
-            level: 'warning' as const,
-            message: 'Some styles were removed for safety.',
-          };
+  const hasCssError = cssDiagnostics.some((d) => d.level === 'error');
+  const cssIssue = !cssDiagnostics.length
+    ? null
+    : {
+        level: hasCssError ? ('error' as const) : ('warning' as const),
+        message: hasCssError
+          ? 'Some CSS couldn’t be applied — check your syntax.'
+          : 'Some styles were removed for safety.',
+      };
 
   return (
     <div className="fixed top-[108px] left-4 z-50 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-2xl backdrop-blur-sm max-w-sm max-h-[calc(100vh-120px)] overflow-y-auto">
