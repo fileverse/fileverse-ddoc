@@ -101,9 +101,24 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
     onStylingChange({ ...currentStyling, ...updates });
   };
 
-  // Non-blocking diagnostics for the Custom CSS box — what the sanitizer
-  // stripped/ignored (url(), position:fixed, breakout, syntax errors).
+  // One general (non-blocking) message for the Custom CSS box. The sanitizer
+  // returns per-issue diagnostics; we collapse them to two neutral variants so
+  // the copy is never wrong: "removed for safety" (url()/@import/fixed/scope)
+  // vs "couldn't be applied" (a syntax error). Specific reasons stay available
+  // in the diagnostics array for the future if needed.
   const cssDiagnostics = validateCustomCss(currentStyling.customCSS).diagnostics;
+  const cssIssue =
+    cssDiagnostics.length === 0
+      ? null
+      : cssDiagnostics.some((d) => d.level === 'error')
+        ? {
+            level: 'error' as const,
+            message: 'Some CSS couldn’t be applied — check your syntax.',
+          }
+        : {
+            level: 'warning' as const,
+            message: 'Some styles were removed for safety.',
+          };
 
   return (
     <div className="fixed top-[108px] left-4 z-50 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-2xl backdrop-blur-sm max-w-sm max-h-[calc(100vh-120px)] overflow-y-auto">
@@ -309,23 +324,18 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
             }
             className="w-full h-32 p-2 text-xs font-mono rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 resize-y focus:outline-none focus:border-blue-500"
           />
-          {cssDiagnostics.length > 0 && (
-            <ul className="space-y-1">
-              {cssDiagnostics.map((d) => (
-                <li
-                  key={d.message}
-                  className={cn(
-                    'text-xs flex gap-1.5 items-start',
-                    d.level === 'error'
-                      ? 'text-red-600 dark:text-red-400'
-                      : 'text-amber-600 dark:text-amber-500',
-                  )}
-                >
-                  <span aria-hidden>{d.level === 'error' ? '⛔' : '⚠️'}</span>
-                  <span>{d.message}</span>
-                </li>
-              ))}
-            </ul>
+          {cssIssue && (
+            <p
+              className={cn(
+                'text-xs flex gap-1.5 items-start',
+                cssIssue.level === 'error'
+                  ? 'text-red-600 dark:text-red-400'
+                  : 'text-amber-600 dark:text-amber-500',
+              )}
+            >
+              <span aria-hidden>{cssIssue.level === 'error' ? '⛔' : '⚠️'}</span>
+              <span>{cssIssue.message}</span>
+            </p>
           )}
         </div>
 
