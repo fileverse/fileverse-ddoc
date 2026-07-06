@@ -42,10 +42,14 @@ export interface CssValidationResult {
 const URL_REF = /url\(/i;
 // Legacy/script-ish value vectors.
 const DANGEROUS_VALUE = /expression\(|-moz-binding|behavior\s*:/i;
-// A leading page-root chain (html / body / :root, possibly combined) that we
-// map onto the document scope. Only matches a "complete" token (followed by
-// whitespace, a combinator, or end) so `body.dark` isn't mistaken for `body`.
-const ROOT_LEAD = /^\s*(?:(?:html|body|:root)(?=$|[\s>~+])\s*[>~+]?\s*)+/i;
+// A leading document-root chain that we map onto the doc scope so full-page
+// CSS "just works": the page roots (html / body / :root) and `.markdown-body`
+// — the github-markdown content wrapper many blogs (incl. Vitalik's) use as
+// their content root, equivalent to our `.ProseMirror`. Only matches a
+// "complete" token (followed by whitespace, a combinator, or end) so
+// `body.dark` / `.markdown-body-foo` aren't mistaken for the root token.
+const ROOT_LEAD =
+  /^\s*(?:(?:html|body|:root|\.markdown-body)(?=$|[\s>~+])\s*[>~+]?\s*)+/i;
 
 const MSG = {
   url: "url() and external resources aren't allowed, so they were removed.",
