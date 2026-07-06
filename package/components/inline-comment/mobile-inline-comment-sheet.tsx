@@ -1,15 +1,23 @@
 import { useRef } from 'react';
-import { Avatar, IconButton, TextAreaFieldV2 } from '@fileverse/ui';
+import {
+  Avatar,
+  Button,
+  IconButton,
+  LucideIcon,
+  TextAreaFieldV2,
+} from '@fileverse/ui';
 import { DeleteConfirmOverlay } from './delete-confirm-overlay';
 import { resizeInlineCommentTextarea } from './resize-inline-comment-textarea';
 import type { InlineCommentDraft } from './context/types';
 import { useCommentStore } from '../../stores/comment-store';
 import { useEnsStatus } from './use-ens-status';
 import EnsLogo from '../../assets/ens.svg';
+import { useCommentDraftAutoSubmitCountdown } from './use-comment-draft-auto-submit-countdown';
 
 interface MobileInlineCommentProps {
   activeDraft: InlineCommentDraft | null;
   activeDraftId: string | null;
+  isConnected: boolean;
   isDiscardCommentOverlayVisible: boolean;
   mobileDraftRef: React.RefObject<HTMLDivElement>;
   onAttemptClose: () => void;
@@ -22,6 +30,7 @@ interface MobileInlineCommentProps {
 export const MobileInlineComment = ({
   activeDraft,
   activeDraftId,
+  isConnected,
   isDiscardCommentOverlayVisible,
   mobileDraftRef,
   onAttemptClose,
@@ -33,6 +42,16 @@ export const MobileInlineComment = ({
   const mobileDraftTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const username = useCommentStore((s) => s.username);
   const ensStatus = useEnsStatus(username);
+  const { handleDraftBlur, handleDraftFocus, submitLabel } =
+    useCommentDraftAutoSubmitCountdown({
+      draftId: activeDraftId,
+      canAutoSubmit:
+        isConnected &&
+        Boolean(activeDraftId) &&
+        Boolean(activeDraft?.text.trim()) &&
+        !isDiscardCommentOverlayVisible,
+      onSubmit,
+    });
 
   return (
     <div
@@ -73,6 +92,8 @@ export const MobileInlineComment = ({
 
             resizeInlineCommentTextarea(event.currentTarget);
           }}
+          onFocus={handleDraftFocus}
+          onBlur={handleDraftBlur}
           onInput={(event) => resizeInlineCommentTextarea(event.currentTarget)}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && (!event.shiftKey || event.metaKey)) {
@@ -83,13 +104,19 @@ export const MobileInlineComment = ({
           className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
           placeholder="Add a comment"
         />
-        <IconButton
+        <Button
+          size="sm"
           onClick={onSubmit}
-          icon={'SendHorizontal'}
           variant="ghost"
           disabled={!activeDraft?.text.trim()}
-          className="!min-w-[24px] !w-[24px] !min-h-[24px] !h-[24px]"
-        />
+          title={submitLabel}
+          className="!min-w-[96px] shrink-0 !px-2"
+        >
+          <span className="inline-flex items-center gap-1 whitespace-nowrap">
+            <LucideIcon name="SendHorizontal" size="sm" />
+            {submitLabel}
+          </span>
+        </Button>
       </div>
       <DeleteConfirmOverlay
         isVisible={isDiscardCommentOverlayVisible}

@@ -404,6 +404,7 @@ export const getResizableMediaNodeView =
           data-drag-handle={isDragging}
           className={cn(
             'w-fit flex flex-col relative group transition-all ease-in-out',
+            !isPreviewMode && 'p-2 pt-1 color-bg-secondary rounded-lg',
             isDragging && 'opacity-50',
           )}
           onTouchStart={handleTouchStart}
@@ -411,6 +412,34 @@ export const getResizableMediaNodeView =
           onTouchEnd={handleTouchEnd}
           onTouchCancel={handleTouchEnd}
         >
+          {!isPreviewMode && (
+            <div className="flex gap-1 p-1 mb-1 ml-auto">
+              {resizableMediaActions
+                .filter((btn) => {
+                  if (mediaType === 'iframe' && btn.tooltip === 'Add Caption')
+                    return false;
+                  return true;
+                })
+                .map((btn, index) => {
+                  return (
+                    <ToolbarButton
+                      key={index}
+                      variant={'ghost'}
+                      tooltip={btn.tooltip}
+                      isActive={mediaActionActiveState[btn.tooltip]}
+                      onClick={() =>
+                        btn.tooltip === 'Delete'
+                          ? deleteNode()
+                          : btn.action?.(updateAttributes, editor, getPos)
+                      }
+                      icon={btn.icon as string}
+                      classNames="min-w-6 aspect-square"
+                      size="sm"
+                    />
+                  );
+                })}
+            </div>
+          )}
           <div
             contentEditable={false}
             className={cn(
@@ -422,7 +451,15 @@ export const getResizableMediaNodeView =
               isImageType && selected
                 ? 'border-[#5c0aff]'
                 : 'border-transparent',
+              // Round the backdrop to match the media's own rounded-lg so the
+              // background doesn't poke out behind a transparent image's corners.
+              node.attrs.backgroundColor && 'rounded-lg',
             )}
+            style={
+              node.attrs.backgroundColor
+                ? { backgroundColor: node.attrs.backgroundColor }
+                : undefined
+            }
             onClick={() => {
               if (isPreviewMode) return;
               const pos = getPos();
@@ -549,39 +586,6 @@ export const getResizableMediaNodeView =
               {node.attrs.caption}
             </div>
           ) : null}
-
-          {!isPreviewMode && (
-            <span
-              className={cn(
-                'absolute transition-all rounded-md overflow-hidden box-border border color-border-default color-bg-default shadow-elevation-3 opacity-0 group-hover:opacity-100 flex gap-1 p-1',
-                isSoundcloudIframe ? 'bottom-2 left-2' : 'top-2 right-2',
-              )}
-            >
-              {resizableMediaActions
-                .filter((btn) => {
-                  if (mediaType === 'iframe' && btn.tooltip === 'Add Caption')
-                    return false;
-                  return true;
-                })
-                .map((btn, index) => {
-                  return (
-                    <ToolbarButton
-                      key={index}
-                      tooltip={btn.tooltip}
-                      isActive={mediaActionActiveState[btn.tooltip]}
-                      onClick={() =>
-                        btn.tooltip === 'Delete'
-                          ? deleteNode()
-                          : btn.action?.(updateAttributes, editor, getPos)
-                      }
-                      icon={btn.icon as string}
-                      classNames="min-w-6 aspect-square"
-                      size="sm"
-                    />
-                  );
-                })}
-            </span>
-          )}
         </div>
       </NodeViewWrapper>
     );

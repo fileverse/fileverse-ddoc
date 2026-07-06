@@ -13,6 +13,7 @@ import {
   useCallback,
   useEffect,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -342,6 +343,15 @@ const DdocEditor = forwardRef(
         DEFAULT_TAB_NAME,
       [activeTabId, tabs],
     );
+
+    // All tabs share a single scroll container (editorScrollContainerRef), so
+    // its scrollTop carries over between tabs. On switch, reset the active tab's
+    // canvas to the top. useLayoutEffect runs before paint to avoid a flash.
+    useLayoutEffect(() => {
+      const el = editorScrollContainerRef.current;
+      if (!el) return;
+      el.scrollTop = 0;
+    }, [activeTabId]);
 
     // Split View (markdown left, read-only doc right). Disabled in preview.
     // Desktop-only for v1: two side-by-side panes don't fit below the 960px
@@ -1184,6 +1194,19 @@ const DdocEditor = forwardRef(
                                               pointerEvents: entry.isActive
                                                 ? undefined
                                                 : 'none',
+                                              // Inactive tabs stay mounted (for
+                                              // instant switching) but are
+                                              // collapsed to the wrapper height
+                                              // via inset:0. Without clipping,
+                                              // their taller content overflows
+                                              // this box and inflates the shared
+                                              // scroll container's scrollHeight —
+                                              // so switching long→short leaves a
+                                              // ghost "void" the browser won't
+                                              // scroll-clamp away. Clip it.
+                                              overflow: entry.isActive
+                                                ? undefined
+                                                : 'hidden',
                                             }}
                                           >
                                             <EditorContent

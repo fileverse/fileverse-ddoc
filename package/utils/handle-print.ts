@@ -92,7 +92,7 @@ const CONTENT_STYLES = `
     height: 1.5em;
     position: relative;
     border: 2px solid black;
-    margin-right: 0.5rem;
+    margin-right: .5rem;
     display: grid;
     place-content: center;
     font-family: 'Inter', sans-serif;
@@ -371,37 +371,88 @@ const buildContentPrintHead = ({
   </head>
 `;
 
-const buildContentPrintDocument = (sectionsHtml: string) => `
-  <!DOCTYPE html>
-  <html>
-    ${buildContentPrintHead({
-      includePrintMediaStyles: true,
-      includeMathScripts: true,
-    })}
-    <body>
-      <div class="print-content-root">
-        ${sectionsHtml}
-      </div>
-      <script>
-        window.onload = () => {
-          renderMathInElement(document.body, {
-            delimiters: [
-              { left: '$$', right: '$$', display: true },
-              { left: '$', right: '$', display: false }
-            ],
-            throwOnError: false
-          });
+// Class for the print host injected into the live document. Content prints via
+// the host page (not an iframe) because iOS WebKit's iframe print pipeline is
+// unreliable — it prints the host page or a blank page. Chrome/Firefox on iOS
+// share WebKit's rendering but use their own print pipelines, so only a
+// page-level print with print-media scoping is reliable across them.
+const PRINT_HOST_CLASS = 'ddoc-print-host';
 
-          setTimeout(() => {
-            window.print();
-            window.onafterprint = () => {
-              window.close();
-            };
-          }, 100);
-        }
-      </script>
-    </body>
-  </html>
+// Restores the document baseline the iframe used to get "for free" from the UA
+// stylesheet. In the live app document the global reset (e.g. Tailwind
+// preflight) zeroes margins and collapses heading sizes, so the print content
+// must re-declare its own typography/spacing. Scoped to `.print-content-root`
+// and intentionally left off KaTeX-rendered nodes (a blanket reset would break
+// math). Declared before CONTENT_STYLES so existing overrides still win.
+const MAIN_DOCUMENT_PRINT_BASELINE = `
+  .print-content-root {
+    color: #0D0D0D;
+    background: #fff;
+    color-scheme: light;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  .print-content-root h1 { font-size: 2em; font-weight: 600; line-height: 1.2; margin: 0.67em 0; color: #0D0D0D; }
+  .print-content-root h2 { font-size: 1.5em; font-weight: 600; line-height: 1.2; margin: 0.83em 0; color: #0D0D0D; }
+  .print-content-root h3 { font-size: 1.17em; font-weight: 600; line-height: 1.2; margin: 1em 0; color: #0D0D0D; }
+  .print-content-root h4 { font-size: 1em; font-weight: 600; margin: 1.33em 0; color: #0D0D0D; }
+  .print-content-root h5 { font-size: 0.83em; font-weight: 600; margin: 1.67em 0; color: #0D0D0D; }
+  .print-content-root h6 { font-size: 0.67em; font-weight: 600; margin: 2.33em 0; color: #0D0D0D; }
+  .print-content-root p { margin: 0 0 12px 0; }
+  .print-content-root ul { list-style: disc; }
+  .print-content-root ol { list-style: decimal; }
+  .print-content-root ul, .print-content-root ol { margin: 0 0 16px 0; padding-left: 24px; }
+  .print-content-root li { margin: 4px 0; }
+  .print-content-root a { color: #3B82F6; text-decoration: underline; }
+  .print-content-root strong, .print-content-root b { font-weight: 600; }
+  .print-content-root em, .print-content-root i { font-style: italic; }
+  .print-content-root hr { border: none; border-top: 1px solid #E8EBEC; margin: 16px 0; }
+  .print-content-root img { max-width: 100%; height: auto; }
+  .print-content-root code { font-family: monospace; }
+`;
+
+// Styles injected alongside the print host. The host is hidden on screen and
+// revealed only for print, while every other top-level node in the page is
+// hidden during print — so the printout contains the document content alone.
+const buildMainDocumentPrintStyles = () => `
+  ${buildRegisteredFontFaceCss()}
+  .${PRINT_HOST_CLASS} { display: none; }
+  ${MAIN_DOCUMENT_PRINT_BASELINE}
+  ${CONTENT_STYLES}
+  ${CONTENT_MEDIA_STYLES}
+  @media print {
+    /* The app shell often pins html/body to the viewport height with
+       overflow hidden; left as-is it clips the printout to a single page and
+       skews the margins. Reset it so content paginates freely. */
+    html, body {
+      height: auto !important;
+      min-height: 0 !important;
+      max-height: none !important;
+      margin: 0 !important;
+      padding: 0 !important;
+      overflow: visible !important;
+    }
+    /* Mobile WebKit honors @page margins unreliably, so only the vertical
+       (per-page) margins ride on @page. Horizontal margins are applied as
+       container padding, which every page inherits because the content column
+       width is constant across page breaks. */
+    @page { margin: ${PAGE_MARGIN_VERTICAL_INCHES}in 0; }
+    body > *:not(.${PRINT_HOST_CLASS}) { display: none !important; }
+    .${PRINT_HOST_CLASS} {
+      display: block !important;
+      position: static !important;
+      height: auto !important;
+      max-height: none !important;
+      overflow: visible !important;
+      margin: 0 !important;
+      padding: 0 !important;
+    }
+    .${PRINT_HOST_CLASS} .print-content-root {
+      box-sizing: border-box;
+      padding-left: ${PAGE_MARGIN_HORIZONTAL_INCHES}in !important;
+      padding-right: ${PAGE_MARGIN_HORIZONTAL_INCHES}in !important;
+    }
+  }
 `;
 
 const buildContentPrintMeasurementDocument = () => `
@@ -752,7 +803,7 @@ export const handlePrint = (slides: string[]) => {
                             height: 1.5em;
                             position: relative;
                             border: 2px solid black;
-                            margin-right: 0.5rem;
+                            margin-right: .5rem;
                             display: grid;
                             place-content: center;
                         }
@@ -871,9 +922,44 @@ export const handleContentPrint = (content: string) => {
   const sectionsHtml = getPrintSectionsHtml(
     splitContentIntoPrintSections(content),
   );
-  const htmlContent = buildContentPrintDocument(sectionsHtml);
 
-  printHelper(htmlContent);
+  const styleEl = document.createElement('style');
+  styleEl.setAttribute('data-ddoc-print', 'true');
+  styleEl.textContent = buildMainDocumentPrintStyles();
+
+  const host = document.createElement('div');
+  host.className = PRINT_HOST_CLASS;
+  host.setAttribute('aria-hidden', 'true');
+
+  const contentRoot = document.createElement('div');
+  contentRoot.className = 'print-content-root';
+  contentRoot.innerHTML = sectionsHtml;
+  host.appendChild(contentRoot);
+
+  document.head.appendChild(styleEl);
+  document.body.appendChild(host);
+
+  // KaTeX is bundled with the package, so render math directly against the host
+  // — no CDN scripts or cross-document load to race against.
+  try {
+    renderMathInElement(contentRoot, CONTENT_PRINT_KATEX_OPTIONS);
+  } catch {
+    // Math rendering is best-effort; print regardless.
+  }
+
+  const state: { fallback?: ReturnType<typeof setTimeout> } = {};
+  const cleanup = () => {
+    window.removeEventListener('afterprint', cleanup);
+    if (state.fallback) clearTimeout(state.fallback);
+    if (styleEl.parentNode) styleEl.parentNode.removeChild(styleEl);
+    if (host.parentNode) host.parentNode.removeChild(host);
+  };
+  window.addEventListener('afterprint', cleanup);
+  // Safety net: some mobile browsers don't reliably fire afterprint.
+  state.fallback = setTimeout(cleanup, 60000);
+
+  // Defer one frame so the injected node is committed before printing.
+  requestAnimationFrame(() => window.print());
 };
 
 const printHelper = (content: string) => {
@@ -888,10 +974,18 @@ const printHelper = (content: string) => {
 
   document.body.appendChild(overlay);
 
+  // Render the print iframe off-screen. If it sits anywhere within the
+  // viewport, mobile browsers (iOS Safari, Android Chrome) print the host page
+  // — navbar and app UI included — instead of the iframe's own document.
   const iframe = document.createElement('iframe');
+  iframe.setAttribute('aria-hidden', 'true');
   iframe.style.position = 'fixed';
+  iframe.style.top = '0';
+  iframe.style.left = '-9999px';
+  iframe.style.width = '1px';
+  iframe.style.height = '1px';
   iframe.style.border = 'none';
-  iframe.style.zIndex = '9999';
+  iframe.style.zIndex = '-1';
 
   document.body.appendChild(iframe);
 

@@ -32,7 +32,7 @@ interface MarkdownSourcePaneProps {
   onViewReady?: (view: EditorView | null) => void;
 }
 
-const PLACEHOLDER = 'Jot down your ideas and grow them 💡';
+const PLACEHOLDER = 'Write your ideas. Watch them grow. 🌱';
 
 // Marks programmatic doc updates (the seed / external value sync) so the change
 // listener can ignore them — only real user edits should reparse into the doc.

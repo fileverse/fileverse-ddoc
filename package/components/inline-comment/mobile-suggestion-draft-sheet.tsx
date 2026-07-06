@@ -7,6 +7,7 @@ import verifiedMark from '../../assets/ens-check.svg';
 import { dateFormatter, nameFormatter } from '../../utils/helpers';
 import type { SuggestionFloatingDraftCard } from './context/types';
 import { SuggestionDiffSummary } from './suggestion-diff-summary';
+import { useSuggestionAutoSubmitCountdown } from './use-suggestion-auto-submit-countdown';
 
 interface MobileSuggestionDraftProps {
   activeSuggestionDraftCard: SuggestionFloatingDraftCard;
@@ -37,6 +38,12 @@ export const MobileSuggestionDraft = ({
   const hasSuggestionLink = Boolean(activeSuggestionDraftCard.linkHref);
   const canSubmitSuggestion =
     hasSuggestionOriginal || hasSuggestionInserted || hasSuggestionLink;
+  const { submitLabel } = useSuggestionAutoSubmitCountdown({
+    suggestionId: activeSuggestionDraftCard.suggestionId,
+    canAutoSubmit:
+      isConnected && canSubmitSuggestion && !isDiscardSuggestionOverlayVisible,
+    onSubmit,
+  });
   const suggestionType = hasSuggestionLink
     ? 'link'
     : hasSuggestionOriginal
@@ -52,7 +59,7 @@ export const MobileSuggestionDraft = ({
   return (
     <div
       data-mobile-comment-drawer-sheet
-      className="p-4 rounded-t-[12px] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] w-full color-bg-secondary"
+      className="p-4 rounded-t-[12px] shadow-[0_-12px_32px_rgba(0,0,0,0.18)] w-full color-bg-secondary pointer-events-auto"
       onClick={(event) => {
         if (isDiscardSuggestionOverlayVisible) {
           return;
@@ -128,7 +135,7 @@ export const MobileSuggestionDraft = ({
               onClick={onSubmit}
               className="!min-w-[80px]"
             >
-              Submit
+              {submitLabel}
             </Button>
           </div>
         </div>

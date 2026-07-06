@@ -121,8 +121,9 @@ export const PageBreak = Node.create<PageBreakRuleOptions>({
               return true;
             }
 
-            // Check if text input would affect a page break
-            const nodeAtPos = state.doc.nodeAt(from - 1);
+            // Check if text input would affect a previous page break. At the
+            // start of the document there is no previous position to inspect.
+            const nodeAtPos = from > 0 ? state.doc.nodeAt(from - 1) : null;
             if (nodeAtPos?.type.name === 'pageBreak') {
               return true;
             }

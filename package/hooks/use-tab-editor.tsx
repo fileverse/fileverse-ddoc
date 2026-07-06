@@ -9,6 +9,7 @@ import {
   MutableRefObject,
   SetStateAction,
 } from 'react';
+import { toast } from '@fileverse/ui';
 import {
   DdocProps,
   DdocEditorProps,
@@ -461,7 +462,6 @@ export const useTabEditor = ({
           ...DdocEditorProps,
           handleDOMEvents: {
             mousedown: focusSubmittedSuggestionFromEditorEvent,
-            click: focusSubmittedSuggestionFromEditorEvent,
             mouseover: (view, event) => {
               if (
                 !isEditorViewInsideActiveRoot(view, activeEditorRef.current)
@@ -1633,6 +1633,12 @@ const useEditorExtension = ({
             storeApiRef.current?.getState().startDeleteDraft(from, to),
           onPasteLink: (from, to, href) =>
             storeApiRef.current?.getState().startLinkDraft(from, to, href),
+          onUnsupportedPaste: () =>
+            toast({
+              title:
+                'Suggestion mode only supports single-line plain text paste.',
+              toastType: 'mini',
+            }),
           onDeleteAtCursor: (direction) =>
             storeApiRef.current
               ?.getState()

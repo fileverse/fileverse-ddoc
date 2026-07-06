@@ -9,6 +9,7 @@ import { SuggestionDiffSummary } from '../suggestion-diff-summary';
 import EnsLogo from '../../../assets/ens.svg';
 import { dateFormatter, nameFormatter } from '../../../utils/helpers';
 import verifiedMark from '../../../assets/ens-check.svg';
+import { useSuggestionAutoSubmitCountdown } from '../use-suggestion-auto-submit-countdown';
 
 /**
  * SuggestionDraftFloatingCard
@@ -40,6 +41,14 @@ export const SuggestionDraftFloatingCard = ({
   const canSubmit = hasOriginal || hasInserted || hasLink;
   const username = useCommentStore((s) => s.username);
   const ensStatus = useEnsStatus(username);
+  const handleSubmit = useCallback(() => {
+    submitDraft(card.suggestionId);
+  }, [card.suggestionId, submitDraft]);
+  const { submitLabel } = useSuggestionAutoSubmitCountdown({
+    suggestionId: card.suggestionId,
+    canAutoSubmit: isConnected && canSubmit,
+    onSubmit: handleSubmit,
+  });
   const handleCardNode = useCallback(
     (node: HTMLDivElement | null) => {
       registerCardNode(card.floatingCardId, node);
@@ -121,10 +130,10 @@ export const SuggestionDraftFloatingCard = ({
             <Button
               size="sm"
               disabled={!canSubmit}
-              onClick={() => submitDraft(card.suggestionId)}
+              onClick={handleSubmit}
               className="!min-w-[80px]"
             >
-              Submit
+              {submitLabel}
             </Button>
           </div>
         </div>

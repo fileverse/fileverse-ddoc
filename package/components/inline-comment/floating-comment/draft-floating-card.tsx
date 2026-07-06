@@ -10,6 +10,7 @@ import { nameFormatter } from '../../../utils/helpers';
 import verifiedMark from '../../../assets/ens-check.svg';
 import EnsLogo from '../../../assets/ens.svg';
 import { useEnsStatus } from '../use-ens-status';
+import { useCommentDraftAutoSubmitCountdown } from '../use-comment-draft-auto-submit-countdown';
 
 export const DraftFloatingCard = ({
   draft,
@@ -108,7 +109,17 @@ const InputField = ({
   const updateInlineDraftText = useCommentStore((s) => s.updateInlineDraftText);
 
   const cancelInlineDraft = useCommentStore((s) => s.cancelInlineDraft);
+  const isConnected = useCommentStore((s) => s.isConnected);
   const draftTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+  const handleSubmit = useCallback(() => {
+    submitInlineDraft(draft.draftId);
+  }, [draft.draftId, submitInlineDraft]);
+  const { handleDraftBlur, handleDraftFocus, submitLabel } =
+    useCommentDraftAutoSubmitCountdown({
+      draftId: draft.draftId,
+      canAutoSubmit: isConnected && Boolean(draftState.text.trim()),
+      onSubmit: handleSubmit,
+    });
 
   useEffect(() => {
     if (!draftTextareaRef.current) {
@@ -128,11 +139,13 @@ const InputField = ({
             updateInlineDraftText(draft.draftId, event.target.value);
             resizeInlineCommentTextarea(event.currentTarget);
           }}
+          onFocus={handleDraftFocus}
+          onBlur={handleDraftBlur}
           onInput={(event) => resizeInlineCommentTextarea(event.currentTarget)}
           onKeyDown={(event) => {
             if (event.key === 'Enter' && (!event.shiftKey || event.metaKey)) {
               event.preventDefault();
-              submitInlineDraft(draft.draftId);
+              handleSubmit();
             }
           }}
           className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
@@ -148,11 +161,11 @@ const InputField = ({
           Cancel
         </Button>
         <Button
-          className="w-20 min-w-20"
+          className="min-w-[96px]"
           disabled={!draftState.text.trim()}
-          onClick={() => submitInlineDraft(draft.draftId)}
+          onClick={handleSubmit}
         >
-          Send
+          {submitLabel}
         </Button>
       </div>
     </div>
