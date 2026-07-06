@@ -113,7 +113,7 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
     : {
         level: hasCssError ? ('error' as const) : ('warning' as const),
         message: hasCssError
-          ? 'Some CSS couldn’t be applied — check your syntax.'
+          ? 'Some CSS couldn’t be applied. Check your syntax.'
           : 'Some styles were removed for safety.',
       };
 
@@ -305,11 +305,7 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
             Custom CSS
           </label>
           <p className="text-xs text-slate-500 dark:text-slate-400">
-            Target elements directly — e.g.{' '}
-            <code className="font-mono">h1</code>,{' '}
-            <code className="font-mono">p</code>,{' '}
-            <code className="font-mono">blockquote</code>. Scoped to the document
-            automatically.
+            Add your own CSS to customize the appearance and layout of your doc.
           </p>
           <textarea
             id="custom-css-input"
@@ -317,7 +313,7 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
             onChange={(e) => handleStylingUpdate({ customCSS: e.target.value })}
             spellCheck={false}
             placeholder={
-              'h1 { letter-spacing: -0.02em }\np { line-height: 1.8 }'
+              'body { font-family: Georgia, serif }\nh1 { letter-spacing: -0.02em }'
             }
             className="w-full h-32 p-2 text-xs font-mono rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 resize-y focus:outline-none focus:border-blue-500"
           />
