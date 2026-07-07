@@ -1,6 +1,50 @@
 import { Editor, Range } from '@tiptap/core';
+import { startImageUpload } from './upload-images';
+import { validateImageExtension } from './check-image-type';
+import { IMG_UPLOAD_SETTINGS } from '../components/editor-utils';
+import { IpfsImageUploadResponse } from '../types';
 
 type InsertCommand = (editor: Editor, range?: Range) => void;
+
+export type UploadImageOptions = {
+  onError?: (errorString: string) => void;
+  ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
+};
+
+/**
+ * File-picker image upload — mirrors the toolbar flow
+ * (editor-utils.tsx "Upload Image") and the slash "Image" item.
+ */
+export const uploadImageCommand = (
+  editor: Editor,
+  { onError, ipfsImageUploadFn }: UploadImageOptions = {},
+) => {
+  editor.chain().focus().deleteRange(editor.state.selection).run();
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/png, image/jpeg, image/gif';
+  input.onchange = async () => {
+    if (input.files?.length) {
+      const file = input.files[0];
+      if (!validateImageExtension(file, onError)) {
+        return;
+      }
+      const size = file.size;
+      const imgConfig = ipfsImageUploadFn
+        ? IMG_UPLOAD_SETTINGS.Extended
+        : IMG_UPLOAD_SETTINGS.Base;
+      if (size > imgConfig.maxSize) {
+        if (onError && typeof onError === 'function') {
+          onError(imgConfig.errorMsg);
+        }
+        return;
+      }
+      const pos = editor.view.state.selection.from;
+      startImageUpload(file, editor.view, pos, ipfsImageUploadFn);
+    }
+  };
+  input.click();
+};
 
 /** Start a chain, deleting the slash-command range when invoked from the slash menu. */
 const begin = (editor: Editor, range?: Range) => {

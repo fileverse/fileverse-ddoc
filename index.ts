@@ -3,6 +3,12 @@ export { PreviewDdocEditor } from './package/preview-ddoc-editor';
 export { handleContentPrint } from './package/utils/handle-print';
 export { DdocExportModal } from './package/components/export-modal';
 export { useHeadlessEditor } from './package/hooks/use-headless-editor';
+export { useEditorCommands } from './package/hooks/use-editor-commands';
+export type {
+  EditorCommand,
+  EditorCommandId,
+  UseEditorCommandsOptions,
+} from './package/hooks/use-editor-commands';
 export { useExportHeadlessEditorContent } from './package/hooks/use-export-headless-editor-content';
 export { mergeTabAwareYjsUpdates } from './package/components/tabs/utils/tab-utils';
 export { buildVersionDiffSnapshot } from './package/components/tabs/utils/version-diff-snapshot';
