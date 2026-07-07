@@ -257,6 +257,9 @@ export interface DdocProps extends CommentAccountProps {
   onComment?: () => void;
   onInlineComment?: () => void;
   onFocusMode?: (isFocusMode: boolean) => void;
+  /** Controlled focus mode (D6). Omit for the legacy internal-state behavior. */
+  isFocusMode?: boolean;
+  onFocusModeChange?: (isFocusMode: boolean) => void;
   onMarkdownExport?: () => void;
   onMarkdownImport?: () => void;
   onPdfExport?: () => void;

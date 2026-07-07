@@ -107,6 +107,8 @@ const DdocEditor = forwardRef(
       onComment,
       onInlineComment,
       onFocusMode,
+      isFocusMode: isFocusModeProp,
+      onFocusModeChange,
       onMarkdownExport,
       onMarkdownImport,
       onPdfExport,
@@ -162,6 +164,8 @@ const DdocEditor = forwardRef(
     ref,
   ) => {
     const { isFocusMode, toggleFocusMode } = useFocusMode({
+      isFocusMode: isFocusModeProp,
+      onFocusModeChange,
       onFocusMode: (value) => {
         if (commentDrawerOpen) {
           setCommentDrawerOpen?.(false);
