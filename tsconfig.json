@@ -27,6 +27,6 @@
     "demo/src/vite-env.d.ts",
     "demo/src/crypto"
   ],
-  "exclude": ["demo", "public"],
+  "exclude": ["demo", "public", "**/*.test.ts", "**/*.test.tsx"],
   "references": [{ "path": "./tsconfig.node.json" }]
 }
