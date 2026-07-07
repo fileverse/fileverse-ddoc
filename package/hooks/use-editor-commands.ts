@@ -1,5 +1,5 @@
-import { useEffect, useMemo, useReducer } from 'react';
-import { Editor } from '@tiptap/react';
+import { useMemo } from 'react';
+import { Editor, useEditorState } from '@tiptap/react';
 import {
   insertCommands,
   uploadImageCommand,
@@ -87,6 +87,18 @@ const readLineHeight = (editor: Editor): string => {
   return lineHeight || '138%';
 };
 
+const currentHeading = (editor: Editor): string | null => {
+  for (const level of HEADING_LEVELS)
+    if (editor.isActive('heading', { level })) return String(level);
+  return editor.isActive('paragraph') ? 'paragraph' : null;
+};
+
+const currentAlign = (editor: Editor): string | null => {
+  for (const a of ['left', 'center', 'right', 'justify'])
+    if (editor.isActive({ textAlign: a })) return a;
+  return null;
+};
+
 const stepFontSize = (editor: Editor, direction: 1 | -1) => {
   const current = parseInt(readFontSize(editor), 10);
   const next =
@@ -98,31 +110,51 @@ const stepFontSize = (editor: Editor, direction: 1 | -1) => {
 
 /**
  * Reactive, editor-derived command registry (architecture doc §2 bucket 1).
- * INVARIANT: every isActive/current below READS the editor — the hook holds no
- * authoritative state of its own, so any number of instances stay in sync.
+ * INVARIANT: all isActive/current/isEnabled values are derived from the
+ * editor via `useEditorState` (Tiptap's useSyncExternalStore wrapper) — the
+ * hook holds no authoritative state of its own, so any number of instances
+ * stay in sync, and consumers only re-render when a derived value changes
+ * (deep-equality gated), not on every transaction.
  */
 export const useEditorCommands = (
   editor: Editor | null,
   options: UseEditorCommandsOptions = {},
 ): Record<EditorCommandId, EditorCommand> => {
   const { onError, ipfsImageUploadFn } = options;
-  // Re-render tick: recompute derived state on the same events the existing
-  // toolbar uses (selectionUpdate), plus transaction so undo-depth and mark
-  // changes from other surfaces are also observed.
-  const [, force] = useReducer((x: number) => x + 1, 0);
-  useEffect(() => {
-    if (!editor) return;
-    editor.on('selectionUpdate', force);
-    editor.on('transaction', force);
-    return () => {
-      editor.off('selectionUpdate', force);
-      editor.off('transaction', force);
-    };
-  }, [editor]);
+
+  // Flat, comparable snapshot — no functions, so deepEqual can gate renders.
+  const state = useEditorState({
+    editor,
+    selector: ({ editor: e }: { editor: Editor | null }) => {
+      if (!e || e.isDestroyed) return null;
+      return {
+        canUndo: e.can().undo(),
+        canRedo: e.can().redo(),
+        hasSelection: !e.state.selection.empty,
+        bold: e.isActive('bold'),
+        italic: e.isActive('italic'),
+        underline: e.isActive('underline'),
+        strike: e.isActive('strike'),
+        superscript: e.isActive('superscript'),
+        subscript: e.isActive('subscript'),
+        code: e.isActive('code'),
+        codeBlock: e.isActive('codeBlock'),
+        link: e.isActive('link'),
+        bulletList: e.isActive('bulletList'),
+        orderedList: e.isActive('orderedList'),
+        taskList: e.isActive('taskList'),
+        heading: currentHeading(e),
+        align: currentAlign(e),
+        lineHeight: getCurrentLineHeight(e, readLineHeight(e)),
+        fontFamily:
+          (e.getAttributes('textStyle').fontFamily as string) ?? null,
+      };
+    },
+  });
 
   return useMemo(() => {
     const disabled: EditorCommand = { run: () => {}, isEnabled: false };
-    if (!editor || editor.isDestroyed) {
+    if (!editor || editor.isDestroyed || !state) {
       return new Proxy({} as Record<EditorCommandId, EditorCommand>, {
         get: () => disabled,
       });
@@ -133,32 +165,20 @@ export const useEditorCommands = (
       extra: Partial<EditorCommand> = {},
     ): EditorCommand => ({ run, isEnabled: true, ...extra });
 
-    const currentHeading = (): string | null => {
-      for (const level of HEADING_LEVELS)
-        if (editor.isActive('heading', { level })) return String(level);
-      return editor.isActive('paragraph') ? 'paragraph' : null;
-    };
-
-    const currentAlign = (): string | null => {
-      for (const a of ['left', 'center', 'right', 'justify'])
-        if (editor.isActive({ textAlign: a })) return a;
-      return null;
-    };
-
     return {
       // --- edit ---
       'edit.undo': cmd(() => editor.chain().focus().undo().run(), {
-        isEnabled: editor.can().undo(),
+        isEnabled: state.canUndo,
       }),
       'edit.redo': cmd(() => editor.chain().focus().redo().run(), {
-        isEnabled: editor.can().redo(),
+        isEnabled: state.canRedo,
       }),
       'edit.selectAll': cmd(() => editor.chain().focus().selectAll().run()),
       'edit.cut': cmd(() => document.execCommand('cut'), {
-        isEnabled: !editor.state.selection.empty,
+        isEnabled: state.hasSelection,
       }),
       'edit.copy': cmd(() => document.execCommand('copy'), {
-        isEnabled: !editor.state.selection.empty,
+        isEnabled: state.hasSelection,
       }),
       'edit.paste': cmd(async () => {
         const text = await navigator.clipboard.readText();
@@ -177,10 +197,10 @@ export const useEditorCommands = (
       'insert.table': cmd(() => insertCommands.table(editor)),
       'insert.quote': cmd(() => insertCommands.quote(editor)),
       'insert.code': cmd(() => insertCommands.code(editor), {
-        isActive: editor.isActive('code'),
+        isActive: state.code,
       }),
       'insert.codeBlock': cmd(() => insertCommands.codeBlock(editor), {
-        isActive: editor.isActive('codeBlock'),
+        isActive: state.codeBlock,
       }),
       'insert.callout': cmd(() => insertCommands.callout(editor)),
       'insert.divider': cmd(() => insertCommands.divider(editor)),
@@ -206,31 +226,31 @@ export const useEditorCommands = (
             .setLink({ href: finalUrl })
             .run();
         },
-        { isActive: editor.isActive('link') },
+        { isActive: state.link },
       ),
 
       // --- format: marks ---
       'format.bold': cmd(() => editor.chain().focus().toggleBold().run(), {
-        isActive: editor.isActive('bold'),
+        isActive: state.bold,
       }),
       'format.italic': cmd(() => editor.chain().focus().toggleItalic().run(), {
-        isActive: editor.isActive('italic'),
+        isActive: state.italic,
       }),
       'format.underline': cmd(
         () => editor.chain().focus().toggleUnderline().run(),
-        { isActive: editor.isActive('underline') },
+        { isActive: state.underline },
       ),
       'format.strike': cmd(() => editor.chain().focus().toggleStrike().run(), {
-        isActive: editor.isActive('strike'),
+        isActive: state.strike,
       }),
       'format.superscript': cmd(
         // exact chain used by the toolbar (editor-utils.tsx)
         () => editor.chain().focus().unsetSubscript().toggleSuperscript().run(),
-        { isActive: editor.isActive('superscript') },
+        { isActive: state.superscript },
       ),
       'format.subscript': cmd(
         () => editor.chain().focus().unsetSuperscript().toggleSubscript().run(),
-        { isActive: editor.isActive('subscript') },
+        { isActive: state.subscript },
       ),
 
       // --- format: block ---
@@ -244,11 +264,11 @@ export const useEditorCommands = (
               .toggleHeading({ level: Number(arg) as 1 | 2 | 3 })
               .run();
         },
-        { current: currentHeading() },
+        { current: state.heading },
       ),
       'format.align': cmd(
         (arg) => editor.chain().focus().setTextAlign(arg!).run(),
-        { current: currentAlign() },
+        { current: state.align },
       ),
       'format.lineHeight': cmd(
         (arg) => {
@@ -263,30 +283,29 @@ export const useEditorCommands = (
             editor.chain().setLineHeight(value).run();
           }
         },
-        { current: getCurrentLineHeight(editor, readLineHeight(editor)) },
+        { current: state.lineHeight },
       ),
       'format.fontFamily': cmd(
         (arg) => editor.chain().focus().setFontFamily(arg!).run(),
-        { current: editor.getAttributes('textStyle').fontFamily ?? null },
+        { current: state.fontFamily },
       ),
       'format.fontSize.increase': cmd(() => stepFontSize(editor, 1)),
       'format.fontSize.decrease': cmd(() => stepFontSize(editor, -1)),
 
       // --- format: lists ---
       'format.list.bullet': cmd(() => insertCommands.bulletList(editor), {
-        isActive: editor.isActive('bulletList'),
+        isActive: state.bulletList,
       }),
       'format.list.numbered': cmd(() => insertCommands.numberedList(editor), {
-        isActive: editor.isActive('orderedList'),
+        isActive: state.orderedList,
       }),
       'format.list.check': cmd(() => insertCommands.todoList(editor), {
-        isActive: editor.isActive('taskList'),
+        isActive: state.taskList,
       }),
 
       'format.clearFormatting': cmd(() =>
         editor.chain().focus().unsetAllMarks().clearNodes().run(),
       ),
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- recompute on each editor state change
-  }, [editor, editor?.state, onError, ipfsImageUploadFn]);
+  }, [editor, state, onError, ipfsImageUploadFn]);
 };

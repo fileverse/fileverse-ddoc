@@ -57,4 +57,28 @@ describe('useEditorCommands', () => {
     expect(result.current['format.bold'].isEnabled).toBe(false);
     expect(() => result.current['format.bold'].run()).not.toThrow();
   });
+
+  it('re-renders only when a derived value changes (equality-gated)', () => {
+    editor.commands.setTextSelection(3);
+    let renders = 0;
+    renderHook(() => {
+      renders++;
+      return useEditorCommands(editor);
+    });
+    // Plain typing changes no derived field (undo depth already > 0 from
+    // setup transactions): no re-renders.
+    const before = renders;
+    act(() => {
+      editor.commands.insertContent('a');
+    });
+    act(() => {
+      editor.commands.insertContent('b');
+    });
+    expect(renders).toBe(before);
+    // A transaction that flips a derived field (bold) re-renders once.
+    act(() => {
+      editor.chain().focus().selectAll().toggleBold().run();
+    });
+    expect(renders).toBe(before + 1);
+  });
 });
