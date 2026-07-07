@@ -3,6 +3,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     environment: 'jsdom',
+    globals: true, // RTL auto-cleanup registers via global afterEach
+
     setupFiles: ['./vitest.setup.ts'],
     include: [
       'package/**/*.test.{ts,tsx}',
