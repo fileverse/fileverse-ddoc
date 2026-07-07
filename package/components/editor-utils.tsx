@@ -266,19 +266,30 @@ export const useEditorToolbar = ({
   useEffect(() => {
     if (!editor) return;
     const updateMarkStates = () => {
-      setFormattingState({
-        isBold: editor.isActive('bold'),
-        isItalic: editor.isActive('italic'),
-        isUnderline: editor.isActive('underline'),
-        isStrikethrough: editor.isActive('strike'),
+      setFormattingState((prev) => {
+        const next = {
+          isBold: editor.isActive('bold'),
+          isItalic: editor.isActive('italic'),
+          isUnderline: editor.isActive('underline'),
+          isStrikethrough: editor.isActive('strike'),
+        };
+        // Bail out (React skips the re-render) when nothing changed, so the
+        // per-transaction listener stays as cheap as selection-only was.
+        return prev.isBold === next.isBold &&
+          prev.isItalic === next.isItalic &&
+          prev.isUnderline === next.isUnderline &&
+          prev.isStrikethrough === next.isStrikethrough
+          ? prev
+          : next;
       });
     };
     updateMarkStates();
-    // Only update mark states on selection changes — not every transaction.
-    // Text input transactions don't change which marks are active at the cursor.
-    editor.on('selectionUpdate', updateMarkStates);
+    // Marks can change without a selection change (toolbar button, Cmd+B),
+    // so selectionUpdate alone goes stale; transaction covers both since
+    // selection changes also dispatch transactions.
+    editor.on('transaction', updateMarkStates);
     return () => {
-      editor.off('selectionUpdate', updateMarkStates);
+      editor.off('transaction', updateMarkStates);
     };
   }, [editor]);
 
