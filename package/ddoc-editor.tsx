@@ -1426,6 +1426,7 @@ const DdocEditor = forwardRef(
                   get editor() {
                     return editor.getJSON();
                   },
+                  liveEditor: editor,
                 })}
             </nav>
             <CommentStoreProvider

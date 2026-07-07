@@ -230,7 +230,15 @@ export interface DdocProps extends CommentAccountProps {
   walletAddress?: string | null;
   username?: string | null;
   setUsername?: React.Dispatch<SetStateAction<string>>;
-  renderNavbar?: ({ editor }: { editor: JSONContent }) => JSX.Element;
+  renderNavbar?: ({
+    editor,
+    liveEditor,
+  }: {
+    /** JSON snapshot — legacy field, unchanged. */
+    editor: JSONContent;
+    /** Live Tiptap editor instance (D8) — null until the editor is ready. */
+    liveEditor: Editor | null;
+  }) => JSX.Element;
   onChange?: (
     updatedDocContent: string | JSONContent,
     updateChunk: string,
