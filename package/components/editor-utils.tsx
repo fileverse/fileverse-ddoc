@@ -14,6 +14,7 @@ import { ensureLoaded } from '../utils/font-loader';
 import type { FontDescriptor } from '../types';
 import { IEditorTool, useEditorToolVisiibility } from '../hooks/use-visibility';
 import { Editor, JSONContent } from '@tiptap/react';
+import { useEditorCommands } from '../hooks/use-editor-commands';
 import { startImageUpload } from '../utils/upload-images';
 import cn from 'classnames';
 import UtilsModal from './utils-modal';
@@ -128,69 +129,10 @@ export function buildPickerEntries(
   });
 }
 
-export const FONT_SIZES = [
-  8, 9, 10, 11, 12, 14, 16, 18, 24, 30, 32, 36, 48, 60, 72, 96,
-] as const;
-
-export const getFontSizeOptions = (editor?: Editor) => {
-  return FONT_SIZES.map((size) => ({
-    title: `${size}`,
-    value: `${size}px`,
-    label: size.toString(),
-    command: (editor: Editor) => {
-      editor.chain().focus().setFontSize(`${size}px`).run();
-    },
-    isActive: () => editor?.isActive('fontSize', { size: `${size}px` }),
-  }));
-};
-
-export const getCurrentFontSize = (
-  editor: Editor | null,
-  currentSize: string,
-) => {
-  if (!editor) return '';
-  return currentSize ? currentSize.replace('px', '') : '';
-};
-
-// Line height conversion helpers: UI shows numbers (1, 1.15, 1.5, etc.) but stores as percentages (120%, 138%, 180%, etc.)
-// Formula: percentage = uiValue * 120
-const LINE_HEIGHT_BASE = 120; // 1 in UI = 120% in storage
-
-export const uiValueToPercentage = (uiValue: string): string => {
-  const num = parseFloat(uiValue);
-  return `${Math.round(num * LINE_HEIGHT_BASE)}%`;
-};
-
-export const percentageToUiValue = (percentage: string): string => {
-  const num = parseFloat(percentage.replace('%', ''));
-  return (num / LINE_HEIGHT_BASE).toString();
-};
-
-export const LINE_HEIGHT_OPTIONS = [
-  { value: '120%', label: '1', uiValue: '1', description: '' },
-  { value: '138%', label: '1.15', uiValue: '1.15', description: '(Default)' },
-  { value: '180%', label: '1.5', uiValue: '1.5', description: '' },
-  { value: '240%', label: '2', uiValue: '2', description: '' },
-  { value: '300%', label: '2.5', uiValue: '2.5', description: '' },
-  { value: '360%', label: '3', uiValue: '3', description: '' },
-];
-
-export const getLineHeightOptions = () => LINE_HEIGHT_OPTIONS;
-
-export const getCurrentLineHeight = (
-  editor: Editor | null,
-  currentLineHeight?: string,
-) => {
-  if (!editor) return '1.15';
-  // currentLineHeight is stored as percentage, find matching label
-  if (currentLineHeight && currentLineHeight.includes('%')) {
-    const option = LINE_HEIGHT_OPTIONS.find(
-      (opt) => opt.value === currentLineHeight,
-    );
-    return option ? option.label : percentageToUiValue(currentLineHeight);
-  }
-  return currentLineHeight || '1.15';
-};
+// Font-size / line-height helpers moved to utils/typography (re-exported
+// here for backward compatibility).
+export * from '../utils/typography';
+import { getFontSizeOptions, getLineHeightOptions } from '../utils/typography';
 
 export const ERR_MSG_MAP = {
   IMAGE_SIZE: 'Image size should be less than 10MB',
@@ -205,13 +147,6 @@ export const IMG_UPLOAD_SETTINGS = {
     maxSize: 1024 * 100,
     errorMsg: 'Image size should be less than 100kb',
   },
-};
-
-const initialFormattingState = {
-  isBold: false,
-  isItalic: false,
-  isUnderline: false,
-  isStrikethrough: false,
 };
 
 export const useEditorToolbar = ({
@@ -257,41 +192,16 @@ export const useEditorToolbar = ({
   } = useEditorToolVisiibility(IEditorTool.NONE);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [fileExportsOpen, setFileExportsOpen] = useState(false);
-  const [formattingState, setFormattingState] = useState(
-    initialFormattingState,
-  );
 
   const { buttonRef } = useCommentRefs();
 
-  useEffect(() => {
-    if (!editor) return;
-    const updateMarkStates = () => {
-      setFormattingState((prev) => {
-        const next = {
-          isBold: editor.isActive('bold'),
-          isItalic: editor.isActive('italic'),
-          isUnderline: editor.isActive('underline'),
-          isStrikethrough: editor.isActive('strike'),
-        };
-        // Bail out (React skips the re-render) when nothing changed, so the
-        // per-transaction listener stays as cheap as selection-only was.
-        return prev.isBold === next.isBold &&
-          prev.isItalic === next.isItalic &&
-          prev.isUnderline === next.isUnderline &&
-          prev.isStrikethrough === next.isStrikethrough
-          ? prev
-          : next;
-      });
-    };
-    updateMarkStates();
-    // Marks can change without a selection change (toolbar button, Cmd+B),
-    // so selectionUpdate alone goes stale; transaction covers both since
-    // selection changes also dispatch transactions.
-    editor.on('transaction', updateMarkStates);
-    return () => {
-      editor.off('transaction', updateMarkStates);
-    };
-  }, [editor]);
+  // Single source of truth for editor-derived state: the same reactive
+  // command registry the second-level nav consumes. It re-renders this hook's
+  // consumer only when a derived value changes (deep-equality gated inside
+  // useEditorCommands), covering mark changes that don't move the selection
+  // (toolbar buttons, shortcuts) — which a selectionUpdate listener misses.
+  // Only the state side is consumed here; onClick dispatches are unchanged.
+  const editorCommands = useEditorCommands(editor);
 
   useEffect(() => {
     if (!editor) return;
@@ -428,7 +338,7 @@ export const useEditorToolbar = ({
       onClick: () => {
         editor?.chain().undo().run();
       },
-      isActive: editor?.can().undo() || false,
+      isActive: editorCommands['edit.undo'].isEnabled,
     },
     {
       icon: 'Redo',
@@ -436,7 +346,7 @@ export const useEditorToolbar = ({
       onClick: () => {
         editor?.chain().redo().run();
       },
-      isActive: editor?.can().redo() || false,
+      isActive: editorCommands['edit.redo'].isEnabled,
     },
     null,
   ];
@@ -458,25 +368,25 @@ export const useEditorToolbar = ({
       icon: 'Bold',
       title: 'Bold',
       onClick: () => editor?.chain().focus().toggleBold().run(),
-      isActive: formattingState.isBold,
+      isActive: editorCommands['format.bold'].isActive ?? false,
     },
     {
       icon: 'Italic',
       title: 'Italic',
       onClick: () => editor?.chain().focus().toggleItalic().run(),
-      isActive: formattingState.isItalic,
+      isActive: editorCommands['format.italic'].isActive ?? false,
     },
     {
       icon: 'Underline',
       title: 'Underlined',
       onClick: () => editor?.chain().focus().toggleUnderline().run(),
-      isActive: formattingState.isUnderline,
+      isActive: editorCommands['format.underline'].isActive ?? false,
     },
     {
       icon: 'Strikethrough',
       title: 'Strikethrough',
       onClick: () => editor?.chain().focus().toggleStrike().run(),
-      isActive: formattingState.isStrikethrough,
+      isActive: editorCommands['format.strike'].isActive ?? false,
     },
     null,
     {
@@ -528,7 +438,7 @@ export const useEditorToolbar = ({
         setToolVisibility(IEditorTool.NONE);
         return result;
       },
-      isActive: editor?.isActive('bulletList') || false,
+      isActive: editorCommands['format.list.bullet'].isActive ?? false,
       group: 'More',
       notVisible: 1030,
     },
@@ -581,7 +491,7 @@ export const useEditorToolbar = ({
         setToolVisibility(IEditorTool.NONE);
         return result;
       },
-      isActive: editor?.isActive('orderedList') || false,
+      isActive: editorCommands['format.list.numbered'].isActive ?? false,
       group: 'More',
       notVisible: 1030,
     },
@@ -635,7 +545,7 @@ export const useEditorToolbar = ({
         setToolVisibility(IEditorTool.NONE);
         return result;
       },
-      isActive: editor?.isActive('taskList') || false,
+      isActive: editorCommands['format.list.check'].isActive ?? false,
       group: 'More',
       notVisible: 1160,
     },
@@ -659,7 +569,7 @@ export const useEditorToolbar = ({
       icon: 'TextQuote',
       title: 'Quote',
       onClick: () => editor?.chain().focus().toggleBlockquote().run(),
-      isActive: editor?.isActive('blockquote') || false,
+      isActive: editorCommands['insert.quote'].isActive ?? false,
       group: 'More',
       notVisible: 1270,
     },
@@ -669,7 +579,7 @@ export const useEditorToolbar = ({
       title: 'Superscript',
       onClick: () =>
         editor?.chain().focus().unsetSubscript().toggleSuperscript().run(),
-      isActive: editor?.isActive('superscript') || false,
+      isActive: editorCommands['format.superscript'].isActive ?? false,
       group: 'More',
       notVisible: 1370,
     },
@@ -679,7 +589,7 @@ export const useEditorToolbar = ({
       onClick: () => {
         editor?.chain().focus().unsetSuperscript().toggleSubscript().run();
       },
-      isActive: editor?.isActive('subscript') || false,
+      isActive: editorCommands['format.subscript'].isActive ?? false,
       group: 'More',
       notVisible: 1370,
     },
@@ -690,7 +600,7 @@ export const useEditorToolbar = ({
       onClick: () => {
         setToolVisibility(IEditorTool.LINK_POPUP);
       },
-      isActive: editor?.isActive('link') || false,
+      isActive: editorCommands['insert.link'].isActive ?? false,
       group: 'More',
       notVisible: 1560,
     },
@@ -738,7 +648,7 @@ export const useEditorToolbar = ({
         }
         editor?.chain().focus().toggleCode().run();
       },
-      isActive: editor?.isActive('code') || false,
+      isActive: editorCommands['insert.code'].isActive ?? false,
       group: 'More',
       notVisible: 1560,
     },
@@ -751,7 +661,7 @@ export const useEditorToolbar = ({
         }
         editor?.chain().focus().toggleCodeBlock().run();
       },
-      isActive: editor?.isActive('codeBlock') || false,
+      isActive: editorCommands['insert.codeBlock'].isActive ?? false,
       group: 'More',
       notVisible: 1560,
     },
@@ -773,7 +683,7 @@ export const useEditorToolbar = ({
       icon: 'PilcrowRight',
       title: 'Set text direction to left-to-right',
       onClick: () => editor?.commands.setTextDirection('ltr'),
-      isActive: editor?.isActive('paragraph', { dir: 'ltr' }) ?? false,
+      isActive: editorCommands['format.direction'].current === 'ltr',
       group: 'More',
       notVisible: 1560,
     },
@@ -781,7 +691,7 @@ export const useEditorToolbar = ({
       icon: 'PilcrowLeft',
       title: 'Set text direction to right-to-left',
       onClick: () => editor?.commands.setTextDirection('rtl'),
-      isActive: editor?.isActive('paragraph', { dir: 'rtl' }) ?? false,
+      isActive: editorCommands['format.direction'].current === 'rtl',
       group: 'More',
       notVisible: 1560,
     },
@@ -790,7 +700,7 @@ export const useEditorToolbar = ({
       icon: 'FileSearch',
       title: 'Find/Replace',
       onClick: () => (editor ? setShowReplacePopoverWithData(editor) : {}),
-      isActive: editor?.isActive('paragraph', { dir: 'rtl' }) ?? false,
+      isActive: false,
       group: 'More',
       notVisible: 1560,
     },
@@ -1060,7 +970,7 @@ export const useEditorToolbar = ({
       onClick: () => {
         editor?.chain().undo().run();
       },
-      isActive: editor?.can().undo() || false,
+      isActive: editorCommands['edit.undo'].isEnabled,
     },
     {
       icon: 'Redo',
@@ -1068,7 +978,7 @@ export const useEditorToolbar = ({
       onClick: () => {
         editor?.chain().redo().run();
       },
-      isActive: editor?.can().redo() || false,
+      isActive: editorCommands['edit.redo'].isEnabled,
     },
     null,
     {

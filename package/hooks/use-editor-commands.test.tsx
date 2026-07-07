@@ -7,7 +7,11 @@ import { getHeadlessExtensions } from './use-headless-editor';
 describe('useEditorCommands', () => {
   let editor: Editor;
   beforeEach(() => {
-    editor = new Editor({ extensions: getHeadlessExtensions() });
+    editor = new Editor({
+      extensions: getHeadlessExtensions(),
+      // matches useHeadlessEditor/ddoc-editor; required for dir tracking
+      textDirection: 'auto',
+    });
     // Collaboration owns the doc — set content post-construction.
     editor.commands.setContent('<p>hello world</p>');
     editor.commands.selectAll();
@@ -50,6 +54,22 @@ describe('useEditorCommands', () => {
     expect(a.result.current['format.bold'].isActive).toBe(
       b.result.current['format.bold'].isActive,
     );
+  });
+
+  it('insert.quote reports blockquote active state', () => {
+    editor.commands.setTextSelection(3);
+    const { result } = renderHook(() => useEditorCommands(editor));
+    expect(result.current['insert.quote'].isActive).toBe(false);
+    act(() => result.current['insert.quote'].run());
+    expect(result.current['insert.quote'].isActive).toBe(true);
+  });
+
+  it('format.direction sets and reports paragraph direction', () => {
+    editor.commands.setTextSelection(3);
+    const { result } = renderHook(() => useEditorCommands(editor));
+    act(() => result.current['format.direction'].run('rtl'));
+    expect(editor.isActive('paragraph', { dir: 'rtl' })).toBe(true);
+    expect(result.current['format.direction'].current).toBe('rtl');
   });
 
   it('returns disabled no-op commands for a null editor', () => {

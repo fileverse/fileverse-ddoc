@@ -9,7 +9,7 @@ import {
   FONT_SIZES,
   getCurrentLineHeight,
   uiValueToPercentage,
-} from '../components/editor-utils';
+} from '../utils/typography';
 
 export type EditorCommand = {
   run: (arg?: string) => void;
@@ -46,6 +46,7 @@ export type EditorCommandId =
   | 'format.subscript'
   | 'format.heading'
   | 'format.align'
+  | 'format.direction'
   | 'format.lineHeight'
   | 'format.fontFamily'
   | 'format.fontSize.increase'
@@ -139,15 +140,20 @@ export const useEditorCommands = (
         subscript: e.isActive('subscript'),
         code: e.isActive('code'),
         codeBlock: e.isActive('codeBlock'),
+        quote: e.isActive('blockquote'),
         link: e.isActive('link'),
+        direction: e.isActive('paragraph', { dir: 'rtl' })
+          ? 'rtl'
+          : e.isActive('paragraph', { dir: 'ltr' })
+            ? 'ltr'
+            : null,
         bulletList: e.isActive('bulletList'),
         orderedList: e.isActive('orderedList'),
         taskList: e.isActive('taskList'),
         heading: currentHeading(e),
         align: currentAlign(e),
         lineHeight: getCurrentLineHeight(e, readLineHeight(e)),
-        fontFamily:
-          (e.getAttributes('textStyle').fontFamily as string) ?? null,
+        fontFamily: (e.getAttributes('textStyle').fontFamily as string) ?? null,
       };
     },
   });
@@ -195,7 +201,9 @@ export const useEditorCommands = (
 
       // --- insert (delegating to the shared module / thin wrappers) ---
       'insert.table': cmd(() => insertCommands.table(editor)),
-      'insert.quote': cmd(() => insertCommands.quote(editor)),
+      'insert.quote': cmd(() => insertCommands.quote(editor), {
+        isActive: state.quote,
+      }),
       'insert.code': cmd(() => insertCommands.code(editor), {
         isActive: state.code,
       }),
@@ -269,6 +277,11 @@ export const useEditorCommands = (
       'format.align': cmd(
         (arg) => editor.chain().focus().setTextAlign(arg!).run(),
         { current: state.align },
+      ),
+      'format.direction': cmd(
+        // same dispatch as the toolbar's LTR/RTL buttons
+        (arg) => editor.commands.setTextDirection(arg as 'ltr' | 'rtl'),
+        { current: state.direction },
       ),
       'format.lineHeight': cmd(
         (arg) => {
