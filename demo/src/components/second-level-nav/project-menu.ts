@@ -6,7 +6,10 @@ import type {
   ProjectedNode,
 } from './menu-types';
 
-const projectNode = (node: MenuNode, ctx: MenuContext): ProjectedNode | null => {
+const projectNode = (
+  node: MenuNode,
+  ctx: MenuContext,
+): ProjectedNode | null => {
   if (node.visibleWhen && !node.visibleWhen(ctx)) return null;
 
   const children = node.children
@@ -15,14 +18,15 @@ const projectNode = (node: MenuNode, ctx: MenuContext): ProjectedNode | null => 
   const cleaned = children ? stripSeparators(children) : undefined;
 
   // A submenu whose children all projected away disappears too.
-  if (node.kind === 'submenu' && (!cleaned || cleaned.length === 0)) return null;
+  if (node.kind === 'submenu' && (!cleaned || cleaned.length === 0))
+    return null;
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { visibleWhen, enabledWhen, state, label, children: _c, ...rest } = node;
+  const { enabledWhen, state, label, ...rest } = node;
   return {
     ...rest,
-    label: typeof label === 'function' ? label(ctx) : label,
-    disabled: node.comingSoon === true || (enabledWhen ? !enabledWhen(ctx) : false),
+    label: (typeof label === 'function' ? label(ctx) : label) ?? '',
+    disabled:
+      node.comingSoon === true || (enabledWhen ? !enabledWhen(ctx) : false),
     checked: state ? state(ctx) : undefined,
     children: cleaned,
   };

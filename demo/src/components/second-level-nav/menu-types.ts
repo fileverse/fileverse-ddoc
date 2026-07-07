@@ -13,7 +13,8 @@ export type MenuContext = {
 
 export type MenuNode = {
   id: string;
-  label: string | ((ctx: MenuContext) => string);
+  /** Optional only for separators. */
+  label?: string | ((ctx: MenuContext) => string);
   icon?: string;
   shortcut?: string;
   comingSoon?: boolean;

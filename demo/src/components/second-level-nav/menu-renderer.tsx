@@ -25,7 +25,11 @@ type Props = {
   onRequiresAuth?: () => void;
 };
 
-export const MenuBarRenderer = ({ projected, registry, onRequiresAuth }: Props) => {
+export const MenuBarRenderer = ({
+  projected,
+  registry,
+  onRequiresAuth,
+}: Props) => {
   const dispatch = (node: ProjectedNode) => {
     if (node.requiresAuth && onRequiresAuth) return onRequiresAuth();
     if (node.action) registry[node.action]?.run(node.value);
@@ -39,10 +43,14 @@ export const MenuBarRenderer = ({ projected, registry, onRequiresAuth }: Props) 
         return (
           <MenubarSub key={node.id}>
             <MenubarSubTrigger disabled={node.disabled}>
-              {node.icon && <LucideIcon name={node.icon} size="sm" className="mr-2" />}
+              {node.icon && (
+                <LucideIcon name={node.icon} size="sm" className="mr-2" />
+              )}
               {node.label}
             </MenubarSubTrigger>
-            <MenubarSubContent>{renderChildren(node.children ?? [])}</MenubarSubContent>
+            <MenubarSubContent className="min-w-60">
+              {renderChildren(node.children ?? [])}
+            </MenubarSubContent>
           </MenubarSub>
         );
       case 'checkbox':
@@ -57,7 +65,9 @@ export const MenuBarRenderer = ({ projected, registry, onRequiresAuth }: Props) 
             }}
           >
             {node.label}
-            {node.shortcut && <MenubarShortcut>{node.shortcut}</MenubarShortcut>}
+            {node.shortcut && (
+              <MenubarShortcut>{node.shortcut}</MenubarShortcut>
+            )}
           </MenubarCheckboxItem>
         );
       // radio items are grouped by renderChildren below
@@ -70,7 +80,9 @@ export const MenuBarRenderer = ({ projected, registry, onRequiresAuth }: Props) 
             disabled={node.disabled}
             onSelect={() => dispatch(node)}
           >
-            {node.icon && <LucideIcon name={node.icon} size="sm" className="mr-2" />}
+            {node.icon && (
+              <LucideIcon name={node.icon} size="sm" className="mr-2" />
+            )}
             {node.label}
             {node.comingSoon && (
               <span className="ml-auto rounded px-1.5 text-helper-text-sm color-text-disabled border color-border-default">
@@ -128,8 +140,12 @@ export const MenuBarRenderer = ({ projected, registry, onRequiresAuth }: Props) 
     <Menubar aria-label="Document menu" className="hidden lg:flex">
       {projected.map((menu) => (
         <MenubarMenu key={menu.id}>
-          <MenubarTrigger data-testid={`slnav-${menu.id}`}>{menu.label}</MenubarTrigger>
-          <MenubarContent>{renderChildren(menu.children)}</MenubarContent>
+          <MenubarTrigger data-testid={`slnav-${menu.id}`}>
+            {menu.label}
+          </MenubarTrigger>
+          <MenubarContent className="min-w-60">
+            {renderChildren(menu.children)}
+          </MenubarContent>
         </MenubarMenu>
       ))}
     </Menubar>

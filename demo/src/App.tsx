@@ -1,7 +1,18 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import DdocEditor from '../../package/ddoc-editor';
 import type { FontDescriptor } from '../../package/types';
-import { JSONContent } from '@tiptap/react';
+import { Editor, JSONContent } from '@tiptap/react';
+import { SecondLevelNav } from './components/second-level-nav/second-level-nav';
+import { demoMenuTree } from './components/second-level-nav/menu-tree';
+import { deriveCapabilities } from './components/second-level-nav/capabilities';
+import { createDemoAppActions } from './components/second-level-nav/demo-app-actions';
 
 const demoFonts: FontDescriptor[] = [
   {
@@ -100,7 +111,11 @@ function App() {
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const handleContentChange = useCallback(
-    (updatedDocContent: string | JSONContent, _updateChunk: string) => {
+    (
+      updatedDocContent: string | JSONContent,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      _updateChunk: string,
+    ) => {
       if (typeof updatedDocContent === 'string') {
         if (saveTimeoutRef.current) {
           clearTimeout(saveTimeoutRef.current);
@@ -191,6 +206,19 @@ function App() {
   const [zoomLevel, setZoomLevel] = useState<string>('1');
   const [isNavbarVisible, setIsNavbarVisible] = useState(true);
   const [isPreviewMode, setIsPreviewMode] = useState(false);
+  // Controlled focus mode (D6) — the second-level nav's View menu drives it.
+  const [isFocusMode, setIsFocusMode] = useState(false);
+  const isOnline = useSyncExternalStore(
+    (cb) => {
+      window.addEventListener('online', cb);
+      window.addEventListener('offline', cb);
+      return () => {
+        window.removeEventListener('online', cb);
+        window.removeEventListener('offline', cb);
+      };
+    },
+    () => navigator.onLine,
+  );
   const [disableInlineComment, setDisableInlineComment] = useState(false);
   const [isDDocOwner, setIsDDocOwner] = useState(true);
   const [viewerMode, setViewerMode] = useState<
@@ -369,6 +397,7 @@ function App() {
     const stored = collabStore.getCollabConf();
     if (stored) {
       setCollabRoomKey(stored.roomKey);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       setCollaborationId(stored.roomId || (stored as any).collaborationId);
       setUsername(stored.username);
       setCollabIsOwner(stored.isOwner);
@@ -429,40 +458,89 @@ function App() {
     });
   };
 
-  const renderNavbar = ({ editor }: { editor: JSONContent }): JSX.Element => {
+  // --- Second-level nav wiring (capability engine, consumer-mirror) ---
+  const caps = deriveCapabilities({
+    isPreviewMode,
+    isCollaboratorMode: collabEnabled && !collabIsOwner,
+    isDDocOwner,
+    isAuthenticated: isConnected,
+    isOnline,
+    hasSelection: false, // refined inside SecondLevelNav from the registry
+    permissionAllowsComment: !disableInlineComment,
+  });
+
+  const renderNavbar = ({
+    editor,
+    liveEditor,
+  }: {
+    editor: JSONContent;
+    liveEditor: Editor | null;
+  }): JSX.Element => {
     const publishDoc = () => console.log(editor, title);
+    const appActions = createDemoAppActions({
+      liveEditor,
+      exportModal: (format?: string) =>
+        editorRef.current?.exportCurrentTabOrOpenExportModal(format),
+      exportMarkdown: () =>
+        editorRef.current?.exportContentAsMarkDown(title || 'Untitled'),
+      onError: (msg) =>
+        toast({
+          title: 'Error',
+          description: msg,
+          variant: 'error',
+          iconType: 'icon',
+        }),
+      isFocusMode,
+      setIsFocusMode,
+      showTOC,
+      setShowTOC,
+      toggleCommentDrawer: () => setCommentDrawerOpen((prev) => !prev),
+      toggleStyling: () => setShowStylingControls((v) => !v),
+      zoomLevel,
+      setZoomLevel,
+      documentStyling,
+      setDocumentStyling,
+      startPresentation: () => setIsPresentationMode(true),
+    });
 
     return (
       <>
-        <div className="flex items-center gap-[12px]">
-          <DocSwitcher currentDocId={docId} currentTitle={title} />
-
-          <div className="relative truncate inline-block xl:!max-w-[300px] !max-w-[108px] color-bg-default text-[14px] font-medium leading-[20px]">
-            <span className="invisible whitespace-pre">
-              {title || 'Untitled'}
-            </span>
-            <input
-              className="focus:outline-none truncate color-bg-default absolute top-0 left-0 right-0 bottom-0 select-text"
-              type="text"
-              placeholder="Untitled"
-              value={title}
-              onChange={(e) => handleTitleChange(e.target.value)}
-            />
-          </div>
-          <Tag
-            icon="BadgeCheck"
-            variant="transparent"
-            className="h-6 rounded border color-border-default color-text-secondary text-[12px] font-normal hidden xl:flex"
-            style={{ backgroundColor: 'hsl(var(--color-bg-secondary))' }}
-          >
-            {lastSavedAt ? 'Saved' : 'Not saved yet'}
-          </Tag>
-          <div className="w-6 h-6 rounded color-bg-secondary flex justify-center items-center border color-border-default xl:hidden">
-            <LucideIcon
-              name="BadgeCheck"
-              size="sm"
-              className="color-text-secondary"
-            />
+        <div className="flex items-center gap-[12px] w-full">
+          <SecondLevelNav
+            tree={demoMenuTree}
+            liveEditor={liveEditor}
+            caps={caps}
+            appActions={appActions}
+          />
+          <div className="mx-auto">
+            <DocSwitcher currentDocId={docId} currentTitle={title} />
+            <div className="relative truncate inline-block xl:!max-w-[300px] !max-w-[108px] color-bg-default text-[14px] font-medium leading-[20px]">
+              <span className="invisible whitespace-pre">
+                {title || 'Untitled'}
+              </span>
+              <input
+                className="focus:outline-none truncate color-bg-default absolute top-0 left-0 right-0 bottom-0 select-text"
+                type="text"
+                placeholder="Untitled"
+                value={title}
+                onChange={(e) => handleTitleChange(e.target.value)}
+              />
+            </div>
+            <Tag
+              icon="BadgeCheck"
+              variant="transparent"
+              className="h-6 rounded border color-border-default color-text-secondary text-[12px] font-normal hidden xl:flex"
+              style={{ backgroundColor: 'hsl(var(--color-bg-secondary))' }}
+            >
+              {lastSavedAt ? 'Saved' : 'Not saved yet'}
+            </Tag>
+            <div className="w-6 h-6 rounded color-bg-secondary flex justify-center items-center border color-border-default xl:hidden">
+              <LucideIcon
+                name="BadgeCheck"
+                size="sm"
+                className="color-text-secondary"
+              />
+            </div>
           </div>
         </div>
         <div className="flex gap-2">
@@ -758,6 +836,8 @@ function App() {
         setCommentDrawerOpen={setCommentDrawerOpen}
         isPresentationMode={isPresentationMode}
         setIsPresentationMode={setIsPresentationMode}
+        isFocusMode={isFocusMode}
+        onFocusModeChange={setIsFocusMode}
         isSplitView={isSplitView}
         setIsSplitView={setIsSplitView}
         zoomLevel={zoomLevel}
