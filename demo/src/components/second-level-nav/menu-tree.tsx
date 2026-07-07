@@ -1,0 +1,421 @@
+// demo/src/components/second-level-nav/menu-tree.tsx
+// The demo's canonical tree — the consumer ddocMenuTree (D2, one tree +
+// capability projection) minus consumer-only items (version history, rename,
+// move-to, delete, templates, copy-as-markdown, local LLM, backup key, Help,
+// Themes). Predicates reference ctx.caps.* only — never roles.
+import type { MenuBarTree, MenuContext } from './menu-types';
+
+const canEdit = (c: MenuContext) => c.caps.canEdit;
+const canExport = (c: MenuContext) => c.caps.canExport;
+const canCreate = (c: MenuContext) => c.caps.canCreate;
+const canTools = (c: MenuContext) => c.caps.canUseTools;
+const hasSelection = (c: MenuContext) => c.caps.hasSelection;
+const isOnline = (c: MenuContext) => c.caps.isOnline;
+
+/** Font families offered by the demo (see demoFonts in App.tsx). */
+export const DEMO_FONT_FAMILIES = [
+  { value: 'Inter, sans-serif', label: 'Inter' },
+  { value: 'Poppins, sans-serif', label: 'Poppins' },
+];
+
+export const demoMenuTree: MenuBarTree = [
+  {
+    id: 'file',
+    label: 'File',
+    children: [
+      {
+        id: 'file.new',
+        kind: 'submenu',
+        label: 'New dDoc',
+        icon: 'Plus',
+        visibleWhen: canCreate,
+        children: [
+          {
+            id: 'file.new.blank',
+            kind: 'action',
+            label: 'Blank dDoc',
+            action: 'file.new.blank',
+          },
+        ],
+      },
+      { id: 'file.sep1', kind: 'separator' },
+      {
+        id: 'file.import',
+        kind: 'submenu',
+        label: 'Import',
+        icon: 'Upload',
+        visibleWhen: canEdit,
+        enabledWhen: isOnline,
+        children: [
+          {
+            id: 'file.import.md',
+            kind: 'action',
+            label: 'Markdown (.md)',
+            action: 'file.import.md',
+          },
+          {
+            id: 'file.import.docx',
+            kind: 'action',
+            label: 'Microsoft Word (.docx)',
+            action: 'file.import.docx',
+          },
+        ],
+      },
+      {
+        id: 'file.export',
+        kind: 'submenu',
+        label: 'Export',
+        icon: 'Download',
+        visibleWhen: (c) => canExport(c) && canEdit(c),
+        children: [
+          {
+            id: 'file.export.pdf',
+            kind: 'action',
+            label: 'PDF document (.pdf)',
+            action: 'file.export.pdf',
+          },
+          {
+            id: 'file.export.html',
+            kind: 'action',
+            label: 'Web page (.html)',
+            action: 'file.export.html',
+          },
+          {
+            id: 'file.export.txt',
+            kind: 'action',
+            label: 'Plain text (.txt)',
+            action: 'file.export.txt',
+          },
+          {
+            id: 'file.export.md',
+            kind: 'action',
+            label: 'Markdown (.md)',
+            action: 'file.export.md',
+          },
+        ],
+      },
+      // Viewer export goes through the export modal — one flat item.
+      {
+        id: 'file.export.viewer',
+        kind: 'action',
+        label: 'Export',
+        icon: 'Download',
+        action: 'file.export.viewerModal',
+        visibleWhen: (c) => canExport(c) && !canEdit(c),
+      },
+      { id: 'file.sep2', kind: 'separator', visibleWhen: canEdit },
+      {
+        id: 'file.print',
+        kind: 'action',
+        label: 'Print',
+        icon: 'Printer',
+        shortcut: '⌘P',
+        action: 'file.print',
+        visibleWhen: canEdit,
+      },
+    ],
+  },
+  {
+    id: 'edit',
+    label: 'Edit',
+    children: [
+      {
+        id: 'edit.undo',
+        kind: 'action',
+        label: 'Undo',
+        icon: 'Undo2',
+        shortcut: '⌘Z',
+        action: 'edit.undo',
+        visibleWhen: canEdit,
+      },
+      {
+        id: 'edit.redo',
+        kind: 'action',
+        label: 'Redo',
+        icon: 'Redo2',
+        shortcut: '⌘⇧Z',
+        action: 'edit.redo',
+        visibleWhen: canEdit,
+      },
+      { id: 'edit.sep1', kind: 'separator' },
+      {
+        id: 'edit.cut',
+        kind: 'action',
+        label: 'Cut',
+        icon: 'Scissors',
+        shortcut: '⌘X',
+        action: 'edit.cut',
+        visibleWhen: canEdit,
+        enabledWhen: hasSelection,
+      },
+      {
+        id: 'edit.copy',
+        kind: 'action',
+        label: 'Copy',
+        icon: 'Copy',
+        shortcut: '⌘C',
+        action: 'edit.copy',
+        visibleWhen: canEdit,
+        enabledWhen: hasSelection,
+      },
+      {
+        id: 'edit.paste',
+        kind: 'action',
+        label: 'Paste',
+        icon: 'Clipboard',
+        shortcut: '⌘V',
+        action: 'edit.paste',
+        visibleWhen: canEdit,
+      },
+      {
+        id: 'edit.pasteWithoutFormatting',
+        kind: 'action',
+        label: 'Paste without formatting',
+        shortcut: '⌘⇧V',
+        action: 'edit.pasteWithoutFormatting',
+        visibleWhen: canEdit,
+      },
+      { id: 'edit.sep2', kind: 'separator' },
+      {
+        id: 'edit.selectAll',
+        kind: 'action',
+        label: 'Select all',
+        shortcut: '⌘A',
+        action: 'edit.selectAll',
+        visibleWhen: canEdit,
+      },
+    ],
+  },
+  {
+    id: 'view',
+    label: 'View',
+    children: [
+      {
+        id: 'view.comments',
+        kind: 'submenu',
+        label: 'Comments',
+        icon: 'MessageSquareText',
+        visibleWhen: (c) => c.caps.canComment,
+        children: [
+          {
+            id: 'view.comments.hideAll',
+            kind: 'action',
+            label: (c) =>
+              c.caps.canEdit ? 'Hide all comments' : 'Show all comments',
+            action: 'view.comments.hideAll',
+          },
+        ],
+      },
+      // Demo-only: D6 controlled focus mode dogfood (not in the consumer tree).
+      {
+        id: 'view.focusMode',
+        kind: 'checkbox',
+        label: 'Focus mode',
+        shortcut: '⌘⇧F',
+        action: 'view.focusMode',
+        visibleWhen: canEdit,
+        state: (c) => c.state['view.focusMode']?.isActive ?? false,
+      },
+      {
+        id: 'view.outlines',
+        kind: 'checkbox',
+        label: (c) =>
+          c.state['view.outlines.toggle']?.isActive
+            ? 'Collapse outlines'
+            : 'Expand tabs and outlines',
+        action: 'view.outlines.toggle',
+        state: (c) => c.state['view.outlines.toggle']?.isActive ?? false,
+      },
+      {
+        id: 'view.styles',
+        kind: 'action',
+        label: 'Styles',
+        icon: 'Palette',
+        action: 'view.styles',
+        visibleWhen: canEdit,
+      },
+      {
+        id: 'view.zoom',
+        kind: 'submenu',
+        label: 'Zoom',
+        icon: 'ZoomIn',
+        visibleWhen: canEdit,
+        children: ['50', '75', '90', '100', '125', '150', '200'].map((z) => ({
+          id: `view.zoom.${z}`,
+          kind: 'radio' as const,
+          label: `${z}%`,
+          value: z,
+          action: 'view.zoom',
+          state: (c: MenuContext) => c.state['view.zoom']?.current === z,
+        })),
+      },
+    ],
+  },
+  {
+    id: 'insert',
+    label: 'Insert',
+    children: [
+      { id: 'insert.image', kind: 'action', label: 'Image', icon: 'Image', action: 'insert.image', visibleWhen: canEdit },
+      { id: 'insert.table', kind: 'action', label: 'Table', icon: 'Table', action: 'insert.table', visibleWhen: canEdit },
+      { id: 'insert.link', kind: 'action', label: 'Link', icon: 'Link', shortcut: '⌘K', action: 'insert.link', visibleWhen: canEdit },
+      { id: 'insert.sep1', kind: 'separator' },
+      { id: 'insert.callout', kind: 'action', label: 'Callout', icon: 'Megaphone', action: 'insert.callout', visibleWhen: canEdit },
+      { id: 'insert.quote', kind: 'action', label: 'Quote', icon: 'TextQuote', action: 'insert.quote', visibleWhen: canEdit },
+      { id: 'insert.code', kind: 'action', label: 'Code', icon: 'Code', action: 'insert.code', visibleWhen: canEdit },
+      { id: 'insert.codeBlock', kind: 'action', label: 'Code block', icon: 'SquareCode', action: 'insert.codeBlock', visibleWhen: canEdit },
+      { id: 'insert.video', kind: 'action', label: 'Video', icon: 'Video', action: 'insert.video', visibleWhen: canEdit },
+      { id: 'insert.sep2', kind: 'separator' },
+      { id: 'insert.divider', kind: 'action', label: 'Divider', icon: 'Minus', action: 'insert.divider', visibleWhen: canEdit },
+      { id: 'insert.pageBreak', kind: 'action', label: 'Page break', icon: 'SeparatorHorizontal', action: 'insert.pageBreak', visibleWhen: canEdit },
+      { id: 'insert.columns2', kind: 'action', label: '2 Columns', icon: 'Columns2', action: 'insert.columns2', visibleWhen: canEdit },
+      { id: 'insert.columns3', kind: 'action', label: '3 Columns', icon: 'Columns3', action: 'insert.columns3', visibleWhen: canEdit },
+    ],
+  },
+  {
+    id: 'format',
+    label: 'Format',
+    children: [
+      {
+        // Demo-only adaptation: consumer's flat Font item opens its picker;
+        // the demo offers a radio submenu over demoFonts.
+        id: 'format.font',
+        kind: 'submenu',
+        label: 'Font',
+        icon: 'Type',
+        visibleWhen: canEdit,
+        children: DEMO_FONT_FAMILIES.map((f) => ({
+          id: `format.font.${f.label.toLowerCase()}`,
+          kind: 'radio' as const,
+          label: f.label,
+          value: f.value,
+          action: 'format.fontFamily',
+          state: (c: MenuContext) =>
+            c.state['format.fontFamily']?.current === f.value,
+        })),
+      },
+      {
+        id: 'format.text',
+        kind: 'submenu',
+        label: 'Text',
+        icon: 'Bold',
+        visibleWhen: canEdit,
+        children: [
+          { id: 'format.bold', kind: 'checkbox', label: 'Bold', shortcut: '⌘B', action: 'format.bold',
+            state: (c) => c.state['format.bold']?.isActive ?? false },
+          { id: 'format.italic', kind: 'checkbox', label: 'Italic', shortcut: '⌘I', action: 'format.italic',
+            state: (c) => c.state['format.italic']?.isActive ?? false },
+          { id: 'format.underline', kind: 'checkbox', label: 'Underline', shortcut: '⌘U', action: 'format.underline',
+            state: (c) => c.state['format.underline']?.isActive ?? false },
+          { id: 'format.strike', kind: 'checkbox', label: 'Strike-through', shortcut: '⌘⇧X', action: 'format.strike',
+            state: (c) => c.state['format.strike']?.isActive ?? false },
+          { id: 'format.superscript', kind: 'checkbox', label: 'Superscript', action: 'format.superscript',
+            state: (c) => c.state['format.superscript']?.isActive ?? false },
+          { id: 'format.subscript', kind: 'checkbox', label: 'Subscript', action: 'format.subscript',
+            state: (c) => c.state['format.subscript']?.isActive ?? false },
+          { id: 'format.text.sep', kind: 'separator' },
+          {
+            id: 'format.fontSize',
+            kind: 'submenu',
+            label: 'Font size',
+            children: [
+              { id: 'format.fontSize.increase', kind: 'action', label: 'Increase font size', action: 'format.fontSize.increase' },
+              { id: 'format.fontSize.decrease', kind: 'action', label: 'Decrease font size', action: 'format.fontSize.decrease' },
+            ],
+          },
+        ],
+      },
+      {
+        id: 'format.paragraph',
+        kind: 'submenu',
+        label: 'Paragraph styles',
+        icon: 'Heading1',
+        visibleWhen: canEdit,
+        children: [
+          { id: 'format.heading.1', kind: 'radio', label: 'Heading 1', value: '1', action: 'format.heading',
+            state: (c) => c.state['format.heading']?.current === '1' },
+          { id: 'format.heading.2', kind: 'radio', label: 'Heading 2', value: '2', action: 'format.heading',
+            state: (c) => c.state['format.heading']?.current === '2' },
+          { id: 'format.heading.3', kind: 'radio', label: 'Heading 3', value: '3', action: 'format.heading',
+            state: (c) => c.state['format.heading']?.current === '3' },
+          { id: 'format.heading.paragraph', kind: 'radio', label: 'Text', value: 'paragraph', action: 'format.heading',
+            state: (c) => c.state['format.heading']?.current === 'paragraph' },
+        ],
+      },
+      {
+        id: 'format.align',
+        kind: 'submenu',
+        label: 'Align',
+        icon: 'AlignLeft',
+        visibleWhen: canEdit,
+        children: [
+          { id: 'format.align.left', kind: 'radio', label: 'Left', value: 'left', action: 'format.align',
+            state: (c) => c.state['format.align']?.current === 'left' },
+          { id: 'format.align.center', kind: 'radio', label: 'Centre', value: 'center', action: 'format.align',
+            state: (c) => c.state['format.align']?.current === 'center' },
+          { id: 'format.align.right', kind: 'radio', label: 'Right', value: 'right', action: 'format.align',
+            state: (c) => c.state['format.align']?.current === 'right' },
+          { id: 'format.align.justify', kind: 'radio', label: 'Justified', value: 'justify', action: 'format.align',
+            state: (c) => c.state['format.align']?.current === 'justify' },
+        ],
+      },
+      {
+        id: 'format.lineHeight',
+        kind: 'submenu',
+        label: 'Line height',
+        icon: 'UnfoldVertical',
+        visibleWhen: canEdit,
+        children: ['1', '1.15', '1.5', '2', '2.5', '3'].map((v) => ({
+          id: `format.lineHeight.${v.replace('.', '_')}`,
+          kind: 'radio' as const,
+          label: v,
+          value: v,
+          action: 'format.lineHeight',
+          state: (c: MenuContext) => c.state['format.lineHeight']?.current === v,
+        })),
+      },
+      {
+        id: 'format.lists',
+        kind: 'submenu',
+        label: 'Lists',
+        icon: 'List',
+        visibleWhen: canEdit,
+        children: [
+          { id: 'format.list.numbered', kind: 'checkbox', label: 'Numbered list', action: 'format.list.numbered',
+            state: (c) => c.state['format.list.numbered']?.isActive ?? false },
+          { id: 'format.list.bullet', kind: 'checkbox', label: 'Bullet list', action: 'format.list.bullet',
+            state: (c) => c.state['format.list.bullet']?.isActive ?? false },
+          { id: 'format.list.check', kind: 'checkbox', label: 'Checklist', action: 'format.list.check',
+            state: (c) => c.state['format.list.check']?.isActive ?? false },
+        ],
+      },
+      {
+        id: 'format.orientation',
+        kind: 'submenu',
+        label: 'Page orientation',
+        icon: 'RectangleVertical',
+        visibleWhen: canEdit,
+        children: [
+          { id: 'format.orientation.vertical', kind: 'radio', label: 'Vertical', value: 'portrait',
+            action: 'format.pageOrientation',
+            state: (c) => (c.state['format.pageOrientation']?.current ?? 'portrait') === 'portrait' },
+          { id: 'format.orientation.horizontal', kind: 'radio', label: 'Horizontal', value: 'landscape',
+            action: 'format.pageOrientation',
+            state: (c) => c.state['format.pageOrientation']?.current === 'landscape' },
+        ],
+      },
+      { id: 'format.margins', kind: 'action', label: 'Margins', icon: 'Frame',
+        action: 'format.margins', comingSoon: true, visibleWhen: canEdit },
+      { id: 'format.sep1', kind: 'separator' },
+      { id: 'format.clearFormatting', kind: 'action', label: 'Clear formatting', icon: 'RemoveFormatting',
+        action: 'format.clearFormatting', visibleWhen: canEdit },
+    ],
+  },
+  {
+    id: 'tools',
+    label: 'Tools',
+    children: [
+      { id: 'tools.slides', kind: 'action', label: 'Slides', icon: 'Presentation',
+        action: 'tools.slides', visibleWhen: canTools },
+    ],
+  },
+];
