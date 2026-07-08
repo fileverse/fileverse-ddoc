@@ -20,6 +20,7 @@ export type DemoAppActionDeps = {
   isSplitView: boolean;
   toggleSplitView: () => void;
   createTab: () => void;
+  openLinkModal: () => void;
   toggleStyling: () => void;
   zoomLevel: string;
   setZoomLevel: (v: string) => void;
@@ -66,21 +67,8 @@ export const createDemoAppActions = (d: DemoAppActionDeps): ActionRegistry => ({
   // Demo approximation of "insert comment on selection": opens the drawer.
   'insert.comment': { run: () => d.openCommentsDrawer() },
   // Overrides the registry's editor command (merge is later-wins): the menu
-  // item needs a URL prompt; the raw command is a no-op without one.
-  'insert.link': {
-    run: () => {
-      if (!d.liveEditor) return;
-      const url = window.prompt('Link URL');
-      if (!url) return;
-      const finalUrl = /^https?:\/\//i.test(url) ? url : `https://${url}`;
-      d.liveEditor
-        .chain()
-        .focus()
-        .extendMarkRange('link')
-        .setLink({ href: finalUrl })
-        .run();
-    },
-  },
+  // item opens the link modal; the raw command is a no-op without a URL.
+  'insert.link': { run: () => d.openLinkModal() },
   'view.focusMode': {
     run: () => d.setIsFocusMode(!d.isFocusMode),
     isActive: d.isFocusMode,

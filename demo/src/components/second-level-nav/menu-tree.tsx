@@ -229,21 +229,19 @@ export const demoMenuTree: MenuBarTree = [
       },
       {
         id: 'view.splitView',
-        kind: 'checkbox',
+        kind: 'action',
         label: 'Split Markdown View',
         action: 'view.splitView',
         visibleWhen: ownerOnly,
-        state: (c) => c.state['view.splitView']?.isActive ?? false,
       },
       {
         id: 'view.outlines',
-        kind: 'checkbox',
+        kind: 'action',
         label: (c) =>
           c.state['view.outlines.toggle']?.isActive
             ? 'Collapse outlines'
             : 'Expand tabs and outlines',
         action: 'view.outlines.toggle',
-        state: (c) => c.state['view.outlines.toggle']?.isActive ?? false,
       },
       {
         id: 'view.styles',

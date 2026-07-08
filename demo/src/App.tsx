@@ -13,6 +13,7 @@ import { SecondLevelNav } from './components/second-level-nav/second-level-nav';
 import { demoMenuTree } from './components/second-level-nav/menu-tree';
 import { deriveCapabilities } from './components/second-level-nav/capabilities';
 import { createDemoAppActions } from './components/second-level-nav/demo-app-actions';
+import { LinkModal } from './components/LinkModal';
 
 const demoFonts: FontDescriptor[] = [
   {
@@ -208,6 +209,7 @@ function App() {
   const [isPreviewMode, setIsPreviewMode] = useState(false);
   // Controlled focus mode (D6) — the second-level nav's View menu drives it.
   const [isFocusMode, setIsFocusMode] = useState(false);
+  const [linkModalOpen, setLinkModalOpen] = useState(false);
   const isOnline = useSyncExternalStore(
     (cb) => {
       window.addEventListener('online', cb);
@@ -500,6 +502,7 @@ function App() {
       isSplitView,
       toggleSplitView: () => setIsSplitView((v: boolean) => !v),
       createTab: () => editorRef.current?.createTab?.(),
+      openLinkModal: () => setLinkModalOpen(true),
       toggleStyling: () => setShowStylingControls((v) => !v),
       zoomLevel,
       setZoomLevel,
@@ -879,6 +882,19 @@ function App() {
         setCharacterCount={setCharacterCount}
         setWordCount={setWordCount}
         setPageCount={setPageCount}
+      />
+      <LinkModal
+        open={linkModalOpen}
+        onOpenChange={setLinkModalOpen}
+        getEditor={() => editorRef.current?.getEditor()}
+        onError={(msg) =>
+          toast({
+            title: 'Error',
+            description: msg,
+            variant: 'error',
+            iconType: 'icon',
+          })
+        }
       />
       <Toaster
         position={!isMobile ? 'bottom-right' : 'center-top'}
