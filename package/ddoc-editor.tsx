@@ -414,8 +414,13 @@ const DdocEditor = forwardRef(
     // Sanitize + scope the author's custom CSS before injecting it (it reaches
     // viewers of published docs, so it's untrusted). Returns '' on SSR; the
     // client re-renders with the sanitized rule after hydration.
+    // Scope with a DOUBLED class (`.ProseMirror.ProseMirror`) so author custom
+    // CSS reliably wins over the editor's own element/class defaults without
+    // needing !important. The editor styles links via `.ProseMirror
+    // .custom-text-link` (specificity 0,2,0), which would otherwise beat a
+    // plain author `a { … }` (0,1,1); doubling makes author rules 0,2,1.
     const safeCustomCss = useMemo(
-      () => sanitizeCustomCss(documentStyling?.customCSS),
+      () => sanitizeCustomCss(documentStyling?.customCSS, '.ProseMirror.ProseMirror'),
       [documentStyling?.customCSS],
     );
 
