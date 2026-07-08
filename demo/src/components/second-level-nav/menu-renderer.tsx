@@ -59,10 +59,7 @@ export const MenuBarRenderer = ({
               {itemIcon(node.icon)}
               {node.label}
             </MenubarSubTrigger>
-            <MenubarSubContent
-              className="min-w-60"
-              onFocusOutside={(e) => e.preventDefault()}
-            >
+            <MenubarSubContent className="min-w-60">
               {renderChildren(node.children)}
             </MenubarSubContent>
           </MenubarSub>
@@ -167,13 +164,7 @@ export const MenuBarRenderer = ({
           >
             {menu.label}
           </MenubarTrigger>
-          {/* Checkbox/radio dispatches keep the menu open (onSelect
-              preventDefault), but editor commands chain .focus() which steals
-              DOM focus — swallow that so only pointer/Escape dismiss. */}
-          <MenubarContent
-            className="min-w-60"
-            onFocusOutside={(e) => e.preventDefault()}
-          >
+          <MenubarContent className="min-w-60">
             {renderChildren(menu.children)}
           </MenubarContent>
         </MenubarMenu>

@@ -221,11 +221,10 @@ export const demoMenuTree: MenuBarTree = [
       // Demo-only: D6 controlled focus mode dogfood (not in the consumer tree).
       {
         id: 'view.focusMode',
-        kind: 'checkbox',
+        kind: 'action',
         label: 'Focus mode',
         action: 'view.focusMode',
         visibleWhen: ownerOnly,
-        state: (c) => c.state['view.focusMode']?.isActive ?? false,
       },
       {
         id: 'view.splitView',
