@@ -15,7 +15,6 @@ const projected: ProjectedMenuBar = [
         label: 'Rename',
         action: 'file.rename',
         disabled: false,
-        shortcut: '⌘⇧R',
       },
       {
         id: 'file.margins',

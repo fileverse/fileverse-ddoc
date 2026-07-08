@@ -9,7 +9,6 @@ import {
   MenubarRadioGroup,
   MenubarRadioItem,
   MenubarSeparator,
-  MenubarShortcut,
   MenubarSub,
   MenubarSubTrigger,
   MenubarSubContent,
@@ -65,9 +64,6 @@ export const MenuBarRenderer = ({
             }}
           >
             {node.label}
-            {node.shortcut && (
-              <MenubarShortcut>{node.shortcut}</MenubarShortcut>
-            )}
           </MenubarCheckboxItem>
         );
       // radio items are grouped by renderChildren below
@@ -88,9 +84,6 @@ export const MenuBarRenderer = ({
               <span className="ml-auto rounded px-1.5 text-helper-text-sm color-text-disabled border color-border-default">
                 Soon
               </span>
-            )}
-            {node.shortcut && !node.comingSoon && (
-              <MenubarShortcut>{node.shortcut}</MenubarShortcut>
             )}
           </MenubarItem>
         );

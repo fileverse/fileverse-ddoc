@@ -16,7 +16,6 @@ export type MenuNode = {
   /** Optional only for separators. */
   label?: string | ((ctx: MenuContext) => string);
   icon?: string;
-  shortcut?: string;
   comingSoon?: boolean;
   requiresAuth?: boolean; // renders normally; click routes to sign-in when !caps.isAuthenticated
   kind: 'action' | 'submenu' | 'checkbox' | 'radio' | 'separator';
