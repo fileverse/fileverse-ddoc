@@ -146,4 +146,16 @@ export const insertCommands: Record<string, InsertCommand> = {
   video: (editor, range) => {
     begin(editor, range).setActionButton('iframe-video').run();
   },
+  mermaid: (editor, range) => {
+    begin(editor, range).setCodeBlock({ language: 'mermaid' }).run();
+  },
+  plainText: (editor, range) => {
+    begin(editor, range).setCodeBlock({ language: 'plaintext' }).run();
+  },
+  tweet: (editor, range) => {
+    begin(editor, range).setActionButton('twitter').run();
+  },
+  soundcloud: (editor, range) => {
+    begin(editor, range).setActionButton('iframe-soundcloud').run();
+  },
 };

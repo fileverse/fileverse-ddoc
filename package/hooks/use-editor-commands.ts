@@ -10,6 +10,7 @@ import {
   getCurrentLineHeight,
   uiValueToPercentage,
 } from '../utils/typography';
+import { setShowReplacePopoverWithData } from '../extensions/search-replace/utils';
 
 export type EditorCommand = {
   run: (arg?: string) => void;
@@ -26,6 +27,8 @@ export type EditorCommandId =
   | 'edit.copy'
   | 'edit.paste'
   | 'edit.pasteWithoutFormatting'
+  | 'edit.delete'
+  | 'edit.findReplace'
   | 'insert.image'
   | 'insert.table'
   | 'insert.link'
@@ -34,6 +37,10 @@ export type EditorCommandId =
   | 'insert.code'
   | 'insert.codeBlock'
   | 'insert.video'
+  | 'insert.mermaid'
+  | 'insert.plainText'
+  | 'insert.tweet'
+  | 'insert.soundcloud'
   | 'insert.divider'
   | 'insert.pageBreak'
   | 'insert.columns2'
@@ -54,7 +61,18 @@ export type EditorCommandId =
   | 'format.list.bullet'
   | 'format.list.numbered'
   | 'format.list.check'
-  | 'format.clearFormatting';
+  | 'format.clearFormatting'
+  | 'table.addRowAbove'
+  | 'table.addRowBelow'
+  | 'table.mergeCells'
+  | 'table.deleteRow'
+  | 'table.addColumnLeft'
+  | 'table.addColumnRight'
+  | 'table.deleteColumn'
+  | 'table.toggleHeaderRow'
+  | 'table.toggleHeaderColumn'
+  | 'table.toggleHeaderCell'
+  | 'table.deleteTable';
 
 export type UseEditorCommandsOptions = UploadImageOptions;
 
@@ -150,6 +168,8 @@ export const useEditorCommands = (
         bulletList: e.isActive('bulletList'),
         orderedList: e.isActive('orderedList'),
         taskList: e.isActive('taskList'),
+        inTable: e.isActive('table'),
+        canMergeCells: e.can().mergeCells(),
         heading: currentHeading(e),
         align: currentAlign(e),
         lineHeight: getCurrentLineHeight(e, readLineHeight(e)),
@@ -180,6 +200,11 @@ export const useEditorCommands = (
         isEnabled: state.canRedo,
       }),
       'edit.selectAll': cmd(() => editor.chain().focus().selectAll().run()),
+      'edit.delete': cmd(
+        () => editor.chain().focus().deleteSelection().run(),
+        { isEnabled: state.hasSelection },
+      ),
+      'edit.findReplace': cmd(() => setShowReplacePopoverWithData(editor)),
       'edit.cut': cmd(() => document.execCommand('cut'), {
         isEnabled: state.hasSelection,
       }),
@@ -219,6 +244,10 @@ export const useEditorCommands = (
         uploadImageCommand(editor, { onError, ipfsImageUploadFn }),
       ),
       'insert.video': cmd(() => insertCommands.video(editor)),
+      'insert.mermaid': cmd(() => insertCommands.mermaid(editor)),
+      'insert.plainText': cmd(() => insertCommands.plainText(editor)),
+      'insert.tweet': cmd(() => insertCommands.tweet(editor)),
+      'insert.soundcloud': cmd(() => insertCommands.soundcloud(editor)),
       'insert.link': cmd(
         (url) => {
           // same chain the link popup dispatches (editor-utils.tsx:1546)
@@ -319,6 +348,46 @@ export const useEditorCommands = (
       'format.clearFormatting': cmd(() =>
         editor.chain().focus().unsetAllMarks().clearNodes().run(),
       ),
+
+      // --- table (enabled only with the cursor inside a table) ---
+      'table.addRowAbove': cmd(() => editor.chain().focus().addRowBefore().run(), {
+        isEnabled: state.inTable,
+      }),
+      'table.addRowBelow': cmd(() => editor.chain().focus().addRowAfter().run(), {
+        isEnabled: state.inTable,
+      }),
+      'table.mergeCells': cmd(() => editor.chain().focus().mergeCells().run(), {
+        isEnabled: state.canMergeCells,
+      }),
+      'table.deleteRow': cmd(() => editor.chain().focus().deleteRow().run(), {
+        isEnabled: state.inTable,
+      }),
+      'table.addColumnLeft': cmd(
+        () => editor.chain().focus().addColumnBefore().run(),
+        { isEnabled: state.inTable },
+      ),
+      'table.addColumnRight': cmd(
+        () => editor.chain().focus().addColumnAfter().run(),
+        { isEnabled: state.inTable },
+      ),
+      'table.deleteColumn': cmd(() => editor.chain().focus().deleteColumn().run(), {
+        isEnabled: state.inTable,
+      }),
+      'table.toggleHeaderRow': cmd(
+        () => editor.chain().focus().toggleHeaderRow().run(),
+        { isEnabled: state.inTable },
+      ),
+      'table.toggleHeaderColumn': cmd(
+        () => editor.chain().focus().toggleHeaderColumn().run(),
+        { isEnabled: state.inTable },
+      ),
+      'table.toggleHeaderCell': cmd(
+        () => editor.chain().focus().toggleHeaderCell().run(),
+        { isEnabled: state.inTable },
+      ),
+      'table.deleteTable': cmd(() => editor.chain().focus().deleteTable().run(), {
+        isEnabled: state.inTable,
+      }),
     };
   }, [editor, state, onError, ipfsImageUploadFn]);
 };

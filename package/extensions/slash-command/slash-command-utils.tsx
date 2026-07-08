@@ -211,12 +211,7 @@ export const getSuggestionItems = ({
       icon: <LucideIcon name="GitGraph" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) =>
-        editor
-          .chain()
-          .focus()
-          .deleteRange(range)
-          .setCodeBlock({ language: 'mermaid' })
-          .run(),
+        insertCommands.mermaid(editor, range),
     },
     {
       title: 'Plain text',
@@ -225,12 +220,7 @@ export const getSuggestionItems = ({
       icon: <LucideIcon name="NotepadText" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) =>
-        editor
-          .chain()
-          .focus()
-          .deleteRange(range)
-          .setCodeBlock({ language: 'plaintext' })
-          .run(),
+        insertCommands.plainText(editor, range),
     },
     {
       title: 'Table',
@@ -291,14 +281,8 @@ export const getSuggestionItems = ({
       searchTerms: ['X', 'embed', 'twitter', 'tweet'],
       icon: <LucideIcon name="XSocial" size={'md'} />,
       image: '',
-      command: ({ editor, range }: CommandProps) => {
-        editor
-          .chain()
-          .focus()
-          .deleteRange(range)
-          .setActionButton('twitter')
-          .run();
-      },
+      command: ({ editor, range }: CommandProps) =>
+        insertCommands.tweet(editor, range),
     },
     {
       title: 'Soundcloud Embed',
@@ -322,14 +306,8 @@ export const getSuggestionItems = ({
         </svg>
       ),
       image: '',
-      command: ({ editor, range }: CommandProps) => {
-        editor
-          .chain()
-          .focus()
-          .deleteRange(range)
-          .setActionButton('iframe-soundcloud')
-          .run();
-      },
+      command: ({ editor, range }: CommandProps) =>
+        insertCommands.soundcloud(editor, range),
     },
     {
       title: '2 Columns',

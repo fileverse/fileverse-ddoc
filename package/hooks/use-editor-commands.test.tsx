@@ -72,6 +72,34 @@ describe('useEditorCommands', () => {
     expect(result.current['format.direction'].current).toBe('rtl');
   });
 
+  it('edit.delete removes the selection and tracks enablement', () => {
+    const { result } = renderHook(() => useEditorCommands(editor));
+    expect(result.current['edit.delete'].isEnabled).toBe(true); // selectAll in setup
+    act(() => result.current['edit.delete'].run());
+    expect(editor.getText()).not.toContain('hello world');
+  });
+
+  it('table commands enable only inside a table and operate on it', () => {
+    editor.commands.setTextSelection(3);
+    const { result } = renderHook(() => useEditorCommands(editor));
+    expect(result.current['table.addRowBelow'].isEnabled).toBe(false);
+    act(() => result.current['insert.table'].run()); // 3x2 with header row
+    expect(result.current['table.addRowBelow'].isEnabled).toBe(true);
+    const rowsBefore = editor.getHTML().match(/<tr/g)?.length ?? 0;
+    act(() => result.current['table.addRowBelow'].run());
+    const rowsAfter = editor.getHTML().match(/<tr/g)?.length ?? 0;
+    expect(rowsAfter).toBe(rowsBefore + 1);
+    act(() => result.current['table.deleteTable'].run());
+    expect(result.current['table.deleteTable'].isEnabled).toBe(false);
+  });
+
+  it('insert.mermaid creates a mermaid code block', () => {
+    editor.commands.setTextSelection(3);
+    const { result } = renderHook(() => useEditorCommands(editor));
+    act(() => result.current['insert.mermaid'].run());
+    expect(editor.isActive('codeBlock', { language: 'mermaid' })).toBe(true);
+  });
+
   it('returns disabled no-op commands for a null editor', () => {
     const { result } = renderHook(() => useEditorCommands(null));
     expect(result.current['format.bold'].isEnabled).toBe(false);
