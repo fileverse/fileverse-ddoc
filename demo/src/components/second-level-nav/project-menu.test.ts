@@ -106,4 +106,41 @@ describe('projectMenu', () => {
     expect(edit.children[0].kind).not.toBe('separator');
     expect(edit.children[edit.children.length - 1].kind).not.toBe('separator');
   });
+
+  it('projects a group inline with its label and drops it when empty', () => {
+    const t: MenuBarTree = [
+      {
+        id: 'format',
+        label: 'Format',
+        children: [
+          {
+            id: 'format.text',
+            kind: 'group',
+            label: 'Text',
+            children: [
+              {
+                id: 'format.bold',
+                kind: 'checkbox',
+                label: 'Bold',
+                action: 'format.bold',
+                visibleWhen: (c) => c.caps.canEdit,
+                state: () => true,
+              },
+            ],
+          },
+        ],
+      },
+    ];
+    const owner = projectMenu(t, ctx());
+    const group = owner[0].children[0];
+    expect(group.kind).toBe('group');
+    expect(group).toMatchObject({ label: 'Text' });
+    expect(group.kind === 'group' && group.children[0]).toMatchObject({
+      kind: 'checkbox',
+      checked: true,
+    });
+    // All children hidden → the group (and then the menu) disappears.
+    const viewer = projectMenu(t, ctx({ isDDocOwner: false, isPreviewMode: true }));
+    expect(viewer).toEqual([]);
+  });
 });

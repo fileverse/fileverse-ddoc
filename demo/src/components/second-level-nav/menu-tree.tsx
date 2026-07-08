@@ -27,6 +27,7 @@ export const demoMenuTree: MenuBarTree = [
           {
             id: 'file.new.blank',
             kind: 'action',
+            icon: 'Plus',
             label: 'Blank dDoc',
             action: 'file.new.blank',
           },
@@ -370,7 +371,7 @@ export const demoMenuTree: MenuBarTree = [
             id: 'format.underline',
             kind: 'checkbox',
             label: 'Underline',
-            icon: 'Italic',
+            icon: 'Underline',
             action: 'format.underline',
             state: (c) => c.state['format.underline']?.isActive ?? false,
           },

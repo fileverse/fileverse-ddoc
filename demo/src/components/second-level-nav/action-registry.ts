@@ -13,8 +13,10 @@ export const mergeRegistries = (...sources: ActionRegistry[]): ActionRegistry =>
 
 const collectActionIds = (nodes: MenuNode[], acc: string[] = []): string[] => {
   for (const n of nodes) {
-    if (n.action && !n.comingSoon) acc.push(n.action);
-    if (n.children) collectActionIds(n.children, acc);
+    if ('action' in n && !('comingSoon' in n && n.comingSoon)) {
+      acc.push(n.action);
+    }
+    if ('children' in n) collectActionIds(n.children, acc);
   }
   return acc;
 };

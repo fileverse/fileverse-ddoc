@@ -1,4 +1,5 @@
 // demo/src/components/second-level-nav/menu-renderer.tsx
+import { Fragment } from 'react';
 import {
   Menubar,
   MenubarMenu,
@@ -8,13 +9,20 @@ import {
   MenubarCheckboxItem,
   MenubarRadioGroup,
   MenubarRadioItem,
+  MenubarLabel,
   MenubarSeparator,
   MenubarSub,
   MenubarSubTrigger,
   MenubarSubContent,
   LucideIcon,
 } from '@fileverse/ui';
-import type { ProjectedMenuBar, ProjectedNode } from './menu-types';
+import type {
+  ProjectedAction,
+  ProjectedCheckbox,
+  ProjectedMenuBar,
+  ProjectedNode,
+  ProjectedRadio,
+} from './menu-types';
 import type { ActionRegistry } from './action-registry';
 
 type Props = {
@@ -29,10 +37,17 @@ export const MenuBarRenderer = ({
   registry,
   onRequiresAuth,
 }: Props) => {
-  const dispatch = (node: ProjectedNode) => {
-    if (node.requiresAuth && onRequiresAuth) return onRequiresAuth();
-    if (node.action) registry[node.action]?.run(node.value);
+  const dispatch = (
+    node: ProjectedAction | ProjectedCheckbox | ProjectedRadio,
+  ) => {
+    if (node.kind === 'action' && node.requiresAuth && onRequiresAuth) {
+      return onRequiresAuth();
+    }
+    registry[node.action]?.run(node.kind === 'radio' ? node.value : undefined);
   };
+
+  const itemIcon = (icon?: string) =>
+    icon && <LucideIcon name={icon} size="sm" className="mr-2" />;
 
   const renderNode = (node: ProjectedNode): JSX.Element => {
     switch (node.kind) {
@@ -42,45 +57,49 @@ export const MenuBarRenderer = ({
         return (
           <MenubarSub key={node.id}>
             <MenubarSubTrigger disabled={node.disabled}>
-              {node.icon && (
-                <LucideIcon name={node.icon} size="sm" className="mr-2" />
-              )}
+              {itemIcon(node.icon)}
               {node.label}
             </MenubarSubTrigger>
             <MenubarSubContent className="min-w-60">
-              {renderChildren(node.children ?? [])}
+              {renderChildren(node.children)}
             </MenubarSubContent>
           </MenubarSub>
+        );
+      case 'group':
+        // Labeled inline section: header + children in the same panel.
+        return (
+          <Fragment key={node.id}>
+            <MenubarLabel>{node.label}</MenubarLabel>
+            {renderChildren(node.children)}
+          </Fragment>
         );
       case 'checkbox':
         return (
           <MenubarCheckboxItem
             key={node.id}
-            checked={node.checked ?? false}
+            checked={node.checked}
             disabled={node.disabled}
             onSelect={(e) => {
               e.preventDefault();
               dispatch(node);
             }}
           >
+            {itemIcon(node.icon)}
             {node.label}
           </MenubarCheckboxItem>
         );
       // radio items are grouped by renderChildren below
       case 'radio':
       case 'action':
-      default:
         return (
           <MenubarItem
             key={node.id}
             disabled={node.disabled}
             onSelect={() => dispatch(node)}
           >
-            {node.icon && (
-              <LucideIcon name={node.icon} size="sm" className="mr-2" />
-            )}
+            {itemIcon(node.icon)}
             {node.label}
-            {node.comingSoon && (
+            {node.kind === 'action' && node.comingSoon && (
               <span className="ml-auto rounded px-1.5 text-helper-text-sm color-text-disabled border color-border-default">
                 Soon
               </span>
@@ -93,7 +112,7 @@ export const MenuBarRenderer = ({
   /** Wrap consecutive radio siblings in a MenubarRadioGroup. */
   const renderChildren = (nodes: ProjectedNode[]): JSX.Element[] => {
     const out: JSX.Element[] = [];
-    let radioRun: ProjectedNode[] = [];
+    let radioRun: ProjectedRadio[] = [];
     const flushRadios = () => {
       if (!radioRun.length) return;
       const group = radioRun;
@@ -104,13 +123,14 @@ export const MenuBarRenderer = ({
           {group.map((r) => (
             <MenubarRadioItem
               key={r.id}
-              value={r.value!}
+              value={r.value}
               disabled={r.disabled}
               onSelect={(e) => {
                 e.preventDefault();
                 dispatch(r);
               }}
             >
+              {itemIcon(r.icon)}
               {r.label}
             </MenubarRadioItem>
           ))}

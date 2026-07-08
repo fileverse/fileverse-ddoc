@@ -1,35 +1,83 @@
 import type {
   MenuBarTree,
   MenuContext,
+  MenuLabel,
   MenuNode,
   ProjectedMenuBar,
   ProjectedNode,
 } from './menu-types';
 
-const projectNode = (
-  node: MenuNode,
-  ctx: MenuContext,
-): ProjectedNode | null => {
+const resolveLabel = (label: MenuLabel, ctx: MenuContext): string =>
+  typeof label === 'function' ? label(ctx) : label;
+
+const projectNode = (node: MenuNode, ctx: MenuContext): ProjectedNode | null => {
   if (node.visibleWhen && !node.visibleWhen(ctx)) return null;
 
-  const children = node.children
-    ?.map((c) => projectNode(c, ctx))
-    .filter((c): c is ProjectedNode => c !== null);
-  const cleaned = children ? stripSeparators(children) : undefined;
+  switch (node.kind) {
+    case 'separator':
+      return { kind: 'separator', id: node.id };
 
-  // A submenu whose children all projected away disappears too.
-  if (node.kind === 'submenu' && (!cleaned || cleaned.length === 0))
-    return null;
+    case 'submenu':
+    case 'group': {
+      const children = stripSeparators(
+        node.children
+          .map((c) => projectNode(c, ctx))
+          .filter((c): c is ProjectedNode => c !== null),
+      );
+      // A container whose children all projected away disappears too.
+      if (children.length === 0) return null;
+      return {
+        kind: node.kind,
+        id: node.id,
+        label: resolveLabel(node.label, ctx),
+        icon: node.icon,
+        disabled:
+          node.kind === 'submenu' && node.enabledWhen
+            ? !node.enabledWhen(ctx)
+            : false,
+        children,
+      };
+    }
 
-  const { enabledWhen, state, label, ...rest } = node;
-  return {
-    ...rest,
-    label: (typeof label === 'function' ? label(ctx) : label) ?? '',
-    disabled:
-      node.comingSoon === true || (enabledWhen ? !enabledWhen(ctx) : false),
-    checked: state ? state(ctx) : undefined,
-    children: cleaned,
-  };
+    case 'checkbox':
+      return {
+        kind: 'checkbox',
+        id: node.id,
+        label: resolveLabel(node.label, ctx),
+        icon: node.icon,
+        action: node.action,
+        shortcut: node.shortcut,
+        disabled: node.enabledWhen ? !node.enabledWhen(ctx) : false,
+        checked: node.state(ctx),
+      };
+
+    case 'radio':
+      return {
+        kind: 'radio',
+        id: node.id,
+        label: resolveLabel(node.label, ctx),
+        icon: node.icon,
+        action: node.action,
+        value: node.value,
+        disabled: node.enabledWhen ? !node.enabledWhen(ctx) : false,
+        checked: node.state(ctx),
+      };
+
+    case 'action':
+      return {
+        kind: 'action',
+        id: node.id,
+        label: resolveLabel(node.label, ctx),
+        icon: node.icon,
+        action: node.action,
+        shortcut: node.shortcut,
+        comingSoon: node.comingSoon,
+        requiresAuth: node.requiresAuth,
+        disabled:
+          node.comingSoon === true ||
+          (node.enabledWhen ? !node.enabledWhen(ctx) : false),
+      };
+  }
 };
 
 /** Remove leading/trailing separators and collapse consecutive ones. */
