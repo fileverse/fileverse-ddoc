@@ -411,6 +411,7 @@ const DdocEditor = forwardRef(
       () => ({
         getEditor: () => editor,
         getYdoc: () => ydoc,
+        createTab,
         refreshYjsIndexedDbProvider,
         mergeYjsContents: (_contents: string[]) => {
           const mergedContent = mergeTabAwareYjsUpdates(_contents);
