@@ -5,6 +5,14 @@ export { DdocExportModal } from './package/components/export-modal';
 export { useHeadlessEditor } from './package/hooks/use-headless-editor';
 export { useExportHeadlessEditorContent } from './package/hooks/use-export-headless-editor-content';
 export { mergeTabAwareYjsUpdates } from './package/components/tabs/utils/tab-utils';
+export {
+  validateCustomCss,
+  sanitizeCustomCss,
+} from './package/utils/sanitize-css';
+export type {
+  CssDiagnostic,
+  CssValidationResult,
+} from './package/utils/sanitize-css';
 export { buildVersionDiffSnapshot } from './package/components/tabs/utils/version-diff-snapshot';
 export type {
   DdocExportModalProps,

@@ -6,6 +6,7 @@ import { getTemporaryEditor } from '../../utils/helpers';
 import { searchForSecureImageNodeAndEmbedImageContent } from '../mardown-paste-handler';
 import DOMPurify from 'dompurify';
 import { prettifyHtml } from '../../utils/prettify-html';
+import { sanitizeCustomCss } from '../../utils/sanitize-css';
 import {
   MERMAID_SVG_ATTRS,
   MERMAID_SVG_TAGS,
@@ -112,11 +113,26 @@ const HtmlExportExtension = (
               date: new Date().toISOString().split('T')[0], // YYYY-MM-DD
             };
 
-            // Create a clean HTML document without any classes, IDs, or styles
+            // The document's custom CSS (author-supplied). sanitizeCustomCss
+            // scopes it to `body` (the export's document root, mirroring the
+            // editor's `.ProseMirror`) AND strips injection vectors — breakout,
+            // url()/@import exfiltration, position:fixed overlays. The returned
+            // string is already `body { … }`-wrapped and safe to embed. Injected
+            // AFTER DOMPurify (which sanitizes the body only), so it survives.
+            const styleTag = sanitizeCustomCss(
+              editor.storage?.markdownPasteHandler?.customCSS || '',
+              'body',
+            );
+            const styleBlock = styleTag
+              ? `\n      <style>\n${styleTag}\n      </style>`
+              : '';
+
+            // Create a clean HTML document (no classes/IDs); the only styling is
+            // the author's custom CSS, when present.
             const htmlContent = `
   <html>
     <head>
-      <title>${metadata.title}</title>
+      <title>${metadata.title}</title>${styleBlock}
     </head>
     <body>
       ${cleanHtml}

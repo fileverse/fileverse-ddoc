@@ -148,6 +148,18 @@ export interface DocumentStyling {
    * @example "portrait" | "landscape"
    */
   orientation?: 'portrait' | 'landscape';
+
+  /**
+   * Custom CSS
+   * @description The author's escape hatch for styling the document beyond the
+   * structured options above. Write BARE selectors (`h1 { … }`, `p { … }`,
+   * `blockquote { … }`) — they are auto-scoped to the document content, so rules
+   * can't leak into the toolbar or the host app. Bare top-level declarations
+   * (e.g. `background`, `font-family`) style the document surface itself.
+   * Applies live in the editor, in preview, and in exports (Markdown/HTML).
+   * @example "h1 { letter-spacing: -0.02em } p { line-height: 1.8 }"
+   */
+  customCSS?: string;
 }
 export interface DdocProps extends CommentAccountProps {
   /**

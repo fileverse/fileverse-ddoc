@@ -25,6 +25,12 @@ interface UseMarkdownSyncArgs {
   onSeedError?: () => void;
 }
 
+// Custom CSS is edited in the styling palette, never in the markdown pane —
+// the pane is document content only. exportMarkdownFile embeds a `<style>`
+// block for downloads, so we strip a leading one from the seed to keep it out
+// of the on-screen pane. Matches the export format and trailing blank lines.
+const LEADING_STYLE_BLOCK = /^\s*<style>[\s\S]*?<\/style>\s*\n*/i;
+
 /**
  * Split View markdown sync — MVP (one-way: markdown → doc).
  *
@@ -85,6 +91,8 @@ export const useMarkdownSync = ({
         // re-embed automatically in handleMarkdownContent.)
         // replaceAll: replace the whole doc by range, atomically — never via
         // the live selection, which can move during an awaited image upload.
+        // Any <style> pasted into the pane is stripped in handleMarkdownContent
+        // (styling lives in the palette, never in doc content).
         await handleMarkdownContent(editor.view, value, ipfsImageUploadFn, {
           breaks: true,
           replaceAll: true,
@@ -138,9 +146,12 @@ export const useMarkdownSync = ({
           embedImages: false,
         });
         if (!cancelled && typeof md === 'string') {
-          // The export prepends YAML frontmatter (title/date) for file
-          // downloads; it's noise in the pane and import strips it anyway.
-          setMarkdown(stripFrontmatter(md));
+          // The export prepends YAML frontmatter (title/date) and — in
+          // "with styles" mode — a custom-CSS <style> block for downloads. Both
+          // are noise in the pane (styling is edited in the palette, not here),
+          // so strip them to show pure document content.
+          const body = stripFrontmatter(md).replace(LEADING_STYLE_BLOCK, '');
+          setMarkdown(body);
           seededRef.current = true;
         }
       } catch (error) {
