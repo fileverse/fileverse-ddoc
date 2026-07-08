@@ -1,5 +1,4 @@
 // demo/src/components/second-level-nav/menu-renderer.tsx
-import { Fragment } from 'react';
 import {
   Menubar,
   MenubarMenu,
@@ -47,7 +46,7 @@ export const MenuBarRenderer = ({
   };
 
   const itemIcon = (icon?: string) =>
-    icon && <LucideIcon name={icon} size="sm" className="mr-2" />;
+    icon && <LucideIcon name={icon} size="sm" className="mr-3" />;
 
   const renderNode = (node: ProjectedNode): JSX.Element => {
     switch (node.kind) {
@@ -68,10 +67,12 @@ export const MenuBarRenderer = ({
       case 'group':
         // Labeled inline section: header + children in the same panel.
         return (
-          <Fragment key={node.id}>
-            <MenubarLabel>{node.label}</MenubarLabel>
+          <div key={node.id} className="[&:has([data-type=label])+*]:mt-1">
+            {node.label && (
+              <MenubarLabel data-type="label">{node.label}</MenubarLabel>
+            )}
             {renderChildren(node.children)}
-          </Fragment>
+          </div>
         );
       case 'checkbox':
         return (
@@ -84,8 +85,10 @@ export const MenuBarRenderer = ({
               dispatch(node);
             }}
           >
-            {itemIcon(node.icon)}
-            {node.label}
+            <div className="flex items-center">
+              {itemIcon(node.icon)}
+              {node.label}
+            </div>
           </MenubarCheckboxItem>
         );
       // radio items are grouped by renderChildren below
@@ -130,8 +133,10 @@ export const MenuBarRenderer = ({
                 dispatch(r);
               }}
             >
-              {itemIcon(r.icon)}
-              {r.label}
+              <div className="flex items-center">
+                {itemIcon(r.icon)}
+                {r.label}
+              </div>
             </MenubarRadioItem>
           ))}
         </MenubarRadioGroup>,

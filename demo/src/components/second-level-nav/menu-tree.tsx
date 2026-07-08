@@ -6,11 +6,12 @@
 import type { MenuBarTree, MenuContext } from './menu-types';
 
 const canEdit = (c: MenuContext) => c.caps.canEdit;
-const canExport = (c: MenuContext) => c.caps.canExport;
 const canCreate = (c: MenuContext) => c.caps.canCreate;
 const canTools = (c: MenuContext) => c.caps.canUseTools;
 const hasSelection = (c: MenuContext) => c.caps.hasSelection;
 const isOnline = (c: MenuContext) => c.caps.isOnline;
+// ticket scopes these to owner, not all editors
+const ownerOnly = (c: MenuContext) => c.caps.canManageDoc;
 
 export const demoMenuTree: MenuBarTree = [
   {
@@ -36,75 +37,74 @@ export const demoMenuTree: MenuBarTree = [
       {
         id: 'file.importexport',
         kind: 'submenu',
-        label: 'Import',
+        label: (c) => (c.caps.canManageDoc ? 'Import/Export' : 'Export'),
         icon: 'FileImport',
-        visibleWhen: canEdit,
         enabledWhen: isOnline,
         children: [
           {
-            id: 'file.import.md',
-            kind: 'action',
-            label: 'Markdown (.md)',
-            action: 'file.import.md',
+            id: 'file.import',
+            kind: 'group',
+            label: 'Import',
+            visibleWhen: (c) => c.caps.canManageDoc,
+            children: [
+              {
+                id: 'file.import.md',
+                kind: 'action',
+                label: 'Markdown (.md)',
+                action: 'file.import.md',
+              },
+              {
+                id: 'file.import.docx',
+                kind: 'action',
+                label: 'Microsoft Word (.docx)',
+                action: 'file.import.docx',
+              },
+            ],
           },
           {
-            id: 'file.import.docx',
-            kind: 'action',
-            label: 'Microsoft Word (.docx)',
-            action: 'file.import.docx',
+            id: 'file.exportGroup',
+            kind: 'group',
+            label: (c) => (c.caps.canManageDoc ? 'Export' : ''),
+            children: [
+              {
+                id: 'file.export.pdf',
+                kind: 'action',
+                label: 'PDF document (.pdf)',
+                action: 'file.export.pdf',
+                visibleWhen: canEdit,
+              },
+              {
+                id: 'file.export.html',
+                kind: 'action',
+                label: 'Web page (.html)',
+                action: 'file.export.html',
+                visibleWhen: canEdit,
+              },
+              {
+                id: 'file.export.txt',
+                kind: 'action',
+                label: 'Plain text (.txt)',
+                action: 'file.export.txt',
+                visibleWhen: canEdit,
+              },
+              {
+                id: 'file.export.md',
+                kind: 'action',
+                label: (c) =>
+                  c.caps.canEdit ? 'Markdown (.md)' : 'Export as .md',
+                action: 'file.export.md',
+              },
+            ],
           },
         ],
       },
-      {
-        id: 'file.export',
-        kind: 'submenu',
-        label: 'Export',
-        icon: 'FileExport',
-        visibleWhen: (c) => canExport(c) && canEdit(c),
-        children: [
-          {
-            id: 'file.export.pdf',
-            kind: 'action',
-            label: 'PDF document (.pdf)',
-            action: 'file.export.pdf',
-          },
-          {
-            id: 'file.export.html',
-            kind: 'action',
-            label: 'Web page (.html)',
-            action: 'file.export.html',
-          },
-          {
-            id: 'file.export.txt',
-            kind: 'action',
-            label: 'Plain text (.txt)',
-            action: 'file.export.txt',
-          },
-          {
-            id: 'file.export.md',
-            kind: 'action',
-            label: 'Markdown (.md)',
-            action: 'file.export.md',
-          },
-        ],
-      },
-      // Viewer export goes through the export modal — one flat item.
-      {
-        id: 'file.export.viewer',
-        kind: 'action',
-        label: 'Export',
-        icon: 'Download',
-        action: 'file.export.viewerModal',
-        visibleWhen: (c) => canExport(c) && !canEdit(c),
-      },
-      { id: 'file.sep2', kind: 'separator', visibleWhen: canEdit },
+      { id: 'file.sep2', kind: 'separator' },
       {
         id: 'file.print',
         kind: 'action',
         label: 'Print',
         icon: 'Printer',
         action: 'file.print',
-        visibleWhen: canEdit,
       },
     ],
   },
@@ -198,7 +198,7 @@ export const demoMenuTree: MenuBarTree = [
         kind: 'checkbox',
         label: 'Focus mode',
         action: 'view.focusMode',
-        visibleWhen: canEdit,
+        visibleWhen: ownerOnly,
         state: (c) => c.state['view.focusMode']?.isActive ?? false,
       },
       {
@@ -225,13 +225,22 @@ export const demoMenuTree: MenuBarTree = [
         label: 'Zoom',
         icon: 'ZoomIn',
         visibleWhen: canEdit,
-        children: ['50', '75', '90', '100', '125', '150', '200'].map((z) => ({
-          id: `view.zoom.${z}`,
+        children: (
+          [
+            ['fit', 'Fit'],
+            ['50', '50%'],
+            ['75', '75%'],
+            ['100', '100%'],
+            ['150', '150%'],
+            ['200', '200%'],
+          ] as const
+        ).map(([value, label]) => ({
+          id: `view.zoom.${value}`,
           kind: 'radio' as const,
-          label: `${z}%`,
-          value: z,
+          label,
+          value,
           action: 'view.zoom',
-          state: (c: MenuContext) => c.state['view.zoom']?.current === z,
+          state: (c: MenuContext) => c.state['view.zoom']?.current === value,
         })),
       },
     ],
@@ -320,22 +329,6 @@ export const demoMenuTree: MenuBarTree = [
         label: 'Page break',
         icon: 'SeparatorHorizontal',
         action: 'insert.pageBreak',
-        visibleWhen: canEdit,
-      },
-      {
-        id: 'insert.columns2',
-        kind: 'action',
-        label: '2 Columns',
-        icon: 'Columns2',
-        action: 'insert.columns2',
-        visibleWhen: canEdit,
-      },
-      {
-        id: 'insert.columns3',
-        kind: 'action',
-        label: '3 Columns',
-        icon: 'Columns3',
-        action: 'insert.columns3',
         visibleWhen: canEdit,
       },
     ],
@@ -522,7 +515,7 @@ export const demoMenuTree: MenuBarTree = [
       {
         id: 'format.lists',
         kind: 'submenu',
-        label: 'Lists',
+        label: 'Bullets and numbering',
         icon: 'List',
         visibleWhen: canEdit,
         children: [
@@ -550,12 +543,42 @@ export const demoMenuTree: MenuBarTree = [
         ],
       },
       {
+        id: 'format.columns',
+        kind: 'submenu',
+        label: 'Columns',
+        icon: 'Columns2',
+        visibleWhen: canEdit,
+        children: [
+          {
+            id: 'format.columns.2',
+            kind: 'action',
+            label: '2 columns',
+            action: 'insert.columns2',
+          },
+          {
+            id: 'format.columns.3',
+            kind: 'action',
+            label: '3 columns',
+            action: 'insert.columns3',
+          },
+        ],
+      },
+      {
         id: 'format.orientation',
         kind: 'submenu',
         label: 'Page orientation',
         icon: 'RectangleVertical',
         visibleWhen: canEdit,
         children: [
+          {
+            id: 'format.orientation.horizontal',
+            kind: 'radio',
+            label: 'Horizontal',
+            value: 'landscape',
+            action: 'format.pageOrientation',
+            state: (c) =>
+              c.state['format.pageOrientation']?.current === 'landscape',
+          },
           {
             id: 'format.orientation.vertical',
             kind: 'radio',
@@ -565,15 +588,6 @@ export const demoMenuTree: MenuBarTree = [
             state: (c) =>
               (c.state['format.pageOrientation']?.current ?? 'portrait') ===
               'portrait',
-          },
-          {
-            id: 'format.orientation.horizontal',
-            kind: 'radio',
-            label: 'Horizontal',
-            value: 'landscape',
-            action: 'format.pageOrientation',
-            state: (c) =>
-              c.state['format.pageOrientation']?.current === 'landscape',
           },
         ],
       },
