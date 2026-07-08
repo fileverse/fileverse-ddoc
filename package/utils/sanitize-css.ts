@@ -134,21 +134,55 @@ const stripRule = (rule: CSSRule, reasons: Set<string>): void => {
   }
 };
 
-// Scope a top-level style rule's selector and strip its (and nested) declarations.
-const scopeStyleRule = (
-  rule: CSSStyleRule,
+const isStyleRule = (rule: CSSRule): boolean =>
+  typeof CSSStyleRule !== 'undefined' && rule instanceof CSSStyleRule;
+
+// @media / @supports — conditional groups that can wrap (and nest) style rules.
+const isGroupingRule = (rule: CSSRule): boolean =>
+  (typeof CSSMediaRule !== 'undefined' && rule instanceof CSSMediaRule) ||
+  (typeof CSSSupportsRule !== 'undefined' && rule instanceof CSSSupportsRule);
+
+// Sanitize a rule tree in place, returning true if the rule should be KEPT.
+//  - style rule: scope its selector (DROP if unscopable — never keep an
+//    unscoped selector) and strip dangerous declarations (this rule + its
+//    author-nested, relative rules).
+//  - grouping rule (@media / @supports, at ANY nesting depth): recurse and
+//    delete any child that must be dropped, so nested rules can't escape
+//    scoping or smuggle url()/@import/position:fixed past the sanitizer.
+//  - anything else (@import, @font-face, @keyframes, @layer, @container, …):
+//    drop. Keeping only known-safe rules is the security-critical default.
+const sanitizeRule = (
+  rule: CSSRule,
   scope: string,
   reasons: Set<string>,
-): void => {
-  const scoped = scopeSelectorList(rule.selectorText, scope);
-  if (scoped) {
+): boolean => {
+  if (isStyleRule(rule)) {
+    const styleRule = rule as CSSStyleRule;
+    const scoped = scopeSelectorList(styleRule.selectorText, scope);
+    if (!scoped) return false;
     try {
-      rule.selectorText = scoped;
+      styleRule.selectorText = scoped;
     } catch {
-      /* leave as-is if the engine rejects it */
+      return false;
     }
+    stripRule(styleRule, reasons);
+    return true;
   }
-  stripRule(rule, reasons);
+  if (isGroupingRule(rule)) {
+    const group = rule as CSSGroupingRule;
+    // Iterate backwards so deleteRule() doesn't shift the indices ahead of us.
+    for (let i = group.cssRules.length - 1; i >= 0; i -= 1) {
+      if (!sanitizeRule(group.cssRules[i], scope, reasons)) {
+        try {
+          group.deleteRule(i);
+        } catch {
+          /* ignore */
+        }
+      }
+    }
+    return true;
+  }
+  return false;
 };
 
 /**
@@ -187,29 +221,9 @@ export const validateCustomCss = (
 
   if (/@import\b/i.test(raw)) reasons.add(MSG.atImport);
 
-  const CssStyleRuleCtor =
-    typeof CSSStyleRule !== 'undefined' ? CSSStyleRule : null;
-  const CssGroupingCtors = [
-    typeof CSSMediaRule !== 'undefined' ? CSSMediaRule : null,
-    typeof CSSSupportsRule !== 'undefined' ? CSSSupportsRule : null,
-  ].filter(Boolean) as Array<typeof CSSMediaRule>;
-
   const kept: string[] = [];
   for (const rule of Array.from(sheet.cssRules)) {
-    if (CssStyleRuleCtor && rule instanceof CssStyleRuleCtor) {
-      scopeStyleRule(rule, scope, reasons);
-      kept.push(rule.cssText);
-    } else if (CssGroupingCtors.some((ctor) => rule instanceof ctor)) {
-      // @media / @supports — scope the inner style rules, keep the wrapper.
-      const group = rule as CSSMediaRule;
-      for (const inner of Array.from(group.cssRules)) {
-        if (CssStyleRuleCtor && inner instanceof CssStyleRuleCtor) {
-          scopeStyleRule(inner, scope, reasons);
-        }
-      }
-      kept.push(group.cssText);
-    }
-    // Everything else (@import, @font-face, @keyframes, …) is dropped.
+    if (sanitizeRule(rule, scope, reasons)) kept.push(rule.cssText);
   }
 
   const css = kept.join('\n');
