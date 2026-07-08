@@ -170,6 +170,23 @@ export const demoMenuTree: MenuBarTree = [
         action: 'edit.selectAll',
         visibleWhen: canEdit,
       },
+      {
+        id: 'edit.delete',
+        kind: 'action',
+        label: 'Delete',
+        icon: 'Trash2',
+        action: 'edit.delete',
+        visibleWhen: canEdit,
+        enabledWhen: hasSelection,
+      },
+      {
+        id: 'edit.findReplace',
+        kind: 'action',
+        label: 'Find and replace',
+        icon: 'FileSearch',
+        action: 'edit.findReplace',
+        visibleWhen: canEdit,
+      },
     ],
   },
   {
@@ -184,11 +201,20 @@ export const demoMenuTree: MenuBarTree = [
         visibleWhen: (c) => c.caps.canComment,
         children: [
           {
-            id: 'view.comments.hideAll',
+            id: 'view.comments.toggleCanvas',
             kind: 'action',
             label: (c) =>
-              c.caps.canEdit ? 'Hide all comments' : 'Show all comments',
-            action: 'view.comments.hideAll',
+              c.state['view.comments.toggleCanvas']?.isActive
+                ? 'Show comments'
+                : 'Hide comments',
+            action: 'view.comments.toggleCanvas',
+            visibleWhen: canEdit,
+          },
+          {
+            id: 'view.comments.showAll',
+            kind: 'action',
+            label: 'Show all comments',
+            action: 'view.comments.showAll',
           },
         ],
       },
@@ -200,6 +226,14 @@ export const demoMenuTree: MenuBarTree = [
         action: 'view.focusMode',
         visibleWhen: ownerOnly,
         state: (c) => c.state['view.focusMode']?.isActive ?? false,
+      },
+      {
+        id: 'view.splitView',
+        kind: 'checkbox',
+        label: 'Split Markdown View',
+        action: 'view.splitView',
+        visibleWhen: ownerOnly,
+        state: (c) => c.state['view.splitView']?.isActive ?? false,
       },
       {
         id: 'view.outlines',
@@ -307,6 +341,22 @@ export const demoMenuTree: MenuBarTree = [
         visibleWhen: canEdit,
       },
       {
+        id: 'insert.mermaid',
+        kind: 'action',
+        label: 'Mermaid diagram',
+        icon: 'GitGraph',
+        action: 'insert.mermaid',
+        visibleWhen: canEdit,
+      },
+      {
+        id: 'insert.plainText',
+        kind: 'action',
+        label: 'Plain text',
+        icon: 'NotepadText',
+        action: 'insert.plainText',
+        visibleWhen: canEdit,
+      },
+      {
         id: 'insert.video',
         kind: 'action',
         label: 'Video',
@@ -314,7 +364,31 @@ export const demoMenuTree: MenuBarTree = [
         action: 'insert.video',
         visibleWhen: canEdit,
       },
+      {
+        id: 'insert.tweet',
+        kind: 'action',
+        label: 'Tweet',
+        icon: 'XSocial',
+        action: 'insert.tweet',
+        visibleWhen: canEdit,
+      },
+      {
+        id: 'insert.soundcloud',
+        kind: 'action',
+        label: 'Soundcloud',
+        icon: 'Music',
+        action: 'insert.soundcloud',
+        visibleWhen: canEdit,
+      },
       { id: 'insert.sep2', kind: 'separator' },
+      {
+        id: 'insert.tab',
+        kind: 'action',
+        label: 'Tab',
+        icon: 'FilePlus',
+        action: 'insert.tab',
+        visibleWhen: canEdit,
+      },
       {
         id: 'insert.divider',
         kind: 'action',
@@ -330,6 +404,15 @@ export const demoMenuTree: MenuBarTree = [
         icon: 'SeparatorHorizontal',
         action: 'insert.pageBreak',
         visibleWhen: canEdit,
+      },
+      { id: 'insert.sep3', kind: 'separator' },
+      {
+        id: 'insert.comment',
+        kind: 'action',
+        label: 'Comment',
+        icon: 'MessageSquareText',
+        action: 'insert.comment',
+        visibleWhen: (c) => c.caps.canComment && canEdit(c),
       },
     ],
   },
@@ -589,6 +672,51 @@ export const demoMenuTree: MenuBarTree = [
               (c.state['format.pageOrientation']?.current ?? 'portrait') ===
               'portrait',
           },
+        ],
+      },
+      {
+        id: 'format.table',
+        kind: 'submenu',
+        label: 'Table',
+        icon: 'Table',
+        visibleWhen: canEdit,
+        // Ticket: active only when the cursor is inside a table.
+        enabledWhen: (c) => c.state['table.deleteTable']?.isEnabled ?? false,
+        children: [
+          ...(
+            [
+              ['table.addRowAbove', 'Add row above'],
+              ['table.addRowBelow', 'Add row below'],
+              ['table.mergeCellsRow', 'Merge cells in a row', 'table.mergeCells'],
+              ['table.deleteRow', 'Remove row'],
+              ['table.sepRows', '---'],
+              ['table.addColumnLeft', 'Add column left'],
+              ['table.addColumnRight', 'Add column right'],
+              [
+                'table.mergeCellsColumn',
+                'Merge cells in a column',
+                'table.mergeCells',
+              ],
+              ['table.deleteColumn', 'Remove column'],
+              ['table.sepCols', '---'],
+              ['table.toggleHeaderRow', 'Toggle header row'],
+              ['table.toggleHeaderColumn', 'Toggle header column'],
+              ['table.toggleHeaderCell', 'Toggle header cell'],
+              ['table.sepHeader', '---'],
+              ['table.deleteTable', 'Delete table'],
+            ] as const
+          ).map(([id, label, actionOverride]) =>
+            label === '---'
+              ? ({ id, kind: 'separator' } as const)
+              : ({
+                  id,
+                  kind: 'action' as const,
+                  label,
+                  action: actionOverride ?? id,
+                  enabledWhen: (c: MenuContext) =>
+                    c.state[actionOverride ?? id]?.isEnabled ?? false,
+                } as const),
+          ),
         ],
       },
       {

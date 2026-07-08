@@ -14,7 +14,12 @@ export type DemoAppActionDeps = {
   setIsFocusMode: (v: boolean) => void;
   showTOC: boolean;
   setShowTOC: (v: boolean) => void;
-  toggleCommentDrawer: () => void;
+  openCommentsDrawer: () => void;
+  canvasCommentsHidden: boolean;
+  toggleCanvasComments: () => void;
+  isSplitView: boolean;
+  toggleSplitView: () => void;
+  createTab: () => void;
   toggleStyling: () => void;
   zoomLevel: string;
   setZoomLevel: (v: string) => void;
@@ -46,7 +51,36 @@ export const createDemoAppActions = (d: DemoAppActionDeps): ActionRegistry => ({
   'file.print': {
     run: () => d.liveEditor && handleContentPrint(d.liveEditor.getHTML()),
   },
-  'view.comments.hideAll': { run: () => d.toggleCommentDrawer() },
+  // Canvas visibility toggle (Hide comments / Show comments).
+  'view.comments.toggleCanvas': {
+    run: () => d.toggleCanvasComments(),
+    isActive: d.canvasCommentsHidden,
+  },
+  // Opens the comments sidebar/drawer.
+  'view.comments.showAll': { run: () => d.openCommentsDrawer() },
+  'view.splitView': {
+    run: () => d.toggleSplitView(),
+    isActive: d.isSplitView,
+  },
+  'insert.tab': { run: () => d.createTab() },
+  // Demo approximation of "insert comment on selection": opens the drawer.
+  'insert.comment': { run: () => d.openCommentsDrawer() },
+  // Overrides the registry's editor command (merge is later-wins): the menu
+  // item needs a URL prompt; the raw command is a no-op without one.
+  'insert.link': {
+    run: () => {
+      if (!d.liveEditor) return;
+      const url = window.prompt('Link URL');
+      if (!url) return;
+      const finalUrl = /^https?:\/\//i.test(url) ? url : `https://${url}`;
+      d.liveEditor
+        .chain()
+        .focus()
+        .extendMarkRange('link')
+        .setLink({ href: finalUrl })
+        .run();
+    },
+  },
   'view.focusMode': {
     run: () => d.setIsFocusMode(!d.isFocusMode),
     isActive: d.isFocusMode,
