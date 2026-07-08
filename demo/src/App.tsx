@@ -505,42 +505,40 @@ function App() {
 
     return (
       <>
-        <div className="flex items-center gap-[12px] w-full">
-          <SecondLevelNav
-            tree={demoMenuTree}
-            liveEditor={liveEditor}
-            caps={caps}
-            appActions={appActions}
-          />
-          <div className="mx-auto">
-            <DocSwitcher currentDocId={docId} currentTitle={title} />
-            <div className="relative truncate inline-block xl:!max-w-[300px] !max-w-[108px] color-bg-default text-[14px] font-medium leading-[20px]">
-              <span className="invisible whitespace-pre">
-                {title || 'Untitled'}
-              </span>
-              <input
-                className="focus:outline-none truncate color-bg-default absolute top-0 left-0 right-0 bottom-0 select-text"
-                type="text"
-                placeholder="Untitled"
-                value={title}
-                onChange={(e) => handleTitleChange(e.target.value)}
-              />
-            </div>
-            <Tag
-              icon="BadgeCheck"
-              variant="transparent"
-              className="h-6 rounded border color-border-default color-text-secondary text-[12px] font-normal hidden xl:flex"
-              style={{ backgroundColor: 'hsl(var(--color-bg-secondary))' }}
-            >
-              {lastSavedAt ? 'Saved' : 'Not saved yet'}
-            </Tag>
-            <div className="w-6 h-6 rounded color-bg-secondary flex justify-center items-center border color-border-default xl:hidden">
-              <LucideIcon
-                name="BadgeCheck"
-                size="sm"
-                className="color-text-secondary"
-              />
-            </div>
+        <SecondLevelNav
+          tree={demoMenuTree}
+          liveEditor={liveEditor}
+          caps={caps}
+          appActions={appActions}
+        />
+        <div className="flex gap-2 items-center">
+          <DocSwitcher currentDocId={docId} currentTitle={title} />
+          <div className="relative truncate inline-block xl:!max-w-[300px] !max-w-[108px] color-bg-default text-[14px] font-medium leading-[20px]">
+            <span className="invisible whitespace-pre">
+              {title || 'Untitled'}
+            </span>
+            <input
+              className="focus:outline-none truncate color-bg-default absolute top-0 left-0 right-0 bottom-0 select-text"
+              type="text"
+              placeholder="Untitled"
+              value={title}
+              onChange={(e) => handleTitleChange(e.target.value)}
+            />
+          </div>
+          <Tag
+            icon="CircleCheck"
+            variant="transparent"
+            className="h-6 rounded border color-border-default color-text-secondary text-[12px] font-normal hidden xl:flex"
+            style={{ backgroundColor: 'hsl(var(--color-bg-secondary))' }}
+          >
+            {lastSavedAt ? 'Saved' : 'Not saved yet'}
+          </Tag>
+          <div className="w-6 h-6 rounded color-bg-secondary flex justify-center items-center border color-border-default xl:hidden">
+            <LucideIcon
+              name="BadgeCheck"
+              size="sm"
+              className="color-text-secondary"
+            />
           </div>
         </div>
         <div className="flex gap-2">

@@ -140,7 +140,10 @@ export const MenuBarRenderer = ({
     <Menubar aria-label="Document menu" className="hidden lg:flex">
       {projected.map((menu) => (
         <MenubarMenu key={menu.id}>
-          <MenubarTrigger data-testid={`slnav-${menu.id}`}>
+          <MenubarTrigger
+            data-testid={`slnav-${menu.id}`}
+            className="text-body-sm-bold color-text-default"
+          >
             {menu.label}
           </MenubarTrigger>
           <MenubarContent className="min-w-60">
