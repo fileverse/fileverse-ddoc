@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "4.1.12-menubar-1",
+  "version": "4.1.12-menubar-3",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
@@ -131,7 +131,7 @@
     "@dnd-kit/utilities": ">=3.2.2",
     "@fileverse/crypto": ">=0.0.21",
     "@fileverse/ens": "0.0.4",
-    "@fileverse/ui": "5.1.10-menubar-4",
+    "@fileverse/ui": "5.1.10-menubar-7",
     "framer-motion": ">=11.2.10",
     "frimousse": ">=0.3.0",
     "mermaid": "11.14.0",
