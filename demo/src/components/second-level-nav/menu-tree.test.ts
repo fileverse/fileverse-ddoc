@@ -100,7 +100,7 @@ describe('demoMenuTree', () => {
       (m) => m.id === 'file',
     )!;
     const submenu = file.children.find((c) => c.id === 'file.importexport');
-    expect(submenu).toMatchObject({ kind: 'submenu', label: 'Import/Export' });
+    expect(submenu).toMatchObject({ kind: 'submenu', label: 'Import / Export' });
     if (submenu?.kind !== 'submenu') throw new Error('expected submenu');
     expect(findNode(submenu.children, 'file.import')).toBeDefined();
   });

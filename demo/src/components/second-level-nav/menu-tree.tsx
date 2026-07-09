@@ -255,7 +255,10 @@ export const demoMenuTree: MenuBarTree = [
         id: 'view.splitView',
         kind: 'action',
         icon: 'SquareSplitHorizontal',
-        label: 'Split Markdown View',
+        label: (c) =>
+          c.state['view.splitView.toggle']?.isActive
+            ? 'Editor View'
+            : 'Split Markdown View',
         action: 'view.splitView',
         visibleWhen: ownerOnly,
       },

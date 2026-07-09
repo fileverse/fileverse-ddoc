@@ -1,4 +1,5 @@
 // demo/src/components/second-level-nav/menu-renderer.tsx
+import { useRef } from 'react';
 import {
   Menubar,
   MenubarMenu,
@@ -36,12 +37,25 @@ export const MenuBarRenderer = ({
   registry,
   onRequiresAuth,
 }: Props) => {
+  // True while a menu close was caused by dispatching an action. Editor
+  // commands chain .focus() onto the new node; Radix's close-auto-focus
+  // would steal it back to the menu trigger — suppress that for dispatches
+  // only, so Escape/outside-click still return focus to the trigger (a11y).
+  const dispatchedRef = useRef(false);
+  const onCloseAutoFocus = (e: Event) => {
+    if (dispatchedRef.current) {
+      dispatchedRef.current = false;
+      e.preventDefault();
+    }
+  };
+
   const dispatch = (
     node: ProjectedAction | ProjectedCheckbox | ProjectedRadio,
   ) => {
     if (node.kind === 'action' && node.requiresAuth && onRequiresAuth) {
       return onRequiresAuth();
     }
+    dispatchedRef.current = true;
     registry[node.action]?.run(node.kind === 'radio' ? node.value : undefined);
   };
 
@@ -59,7 +73,10 @@ export const MenuBarRenderer = ({
               {itemIcon(node.icon)}
               {node.label}
             </MenubarSubTrigger>
-            <MenubarSubContent className="min-w-60">
+            <MenubarSubContent
+              className="min-w-60"
+              onCloseAutoFocus={onCloseAutoFocus}
+            >
               {renderChildren(node.children)}
             </MenubarSubContent>
           </MenubarSub>
@@ -164,7 +181,10 @@ export const MenuBarRenderer = ({
           >
             {menu.label}
           </MenubarTrigger>
-          <MenubarContent className="min-w-60">
+          <MenubarContent
+            className="min-w-60"
+            onCloseAutoFocus={onCloseAutoFocus}
+          >
             {renderChildren(menu.children)}
           </MenubarContent>
         </MenubarMenu>
