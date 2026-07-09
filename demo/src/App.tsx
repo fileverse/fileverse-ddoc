@@ -513,12 +513,16 @@ function App() {
 
     return (
       <>
-        <SecondLevelNav
-          tree={demoMenuTree}
-          liveEditor={liveEditor}
-          caps={caps}
-          appActions={appActions}
-        />
+        {/* Split view's markdown pane is the sole input surface — the doc
+            menus must not be reachable while it is active. */}
+        {!isSplitView && (
+          <SecondLevelNav
+            tree={demoMenuTree}
+            liveEditor={liveEditor}
+            caps={caps}
+            appActions={appActions}
+          />
+        )}
         <div className="flex gap-2 items-center">
           <DocSwitcher currentDocId={docId} currentTitle={title} />
           <div className="relative truncate inline-block xl:!max-w-[300px] !max-w-[108px] color-bg-default text-[14px] font-medium leading-[20px]">
