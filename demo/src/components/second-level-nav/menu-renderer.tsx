@@ -73,10 +73,7 @@ export const MenuBarRenderer = ({
               {itemIcon(node.icon)}
               {node.label}
             </MenubarSubTrigger>
-            <MenubarSubContent
-              className="min-w-60"
-              onCloseAutoFocus={onCloseAutoFocus}
-            >
+            <MenubarSubContent className="min-w-60">
               {renderChildren(node.children)}
             </MenubarSubContent>
           </MenubarSub>

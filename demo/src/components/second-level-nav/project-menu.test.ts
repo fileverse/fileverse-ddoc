@@ -14,6 +14,7 @@ const ctx = (
     isOnline: true,
     hasSelection: true,
     permissionAllowsComment: true,
+    isRtcEnabled: false,
     ...over,
   }),
   state: {},

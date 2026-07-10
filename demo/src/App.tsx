@@ -469,6 +469,7 @@ function App() {
     isOnline,
     hasSelection: false, // refined inside SecondLevelNav from the registry
     permissionAllowsComment: !disableInlineComment,
+    isRtcEnabled: collabEnabled,
   });
 
   const renderNavbar = ({

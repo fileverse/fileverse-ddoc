@@ -7,6 +7,7 @@ export type DocumentCapabilities = {
   canComment: boolean;
   commentRequiresAuth: boolean;
   canManageDoc: boolean;
+  canSplitView: boolean;
   canShare: boolean;
   canExport: boolean;
   canCreate: boolean;
@@ -24,6 +25,7 @@ export function deriveCapabilities(input: {
   isOnline: boolean;
   hasSelection: boolean;
   permissionAllowsComment: boolean;
+  isRtcEnabled: boolean;
 }): DocumentCapabilities {
   const {
     isPreviewMode,
@@ -37,12 +39,14 @@ export function deriveCapabilities(input: {
 
   const isOwner = isDDocOwner && !isPreviewMode;
   const canEdit = isOwner || isCollaboratorMode;
+  const canManageDoc = isOwner;
 
   return {
     canEdit,
     canComment: isOwner || permissionAllowsComment,
     commentRequiresAuth: !isOwner && !isAuthenticated,
-    canManageDoc: isOwner,
+    canManageDoc,
+    canSplitView: canManageDoc && !input.isRtcEnabled,
     canShare: isOwner,
     canExport: true, // universal (role table)
     canCreate: true, // universal incl. unauth (D9)

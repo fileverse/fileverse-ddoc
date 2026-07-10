@@ -13,6 +13,7 @@ const ctxFor = (role: 'owner' | 'viewer' | 'unauth' | 'collaborator') => ({
     isOnline: true,
     hasSelection: false,
     permissionAllowsComment: true,
+    isRtcEnabled: false,
   }),
   state: {},
 });

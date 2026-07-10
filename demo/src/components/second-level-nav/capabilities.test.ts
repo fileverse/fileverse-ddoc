@@ -9,6 +9,7 @@ const base = {
   isOnline: true,
   hasSelection: false,
   permissionAllowsComment: true,
+  isRtcEnabled: false,
 };
 
 describe('deriveCapabilities (role table, architecture doc §3)', () => {
@@ -74,5 +75,34 @@ describe('deriveCapabilities (role table, architecture doc §3)', () => {
       permissionAllowsComment: false,
     });
     expect(caps.canComment).toBe(false);
+  });
+
+  it('owner in an RTC-enabled doc cannot split view but keeps manage rights', () => {
+    const caps = deriveCapabilities({
+      isPreviewMode: false,
+      isCollaboratorMode: false,
+      isDDocOwner: true,
+      isAuthenticated: true,
+      isOnline: true,
+      hasSelection: false,
+      permissionAllowsComment: true,
+      isRtcEnabled: true,
+    });
+    expect(caps.canManageDoc).toBe(true);
+    expect(caps.canSplitView).toBe(false);
+  });
+
+  it('owner in a non-RTC doc can split view', () => {
+    const caps = deriveCapabilities({
+      isPreviewMode: false,
+      isCollaboratorMode: false,
+      isDDocOwner: true,
+      isAuthenticated: true,
+      isOnline: true,
+      hasSelection: false,
+      permissionAllowsComment: true,
+      isRtcEnabled: false,
+    });
+    expect(caps.canSplitView).toBe(true);
   });
 });
