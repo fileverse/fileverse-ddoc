@@ -41,6 +41,7 @@ export const useYjsSetup = ({
 
   const {
     connect,
+    disconnect,
     isReady,
     isSyncing,
     terminateSession,
@@ -147,6 +148,7 @@ export const useYjsSetup = ({
   return {
     ydoc,
     onConnect: connect,
+    onDisconnect: disconnect,
     isReady,
     isSyncing,
     terminateSession,

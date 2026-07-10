@@ -5,8 +5,8 @@ import { Awareness, removeAwarenessStates } from 'y-protocols/awareness.js';
 
 import { SocketClient } from './socketClient';
 import { crypto as cryptoUtils } from './crypto';
-import { objectToFile } from './utils/objectToFile';
 import { createAwarenessUpdateHandler } from './utils/createAwarenessUpdateHandler';
+import { advanceFloor, shouldAuthorSnapshot } from './floor';
 import {
   SyncManagerConfig,
   CollabConnectionConfig,
@@ -26,7 +26,6 @@ import {
 } from './collabStateMachine';
 
 const MAX_RETRIES = 3;
-const COMMIT_THRESHOLD = 100;
 
 export class SyncManager {
   // --- State machine ---
@@ -40,27 +39,29 @@ export class SyncManager {
   private roomKeyBytes: Uint8Array | null = null;
   private isOwner = false;
   private updateQueue: Uint8Array[] = [];
-  private uncommittedUpdatesIdList: string[] = [];
   private contentTobeAppliedQueue: Array<{ data: string; id?: string }> = [];
   private isProcessing = false;
   private syncId = 0;
+  private floor = 0;
+  private updatesSinceSnapshot = 0;
+  private isAuthoringSnapshot = false;
+  private readonly SNAPSHOT_THRESHOLD = 100;
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly FLUSH_INTERVAL_MS = 50;
   private readonly MAX_QUEUE_SIZE = 5;
   private _awarenessUpdateHandler:
     | ((
-        changes: {
-          added: number[];
-          updated: number[];
-          removed: number[];
-        },
-        origin: any,
-      ) => void)
+      changes: {
+        added: number[];
+        updated: number[];
+        removed: number[];
+      },
+      origin: any,
+    ) => void)
     | null = null;
 
   // --- Config (from constructor) ---
   private ydoc: Y.Doc;
-  private servicesRef: CollabServices | undefined;
   private callbacksRef: CollabCallbacks | undefined;
   private onLocalUpdate?: (
     updatedDocContent: string,
@@ -72,18 +73,16 @@ export class SyncManager {
     private onCollabStateChange: (state: CollabState) => void,
   ) {
     this.ydoc = config.ydoc;
-    this.servicesRef = config.services;
     this.callbacksRef = config.callbacks;
     this.onLocalUpdate = config.onLocalUpdate;
   }
 
   /** Called by useSyncManager on every render to keep refs fresh */
   updateRefs(
-    services: CollabServices | undefined,
+    _services: CollabServices | undefined,
     callbacks: CollabCallbacks | undefined,
     onLocalUpdate?: (updatedDocContent: string, updateChunk: string) => void,
   ) {
-    this.servicesRef = services;
     this.callbacksRef = callbacks;
     this.onLocalUpdate = onLocalUpdate;
   }
@@ -192,8 +191,6 @@ export class SyncManager {
     this.roomKeyBytes = toUint8Array(config.roomKey);
     this.isOwner = config.isOwner;
 
-    const initialUpdate = fromUint8Array(Y.encodeStateAsUpdate(this.ydoc));
-
     this.socketClient = new SocketClient({
       wsUrl: config.wsUrl,
       roomKey: config.roomKey,
@@ -201,6 +198,9 @@ export class SyncManager {
       ownerEdSecret: config.ownerEdSecret,
       contractAddress: config.contractAddress,
       ownerAddress: config.ownerAddress,
+      ownerIdentityDid: config.ownerIdentityDid,
+      editLock: config.editLock,
+      encryptedTitle: config.encryptedTitle,
       onHandshakeData: this.callbacksRef?.onHandshakeData,
       roomInfo: config.roomInfo,
     });
@@ -215,7 +215,7 @@ export class SyncManager {
       this.send({ type: 'AUTH_SUCCESS' });
       syncId = this.beginSyncAttempt();
 
-      await this.syncLatestCommit(initialUpdate, syncId);
+      await this.hydrate(syncId);
 
       if (!this.isCurrentSyncAttempt(syncId)) {
         return;
@@ -243,6 +243,12 @@ export class SyncManager {
       if (this.updateQueue.length > 0) {
         this.processUpdateQueue().catch((err) => {
           console.error('SyncManager: processUpdateQueue failed', err);
+        });
+      }
+
+      if (this.isOwner) {
+        this.socketClient?.setDocumentMeta().catch((err) => {
+          console.error('SyncManager: document meta upload failed', err);
         });
       }
     } catch (err) {
@@ -320,14 +326,28 @@ export class SyncManager {
       clearTimeout(this.flushTimer);
       this.flushTimer = null;
     }
-    this.sendUpdateBatch();
+    if (this.updateQueue.length === 0 || !this.roomKey || !this.isConnected)
+      return;
+
+    const updates = this.updateQueue;
+    this.updateQueue = [];
+    const encrypted = cryptoUtils.encryptData(
+      this.roomKeyBytes!,
+      Y.mergeUpdates(updates),
+    );
+    try {
+      // Bounded by the socket client's own emit timeout; we await the ACK so a graceful
+      // unmount/route-change does not drop the last batch (the pre-existing bug).
+      await this.socketClient?.sendUpdate({ update: encrypted });
+    } catch (err) {
+      console.error('SyncManager: awaitFlush send failed', err);
+    }
   }
 
   /**
    * Fire-and-forget: merge all queued updates, encrypt, and emit via Socket.IO
    * without awaiting the server ACK. The server broadcasts to peers immediately
    * (before MongoDB write), so content reaches observers in near-real-time.
-   * ACK callback handles updateId tracking and auto-commit asynchronously.
    */
   private sendUpdateBatch(): void {
     if (this.updateQueue.length === 0 || !this.roomKey || !this.isConnected) {
@@ -347,16 +367,16 @@ export class SyncManager {
           console.error('SyncManager: server rejected update', response?.error);
           return;
         }
-        const updateId = response?.data?.id;
-        if (updateId) {
-          this.uncommittedUpdatesIdList.push(updateId);
-        }
+        this.updatesSinceSnapshot += 1;
         if (
-          this.isOwner &&
-          this.uncommittedUpdatesIdList.length >= COMMIT_THRESHOLD
+          shouldAuthorSnapshot({
+            isOwner: this.isOwner,
+            updatesSinceLastSnapshot: this.updatesSinceSnapshot,
+            threshold: this.SNAPSHOT_THRESHOLD,
+          })
         ) {
-          this.processCommit().catch((err) => {
-            console.error('SyncManager: auto-commit failed', err);
+          this.authorSnapshot(null, this.syncId).catch((err) => {
+            console.error('SyncManager: snapshot authoring failed', err);
           });
         }
       })
@@ -365,8 +385,29 @@ export class SyncManager {
       });
   }
 
+  // The final merged delta for a hard tab-close beacon: any queued-but-unsent updates,
+  // merged and encrypted. Returns null when there is nothing pending.
+  buildPendingBeaconPayload(): string | null {
+    if (this.updateQueue.length === 0 || !this.roomKeyBytes) return null;
+    const merged = Y.mergeUpdates(this.updateQueue);
+    return cryptoUtils.encryptData(this.roomKeyBytes, merged);
+  }
+
+  fireBeacon(): void {
+    const payload = this.buildPendingBeaconPayload();
+    if (payload) this.socketClient?.flushBeacon(payload);
+  }
+
   forceCleanup(): void {
-    this.flushUpdates();
+    if (this.flushTimer) {
+      clearTimeout(this.flushTimer);
+      this.flushTimer = null;
+    }
+    // Route-change/unmount can't await and the socket is about to close, so beacon the
+    // last batch (keepalive survives teardown) and clear the queue so an awaited flush
+    // on another teardown path can't double-send it.
+    this.fireBeacon();
+    this.updateQueue = [];
     // Broadcast awareness removal BEFORE tearing down handler/socket
     if (this._awareness) {
       removeAwarenessStates(this._awareness, [this.ydoc.clientID], 'cleanup');
@@ -430,8 +471,7 @@ export class SyncManager {
     const syncId = this.beginSyncAttempt();
 
     try {
-      const initialUpdate = fromUint8Array(Y.encodeStateAsUpdate(this.ydoc));
-      await this.syncLatestCommit(initialUpdate, syncId);
+      await this.hydrate(syncId);
 
       if (!this.isCurrentSyncAttempt(syncId)) {
         return;
@@ -582,119 +622,115 @@ export class SyncManager {
     });
   }
 
-  private async syncLatestCommit(
-    initialUpdate: string,
+  private decodeInto(target: Uint8Array[], encrypted: string): void {
+    try {
+      target.push(cryptoUtils.decryptData(this.roomKeyBytes!, encrypted));
+    } catch (err) {
+      // Undecryptable rows (e.g. a guessed-documentId injection) are skipped, not fatal.
+      console.warn(
+        'SyncManager: failed to decrypt hydration row, skipping',
+        err,
+      );
+    }
+  }
+
+  // Pull the server's snapshot + seq-tail from the current floor, apply it to the Y.Doc,
+  // and advance the floor. Paginates until the server reports no more. Returns whether any
+  // tail row was applied (used to flag unmerged peer content to the owner).
+  private async catchUpFloor(syncId: number): Promise<boolean> {
+    // Also valid in steady state (ready) for the SAME generation, so authorSnapshot can
+    // advance the floor before stamping; the syncId check still bails a superseded attempt.
+    const syncStillCurrent = () =>
+      this.isCurrentSyncAttempt(syncId) ||
+      (this.isReady && this.syncId === syncId);
+    let sinceSeq: number | undefined = this.floor > 0 ? this.floor : undefined;
+    let appliedTail = false;
+
+    for (; ;) {
+      const res = await this.socketClient?.fetchHydrationRange(sinceSeq);
+      if (!syncStillCurrent()) return appliedTail;
+      const d = res?.data;
+      if (!d) return appliedTail;
+
+      const updates: Uint8Array[] = [];
+      const pageSeqs: number[] = [];
+      for (const row of d.history) {
+        this.decodeInto(updates, row.data);
+        if (row.updateType !== 'snapshot' && typeof row.seq === 'number') {
+          pageSeqs.push(row.seq);
+        }
+      }
+      if (updates.length) {
+        Y.applyUpdate(this.ydoc, Y.mergeUpdates(updates), 'self');
+        appliedTail = appliedTail || pageSeqs.length > 0;
+      }
+
+      const snapFloor =
+        d.snapshot && typeof d.snapshot.floorSeq === 'number'
+          ? d.snapshot.floorSeq
+          : 0;
+      this.floor = advanceFloor(Math.max(this.floor, snapFloor), pageSeqs);
+
+      if (d.hasMore && typeof d.nextSeq === 'number') {
+        sinceSeq = d.nextSeq;
+        continue;
+      }
+      return appliedTail;
+    }
+  }
+
+  // Owner-only. Advance the floor with a catch-up read so the stamp is current, then
+  // upload the full Y.Doc state stamped with that floor. The server serves the tail as
+  // seq > floorSeq, so a concurrent writer's update the author never applied is
+  // re-served rather than orphaned below the snapshot's own seq.
+  private async authorSnapshot(
+    publishedMarker: string | null,
     syncId: number,
   ): Promise<void> {
+    if (!this.isOwner || !this.isConnected) return;
+    if (this.isAuthoringSnapshot) return;
+    this.isAuthoringSnapshot = true;
+    try {
+      const syncStillCurrent = () =>
+        this.isCurrentSyncAttempt(syncId) || this.isReady;
+
+      await this.catchUpFloor(syncId);
+      if (!syncStillCurrent() || this.floor <= 0) return;
+
+      const data = cryptoUtils.encryptData(
+        this.roomKeyBytes!,
+        Y.encodeStateAsUpdate(this.ydoc),
+      );
+      const res = await this.socketClient?.sendSnapshot({
+        data,
+        floorSeq: this.floor,
+        publishedMarker,
+      });
+      if (res?.status) {
+        this.updatesSinceSnapshot = 0;
+      }
+    } finally {
+      this.isAuthoringSnapshot = false;
+    }
+  }
+
+  private async hydrate(syncId: number): Promise<void> {
     const syncStillCurrent = () => this.isCurrentSyncAttempt(syncId);
 
     await this.withRetry(async () => {
-      const latestCommit = await this.socketClient?.fetchLatestCommit();
+      const appliedTail = await this.catchUpFloor(syncId);
       if (!syncStillCurrent()) return;
 
-      const history = latestCommit?.data?.history?.[0];
-      let decryptedCommit: Uint8Array | undefined;
-
-      if (history?.data) {
-        try {
-          decryptedCommit = cryptoUtils.decryptData(
-            this.roomKeyBytes!,
-            history.data,
-          );
-        } catch (err) {
-          console.warn(
-            'SyncManager: failed to decrypt commit data, skipping',
-            err,
-          );
-        }
+      if (appliedTail && this.isOwner) {
+        this.send({ type: 'SET_UNMERGED_UPDATES', hasUpdates: true });
       }
 
-      const updates: Uint8Array[] = [];
-
-      if (history?.cid && this.servicesRef?.fetchFromStorage) {
-        const content = await this.servicesRef.fetchFromStorage(history.cid);
-        if (!syncStillCurrent()) return;
-
-        if (content?.data) {
-          try {
-            const decryptedContent = cryptoUtils.decryptData(
-              this.roomKeyBytes!,
-              content.data,
-            );
-            updates.push(decryptedContent);
-          } catch (err) {
-            console.warn(
-              'SyncManager: failed to decrypt commit content, skipping',
-              err,
-            );
-          }
-        }
-      }
-
-      const uncommittedChanges =
-        await this.socketClient?.getUncommittedChanges();
+      // Broadcast post-sync local-only state so peers receive items that exist only
+      // locally (e.g. tab metadata created with a fresh clientID after a refresh).
+      const postSync = fromUint8Array(Y.encodeStateAsUpdate(this.ydoc));
       if (!syncStillCurrent()) return;
-
-      const encryptedUpdates = uncommittedChanges?.data?.history;
-      const uncommittedChangesId: string[] = [];
-      if (initialUpdate) {
-        updates.push(toUint8Array(initialUpdate));
-      }
-      if (decryptedCommit) updates.push(decryptedCommit);
-
-      if (encryptedUpdates && encryptedUpdates.length > 0) {
-        // Signal unmerged peer updates via state machine
-        if (this.isOwner) {
-          this.send({ type: 'SET_UNMERGED_UPDATES', hasUpdates: true });
-        }
-        for (const encryptedUpdate of encryptedUpdates) {
-          try {
-            const data = cryptoUtils.decryptData(
-              this.roomKeyBytes!,
-              encryptedUpdate.data,
-            );
-            uncommittedChangesId.push(encryptedUpdate.id);
-            updates.push(data);
-          } catch (err) {
-            console.warn(
-              'SyncManager: failed to decrypt uncommitted update, skipping',
-              err,
-            );
-          }
-        }
-      }
-
-      // A socket drop can start a newer reconnect sync while this older sync is
-      // awaiting network calls. Bail before mutating Yjs state or broadcasting
-      // a stale post-sync snapshot.
-      if (!syncStillCurrent()) return;
-
-      if (updates.length) {
-        const mergedState = Y.mergeUpdates(updates);
-        Y.applyUpdate(this.ydoc, mergedState, 'self');
-      }
-
-      this.uncommittedUpdatesIdList = uncommittedChangesId;
-
-      // Broadcast the POST-sync state so peers receive any local-only
-      // items (e.g. tab metadata created by syncTabState with a new
-      // clientID after refresh).  The pre-sync initialUpdate would be
-      // stale — it lacks the server content that was just merged in,
-      // causing peers to miss parent items for subsequent typing ops.
-      const postSyncUpdate = fromUint8Array(Y.encodeStateAsUpdate(this.ydoc));
-
-      if (!syncStillCurrent()) return;
-
-      if (this.isOwner) {
-        await this.commitLocalContents(
-          uncommittedChangesId,
-          postSyncUpdate,
-          syncId,
-        );
-      } else {
-        await this.broadcastLocalContents(postSyncUpdate, syncId);
-      }
-    }, 'syncLatestCommit');
+      await this.broadcastLocalContents(postSync, syncId);
+    }, 'hydrate');
   }
 
   private initializeAwareness(): void {
@@ -726,55 +762,9 @@ export class SyncManager {
     this._awarenessUpdateHandler = null;
   }
 
-  private async commitLocalContents(
-    ids: string[],
-    unbroadcastedUpdate: string | null,
-    syncId: number,
-  ): Promise<void> {
-    const syncStillCurrent = () => this.isCurrentSyncAttempt(syncId);
-
-    if (ids.length >= COMMIT_THRESHOLD) {
-      if (typeof this.servicesRef?.commitToStorage !== 'function') {
-        console.debug(
-          'SyncManager: no commit function provided, skipping commit',
-        );
-      } else {
-        const localContent = cryptoUtils.encryptData(
-          this.roomKeyBytes!,
-          Y.encodeStateAsUpdate(this.ydoc),
-        );
-        const file = objectToFile({ data: localContent }, 'commit');
-        const ipfsHash = await this.servicesRef.commitToStorage(file);
-        if (!syncStillCurrent()) return;
-
-        if (!ipfsHash) {
-          throw new Error('Failed to upload commit to IPFS: no hash returned');
-        }
-
-        const commitResponse = await this.socketClient?.commitUpdates({
-          updates: ids,
-          cid: ipfsHash,
-        });
-        if (!syncStillCurrent()) return;
-
-        if (!commitResponse?.status) {
-          const errorMsg = commitResponse?.error || 'Server rejected commit';
-          throw new Error(
-            `Failed to commit local contents: ${errorMsg}${commitResponse?.statusCode ? ` (${commitResponse.statusCode})` : ''}`,
-          );
-        }
-
-        this.uncommittedUpdatesIdList = [];
-      }
-    }
-
-    await this.broadcastLocalContents(unbroadcastedUpdate, syncId, true);
-  }
-
   private async broadcastLocalContents(
     unbroadcastedUpdate: string | null,
     syncId: number,
-    trackUpdateId = false,
   ): Promise<void> {
     const syncStillCurrent = () => this.isCurrentSyncAttempt(syncId);
 
@@ -797,11 +787,6 @@ export class SyncManager {
         `Failed to broadcast local contents: ${errorMsg}${response?.statusCode ? ` (${response.statusCode})` : ''}`,
       );
     }
-
-    const updateId = response?.data?.id;
-    if (trackUpdateId && updateId) {
-      this.uncommittedUpdatesIdList.push(updateId);
-    }
   }
 
   private async processUpdateQueue(): Promise<void> {
@@ -812,23 +797,6 @@ export class SyncManager {
       while (this.updateQueue.length > 0) {
         if (!this.isConnected) break;
         await this.processNextUpdate();
-
-        // If owner and enough uncommitted updates, commit
-        if (
-          this.isOwner &&
-          this.uncommittedUpdatesIdList.length >= COMMIT_THRESHOLD
-        ) {
-          await this.processCommit();
-        }
-      }
-
-      // Commit remote-only accumulated updates
-      if (
-        this.isConnected &&
-        this.isOwner &&
-        this.uncommittedUpdatesIdList.length >= COMMIT_THRESHOLD
-      ) {
-        await this.processCommit();
       }
 
       if (!this.isConnected) {
@@ -866,10 +834,6 @@ export class SyncManager {
           );
         }
 
-        const updateId = response?.data?.id;
-        if (updateId) {
-          this.uncommittedUpdatesIdList.push(updateId);
-        }
         // Remove processed updates from queue
         this.updateQueue = this.updateQueue.slice(queueOffset);
         return;
@@ -883,63 +847,6 @@ export class SyncManager {
     }
 
     throw lastError || new Error('processNextUpdate failed after retries');
-  }
-
-  private async processCommit(): Promise<void> {
-    if (
-      !this.servicesRef?.commitToStorage ||
-      typeof this.servicesRef.commitToStorage !== 'function'
-    ) {
-      console.debug(
-        'SyncManager: no commit function provided, skipping commit',
-      );
-      return;
-    }
-
-    if (this.uncommittedUpdatesIdList.length < COMMIT_THRESHOLD) return;
-
-    const updates = [...this.uncommittedUpdatesIdList];
-
-    let lastError: Error | null = null;
-    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
-      try {
-        const commitContent = {
-          data: cryptoUtils.encryptData(
-            this.roomKeyBytes!,
-            Y.encodeStateAsUpdate(this.ydoc),
-          ),
-        };
-        const file = objectToFile(commitContent, 'commit');
-        const ipfsHash = await this.servicesRef!.commitToStorage(file);
-
-        if (!ipfsHash) {
-          throw new Error('Failed to upload commit to IPFS: no hash returned');
-        }
-
-        const response = await this.socketClient?.commitUpdates({
-          updates,
-          cid: ipfsHash,
-        });
-
-        if (!response?.status) {
-          const errorMsg = response?.error || 'Server rejected commit';
-          throw new Error(
-            `Failed to commit updates: ${errorMsg}${response?.statusCode ? ` (${response.statusCode})` : ''}`,
-          );
-        }
-
-        this.uncommittedUpdatesIdList = [];
-        return;
-      } catch (err) {
-        lastError = err instanceof Error ? err : new Error(String(err));
-        console.error(
-          `SyncManager: processCommit attempt ${attempt + 1} failed`,
-          err,
-        );
-      }
-    }
-
-    throw lastError || new Error('processCommit failed after retries');
   }
 
   private handleRemoteContentUpdate(payload: {
@@ -957,19 +864,10 @@ export class SyncManager {
       return;
     }
 
-    this.applyRemoteYjsUpdate(payload.data, payload.id);
-
-    if (this.isOwner && !this.isProcessing && this.isReady) {
-      // Check if we need to commit
-      if (this.uncommittedUpdatesIdList.length >= COMMIT_THRESHOLD) {
-        this.processUpdateQueue().catch((err) => {
-          console.error('SyncManager: processUpdateQueue failed', err);
-        });
-      }
-    }
+    this.applyRemoteYjsUpdate(payload.data);
   }
 
-  private applyRemoteYjsUpdate(encrypted: string, id?: string): void {
+  private applyRemoteYjsUpdate(encrypted: string): void {
     if (!this.ydoc) return;
 
     let update: Uint8Array;
@@ -998,10 +896,6 @@ export class SyncManager {
       }
     } catch (err) {
       console.error('SyncManager: onLocalUpdate callback threw', err);
-    }
-
-    if (this.isOwner && id) {
-      this.uncommittedUpdatesIdList.push(id);
     }
   }
 
@@ -1054,10 +948,6 @@ export class SyncManager {
     } catch (err) {
       console.error('SyncManager: onLocalUpdate callback threw', err);
     }
-
-    if (this.isOwner && queuedUpdateIds.length > 0) {
-      this.uncommittedUpdatesIdList.push(...queuedUpdateIds);
-    }
   }
 
   private async withRetry<T>(fn: () => Promise<T>, label: string): Promise<T> {
@@ -1075,7 +965,7 @@ export class SyncManager {
         if (attempt === MAX_RETRIES) break;
 
         // Check if we should keep retrying
-        if (!this.isConnected && label !== 'syncLatestCommit') break;
+        if (!this.isConnected && label !== 'hydrate') break;
       }
     }
 
@@ -1107,12 +997,14 @@ export class SyncManager {
       this.flushTimer = null;
     }
     this.socketClient = null;
-    this.uncommittedUpdatesIdList = [];
     this.updateQueue = [];
     this.contentTobeAppliedQueue = [];
     this.isProcessing = false;
     this.roomKey = '';
     this.roomKeyBytes = null;
     this.isOwner = false;
+    this.floor = 0;
+    this.updatesSinceSnapshot = 0;
+    this.isAuthoringSnapshot = false;
   }
 }

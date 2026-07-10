@@ -10,6 +10,16 @@ export interface CollabConnectionConfig {
   roomId: string;
   wsUrl: string;
   isOwner: boolean;
+  /** Host signal: doc is in an active live-collaboration context (shared / peers present). Keeps the socket connected. */
+  livePresence?: boolean;
+  /** Host signal: connect once on open to initialise durability even without an edit. */
+  connectOnOpen?: boolean;
+  /** Host signal (owner-only): the owner identity signingKey DID. Recorded by the durable server on the first owner /auth as the R3 owner binding. */
+  ownerIdentityDid?: string;
+  /** Host signal (owner-only): wrapped roomKey bytes (owner-lock construction), uploaded as the server editLock recovery artifact. Opaque to the package. */
+  editLock?: string;
+  /** Host signal (owner-only): the document title encrypted with the roomKey, uploaded as the server title recovery artifact. Opaque to the package. */
+  encryptedTitle?: string;
   ownerEdSecret?: string;
   contractAddress?: string;
   ownerAddress?: string;
@@ -26,11 +36,10 @@ export interface CollabSessionMeta {
   isEns?: boolean;
 }
 
-/** Storage integrations the sync engine depends on */
-export interface CollabServices {
-  commitToStorage?: (file: File) => Promise<string>;
-  fetchFromStorage?: (cid: string) => Promise<any>;
-}
+// Host-seeds model: the sync engine performs no IPFS/fileKey I/O. The host app loads
+// the published artifact into the Y.Doc; Yjs idempotency merges it with the server
+// tail. Reserved for future host integrations.
+export type CollabServices = Record<string, never>;
 
 // ─── State Machine Types ───
 
@@ -152,13 +161,31 @@ export interface SendUpdateResponse
     createdAt: number;
   }> { }
 
-export interface CommitResponse
+export interface HydrationRow {
+  id: string;
+  documentId: string;
+  seq: number;
+  data: string;
+  updateType: string;
+  committed?: boolean;
+  commitCid?: string | null;
+  createdAt?: number;
+  sessionDid?: string;
+  publishedMarker?: string | null;
+  floorSeq?: number | null;
+}
+
+export interface HydrationResponse
   extends AckResponse<{
-    cid: string;
-    createdAt: number;
-    documentId: string;
-    updates: string[];
+    history: HydrationRow[];
+    total: number;
+    snapshot: HydrationRow | null;
+    nextSeq: number | null;
+    hasMore: boolean;
   }> { }
+
+export interface SnapshotResponse
+  extends AckResponse<{ id: string; seq: number }> { }
 
 export interface ISocketInitConfig {
   onHandshakeSuccess: () => void;
@@ -203,4 +230,5 @@ export interface IAuthArgs {
   contractAddress?: string;
   sessionDid?: string;
   roomInfo?: string;
+  ownerIdentityDid?: string;
 }

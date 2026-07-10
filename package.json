@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "4.1.12",
+  "version": "4.1.12-durability-1",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
@@ -120,7 +120,6 @@
     "y-indexeddb": "^9.0.12",
     "y-prosemirror": "^1.2.5",
     "y-protocols": "^1.0.6",
-    "y-webrtc": "^10.3.0",
     "yjs": "^13.6.15",
     "zustand": "^5.0.12"
   },
