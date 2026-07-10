@@ -20,6 +20,10 @@ export interface CollabConnectionConfig {
   editLock?: string;
   /** Host signal (owner-only): the document title encrypted with the roomKey, uploaded as the server title recovery artifact. Opaque to the package. */
   encryptedTitle?: string;
+  /** Host signal (owner-only): Ed25519 UCAN proving the owner identity, sent on /auth so the server binds the CRYPTOGRAPHICALLY PROVEN owner DID (not a bare asserted string). Opaque to the package. */
+  identityToken?: string;
+  /** Host signal (owner-only): the identity contract address the server reads to resolve the on-chain signingDid that verifies identityToken. */
+  identityContractAddress?: string;
   ownerEdSecret?: string;
   contractAddress?: string;
   ownerAddress?: string;
@@ -231,4 +235,6 @@ export interface IAuthArgs {
   sessionDid?: string;
   roomInfo?: string;
   ownerIdentityDid?: string;
+  identityToken?: string;
+  identityContractAddress?: string;
 }
