@@ -2,18 +2,13 @@ import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { Editor } from '@tiptap/react';
 import { useEditorCommands } from './use-editor-commands';
-import { getHeadlessExtensions } from './use-headless-editor';
+import { makeEditor } from '../utils/make-editor';
 
 describe('useEditorCommands', () => {
   let editor: Editor;
   beforeEach(() => {
-    editor = new Editor({
-      extensions: getHeadlessExtensions(),
-      // matches useHeadlessEditor/ddoc-editor; required for dir tracking
-      textDirection: 'auto',
-    });
-    // Collaboration owns the doc — set content post-construction.
-    editor.commands.setContent('<p>hello world</p>');
+    // Collaboration owns the doc — content is set post-construction inside makeEditor.
+    editor = makeEditor('<p>hello world</p>');
     editor.commands.selectAll();
   });
   afterEach(() => {
