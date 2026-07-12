@@ -1401,36 +1401,12 @@ const DdocEditor = forwardRef(
           >
             <SearchReplace editor={editor} viewerMode={viewerMode} />
 
-            <nav
-              id="Navbar"
-              onKeyDown={(e) => {
-                // Escape from anywhere in the navbar returns focus to the
-                // editor, letting keyboard users leave the navbar's tabbing
-                // order (mirrors the formatting toolbar's behavior).
-                if (e.key === 'Escape' && editor) {
-                  e.preventDefault();
-                  editor.commands.focus();
-                }
-              }}
-              className={cn(
-                'h-14 color-bg-default py-2 px-0 md:px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-[45] transition-all duration-300',
-                {
-                  'translate-y-0 opacity-100':
-                    !isFocusMode && isNavbarVisible && !isPresentationMode,
-                  'translate-y-[-100%] opacity-0 pointer-events-none':
-                    isFocusMode || !isNavbarVisible || isPresentationMode,
-                },
-              )}
-            >
-              {editor &&
-                renderNavbar?.({
-                  get editor() {
-                    return editor.getJSON();
-                  },
-                  liveEditor: editor,
-                })}
-            </nav>
             <CommentStoreProvider
+              isInlineCommentAvailable={
+                !isCollabEnabled &&
+                !disableInlineComment &&
+                isCollabDocumentPublished
+              }
               editor={editor ?? null}
               ydoc={ydoc}
               isFocusMode={isFocusMode}
@@ -1464,6 +1440,35 @@ const DdocEditor = forwardRef(
               storeApiRef={storeApiRef}
               initialCommentAnchors={initialCommentAnchors}
             >
+              <nav
+                id="Navbar"
+                onKeyDown={(e) => {
+                  // Escape from anywhere in the navbar returns focus to the
+                  // editor, letting keyboard users leave the navbar's tabbing
+                  // order (mirrors the formatting toolbar's behavior).
+                  if (e.key === 'Escape' && editor) {
+                    e.preventDefault();
+                    editor.commands.focus();
+                  }
+                }}
+                className={cn(
+                  'h-14 color-bg-default py-2 px-0 md:px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-[45] transition-all duration-300',
+                  {
+                    'translate-y-0 opacity-100':
+                      !isFocusMode && isNavbarVisible && !isPresentationMode,
+                    'translate-y-[-100%] opacity-0 pointer-events-none':
+                      isFocusMode || !isNavbarVisible || isPresentationMode,
+                  },
+                )}
+              >
+                {editor &&
+                  renderNavbar?.({
+                    get editor() {
+                      return editor.getJSON();
+                    },
+                    liveEditor: editor,
+                  })}
+              </nav>
               {/*
                 Split View keeps the REAL editor mounted in place — it is never
                 moved into a second <EditorContent>, which would orphan every
