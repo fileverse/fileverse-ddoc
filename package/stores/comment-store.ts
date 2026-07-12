@@ -3472,8 +3472,11 @@ export function useCommentStore<T>(
 /**
  * Non-throwing variant of useCommentStore: returns undefined when no
  * CommentStoreProvider is above the caller (e.g. useEditorCommands used
- * outside DdocEditor). Pass a STABLE selector (module-level fn) — the
- * snapshot is compared with Object.is per React's useSyncExternalStore.
+ * outside DdocEditor). The selector's RETURN VALUE must be Object.is-stable
+ * for unchanged state (primitives or refs already held by the store) —
+ * useSyncExternalStore compares snapshots with Object.is, so a selector
+ * that constructs a fresh object/array per call would re-render forever.
+ * Selector function identity itself doesn't matter.
  */
 export function useCommentStoreOptional<T>(
   selector: (state: CommentStoreState) => T,
