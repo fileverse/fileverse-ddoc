@@ -1,8 +1,13 @@
-import { describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
+import type { ReactNode } from 'react';
 import { Editor } from '@tiptap/react';
 import { useEditorCommands } from './use-editor-commands';
 import { makeEditor } from '../utils/make-editor';
+import {
+  CommentStoreContext,
+  createCommentStore,
+} from '../stores/comment-store';
 
 describe('useEditorCommands', () => {
   let editor: Editor;
@@ -123,5 +128,121 @@ describe('useEditorCommands', () => {
       editor.chain().focus().selectAll().toggleBold().run();
     });
     expect(renders).toBe(before + 1);
+  });
+});
+
+describe('useEditorCommands insert.comment', () => {
+  let editor: Editor;
+  beforeEach(() => {
+    editor = makeEditor();
+    editor.commands.insertContent('hello world');
+  });
+  afterEach(() => {
+    editor.destroy();
+  });
+
+  const wrapperFor = (store: ReturnType<typeof createCommentStore>) => {
+    const wrapper = ({ children }: { children: ReactNode }) => (
+      <CommentStoreContext.Provider value={store}>
+        {children}
+      </CommentStoreContext.Provider>
+    );
+    return wrapper;
+  };
+
+  it('runs the spy and expands the selection to the word when enabled, cursor mid-word', () => {
+    const store = createCommentStore();
+    const spy = vi.fn();
+    store.setState({
+      isInlineCommentAvailable: true,
+      handleInlineComment: spy,
+    });
+    const base = editor.state.selection.$from.start();
+    editor.commands.setTextSelection(base + 2); // inside "hello"
+
+    const { result } = renderHook(() => useEditorCommands(editor), {
+      wrapper: wrapperFor(store),
+    });
+
+    expect(result.current['insert.comment'].isEnabled).toBe(true);
+    act(() => result.current['insert.comment'].run());
+    expect(spy).toHaveBeenCalledTimes(1);
+    const { from, to } = editor.state.selection;
+    expect(editor.state.doc.textBetween(from, to)).toBe('hello');
+  });
+
+  it('isEnabled is false when rendered without a CommentStoreProvider', () => {
+    const base = editor.state.selection.$from.start();
+    editor.commands.setTextSelection(base + 2);
+
+    const { result } = renderHook(() => useEditorCommands(editor));
+
+    expect(result.current['insert.comment'].isEnabled).toBe(false);
+  });
+
+  it('isEnabled is false when isInlineCommentAvailable is false', () => {
+    const store = createCommentStore();
+    const spy = vi.fn();
+    store.setState({
+      isInlineCommentAvailable: false,
+      handleInlineComment: spy,
+    });
+    const base = editor.state.selection.$from.start();
+    editor.commands.setTextSelection(base + 2);
+
+    const { result } = renderHook(() => useEditorCommands(editor), {
+      wrapper: wrapperFor(store),
+    });
+
+    expect(result.current['insert.comment'].isEnabled).toBe(false);
+  });
+
+  it('isEnabled is false when the cursor sits in a whitespace run', () => {
+    const store = createCommentStore();
+    const spy = vi.fn();
+    store.setState({
+      isInlineCommentAvailable: true,
+      handleInlineComment: spy,
+    });
+    editor.commands.setContent('<p></p>');
+    editor.commands.insertContent('hello  world'); // two spaces
+    const base = editor.state.selection.$from.start();
+    editor.commands.setTextSelection(base + 6); // between the two spaces
+
+    const { result } = renderHook(() => useEditorCommands(editor), {
+      wrapper: wrapperFor(store),
+    });
+
+    expect(result.current['insert.comment'].isEnabled).toBe(false);
+  });
+
+  // NodeSelection hazard (Task 3 review): a node-selected horizontal rule
+  // reports non-empty selection but has no text, so the old
+  // `!selection.empty` enablement would flip the command on while
+  // createFloatingDraft's `textBetween` silently no-ops. The hr's dBlock
+  // wrapper (doc.ts: `content: 'dBlock+'`) has empty textContent, so
+  // hasTextTargetAtSelection correctly reports false here.
+  it('isEnabled is false for a NodeSelection not adjacent to a word (horizontal rule)', () => {
+    const store = createCommentStore();
+    const spy = vi.fn();
+    store.setState({
+      isInlineCommentAvailable: true,
+      handleInlineComment: spy,
+    });
+    editor.commands.insertContent('<p>after</p>');
+    editor.commands.setHorizontalRule();
+    editor.commands.insertContent('<p>trailing</p>');
+    let hrPos = -1;
+    editor.state.doc.descendants((node, pos) => {
+      if (node.type.name === 'horizontalRule') hrPos = pos;
+    });
+    editor.commands.setNodeSelection(hrPos);
+    expect(editor.state.selection.empty).toBe(false);
+
+    const { result } = renderHook(() => useEditorCommands(editor), {
+      wrapper: wrapperFor(store),
+    });
+
+    expect(result.current['insert.comment'].isEnabled).toBe(false);
   });
 });

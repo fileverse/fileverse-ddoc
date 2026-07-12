@@ -64,8 +64,6 @@ export const createDemoAppActions = (d: DemoAppActionDeps): ActionRegistry => ({
     isActive: d.isSplitView,
   },
   'insert.tab': { run: () => d.createTab() },
-  // Demo approximation of "insert comment on selection": opens the drawer.
-  'insert.comment': { run: () => d.openCommentsDrawer() },
   // Overrides the registry's editor command (merge is later-wins): the menu
   // item opens the link modal; the raw command is a no-op without a URL.
   'insert.link': { run: () => d.openLinkModal() },

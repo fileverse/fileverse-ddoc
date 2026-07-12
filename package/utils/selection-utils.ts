@@ -1,4 +1,5 @@
 import type { Editor } from '@tiptap/core';
+import { TextSelection } from '@tiptap/pm/state';
 
 const isWordChar = (ch: string) => /\S/.test(ch);
 
@@ -25,13 +26,35 @@ export const findWordRangeAtCursor = (
 
 /**
  * Ensure a text target for anchored actions (inline comments): keep any
- * existing selection; otherwise select the word under the collapsed cursor.
- * Shares findWordRangeAtCursor with enablement so "enabled" always implies
- * "dispatch does something".
+ * existing non-empty TextSelection; otherwise select the word under the
+ * collapsed cursor. Shares findWordRangeAtCursor with enablement so
+ * "enabled" always implies "dispatch does something".
+ *
+ * Only a TextSelection passes through untouched — a non-empty NodeSelection
+ * (e.g. an image or horizontal rule selected as a node) looks "non-empty"
+ * but has no text content, so `textBetween` over it is '' and anything
+ * downstream that needs real text (e.g. createFloatingDraft) would silently
+ * no-op. Falling through to findWordRangeAtCursor for any other selection
+ * type gives either a legitimate adjacent word or null (schema-dependent —
+ * e.g. false for a NodeSelection whose dBlock wrapper has no text).
  */
 export const selectWordAtCursor = (editor: Editor): boolean => {
-  if (!editor.state.selection.empty) return true;
+  const { selection } = editor.state;
+  if (selection instanceof TextSelection && !selection.empty) return true;
   const range = findWordRangeAtCursor(editor);
   if (!range) return false;
   return editor.chain().setTextSelection(range).run();
+};
+
+/**
+ * Single enablement predicate for anchored text actions (inline comments):
+ * true when there's already a non-empty TextSelection, or a word is
+ * reachable from a collapsed cursor via findWordRangeAtCursor. Mirrors the
+ * passthrough condition in selectWordAtCursor so "enabled" always implies
+ * selectWordAtCursor will produce a real text target.
+ */
+export const hasTextTargetAtSelection = (editor: Editor): boolean => {
+  const { selection } = editor.state;
+  if (selection instanceof TextSelection && !selection.empty) return true;
+  return findWordRangeAtCursor(editor) !== null;
 };

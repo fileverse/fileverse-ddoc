@@ -1,7 +1,30 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { Editor } from '@tiptap/react';
-import { findWordRangeAtCursor, selectWordAtCursor } from './selection-utils';
+import {
+  findWordRangeAtCursor,
+  selectWordAtCursor,
+  hasTextTargetAtSelection,
+} from './selection-utils';
 import { makeEditor } from './make-editor';
+
+/**
+ * Builds a NodeSelection on a horizontal rule that is not adjacent to any
+ * text. The schema wraps every top-level block (including the hr) in its
+ * own dBlock node (see package/extensions/doc.ts: `content: 'dBlock+'`), so
+ * the hr's immediate parent is an empty dBlock — $from.parent.textContent
+ * is '' and findWordRangeAtCursor correctly reports "no word here" rather
+ * than bleeding into a neighboring paragraph's text.
+ */
+const selectHorizontalRuleNode = (editor: Editor) => {
+  editor.commands.insertContent('<p>hello world</p>');
+  editor.commands.setHorizontalRule();
+  editor.commands.insertContent('<p>another paragraph</p>');
+  let hrPos = -1;
+  editor.state.doc.descendants((node, pos) => {
+    if (node.type.name === 'horizontalRule') hrPos = pos;
+  });
+  editor.commands.setNodeSelection(hrPos);
+};
 
 describe('findWordRangeAtCursor', () => {
   let editor: Editor;
@@ -74,5 +97,49 @@ describe('selectWordAtCursor', () => {
     const base = editor.state.selection.$from.start();
     editor.commands.setTextSelection(base + 6);
     expect(selectWordAtCursor(editor)).toBe(false);
+  });
+
+  it('returns false for a NodeSelection not adjacent to a word (horizontal rule)', () => {
+    editor = makeEditor();
+    selectHorizontalRuleNode(editor);
+    expect(editor.state.selection.empty).toBe(false); // node selections are never "empty"
+    expect(selectWordAtCursor(editor)).toBe(false);
+  });
+});
+
+describe('hasTextTargetAtSelection', () => {
+  let editor: Editor;
+  afterEach(() => {
+    editor.destroy();
+  });
+
+  it('is true for a non-empty TextSelection', () => {
+    editor = makeEditor();
+    editor.commands.insertContent('hello world');
+    const base = editor.state.selection.$from.start();
+    editor.commands.setTextSelection({ from: base, to: base + 5 });
+    expect(hasTextTargetAtSelection(editor)).toBe(true);
+  });
+
+  it('is true for a collapsed cursor mid-word', () => {
+    editor = makeEditor();
+    editor.commands.insertContent('hello world');
+    const base = editor.state.selection.$from.start();
+    editor.commands.setTextSelection(base + 2);
+    expect(hasTextTargetAtSelection(editor)).toBe(true);
+  });
+
+  it('is false for a collapsed cursor in a whitespace run', () => {
+    editor = makeEditor();
+    editor.commands.insertContent('hello  world');
+    const base = editor.state.selection.$from.start();
+    editor.commands.setTextSelection(base + 6);
+    expect(hasTextTargetAtSelection(editor)).toBe(false);
+  });
+
+  it('is false for a NodeSelection not adjacent to a word (horizontal rule)', () => {
+    editor = makeEditor();
+    selectHorizontalRuleNode(editor);
+    expect(hasTextTargetAtSelection(editor)).toBe(false);
   });
 });

@@ -11,6 +11,22 @@ import {
   uiValueToPercentage,
 } from '../utils/typography';
 import { setShowReplacePopoverWithData } from '../extensions/search-replace/utils';
+import {
+  hasTextTargetAtSelection,
+  selectWordAtCursor,
+} from '../utils/selection-utils';
+import {
+  CommentStoreState,
+  useCommentStoreOptional,
+} from '../stores/comment-store';
+
+// Module-scope stable selectors: useCommentStoreOptional's
+// useSyncExternalStore contract compares snapshots with Object.is, so these
+// must be plain field reads (not fresh closures) to avoid re-render loops.
+const selectHandleInlineComment = (s: CommentStoreState) =>
+  s.handleInlineComment;
+const selectInlineCommentAvailable = (s: CommentStoreState) =>
+  s.isInlineCommentAvailable;
 
 export type EditorCommand = {
   run: (arg?: string) => void;
@@ -32,6 +48,7 @@ export type EditorCommandId =
   | 'insert.image'
   | 'insert.table'
   | 'insert.link'
+  | 'insert.comment'
   | 'insert.callout'
   | 'insert.quote'
   | 'insert.code'
@@ -141,6 +158,15 @@ export const useEditorCommands = (
 ): Record<EditorCommandId, EditorCommand> => {
   const { onError, ipfsImageUploadFn } = options;
 
+  // Optional (undefined outside a CommentStoreProvider) — see
+  // useCommentStoreOptional's doc comment for the selector-stability
+  // contract these module-scope selectors satisfy.
+  const handleInlineComment = useCommentStoreOptional(
+    selectHandleInlineComment,
+  );
+  const inlineCommentAvailable =
+    useCommentStoreOptional(selectInlineCommentAvailable) ?? false;
+
   // Flat, comparable snapshot — no functions, so deepEqual can gate renders.
   const state = useEditorState({
     editor,
@@ -174,6 +200,10 @@ export const useEditorCommands = (
         align: currentAlign(e),
         lineHeight: getCurrentLineHeight(e, readLineHeight(e)),
         fontFamily: (e.getAttributes('textStyle').fontFamily as string) ?? null,
+        canInsertComment:
+          inlineCommentAvailable &&
+          Boolean(handleInlineComment) &&
+          hasTextTargetAtSelection(e),
       };
     },
   });
@@ -264,6 +294,13 @@ export const useEditorCommands = (
             .run();
         },
         { isActive: state.link },
+      ),
+      'insert.comment': cmd(
+        () => {
+          if (!selectWordAtCursor(editor)) return;
+          handleInlineComment?.();
+        },
+        { isEnabled: state.canInsertComment },
       ),
 
       // --- format: marks ---
@@ -389,5 +426,5 @@ export const useEditorCommands = (
         isEnabled: state.inTable,
       }),
     };
-  }, [editor, state, onError, ipfsImageUploadFn]);
+  }, [editor, state, onError, ipfsImageUploadFn, handleInlineComment]);
 };
