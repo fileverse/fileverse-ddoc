@@ -1,5 +1,10 @@
 import { Editor } from '@tiptap/react';
-import { createContext, useContext } from 'react';
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useSyncExternalStore,
+} from 'react';
 import React from 'react';
 import {
   CommentAnchor,
@@ -692,6 +697,10 @@ export interface CommentStoreState {
   isConnected: boolean;
   isLoading: boolean;
   isDDocOwner: boolean;
+  /** Inline comments usable at all (not RTC, published, not disabled) —
+   *  synced from CommentStoreProvider's prop; drives insert.comment
+   *  enablement in useEditorCommands. */
+  isInlineCommentAvailable: boolean;
 
   // --- External callbacks (synced via useEffect, read by consumers) ---
   onComment: (() => void) | null;
@@ -746,6 +755,7 @@ export interface CommentStoreState {
   setIsConnected: (connected: boolean) => void;
   setIsLoading: (loading: boolean) => void;
   setIsDDocOwner: (isOwner: boolean) => void;
+  setIsInlineCommentAvailable: (value: boolean) => void;
   setOnComment: (fn: (() => void) | null) => void;
   setCommentDrawerOpenFn: (fn: ((open: boolean) => void) | null) => void;
   setConnectViaWallet: (fn: (() => Promise<void>) | null) => void;
@@ -943,6 +953,7 @@ export const createCommentStore = () =>
     isConnected: false,
     isLoading: false,
     isDDocOwner: false,
+    isInlineCommentAvailable: false,
 
     // --- External callbacks ---
     onComment: null,
@@ -1170,6 +1181,11 @@ export const createCommentStore = () =>
     setIsConnected: (connected) => set({ isConnected: connected }),
     setIsLoading: (loading) => set({ isLoading: loading }),
     setIsDDocOwner: (isOwner) => set({ isDDocOwner: isOwner }),
+    setIsInlineCommentAvailable: (value) => {
+      if (get().isInlineCommentAvailable !== value) {
+        set({ isInlineCommentAvailable: value });
+      }
+    },
     setOnComment: (fn) => set({ onComment: fn }),
     setCommentDrawerOpenFn: (fn) => set({ setCommentDrawerOpen: fn }),
     setConnectViaWallet: (fn) => set({ connectViaWallet: fn }),
@@ -3451,4 +3467,22 @@ export function useCommentStore<T>(
   }
 
   return useStore(store, selector);
+}
+
+/**
+ * Non-throwing variant of useCommentStore: returns undefined when no
+ * CommentStoreProvider is above the caller (e.g. useEditorCommands used
+ * outside DdocEditor). Pass a STABLE selector (module-level fn) — the
+ * snapshot is compared with Object.is per React's useSyncExternalStore.
+ */
+export function useCommentStoreOptional<T>(
+  selector: (state: CommentStoreState) => T,
+): T | undefined {
+  const store = useContext(CommentStoreContext);
+  const subscribe = useCallback(
+    (onChange: () => void) => (store ? store.subscribe(onChange) : () => {}),
+    [store],
+  );
+  const getSnapshot = () => (store ? selector(store.getState()) : undefined);
+  return useSyncExternalStore(subscribe, getSnapshot, getSnapshot);
 }

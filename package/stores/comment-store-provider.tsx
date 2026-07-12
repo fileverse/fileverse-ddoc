@@ -88,6 +88,8 @@ export interface CommentStoreProviderProps {
   isConnected?: boolean;
   isLoading?: boolean;
   isDDocOwner?: boolean;
+  /** Inline comments usable — see ddoc-editor.tsx's derivation. */
+  isInlineCommentAvailable?: boolean;
   setUsername?: React.Dispatch<React.SetStateAction<string>>;
 }
 
@@ -127,6 +129,7 @@ export const CommentStoreProvider = ({
   isConnected = false,
   isLoading = false,
   isDDocOwner = false,
+  isInlineCommentAvailable = false,
 }: CommentStoreProviderProps) => {
   const store = useMemo(() => createCommentStore(), []);
   const { isBelow1280px, isNativeMobile } = useResponsive();
@@ -496,6 +499,10 @@ export const CommentStoreProvider = ({
   useEffect(() => {
     store.getState().setIsDDocOwner(isDDocOwner);
   }, [isDDocOwner, store]);
+
+  useEffect(() => {
+    store.getState().setIsInlineCommentAvailable(isInlineCommentAvailable);
+  }, [isInlineCommentAvailable, store]);
 
   // --- Sync external callbacks consumers need to read ---
   useEffect(() => {
