@@ -15,6 +15,7 @@ const ctx = (
     hasSelection: true,
     permissionAllowsComment: true,
     isRtcEnabled: false,
+    isCommentUsable: true,
     ...over,
   }),
   state: {},
@@ -106,6 +107,31 @@ describe('projectMenu', () => {
     const edit = out.find((m) => m.id === 'edit')!;
     expect(edit.children[0].kind).not.toBe('separator');
     expect(edit.children[edit.children.length - 1].kind).not.toBe('separator');
+  });
+
+  it('evaluates a requiresAuth predicate into the projected boolean, per auth state', () => {
+    const t: MenuBarTree = [
+      {
+        id: 'view',
+        label: 'View',
+        children: [
+          {
+            id: 'view.gated',
+            kind: 'action',
+            label: 'Gated',
+            action: 'view.gated',
+            requiresAuth: (c) => !c.caps.isAuthenticated,
+          },
+        ],
+      },
+    ];
+    const authed = projectMenu(t, ctx({ isAuthenticated: true }))[0]
+      .children[0];
+    expect(authed.kind === 'action' && authed.requiresAuth).toBe(false);
+
+    const unauth = projectMenu(t, ctx({ isAuthenticated: false }))[0]
+      .children[0];
+    expect(unauth.kind === 'action' && unauth.requiresAuth).toBe(true);
   });
 
   it('projects a group inline with its label and drops it when empty', () => {

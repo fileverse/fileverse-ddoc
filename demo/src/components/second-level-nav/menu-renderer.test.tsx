@@ -88,6 +88,58 @@ describe('MenuBarRenderer', () => {
     expect(bold).toHaveAttribute('aria-checked', 'true');
   });
 
+  it('a requiresAuth item click fires onRequiresAuth INSTEAD of dispatching the action', async () => {
+    const run = vi.fn();
+    const onRequiresAuth = vi.fn();
+    const gated: ProjectedMenuBar = [
+      {
+        id: 'view',
+        label: 'View',
+        children: [
+          {
+            id: 'view.comments.showAll',
+            kind: 'action',
+            label: 'Show all comments',
+            action: 'view.comments.showAll',
+            disabled: false,
+            requiresAuth: true,
+          },
+        ],
+      },
+    ];
+    render(
+      <MenuBarRenderer
+        projected={gated}
+        registry={{ 'view.comments.showAll': { run } }}
+        onRequiresAuth={onRequiresAuth}
+      />,
+    );
+    fireEvent.keyDown(screen.getByRole('menuitem', { name: 'View' }), {
+      key: 'Enter',
+    });
+    await waitFor(() => screen.getByText('Show all comments'));
+    fireEvent.click(screen.getByText('Show all comments'));
+    expect(onRequiresAuth).toHaveBeenCalledTimes(1);
+    expect(run).not.toHaveBeenCalled();
+  });
+
+  it('a non-requiresAuth item click dispatches normally even when onRequiresAuth is wired', async () => {
+    const run = vi.fn();
+    const onRequiresAuth = vi.fn();
+    render(
+      <MenuBarRenderer
+        projected={projected}
+        registry={{ 'file.rename': { run } }}
+        onRequiresAuth={onRequiresAuth}
+      />,
+    );
+    openFileMenu();
+    await waitFor(() => screen.getByText('Rename'));
+    fireEvent.click(screen.getByText('Rename'));
+    expect(run).toHaveBeenCalledTimes(1);
+    expect(onRequiresAuth).not.toHaveBeenCalled();
+  });
+
   it('renders comingSoon items disabled with a Soon badge', async () => {
     render(
       <MenuBarRenderer

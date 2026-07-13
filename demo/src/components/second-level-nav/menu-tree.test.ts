@@ -4,7 +4,10 @@ import { projectMenu } from './project-menu';
 import { deriveCapabilities } from './capabilities';
 import type { ProjectedNode } from './menu-types';
 
-const ctxFor = (role: 'owner' | 'viewer' | 'unauth' | 'collaborator') => ({
+const ctxFor = (
+  role: 'owner' | 'viewer' | 'unauth' | 'collaborator',
+  opts: { isCommentUsable?: boolean } = {},
+) => ({
   caps: deriveCapabilities({
     isPreviewMode: role === 'viewer' || role === 'unauth',
     isCollaboratorMode: role === 'collaborator',
@@ -14,6 +17,7 @@ const ctxFor = (role: 'owner' | 'viewer' | 'unauth' | 'collaborator') => ({
     hasSelection: false,
     permissionAllowsComment: true,
     isRtcEnabled: false,
+    isCommentUsable: opts.isCommentUsable ?? true,
   }),
   state: {},
 });
@@ -157,6 +161,47 @@ describe('demoMenuTree', () => {
     expect(format.children.find((c) => c.id === 'format.margins')!.disabled).toBe(
       true,
     );
+  });
+
+  it('owner + isCommentUsable:false: View ▸ Comments submenu is visible but disabled (TEC-1458 bugfix)', () => {
+    const view = projectMenu(
+      demoMenuTree,
+      ctxFor('owner', { isCommentUsable: false }),
+    ).find((m) => m.id === 'view')!;
+    const comments = findNode(view.children, 'view.comments')!;
+    expect(comments, 'view.comments should be visible for owner').toBeDefined();
+    expect(
+      'disabled' in comments && comments.disabled,
+      'view.comments should be disabled when isCommentUsable is false',
+    ).toBe(true);
+  });
+
+  it('owner + isCommentUsable:true: View ▸ Comments submenu is enabled', () => {
+    const view = projectMenu(
+      demoMenuTree,
+      ctxFor('owner', { isCommentUsable: true }),
+    ).find((m) => m.id === 'view')!;
+    const comments = findNode(view.children, 'view.comments')!;
+    expect(comments).toBeDefined();
+    expect('disabled' in comments && comments.disabled).toBe(false);
+  });
+
+  it('unauth viewer: View ▸ Comments ▸ Show all comments requiresAuth', () => {
+    const view = projectMenu(demoMenuTree, ctxFor('unauth')).find(
+      (m) => m.id === 'view',
+    )!;
+    const showAll = findNode(view.children, 'view.comments.showAll')!;
+    expect(showAll).toBeDefined();
+    expect(showAll.kind === 'action' && showAll.requiresAuth).toBe(true);
+  });
+
+  it('authenticated owner: View ▸ Comments ▸ Show all comments does not requireAuth', () => {
+    const view = projectMenu(demoMenuTree, ctxFor('owner')).find(
+      (m) => m.id === 'view',
+    )!;
+    const showAll = findNode(view.children, 'view.comments.showAll')!;
+    expect(showAll).toBeDefined();
+    expect(showAll.kind === 'action' && showAll.requiresAuth).toBe(false);
   });
 
   it('insert.comment disabled state mirrors the command isEnabled', () => {

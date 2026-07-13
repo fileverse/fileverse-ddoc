@@ -28,8 +28,10 @@ export type ActionNode = BaseNode & {
   action: string;
   shortcut?: string;
   comingSoon?: boolean;
-  /** Renders normally; click routes to sign-in when !caps.isAuthenticated. */
-  requiresAuth?: boolean;
+  /** Renders normally; click routes to sign-in when this predicate is true
+   *  (mirrors visibleWhen/enabledWhen — evaluated over MenuContext, not a
+   *  static flag, so it can react to auth state). */
+  requiresAuth?: MenuPredicate;
   enabledWhen?: MenuPredicate;
 };
 

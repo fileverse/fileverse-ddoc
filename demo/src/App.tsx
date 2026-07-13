@@ -461,6 +461,11 @@ function App() {
   };
 
   // --- Second-level nav wiring (capability engine, consumer-mirror) ---
+  // isCommentUsable: demo has no publish/IPFS-availability concept (unlike
+  // the consumer's comments.available/isDocumentPublished), so this derives
+  // from the closest equivalents already tracked here: `isOnline` (network,
+  // consumer's comments.available proxy) and `!collabEnabled` (RTC gate,
+  // consumer's !enableCollaboration). No unpublished-doc gate to mirror.
   const caps = deriveCapabilities({
     isPreviewMode,
     isCollaboratorMode: collabEnabled && !collabIsOwner,
@@ -470,6 +475,7 @@ function App() {
     hasSelection: false, // refined inside SecondLevelNav from the registry
     permissionAllowsComment: !disableInlineComment,
     isRtcEnabled: collabEnabled,
+    isCommentUsable: isOnline && !collabEnabled,
   });
 
   const renderNavbar = ({

@@ -207,6 +207,11 @@ export const demoMenuTree: MenuBarTree = [
         label: 'Comments',
         icon: 'MessageSquareText',
         visibleWhen: (c) => c.caps.canComment,
+        // Visible-but-disabled when comments aren't actually usable
+        // (unpublished/RTC/offline — see canUseComments, capabilities.ts),
+        // consistent with the ticket's RTC treatment elsewhere. TEC-1458 bug:
+        // this was previously unconditionally enabled once visible.
+        enabledWhen: (c) => c.caps.canUseComments,
         children: [
           {
             id: 'view.comments.toggleCanvas',
@@ -223,6 +228,11 @@ export const demoMenuTree: MenuBarTree = [
             kind: 'action',
             label: 'Show all comments',
             action: 'view.comments.showAll',
+            // Makes capabilities.ts's commentRequiresAuth live: an unauth
+            // permission-holding viewer clicking this goes to the login flow
+            // instead of opening the drawer (TEC-1458 bug: was previously
+            // dead — no tree node consulted it).
+            requiresAuth: (c) => c.caps.commentRequiresAuth,
           },
         ],
       },

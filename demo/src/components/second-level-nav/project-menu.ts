@@ -72,7 +72,7 @@ const projectNode = (node: MenuNode, ctx: MenuContext): ProjectedNode | null => 
         action: node.action,
         shortcut: node.shortcut,
         comingSoon: node.comingSoon,
-        requiresAuth: node.requiresAuth,
+        requiresAuth: node.requiresAuth?.(ctx),
         disabled:
           node.comingSoon === true ||
           (node.enabledWhen ? !node.enabledWhen(ctx) : false),

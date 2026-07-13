@@ -10,6 +10,7 @@ const base = {
   hasSelection: false,
   permissionAllowsComment: true,
   isRtcEnabled: false,
+  isCommentUsable: true,
 };
 
 describe('deriveCapabilities (role table, architecture doc §3)', () => {
@@ -87,6 +88,7 @@ describe('deriveCapabilities (role table, architecture doc §3)', () => {
       hasSelection: false,
       permissionAllowsComment: true,
       isRtcEnabled: true,
+      isCommentUsable: true,
     });
     expect(caps.canManageDoc).toBe(true);
     expect(caps.canSplitView).toBe(false);
@@ -102,7 +104,52 @@ describe('deriveCapabilities (role table, architecture doc §3)', () => {
       hasSelection: false,
       permissionAllowsComment: true,
       isRtcEnabled: false,
+      isCommentUsable: true,
     });
     expect(caps.canSplitView).toBe(true);
+  });
+
+  describe('canUseComments (real comment availability, TEC-1458 bugfix)', () => {
+    it('owner + usable: canUseComments true', () => {
+      const caps = deriveCapabilities({
+        ...base,
+        isDDocOwner: true,
+        isCommentUsable: true,
+      });
+      expect(caps.canComment).toBe(true);
+      expect(caps.canUseComments).toBe(true);
+    });
+
+    it('owner + unusable (unpublished/RTC/offline): canUseComments false even though canComment is true', () => {
+      const caps = deriveCapabilities({
+        ...base,
+        isDDocOwner: true,
+        isCommentUsable: false,
+      });
+      expect(caps.canComment).toBe(true);
+      expect(caps.canUseComments).toBe(false);
+    });
+
+    it('viewer without comment permission + usable: canUseComments still false (follows canComment)', () => {
+      const caps = deriveCapabilities({
+        ...base,
+        isPreviewMode: true,
+        permissionAllowsComment: false,
+        isCommentUsable: true,
+      });
+      expect(caps.canComment).toBe(false);
+      expect(caps.canUseComments).toBe(false);
+    });
+
+    it('viewer with comment permission + usable: canUseComments true', () => {
+      const caps = deriveCapabilities({
+        ...base,
+        isPreviewMode: true,
+        permissionAllowsComment: true,
+        isCommentUsable: true,
+      });
+      expect(caps.canComment).toBe(true);
+      expect(caps.canUseComments).toBe(true);
+    });
   });
 });
