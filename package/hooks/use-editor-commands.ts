@@ -230,10 +230,9 @@ export const useEditorCommands = (
         isEnabled: state.canRedo,
       }),
       'edit.selectAll': cmd(() => editor.chain().focus().selectAll().run()),
-      'edit.delete': cmd(
-        () => editor.chain().focus().deleteSelection().run(),
-        { isEnabled: state.hasSelection },
-      ),
+      'edit.delete': cmd(() => editor.chain().focus().deleteSelection().run(), {
+        isEnabled: state.hasSelection,
+      }),
       'edit.findReplace': cmd(() => setShowReplacePopoverWithData(editor)),
       'edit.cut': cmd(() => document.execCommand('cut'), {
         isEnabled: state.hasSelection,
@@ -387,12 +386,18 @@ export const useEditorCommands = (
       ),
 
       // --- table (enabled only with the cursor inside a table) ---
-      'table.addRowAbove': cmd(() => editor.chain().focus().addRowBefore().run(), {
-        isEnabled: state.inTable,
-      }),
-      'table.addRowBelow': cmd(() => editor.chain().focus().addRowAfter().run(), {
-        isEnabled: state.inTable,
-      }),
+      'table.addRowAbove': cmd(
+        () => editor.chain().focus().addRowBefore().run(),
+        {
+          isEnabled: state.inTable,
+        },
+      ),
+      'table.addRowBelow': cmd(
+        () => editor.chain().focus().addRowAfter().run(),
+        {
+          isEnabled: state.inTable,
+        },
+      ),
       'table.mergeCells': cmd(() => editor.chain().focus().mergeCells().run(), {
         isEnabled: state.canMergeCells,
       }),
@@ -407,9 +412,12 @@ export const useEditorCommands = (
         () => editor.chain().focus().addColumnAfter().run(),
         { isEnabled: state.inTable },
       ),
-      'table.deleteColumn': cmd(() => editor.chain().focus().deleteColumn().run(), {
-        isEnabled: state.inTable,
-      }),
+      'table.deleteColumn': cmd(
+        () => editor.chain().focus().deleteColumn().run(),
+        {
+          isEnabled: state.inTable,
+        },
+      ),
       'table.toggleHeaderRow': cmd(
         () => editor.chain().focus().toggleHeaderRow().run(),
         { isEnabled: state.inTable },
@@ -422,9 +430,12 @@ export const useEditorCommands = (
         () => editor.chain().focus().toggleHeaderCell().run(),
         { isEnabled: state.inTable },
       ),
-      'table.deleteTable': cmd(() => editor.chain().focus().deleteTable().run(), {
-        isEnabled: state.inTable,
-      }),
+      'table.deleteTable': cmd(
+        () => editor.chain().focus().deleteTable().run(),
+        {
+          isEnabled: state.inTable,
+        },
+      ),
     };
   }, [editor, state, onError, ipfsImageUploadFn, handleInlineComment]);
 };
