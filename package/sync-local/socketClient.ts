@@ -32,6 +32,8 @@ interface ISocketClientConfig {
   ownerIdentityDid?: string;
   editLock?: string;
   encryptedTitle?: string;
+  identityToken?: string;
+  identityContractAddress?: string;
   onHandshakeData?: (response: { data: AckResponse; roomKey: string }) => void;
   roomInfo?: {
     documentTitle: string;
@@ -67,6 +69,8 @@ export class SocketClient {
   private ownerIdentityDid?: string;
   private editLock?: string;
   private encryptedTitle?: string;
+  private identityToken?: string;
+  private identityContractAddress?: string;
   private roomKey: string;
   private roomInfo?: {
     documentTitle: string;
@@ -104,6 +108,9 @@ export class SocketClient {
     if (config.ownerIdentityDid)
       this.ownerIdentityDid = config.ownerIdentityDid;
     if (config.editLock) this.editLock = config.editLock;
+    if (config.identityToken) this.identityToken = config.identityToken;
+    if (config.identityContractAddress)
+      this.identityContractAddress = config.identityContractAddress;
     if (config.encryptedTitle) this.encryptedTitle = config.encryptedTitle;
     if (config.onHandshakeData) this._onHandshakeData = config.onHandshakeData;
     if (config.roomInfo) this.roomInfo = config.roomInfo;
@@ -388,6 +395,9 @@ export class SocketClient {
     if (this.ownerAddress) args.ownerAddress = this.ownerAddress;
     if (this.contractAddress) args.contractAddress = this.contractAddress;
     if (this.ownerIdentityDid) args.ownerIdentityDid = this.ownerIdentityDid;
+    if (this.identityToken) args.identityToken = this.identityToken;
+    if (this.identityContractAddress)
+      args.identityContractAddress = this.identityContractAddress;
 
     const response = await this._emitWithAck('/auth', args);
 

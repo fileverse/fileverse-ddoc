@@ -201,6 +201,8 @@ export class SyncManager {
       ownerIdentityDid: config.ownerIdentityDid,
       editLock: config.editLock,
       encryptedTitle: config.encryptedTitle,
+      identityToken: config.identityToken,
+      identityContractAddress: config.identityContractAddress,
       onHandshakeData: this.callbacksRef?.onHandshakeData,
       roomInfo: config.roomInfo,
     });
@@ -367,22 +369,31 @@ export class SyncManager {
           console.error('SyncManager: server rejected update', response?.error);
           return;
         }
-        this.updatesSinceSnapshot += 1;
-        if (
-          shouldAuthorSnapshot({
-            isOwner: this.isOwner,
-            updatesSinceLastSnapshot: this.updatesSinceSnapshot,
-            threshold: this.SNAPSHOT_THRESHOLD,
-          })
-        ) {
-          this.authorSnapshot(null, this.syncId).catch((err) => {
-            console.error('SyncManager: snapshot authoring failed', err);
-          });
-        }
+        this.maybeAuthorSnapshotAfterSend();
       })
       .catch((err) => {
         console.error('SyncManager: update send failed', err);
       });
+  }
+
+  // Count a successfully-sent update toward the snapshot cadence and author a snapshot once
+  // the threshold is crossed. Called from every send path — the live batch, the reconnect
+  // drain, and the full-state rebroadcast — so the reconnect tail can bound itself instead
+  // of growing forever. authorSnapshot's own isAuthoringSnapshot/syncId guards keep the
+  // fire-and-forget re-entrant-safe when triggered mid-hydrate.
+  private maybeAuthorSnapshotAfterSend(): void {
+    this.updatesSinceSnapshot += 1;
+    if (
+      shouldAuthorSnapshot({
+        isOwner: this.isOwner,
+        updatesSinceLastSnapshot: this.updatesSinceSnapshot,
+        threshold: this.SNAPSHOT_THRESHOLD,
+      })
+    ) {
+      this.authorSnapshot(null, this.syncId).catch((err) => {
+        console.error('SyncManager: snapshot authoring failed', err);
+      });
+    }
   }
 
   // The final merged delta for a hard tab-close beacon: any queued-but-unsent updates,
@@ -787,6 +798,7 @@ export class SyncManager {
         `Failed to broadcast local contents: ${errorMsg}${response?.statusCode ? ` (${response.statusCode})` : ''}`,
       );
     }
+    this.maybeAuthorSnapshotAfterSend();
   }
 
   private async processUpdateQueue(): Promise<void> {
@@ -836,6 +848,7 @@ export class SyncManager {
 
         // Remove processed updates from queue
         this.updateQueue = this.updateQueue.slice(queueOffset);
+        this.maybeAuthorSnapshotAfterSend();
         return;
       } catch (err) {
         lastError = err instanceof Error ? err : new Error(String(err));
