@@ -228,7 +228,6 @@ interface UseTabEditorArgs {
   initialContent: DdocProps['initialContent'];
   collaboration?: CollaborationProps;
   isReady?: boolean;
-  isSyncing?: boolean;
   awareness?: any;
   disableInlineComment?: boolean;
   isFocusMode?: boolean;
@@ -256,6 +255,8 @@ interface UseTabEditorArgs {
   ignoreCorruptedData?: boolean;
   onCollaboratorChange?: DdocProps['onCollaboratorChange'];
   onConnect: (connectConfig: CollabConnectionConfig) => void;
+  onDisconnect: () => void;
+  isIndexeddbSynced: boolean;
   hasCollabContentInitialised?: boolean;
   initialiseYjsIndexedDbProvider: () => Promise<void>;
   externalExtensions?: Record<string, AnyExtension>;
@@ -278,7 +279,6 @@ export const useTabEditor = ({
   initialContent,
   collaboration,
   isReady,
-  isSyncing,
   awareness,
   disableInlineComment,
   isFocusMode,
@@ -306,6 +306,8 @@ export const useTabEditor = ({
   ignoreCorruptedData,
   onCollaboratorChange,
   onConnect,
+  onDisconnect,
+  isIndexeddbSynced,
   hasCollabContentInitialised,
   initialiseYjsIndexedDbProvider,
   externalExtensions,
@@ -612,15 +614,13 @@ export const useTabEditor = ({
     return collabEnabled;
   }, [collabEnabled]);
 
-  // Editability is disabled only during active content sync (server merging
-  // updates into the ydoc). All other collab states keep the editor editable so
-  // there is no scroll-jump on start or flicker on stop.
+  // The editor stays editable while the collab server merges updates in the
+  // background — local edits are queued and CRDT-merged on sync, so freezing is
+  // unnecessary. Only preview mode (outside suggestion mode) blocks editing.
   const readyState = useMemo(() => {
     if (isPreviewMode && !isSuggestionMode) return false;
-    if (!isCollaborationEnabled) return true;
-    if (isSyncing) return false;
     return true;
-  }, [isPreviewMode, isSuggestionMode, isCollaborationEnabled, isSyncing]);
+  }, [isPreviewMode, isSuggestionMode]);
 
   const destroyTabEditor = useCallback((targetEditor: Editor) => {
     clearTableOfContentsStorage(targetEditor);
@@ -823,12 +823,6 @@ export const useTabEditor = ({
       return;
     }
 
-    // In collab mode, content arrives via WebSocket — skip hydration entirely.
-    if (collabEnabled) {
-      setIsContentLoading(false);
-      return;
-    }
-
     if (initialContent === null) {
       setIsContentLoading(true);
       return;
@@ -922,6 +916,12 @@ export const useTabEditor = ({
 
   const collaborationCleanupRef = useRef<() => void>(() => {});
   const ref = useRef<HTMLDivElement>(null);
+
+  // Keep the socket warm this long after the last local edit before idle-disconnecting
+  // a durability-only doc. Live-collab docs (livePresence) never idle-disconnect.
+  const COLLAB_WARM_MS = 30_000;
+  const warmTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isSocketConnectedRef = useRef(false);
 
   useExtensionSyncWithCollaboration({
     editor,
@@ -1182,19 +1182,68 @@ export const useTabEditor = ({
     };
   }, [editor, isPresentationMode, slides]);
 
-  // Collaboration onConnect handler — watches connection identity fields only
+  // Collaboration hybrid connect controller — connect-and-stay while
+  // livePresence/connectOnOpen holds; otherwise lazy connect-on-edit with a warm window.
   useEffect(() => {
-    if (collabEnabled && connection) {
+    if (!collabEnabled || !connection) return;
+
+    const keepAlive =
+      connection.livePresence === true || connection.connectOnOpen === true;
+
+    const doConnect = () => {
+      if (isSocketConnectedRef.current) return;
+      isSocketConnectedRef.current = true;
       onConnect(connection);
+    };
+    const doDisconnect = () => {
+      if (!isSocketConnectedRef.current) return;
+      isSocketConnectedRef.current = false;
+      onDisconnect();
+    };
+    const armIdle = () => {
+      if (warmTimerRef.current) clearTimeout(warmTimerRef.current);
+      warmTimerRef.current = setTimeout(() => {
+        warmTimerRef.current = null;
+        if (
+          connection.livePresence !== true &&
+          connection.connectOnOpen !== true
+        ) {
+          doDisconnect();
+        }
+      }, COLLAB_WARM_MS);
+    };
+
+    if (keepAlive) {
+      doConnect();
     }
+
+    // Lazy path: connect on the first qualifying local edit, then keep warm.
+    const onEdit = (_update: Uint8Array, origin: unknown) => {
+      if (origin === 'self' || origin === 'remote' || !isIndexeddbSynced)
+        return;
+      doConnect();
+      armIdle();
+    };
+    ydoc?.on('update', onEdit);
+
     return () => {
-      collaborationCleanupRef.current();
+      ydoc?.off('update', onEdit);
+      if (warmTimerRef.current) {
+        clearTimeout(warmTimerRef.current);
+        warmTimerRef.current = null;
+      }
     };
   }, [
     collabEnabled,
     connection?.roomKey,
     connection?.roomId,
     connection?.wsUrl,
+    connection?.livePresence,
+    connection?.connectOnOpen,
+    ydoc,
+    onConnect,
+    onDisconnect,
+    isIndexeddbSynced,
   ]);
 
   // Scroll to heading handler for preview mode

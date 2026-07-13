@@ -7,7 +7,8 @@ import {
   RoomMember,
   SocketStatusEnum,
   SendUpdateResponse,
-  CommitResponse,
+  HydrationResponse,
+  SnapshotResponse,
   IAuthArgs,
   AckResponse,
 } from './types';
@@ -28,6 +29,9 @@ interface ISocketClientConfig {
   ownerEdSecret?: string;
   contractAddress?: string;
   ownerAddress?: string;
+  ownerIdentityDid?: string;
+  editLock?: string;
+  encryptedTitle?: string;
   onHandshakeData?: (response: { data: AckResponse; roomKey: string }) => void;
   roomInfo?: {
     documentTitle: string;
@@ -37,6 +41,8 @@ interface ISocketClientConfig {
 }
 export class SocketClient {
   private _socketUrl: string;
+  private _restBase: string;
+  private _lastSessionToken: string | null = null;
   private _socket: Socket | null = null;
   private _webSocketStatus: SocketStatusEnum = SocketStatusEnum.CLOSED;
   private _isIntentionalDisconnect = false;
@@ -58,6 +64,9 @@ export class SocketClient {
   private ownerUcan?: ucans.Ucan;
   private collaborationUcan?: ucans.Ucan;
   private ownerAddress?: string;
+  private ownerIdentityDid?: string;
+  private editLock?: string;
+  private encryptedTitle?: string;
   private roomKey: string;
   private roomInfo?: {
     documentTitle: string;
@@ -72,6 +81,10 @@ export class SocketClient {
 
   constructor(config: ISocketClientConfig) {
     this._socketUrl = config.wsUrl || 'ws://localhost:5000';
+    // REST endpoints (e.g. /flush) share the collab-server origin; normalize ws→http.
+    this._restBase = (config.wsUrl || 'http://localhost:5000')
+      .replace(/^ws(s?):\/\//, 'http$1://')
+      .replace(/\/+$/, '');
     const { secretKey: ucanSecret } = generateKeyPairFromSeed(
       toUint8Array(config.roomKey),
     );
@@ -88,6 +101,10 @@ export class SocketClient {
 
     if (config.contractAddress) this.contractAddress = config.contractAddress;
     if (config.ownerAddress) this.ownerAddress = config.ownerAddress;
+    if (config.ownerIdentityDid)
+      this.ownerIdentityDid = config.ownerIdentityDid;
+    if (config.editLock) this.editLock = config.editLock;
+    if (config.encryptedTitle) this.encryptedTitle = config.encryptedTitle;
     if (config.onHandshakeData) this._onHandshakeData = config.onHandshakeData;
     if (config.roomInfo) this.roomInfo = config.roomInfo;
   }
@@ -157,41 +174,43 @@ export class SocketClient {
     )) as SendUpdateResponse;
   }
 
-  async commitUpdates({ updates, cid }: { updates: string[]; cid: string }) {
+  async fetchHydrationRange(sinceSeq?: number) {
+    const args = { documentId: this.roomId, sinceSeq };
+    return (await this._emitWithAck(
+      '/documents/update/history',
+      args,
+    )) as HydrationResponse;
+  }
+
+  async sendSnapshot({
+    data,
+    floorSeq,
+    publishedMarker,
+  }: {
+    data: string;
+    floorSeq: number;
+    publishedMarker?: string | null;
+  }) {
     const args = {
-      updates,
-      cid,
+      data,
+      floorSeq,
+      publishedMarker: publishedMarker ?? null,
       documentId: this.roomId,
-      ownerToken: await this.getOwnerToken(),
-      contractAddress: this.contractAddress,
-      ownerAddress: this.ownerAddress,
+      collaborationToken: await this.buildSessionToken(),
     };
     return (await this._emitWithAck(
-      '/documents/commit',
+      '/documents/snapshot',
       args,
-    )) as CommitResponse;
+    )) as SnapshotResponse;
   }
 
-  async fetchLatestCommit() {
-    const args = {
+  async setDocumentMeta(): Promise<void> {
+    if (!this.editLock && !this.encryptedTitle) return;
+    await this._emitWithAck('/documents/meta', {
       documentId: this.roomId,
-      offset: 0,
-      limit: 1,
-      sort: 'desc',
-    };
-
-    return await this._emitWithAck('/documents/commit/history', args);
-  }
-
-  async getUncommittedChanges() {
-    const args = {
-      documentId: this.roomId,
-      limit: 1000,
-      offset: 0,
-      filters: { committed: false },
-      sort: 'desc',
-    };
-    return await this._emitWithAck('/documents/update/history', args);
+      editLock: this.editLock ?? null,
+      title: this.encryptedTitle ?? null,
+    });
   }
 
   public async broadcastAwareness(awarenessUpdate: string) {
@@ -230,6 +249,39 @@ export class SocketClient {
       this.disconnect();
     }
   };
+
+  // Fired from pagehide: a keepalive POST of the final merged delta so the last edits
+  // survive a hard tab-close. Must run without an awaited token build, so it uses the
+  // last session token minted during normal operation; if none exists, it no-ops.
+  flushBeacon(mergedUpdate: string): void {
+    const token = this._lastSessionToken;
+    const sessionDid = this.collaborationKeyPair?.did();
+    if (!token || !sessionDid || !mergedUpdate) return;
+
+    const url = `${this._restBase}/flush`;
+    const body = JSON.stringify({
+      documentId: this.roomId,
+      sessionDid,
+      collaborationToken: token,
+      data: mergedUpdate,
+    });
+
+    const sent =
+      typeof navigator !== 'undefined' &&
+      typeof navigator.sendBeacon === 'function' &&
+      navigator.sendBeacon(url, new Blob([body], { type: 'application/json' }));
+
+    if (!sent && typeof fetch === 'function') {
+      void fetch(url, {
+        method: 'POST',
+        body,
+        headers: { 'content-type': 'application/json' },
+        keepalive: true,
+      }).catch(() => {
+        /* best-effort: local IndexedDB still holds this state */
+      });
+    }
+  }
 
   private getCollaborationKeyPair() {
     if (!this.collaborationKeyPair)
@@ -282,7 +334,8 @@ export class SocketClient {
       );
     }
     if (this.collaborationUcan && this.isUcanValid(this.collaborationUcan)) {
-      return ucans.encode(this.collaborationUcan);
+      this._lastSessionToken = ucans.encode(this.collaborationUcan);
+      return this._lastSessionToken;
     }
     const keyPair = this.getCollaborationKeyPair();
 
@@ -302,7 +355,8 @@ export class SocketClient {
       ],
     });
 
-    return ucans.encode(this.collaborationUcan);
+    this._lastSessionToken = ucans.encode(this.collaborationUcan);
+    return this._lastSessionToken;
   };
 
   private _handleHandShake = async (
@@ -333,6 +387,7 @@ export class SocketClient {
     if (this.ownerKeyPair) args.ownerToken = await this.getOwnerToken();
     if (this.ownerAddress) args.ownerAddress = this.ownerAddress;
     if (this.contractAddress) args.contractAddress = this.contractAddress;
+    if (this.ownerIdentityDid) args.ownerIdentityDid = this.ownerIdentityDid;
 
     const response = await this._emitWithAck('/auth', args);
 
