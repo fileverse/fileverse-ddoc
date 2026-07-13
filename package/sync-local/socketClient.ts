@@ -4,7 +4,6 @@ import * as ucans from '@ucans/ucans';
 
 import {
   ISocketInitConfig,
-  RoomMember,
   SocketStatusEnum,
   SendUpdateResponse,
   HydrationResponse,
@@ -12,6 +11,8 @@ import {
   IAuthArgs,
   AckResponse,
 } from './types';
+import { buildIdentityMap, mergePresence, identitySignature } from './presence';
+import { IDocCollabUsers } from '../types';
 import { generateKeyPairFromSeed } from '@stablelib/ed25519';
 import { fromUint8Array, toUint8Array } from 'js-base64';
 import { crypto } from './crypto';
@@ -59,7 +60,9 @@ export class SocketClient {
   private _websocketServiceDid = '';
   private roomId = '';
 
-  roomMembers: RoomMember[] = [];
+  roomMembers: string[] = [];
+  private _lastPresenceSignature = '';
+  private _onPresenceChange?: (collaborators: IDocCollabUsers[]) => void;
   private collaborationKeyPair: ucans.EdKeypair | null = null;
   private ownerKeyPair?: ucans.EdKeypair;
   private contractAddress?: string;
@@ -117,7 +120,9 @@ export class SocketClient {
   }
 
   registerAwareness(awareness: Awareness) {
+    if (this.awareness) this.awareness.off('update', this._recomputePresence);
     this.awareness = awareness;
+    awareness.on('update', this._recomputePresence);
   }
 
   private _emitWithAck<T = any>(
@@ -165,8 +170,20 @@ export class SocketClient {
       throw new Error('Failed to fetch room members');
     }
 
-    this.roomMembers = data.data?.peers as any;
+    this.roomMembers = data.data?.peers ?? [];
   }
+
+  private _recomputePresence = () => {
+    // Guarded to connected: the disconnect-time awareness cleanup fires an awareness
+    // update; skipping while disconnected keeps live peers from flashing to placeholders
+    // until reconnect refetches the roster.
+    if (!this.isConnected || !this.awareness || !this._onPresenceChange) return;
+    const identity = buildIdentityMap(this.awareness.getStates());
+    const sig = identitySignature(this.roomMembers, identity);
+    if (sig === this._lastPresenceSignature) return;
+    this._lastPresenceSignature = sig;
+    this._onPresenceChange(mergePresence(this.roomMembers, identity));
+  };
 
   public async sendUpdate({ update }: { update: string }) {
     const args = {
@@ -419,6 +436,17 @@ export class SocketClient {
 
     this._webSocketStatus = SocketStatusEnum.CONNECTED;
     config.onHandshakeSuccess();
+
+    // Presence: fetch the authoritative roster, then stamp our socket id into awareness
+    // (the sibling join key), then emit. Runs on first connect and every reconnect
+    // (socket.id changes on reconnect). _onPresenceChange is set only after the roster is
+    // populated so the first emit is never an empty flash.
+    await this._fetchRoomMembers().catch(() => {}); // retain last-known on fetch failure
+    this._onPresenceChange = config.onPresenceChange;
+    if (this.awareness && this._socket?.id) {
+      this.awareness.setLocalStateField('socketId', this._socket.id);
+    }
+    this._recomputePresence();
   };
 
   private _handleAwarenessUpdate = (data: { data: any; roomId: string }) => {
@@ -506,7 +534,9 @@ export class SocketClient {
       });
 
       this._socket.on('/room/membership_change', (data) => {
-        this._fetchRoomMembers().catch(console.error);
+        this._fetchRoomMembers()
+          .then(() => this._recomputePresence())
+          .catch(console.error);
         config.onMembershipChange(data);
       });
 

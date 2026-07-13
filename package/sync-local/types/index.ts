@@ -208,6 +208,7 @@ export interface ISocketInitConfig {
     user: { role: string };
     roomId: string;
   }) => void;
+  onPresenceChange?: (collaborators: IDocCollabUsers[]) => void;
   onSessionTerminated: (data: { roomId: string }) => void;
   onReconnectFailed: () => void;
 }
