@@ -425,6 +425,9 @@ export const demoMenuTree: MenuBarTree = [
         icon: 'MessageSquareText',
         action: 'insert.comment',
         visibleWhen: (c) => c.caps.canComment && canEdit(c),
+        // Reflect the package command's enablement (word target under the
+        // cursor + isInlineCommentAvailable) — same pattern as format.table.
+        enabledWhen: (c) => c.state['insert.comment']?.isEnabled ?? false,
       },
     ],
   },

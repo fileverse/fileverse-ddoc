@@ -159,6 +159,23 @@ describe('demoMenuTree', () => {
     );
   });
 
+  it('insert.comment disabled state mirrors the command isEnabled', () => {
+    const commentNode = (isEnabled: boolean | undefined) => {
+      const ctx = ctxFor('owner');
+      if (isEnabled !== undefined) {
+        ctx.state = { 'insert.comment': { isEnabled } };
+      }
+      const insert = projectMenu(demoMenuTree, ctx).find(
+        (m) => m.id === 'insert',
+      )!;
+      return findNode(insert.children, 'insert.comment')!;
+    };
+    // No state entry (e.g. store not wired) → disabled, never silently enabled.
+    expect(commentNode(undefined).disabled).toBe(true);
+    expect(commentNode(false).disabled).toBe(true);
+    expect(commentNode(true).disabled).toBe(false);
+  });
+
   it('every node id is unique', () => {
     const ids: string[] = [];
     const walk = (nodes: { id: string; children?: unknown[] }[]) =>
