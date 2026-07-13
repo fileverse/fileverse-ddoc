@@ -27,3 +27,6 @@ dist-ssr
 # Editor
 .cursorrules
 
+# graphify (generated knowledge graph — local only)
+graphify-out/
+

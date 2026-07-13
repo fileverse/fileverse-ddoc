@@ -1,5 +1,6 @@
 import React from 'react';
 import type { DocumentStyling, DocumentStylingValue } from '../../package/types';
+import { validateCustomCss } from '../../package/utils/sanitize-css';
 import cn from 'classnames';
 
 interface DocumentStylingPanelProps {
@@ -99,6 +100,22 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
   const handleStylingUpdate = (updates: Partial<DocumentStyling>) => {
     onStylingChange({ ...currentStyling, ...updates });
   };
+
+  // One general (non-blocking) message for the Custom CSS box. The sanitizer
+  // returns per-issue diagnostics; we collapse them to two neutral variants so
+  // the copy is never wrong: "removed for safety" (url()/@import/fixed/scope)
+  // vs "couldn't be applied" (a syntax error). Specific reasons stay available
+  // in the diagnostics array for the future if needed.
+  const cssDiagnostics = validateCustomCss(currentStyling.customCSS).diagnostics;
+  const hasCssError = cssDiagnostics.some((d) => d.level === 'error');
+  const cssIssue = !cssDiagnostics.length
+    ? null
+    : {
+        level: hasCssError ? ('error' as const) : ('warning' as const),
+        message: hasCssError
+          ? 'Some CSS couldn’t be applied. Check your syntax.'
+          : 'Some styles were removed for safety.',
+      };
 
   return (
     <div className="fixed top-[108px] left-4 z-50 bg-gradient-to-br from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl p-6 shadow-2xl backdrop-blur-sm max-w-sm max-h-[calc(100vh-120px)] overflow-y-auto">
@@ -277,6 +294,42 @@ export const DocumentStylingPanel: React.FC<DocumentStylingPanelProps> = ({
               </span>
             </button>
           </div>
+        </div>
+
+        {/* Custom CSS */}
+        <div className="space-y-2">
+          <label
+            htmlFor="custom-css-input"
+            className="text-sm font-medium block text-slate-700 dark:text-slate-200"
+          >
+            Custom CSS
+          </label>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            Add your own CSS to customize the appearance and layout of your doc.
+          </p>
+          <textarea
+            id="custom-css-input"
+            value={currentStyling.customCSS ?? ''}
+            onChange={(e) => handleStylingUpdate({ customCSS: e.target.value })}
+            spellCheck={false}
+            placeholder={
+              'body { font-family: Georgia, serif }\nh1 { letter-spacing: -0.02em }'
+            }
+            className="w-full h-32 p-2 text-xs font-mono rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 resize-y focus:outline-none focus:border-blue-500"
+          />
+          {cssIssue && (
+            <p
+              className={cn(
+                'text-xs flex gap-1.5 items-start',
+                cssIssue.level === 'error'
+                  ? 'text-red-600 dark:text-red-400'
+                  : 'text-amber-600 dark:text-amber-500',
+              )}
+            >
+              <span aria-hidden>{cssIssue.level === 'error' ? '⛔' : '⚠️'}</span>
+              <span>{cssIssue.message}</span>
+            </p>
+          )}
         </div>
 
         {/* Reset Button */}

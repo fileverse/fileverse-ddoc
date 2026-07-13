@@ -52,6 +52,7 @@ import {
   getResponsiveThemeTextColor,
   getThemeStyle,
 } from './utils/document-styling';
+import { sanitizeCustomCss } from './utils/sanitize-css';
 import { useFocusMode } from './hooks/use-focus-mode';
 import { FullScreenToolbar } from './components/fullscreen-toolbar';
 import { mergeTabAwareYjsUpdates } from './components/tabs/utils/tab-utils';
@@ -405,6 +406,31 @@ const DdocEditor = forwardRef(
         setIsSplitView?.(false);
       },
     });
+
+    // Mirror custom CSS into the markdown extension's storage so the
+    // exportMarkdownFile command can embed it as a <style> block (the export
+    // has no other access to documentStyling).
+    useEffect(() => {
+      const storage = editor?.storage?.markdownPasteHandler;
+      if (storage) storage.customCSS = documentStyling?.customCSS ?? '';
+    }, [editor, documentStyling?.customCSS]);
+
+    // Sanitize + scope the author's custom CSS before injecting it (it reaches
+    // viewers of published docs, so it's untrusted). Returns '' on SSR; the
+    // client re-renders with the sanitized rule after hydration.
+    // Scope with a DOUBLED class (`.ProseMirror.ProseMirror`) so author custom
+    // CSS reliably wins over the editor's own element/class defaults without
+    // needing !important. The editor styles links via `.ProseMirror
+    // .custom-text-link` (specificity 0,2,0), which would otherwise beat a
+    // plain author `a { … }` (0,1,1); doubling makes author rules 0,2,1.
+    const safeCustomCss = useMemo(
+      () =>
+        sanitizeCustomCss(
+          documentStyling?.customCSS,
+          '.ProseMirror.ProseMirror',
+        ),
+      [documentStyling?.customCSS],
+    );
 
     useImperativeHandle(
       ref,
@@ -1378,6 +1404,16 @@ const DdocEditor = forwardRef(
                   : `calc(100dvh - 52px - ${footerHeight || '0px'})`,
           }}
         >
+          {/* Author's custom CSS escape hatch. The author writes bare selectors
+              (`h1 { … }`, `p { … }`); sanitizeCustomCss scopes every rule to the
+              document (`.ProseMirror { … }`) AND strips injection vectors —
+              breakout via `}`, url()/@import exfiltration, position:fixed
+              overlays, expression()/behavior. Custom CSS reaches viewers of a
+              published doc, so it is treated as untrusted input, not a trusted
+              stylesheet. Applies live while editing, in preview, and published. */}
+          {safeCustomCss ? (
+            <style dangerouslySetInnerHTML={{ __html: safeCustomCss }} />
+          ) : null}
           <div
             id="editor-canvas"
             onMouseDown={handleFocusModeMouseDown}
@@ -1491,6 +1527,7 @@ const DdocEditor = forwardRef(
                     onMarkdownChange={onSplitViewMarkdownChange}
                     ipfsImageUploadFn={ipfsImageUploadFn}
                     onError={onError}
+                    customCSS={documentStyling?.customCSS}
                     style={{ flexGrow: splitRatio }}
                   />
                 )}

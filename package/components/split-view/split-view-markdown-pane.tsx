@@ -1,6 +1,7 @@
 import { Suspense, lazy, useCallback, useState } from 'react';
 import type { EditorView } from '@codemirror/view';
 import { IpfsImageUploadResponse } from '../../types';
+import { SplitViewCssAccordion } from './split-view-css-accordion';
 import './split-view.css';
 
 // Lazy chunks: CodeMirror only loads/instantiates when Split View opens.
@@ -13,6 +14,8 @@ interface SplitViewMarkdownPaneProps {
   /** Same uploader the editor uses — for the markdown toolbar's Image button. */
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   onError?: (error: string) => void;
+  /** Document custom CSS — shown read-only in a collapsible accordion. */
+  customCSS?: string;
   /** Sizing for the resizable split (flex-grow set by the draggable splitter). */
   style?: React.CSSProperties;
 }
@@ -28,6 +31,7 @@ export const SplitViewMarkdownPane = ({
   onMarkdownChange,
   ipfsImageUploadFn,
   onError,
+  customCSS,
   style,
 }: SplitViewMarkdownPaneProps) => {
   // Capture the CodeMirror view to drive the dedicated markdown toolbar.
@@ -48,6 +52,7 @@ export const SplitViewMarkdownPane = ({
           onError={onError}
         />
       </Suspense>
+      <SplitViewCssAccordion customCSS={customCSS} />
       <div className="flex-1 min-h-0 overflow-hidden">
         <Suspense
           fallback={
