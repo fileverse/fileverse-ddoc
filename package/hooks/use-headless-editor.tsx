@@ -18,31 +18,48 @@ export interface UseHeadlessEditorProps {
   optionalExtensions?: string[];
 }
 
+/**
+ * The exact extension set the headless editor runs with. Exported so tests
+ * can build an equivalent editor without the hook.
+ */
+export const getHeadlessExtensions = (options?: {
+  ydoc?: Y.Doc;
+  optionalExtensions?: string[];
+}): AnyExtension[] => {
+  const ydoc = options?.ydoc ?? new Y.Doc();
+
+  const getOptionalExtensions = () => {
+    const optionalExtensions = [];
+    if (options?.optionalExtensions?.includes('comment')) {
+      const commentExtensions = Comment.configure({
+        HTMLAttributes: {
+          class: 'inline-comment',
+        },
+      });
+      optionalExtensions.push(commentExtensions);
+    }
+    return optionalExtensions;
+  };
+
+  return [
+    ...defaultExtensions({ onError: () => null }).filter(
+      (extension) => extension.name !== 'characterCount',
+    ),
+    customTextInputRules,
+    PageBreak,
+    Collaboration.configure({ document: ydoc }),
+    ...getOptionalExtensions(),
+  ] as unknown as AnyExtension[];
+};
+
 export const useHeadlessEditor = (props?: UseHeadlessEditorProps) => {
   const getEditor = () => {
     const ydoc = new Y.Doc();
 
-    const getOptionalExtensions = () => {
-      const optionalExtensions = [];
-      if (props?.optionalExtensions?.includes('comment')) {
-        const commentExtensions = Comment.configure({
-          HTMLAttributes: {
-            class: 'inline-comment',
-          },
-        });
-        optionalExtensions.push(commentExtensions);
-      }
-      return optionalExtensions;
-    };
-    const extensions = [
-      ...defaultExtensions({ onError: () => null }).filter(
-        (extension) => extension.name !== 'characterCount',
-      ),
-      customTextInputRules,
-      PageBreak,
-      Collaboration.configure({ document: ydoc }),
-      ...getOptionalExtensions(),
-    ] as unknown as AnyExtension[];
+    const extensions = getHeadlessExtensions({
+      ydoc,
+      optionalExtensions: props?.optionalExtensions,
+    });
 
     const editor = new Editor({
       extensions,

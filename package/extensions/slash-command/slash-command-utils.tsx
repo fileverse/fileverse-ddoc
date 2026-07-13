@@ -5,6 +5,7 @@ import { startImageUpload } from '../../utils/upload-images';
 import { IMG_UPLOAD_SETTINGS } from '../../components/editor-utils';
 import { validateImageExtension } from '../../utils/check-image-type';
 import { CommandProps } from './types';
+import { insertCommands } from '../../utils/insert-commands';
 import { IpfsImageUploadResponse } from '../../types';
 
 export const getSuggestionItems = ({
@@ -91,9 +92,8 @@ export const getSuggestionItems = ({
       searchTerms: ['todo', 'task', 'list', 'check', 'checkbox'],
       icon: <LucideIcon name="ListChecks" size={'md'} />,
       image: '',
-      command: ({ editor, range }: CommandProps) => {
-        editor.chain().focus().deleteRange(range).toggleTaskList().run();
-      },
+      command: ({ editor, range }: CommandProps) =>
+        insertCommands.todoList(editor, range),
     },
     {
       title: 'Heading 1',
@@ -146,9 +146,8 @@ export const getSuggestionItems = ({
       searchTerms: ['unordered', 'point'],
       icon: <LucideIcon name="List" size={'md'} />,
       image: '',
-      command: ({ editor, range }: CommandProps) => {
-        editor.chain().focus().deleteRange(range).toggleBulletList().run();
-      },
+      command: ({ editor, range }: CommandProps) =>
+        insertCommands.bulletList(editor, range),
     },
     {
       title: 'Numbered List',
@@ -156,9 +155,8 @@ export const getSuggestionItems = ({
       searchTerms: ['ordered'],
       icon: <LucideIcon name="ListOrdered" size={'md'} />,
       image: '',
-      command: ({ editor, range }: CommandProps) => {
-        editor.chain().focus().deleteRange(range).toggleOrderedList().run();
-      },
+      command: ({ editor, range }: CommandProps) =>
+        insertCommands.numberedList(editor, range),
     },
     {
       title: 'Callout',
@@ -166,45 +164,8 @@ export const getSuggestionItems = ({
       searchTerms: ['callout', 'note', 'highlight', 'box'],
       icon: <LucideIcon name="Callout" size={'md'} />,
       image: '',
-      command: ({ editor, range }: CommandProps) => {
-        const attrs = editor.getAttributes('textStyle');
-        // Fall back to paragraph node attrs for fontFamily/fontSize
-        const { selection } = editor.state;
-        const $pos = selection.$from;
-        const node = $pos.node($pos.depth);
-        if (node?.type.name === 'paragraph') {
-          if (!attrs.fontFamily && node.attrs.fontFamily) {
-            attrs.fontFamily = node.attrs.fontFamily;
-          }
-          if (!attrs.fontSize && node.attrs.fontSize) {
-            attrs.fontSize = node.attrs.fontSize;
-          }
-        }
-
-        const fontFamily = attrs?.fontFamily || null;
-        const fontSize = attrs?.fontSize || null;
-
-        editor
-          .chain()
-          .focus()
-          .deleteRange(range)
-          .insertContent({
-            type: 'callout',
-            content: [
-              {
-                type: 'paragraph',
-                attrs: { fontFamily, fontSize },
-                content: [],
-              },
-            ],
-          })
-          .run();
-
-        // Then apply textStyle marks to content inside callout
-        if (attrs && Object.keys(attrs).length > 0) {
-          editor.chain().focus().setMark('textStyle', attrs).run();
-        }
-      },
+      command: ({ editor, range }: CommandProps) =>
+        insertCommands.callout(editor, range),
     },
     {
       title: 'Page breaker',
@@ -213,9 +174,8 @@ export const getSuggestionItems = ({
       searchTerms: ['pagebreak', 'break', 'line', 'page'],
       icon: <LucideIcon name="PageBreak" size={'md'} />,
       image: '',
-      command: ({ editor, range }: CommandProps) => {
-        editor.chain().focus().deleteRange(range).setPageBreak().run();
-      },
+      command: ({ editor, range }: CommandProps) =>
+        insertCommands.pageBreak(editor, range),
     },
     {
       title: 'Divider',
@@ -223,9 +183,8 @@ export const getSuggestionItems = ({
       searchTerms: ['hr', 'divider', 'break', 'line', 'delimiter'],
       icon: <LucideIcon name="Minus" size={'md'} />,
       image: '',
-      command: ({ editor, range }: CommandProps) => {
-        editor.chain().focus().deleteRange(range).setHorizontalRule().run();
-      },
+      command: ({ editor, range }: CommandProps) =>
+        insertCommands.divider(editor, range),
     },
     {
       title: 'Quote',
@@ -234,13 +193,7 @@ export const getSuggestionItems = ({
       icon: <LucideIcon name="TextQuote" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) =>
-        editor
-          .chain()
-          .focus()
-          .deleteRange(range)
-          .toggleNode('paragraph', 'paragraph')
-          .toggleBlockquote()
-          .run(),
+        insertCommands.quote(editor, range),
     },
     {
       title: 'Code',
@@ -249,7 +202,7 @@ export const getSuggestionItems = ({
       icon: <LucideIcon name="Code" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) =>
-        editor.chain().focus().deleteRange(range).toggleCodeBlock().run(),
+        insertCommands.codeBlock(editor, range),
     },
     {
       title: 'Mermaid Diagram',
@@ -258,12 +211,7 @@ export const getSuggestionItems = ({
       icon: <LucideIcon name="GitGraph" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) =>
-        editor
-          .chain()
-          .focus()
-          .deleteRange(range)
-          .setCodeBlock({ language: 'mermaid' })
-          .run(),
+        insertCommands.mermaid(editor, range),
     },
     {
       title: 'Plain text',
@@ -272,12 +220,7 @@ export const getSuggestionItems = ({
       icon: <LucideIcon name="NotepadText" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) =>
-        editor
-          .chain()
-          .focus()
-          .deleteRange(range)
-          .setCodeBlock({ language: 'plaintext' })
-          .run(),
+        insertCommands.plainText(editor, range),
     },
     {
       title: 'Table',
@@ -286,12 +229,7 @@ export const getSuggestionItems = ({
       icon: <LucideIcon name="Table" size={'md'} />,
       image: '',
       command: ({ editor, range }: CommandProps) =>
-        editor
-          .chain()
-          .focus()
-          .deleteRange(range)
-          .insertTable({ rows: 3, cols: 2, withHeaderRow: true })
-          .run(),
+        insertCommands.table(editor, range),
     },
     {
       title: 'Image',
@@ -334,14 +272,8 @@ export const getSuggestionItems = ({
       searchTerms: ['iframe', 'embed', 'video', 'youtube'],
       icon: <LucideIcon name="Youtube" size={'md'} />,
       image: '',
-      command: ({ editor, range }: CommandProps) => {
-        editor
-          .chain()
-          .focus()
-          .deleteRange(range)
-          .setActionButton('iframe-video')
-          .run();
-      },
+      command: ({ editor, range }: CommandProps) =>
+        insertCommands.video(editor, range),
     },
     {
       title: 'X',
@@ -349,14 +281,8 @@ export const getSuggestionItems = ({
       searchTerms: ['X', 'embed', 'twitter', 'tweet'],
       icon: <LucideIcon name="XSocial" size={'md'} />,
       image: '',
-      command: ({ editor, range }: CommandProps) => {
-        editor
-          .chain()
-          .focus()
-          .deleteRange(range)
-          .setActionButton('twitter')
-          .run();
-      },
+      command: ({ editor, range }: CommandProps) =>
+        insertCommands.tweet(editor, range),
     },
     {
       title: 'Soundcloud Embed',
@@ -380,14 +306,8 @@ export const getSuggestionItems = ({
         </svg>
       ),
       image: '',
-      command: ({ editor, range }: CommandProps) => {
-        editor
-          .chain()
-          .focus()
-          .deleteRange(range)
-          .setActionButton('iframe-soundcloud')
-          .run();
-      },
+      command: ({ editor, range }: CommandProps) =>
+        insertCommands.soundcloud(editor, range),
     },
     {
       title: '2 Columns',
@@ -395,14 +315,7 @@ export const getSuggestionItems = ({
       searchTerms: ['col', 'column', '2', 'layout'],
       icon: <LucideIcon name="Columns2" size={'md'} />,
       image: '',
-      command: ({ editor }: CommandProps) => {
-        editor
-          .chain()
-          .focus()
-          .setColumns(2)
-          .focus(editor.state.selection.head - 1)
-          .run();
-      },
+      command: ({ editor }: CommandProps) => insertCommands.columns2(editor),
     },
     {
       title: '3 Columns',
@@ -410,14 +323,7 @@ export const getSuggestionItems = ({
       searchTerms: ['col', 'column', '3', 'layout'],
       icon: <LucideIcon name="Columns3" size={'md'} />,
       image: '',
-      command: ({ editor }: CommandProps) => {
-        editor
-          .chain()
-          .focus()
-          .setColumns(3)
-          .focus(editor.state.selection.head - 1)
-          .run();
-      },
+      command: ({ editor }: CommandProps) => insertCommands.columns3(editor),
     },
   ];
   return items.filter((item) => {

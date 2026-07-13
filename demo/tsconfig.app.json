@@ -19,7 +19,9 @@
     "strict": true,
     "noUnusedLocals": true,
     "noUnusedParameters": true,
-    "noFallthroughCasesInSwitch": true
+    "noFallthroughCasesInSwitch": true,
+    "types": []
   },
-  "include": ["src", "../package/crypto"]
+  "include": ["src", "../package/crypto"],
+  "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
 }
