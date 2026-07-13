@@ -585,6 +585,9 @@ export class SyncManager {
           onMembershipChange: () => {
             // Room membership changes are handled by socketClient internally
           },
+          onPresenceChange: (collaborators) => {
+            this.callbacksRef?.onCollaboratorsChange?.(collaborators);
+          },
           onSessionTerminated: () => {
             this.resetInternalState();
             this.send({

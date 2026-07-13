@@ -253,7 +253,6 @@ interface UseTabEditorArgs {
   isPresentationMode?: boolean;
   onInvalidContentError?: DdocProps['onInvalidContentError'];
   ignoreCorruptedData?: boolean;
-  onCollaboratorChange?: DdocProps['onCollaboratorChange'];
   onConnect: (connectConfig: CollabConnectionConfig) => void;
   onDisconnect: () => void;
   isIndexeddbSynced: boolean;
@@ -304,7 +303,6 @@ export const useTabEditor = ({
   isPresentationMode,
   onInvalidContentError,
   ignoreCorruptedData,
-  onCollaboratorChange,
   onConnect,
   onDisconnect,
   isIndexeddbSynced,
@@ -929,7 +927,6 @@ export const useTabEditor = ({
     awareness,
     collaboration,
     collaborationCleanupRef,
-    onCollaboratorChange,
   });
 
   // ZOOM handler
@@ -1869,7 +1866,6 @@ interface UseExtensionSyncWithCollaborationArgs {
   awareness?: any;
   collaboration?: CollaborationProps;
   collaborationCleanupRef: MutableRefObject<() => void>;
-  onCollaboratorChange: DdocProps['onCollaboratorChange'];
 }
 
 const useExtensionSyncWithCollaboration = ({
@@ -1878,13 +1874,10 @@ const useExtensionSyncWithCollaboration = ({
   awareness,
   collaboration,
   collaborationCleanupRef,
-  onCollaboratorChange,
 }: UseExtensionSyncWithCollaborationArgs) => {
   const collabEnabled = collaboration?.enabled === true;
   const session = collabEnabled ? collaboration.session : null;
 
-  const onCollaboratorChangeRef = useRef(onCollaboratorChange);
-  onCollaboratorChangeRef.current = onCollaboratorChange;
   const userColorRef = useRef(
     usercolors[Math.floor(Math.random() * usercolors.length)],
   );
@@ -1948,21 +1941,7 @@ const useExtensionSyncWithCollaboration = ({
     });
     editor.registerPlugin(plugin);
 
-    // Track collaborators via awareness updates
-    const updateCollaborators = () => {
-      const users = Array.from(
-        awareness.states as Map<number, Record<string, any>>,
-      ).map(([clientId, state]) => ({
-        clientId,
-        ...(state.user || {}),
-      }));
-      onCollaboratorChangeRef.current?.(users);
-    };
-    awareness.on('update', updateCollaborators);
-    updateCollaborators();
-
     collaborationCleanupRef.current = () => {
-      awareness.off('update', updateCollaborators);
       if (!editor.isDestroyed) {
         editor.unregisterPlugin(yCursorPluginKey);
       }
