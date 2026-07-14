@@ -24,6 +24,23 @@ export interface CollabConnectionConfig {
   identityToken?: string;
   /** Host signal (owner-only): the identity contract address the server reads to resolve the on-chain signingDid that verifies identityToken. */
   identityContractAddress?: string;
+  /** Host signal (non-owner editor): the gate-minted edit-admission UCAN, forwarded on /auth so the
+   *  server admits this connection as a GP-rail editor. Opaque to the package. */
+  editUcan?: string;
+  /** Host signal (non-owner editor): re-mints a CURRENT-epoch editUcan. Called at every /auth
+   *  (incl. reconnect after a force-drop), so an editor whose epoch was bumped re-admits with a
+   *  fresh claim and a demoted member resolves to undefined (→ dropped to viewer). If present it
+   *  overrides `editUcan`; if absent, the static `editUcan` is used. Opaque to the package. */
+  refreshEditClaim?: () => Promise<string | undefined>;
+  /** Host signal: an anonymous per-connection actor handle (public rail). Record-only; opaque. */
+  actorHandle?: string;
+  /** Host signal (editor): produces the view-plane mirror ciphertext from the live Yjs state. The app
+   *  AES-GCM-encrypts `{ file: base64(yjsUpdate), source }` under the fileKey in the publish wire
+   *  format. Absent ⇒ the mirror is not written. The package never sees the fileKey or the crypto. */
+  encryptMirror?: (yjsUpdate: Uint8Array) => Promise<string>;
+  /** Host signal: the fileKey's rotation epoch (the gate `currentEpoch` / fileKey version — NOT
+   *  `editGrantEpoch`; default 0 for non-rotating plain-public docs). */
+  fileKeyEpoch?: number;
   ownerEdSecret?: string;
   contractAddress?: string;
   ownerAddress?: string;
@@ -145,6 +162,8 @@ export enum ServerErrorCode {
   NOT_AUTHENTICATED = 'NOT_AUTHENTICATED',
   DB_ERROR = 'DB_ERROR',
   INTERNAL_ERROR = 'INTERNAL_ERROR',
+  JOIN_DISABLED = 'JOIN_DISABLED',
+  EDIT_REVOKED = 'EDIT_REVOKED',
 }
 
 export interface AckResponse<T = Record<string, any>> {
@@ -196,7 +215,11 @@ export interface ISocketInitConfig {
   onDisconnect: () => void;
   onSocketDropped: () => void;
   onError: (err: Error) => void;
-  onHandShakeError: (err: Error, statusCode?: number) => void;
+  onHandShakeError: (
+    err: Error,
+    statusCode?: number,
+    errorCode?: ServerErrorCode,
+  ) => void;
   onContentUpdate: (data: {
     id: string;
     data: string;
@@ -238,4 +261,6 @@ export interface IAuthArgs {
   ownerIdentityDid?: string;
   identityToken?: string;
   identityContractAddress?: string;
+  editUcan?: string;
+  actorHandle?: string;
 }
