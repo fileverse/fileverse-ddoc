@@ -1,6 +1,18 @@
 import { EditorContent, isTextSelection } from '@tiptap/react';
 import { EditorBubbleMenu } from './components/editor-bubble-menu/editor-bubble-menu';
 import { DdocProps } from './types';
+import type { CollaborationProps } from './sync-local/types';
+
+// A LIVE collaboration session (peers/presence — what users know as "real-time
+// collab mode") vs a durable background connection (connectOnOpen sync, which
+// every doc now has). UI restrictions — slides, split view, comment surfaces —
+// key off the live session; sync plumbing keys off `enabled`. Hosts that
+// predate `livePresence` never send it → fall back to `enabled`, preserving
+// their old semantics.
+const isLiveCollabSession = (collaboration?: CollaborationProps): boolean =>
+  Boolean(
+    collaboration?.enabled && (collaboration.connection.livePresence ?? true),
+  );
 import { ColumnsMenu } from './extensions/multi-column/menus';
 import { EditingProvider } from './hooks/use-editing-context';
 import EditorToolBar from './components/editor-toolbar';
@@ -361,10 +373,11 @@ const DdocEditor = forwardRef(
     // Split View (markdown left, read-only doc right). Disabled in preview.
     // Desktop-only for v1: two side-by-side panes don't fit below the 960px
     // `mobile` breakpoint (which also hides the toolbar that holds the toggle).
-    // Disabled during collaboration: the markdown→doc sync is a one-way full-doc
-    // replace, so editing the left pane would clobber a collaborator's changes.
+    // Disabled during a LIVE collaboration session: the markdown→doc sync is a
+    // one-way full-doc replace, so editing the left pane would clobber a
+    // collaborator's changes. A durable-only connection (no live peers) is fine.
     const canUseSplitView = useMediaQuery('(min-width: 960px)');
-    const isCollabEnabled = Boolean(collaboration?.enabled);
+    const isCollabEnabled = isLiveCollabSession(collaboration);
     const isSplitViewActive =
       Boolean(isSplitView) &&
       !isPreviewMode &&
@@ -733,7 +746,7 @@ const DdocEditor = forwardRef(
           <EditorToolBar
             isPresentationMode={isPresentationMode}
             setIsPresentationMode={handlePresentationMode}
-            enableCollaboration={collaboration?.enabled}
+            enableCollaboration={isLiveCollabSession(collaboration)}
             onError={onError}
             editor={editor}
             zoomLevel={zoomLevel}
@@ -1055,7 +1068,9 @@ const DdocEditor = forwardRef(
                                   ipfsImageFetchFn={ipfsImageFetchFn}
                                   fetchV1ImageFn={fetchV1ImageFn}
                                   ipfsImageUploadFn={ipfsImageUploadFn}
-                                  enableCollaboration={collaboration?.enabled}
+                                  enableCollaboration={isLiveCollabSession(
+                                    collaboration,
+                                  )}
                                   isCollabDocOwner={
                                     collaboration?.enabled
                                       ? collaboration.connection.isOwner
@@ -1284,7 +1299,9 @@ const DdocEditor = forwardRef(
                               Boolean(commentDrawerOpen) ||
                               Boolean(disableInlineComment)
                             }
-                            isCollaborationEnabled={collaboration?.enabled}
+                            isCollaborationEnabled={isLiveCollabSession(
+                              collaboration,
+                            )}
                           />
                         </div>
                       )}
@@ -1359,7 +1376,7 @@ const DdocEditor = forwardRef(
                 onTabChange={setActiveTabId}
                 isPreviewMode={isPreviewMode}
                 tabs={tabs}
-                isCollaborationEnabled={collaboration?.enabled || false}
+                isCollaborationEnabled={isLiveCollabSession(collaboration)}
               />
             )}
 
