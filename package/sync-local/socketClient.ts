@@ -35,6 +35,9 @@ interface ISocketClientConfig {
   encryptedTitle?: string;
   identityToken?: string;
   identityContractAddress?: string;
+  editUcan?: string;
+  refreshEditClaim?: () => Promise<string | undefined>;
+  actorHandle?: string;
   onHandshakeData?: (response: { data: AckResponse; roomKey: string }) => void;
   roomInfo?: {
     documentTitle: string;
@@ -74,6 +77,9 @@ export class SocketClient {
   private encryptedTitle?: string;
   private identityToken?: string;
   private identityContractAddress?: string;
+  private editUcan?: string;
+  private refreshEditClaim?: () => Promise<string | undefined>;
+  private actorHandle?: string;
   private roomKey: string;
   private roomInfo?: {
     documentTitle: string;
@@ -114,6 +120,10 @@ export class SocketClient {
     if (config.identityToken) this.identityToken = config.identityToken;
     if (config.identityContractAddress)
       this.identityContractAddress = config.identityContractAddress;
+    if (config.editUcan) this.editUcan = config.editUcan;
+    if (config.refreshEditClaim)
+      this.refreshEditClaim = config.refreshEditClaim;
+    if (config.actorHandle) this.actorHandle = config.actorHandle;
     if (config.encryptedTitle) this.encryptedTitle = config.encryptedTitle;
     if (config.onHandshakeData) this._onHandshakeData = config.onHandshakeData;
     if (config.roomInfo) this.roomInfo = config.roomInfo;
@@ -226,6 +236,21 @@ export class SocketClient {
       '/documents/snapshot',
       args,
     )) as SnapshotResponse;
+  }
+
+  async sendMirrorSnapshot({
+    data,
+    fileKeyEpoch,
+  }: {
+    data: string;
+    fileKeyEpoch: number;
+  }) {
+    const args = {
+      data,
+      fileKeyEpoch,
+      documentId: this.roomId,
+    };
+    return await this._emitWithAck('/documents/mirror-snapshot', args);
   }
 
   async setDocumentMeta(): Promise<void> {
@@ -416,6 +441,14 @@ export class SocketClient {
     if (this.identityContractAddress)
       args.identityContractAddress = this.identityContractAddress;
 
+    // Re-mint on every /auth (incl. reconnect) so a force-dropped-then-reconnected editor
+    // presents a current-epoch editUcan; fall back to the static claim if no refresher.
+    const editUcan = this.refreshEditClaim
+      ? await this.refreshEditClaim()
+      : this.editUcan;
+    if (editUcan) args.editUcan = editUcan;
+    if (this.actorHandle) args.actorHandle = this.actorHandle;
+
     const response = await this._emitWithAck('/auth', args);
 
     // Always notify consumer with handshake data (for room info, link copying, etc.)
@@ -430,7 +463,7 @@ export class SocketClient {
         (response?.error || 'Unknown error') +
         `, statusCode: ${response?.statusCode}`;
       const error = new Error(message);
-      config.onHandShakeError(error, response.statusCode);
+      config.onHandShakeError(error, response.statusCode, response.errorCode);
       return;
     }
 
@@ -557,7 +590,7 @@ export class SocketClient {
         this._socket?.emit('pong', { message: 'pong' });
       });
 
-      this._socket.on('disconnect', () => {
+      this._socket.on('disconnect', (reason) => {
         console.error('SocketAPI: socket disconnected');
         this._webSocketStatus = SocketStatusEnum.CLOSED;
 
@@ -578,6 +611,12 @@ export class SocketClient {
 
         if (this._isIntentionalDisconnect) {
           config.onDisconnect();
+        } else if (reason === 'io server disconnect') {
+          // Server force-dropped us (e.g. edit revoked). socket.io will NOT auto-reconnect
+          // this reason, so reconnect once to re-auth and learn why (→ 403 → terminated).
+          // Do NOT call onSocketDropped here — staying in the current state lets the ensuing
+          // SESSION_TERMINATED land from 'ready'.
+          this._socket?.connect();
         } else {
           // Unintentional drop — notify SyncManager so it can transition to reconnecting
           config.onSocketDropped();

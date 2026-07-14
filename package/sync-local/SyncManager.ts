@@ -17,6 +17,7 @@ import {
   CollabEvent,
   CollabContext,
   CollabError,
+  ServerErrorCode,
 } from './types';
 import {
   transition,
@@ -37,6 +38,11 @@ export class SyncManager {
   private socketClient: SocketClient | null = null;
   private roomKey = '';
   private roomKeyBytes: Uint8Array | null = null;
+  private encryptMirror: ((yjsUpdate: Uint8Array) => Promise<string>) | null =
+    null;
+  private fileKeyEpoch = 0;
+  private mirrorIdleTimer: ReturnType<typeof setTimeout> | null = null;
+  private readonly MIRROR_IDLE_MS = 4000;
   private isOwner = false;
   private updateQueue: Uint8Array[] = [];
   private contentTobeAppliedQueue: Array<{ data: string; id?: string }> = [];
@@ -191,6 +197,9 @@ export class SyncManager {
     this.roomKeyBytes = toUint8Array(config.roomKey);
     this.isOwner = config.isOwner;
 
+    this.encryptMirror = config.encryptMirror ?? null;
+    this.fileKeyEpoch = config.fileKeyEpoch ?? 0;
+
     this.socketClient = new SocketClient({
       wsUrl: config.wsUrl,
       roomKey: config.roomKey,
@@ -203,6 +212,9 @@ export class SyncManager {
       encryptedTitle: config.encryptedTitle,
       identityToken: config.identityToken,
       identityContractAddress: config.identityContractAddress,
+      editUcan: config.editUcan,
+      refreshEditClaim: config.refreshEditClaim,
+      actorHandle: config.actorHandle,
       onHandshakeData: this.callbacksRef?.onHandshakeData,
       roomInfo: config.roomInfo,
     });
@@ -366,6 +378,10 @@ export class SyncManager {
       ?.sendUpdate({ update: encrypted })
       .then((response) => {
         if (!response?.status) {
+          if (this.isRevocationResponse(response)) {
+            this.send({ type: 'SESSION_TERMINATED', reason: 'EDIT_REVOKED' });
+            return;
+          }
           console.error('SyncManager: server rejected update', response?.error);
           return;
         }
@@ -374,6 +390,17 @@ export class SyncManager {
       .catch((err) => {
         console.error('SyncManager: update send failed', err);
       });
+  }
+
+  private isRevocationResponse(response?: {
+    statusCode?: number;
+    errorCode?: ServerErrorCode;
+  }): boolean {
+    return (
+      response?.statusCode === 403 &&
+      (response.errorCode === ServerErrorCode.JOIN_DISABLED ||
+        response.errorCode === ServerErrorCode.EDIT_REVOKED)
+    );
   }
 
   // Count a successfully-sent update toward the snapshot cadence and author a snapshot once
@@ -394,6 +421,32 @@ export class SyncManager {
         console.error('SyncManager: snapshot authoring failed', err);
       });
     }
+    this.scheduleMirror();
+  }
+
+  // View plane: any connected editor writes a fileKey-encrypted full-state snapshot on an
+  // editing-idle debounce (trailing) — active editing keeps resetting the timer, so exactly
+  // one write lands once typing pauses. Best-effort; NOT owner-gated (unlike authorSnapshot).
+  private scheduleMirror(): void {
+    if (!this.encryptMirror) return;
+    if (this.mirrorIdleTimer) clearTimeout(this.mirrorIdleTimer);
+    this.mirrorIdleTimer = setTimeout(() => {
+      this.authorMirror().catch((err) =>
+        console.error('SyncManager: mirror authoring failed', err),
+      );
+    }, this.MIRROR_IDLE_MS);
+  }
+
+  private async authorMirror(): Promise<void> {
+    if (!this.encryptMirror || !this.isConnected) return;
+    // The app's closure AES-GCM-encrypts { file, source } under the fileKey in the publish wire
+    // format, so a viewer reads it with the same penumbraDecryptFileGP path. The package
+    // supplies the live full-state; it never sees the fileKey or the crypto.
+    const data = await this.encryptMirror(Y.encodeStateAsUpdate(this.ydoc));
+    await this.socketClient?.sendMirrorSnapshot({
+      data,
+      fileKeyEpoch: this.fileKeyEpoch,
+    });
   }
 
   // The final merged delta for a hard tab-close beacon: any queued-but-unsent updates,
@@ -413,6 +466,10 @@ export class SyncManager {
     if (this.flushTimer) {
       clearTimeout(this.flushTimer);
       this.flushTimer = null;
+    }
+    if (this.mirrorIdleTimer) {
+      clearTimeout(this.mirrorIdleTimer);
+      this.mirrorIdleTimer = null;
     }
     // Route-change/unmount can't await and the socket is about to close, so beacon the
     // last batch (keepalive survives teardown) and clear the queue so an awaited flush
@@ -555,7 +612,7 @@ export class SyncManager {
               this.send({ type: 'SOCKET_DROPPED' });
             }
           },
-          onHandShakeError: (e, statusCode) => {
+          onHandShakeError: (e, statusCode, errorCode) => {
             // Classify error by statusCode
             if (statusCode === 404) {
               this.socketClient?.disconnect();
@@ -567,6 +624,21 @@ export class SyncManager {
               if (!settled) {
                 settled = true;
                 // Don't reject — the state machine handles this
+                resolve();
+              }
+              return;
+            }
+
+            if (
+              statusCode === 403 &&
+              (errorCode === ServerErrorCode.JOIN_DISABLED ||
+                errorCode === ServerErrorCode.EDIT_REVOKED)
+            ) {
+              this.socketClient?.disconnect();
+              this.resetInternalState();
+              this.send({ type: 'SESSION_TERMINATED', reason: 'EDIT_REVOKED' });
+              if (!settled) {
+                settled = true;
                 resolve();
               }
               return;
@@ -796,6 +868,10 @@ export class SyncManager {
     if (!syncStillCurrent()) return;
 
     if (!response?.status) {
+      if (this.isRevocationResponse(response)) {
+        this.send({ type: 'SESSION_TERMINATED', reason: 'EDIT_REVOKED' });
+        return;
+      }
       const errorMsg = response?.error || 'Server rejected update';
       throw new Error(
         `Failed to broadcast local contents: ${errorMsg}${response?.statusCode ? ` (${response.statusCode})` : ''}`,
@@ -843,6 +919,10 @@ export class SyncManager {
         });
 
         if (!response?.status) {
+          if (this.isRevocationResponse(response)) {
+            this.send({ type: 'SESSION_TERMINATED', reason: 'EDIT_REVOKED' });
+            return;
+          }
           const errorMsg = response?.error || 'Server rejected update';
           throw new Error(
             `Failed to send update: ${errorMsg}${response?.statusCode ? ` (${response.statusCode})` : ''}`,
@@ -1011,6 +1091,10 @@ export class SyncManager {
     if (this.flushTimer) {
       clearTimeout(this.flushTimer);
       this.flushTimer = null;
+    }
+    if (this.mirrorIdleTimer) {
+      clearTimeout(this.mirrorIdleTimer);
+      this.mirrorIdleTimer = null;
     }
     this.socketClient = null;
     this.updateQueue = [];
