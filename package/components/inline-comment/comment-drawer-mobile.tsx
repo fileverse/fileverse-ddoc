@@ -17,7 +17,6 @@ interface CommentDrawerMobileProps {
   canGoToNextMobileComment: boolean;
   canGoToPreviousMobileComment: boolean;
   comments: IComment[];
-  isCollaborationEnabled: boolean;
   isCommentMobileFocused: boolean;
   isConnected: boolean;
   isDiscardCommentOverlayVisible: boolean;
@@ -56,7 +55,6 @@ export const CommentDrawerMobile = ({
   canGoToNextMobileComment,
   canGoToPreviousMobileComment,
   comments,
-  isCollaborationEnabled,
   isCommentMobileFocused,
   isConnected,
   isDiscardCommentOverlayVisible,
@@ -171,7 +169,7 @@ export const CommentDrawerMobile = ({
             <h2 className="text-heading-sm">All Comments</h2>
             <div className="flex gap-sm">
               <IconButton
-                disabled={!isConnected || isCollaborationEnabled}
+                disabled={!isConnected}
                 icon={'MessageSquarePlus'}
                 onClick={onStartNewMobileComment}
                 variant="ghost"
@@ -203,7 +201,6 @@ export const CommentDrawerMobile = ({
             tabNameById={tabNameById}
             onCommentFocus={onCommentFocus}
             showNewCommentInput={false}
-            isCollaborationEnabled={isCollaborationEnabled}
           />
         </div>
       </div>

@@ -21,7 +21,6 @@ export const CommentDrawer = ({
   onTabChange,
   isPreviewMode,
   tabs,
-  isCollaborationEnabled,
 }: CommentDrawerProps) => {
   const comments = useCommentStore((s) => s.initialComments);
   const isConnected = useCommentStore((s) => s.isConnected);
@@ -131,7 +130,6 @@ export const CommentDrawer = ({
           canGoToNextMobileComment={canGoToNextMobileComment}
           canGoToPreviousMobileComment={canGoToPreviousMobileComment}
           comments={comments}
-          isCollaborationEnabled={isCollaborationEnabled}
           isCommentMobileFocused={isCommentMobileFocused}
           isConnected={isConnected}
           isDiscardCommentOverlayVisible={isDiscardCommentOverlayVisible}
@@ -181,7 +179,6 @@ export const CommentDrawer = ({
           commentType={commentType}
           commentTypeOptions={commentTypeOptions}
           filteredComments={filteredComments}
-          isCollaborationEnabled={isCollaborationEnabled}
           isCommentTypeSelectOpen={isCommentTypeSelectOpen}
           isConnected={isConnected}
           isNavbarVisible={isNavbarVisible}

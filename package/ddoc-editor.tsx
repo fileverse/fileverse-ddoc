@@ -1068,9 +1068,6 @@ const DdocEditor = forwardRef(
                                   ipfsImageFetchFn={ipfsImageFetchFn}
                                   fetchV1ImageFn={fetchV1ImageFn}
                                   ipfsImageUploadFn={ipfsImageUploadFn}
-                                  enableCollaboration={isLiveCollabSession(
-                                    collaboration,
-                                  )}
                                   isCollabDocOwner={
                                     collaboration?.enabled
                                       ? collaboration.connection.isOwner
@@ -1299,9 +1296,6 @@ const DdocEditor = forwardRef(
                               Boolean(commentDrawerOpen) ||
                               Boolean(disableInlineComment)
                             }
-                            isCollaborationEnabled={isLiveCollabSession(
-                              collaboration,
-                            )}
                           />
                         </div>
                       )}
@@ -1376,7 +1370,6 @@ const DdocEditor = forwardRef(
                 onTabChange={setActiveTabId}
                 isPreviewMode={isPreviewMode}
                 tabs={tabs}
-                isCollaborationEnabled={isLiveCollabSession(collaboration)}
               />
             )}
 

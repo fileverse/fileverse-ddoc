@@ -11,13 +11,11 @@ interface CommentReplyInputProps {
   commentId: string;
   commentUsername?: string;
   replyCount: number;
-  isCollaborationEnabled: boolean;
 }
 
 export const CommentReplyInput = ({
   commentId,
   replyCount,
-  isCollaborationEnabled,
   commentUsername,
 }: CommentReplyInputProps) => {
   const reply = useCommentStore((s) => s.reply);
@@ -74,7 +72,7 @@ export const CommentReplyInput = ({
         className={cn(
           'border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]',
           isBelow1280px && 'items-center justify-between ',
-          isCollaborationEnabled ? 'color-bg-disabled' : 'color-bg-default',
+          'color-bg-default',
         )}
       >
         <Avatar
@@ -94,13 +92,11 @@ export const CommentReplyInput = ({
           onInput={(event) => resizeInlineCommentTextarea(event.currentTarget)}
           className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
           placeholder={
-            isCollaborationEnabled
-              ? 'Replies off in live collaboration (coming soon)'
-              : replyCount === 0
-                ? `Reply to @${nameFormatter(commentUsername ?? 'comment')}`
-                : replyCount >= 2
-                  ? `Add a reply`
-                  : `Reply `
+            replyCount === 0
+              ? `Reply to @${nameFormatter(commentUsername ?? 'comment')}`
+              : replyCount >= 2
+                ? `Add a reply`
+                : `Reply `
           }
           id={commentId}
           onChange={(event) => {
@@ -108,11 +104,10 @@ export const CommentReplyInput = ({
             resizeInlineCommentTextarea(event.currentTarget);
           }}
           onKeyDown={handleReplyKeyDown}
-          disabled={isCollaborationEnabled}
         />
         <IconButton
           onClick={() => {
-            if (isSendDisabled || isCollaborationEnabled) {
+            if (isSendDisabled) {
               return;
             }
             handleReplySubmit();
@@ -150,7 +145,7 @@ export const CommentReplyInput = ({
         <Button
           data-testid="comment-reply-send"
           className="w-20 min-w-20"
-          disabled={isSendDisabled || isCollaborationEnabled}
+          disabled={isSendDisabled}
           onClick={(e) => {
             e.stopPropagation();
             handleReplySubmit();

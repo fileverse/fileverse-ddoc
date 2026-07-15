@@ -18,7 +18,6 @@ export interface CommentFloatingContainerProps {
   scrollContainerRef: RefObject<HTMLDivElement>;
   tabName: string;
   isHidden: boolean;
-  isCollaborationEnabled?: boolean;
 }
 
 export interface FloatingCardShellProps {
@@ -41,7 +40,6 @@ export interface ThreadFloatingCardProps {
   tabName: string;
   isHidden: boolean;
   registerCardNode: RegisterCardNode;
-  isCollaborationEnabled?: boolean;
 }
 
 export interface SuggestionDraftFloatingCardProps {

@@ -37,7 +37,6 @@ export type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
     _data: IpfsImageFetchPayload,
   ) => Promise<{ url: string; file: File }>;
   fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
-  enableCollaboration?: boolean;
   isCollabDocOwner?: boolean;
 };
 
