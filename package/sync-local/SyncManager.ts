@@ -379,7 +379,10 @@ export class SyncManager {
       .then((response) => {
         if (!response?.status) {
           if (this.isRevocationResponse(response)) {
-            this.send({ type: 'SESSION_TERMINATED', reason: 'EDIT_REVOKED' });
+            // Soft revocation: re-queue the unacked updates ahead of anything queued since, then
+            // reconnect to re-mint. No queue loss; a real demote re-surfaces as a terminal handshake 403.
+            this.updateQueue = [...updates, ...this.updateQueue];
+            this.handleWriteRevocation(response);
             return;
           }
           console.error('SyncManager: server rejected update', response?.error);
@@ -401,6 +404,32 @@ export class SyncManager {
       (response.errorCode === ServerErrorCode.JOIN_DISABLED ||
         response.errorCode === ServerErrorCode.EDIT_REVOKED)
     );
+  }
+
+  private classifyRevocation(_response?: {
+    statusCode?: number;
+    errorCode?: ServerErrorCode;
+  }): 'soft' | 'terminal' {
+    // A write-time 403 EDIT_REVOKED/JOIN_DISABLED can't be told apart from a merely-stale claim,
+    // so every live-write revocation is soft: reconnect + re-mint. Terminality is decided at the
+    // handshake, where a demoted refresher yields no token and the server 403 is final.
+    return 'soft';
+  }
+
+  private handleWriteRevocation(response?: {
+    statusCode?: number;
+    errorCode?: ServerErrorCode;
+  }): void {
+    if (this.classifyRevocation(response) === 'terminal') {
+      this.send({ type: 'SESSION_TERMINATED', reason: 'EDIT_REVOKED' });
+      return;
+    }
+    // Soft: leave the live-write states first so no further writes escape, then reconnect to
+    // force a fresh handshake (re-minting the editUcan via refreshEditClaim).
+    if (this._status === 'ready' || this._status === 'syncing') {
+      this.send({ type: 'SOCKET_DROPPED' });
+    }
+    this.socketClient?.reauth();
   }
 
   // Count a successfully-sent update toward the snapshot cadence and author a snapshot once
@@ -869,7 +898,7 @@ export class SyncManager {
 
     if (!response?.status) {
       if (this.isRevocationResponse(response)) {
-        this.send({ type: 'SESSION_TERMINATED', reason: 'EDIT_REVOKED' });
+        this.handleWriteRevocation(response);
         return;
       }
       const errorMsg = response?.error || 'Server rejected update';
@@ -886,7 +915,10 @@ export class SyncManager {
 
     try {
       while (this.updateQueue.length > 0) {
-        if (!this.isConnected) break;
+        // Drain only while actively writable. A soft revocation reroutes to `reconnecting`
+        // (bouncing the socket to re-mint the edit claim); stop here rather than send on the
+        // dropped socket — the reconnect resumes the drain with the queue intact.
+        if (this._status !== 'ready' && this._status !== 'syncing') break;
         await this.processNextUpdate();
       }
 
@@ -920,7 +952,7 @@ export class SyncManager {
 
         if (!response?.status) {
           if (this.isRevocationResponse(response)) {
-            this.send({ type: 'SESSION_TERMINATED', reason: 'EDIT_REVOKED' });
+            this.handleWriteRevocation(response);
             return;
           }
           const errorMsg = response?.error || 'Server rejected update';

@@ -36,7 +36,9 @@ interface ISocketClientConfig {
   identityToken?: string;
   identityContractAddress?: string;
   editUcan?: string;
-  refreshEditClaim?: () => Promise<string | undefined>;
+  refreshEditClaim?: () => Promise<
+    { status: 'ok'; token: string } | { status: 'demoted' } | { status: 'unavailable' }
+  >;
   actorHandle?: string;
   onHandshakeData?: (response: { data: AckResponse; roomKey: string }) => void;
   roomInfo?: {
@@ -78,7 +80,10 @@ export class SocketClient {
   private identityToken?: string;
   private identityContractAddress?: string;
   private editUcan?: string;
-  private refreshEditClaim?: () => Promise<string | undefined>;
+  private refreshEditClaim?: () => Promise<
+    { status: 'ok'; token: string } | { status: 'demoted' } | { status: 'unavailable' }
+  >;
+  private lastGoodEditUcan?: string;
   private actorHandle?: string;
   private roomKey: string;
   private roomInfo?: {
@@ -121,6 +126,7 @@ export class SocketClient {
     if (config.identityContractAddress)
       this.identityContractAddress = config.identityContractAddress;
     if (config.editUcan) this.editUcan = config.editUcan;
+    this.lastGoodEditUcan = config.editUcan;
     if (config.refreshEditClaim)
       this.refreshEditClaim = config.refreshEditClaim;
     if (config.actorHandle) this.actorHandle = config.actorHandle;
@@ -283,6 +289,20 @@ export class SocketClient {
     this._webSocketStatus = SocketStatusEnum.CLOSED;
   };
 
+  // Re-establishes the connection so '/server/handshake' → '/auth' re-runs (re-minting the
+  // editUcan via refreshEditClaim), without tearing down editor/SyncManager state.
+  public reauth = () => {
+    if (!this._socket) return;
+    // Live socket (soft revocation): the server won't re-emit '/server/handshake' on a still-open
+    // connection, so bounce it — disconnect().connect() forces a fresh handshake + editUcan re-mint.
+    // Already-dropped socket (server force-drop / reconnecting): just reopen.
+    if (this._socket.connected) {
+      this._socket.disconnect().connect();
+    } else {
+      this._socket.connect();
+    }
+  };
+
   public terminateSession = async () => {
     try {
       const ownerToken = await this.getOwnerToken();
@@ -441,11 +461,21 @@ export class SocketClient {
     if (this.identityContractAddress)
       args.identityContractAddress = this.identityContractAddress;
 
-    // Re-mint on every /auth (incl. reconnect) so a force-dropped-then-reconnected editor
-    // presents a current-epoch editUcan; fall back to the static claim if no refresher.
-    const editUcan = this.refreshEditClaim
-      ? await this.refreshEditClaim()
-      : this.editUcan;
+    // Re-mint on every /auth (incl. reconnect). ok → use + cache the fresh token; unavailable
+    // (transient/network) → fall back to the last-good claim so a blip doesn't self-demote;
+    // demoted → leave undefined so the ensuing 403 is genuinely terminal.
+    let editUcan: string | undefined;
+    if (this.refreshEditClaim) {
+      const r = await this.refreshEditClaim();
+      if (r.status === 'ok') {
+        editUcan = r.token;
+        this.lastGoodEditUcan = r.token;
+      } else if (r.status === 'unavailable') {
+        editUcan = this.lastGoodEditUcan ?? this.editUcan;
+      }
+    } else {
+      editUcan = this.editUcan;
+    }
     if (editUcan) args.editUcan = editUcan;
     if (this.actorHandle) args.actorHandle = this.actorHandle;
 

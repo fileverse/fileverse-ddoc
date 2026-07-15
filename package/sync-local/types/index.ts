@@ -28,10 +28,12 @@ export interface CollabConnectionConfig {
    *  server admits this connection as a GP-rail editor. Opaque to the package. */
   editUcan?: string;
   /** Host signal (non-owner editor): re-mints a CURRENT-epoch editUcan. Called at every /auth
-   *  (incl. reconnect after a force-drop), so an editor whose epoch was bumped re-admits with a
-   *  fresh claim and a demoted member resolves to undefined (→ dropped to viewer). If present it
-   *  overrides `editUcan`; if absent, the static `editUcan` is used. Opaque to the package. */
-  refreshEditClaim?: () => Promise<string | undefined>;
+   *  (incl. reconnect after a force-drop). Tri-state: `ok` (fresh token; overrides the static
+   *  `editUcan`), `demoted` (no longer an editor → terminal, drop to viewer), or `unavailable`
+   *  (transient/network → retry on the last-good claim). Opaque to the package. */
+  refreshEditClaim?: () => Promise<
+    { status: 'ok'; token: string } | { status: 'demoted' } | { status: 'unavailable' }
+  >;
   /** Host signal: an anonymous per-connection actor handle (public rail). Record-only; opaque. */
   actorHandle?: string;
   /** Host signal (editor): produces the view-plane mirror ciphertext from the live Yjs state. The app
