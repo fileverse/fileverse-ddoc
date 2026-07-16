@@ -289,6 +289,7 @@ const DdocEditor = forwardRef(
       tocItems,
       setTocItems,
       terminateSession,
+      updateTitle,
       tabs,
       setTabs,
       activeTabId,
@@ -502,6 +503,12 @@ const DdocEditor = forwardRef(
           exportTriggerRef.current?.(format, name);
         },
         terminateSession,
+        updateSessionTitle: (args: {
+          encryptedTitle: string;
+          documentTitle: string;
+        }) => {
+          updateTitle(args);
+        },
       }),
 
       // eslint-disable-next-line react-hooks/exhaustive-deps

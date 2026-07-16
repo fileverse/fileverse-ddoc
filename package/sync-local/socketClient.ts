@@ -69,6 +69,7 @@ export class SocketClient {
   roomMembers: string[] = [];
   private _lastPresenceSignature = '';
   private _onPresenceChange?: (collaborators: IDocCollabUsers[]) => void;
+  private _pendingAwarenessUpdates: { data: any; roomId: string }[] = [];
   private collaborationKeyPair: ucans.EdKeypair | null = null;
   private ownerKeyPair?: ucans.EdKeypair;
   private contractAddress?: string;
@@ -142,6 +143,22 @@ export class SocketClient {
     if (this.awareness) this.awareness.off('update', this._recomputePresence);
     this.awareness = awareness;
     awareness.on('update', this._recomputePresence);
+    // Awareness is created at 'ready', after the handshake already tried (and
+    // skipped) the stamp — without this, first-connect states never carry a
+    // socketId and the whole roster renders as placeholders.
+    this._stampSocketId();
+    const pending = this._pendingAwarenessUpdates;
+    this._pendingAwarenessUpdates = [];
+    pending.forEach((d) => this._handleAwarenessUpdate(d));
+  }
+
+  // Invariant: whenever both an awareness and a live socket exist, the local
+  // 'socketId' awareness field matches socket.id. Re-stamping the same value
+  // still bumps the awareness clock, re-broadcasting the full local state.
+  private _stampSocketId() {
+    if (this.awareness && this._socket?.id) {
+      this.awareness.setLocalStateField('socketId', this._socket.id);
+    }
   }
 
   private _emitWithAck<T = any>(
@@ -271,6 +288,23 @@ export class SocketClient {
     });
   }
 
+  /** Owner rename mid-session: refresh the connect-frozen title artifacts (so
+   *  every later /auth re-sends current values), persist server-side, and let
+   *  the server broadcast /document/meta_update to room peers. */
+  async updateDocumentMeta(args: {
+    encryptedTitle: string;
+    documentTitle: string;
+  }): Promise<void> {
+    this.encryptedTitle = args.encryptedTitle;
+    if (this.roomInfo) this.roomInfo.documentTitle = args.documentTitle;
+    if (this._webSocketStatus !== SocketStatusEnum.CONNECTED) return;
+    await this._emitWithAck('/documents/meta', {
+      documentId: this.roomId,
+      editLock: this.editLock ?? null,
+      title: args.encryptedTitle,
+    });
+  }
+
   public async broadcastAwareness(awarenessUpdate: string) {
     if (this._webSocketStatus !== SocketStatusEnum.CONNECTED || !this._socket)
       return;
@@ -286,6 +320,7 @@ export class SocketClient {
   public disconnect = () => {
     this._isIntentionalDisconnect = true;
     this._webSocketStatus = SocketStatusEnum.CLOSED;
+    this._pendingAwarenessUpdates = [];
     if (!this._socket) return;
     this._socket.disconnect();
     this._socket = null;
@@ -510,14 +545,20 @@ export class SocketClient {
     // populated so the first emit is never an empty flash.
     await this._fetchRoomMembers().catch(() => {}); // retain last-known on fetch failure
     this._onPresenceChange = config.onPresenceChange;
-    if (this.awareness && this._socket?.id) {
-      this.awareness.setLocalStateField('socketId', this._socket.id);
-    }
+    this._stampSocketId();
     this._recomputePresence();
   };
 
   private _handleAwarenessUpdate = (data: { data: any; roomId: string }) => {
-    if (!this.awareness) return;
+    if (!this.awareness) {
+      // Awareness only exists once the session reaches 'ready'; peer identity
+      // broadcast in the window before that would be silently lost and only
+      // healed by the next ~15-30s awareness renewal. Hold and replay instead.
+      if (this._pendingAwarenessUpdates.length < 64) {
+        this._pendingAwarenessUpdates.push(data);
+      }
+      return;
+    }
 
     const key = this.roomKey;
     const encryptedPosition = data.data.position as string;
@@ -600,10 +641,22 @@ export class SocketClient {
         this._handleAwarenessUpdate(data);
       });
 
+      this._socket.on(
+        '/document/meta_update' as any,
+        (data: { roomId: string; title: string | null }) => {
+          if (data?.roomId !== this.roomId) return;
+          this.encryptedTitle = data.title ?? undefined;
+          config.onTitleUpdate?.(data.title ?? null);
+        },
+      );
+
       this._socket.on('/room/membership_change', (data) => {
         this._fetchRoomMembers()
           .then(() => this._recomputePresence())
           .catch(console.error);
+        // Re-broadcast our full awareness state so a late joiner gets our
+        // identity immediately instead of waiting for the next heartbeat.
+        this._stampSocketId();
         config.onMembershipChange(data);
       });
 

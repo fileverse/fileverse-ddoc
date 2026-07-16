@@ -128,6 +128,8 @@ export interface CollabCallbacks {
   onError?: (error: CollabError) => void;
   onCollaboratorsChange?: (collaborators: IDocCollabUsers[]) => void;
   onHandshakeData?: (data: { data: AckResponse; roomKey: string }) => void;
+  /** Live rename from the room owner; title is roomKey-encrypted. */
+  onTitleUpdate?: (encryptedTitle: string | null) => void;
 }
 
 /** Discriminated union — TypeScript enforces config+services only when enabled */
@@ -240,6 +242,7 @@ export interface ISocketInitConfig {
     roomId: string;
   }) => void;
   onPresenceChange?: (collaborators: IDocCollabUsers[]) => void;
+  onTitleUpdate?: (encryptedTitle: string | null) => void;
   onSessionTerminated: (data: { roomId: string }) => void;
   onReconnectFailed: () => void;
 }

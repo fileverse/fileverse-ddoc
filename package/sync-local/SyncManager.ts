@@ -284,6 +284,14 @@ export class SyncManager {
     await this.disconnectInternal();
   }
 
+  /** Owner rename mid-session — see SocketClient.updateDocumentMeta. */
+  async updateTitle(args: {
+    encryptedTitle: string;
+    documentTitle: string;
+  }): Promise<void> {
+    await this.socketClient?.updateDocumentMeta(args);
+  }
+
   async terminateSession(): Promise<void> {
     if (this._status === 'idle') return;
     await this.awaitFlush();
@@ -717,6 +725,9 @@ export class SyncManager {
           },
           onPresenceChange: (collaborators) => {
             this.callbacksRef?.onCollaboratorsChange?.(collaborators);
+          },
+          onTitleUpdate: (encryptedTitle) => {
+            this.callbacksRef?.onTitleUpdate?.(encryptedTitle);
           },
           onSessionTerminated: () => {
             this.resetInternalState();

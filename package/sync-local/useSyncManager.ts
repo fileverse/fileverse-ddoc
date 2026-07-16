@@ -134,6 +134,15 @@ export const useSyncManager = (config: SyncManagerConfig) => {
     manager.terminateSession();
   }, [manager]);
 
+  const updateTitle = useCallback(
+    (args: { encryptedTitle: string; documentTitle: string }) => {
+      manager.updateTitle(args).catch((err) => {
+        console.error('useSyncManager: updateTitle failed', err);
+      });
+    },
+    [manager],
+  );
+
   const isSyncing = collabState.status === 'syncing';
   const isReady = collabState.status === 'ready' && !!awareness;
 
@@ -154,6 +163,7 @@ export const useSyncManager = (config: SyncManagerConfig) => {
     connect,
     disconnect,
     terminateSession,
+    updateTitle,
     isReady,
     isSyncing,
     awareness,
