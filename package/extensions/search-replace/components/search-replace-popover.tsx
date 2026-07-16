@@ -90,7 +90,7 @@ const SearchReplace = ({
   }
 
   const handleSearchReplaceOnKeydown = (ev: KeyboardEvent) => {
-    if (ev.code === 'KeyF' && ev.metaKey) {
+    if (ev.code === 'KeyF' && ev.metaKey && !ev.shiftKey) {
       ev.preventDefault();
       if (editor) {
         setShowReplacePopoverWithData(editor);
