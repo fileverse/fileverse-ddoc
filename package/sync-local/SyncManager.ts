@@ -648,7 +648,9 @@ export class SyncManager {
             // Join-only (workspace member) connections degrade quietly: every handshake
             // rejection is a terminal no-session outcome, never an error surface. The
             // distinct ROOM_NOT_ESTABLISHED reason lets the host render read-only until
-            // the creator establishes the room.
+            // the creator establishes the room; a 403 revocation means the owner turned
+            // whole-team editing off (the post-kick reconnect exists to learn exactly
+            // this), so the host can surface it instead of a generic rejection.
             if (this.joinOnly) {
               this.socketClient?.disconnect();
               this.resetInternalState();
@@ -657,7 +659,11 @@ export class SyncManager {
                 reason:
                   errorCode === ServerErrorCode.ROOM_NOT_ESTABLISHED
                     ? 'ROOM_NOT_ESTABLISHED'
-                    : 'JOIN_REJECTED',
+                    : statusCode === 403 &&
+                        (errorCode === ServerErrorCode.JOIN_DISABLED ||
+                          errorCode === ServerErrorCode.EDIT_REVOKED)
+                      ? 'WORKSPACE_EDIT_DISABLED'
+                      : 'JOIN_REJECTED',
               });
               if (!settled) {
                 settled = true;
