@@ -44,6 +44,7 @@ export class SyncManager {
   private mirrorIdleTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly MIRROR_IDLE_MS = 4000;
   private isOwner = false;
+  private joinOnly = false;
   private updateQueue: Uint8Array[] = [];
   private contentTobeAppliedQueue: Array<{ data: string; id?: string }> = [];
   private isProcessing = false;
@@ -196,6 +197,7 @@ export class SyncManager {
     this.roomKey = config.roomKey;
     this.roomKeyBytes = toUint8Array(config.roomKey);
     this.isOwner = config.isOwner;
+    this.joinOnly = config.joinOnly ?? false;
 
     this.encryptMirror = config.encryptMirror ?? null;
     this.fileKeyEpoch = config.fileKeyEpoch ?? 0;
@@ -215,6 +217,7 @@ export class SyncManager {
       editUcan: config.editUcan,
       refreshEditClaim: config.refreshEditClaim,
       actorHandle: config.actorHandle,
+      joinOnly: config.joinOnly,
       onHandshakeData: this.callbacksRef?.onHandshakeData,
       roomInfo: config.roomInfo,
     });
@@ -642,6 +645,26 @@ export class SyncManager {
             }
           },
           onHandShakeError: (e, statusCode, errorCode) => {
+            // Join-only (workspace member) connections degrade quietly: every handshake
+            // rejection is a terminal no-session outcome, never an error surface. The
+            // distinct ROOM_NOT_ESTABLISHED reason lets the host render read-only until
+            // the creator establishes the room.
+            if (this.joinOnly) {
+              this.socketClient?.disconnect();
+              this.resetInternalState();
+              this.send({
+                type: 'SESSION_TERMINATED',
+                reason:
+                  errorCode === ServerErrorCode.ROOM_NOT_ESTABLISHED
+                    ? 'ROOM_NOT_ESTABLISHED'
+                    : 'JOIN_REJECTED',
+              });
+              if (!settled) {
+                settled = true;
+                resolve();
+              }
+              return;
+            }
             // Classify error by statusCode
             if (statusCode === 404) {
               this.socketClient?.disconnect();

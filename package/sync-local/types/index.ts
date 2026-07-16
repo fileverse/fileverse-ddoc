@@ -36,6 +36,11 @@ export interface CollabConnectionConfig {
   >;
   /** Host signal: an anonymous per-connection actor handle (public rail). Record-only; opaque. */
   actorHandle?: string;
+  /** Host signal (non-creator workspace member): join-only. The server never creates or
+   *  binds a session for this connection and caps the role at editor; every handshake
+   *  rejection resolves to a quiet terminated state ('ROOM_NOT_ESTABLISHED' when the room
+   *  was never established, 'JOIN_REJECTED' otherwise) instead of an error. */
+  joinOnly?: boolean;
   /** Host signal (editor): produces the view-plane mirror ciphertext from the live Yjs state. The app
    *  AES-GCM-encrypts `{ file: base64(yjsUpdate), source }` under the fileKey in the publish wire
    *  format. Absent ⇒ the mirror is not written. The package never sees the fileKey or the crypto. */
@@ -166,6 +171,7 @@ export enum ServerErrorCode {
   INTERNAL_ERROR = 'INTERNAL_ERROR',
   JOIN_DISABLED = 'JOIN_DISABLED',
   EDIT_REVOKED = 'EDIT_REVOKED',
+  ROOM_NOT_ESTABLISHED = 'ROOM_NOT_ESTABLISHED',
 }
 
 export interface AckResponse<T = Record<string, any>> {
@@ -265,4 +271,5 @@ export interface IAuthArgs {
   identityContractAddress?: string;
   editUcan?: string;
   actorHandle?: string;
+  joinOnly?: boolean;
 }

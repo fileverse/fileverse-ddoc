@@ -40,6 +40,7 @@ interface ISocketClientConfig {
     { status: 'ok'; token: string } | { status: 'demoted' } | { status: 'unavailable' }
   >;
   actorHandle?: string;
+  joinOnly?: boolean;
   onHandshakeData?: (response: { data: AckResponse; roomKey: string }) => void;
   roomInfo?: {
     documentTitle: string;
@@ -85,6 +86,7 @@ export class SocketClient {
   >;
   private lastGoodEditUcan?: string;
   private actorHandle?: string;
+  private joinOnly?: boolean;
   private roomKey: string;
   private roomInfo?: {
     documentTitle: string;
@@ -130,6 +132,7 @@ export class SocketClient {
     if (config.refreshEditClaim)
       this.refreshEditClaim = config.refreshEditClaim;
     if (config.actorHandle) this.actorHandle = config.actorHandle;
+    if (config.joinOnly) this.joinOnly = config.joinOnly;
     if (config.encryptedTitle) this.encryptedTitle = config.encryptedTitle;
     if (config.onHandshakeData) this._onHandshakeData = config.onHandshakeData;
     if (config.roomInfo) this.roomInfo = config.roomInfo;
@@ -478,6 +481,7 @@ export class SocketClient {
     }
     if (editUcan) args.editUcan = editUcan;
     if (this.actorHandle) args.actorHandle = this.actorHandle;
+    if (this.joinOnly) args.joinOnly = true;
 
     const response = await this._emitWithAck('/auth', args);
 
