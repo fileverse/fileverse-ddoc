@@ -5,6 +5,9 @@ import dts from 'vite-plugin-dts';
 
 export default defineConfig({
   mode: process.env.NODE_ENV,
+  resolve: {
+    dedupe: ['yjs'],
+  },
   build: {
     //Specifies that the output of the build will be a library.
     lib: {
@@ -27,6 +30,8 @@ export default defineConfig({
           'frimousse',
           'mermaid',
         ].includes(id) ||
+        id === 'yjs' ||
+        id.startsWith('yjs/') ||
         id.startsWith('@fileverse/crypto') ||
         id.startsWith('@dnd-kit/') ||
         id.startsWith('viem'),

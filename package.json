@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "4.2.0-durability-7",
+  "version": "4.2.0-yjs-dedupe-1",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
@@ -121,7 +121,6 @@
     "y-indexeddb": "^9.0.12",
     "y-prosemirror": "^1.2.5",
     "y-protocols": "^1.0.6",
-    "yjs": "^13.6.15",
     "zustand": "^5.0.12"
   },
   "peerDependencies": {
@@ -134,6 +133,7 @@
     "framer-motion": ">=11.2.10",
     "frimousse": ">=0.3.0",
     "mermaid": "11.14.0",
+    "yjs": ">=13.6.30 <14",
     "viem": ">=2.35.0"
   },
   "devDependencies": {
@@ -164,6 +164,7 @@
     "tailwindcss": "^3.4.3",
     "typescript": "^5.2.2",
     "vite": "^5.0.0",
-    "vitest": "^2.1.0"
+    "vitest": "^2.1.0",
+    "yjs": "13.6.30"
   }
 }
