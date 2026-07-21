@@ -37,8 +37,24 @@ interface ISocketClientConfig {
   identityContractAddress?: string;
   editUcan?: string;
   refreshEditClaim?: () => Promise<
-    { status: 'ok'; token: string } | { status: 'demoted' } | { status: 'unavailable' }
+    | { status: 'ok'; token: string }
+    | { status: 'demoted' }
+    | { status: 'unavailable' }
   >;
+  // Config-shape parity with refreshEditClaim; not yet stored on the instance — the
+  // rekey() path (Task 3) is the first consumer.
+  onRotationPrepare?: (inner: {
+    epoch: number;
+    gp: string;
+    appLock?: string;
+  }) => Promise<string | { roomKey: string; editUcan?: string } | null>;
+  // Rotation PREPARE/cutover signals — SyncManager sets these.
+  onEpochAvailable?: (data: {
+    roomId: string;
+    epoch: number;
+    payload: string;
+  }) => void | Promise<void>;
+  onCutover?: (data: { roomId: string; epoch: number }) => void | Promise<void>;
   actorHandle?: string;
   joinOnly?: boolean;
   onHandshakeData?: (response: { data: AckResponse; roomKey: string }) => void;
@@ -83,7 +99,9 @@ export class SocketClient {
   private identityContractAddress?: string;
   private editUcan?: string;
   private refreshEditClaim?: () => Promise<
-    { status: 'ok'; token: string } | { status: 'demoted' } | { status: 'unavailable' }
+    | { status: 'ok'; token: string }
+    | { status: 'demoted' }
+    | { status: 'unavailable' }
   >;
   private lastGoodEditUcan?: string;
   private actorHandle?: string;
@@ -99,6 +117,13 @@ export class SocketClient {
 
   private _onHandshakeData: ISocketClientConfig['onHandshakeData'] | null =
     null;
+  private _onEpochAvailable: ISocketClientConfig['onEpochAvailable'] | null =
+    null;
+  private _onCutover: ISocketClientConfig['onCutover'] | null = null;
+  // True while an in-place rekey's re-auth is in flight — the outgoing session's
+  // leave can trigger '/session/terminated' on this same socket; swallow it so a
+  // rotation isn't surfaced as a kick.
+  private _rotating = false;
 
   constructor(config: ISocketClientConfig) {
     this._socketUrl = config.wsUrl || 'ws://localhost:5000';
@@ -136,6 +161,9 @@ export class SocketClient {
     if (config.joinOnly) this.joinOnly = config.joinOnly;
     if (config.encryptedTitle) this.encryptedTitle = config.encryptedTitle;
     if (config.onHandshakeData) this._onHandshakeData = config.onHandshakeData;
+    if (config.onEpochAvailable)
+      this._onEpochAvailable = config.onEpochAvailable;
+    if (config.onCutover) this._onCutover = config.onCutover;
     if (config.roomInfo) this.roomInfo = config.roomInfo;
   }
 
@@ -341,6 +369,75 @@ export class SocketClient {
     }
   };
 
+  // In-place roomKey migration: re-derive the collab keypair and re-/auth the SAME socket
+  // into sessionDid_{e+1} — no disconnect, no reconnect blink. Reverts all key material on
+  // failure so the caller's self-heal path can retry from a coherent old-key state.
+  async rekey(
+    newRoomKey: string,
+    newAppLock?: string,
+    newEditUcan?: string,
+  ): Promise<void> {
+    this._rotating = true;
+    const prevRoomKey = this.roomKey;
+    const prevEditLock = this.editLock;
+    try {
+      // The new-epoch editUcan minted by the SAME gate release that resolved newRoomKey.
+      // Install it as the last-good claim BEFORE re-auth: refreshEditClaim can race the
+      // rotation's deferred publish and come back 'unavailable' (or with a stale-epoch
+      // token), and the fallback must then present THIS claim, not the pre-rotation one.
+      // Deliberately not reverted on failure — the epoch floor is monotonic, so a newer
+      // claim is never worse, and the self-heal retry path (which passes no editUcan)
+      // relies on it staying installed.
+      if (newEditUcan) this.lastGoodEditUcan = newEditUcan;
+      this.roomKey = newRoomKey;
+      // Same two-step derivation the constructor uses — the keypair is a ucans.EdKeypair,
+      // not the raw generateKeyPairFromSeed result.
+      const { secretKey } = generateKeyPairFromSeed(toUint8Array(newRoomKey));
+      this.collaborationKeyPair = ucans.EdKeypair.fromSecretKey(
+        fromUint8Array(secretKey),
+      );
+      // The cached session UCAN was issued by the old keypair and is still time-valid —
+      // invalidate it so buildSessionToken mints a fresh one under the new keypair instead
+      // of handing the server a token whose issuer no longer matches sessionDid.
+      this.collaborationUcan = undefined;
+      // editLock is the appLock collab config, encrypted under the WORKSPACE key — NOT the
+      // roomKey — so it can't be re-keyed here; the rotation relay carries the freshly
+      // re-locked value (inner.appLock), so adopt that when present. The title is AES-GCM
+      // under the roomKey and stays as-is: it is display-only and the owner re-broadcasts it
+      // on the next rename. See docs/architecture/gp-semaphore.md.
+      if (newAppLock !== undefined) this.editLock = newAppLock;
+
+      const response = await this._authenticate({ rotationCutover: true });
+      if (response.statusCode !== 200) {
+        throw new Error(
+          (response?.error || 'Unknown error') +
+            `, statusCode: ${response?.statusCode}`,
+        );
+      }
+      // Mirrors _handleHandShake's success path. No-op for the steady-state cutover caller
+      // (already CONNECTED); needed when rekey heals a socket whose first /auth never
+      // completed (terminated-JOIN self-heal).
+      this._webSocketStatus = SocketStatusEnum.CONNECTED;
+    } catch (e) {
+      // Failed re-auth: revert so the old key/session stay coherent; the caller's heal
+      // path retries from scratch.
+      this.roomKey = prevRoomKey;
+      const { secretKey } = generateKeyPairFromSeed(toUint8Array(prevRoomKey));
+      this.collaborationKeyPair = ucans.EdKeypair.fromSecretKey(
+        fromUint8Array(secretKey),
+      );
+      this.collaborationUcan = undefined;
+      this.editLock = prevEditLock;
+      throw e;
+    } finally {
+      this._rotating = false;
+    }
+  }
+
+  async ackEpochLoaded(documentId: string, epoch: number): Promise<void> {
+    await this._emitWithAck('/session/epoch_loaded', { documentId, epoch });
+  }
+
   public terminateSession = async () => {
     try {
       const ownerToken = await this.getOwnerToken();
@@ -466,20 +563,13 @@ export class SocketClient {
     return this._lastSessionToken;
   };
 
-  private _handleHandShake = async (
-    message: { server_did: string; message: string },
-    config: ISocketInitConfig,
-  ) => {
-    this._websocketServiceDid = message.server_did;
-
-    if (this._webSocketStatus === SocketStatusEnum.CLOSED || !this.roomId) {
-      throw new Error(
-        'Cannot establish handshake. WebSocket not connected or roomId not defined',
-      );
-    }
-
+  // Builds the /auth args and emits, shared by the initial handshake and rekey's in-place
+  // re-auth (rotationCutover: true) on an already-connected socket.
+  private _authenticate = async (opts?: {
+    rotationCutover?: boolean;
+  }): Promise<AckResponse> => {
     const token = await this.buildSessionToken();
-    const args: IAuthArgs = {
+    const args: IAuthArgs & { rotationCutover?: boolean } = {
       collaborationToken: token,
       sessionDid: this.collaborationKeyPair?.did(),
       documentId: this.roomId,
@@ -499,9 +589,9 @@ export class SocketClient {
     if (this.identityContractAddress)
       args.identityContractAddress = this.identityContractAddress;
 
-    // Re-mint on every /auth (incl. reconnect). ok → use + cache the fresh token; unavailable
-    // (transient/network) → fall back to the last-good claim so a blip doesn't self-demote;
-    // demoted → leave undefined so the ensuing 403 is genuinely terminal.
+    // Re-mint on every /auth (incl. reconnect, rekey). ok → use + cache the fresh token;
+    // unavailable (transient/network) → fall back to the last-good claim so a blip doesn't
+    // self-demote; demoted → leave undefined so the ensuing 403 is genuinely terminal.
     let editUcan: string | undefined;
     if (this.refreshEditClaim) {
       const r = await this.refreshEditClaim();
@@ -517,6 +607,7 @@ export class SocketClient {
     if (editUcan) args.editUcan = editUcan;
     if (this.actorHandle) args.actorHandle = this.actorHandle;
     if (this.joinOnly) args.joinOnly = true;
+    if (opts?.rotationCutover) args.rotationCutover = true;
 
     const response = await this._emitWithAck('/auth', args);
 
@@ -525,6 +616,23 @@ export class SocketClient {
       data: response,
       roomKey: this.roomKey,
     });
+
+    return response;
+  };
+
+  private _handleHandShake = async (
+    message: { server_did: string; message: string },
+    config: ISocketInitConfig,
+  ) => {
+    this._websocketServiceDid = message.server_did;
+
+    if (this._webSocketStatus === SocketStatusEnum.CLOSED || !this.roomId) {
+      throw new Error(
+        'Cannot establish handshake. WebSocket not connected or roomId not defined',
+      );
+    }
+
+    const response = await this._authenticate();
 
     // Check statusCode FIRST — only proceed for 200
     if (response.statusCode !== 200) {
@@ -661,9 +769,26 @@ export class SocketClient {
       });
 
       this._socket.on('/session/terminated', (data) => {
+        // A rekey's in-place re-auth can trigger this on its own leave of the outgoing
+        // session — the manager drives that migration, so don't surface it as a kick.
+        if (this._rotating) return;
         config.onSessionTerminated(data);
         this._onSessionTerminated();
       });
+
+      this._socket.on(
+        '/session/epoch_available' as any,
+        (data: { roomId: string; epoch: number; payload: string }) => {
+          void this._onEpochAvailable?.(data);
+        },
+      );
+
+      this._socket.on(
+        '/session/cutover' as any,
+        (data: { roomId: string; epoch: number }) => {
+          void this._onCutover?.(data);
+        },
+      );
 
       this._socket.on('/server/error' as any, (data: any) => {
         console.error('SocketAPI: server error event', data);

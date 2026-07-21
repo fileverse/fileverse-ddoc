@@ -32,8 +32,22 @@ export interface CollabConnectionConfig {
    *  `editUcan`), `demoted` (no longer an editor → terminal, drop to viewer), or `unavailable`
    *  (transient/network → retry on the last-good claim). Opaque to the package. */
   refreshEditClaim?: () => Promise<
-    { status: 'ok'; token: string } | { status: 'demoted' } | { status: 'unavailable' }
+    | { status: 'ok'; token: string }
+    | { status: 'demoted' }
+    | { status: 'unavailable' }
   >;
+  /** Host signal: resolves the rotated roomKey for the given epoch payload (GP: gate release
+   *  unwrap of `gp`; workspace: app-key unwrap of `appLock`). Returns the new base64 roomKey —
+   *  or, for a gate-admitted editor, `{ roomKey, editUcan }`: the same gate release that unwraps
+   *  the relay also mints the new-epoch editUcan, and the cutover re-auth must present THAT token
+   *  (a re-mint through the host's fresh-open flow can race the deferred publish and hand back a
+   *  stale-epoch claim). `null` if this actor can't resolve it (falls back to the decrypt-miss
+   *  self-heal path). Opaque to the package. */
+  onRotationPrepare?: (inner: {
+    epoch: number;
+    gp: string;
+    appLock?: string;
+  }) => Promise<string | { roomKey: string; editUcan?: string } | null>;
   /** Host signal: an anonymous per-connection actor handle (public rail). Record-only; opaque. */
   actorHandle?: string;
   /** Host signal (non-creator workspace member): join-only. The server never creates or
@@ -90,6 +104,7 @@ export type CollabStatus =
   | 'syncing'
   | 'ready'
   | 'reconnecting'
+  | 'rotating'
   | 'error'
   | 'terminated';
 
@@ -99,6 +114,8 @@ export type CollabState =
   | { status: 'syncing'; hasUnmergedPeerUpdates: boolean }
   | { status: 'ready' }
   | { status: 'reconnecting'; attempt: number; maxAttempts: number }
+  /** roomKey migration in flight — distinct from `terminated` so consumers don't mistake it for a kick. */
+  | { status: 'rotating' }
   | { status: 'error'; error: CollabError }
   | { status: 'terminated'; reason?: string };
 
@@ -112,6 +129,8 @@ export type CollabEvent =
   | { type: 'RETRY_EXHAUSTED' }
   | { type: 'ERROR'; error: CollabError }
   | { type: 'SESSION_TERMINATED'; reason?: string }
+  /** roomKey cutover in progress; no-op on status — lets the manager gate re-entrancy itself. */
+  | { type: 'CUTOVER' }
   | { type: 'RESET' };
 
 export interface CollabContext {
@@ -130,18 +149,23 @@ export interface CollabCallbacks {
   onHandshakeData?: (data: { data: AckResponse; roomKey: string }) => void;
   /** Live rename from the room owner; title is roomKey-encrypted. */
   onTitleUpdate?: (encryptedTitle: string | null) => void;
+  /** Decrypt-miss self-heal: resolves the CURRENT-epoch roomKey (same resolution the host
+   *  uses for `onRotationPrepare`, minus the relay payload — re-read the blob's
+   *  `wrappedRoomKey` / appLock). Returns the new base64 roomKey, or `null` if this actor
+   *  can't resolve one (the miss is then a real revocation, not a rotation lag). */
+  onRotationSelfHeal?: () => Promise<string | null>;
 }
 
 /** Discriminated union — TypeScript enforces config+services only when enabled */
 export type CollaborationProps =
   | { enabled: false }
   | {
-    enabled: true;
-    connection: CollabConnectionConfig;
-    session: CollabSessionMeta;
-    services: CollabServices;
-    on?: CollabCallbacks;
-  };
+      enabled: true;
+      connection: CollabConnectionConfig;
+      session: CollabSessionMeta;
+      services: CollabServices;
+      on?: CollabCallbacks;
+    };
 
 // ─── Internal sync types ───
 
@@ -192,7 +216,7 @@ export interface SendUpdateResponse
     updateType: string;
     commitCid: string | null;
     createdAt: number;
-  }> { }
+  }> {}
 
 export interface HydrationRow {
   id: string;
@@ -215,10 +239,10 @@ export interface HydrationResponse
     snapshot: HydrationRow | null;
     nextSeq: number | null;
     hasMore: boolean;
-  }> { }
+  }> {}
 
 export interface SnapshotResponse
-  extends AckResponse<{ id: string; seq: number }> { }
+  extends AckResponse<{ id: string; seq: number }> {}
 
 export interface ISocketInitConfig {
   onHandshakeSuccess: () => void;
