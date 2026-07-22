@@ -28,6 +28,19 @@ import {
 
 const MAX_RETRIES = 3;
 
+// 'rekeyed': a new key was resolved and applied. 'current-key-ok': the resolved key already
+// matches what we hold — nothing to rekey, but the miss/409 that triggered the heal isn't a
+// rotation-lag problem. 'failed': no key resolved, or the heal threw.
+type HealOutcome = 'rekeyed' | 'current-key-ok' | 'failed';
+
+function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
 export class SyncManager {
   // --- State machine ---
   private _status: CollabStatus = 'idle';
@@ -38,6 +51,28 @@ export class SyncManager {
   private socketClient: SocketClient | null = null;
   private roomKey = '';
   private roomKeyBytes: Uint8Array | null = null;
+  // Set while an in-place roomKey rotation's re-auth is in flight — dispatch pauses (edits
+  // still enqueue) so nothing goes out under a mismatched key. Cleared in rekey()'s finally.
+  private rotating = false;
+  // Prior roomKey bytes during a rotation's dual-decrypt window (consumed by the self-heal
+  // path for stragglers still encrypting under the old key). Stays set after a successful rekey.
+  private roomKeyBytesPrev: Uint8Array | null = null;
+  // Rotation key resolved at PREPARE, epoch-tagged and held until the server signals
+  // CUTOVER for that same epoch. An epoch mismatch at cutover means this key was PREPARE'd
+  // for a since-superseded rotation — discarded rather than applied.
+  private pendingRotationKey: {
+    key: string;
+    epoch: number;
+    appLock?: string;
+    editUcan?: string;
+  } | null = null;
+  // In-flight decrypt-miss self-heal, shared so concurrent callers (a write-409 racing an
+  // inbound decrypt miss) join the same outcome instead of one bailing false while the
+  // other converges.
+  private healingPromise: Promise<HealOutcome> | null = null;
+  // Bounds the "resend once on a stale current-key-ok 409" retry shared by the write-ack
+  // paths below, so a genuinely-stuck client can't loop. Reset on any successful ack.
+  private staleAckRetries = 0;
   private encryptMirror: ((yjsUpdate: Uint8Array) => Promise<string>) | null =
     null;
   private fileKeyEpoch = 0;
@@ -58,13 +93,13 @@ export class SyncManager {
   private readonly MAX_QUEUE_SIZE = 5;
   private _awarenessUpdateHandler:
     | ((
-      changes: {
-        added: number[];
-        updated: number[];
-        removed: number[];
-      },
-      origin: any,
-    ) => void)
+        changes: {
+          added: number[];
+          updated: number[];
+          removed: number[];
+        },
+        origin: any,
+      ) => void)
     | null = null;
 
   // --- Config (from constructor) ---
@@ -216,10 +251,68 @@ export class SyncManager {
       identityContractAddress: config.identityContractAddress,
       editUcan: config.editUcan,
       refreshEditClaim: config.refreshEditClaim,
+      onRotationPrepare: config.onRotationPrepare,
       actorHandle: config.actorHandle,
       joinOnly: config.joinOnly,
       onHandshakeData: this.callbacksRef?.onHandshakeData,
       roomInfo: config.roomInfo,
+      onEpochAvailable: async (data: { epoch: number; payload: string }) => {
+        try {
+          const inner = JSON.parse(
+            new TextDecoder().decode(
+              cryptoUtils.decryptData(this.roomKeyBytes!, data.payload),
+            ),
+          ) as { epoch: number; gp: string; appLock?: string };
+          const prepared = config.onRotationPrepare
+            ? await config.onRotationPrepare(inner)
+            : null;
+          const newRoomKey =
+            typeof prepared === 'string' ? prepared : prepared?.roomKey;
+          if (newRoomKey) {
+            // Carry the relay's re-locked appLock config with the key — applied to editLock at
+            // cutover (workspace-key encrypted, so it can't be re-keyed locally). Held until
+            // cutover. Same for the gate-minted new-epoch editUcan when the host resolved one:
+            // the cutover re-auth must present it (a refreshEditClaim re-mint can race the
+            // deferred publish and return a stale-epoch claim).
+            this.pendingRotationKey = {
+              key: newRoomKey,
+              epoch: data.epoch,
+              appLock: inner.appLock,
+              editUcan:
+                typeof prepared === 'object' && prepared !== null
+                  ? prepared.editUcan
+                  : undefined,
+            };
+            await this.socketClient?.ackEpochLoaded(config.roomId, data.epoch);
+          }
+        } catch (e) {
+          console.error(
+            'SyncManager: PREPARE failed; will self-heal at cutover',
+            e,
+          );
+        }
+      },
+      onCutover: async (data: { roomId: string; epoch: number }) => {
+        if (
+          this.pendingRotationKey &&
+          this.pendingRotationKey.epoch === data.epoch
+        ) {
+          const k = this.pendingRotationKey.key;
+          const appLock = this.pendingRotationKey.appLock;
+          const editUcan = this.pendingRotationKey.editUcan;
+          this.pendingRotationKey = null;
+          await this.rekey(k, appLock, editUcan).catch((e) => {
+            console.error('SyncManager: cutover rekey failed', e);
+          });
+        } else {
+          // Either PREPARE never yielded a key, or the held key was PREPARE'd for a
+          // since-superseded rotation (epoch mismatch) — discard it rather than apply a
+          // stale key. Either way the old room is about to go silent — heal now rather
+          // than waiting on inbound traffic that will never arrive.
+          this.pendingRotationKey = null;
+          void this.onDecryptMiss();
+        }
+      },
     });
 
     this.send({ type: 'CONNECT' });
@@ -320,9 +413,118 @@ export class SyncManager {
     }
   }
 
+  /** In-place roomKey migration on CUTOVER: pause dispatch, swap the key, re-auth the same
+   *  socket, re-broadcast awareness, then flush. See SocketClient.rekey for the wire side. */
+  async rekey(
+    newRoomKey: string,
+    newAppLock?: string,
+    newEditUcan?: string,
+  ): Promise<void> {
+    if (this.rotating) return;
+    // 'connecting'/'reconnecting' included: the terminated-JOIN self-heal can call this
+    // before the handshake has ever completed, or mid-reconnect.
+    if (
+      this._status !== 'ready' &&
+      this._status !== 'syncing' &&
+      this._status !== 'connecting' &&
+      this._status !== 'reconnecting'
+    ) {
+      return;
+    }
+
+    this.rotating = true;
+    const prevRoomKey = this.roomKey;
+    this.roomKeyBytesPrev = this.roomKeyBytes; // dual-decrypt window
+    // Swap FIRST: inbound new-session traffic arriving during the re-auth round-trip must
+    // decrypt with the NEW key (old stragglers ride roomKeyBytesPrev). Outbound is paused by
+    // `rotating`, so nothing goes out under a mismatched key.
+    this.roomKey = newRoomKey;
+    this.roomKeyBytes = toUint8Array(newRoomKey);
+
+    try {
+      await this.socketClient?.rekey(newRoomKey, newAppLock, newEditUcan);
+      // Same Awareness instance + clientID — only the outbound broadcast handler is rebound,
+      // since it closes over roomKey by value (createAwarenessUpdateHandler) and won't pick up
+      // the swap on its own. Re-stamping local state after rebinding re-broadcasts under the
+      // new key.
+      if (this._awareness && this.socketClient) {
+        if (this._awarenessUpdateHandler) {
+          this._awareness.off('update', this._awarenessUpdateHandler);
+        }
+        const handler = createAwarenessUpdateHandler(
+          this._awareness,
+          this.socketClient,
+          this.roomKey,
+        );
+        this._awareness.on('update', handler);
+        this._awarenessUpdateHandler = handler;
+        this._awareness.setLocalState(this._awareness.getLocalState());
+      }
+      if (this.isOwner) {
+        // socketClient.rekey adopted the relay's re-locked editLock; re-broadcast meta so
+        // joiners pick it up (the roomKey-encrypted title rides along, refreshed on next rename).
+        this.socketClient?.setDocumentMeta().catch(() => undefined);
+      }
+    } catch (e) {
+      // Re-auth failed and SocketClient reverted its own key material — revert ours too; the
+      // self-heal path retries from scratch.
+      this.roomKey = prevRoomKey;
+      this.roomKeyBytes = this.roomKeyBytesPrev;
+      this.roomKeyBytesPrev = null;
+      throw e;
+    } finally {
+      this.rotating = false;
+      if (this.updateQueue.length > 0) {
+        this.processUpdateQueue().catch((err) => {
+          console.error('SyncManager: post-rekey flush failed', err);
+        });
+      }
+    }
+  }
+
+  // A row that decrypts under neither roomKeyBytes nor roomKeyBytesPrev means this peer
+  // missed the rotation entirely (no PREPARE, or onRotationPrepare couldn't resolve a key).
+  // Fetch the current-epoch key from the host and rekey once, rather than dropping rows
+  // forever. `rotating` guard stops a heal firing mid-rekey — callers on the write path
+  // check `rotating` themselves before calling in, so they can defer instead of bailing.
+  // A caller that arrives while a heal is already in flight joins that same promise rather
+  // than racing an independent one.
+  private onDecryptMiss(): Promise<HealOutcome> {
+    if (this.healingPromise) return this.healingPromise;
+    const selfHeal = this.callbacksRef?.onRotationSelfHeal;
+    if (this.rotating || !selfHeal) return Promise.resolve('failed');
+
+    this.healingPromise = (async (): Promise<HealOutcome> => {
+      try {
+        const newRoomKey = await selfHeal();
+        if (!newRoomKey) return 'failed';
+        // Compare decoded bytes, not base64 text — a standard-vs-urlsafe encoding mismatch
+        // between the host and this key must not read as "different key".
+        if (
+          this.roomKeyBytes &&
+          bytesEqual(toUint8Array(newRoomKey), this.roomKeyBytes)
+        ) {
+          // Already on the resolved key: nothing to rekey. Whatever triggered this heal
+          // (a decrypt miss, a write 409) isn't a rotation-lag problem this can fix.
+          return 'current-key-ok';
+        }
+        await this.rekey(newRoomKey);
+        return 'rekeyed';
+      } catch (e) {
+        console.error('SyncManager: rotation self-heal failed', e);
+        return 'failed';
+      } finally {
+        this.healingPromise = null;
+      }
+    })();
+    return this.healingPromise;
+  }
+
   enqueueLocalUpdate(update: Uint8Array): void {
     this.updateQueue.push(update);
-    if (this._status !== 'ready' || this.isProcessing) return;
+    // Rotation in flight: keep enqueuing (drained by rekey()'s post-cutover flush) but skip
+    // dispatch — the editor stays editable, only the wire pauses.
+    if (this._status !== 'ready' || this.isProcessing || this.rotating) return;
 
     // Flush immediately if queue is full
     if (this.updateQueue.length >= this.MAX_QUEUE_SIZE) {
@@ -351,7 +553,12 @@ export class SyncManager {
       clearTimeout(this.flushTimer);
       this.flushTimer = null;
     }
-    if (this.updateQueue.length === 0 || !this.roomKey || !this.isConnected)
+    if (
+      this.updateQueue.length === 0 ||
+      !this.roomKey ||
+      !this.isConnected ||
+      this.rotating
+    )
       return;
 
     const updates = this.updateQueue;
@@ -375,7 +582,12 @@ export class SyncManager {
    * (before MongoDB write), so content reaches observers in near-real-time.
    */
   private sendUpdateBatch(): void {
-    if (this.updateQueue.length === 0 || !this.roomKey || !this.isConnected) {
+    if (
+      this.updateQueue.length === 0 ||
+      !this.roomKey ||
+      !this.isConnected ||
+      this.rotating
+    ) {
       return;
     }
 
@@ -385,25 +597,65 @@ export class SyncManager {
     const merged = Y.mergeUpdates(updates);
     const encrypted = cryptoUtils.encryptData(this.roomKeyBytes!, merged);
 
-    this.socketClient
-      ?.sendUpdate({ update: encrypted })
-      .then((response) => {
-        if (!response?.status) {
-          if (this.isRevocationResponse(response)) {
-            // Soft revocation: re-queue the unacked updates ahead of anything queued since, then
-            // reconnect to re-mint. No queue loss; a real demote re-surfaces as a terminal handshake 403.
-            this.updateQueue = [...updates, ...this.updateQueue];
-            this.handleWriteRevocation(response);
-            return;
-          }
-          console.error('SyncManager: server rejected update', response?.error);
+    void this.sendUpdateBatchAttempt(updates, encrypted);
+  }
+
+  // Extracted from sendUpdateBatch so a 'current-key-ok' 409 (a stale ack for a pre-rotation
+  // send that lands after we're already on the current key) can retry once by recursing,
+  // without duplicating the response handling.
+  private async sendUpdateBatchAttempt(
+    updates: Uint8Array[],
+    encrypted: string,
+  ): Promise<void> {
+    try {
+      const response = await this.socketClient?.sendUpdate({
+        update: encrypted,
+      });
+      if (!response?.status) {
+        if (this.isRevocationResponse(response)) {
+          // Soft revocation: re-queue the unacked updates ahead of anything queued since, then
+          // reconnect to re-mint. No queue loss; a real demote re-surfaces as a terminal handshake 403.
+          this.updateQueue = [...updates, ...this.updateQueue];
+          this.handleWriteRevocation();
           return;
         }
-        this.maybeAuthorSnapshotAfterSend();
-      })
-      .catch((err) => {
-        console.error('SyncManager: update send failed', err);
-      });
+        if (this.isSessionTerminatedResponse(response)) {
+          if (this.rotating) {
+            // A cutover is already in flight under us — leave the batch queued; rekey's own
+            // finally re-drains once it completes. Not a terminal condition.
+            this.updateQueue = [...updates, ...this.updateQueue];
+            return;
+          }
+          const outcome = await this.onDecryptMiss();
+          if (outcome === 'rekeyed') {
+            this.staleAckRetries = 0;
+            this.updateQueue = [...updates, ...this.updateQueue];
+            return;
+          }
+          if (outcome === 'current-key-ok' && this.staleAckRetries < 1) {
+            this.staleAckRetries += 1;
+            // Re-encrypt under whatever key is live now — `encrypted` may predate a rekey
+            // that completed elsewhere (e.g. a joined healingPromise) while this send was
+            // in flight; resending it would land old-key ciphertext in the new session's
+            // durable log, undecryptable to fresh joiners.
+            const freshEncrypted = cryptoUtils.encryptData(
+              this.roomKeyBytes!,
+              Y.mergeUpdates(updates),
+            );
+            await this.sendUpdateBatchAttempt(updates, freshEncrypted);
+            return;
+          }
+          this.surfaceSessionTerminated('SESSION_TERMINATED');
+          return;
+        }
+        console.error('SyncManager: server rejected update', response?.error);
+        return;
+      }
+      this.staleAckRetries = 0;
+      this.maybeAuthorSnapshotAfterSend();
+    } catch (err) {
+      console.error('SyncManager: update send failed', err);
+    }
   }
 
   private isRevocationResponse(response?: {
@@ -417,21 +669,28 @@ export class SyncManager {
     );
   }
 
-  private classifyRevocation(_response?: {
+  // A write ack'd 409/SESSION_TERMINATED means this session's old sessionDid was cut over
+  // out from under an in-flight write — distinct from isRevocationResponse's 403s, and the
+  // fix is a decrypt-miss self-heal, not a reconnect.
+  private isSessionTerminatedResponse(response?: {
     statusCode?: number;
     errorCode?: ServerErrorCode;
-  }): 'soft' | 'terminal' {
+  }): boolean {
+    return (
+      response?.statusCode === 409 &&
+      response.errorCode === ServerErrorCode.SESSION_TERMINATED
+    );
+  }
+
+  private classifyRevocation(): 'soft' | 'terminal' {
     // A write-time 403 EDIT_REVOKED/JOIN_DISABLED can't be told apart from a merely-stale claim,
     // so every live-write revocation is soft: reconnect + re-mint. Terminality is decided at the
     // handshake, where a demoted refresher yields no token and the server 403 is final.
     return 'soft';
   }
 
-  private handleWriteRevocation(response?: {
-    statusCode?: number;
-    errorCode?: ServerErrorCode;
-  }): void {
-    if (this.classifyRevocation(response) === 'terminal') {
+  private handleWriteRevocation(): void {
+    if (this.classifyRevocation() === 'terminal') {
       this.send({ type: 'SESSION_TERMINATED', reason: 'EDIT_REVOKED' });
       return;
     }
@@ -441,6 +700,15 @@ export class SyncManager {
       this.send({ type: 'SOCKET_DROPPED' });
     }
     this.socketClient?.reauth();
+  }
+
+  // Terminal kick shared by every path that gives up on a session for good: a decrypt-miss
+  // self-heal that couldn't resolve a key, or a terminated-JOIN reconnect with nothing to
+  // heal into. Bounded — never loops the caller back into more sends.
+  private surfaceSessionTerminated(reason: string): void {
+    this.socketClient?.disconnect();
+    this.resetInternalState();
+    this.send({ type: 'SESSION_TERMINATED', reason });
   }
 
   // Count a successfully-sent update toward the snapshot cadence and author a snapshot once
@@ -621,6 +889,9 @@ export class SyncManager {
       }
 
       let settled = false;
+      // One-shot per connect attempt: connectSocket() runs once per SyncManager.connect(),
+      // so this covers every socket.io-internal reconnect within that attempt too.
+      let selfHealAttempted = false;
 
       this.socketClient
         .connectSocket({
@@ -681,17 +952,57 @@ export class SyncManager {
             }
             // Classify error by statusCode
             if (statusCode === 404) {
-              this.socketClient?.disconnect();
-              this.resetInternalState();
-              this.send({
-                type: 'SESSION_TERMINATED',
-                reason: 'Session not found',
-              });
-              if (!settled) {
-                settled = true;
-                // Don't reject — the state machine handles this
-                resolve();
+              const surfaceSessionNotFound = () => {
+                this.surfaceSessionTerminated('Session not found');
+                if (!settled) {
+                  settled = true;
+                  // Don't reject — the state machine handles this
+                  resolve();
+                }
+              };
+
+              // A laggard that was offline for a rotation reconnects and re-auths into its
+              // OLD sessionDid — the server has already terminated it (SESSION_NOT_FOUND).
+              // Try self-heal once before the terminal kick; a genuinely revoked or
+              // never-established session still falls through to it.
+              if (
+                !selfHealAttempted &&
+                !this.rotating &&
+                this.callbacksRef?.onRotationSelfHeal
+              ) {
+                selfHealAttempted = true;
+                void this.callbacksRef
+                  .onRotationSelfHeal()
+                  .then((newRoomKey) => {
+                    if (!newRoomKey) {
+                      throw new Error('no rotation key available');
+                    }
+                    return this.rekey(newRoomKey);
+                  })
+                  .then(() => {
+                    if (!settled) {
+                      settled = true;
+                      resolve();
+                      return;
+                    }
+                    // Reconnect case: settled already, so drive it exactly like a normal
+                    // post-drop handshake success would.
+                    if (this._status !== 'reconnecting') {
+                      this.send({ type: 'SOCKET_DROPPED' });
+                    }
+                    this.handleReconnection();
+                  })
+                  .catch((e) => {
+                    console.error(
+                      'SyncManager: terminated-join self-heal failed',
+                      e,
+                    );
+                    surfaceSessionNotFound();
+                  });
+                return;
               }
+
+              surfaceSessionNotFound();
               return;
             }
 
@@ -729,7 +1040,24 @@ export class SyncManager {
           onTitleUpdate: (encryptedTitle) => {
             this.callbacksRef?.onTitleUpdate?.(encryptedTitle);
           },
-          onSessionTerminated: () => {
+          onSessionTerminated: async () => {
+            // A live-socket push of this event during a NORMAL rotation is reachable two
+            // ways: a peer that PREPARE'd, blipped, and re-authed into the still-draining
+            // OLD session (missing the one-shot cutover; termination fires once the drain
+            // window elapses), or a connected laggard whose onCutover keyless self-heal is
+            // still awaiting when termination lands (`rotating` still false during that
+            // await — onDecryptMiss's own healingPromise join covers that race). Try the
+            // same heal once before kicking; only a heal that can't recover a live session
+            // falls through, so a genuine owner-termination still kicks.
+            if (!this.rotating && this.callbacksRef?.onRotationSelfHeal) {
+              const outcome = await this.onDecryptMiss();
+              if (outcome === 'rekeyed') {
+                // rekey() already re-authed into the live session; nothing else to do.
+                return;
+              }
+              // 'failed', or 'current-key-ok' (already on the resolved key and STILL
+              // swept — not a rotation lag, a real termination): fall through to the kick.
+            }
             this.resetInternalState();
             this.send({
               type: 'SESSION_TERMINATED',
@@ -777,16 +1105,33 @@ export class SyncManager {
     });
   }
 
-  private decodeInto(target: Uint8Array[], encrypted: string): void {
+  // Dual-decrypt window: a rotation cutover can land between a peer's PREPARE miss and its
+  // next inbound row — try the current key, then the pre-rotation key, before giving up.
+  private tryDecrypt(encrypted: string): Uint8Array | null {
     try {
-      target.push(cryptoUtils.decryptData(this.roomKeyBytes!, encrypted));
-    } catch (err) {
-      // Undecryptable rows (e.g. a guessed-documentId injection) are skipped, not fatal.
-      console.warn(
-        'SyncManager: failed to decrypt hydration row, skipping',
-        err,
-      );
+      return cryptoUtils.decryptData(this.roomKeyBytes!, encrypted);
+    } catch {
+      if (this.roomKeyBytesPrev) {
+        try {
+          return cryptoUtils.decryptData(this.roomKeyBytesPrev, encrypted);
+        } catch {
+          /* fall through */
+        }
+      }
+      return null;
     }
+  }
+
+  private decodeInto(target: Uint8Array[], encrypted: string): void {
+    const decrypted = this.tryDecrypt(encrypted);
+    if (!decrypted) {
+      // Undecryptable rows (e.g. a guessed-documentId injection, or a genuine rotation
+      // miss) are skipped, not fatal.
+      console.warn('SyncManager: failed to decrypt hydration row, skipping');
+      void this.onDecryptMiss();
+      return;
+    }
+    target.push(decrypted);
   }
 
   // Pull the server's snapshot + seq-tail from the current floor, apply it to the Y.Doc,
@@ -801,7 +1146,7 @@ export class SyncManager {
     let sinceSeq: number | undefined = this.floor > 0 ? this.floor : undefined;
     let appliedTail = false;
 
-    for (; ;) {
+    for (;;) {
       const res = await this.socketClient?.fetchHydrationRange(sinceSeq);
       if (!syncStillCurrent()) return appliedTail;
       const d = res?.data;
@@ -938,7 +1283,21 @@ export class SyncManager {
 
     if (!response?.status) {
       if (this.isRevocationResponse(response)) {
-        this.handleWriteRevocation(response);
+        this.handleWriteRevocation();
+        return;
+      }
+      if (this.isSessionTerminatedResponse(response)) {
+        if (this.rotating) {
+          // A cutover is already in flight — this one-shot broadcast is a recoverable
+          // full-state rebroadcast, not worth blocking hydrate() on; just drop it.
+          return;
+        }
+        const outcome = await this.onDecryptMiss();
+        if (outcome === 'failed') {
+          this.surfaceSessionTerminated('SESSION_TERMINATED');
+        }
+        // 'rekeyed' or 'current-key-ok': drop this broadcast either way — recoverable, and
+        // not worth a retry the way a queued edit batch is.
         return;
       }
       const errorMsg = response?.error || 'Server rejected update';
@@ -959,6 +1318,10 @@ export class SyncManager {
         // (bouncing the socket to re-mint the edit claim); stop here rather than send on the
         // dropped socket — the reconnect resumes the drain with the queue intact.
         if (this._status !== 'ready' && this._status !== 'syncing') break;
+        // A cutover can land mid-drain (this loop is `await`-suspended between iterations);
+        // stop dispatching under a possibly-swapped key — rekey()'s own finally resumes the
+        // drain once the re-auth settles.
+        if (this.rotating) break;
         await this.processNextUpdate();
       }
 
@@ -978,10 +1341,9 @@ export class SyncManager {
 
     const queueOffset = this.updateQueue.length;
     const nextUpdate = Y.mergeUpdates(this.updateQueue);
-    const updateToSend = cryptoUtils.encryptData(
-      this.roomKeyBytes!,
-      nextUpdate,
-    );
+    // Re-encrypted in place on a 'current-key-ok' retry below — the plaintext (`nextUpdate`)
+    // doesn't change across a retry, but the key it's encrypted under might.
+    let updateToSend = cryptoUtils.encryptData(this.roomKeyBytes!, nextUpdate);
 
     let lastError: Error | null = null;
     for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
@@ -992,7 +1354,39 @@ export class SyncManager {
 
         if (!response?.status) {
           if (this.isRevocationResponse(response)) {
-            this.handleWriteRevocation(response);
+            this.handleWriteRevocation();
+            return;
+          }
+          if (this.isSessionTerminatedResponse(response)) {
+            if (this.rotating) {
+              // A cutover started under us mid-drain — leave the batch queued (nothing
+              // sliced off above) and stop here. processUpdateQueue's own `rotating` check
+              // breaks the outer while loop on its next iteration; rekey()'s finally
+              // re-drains once the cutover settles. Not a terminal condition.
+              return;
+            }
+            // Await the heal outcome — this call sits in processUpdateQueue's while loop,
+            // which would otherwise re-merge and re-send this same rejected batch forever.
+            const outcome = await this.onDecryptMiss();
+            if (outcome === 'rekeyed') {
+              // Batch is still queued (nothing sliced above); the next drain iteration
+              // resends it under the new key.
+              this.staleAckRetries = 0;
+              return;
+            }
+            if (outcome === 'current-key-ok' && this.staleAckRetries < 1) {
+              // Stale ack for a pre-rotation send: we're already on the current key, so a
+              // resend should succeed. Bounded to one retry — re-run this same attempt.
+              // Re-encrypt first: `updateToSend` may predate a rekey that completed
+              // elsewhere (e.g. a joined healingPromise) since this attempt started.
+              this.staleAckRetries += 1;
+              updateToSend = cryptoUtils.encryptData(
+                this.roomKeyBytes!,
+                nextUpdate,
+              );
+              continue;
+            }
+            this.surfaceSessionTerminated('SESSION_TERMINATED');
             return;
           }
           const errorMsg = response?.error || 'Server rejected update';
@@ -1003,6 +1397,7 @@ export class SyncManager {
 
         // Remove processed updates from queue
         this.updateQueue = this.updateQueue.slice(queueOffset);
+        this.staleAckRetries = 0;
         this.maybeAuthorSnapshotAfterSend();
         return;
       } catch (err) {
@@ -1038,11 +1433,10 @@ export class SyncManager {
   private applyRemoteYjsUpdate(encrypted: string): void {
     if (!this.ydoc) return;
 
-    let update: Uint8Array;
-    try {
-      update = cryptoUtils.decryptData(this.roomKeyBytes!, encrypted);
-    } catch (err) {
-      console.warn('SyncManager: failed to decrypt update, skipping', err);
+    const update = this.tryDecrypt(encrypted);
+    if (!update) {
+      console.warn('SyncManager: failed to decrypt update, skipping');
+      void this.onDecryptMiss();
       return;
     }
 
@@ -1072,24 +1466,23 @@ export class SyncManager {
 
     const decryptedContents: Uint8Array[] = [];
     const queuedUpdateIds: string[] = [];
+    let missed = false;
 
     for (const item of this.contentTobeAppliedQueue) {
-      try {
-        const decrypted = cryptoUtils.decryptData(
-          this.roomKeyBytes!,
-          item.data,
-        );
-        decryptedContents.push(decrypted);
-        if (item.id) {
-          queuedUpdateIds.push(item.id);
-        }
-      } catch (err) {
+      const decrypted = this.tryDecrypt(item.data);
+      if (!decrypted) {
         console.warn(
           'SyncManager: failed to decrypt queued remote content, skipping',
-          err,
         );
+        missed = true;
+        continue;
+      }
+      decryptedContents.push(decrypted);
+      if (item.id) {
+        queuedUpdateIds.push(item.id);
       }
     }
+    if (missed) void this.onDecryptMiss();
 
     this.contentTobeAppliedQueue = [];
 
@@ -1178,5 +1571,14 @@ export class SyncManager {
     this.floor = 0;
     this.updatesSinceSnapshot = 0;
     this.isAuthoringSnapshot = false;
+    // Rotation state must not bleed into the next session on manager reuse — e.g. a
+    // leftover staleAckRetries=1 would make the next session's first current-key-ok 409
+    // skip its bounded retry. healingPromise is only nulled here, never awaited: an
+    // in-flight heal from the torn-down session has nothing left to act on.
+    this.rotating = false;
+    this.roomKeyBytesPrev = null;
+    this.pendingRotationKey = null;
+    this.healingPromise = null;
+    this.staleAckRetries = 0;
   }
 }
