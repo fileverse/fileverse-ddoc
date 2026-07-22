@@ -97,6 +97,14 @@ const EditorBubbleMenuComponent = (props: EditorBubbleMenuProps) => {
     node?.style.setProperty('z-index', BUBBLE_MENU_Z_INDEX);
   }, []);
 
+  // In preview mode the bubble menu only hosts the Comment button, so it's
+  // pointless when commenting isn't available for this viewer.
+  const canComment =
+    !!isCollabDocumentPublished &&
+    !disableInlineComment &&
+    !isCommentResolved &&
+    !enableCollaboration;
+
   // Mobile text selection can survive an editor blur, so retry the same
   // visibility checks without the focus requirement when selection stays in-editor.
   const handleBubbleMenuShouldShow = useCallback(
@@ -106,14 +114,15 @@ const EditorBubbleMenuComponent = (props: EditorBubbleMenuProps) => {
       }
 
       // Mobile native selection and preview-mode selection can both survive an
-      // editor blur, so ignore focus when the selection still belongs to the editor.
+      // editor blur, so ignore focus when the selection still belongs to the
+      // editor. In preview mode, only show when the Comment button is usable.
       return (
-        (isNativeMobile || isPreviewMode) &&
+        (isNativeMobile || (isPreviewMode && canComment)) &&
         isSelectionInsideEditor(editor) &&
         shouldShowIgnoringFocus(editor)
       );
     },
-    [isNativeMobile, isPreviewMode],
+    [isNativeMobile, isPreviewMode, canComment],
   );
 
   const items: BubbleMenuItem[] = useMemo(() => {
