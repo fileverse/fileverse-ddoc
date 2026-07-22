@@ -63,7 +63,16 @@ export function mergePresence(
       return a.isPlaceholder ? 1 : -1;
     return String(a.clientId).localeCompare(String(b.clientId));
   });
-  return roster;
+  // One avatar per person, not per socket: the same user in two tabs holds two
+  // sockets broadcasting the same identity name. Placeholders (identity not yet
+  // known) stay per-socket so unidentified joins are never undercounted.
+  const seenNames = new Set<string>();
+  return roster.filter((entry) => {
+    if (entry.isPlaceholder || !entry.name) return true;
+    if (seenNames.has(entry.name)) return false;
+    seenNames.add(entry.name);
+    return true;
+  });
 }
 
 // Signature over only what the rendered roster depends on (member set + each identity),
