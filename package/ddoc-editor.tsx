@@ -1075,6 +1075,9 @@ const DdocEditor = forwardRef(
                                   ipfsImageFetchFn={ipfsImageFetchFn}
                                   fetchV1ImageFn={fetchV1ImageFn}
                                   ipfsImageUploadFn={ipfsImageUploadFn}
+                                  enableCollaboration={isLiveCollabSession(
+                                    collaboration,
+                                  )}
                                   isCollabDocOwner={
                                     collaboration?.enabled
                                       ? collaboration.connection.isOwner

@@ -46,6 +46,7 @@ const EditorBubbleMenuComponent = (props: EditorBubbleMenuProps) => {
     disableInlineComment,
     ipfsImageUploadFn,
     ipfsImageFetchFn,
+    enableCollaboration,
     fetchV1ImageFn,
   } = props;
   const editorStates = useEditorStates(editor as Editor);
