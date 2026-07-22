@@ -32,6 +32,7 @@ export type EditorBubbleMenuProps = Omit<BubbleMenuProps, 'children'> & {
   commentDrawerOpen?: boolean;
   setCommentDrawerOpen?: React.Dispatch<SetStateAction<boolean>>;
   isCollabDocumentPublished?: boolean | undefined;
+  enableCollaboration?: boolean;
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useMediaQuery } from 'usehooks-ts';
+import { useEscapeKey } from './useEscapeKey';
 
 type UseFocusModeOptions = {
   /** Notify callback — fires on every toggle in both modes (existing API). */
@@ -45,6 +46,12 @@ export const useFocusMode = ({
       window.removeEventListener('keydown', onKeyDown);
     };
   }, [isMobile, toggleFocusMode]);
+
+  useEscapeKey(() => {
+    if (isFocusMode) {
+      toggleFocusMode();
+    }
+  });
 
   return { isFocusMode, toggleFocusMode };
 };

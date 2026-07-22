@@ -436,8 +436,6 @@ export const useTabEditor = ({
   );
   const isInitialEditorCreation = useRef(true);
   const [slides, setSlides] = useState<string[]>([]);
-  const isPreviewModeRef = useRef(isPreviewMode);
-  isPreviewModeRef.current = isPreviewMode;
   const unFocusedRef = useRef(unFocused);
   unFocusedRef.current = unFocused;
 
@@ -561,7 +559,10 @@ export const useTabEditor = ({
                 }
               }
 
-              if (isPreviewModeRef.current) {
+              // Read-only preview mode can use the anchor's native navigation.
+              // Suggestion mode is also a preview mode, but its ProseMirror
+              // view stays editable so it can intercept proposed changes.
+              if (!view.editable) {
                 return false;
               }
 
