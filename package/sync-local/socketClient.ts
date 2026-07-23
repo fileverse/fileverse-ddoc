@@ -30,11 +30,9 @@ interface ISocketClientConfig {
   ownerEdSecret?: string;
   contractAddress?: string;
   ownerAddress?: string;
-  ownerIdentityDid?: string;
   editLock?: string;
   encryptedTitle?: string;
   identityToken?: string;
-  identityContractAddress?: string;
   editUcan?: string;
   refreshEditClaim?: () => Promise<
     | { status: 'ok'; token: string }
@@ -92,11 +90,9 @@ export class SocketClient {
   private ownerUcan?: ucans.Ucan;
   private collaborationUcan?: ucans.Ucan;
   private ownerAddress?: string;
-  private ownerIdentityDid?: string;
   private editLock?: string;
   private encryptedTitle?: string;
   private identityToken?: string;
-  private identityContractAddress?: string;
   private editUcan?: string;
   private refreshEditClaim?: () => Promise<
     | { status: 'ok'; token: string }
@@ -147,12 +143,8 @@ export class SocketClient {
 
     if (config.contractAddress) this.contractAddress = config.contractAddress;
     if (config.ownerAddress) this.ownerAddress = config.ownerAddress;
-    if (config.ownerIdentityDid)
-      this.ownerIdentityDid = config.ownerIdentityDid;
     if (config.editLock) this.editLock = config.editLock;
     if (config.identityToken) this.identityToken = config.identityToken;
-    if (config.identityContractAddress)
-      this.identityContractAddress = config.identityContractAddress;
     if (config.editUcan) this.editUcan = config.editUcan;
     this.lastGoodEditUcan = config.editUcan;
     if (config.refreshEditClaim)
@@ -584,10 +576,7 @@ export class SocketClient {
     if (this.ownerKeyPair) args.ownerToken = await this.getOwnerToken();
     if (this.ownerAddress) args.ownerAddress = this.ownerAddress;
     if (this.contractAddress) args.contractAddress = this.contractAddress;
-    if (this.ownerIdentityDid) args.ownerIdentityDid = this.ownerIdentityDid;
     if (this.identityToken) args.identityToken = this.identityToken;
-    if (this.identityContractAddress)
-      args.identityContractAddress = this.identityContractAddress;
 
     // Re-mint on every /auth (incl. reconnect, rekey). ok → use + cache the fresh token;
     // unavailable (transient/network) → fall back to the last-good claim so a blip doesn't

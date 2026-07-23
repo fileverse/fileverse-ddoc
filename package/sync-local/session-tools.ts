@@ -20,9 +20,7 @@ function buildSocketClientConfig(
     ownerEdSecret: ownerAuth.ownerEdSecret,
     contractAddress: ownerAuth.contractAddress,
     ownerAddress: ownerAuth.ownerAddress,
-    ownerIdentityDid: ownerAuth.ownerIdentityDid,
     identityToken: ownerAuth.identityToken,
-    identityContractAddress: ownerAuth.identityContractAddress,
     joinOnly,
   };
 }

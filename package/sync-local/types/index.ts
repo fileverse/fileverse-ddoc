@@ -14,16 +14,12 @@ export interface CollabConnectionConfig {
   livePresence?: boolean;
   /** Host signal: connect once on open to initialise durability even without an edit. */
   connectOnOpen?: boolean;
-  /** Host signal (owner-only): the owner identity signingKey DID. Recorded by the durable server on the first owner /auth as the R3 owner binding. */
-  ownerIdentityDid?: string;
   /** Host signal (owner-only): wrapped roomKey bytes (owner-lock construction), uploaded as the server editLock recovery artifact. Opaque to the package. */
   editLock?: string;
   /** Host signal (owner-only): the document title encrypted with the roomKey, uploaded as the server title recovery artifact. Opaque to the package. */
   encryptedTitle?: string;
   /** Host signal (owner-only): Ed25519 UCAN proving the owner identity, sent on /auth so the server binds the CRYPTOGRAPHICALLY PROVEN owner DID (not a bare asserted string). Opaque to the package. */
   identityToken?: string;
-  /** Host signal (owner-only): the identity contract address the server reads to resolve the on-chain signingDid that verifies identityToken. */
-  identityContractAddress?: string;
   /** Host signal (non-owner editor): the gate-minted edit-admission UCAN, forwarded on /auth so the
    *  server admits this connection as a GP-rail editor. Opaque to the package. */
   editUcan?: string;
@@ -293,9 +289,7 @@ export interface IAuthArgs {
   contractAddress?: string;
   sessionDid?: string;
   roomInfo?: string;
-  ownerIdentityDid?: string;
   identityToken?: string;
-  identityContractAddress?: string;
   editUcan?: string;
   actorHandle?: string;
   joinOnly?: boolean;
