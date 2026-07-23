@@ -15,6 +15,7 @@ interface UseYjsSetupArgs {
   enableIndexeddbSync?: boolean;
   ddocId?: string;
   collaboration?: CollaborationProps;
+  onCollaboratorChange?: DdocProps['onCollaboratorChange'];
   onIndexedDbError?: (error: Error) => void;
 }
 
@@ -23,6 +24,7 @@ export const useYjsSetup = ({
   enableIndexeddbSync,
   ddocId,
   collaboration,
+  onCollaboratorChange,
   onIndexedDbError,
 }: UseYjsSetupArgs) => {
   const [ydoc] = useState(new Y.Doc());
@@ -34,16 +36,18 @@ export const useYjsSetup = ({
     ? collaboration.services
     : undefined;
   const callbacks: CollabCallbacks | undefined = collabEnabled
-    ? collaboration.on
+    ? { ...collaboration.on, onCollaboratorsChange: onCollaboratorChange }
     : undefined;
 
   const yjsIndexeddbProviderRef = useRef<IndexeddbPersistence | null>(null);
 
   const {
     connect,
+    disconnect,
     isReady,
     isSyncing,
     terminateSession,
+    updateTitle,
     awareness,
     hasCollabContentInitialised,
     state: collabState,
@@ -147,9 +151,11 @@ export const useYjsSetup = ({
   return {
     ydoc,
     onConnect: connect,
+    onDisconnect: disconnect,
     isReady,
     isSyncing,
     terminateSession,
+    updateTitle,
     awareness,
     hasCollabContentInitialised,
     isIndexeddbSynced,
