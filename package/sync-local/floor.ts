@@ -1,10 +1,15 @@
+import * as Y from 'yjs';
+
 // The authorship floor is the highest seq the client has applied as an ordered
 // range read. A range read returns a gapless PREFIX of the update rows above the
 // cursor (snapshot rows consume seqs but are excluded from the tail, so
 // non-consecutive integers are expected and are NOT a gap). Live broadcasts carry
 // no seq and never reach this function, so they never advance the floor — which is
 // exactly what keeps an owner-authored snapshot's floorSeq honest.
-export function advanceFloor(floor: number, pageSeqsAscending: number[]): number {
+export function advanceFloor(
+  floor: number,
+  pageSeqsAscending: number[],
+): number {
   let next = floor;
   for (const seq of pageSeqsAscending) {
     if (seq > next) next = seq;
@@ -12,13 +17,40 @@ export function advanceFloor(floor: number, pageSeqsAscending: number[]): number
   return next;
 }
 
-// Owner-only snapshot cadence. The server also enforces owner-only authorship; this
-// just avoids doing the client work for non-owners. The floor is advanced by a
-// catch-up read inside the authoring routine, so it is not a precondition here.
+// Snapshot cadence for any writer (the server admits owners and admitted editors; a
+// joinOnly client passes canAuthor=false). The floor is advanced by a catch-up read
+// inside the authoring routine, so it is not a precondition here.
 export function shouldAuthorSnapshot(p: {
-  isOwner: boolean;
+  canAuthor: boolean;
   updatesSinceLastSnapshot: number;
   threshold: number;
 }): boolean {
-  return p.isOwner && p.updatesSinceLastSnapshot >= p.threshold;
+  return p.canAuthor && p.updatesSinceLastSnapshot >= p.threshold;
+}
+
+// The update carrying ops/deletes the local doc holds that the server's log provably
+// lacks, or null when there is nothing local-only worth writing. `serverMerged` is the
+// merged decrypted log content from a full hydration walk; null means an empty log,
+// where the whole local state is the seed. Sending a diff instead of the full state is
+// what keeps the durable log from growing by one document copy per join.
+export function computeLocalOnlyUpdate(
+  ydoc: Y.Doc,
+  serverMerged: Uint8Array | null,
+): Uint8Array | null {
+  const full = Y.encodeStateAsUpdate(ydoc);
+  if (full.length <= 2) return null; // structurally empty doc
+  if (serverMerged === null) return full; // empty log — seed it
+  const serverSV = Y.encodeStateVectorFromUpdate(serverMerged);
+  const diff = Y.encodeStateAsUpdate(ydoc, serverSV);
+  // encodeStateAsUpdate always carries the doc's full delete set even when no structs
+  // are missing. The log's diff against its own state vector is exactly that redundant
+  // baseline — a byte-identical result means nothing local-only exists, deletes included.
+  const baseline = Y.diffUpdate(serverMerged, serverSV);
+  if (
+    diff.length === baseline.length &&
+    diff.every((b, i) => b === baseline[i])
+  ) {
+    return null;
+  }
+  return diff;
 }

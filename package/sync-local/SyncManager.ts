@@ -6,7 +6,11 @@ import { Awareness, removeAwarenessStates } from 'y-protocols/awareness.js';
 import { SocketClient } from './socketClient';
 import { crypto as cryptoUtils } from './crypto';
 import { createAwarenessUpdateHandler } from './utils/createAwarenessUpdateHandler';
-import { advanceFloor, shouldAuthorSnapshot } from './floor';
+import {
+  advanceFloor,
+  computeLocalOnlyUpdate,
+  shouldAuthorSnapshot,
+} from './floor';
 import {
   SyncManagerConfig,
   CollabConnectionConfig,
@@ -32,6 +36,14 @@ const MAX_RETRIES = 3;
 // matches what we hold — nothing to rekey, but the miss/409 that triggered the heal isn't a
 // rotation-lag problem. 'failed': no key resolved, or the heal threw.
 type HealOutcome = 'rekeyed' | 'current-key-ok' | 'failed';
+
+// Accumulator for one hydration walk: the merged decrypted log content (drives the
+// local-only diff) and the walk's size (drives the compaction decision).
+interface HydrationWalk {
+  merged: Uint8Array | null;
+  pages: number;
+  tailRows: number;
+}
 
 function bytesEqual(a: Uint8Array, b: Uint8Array): boolean {
   if (a.length !== b.length) return false;
@@ -88,6 +100,11 @@ export class SyncManager {
   private updatesSinceSnapshot = 0;
   private isAuthoringSnapshot = false;
   private readonly SNAPSHOT_THRESHOLD = 100;
+  private tailCompactTimer: ReturnType<typeof setTimeout> | null = null;
+  // Compact when the hydration walk needed more than one page (>~9MB of tail) or the
+  // row count alone makes replay expensive.
+  private readonly TAIL_COMPACT_PAGES = 2;
+  private readonly TAIL_COMPACT_ROWS = 200;
   private flushTimer: ReturnType<typeof setTimeout> | null = null;
   private readonly FLUSH_INTERVAL_MS = 50;
   private readonly MAX_QUEUE_SIZE = 5;
@@ -718,7 +735,7 @@ export class SyncManager {
     this.updatesSinceSnapshot += 1;
     if (
       shouldAuthorSnapshot({
-        isOwner: this.isOwner,
+        canAuthor: !this.joinOnly,
         updatesSinceLastSnapshot: this.updatesSinceSnapshot,
         threshold: this.SNAPSHOT_THRESHOLD,
       })
@@ -1134,8 +1151,12 @@ export class SyncManager {
 
   // Pull the server's snapshot + seq-tail from the current floor, apply it to the Y.Doc,
   // and advance the floor. Paginates until the server reports no more. Returns whether any
-  // tail row was applied (used to flag unmerged peer content to the owner).
-  private async catchUpFloor(syncId: number): Promise<boolean> {
+  // tail row was applied (used to flag unmerged peer content to the owner). When `walk` is
+  // given, accumulates the decrypted log content and walk stats for the caller.
+  private async catchUpFloor(
+    syncId: number,
+    walk?: HydrationWalk,
+  ): Promise<boolean> {
     // Also valid in steady state (ready) for the SAME generation, so authorSnapshot can
     // advance the floor before stamping; the syncId check still bails a superseded attempt.
     const syncStillCurrent = () =>
@@ -1158,9 +1179,19 @@ export class SyncManager {
           pageSeqs.push(row.seq);
         }
       }
+      if (walk) {
+        walk.pages += 1;
+        walk.tailRows += pageSeqs.length;
+      }
       if (updates.length) {
-        Y.applyUpdate(this.ydoc, Y.mergeUpdates(updates), 'self');
+        const pageMerged = Y.mergeUpdates(updates);
+        Y.applyUpdate(this.ydoc, pageMerged, 'self');
         appliedTail = appliedTail || pageSeqs.length > 0;
+        if (walk) {
+          walk.merged = walk.merged
+            ? Y.mergeUpdates([walk.merged, pageMerged])
+            : pageMerged;
+        }
       }
 
       const snapFloor =
@@ -1177,15 +1208,16 @@ export class SyncManager {
     }
   }
 
-  // Owner-only. Advance the floor with a catch-up read so the stamp is current, then
-  // upload the full Y.Doc state stamped with that floor. The server serves the tail as
-  // seq > floorSeq, so a concurrent writer's update the author never applied is
-  // re-served rather than orphaned below the snapshot's own seq.
+  // Any writer (owner or admitted editor; the server rejects revoked actors). Advance
+  // the floor with a catch-up read so the stamp is current, then upload the full Y.Doc
+  // state stamped with that floor. The server serves the tail as seq > floorSeq, so a
+  // concurrent writer's update the author never applied is re-served rather than
+  // orphaned below the snapshot's own seq.
   private async authorSnapshot(
     publishedMarker: string | null,
     syncId: number,
   ): Promise<void> {
-    if (!this.isOwner || !this.isConnected) return;
+    if (this.joinOnly || !this.isConnected) return;
     if (this.isAuthoringSnapshot) return;
     this.isAuthoringSnapshot = true;
     try {
@@ -1214,21 +1246,58 @@ export class SyncManager {
 
   private async hydrate(syncId: number): Promise<void> {
     const syncStillCurrent = () => this.isCurrentSyncAttempt(syncId);
+    // floor === 0 ⇒ first walk of this session generation (page load or post-reset): the
+    // only walk that observes the log from its base and can prove what the server already
+    // holds. A floor>0 walk (in-session reconnect) covers just the new tail — pending
+    // local edits ride the update queue there, so no post-sync broadcast is needed.
+    const fullWalk = this.floor === 0;
+    const hadLocalState = this.ydoc.store.clients.size > 0;
+    const walk: HydrationWalk = { merged: null, pages: 0, tailRows: 0 };
 
     await this.withRetry(async () => {
-      const appliedTail = await this.catchUpFloor(syncId);
+      const appliedTail = await this.catchUpFloor(syncId, walk);
       if (!syncStillCurrent()) return;
 
       if (appliedTail && this.isOwner) {
         this.send({ type: 'SET_UNMERGED_UPDATES', hasUpdates: true });
       }
 
-      // Broadcast post-sync local-only state so peers receive items that exist only
-      // locally (e.g. tab metadata created with a fresh clientID after a refresh).
-      const postSync = fromUint8Array(Y.encodeStateAsUpdate(this.ydoc));
+      if (!fullWalk || !hadLocalState) return;
+      // Broadcast ONLY what the log provably lacks (e.g. offline/IndexedDB edits, tab
+      // metadata minted before connect) — never the full state: a full-state row per join
+      // grew the durable log by one document copy per visit.
+      const diff = computeLocalOnlyUpdate(this.ydoc, walk.merged);
+      if (!diff) return;
       if (!syncStillCurrent()) return;
-      await this.broadcastLocalContents(postSync, syncId);
+      await this.broadcastLocalContents(fromUint8Array(diff), syncId);
     }, 'hydrate');
+
+    this.maybeCompactTail(walk);
+  }
+
+  // A tail that took multiple pages (or hundreds of rows) makes every future open pay
+  // serial round-trips — whoever hydrated it and can write collapses it into one
+  // snapshot. Jitter spreads simultaneous joiners; a lost race is harmless (snapshots
+  // are keep-latest and floors monotone).
+  private maybeCompactTail(walk: HydrationWalk): void {
+    if (
+      walk.pages < this.TAIL_COMPACT_PAGES &&
+      walk.tailRows < this.TAIL_COMPACT_ROWS
+    ) {
+      return;
+    }
+    if (this.joinOnly) return;
+    if (this.tailCompactTimer) clearTimeout(this.tailCompactTimer);
+    this.tailCompactTimer = setTimeout(
+      () => {
+        this.tailCompactTimer = null;
+        if (!this.isConnected) return;
+        this.authorSnapshot(null, this.syncId).catch((err) => {
+          console.error('SyncManager: tail compaction failed', err);
+        });
+      },
+      1000 + Math.floor(Math.random() * 4000),
+    );
   }
 
   private initializeAwareness(): void {
@@ -1558,6 +1627,10 @@ export class SyncManager {
     if (this.mirrorIdleTimer) {
       clearTimeout(this.mirrorIdleTimer);
       this.mirrorIdleTimer = null;
+    }
+    if (this.tailCompactTimer) {
+      clearTimeout(this.tailCompactTimer);
+      this.tailCompactTimer = null;
     }
     this.socketClient = null;
     this.updateQueue = [];
