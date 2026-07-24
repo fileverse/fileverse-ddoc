@@ -454,12 +454,18 @@ export class SocketClient {
     const sessionDid = this.collaborationKeyPair?.did();
     if (!token || !sessionDid || !mergedUpdate) return;
 
+    // Carry the freshest known-good edit claim (same value threaded to /auth) so the server can
+    // re-run offline admission on this durable-write path — H3(a) belt. Cached, no await: pagehide
+    // can't refresh a token. Public/workspace rails hold no claim, so this stays undefined there.
+    const editUcan = this.lastGoodEditUcan ?? this.editUcan;
+
     const url = `${this._restBase}/flush`;
     const body = JSON.stringify({
       documentId: this.roomId,
       sessionDid,
       collaborationToken: token,
       data: mergedUpdate,
+      ...(editUcan ? { editUcan } : {}),
     });
 
     const sent =
