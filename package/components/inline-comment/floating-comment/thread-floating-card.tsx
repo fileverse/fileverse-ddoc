@@ -16,7 +16,6 @@ export const ThreadFloatingCard = ({
   tabName,
   isHidden,
   registerCardNode,
-  isCollaborationEnabled,
 }: ThreadFloatingCardProps) => {
   const focusFloatingCard = useCommentStore((s) => s.focusFloatingCard);
   const focusCommentInEditor = useCommentStore((s) => s.focusCommentInEditor);
@@ -104,15 +103,9 @@ export const ThreadFloatingCard = ({
           version={comment?.version}
           emptyComment={!comment}
         />
-        {thread.isFocused && !isConnected && !isCollaborationEnabled && (
-          <FloatingAuthPrompt />
-        )}
+        {thread.isFocused && !isConnected && <FloatingAuthPrompt />}
         <div className="px-3">
-          <InputField
-            comment={comment}
-            thread={thread}
-            isCollaborationEnabled={isCollaborationEnabled}
-          />
+          <InputField comment={comment} thread={thread} />
         </div>
 
         <DeleteConfirmOverlay
@@ -129,11 +122,9 @@ export const ThreadFloatingCard = ({
 const InputField = ({
   comment,
   thread,
-  isCollaborationEnabled,
 }: {
   comment: ThreadFloatingCardProps['comment'];
   thread: ThreadFloatingCardProps['thread'];
-  isCollaborationEnabled?: boolean;
 }) => {
   const username = useCommentStore((s) => s.username);
   const [isReplyInputFocused, setIsReplyInputFocused] = useState(false);
@@ -189,9 +180,8 @@ const InputField = ({
       (isEditingThisThread &&
         replyText.trim() === (replyEditTarget?.originalText ?? '').trim()),
   );
-  const shouldShowReplyInputField = isCollaborationEnabled
-    ? thread.isFocused
-    : isConnected && (thread.isFocused || hasUnsentReply);
+  const shouldShowReplyInputField =
+    isConnected && (thread.isFocused || hasUnsentReply);
 
   useEffect(() => {
     if (!replyTextareaRef.current) {
@@ -240,7 +230,7 @@ const InputField = ({
       <div
         className={cn(
           'border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]',
-          isCollaborationEnabled ? 'color-bg-disabled' : 'color-bg-default',
+          'color-bg-default',
         )}
       >
         <Avatar
@@ -270,14 +260,8 @@ const InputField = ({
             }
           }}
           className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
-          placeholder={
-            isCollaborationEnabled
-              ? 'Replies off in live collaboration (coming soon)'
-              : canReply
-                ? 'Add a reply'
-                : 'Thread resolved'
-          }
-          disabled={!canReply || isCollaborationEnabled}
+          placeholder={canReply ? 'Add a reply' : 'Thread resolved'}
+          disabled={!canReply}
         />
       </div>
       <div
@@ -300,7 +284,7 @@ const InputField = ({
         </Button>
         <Button
           className="w-20 min-w-20"
-          disabled={isSendDisabled || isCollaborationEnabled}
+          disabled={isSendDisabled}
           onClick={onReplySubmit}
         >
           Send

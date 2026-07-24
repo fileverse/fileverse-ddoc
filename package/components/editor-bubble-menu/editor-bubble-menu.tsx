@@ -251,8 +251,7 @@ const EditorBubbleMenuComponent = (props: EditorBubbleMenuProps) => {
         disabled={
           isCommentResolved ||
           !isCollabDocumentPublished ||
-          disableInlineComment ||
-          enableCollaboration
+          disableInlineComment
         }
         isActive={isCommentActive}
         onClick={handleMobileInlineComment}
@@ -564,18 +563,11 @@ const EditorBubbleMenuComponent = (props: EditorBubbleMenuProps) => {
                         icon="MessageSquarePlus"
                         variant="ghost"
                         size="sm"
-                        tooltip={
-                          enableCollaboration
-                            ? 'Comments are not available during real-time  collaboration'
-                            : isCommentResolved
-                              ? 'Comment resolved'
-                              : ''
-                        }
+                        tooltip={isCommentResolved ? 'Comment resolved' : ''}
                         disabled={
                           isCommentResolved ||
                           !isCollabDocumentPublished ||
-                          disableInlineComment ||
-                          enableCollaboration
+                          disableInlineComment
                         }
                         isActive={isCommentActive}
                         onClick={handleInlineComment}
@@ -599,18 +591,11 @@ const EditorBubbleMenuComponent = (props: EditorBubbleMenuProps) => {
                           icon="MessageSquarePlus"
                           variant="ghost"
                           size="sm"
-                          tooltip={
-                            enableCollaboration
-                              ? 'Comments are not available during real-time  collaboration'
-                              : isCommentResolved
-                                ? 'Comment resolved'
-                                : ''
-                          }
+                          tooltip={isCommentResolved ? 'Comment resolved' : ''}
                           disabled={
                             isCommentResolved ||
                             !isCollabDocumentPublished ||
-                            disableInlineComment ||
-                            enableCollaboration
+                            disableInlineComment
                           }
                           isActive={isCommentActive}
                           onClick={handleInlineComment}

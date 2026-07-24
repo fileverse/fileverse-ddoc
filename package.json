@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "4.2.4",
+  "version": "4.2.4-patch-6",
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",
   "exports": {
@@ -121,7 +121,6 @@
     "y-indexeddb": "^9.0.12",
     "y-prosemirror": "^1.2.5",
     "y-protocols": "^1.0.6",
-    "y-webrtc": "^10.3.0",
     "yjs": "^13.6.15",
     "zustand": "^5.0.12"
   },
@@ -131,7 +130,7 @@
     "@dnd-kit/utilities": ">=3.2.2",
     "@fileverse/crypto": ">=0.0.21",
     "@fileverse/ens": "0.0.4",
-    "@fileverse/ui": "5.2.0",
+    "@fileverse/ui": "5.2.1",
     "framer-motion": ">=11.2.10",
     "frimousse": ">=0.3.0",
     "mermaid": "11.14.0",
