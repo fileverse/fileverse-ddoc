@@ -20,7 +20,6 @@ interface CommentDrawerDesktopProps {
   commentType: string;
   commentTypeOptions: DrawerSelectOption[];
   filteredComments: IComment[];
-  isCollaborationEnabled: boolean;
   isCommentTypeSelectOpen: boolean;
   isConnected: boolean;
   isNavbarVisible: boolean;
@@ -48,7 +47,6 @@ export const CommentDrawerDesktop = ({
   commentType,
   commentTypeOptions,
   filteredComments,
-  isCollaborationEnabled,
   isCommentTypeSelectOpen,
   isConnected,
   isNavbarVisible,
@@ -94,7 +92,7 @@ export const CommentDrawerDesktop = ({
           !isConnected && isPreviewMode && 'flex items-center h-[77dvh]',
         )}
       >
-        {(isConnected || isCollaborationEnabled) && (
+        {isConnected && (
           <div className="flex mb-[16px] px-4 gap-[8px]">
             <Select
               value={commentType}
@@ -144,7 +142,6 @@ export const CommentDrawerDesktop = ({
           newCommentTabId={newCommentTabId}
           onCommentFocus={onCommentFocus}
           onReset={onReset}
-          isCollaborationEnabled={isCollaborationEnabled}
         />
       </div>
     }

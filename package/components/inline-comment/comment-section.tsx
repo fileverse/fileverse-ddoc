@@ -29,7 +29,6 @@ export const CommentSection = ({
   showNewCommentInput = true,
   onCommentFocus,
   onReset,
-  isCollaborationEnabled,
 }: CommentSectionProps) => {
   const tabComments = useCommentStore((s) => s.tabComments);
   const username = useCommentStore((s) => s.username);
@@ -124,7 +123,6 @@ export const CommentSection = ({
             onUnresolve={unresolveComment}
             onDelete={handleDeleteComment}
             onSetOpenReplyId={setOpenReplyId}
-            isCollaborationEnabled={isCollaborationEnabled}
           />
         ))}
       </>
@@ -208,7 +206,7 @@ export const CommentSection = ({
     return () => window.clearTimeout(timeoutId);
   }, [isBelow1280px, resolvedToastCommentId]);
 
-  if (!isConnected && !isCollaborationEnabled) {
+  if (!isConnected) {
     return (
       <CommentUsername
         connectViaWallet={connectViaWallet}
@@ -274,10 +272,7 @@ export const CommentSection = ({
       </div>
 
       {showNewCommentInput && (
-        <CommentInputField
-          tabId={newCommentTabId}
-          isCollaborationEnabled={isCollaborationEnabled}
-        />
+        <CommentInputField tabId={newCommentTabId} />
       )}
       {isBelow1280px && resolvedToastCommentId && (
         <MobileResolvedCommentToast
@@ -306,7 +301,6 @@ const SidebarCommentItem = ({
   onUnresolve,
   onDelete,
   onSetOpenReplyId,
-  isCollaborationEnabled,
 }: {
   comment: IComment;
   tabName: string;
@@ -322,7 +316,6 @@ const SidebarCommentItem = ({
   onUnresolve: (id: string) => void;
   onDelete: (id: string) => void;
   onSetOpenReplyId: (id: string | null) => void;
-  isCollaborationEnabled: boolean;
 }) => {
   const [isDeleteOverlayVisible, setIsDeleteOverlayVisible] = useState(false);
   const { isBelow1280px } = useResponsive();
@@ -440,7 +433,6 @@ const SidebarCommentItem = ({
             commentId={comment.id as string}
             commentUsername={comment.username}
             replyCount={comment.replies?.length ?? 0}
-            isCollaborationEnabled={isCollaborationEnabled}
           />
         )}
       </div>

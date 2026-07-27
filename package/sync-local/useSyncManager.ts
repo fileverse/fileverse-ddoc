@@ -37,7 +37,8 @@ export const useSyncManager = (config: SyncManagerConfig) => {
     if (!isConnected || !config.ydoc) return;
 
     const updateHandler = (update: Uint8Array, origin: any) => {
-      if (origin === 'self' || origin === 'remote' || !manager.isConnected) return;
+      if (origin === 'self' || origin === 'remote' || !manager.isConnected)
+        return;
       // Skip origins from external providers (e.g. y-indexeddb).
       // Guard against ref.current being null — otherwise a default-origin
       // transact (origin === null) would collide with an uninitialised
@@ -92,6 +93,29 @@ export const useSyncManager = (config: SyncManagerConfig) => {
     };
   }, []);
 
+  // Hard tab-close: beacon the last pending edits (local y-indexeddb covers same-device
+  // reopen; this closes the cross-device tail). pagehide fires on mobile/bfcache where
+  // beforeunload does not.
+  useEffect(() => {
+    const onPageHide = () => {
+      managerRef.current?.fireBeacon();
+    };
+    if (
+      typeof window !== 'undefined' &&
+      typeof window.addEventListener === 'function'
+    ) {
+      window.addEventListener('pagehide', onPageHide);
+    }
+    return () => {
+      if (
+        typeof window !== 'undefined' &&
+        typeof window.removeEventListener === 'function'
+      ) {
+        window.removeEventListener('pagehide', onPageHide);
+      }
+    };
+  }, []);
+
   const connect = useCallback(
     (connectConfig: CollabConnectionConfig) => {
       manager.connect(connectConfig).catch((err) => {
@@ -109,6 +133,15 @@ export const useSyncManager = (config: SyncManagerConfig) => {
   const terminateSession = useCallback(() => {
     manager.terminateSession();
   }, [manager]);
+
+  const updateTitle = useCallback(
+    (args: { encryptedTitle: string; documentTitle: string }) => {
+      manager.updateTitle(args).catch((err) => {
+        console.error('useSyncManager: updateTitle failed', err);
+      });
+    },
+    [manager],
+  );
 
   const isSyncing = collabState.status === 'syncing';
   const isReady = collabState.status === 'ready' && !!awareness;
@@ -130,6 +163,7 @@ export const useSyncManager = (config: SyncManagerConfig) => {
     connect,
     disconnect,
     terminateSession,
+    updateTitle,
     isReady,
     isSyncing,
     awareness,

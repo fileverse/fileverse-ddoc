@@ -30,7 +30,6 @@ export const SuggestionThreadFloatingCard = ({
   comment,
   isHidden,
   registerCardNode,
-  isCollaborationEnabled,
 }: ThreadFloatingCardProps) => {
   const focusFloatingCard = useCommentStore((s) => s.focusFloatingCard);
   const focusCommentInEditor = useCommentStore((s) => s.focusCommentInEditor);
@@ -105,11 +104,7 @@ export const SuggestionThreadFloatingCard = ({
           onFocusRequest={handleFocus}
         />
 
-        <ReplyField
-          thread={thread}
-          comment={comment}
-          isCollaborationEnabled={isCollaborationEnabled}
-        />
+        <ReplyField thread={thread} comment={comment} />
       </div>
     </FloatingCardShell>
   );
@@ -259,11 +254,9 @@ const RepliesThread = ({
 const ReplyField = ({
   thread,
   comment,
-  isCollaborationEnabled,
 }: {
   thread: ThreadFloatingCardProps['thread'];
   comment: NonNullable<ThreadFloatingCardProps['comment']>;
-  isCollaborationEnabled?: boolean;
 }) => {
   const username = useCommentStore((s) => s.username);
   const isConnected = useCommentStore((s) => s.isConnected);
@@ -274,9 +267,8 @@ const ReplyField = ({
   const replyTextareaRef = useRef<HTMLTextAreaElement | null>(null);
   const canReply = !comment.resolved && !comment.deleted;
   const hasUnsentReply = Boolean(replyText.trim());
-  const shouldShowReplyField = isCollaborationEnabled
-    ? thread.isFocused
-    : isConnected && (thread.isFocused || hasUnsentReply);
+  const shouldShowReplyField =
+    isConnected && (thread.isFocused || hasUnsentReply);
   const ensStatus = useEnsStatus(username);
 
   useEffect(() => {
@@ -286,7 +278,6 @@ const ReplyField = ({
   }, [replyText]);
 
   const handleSubmit = () => {
-    if (isCollaborationEnabled) return;
     if (!thread.commentId || !replyText.trim()) return;
     if (!isConnected) {
       setCommentDrawerOpen?.(true);
@@ -299,7 +290,7 @@ const ReplyField = ({
 
   if (!canReply) return null;
 
-  if (thread.isFocused && !isConnected && !isCollaborationEnabled) {
+  if (thread.isFocused && !isConnected) {
     return <FloatingAuthPrompt />;
   }
 
@@ -310,7 +301,7 @@ const ReplyField = ({
       <div
         className={cn(
           'border flex px-[12px] py-[8px] gap-[8px] rounded-[4px]',
-          isCollaborationEnabled ? 'color-bg-disabled' : 'color-bg-default',
+          'color-bg-default',
         )}
       >
         <Avatar
@@ -340,14 +331,8 @@ const ReplyField = ({
             }
           }}
           className="color-bg-default w-full text-body-sm color-text-default !p-0 !border-none h-[20px] max-h-[296px] overflow-y-auto no-scrollbar whitespace-pre-wrap"
-          placeholder={
-            isCollaborationEnabled
-              ? 'Replies off in live collaboration (coming soon)'
-              : canReply
-                ? 'Add a reply'
-                : 'Thread resolved'
-          }
-          disabled={!canReply || isCollaborationEnabled}
+          placeholder={canReply ? 'Add a reply' : 'Thread resolved'}
+          disabled={!canReply}
         />
       </div>
       <div
@@ -369,7 +354,7 @@ const ReplyField = ({
         </Button>
         <Button
           className="w-20 min-w-20"
-          disabled={!replyText.trim() || isCollaborationEnabled}
+          disabled={!replyText.trim()}
           onClick={handleSubmit}
         >
           Send

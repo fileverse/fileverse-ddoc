@@ -38,6 +38,14 @@ export type {
   CollabErrorCode,
   CollabStatus,
 } from './package/sync-local/types';
+export {
+  encryptForRoomKey,
+  decryptForRoomKey,
+} from './package/sync-local/crypto/room-key';
+export {
+  fetchSessionState,
+  seedSession,
+} from './package/sync-local/session-tools';
 
 export type { CommentMutationMeta, SuggestionType } from './package/types';
 export type { IComment } from './package/extensions/comment/comment.ts';

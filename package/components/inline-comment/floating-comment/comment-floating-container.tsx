@@ -15,7 +15,6 @@ export const CommentFloatingContainer = ({
   scrollContainerRef,
   tabName,
   isHidden,
-  isCollaborationEnabled,
 }: CommentFloatingContainerProps) => {
   const comments = useCommentStore((s) => s.tabComments);
   const {
@@ -87,7 +86,6 @@ export const CommentFloatingContainer = ({
               tabName={tabName}
               isHidden={isHidden}
               registerCardNode={registerCardNode}
-              isCollaborationEnabled={isCollaborationEnabled}
             />
           );
         }
@@ -100,7 +98,6 @@ export const CommentFloatingContainer = ({
             tabName={tabName}
             isHidden={isHidden}
             registerCardNode={registerCardNode}
-            isCollaborationEnabled={isCollaborationEnabled}
           />
         );
       })}

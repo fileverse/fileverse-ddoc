@@ -147,6 +147,11 @@ export const useTabEditorCache = ({
 
       if (isActive) {
         setEditorEditableState(entry.editor, readyStateRef.current);
+        // A mid-session flip to non-editable (edit revoked) must also drop
+        // focus — a caret left in the surface reads as still-writable.
+        if (!readyStateRef.current) {
+          blurEditorDOM(entry.editor);
+        }
         return;
       }
 

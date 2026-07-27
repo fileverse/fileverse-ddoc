@@ -29,10 +29,11 @@ export const DdocEditorProps: EditorProps = {
 };
 
 export interface IDocCollabUsers {
-  clientId: number;
+  clientId: string | number;
   name: string;
   isEns: string;
   color: string;
+  isPlaceholder?: boolean;
 }
 
 export type InlineCommentData = {

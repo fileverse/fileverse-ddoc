@@ -82,6 +82,13 @@ export function transition(
           status: 'error',
           context: { error: event.error, hasUnmergedPeerUpdates: false },
         };
+      if (type === 'SESSION_TERMINATED')
+        return {
+          status: 'terminated',
+          context: { terminationReason: event.reason },
+        };
+      // No-op on status: the manager gates rekey re-entrancy itself.
+      if (type === 'CUTOVER') return { status: currentStatus, context: {} };
       if (type === 'RESET')
         return { status: 'idle', context: { ...INITIAL_CONTEXT } };
       return null;
@@ -102,6 +109,8 @@ export function transition(
           status: 'error',
           context: { error: event.error },
         };
+      // No-op on status: the manager gates rekey re-entrancy itself.
+      if (type === 'CUTOVER') return { status: currentStatus, context: {} };
       if (type === 'RESET')
         return { status: 'idle', context: { ...INITIAL_CONTEXT } };
       return null;
@@ -134,6 +143,11 @@ export function transition(
           context: {
             reconnectAttempt: context.reconnectAttempt + 1,
           },
+        };
+      if (type === 'SESSION_TERMINATED')
+        return {
+          status: 'terminated',
+          context: { terminationReason: event.reason },
         };
       if (type === 'RESET')
         return { status: 'idle', context: { ...INITIAL_CONTEXT } };
@@ -179,6 +193,8 @@ export function deriveCollabState(
         attempt: context.reconnectAttempt,
         maxAttempts: context.maxReconnectAttempts,
       };
+    case 'rotating':
+      return { status: 'rotating' };
     case 'error':
       return {
         status: 'error',

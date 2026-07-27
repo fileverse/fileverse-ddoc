@@ -90,6 +90,7 @@ export const useDdocEditor = ({
     enableIndexeddbSync,
     ddocId,
     collaboration,
+    onCollaboratorChange,
     onIndexedDbError,
   });
   const shouldWaitForIndexeddbBeforeCreatingDefaultTab = Boolean(
@@ -140,7 +141,6 @@ export const useDdocEditor = ({
     collaboration,
     versionId: versionHistoryState?.versionId,
     isReady: yjsSetup.isReady,
-    isSyncing: yjsSetup.isSyncing,
     awareness: yjsSetup.awareness,
     disableInlineComment,
     isFocusMode,
@@ -167,8 +167,9 @@ export const useDdocEditor = ({
     isContentLoading,
     onInvalidContentError,
     ignoreCorruptedData,
-    onCollaboratorChange,
     onConnect: yjsSetup.onConnect,
+    onDisconnect: yjsSetup.onDisconnect,
+    isIndexeddbSynced: yjsSetup.isIndexeddbSynced,
     hasCollabContentInitialised: yjsSetup.hasCollabContentInitialised,
     initialiseYjsIndexedDbProvider: yjsSetup.initialiseYjsIndexedDbProvider,
     externalExtensions,
