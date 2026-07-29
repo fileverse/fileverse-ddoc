@@ -1,4 +1,11 @@
-import { Editor, JSONContent } from '@tiptap/core';
+import {
+  type AnyExtension,
+  Editor,
+  JSONContent,
+  extensions as coreExtensions,
+  flattenExtensions,
+  getExtensionField,
+} from '@tiptap/core';
 import { isHex } from 'viem';
 
 export const nameFormatter = (username: string) => {
@@ -11,41 +18,56 @@ export const nameFormatter = (username: string) => {
   return username;
 };
 
-export const EXTENSIONS_WITH_DUPLICATE_WARNINGS = [
-  'paragraph',
-  'editable',
-  'clipboardTextSerializer',
-  'commands',
-  'focusEvents',
-  'keymap',
-  'tabindex',
-  'drop',
-  'paste',
-  'bold',
-  'blockquote',
-  'code',
-  'hardBreak',
-  'italic',
-  'orderedList',
-  'strike',
-  'text',
-  'column',
-  'columns',
-  'inlineMath',
-  'markdownTightLists',
-  'markdownClipboard',
-];
+const CORE_EXTENSION_NAMES = Object.values(coreExtensions)
+  .map((extension) => (extension as AnyExtension)?.name)
+  .filter(Boolean);
+
+/**
+ * `editor.extensionManager.extensions` is already resolved: it holds the parent
+ * kits (StarterKit, Markdown, ColumnExtension, ...) *and* the children they
+ * generate. Feeding that list straight into a new Editor re-runs every
+ * `addExtensions()`, so each child lands twice, and the Editor re-adds its own
+ * core extensions on top — which is what triggers tiptap's "Duplicate extension
+ * names" warning.
+ *
+ * Drop whatever the new Editor will recreate rather than maintaining a list of
+ * names by hand: a hardcoded list silently goes stale whenever tiptap adds a
+ * core extension (`delete`, `textDirection`) or StarterKit gains a child
+ * (`underline`, `listKeymap`). Parents keep their configured options, so the
+ * regenerated children are identical to the ones removed here.
+ */
+export const dedupeResolvedExtensions = (extensions: AnyExtension[]) => {
+  const regenerated = new Set<string>(CORE_EXTENSION_NAMES);
+
+  extensions.forEach((extension) => {
+    const addExtensions = getExtensionField<() => AnyExtension[]>(
+      extension,
+      'addExtensions',
+      {
+        name: extension.name,
+        options: extension.options,
+        storage: extension.storage,
+      },
+    );
+
+    if (!addExtensions) return;
+
+    flattenExtensions(addExtensions()).forEach((child) =>
+      regenerated.add(child.name),
+    );
+  });
+
+  return extensions.filter((extension) => !regenerated.has(extension.name));
+};
 
 export const getTemporaryEditor = (editor: Editor, content: JSONContent) => {
   const isCollaborationExtension = (name: string) =>
     name.toLowerCase().startsWith('collaboration');
 
   const temporalEditor = new Editor({
-    extensions: editor.extensionManager.extensions.filter(
-      (extension) =>
-        !isCollaborationExtension(extension.name) &&
-        !EXTENSIONS_WITH_DUPLICATE_WARNINGS.includes(extension.name),
-    ),
+    extensions: dedupeResolvedExtensions(
+      editor.extensionManager.extensions,
+    ).filter((extension) => !isCollaborationExtension(extension.name)),
     content,
   });
   return temporalEditor;

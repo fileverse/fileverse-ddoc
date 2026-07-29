@@ -17,7 +17,7 @@ import copy from 'copy-to-clipboard';
 import { convertMarkdownToHTML } from '../../utils/md-to-html';
 import { useResponsive } from '../../utils/responsive';
 import { IpfsImageFetchPayload, DdocProps, ThemeKey } from '../../types';
-import { EXTENSIONS_WITH_DUPLICATE_WARNINGS } from '../../utils/helpers';
+import { dedupeResolvedExtensions } from '../../utils/helpers';
 import {
   getResponsiveThemeTextColor,
   getThemeStyle,
@@ -161,7 +161,9 @@ export const PresentationMode = ({
 
   const presentationEditor = useMemo(() => {
     return new Editor({
-      extensions: editor.extensionManager.extensions.filter(
+      extensions: dedupeResolvedExtensions(
+        editor.extensionManager.extensions,
+      ).filter(
         (b) =>
           ![
             'collaboration',
@@ -174,7 +176,6 @@ export const PresentationMode = ({
             // via dangerouslySetInnerHTML) still showed content. The presentation
             // editor only renders slides read-only, so it never needs tracking.
             'suggestionTracking',
-            ...EXTENSIONS_WITH_DUPLICATE_WARNINGS,
           ].includes(b.name),
       ),
       editable: !isPreviewMode,

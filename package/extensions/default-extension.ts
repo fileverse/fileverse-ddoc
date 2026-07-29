@@ -332,6 +332,7 @@ export const defaultExtensions = ({
     bulletList: false,
     listItem: false,
     codeBlock: false,
+    trailingNode: false,
   }),
   CollapsibleHeading.configure({
     HTMLAttributes: {
