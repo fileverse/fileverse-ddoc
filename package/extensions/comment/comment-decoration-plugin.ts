@@ -757,11 +757,31 @@ export const CommentDecorationExtension =
             },
             apply(tr, pluginState, _oldState, newState) {
               // Rebuild decorations if:
-              //   1. Document changed (tr.docChanged)
-              //   2. Explicit rebuild triggered (tr.getMeta(commentDecorationPluginKey))
-              // Otherwise, map existing decorations through the transaction's mapping
-              // to preserve visual highlights during non-doc changes (e.g., selection moves).
-              if (tr.docChanged || tr.getMeta(commentDecorationPluginKey)) {
+              //   1. Explicit rebuild triggered (tr.getMeta(commentDecorationPluginKey))
+              //   2. The doc changed *and* the Y.Doc already reflects that change
+              //
+              // Rebuilding resolves RelativePositions against the Y.Doc, so it is
+              // only correct when the Y.Doc is in sync with `newState.doc`. That
+              // holds for Yjs-origin changes (remote peers, undo/redo): the Y.Doc
+              // is updated first and the ProseMirror transaction is dispatched from
+              // the observer. It does NOT hold for local edits — y-tiptap flushes
+              // ProseMirror → Y.Doc from its plugin view, which runs after every
+              // plugin's apply(). Resolving here would read pre-edit Yjs content and
+              // paint the highlight at stale coordinates: shifted by the size of the
+              // edit, or dropped entirely when the stale range no longer fits the
+              // shorter doc.
+              //
+              // For local edits (and non-doc changes such as selection moves), map
+              // the rendered decorations through the transaction instead. ProseMirror's
+              // own mapping is exact for those, and the anchor analysis in
+              // comment-store-provider re-resolves from the synced Y.Doc afterwards.
+              const isYjsOriginChange =
+                !!tr.getMeta(ySyncPluginKey)?.isChangeOrigin;
+
+              if (
+                tr.getMeta(commentDecorationPluginKey) ||
+                (tr.docChanged && isYjsOriginChange)
+              ) {
                 const previousDecorations = tr.docChanged
                   ? null
                   : pluginState.decorations;
