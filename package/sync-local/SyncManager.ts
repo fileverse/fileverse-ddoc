@@ -31,6 +31,8 @@ import {
 } from './collabStateMachine';
 
 const MAX_RETRIES = 3;
+// Pause between self-heal attempts while a rotation's on-chain anchor is still landing.
+const HEAL_RETRY_BACKOFF_MS = 4_000;
 
 // 'rekeyed': a new key was resolved and applied. 'current-key-ok': the resolved key already
 // matches what we hold — nothing to rekey, but the miss/409 that triggered the heal isn't a
@@ -82,6 +84,10 @@ export class SyncManager {
   // inbound decrypt miss) join the same outcome instead of one bailing false while the
   // other converges.
   private healingPromise: Promise<HealOutcome> | null = null;
+  // Backoff floor after a failed self-heal: the post-rotation gate blob anchors on-chain
+  // seconds-to-a-minute after the cutover, so a 'failed' heal is usually "not anchored YET".
+  // Send paths pause (edits keep queueing) instead of hot-looping the heal or terminalizing.
+  private healBackoffUntil = 0;
   // Bounds the "resend once on a stale current-key-ok 409" retry shared by the write-ack
   // paths below, so a genuinely-stuck client can't loop. Reset on any successful ack.
   private staleAckRetries = 0;
@@ -101,6 +107,10 @@ export class SyncManager {
   private isAuthoringSnapshot = false;
   private readonly SNAPSHOT_THRESHOLD = 100;
   private tailCompactTimer: ReturnType<typeof setTimeout> | null = null;
+  // Gap catch-up (rotation room-migration skew / missed broadcasts): see runGapCatchUp.
+  private gapCatchUpTimer: ReturnType<typeof setTimeout> | null = null;
+  private gapCatchUpInFlight = false;
+  private gapCatchUpCooldownUntil = 0;
   // Compact when the hydration walk needed more than one page (>~9MB of tail) or the
   // row count alone makes replay expensive.
   private readonly TAIL_COMPACT_PAGES = 2;
@@ -283,6 +293,13 @@ export class SyncManager {
             : null;
           const newRoomKey =
             typeof prepared === 'string' ? prepared : prepared?.roomKey;
+          if (!newRoomKey) {
+            // No ack goes out — the rotation barrier times out for this peer and it must
+            // recover via the cutover/update-path self-heal instead. Loud, not silent.
+            console.warn(
+              'SyncManager: rotation PREPARE resolved no key — will self-heal at cutover',
+            );
+          }
           if (newRoomKey) {
             // Carry the relay's re-locked appLock config with the key — applied to editLock at
             // cutover (workspace-key encrypted, so it can't be re-keyed locally). Held until
@@ -324,6 +341,9 @@ export class SyncManager {
           // since-superseded rotation (epoch mismatch) — discard it rather than apply a
           // stale key. Either way the old room is about to go silent — heal now rather
           // than waiting on inbound traffic that will never arrive.
+          console.warn(
+            'SyncManager: cutover arrived without a prepared key — self-healing',
+          );
           this.pendingRotationKey = null;
           void this.onDecryptMiss();
         }
@@ -480,6 +500,12 @@ export class SyncManager {
         // joiners pick it up (the roomKey-encrypted title rides along, refreshed on next rename).
         this.socketClient?.setDocumentMeta().catch(() => undefined);
       }
+      // Peers migrate rooms at different moments during a cutover (this socket now, a
+      // laggard only when the old-session drain ends), so anything the laggard broadcast
+      // into the old room after this socket left exists only in the durable seq stream.
+      // Replay it — without this, Yjs parks every later update from that peer in its
+      // pending-dependency buffer and the live view goes permanently blind to them.
+      this.runGapCatchUp('post-rekey');
     } catch (e) {
       // Re-auth failed and SocketClient reverted its own key material — revert ours too; the
       // self-heal path retries from scratch.
@@ -512,7 +538,13 @@ export class SyncManager {
     this.healingPromise = (async (): Promise<HealOutcome> => {
       try {
         const newRoomKey = await selfHeal();
-        if (!newRoomKey) return 'failed';
+        if (!newRoomKey) {
+          console.warn(
+            'SyncManager: rotation self-heal yielded no key (post-rotation blob may not be anchored yet)',
+          );
+          this.healBackoffUntil = Date.now() + HEAL_RETRY_BACKOFF_MS;
+          return 'failed';
+        }
         // Compare decoded bytes, not base64 text — a standard-vs-urlsafe encoding mismatch
         // between the host and this key must not read as "different key".
         if (
@@ -524,15 +556,58 @@ export class SyncManager {
           return 'current-key-ok';
         }
         await this.rekey(newRoomKey);
+        this.healBackoffUntil = 0;
         return 'rekeyed';
       } catch (e) {
         console.error('SyncManager: rotation self-heal failed', e);
+        this.healBackoffUntil = Date.now() + HEAL_RETRY_BACKOFF_MS;
         return 'failed';
       } finally {
         this.healingPromise = null;
       }
     })();
     return this.healingPromise;
+  }
+
+  // Replays the durable seq stream from the current floor to fill a delivery gap
+  // (old-session drain rows decrypt via roomKeyBytesPrev). Steady-state only: during
+  // 'syncing'/'connecting' the initial-sync hydration is already replaying the stream.
+  private runGapCatchUp(trigger: string): void {
+    if (!this.isReady || this.gapCatchUpInFlight) return;
+    this.gapCatchUpInFlight = true;
+    this.catchUpFloor(this.syncId)
+      .then(() => {
+        if (this.ydoc.store.pendingStructs) {
+          // Still gapped after a full replay (e.g. rows from two keys back that no
+          // longer decrypt): cool down so the next incoming update doesn't hot-loop
+          // a fetch that cannot make progress.
+          this.gapCatchUpCooldownUntil = Date.now() + 15_000;
+        } else {
+          this.gapCatchUpCooldownUntil = 0;
+        }
+      })
+      .catch((err) => {
+        console.error(`SyncManager: ${trigger} catch-up failed`, err);
+        this.gapCatchUpCooldownUntil = Date.now() + 15_000;
+      })
+      .finally(() => {
+        this.gapCatchUpInFlight = false;
+      });
+  }
+
+  // Debounced entry for the missing-dependency detector below — a typing peer emits a
+  // burst of gapped updates; one replay covers them all.
+  private scheduleGapCatchUp(): void {
+    if (
+      this.gapCatchUpTimer ||
+      this.gapCatchUpInFlight ||
+      Date.now() < this.gapCatchUpCooldownUntil
+    )
+      return;
+    this.gapCatchUpTimer = setTimeout(() => {
+      this.gapCatchUpTimer = null;
+      this.runGapCatchUp('gap-detector');
+    }, 1_000);
   }
 
   enqueueLocalUpdate(update: Uint8Array): void {
@@ -601,7 +676,10 @@ export class SyncManager {
       this.updateQueue.length === 0 ||
       !this.roomKey ||
       !this.isConnected ||
-      this.rotating
+      this.rotating ||
+      // A self-heal just failed (rotation anchor not landed yet): hold the queue until
+      // the backoff elapses instead of re-triggering a doomed heal on every keystroke.
+      Date.now() < this.healBackoffUntil
     ) {
       return;
     }
@@ -663,6 +741,37 @@ export class SyncManager {
           this.surfaceSessionTerminated('SESSION_TERMINATED');
           return;
         }
+        if (this.isSessionNotFoundResponse(response)) {
+          if (this.rotating) {
+            // Cutover already in flight — leave the batch queued; rekey's finally re-drains it.
+            this.updateQueue = [...updates, ...this.updateQueue];
+            return;
+          }
+          // Live editor stranded on a rotation-terminated session (the server keeps laggard
+          // sockets authed precisely so this ack can drive recovery). Resolve the current-epoch
+          // roomKey and rekey — same heal as the handshake 404 path.
+          const outcome = await this.onDecryptMiss();
+          this.updateQueue = [...updates, ...this.updateQueue];
+          if (outcome === 'rekeyed') {
+            this.staleAckRetries = 0;
+            return;
+          }
+          if (outcome === 'failed') {
+            // Usually the post-rotation blob hasn't anchored on-chain yet — NOT terminal.
+            // Keep the batch queued and retry after the backoff (the timer guarantees
+            // progress even if the user stops typing). A genuine termination arrives on
+            // its own signal (403 / session-terminated event), so this cannot mask one.
+            setTimeout(
+              () => this.sendUpdateBatch(),
+              HEAL_RETRY_BACKOFF_MS + 100,
+            );
+            return;
+          }
+          // 'current-key-ok': we already hold the freshest resolvable key yet the server has
+          // no session for it — not rotation lag. Reconnect; the handshake decides terminality.
+          this.handleWriteRevocation();
+          return;
+        }
         console.error('SyncManager: server rejected update', response?.error);
         return;
       }
@@ -694,6 +803,21 @@ export class SyncManager {
     return (
       response?.statusCode === 409 &&
       response.errorCode === ServerErrorCode.SESSION_TERMINATED
+    );
+  }
+
+  // A write ack'd 404/SESSION_NOT_FOUND means the server has no runtime session for this
+  // sessionDid: a live editor whose OLD session was terminated by a rotation drain it never
+  // migrated off (missed the one-shot cutover). Same self-heal as the handshake 404 path —
+  // resolve the current-epoch roomKey and rekey — NOT a plain reconnect, which would just
+  // re-auth back into the same dead sessionDid.
+  private isSessionNotFoundResponse(response?: {
+    statusCode?: number;
+    errorCode?: ServerErrorCode;
+  }): boolean {
+    return (
+      response?.statusCode === 404 &&
+      response.errorCode === ServerErrorCode.SESSION_NOT_FOUND
     );
   }
 
@@ -1389,6 +1513,9 @@ export class SyncManager {
         // stop dispatching under a possibly-swapped key — rekey()'s own finally resumes the
         // drain once the re-auth settles.
         if (this.rotating) break;
+        // A self-heal just failed (rotation anchor not landed): stop the drain instead of
+        // re-triggering the doomed heal each iteration; the send paths resume post-backoff.
+        if (Date.now() < this.healBackoffUntil) break;
         await this.processNextUpdate();
       }
 
@@ -1456,6 +1583,30 @@ export class SyncManager {
             this.surfaceSessionTerminated('SESSION_TERMINATED');
             return;
           }
+          if (this.isSessionNotFoundResponse(response)) {
+            if (this.rotating) return;
+            // A queued edit hit a rotation-terminated session mid-drain — self-heal to the
+            // current-epoch roomKey (same as the update-batch 404 path). The batch stays
+            // queued (nothing sliced above), so the next drain resends it under the new key.
+            const outcome = await this.onDecryptMiss();
+            if (outcome === 'rekeyed') {
+              this.staleAckRetries = 0;
+              return;
+            }
+            if (outcome === 'failed') {
+              // Anchor race — not terminal. The heal set healBackoffUntil, which breaks the
+              // drain loop; the timer resumes the flush once the backoff elapses.
+              setTimeout(
+                () => this.sendUpdateBatch(),
+                HEAL_RETRY_BACKOFF_MS + 100,
+              );
+              return;
+            }
+            // 'current-key-ok': the session is genuinely gone for the key we hold.
+            // Reconnect; the handshake decides terminality.
+            this.handleWriteRevocation();
+            return;
+          }
           const errorMsg = response?.error || 'Server rejected update';
           throw new Error(
             `Failed to send update: ${errorMsg}${response?.statusCode ? ` (${response.statusCode})` : ''}`,
@@ -1515,6 +1666,12 @@ export class SyncManager {
         err,
       );
       return;
+    }
+    // An update whose dependencies never arrived (missed broadcast, room-migration skew)
+    // "applies" without error but sits invisibly in Yjs' pending buffer — and every later
+    // update from that peer chains onto it. Detect and replay the durable stream.
+    if (this.ydoc.store.pendingStructs) {
+      this.scheduleGapCatchUp();
     }
     try {
       if (this.onLocalUpdate && typeof this.onLocalUpdate === 'function') {
@@ -1632,6 +1789,12 @@ export class SyncManager {
       clearTimeout(this.tailCompactTimer);
       this.tailCompactTimer = null;
     }
+    if (this.gapCatchUpTimer) {
+      clearTimeout(this.gapCatchUpTimer);
+      this.gapCatchUpTimer = null;
+    }
+    this.gapCatchUpInFlight = false;
+    this.gapCatchUpCooldownUntil = 0;
     this.socketClient = null;
     this.updateQueue = [];
     this.contentTobeAppliedQueue = [];
