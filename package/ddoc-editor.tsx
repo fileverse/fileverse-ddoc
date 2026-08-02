@@ -741,11 +741,13 @@ const DdocEditor = forwardRef(
       <div
         id="toolbar"
         className={cn(
-          'z-[45] hidden mobile:flex items-center justify-center w-full h-[52px] fixed left-0 color-bg-default border-b color-border-default transition-all duration-300 top-[3.5rem]',
+          'z-[45] hidden mobile:flex items-center justify-center w-full h-11 fixed left-0 color-bg-default border-b color-border-default transition-all duration-300 top-[var(--navbar)]',
           {
             'translate-y-0 opacity-100': !isFocusMode && isNavbarVisible,
-            'translate-y-[-108%] opacity-100': !isFocusMode && !isNavbarVisible,
-            'translate-y-[-108%] opacity-0 pointer-events-none': isFocusMode,
+            '-translate-y-[var(--navbar)] opacity-100':
+              !isFocusMode && !isNavbarVisible,
+            '-translate-y-[var(--navbar)] opacity-0 pointer-events-none':
+              isFocusMode,
           },
         )}
       >
@@ -1353,7 +1355,10 @@ const DdocEditor = forwardRef(
                 className={cn(
                   'flex mobile:hidden items-center w-full h-[52px] fixed left-0 z-10 px-4 color-bg-default transition-all duration-300 ease-in-out border-b border-color-default',
                   isKeyboardVisible && 'hidden',
-                  { 'top-14': isNavbarVisible, 'top-0': !isNavbarVisible },
+                  {
+                    'top-[var(--navbar)]': isNavbarVisible,
+                    'top-0': !isNavbarVisible,
+                  },
                 )}
               >
                 <MobileToolbar
@@ -1438,18 +1443,20 @@ const DdocEditor = forwardRef(
             id="editor-canvas"
             onMouseDown={handleFocusModeMouseDown}
             className={cn(
-              'h-[100%] flex w-full relative',
+              'h-[100%] flex w-full relative [--navbar:64px] max-lg:[--navbar:46px] [--toolbar:44px] max-mobile:[--toolbar:52px]',
               // Split View: the right-pane wrapper owns the scroll, not the canvas.
               isSplitViewActive ? 'overflow-hidden' : 'overflow-auto',
               !isPreviewMode &&
                 !isFocusMode &&
                 !isSplitViewActive &&
-                (isNavbarVisible ? 'mt-[6.7rem]' : 'mt-[3.3rem]'),
+                (isNavbarVisible
+                  ? 'mt-[calc(var(--navbar)+var(--toolbar))]'
+                  : 'mt-[var(--toolbar)]'),
               // Split View hides the rich toolbar, so only reserve the navbar.
               isSplitViewActive &&
                 !isFocusMode &&
-                (isNavbarVisible ? 'mt-[3.5rem]' : 'mt-0'),
-              isPreviewMode && !isFocusMode && 'mt-[3.5rem]',
+                (isNavbarVisible ? 'mt-[var(--navbar)]' : 'mt-0'),
+              isPreviewMode && !isFocusMode && 'mt-[var(--navbar)]',
               !isPresentationMode ? 'color-bg-secondary' : 'color-bg-default',
               editorCanvasClassNames,
             )}
@@ -1508,7 +1515,7 @@ const DdocEditor = forwardRef(
                   }
                 }}
                 className={cn(
-                  'h-14 color-bg-default py-2 px-0 md:px-4 flex gap-2 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-[45] transition-all duration-300',
+                  'h-[var(--navbar)] color-bg-default p-2 flex gap-10 items-center justify-between w-screen fixed left-0 top-0 border-b color-border-default z-[45] transition-all duration-300',
                   {
                     'translate-y-0 opacity-100':
                       !isFocusMode && isNavbarVisible && !isPresentationMode,

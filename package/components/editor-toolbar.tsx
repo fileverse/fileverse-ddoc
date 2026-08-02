@@ -178,7 +178,7 @@ const TiptapToolBar = ({
             editor.commands.focus();
           }
         }}
-        className="w-full bg-transparent py-2 px-4 items-center h-9 flex justify-between relative"
+        className="w-full bg-transparent px-2 py-1 items-center h-9 flex justify-between relative"
       >
         <div className="flex h-9 items-center gap-1 justify-center">
           {/* Export/Import Dropdown */}
