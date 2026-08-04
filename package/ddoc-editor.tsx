@@ -1214,6 +1214,7 @@ const DdocEditor = forwardRef(
                                       runtimeState={
                                         splitAwareDBlockRuntimeState
                                       }
+                                      onCopyHeadingLink={onCopyHeadingLink}
                                     >
                                       <div className="grammarly-wrapper">
                                         {(cachedEditorEntries?.length
@@ -1278,8 +1279,7 @@ const DdocEditor = forwardRef(
                                               }
                                               className={cn(
                                                 'w-full h-auto',
-                                                isPreviewMode &&
-                                                  'preview-mode max-sm:!pb-40',
+                                                isPreviewMode && 'preview-mode',
                                                 activeModel !== undefined &&
                                                   isAIAgentEnabled &&
                                                   'has-available-models',

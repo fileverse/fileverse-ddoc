@@ -63,18 +63,6 @@
     }
   }
 
-  h1 {
-    transform: translateY(-0.5rem);
-  }
-
-  h2 {
-    transform: translateY(-0.25rem);
-  }
-
-  h3 {
-    transform: translateY(0);
-  }
-
   & > p {
     margin-top: 1.5rem;
     margin-bottom: 1.5rem;
@@ -486,6 +474,26 @@
       grid-template-rows: subgrid;
       grid-row: span 2;
     }
+  }
+}
+
+.ProseMirror.main-doc-editor {
+  padding: 24px 16px 20vh 36px;
+}
+
+@media (min-width: 768px) {
+  .ProseMirror.main-doc-editor {
+    padding: 72px 80px 20vh;
+  }
+}
+
+/* table blocks keep their width cap now that the content shell is gone */
+.ProseMirror [data-type='d-block'].is-table > [data-node-view-content] {
+  max-width: 100%;
+}
+@media (min-width: 1024px) {
+  .ProseMirror [data-type='d-block'].is-table > [data-node-view-content] {
+    max-width: 90%;
   }
 }
 
@@ -938,6 +946,15 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
       &.ProseMirror-selectednode {
         background-color: transparent;
       }
+    }
+  }
+
+  /* presentation preview: container inset replaces old per-block px-4 md:px-[80px] */
+  .ProseMirror.main-doc-editor {
+    padding: 16px;
+
+    @media (min-width: 768px) {
+      padding: 16px 80px;
     }
   }
 

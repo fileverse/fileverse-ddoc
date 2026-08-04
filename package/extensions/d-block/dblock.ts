@@ -990,7 +990,6 @@ export const DBlock = Node.create<DBlockOptions>({
         decorations,
         HTMLAttributes,
         getRuntimeState: this.options.getRuntimeState,
-        onCopyHeadingLink: this.options.onCopyHeadingLink,
       });
   },
 

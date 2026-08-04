@@ -355,7 +355,7 @@ li > ol > li > ol > li:before {
   z-index: 999;
 }
 
-.node-view-content > div {
+[data-node-view-content] > div {
   word-break: break-word;
 }
 
