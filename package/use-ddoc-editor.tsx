@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DdocProps } from './types';
-import { useSchemaVersionGuard } from './hooks/use-schema-version-guard';
+import { useDocSchemaVersion } from './hooks/use-doc-schema-version';
 import { useTabEditor } from './hooks/use-tab-editor';
 import { useTabManager } from './hooks/use-tab-manager';
 import { useYjsSetup } from './hooks/use-yjs-setup';
@@ -46,6 +46,7 @@ export const useDdocEditor = ({
   initialCommentAnchors,
   isPreviewEditor = false,
   fonts,
+  preferredSchemaVersion,
   ...rest
 }: Partial<DdocProps> & {
   isFocusMode?: boolean;
@@ -94,7 +95,6 @@ export const useDdocEditor = ({
     onCollaboratorChange,
     onIndexedDbError,
   });
-  const isSchemaUnsupported = useSchemaVersionGuard(yjsSetup.ydoc);
   const shouldWaitForIndexeddbBeforeCreatingDefaultTab = Boolean(
     enableIndexeddbSync &&
       !collabEnabled &&
@@ -134,6 +134,18 @@ export const useDdocEditor = ({
     () => tabManager.tabs.map((tab) => tab.id),
     [tabManager.tabs],
   );
+
+  // Called after useTabManager on purpose: initialContent is decoded into the
+  // ydoc synchronously by useTabManager's hydration memo, so the schema marker
+  // is already readable here on the very first render.
+  const { docSchemaVersion, isSchemaUnsupported } = useDocSchemaVersion({
+    ydoc: yjsSetup.ydoc,
+    isNewDdoc: Boolean(rest.isDDocOwner && !collabEnabled && !ddocContent),
+    isContentResolved:
+      !shouldWaitForIndexeddbBeforeCreatingDefaultTab ||
+      yjsSetup.isIndexeddbSynced,
+    preferredSchemaVersion,
+  });
 
   const tabEditor = useTabEditor({
     ydoc: yjsSetup.ydoc,
@@ -177,8 +189,13 @@ export const useDdocEditor = ({
     externalExtensions,
     // An empty activeTabId makes useTabEditorCache destroy every editor and
     // create none, so this build never binds y-sync to a newer-schema doc.
+    // Do NOT also gate on schema resolution: IndexedDB sync only starts from
+    // the editor's content effect, so holding the editor until sync deadlocks.
+    // A doc whose marker arrives late rebuilds its editors via the
+    // docSchemaVersion dependency of buildExtensionsForTab instead.
     activeTabId: isSchemaUnsupported ? '' : tabManager.activeTabId,
     tabIds,
+    docSchemaVersion,
     hasTabState: tabManager.hasTabState,
     isVersionMode,
     theme,
@@ -202,6 +219,7 @@ export const useDdocEditor = ({
     terminateSession: yjsSetup.terminateSession,
     isContentLoading: Boolean(aggregatedContentLoading),
     isSchemaUnsupported,
+    docSchemaVersion,
     tabs: tabManager.tabs,
     hasTabState: tabManager.hasTabState,
     dBlockRuntimeState,

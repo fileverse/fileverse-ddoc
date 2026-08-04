@@ -4,8 +4,8 @@ export const DDOC_META_ROOT_KEY = 'ddocMeta';
 export const SCHEMA_VERSION_META_KEY = 'schemaVersion';
 
 // The highest doc schema this build can safely open for editing.
-// The flat (wrapper-less) block schema will bump this to 2.
-export const SUPPORTED_SCHEMA_VERSION = 1;
+// 1 = dBlock wrapper, 2 = flat (wrapper-less) blocks.
+export const SUPPORTED_SCHEMA_VERSION = 2;
 
 // Docs created before the marker existed have no ddocMeta entry: treat as v1.
 export const getDocSchemaVersion = (doc: Y.Doc): number => {

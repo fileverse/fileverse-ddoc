@@ -45,6 +45,7 @@ const ExtendedTextStyle = TextStyle.extend({
 });
 import HorizontalRule from './horizontal-rule';
 import ColumnExtension from './multi-column';
+import { FlatColumn } from './multi-column/column';
 import CustomKeymap from './custom-keymap';
 import { CollapsibleHeading } from './collapsible-heading';
 import { Color } from '@tiptap/extension-color';
@@ -52,7 +53,7 @@ import { Iframe } from './iframe';
 import { EmbeddedTweet } from './twitter-embed';
 import { createDBlockExtension } from './d-block';
 import { SuperchargedTableExtensions } from './supercharged-table';
-import { Document } from './document';
+import { Document, FlatDocument } from './document';
 import { TrailingNode } from './trailing-node';
 import { type NodeType } from '@tiptap/pm/model';
 import { Plugin } from '@tiptap/pm/state';
@@ -261,6 +262,7 @@ export const defaultExtensions = ({
   onTocUpdate,
   dBlockRuntimeStateRef,
   hasAvailableModels = false,
+  schemaVersion = 1,
 }: {
   ipfsImageFetchFn?: (
     _data: IpfsImageFetchPayload,
@@ -273,6 +275,7 @@ export const defaultExtensions = ({
   onTocUpdate?: (data: ToCItemType[], isCreate?: boolean) => void;
   dBlockRuntimeStateRef?: DBlockRuntimeStateRef;
   hasAvailableModels?: boolean;
+  schemaVersion?: number;
 }) => [
   FontFamily,
   FontFamilyPersistence,
@@ -425,16 +428,23 @@ export const defaultExtensions = ({
     fetchV1ImageFn,
   }),
   Gapcursor,
-  createDBlockExtension({
-    ipfsImageUploadFn,
-    onCopyHeadingLink,
-    hasAvailableModels,
-    getRuntimeState: dBlockRuntimeStateRef
-      ? () => dBlockRuntimeStateRef.current
-      : undefined,
-  }),
-  TrailingNode,
-  Document,
+  // Schema fork. v1: every block wrapped in a dBlock (TrailingNode's position
+  // math assumes the wrapper, so it is v1-only until re-homed in M2).
+  // v2: flat top node, stock Tiptap structure.
+  ...(schemaVersion >= 2
+    ? [FlatDocument]
+    : [
+        createDBlockExtension({
+          ipfsImageUploadFn,
+          onCopyHeadingLink,
+          hasAvailableModels,
+          getRuntimeState: dBlockRuntimeStateRef
+            ? () => dBlockRuntimeStateRef.current
+            : undefined,
+        }),
+        TrailingNode,
+        Document,
+      ]),
   ...SuperchargedTableExtensions,
   CustomKeymap,
   Iframe.configure({ ipfsImageFetchFn, fetchV1ImageFn }),
@@ -442,7 +452,10 @@ export const defaultExtensions = ({
   actionButton.configure({
     onError,
   }),
-  ColumnExtension,
+  // v2 swaps the column node for one whose content is bare blocks.
+  ...(schemaVersion >= 2
+    ? [ColumnExtension.configure({ column: false }), FlatColumn]
+    : [ColumnExtension]),
   DocxFileHandler.configure({
     ipfsImageUploadFn,
     onError,

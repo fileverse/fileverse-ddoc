@@ -832,6 +832,12 @@ function App() {
         initialContent={initialContent}
         enableIndexeddbSync={true}
         ddocId={docId}
+        // Only consulted at doc creation; existing docs follow their marker.
+        preferredSchemaVersion={
+          new URLSearchParams(window.location.search).get('v2') === '1'
+            ? 2
+            : undefined
+        }
         tabConfig={tabConfig}
         onError={(error) => {
           toast({

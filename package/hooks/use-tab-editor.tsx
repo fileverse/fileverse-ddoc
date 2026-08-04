@@ -266,6 +266,7 @@ interface UseTabEditorArgs {
   editorRef?: MutableRefObject<Editor | null>;
   initialCommentAnchors?: SerializedCommentAnchor[];
   dBlockRuntimeStateRef?: DBlockRuntimeStateRef;
+  docSchemaVersion?: number;
 }
 
 export const useTabEditor = ({
@@ -316,6 +317,7 @@ export const useTabEditor = ({
   editorRef,
   initialCommentAnchors,
   dBlockRuntimeStateRef,
+  docSchemaVersion = 1,
 }: UseTabEditorArgs) => {
   const collabEnabled = collaboration?.enabled === true;
   const connection = collabEnabled ? collaboration.connection : null;
@@ -382,6 +384,7 @@ export const useTabEditor = ({
     initialCommentAnchors,
     isSuggestionMode,
     dBlockRuntimeStateRef: resolvedDBlockRuntimeStateRef,
+    docSchemaVersion,
   });
 
   const { handleCommentInteraction, handleCommentClick } =
@@ -1537,6 +1540,7 @@ interface UseExtensionStackArgs {
   initialCommentAnchors?: SerializedCommentAnchor[];
   isSuggestionMode?: boolean;
   dBlockRuntimeStateRef: DBlockRuntimeStateRef;
+  docSchemaVersion?: number;
 }
 
 const useEditorExtension = ({
@@ -1560,6 +1564,7 @@ const useEditorExtension = ({
   initialCommentAnchors,
   isSuggestionMode = false,
   dBlockRuntimeStateRef,
+  docSchemaVersion = 1,
 }: UseExtensionStackArgs) => {
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
@@ -1650,6 +1655,7 @@ const useEditorExtension = ({
             onTocUpdateForTab(tabId, data, isCreate),
           hasAvailableModels,
           dBlockRuntimeStateRef,
+          schemaVersion: docSchemaVersion,
         }),
         createSlashCommand(),
         customTextInputRules,
@@ -1722,12 +1728,17 @@ const useEditorExtension = ({
           tone: 'neutral',
         }),
         AIWriter,
-        createDBlockExtension({
-          hasAvailableModels,
-          ipfsImageUploadFn,
-          onCopyHeadingLink: handleCopyHeadingLink,
-          getRuntimeState: () => dBlockRuntimeStateRef.current,
-        }),
+        // v2 has no dBlock: the filter above removed nothing, re-add nothing.
+        ...(docSchemaVersion >= 2
+          ? []
+          : [
+              createDBlockExtension({
+                hasAvailableModels,
+                ipfsImageUploadFn,
+                onCopyHeadingLink: handleCopyHeadingLink,
+                getRuntimeState: () => dBlockRuntimeStateRef.current,
+              }),
+            ]),
         createSlashCommand(),
       ] as AnyExtension[];
     },
@@ -1747,6 +1758,7 @@ const useEditorExtension = ({
       activeModel,
       maxTokens,
       onCommentActivated,
+      docSchemaVersion,
     ],
   );
 
