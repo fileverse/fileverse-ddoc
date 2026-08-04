@@ -32,6 +32,14 @@ interface HoveredBlock {
   pos: number;
 }
 
+// Stable identity: DragHandle's internal useEffect depends on
+// `computePositionConfig` (and `onNodeChange`) by reference. A new object
+// literal on every render would tear down and re-register the ProseMirror
+// plugin on every render, which resets the handle to `visibility: hidden`
+// each time (see `hideHandle()` in the plugin's `view()` factory) — the
+// handle would never stay visible.
+const COMPUTE_POSITION_CONFIG = { placement: 'left-start' as const };
+
 export const DBlockDragHandle = ({
   editor,
   runtimeState,
@@ -52,6 +60,31 @@ export const DBlockDragHandle = ({
     return { editor, node, pos: hovered.pos };
   }, [editor, hovered]);
   const actions = useContentItemActions(editor, resolveBlock);
+
+  // Stable identity for the same reason as COMPUTE_POSITION_CONFIG above —
+  // must not close over `hovered` (that would change identity every time
+  // `hovered` changes, which is exactly when DragHandle calls it).
+  // The plugin also calls this with `node: null` on keydown/mouseleave
+  // (it resets its internal currentNode); we deliberately keep the last
+  // hovered block in state rather than clearing it, so an open menu
+  // doesn't lose its target block.
+  const handleNodeChange = useCallback(
+    ({
+      node,
+      pos,
+    }: {
+      node: ProseMirrorNode | null;
+      editor: Editor;
+      pos: number;
+    }) => {
+      setHovered((prev) => {
+        if (!node) return prev;
+        if (prev && prev.pos === pos && prev.node === node) return prev;
+        return { node, pos };
+      });
+    },
+    [],
+  );
 
   useEffect(() => {
     setMenuOpen(false);
@@ -111,10 +144,8 @@ export const DBlockDragHandle = ({
   return (
     <DragHandle
       editor={editor}
-      computePositionConfig={{ placement: 'left-start' }}
-      onNodeChange={({ node, pos }) => {
-        if (node) setHovered({ node, pos });
-      }}
+      computePositionConfig={COMPUTE_POSITION_CONFIG}
+      onNodeChange={handleNodeChange}
     >
       <div
         aria-label="block-controls"
