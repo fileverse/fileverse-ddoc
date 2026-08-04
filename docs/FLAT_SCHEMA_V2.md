@@ -81,12 +81,12 @@ Housekeeping: `package/extensions/doc.ts` is a dead duplicate top-node (nothing 
 
 ## Milestones
 
-### M0: Marker + safety check (ships first, next regular release)
+### M0: Safety check (ships first, next regular release)
 
-- Define the `schemaVersion` field and read/write helpers
-- Write the marker for new docs in `applyResolvedTabState`
-- The check: if a doc's version is higher than the package supports, open read-only with a "refresh to update" banner. Package renders the banner itself
+- Define the `schemaVersion` field (`ddocMeta` Y.Map) and read helpers
+- The check: if a doc's version is higher than the package supports, no editor is created at all (no y-sync binding) and the package renders a "refresh to update" banner in both the main and preview editors
 - This ships while every doc in existence is v1, so it is dormant. That is the point: by the time v2 launches, even stale browser tabs have the check
+- The marker write moved to M1: `applyResolvedTabState` runs for both new-doc seeding and ongoing self-heal of existing docs, so an unconditional write there would stamp old docs. The scoped new-doc write ships with the v2 creation path, where it is needed
 
 ### M1: v2 skeleton that types
 

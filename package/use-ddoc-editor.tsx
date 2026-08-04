@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { DdocProps } from './types';
+import { useSchemaVersionGuard } from './hooks/use-schema-version-guard';
 import { useTabEditor } from './hooks/use-tab-editor';
 import { useTabManager } from './hooks/use-tab-manager';
 import { useYjsSetup } from './hooks/use-yjs-setup';
@@ -93,6 +94,7 @@ export const useDdocEditor = ({
     onCollaboratorChange,
     onIndexedDbError,
   });
+  const isSchemaUnsupported = useSchemaVersionGuard(yjsSetup.ydoc);
   const shouldWaitForIndexeddbBeforeCreatingDefaultTab = Boolean(
     enableIndexeddbSync &&
       !collabEnabled &&
@@ -173,7 +175,9 @@ export const useDdocEditor = ({
     hasCollabContentInitialised: yjsSetup.hasCollabContentInitialised,
     initialiseYjsIndexedDbProvider: yjsSetup.initialiseYjsIndexedDbProvider,
     externalExtensions,
-    activeTabId: tabManager.activeTabId,
+    // An empty activeTabId makes useTabEditorCache destroy every editor and
+    // create none, so this build never binds y-sync to a newer-schema doc.
+    activeTabId: isSchemaUnsupported ? '' : tabManager.activeTabId,
     tabIds,
     hasTabState: tabManager.hasTabState,
     isVersionMode,
@@ -197,6 +201,7 @@ export const useDdocEditor = ({
     refreshYjsIndexedDbProvider: yjsSetup.refreshYjsIndexedDbProvider,
     terminateSession: yjsSetup.terminateSession,
     isContentLoading: Boolean(aggregatedContentLoading),
+    isSchemaUnsupported,
     tabs: tabManager.tabs,
     hasTabState: tabManager.hasTabState,
     dBlockRuntimeState,
