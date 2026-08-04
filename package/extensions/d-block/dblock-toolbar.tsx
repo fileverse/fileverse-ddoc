@@ -44,6 +44,7 @@ import {
   refreshRegisteredDBlockViews,
   type DBlockViewHandle,
 } from './dblock-view-registry';
+import { DBlockDragHandle } from './dblock-drag-handle';
 
 interface ResolvedDBlock {
   editor: Editor;
@@ -451,6 +452,17 @@ export const DBlockToolbarProvider = ({
   return (
     <>
       {children}
+      {editor ? (
+        <DBlockDragHandle
+          editor={editor}
+          runtimeState={runtimeState}
+          onCopyHeadingLink={
+            getDBlockViewFromElement(
+              editor.view.dom.querySelector('[data-dblock-node-view]'),
+            )?.onCopyHeadingLink
+          }
+        />
+      ) : null}
       {activeHandle && editor ? (
         <DBlockToolbar
           editor={editor}
