@@ -595,6 +595,12 @@ export const useTabEditor = ({
           },
           attributes: {
             spellCheck: 'true',
+            // Lets CSS target one schema (v1 keeps the dBlock-era
+            // compensation rules, v2 gets its own rhythm). NOTE: this
+            // attributes literal shadows DdocEditorProps.attributes from the
+            // spread above (pre-existing), so the prose-* class list in
+            // types.ts never reaches this editor.
+            'data-schema-version': String(docSchemaVersion),
           },
         },
         textDirection: 'auto',
@@ -609,6 +615,7 @@ export const useTabEditor = ({
       focusSubmittedSuggestionFromEditorEvent,
       handleCommentClick,
       handleCommentInteraction,
+      docSchemaVersion,
     ],
   );
 

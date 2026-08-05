@@ -63,16 +63,37 @@
     }
   }
 
-  h1 {
-    transform: translateY(-0.5rem);
+  /* v1-only: compensates the dBlock flex row's items-center alignment.
+     Scoped away from the flat v2 schema, where it would shift headings off
+     their caret line for no reason. */
+  &:not([data-schema-version='2']) {
+    h1 {
+      transform: translateY(-0.5rem);
+    }
+
+    h2 {
+      transform: translateY(-0.25rem);
+    }
+
+    h3 {
+      transform: translateY(0);
+    }
   }
 
-  h2 {
-    transform: translateY(-0.25rem);
-  }
-
-  h3 {
-    transform: translateY(0);
+  /* Flat v2 rhythm: match v1's effective uniform 24px block gap. prose-lg
+     gives headings 48px margins; v1 never shows them (margins collapse
+     through the wrapper rows), so v2 pins headings to the same 1.5rem as
+     paragraphs. */
+  &[data-schema-version='2'] {
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6 {
+      margin-top: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
   }
 
   & > p {
