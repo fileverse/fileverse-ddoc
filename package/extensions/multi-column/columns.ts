@@ -5,7 +5,7 @@ import {
   Predicate,
   findParentNodeClosestToPos,
 } from '@tiptap/core';
-import { NodeSelection } from 'prosemirror-state';
+import { NodeSelection, TextSelection } from 'prosemirror-state';
 import type { Node as ProseMirrorNode, NodeType } from 'prosemirror-model';
 import { ColumnSelection } from './column-selection';
 import {
@@ -155,7 +155,19 @@ export const Columns = Node.create({
             }
 
             tr = tr.setSelection(sel);
+            const columnsStart = tr.selection.from;
             tr = tr.replaceSelectionWith(newNode, false);
+            // Caret into the first cell, computed against THIS transaction:
+            // open tokens for columns + column (+ dBlock in v1), then
+            // TextSelection.near finds the first text position inside.
+            const intoFirstCell = hasDBlock ? 3 : 2;
+            tr = tr.setSelection(
+              TextSelection.near(
+                tr.doc.resolve(
+                  Math.min(columnsStart + intoFirstCell, tr.doc.content.size),
+                ),
+              ),
+            );
             return dispatch(tr);
           } catch (error) {
             console.error(error);
