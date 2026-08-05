@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { DragHandle } from '@tiptap/extension-drag-handle-react';
 import { Editor } from '@tiptap/react';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
@@ -30,11 +30,6 @@ import {
 interface HoveredBlock {
   node: ProseMirrorNode;
   pos: number;
-  // Vertical correction, computed synchronously on node change: the plugin
-  // top-aligns the handle with the hovered block ('left-start'), but the
-  // cluster should center on the block's FIRST LINE. 0 at the default
-  // 24px line-height; (lineHeight - 24) / 2 for taller lines/headings.
-  lineOffset: number;
 }
 
 const CLUSTER_HEIGHT = 24;
@@ -77,6 +72,7 @@ export const DBlockDragHandle = ({
 }) => {
   const [hovered, setHovered] = useState<HoveredBlock | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const clusterRef = useRef<HTMLDivElement | null>(null);
   const isBelowLargeScreen = useMediaQuery('(max-width: 1024px)');
 
   const resolveBlock = useCallback((): ResolvedContentItem | null => {
@@ -104,17 +100,25 @@ export const DBlockDragHandle = ({
       editor: Editor;
       pos: number;
     }) => {
+      if (node) {
+        // Applied imperatively, NOT via React state/effect: the plugin
+        // writes the handle's left/top in this same task (its mousemove
+        // rAF + computePosition microtasks), while a React commit lands in
+        // a LATER task — the browser can paint between the two, flashing
+        // the cluster at the block top before the offset corrects it.
+        // Writing the transform here keeps both style writes inside one
+        // task, so they always paint together.
+        const offset = getFirstLineOffset(dragHandleEditor, pos);
+        if (clusterRef.current) {
+          clusterRef.current.style.transform = offset
+            ? `translateY(${offset}px)`
+            : '';
+        }
+      }
       setHovered((prev) => {
         if (!node) return prev;
         if (prev && prev.pos === pos && prev.node === node) return prev;
-        // Computed here, not in an effect: an effect would land the offset
-        // one paint AFTER the plugin repositions the handle, flashing the
-        // cluster at the block top before it snaps to the first-line center.
-        return {
-          node,
-          pos,
-          lineOffset: getFirstLineOffset(dragHandleEditor, pos),
-        };
+        return { node, pos };
       });
     },
     [],
@@ -186,13 +190,9 @@ export const DBlockDragHandle = ({
       onNodeChange={handleNodeChange}
     >
       <div
+        ref={clusterRef}
         aria-label="block-controls"
         className="flex h-6 items-center justify-end gap-0.5 pr-2"
-        style={
-          hovered?.lineOffset
-            ? { transform: `translateY(${hovered.lineOffset}px)` }
-            : undefined
-        }
       >
         {shouldShowEditingControls ? (
           <>
