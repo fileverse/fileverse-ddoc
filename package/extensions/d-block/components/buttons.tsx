@@ -1,11 +1,5 @@
 import React, { forwardRef } from 'react';
-import {
-  Button,
-  IconButton,
-  LucideIcon,
-  PopoverClose,
-  cn,
-} from '@fileverse/ui';
+import { Button, IconButton, LucideIcon, PopoverClose } from '@fileverse/ui';
 
 // Memoized button components to prevent unnecessary re-renders
 export const ActionButton = React.memo(
@@ -105,21 +99,3 @@ export const CollapseButton = React.memo(
 );
 
 CollapseButton.displayName = 'CollapseButton';
-
-export const CopyLinkButton = React.memo(
-  forwardRef<HTMLDivElement, { onClick: () => void; className: string }>(
-    ({ onClick, className, ...props }, ref) => (
-      <div
-        ref={ref}
-        className={cn(className)}
-        data-test="copy-heading-link-button"
-        {...props}
-        onClick={onClick}
-      >
-        <LucideIcon name="Link" size="sm" />
-      </div>
-    ),
-  ),
-);
-
-CopyLinkButton.displayName = 'CopyLinkButton';

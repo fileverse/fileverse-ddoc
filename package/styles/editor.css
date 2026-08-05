@@ -504,6 +504,68 @@
   }
 }
 
+/* Read-only-preview heading chrome (collapse chevron + copy link), rendered
+   by the dBlock node view INSIDE the editor DOM — the floating drag-handle
+   cluster can never appear in preview because the upstream plugin hides its
+   element whenever the editor is not editable. The node view renders the
+   controls for headings in every mode; `[contenteditable='false']` is what
+   scopes them to read-only editors (mode switches flip that attribute
+   without dispatching a transaction, so a JS-side gate would go stale —
+   see DBlockNodeView.shouldShowPreviewControls). Sits in the container's
+   left padding (36px mobile / 80px desktop); hover-revealed, but kept
+   visible while the heading is collapsed so hidden content stays
+   discoverable. */
+.ProseMirror [data-type='d-block'] > .d-block-preview-controls {
+  display: none;
+}
+
+.ProseMirror[contenteditable='false']
+  [data-type='d-block']
+  > .d-block-preview-controls {
+  position: absolute;
+  right: 100%;
+  top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 4px;
+  visibility: hidden;
+}
+
+.ProseMirror[contenteditable='false']
+  [data-type='d-block']:hover
+  > .d-block-preview-controls,
+.ProseMirror[contenteditable='false']
+  [data-type='d-block']
+  > .d-block-preview-controls.is-collapsed {
+  visibility: visible;
+}
+
+.ProseMirror .d-block-preview-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  cursor: pointer;
+}
+
+.ProseMirror .d-block-preview-button svg {
+  transition: transform 150ms ease;
+}
+
+.ProseMirror .d-block-preview-button.is-collapsed svg {
+  transform: rotate(-90deg);
+}
+
+/* Below the large breakpoint there is no hover to reveal it and the 36px
+   gutter fits only one button — match the cluster's lg gate and keep just
+   the collapse chevron (which self-reveals when collapsed). */
+@media (max-width: 1023px) {
+  .ProseMirror .d-block-preview-copy-link {
+    display: none;
+  }
+}
+
 /* table blocks keep their width cap now that the content shell is gone */
 .ProseMirror [data-type='d-block'].is-table > [data-node-view-content] {
   max-width: 100%;

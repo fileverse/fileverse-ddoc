@@ -169,22 +169,16 @@ export const DBlockToolbarProvider = ({
   children,
   editor,
   runtimeState = DEFAULT_DBLOCK_RUNTIME_STATE,
-  onCopyHeadingLink,
 }: {
   children: React.ReactNode;
   editor: Editor | null;
   runtimeState?: DBlockRuntimeState;
-  onCopyHeadingLink?: (link: string) => void;
 }) => {
   return (
     <>
       {children}
       {editor ? (
-        <DBlockDragHandle
-          editor={editor}
-          runtimeState={runtimeState}
-          onCopyHeadingLink={onCopyHeadingLink}
-        />
+        <DBlockDragHandle editor={editor} runtimeState={runtimeState} />
       ) : null}
       <DBlockTemplateOverlay editor={editor} runtimeState={runtimeState} />
     </>

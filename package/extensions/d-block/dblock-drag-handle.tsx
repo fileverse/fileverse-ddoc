@@ -7,23 +7,13 @@ import { cn } from '@fileverse/ui';
 import useContentItemActions, {
   ResolvedContentItem,
 } from '../../hooks/use-content-item-actions';
-import {
-  getDBlockRenderMeta,
-  getHeadingLinkSlug,
-  toggleHeadingCollapse,
-} from './dblock-collapse';
+import { getDBlockRenderMeta, toggleHeadingCollapse } from './dblock-collapse';
 import type { DBlockRuntimeState } from './dblock-runtime';
 import { DBlockMenu } from './components/menu';
-import {
-  CollapseButton,
-  CopyLinkButton,
-  GripButton,
-  PlusButton,
-} from './components/buttons';
+import { CollapseButton, GripButton, PlusButton } from './components/buttons';
 import {
   AddBlockTooltip,
   CollapseTooltip,
-  CopyLinkTooltip,
   DragTooltip,
 } from './components/tooltips';
 
@@ -84,11 +74,9 @@ const COMPUTE_POSITION_CONFIG = { placement: 'left-start' as const };
 export const DBlockDragHandle = ({
   editor,
   runtimeState,
-  onCopyHeadingLink,
 }: {
   editor: Editor;
   runtimeState: DBlockRuntimeState;
-  onCopyHeadingLink?: (link: string) => void;
 }) => {
   const [hovered, setHovered] = useState<HoveredBlock | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -161,10 +149,6 @@ export const DBlockDragHandle = ({
   // that widens after positioning (chevron appearing for a heading) grows
   // rightward over the block's text. Constant width keeps `left` stable.
   const isHeadingHovered = Boolean(meta?.isHeading);
-  const shouldRenderCopyLinkSlot =
-    runtimeState.isPreviewMode &&
-    !runtimeState.isPreviewEditor &&
-    !isBelowLargeScreen;
 
   const handleAddBlock = (event: React.MouseEvent<HTMLButtonElement>) => {
     const current = resolveBlock();
@@ -189,13 +173,6 @@ export const DBlockDragHandle = ({
   const handleToggleCollapse = () => {
     const current = resolveBlock();
     if (current) toggleHeadingCollapse(current.editor, current.pos);
-  };
-
-  const handleCopyHeadingLink = () => {
-    const current = resolveBlock();
-    if (!current) return;
-    const link = getHeadingLinkSlug(current.node, current.pos);
-    if (link) onCopyHeadingLink?.(link);
   };
 
   const buttonClassName = cn(
@@ -246,17 +223,6 @@ export const DBlockDragHandle = ({
             )}
           />
         </CollapseTooltip>
-        {shouldRenderCopyLinkSlot ? (
-          <CopyLinkTooltip>
-            <CopyLinkButton
-              onClick={handleCopyHeadingLink}
-              className={cn(
-                'd-block-button color-text-default color-bg-default-hover aspect-square h-6 w-6 shrink-0',
-                !isHeadingHovered && 'invisible pointer-events-none',
-              )}
-            />
-          </CopyLinkTooltip>
-        ) : null}
       </div>
     </DragHandle>
   );

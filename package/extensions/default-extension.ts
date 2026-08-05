@@ -255,6 +255,7 @@ export const defaultExtensions = ({
   ipfsImageFetchFn,
   onError,
   metadataProxyUrl,
+  onCopyHeadingLink,
   ipfsImageUploadFn,
   fetchV1ImageFn,
   onTocUpdate,
@@ -267,6 +268,7 @@ export const defaultExtensions = ({
   onError: (error: string) => void;
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
   metadataProxyUrl?: string;
+  onCopyHeadingLink?: (link: string) => void;
   fetchV1ImageFn?: (url: string) => Promise<ArrayBuffer | undefined>;
   onTocUpdate?: (data: ToCItemType[], isCreate?: boolean) => void;
   dBlockRuntimeStateRef?: DBlockRuntimeStateRef;
@@ -425,6 +427,7 @@ export const defaultExtensions = ({
   Gapcursor,
   createDBlockExtension({
     ipfsImageUploadFn,
+    onCopyHeadingLink,
     hasAvailableModels,
     getRuntimeState: dBlockRuntimeStateRef
       ? () => dBlockRuntimeStateRef.current

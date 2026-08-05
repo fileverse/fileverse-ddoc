@@ -342,6 +342,7 @@ const DdocEditor = forwardRef(
       isPresentationMode,
       metadataProxyUrl,
       extensions,
+      onCopyHeadingLink,
       disableInlineComment,
       isFocusMode,
       isConnected,
@@ -1213,7 +1214,6 @@ const DdocEditor = forwardRef(
                                       runtimeState={
                                         splitAwareDBlockRuntimeState
                                       }
-                                      onCopyHeadingLink={onCopyHeadingLink}
                                     >
                                       <div className="grammarly-wrapper">
                                         {(cachedEditorEntries?.length
