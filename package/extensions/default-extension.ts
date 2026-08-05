@@ -54,6 +54,7 @@ import { EmbeddedTweet } from './twitter-embed';
 import { createDBlockExtension } from './d-block';
 import { FlatHeadingCollapse } from './d-block/dblock-collapse';
 import { BlockId } from './block-id';
+import { AiWriterSpaceTrigger } from './ai-writer/ai-writer-space-trigger';
 import { SuperchargedTableExtensions } from './supercharged-table';
 import { Document, FlatDocument } from './document';
 import { TrailingNode } from './trailing-node';
@@ -436,7 +437,13 @@ export const defaultExtensions = ({
   // math assumes the wrapper, so it is v1-only until re-homed in M2).
   // v2: flat top node, stock Tiptap structure.
   ...(schemaVersion >= 2
-    ? [FlatDocument, FlatHeadingCollapse, BlockId]
+    ? [
+        FlatDocument,
+        FlatHeadingCollapse,
+        BlockId,
+        // Same hasAvailableModels gate as v1's in-dBlock space trigger.
+        ...(hasAvailableModels ? [AiWriterSpaceTrigger] : []),
+      ]
     : [
         createDBlockExtension({
           ipfsImageUploadFn,
