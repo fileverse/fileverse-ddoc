@@ -1,4 +1,4 @@
-import type { Editor } from '@tiptap/core';
+import { Extension, type Editor } from '@tiptap/core';
 import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
 import {
   EditorState,
@@ -38,6 +38,29 @@ interface DBlockCollapsePluginState {
 }
 
 const getFirstChild = (node: ProseMirrorNode) => node.content.firstChild;
+
+// v1 wraps each block in a dBlock whose first child is the real node; the
+// flat v2 schema puts the block itself at the top level. These resolvers let
+// the same collapse engine serve both shapes, keyed off the doc's own schema.
+const docHasDBlock = (doc: ProseMirrorNode) =>
+  Boolean(doc.type.schema.nodes.dBlock);
+
+// The heading of a top-level block, or null when the block is not a heading.
+const getBlockHeading = (
+  doc: ProseMirrorNode,
+  node: ProseMirrorNode | null | undefined,
+): ProseMirrorNode | null => {
+  if (!node) return null;
+  if (docHasDBlock(doc)) {
+    const firstChild = node.type.name === 'dBlock' ? getFirstChild(node) : null;
+    return firstChild?.type.name === 'heading' ? firstChild : null;
+  }
+  return node.type.name === 'heading' ? node : null;
+};
+
+// Position of the heading node given its top-level block position.
+const headingPosAt = (doc: ProseMirrorNode, blockPos: number) =>
+  blockPos + (docHasDBlock(doc) ? 1 : 0);
 
 export const getDBlockRenderMeta = (
   node: ProseMirrorNode,
@@ -93,12 +116,8 @@ export const buildHeadingMap = (doc: ProseMirrorNode): HeadingLookupMap => {
   const parentStack: Array<{ id: string; level: number }> = [];
 
   doc.forEach((node, position) => {
-    if (node.type.name !== 'dBlock') {
-      return;
-    }
-
-    const headingNode = getFirstChild(node);
-    if (headingNode?.type.name !== 'heading') {
+    const headingNode = getBlockHeading(doc, node);
+    if (!headingNode) {
       return;
     }
 
@@ -144,7 +163,7 @@ const isHeadingCollapsed = (
   }
 
   const node = doc.nodeAt(heading.position);
-  const headingNode = node ? getFirstChild(node) : null;
+  const headingNode = getBlockHeading(doc, node);
   return Boolean(headingNode?.attrs.isCollapsed);
 };
 
@@ -154,11 +173,10 @@ export const shouldHideDBlock = (
   position: number,
   headingMap: HeadingLookupMap,
 ) => {
-  const firstChild = getFirstChild(node);
-  const isHeading = firstChild?.type.name === 'heading';
+  const blockHeading = getBlockHeading(doc, node);
 
-  if (isHeading) {
-    const headingId = firstChild.attrs.id || `heading-${position}`;
+  if (blockHeading) {
+    const headingId = blockHeading.attrs.id || `heading-${position}`;
     const heading = headingMap.get(headingId);
 
     if (!heading || heading.level === 1 || !heading.parent) {
@@ -226,7 +244,7 @@ const setHeadingCollapsed = (
   dBlockPos: number,
   isCollapsed: boolean,
 ) => {
-  const headingPos = dBlockPos + 1;
+  const headingPos = headingPosAt(tr.doc, dBlockPos);
   const headingNode = tr.doc.nodeAt(headingPos);
 
   if (headingNode?.type.name !== 'heading') {
@@ -259,6 +277,9 @@ const findHeadingAtSelectionEnd = (
     return null;
   }
 
+  // Caret max position inside the heading text: block end minus the closing
+  // heading token, minus one more for the dBlock wrapper when present.
+  const endOffset = docHasDBlock(doc) ? 2 : 1;
   let position = 0;
   while (position < doc.content.size) {
     const node = doc.nodeAt(position);
@@ -266,13 +287,11 @@ const findHeadingAtSelectionEnd = (
       break;
     }
 
-    if (node.type.name === 'dBlock') {
-      const firstChild = getFirstChild(node);
-      if (firstChild?.type.name === 'heading' && firstChild.attrs.isCollapsed) {
-        const end = position + node.nodeSize;
-        if (selection.from >= end - 2 && selection.from <= end) {
-          return { node, position };
-        }
+    const headingNode = getBlockHeading(doc, node);
+    if (headingNode?.attrs.isCollapsed) {
+      const end = position + node.nodeSize;
+      if (selection.from >= end - endOffset && selection.from <= end) {
+        return { node, position };
       }
     }
 
@@ -286,15 +305,15 @@ export const findEndOfCollapsedContent = (
   doc: ProseMirrorNode,
   headingPos: number,
 ) => {
-  const headingNode = doc.nodeAt(headingPos);
-  const firstChild = headingNode ? getFirstChild(headingNode) : null;
+  const blockNode = doc.nodeAt(headingPos);
+  const headingNode = getBlockHeading(doc, blockNode);
 
-  if (!headingNode || firstChild?.type.name !== 'heading') {
-    return headingPos + (headingNode?.nodeSize ?? 0);
+  if (!blockNode || !headingNode) {
+    return headingPos + (blockNode?.nodeSize ?? 0);
   }
 
-  const headingLevel = firstChild.attrs.level || 1;
-  let position = headingPos + headingNode.nodeSize;
+  const headingLevel = headingNode.attrs.level || 1;
+  let position = headingPos + blockNode.nodeSize;
 
   while (position < doc.content.size) {
     const node = doc.nodeAt(position);
@@ -302,14 +321,9 @@ export const findEndOfCollapsedContent = (
       break;
     }
 
-    if (node.type.name === 'dBlock') {
-      const nextHeading = getFirstChild(node);
-      if (
-        nextHeading?.type.name === 'heading' &&
-        (nextHeading.attrs.level || 1) <= headingLevel
-      ) {
-        break;
-      }
+    const nextHeading = getBlockHeading(doc, node);
+    if (nextHeading && (nextHeading.attrs.level || 1) <= headingLevel) {
+      break;
     }
 
     position += node.nodeSize;
@@ -318,18 +332,25 @@ export const findEndOfCollapsedContent = (
   return position;
 };
 
-const isEmptyDBlock = (node: ProseMirrorNode | null | undefined) => {
-  const firstChild = node ? getFirstChild(node) : null;
-  return (
-    node?.type.name === 'dBlock' &&
-    firstChild?.type.name === 'paragraph' &&
-    firstChild.content.size === 0
-  );
+const isEmptyBlock = (
+  doc: ProseMirrorNode,
+  node: ProseMirrorNode | null | undefined,
+) => {
+  if (!node) return false;
+  if (docHasDBlock(doc)) {
+    const firstChild = getFirstChild(node);
+    return (
+      node.type.name === 'dBlock' &&
+      firstChild?.type.name === 'paragraph' &&
+      firstChild.content.size === 0
+    );
+  }
+  return node.type.name === 'paragraph' && node.content.size === 0;
 };
 
 const getEmptyTrailingDBlockPosition = (doc: ProseMirrorNode) => {
   const lastChild = doc.lastChild;
-  if (!isEmptyDBlock(lastChild)) {
+  if (!isEmptyBlock(doc, lastChild)) {
     return null;
   }
 
@@ -341,20 +362,20 @@ export const buildToggleHeadingCollapseTransaction = (
   position: number,
 ) => {
   const node = state.doc.nodeAt(position);
-  const firstChild = node ? getFirstChild(node) : null;
+  const headingNode = getBlockHeading(state.doc, node);
 
-  if (node?.type.name !== 'dBlock' || firstChild?.type.name !== 'heading') {
+  if (!node || !headingNode) {
     return null;
   }
 
   const headingMap = buildHeadingMap(state.doc);
-  const headingId = firstChild.attrs.id || `heading-${position}`;
+  const headingId = headingNode.attrs.id || `heading-${position}`;
   const heading = headingMap.get(headingId);
   if (!heading) {
     return null;
   }
 
-  const wasCollapsed = Boolean(firstChild.attrs.isCollapsed);
+  const wasCollapsed = Boolean(headingNode.attrs.isCollapsed);
   const tr = state.tr;
 
   setHeadingCollapsed(tr, position, !wasCollapsed);
@@ -403,17 +424,13 @@ export const toggleHeadingCollapse = (editor: Editor, position: number) => {
 
 export const expandHeadingContent = (editor: Editor, nodePos: number) => {
   const node = editor.state.doc.nodeAt(nodePos);
-  const firstChild = node ? getFirstChild(node) : null;
+  const headingNode = getBlockHeading(editor.state.doc, node);
 
-  if (
-    node?.type.name !== 'dBlock' ||
-    firstChild?.type.name !== 'heading' ||
-    !firstChild.attrs.isCollapsed
-  ) {
+  if (!node || !headingNode || !headingNode.attrs.isCollapsed) {
     return false;
   }
 
-  const headingLevel = firstChild.attrs.level || 1;
+  const headingLevel = headingNode.attrs.level || 1;
   const tr = editor.state.tr;
   let changed = setHeadingCollapsed(tr, nodePos, false);
   let position = nodePos + node.nodeSize;
@@ -424,11 +441,8 @@ export const expandHeadingContent = (editor: Editor, nodePos: number) => {
       break;
     }
 
-    const nextHeading = getFirstChild(nextNode);
-    if (
-      nextNode.type.name === 'dBlock' &&
-      nextHeading?.type.name === 'heading'
-    ) {
+    const nextHeading = getBlockHeading(editor.state.doc, nextNode);
+    if (nextHeading) {
       const nextLevel = nextHeading.attrs.level || 1;
       if (nextLevel <= headingLevel) {
         break;
@@ -459,8 +473,8 @@ const buildExpandCollapsedHeadingAtSelectionTransaction = (
   }
 
   const { node, position } = headingAtSelection;
-  const firstChild = getFirstChild(node);
-  const headingLevel = firstChild?.attrs.level || 1;
+  const blockHeading = getBlockHeading(state.doc, node);
+  const headingLevel = blockHeading?.attrs.level || 1;
   const insertPos = findEndOfCollapsedContent(state.doc, position);
   const tr = state.tr;
 
@@ -473,11 +487,8 @@ const buildExpandCollapsedHeadingAtSelectionTransaction = (
       break;
     }
 
-    const nextHeading = getFirstChild(nextNode);
-    if (
-      nextNode.type.name === 'dBlock' &&
-      nextHeading?.type.name === 'heading'
-    ) {
+    const nextHeading = getBlockHeading(state.doc, nextNode);
+    if (nextHeading) {
       const nextLevel = nextHeading.attrs.level || 1;
       if (nextLevel <= headingLevel) {
         break;
@@ -505,22 +516,26 @@ const buildCollapsedHeadingEnterFollowUpTransaction = (
   const tr = state.tr;
   const nodeAtInsert = state.doc.nodeAt(insertPos);
   const trailingPos = getEmptyTrailingDBlockPosition(state.doc);
+  // Caret goes inside the paragraph: +1 into it, +1 more through the dBlock
+  // wrapper when the schema has one.
+  const intoParagraph = docHasDBlock(state.doc) ? 2 : 1;
   const focusPos =
-    isEmptyDBlock(nodeAtInsert) &&
+    isEmptyBlock(state.doc, nodeAtInsert) &&
     insertPos + nodeAtInsert!.nodeSize >= state.doc.content.size
-      ? insertPos + 2
+      ? insertPos + intoParagraph
       : trailingPos !== null && insertPos >= state.doc.content.size
-        ? trailingPos + 2
+        ? trailingPos + intoParagraph
         : null;
 
   if (focusPos !== null) {
     tr.setSelection(TextSelection.create(tr.doc, focusPos));
   } else {
-    const dBlockNode = state.schema.nodes.dBlock.create(null, [
-      state.schema.nodes.paragraph.create(),
-    ]);
-    tr.insert(insertPos, dBlockNode);
-    tr.setSelection(TextSelection.create(tr.doc, insertPos + 2));
+    const dBlockType = state.schema.nodes.dBlock;
+    const newBlock = dBlockType
+      ? dBlockType.create(null, [state.schema.nodes.paragraph.create()])
+      : state.schema.nodes.paragraph.create();
+    tr.insert(insertPos, newBlock);
+    tr.setSelection(TextSelection.create(tr.doc, insertPos + intoParagraph));
   }
 
   return tr.scrollIntoView();
@@ -530,17 +545,19 @@ const buildHiddenDecorationSet = (doc: ProseMirrorNode) => {
   const decorations: Decoration[] = [];
   const headingStack: Array<{ level: number; isCollapsed: boolean }> = [];
   let collapsedHeadingDepth = 0;
+  const hasDBlock = docHasDBlock(doc);
 
   doc.forEach((node, position) => {
-    if (node.type.name !== 'dBlock') {
+    // v1 quirk preserved: non-dBlock top nodes (columns, pageBreak) are never
+    // hidden. In flat v2, every top-level block participates.
+    if (hasDBlock && node.type.name !== 'dBlock') {
       return;
     }
 
-    const firstChild = getFirstChild(node);
-    const isHeading = firstChild?.type.name === 'heading';
+    const blockHeading = getBlockHeading(doc, node);
 
-    if (isHeading) {
-      const level = firstChild.attrs.level || 1;
+    if (blockHeading) {
+      const level = blockHeading.attrs.level || 1;
       while (
         headingStack.length > 0 &&
         headingStack[headingStack.length - 1].level >= level
@@ -560,10 +577,10 @@ const buildHiddenDecorationSet = (doc: ProseMirrorNode) => {
       );
     }
 
-    if (isHeading) {
-      const isCollapsed = Boolean(firstChild.attrs.isCollapsed);
+    if (blockHeading) {
+      const isCollapsed = Boolean(blockHeading.attrs.isCollapsed);
       headingStack.push({
-        level: firstChild.attrs.level || 1,
+        level: blockHeading.attrs.level || 1,
         isCollapsed,
       });
       if (isCollapsed) {
@@ -577,27 +594,28 @@ const buildHiddenDecorationSet = (doc: ProseMirrorNode) => {
 
 const getDBlockCollapseStructureSignature = (doc: ProseMirrorNode) => {
   const parts: string[] = [];
+  const hasDBlock = docHasDBlock(doc);
 
   doc.forEach((node) => {
-    if (node.type.name !== 'dBlock') {
-      parts.push(node.type.name);
-      return;
-    }
-
-    const firstChild = getFirstChild(node);
-    if (firstChild?.type.name === 'heading') {
+    const blockHeading = getBlockHeading(doc, node);
+    if (blockHeading) {
       parts.push(
         [
           'heading',
-          firstChild.attrs.id ?? '',
-          firstChild.attrs.level ?? '',
-          firstChild.attrs.isCollapsed ? '1' : '0',
+          blockHeading.attrs.id ?? '',
+          blockHeading.attrs.level ?? '',
+          blockHeading.attrs.isCollapsed ? '1' : '0',
         ].join(':'),
       );
       return;
     }
 
-    parts.push(firstChild?.type.name ?? 'empty');
+    if (hasDBlock && node.type.name === 'dBlock') {
+      parts.push(getFirstChild(node)?.type.name ?? 'empty');
+      return;
+    }
+
+    parts.push(node.type.name);
   });
 
   return parts.join('|');
@@ -654,6 +672,16 @@ const buildCollapsePluginState = (
 export const dBlockCollapsePluginKey = new PluginKey<DBlockCollapsePluginState>(
   'dblock-collapse',
 );
+
+// v2 registration point: v1 gets this plugin from createDBlockExtension, the
+// flat schema has no dBlock extension, so the same (schema-aware) plugin is
+// registered through this wrapper instead.
+export const FlatHeadingCollapse = Extension.create({
+  name: 'flatHeadingCollapse',
+  addProseMirrorPlugins() {
+    return [createDBlockCollapsePlugin()];
+  },
+});
 
 export const createDBlockCollapsePlugin = () =>
   new Plugin<DBlockCollapsePluginState>({
