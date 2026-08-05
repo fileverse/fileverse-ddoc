@@ -14,12 +14,11 @@ import {
 import { DBlockDragHandle } from './dblock-drag-handle';
 
 interface DBlockTemplateTarget {
-  contentElement: Element;
   node: ProseMirrorNode;
   pos: number;
 }
 
-const getTemplateTarget = (
+export const getTemplateTarget = (
   editor: Editor | null,
   runtimeState: DBlockRuntimeState,
 ): DBlockTemplateTarget | null => {
@@ -65,20 +64,7 @@ const getTemplateTarget = (
     return null;
   }
 
-  // TODO(Task 4): the registry used to resolve the target node view's
-  // content element directly. With the gutter/content-shell DOM gone, the
-  // first (and only, per the childCount check above) d-block's content
-  // element is queried directly off the editor DOM as a one-task bridge.
-  const contentElement = editor.view.dom.querySelector(
-    '[data-type="d-block"] > [data-node-view-content]',
-  );
-
-  if (!contentElement || !contentElement.isConnected) {
-    return null;
-  }
-
   return {
-    contentElement,
     node,
     pos,
   };
@@ -102,10 +88,12 @@ const DBlockTemplateOverlay = ({
     const refresh = () => setRefreshKey((key) => key + 1);
     editor.on('transaction', refresh);
     editor.on('selectionUpdate', refresh);
+    window.addEventListener('resize', refresh);
 
     return () => {
       editor.off('transaction', refresh);
       editor.off('selectionUpdate', refresh);
+      window.removeEventListener('resize', refresh);
     };
   }, [editor]);
 
@@ -145,22 +133,43 @@ const DBlockTemplateOverlay = ({
     });
   }, [moreTemplates.length]);
 
-  if (!target || isFocusMode) {
+  const panel = editor?.view.dom.closest('[data-ddoc-editor-panel]');
+
+  if (!target || isFocusMode || !panel) {
     return null;
   }
 
+  const firstBlock = editor?.view.dom.querySelector('[data-type="d-block"]');
+  if (!firstBlock) {
+    return null;
+  }
+
+  const panelRect = panel.getBoundingClientRect();
+  const blockRect = firstBlock.getBoundingClientRect();
+
   return createPortal(
-    renderTemplateButtons(
-      templateButtons,
-      moreTemplates,
-      visibleTemplateCount,
-      toggleAllTemplates,
-      isExpanded,
-      runtimeState.isCollaboratorsDoc,
-      runtimeState.isPreviewMode,
-      isFocusMode,
-    ),
-    target.contentElement,
+    <div
+      data-template-overlay="true"
+      contentEditable={false}
+      style={{
+        position: 'absolute',
+        top: blockRect.bottom - panelRect.top + 8,
+        left: blockRect.left - panelRect.left,
+        width: blockRect.width,
+      }}
+    >
+      {renderTemplateButtons(
+        templateButtons,
+        moreTemplates,
+        visibleTemplateCount,
+        toggleAllTemplates,
+        isExpanded,
+        runtimeState.isCollaboratorsDoc,
+        runtimeState.isPreviewMode,
+        isFocusMode,
+      )}
+    </div>,
+    panel,
   );
 };
 
