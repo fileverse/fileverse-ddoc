@@ -11,7 +11,6 @@ import { createDBlockMediaConversionPlugin } from './dblock-media-plugin';
 export interface DBlockOptions {
   HTMLAttributes: Record<string, any>;
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
-  onCopyHeadingLink?: (link: string) => void;
   hasAvailableModels: boolean;
   getRuntimeState?: () => DBlockRuntimeState;
 }
@@ -58,7 +57,6 @@ export const DBlock = Node.create<DBlockOptions>({
   addOptions() {
     return {
       HTMLAttributes: {},
-      onCopyHeadingLink: undefined,
       hasAvailableModels: false,
       getRuntimeState: undefined,
     };

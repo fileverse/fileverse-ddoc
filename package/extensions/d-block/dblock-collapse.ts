@@ -55,19 +55,6 @@ export const getDBlockRenderMeta = (
   };
 };
 
-export const getHeadingAlignmentClass = (alignment?: string) => {
-  switch (alignment) {
-    case 'center':
-      return 'justify-center';
-    case 'left':
-      return 'justify-end';
-    case 'right':
-      return 'justify-start';
-    default:
-      return 'justify-end';
-  }
-};
-
 export const getHeadingLinkSlug = (
   node: ProseMirrorNode,
   pos: number,

@@ -249,7 +249,6 @@ interface UseTabEditorArgs {
   onError?: DdocProps['onError'];
   ipfsImageUploadFn?: DdocProps['ipfsImageUploadFn'];
   metadataProxyUrl?: string;
-  onCopyHeadingLink?: DdocProps['onCopyHeadingLink'];
   ipfsImageFetchFn?: DdocProps['ipfsImageFetchFn'];
   fetchV1ImageFn?: DdocProps['fetchV1ImageFn'];
   isConnected?: boolean;
@@ -299,7 +298,6 @@ export const useTabEditor = ({
   onError,
   ipfsImageUploadFn,
   metadataProxyUrl,
-  onCopyHeadingLink,
   ipfsImageFetchFn,
   fetchV1ImageFn,
   isConnected,
@@ -379,7 +377,6 @@ export const useTabEditor = ({
     onError,
     ipfsImageUploadFn,
     metadataProxyUrl,
-    onCopyHeadingLink,
     ipfsImageFetchFn,
     fetchV1ImageFn,
     enableCollaboration: collabEnabled,
@@ -1537,7 +1534,6 @@ interface UseExtensionStackArgs {
   onError?: (error: string) => void;
   ipfsImageUploadFn?: DdocProps['ipfsImageUploadFn'];
   metadataProxyUrl?: string;
-  onCopyHeadingLink?: DdocProps['onCopyHeadingLink'];
   ipfsImageFetchFn?: DdocProps['ipfsImageFetchFn'];
   fetchV1ImageFn?: DdocProps['fetchV1ImageFn'];
   enableCollaboration?: boolean;
@@ -1565,7 +1561,6 @@ const useEditorExtension = ({
   onError,
   ipfsImageUploadFn,
   metadataProxyUrl,
-  onCopyHeadingLink,
   ipfsImageFetchFn,
   fetchV1ImageFn,
   enableCollaboration,
@@ -1584,13 +1579,8 @@ const useEditorExtension = ({
 }: UseExtensionStackArgs) => {
   const onErrorRef = useRef(onError);
   onErrorRef.current = onError;
-  const onCopyHeadingLinkRef = useRef(onCopyHeadingLink);
-  onCopyHeadingLinkRef.current = onCopyHeadingLink;
   const handleExtensionError = useCallback((error: string) => {
     onErrorRef.current?.(error);
-  }, []);
-  const handleCopyHeadingLink = useCallback((link: string) => {
-    onCopyHeadingLinkRef.current?.(link);
   }, []);
   const slashCommandConfigRef = useRef({
     isConnected,
@@ -1664,7 +1654,6 @@ const useEditorExtension = ({
           onError: handleExtensionError,
           ipfsImageUploadFn,
           metadataProxyUrl,
-          onCopyHeadingLink: handleCopyHeadingLink,
           ipfsImageFetchFn,
           fetchV1ImageFn,
           onTocUpdate: (data, isCreate) =>
@@ -1746,7 +1735,6 @@ const useEditorExtension = ({
         createDBlockExtension({
           hasAvailableModels,
           ipfsImageUploadFn,
-          onCopyHeadingLink: handleCopyHeadingLink,
           getRuntimeState: () => dBlockRuntimeStateRef.current,
         }),
         createSlashCommand(),
@@ -1756,7 +1744,6 @@ const useEditorExtension = ({
       ipfsImageUploadFn,
       metadataProxyUrl,
       handleExtensionError,
-      handleCopyHeadingLink,
       ipfsImageFetchFn,
       fetchV1ImageFn,
       onTocUpdateForTab,

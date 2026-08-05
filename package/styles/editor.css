@@ -490,6 +490,7 @@
 /* table blocks keep their width cap now that the content shell is gone */
 .ProseMirror [data-type='d-block'].is-table > [data-node-view-content] {
   max-width: 100%;
+  margin-inline: auto;
 }
 @media (min-width: 1024px) {
   .ProseMirror [data-type='d-block'].is-table > [data-node-view-content] {
@@ -950,7 +951,7 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
   }
 
   /* presentation preview: container inset replaces old per-block px-4 md:px-[80px] */
-  .ProseMirror.main-doc-editor {
+  .ProseMirror {
     padding: 16px;
 
     @media (min-width: 768px) {

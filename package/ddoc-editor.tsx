@@ -344,7 +344,6 @@ const DdocEditor = forwardRef(
       extensions,
       disableInlineComment,
       isFocusMode,
-      onCopyHeadingLink,
       isConnected,
       activeModel,
       maxTokens,
