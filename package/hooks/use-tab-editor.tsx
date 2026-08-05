@@ -864,6 +864,7 @@ export const useTabEditor = ({
               data: initialContent as JSONContent,
               ignoreCorruptedData,
               onInvalidContentError,
+              wrapInDBlock: Boolean(editor.schema.nodes.dBlock),
             }),
           );
         }

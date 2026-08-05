@@ -117,20 +117,21 @@ export const Columns = Node.create({
             }
 
             // create columns and put old content in the first column
+            const hasDBlock = Boolean(doc.type.schema.nodes.dBlock);
             let columnBlock;
             if (keepContent) {
               const content = sel.content().toJSON();
               const firstColumn = buildColumn(content);
-              const otherColumns = buildNColumns(n - 1);
+              const otherColumns = buildNColumns(n - 1, hasDBlock);
               columnBlock = buildColumnBlock({
                 content: [firstColumn, ...otherColumns],
               });
             } else {
-              const columns = buildNColumns(n);
+              const columns = buildNColumns(n, hasDBlock);
               columnBlock = buildColumnBlock({ content: columns });
             }
             const newNode = doc.type.schema.nodeFromJSON(
-              buildDBlock({ content: [columnBlock] }),
+              hasDBlock ? buildDBlock({ content: [columnBlock] }) : columnBlock,
             );
             if (newNode === null) {
               return;

@@ -275,6 +275,12 @@ function App() {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const editorRef = useRef<any>(null);
 
+  // Dev affordance: expose the editor handle for automated smoke tests.
+  useEffect(() => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (window as any).__ddoc = editorRef;
+  }, []);
+
   // Poll tab state from Y.Doc for DevBar
   useEffect(() => {
     const interval = setInterval(() => {

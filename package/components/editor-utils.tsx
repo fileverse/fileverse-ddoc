@@ -2543,46 +2543,64 @@ export const checkActiveListsAndDBlocks = (editor: Editor) => {
 
   const activeDBlocks: number[] = [];
   const activeListDBlocks: number[] = [];
+  const hasDBlock = Boolean(state.schema.nodes.dBlock);
 
-  // First pass: collect all dBlocks in selection
+  // First pass: collect the top-level containers in the selection.
+  // v1: the dBlock wrappers. Flat v2: the top-level blocks themselves.
   state.doc.nodesBetween(from, to, (node, pos) => {
-    if (node.type.name === 'dBlock') {
-      activeDBlocks.push(pos);
-      let containsList = false;
-      node.content.forEach((child) => {
-        if (
-          ['bulletList', 'orderedList', 'taskList'].includes(child.type.name)
-        ) {
-          containsList = true;
+    if (hasDBlock) {
+      if (node.type.name === 'dBlock') {
+        activeDBlocks.push(pos);
+        let containsList = false;
+        node.content.forEach((child) => {
+          if (
+            ['bulletList', 'orderedList', 'taskList'].includes(child.type.name)
+          ) {
+            containsList = true;
+          }
+        });
+        if (containsList) {
+          activeListDBlocks.push(pos);
         }
-      });
-      if (containsList) {
+      }
+      return;
+    }
+
+    if (state.doc.resolve(pos).depth === 0) {
+      activeDBlocks.push(pos);
+      if (['bulletList', 'orderedList', 'taskList'].includes(node.type.name)) {
         activeListDBlocks.push(pos);
       }
     }
   });
 
-  // Check if there are multiple dBlocks with different content types
-  const hasMultipleContentTypes =
-    activeDBlocks.length > 1 &&
-    activeDBlocks.some((pos) => {
-      const node = state.doc.nodeAt(pos);
-      if (!node) return false;
+  // Check if there are multiple dBlocks with different content types.
+  // Flat schema: mixed means the selection spans both list and non-list
+  // top-level blocks.
+  const hasMultipleContentTypes = !hasDBlock
+    ? activeListDBlocks.length > 0 &&
+      activeListDBlocks.length < activeDBlocks.length
+    : activeDBlocks.length > 1 &&
+      activeDBlocks.some((pos) => {
+        const node = state.doc.nodeAt(pos);
+        if (!node) return false;
 
-      // Check if this dBlock has a different content type than others
-      const hasListContent = node.content.content.some((child) =>
-        ['bulletList', 'orderedList', 'taskList'].includes(child.type.name),
-      );
-      const hasNonListContent = node.content.content.some(
-        (child) =>
-          !['bulletList', 'orderedList', 'taskList'].includes(child.type.name),
-      );
+        // Check if this dBlock has a different content type than others
+        const hasListContent = node.content.content.some((child) =>
+          ['bulletList', 'orderedList', 'taskList'].includes(child.type.name),
+        );
+        const hasNonListContent = node.content.content.some(
+          (child) =>
+            !['bulletList', 'orderedList', 'taskList'].includes(
+              child.type.name,
+            ),
+        );
 
-      return (
-        (hasListContent && hasNonListContent) || // Mixed content in same dBlock
-        (hasListContent && activeListDBlocks.length < activeDBlocks.length)
-      ); // Some dBlocks don't have lists
-    });
+        return (
+          (hasListContent && hasNonListContent) || // Mixed content in same dBlock
+          (hasListContent && activeListDBlocks.length < activeDBlocks.length)
+        ); // Some dBlocks don't have lists
+      });
 
   return {
     activeListTypes,

@@ -1006,12 +1006,18 @@ const MarkdownPasteHandler = (
           find: /===\s*$/m,
           handler: ({ state, range }) => {
             const { tr } = state;
-            const start = range.from - 2;
+            // v1: replace the dBlock around the paragraph (2 levels up).
+            // Flat v2: replace the paragraph itself (1 level up).
+            const hasDBlock = Boolean(state.schema.nodes.dBlock);
+            const start = range.from - (hasDBlock ? 2 : 1);
             const end = range.to;
 
-            const isDBlock = state.doc.nodeAt(start)?.type.name === 'dBlock';
+            const containerName = state.doc.nodeAt(start)?.type.name;
+            const isReplaceableContainer = hasDBlock
+              ? containerName === 'dBlock'
+              : containerName === 'paragraph';
             // Create a page break node
-            if (isDBlock) {
+            if (isReplaceableContainer) {
               tr.replaceWith(
                 start,
                 end,
@@ -1367,7 +1373,8 @@ export async function handleMarkdownContent(
     view.state.schema,
   ).parse(domContent);
 
-  // Post-process: replace dBlock nodes containing a "===" paragraph with pageBreak nodes
+  // Post-process: replace "===" paragraphs with pageBreak nodes. In v1 they
+  // arrive wrapped in a dBlock; in the flat v2 schema they are top-level.
   const newChildren: PMNode[] = [];
   proseMirrorNodes.forEach((child: PMNode) => {
     if (child.type.name === 'dBlock' && child.childCount === 1) {
@@ -1379,6 +1386,10 @@ export async function handleMarkdownContent(
         newChildren.push(view.state.schema.nodes.pageBreak.create());
         return;
       }
+    }
+    if (child.type.name === 'paragraph' && child.textContent.trim() === '===') {
+      newChildren.push(view.state.schema.nodes.pageBreak.create());
+      return;
     }
     newChildren.push(child);
   });

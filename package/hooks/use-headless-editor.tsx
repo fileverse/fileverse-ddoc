@@ -105,7 +105,10 @@ export const useHeadlessEditor = (props?: UseHeadlessEditorProps) => {
       }
     } else {
       editor.commands.setContent(
-        sanitizeContent({ data: initialContent as JSONContent }),
+        sanitizeContent({
+          data: initialContent as JSONContent,
+          wrapInDBlock: Boolean(editor.schema.nodes.dBlock),
+        }),
       );
     }
   };
