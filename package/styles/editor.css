@@ -522,10 +522,6 @@
   width: 100%;
 }
 
-[data-ddoc-editor-root='true'] {
-  padding-bottom: 4rem;
-}
-
 .node-dBlock:first-child > div > .is-table {
   padding-top: 0.5rem;
 }
