@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Editor } from '@tiptap/react';
 import { JSONContent } from '@tiptap/core';
-import { splitDocIntoSlides, isSoloMediaSlide } from './doc-to-slides';
+import {
+  splitDocIntoSlides,
+  isSoloMediaSlide,
+  scaleInlineFontSizes,
+  matchListMarkersToText,
+} from './doc-to-slides';
 // Same extension assembly the headless editor uses, so custom nodes
 // (dBlock, columns, pageBreak) are registered and the documents below are
 // validated against the real schema rather than hand-rolled JSON.
@@ -221,6 +226,160 @@ describe('splitDocIntoSlides', () => {
     // slide. Summing the columns would wrongly split it.
     const slides = splitDocIntoSlides(doc, { maxLinesPerSlide: 4 });
     expect(slides).toHaveLength(1);
+  });
+});
+
+describe('matchListMarkersToText', () => {
+  const listItem = (text: JSONContent): JSONContent => ({
+    type: 'listItem',
+    content: [{ type: 'paragraph', content: [text] }],
+  });
+
+  // A native marker is sized by its <li>, but the size lives on the mark
+  // inside it, so a resized item kept a base-size bullet.
+  it('copies a size carried by a textStyle mark onto the item', () => {
+    const result = matchListMarkersToText({
+      type: 'bulletList',
+      content: [
+        listItem({
+          type: 'text',
+          text: 'big',
+          marks: [{ type: 'textStyle', attrs: { fontSize: '30px' } }],
+        }),
+      ],
+    });
+
+    expect(result.content?.[0].attrs?.fontSize).toBe('30px');
+  });
+
+  it('copies a size carried as a paragraph attribute', () => {
+    const result = matchListMarkersToText({
+      type: 'bulletList',
+      content: [
+        {
+          type: 'listItem',
+          content: [
+            {
+              type: 'paragraph',
+              attrs: { fontSize: '24px' },
+              content: [{ type: 'text', text: 'big' }],
+            },
+          ],
+        },
+      ],
+    });
+
+    expect(result.content?.[0].attrs?.fontSize).toBe('24px');
+  });
+
+  it('leaves an item with no explicit size untouched', () => {
+    const result = matchListMarkersToText({
+      type: 'bulletList',
+      content: [listItem({ type: 'text', text: 'plain' })],
+    });
+
+    expect(result.content?.[0].attrs?.fontSize).toBeUndefined();
+  });
+
+  it('sizes each item independently', () => {
+    const result = matchListMarkersToText({
+      type: 'bulletList',
+      content: [
+        listItem({
+          type: 'text',
+          text: 'small',
+          marks: [{ type: 'textStyle', attrs: { fontSize: '12px' } }],
+        }),
+        listItem({
+          type: 'text',
+          text: 'large',
+          marks: [{ type: 'textStyle', attrs: { fontSize: '40px' } }],
+        }),
+      ],
+    });
+
+    expect(result.content?.[0].attrs?.fontSize).toBe('12px');
+    expect(result.content?.[1].attrs?.fontSize).toBe('40px');
+  });
+
+  it('reaches items nested inside another list', () => {
+    const result = matchListMarkersToText({
+      type: 'bulletList',
+      content: [
+        {
+          type: 'listItem',
+          content: [
+            {
+              type: 'bulletList',
+              content: [
+                listItem({
+                  type: 'text',
+                  text: 'nested',
+                  marks: [{ type: 'textStyle', attrs: { fontSize: '18px' } }],
+                }),
+              ],
+            },
+          ],
+        },
+      ],
+    });
+
+    const nested = result.content?.[0].content?.[0].content?.[0];
+    expect(nested?.attrs?.fontSize).toBe('18px');
+  });
+
+  it('preserves content and other node types', () => {
+    const doc: JSONContent = {
+      type: 'doc',
+      content: [
+        { type: 'paragraph', content: [{ type: 'text', text: 'before' }] },
+        {
+          type: 'bulletList',
+          content: [listItem({ type: 'text', text: 'item' })],
+        },
+      ],
+    };
+
+    expect(JSON.stringify(matchListMarkersToText(doc))).toContain('before');
+    expect(JSON.stringify(matchListMarkersToText(doc))).toContain('item');
+  });
+});
+
+describe('scaleInlineFontSizes', () => {
+  // Inline font-size beats any stylesheet rule, so explicitly-sized text used
+  // to ignore the presenter font scale while everything around it responded.
+  it('routes an explicit size through the scale variable', () => {
+    expect(scaleInlineFontSizes('<p style="font-size: 20px">big</p>')).toBe(
+      '<p style="font-size: calc(var(--slide-font-scale, 1) * 20px)">big</p>',
+    );
+  });
+
+  it.each(['px', 'rem', 'em', 'pt'])('handles %s units', (unit) => {
+    expect(
+      scaleInlineFontSizes(`<span style="font-size:1.5${unit}">x</span>`),
+    ).toBe(
+      `<span style="font-size: calc(var(--slide-font-scale, 1) * 1.5${unit})">x</span>`,
+    );
+  });
+
+  it('scales every occurrence, not just the first', () => {
+    const scaled = scaleInlineFontSizes(
+      '<p style="font-size: 12px">a</p><p style="font-size: 30px">b</p>',
+    );
+
+    expect(scaled).toContain('* 12px)');
+    expect(scaled).toContain('* 30px)');
+  });
+
+  // Running twice must not nest calc() inside calc().
+  it('is idempotent', () => {
+    const once = scaleInlineFontSizes('<p style="font-size: 20px">x</p>');
+    expect(scaleInlineFontSizes(once)).toBe(once);
+  });
+
+  it('leaves markup without an inline size untouched', () => {
+    const html = '<p>plain</p><ul><li>item</li></ul>';
+    expect(scaleInlineFontSizes(html)).toBe(html);
   });
 });
 

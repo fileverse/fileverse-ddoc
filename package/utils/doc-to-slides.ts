@@ -511,6 +511,72 @@ export interface BuildSlidesOptions extends DocToSlidesOptions {
 }
 
 /**
+ * The font size in effect for a node's first run of text.
+ *
+ * Sizes arrive two ways: as a `textStyle` mark on the text itself, and as an
+ * attribute on the paragraph. Both are checked, nearest first.
+ */
+const firstFontSize = (node?: JSONContent): string | null => {
+  if (!node) return null;
+
+  const markSize = node.marks?.find(
+    (mark) => mark.type === 'textStyle' && mark.attrs?.fontSize,
+  )?.attrs?.fontSize;
+  if (markSize) return String(markSize);
+
+  if (node.attrs?.fontSize) return String(node.attrs.fontSize);
+
+  for (const child of node.content ?? []) {
+    const found = firstFontSize(child);
+    if (found) return found;
+  }
+
+  return null;
+};
+
+/**
+ * Copies each list item's own text size onto the item.
+ *
+ * A native list marker is sized by its `<li>`, but an explicit size lives on
+ * the mark or paragraph inside it. The marker therefore kept the base size
+ * while its text grew, and the mismatch widened as the presenter font scale
+ * went up. Giving the item the same size lets the marker follow its text.
+ */
+export const matchListMarkersToText = (node: JSONContent): JSONContent => {
+  const content = node.content?.map(matchListMarkersToText);
+
+  if (node.type !== 'listItem') {
+    return content ? { ...node, content } : node;
+  }
+
+  const fontSize = firstFontSize(node);
+
+  return {
+    ...node,
+    ...(content ? { content } : {}),
+    ...(fontSize ? { attrs: { ...node.attrs, fontSize } } : {}),
+  };
+};
+
+/**
+ * Makes explicitly-sized text obey the presenter font scale.
+ *
+ * An inline `font-size` beats any stylesheet rule, so text carrying its own
+ * size ignored the scale entirely while everything around it grew and shrank.
+ * Rewriting the value into the same multiplication the stylesheet uses puts
+ * both under one control.
+ *
+ * Values already expressed as `calc(...)` are left alone: the pattern requires
+ * a digit after the colon, so it cannot wrap its own output twice.
+ */
+export const scaleInlineFontSizes = (html: string): string =>
+  html.replace(
+    /font-size:\s*(-?[\d.]+)(px|rem|em|pt)/gi,
+    (_match, value, unit) =>
+      `font-size: calc(var(--slide-font-scale, 1) * ${value}${unit})`,
+  );
+
+/**
  * Serialises slide documents back to HTML through the editor's own schema.
  *
  * Round-tripping via renderHTML/parseHTML is lossless by construction, so
@@ -540,8 +606,8 @@ const renderSlideDocsToHtml = (
 
   try {
     return slideDocs.map((slideDoc) => {
-      temporaryEditor.commands.setContent(slideDoc);
-      return temporaryEditor.getHTML();
+      temporaryEditor.commands.setContent(matchListMarkersToText(slideDoc));
+      return scaleInlineFontSizes(temporaryEditor.getHTML());
     });
   } finally {
     temporaryEditor.destroy();
