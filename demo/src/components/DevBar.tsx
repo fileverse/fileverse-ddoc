@@ -39,6 +39,7 @@ export function DevBar({
 }: DevBarProps) {
   const [visible, setVisible] = useState(false);
   const [contentSize, setContentSize] = useState(0);
+  const [schemaInfo, setSchemaInfo] = useState('...');
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -62,6 +63,33 @@ export function DevBar({
     const interval = setInterval(update, 2000);
     return () => clearInterval(interval);
   }, [visible, docId]);
+
+  // Doc schema: what the marker says vs what the editor actually loaded.
+  // A disagreement means the extension fork picked the wrong set.
+  useEffect(() => {
+    if (!visible) return;
+    const update = () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const handle = (window as any).__ddoc?.current;
+      const editor = handle?.getEditor?.();
+      const ydoc = handle?.getYdoc?.();
+      if (!editor || !ydoc) {
+        setSchemaInfo('...');
+        return;
+      }
+      const marker = ydoc.getMap('ddocMeta').get('schemaVersion');
+      const markerVersion = typeof marker === 'number' ? marker : 1;
+      const loadedVersion = editor.schema.nodes.dBlock ? 1 : 2;
+      setSchemaInfo(
+        markerVersion === loadedVersion
+          ? `v${loadedVersion} ${loadedVersion >= 2 ? '(flat)' : '(dblock)'}`
+          : `MISMATCH marker=v${markerVersion} loaded=v${loadedVersion}`,
+      );
+    };
+    update();
+    const interval = setInterval(update, 2000);
+    return () => clearInterval(interval);
+  }, [visible]);
 
   const handleClearData = () => {
     const confirmed = window.confirm(
@@ -87,6 +115,15 @@ export function DevBar({
     <div className="fixed bottom-0 left-0 right-0 z-[9999] h-8 color-bg-default border-t color-border-default flex items-center gap-3 px-4 text-[11px] font-mono color-text-secondary select-none">
       <span title="Document ID">
         <strong>doc:</strong> {docId.slice(0, 8)}
+      </span>
+      <Separator />
+      <span
+        title="Doc schema: marker in ddocMeta vs extensions the editor loaded"
+        className={
+          schemaInfo.startsWith('MISMATCH') ? 'text-red-500 font-bold' : ''
+        }
+      >
+        <strong>schema:</strong> {schemaInfo}
       </span>
       <Separator />
       <span title="Active Tab ID">
