@@ -190,10 +190,21 @@ export const createDBlockMediaConversionPlugin = (
         }
 
         const tr = view.state.tr;
+        const { selection } = view.state;
 
         candidates
           .sort((a, b) => b.from - a.from)
           .forEach((candidate) => {
+            // Never convert the block the user is currently in: replacing
+            // the paragraph under their caret yanks the selection to the
+            // replacement boundary mid-typing (TEC-2539 cursor jumps). The
+            // candidate converts on a later scan, once the caret has left.
+            if (
+              selection.from <= candidate.to + 1 &&
+              selection.to >= candidate.from - 1
+            ) {
+              return;
+            }
             const node =
               candidate.type === 'img'
                 ? view.state.schema.nodes.resizableMedia?.create({
