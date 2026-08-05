@@ -102,4 +102,31 @@ describe('DBlockDragHandle', () => {
     );
     expect(container.querySelector('[aria-label="block-controls"]')).toBeNull();
   });
+
+  it('keeps the collapse slot mounted (invisible) so cluster width is constant', () => {
+    // The DragHandle plugin computes `left` from the cluster's width at
+    // reposition time. If the chevron mounted only for headings, the cluster
+    // would widen AFTER positioning and overlap the block's text
+    // (paragraph → heading hover). The slot must reserve its width always.
+    editor = makeEditor('<p>hello</p>');
+    document.body.appendChild(editor.view.dom);
+    const { unmount } = render(
+      <DBlockDragHandle
+        editor={editor}
+        runtimeState={DEFAULT_DBLOCK_RUNTIME_STATE}
+      />,
+    );
+    const collapse = document.querySelector('[data-test="collapse-button"]');
+    expect(collapse).toBeTruthy();
+    expect(collapse!.className).toMatch(/invisible/);
+    expect(collapse!.className).toMatch(/pointer-events-none/);
+
+    // Same manual unmount as the first test — see its comment about the
+    // DragHandle plugin relocating the element outside React's root.
+    try {
+      unmount();
+    } catch {
+      // expected
+    }
+  });
 });

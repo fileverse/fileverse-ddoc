@@ -51,6 +51,11 @@ export const DBlockDragHandle = ({
 }) => {
   const [hovered, setHovered] = useState<HoveredBlock | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  // Vertical correction: the DragHandle plugin top-aligns the handle with
+  // the hovered block ('left-start'), but the cluster should center on the
+  // block's FIRST LINE. With default line-height (24px) the offset is 0;
+  // for larger line-heights/headings it grows to (lineHeight - 24) / 2.
+  const [lineOffset, setLineOffset] = useState(0);
   const isBelowLargeScreen = useMediaQuery('(max-width: 1024px)');
 
   const resolveBlock = useCallback((): ResolvedContentItem | null => {
@@ -90,6 +95,31 @@ export const DBlockDragHandle = ({
     setMenuOpen(false);
   }, [hovered?.pos]);
 
+  useEffect(() => {
+    if (!hovered) {
+      setLineOffset(0);
+      return;
+    }
+    try {
+      // nodeDOM(pos) → div[data-type=d-block] → div[data-node-view-content]
+      // → the actual block element (p/hN/ul/...), whose computed line-height
+      // determines where the first line's center sits.
+      const wrapper = editor.view.nodeDOM(hovered.pos) as HTMLElement | null;
+      const blockEl = wrapper?.firstElementChild
+        ?.firstElementChild as HTMLElement | null;
+      const lineHeight = blockEl
+        ? parseFloat(getComputedStyle(blockEl).lineHeight)
+        : NaN;
+      setLineOffset(
+        Number.isFinite(lineHeight) && lineHeight > 24
+          ? Math.round((lineHeight - 24) / 2)
+          : 0,
+      );
+    } catch {
+      setLineOffset(0);
+    }
+  }, [editor, hovered]);
+
   if (runtimeState.isPresentationMode && runtimeState.isPreviewMode) {
     return null;
   }
@@ -98,10 +128,14 @@ export const DBlockDragHandle = ({
 
   const shouldShowEditingControls =
     !runtimeState.isPreviewMode && !isBelowLargeScreen;
-  const shouldShowCollapse = Boolean(meta?.isHeading);
-  const shouldShowCopyLink =
+  // Heading-only buttons stay MOUNTED (reserving their width) and toggle
+  // `invisible` instead of unmounting. The DragHandle plugin computes the
+  // handle's `left` from the cluster's width at reposition time; a cluster
+  // that widens after positioning (chevron appearing for a heading) grows
+  // rightward over the block's text. Constant width keeps `left` stable.
+  const isHeadingHovered = Boolean(meta?.isHeading);
+  const shouldRenderCopyLinkSlot =
     runtimeState.isPreviewMode &&
-    Boolean(meta?.isHeading) &&
     !runtimeState.isPreviewEditor &&
     !isBelowLargeScreen;
 
@@ -150,6 +184,7 @@ export const DBlockDragHandle = ({
       <div
         aria-label="block-controls"
         className="flex h-6 items-center justify-end gap-0.5 pr-2"
+        style={lineOffset ? { transform: `translateY(${lineOffset}px)` } : undefined}
       >
         {shouldShowEditingControls ? (
           <>
@@ -174,21 +209,23 @@ export const DBlockDragHandle = ({
             />
           </>
         ) : null}
-        {shouldShowCollapse ? (
-          <CollapseTooltip isCollapsed={Boolean(meta?.isThisHeadingCollapsed)}>
-            <CollapseButton
-              isCollapsed={Boolean(meta?.isThisHeadingCollapsed)}
-              onToggle={handleToggleCollapse}
-              className={buttonClassName}
-            />
-          </CollapseTooltip>
-        ) : null}
-        {shouldShowCopyLink ? (
+        <CollapseTooltip isCollapsed={Boolean(meta?.isThisHeadingCollapsed)}>
+          <CollapseButton
+            isCollapsed={Boolean(meta?.isThisHeadingCollapsed)}
+            onToggle={handleToggleCollapse}
+            className={cn(
+              buttonClassName,
+              !isHeadingHovered && 'invisible pointer-events-none',
+            )}
+          />
+        </CollapseTooltip>
+        {shouldRenderCopyLinkSlot ? (
           <CopyLinkTooltip>
             <CopyLinkButton
               onClick={handleCopyHeadingLink}
               className={cn(
                 'd-block-button color-text-default color-bg-default-hover aspect-square h-6 w-6 shrink-0',
+                !isHeadingHovered && 'invisible pointer-events-none',
               )}
             />
           </CopyLinkTooltip>
