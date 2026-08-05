@@ -75,6 +75,20 @@ import {
 import { destroyEditorWithYSyncCleanup } from '../utils/y-prosemirror-cleanup';
 import { clearTableOfContentsStorage } from '../extensions/table-of-contents';
 import { useTabEditorCache } from './use-tab-editor-cache';
+
+// The single source of truth for the tab editor's construction-time
+// `editorProps.attributes` (the `main-doc-editor`/prose classes,
+// `spellcheck`, `suppressContentEditableWarning`). Extracted to a named,
+// independently-testable constant so a future local `attributes:` key
+// added inline at the `new Editor({ editorProps: { ... } })` call site
+// below can't silently collide with — and replace — the spread of
+// `DdocEditorProps` the way the pre-existing bug did (a later `attributes:`
+// key in the same object literal overwrites the earlier one from
+// `...DdocEditorProps`, rather than merging).
+export const TAB_EDITOR_ATTRIBUTES: Record<string, string> = {
+  ...(DdocEditorProps.attributes as Record<string, string>),
+};
+
 const usercolors = [
   '#30bced',
   '#6eeb83',
@@ -590,9 +604,16 @@ export const useTabEditor = ({
 
             return false;
           },
-          attributes: {
-            spellCheck: 'true',
-          },
+          // `...DdocEditorProps` above already sets `attributes` as ONE key
+          // inside this same object literal — a later `attributes:` key in
+          // a JS object literal replaces the earlier one wholesale rather
+          // than merging, so this must reuse the same merged value instead
+          // of introducing a second, colliding `attributes:` key. See
+          // TAB_EDITOR_ATTRIBUTES above. (The camelCase `spellCheck` this
+          // used to additionally set here was redundant with — and
+          // normalized by the DOM to the same attribute as —
+          // DdocEditorProps' lowercase `spellcheck`, so it's dropped.)
+          attributes: TAB_EDITOR_ATTRIBUTES,
         },
         textDirection: 'auto',
         autofocus: shouldAutofocus ? 'start' : false,

@@ -63,18 +63,6 @@
     }
   }
 
-  h1 {
-    transform: translateY(-0.5rem);
-  }
-
-  h2 {
-    transform: translateY(-0.25rem);
-  }
-
-  h3 {
-    transform: translateY(0);
-  }
-
   & > p {
     margin-top: 1.5rem;
     margin-bottom: 1.5rem;
@@ -469,12 +457,21 @@
   .task-item {
     grid-template-columns: auto 1fr;
     grid-template-rows: auto 1fr;
-    align-items: center;
+    /* Top-align, not center: on multi-line items the checkbox must sit on
+       the FIRST line (TEC-2644), not float at the item's vertical middle. */
+    align-items: start;
     &:has(> div:has(ul)) {
       row-gap: 0.5rem;
     }
     > label {
       grid-area: 1/1/2/2;
+      /* flex kills the inline line-box slack that pushed the checkbox a few
+         px below the label top (block label + inline-grid input). */
+      display: flex;
+      /* Optically center the 1.25rem checkbox within the first text line
+         (1.5 line-height): (1.5em - 1.25rem) / 2, in em so it tracks the
+         document font size. */
+      margin-top: calc(0.75em - 0.625rem);
     }
     > div {
       p {
@@ -486,6 +483,97 @@
       grid-template-rows: subgrid;
       grid-row: span 2;
     }
+  }
+}
+
+.ProseMirror.main-doc-editor {
+  --padding-t: 24px;
+  --padding-r: 16px;
+  --padding-b: 20vh;
+  --padding-l: 36px;
+  padding: var(--padding-t) var(--padding-r) var(--padding-b) var(--padding-l);
+}
+
+@media (min-width: 768px) {
+  .ProseMirror.main-doc-editor {
+    --padding-t: 72px;
+    --padding-r: 80px;
+    --padding-b: 20vh;
+    --padding-l: var(--padding-r);
+    padding: var(--padding-t) var(--padding-r) var(--padding-b) var(--padding-l);
+  }
+}
+
+/* Read-only-preview heading chrome (collapse chevron + copy link), rendered
+   by the dBlock node view INSIDE the editor DOM — the floating drag-handle
+   cluster can never appear in preview because the upstream plugin hides its
+   element whenever the editor is not editable. The node view renders the
+   controls for headings in every mode; `[contenteditable='false']` is what
+   scopes them to read-only editors (mode switches flip that attribute
+   without dispatching a transaction, so a JS-side gate would go stale —
+   see DBlockNodeView.shouldShowPreviewControls). Sits in the container's
+   left padding (36px mobile / 80px desktop); hover-revealed, but kept
+   visible while the heading is collapsed so hidden content stays
+   discoverable. */
+.ProseMirror [data-type='d-block'] > .d-block-preview-controls {
+  display: none;
+}
+
+.ProseMirror[contenteditable='false']
+  [data-type='d-block']
+  > .d-block-preview-controls {
+  position: absolute;
+  right: 100%;
+  top: 2px;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 4px;
+  visibility: hidden;
+}
+
+.ProseMirror[contenteditable='false']
+  [data-type='d-block']:hover
+  > .d-block-preview-controls,
+.ProseMirror[contenteditable='false']
+  [data-type='d-block']
+  > .d-block-preview-controls.is-collapsed {
+  visibility: visible;
+}
+
+.ProseMirror .d-block-preview-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 0;
+  cursor: pointer;
+}
+
+.ProseMirror .d-block-preview-button svg {
+  transition: transform 150ms ease;
+}
+
+.ProseMirror .d-block-preview-button.is-collapsed svg {
+  transform: rotate(-90deg);
+}
+
+/* Below the large breakpoint there is no hover to reveal it and the 36px
+   gutter fits only one button — match the cluster's lg gate and keep just
+   the collapse chevron (which self-reveals when collapsed). */
+@media (max-width: 1023px) {
+  .ProseMirror .d-block-preview-copy-link {
+    display: none;
+  }
+}
+
+/* table blocks keep their width cap now that the content shell is gone */
+.ProseMirror [data-type='d-block'].is-table > [data-node-view-content] {
+  max-width: 100%;
+  margin-inline: auto;
+}
+@media (min-width: 1024px) {
+  .ProseMirror [data-type='d-block'].is-table > [data-node-view-content] {
+    max-width: 90%;
   }
 }
 
@@ -511,10 +599,6 @@
   flex-grow: 1;
   transition: all 0.2s;
   width: 100%;
-}
-
-[data-ddoc-editor-root='true'] {
-  padding-bottom: 4rem;
 }
 
 .node-dBlock:first-child > div > .is-table {
@@ -938,6 +1022,15 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
       &.ProseMirror-selectednode {
         background-color: transparent;
       }
+    }
+  }
+
+  /* presentation preview: container inset replaces old per-block px-4 md:px-[80px] */
+  .ProseMirror {
+    padding: 16px;
+
+    @media (min-width: 768px) {
+      padding: 16px 80px;
     }
   }
 

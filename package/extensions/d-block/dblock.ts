@@ -11,9 +11,11 @@ import { createDBlockMediaConversionPlugin } from './dblock-media-plugin';
 export interface DBlockOptions {
   HTMLAttributes: Record<string, any>;
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
-  onCopyHeadingLink?: (link: string) => void;
   hasAvailableModels: boolean;
   getRuntimeState?: () => DBlockRuntimeState;
+  // Consumed by the node view's read-only-preview heading chrome; the
+  // editing-mode equivalent lives in the floating drag-handle cluster.
+  onCopyHeadingLink?: (link: string) => void;
 }
 
 declare module '@tiptap/core' {
@@ -58,9 +60,9 @@ export const DBlock = Node.create<DBlockOptions>({
   addOptions() {
     return {
       HTMLAttributes: {},
-      onCopyHeadingLink: undefined,
       hasAvailableModels: false,
       getRuntimeState: undefined,
+      onCopyHeadingLink: undefined,
     };
   },
 

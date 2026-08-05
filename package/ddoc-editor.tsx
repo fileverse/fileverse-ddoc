@@ -342,9 +342,9 @@ const DdocEditor = forwardRef(
       isPresentationMode,
       metadataProxyUrl,
       extensions,
+      onCopyHeadingLink,
       disableInlineComment,
       isFocusMode,
-      onCopyHeadingLink,
       isConnected,
       activeModel,
       maxTokens,
@@ -984,11 +984,11 @@ const DdocEditor = forwardRef(
                             !isPreviewMode &&
                             !isFocusMode &&
                             (isNavbarVisible
-                              ? '-mt-[1.5rem] md:!mt-[0.8rem] pt-0 md:pt-[5rem]'
-                              : 'pt-0 md:pt-[1.5rem]'),
+                              ? '-mt-[1.5rem] md:!mt-[0.8rem]'
+                              : null),
                           !isSplitViewActive &&
                             isPreviewMode &&
-                            'md:!mt-[1rem] pt-0 md:!pt-[5rem]',
+                            'md:!mt-[1rem]',
                           {
                             'md:!mt-[0.7rem]':
                               !isSplitViewActive &&
@@ -1002,7 +1002,7 @@ const DdocEditor = forwardRef(
                               !isPreviewMode,
                           },
                           // Split View: no full-screen top spacing.
-                          isSplitViewActive && 'mt-0 pt-0',
+                          isSplitViewActive && 'mt-0',
                           isFocusMode && 'mt-[48px]',
                         )}
                         style={{
@@ -1278,8 +1278,7 @@ const DdocEditor = forwardRef(
                                               }
                                               className={cn(
                                                 'w-full h-auto',
-                                                isPreviewMode &&
-                                                  'preview-mode max-sm:!pb-40',
+                                                isPreviewMode && 'preview-mode',
                                                 activeModel !== undefined &&
                                                   isAIAgentEnabled &&
                                                   'has-available-models',
