@@ -355,7 +355,11 @@ li > ol > li > ol > li:before {
   z-index: 999;
 }
 
-[data-node-view-content] > div {
+/* On the contentDOM itself, NOT `> div`: the dBlock contentDOM's children
+   are the actual blocks (p/hN/ul/...), and word-break inherits into all of
+   them — matching the old `.node-view-content > div` behavior, which hit
+   the contentDOM when it was still a div child of the class-bearing shell. */
+[data-node-view-content] {
   word-break: break-word;
 }
 
