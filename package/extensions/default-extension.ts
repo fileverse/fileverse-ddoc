@@ -53,6 +53,7 @@ import { Iframe } from './iframe';
 import { EmbeddedTweet } from './twitter-embed';
 import { createDBlockExtension } from './d-block';
 import { FlatHeadingCollapse } from './d-block/dblock-collapse';
+import { BlockId } from './block-id';
 import { SuperchargedTableExtensions } from './supercharged-table';
 import { Document, FlatDocument } from './document';
 import { TrailingNode } from './trailing-node';
@@ -433,7 +434,7 @@ export const defaultExtensions = ({
   // math assumes the wrapper, so it is v1-only until re-homed in M2).
   // v2: flat top node, stock Tiptap structure.
   ...(schemaVersion >= 2
-    ? [FlatDocument, FlatHeadingCollapse]
+    ? [FlatDocument, FlatHeadingCollapse, BlockId]
     : [
         createDBlockExtension({
           ipfsImageUploadFn,
