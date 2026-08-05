@@ -337,7 +337,9 @@ export const defaultExtensions = ({
     bulletList: false,
     listItem: false,
     codeBlock: false,
-    trailingNode: false,
+    // v1 uses the custom dBlock-aware TrailingNode registered below; the
+    // flat v2 schema uses StarterKit's stock one (schema-agnostic).
+    trailingNode: schemaVersion >= 2 ? undefined : false,
   }),
   CollapsibleHeading.configure({
     HTMLAttributes: {
