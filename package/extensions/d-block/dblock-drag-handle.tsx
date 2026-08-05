@@ -30,7 +30,33 @@ import {
 interface HoveredBlock {
   node: ProseMirrorNode;
   pos: number;
+  // Vertical correction, computed synchronously on node change: the plugin
+  // top-aligns the handle with the hovered block ('left-start'), but the
+  // cluster should center on the block's FIRST LINE. 0 at the default
+  // 24px line-height; (lineHeight - 24) / 2 for taller lines/headings.
+  lineOffset: number;
 }
+
+const CLUSTER_HEIGHT = 24;
+
+const getFirstLineOffset = (editor: Editor, pos: number): number => {
+  try {
+    // nodeDOM(pos) → div[data-type=d-block] → div[data-node-view-content]
+    // → the actual block element (p/hN/ul/...), whose computed line-height
+    // determines where the first line's center sits.
+    const wrapper = editor.view.nodeDOM(pos) as HTMLElement | null;
+    const blockEl = wrapper?.firstElementChild
+      ?.firstElementChild as HTMLElement | null;
+    const lineHeight = blockEl
+      ? parseFloat(getComputedStyle(blockEl).lineHeight)
+      : NaN;
+    return Number.isFinite(lineHeight) && lineHeight > CLUSTER_HEIGHT
+      ? Math.round((lineHeight - CLUSTER_HEIGHT) / 2)
+      : 0;
+  } catch {
+    return 0;
+  }
+};
 
 // Stable identity: DragHandle's internal useEffect depends on
 // `computePositionConfig` (and `onNodeChange`) by reference. A new object
@@ -51,11 +77,6 @@ export const DBlockDragHandle = ({
 }) => {
   const [hovered, setHovered] = useState<HoveredBlock | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
-  // Vertical correction: the DragHandle plugin top-aligns the handle with
-  // the hovered block ('left-start'), but the cluster should center on the
-  // block's FIRST LINE. With default line-height (24px) the offset is 0;
-  // for larger line-heights/headings it grows to (lineHeight - 24) / 2.
-  const [lineOffset, setLineOffset] = useState(0);
   const isBelowLargeScreen = useMediaQuery('(max-width: 1024px)');
 
   const resolveBlock = useCallback((): ResolvedContentItem | null => {
@@ -76,6 +97,7 @@ export const DBlockDragHandle = ({
   const handleNodeChange = useCallback(
     ({
       node,
+      editor: dragHandleEditor,
       pos,
     }: {
       node: ProseMirrorNode | null;
@@ -85,7 +107,14 @@ export const DBlockDragHandle = ({
       setHovered((prev) => {
         if (!node) return prev;
         if (prev && prev.pos === pos && prev.node === node) return prev;
-        return { node, pos };
+        // Computed here, not in an effect: an effect would land the offset
+        // one paint AFTER the plugin repositions the handle, flashing the
+        // cluster at the block top before it snaps to the first-line center.
+        return {
+          node,
+          pos,
+          lineOffset: getFirstLineOffset(dragHandleEditor, pos),
+        };
       });
     },
     [],
@@ -94,31 +123,6 @@ export const DBlockDragHandle = ({
   useEffect(() => {
     setMenuOpen(false);
   }, [hovered?.pos]);
-
-  useEffect(() => {
-    if (!hovered) {
-      setLineOffset(0);
-      return;
-    }
-    try {
-      // nodeDOM(pos) → div[data-type=d-block] → div[data-node-view-content]
-      // → the actual block element (p/hN/ul/...), whose computed line-height
-      // determines where the first line's center sits.
-      const wrapper = editor.view.nodeDOM(hovered.pos) as HTMLElement | null;
-      const blockEl = wrapper?.firstElementChild
-        ?.firstElementChild as HTMLElement | null;
-      const lineHeight = blockEl
-        ? parseFloat(getComputedStyle(blockEl).lineHeight)
-        : NaN;
-      setLineOffset(
-        Number.isFinite(lineHeight) && lineHeight > 24
-          ? Math.round((lineHeight - 24) / 2)
-          : 0,
-      );
-    } catch {
-      setLineOffset(0);
-    }
-  }, [editor, hovered]);
 
   if (runtimeState.isPresentationMode && runtimeState.isPreviewMode) {
     return null;
@@ -184,7 +188,11 @@ export const DBlockDragHandle = ({
       <div
         aria-label="block-controls"
         className="flex h-6 items-center justify-end gap-0.5 pr-2"
-        style={lineOffset ? { transform: `translateY(${lineOffset}px)` } : undefined}
+        style={
+          hovered?.lineOffset
+            ? { transform: `translateY(${hovered.lineOffset}px)` }
+            : undefined
+        }
       >
         {shouldShowEditingControls ? (
           <>
