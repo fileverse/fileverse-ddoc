@@ -457,12 +457,21 @@
   .task-item {
     grid-template-columns: auto 1fr;
     grid-template-rows: auto 1fr;
-    align-items: center;
+    /* Top-align, not center: on multi-line items the checkbox must sit on
+       the FIRST line (TEC-2644), not float at the item's vertical middle. */
+    align-items: start;
     &:has(> div:has(ul)) {
       row-gap: 0.5rem;
     }
     > label {
       grid-area: 1/1/2/2;
+      /* flex kills the inline line-box slack that pushed the checkbox a few
+         px below the label top (block label + inline-grid input). */
+      display: flex;
+      /* Optically center the 1.25rem checkbox within the first text line
+         (1.5 line-height): (1.5em - 1.25rem) / 2, in em so it tracks the
+         document font size. */
+      margin-top: calc(0.75em - 0.625rem);
     }
     > div {
       p {
