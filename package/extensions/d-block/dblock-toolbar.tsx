@@ -144,19 +144,11 @@ const DBlockTemplateOverlay = ({
     return null;
   }
 
-  const panelRect = panel.getBoundingClientRect();
-  const blockRect = firstBlock.getBoundingClientRect();
-
   return createPortal(
     <div
       data-template-overlay="true"
       contentEditable={false}
-      style={{
-        position: 'absolute',
-        top: blockRect.bottom - panelRect.top + 8,
-        left: blockRect.left - panelRect.left,
-        width: blockRect.width,
-      }}
+      className="top-[66px] right-20 w-max absolute z-10 max-md:right-[unset] max-md:left-9"
     >
       {renderTemplateButtons(
         templateButtons,

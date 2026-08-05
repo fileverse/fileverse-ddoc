@@ -63,5 +63,9 @@
    specificity regardless of stylesheet import order — both are two-class
    selectors otherwise. */
 [data-split-view-preview] .ProseMirror.main-doc-editor {
-  padding: 8px 48px 64px 48px;
+  --padding-t: 8px;
+  --padding-r: 48px;
+  --padding-b: 64px;
+  --padding-l: var(--padding-r);
+  padding: var(--padding-t) var(--padding-r) var(--padding-b) var(--padding-l);
 }

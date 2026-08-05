@@ -487,12 +487,20 @@
 }
 
 .ProseMirror.main-doc-editor {
-  padding: 24px 16px 20vh 36px;
+  --padding-t: 24px;
+  --padding-r: 16px;
+  --padding-b: 20vh;
+  --padding-l: 36px;
+  padding: var(--padding-t) var(--padding-r) var(--padding-b) var(--padding-l);
 }
 
 @media (min-width: 768px) {
   .ProseMirror.main-doc-editor {
-    padding: 72px 80px 20vh;
+    --padding-t: 72px;
+    --padding-r: 80px;
+    --padding-b: 20vh;
+    --padding-l: var(--padding-r);
+    padding: var(--padding-t) var(--padding-r) var(--padding-b) var(--padding-l);
   }
 }
 
