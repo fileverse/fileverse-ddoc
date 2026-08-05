@@ -2,7 +2,7 @@ import { describe, it, expect, afterEach, beforeAll, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { Editor } from '@tiptap/react';
 import { makeEditor } from '../../utils/make-editor';
-import { DBlockDragHandle } from './dblock-drag-handle';
+import { DBlockDragHandle, resolveTopLevelBlock } from './dblock-drag-handle';
 import { DEFAULT_DBLOCK_RUNTIME_STATE } from './dblock-runtime';
 
 beforeAll(() => {
@@ -14,6 +14,47 @@ beforeAll(() => {
       disconnect() {}
     } as unknown as typeof ResizeObserver;
   }
+});
+
+describe('resolveTopLevelBlock', () => {
+  let editor: Editor;
+  afterEach(() => editor?.destroy());
+
+  it('resolves a top-level dBlock', () => {
+    editor = makeEditor('<p>hello</p>');
+    const resolved = resolveTopLevelBlock(editor, 0);
+    expect(resolved?.node.type.name).toBe('dBlock');
+    expect(resolved?.pos).toBe(0);
+  });
+
+  it('resolves non-dBlock top-level nodes so their controls act on the whole block', () => {
+    // The DragHandle plugin targets the depth-1 node, so inside a columns
+    // layout (or on a pageBreak) the hovered node is never a dBlock. These
+    // must resolve — a null here renders live-looking Plus/menu buttons
+    // whose every action silently no-ops.
+    editor = makeEditor('<p>hello</p>');
+    editor.commands.insertContentAt(editor.state.doc.content.size, {
+      type: 'pageBreak',
+    });
+    let pageBreakPos = -1;
+    editor.state.doc.forEach((node, pos) => {
+      if (node.type.name === 'pageBreak') pageBreakPos = pos;
+    });
+    expect(pageBreakPos).toBeGreaterThan(-1);
+
+    const resolved = resolveTopLevelBlock(editor, pageBreakPos);
+    expect(resolved?.node.type.name).toBe('pageBreak');
+  });
+
+  it('returns null for nested and out-of-range positions', () => {
+    editor = makeEditor('<p>hello</p>');
+    // depth > 0: inside the paragraph
+    expect(resolveTopLevelBlock(editor, 2)).toBeNull();
+    // beyond the doc (stale pos after a deletion shrank the doc)
+    expect(
+      resolveTopLevelBlock(editor, editor.state.doc.content.size + 5),
+    ).toBeNull();
+  });
 });
 
 describe('DBlockDragHandle', () => {

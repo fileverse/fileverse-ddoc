@@ -53,6 +53,26 @@ const getFirstLineOffset = (editor: Editor, pos: number): number => {
   }
 };
 
+// The DragHandle plugin always targets the depth-1 (top-level) node, so
+// inside a columns layout the hovered node is the `columns` node itself —
+// never the nested dBlock. Accept ANY top-level block (dBlock, columns,
+// pageBreak): the menu actions and the plus button are NodeSelection-based
+// and operate correctly on the whole block, which beats rendering controls
+// that silently no-op. Nested/stale positions (depth > 0 after an edit
+// shifted the doc under a stored pos) resolve to null.
+export const resolveTopLevelBlock = (
+  editor: Editor,
+  pos: number,
+): ResolvedContentItem | null => {
+  const { doc } = editor.state;
+  if (pos < 0 || pos > doc.content.size) return null;
+  const $pos = doc.resolve(pos);
+  if ($pos.depth !== 0) return null;
+  const node = $pos.nodeAfter;
+  if (!node) return null;
+  return { editor, node, pos };
+};
+
 // Stable identity: DragHandle's internal useEffect depends on
 // `computePositionConfig` (and `onNodeChange`) by reference. A new object
 // literal on every render would tear down and re-register the ProseMirror
@@ -75,12 +95,11 @@ export const DBlockDragHandle = ({
   const clusterRef = useRef<HTMLDivElement | null>(null);
   const isBelowLargeScreen = useMediaQuery('(max-width: 1024px)');
 
-  const resolveBlock = useCallback((): ResolvedContentItem | null => {
-    if (!hovered) return null;
-    const node = editor.state.doc.nodeAt(hovered.pos);
-    if (node?.type.name !== 'dBlock') return null;
-    return { editor, node, pos: hovered.pos };
-  }, [editor, hovered]);
+  const resolveBlock = useCallback(
+    (): ResolvedContentItem | null =>
+      hovered ? resolveTopLevelBlock(editor, hovered.pos) : null,
+    [editor, hovered],
+  );
   const actions = useContentItemActions(editor, resolveBlock);
 
   // Stable identity for the same reason as COMPUTE_POSITION_CONFIG above —
