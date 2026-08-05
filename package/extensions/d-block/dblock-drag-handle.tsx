@@ -105,7 +105,7 @@ export const DBlockDragHandle = ({
     !runtimeState.isPreviewEditor &&
     !isBelowLargeScreen;
 
-  const handleAddBlock = (event: React.MouseEvent<HTMLDivElement>) => {
+  const handleAddBlock = (event: React.MouseEvent<HTMLButtonElement>) => {
     const current = resolveBlock();
     if (!current) return;
     const insertPos = event.altKey
@@ -117,7 +117,7 @@ export const DBlockDragHandle = ({
     });
   };
 
-  const handleDragClick = (event: React.MouseEvent<HTMLDivElement>) => {
+  const handleDragClick = (event: React.MouseEvent<HTMLButtonElement>) => {
     if (event.altKey) {
       actions.deleteNode();
       return;
@@ -138,7 +138,7 @@ export const DBlockDragHandle = ({
   };
 
   const buttonClassName = cn(
-    'd-block-button color-text-default hover:color-bg-default-hover aspect-square h-5 w-5 shrink-0',
+    'd-block-button color-text-default hover:color-bg-default-hover aspect-square h-5 w-5 min-w-0 shrink-0',
   );
 
   return (
@@ -149,7 +149,7 @@ export const DBlockDragHandle = ({
     >
       <div
         aria-label="block-controls"
-        className="flex h-6 items-center justify-end gap-[2px] pr-2"
+        className="flex h-6 items-center justify-end gap-0.5 pr-2"
       >
         {shouldShowEditingControls ? (
           <>
