@@ -36,6 +36,22 @@ describe('dblock media conversion plugin', () => {
     expect(editor.state.selection.from).toBe(5);
   });
 
+  it('converts after the caret leaves, even with no further doc edits', () => {
+    editor = makeEditor(`${LINK_PARAGRAPH}<p>elsewhere</p>`);
+    // caret inside the link text at the first scan → conversion deferred
+    editor.commands.setTextSelection(5);
+    vi.advanceTimersByTime(1000);
+    expect(hasIframe(editor)).toBe(false);
+
+    // move the caret away WITHOUT changing the doc — selection-only
+    // transactions never set shouldScan, so only the deferred-candidate
+    // re-arm can pick this up
+    editor.commands.setTextSelection(editor.state.doc.content.size - 3);
+    vi.advanceTimersByTime(1000);
+
+    expect(hasIframe(editor)).toBe(true);
+  });
+
   it('converts once the caret is elsewhere', () => {
     editor = makeEditor(LINK_PARAGRAPH);
     // add a second block and put the caret there; the insert re-arms the
