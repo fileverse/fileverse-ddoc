@@ -918,6 +918,43 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
       line-height: 1.5;
     }
 
+    /* Keep list text on the same line as its marker; see the matching rule in
+       the fullscreen block. */
+    li > p {
+      margin: 0;
+    }
+
+    /*
+     * A native ::marker takes its size from the <li>, while the text takes
+     * its size from the mark or paragraph inside it — so an item with an
+     * explicit font size got a marker that no longer matched its own text,
+     * increasingly visibly as the presenter font scale went up.
+     *
+     * The size is copied onto the list item itself when slides are built (see
+     * matchListMarkersToText), which the schema now carries, so these rules
+     * can stay as plain native markers.
+     *
+     * They live in the shared .ProseMirror block and so apply in fullscreen
+     * too; the fullscreen block only adjusts spacing.
+     */
+    ul:not([data-type='taskList']) {
+      list-style-type: disc;
+      padding-left: 2rem;
+
+      li {
+        list-style-type: inherit;
+      }
+    }
+
+    ol {
+      list-style-type: decimal;
+      padding-left: 2rem;
+
+      li {
+        display: list-item;
+      }
+    }
+
     ul[data-type='taskList'],
     li[data-type='taskItem'] {
       list-style: none !important;
@@ -1149,6 +1186,14 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
       font-weight: 700;
     }
 
+    /* A list item wraps its text in a paragraph, which would otherwise take
+       the block-level `p` margin. The marker stays anchored to the top of the
+       item, so that margin drops the text below its own bullet — visibly so
+       here, where the margin is viewport-relative. */
+    li > p {
+      margin: 0;
+    }
+
     blockquote {
       padding-left: 1rem;
       font-style: italic;
@@ -1183,32 +1228,24 @@ ul[data-type='taskList'] li[data-checked='true'] > div > p > span {
       margin-top: 1rem;
     }
 
+    /* Markers are drawn by the shared .ProseMirror rules so they inherit each
+       item's own font size; this block only sets spacing. `data-tight`
+       describes spacing, not nesting depth — it previously switched the marker
+       to a hollow circle, which made a top-level tight list read as a nested
+       one and disagreed with the windowed view. */
     ul:not([data-type='taskList']) {
-      list-style-type: disc;
-      padding-left: 2rem;
       margin: 1vh 0;
 
       &[data-tight='true'] {
         margin: 0;
-        list-style-type: circle;
         > li {
           margin: 0;
           padding: 0;
-          list-style-type: circle !important;
         }
       }
 
       li {
-        list-style-type: inherit;
         margin: 0.5vh 0;
-      }
-    }
-
-    ol {
-      list-style-type: decimal;
-      padding-left: 2rem;
-      li {
-        display: list-item;
       }
     }
 
