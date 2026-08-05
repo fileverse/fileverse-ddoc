@@ -58,11 +58,13 @@ export const TrailingNode = Extension.create<TrailingNodeOptions>({
             const lastChild = doc.lastChild;
             let fontFamily: string | null = null;
             let fontSize: string | null = null;
+            let lineHeight: string | null = null;
             if (lastChild?.type.name === 'dBlock') {
               lastChild.descendants((node) => {
                 if (node.type.name === 'paragraph') {
                   fontFamily = node.attrs.fontFamily || null;
                   fontSize = node.attrs.fontSize || null;
+                  lineHeight = node.attrs.lineHeight || null;
                 }
               });
             }
@@ -71,6 +73,8 @@ export const TrailingNode = Extension.create<TrailingNodeOptions>({
               class: 'trailing-node',
               fontFamily,
               fontSize,
+              // Omit when absent so the schema default applies
+              ...(lineHeight ? { lineHeight } : {}),
             });
 
             return tr.insert(endPosition, styledNode);
@@ -118,28 +122,33 @@ export const TrailingNode = Extension.create<TrailingNodeOptions>({
           const prevDBlock = doc.child(doc.childCount - 2);
           let prevFontFamily: string | null = null;
           let prevFontSize: string | null = null;
+          let prevLineHeight: string | null = null;
           prevDBlock.descendants((node) => {
             if (node.type.name === 'paragraph') {
               prevFontFamily = node.attrs.fontFamily || null;
               prevFontSize = node.attrs.fontSize || null;
+              prevLineHeight = node.attrs.lineHeight || null;
             }
           });
 
-          // Skip if font attrs haven't changed
+          // Skip if typography attrs haven't changed
           const currentAttrs = (trailingPara as typeof lastDBlock).attrs;
+          const nextLineHeight = prevLineHeight ?? currentAttrs.lineHeight;
           if (
             prevFontFamily === currentAttrs.fontFamily &&
-            prevFontSize === currentAttrs.fontSize
+            prevFontSize === currentAttrs.fontSize &&
+            nextLineHeight === currentAttrs.lineHeight
           ) {
             return null;
           }
 
-          // Update the trailing node's font attrs
+          // Update the trailing node's typography attrs
           const updateTr = state.tr;
           updateTr.setNodeMarkup(trailingParaPos, undefined, {
             ...currentAttrs,
             fontFamily: prevFontFamily,
             fontSize: prevFontSize,
+            lineHeight: nextLineHeight,
           });
           return updateTr;
         },
