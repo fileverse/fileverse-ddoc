@@ -62,19 +62,24 @@ const getBlockHeading = (
 const headingPosAt = (doc: ProseMirrorNode, blockPos: number) =>
   blockPos + (docHasDBlock(doc) ? 1 : 0);
 
+// Schema-agnostic: in v1 the meaningful node is the dBlock's first child, in
+// the flat v2 schema the top-level node IS the block. Resolved from the node's
+// own schema so callers (node view, floating drag-handle cluster) need no
+// version awareness.
 export const getDBlockRenderMeta = (
   node: ProseMirrorNode,
   pos: number,
 ): DBlockRenderMeta => {
-  const firstChild = getFirstChild(node);
-  const isHeading = firstChild?.type.name === 'heading';
+  const block =
+    node.type.name === 'dBlock' ? getFirstChild(node) : (node ?? null);
+  const isHeading = block?.type.name === 'heading';
 
   return {
     isHeading,
-    headingId: isHeading ? firstChild?.attrs.id || `heading-${pos}` : null,
-    isThisHeadingCollapsed: Boolean(isHeading && firstChild?.attrs.isCollapsed),
-    headingAlignment: isHeading ? firstChild?.attrs.textAlign : undefined,
-    isTable: firstChild?.type.name === 'table',
+    headingId: isHeading ? block?.attrs.id || `heading-${pos}` : null,
+    isThisHeadingCollapsed: Boolean(isHeading && block?.attrs.isCollapsed),
+    headingAlignment: isHeading ? block?.attrs.textAlign : undefined,
+    isTable: block?.type.name === 'table',
   };
 };
 
