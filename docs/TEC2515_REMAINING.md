@@ -49,6 +49,30 @@ Still deferred, deliberately:
   `.node-dBlock` CSS. Removing these while v1 is live buys nothing and risks
   the schema we still ship.
 
+## 2b. Parity sweep — 20 features, all matching
+
+Run 2026-08-06. Both schemas were driven through the same scripted actions in
+a real browser and their results compared. A check only counts if it produced
+real evidence — four early versions "passed" against an empty document and had
+to be rewritten before they meant anything.
+
+All 20 match: export markdown, export HTML (text + tag vocabulary), title
+extraction, character/word count, table of contents, comments, search and
+replace, undo/redo, copy-paste round trip, list indent/outdent, markdown to
+slides, read-only render, node commands (heading/list/code/quote/task), block
+duplicate and delete, tables (create, add row, add column, delete), page
+break, suggestion highlight marks, split-view markdown serialization, media
+insert, and columns.
+
+**One real break found and fixed** (`0128a3b`): `extractTitleFromContent`
+walked two levels down, so every flat-schema document came out untitled —
+it feeds export filenames from seven call sites. Covered by tests now.
+
+Worth noting how it was found: it was invisible to a `dBlock` grep, because
+the file never mentions dBlock — it just assumed the wrapper's shape. The
+same is true of the `getHeadingLinkSlug` and template-overlay breaks found
+earlier. Static search cleared all three; only running them exposed the bugs.
+
 ## 3. M3 — ddocs.new (not started, deliberately)
 
 Nothing here begins until we are confident in the package. All sites are
