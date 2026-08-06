@@ -39,7 +39,31 @@ Old documents are not migrated. They keep the v1 schema and today's code path in
 
 Each doc carries `schemaVersion` in a Yjs map (same pattern as `ddocTabs` / `tabs_state`). Absence of the marker means v1, so every existing doc is v1 by definition without being touched.
 
-New docs get the marker written during their first seeding transaction, in `applyResolvedTabState` (`package/components/tabs/utils/tab-utils.ts`, the existing `doc.transact` that seeds the default tab and registries).
+The marker is written in exactly one place: `useDocSchemaVersion`
+(`package/hooks/use-doc-schema-version.ts`), in the `useMemo` that calls
+`ydoc.transact(...)` with the `'self'` origin.
+
+> Earlier drafts of this doc placed the write in `applyResolvedTabState`
+> (tab seeding). It moved during implementation: the version has to be
+> readable on the *first* render, because it decides which extension set the
+> editor is built with. `useTabManager` decodes `initialContent` into the ydoc
+> synchronously during render, and `useDocSchemaVersion` is called immediately
+> after it (`use-ddoc-editor.tsx`) so the marker is already readable when the
+> extensions are assembled. Hence the hook-order comment at the top of that
+> file — it must stay after `useTabManager`.
+
+All four conditions must hold before anything is written:
+
+- the doc has no marker yet,
+- content is resolved (IndexedDB can no longer replay a marker),
+- the doc is genuinely new (`isNewDdoc`: owner, no collab, no initial content),
+- and `preferredSchemaVersion >= 2`.
+
+That last one is why a v1 doc never gets a marker at all: **with today's
+default of 1, the write never executes.** A breakpoint there stays silent
+until a consumer explicitly asks for v2. Absence of the marker *is* the v1
+signal — see `getDocSchemaVersion` in `package/utils/schema-version.ts`, which
+treats anything non-numeric as 1.
 
 ### Mode selection on open
 
