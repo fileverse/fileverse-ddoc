@@ -53,6 +53,7 @@ import { Iframe } from './iframe';
 import { EmbeddedTweet } from './twitter-embed';
 import { createDBlockExtension } from './d-block';
 import { FlatHeadingCollapse } from './d-block/dblock-collapse';
+import { FlatMediaConversion } from './d-block/dblock-media-plugin';
 import { BlockId } from './block-id';
 import { AiWriterSpaceTrigger } from './ai-writer/ai-writer-space-trigger';
 import { SuperchargedTableExtensions } from './supercharged-table';
@@ -439,7 +440,16 @@ export const defaultExtensions = ({
   ...(schemaVersion >= 2
     ? [
         FlatDocument,
-        FlatHeadingCollapse,
+        // Supplies the read-only-preview heading chrome that v1 renders from
+        // its node view (flat blocks have none).
+        FlatHeadingCollapse.configure({ onCopyHeadingLink }),
+        // Pasted image/video URLs convert to media in v1 through a plugin
+        // registered inside the dBlock extension; re-registered here for v2.
+        FlatMediaConversion.configure({
+          getRuntimeState: dBlockRuntimeStateRef
+            ? () => dBlockRuntimeStateRef.current
+            : undefined,
+        }),
         BlockId,
         // Same hasAvailableModels gate as v1's in-dBlock space trigger.
         ...(hasAvailableModels ? [AiWriterSpaceTrigger] : []),

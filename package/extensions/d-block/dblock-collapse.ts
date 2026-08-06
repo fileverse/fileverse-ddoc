@@ -9,6 +9,7 @@ import {
 } from '@tiptap/pm/state';
 import { Decoration, DecorationSet } from '@tiptap/pm/view';
 import { headingToSlug } from '../../utils/heading-to-slug';
+import { CHEVRON_SVG, LINK_SVG } from './heading-chrome-icons';
 import { HEADING_COLLAPSE_TOGGLE_META } from '../suggestion/suggestion-tracking-extension';
 
 export const DBLOCK_HIDDEN_CLASS = 'd-block-hidden';
@@ -87,13 +88,16 @@ export const getHeadingLinkSlug = (
   node: ProseMirrorNode,
   pos: number,
 ): string | null => {
-  const firstChild = getFirstChild(node);
-  if (firstChild?.type.name !== 'heading') {
+  // Same shape-agnostic resolution as getDBlockRenderMeta: v1 passes the
+  // dBlock wrapper, the flat schema passes the heading itself.
+  const headingNode =
+    node.type.name === 'dBlock' ? getFirstChild(node) : (node ?? null);
+  if (headingNode?.type.name !== 'heading') {
     return null;
   }
 
-  const id = firstChild.attrs.id || `heading-${pos}`;
-  const title = firstChild.textContent;
+  const id = headingNode.attrs.id || `heading-${pos}`;
+  const title = headingNode.textContent;
   if (!title) {
     return null;
   }
@@ -533,7 +537,92 @@ const buildCollapsedHeadingEnterFollowUpTransaction = (
   return tr.scrollIntoView();
 };
 
-const buildHiddenDecorationSet = (doc: ProseMirrorNode) => {
+// Read-only-preview heading chrome for the FLAT schema. v1 renders these
+// buttons from the dBlock node view; flat blocks have no node view, so the
+// same controls (same classes, same icons) are supplied as a widget
+// decoration instead.
+//
+// Rendered in every mode and gated by CSS on `[contenteditable='false']`,
+// exactly like the v1 node view: switching owner -> view-only flips
+// editability without dispatching a transaction, so a JS-side gate here
+// would keep a stale decision. The widget sits at the heading's inline
+// start, is `contenteditable=false`, and is excluded from copied slices.
+const buildHeadingPreviewControls = (
+  view: { state: EditorState; dispatch: (tr: Transaction) => void },
+  getPos: () => number | undefined,
+  node: ProseMirrorNode,
+  onCopyHeadingLink?: (link: string) => void,
+) => {
+  const controls = document.createElement('span');
+  controls.className = 'd-block-preview-controls d-block-preview-controls-flat';
+  controls.contentEditable = 'false';
+  controls.dataset.previewControls = 'true';
+
+  const isCollapsed = Boolean(node.attrs.isCollapsed);
+  controls.classList.toggle('is-collapsed', isCollapsed);
+
+  // The widget lives at the heading's inline start, so getPos() is one past
+  // the heading's own position — which is what both helpers below expect.
+  const resolveHeadingPos = () => {
+    const widgetPos = getPos();
+    if (widgetPos == null) return null;
+    const $pos = view.state.doc.resolve(widgetPos);
+    return $pos.depth > 0 ? $pos.before() : widgetPos;
+  };
+
+  const makeButton = (extraClass: string, svg: string, label: string) => {
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = `d-block-button d-block-preview-button ${extraClass} color-text-default hover:color-bg-default-hover`;
+    button.setAttribute('aria-label', label);
+    button.innerHTML = svg;
+    // Keep the click from moving the selection into the read-only surface.
+    button.addEventListener('mousedown', (event) => event.preventDefault());
+    return button;
+  };
+
+  const collapse = makeButton(
+    '',
+    CHEVRON_SVG,
+    isCollapsed ? 'Expand heading' : 'Collapse heading',
+  );
+  collapse.dataset.test = 'preview-collapse-button';
+  collapse.classList.toggle('is-collapsed', isCollapsed);
+  collapse.addEventListener('click', (event) => {
+    event.preventDefault();
+    event.stopPropagation();
+    const position = resolveHeadingPos();
+    if (position == null) return;
+    const tr = buildToggleHeadingCollapseTransaction(view.state, position);
+    if (tr) view.dispatch(tr.scrollIntoView());
+  });
+  controls.appendChild(collapse);
+
+  if (onCopyHeadingLink) {
+    const copyLink = makeButton(
+      'd-block-preview-copy-link',
+      LINK_SVG,
+      'Copy heading link',
+    );
+    copyLink.dataset.test = 'preview-copy-link-button';
+    copyLink.addEventListener('click', (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+      const position = resolveHeadingPos();
+      if (position == null) return;
+      const link = getHeadingLinkSlug(node, position);
+      if (link) onCopyHeadingLink(link);
+    });
+    controls.appendChild(copyLink);
+  }
+
+  return controls;
+};
+
+const buildHiddenDecorationSet = (
+  doc: ProseMirrorNode,
+  onCopyHeadingLink?: (link: string) => void,
+) => {
   const decorations: Decoration[] = [];
   const headingStack: Array<{ level: number; isCollapsed: boolean }> = [];
   let collapsedHeadingDepth = 0;
@@ -571,6 +660,29 @@ const buildHiddenDecorationSet = (doc: ProseMirrorNode) => {
 
     if (blockHeading) {
       const isCollapsed = Boolean(blockHeading.attrs.isCollapsed);
+
+      // Flat schema only: v1 gets these controls from its node view.
+      if (!hasDBlock) {
+        decorations.push(
+          Decoration.widget(
+            position + 1,
+            (view, getPos) =>
+              buildHeadingPreviewControls(
+                view,
+                getPos,
+                blockHeading,
+                onCopyHeadingLink,
+              ),
+            {
+              side: -1,
+              // Re-render only when the rendered state actually changes.
+              key: `heading-preview-${isCollapsed ? 'collapsed' : 'open'}`,
+              ignoreSelection: true,
+            },
+          ),
+        );
+      }
+
       headingStack.push({
         level: blockHeading.attrs.level || 1,
         isCollapsed,
@@ -656,8 +768,9 @@ const transactionTouchesTopLevelStructure = (tr: Transaction) => {
 
 const buildCollapsePluginState = (
   doc: ProseMirrorNode,
+  onCopyHeadingLink?: (link: string) => void,
 ): DBlockCollapsePluginState => ({
-  decorations: buildHiddenDecorationSet(doc),
+  decorations: buildHiddenDecorationSet(doc, onCopyHeadingLink),
   structureSignature: getDBlockCollapseStructureSignature(doc),
 });
 
@@ -668,18 +781,30 @@ export const dBlockCollapsePluginKey = new PluginKey<DBlockCollapsePluginState>(
 // v2 registration point: v1 gets this plugin from createDBlockExtension, the
 // flat schema has no dBlock extension, so the same (schema-aware) plugin is
 // registered through this wrapper instead.
-export const FlatHeadingCollapse = Extension.create({
+export interface FlatHeadingCollapseOptions {
+  // Enables the copy-link button in read-only preview; omitted means the
+  // host has nowhere to put the link, so the button is not rendered.
+  onCopyHeadingLink?: (link: string) => void;
+}
+
+export const FlatHeadingCollapse = Extension.create<FlatHeadingCollapseOptions>({
   name: 'flatHeadingCollapse',
+  addOptions() {
+    return { onCopyHeadingLink: undefined };
+  },
   addProseMirrorPlugins() {
-    return [createDBlockCollapsePlugin()];
+    return [createDBlockCollapsePlugin(this.options.onCopyHeadingLink)];
   },
 });
 
-export const createDBlockCollapsePlugin = () =>
+export const createDBlockCollapsePlugin = (
+  onCopyHeadingLink?: (link: string) => void,
+) =>
   new Plugin<DBlockCollapsePluginState>({
     key: dBlockCollapsePluginKey,
     state: {
-      init: (_config, state) => buildCollapsePluginState(state.doc),
+      init: (_config, state) =>
+        buildCollapsePluginState(state.doc, onCopyHeadingLink),
       apply: (tr, previousState) => {
         if (!tr.docChanged) {
           return {
@@ -696,7 +821,7 @@ export const createDBlockCollapsePlugin = () =>
           transactionTouchesTopLevelStructure(tr)
         ) {
           return {
-            decorations: buildHiddenDecorationSet(tr.doc),
+            decorations: buildHiddenDecorationSet(tr.doc, onCopyHeadingLink),
             structureSignature,
           };
         }

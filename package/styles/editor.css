@@ -570,6 +570,40 @@
   visibility: visible;
 }
 
+/* Flat-schema equivalent of the block above. There is no wrapper to anchor
+   to, so the controls are a widget decoration at the heading's inline start
+   and the heading itself becomes the positioning context. Height is set in
+   em so the buttons stay centred on the first line at every heading size. */
+.ProseMirror[contenteditable='false']
+  :is(h1, h2, h3, h4, h5, h6):has(> .d-block-preview-controls-flat) {
+  position: relative;
+}
+
+.ProseMirror .d-block-preview-controls-flat {
+  display: none;
+}
+
+.ProseMirror[contenteditable='false'] .d-block-preview-controls-flat {
+  position: absolute;
+  right: 100%;
+  top: 0;
+  height: 1.2em;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 4px;
+  visibility: hidden;
+  user-select: none;
+}
+
+.ProseMirror[contenteditable='false']
+  :is(h1, h2, h3, h4, h5, h6):hover
+  > .d-block-preview-controls-flat,
+.ProseMirror[contenteditable='false']
+  .d-block-preview-controls-flat.is-collapsed {
+  visibility: visible;
+}
+
 .ProseMirror .d-block-preview-button {
   display: inline-flex;
   align-items: center;

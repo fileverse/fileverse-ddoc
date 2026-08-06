@@ -7,6 +7,7 @@ import {
   createTemplateButtons,
   renderTemplateButtons,
 } from '../../utils/template-utils';
+import { unwrapDBlocksInJSON } from '../../utils/block-schema';
 import {
   DEFAULT_DBLOCK_RUNTIME_STATE,
   type DBlockRuntimeState,
@@ -35,12 +36,12 @@ export const getTemplateTarget = (
 
   const node = editor.state.doc.firstChild;
   const pos = 0;
-  const paragraphNode = node?.content.firstChild;
+  // v1 wraps the paragraph in a dBlock; in the flat schema the only block IS
+  // the paragraph.
+  const paragraphNode =
+    node?.type.name === 'dBlock' ? node.content.firstChild : node;
 
-  if (
-    node?.type.name !== 'dBlock' ||
-    paragraphNode?.type.name !== 'paragraph'
-  ) {
+  if (!node || paragraphNode?.type.name !== 'paragraph') {
     return null;
   }
 
@@ -109,9 +110,17 @@ const DBlockTemplateOverlay = ({
         return;
       }
 
+      // The template JSON is authored in v1 shape (dBlock wrappers) and stays
+      // the single source of truth; the flat schema gets it unwrapped at
+      // insert time. Insert position: v1's arithmetic lands on the empty
+      // wrapper's own position, which is what the flat schema uses directly.
+      const hasDBlock = Boolean(editor?.schema.nodes.dBlock);
+
       editor?.commands.insertContentAt(
-        currentTarget.pos + currentTarget.node.nodeSize - 4,
-        template,
+        hasDBlock
+          ? currentTarget.pos + currentTarget.node.nodeSize - 4
+          : currentTarget.pos,
+        hasDBlock ? template : unwrapDBlocksInJSON(template),
       );
     },
     [editor, runtimeState],
@@ -139,7 +148,10 @@ const DBlockTemplateOverlay = ({
     return null;
   }
 
-  const firstBlock = editor?.view.dom.querySelector('[data-type="d-block"]');
+  // The editor's first block must be rendered before the overlay is worth
+  // portaling. Matched by position rather than by the v1-only
+  // `[data-type="d-block"]` marker, which flat blocks do not carry.
+  const firstBlock = editor?.view.dom.firstElementChild;
   if (!firstBlock) {
     return null;
   }
