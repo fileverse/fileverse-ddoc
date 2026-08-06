@@ -239,6 +239,7 @@ const getTemplateTarget = (
 ) => {
   if (
     !editor ||
+    editor.isDestroyed ||
     runtimeState.isPreviewMode ||
     runtimeState.isCollaboratorsDoc ||
     // Split View renders the doc read-only on the right — no template picker.
@@ -383,6 +384,11 @@ export const DBlockToolbarProvider = ({
   }, []);
 
   const refreshToolbar = useCallback(() => {
+    if (!editor || editor.isDestroyed) {
+      setActiveDBlock(null);
+      return;
+    }
+
     const currentHandle = activeHandleRef.current;
     currentHandle?.refresh();
 
@@ -395,7 +401,10 @@ export const DBlockToolbarProvider = ({
   }, [editor, setActiveDBlock]);
 
   useEffect(() => {
-    if (!editor) {
+    // The tab-editor cache destroys/recreates editors in pre-paint layout
+    // effects, so this effect can fire with an already-destroyed editor —
+    // whose `view` access throws on tiptap v3.
+    if (!editor || editor.isDestroyed) {
       setActiveDBlock(null);
       return;
     }
