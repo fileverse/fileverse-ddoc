@@ -1,8 +1,19 @@
 # Flat Schema v2 Spec
 
-Status: planned. Owner: Mohit (v2 track), Bhavesh (chrome + point fixes track).
+Owner: Mohit (v2 track), Bhavesh (chrome + point fixes track).
 Parent ticket: [TEC-2515](https://linear.app/fileverse/issue/TEC-2515/editor-improvement-dblock-issues).
-Last updated: 2026-08-04.
+Last updated: 2026-08-06.
+
+**Status: M0-M2 built and verified; M3 not started.** Both tracks are combined
+in PR #552 (`integration/tec2515-x-v2`), which also carries Bhavesh's chrome
+work. Package-side parity is confirmed by a 20-feature v1-vs-v2 sweep
+(`scripts/parity-sweep.cjs`, all matching). What is left, and what is
+deliberately deferred, is tracked in `TEC2515_REMAINING.md` — read that for
+current state; this document describes the design.
+
+Sections below are marked where the built code diverged from the original
+plan. The plan is kept rather than rewritten, because the reasoning still
+explains why things are shaped the way they are.
 
 ## Why
 
@@ -26,9 +37,9 @@ Old documents are not migrated. They keep the v1 schema and today's code path in
 |---|---|
 | Old docs | Stay v1 forever (until a future, separate migration project) |
 | New docs after flip | All v2, including template-created docs. No opt-in stage |
-| Who writes the schema marker | The package, at new-doc seeding time |
-| Where the marker lives | A Yjs map field in the doc itself (`schemaVersion`), following the existing tab-metadata pattern. No marker = v1 |
-| Safety check | Ships in the next regular release, months before v2 exists (see Ordering constraints) |
+| Who writes the schema marker | The package, on the first render of a new doc (`useDocSchemaVersion`) |
+| Where the marker lives | `schemaVersion` in the `ddocMeta` Y.Map of the doc itself, following the existing tab-metadata pattern. No marker = v1 |
+| Safety check | Ships with the combined PR, and must be live in a real release before the ddocs.new flag is ever flipped (see Ordering constraints) |
 | Block IDs | v2 blocks carry a persistent unique ID attribute from day one (cheap at birth, avoids a future migration) |
 | Templates | Move to v2 via a runtime unwrap util. The v1-shaped template JSONs in both repos stay untouched as source of truth |
 | ddocs.new flag | `NEXT_PUBLIC_*` env var following the existing `utils/feature-flags.ts` pattern |
@@ -85,20 +96,43 @@ The version is read before extensions are built. Extensions are assembled per ta
 3. Headless (exports, import, print): `getHeadlessExtensions` in `package/hooks/use-headless-editor.tsx`
 4. The AI path re-fork in `use-tab-editor.tsx` (filters out `dBlock` and re-adds it; must be version-aware)
 
+As built, the v2 branch also registers what the dBlock extension used to
+supply on its own: `FlatDocument`, `FlatHeadingCollapse` (the collapse plugin
+plus the read-only preview heading chrome), `FlatMediaConversion` (URL to
+media), `BlockId`, and `AiWriterSpaceTrigger`. Anything registered *inside*
+`createDBlockExtension` needs an equivalent here — that is the failure mode
+this list exists to prevent.
+
 ### The v2 schema
 
-Two content-spec changes:
+Two content-spec changes. As built these are *additional* node types rather
+than edits, so the v1 specs are untouched and both can coexist in one bundle:
 
-- `package/extensions/document/document.ts`: `content: '(dBlock|columns|pageBreak)+'` becomes `'(block|columns|pageBreak)+'`
-- `package/extensions/multi-column/column.ts`: `content: 'dBlock+'` becomes `'block+'`
+- `package/extensions/document/document.ts`: `Document` keeps `content: '(dBlock|columns|pageBreak)+'`; `FlatDocument` extends it with `'(block|columns|pageBreak)+'`
+- `package/extensions/multi-column/column.ts`: `Column` keeps `content: 'dBlock+'`; `FlatColumn` extends it with `'block+'`
 
-Known wrinkles to resolve in M1: `columns` is `group: 'columns'` (not `block`), `pageBreak` needs a group check, and `dBlock` has `priority: 1000`, so removing it changes which handler answers Enter/Tab/Backspace globally in v2. The behavior test suite is the guard for this.
+The M1 wrinkles resolved as follows: the group questions were not a problem in
+practice, and removing `priority: 1000` did reshuffle keymap resolution — which
+is the point, since v2 wants stock Tiptap handlers. Position arithmetic that
+assumed the wrapper was swept separately (`POSITION_AUDIT.md`).
 
-Housekeeping: `package/extensions/doc.ts` is a dead duplicate top-node (nothing imports it). Delete it.
+Housekeeping: `package/extensions/doc.ts` is a dead duplicate top-node (still
+unimported, still present). Deleting it is deferred with the rest of the v1
+dead-code cleanup, so nothing is removed while v1 is the shipping schema.
 
 ### New-doc version preference
 
-`DdocProps` gains `preferredSchemaVersion?: 1 | 2` (default 1). It applies only when the package detects a genuinely new doc (`isNewDdoc` in `use-tab-manager.ts`: owner, no collab, no initial content). Existing docs always follow their marker; the prop is ignored for them. Consequences that fall out for free:
+`DdocProps` gains `preferredSchemaVersion?: 1 | 2` (default 1). It applies only when the package detects a genuinely new doc (owner, no collab, no initial content — computed in `use-ddoc-editor.tsx` and passed to `useDocSchemaVersion`; `use-tab-manager.ts` derives the same condition separately for tab seeding). Existing docs always follow their marker; the prop is ignored for them.
+
+The default is 1 on purpose, and it is not a placeholder. The package is a
+published library: if 2 were the default, merely bumping the dependency would
+silently change the storage format of every new document, before the safety
+check has spread and before the consuming app has been taught the new shape.
+Off-by-default makes the flip a deliberate, revertible act. It should become 2
+eventually, in a **major** version, once the guard has soaked and ddocs.new is
+creating v2 documents for real.
+
+Consequences that fall out for free:
 
 - Flipping the flag off stops creating v2 docs but never breaks existing ones
 - Duplicating a doc copies the encoded Yjs blob, so the marker travels with it and duplicates keep their source's version automatically
@@ -110,14 +144,15 @@ Housekeeping: `package/extensions/doc.ts` is a dead duplicate top-node (nothing 
 - Define the `schemaVersion` field (`ddocMeta` Y.Map) and read helpers
 - The check: if a doc's version is higher than the package supports, no editor is created at all (no y-sync binding) and the package renders a "refresh to update" banner in both the main and preview editors
 - This ships while every doc in existence is v1, so it is dormant. That is the point: by the time v2 launches, even stale browser tabs have the check
-- The marker write moved to M1: `applyResolvedTabState` runs for both new-doc seeding and ongoing self-heal of existing docs, so an unconditional write there would stamp old docs. The scoped new-doc write ships with the v2 creation path, where it is needed
+- The marker write moved to M1, and then out of tab seeding entirely — see The marker above. `applyResolvedTabState` runs for both new-doc seeding *and* ongoing self-heal of existing docs, so an unconditional write there would have stamped old docs
+- **Changed after the fact:** M0 was originally meant to ship on its own, ahead of everything else. Mohit decided (2026-08-06) that nothing ships separately — the guard rides the combined PR. The soak requirement did not go away, it just moved: the constraint is now that a release containing the guard must be live *before* the ddocs.new flag is flipped
 
 ### M1: v2 skeleton that types
 
 - The two-line schema change + block ID attribute
 - `defaultExtensions` fork wired through all four call paths
 - Stock keymaps only: paragraphs, headings, lists working with default Tiptap behavior
-- Template overlay suppressed on v2 docs (until the unwrap util lands in M2)
+- Template overlay suppressed on v2 docs (until the unwrap util lands in M2; it is now enabled and unwraps at insert time)
 - Demo app toggle: a "new v2 doc" action keyed on docId (demo has multi-doc infra already; `demo/src/App.tsx` has zero dBlock references)
 - Exit: a v2 doc can be created, edited, closed, and reopened in the demo, and the four fork paths all produce the right extension set
 
@@ -127,9 +162,14 @@ M1 is deliberately where surprises are supposed to surface (keymap priority resh
 
 Work items from the package audit (see inventory below). Only one is large on this track: heading collapse. The gutter toolbar / floating handle chrome comes from Bhavesh's track and must be built schema-agnostic.
 
-Late in M2: the template unwrap util. One exported function, roughly 20 lines: walk template JSON, replace every `dBlock` with its child, recursing into columns. Shared by the package overlay and ddocs.new's create flow. Never hand-rewrite the template JSONs (144 dBlock nodes in ddocs.new, 69 in the package); the transform is the only safe path.
+Late in M2: the template unwrap util. One exported function, roughly 20 lines: walk template JSON, replace every `dBlock` with its child, recursing into columns. Shared by the package overlay and ddocs.new's create flow. Never hand-rewrite the template JSONs (144 dBlock nodes in ddocs.new, 69 in the package); the transform is the only safe path. Built as `unwrapDBlocksInJSON` in `package/utils/block-schema.ts`.
 
-Exit criterion: **all 9 templates render and edit correctly in a v2 doc.** Templates contain tables, callouts, media, and columns, so they double as the parity smoke test.
+Exit criterion: **every template renders and edits correctly in a v2 doc.** Templates contain tables, callouts, media, and columns, so they double as the parity smoke test.
+
+> Count correction: the package ships **6** templates (meeting-notes, todo-list,
+> brainstorm, breathe, pretend-to-work, resume). The "9" in earlier drafts was
+> the ddocs.new count. All 6 were verified unwrapping into v2 with block counts
+> identical to v1.
 
 ### M3: ddocs.new integration + flip
 
@@ -143,23 +183,31 @@ Exit criterion: **all 9 templates render and edit correctly in a v2 doc.** Templ
 44 files reference dBlock. Buckets:
 
 - **Works as-is (9)**: comment-only refs, dead code, the runtime state container. No work
-- **v1-only, absent from v2 set (7)**: the `d-block/` folder itself (`dblock.ts`, node view, view registry, gutter components). Kept for v1 mode, simply not registered in v2
+- **v1-only, absent from v2 set (7)**: the `d-block/` folder itself (`dblock.ts`, node view, gutter components). Kept for v1 mode, simply not registered in v2. Note the chrome work has since deleted `dblock-view-registry.ts` and gutted the gutter toolbar, so this bucket is smaller than the audit found
 - **Trivial content producers (5)**: stop emitting `type: 'dBlock'` in v2 paths: `sanitize-content.ts`, `resizable-media.ts` Enter-on-media, `multi-column/utils.ts` `buildDBlock`, `multi-column/columns.ts`, plus the package template JSONs (handled by the unwrap util)
 - **Point edits (11)**: retarget "find enclosing dBlock" to "top-level block": bubble-menu node-selector (medium, list conversion wraps/unwraps dBlock), code-block Mod-Enter escape, media captions, editor-utils list detection, AI autocomplete gating, markdown paste pageBreak conversion, content-item actions, TOC heading expansion, callout clipboard flatten, plus the headless assembly fork
-- **Re-homes (12)**: heading collapse (large, decorations over top-level ranges, `collapsed` attr on the heading node), gutter toolbar + template overlay (large, but mostly Bhavesh's chrome track), media conversion plugin (medium), trailing node (medium, position math assumes the wrapper), the two schema files (trivial), dBlock-specific CSS in `editor.css` / `index.css` / `split-view.css` (small; note `.node-dBlock` rules at `editor.css:510` appear already dead, verify before porting)
+- **Re-homes (12)**: heading collapse (large, decorations over top-level ranges, `collapsed` attr on the heading node), gutter toolbar + template overlay (large, but mostly Bhavesh's chrome track), media conversion plugin (medium), trailing node (medium, position math assumes the wrapper), the two schema files (trivial), dBlock-specific CSS in `editor.css` / `index.css` / `split-view.css` (small; the `.node-dBlock` rules still look dead — search for them rather than trusting the old line number, the file has moved a lot)
+
+**What the audit could not see.** Three v2 breaks were found by running the
+editor, not by searching it: `getHeadingLinkSlug` (copy-link returned nothing),
+the template overlay's second guard (a `[data-type="d-block"]` DOM query), and
+`extract-title-from-content.tsx` (every v2 doc untitled). None of those files
+mention `dBlock` — they assume the wrapper's *shape*, which no grep finds.
+Treat the bucket counts above as a floor, and prefer the parity sweep for
+evidence.
 
 ## ddocs.new work inventory (from the 2026-08-04 audit)
 
 The app treats content as opaque bytes everywhere that matters: all Yjs handling is byte-level, no `getXmlFragment` anywhere, comments/publish/IPFS/search/AI/key-rotation all pass content through. Four structural exceptions:
 
-1. **Title auto-extraction, must fix**: `utils/ddoc-title-manager.ts:120-180` assumes one wrapper level when finding the H1 title. On v2 docs it fails silently and every doc stays "Untitled". Roughly 5 lines to handle both shapes. Sneaky because nothing throws
+1. **Title auto-extraction, must fix**: `utils/ddoc-title-manager.ts:120-180` assumes one wrapper level when finding the H1 title. On v2 docs it fails silently and every doc stays "Untitled". Roughly 5 lines to handle both shapes. Sneaky because nothing throws. The package had its own copy of the same bug, fixed in `package/utils/extract-title-from-content.tsx` — reuse that shape as the fix
 2. **Version-history diff**: `utils/diff/node-diff-renderer.ts:272` has an explicit dBlock branch. Add a flat branch; keep the v1 branch (v1 docs live forever). Cross-schema diffs cannot occur because docs never change schema, so that case is deferred until migration exists
 3. **App-side templates**: `utils/template-utils.ts` (7k lines, 144 dBlock nodes) feeds the create-page flow. Handled by the shared unwrap util at creation time; the JSON stays untouched
 4. **Corrupt-content guard**: compares against a dBlock literal but only runs for legacy JSON content, never Yjs blobs. Inert; no change
 
 Operational notes:
 
-- The app pins the package exactly (`"@fileverse-dev/ddoc": "4.3.6"`) and forces single `yjs` / `y-indexeddb` / `y-protocols` instances via `overrides`. v2 package releases must keep these in lockstep or cross-boundary `instanceof` checks break
+- The app pins the package exactly (`"@fileverse-dev/ddoc": "4.3.6"` as audited; the combined branch is now `4.4.0`) and forces single `yjs` / `y-indexeddb` / `y-protocols` instances via `overrides`. v2 package releases must keep these in lockstep or cross-boundary `instanceof` checks break
 - One e2e selector (`tests/utils/selectors.ts:13`, `.node-view-content p.select-text`) couples to the v1 node-view DOM and needs a v2 variant
 - `IDdoc.version` is the crypto/contract version, unrelated to editor schema. No Dexie migration needed; the marker lives in the doc
 
@@ -167,17 +215,18 @@ Operational notes:
 
 These are the only hard sequencing rules. Everything else can shuffle.
 
-1. **Safety check before any v2 doc exists, with months of soak.** The check only protects clients that have it. Stale browser tabs run old bundles; an old bundle opening a v2 doc would write dBlock structure into it and corrupt it for everyone, with no Yjs undo. Since the flip makes all new docs v2 at once, day-one stale-tab exposure is high, and the soak time is what covers it
-2. **Chrome (Bhavesh's track) must be schema-agnostic.** The floating drag/plus handle and container padding anchor to top-level blocks, not to `[data-dblock-*]`. Built that way once, v2 inherits it and the large "toolbar re-home" item mostly disappears
-3. **Behavior tests before v2 is judged working.** The ~15 list/caret tests from Bhavesh's keymap track should be written against editor behavior, not dBlock internals, so the identical suite runs against both extension sets
+1. **Safety check live in a shipped release before any v2 doc exists, with soak time.** The check only protects clients that have it. Stale browser tabs run old bundles; an old bundle opening a v2 doc would write dBlock structure into it and corrupt it for everyone, with no Yjs undo. Since the flip makes all new docs v2 at once, day-one stale-tab exposure is high, and the soak time is what covers it. **This is the one rule still outstanding** — the guard is built and merged with everything else, but the ddocs.new flag must not be flipped until a release carrying it has been out for a while
+2. **Chrome (Bhavesh's track) must be schema-agnostic.** The floating drag/plus handle and container padding anchor to top-level blocks, not to `[data-dblock-*]`. Built that way once, v2 inherits it and the large "toolbar re-home" item mostly disappears. *Held up in practice:* `resolveTopLevelBlock` accepts any depth-0 block. The parts that still assumed the wrapper (heading render meta, first-line offset, plus-button insert) were point fixes, not a rebuild
+3. **Behavior tests before v2 is judged working.** Tests should be written against editor behavior, not dBlock internals, so the identical suite runs against both extension sets. *As built:* this became `scripts/parity-sweep.cjs`, which drives both schemas through the same actions in a real browser. Unit tests cover the schema-aware utilities; the keymap suite from Bhavesh's track has not been written, since the keymap shrink did not happen
 4. **Template unwrap after parity covers what templates contain.** Templates exercise tables, callouts, media, and columns; running them earlier just reports known-missing features
 
 ## Risks and open items
 
-- M1 unknowns (accepted, that is what M1 is for): keymap resolution order after removing `priority: 1000`, `columns` / `pageBreak` group handling in the new content expression
-- Heading collapse is the single largest v2 work item on this track
+- ~~M1 unknowns~~ — resolved. Keymap order did change with `priority: 1000` gone, which is the intent in v2; the group handling was a non-issue
+- ~~Heading collapse is the single largest v2 work item~~ — done. Generalised in place around a resolver, so every v1 caller kept its signature
 - Effort labels in the inventories are informed estimates from the audits, not scoped commitments
 - Out of scope, deliberately: migration of v1 docs, cross-schema diffs, retiring the v1 code path
+- Still open and **not** part of this design: the ~200ms tab-switch pause (see `TEC2515_REMAINING.md`), and the v1 keymap shrink, which was never done — `dblock.ts` is still ~1090 lines
 
 ## Related tickets
 
