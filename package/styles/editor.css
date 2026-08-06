@@ -511,6 +511,18 @@
   padding: var(--padding-t) var(--padding-r) var(--padding-b) var(--padding-l);
 }
 
+/* The floating handle sits in the container's left padding, which is part of
+   .ProseMirror's own box. Both are positioned siblings in one stacking
+   context, so without an explicit z-index the winner is decided by DOM
+   insertion order — and the plugin's element lands before .ProseMirror in
+   some mounts and after it in others. When it lands first the editor surface
+   paints over the cluster: it stays visible but every click hits the editor
+   instead of the buttons. Pin it above the surface so the order stops
+   mattering. */
+.drag-handle {
+  z-index: 5;
+}
+
 @media (min-width: 768px) {
   .ProseMirror.main-doc-editor {
     --padding-t: 72px;
