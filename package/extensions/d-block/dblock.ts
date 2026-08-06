@@ -11,9 +11,11 @@ import { createDBlockMediaConversionPlugin } from './dblock-media-plugin';
 export interface DBlockOptions {
   HTMLAttributes: Record<string, any>;
   ipfsImageUploadFn?: (file: File) => Promise<IpfsImageUploadResponse>;
-  onCopyHeadingLink?: (link: string) => void;
   hasAvailableModels: boolean;
   getRuntimeState?: () => DBlockRuntimeState;
+  // Consumed by the node view's read-only-preview heading chrome; the
+  // editing-mode equivalent lives in the floating drag-handle cluster.
+  onCopyHeadingLink?: (link: string) => void;
 }
 
 declare module '@tiptap/core' {
@@ -58,9 +60,9 @@ export const DBlock = Node.create<DBlockOptions>({
   addOptions() {
     return {
       HTMLAttributes: {},
-      onCopyHeadingLink: undefined,
       hasAvailableModels: false,
       getRuntimeState: undefined,
+      onCopyHeadingLink: undefined,
     };
   },
 
@@ -226,6 +228,10 @@ export const DBlock = Node.create<DBlockOptions>({
         // Get the current node and its parent
         const currentNode = $head.node($head.depth);
         const parent = $head.node($head.depth - 1);
+        // lineHeight is a node attr (not a textStyle mark), so it is only read
+        // from the current block and carried onto the block created below it
+        const lineHeight = currentNode?.attrs?.lineHeight || null;
+        const lineHeightAttr = lineHeight ? { lineHeight } : {};
         const headString = $head.toString();
         const nodePaths = headString.split('/');
         const isAtEndOfTheNode = $head.end() === from;
@@ -299,7 +305,10 @@ export const DBlock = Node.create<DBlockOptions>({
                 .insertContentAt(currentItemStart, {
                   type: 'dBlock',
                   content: [
-                    { type: 'paragraph', attrs: { fontFamily, fontSize } },
+                    {
+                      type: 'paragraph',
+                      attrs: { fontFamily, fontSize, ...lineHeightAttr },
+                    },
                   ],
                 })
                 .focus(currentItemStart + 2)
@@ -345,7 +354,10 @@ export const DBlock = Node.create<DBlockOptions>({
               .insertContentAt(from, {
                 type: 'dBlock',
                 content: [
-                  { type: 'paragraph', attrs: { fontFamily, fontSize } },
+                  {
+                    type: 'paragraph',
+                    attrs: { fontFamily, fontSize, ...lineHeightAttr },
+                  },
                 ],
               })
               .focus(from + 2)
@@ -405,7 +417,7 @@ export const DBlock = Node.create<DBlockOptions>({
                   content: [
                     {
                       type: 'paragraph',
-                      attrs: { fontFamily, fontSize },
+                      attrs: { fontFamily, fontSize, ...lineHeightAttr },
                     },
                   ],
                 })
@@ -448,7 +460,12 @@ export const DBlock = Node.create<DBlockOptions>({
             const finalContent =
               content && content.length > 0 && !isAtEndOfTheNode
                 ? content
-                : [{ type: 'paragraph', attrs: { fontFamily, fontSize } }];
+                : [
+                    {
+                      type: 'paragraph',
+                      attrs: { fontFamily, fontSize, ...lineHeightAttr },
+                    },
+                  ];
 
             return editor
               .chain()
@@ -462,7 +479,7 @@ export const DBlock = Node.create<DBlockOptions>({
               .command(({ tr, dispatch }) => {
                 // After insertContentAt, set font attrs on the original (now empty) paragraph
                 // The paragraph position is from - 1 (from was the cursor pos inside the paragraph)
-                if (dispatch && (fontFamily || fontSize)) {
+                if (dispatch && (fontFamily || fontSize || lineHeight)) {
                   const paragraphPos = from - 1;
                   const node = tr.doc.nodeAt(paragraphPos);
                   if (node && node.type.name === 'paragraph') {
@@ -470,6 +487,7 @@ export const DBlock = Node.create<DBlockOptions>({
                       ...node.attrs,
                       fontFamily,
                       fontSize,
+                      ...lineHeightAttr,
                     });
                   }
                 }
