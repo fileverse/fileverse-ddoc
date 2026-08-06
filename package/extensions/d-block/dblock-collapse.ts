@@ -407,13 +407,27 @@ export const buildToggleHeadingCollapseTransaction = (
   return tr;
 };
 
+// Toggling collapse must leave the viewport where it is. The caret is
+// usually somewhere else entirely (often the document start, from autofocus),
+// and scrolling to an untouched selection drags the reader away from the
+// heading they just clicked. Only the case where the transaction itself
+// relocated the caret — it sat inside the region being hidden — is worth
+// scrolling to.
+const dispatchCollapseToggle = (
+  view: { state: EditorState; dispatch: (tr: Transaction) => void },
+  previousSelection: EditorState['selection'],
+  tr: Transaction,
+) => {
+  view.dispatch(tr.selection.eq(previousSelection) ? tr : tr.scrollIntoView());
+};
+
 export const toggleHeadingCollapse = (editor: Editor, position: number) => {
   const tr = buildToggleHeadingCollapseTransaction(editor.state, position);
   if (!tr) {
     return false;
   }
 
-  editor.view.dispatch(tr.scrollIntoView());
+  dispatchCollapseToggle(editor.view, editor.state.selection, tr);
   editor.view.focus();
   return true;
 };
@@ -594,7 +608,7 @@ const buildHeadingPreviewControls = (
     const position = resolveHeadingPos();
     if (position == null) return;
     const tr = buildToggleHeadingCollapseTransaction(view.state, position);
-    if (tr) view.dispatch(tr.scrollIntoView());
+    if (tr) dispatchCollapseToggle(view, view.state.selection, tr);
   });
   controls.appendChild(collapse);
 
