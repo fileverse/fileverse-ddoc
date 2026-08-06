@@ -44,11 +44,19 @@ export function replaceSelectionWithBlockNode(
   let selection = Selection.findFrom(tr.doc.resolve(afterPos), 1, true);
 
   if (!selection) {
+    // The node landed last, so there is no textblock after it to hold the
+    // caret — append one. v1 needs it inside a dBlock wrapper; the flat
+    // schema takes the paragraph directly.
     const dBlockType = schema.nodes.dBlock;
     const paragraphType = schema.nodes.paragraph;
-    if (dBlockType && paragraphType) {
+    if (paragraphType) {
       const end = tr.doc.content.size;
-      tr.insert(end, dBlockType.create(null, paragraphType.create()));
+      tr.insert(
+        end,
+        dBlockType
+          ? dBlockType.create(null, paragraphType.create())
+          : paragraphType.create(),
+      );
       selection = Selection.findFrom(tr.doc.resolve(end), 1, true);
     }
   }

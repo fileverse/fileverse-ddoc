@@ -8,6 +8,7 @@ import useContentItemActions, {
   ResolvedContentItem,
 } from '../../hooks/use-content-item-actions';
 import { getDBlockRenderMeta, toggleHeadingCollapse } from './dblock-collapse';
+import { wrapBlockNode } from '../../utils/block-schema';
 import type { DBlockRuntimeState } from './dblock-runtime';
 import { DBlockMenu } from './components/menu';
 import { CollapseButton, GripButton, PlusButton } from './components/buttons';
@@ -26,12 +27,14 @@ const CLUSTER_HEIGHT = 24;
 
 const getFirstLineOffset = (editor: Editor, pos: number): number => {
   try {
-    // nodeDOM(pos) → div[data-type=d-block] → div[data-node-view-content]
-    // → the actual block element (p/hN/ul/...), whose computed line-height
-    // determines where the first line's center sits.
-    const wrapper = editor.view.nodeDOM(pos) as HTMLElement | null;
-    const blockEl = wrapper?.firstElementChild
-      ?.firstElementChild as HTMLElement | null;
+    // v1: nodeDOM(pos) → div[data-type=d-block] → div[data-node-view-content]
+    // → the actual block element (p/hN/ul/...). In the flat schema there is no
+    // wrapper node view, so nodeDOM(pos) IS that block element. Either way we
+    // want the element whose computed line-height sets the first line's center.
+    const domNode = editor.view.nodeDOM(pos) as HTMLElement | null;
+    const blockEl =
+      (domNode?.querySelector<HTMLElement>('[data-node-view-content] > *') ??
+        domNode) ?? null;
     const lineHeight = blockEl
       ? parseFloat(getComputedStyle(blockEl).lineHeight)
       : NaN;
@@ -156,10 +159,12 @@ export const DBlockDragHandle = ({
     const insertPos = event.altKey
       ? current.pos
       : current.pos + current.node.nodeSize;
-    current.editor.commands.insertContentAt(insertPos, {
-      type: 'dBlock',
-      content: [{ type: 'paragraph' }],
-    });
+    current.editor.commands.insertContentAt(
+      insertPos,
+      // v1 needs the dBlock wrapper; the flat schema rejects it (and silently
+      // inserts nothing), so the shape comes from the live schema.
+      wrapBlockNode(current.editor.schema, { type: 'paragraph' }),
+    );
   };
 
   const handleDragClick = (event: React.MouseEvent<HTMLButtonElement>) => {
