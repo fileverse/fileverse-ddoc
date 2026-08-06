@@ -16,7 +16,7 @@ between here and that merge, plus what follows it.
 | # | Item | Owner | Notes |
 |---|---|---|---|
 | 1.1 | ~~Read-only preview collapse + copy-link chrome for the flat schema~~ | us | **Done** (`497c460`). Supplied as a widget decoration from the collapse plugin, sharing v1's classes and icons via `heading-chrome-icons.ts`. Same always-render + CSS `[contenteditable='false']` gate as v1, for the same staleness reason. |
-| 1.2 | Bhavesh reviews the integration fixes on his code | Bhavesh | The `.drag-handle` z-index fix especially — it is a DOM-order race that is not v2-specific, and it makes the cluster unclickable whenever the handle mounts before `.ProseMirror`. |
+| 1.2 | Bhavesh reviews the integration fixes on his code | Bhavesh | Two of them are **v1 bugs, not v2 bugs**, and matter to #551 on their own: (a) the `.drag-handle` z-index race — DOM insertion order alone decided whether the cluster or the editor surface painted on top, so the cluster was unclickable whenever the handle mounted first; (b) the collapse toggle scrolled to the caret unconditionally, so collapsing a heading part-way down a document threw the reader back to the top. |
 | 1.3 | Decide #551's fate | Mohit | Merging #552 absorbs it. His commits keep their attribution, but the PR closes rather than merges — worth telling him rather than letting him find out. |
 | 1.4 | Version number for the combined release | Mohit | His branch bumped to `4.4.0`. Confirm that is still the right number for both tracks together. |
 | 1.5 | Re-merge + re-verify if `main` moves | us | Two known conflict points: the `editorProps.attributes` literal and `editor.css`. |
@@ -78,7 +78,20 @@ Yjs, corrupting it with no undo.
 Merging #552 satisfies this, but only once a release actually ships from it.
 Confirm that has happened before flipping the ddocs.new flag in 3.
 
-## 5. Not ours / still open elsewhere
+## 5. Split out as separate work
+
+- **Tab switching pauses (~200ms).** A warm switch — both editors cached, 700
+  blocks each — is one synchronous blocking task, so it is JS and layout in
+  the click handler rather than progressive rendering. Profile: `setAttribute`
+  30ms, ProseMirror `updateStateInner` 29ms, `compareDeep` 12ms,
+  `nodesBetween` 11ms, the rest unattributed layout. Unconfirmed hypothesis:
+  inactive panels are `position: absolute` and flip to `relative` on
+  activation, forcing a full reflow of a large document, plus two React
+  commits per switch. This is the tabs architecture rather than TEC-2515, and
+  changing how inactive panels are laid out risks scroll position and
+  measurement, so it is deliberately not bundled here.
+
+## 6. Not ours / still open elsewhere
 
 - **Keymap shrink (Phase 3)** has not happened. `dblock.ts` is still 1090
   lines; #551 touched it by 4 lines. The Enter/Backspace handlers keep their
@@ -88,7 +101,7 @@ Confirm that has happened before flipping the ddocs.new flag in 3.
   evidence points at awareness/sync, not dBlock.
 - Three vague ticket items awaiting scoping from Vijay.
 
-## 6. Accepted, no action
+## 7. Accepted, no action
 
 - The cluster hides below 1024px, while the codebase convention elsewhere is
   1280/1000. Intentional per Bhavesh's spec; flagged only for consistency.
