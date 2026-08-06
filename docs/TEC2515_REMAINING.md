@@ -2,6 +2,10 @@
 
 Status note kept alongside `FLAT_SCHEMA_V2.md`. Last updated 2026-08-06.
 
+**Where this stands:** every package-side item is done. What remains before
+#552 merges is coordination, not code (section 1); everything else is the
+ddocs.new integration in section 3, which is deliberately not started.
+
 **Decision (Mohit, 2026-08-06):** no release pressure. PR #552
 (`integration/tec2515-x-v2` → `main`) carries both tracks and merges as one
 unit; #551 does not need to land separately. Everything below is what stands
@@ -11,30 +15,39 @@ between here and that merge, plus what follows it.
 
 | # | Item | Owner | Notes |
 |---|---|---|---|
-| 1.1 | Read-only **preview** collapse + copy-link chrome for the flat schema | us | Only real product gap. Bhavesh's preview controls are built inside the dBlock node view; flat-schema blocks have no node view, so a v2 doc shared read-only with a collapsed heading gives viewers no way to expand it. Needs a decoration-widget equivalent. |
+| 1.1 | ~~Read-only preview collapse + copy-link chrome for the flat schema~~ | us | **Done** (`497c460`). Supplied as a widget decoration from the collapse plugin, sharing v1's classes and icons via `heading-chrome-icons.ts`. Same always-render + CSS `[contenteditable='false']` gate as v1, for the same staleness reason. |
 | 1.2 | Bhavesh reviews the integration fixes on his code | Bhavesh | The `.drag-handle` z-index fix especially — it is a DOM-order race that is not v2-specific, and it makes the cluster unclickable whenever the handle mounts before `.ProseMirror`. |
 | 1.3 | Decide #551's fate | Mohit | Merging #552 absorbs it. His commits keep their attribution, but the PR closes rather than merges — worth telling him rather than letting him find out. |
 | 1.4 | Version number for the combined release | Mohit | His branch bumped to `4.4.0`. Confirm that is still the right number for both tracks together. |
 | 1.5 | Re-merge + re-verify if `main` moves | us | Two known conflict points: the `editorProps.attributes` literal and `editor.css`. |
 
-## 2. Package work still open (not blocking the merge)
+## 2. Package work — done (`497c460`)
 
-These only affect v2 documents, which cannot exist until a consumer passes
-`preferredSchemaVersion` (see section 3), so they can land after the merge.
+All of the flat-schema parity gaps below are closed and verified with trusted
+input in both schemas.
 
-- **URL-to-media conversion is v1-only.** `createDBlockMediaConversionPlugin`
-  is registered inside the dBlock extension (`dblock.ts:1018`), so pasting a
-  bare image URL never converts in a flat-schema doc. Register it standalone
-  for v2.
-- **Template overlay never shows on a blank v2 doc.** `getTemplateTarget`
-  requires the first node to be a `dBlock`. The unwrap util already exists, so
-  this is a detection fix, not new machinery.
-- **Fonts parity nuance.** v2 uses StarterKit's stock trailing node, which has
-  no `trailing-node` class, so `typography-persistence.ts:65` does not skip it
-  the way it does in v1.
+- ~~**URL-to-media conversion is v1-only.**~~ `getDBlockMediaCandidate` now
+  understands both shapes (wrapper vs. bare paragraph, with the replaced range
+  following the same split) and the plugin is registered for v2 through
+  `FlatMediaConversion`.
+- ~~**Template overlay never shows on a blank v2 doc.**~~ Detection no longer
+  requires a `dBlock` first child or the `[data-type="d-block"]` DOM marker.
+  Templates stay authored in v1 shape as the single source of truth and are
+  run through `unwrapDBlocksInJSON` at insert time.
+- ~~**Fonts parity nuance.**~~ The trailing paragraph is now identified by
+  position (last top-level child, still empty) as well as by v1's class
+  attribute, so v2's stock trailing node is skipped the same way.
+- **Found while doing the above:** `getHeadingLinkSlug` resolved the heading
+  through the wrapper and so returned null for every flat heading, which made
+  copy-link dead in v2 even where the button rendered. Now shape-agnostic,
+  matching `getDBlockRenderMeta`.
+
+Still deferred, deliberately:
+
 - **Dead code, once v1 retires.** `createInputRule` (zero consumers), the
   `isDBlockEmpty` checks in ai-autocomplete, `extensions/doc.ts`, and the
-  `.node-dBlock` CSS.
+  `.node-dBlock` CSS. Removing these while v1 is live buys nothing and risks
+  the schema we still ship.
 
 ## 3. M3 — ddocs.new (not started, deliberately)
 
