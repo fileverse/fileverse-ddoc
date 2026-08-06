@@ -163,6 +163,23 @@ const PreviewDdocEditorContent = forwardRef(
 
     const isMobile = useMediaQuery('(max-width: 768px)');
 
+    // Newer-schema docs never bind an editor in this build (schema guard in
+    // useDdocEditor); show a refresh prompt instead of the preview surface.
+    if (rest.isSchemaUnsupported) {
+      return (
+        <div className="flex flex-col items-center gap-3 text-center p-10">
+          <p className="text-heading-sm color-text-default">
+            Update needed to open this document
+          </p>
+          <p className="text-body-sm color-text-secondary">
+            This document was created with a newer version of the app. Refresh
+            the page to update and open it.
+          </p>
+          <Button onClick={() => window.location.reload()}>Refresh</Button>
+        </div>
+      );
+    }
+
     return (
       <>
         {editor && rest.tabs.length > 0 && (

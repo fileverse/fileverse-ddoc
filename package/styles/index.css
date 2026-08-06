@@ -355,7 +355,13 @@ li > ol > li > ol > li:before {
   z-index: 999;
 }
 
-.node-view-content > div {
+/* On the editor root, so it inherits into every block in both schemas: the
+   v1 dBlock contentDOM's children and the flat schema's top-level blocks
+   alike. (Scoping this to `[data-node-view-content]` covers v1 only, since
+   flat-schema blocks have no node view; scoping it to `.node-view-content
+   > div` — the original — worked only while the contentDOM was a div child
+   of the class-bearing shell.) */
+.ProseMirror {
   word-break: break-word;
 }
 

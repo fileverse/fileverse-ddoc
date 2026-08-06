@@ -25,6 +25,7 @@ export interface UseHeadlessEditorProps {
 export const getHeadlessExtensions = (options?: {
   ydoc?: Y.Doc;
   optionalExtensions?: string[];
+  schemaVersion?: number;
 }): AnyExtension[] => {
   const ydoc = options?.ydoc ?? new Y.Doc();
 
@@ -42,7 +43,10 @@ export const getHeadlessExtensions = (options?: {
   };
 
   return [
-    ...defaultExtensions({ onError: () => null }).filter(
+    ...defaultExtensions({
+      onError: () => null,
+      schemaVersion: options?.schemaVersion,
+    }).filter(
       (extension) => extension.name !== 'characterCount',
     ),
     customTextInputRules,
@@ -101,7 +105,10 @@ export const useHeadlessEditor = (props?: UseHeadlessEditorProps) => {
       }
     } else {
       editor.commands.setContent(
-        sanitizeContent({ data: initialContent as JSONContent }),
+        sanitizeContent({
+          data: initialContent as JSONContent,
+          wrapInDBlock: Boolean(editor.schema.nodes.dBlock),
+        }),
       );
     }
   };
