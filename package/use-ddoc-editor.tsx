@@ -104,6 +104,10 @@ export const useDdocEditor = ({
       !ddocContent,
   );
 
+  const shouldSyncActiveTab = Boolean(
+    !isVersionMode && !isPreviewMode && !collabEnabled && rest.isDDocOwner,
+  );
+
   const tabManager = useTabManager({
     ydoc: yjsSetup.ydoc,
     initialContent: ddocContent,
@@ -120,9 +124,7 @@ export const useDdocEditor = ({
           yjsSetup.isIndexeddbSynced),
     ),
     defaultTabId: rest.tabConfig?.defaultTabId,
-    shouldSyncActiveTab: Boolean(
-      !isVersionMode && !isPreviewMode && !collabEnabled && rest.isDDocOwner,
-    ),
+    shouldSyncActiveTab,
     // Viewers (non-owners) should land on the first tab, not whatever the
     // owner last selected, since active-tab is persisted in the shared Yjs doc.
     preferFirstTabOnInit: !rest.isDDocOwner,
@@ -204,11 +206,29 @@ export const useDdocEditor = ({
     dBlockRuntimeStateRef,
   });
 
+  // A tab switch is not a content edit, so it is written to Yjs with the
+  // 'self' origin and never reaches the consumer's onChange. The blob the
+  // consumer hands back as initialContent therefore carries a STALE
+  // activeTabId, while IndexedDB (which records every update regardless of
+  // origin) carries the true one. The stale tab is applied synchronously and
+  // painted, then corrected once IndexedDB syncs — visibly flashing another
+  // tab's content for ~100ms. Keep the loading state up over that window so
+  // the first thing rendered is the tab the user actually left on.
+  //
+  // Only the editor CONTENT is withheld; the editor instance is still created
+  // (it is what triggers IndexedDB initialisation), so this cannot deadlock.
+  const isActiveTabUnsettled = Boolean(
+    enableIndexeddbSync &&
+      !yjsSetup.isIndexeddbSynced &&
+      shouldSyncActiveTab &&
+      tabManager.tabs.length > 1,
+  );
+
   const isOwner = collabEnabled ? collaboration.connection.isOwner : true;
   const aggregatedContentLoading =
-    collabEnabled && !isOwner
+    (collabEnabled && !isOwner
       ? tabEditor.isContentLoading || isCollabContentLoading
-      : tabEditor.isContentLoading;
+      : tabEditor.isContentLoading) || isActiveTabUnsettled;
 
   return {
     ...tabEditor,
