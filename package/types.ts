@@ -26,6 +26,11 @@ export const DdocEditorProps: EditorProps = {
     spellcheck: 'true',
     suppressContentEditableWarning: 'true',
   },
+  // Caret comfort band (TEC-2948): scroll once the caret is within
+  // `scrollThreshold` of an edge and park it `scrollMargin` away; the gap is
+  // hysteresis. All four sides are required: a missing side reads as NaN.
+  scrollThreshold: { top: 60, bottom: 120, left: 0, right: 0 },
+  scrollMargin: { top: 96, bottom: 160, left: 5, right: 5 },
 };
 
 export interface IDocCollabUsers {

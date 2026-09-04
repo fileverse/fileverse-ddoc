@@ -77,7 +77,6 @@ import { useSplitResize } from './hooks/use-split-resize';
 import { applyTabbedTemplate } from './utils/apply-tabbed-template';
 import type { TabbedJSONContent } from './hooks/use-headless-editor';
 import { useTabPositionMemory } from './hooks/use-tab-position-memory';
-import { useCaretScrollBand } from './hooks/use-caret-scroll-band';
 
 const DdocEditor = forwardRef(
   (
@@ -397,10 +396,6 @@ const DdocEditor = forwardRef(
         Boolean(rest.versionHistoryState?.enabled) ||
         Boolean(isPresentationMode),
     });
-
-    // Keeps the caret in a comfort band instead of hugging the scroll
-    // container's bottom edge while typing (TEC-2948).
-    useCaretScrollBand(editor);
 
     // Split View (markdown left, read-only doc right). Disabled in preview.
     // Desktop-only for v1: two side-by-side panes don't fit below the 960px
