@@ -2,7 +2,7 @@ const SCROLLABLE_OVERFLOW_VALUES = ['auto', 'scroll', 'overlay'];
 const EDITOR_SCROLL_CONTAINER_SELECTOR =
   '[data-editor-scroll-container="true"]';
 
-const hasScrollableOverflow = (element: HTMLElement) => {
+export const hasScrollableOverflow = (element: HTMLElement) => {
   const { overflow, overflowY } = window.getComputedStyle(element);
 
   return (
