@@ -28,4 +28,11 @@ describe('defaultExtensions schema fork', () => {
       expect(extensionNames(schemaVersion)).toContain('paragraphSpacing');
     },
   );
+
+  it.each([1, 2])(
+    'registers the caret scroll band for schema v%i',
+    (schemaVersion) => {
+      expect(extensionNames(schemaVersion)).toContain('caretScrollBand');
+    },
+  );
 });

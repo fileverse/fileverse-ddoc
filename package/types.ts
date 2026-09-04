@@ -26,11 +26,6 @@ export const DdocEditorProps: EditorProps = {
     spellcheck: 'true',
     suppressContentEditableWarning: 'true',
   },
-  // Caret comfort band (TEC-2948): within `scrollThreshold` of the bottom, park
-  // the caret `scrollMargin` away (gap = hysteresis). Top keeps ProseMirror's
-  // defaults: Chrome reveals upward moves itself. All four sides are required.
-  scrollThreshold: { top: 0, bottom: 120, left: 0, right: 0 },
-  scrollMargin: { top: 5, bottom: 160, left: 5, right: 5 },
 };
 
 export interface IDocCollabUsers {
