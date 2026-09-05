@@ -1,10 +1,12 @@
 # ddoc Bundle Optimization Notes
 
+> **Status (2026-09):** the numbers below are from Feb 2026 and predate several changes. Step 4 landed and went further: `vite.config.ts` now externalizes `react`, `react-dom` (and their subpaths), `@fileverse/ui`, `framer-motion`, `frimousse`, `mermaid`, `yjs`, `@fileverse/crypto`, `@dnd-kit/*` and `viem`, and dedupes `yjs`. `yjs` is a peer dependency (`>=13.6.30 <14`) and ddocs.new pins it to one copy through its `overrides`, so the "must stay bundled" note under step 4 is obsolete. `useSyncMachine` / xstate were replaced by `useSyncManager` + `SyncManager` in `package/sync-local/`. Steps 1–3 and 5 (viewer entry, viewer hook, lazy highlight.js) are still open.
+
 ## Current State (measured Feb 2026)
 
 - Full bundle: `index-CQx6ZWfA.mjs` — **7,865 KB raw, 1,765 KB gzipped** (3,130 modules)
 - CSS: 1,620 KB
-- Only `react` and `react-dom` are externalized in vite.config.ts
+- Only `react` and `react-dom` were externalized in vite.config.ts at the time (see status note above)
 - All exports (DdocEditor, PreviewDdocEditor, useHeadlessEditor, etc.) ship in one chunk — no code splitting
 
 ## Problem
@@ -111,7 +113,7 @@ Add to `rollupOptions.external`:
 - `viem` (ddocs.new already has it)
 - `framer-motion` (ddocs.new already has it)
 
-Note: `yjs` is NOT in ddocs.new, so it must stay bundled inside ddoc.
+Note: `yjs` was not in ddocs.new when this was written. That is no longer the case: ddocs.new pins `yjs` (currently 13.6.30, enforced via `overrides`) and ddoc externalizes and dedupes it, so consumer and package share a single yjs instance.
 
 Measured impact: externalizing viem + framer-motion saves **498 KB raw / 135 KB gzip** (7,865 → 7,367 KB raw, 1,765 → 1,630 KB gzip).
 
@@ -131,9 +133,9 @@ Built a `viewer-poc.ts` entry with only viewer-needed extensions and Comment to 
 
 ### Key finding
 
-Just swapping the extensions list saves almost nothing (~724 KB raw) because `PreviewDdocEditor` → `useDdocEditor` → `useSyncMachine` → yjs, xstate, Collaboration, SlashCommand, AiAutocomplete, etc. The transitive imports through the shared hook are the real problem.
+Just swapping the extensions list saves almost nothing (~724 KB raw) because `PreviewDdocEditor` → `useDdocEditor` → `useYjsSetup` → `useSyncManager` → yjs, the `sync-local` runtime, Collaboration, SlashCommand, AiAutocomplete, etc. The transitive imports through the shared hook are the real problem.
 
-**The critical refactor is step 1**: `PreviewDdocEditor` needs its own `useViewerEditor` hook that does NOT call `useSyncMachine`, does NOT import `Collaboration`/`CollaborationCaret`, `SlashCommand`, `AiAutocomplete`, `AIWriter`, `DocxFileHandler`, or `customTextInputRules`. Without this, the separate entry point achieves nothing — the component drags the full tree back in.
+**The critical refactor is step 1**: `PreviewDdocEditor` needs its own `useViewerEditor` hook that does NOT call `useSyncManager`, does NOT import `Collaboration`/`SyncCursor`, `SlashCommand`, `AiAutocomplete`, `AIWriter`, `DocxFileHandler`, or `customTextInputRules`. Without this, the separate entry point achieves nothing — the component drags the full tree back in.
 
 With a proper viewer hook, the measured viewer-only size is **4,776 KB raw / 987 KB gzip** — a **39% raw / 44% gzip reduction**.
 

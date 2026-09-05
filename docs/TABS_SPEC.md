@@ -1,6 +1,7 @@
 # TEC-1214: Tabs (Sub-documents) — Technical Spec
 
 > Updated 2026-02-23 to reflect the actual implementation on `tab-feature` branch (PR #435).
+> Updated 2026-09-05: tab switching now uses one editor per tab with a warm cache (§2c) and the collab transport is `useSyncManager` (§2a).
 
 ## Overview
 
@@ -131,7 +132,7 @@ Creates the single `Y.Doc` and all sync infrastructure. Persists across tab swit
 
 **Key behaviors**:
 - Creates `new Y.Doc()` once (stable via `useState`)
-- Wires up `useSyncMachine` (XState-based WebSocket collaboration)
+- Wires up `useSyncManager` (`package/sync-local/`): `SyncManager` drives the state machine in `collabStateMachine.ts` over the WebSocket in `socketClient.ts`
 - Attaches `ydoc.on('update')` handler:
   - Skips updates from origin `'self'`
   - Fires `onChange(fullState, chunk)` with **300ms debounce** on full-state encode
@@ -204,20 +205,20 @@ Active tab is persisted to `ddocTabs.activeTabId` (Y.Text) only for the document
 
 Creates and manages the TipTap editor instance, binding it to the correct Y.XmlFragment for the active tab.
 
-**Tab switching mechanism**: When `activeTabId` changes, the extension stack is rebuilt via `setExtensions(buildExtensions())`, which sets `Collaboration.configure({ document: ydoc, field: newActiveTabId })`. This redirects the Yjs binding to the new Y.XmlFragment **without destroying/recreating the editor instance**. The same editor persists — only its extensions are reconfigured.
+**Tab switching mechanism**: Each tab gets its own TipTap `Editor`. `createEditorForTab(tabId)` builds `new Editor({ extensions: buildExtensionsForTab(tabId) })`; the stack includes `Collaboration.configure({ document: ydoc, field: tabId })`, so every editor is bound to its own Y.XmlFragment for its whole lifetime. `useTabEditorCache` (`package/hooks/use-tab-editor-cache.ts`) keeps the editors of the 4 most recently visited tabs warm (`PREVIOUS_TAB_CACHE_LIMIT`); switching to a warm tab re-activates it, nothing is rebuilt. Inactive editors stay mounted but are made non-editable, blurred and marked `data-ddoc-editor-inactive`. Editors beyond the limit are destroyed and rebuilt on revisit.
 
-> **Divergence from original plan**: The plan called for `key={activeTabId}` on a wrapper component to force full editor remount. The implementation instead rebuilds the extension stack in-place, which is faster (~0ms vs ~50-100ms for full remount) but means the editor instance is reused across tabs.
+> **History**: The original plan called for `key={activeTabId}` to force a full remount. The first implementation kept a single editor and rebuilt its extension stack in-place via `setExtensions`. That was replaced by the per-tab cache above: with one editor, rotating through 3+ tabs forced a full teardown/rebuild on every switch, which on 10k-word tabs was the dominant source of transient garbage (~43k detached DOM nodes per 4-tab rotation vs ~23k with all tabs warm).
 
 **Internal sub-hooks**:
-- `useEditorExtension`: Builds TipTap extension array. Calls `setExtensions(buildExtensions())` when `activeTabId` changes.
-- `useTocState`: Maintains a `tabToTocCacheRef` that stores ToC items per tab ID. On tab switch, immediately renders from cache, then updates asynchronously on editor changes. ToC updates are **debounced at 300ms**.
+- `useEditorExtension`: Owns the extension configuration refs and exposes `buildExtensionsForTab(tabId)`, which `createEditorForTab` calls once per tab editor.
+- `useTocState`: Maintains a `tabToTocCacheRef` that stores ToC items per tab ID. On tab switch, immediately renders from cache, then updates asynchronously on editor changes. ToC updates are deferred by a `requestAnimationFrame` plus a **100ms** timeout.
 
 **Key behaviors**:
 - Content hydration: Applies Yjs encoded state (or JSON content) to Y.Doc. Uses `versionId + activeTabId` as hydration key to prevent re-applying.
 - Collaboration cursor: Registers `yCursorPlugin(awareness)` via `editor.registerPlugin()` (not as an extension) to avoid editor rebuild when awareness changes.
 - Word/char count: 500ms debounce
 - Clears `activeCommentId` on tab change
-- Destroys editor on unmount
+- Destroys all cached tab editors on unmount
 
 **Returns**:
 ```typescript
@@ -498,7 +499,7 @@ isDDocOwner?: boolean;
 |------|---------|
 | `package/use-ddoc-editor.tsx` | Refactored from ~1006 lines to ~141 lines. Now composes three hooks. |
 | `package/ddoc-editor.tsx` | Wires tab state, renders DocumentOutline with tabs, computes `tabCommentCounts` |
-| `package/preview-ddoc-editor.tsx` | Split into content + wrapper, uses `key={editorSessionKey}` for tab switching in preview |
+| `package/preview-ddoc-editor.tsx` | Split into content + wrapper, uses `key={editorSessionKey}` (the `versionId` in version-history mode) to remount when the viewed version changes |
 | `package/components/toc/document-outline.tsx` | Simplified to router between desktop `DocumentTabsSidebar` and mobile `DocumentMobileTabPanel` |
 | `package/components/inline-comment/context/comment-context.tsx` | Per-tab comment filtering via `tabComments` memo, `tabId` on new comments |
 | `package/types.ts` | Added `tabConfig`, `versionHistoryState`, `tabSectionContainer`, `isDDocOwner` |
@@ -555,7 +556,7 @@ Additionally, each `DdocTab` component independently observes its own Y.Map meta
 ### Tab Switching
 | Scenario | Behavior |
 |----------|----------|
-| Switch mechanism | Extensions rebuilt in-place (not full editor remount). |
+| Switch mechanism | One editor per tab; the 4 most recently visited stay warm, others are rebuilt on revisit. |
 | ToC on switch | Served from cache immediately, refreshed asynchronously. |
 | Comments on switch | `activeCommentId` cleared. Comment drawer updates to show new tab's comments. |
 
@@ -582,7 +583,7 @@ Additionally, each `DdocTab` component independently observes its own Y.Map meta
 | Y.Map key | `'tabsMeta'` | `'ddocTabs'` |
 | Tab metadata | `TabMeta` with `fragmentId` field | `Tab` — tab ID IS the fragment key |
 | Active tab storage | Not specified in Y.Doc | `Y.Text('activeTabId')` inside `ddocTabs` |
-| Tab switching | `key={activeTabId}` forcing full editor remount | Extension stack rebuild (`setExtensions`) — same editor instance persists |
+| Tab switching | `key={activeTabId}` forcing full editor remount | One editor per tab, 4 most recent kept warm (`useTabEditorCache`); an earlier build used a single editor with `setExtensions` |
 | Hook names | `useYjsDocument`, `useTabsManager`, `useTabEditor` | `useYjsSetup`, `useTabManager`, `useTabEditor` |
 | Undo system | In-memory stack + Ctrl+Z interceptor + 10s window | Not implemented |
 | Tab switch blocking | `pendingOperationRef` for image upload / AI streaming | Not implemented |

@@ -1,6 +1,6 @@
 # Font Decoupling — `@fileverse/ddoc` Package - Specs
 
-**Status:** Design
+**Status:** Implemented (`fonts` prop on `DdocProps`, `package/utils/font-loader.ts`, system-only `package/styles/fonts.css`, `react-window` picker).
 **Scope:** Package only (`@fileverse/ddoc`). Consumer-side changes (`ddocs.new`) are out of scope for this branch but referenced for context.
 **Breaking change:** Yes — bumped as a major version.
 
@@ -199,8 +199,8 @@ A separate PR in `ddocs.new`:
 
 # Font Autoload Extension — Lift RTC Coverage Into the Editor Layer
 
-**Status:** Design
-**Scope:** Package only (`@fileverse/ddoc`). Follow-up to the font-decoupling work in `2026-06-08-package-font-decoupling-design.md`.
+**Status:** Not implemented. As of 2026-09 there is no `package/extensions/font-autoload.ts` and `defaultExtensions` registers no `FontAutoload` extension. The interim `useEffect` autoload described in §1 is not present in `use-tab-editor.tsx` either; the only `ensureLoaded` call site is the picker click in `package/components/editor-utils.tsx`, so the RTC gap in §1 is still open.
+**Scope:** Package only (`@fileverse/ddoc`). Follow-up to the font-decoupling spec at the top of this file.
 **Breaking change:** No (internal architectural refactor; no API surface change).
 
 ## 1. Problem
@@ -362,7 +362,7 @@ The picker's own `ensureLoaded` call is retained because it returns a Promise th
 
 ## 9. Verification
 
-This repo has no test harness. Verification is build + manual smoke check:
+Verification is `npm test` (vitest) for anything unit-testable, plus build + manual smoke check:
 
 1. `npm run build` — must pass with zero TS errors.
 2. Manual: open the demo in two browser windows pointing at the same collab doc. In window A, apply Poppins (or any consumer-registered font) to some text. In window B, the same text should re-render in Poppins within ~one network round-trip. Confirm via DevTools Network panel that exactly one Poppins woff2 fetch fires in window B at that moment.
@@ -381,9 +381,9 @@ No regressions expected in the picker UX (loading spinner still works because th
 
 **Tech Stack:** React 18, TypeScript, Vite, Tiptap, `react-window` (new), CSS Font Loading API.
 
-**Spec:** `docs/superpowers/specs/2026-06-08-package-font-decoupling-design.md`.
+**Spec:** the "Font Decoupling" spec at the top of this file.
 
-**Testing note:** This repo has no test harness (no vitest / jest / `*.test.*` files outside `node_modules`). Each task is verified by `npm run build` (must pass with zero TS errors) and manual smoke check in the demo app (`npm run dev`). Adding a test framework is out of scope.
+**Testing note:** This repo uses vitest (`npm test`; tests sit next to the code as `*.test.ts(x)`). Each task is verified by `npm run build` (must pass with zero TS errors), `npm test`, and a manual smoke check in the demo app (`npm run dev`).
 
 ---
 
@@ -1065,11 +1065,13 @@ This task is verification only. If any step fails, return to the prior task that
 ## Notes for the implementer
 
 - **Minimal-change discipline.** Do not refactor `font-family-persistence.ts`, the broader toolbar, or unrelated code. The user has a standing preference for minimal scope.
-- **No new test framework.** Verification is build + manual demo check. Do not introduce vitest/jest as part of this plan.
+- **Tests.** vitest is already set up (`npm test`); do not introduce another framework. Verification is build + `npm test` + manual demo check.
 - **SSR safety.** `font-loader.ts` already guards with `typeof document !== 'undefined'`. Do not call `ensureLoaded` from module-level code or constructors that run during SSR.
 - **Picker callsite changes.** If `EditorFontFamily` is rendered from multiple places, prefer threading `fonts` one level rather than introducing a React context — keep the diff small.
 
 # Font Autoload Extension Implementation Plan
+
+> **Status:** Not implemented as of 2026-09 (see the status note on the design section above).
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
@@ -1079,9 +1081,9 @@ This task is verification only. If any step fails, return to the prior task that
 
 **Tech Stack:** Tiptap (`@tiptap/core`), ProseMirror (`@tiptap/pm/state`, `@tiptap/pm/model`), TypeScript, Vite.
 
-**Spec:** `docs/superpowers/specs/2026-06-09-font-autoload-extension-design.md`.
+**Spec:** the "Font Autoload Extension" design earlier in this file.
 
-**Testing note:** This repo has no test harness (no vitest / jest / `*.test.*` files outside `node_modules`). Verification is `npm run build` (must pass with zero TS errors) plus a manual collab smoke check. Adding a test framework is out of scope.
+**Testing note:** This repo uses vitest (`npm test`; tests sit next to the code as `*.test.ts(x)`). Verification is `npm run build` (must pass with zero TS errors), `npm test`, plus a manual collab smoke check.
 
 **Commits:** The user prefers to commit themselves once the work passes review. **Do NOT run `git commit` after any task.** Stop after the final verification step.
 
@@ -1361,7 +1363,7 @@ Report the diff stats (e.g. `git diff --stat`) and the build output to the user.
 ## Notes for the implementer
 
 - **Minimal-change discipline.** Do not touch `font-family-persistence.ts`, the picker (`editor-utils.tsx`), `font-loader.ts`, or any unrelated extension. The user has a standing preference for minimal scope.
-- **No new test framework.** Verification is build + a suggested manual smoke check. Do not introduce vitest/jest as part of this plan.
+- **Tests.** vitest is already set up (`npm test`); do not introduce another framework. Verification is build + `npm test` + a suggested manual smoke check.
 - **No commits.** The user commits themselves. Skip every commit step you might be tempted to add.
 - **SSR safety.** The plugin only runs when the editor mounts in the browser. `ensureLoaded` already guards `typeof document === 'undefined'`. No extra guards needed in the extension.
 - **Order in the extension array.** Adjacent to `FontFamilyPersistence` for readability, but not load-bearing — the plugin has no extension dependencies.
