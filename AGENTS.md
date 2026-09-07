@@ -75,7 +75,7 @@ Read `docs/FLAT_SCHEMA_V2.md` before touching block structure, keymaps, or anyth
 
 - Branch names and PR titles are Linear ticket ids (`TEC-1234`).
 - Prettier through eslint: single quotes, trailing commas, semicolons, 2-space indent.
-- `docs/` holds the design specs and status notes (`FLAT_SCHEMA_V2.md`, `TABS_SPEC.md`, `PARAGRAPH_SPACING.md`, `FONTS.md`, `DDOCS_NEW_INTEGRATION.md`, `TAB_SCROLL_POSITION.md`). Read the relevant one before changing that area. `docs/superpowers/` holds dated specs and plans from past tickets.
+- `docs/` holds the design specs and status notes (`FLAT_SCHEMA_V2.md`, `TABS_SPEC.md`, `PARAGRAPH_SPACING.md`, `FONTS.md`, `DDOCS_NEW_INTEGRATION.md`, `TAB_SCROLL_POSITION.md`). Read the relevant one before changing that area.
 
 ## Consumer repo: ddocs.new
 
