@@ -2,7 +2,52 @@ import { describe, expect, it } from 'vitest';
 import {
   COLLAB_PRESENCE_COLORS,
   assignSessionColors,
+  mergePresence,
 } from './presence';
+
+const identity = (name: string) => ({
+  name,
+  color: '#30bced',
+  isEns: '',
+});
+
+describe('mergePresence', () => {
+  it('does not show sockets whose identity is unresolved', () => {
+    const collaborators = mergePresence(
+      ['socket-owner', 'socket-pending'],
+      new Map([['socket-owner', identity('Owner')]]),
+    );
+
+    expect(collaborators.map(({ name }) => name)).toEqual(['Owner']);
+  });
+
+  it('shows one collaborator for multiple tabs with the same identity', () => {
+    const collaborators = mergePresence(
+      ['socket-tab-1', 'socket-tab-2'],
+      new Map([
+        ['socket-tab-1', identity('Owner')],
+        ['socket-tab-2', identity('Owner')],
+      ]),
+    );
+
+    expect(collaborators.map(({ name }) => name)).toEqual(['Owner']);
+  });
+
+  it('shows a different collaborator once their identity resolves', () => {
+    const collaborators = mergePresence(
+      ['socket-owner', 'socket-editor'],
+      new Map([
+        ['socket-owner', identity('Owner')],
+        ['socket-editor', identity('Editor')],
+      ]),
+    );
+
+    expect(collaborators.map(({ name }) => name)).toEqual([
+      'Editor',
+      'Owner',
+    ]);
+  });
+});
 
 describe('assignSessionColors', () => {
   it('exhausts the palette and keeps colors stable for the session', () => {

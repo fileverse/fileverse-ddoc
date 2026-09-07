@@ -41,9 +41,8 @@ export function buildIdentityMap(
   return map;
 }
 
-// Authoritative set = roomMembers. Attach identity; unmatched sockets become placeholders.
-// Identified-first, then stable by socketId, so real people fill the visible avatar slots
-// and a not-yet-identified socket only affects the count / +N overflow.
+// Authoritative set = roomMembers. Attach identity; unmatched sockets stay
+// internal until awareness resolves them instead of surfacing as collaborators.
 export function mergePresence(
   roomMembers: string[],
   identityBySocketId: Map<string, AwarenessIdentity>,
@@ -73,12 +72,12 @@ export function mergePresence(
       return a.isPlaceholder ? 1 : -1;
     return String(a.clientId).localeCompare(String(b.clientId));
   });
-  // One avatar per person, not per socket: the same user in two tabs holds two
-  // sockets broadcasting the same identity name. Placeholders (identity not yet
-  // known) stay per-socket so unidentified joins are never undercounted.
+  // One avatar per resolved person, not per socket: the same user in two tabs
+  // holds two sockets broadcasting the same identity name. Unresolved sockets
+  // are not collaborators yet and must not appear as ghost placeholders.
   const seenNames = new Set<string>();
   return roster.filter((entry) => {
-    if (entry.isPlaceholder || !entry.name) return true;
+    if (entry.isPlaceholder || !entry.name) return false;
     if (seenNames.has(entry.name)) return false;
     seenNames.add(entry.name);
     return true;
