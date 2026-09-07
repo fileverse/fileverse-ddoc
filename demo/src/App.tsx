@@ -918,7 +918,7 @@ function App() {
         setWordCount={setWordCount}
         setPageCount={setPageCount}
         // Mirrors ddocs.new: the fixed DemoFooter overlaps the viewport bottom.
-        footerHeight="22px"
+        footerHeight="25px"
       />
       <DemoFooter wordCount={wordCount} pageCount={pageCount} />
       <WordCountModal
