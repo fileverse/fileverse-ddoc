@@ -995,8 +995,8 @@ const DdocEditor = forwardRef(
                           isSplitViewActive
                           ? 'auto'
                           : isNavbarVisible
-                            ? `calc(100dvh - (var(--navbar) + var(--toolbar)))`
-                            : `calc(100dvh - var(--toolbar))`,
+                            ? `calc(100dvh - (var(--navbar) + var(--toolbar)) - ${footerInset})`
+                            : `calc(100dvh - var(--toolbar) - ${footerInset})`,
                     }}
                   >
                     <div
@@ -1445,6 +1445,11 @@ const DdocEditor = forwardRef(
     // A doc created on a newer schema must never bind editors in this build;
     // useDdocEditor already blocks editor creation via the schema guard, this
     // branch replaces the editor surface with a refresh prompt.
+    // The consumer's fixed footer overlaps the viewport bottom. Ending the
+    // scroller above it keeps its bottom edge (and Chrome's native drag
+    // autoscroll belt there, TEC-2947) reachable by the pointer.
+    const footerInset = footerHeight || '0px';
+
     if (isSchemaUnsupported) {
       return (
         <div className="w-full h-[100dvh] color-bg-secondary flex items-center justify-center p-6">
@@ -1481,13 +1486,13 @@ const DdocEditor = forwardRef(
               ? '100vh'
               : isSplitViewActive
                 ? isNavbarVisible
-                  ? `calc(100dvh - 56px - ${footerHeight || '0px'})`
-                  : `calc(100dvh - ${footerHeight || '0px'})`
+                  ? `calc(100dvh - 56px - ${footerInset})`
+                  : `calc(100dvh - ${footerInset})`
                 : !isPreviewMode
                   ? isNavbarVisible
-                    ? `calc(100dvh - (var(--toolbar) + var(--navbar)))`
-                    : `calc(100dvh - var(--toolbar))`
-                  : `calc(100dvh - var(--toolbar))`,
+                    ? `calc(100dvh - (var(--toolbar) + var(--navbar)) - ${footerInset})`
+                    : `calc(100dvh - var(--toolbar) - ${footerInset})`
+                  : `calc(100dvh - var(--toolbar) - ${footerInset})`,
           }}
         >
           {/* Author's custom CSS escape hatch. The author writes bare selectors
