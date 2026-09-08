@@ -5,7 +5,7 @@
   "version": "4.8.13",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/fileverse/fileverse-ddoc.git"
+    "url": "git+https://github.com/fileverse/fileverse-ddocs.git"
   },
   "main": "dist/index.es.js",
   "module": "dist/index.es.js",

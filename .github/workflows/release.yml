@@ -68,7 +68,7 @@ jobs:
             ${{ steps.changelog.outputs.changelog }}
 
       # No NODE_AUTH_TOKEN: auth comes from the OIDC token via the trusted
-      # publisher configured on npm (repo fileverse/fileverse-ddoc, workflow release.yml).
+      # publisher configured on npm (repo fileverse/fileverse-ddocs, workflow release.yml).
       - name: Publish to npm
         if: steps.version.outputs.published == 'false'
         run: npm publish
