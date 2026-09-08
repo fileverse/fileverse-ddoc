@@ -206,7 +206,7 @@ export const DocumentMobileTabPanel = ({
   return (
     <div
       data-testid="mobile-tab-panel"
-      className={cn('fixed w-full flex flex-col z-[9]')}
+      className={cn('fixed w-full flex flex-col z-[9] color-bg-secondary')}
       style={{
         // 24px = the consumer app's footer height; the env() term keeps the
         // panel above the iOS home indicator in home-screen (standalone)

@@ -57,7 +57,6 @@ import { FlatMediaConversion } from './d-block/dblock-media-plugin';
 import { BlockId } from './block-id';
 import { ListNormalization } from './list-normalization';
 import { TabIndent } from './tab-indent';
-import { DragAutoscroll } from './drag-autoscroll';
 import { UndoSelection } from './undo-selection';
 import { AiWriterSpaceTrigger } from './ai-writer/ai-writer-space-trigger';
 import { SuperchargedTableExtensions } from './supercharged-table';
@@ -460,10 +459,6 @@ export const defaultExtensions = ({
   UndoSelection,
   // Both schemas: Tab/Shift-Tab indent, outdent, and list sink/lift.
   TabIndent,
-  // Both schemas: scroll the container while a block or file is dragged near
-  // its edges. Chrome's native 20px belt sits under fixed chrome (footer,
-  // the <1280px bottom tabs panel), so it is never reached (TEC-2947).
-  DragAutoscroll,
   // Schema fork. v1: every block wrapped in a dBlock (TrailingNode's position
   // math assumes the wrapper, so it is v1-only until re-homed in M2).
   // v2: flat top node, stock Tiptap structure.

@@ -989,14 +989,14 @@ const DdocEditor = forwardRef(
                     data-zoom-below-100={zoom < 1 ? 'true' : 'false'}
                     style={{
                       minHeight: isFocusMode
-                        ? '100vh'
+                        ? focusHeight
                         : // Split View: don't force viewport height — the content
                           // flows inside the right pane's own scroll box.
                           isSplitViewActive
                           ? 'auto'
                           : isNavbarVisible
-                            ? `calc(100dvh - (var(--navbar) + var(--toolbar)) - ${footerInset})`
-                            : `calc(100dvh - var(--toolbar) - ${footerInset})`,
+                            ? `calc(100dvh - (var(--navbar) + var(--toolbar)) - ${bottomInset})`
+                            : `calc(100dvh - var(--toolbar) - ${bottomInset})`,
                     }}
                   >
                     <div
@@ -1442,14 +1442,19 @@ const DdocEditor = forwardRef(
       );
     };
 
+    // Bottom chrome the scroller must end above so its bottom edge (and the
+    // browser's native drag-autoscroll belt there, TEC-2947) stays reachable:
+    // the consumer's fixed footer, plus the collapsed tab panel that sits on
+    // it below 1280px (hard-coded height for now).
+    const footerInset = footerHeight || '0px';
+    const mobileTabPanelInset =
+      isBelow1280px && shouldRenderDocumentOutline ? '50px' : '0px';
+    const bottomInset = `calc(${footerInset} + ${mobileTabPanelInset})`;
+    const focusHeight = `calc(100vh - ${mobileTabPanelInset})`;
+
     // A doc created on a newer schema must never bind editors in this build;
     // useDdocEditor already blocks editor creation via the schema guard, this
     // branch replaces the editor surface with a refresh prompt.
-    // The consumer's fixed footer overlaps the viewport bottom. Ending the
-    // scroller above it keeps its bottom edge (and Chrome's native drag
-    // autoscroll belt there, TEC-2947) reachable by the pointer.
-    const footerInset = footerHeight || '0px';
-
     if (isSchemaUnsupported) {
       return (
         <div className="w-full h-[100dvh] color-bg-secondary flex items-center justify-center p-6">
@@ -1483,16 +1488,16 @@ const DdocEditor = forwardRef(
           )}
           style={{
             height: isFocusMode
-              ? '100vh'
+              ? focusHeight
               : isSplitViewActive
                 ? isNavbarVisible
-                  ? `calc(100dvh - 56px - ${footerInset})`
-                  : `calc(100dvh - ${footerInset})`
+                  ? `calc(100dvh - 56px - ${bottomInset})`
+                  : `calc(100dvh - ${bottomInset})`
                 : !isPreviewMode
                   ? isNavbarVisible
-                    ? `calc(100dvh - (var(--toolbar) + var(--navbar)) - ${footerInset})`
-                    : `calc(100dvh - var(--toolbar) - ${footerInset})`
-                  : `calc(100dvh - var(--toolbar) - ${footerInset})`,
+                    ? `calc(100dvh - (var(--toolbar) + var(--navbar)) - ${bottomInset})`
+                    : `calc(100dvh - var(--toolbar) - ${bottomInset})`
+                  : `calc(100dvh - var(--toolbar) - ${bottomInset})`,
           }}
         >
           {/* Author's custom CSS escape hatch. The author writes bare selectors
