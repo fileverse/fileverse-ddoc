@@ -62,6 +62,7 @@ import { AiWriterSpaceTrigger } from './ai-writer/ai-writer-space-trigger';
 import { SuperchargedTableExtensions } from './supercharged-table';
 import { Document, FlatDocument } from './document';
 import { TrailingNode } from './trailing-node';
+import { CaretScrollBand } from './caret-scroll-band';
 import { type NodeType } from '@tiptap/pm/model';
 import { Plugin } from '@tiptap/pm/state';
 import { type Editor, InputRule } from '@tiptap/core';
@@ -459,6 +460,8 @@ export const defaultExtensions = ({
   UndoSelection,
   // Both schemas: Tab/Shift-Tab indent, outdent, and list sink/lift.
   TabIndent,
+  // Both schemas: caret comfort band while typing near the bottom (TEC-2948).
+  CaretScrollBand,
   // Schema fork. v1: every block wrapped in a dBlock (TrailingNode's position
   // math assumes the wrapper, so it is v1-only until re-homed in M2).
   // v2: flat top node, stock Tiptap structure.
