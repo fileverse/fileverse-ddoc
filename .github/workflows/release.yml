@@ -5,20 +5,28 @@ on:
     branches:
       - main
 
+permissions:
+  contents: write # create the GitHub release + tag
+  id-token: write # npm trusted publishing (OIDC)
+
 jobs:
   build-test-release-publish:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '22.x'
           registry-url: 'https://registry.npmjs.org'
+
+      # Trusted publishing needs npm >= 11.5.1; Node 22 bundles npm 10.
+      - name: Update npm
+        run: npm install -g npm@latest && npm --version
 
       - name: Install dependencies
         run: npm ci
@@ -26,11 +34,21 @@ jobs:
       - name: Build
         run: npm run build
 
-      - name: Get version from package.json
-        id: package-version
-        uses: martinbeentjes/npm-get-version-action@v1.3.1
+      - name: Read version and check npm
+        id: version
+        run: |
+          NAME=$(node -p "require('./package.json').name")
+          VERSION=$(node -p "require('./package.json').version")
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "published=true" >> "$GITHUB_OUTPUT"
+            echo "$NAME@$VERSION is already on npm, skipping release and publish."
+          else
+            echo "published=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Generate changelog
+        if: steps.version.outputs.published == 'false'
         id: changelog
         uses: jaywcjlove/changelog-generator@v1.9.2
         with:
@@ -39,24 +57,18 @@ jobs:
           filter: '[R|r]elease[d]\s+[v|V]\d+\.\d+\.\d+'
 
       - name: Create GitHub Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        if: steps.version.outputs.published == 'false'
+        uses: softprops/action-gh-release@v2
         with:
-          tag_name: v${{ steps.package-version.outputs.current-version }}
-          release_name: Release v${{ steps.package-version.outputs.current-version }}
+          tag_name: v${{ steps.version.outputs.version }}
+          name: Release v${{ steps.version.outputs.version }}
           body: |
-            # Release v${{ steps.package-version.outputs.current-version }}
+            # Release v${{ steps.version.outputs.version }}
 
             ${{ steps.changelog.outputs.changelog }}
-          draft: false
-          prerelease: false
 
+      # No NODE_AUTH_TOKEN: auth comes from the OIDC token via the trusted
+      # publisher configured on npm (repo fileverse/fileverse-ddoc, workflow release.yml).
       - name: Publish to npm
+        if: steps.version.outputs.published == 'false'
         run: npm publish
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        # if version is already published, don't fail the build
-        if: ${{ steps.package-version.outputs.current-version }} != ${{ steps.package-version.outputs.previous-version }}
-        continue-on-error: true
