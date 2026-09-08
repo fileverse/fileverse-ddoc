@@ -19,7 +19,7 @@ npx vitest run -t "treats 0 as an explicit value"             # one test by name
 npx vitest package/extensions/docx                            # watch a directory
 ```
 
-Demo app: `cd demo && npm i` once, then from the repo root `npx vite demo` (port 5173). The demo resolves shared deps by walking up to the root `node_modules`. Live collaboration in the demo needs `VITE_COLLAB_WS_URL` (plus owner secret/contract vars, see `demo/src/App.tsx`) in a `.env`. If a rebuilt npm-linked `@fileverse/ui` is not picked up, delete `demo/node_modules/.vite` and restart with `--force`.
+Demo app: `cd demo && npm i` once, then `cd demo && npx vite` (port 5173). Start it inside `demo/`: from the repo root Tailwind loads the root `tailwind.config.js` and drops every demo-only class (the `xl:` navbar variants, the demo footer padding). The demo resolves shared deps by walking up to the root `node_modules`. Live collaboration in the demo needs `VITE_COLLAB_WS_URL` (plus owner secret/contract vars, see `demo/src/App.tsx`) in a `.env`. If a rebuilt npm-linked `@fileverse/ui` is not picked up, delete `demo/node_modules/.vite` and restart with `--force`.
 
 Release: `.github/workflows/release.yml` builds, tags `v<version>` and publishes to npm on every push to `main`; an unchanged version is a no-op. Version bumps are their own commit (`chore: package bump vX.Y.Z`). CI never publishes from a branch. To try branch work in ddocs.new before merging, bump `package.json` to a prerelease (`4.8.0-restore-position.0` style), commit it, run `npm run build && npm publish --tag <name>` (always pass `--tag`, otherwise the prerelease becomes `latest`), then bump the pin in ddocs.new.
 
