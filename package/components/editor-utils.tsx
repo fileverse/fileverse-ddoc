@@ -56,6 +56,7 @@ import { IpfsImageFetchPayload, IpfsImageUploadResponse } from '../types';
 import { getTemporaryEditor } from '../utils/helpers';
 import { extractTitleFromContent } from '../utils/extract-title-from-content';
 import { getContrastColor } from '../utils/color-utils';
+import { formatAo3Html } from '../utils/format-ao3-html';
 import { parseHeadingLink } from '../utils/heading-link';
 import { setShowReplacePopoverWithData } from '../extensions/search-replace/utils';
 import copy from 'copy-to-clipboard';
@@ -764,8 +765,9 @@ export const useEditorToolbar = ({
   const copyAo3Html: CopyAo3Html = useCallback(
     async (getHtml) => {
       try {
-        const html = await getHtml();
-        if (!html) throw new Error('HTML export returned no content');
+        const rawHtml = await getHtml();
+        if (!rawHtml) throw new Error('HTML export returned no content');
+        const html = await formatAo3Html(rawHtml);
 
         let copied = false;
         try {
