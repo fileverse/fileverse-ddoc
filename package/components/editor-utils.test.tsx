@@ -152,9 +152,7 @@ describe('Copy HTML export', () => {
 
     expect(writeText).toHaveBeenCalledOnce();
     const copiedHtml = writeText.mock.calls[0][0];
-    expect(copiedHtml).toContain('Hello');
-    expect(copiedHtml).toContain('<strong');
-    expect(copiedHtml).toContain('world</strong>');
+    expect(copiedHtml).toBe('<p>Hello <strong>world</strong></p>');
     expect(copiedHtml).not.toMatch(/<html|<head|<body|<style/i);
     expect(copy).not.toHaveBeenCalled();
     expect(toast).toHaveBeenCalledOnce();
