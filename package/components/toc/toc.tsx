@@ -131,7 +131,7 @@ export const ToCItem = memo(
             position={'right'}
           >
             <IconButton
-              icon={copyState ? 'Check' : 'Clipboard'}
+              icon={copyState ? 'Check' : 'Link'}
               size="sm"
               variant="ghost"
               className={cn(
