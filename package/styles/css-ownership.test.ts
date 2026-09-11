@@ -64,6 +64,7 @@ const SHARED_SELECTORS: Record<string, string> = {
   '[data-page-break]': 'page-break node attribute',
   '[data-type]': 'ProseMirror node type attribute',
   '.buttonless': 'number input inside portal-rendered popovers',
+  '.editor-main-lane': 'editor layout lane wrapper around the content root; scoping candidate',
 };
 // Theme roots may only declare editor tokens.
 const TOKEN_ROOT = /^(:root|\.dark|\.theme-[a-z-]+)$/;
