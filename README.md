@@ -27,17 +27,23 @@ This repository contains:
 
 ## Usage
 
-### Prequisites
+### Prerequisites
 
-To use dDocs, ensure your project is set up with Tailwind CSS and have a Tailwind configuration file.
+Your app runs Tailwind CSS 3.4 and owns the `@tailwind base/components/utilities` entry. The package ships only editor CSS; preflight, utilities, the `@fileverse/ui` styles, and the KaTeX stylesheet come from your build.
 
 ### Install & import
 
-Add the following imports :
-
 ```javascript
 import { DdocEditor } from '@fileverse-dev/ddoc';
-import '@fileverse-dev/ddoc/styles'; // in App.jsx/App.tsx
+```
+
+Load stylesheets in this order (Vite emits CSS in import order; in Next put the first two in the root layout and the last two in the editor route):
+
+```javascript
+import './globals.css';                 // your tailwind entry
+import '@fileverse/ui/styles/base';     // tokens and base rules
+import 'katex/dist/katex.min.css';      // math; fonts are served as files
+import '@fileverse-dev/ddoc/styles';    // editor CSS
 ```
 
 ### Peer Dependencies
@@ -53,7 +59,7 @@ npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities @fileverse/ui @fi
 | `@dnd-kit/core`      | `>=6.3.1`   |
 | `@dnd-kit/sortable`  | `>=10.0.0`  |
 | `@dnd-kit/utilities` | `>=3.2.2`   |
-| `@fileverse/ui`      | `>=5.0.0`   |
+| `@fileverse/ui`      | `5.4.0`     |
 | `@fileverse/crypto`  | `>=0.0.21`  |
 | `viem`               | `>=2.13.8`  |
 | `framer-motion`      | `>=11.2.10` |
@@ -63,9 +69,27 @@ These are externalized from the bundle to avoid duplication when your app alread
 
 ### Update Tailwind Config
 
-In your tailwind config, add this line to content array :
+```javascript
+module.exports = {
+  presets: [require('@fileverse-dev/ddoc/tailwind')],
+  content: [
+    './src/**/*.{js,ts,jsx,tsx}',
+    './node_modules/@fileverse-dev/ddoc/dist/index.es.js',
+    './node_modules/@fileverse/ui/dist/index.es.js',
+  ],
+};
+```
 
-`@fileverse-dev/ddoc/dist/index.es.js`
+The preset composes `@fileverse/ui/tailwind` (class-based dark mode, animate plugin, design-system classes) and adds the `mobile: 960px` screen the editor uses.
+
+### Migrating from 4.x
+
+5.0 stops shipping preflight, Tailwind utilities, the ui stylesheet, the KaTeX stylesheet, and the `html`, `body`, and `*` resets. To upgrade:
+
+1. Add the preset and the two `content` entries above.
+2. Import `@fileverse/ui/styles/base` and `katex/dist/katex.min.css` yourself, in the order above.
+3. If your shell relied on `html, body { overflow: hidden }` or `body { user-select: none }` from the package, add them to your own global stylesheet.
+4. Remove any workaround that re-declared `mobile:` classes; the preset generates them.
 
 You should now be set to use dDocs!
 
