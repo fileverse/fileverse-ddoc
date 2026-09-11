@@ -65,6 +65,8 @@ npm install @dnd-kit/core @dnd-kit/sortable @dnd-kit/utilities @fileverse/ui @fi
 | `framer-motion`      | `>=11.2.10` |
 | `frimousse`          | `>=0.3.0`   |
 
+During the `unstable-styles` prerelease, install `@fileverse/ui@5.4.0-unstable-styles-1` exactly; the stable release pairs with `5.4.0`.
+
 These are externalized from the bundle to avoid duplication when your app already uses them. If you don't have them installed, npm (v7+) will auto-install them for you.
 
 ### Update Tailwind Config
@@ -90,6 +92,8 @@ The preset composes `@fileverse/ui/tailwind` (class-based dark mode, animate plu
 2. Import `@fileverse/ui/styles/base` and `katex/dist/katex.min.css` yourself, in the order above.
 3. If your shell relied on `html, body { overflow: hidden }` or `body { user-select: none }` from the package, add them to your own global stylesheet.
 4. Remove any workaround that re-declared `mobile:` classes; the preset generates them.
+5. Add `katex` to your own dependencies (`npm install katex@^0.16.11`); the package no longer guarantees it is hoisted.
+6. If you styled anything from the old bundle by class name: `.custom-scrollbar` is now `.ddoc-scrollbar`, and `.highlight-comment-bg`, `.is-active`, `.custom-border-bg`, `.animate-fade-in-out`, `.placeholder-disabled` were removed as unused.
 
 You should now be set to use dDocs!
 

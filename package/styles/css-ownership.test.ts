@@ -16,6 +16,7 @@ const PACKAGE_DIR = path.resolve(__dirname, '..');
 const APPROVED_ROOTS = new Set([
   '.ProseMirror',
   '[data-ddoc-editor-root]',
+  '[data-ddoc-editor-root="true"]',
   '#editor-wrapper',
   '#editor-canvas',
   '[data-split-view-preview]',
@@ -58,11 +59,18 @@ const SHARED_SELECTORS: Record<string, string> = {
   '.table-wrapper': 'ProseMirror table wrapper inside content; scoping candidate',
   '.resize-cursor': 'ProseMirror table resize state; scoping candidate',
   '.presentation-mode': 'presentation container; scoping candidate',
-  '[data-mode]': 'editor mode attribute on the host element',
-  '[data-theme]': 'tippy theme attribute on portal-rendered popovers',
-  '[data-schema-version]': 'schema attribute on the host element',
-  '[data-page-break]': 'page-break node attribute',
-  '[data-type]': 'ProseMirror node type attribute',
+  '[data-mode="focus"]': 'editor mode attribute on the host element',
+  '[data-theme="link-command"]': 'tippy theme attribute on portal-rendered popovers',
+  '[data-schema-version="2"]': 'schema attribute on the host element',
+  '[data-page-break="false"]': 'page-break node attribute',
+  '[data-type="taskList"]': 'ProseMirror node type attribute',
+  '[data-type="d-block"]': 'ProseMirror node type attribute',
+  '[data-type="column"]': 'ProseMirror node type attribute',
+  '[data-type="columns"]': 'ProseMirror node type attribute',
+  '[data-type="horizontalRule"]': 'ProseMirror node type attribute',
+  '[data-type="taskItem"]': 'ProseMirror node type attribute',
+  '[data-type="callout"]': 'ProseMirror node type attribute',
+  '[data-type="page-break"]': 'ProseMirror node type attribute',
   '.buttonless': 'number input inside portal-rendered popovers',
   '.editor-main-lane': 'editor layout lane wrapper around the content root; scoping candidate',
 };
@@ -101,7 +109,9 @@ function collectRules(container: Container, out: Rule[]): void {
 function token(node: SelectorNode): string | null {
   if (node.type === 'class') return `.${node.value}`;
   if (node.type === 'id') return `#${node.value}`;
-  if (node.type === 'attribute') return `[${node.attribute}]`;
+  if (node.type === 'attribute') {
+    return node.value ? `[${node.attribute}="${node.value}"]` : `[${node.attribute}]`;
+  }
   return null;
 }
 
@@ -148,12 +158,15 @@ export function ownershipViolations(css: string, from: string): string[] {
   const rules: Rule[] = [];
   collectRules(flatten(css, from), rules);
   const out: string[] = [];
-  const where = (rule: Rule) => `${path.basename(from)}:${rule.source?.start?.line ?? 0}`;
+  const label = path.isAbsolute(from) ? path.relative(PACKAGE_DIR, from) : from;
+  const where = (rule: Rule) => `${label}:${rule.source?.start?.line ?? 0}`;
   for (const rule of rules) {
     for (const raw of rule.selectors) {
       const sel = raw.trim();
       if (TOKEN_ROOT.test(sel)) {
-        const nonToken = rule.nodes.some((n) => n.type === 'decl' && !n.prop.startsWith('--'));
+        const nonToken = rule.nodes.some(
+          (n) => n.type === 'decl' && !n.prop.startsWith('--color-editor-'),
+        );
         if (nonToken) out.push(`${sel} declares non-token properties (${where(rule)})`);
         continue;
       }
@@ -219,6 +232,8 @@ describe('ownership predicate', () => {
     "[dir='rtl'] {}",
     ':is(.ProseMirror, body) p {}',
     '.dark { color: red }',
+    "[data-theme='dark'] {}",
+    '.dark { --color-bg-default: 0, 0%, 18%, 1 }',
   ])('rejects %s', (css) => {
     expect(check(css)).toHaveLength(1);
   });
@@ -233,6 +248,7 @@ describe('ownership predicate', () => {
     '.ProseMirror:not(.readonly) p {}',
     '.dark { --color-editor-rose: red }',
     '@media (hover: none) { .ProseMirror p {} }',
+    "[data-theme='link-command'] {}",
   ])('accepts %s', (css) => {
     expect(check(css)).toEqual([]);
   });

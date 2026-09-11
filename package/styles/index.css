@@ -218,8 +218,8 @@
   --color-editor-neutral-13: #878787;
   --color-editor-neutral-14: #808080;
 }
-:where(.ProseMirror) ul,
-:where(.ProseMirror) ol {
+:where(.ProseMirror, .presentation-mode) ul,
+:where(.ProseMirror, .presentation-mode) ol {
   list-style: revert;
 }
 
@@ -297,7 +297,7 @@ input[type='number'].buttonless::-webkit-inner-spin-button {
   margin: 0;
 }
 
-:where(.ProseMirror) li > ol {
+:where(.ProseMirror, .presentation-mode) li > ol {
   /* `list-item` must stay in this reset: the UA stylesheet sets
      `counter-reset: list-item` on every ol/ul, and Firefox derives ordered-list
      numbering from that counter (Chromium/WebKit compute it in layout instead).
@@ -308,12 +308,12 @@ input[type='number'].buttonless::-webkit-inner-spin-button {
   margin: 0;
 }
 
-:where(.ProseMirror) li > ol > li {
+:where(.ProseMirror, .presentation-mode) li > ol > li {
   list-style: none;
   position: relative;
 }
 
-:where(.ProseMirror) li > ol > li:before {
+:where(.ProseMirror, .presentation-mode) li > ol > li:before {
   counter-increment: list;
   content: counter(list, lower-alpha) '. ';
   position: absolute;
@@ -321,17 +321,17 @@ input[type='number'].buttonless::-webkit-inner-spin-button {
 }
 
 /* Level 3 nested items to use Roman numerals */
-:where(.ProseMirror) li > ol > li > ol {
+:where(.ProseMirror, .presentation-mode) li > ol > li > ol {
   /* see the note on `li > ol` above */
   counter-reset: sublist list-item;
 }
 
-:where(.ProseMirror) li > ol > li > ol > li {
+:where(.ProseMirror, .presentation-mode) li > ol > li > ol > li {
   list-style: none;
   position: relative;
 }
 
-:where(.ProseMirror) li > ol > li > ol > li:before {
+:where(.ProseMirror, .presentation-mode) li > ol > li > ol > li:before {
   counter-increment: sublist;
   content: counter(sublist, lower-roman) '. ';
   position: absolute;
