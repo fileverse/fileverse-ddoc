@@ -2,7 +2,7 @@
   "name": "@fileverse-dev/ddoc",
   "private": false,
   "description": "DDoc",
-  "version": "4.8.16",
+  "version": "5.0.0-unstable-styles-1",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/fileverse/fileverse-ddocs.git"
@@ -19,10 +19,12 @@
       "types": "./dist/headless-editor-utils.d.ts"
     },
     "./styles": "./dist/style.css",
-    "./types": "./dist/package/types.d.ts"
+    "./types": "./dist/package/types.d.ts",
+    "./tailwind": "./tailwind.preset.cjs"
   },
   "files": [
-    "/dist"
+    "/dist",
+    "/tailwind.preset.cjs"
   ],
   "publishConfig": {
     "access": "public"
@@ -141,7 +143,7 @@
     "@dnd-kit/utilities": ">=3.2.2",
     "@fileverse/crypto": ">=0.0.21",
     "@fileverse/ens": "0.0.4",
-    "@fileverse/ui": "5.3.3",
+    "@fileverse/ui": "5.4.0-unstable-styles-1",
     "framer-motion": ">=11.2.10",
     "frimousse": ">=0.3.0",
     "mermaid": "11.14.0",
