@@ -55,7 +55,6 @@ const SHARED_SELECTORS: Record<string, string> = {
   '.search-result': 'search/replace decoration inside content; scoping candidate',
   '.trigger-button': 'table cell menu trigger; scoping candidate',
   '.dropdown': 'table cell menu, portal-rendered; namespacing candidate',
-  '.custom-ens-button': 'ENS button inside portal-rendered popover; namespacing candidate',
   '.table-wrapper': 'ProseMirror table wrapper inside content; scoping candidate',
   '.resize-cursor': 'ProseMirror table resize state; scoping candidate',
   '.presentation-mode': 'presentation container; scoping candidate',
