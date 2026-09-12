@@ -280,6 +280,7 @@ describe('ownership predicate', () => {
     '.dark { --color-bg-default: 0, 0%, 18%, 1 }',
     '[data-type*="callout"] {}',
     '.ProseMirror { @starting-style { body { color: red } } }',
+    '.ProseMirror { @scope { body { color: red } } }',
   ])('rejects %s', (css) => {
     expect(check(css)).toHaveLength(1);
   });
