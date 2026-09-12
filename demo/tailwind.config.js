@@ -7,6 +7,6 @@ export default {
     './index.html',
     './src/**/*.{js,ts,jsx,tsx}',
     '../package/**/*.{js,ts,tsx,jsx}',
-    '../node_modules/@fileverse/ui/dist/index.es.js',
+    '../node_modules/@fileverse/ui/dist/**/*.{js,mjs}',
   ],
 };
